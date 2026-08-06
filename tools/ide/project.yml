@@ -31,14 +31,33 @@ targets:
     platform: macOS
     sources:
       - path: SharpeeIDE
-      # Bundle the @sharpee/devkit Chord story template so "New Story…" can
-      # scaffold a `.story` without any CLI (ADR-258 D2). StoryScaffold reads
-      # story.story.template from Bundle.main (package.json.template is bundled
-      # but unused — the IDE scaffold never writes one).
-      - path: ../../packages/devkit/templates/story-chord
+        # The Testing tab's bundle is added below as a FOLDER reference; without
+        # this exclude XcodeGen would also add each file individually and the
+        # copy phase would carry them twice.
+        excludes:
+          - "Resources/testing-tab/**"
+      # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
+      # esbuild output is copied whole into Contents/Resources/testing-tab/ and
+      # adding a file to it never needs a project regenerate.
+      #
+      # The output is COMMITTED, unusually for build output, because XcodeGen
+      # resolves this path at generate time: a gitignored folder would make
+      # `xcodegen generate` on a fresh clone silently produce an app with no
+      # Testing tab. The pre-build script below regenerates it on every build,
+      # so the committed copy is a seed, never the thing that ships stale.
+      - path: SharpeeIDE/Resources/testing-tab
+        type: folder
         buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
+    # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
+    # step it did not have before. Cheap (one esbuild pass, tens of
+    # milliseconds), so unlike the toolchain vendoring below it is NOT opt-in:
+    # a stale tab is a wrong tab. Degrades to a warning when node is absent.
+    preBuildScripts:
+      - name: Bundle the Testing tab (ADR-301 D1)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/build-testing-tab.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds

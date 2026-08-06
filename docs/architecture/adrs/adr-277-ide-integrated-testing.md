@@ -117,6 +117,59 @@ internal types:
 - **Run-level aggregation lives in the contract's emitter** (one function in
   transcript-tester), not a fourth hand-rolled `reduce`.
 
+> **AMENDED 2026-08-06 — the record stream is superseded by the run-event
+> stream** (`packages/ide-protocol/src/run-events.ts`,
+> `RUN_EVENT_SCHEMA_VERSION = 2`). Authority: David's standing directive of
+> 2026-08-05 that for the IDE and the platform API everything is on the table and
+> ADR imperatives do not bind the work. Plan:
+> `docs/work/ide-testing-wire/plan-20260806-run-event-spine.md`.
+>
+> **What survives unchanged.** NDJSON, one JSON object per stdout line; the
+> version discriminator per line, rejected loudly when unknown; per-command
+> records carrying the `.transcript` line number for click-through; a transcript
+> that fails to validate or load reported as a loud row and never a silent skip;
+> `sharpee test` accepting a `.story` file and resolving its folder; the bundle
+> `--test` staying out of scope.
+>
+> **What was intended and not delivered.** This decision's stated purpose was
+> that "a test run lasts minutes… so the Tests panel fills live." The
+> implementation does not do that. `transcriptRecords`
+> (`transcript-tester/src/aggregate.ts`) takes a **completed** `TranscriptResult`
+> and returns `[start, …commands, end]` as one array, which the CLI writes in a
+> single burst (`devkit/src/commands/test.ts`). So `transcript-start` — whose doc
+> comment reads "a transcript is about to run" — is emitted *after* that
+> transcript finished, and the feed advances only when a file completes. Measured
+> 2026-08-06: the Dungeo walkthrough chain is `952 tests in 17 transcripts,
+> 8452ms`, i.e. seventeen jumps over 8.8 seconds, with no vocabulary at all for
+> the compile and load that precede the first command. `--tree` emits nothing.
+>
+> **What replaces it.** Version 2 is a break, not a widening — backwards
+> compatibility bought nothing, because every consumer of this stream lives in
+> this repository and ships from this build. Runners gain an observer and emit as
+> they run; the terminal reporter and the NDJSON writer both become subscribers
+> of one event sequence, so report and wire stop being two hand-maintained
+> tallies. New or changed: an envelope (`seq`, `elapsedMs`) on every event;
+> `phase` events for compile/load/assemble; `progress` events carrying
+> multi-dimensional `budgets`; `transcript-start` emitted **before** execution and
+> carrying `commandCount`, `parent` (ADR-302 parentage) and `replayed` (D17);
+> `command-result` emitted as each command completes; `transcript-end` gaining
+> `unreached` + `blockedBy`, which is this decision's own "never a silent skip"
+> rule applied to the last case still exempt from it.
+>
+> **The Swift-mirror clause is retired.** D1 requires the contract be mirrored as
+> `Codable` structs "pinned by tests on both sides". The Testing tab is instead a
+> web bundle in the IDE's existing `WKWebView`, importing `@sharpee/ide-protocol`
+> directly — which satisfies DEVARCH 8b rather than waiving it at a language
+> boundary, and removes two files that could silently disagree. This also answers
+> ADR-301's open question ("what hosts it?") rather than waiting on it.
+>
+> **The explorer is a designed-for consumer, not a built one.** ADR-131 remains
+> unbuilt; the vocabulary accommodates a producer that searches rather than
+> replays (optional `transcriptCount`, denominator-free `progress`, budgeted
+> reporting per ADR-294's soundness contract), proven by a synthetic
+> explorer-shaped producer test rather than asserted. A `finding` event is
+> deliberately **not** declared until the explorer exists.
+
 ### D2 — The IDE gains a Tests surface
 
 A Tests panel that: discovers the open story's transcripts, runs one / all /

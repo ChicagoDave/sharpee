@@ -96,27 +96,16 @@ final class MainWindowController: NSWindowController {
         rootViewController?.storyBuildReport()
     }
 
-    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
-    /// Force-unwrap-free: the panel exists for the window's lifetime; the
+    /// The right panel's Testing tab (ADR-301) — the web surface a run streams
+    /// into. Force-unwrap-free: it exists for the window's lifetime; the
     /// fallback instance only serves a window-less controller (tests).
-    var testPanel: TestPanelView {
-        rootViewController?.testPanel ?? TestPanelView()
+    var testingTab: TestingTabViewController {
+        rootViewController?.testingTab ?? TestingTabViewController()
     }
 
-    /// Switches the right panel to the Test tab (a test run just started).
-    func showTestTab() {
-        rootViewController?.showTestTab()
-    }
-
-    /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        rootViewController?.configureRecording(storyDirectory: storyDirectory, onRecorded: onRecorded)
-    }
-
-    /// Re-reads the open project from disk so files written from outside the
-    /// tree (a recorded transcript) become visible without reopening.
-    func refreshProjectTree() {
-        rootViewController?.refreshProjectTree()
+    /// Switches the right panel to the Testing tab (a test run just started).
+    func showTestingTab() {
+        rootViewController?.showTestingTab()
     }
 
     /// The editor's focused document (Run Current Test File target), or nil.
@@ -392,22 +381,11 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showBuildTab()
     }
 
-    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
-    var testPanel: TestPanelView { mainSplitViewController.testPanel }
+    /// The right panel's Testing tab (ADR-301) — wired by TestController.
+    var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
 
-    func showTestTab() {
-        mainSplitViewController.showTestTab()
-    }
-
-    /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        mainSplitViewController.configureRecording(storyDirectory: storyDirectory,
-                                                   onRecorded: onRecorded)
-    }
-
-    /// Re-reads the open project from disk, preserving expansion state.
-    func refreshProjectTree() {
-        mainSplitViewController.refreshProjectTree()
+    func showTestingTab() {
+        mainSplitViewController.showTestingTab()
     }
 
     /// The editor's focused document (Run Current Test File enablement/target).
@@ -432,6 +410,11 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.storyBuildReport()
     }
 
+    /// Diagnostics the last compose reported, so the panel can be revealed on
+    /// the transition from clean to not-clean and never again for the same run
+    /// of problems.
+    private var lastProblemCount = 0
+
     /// Routes a compose outcome to the Problems tab and the editor's underlines.
     private func handleComposeOutcome(_ outcome: ComposeScheduler.Outcome) {
         switch outcome.result {
@@ -439,6 +422,15 @@ private final class RootViewController: NSViewController {
             bottomPanelViewController.setProblems(payload.diagnostics, for: outcome.storyURL)
             mainSplitViewController.applyComposeDiagnostics(payload.diagnostics,
                                                             forFile: outcome.storyURL)
+            // The panel is collapsed by default, so a diagnostic could underline
+            // the editor while the only surface that NAMES it stayed hidden —
+            // the author saw a coloured squiggle and no text anywhere. Reveal on
+            // the clean → not-clean edge only: revealing on every compose would
+            // reopen a panel the author had just closed, on every keystroke.
+            if lastProblemCount == 0 && !payload.diagnostics.isEmpty {
+                applyBuildPanelVisible(true)
+            }
+            lastProblemCount = payload.diagnostics.count
         case .failure(let failure):
             bottomPanelViewController.setProblemsStatus(Self.statusMessage(for: failure))
         }
@@ -584,31 +576,15 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makePlayItem())
     }
 
-    /// Opens a file the author activated in the project sidebar, in whatever
-    /// surface reads it.
+    /// Opens a file the author activated in the project sidebar.
     ///
-    /// A `.skein` is a committed artifact whose content is threads and prose
-    /// (ADR-299 D7) — the editor would show its JSON serialization, which is
-    /// the storage format, not the thing the author made. Every other file is
-    /// text and goes to the editor.
+    /// Every file is text and goes to the editor. `.skein` used to be the one
+    /// exception — a committed artifact whose storage format was JSON — but the
+    /// artifact is retired (ADR-300) and the exception went with it.
     ///
     /// - Parameter url: the activated file.
     private func activateFile(at url: URL) {
-        guard url.pathExtension == SkeinStore.fileExtension else {
-            editorViewController.openDocument(at: url)
-            return
-        }
-        do {
-            try rightPanelViewController.openSkein(at: url)
-        } catch {
-            // A skein that cannot be read is exactly when the raw bytes are
-            // worth seeing, so the refusal is stated AND the text is opened —
-            // rather than leaving the author with a message and no file.
-            rightPanelViewController.showSkeinTab()
-            rightPanelViewController.skeinView.setStatus(
-                "\(url.lastPathComponent): \(error.localizedDescription)")
-            editorViewController.openDocument(at: url)
-        }
+        editorViewController.openDocument(at: url)
     }
 
     /// The composed story's identity for Build/Play gating: its URL and whether
@@ -662,24 +638,6 @@ private final class MainSplitViewController: NSSplitViewController {
         persistSession()
     }
 
-    /// Re-reads the open project from disk and re-applies it, preserving which
-    /// folders are expanded.
-    ///
-    /// The tree is a snapshot of one scan, so anything that writes into the
-    /// project from OUTSIDE the tree leaves it stale — a recorded transcript
-    /// (ADR-282 D3/D4) lands in `tests/transcripts/` or `walkthroughs/` and is
-    /// simply invisible until the project is reopened. Re-applying rather than
-    /// reloading keeps `RecentProjectsStore` and the persisted session out of
-    /// it: nothing about the project changed, only what is inside it.
-    ///
-    /// A no-op when no project is open.
-    fileprivate func refreshProjectTree() {
-        guard let root = currentProject?.rootURL else { return }
-        let expanded = projectPaneViewController.expandedFolderURLs
-        let rescanned = Project(rootURL: root)
-        currentProject = rescanned
-        projectPaneViewController.setProject(rescanned, expandedFolderURLs: expanded)
-    }
 
     func saveActiveDocument() {
         editorViewController.saveActiveDocument()
@@ -772,18 +730,11 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.showBuildTab()
     }
 
-    /// Tests-panel plumbing — the Test tab lives in the right panel (ADR-277 D2).
-    fileprivate var testPanel: TestPanelView { rightPanelViewController.testPanel }
+    /// The Testing tab (ADR-301) — likewise in the right panel.
+    fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
 
-    /// Points the skein exporter at the open story (save-panel default dir +
-    /// re-discovery hook for the Tests panel) — ADR-299 D7.
-    fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        playViewController.storyDirectory = storyDirectory
-        playViewController.onTranscriptRecorded = onRecorded
-    }
-
-    fileprivate func showTestTab() {
-        rightPanelViewController.showTestTab()
+    fileprivate func showTestingTab() {
+        rightPanelViewController.showTestingTab()
     }
 
     /// The editor's focused document, or nil when nothing is open (drives the

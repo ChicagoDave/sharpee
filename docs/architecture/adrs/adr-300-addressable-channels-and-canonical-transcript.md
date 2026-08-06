@@ -251,7 +251,32 @@ harness specifically, and one of them cannot be done in a frozen package at all.
 | Decision | Lands in | Shape of the work |
 | --- | --- | --- |
 | D13, D14 | **`branch-tester` only** | Assertion vocabulary and capture inference. These extend the assertion grammar, which ADR-302 D15 freezes in `transcript-tester` — so they land in the new harness and are **not** back-ported |
-| D1 | **`tools/ide` (Swift)** | `.skein` retirement is unexecuted: `tools/ide/SharpeeIDE/Skein/` and `stories/fernhill/play-testing/` are still committed. Deleting them needs explicit confirmation |
+| D1 | **`tools/ide` (Swift)** | ~~`.skein` retirement is unexecuted~~ — **EXECUTED 2026-08-06 (session 322542)**, on David's confirmation. Removed: `tools/ide/SharpeeIDE/Skein/` (12 files, 2,768 lines), 15 test files, `branch-stories/fernhill/play-testing/fernhill.skein`, the Skein tab and its replay/tag/force/bless actions, the Play pane's skein session and replay-to-node machinery, and ADR-280's "Play Testing" sidebar group. Suite **363 passed, 0 failures** (from 521 — the delta is skein tests). See the note below for what deliberately survived |
+
+> **What went with the `.skein` retirement** (2026-08-06). A first pass kept the
+> turn-events bridge, an in-memory session log, and a pinned Play seed, on the
+> reasoning that the editing surface ADR-301 defers would want them. David called
+> that what it was — retention dressed as foresight — and a count settled it:
+> every one of those symbols had **zero production readers**. They were hooks
+> feeding nothing, plus a test written to justify them.
+>
+> So they went too: the turn-events bridge (ADR-277 D5), `sessionLog`/`onTurn`,
+> `announceTranscript`/`onTranscriptRecorded`/`transcriptsSaveDirectory`/
+> `storyDirectory`, the whole `configureRecording` chain from `AppDelegate` down,
+> `refreshProjectTree` (a three-level forward whose only caller was the deleted
+> recording callback), and the pinned seed. The seed is worth naming: it arrived
+> WITH the skein (commit `23c81be6`) and existed to make skein replay
+> reproducible — replacing it with a constant was inventing a feature to stand
+> where one had been deleted.
+>
+> One thing did stay, on evidence rather than intent: `RecordingSession`'s
+> serialization grammar has no production caller either, but the re-bless tests
+> build their fixtures with it, and re-blessing a transcript is only a meaningful
+> test if the transcript came from the real serializer instead of a hand-typed
+> string. Its header says exactly that now.
+>
+> When the editing surface lands it will need a turn feed again. It should be
+> built against that decision, not left standing as a hook nothing reads.
 
 **Sequencing consequence — D8 must precede ADR-302's copy.** *(Discharged
 2026-08-05: D8/D9 shipped before any harness copy existed.)* Dissolving `main`

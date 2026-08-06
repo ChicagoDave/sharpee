@@ -2,25 +2,26 @@
 // Owns a single child `sharpee test … --json` process (ADR-277 D1/D2): spawns
 // it with the same resolution as builds (workspace shim, else login-shell
 // PATH), line-buffers its NDJSON stdout (chunks do not align with line
-// boundaries), decodes each complete line as it arrives so the Tests panel
-// fills live, and supports graceful cancel (SIGTERM, escalating to SIGKILL
-// after 2s) — a cancelled run keeps every record already decoded. A
-// schemaVersion mismatch is surfaced once and stops decoding (the "IDE is out
-// of date" state), never a partial decode.
-// Public interface: TestRunner.runAll(storyFile:), runChain(storyFile:),
-// runFile(storyFile:transcript:), start(executable:arguments:...), cancel(),
-// state, delegate.
+// boundaries), hands each complete line to its delegate as it arrives so the
+// Testing tab fills live, and supports graceful cancel (SIGTERM, escalating to
+// SIGKILL after 2s) — a cancelled run keeps everything already rendered.
+// It does NOT decode: the tab owns the wire (ADR-301 D1), including deciding
+// that a line is unreadable.
+// Public interface: TestRunner.runTests(storyFile:),
+// start(executable:arguments:...), cancel(), state, delegate.
 // Owner context: tools/ide — Test.
 
 import Foundation
 
 @MainActor
 protocol TestRunnerDelegate: AnyObject {
-    /// One decoded NDJSON record, in stream order.
-    func runner(_ runner: TestRunner, didDecode record: TestResultRecord)
-    /// The stream stopped decoding (schema mismatch or malformed line).
-    /// Fires at most once per run; subsequent lines are dropped.
-    func runner(_ runner: TestRunner, didFailDecode error: Error)
+    /// One complete NDJSON line, verbatim, in stream order.
+    ///
+    /// The runner does not decode. Its consumer is the Testing tab, a
+    /// TypeScript surface that imports the wire contract directly and validates
+    /// each line with the wire's own guard (DEVARCH 8b) — a Swift decoder in
+    /// front of it could only be a second opinion that drifts.
+    func runner(_ runner: TestRunner, didReceiveLine line: String)
     /// A chunk of UTF-8 stderr (diagnostics, validation detail).
     func runner(_ runner: TestRunner, didEmitStderr text: String)
     /// The runner's state changed (drives buttons and the status line).
@@ -28,6 +29,7 @@ protocol TestRunnerDelegate: AnyObject {
     /// The run finished (passed, failed, or cancelled).
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result)
 }
+
 
 @MainActor
 final class TestRunner {
@@ -59,26 +61,23 @@ final class TestRunner {
     private var killTimer: Timer?
     private var didRequestCancel = false
     private var lineBuffer = NDJSONLineBuffer()
-    /// Set on the first decode failure — the stream contract is broken (or
-    /// from a future toolchain); remaining lines are dropped, not guessed at.
-    private var decodingStopped = false
 
     // MARK: - Production entries (ADR-277 D2/D3)
 
-    /// Run every transcript under the story's `tests/` subtree.
-    func runAll(storyFile: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: [])
-    }
-
-    /// Run the story's `walkthroughs/` chain (filename order, state persists —
-    /// D3: `--chain` with no explicit files IS the chain request).
-    func runChain(storyFile: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: ["--chain"])
-    }
-
-    /// Run one `.transcript` file against the story.
-    func runFile(storyFile: URL, transcript: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: [transcript.path])
+    /// Run the story's tests. `--tree` (ADR-302) is the ONLY run model the IDE
+    /// offers, and this is the only production entry point.
+    ///
+    /// The two it replaced were not merely redundant, they were wrong here.
+    /// Flat `tests` mode runs every transcript standalone from story start, so
+    /// each one that `continues:` an ancestor fails for want of the state its
+    /// parent builds — measured on `branch-stories/fernhill` 2026-08-06:
+    /// **229 passed / 287 failed** flat, against **516 / 0** as a tree, same
+    /// suite. And `--chain` scans `walkthroughs/`, which an IDE project does
+    /// not have. Tree mode is also correct for a suite with no `continues:` at
+    /// all — every transcript is simply a root (verified on
+    /// `stories/cloak-of-darkness`, zero parentage, 81 passed).
+    func runTests(storyFile: URL) {
+        startSharpee(storyFile: storyFile, extraArguments: ["--tree"])
     }
 
     /// Shared production spawn: `sharpee test <file>.story … --json` with the
@@ -102,7 +101,7 @@ final class TestRunner {
 
     /// Spawns an arbitrary executable. This is the production spawn path; the
     /// sharpee overloads delegate here, and tests drive it directly with the
-    /// real devkit CLI so the Process/pipe/line-decode machinery is exercised.
+    /// real devkit CLI so the Process/pipe/line-buffer machinery is exercised.
     func start(executable: URL, arguments: [String], workingDirectory: URL,
                environment: [String: String]? = nil) {
         guard !isRunning else {
@@ -110,7 +109,6 @@ final class TestRunner {
             return
         }
         didRequestCancel = false
-        decodingStopped = false
         lineBuffer = NDJSONLineBuffer()
 
         let proc = Process()
@@ -156,8 +154,9 @@ final class TestRunner {
                 guard let self else { return }
                 if !tailOut.isEmpty { self.consumeStdout(tailOut) }
                 // A well-formed stream ends newline-terminated; flush defends
-                // against a truncated final line (decode failure, reported).
-                if let last = self.lineBuffer.flush() { self.decodeLine(last) }
+                // against a truncated final line, which the tab rejects as
+                // unreadable rather than folding.
+                if let last = self.lineBuffer.flush() { self.emit(last) }
                 if !errText.isEmpty { self.delegate?.runner(self, didEmitStderr: errText) }
                 self.handleTermination(of: finished)
             }
@@ -182,7 +181,7 @@ final class TestRunner {
     // MARK: - Cancel
 
     /// Requests cancellation of the running tests: SIGTERM now, SIGKILL after a
-    /// grace period if it hasn't exited. Records already decoded are kept — the
+    /// grace period if it has not exited. Lines already delivered are kept — the
     /// panel shows the run up to the cancel point. No-op when not running.
     func cancel() {
         guard isRunning, let proc = process else { return }
@@ -198,23 +197,17 @@ final class TestRunner {
         }
     }
 
-    // MARK: - Decode
+    // MARK: - Line delivery
 
     private func consumeStdout(_ chunk: Data) {
         for line in lineBuffer.append(chunk) {
-            decodeLine(line)
+            emit(line)
         }
     }
 
-    private func decodeLine(_ line: Data) {
-        guard !decodingStopped else { return }
-        do {
-            let record = try TestResultRecord.decode(line: line)
-            delegate?.runner(self, didDecode: record)
-        } catch {
-            decodingStopped = true
-            delegate?.runner(self, didFailDecode: error)
-        }
+    private func emit(_ line: Data) {
+        guard let text = String(data: line, encoding: .utf8) else { return }
+        delegate?.runner(self, didReceiveLine: text)
     }
 
     // MARK: - Termination

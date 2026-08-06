@@ -1,7 +1,12 @@
 # ADR-299: Play–Skein–Bless — the IDE's Testing Paradigm Adopts the Inform 7 Skein
 
 **Status**: **SUPERSEDED** (2026-08-04, session c42886) by **ADR-300**, which
-retires the `.skein` artifact and the second verification engine. What is
+retires the `.skein` artifact and the second verification engine.
+**Code removed 2026-08-06** (session 322542, branch `feat/adr-301-testing-tab`):
+supersession and deletion were two separate events two days apart, and for those
+two days the ADR read as retired while 2,768 lines of it still shipped. See
+ADR-300's D1 row for the removal's exact scope, including the hooks a first pass
+kept and a second pass cut once a count showed none of them had a reader. What is
 superseded is the *artifact and verification* model — `.skein`, blessing scopes,
 all-paths invariance, `SkeinVerifier`, findings, locks, trims, and the exporter.
 What carries forward — now held by [ADR-301](adr-301-sharpee-transcript-editor.md), which is TBD — is the interaction design: play

@@ -92,7 +92,14 @@ import {
   IRStoryFields,
   StoryIR,
 } from './ir.js';
-import { Span } from './span.js';
+import { Span, spanOf } from './span.js';
+
+/**
+ * The `story` block's opening keyword. Its length is how far a header-level
+ * diagnostic underlines: a field missing from the block has no span of its own,
+ * so the block's opening token is the honest target.
+ */
+const STORY_KEYWORD = 'story';
 
 /** AST pattern part → IR: span dropped; `optional` present only when written `[…]` (ADR-267 D9). */
 function lowerPatternPart(part: PatternPart): IRPatternPart {
@@ -832,7 +839,13 @@ class Analyzer {
       this.diagnostics.warning(
         'analysis.missing-ifid',
         'The story has no `ifid:` — mint one with `sharpee ifid` (Treaty of Babel, ADR-074). Publishing requires one (ADR-284).',
-        header.span,
+        // The `story` keyword, NOT `header.span`. The header's span covers the
+        // whole block, so an editor underlining it paints every header line
+        // yellow to report one absent field — which is what the IDE did until
+        // 2026-08-06. A missing field has no span of its own, so the honest
+        // target is the block's opening token: it names the block that lacks
+        // the field without claiming every line in it is wrong.
+        spanOf(header.span.line, header.span.column, STORY_KEYWORD.length),
       );
     }
   }

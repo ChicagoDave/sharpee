@@ -1,6 +1,13 @@
 /**
  * test-results.ts — the `sharpee test --json` NDJSON wire contract (ADR-277 D1).
  *
+ * @deprecated SUPERSEDED by `run-events.ts` (`RUN_EVENT_SCHEMA_VERSION = 2`).
+ *   These records are built from a COMPLETED `TranscriptResult` and written as
+ *   one burst, which makes `transcript-start` ("a transcript is about to run")
+ *   false by construction and leaves the IDE's Testing tab unable to show what
+ *   is currently running. Kept only until transcript-tester, branch-tester and
+ *   devkit move to the event stream; deletion is a separate, confirmed step.
+ *
  * Purpose: the versioned record stream `sharpee test --json` writes to stdout,
  *   one JSON object per line — `run-start`, then per transcript
  *   `transcript-start` / `command-result`* / `transcript-end`, then `run-end`.
@@ -94,19 +101,11 @@ export interface TranscriptEndRecord {
   errorMessage?: string;
 }
 
-/** One declared point's coverage row (ADR-293 D15) inside a {@link CoverageRecord}. */
-export interface CoveragePoint {
-  /** The point's dotted name (ADR-293 D2). */
-  name: string;
-  /** Declared outcome classes. Absent = plain draw (no coverage classes, D4). */
-  classes?: string[];
-  /** Firing count over the run/chain — 0 = never fired. */
-  fired: number;
-  /** Classes observed at least once (drawn or forced — D8 reports class coverage). */
-  observed?: string[];
-  /** Declared classes never observed — the report's actionable column. */
-  unobserved?: string[];
-}
+// `CoveragePoint` is shape-identical in v1 and v2 and is imported by name by
+// transcript-tester and branch-tester. It is owned by `run-events.ts` so that
+// deleting this module (Phase 2) leaves no dangling declaration behind.
+export type { CoveragePoint } from './run-events.js';
+import type { CoveragePoint } from './run-events.js';
 
 /**
  * The run's coverage report (ADR-293 D15 / ADR-294 D13): every declared

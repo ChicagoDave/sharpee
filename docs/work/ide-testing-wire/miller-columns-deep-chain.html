@@ -1,0 +1,322 @@
+<title>Miller columns meet a chain</title>
+<style>
+:root{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --warn:#DF8E1D;
+  --sel-soft:#1E66F51a; --fail-wash:#D20F390f; --pass-wash:#40A02B0f;
+  --ui:system-ui,-apple-system,"SF Pro Text",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --radius:5px; --row-h:26px; --colw:208px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF;
+  --sel-soft:#89B4FA22; --fail-wash:#F38BA814; --pass-wash:#A6E3A114;
+}}
+:root[data-theme="dark"]{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF;
+  --sel-soft:#89B4FA22; --fail-wash:#F38BA814; --pass-wash:#A6E3A114;
+}
+:root[data-theme="light"]{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --warn:#DF8E1D;
+  --sel-soft:#1E66F51a; --fail-wash:#D20F390f; --pass-wash:#40A02B0f;
+}
+*{box-sizing:border-box;}
+body{margin:0;padding:28px 20px 56px;background:var(--play);color:var(--fg);
+  font-family:var(--ui);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.page{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-faint);}
+h1{margin:0;font-size:21px;font-weight:600;letter-spacing:-.015em;text-wrap:balance;}
+.lede{max-width:68ch;display:flex;flex-direction:column;gap:8px;}
+.lede p{margin:0;color:var(--fg-dim);}
+.lede b{color:var(--fg);}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:12px;}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;
+  background:var(--editor);display:flex;flex-direction:column;gap:4px;}
+.card.good{border-left:3px solid var(--pass);}
+.card.bad{border-left:3px solid var(--fail);}
+.card.warn{border-left:3px solid var(--warn);}
+.card h4{margin:0;font-size:12.5px;font-weight:600;}
+.card p{margin:0;color:var(--fg-dim);font-size:12px;}
+.card .num{font-family:var(--mono);font-size:18px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+
+.window{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--editor);}
+.head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:8px 14px;
+  background:var(--rail);border-bottom:1px solid var(--border);}
+.head h2{margin:0;font-size:12.5px;font-weight:600;}
+.head .meta{font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.head .verdictbit{margin-left:auto;font-family:var(--mono);font-size:11px;}
+.head .verdictbit.bad{color:var(--fail);} .head .verdictbit.good{color:var(--pass);}
+.ruler{padding:5px 14px;background:var(--project);border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.ruler b{color:var(--fg);font-weight:600;}
+.scroll{overflow-x:auto;}
+.cols{display:flex;align-items:stretch;width:max-content;min-width:100%;min-height:250px;}
+.col{flex:0 0 var(--colw);border-right:1px solid var(--border);}
+.col.thin{--colw:208px;}
+.col.run{background:var(--project);}
+.col.preview{flex:0 0 280px;border-right:0;background:var(--project);padding:11px 13px;}
+.cap{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-faint);padding:6px 8px 2px;}
+.col.run .cap{color:var(--accent);}
+.crow{display:flex;align-items:center;gap:7px;height:var(--row-h);padding:0 8px;}
+.crow.sel{background:var(--accent);color:var(--on-accent);}
+.crow.inpath{background:var(--sel-soft);}
+.crow .stem{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11.5px;}
+.crow .n{font-family:var(--mono);font-size:10px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.crow.sel .n,.crow.sel .chev{color:var(--on-accent);opacity:.85;}
+.crow .chev{color:var(--fg-faint);font-size:10px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--pass);flex:0 0 auto;}
+.empty{padding:8px;font-family:var(--mono);font-size:10px;color:var(--fg-faint);font-style:italic;}
+/* The columns Finder has already slid past the left edge: present, unreachable
+   without scrolling back, and one row apiece. */
+.col.offleft{flex:0 0 128px;background:repeating-linear-gradient(135deg,
+  transparent 0 6px, var(--fail-wash) 6px 12px);display:flex;flex-direction:column;}
+.col.offleft .cap{color:var(--fail);}
+.ghost{font-family:var(--mono);font-size:11px;color:var(--fg-faint);padding:4px 8px;line-height:1.7;}
+.ghostn{margin-top:auto;font-family:var(--mono);font-size:9.5px;color:var(--fail);
+  padding:8px;line-height:1.5;}
+.preview h3{margin:0 0 2px;font-family:var(--mono);font-size:13px;}
+.preview .sub{font-family:var(--mono);font-size:11px;color:var(--fg-dim);margin-bottom:9px;}
+.preview .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;}
+.preview dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);}
+.preview dd{margin:0;font-family:var(--mono);font-size:11px;}
+.pathbar{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--project);
+  border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--fg-dim);
+  overflow-x:auto;white-space:nowrap;}
+.pathbar b{color:var(--fg);font-weight:600;}
+.pathbar .sep{color:var(--fg-faint);}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px;}
+.note{border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:var(--radius);
+  padding:11px 13px;background:var(--editor);display:flex;flex-direction:column;gap:5px;}
+.note.killed{border-left-color:var(--fail);}
+.note.bad{border-left-color:var(--warn);}
+.note h4{margin:0;font-size:12.5px;font-weight:600;}
+.note p{margin:0;color:var(--fg-dim);font-size:12px;}
+code{font-family:var(--mono);font-size:11px;background:var(--project);padding:0 4px;border-radius:3px;}
+footer{color:var(--fg-faint);font-size:11.5px;max-width:68ch;}
+</style>
+
+<div class="page">
+  <div class="lede">
+    <div class="eyebrow">Sharpee IDE · Testing · problem study</div>
+    <h1>Miller columns are for branching. A split test is a chain.</h1>
+    <p>
+      Column view won the branch canvas because Fernhill is <b>wide and shallow</b> —
+      12 children off one node, depth 3 — and one column absorbs a 12-way fan without a
+      palette or a pixel of extra height. The layout study also named where it breaks
+      and left the question open: <b>does it bite often enough to matter?</b>
+    </p>
+    <p>
+      <b>Not yet, and possibly never.</b> This study records the shape and the trigger.
+      <b>Resolved 2026-08-06 as ADR-301 D6:</b> the coalescing fix below is rejected —
+      a chain gets List mode instead of a special case in the column layout. See
+      <code>branch-view-modes.html</code>. Kept as the reasoning behind that decision.
+    </p>
+    <p>
+      The shape comes from ADR-302 D1's length discipline: split a long test and each
+      part <code>continues:</code> the last, so a chain of N files is a tree of depth N.
+      Fernhill's <code>dawn-lose</code> is 115 commands under <code>timeline</code>. Split
+      it eight ways and the suite is depth 10 — with the view showing two of those steps
+      and the rest shifted off the left edge.
+    </p>
+    <p>
+      <b>But that split is the unnatural one.</b> You split a long walkthrough where the
+      state is worth hanging tests off — and a node with children is precisely where a
+      column earns its width. Look at what normalized branch testing actually produces:
+      Fernhill's <code>arrival</code> is <b>2 commands with 12 children</b>, and
+      <code>key</code> is <b>2 commands with 4</b>. The spine is not long tests chopped
+      up; it is minimal prefixes that fan out immediately. A run of single-child levels
+      is what you get from splitting for length <em>alone</em>, at points nothing
+      branches from.
+    </p>
+    <p>
+      The cost is <b>not</b> horizontal scrolling. Column view shifts left as you
+      descend, so the newest column and its preview stay put and the ancestors slide
+      away — you never traverse that width. The cost is what is left on screen, and how
+      quietly it goes missing.
+    </p>
+  </div>
+
+  <div class="verdict">
+    <div class="card good">
+      <h4>Fernhill today · the whole v2 population</h4>
+      <div class="num">3 cols</div>
+      <p>22 nodes, depth 3, 19 end-branches. Ancestry is the selected path, so it costs no highlight and no colour. Column view is right for this, which is the case that exists.</p>
+    </div>
+    <div class="card warn">
+      <h4>If a long test is split</h4>
+      <div class="num">2 of 10</div>
+      <p>Eight-way split of <code>dawn-lose</code> → depth 10. You would be looking at two steps of a ten-step chain, the other eight off the left edge.</p>
+    </div>
+    <div class="card warn">
+      <h4>What those columns carry</h4>
+      <div class="num">1 bit</div>
+      <p>A column exists so you can pick among siblings. A level with one child offers no choice — so re-orienting means scrolling back through columns that each hold one row.</p>
+    </div>
+    <div class="card bad">
+      <h4>Instances today</h4>
+      <div class="num">0</div>
+      <p>No v2 suite is deeper than 3 — and the tree model actively resists getting deeper. Dungeo is depth-17 as a v1 <em>chain</em>, but that is v1's linear walkthrough convention, not the shape of its content.</p>
+    </div>
+  </div>
+
+  <!-- ── 1. The shape, as Finder draws it ─────────────────────────── -->
+  <div class="window">
+    <div class="head">
+      <h2>A split test, as Finder does it</h2>
+      <span class="meta">hypothetical · depth 10 · 1 leaf</span>
+      <span class="verdictbit bad">eight columns have shifted off the left edge</span>
+    </div>
+    <div class="ruler">the view auto-shifts left as you descend — at depth <b>10</b> you see <b>2</b> of the chain's steps, and the pathbar is the only thing still carrying the rest</div>
+    <div class="scroll">
+      <div class="cols">
+        <div class="col offleft">
+          <div class="cap">← shifted off</div>
+          <div class="ghost">arrival …<br>dawn-lose-7</div>
+          <div class="ghostn">8 columns<br>8 rows</div>
+        </div>
+        <div class="col"><div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-7-grey</span><span class="n">14</span><span class="chev">›</span></div></div>
+        <div class="col"><div class="crow sel"><span class="dot"></span><span class="stem">dawn-lose-8-dawn</span><span class="n">14</span></div></div>
+        <div class="col preview">
+          <h3>dawn-lose-8-dawn</h3>
+          <div class="sub">tests/transcripts/dawn-lose-8-dawn.transcript</div>
+          <dl class="kv">
+            <dt>Result</dt><dd>14 assertions passed</dd>
+            <dt>Depth</dt><dd>10</dd>
+            <dt>Children</dt><dd>none — a leaf</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="pathbar"><span>timeline</span><span class="sep">›</span><span>dawn-lose-1-dusk</span><span class="sep">›</span><span>dawn-lose-2-small-hours</span><span class="sep">›</span><span>dawn-lose-3-cold</span><span class="sep">›</span><span>dawn-lose-4-lamp-out</span><span class="sep">›</span><span>dawn-lose-5-drift</span><span class="sep">›</span><span>dawn-lose-6-last-light</span><span class="sep">›</span><span>dawn-lose-7-grey</span><span class="sep">›</span><b>dawn-lose-8-dawn</b></div>
+  </div>
+
+  <!-- ── 2. The fix, if it is ever needed ──────────────────────────── -->
+  <div class="window">
+    <div class="head">
+      <h2>The same chain, where a run shares a column</h2>
+      <span class="meta">same nodes · same depth · nothing hidden</span>
+      <span class="verdictbit good">every step on screen at once</span>
+    </div>
+    <div class="ruler"><b>1</b> column for depth <b>10</b> — nothing shifted off, so your position in the chain is readable without scrolling anywhere</div>
+    <div class="scroll">
+      <div class="cols">
+        <div class="col run">
+          <div class="cap">run — no choice to make</div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">timeline</span><span class="n">15</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-1-dusk</span><span class="n">14</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-2-small-hours</span><span class="n">15</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-3-cold</span><span class="n">14</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-4-lamp-out</span><span class="n">15</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-5-drift</span><span class="n">14</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-6-last-light</span><span class="n">15</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">dawn-lose-7-grey</span><span class="n">14</span></div>
+          <div class="crow sel"><span class="dot"></span><span class="stem">dawn-lose-8-dawn</span><span class="n">14</span></div>
+        </div>
+        <div class="col preview">
+          <h3>dawn-lose-8-dawn</h3>
+          <div class="sub">tests/transcripts/dawn-lose-8-dawn.transcript</div>
+          <dl class="kv">
+            <dt>Result</dt><dd>14 assertions passed</dd>
+            <dt>Depth</dt><dd>10</dd>
+            <dt>Children</dt><dd>none — a leaf</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="pathbar"><span>timeline</span><span class="sep">›</span><span>…</span><span class="sep">›</span><span>dawn-lose-7-grey</span><span class="sep">›</span><b>dawn-lose-8-dawn</b></div>
+  </div>
+
+  <!-- ── 3. Fernhill is untouched ──────────────────────────────────── -->
+  <div class="window">
+    <div class="head">
+      <h2>Fernhill as it actually is, under the same rule</h2>
+      <span class="meta">22 nodes · max depth 3 · 19 end-branches</span>
+      <span class="verdictbit good">identical to Finder — 3 columns</span>
+    </div>
+    <div class="ruler"><b>3</b> columns for depth <b>3</b> — the rule is a no-op wherever a tree actually branches, which is every v2 suite that exists</div>
+    <div class="scroll">
+      <div class="cols">
+        <div class="col">
+          <div class="crow inpath"><span class="dot"></span><span class="stem">arrival</span><span class="n">2</span><span class="chev">›</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">compass</span><span class="n">15</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">phrasebooks</span><span class="n">18</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">recorded</span><span class="n">4</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">timeline</span><span class="n">15</span><span class="chev">›</span></div>
+        </div>
+        <div class="col">
+          <div class="crow"><span class="dot"></span><span class="stem">concealment</span><span class="n">16</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">containers</span><span class="n">20</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">e-group</span><span class="n">37</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">frost-seal</span><span class="n">12</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">fuse</span><span class="n">23</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">fuse-lose</span><span class="n">21</span></div>
+          <div class="crow inpath"><span class="dot"></span><span class="stem">key</span><span class="n">2</span><span class="chev">›</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">machine</span><span class="n">8</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">media-degrade</span><span class="n">19</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">npcs</span><span class="n">41</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">restart</span><span class="n">4</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">tool-gates</span><span class="n">30</span></div>
+        </div>
+        <div class="col">
+          <div class="crow"><span class="dot"></span><span class="stem">cellar-dark</span><span class="n">14</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">doors</span><span class="n">17</span></div>
+          <div class="crow sel"><span class="dot"></span><span class="stem">smoke</span><span class="n">31</span></div>
+          <div class="crow"><span class="dot"></span><span class="stem">the-long-night</span><span class="n">54</span></div>
+        </div>
+        <div class="col preview">
+          <h3>smoke</h3>
+          <div class="sub">tests/transcripts/smoke.transcript</div>
+          <dl class="kv">
+            <dt>Result</dt><dd>31 assertions passed</dd>
+            <dt>Depth</dt><dd>3</dd>
+            <dt>Children</dt><dd>none — a leaf</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="pathbar"><span>arrival</span><span class="sep">›</span><span>key</span><span class="sep">›</span><b>smoke</b></div>
+  </div>
+
+  <div class="notes">
+    <div class="note bad">
+      <h4>Do not build this yet</h4>
+      <p>The rule would be dead code guarding a shape nobody has. The <b>trigger</b> is narrow and specific: a real Chord suite with a run of <b>single-child</b> levels more than three deep. Depth alone is not the trigger — a deep spine that branches at every joint is what column view is for.</p>
+    </div>
+    <div class="note killed">
+      <h4>Not run-folding — that was already killed</h4>
+      <p>Folding a chain behind “<code>+ 6 more</code>” was built and then removed at your request: it was the one departure from Finder, and it <b>hid nodes behind a summary</b>. This keeps every step on screen with its own assertion count. A run is not summarised; it is stacked.</p>
+    </div>
+    <div class="note">
+      <h4>The rule would be structural, not a heuristic</h4>
+      <p>Open a new column exactly when a node has <b>more than one child</b>. That is the only moment a column earns its width, because it is the only moment there is a sibling to choose between. Depth alone never opens one.</p>
+    </div>
+    <div class="note">
+      <h4>Porting a v1 story would not produce this</h4>
+      <p>A 952-command v1 walkthrough does not become a 17-deep chain under D13. It becomes a spine split where tests attach — and every split point then has siblings to choose between, which is a column doing its job. The chain is an artefact of the linear walkthrough convention, not of long content.</p>
+    </div>
+    <div class="note">
+      <h4>The shift is why this is subtle</h4>
+      <p>Because the view slides left on its own, a deep chain never <em>looks</em> broken — nothing overflows and no scrollbar demands attention. The context simply is not there, and the pathbar quietly becomes the only record of where you are.</p>
+    </div>
+  </div>
+
+  <footer>
+    Fernhill is the real <code>branch-stories/fernhill</code> suite — 22 nodes, depth 3 —
+    and per ADR-302 D12 it is v2's <b>only</b> consumer. The split of
+    <code>dawn-lose</code> is hypothetical: it is 115 commands today and nobody has
+    proposed splitting it. <b>Dungeo is deliberately absent.</b> Its walkthrough chain is
+    depth 17, but D12 keeps it on v1 indefinitely, the IDE never tests it, and D9 states
+    that no branch, chain, or tree design is to be shaped by its corpus — which an
+    earlier draft of this page did. Column width 208px is the layout study's.
+  </footer>
+</div>

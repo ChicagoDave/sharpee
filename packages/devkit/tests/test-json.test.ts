@@ -14,12 +14,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
-  isTestResultRecord,
-  type CommandResultRecord,
-  type RunEndRecord,
-  type RunStartRecord,
-  type TestResultRecord,
-  type TranscriptEndRecord,
+  isRunEvent,
+  type CommandResultEvent,
+  type RunEndEvent,
+  type RunEvent,
+  type RunStartEvent,
+  type TranscriptEndEvent,
 } from '@sharpee/ide-protocol';
 import { runTestCommand } from '../src/commands/test.js';
 
@@ -97,7 +97,7 @@ beforeAll(() => {
 afterAll(() => rmSync(projectDir, { recursive: true, force: true }));
 
 /** Run runTestCommand capturing stdout (NDJSON) and stderr; muting console.log. */
-async function run(args: string[]): Promise<{ code: number; records: TestResultRecord[]; err: string }> {
+async function run(args: string[]): Promise<{ code: number; records: RunEvent[]; err: string }> {
   let stdout = '';
   const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(((chunk: unknown) => {
     stdout += String(chunk);
@@ -113,10 +113,10 @@ async function run(args: string[]): Promise<{ code: number; records: TestResultR
     const records = stdout
       .split('\n')
       .filter((line) => line.length > 0)
-      .map((line): TestResultRecord => {
+      .map((line): RunEvent => {
         const parsed: unknown = JSON.parse(line);
-        expect(isTestResultRecord(parsed), `guard-valid record: ${line}`).toBe(true);
-        return parsed as TestResultRecord;
+        expect(isRunEvent(parsed), `guard-valid event: ${line}`).toBe(true);
+        return parsed as RunEvent;
       });
     return { code, records, err: errs.join('\n') };
   } finally {
@@ -126,29 +126,92 @@ async function run(args: string[]): Promise<{ code: number; records: TestResultR
   }
 }
 
-const ofType = <T extends TestResultRecord>(records: TestResultRecord[], type: T['type']): T[] =>
+const ofType = <T extends RunEvent>(records: RunEvent[], type: T['type']): T[] =>
   records.filter((r): r is T => r.type === type);
 
 describe('sharpee test --json (real story, real runner)', () => {
   it('emits run-start → transcript records → run-end, all guard-valid, exit 0', async () => {
     const { code, records } = await run(['--json', projectDir]);
     expect(code).toBe(0);
-    const first = records[0] as RunStartRecord;
+    const first = records[0] as RunStartEvent;
     expect(first.type).toBe('run-start');
     expect(first.mode).toBe('tests');
     expect(first.transcriptCount).toBe(1);
-    const last = records[records.length - 1] as RunEndRecord;
+    const last = records[records.length - 1] as RunEndEvent;
     expect(last.type).toBe('run-end');
     expect(last.exitCode).toBe(0);
     expect(last.totalErrors).toBe(0);
-    const ends = ofType<TranscriptEndRecord>(records, 'transcript-end');
+    const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
     expect(ends).toHaveLength(1);
     expect(ends[0].status).toBe('passed');
-    const commands = ofType<CommandResultRecord>(records, 'command-result');
+    const commands = ofType<CommandResultEvent>(records, 'command-result');
     expect(commands.map((c) => c.input)).toEqual(['look', 'examine the brass lamp']);
     // Click-through carriage: `> look` sits on line 4 of the transcript file.
     expect(commands[0].line).toBe(4);
     expect(commands[0].file).toEqual(ends[0].file);
+  });
+
+  it('announces the transcript BEFORE its commands, and sequences the whole stream', async () => {
+    // Phase 2's actual claim, pinned on the real CLI: under the superseded
+    // record stream every event for a transcript was constructed from its
+    // FINISHED result and written in one burst, so `transcript-start` — "a
+    // transcript is about to run" — was emitted after it had already run. A
+    // consumer cannot show what is currently running unless this order holds.
+    const { code, records } = await run(['--json', projectDir]);
+    expect(code).toBe(0);
+
+    const startIndex = records.findIndex((r) => r.type === 'transcript-start');
+    const firstCommandIndex = records.findIndex((r) => r.type === 'command-result');
+    const endIndex = records.findIndex((r) => r.type === 'transcript-end');
+    expect(startIndex).toBeGreaterThanOrEqual(0);
+    expect(startIndex).toBeLessThan(firstCommandIndex);
+    expect(firstCommandIndex).toBeLessThan(endIndex);
+
+    // The count rides the start event, so a consumer can draw a real progress
+    // bar rather than a spinner — and it must match what actually ran.
+    const start = records[startIndex] as { commandCount?: number };
+    expect(start.commandCount).toBe(2);
+    expect(ofType<CommandResultEvent>(records, 'command-result')).toHaveLength(2);
+
+    // The envelope: monotonic from zero, and a clock that never goes backwards.
+    expect(records.map((r) => r.seq)).toEqual(records.map((_, i) => i));
+    for (let i = 1; i < records.length; i++) {
+      expect(records[i].elapsedMs).toBeGreaterThanOrEqual(records[i - 1].elapsedMs);
+    }
+  });
+
+  it('reports compile and load before the first transcript, in that order', async () => {
+    // The stretch this covers used to be silent: a Chord project compiles and
+    // then assembles before any command runs, and the stream said nothing until
+    // the first transcript. `elapsedMs` on the pairs is what makes "where did
+    // the time go" answerable from the stream alone.
+    const { code, records } = await run(['--json', projectDir]);
+    expect(code).toBe(0);
+
+    const phases = records.filter((r) => r.type === 'phase') as Array<{
+      name: string;
+      status: string;
+      seq: number;
+      elapsedMs: number;
+      detail?: string;
+    }>;
+    expect(phases.map((p) => `${p.name}/${p.status}`)).toEqual([
+      'compile/started',
+      'compile/finished',
+      'load/started',
+      'load/finished',
+    ]);
+    expect(phases.every((p) => p.detail?.endsWith('.story'))).toBe(true);
+
+    // Every phase lands before the run's first transcript is announced.
+    const firstStart = records.findIndex((r) => r.type === 'transcript-start');
+    expect(Math.max(...phases.map((p) => p.seq))).toBeLessThan(records[firstStart].seq);
+
+    // Each pair encloses real elapsed time rather than being stamped together.
+    const [compileStart, compileEnd, loadStart, loadEnd] = phases;
+    expect(compileEnd.elapsedMs).toBeGreaterThanOrEqual(compileStart.elapsedMs);
+    expect(loadStart.elapsedMs).toBeGreaterThanOrEqual(compileEnd.elapsedMs);
+    expect(loadEnd.elapsedMs).toBeGreaterThanOrEqual(loadStart.elapsedMs);
   });
 
   it('a validation-broken transcript is an error record with exit 1 — it never vanishes', async () => {
@@ -157,14 +220,14 @@ describe('sharpee test --json (real story, real runner)', () => {
     try {
       const { code, records, err } = await run(['--json', projectDir]);
       expect(code).toBe(1);
-      const ends = ofType<TranscriptEndRecord>(records, 'transcript-end');
+      const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
       expect(ends).toHaveLength(2); // both transcripts present — the old code dropped one
       const errorEnd = ends.find((e) => e.status === 'error');
       expect(errorEnd).toBeDefined();
       expect(errorEnd!.file).toBe(broken);
       expect(errorEnd!.errorMessage).toContain('validation failed');
       expect(ends.some((e) => e.status === 'passed')).toBe(true);
-      const last = records[records.length - 1] as RunEndRecord;
+      const last = records[records.length - 1] as RunEndEvent;
       expect(last.totalErrors).toBe(1);
       expect(last.exitCode).toBe(1);
       expect(err).toContain('Errors in');
@@ -185,7 +248,7 @@ describe('sharpee test --json (real story, real runner)', () => {
     try {
       const { code, records } = await run(['--json', projectDir]);
       expect(code).toBe(1);
-      const errorEnd = ofType<TranscriptEndRecord>(records, 'transcript-end').find(
+      const errorEnd = ofType<TranscriptEndEvent>(records, 'transcript-end').find(
         (e) => e.file === fenced,
       );
       expect(errorEnd?.status).toBe('error');
@@ -204,7 +267,7 @@ describe('sharpee test --json (real story, real runner)', () => {
       .filter((i) => i >= 0);
     expect(coverageIndexes).toHaveLength(1);
     expect(records[coverageIndexes[0] + 1].type).toBe('run-end');
-    const coverage = records[coverageIndexes[0]] as Extract<TestResultRecord, { type: 'coverage' }>;
+    const coverage = records[coverageIndexes[0]] as Extract<RunEvent, { type: 'coverage' }>;
     expect(coverage.pointsFired + coverage.pointsNeverFired).toBe(coverage.points.length);
   });
 
@@ -221,7 +284,7 @@ describe('sharpee test --json (real story, real runner)', () => {
     try {
       const { code, records } = await run(['--json', '--capture-output', projectDir, replay]);
       expect(code).toBe(0);
-      const commands = ofType<CommandResultRecord>(records, 'command-result');
+      const commands = ofType<CommandResultEvent>(records, 'command-result');
       expect(commands.map((c) => c.input)).toEqual(['look', 'examine the brass lamp']);
       // The [SKIP]'d command (skipped, passed) carries real story prose...
       expect(commands[0].skipped).toBe(true);
@@ -236,7 +299,7 @@ describe('sharpee test --json (real story, real runner)', () => {
 
   it('without --capture-output passing commands still omit actualOutput', async () => {
     const { records } = await run(['--json', projectDir]);
-    const commands = ofType<CommandResultRecord>(records, 'command-result');
+    const commands = ofType<CommandResultEvent>(records, 'command-result');
     expect(commands.length).toBeGreaterThan(0);
     for (const command of commands) {
       expect(command.passed).toBe(true);
@@ -249,7 +312,7 @@ describe('sharpee test --json (real story, real runner)', () => {
     const viaDir = await run(['--json', projectDir]);
     expect(viaFile.code).toBe(0);
     const files = (r: typeof viaFile) =>
-      ofType<TranscriptEndRecord>(r.records, 'transcript-end').map((e) => e.file);
+      ofType<TranscriptEndEvent>(r.records, 'transcript-end').map((e) => e.file);
     expect(files(viaFile)).toEqual(files(viaDir));
   });
 });
@@ -258,9 +321,9 @@ describe('sharpee test --chain (walkthroughs/, D3)', () => {
   it('with no file args runs walkthroughs/ in filename order with state persisting', async () => {
     const { code, records } = await run(['--json', '--chain', projectDir]);
     expect(code).toBe(0);
-    const start = records[0] as RunStartRecord;
+    const start = records[0] as RunStartEvent;
     expect(start.mode).toBe('chain');
-    const ends = ofType<TranscriptEndRecord>(records, 'transcript-end');
+    const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
     expect(ends.map((e) => e.file)).toEqual([
       join(projectDir, 'walkthroughs', 'wt-01-take.transcript'),
       join(projectDir, 'walkthroughs', 'wt-02-carry.transcript'),
@@ -280,6 +343,122 @@ describe('sharpee test --chain (walkthroughs/, D3)', () => {
       expect(err).toContain('no transcript files found');
     } finally {
       rmSync(only, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('sharpee test --tree --json (ADR-302 over the run-event stream)', () => {
+  let treeDir: string;
+
+  beforeAll(() => {
+    treeDir = mkdtempSync(join(tmpdir(), 'devkit-tree-json-'));
+    writeFileSync(join(treeDir, 'mini.story'), STORY);
+    mkdirSync(join(treeDir, 'tests', 'transcripts'), { recursive: true });
+    // One root with TWO children on purpose: a single child continues the live
+    // engine and replays nothing, so it would not exercise D17 at all.
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'spine.transcript'),
+      `title: Spine\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+    );
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'lamp.transcript'),
+      `title: Lamp\ncontinues: spine\n\n---\n\n> examine the brass lamp\n[OK: contains "gleams"]\n`,
+    );
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'den.transcript'),
+      `title: Den again\ncontinues: spine\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+    );
+  });
+
+  afterAll(() => rmSync(treeDir, { recursive: true, force: true }));
+
+  it('carries parentage and marks the replayed execution (D17)', async () => {
+    const { code, records } = await run(['--json', '--tree', treeDir]);
+    expect(code).toBe(0);
+
+    expect((records[0] as RunStartEvent).mode).toBe('tree');
+    expect(records.some((r) => r.type === 'phase' && r.name === 'assemble')).toBe(true);
+
+    const starts = records.filter((r) => r.type === 'transcript-start') as Array<{
+      file: string;
+      parent?: string;
+      replayed?: boolean;
+    }>;
+    const spine = join(treeDir, 'tests', 'transcripts', 'spine.transcript');
+
+    // Four executions for three nodes: the second child forks, so the root is
+    // re-executed to rebuild its state. That extra execution is the ONE thing
+    // `TreeRunResult.outcomes` deliberately omits, which is why the stream is
+    // driven by the observer and not by the returned result.
+    expect(starts).toHaveLength(4);
+    expect(starts.filter((s) => s.replayed)).toHaveLength(1);
+    expect(starts.filter((s) => s.replayed)[0].file).toBe(spine);
+
+    // Roots carry no parent; both children name the root by its absolute path,
+    // the same identity domain as `file`, so a consumer joins on one key.
+    const roots = starts.filter((s) => s.parent === undefined);
+    expect(roots.every((s) => s.file === spine)).toBe(true);
+    expect(starts.filter((s) => s.parent !== undefined).every((s) => s.parent === spine)).toBe(true);
+
+    // The D17 arithmetic, recomputed from the stream by attributing each
+    // command to its enclosing start rather than trusting the summary line.
+    let current: { replayed?: boolean } | undefined;
+    let authored = 0;
+    let replayed = 0;
+    for (const record of records) {
+      if (record.type === 'transcript-start') current = record;
+      else if (record.type === 'command-result') current?.replayed ? replayed++ : authored++;
+    }
+    expect({ authored, replayed }).toEqual({ authored: 3, replayed: 1 });
+  });
+
+  it('announces a blocked subtree as unreached, naming what blocked it (D13)', async () => {
+    // A failing root blocks both children. They must appear in the stream —
+    // absent nodes would render as a tree that silently lost two tests, and
+    // reporting them as failures is the wall of red D13 exists to prevent.
+    const broken = mkdtempSync(join(tmpdir(), 'devkit-tree-blocked-'));
+    try {
+      writeFileSync(join(broken, 'mini.story'), STORY);
+      mkdirSync(join(broken, 'tests', 'transcripts'), { recursive: true });
+      writeFileSync(
+        join(broken, 'tests', 'transcripts', 'spine.transcript'),
+        `title: Spine\n\n---\n\n> look\n[OK: contains "this text is not in the story"]\n`,
+      );
+      writeFileSync(
+        join(broken, 'tests', 'transcripts', 'lamp.transcript'),
+        `title: Lamp\ncontinues: spine\n\n---\n\n> examine the brass lamp\n[OK: contains "gleams"]\n`,
+      );
+      writeFileSync(
+        join(broken, 'tests', 'transcripts', 'den.transcript'),
+        `title: Den again\ncontinues: spine\n\n---\n\n> look\n[OK: contains "den"]\n`,
+      );
+
+      const { code, records } = await run(['--json', '--tree', broken]);
+      expect(code).toBe(1);
+
+      const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
+      const unreached = ends.filter((e) => e.status === 'unreached');
+      expect(unreached).toHaveLength(2);
+      // `blockedBy` is the failing node's PATH, the same identity domain as
+      // `file` and `parent` — a stem here would force a second lookup table.
+      const spine = join(broken, 'tests', 'transcripts', 'spine.transcript');
+      expect(unreached.every((e) => e.blockedBy === spine)).toBe(true);
+
+      // One originating failure, not three.
+      expect(ends.filter((e) => e.status === 'failed')).toHaveLength(1);
+
+      const last = records[records.length - 1] as RunEndEvent;
+      expect(last.totalUnreached).toBe(2);
+
+      // Every unreached node was announced before it was reported unreached.
+      for (const end of unreached) {
+        const startIndex = records.findIndex((r) => r.type === 'transcript-start' && r.file === end.file);
+        const endIndex = records.findIndex((r) => r.type === 'transcript-end' && r.file === end.file);
+        expect(startIndex).toBeGreaterThanOrEqual(0);
+        expect(startIndex).toBeLessThan(endIndex);
+      }
+    } finally {
+      rmSync(broken, { recursive: true, force: true });
     }
   });
 });

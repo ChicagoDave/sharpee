@@ -52,20 +52,20 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // Lazy require (compose.ts pattern): pull the harness only when testing.
   const {
     aggregateTestRun,
-    coverageRecord,
     CoverageTracker,
     findTranscripts,
     formatCoverageBreakdown,
     formatCoverageSummary,
     getExitCode,
-    ndjsonLine,
+    ndjsonEventLine,
     parseTranscriptFile,
+    reportCommandResult,
     reportTestRun,
     reportTranscript,
-    runEndRecord,
-    runStartRecord,
+    reportTranscriptEnd,
+    reportTranscriptStart,
+    RunEventStream,
     runTranscript,
-    transcriptRecords,
     validateTranscript,
   } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
@@ -159,14 +159,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // transcripts before executing any, and its reporting distinguishes unreached
   // from failed (D13). Hand off whole rather than branching through the loop.
   if (tree) {
-    if (json) {
-      // The ADR-277 D1 record stream carries no parentage, no `unreached` and
-      // no replay markers yet, so a tree emitted through it would be reported
-      // as a flat run. Refusing beats emitting a shape that reads as truth.
-      console.error('test: --json does not yet carry tree records (parentage, unreached, replay) — run --tree without --json');
-      return 2;
-    }
-    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure });
+    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput });
   }
 
   // In --json mode, stdout is exclusively the NDJSON stream: informational
@@ -175,11 +168,40 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   const info = (msg: string): void => {
     if (!json) console.log(msg);
   };
-  const emitTranscript = (result: TranscriptResult, index: number): void => {
-    if (!json) return;
-    for (const record of transcriptRecords(result, index, { captureOutput })) {
-      process.stdout.write(ndjsonLine(record));
-    }
+  /**
+   * The run-event stream, when `--json` asked for one. Constructed immediately
+   * before `run-start` so every event's `elapsedMs` is measured from the run,
+   * not from argument parsing.
+   */
+  const stream = json
+    ? new RunEventStream((event) => {
+        process.stdout.write(ndjsonEventLine(event));
+      })
+    : undefined;
+
+  /**
+   * A transcript that never reached the runner — a parse error, a validation
+   * failure, or a story that would not load. The runner announces the ones it
+   * runs; these it never sees, so they are announced here. Start-then-end with
+   * no commands between, never a silent gap (ADR-277 D1).
+   */
+  /**
+   * Compile and load are the run's silent stretches — for a Chord project the
+   * compile is seconds of nothing before the first command. Reported on the
+   * stream only: the human reporter already prints its own "Loading story from"
+   * line, and changing that would move a regression baseline for no gain.
+   */
+  const onPhase = (
+    name: 'compile' | 'load',
+    status: 'started' | 'finished',
+    detail?: string,
+  ): void => {
+    stream?.phase(name, status, detail);
+  };
+
+  const emitUnrunTranscript = (result: TranscriptResult, index: number): void => {
+    stream?.transcriptStart(result.transcript.filePath, index);
+    stream?.transcriptEnd(result);
   };
 
   /** An error-status result for a transcript that never ran (ADR-277 D1). */
@@ -195,7 +217,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     errorMessage,
   });
 
-  if (json) process.stdout.write(ndjsonLine(runStartRecord(chain ? 'chain' : 'tests', transcripts.length)));
+  stream?.runStart(chain ? 'chain' : 'tests', transcripts.length);
 
   info(`Loading story from: ${dir}`);
   // Chain mode shares one game across transcripts; per-transcript mode loads
@@ -213,17 +235,17 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       chainSeed = undefined;
     }
     try {
-      game = await loadAuthorGame(dir, { seed: chainSeed });
+      game = await loadAuthorGame(dir, { seed: chainSeed, onPhase });
     } catch (error) {
       const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
       console.error(message);
       // Nothing can run — every transcript is an error record, never absent.
       const results = transcripts.map((t, i) => {
         const r = errorResult(t, message);
-        emitTranscript(r, i);
+        emitUnrunTranscript(r, i);
         return r;
       });
-      if (json) process.stdout.write(ndjsonLine(runEndRecord(aggregateTestRun(results), 3)));
+      stream?.runEnd(aggregateTestRun(results), 3);
       return 3;
     }
   }
@@ -246,7 +268,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       console.error(`\n${transcriptPath}: ${message}`);
       const result = errorResult(transcriptPath, message);
       results.push(result);
-      emitTranscript(result, index);
+      emitUnrunTranscript(result, index);
       if (!json) reportTranscript(result, { verbose });
       continue;
     }
@@ -257,7 +279,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       for (const err of errors) console.error(`  - ${err}`);
       const result = errorResult(transcriptPath, `Transcript validation failed: ${errors.join('; ')}`, transcript);
       results.push(result);
-      emitTranscript(result, index);
+      emitUnrunTranscript(result, index);
       if (!json) reportTranscript(result, { verbose });
       continue;
     }
@@ -270,6 +292,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
         game = await loadAuthorGame(dir, {
           entry: transcript.header.entry,
           seed: transcript.config?.seeds?.[0],
+          onPhase,
         });
       } catch (error) {
         const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
@@ -279,7 +302,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
         for (let j = index; j < transcripts.length; j++) {
           const r = errorResult(transcripts[j], message);
           results.push(r);
-          emitTranscript(r, j);
+          emitUnrunTranscript(r, j);
         }
         loadError = true;
         break;
@@ -290,10 +313,25 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       verbose,
       stopOnFailure,
       coverage: coverageTracker,
+      // Live emission: the runner announces the transcript before its first
+      // command and each command as it completes, so the stream is a log of
+      // the run rather than a summary of it.
+      observer: {
+        onTranscriptStart: (started) => {
+          stream?.transcriptStart(started.file, index, { commandCount: started.commandCount });
+          if (!json) reportTranscriptStart({ filePath: started.file, title: transcript.header.title });
+        },
+        onCommandResult: (command) => {
+          stream?.commandResult(transcriptPath, command, captureOutput);
+          if (!json) reportCommandResult(command, { verbose });
+        },
+      },
     });
     results.push(result);
-    emitTranscript(result, index);
-    if (!json) reportTranscript(result, { verbose });
+    stream?.transcriptEnd(result);
+    // The header and per-command rows already printed as the transcript ran;
+    // only the closing lines are left.
+    if (!json) reportTranscriptEnd(result);
     if (stopOnFailure && result.failed > 0) break;
   }
 
@@ -305,7 +343,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // the wire, before run-end.
   const report = coverageTracker.buildReport();
   if (json) {
-    if (coverage) process.stdout.write(ndjsonLine(coverageRecord(report)));
+    if (coverage) stream?.coverage(report);
   } else {
     info('');
     info(formatCoverageSummary(report));
@@ -316,6 +354,6 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   }
 
   const code = loadError ? 3 : getExitCode(runResult);
-  if (json) process.stdout.write(ndjsonLine(runEndRecord(runResult, code)));
+  stream?.runEnd(runResult, code);
   return code;
 }

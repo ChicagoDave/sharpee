@@ -93,6 +93,37 @@ export interface NodeRunOutcome {
   readonly blockedBy?: string;
 }
 
+/**
+ * Watches a tree execute, as it executes.
+ *
+ * The returned `TreeRunResult` cannot serve this purpose even after the fact: a
+ * replayed execution is deliberately absent from `outcomes`, because every node
+ * must be reported exactly once for D13's "one broken spine node, one failure"
+ * to hold. That is right for the report and wrong for a live view, which wants
+ * to see the replays happen — they are 34 of Fernhill's 552 commands, and the
+ * cost D17 chose to pay openly rather than hide.
+ *
+ * So the observer sees EVERY execution, marked, and the summary stays a
+ * projection over `outcomes`. Two views of one run, neither derived from the
+ * other's compromises.
+ */
+export interface TreeObserver {
+  /** A node is about to execute. `replayed` = it runs to build a sibling's state. */
+  onNodeStart?(info: { node: TreeNode; replayed: boolean; commandCount: number }): void;
+  /** That execution finished. Fires for replays too. */
+  onNodeEnd?(info: { node: TreeNode; replayed: boolean; result: TranscriptResult }): void;
+  /**
+   * A node that never ran because an ancestor failed (D13). `origin` is the
+   * failing NODE rather than its stem, so a consumer can name it in whatever
+   * identity domain it already uses — the wire joins on file paths, and a stem
+   * would force a second lookup table.
+   */
+  onNodeUnreached?(info: { node: TreeNode; origin: TreeNode }): void;
+}
+
+/** Runner options plus the tree-shaped observation the flat runner has no concept of. */
+export type TreeRunnerOptions = RunnerOptions & { treeObserver?: TreeObserver };
+
 /** The outcome of running one story's tree. */
 export interface TreeRunResult {
   /** Per-node outcomes in execution order. */
@@ -171,7 +202,7 @@ export function reseedFor(node: TreeNode): 'all' | string[] | null {
 export async function runTree(
   tree: TranscriptTree,
   game: TreeGameEngine | GameFactory,
-  options: RunnerOptions = {}
+  options: TreeRunnerOptions = {}
 ): Promise<TreeRunResult> {
   const outcomes: NodeRunOutcome[] = [];
   let executedCommands = 0;
@@ -198,10 +229,11 @@ export async function runTree(
   };
 
   /** Mark a failed node's whole subtree unreached, naming the origin. */
-  const markUnreached = (node: TreeNode, blockedBy: string): void => {
+  const markUnreached = (origin: TreeNode, node: TreeNode): void => {
     for (const child of node.children) {
-      outcomes.push({ stem: child.stem, status: 'unreached', blockedBy });
-      markUnreached(child, blockedBy);
+      outcomes.push({ stem: child.stem, status: 'unreached', blockedBy: origin.stem });
+      options.treeObserver?.onNodeUnreached?.({ node: child, origin });
+      markUnreached(origin, child);
     }
   };
 
@@ -216,11 +248,21 @@ export async function runTree(
   const execute = async (node: TreeNode, replay: boolean): Promise<boolean> => {
     const config = effectiveConfig(node);
     applyReseed(engine, node);
+    options.treeObserver?.onNodeStart?.({
+      node,
+      replayed: replay,
+      commandCount: (node.transcript.items ?? []).filter((item) => item.type === 'command').length,
+    });
     const result = await runTranscript(node.transcript, engine as never, {
       ...options,
+      // The tree announces its own nodes, with the parentage and replay marking
+      // the flat runner has no concept of. Forwarding `onTranscriptStart` too
+      // would announce every execution twice, in two different shapes.
+      observer: options.observer && { onCommandResult: options.observer.onCommandResult },
       // D8: the node runs at its RESOLVED header, not its declared one.
       assembledChannels: options.assembledChannels ?? config.channels,
     });
+    options.treeObserver?.onNodeEnd?.({ node, replayed: replay, result });
     const ran = result.commands?.length ?? 0;
     executedCommands += ran;
     if (!replay) {
@@ -242,7 +284,7 @@ export async function runTree(
 
   const walk = async (node: TreeNode): Promise<void> => {
     if (!(await execute(node, false))) {
-      markUnreached(node, node.stem);
+      markUnreached(node, node);
       return;
     }
 

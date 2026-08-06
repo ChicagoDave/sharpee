@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sharpee IDE — Testing tab</title>
+<style>
+:root{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --unreached:#8C8FA1; --replay:#FE640B; --mauve:#8839EF;
+  --sel-soft:#1E66F51a; --mauve-wash:#8839EF12;
+  --ui:system-ui,-apple-system,"SF Pro Text",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --radius:5px; --row-h:26px; --colw:210px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --unreached:#6C7086; --replay:#FAB387; --mauve:#CBA6F7;
+  --sel-soft:#89B4FA22; --mauve-wash:#CBA6F714;
+}}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;font-family:var(--ui);font-size:13px;color:var(--fg);background:var(--editor);
+  -webkit-font-smoothing:antialiased;line-height:1.5;}
+.tab{display:flex;flex-direction:column;height:100%;}
+
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 14px;
+  background:var(--rail);border-bottom:1px solid var(--border);flex:none;}
+.toolbar .story{font-weight:600;}
+.toolbar .meta{font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.spacer{flex:1 1 auto;}
+.seg{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.seg button{font:inherit;font-size:11.5px;padding:3px 12px;border:0;cursor:pointer;
+  background:transparent;color:var(--fg-dim);display:flex;align-items:center;gap:6px;}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600;}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+.glyph{font-family:var(--mono);font-size:11px;letter-spacing:-1px;}
+
+.body{flex:1;min-height:0;display:flex;}
+.pane{flex:1;min-height:0;display:none;}
+.pane.on{display:flex;}
+
+/* ── columns ─────────────────────────────────────────────── */
+.cols{flex:1;display:flex;align-items:stretch;min-height:0;overflow-x:auto;}
+.col{flex:0 0 var(--colw);border-right:1px solid var(--border);overflow-y:auto;background:var(--editor);}
+.col.preview{flex:1 1 330px;min-width:290px;border-right:0;background:var(--project);padding:12px 14px;overflow-y:auto;}
+.crow{display:flex;align-items:center;gap:7px;width:100%;height:var(--row-h);padding:0 8px;
+  border:0;background:transparent;font:inherit;color:inherit;cursor:default;text-align:left;}
+.crow:hover{background:var(--sel-soft);}
+.crow[aria-selected="true"]{background:var(--accent);color:var(--on-accent);}
+.crow[data-inpath="true"]:not([aria-selected="true"]){background:var(--sel-soft);}
+.crow[aria-selected="true"] .n,.crow[aria-selected="true"] .chev{color:var(--on-accent);opacity:.85;}
+.crow .stem{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11.5px;}
+.crow .n{font-family:var(--mono);font-size:10px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.crow .chev{color:var(--fg-faint);font-size:10px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--pass);flex:0 0 auto;}
+
+/* ── list ────────────────────────────────────────────────── */
+.listwrap{flex:1;display:flex;min-height:0;}
+.list{flex:1 1 auto;overflow-y:auto;padding:4px 0;min-width:0;}
+.lrow{display:flex;align-items:center;gap:6px;height:var(--row-h);width:100%;border:0;
+  background:transparent;font:inherit;color:inherit;cursor:default;text-align:left;padding-right:12px;}
+.lrow:hover{background:var(--sel-soft);}
+.lrow[aria-selected="true"]{background:var(--accent);color:var(--on-accent);}
+.lrow[aria-selected="true"] .n{color:var(--on-accent);opacity:.85;}
+.lrow .tw{color:var(--fg-faint);font-size:9px;width:10px;flex:0 0 auto;}
+.lrow .stem{flex:1 1 auto;font-family:var(--mono);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;}
+.lrow .n{font-family:var(--mono);font-size:10px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.side{flex:0 0 330px;border-left:1px solid var(--border);background:var(--project);
+  padding:12px 14px;overflow-y:auto;}
+
+/* ── documents ───────────────────────────────────────────── */
+.docwrap{flex:1;overflow-y:auto;}
+.groupbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--project);
+  border-bottom:1px solid var(--border);border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-faint);
+  position:sticky;top:0;z-index:1;}
+.groupbar:first-child{border-top:0;}
+.groupbar.prop{color:var(--mauve);background:var(--mauve-wash);}
+.groupbar .act{margin-left:auto;display:flex;gap:6px;}
+.groupbar .act button{font:inherit;font-size:10.5px;text-transform:none;letter-spacing:0;
+  color:var(--fg-dim);background:var(--editor);border:1px solid var(--border);
+  border-radius:3px;padding:1px 8px;cursor:pointer;}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;padding:14px;}
+.doc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;
+  border-radius:var(--radius);border:1px solid transparent;background:transparent;
+  font:inherit;color:inherit;cursor:default;}
+.doc:hover{background:var(--sel-soft);}
+.doc[aria-selected="true"]{background:var(--sel-soft);border-color:var(--accent);}
+.doc.proposed{border-style:dashed;border-color:var(--mauve);}
+.sheet{width:60px;height:76px;border:1px solid var(--border);border-radius:3px;background:var(--editor);
+  padding:7px 6px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden;
+  box-shadow:0 1px 2px #00000014;flex:none;}
+.sheet i{display:block;height:2px;border-radius:1px;background:var(--fg-faint);opacity:.45;}
+.sheet i.cmd{background:var(--accent);opacity:.7;}
+.sheet.pass{border-bottom:2px solid var(--pass);}
+.sheet.prop{border-style:dashed;background:transparent;}
+.doc .name{font-family:var(--mono);font-size:10.5px;text-align:center;line-height:1.35;word-break:break-word;}
+.doc .sub{font-family:var(--mono);font-size:9px;color:var(--fg-faint);}
+.pill{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;
+  padding:0 4px;border-radius:3px;border:1px solid currentColor;color:var(--mauve);}
+
+/* ── opened document ─────────────────────────────────────── */
+.docview{flex:1;display:none;flex-direction:column;min-height:0;background:var(--editor);}
+.docview.on{display:flex;}
+.docview > header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;
+  background:var(--project);border-bottom:1px solid var(--border);flex:none;}
+.docview h2{margin:0;font-family:var(--mono);font-size:14px;font-weight:600;}
+.docview .path{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.back{font:inherit;font-size:11.5px;color:var(--fg);background:var(--editor);
+  border:1px solid var(--border);border-radius:var(--radius);padding:3px 10px;cursor:pointer;}
+.back:hover{border-color:var(--accent);color:var(--accent);}
+.docmeta{display:flex;gap:0;background:var(--project);border-bottom:1px solid var(--border);flex:none;
+  flex-wrap:wrap;}
+.docmeta div{padding:7px 14px;display:flex;flex-direction:column;gap:1px;}
+.docmeta div+div{border-left:1px solid var(--border);}
+.docmeta .k{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);}
+.docmeta .v{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;}
+.docmeta .v.pass{color:var(--pass);}
+.turns{flex:1;overflow-y:auto;padding:8px 0 20px;}
+.turn{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:3px 14px;align-items:baseline;}
+.turn:hover{background:var(--sel-soft);}
+.turn .ln{font-family:var(--mono);font-size:9.5px;color:var(--fg-faint);font-variant-numeric:tabular-nums;text-align:right;}
+.turn .cmd{font-family:var(--mono);font-size:12px;}
+.turn .cmd b{color:var(--fg-faint);font-weight:400;}
+.turn .r{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--pass);}
+
+.pathbar{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--project);
+  border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--fg-dim);
+  overflow-x:auto;white-space:nowrap;flex:none;}
+.pathbar b{color:var(--fg);font-weight:600;}
+.pathbar .sep{color:var(--fg-faint);}
+.pathbar .hint{margin-left:auto;color:var(--fg-faint);white-space:nowrap;}
+.prev h3{margin:0 0 2px;font-family:var(--mono);font-size:13px;}
+.prev .sub{font-family:var(--mono);font-size:11px;color:var(--fg-dim);margin-bottom:10px;}
+.prev .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 12px;}
+.prev dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint);}
+.prev dd{margin:0;font-family:var(--mono);font-size:11px;}
+.prev .open{font:inherit;font-size:11.5px;color:var(--on-accent);background:var(--accent);
+  border:1px solid var(--accent);border-radius:var(--radius);padding:3px 12px;cursor:pointer;}
+.prev .t{font-family:var(--mono);font-size:11px;padding:1px 0;color:var(--fg-dim);}
+.prev .t b{color:var(--fg-faint);font-weight:400;}
+</style></head>
+<body>
+<div class="tab">
+  <div class="toolbar">
+    <span class="story">fernhill</span>
+    <span class="meta" id="meta"></span>
+    <span class="spacer"></span>
+    <span style="font-size:11.5px;color:var(--fg-dim)">View</span>
+    <div class="seg" role="group" aria-label="View mode">
+      <button type="button" data-mode="col" aria-pressed="true"><i class="glyph">▊▊▊</i> Column</button>
+      <button type="button" data-mode="list" aria-pressed="false"><i class="glyph">☰</i> List</button>
+      <button type="button" data-mode="doc" aria-pressed="false"><i class="glyph">▤▤</i> Documents</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="pane" id="pane-col"><div class="cols" id="cols"></div></div>
+    <div class="pane" id="pane-list"><div class="listwrap">
+      <div class="list" id="list"></div><div class="side prev" id="listside"></div>
+    </div></div>
+    <div class="pane" id="pane-doc"><div class="docwrap" id="docs"></div></div>
+    <div class="docview" id="docview"></div>
+  </div>
+
+  <div class="pathbar" id="pathbar"></div>
+</div>
+
+<script id="data" type="application/json">[{"stem":"arrival","parent":null,"file":"branch-stories/fernhill/tests/transcripts/arrival.transcript","count":2,"turns":[["north",10,1],["north",13,1]],"status":"passed","ms":7},{"stem":"concealment","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/concealment.transcript","count":16,"turns":[["take the tarnished key",12,1],["examine the doormat",15,1],["search the doormat",18,1],["take the tarnished key",21,1],["north",25,1],["take the grey overcoat",28,1],["take the winding key",31,1],["search the overcoat",34,1],["take the winding key",37,1],["wear the overcoat",40,1],["east",44,1],["take the sherry bottle",47,1],["west",50,1],["give the sherry bottle to kettle",53,1],["west",56,1],["hide behind the curtains",59,1]],"status":"passed","ms":19},{"stem":"containers","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/containers.transcript","count":20,"turns":[["read the solicitor's letter",12,1],["south",17,1],["south",20,1],["read the auction notice",23,1],["north",26,1],["north",29,1],["north",32,1],["east",37,1],["take the sherry bottle",40,1],["west",43,1],["give the sherry bottle to kettle",46,1],["west",49,1],["open the trunk",53,1],["read the diary page",57,1],["take the half-burned letter",60,1],["read the half-burned letter",64,1],["east",68,1],["examine the mantel",71,1],["put the half-burned letter on the mantel",74,1],["put the solicitor's letter on the mantel",79,1]],"status":"passed","ms":13},{"stem":"e-group","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/e-group.transcript","count":37,"turns":[["south",14,1],["prune the lime trees",17,1],["wind the lime trees",20,1],["north",24,1],["east",27,1],["take the furnace poker",30,1],["drop the furnace poker",33,1],["west",37,1],["west",40,1],["prune the vine",43,1],["east",46,1],["north",49,1],["east",52,1],["take the garden shears",55,1],["west",58,1],["south",61,1],["west",64,1],["prune the vine",67,1],["east",71,1],["east",74,1],["turn the stopcock",77,1],["push the primer",80,1],["turn on the boiler",83,1],["take the furnace poker",87,1],["west",91,1],["west",94,1],["prune the vine",97,1],["take the silver locket",100,1],["prune the vine",103,1],["east",107,1],["north",110,1],["wind the clock",113,1],["take the grey overcoat",116,1],["search the overcoat",119,1],["take the winding key",122,1],["wind the clock",125,1],["wind the clock",128,1]],"status":"passed","ms":25},{"stem":"frost-seal","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/frost-seal.transcript","count":12,"turns":[["west",13,1],["north",17,1],["east",22,1],["east",25,1],["turn the stopcock",28,1],["push the primer",31,1],["turn on the boiler",34,1],["west",38,1],["west",41,1],["north",44,1],["open the folly door",50,1],["north",53,1]],"status":"passed","ms":8},{"stem":"fuse","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/fuse.transcript","count":23,"turns":[["north",12,1],["east",15,1],["take the garden shears",18,1],["west",21,1],["south",24,1],["east",27,1],["turn the stopcock",30,1],["push the primer",33,1],["turn on the boiler",36,1],["wait",41,1],["wait",44,1],["wait",47,1],["ask tobias about the fire",50,1],["west",53,1],["west",56,1],["north",59,1],["open the folly door",62,1],["north",66,1],["cut the fuse with the garden shears",71,1],["wait",75,1],["wait",78,1],["wait",81,1],["look",84,1]],"status":"passed","ms":14},{"stem":"fuse-lose","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/fuse-lose.transcript","count":21,"turns":[["east",10,1],["turn the stopcock",13,1],["push the primer",16,1],["turn on the boiler",19,1],["wait",24,1],["wait",27,1],["wait",30,1],["wait",33,1],["wait",36,1],["wait",39,1],["wait",42,1],["wait",45,1],["ask tobias about the fire",48,1],["west",51,1],["west",54,1],["north",57,1],["open the folly door",60,1],["north",63,1],["wait",69,1],["wait",72,1],["wait",76,1]],"status":"passed","ms":12},{"stem":"key","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/key.transcript","count":2,"turns":[["search the doormat",9,1],["take the tarnished key",12,1]],"status":"passed","ms":2},{"stem":"cellar-dark","parent":"key","file":"branch-stories/fernhill/tests/transcripts/cellar-dark.transcript","count":14,"turns":[["north",9,1],["north",12,1],["unlock the cellar door with the tarnished key",15,1],["open the cellar door",18,1],["down",22,1],["look",25,1],["up",29,1],["take the oil lamp",32,1],["turn on the oil lamp",35,1],["down",38,1],["wait",45,1],["wait",49,1],["turn off the oil lamp",53,1],["look",56,1]],"status":"passed","ms":7},{"stem":"doors","parent":"key","file":"branch-stories/fernhill/tests/transcripts/doors.transcript","count":17,"turns":[["north",14,1],["north",17,1],["down",20,1],["unlock the cellar door with the tarnished key",24,1],["down",27,1],["open the cellar door",30,1],["south",35,1],["east",38,1],["open the pantry door",41,1],["north",44,1],["close the pantry door",49,1],["examine the pantry door",52,1],["lock the pantry door",55,1],["south",58,1],["unlock the pantry door",62,1],["open the pantry door",65,1],["south",68,1]],"status":"passed","ms":9},{"stem":"smoke","parent":"key","file":"branch-stories/fernhill/tests/transcripts/smoke.transcript","count":31,"turns":[["north",13,1],["north",16,1],["take the oil lamp",19,1],["turn on the oil lamp",22,1],["unlock the cellar door with the tarnished key",25,1],["open the cellar door",28,1],["down",31,1],["take the crowbar",34,1],["up",37,1],["south",40,1],["south",43,1],["east",46,1],["open the nailed crate with the crowbar",49,1],["take the tin opener",52,1],["west",56,1],["north",59,1],["east",62,1],["open the pantry door",65,1],["north",68,1],["feed smoke",71,1],["open the kipper tin with the tin opener",74,1],["take the kipper",77,1],["feed smoke",80,1],["feed smoke",83,1],["south",87,1],["west",90,1],["examine smoke",93,1],["south",97,1],["west",102,1],["wait",106,1],["wait",109,1]],"status":"passed","ms":20},{"stem":"the-long-night","parent":"key","file":"branch-stories/fernhill/tests/transcripts/the-long-night.transcript","count":54,"turns":[["score",14,1],["north",18,1],["take the grey overcoat",21,1],["wear the overcoat",24,1],["search the overcoat",27,1],["take the winding key",30,1],["wind the clock",33,1],["east",37,1],["take the garden shears",40,1],["take the sherry bottle",43,1],["west",46,1],["give the sherry bottle to kettle",49,1],["west",53,1],["open the trunk",56,1],["read the diary page",59,1],["east",63,1],["look",66,1],["examine the photograph",69,1],["north",73,1],["take the oil lamp",76,1],["turn on the oil lamp",79,1],["unlock the cellar door with the tarnished key",82,1],["open the cellar door",85,1],["down",88,1],["take the crowbar",91,1],["up",94,1],["south",97,1],["south",100,1],["score",103,1],["east",107,1],["open the nailed crate with the crowbar",110,1],["turn the stopcock",113,1],["push the primer",116,1],["turn on the boiler",119,1],["score",122,1],["ask tobias about the fire",128,1],["west",132,1],["west",135,1],["prune the vine",138,1],["take the silver locket",141,1],["score",144,1],["north",148,1],["open the folly door",151,1],["north",154,1],["cut the fuse with the garden shears",157,1],["open the deed box with the silver locket",160,1],["take the deed",163,1],["read the deed",166,1],["score",169,1],["south",173,1],["south",176,1],["east",179,1],["south",182,1],["south",185,1]],"status":"passed","ms":33},{"stem":"machine","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/machine.transcript","count":8,"turns":[["east",11,1],["push the primer",15,1],["turn on the boiler",19,1],["turn the stopcock",23,1],["turn on the boiler",28,1],["push the primer",32,1],["turn on the boiler",36,1],["examine the boiler",41,1]],"status":"passed","ms":5},{"stem":"media-degrade","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/media-degrade.transcript","count":19,"turns":[["north",15,1],["examine the photograph",23,1],["take the grey overcoat",31,1],["search the overcoat",34,1],["take the winding key",37,1],["wind the clock",40,1],["wait",46,1],["wait",49,1],["wait",52,1],["wait",55,1],["wait",58,1],["wait",61,1],["wait",64,1],["wait",67,1],["south",73,1],["east",79,1],["turn the stopcock",82,1],["push the primer",85,1],["turn on the boiler",88,1]],"status":"passed","ms":10},{"stem":"npcs","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/npcs.transcript","count":41,"turns":[["north",16,1],["west",19,1],["take the grey overcoat",25,1],["ask kettle about the overcoat",28,1],["ask kettle about verity's study",31,1],["ask kettle about the weather",34,1],["east",38,1],["take the sherry bottle",41,1],["west",44,1],["give the sherry bottle to kettle",47,1],["west",50,1],["east",53,1],["south",58,1],["wait",63,1],["wait",66,1],["wait",69,1],["wait",72,1],["wait",75,1],["wait",78,1],["wait",81,1],["wait",84,1],["wait",87,1],["wait",90,1],["wait",93,1],["wait",96,1],["ask tobias about the fire",101,1],["ask tobias about the weather",106,1],["ask tobias about the bank",110,1],["east",114,1],["wait",118,1],["wait",121,1],["wait",124,1],["ask tobias about the boiler",127,1],["turn the stopcock",131,1],["push the primer",134,1],["turn on the boiler",137,1],["west",141,1],["west",144,1],["north",147,1],["open the folly door",150,1],["north",153,1]],"status":"passed","ms":22},{"stem":"restart","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/restart.transcript","count":4,"turns":[["look",16,1],["restart",21,1],["look",27,1],["north",31,1]],"status":"passed","ms":3},{"stem":"tool-gates","parent":"arrival","file":"branch-stories/fernhill/tests/transcripts/tool-gates.transcript","count":30,"turns":[["east",14,1],["open the nailed crate",17,1],["west",21,1],["search the doormat",24,1],["take the tarnished key",27,1],["north",30,1],["north",33,1],["take the oil lamp",36,1],["turn on the oil lamp",39,1],["unlock the cellar door with the tarnished key",42,1],["open the cellar door",45,1],["down",48,1],["take the crowbar",51,1],["up",55,1],["south",58,1],["south",61,1],["east",64,1],["open the nailed crate with the crowbar",67,1],["take the tin opener",70,1],["take the brass valve handle",73,1],["west",77,1],["north",80,1],["east",83,1],["open the pantry door",86,1],["north",89,1],["drop the tin opener",92,1],["open the kipper tin",95,1],["take the tin opener",98,1],["open the kipper tin with the tin opener",101,1],["take the kipper",104,1]],"status":"passed","ms":19},{"stem":"compass","parent":null,"file":"branch-stories/fernhill/tests/transcripts/compass.transcript","count":15,"turns":[["look",15,1],["look",19,1],["south",24,1],["north",27,1],["north",31,1],["north",34,1],["west",40,1],["east",44,1],["west",47,1],["north",51,1],["south",54,1],["south",58,1],["west",62,1],["east",65,1],["east",68,1]],"status":"passed","ms":7},{"stem":"phrasebooks","parent":null,"file":"branch-stories/fernhill/tests/transcripts/phrasebooks.transcript","count":18,"turns":[["examine the weathervane",19,1],["examine the weathervane",22,1],["push the weathervane",26,1],["touch the weathervane",29,1],["wait",35,1],["wait",38,1],["wait",41,1],["wait",44,1],["wait",47,1],["wait",50,1],["wait",53,1],["wait",56,1],["wait",59,1],["wait",62,1],["examine the weathervane",67,1],["examine the weathervane",70,1],["push the weathervane",74,1],["touch the weathervane",79,1]],"status":"passed","ms":8},{"stem":"recorded","parent":null,"file":"branch-stories/fernhill/tests/transcripts/recorded.transcript","count":4,"turns":[["look",7,1],["lok",15,1],["look",19,1],["n",26,1]],"status":"passed","ms":2},{"stem":"timeline","parent":null,"file":"branch-stories/fernhill/tests/transcripts/timeline.transcript","count":15,"turns":[["north",9,1],["wait",14,1],["wait",17,1],["wait",20,1],["wait",23,1],["wait",26,1],["wait",29,1],["wait",32,1],["wait",35,1],["wait",38,1],["wait",41,1],["wait",44,1],["wait",47,1],["wait",50,1],["look",53,1]],"status":"passed","ms":7},{"stem":"dawn-lose","parent":"timeline","file":"branch-stories/fernhill/tests/transcripts/dawn-lose.transcript","count":115,"turns":[["wait",15,1],["wait",18,1],["wait",21,1],["wait",24,1],["wait",27,1],["wait",30,1],["wait",33,1],["wait",36,1],["wait",39,1],["wait",42,1],["wait",45,1],["wait",48,1],["wait",51,1],["wait",54,1],["wait",57,1],["wait",60,1],["wait",63,1],["wait",66,1],["wait",69,1],["wait",72,1],["wait",75,1],["wait",78,1],["wait",81,1],["wait",84,1],["wait",87,1],["wait",90,1],["wait",93,1],["wait",96,1],["wait",99,1],["wait",102,1],["wait",105,1],["wait",108,1],["wait",111,1],["wait",114,1],["wait",117,1],["wait",120,1],["wait",123,1],["wait",126,1],["wait",129,1],["wait",132,1],["wait",135,1],["wait",138,1],["wait",141,1],["wait",144,1],["wait",147,1],["wait",150,1],["wait",153,1],["wait",156,1],["wait",159,1],["wait",162,1],["wait",165,1],["wait",168,1],["wait",171,1],["wait",174,1],["wait",177,1],["wait",180,1],["wait",183,1],["wait",186,1],["wait",189,1],["wait",192,1],["wait",195,1],["wait",198,1],["wait",201,1],["wait",204,1],["wait",207,1],["wait",210,1],["wait",213,1],["wait",216,1],["wait",219,1],["wait",222,1],["wait",225,1],["wait",228,1],["wait",231,1],["wait",234,1],["wait",237,1],["wait",240,1],["wait",243,1],["wait",246,1],["wait",249,1],["wait",252,1],["wait",255,1],["wait",258,1],["wait",261,1],["wait",264,1],["wait",267,1],["wait",270,1],["wait",273,1],["wait",276,1],["wait",279,1],["wait",282,1],["wait",285,1],["wait",288,1],["wait",291,1],["wait",294,1],["wait",297,1],["wait",300,1],["wait",303,1],["wait",306,1],["wait",309,1],["wait",312,1],["wait",315,1],["wait",318,1],["wait",321,1],["wait",324,1],["wait",327,1],["wait",330,1],["wait",333,1],["wait",336,1],["wait",339,1],["wait",342,1],["wait",345,1],["wait",348,1],["wait",351,1],["wait",354,1],["wait",357,1]],"status":"passed","ms":47}]</script>
+<script>
+const NODES = JSON.parse(document.getElementById('data').textContent);
+const BY = new Map(NODES.map(n => [n.stem, n]));
+NODES.forEach(n => { n.kids = NODES.filter(k => k.parent === n.stem); });
+const ROOTS = NODES.filter(n => !n.parent);
+
+/* Illustrative only — ADR-131's explorer is unbuilt and has never emitted a
+   finding. Included because the document grid is the surface on which a
+   machine-proposed path can be accepted or discarded as a thing. */
+const PROPOSED = [
+  { stem: 'softlock-cellar-no-lamp', sub: 'found at 12 400 states', turns: [
+      ['north',1,1],['north',2,1],['open the cellar door',3,1],['down',4,1],
+      ['close the cellar door',5,1],['look',6,1]] },
+  { stem: 'unwinnable-shears-lost', sub: 'found at depth 14', turns: [
+      ['north',1,1],['east',2,1],['take the garden shears',3,1],['west',4,1],
+      ['put the shears in the fountain',5,1],['east',6,1]] },
+];
+
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
+const $ = id => document.getElementById(id);
+const ancestry = n => { const o = []; let c = n; while (c) { o.unshift(c); c = c.parent ? BY.get(c.parent) : null; } return o; };
+
+let mode = 'col', selected = BY.get('smoke'), opened = null;
+
+/* ── shared bits ───────────────────────────────────────────────── */
+function sheet(turns, proposed) {
+  const s = el('div', 'sheet ' + (proposed ? 'prop' : 'pass'));
+  for (let i = 0; i < 6; i++) {
+    const line = el('i', i % 2 === 0 ? 'cmd' : '');
+    line.style.width = (i % 2 === 0 ? 62 : [88, 70, 80][(i / 2) | 0] ?? 74) + '%';
+    s.append(line);
+  }
+  return s;
+}
+
+function turnRows(node, host) {
+  node.turns.forEach(([input, line, ok]) => {
+    const t = el('div', 'turn');
+    t.append(el('div', 'ln', String(line)));
+    const c = el('div', 'cmd'); c.append(el('b', null, '> '), document.createTextNode(input));
+    t.append(c);
+    t.append(el('div', 'r', ok ? 'PASS' : 'FAIL'));
+    host.append(t);
+  });
+}
+
+/* ── opened document — the reading surface ─────────────────────── */
+function openDoc(node) { opened = node; render(); }
+
+function renderDocView() {
+  const v = $('docview');
+  v.replaceChildren();
+  if (!opened) return;
+  const head = document.createElement('header');
+  const back = el('button', 'back', '‹ Back');
+  back.type = 'button';
+  back.addEventListener('click', () => { opened = null; render(); });
+  head.append(back, el('h2', null, opened.stem));
+  head.append(el('span', 'path', opened.file ?? ('tests/transcripts/' + opened.stem + '.transcript')));
+  v.append(head);
+
+  const meta = el('div', 'docmeta');
+  const add = (k, val, cls) => { const d = el('div'); d.append(el('span', 'k', k), el('span', 'v' + (cls ? ' ' + cls : ''), val)); meta.append(d); };
+  if (opened.proposed) {
+    add('Origin', 'explorer'); add('Turns', String(opened.turns.length));
+    add('Status', 'proposed'); add('Action', 'accept or discard');
+  } else {
+    add('Result', opened.turns.length + ' passed', 'pass');
+    add('Ancestry', ancestry(opened).map(a => a.stem).join(' › '));
+    add('Duration', (opened.ms ?? 0) + ' ms');
+    add('Children', opened.kids.length ? String(opened.kids.length) : 'leaf');
+  }
+  v.append(meta);
+
+  const turns = el('div', 'turns');
+  turnRows(opened, turns);
+  v.append(turns);
+}
+
+/* ── column mode ───────────────────────────────────────────────── */
+function crow(n) {
+  const r = el('button', 'crow'); r.type = 'button';
+  r.setAttribute('aria-selected', String(n === selected));
+  if (n !== selected && ancestry(selected).includes(n)) r.dataset.inpath = 'true';
+  r.append(el('span', 'dot'), el('span', 'stem', n.stem), el('span', 'n', String(n.turns.length)));
+  if (n.kids.length) r.append(el('span', 'chev', '›'));
+  r.addEventListener('click', () => { selected = n; render(); });
+  r.addEventListener('dblclick', () => openDoc(n));
+  return r;
+}
+
+function preview(n, host) {
+  host.append(el('h3', null, n.stem));
+  host.append(el('div', 'sub', n.file));
+  const dl = el('dl', 'kv');
+  dl.append(el('dt', null, 'Result'), el('dd', null, n.turns.length + ' assertions passed'));
+  dl.append(el('dt', null, 'Ancestry'), el('dd', null, ancestry(n).map(a => a.stem).join(' › ')));
+  dl.append(el('dt', null, 'Children'), el('dd', null, n.kids.length ? String(n.kids.length) : 'none — a leaf'));
+  host.append(dl);
+  const open = el('button', 'open', 'Open document');
+  open.type = 'button';
+  open.addEventListener('click', () => openDoc(n));
+  host.append(open);
+  const list = el('div');
+  list.style.marginTop = '12px';
+  n.turns.slice(0, 8).forEach(([input]) => {
+    const t = el('div', 't'); t.append(el('b', null, '> '), document.createTextNode(input)); list.append(t);
+  });
+  if (n.turns.length > 8) list.append(el('div', 't', '… ' + (n.turns.length - 8) + ' more — open to read'));
+  host.append(list);
+}
+
+function renderCols() {
+  const wrap = $('cols'); wrap.replaceChildren();
+  const path = ancestry(selected);
+  let level = ROOTS, depth = 0;
+  while (level.length) {
+    const col = el('div', 'col');
+    level.forEach(n => col.append(crow(n)));
+    wrap.append(col);
+    const step = path[depth];
+    if (!step || !step.kids.length) break;
+    level = step.kids; depth += 1;
+  }
+  const p = el('div', 'col preview prev');
+  preview(selected, p);
+  wrap.append(p);
+  wrap.scrollLeft = wrap.scrollWidth;
+}
+
+/* ── list mode ─────────────────────────────────────────────────── */
+function renderList() {
+  const host = $('list'); host.replaceChildren();
+  const walk = (n, d) => {
+    const r = el('button', 'lrow'); r.type = 'button';
+    r.style.paddingLeft = (10 + d * 16) + 'px';
+    r.setAttribute('aria-selected', String(n === selected));
+    r.append(el('span', 'tw', n.kids.length ? '▾' : ''));
+    r.append(el('span', 'stem', n.stem), el('span', 'n', String(n.turns.length)));
+    r.addEventListener('click', () => { selected = n; render(); });
+    r.addEventListener('dblclick', () => openDoc(n));
+    host.append(r);
+    n.kids.forEach(k => walk(k, d + 1));
+  };
+  ROOTS.forEach(r => walk(r, 0));
+  const side = $('listside'); side.replaceChildren();
+  preview(selected, side);
+}
+
+/* ── document mode ─────────────────────────────────────────────── */
+function docTile(n, proposed) {
+  const b = el('button', 'doc' + (proposed ? ' proposed' : '')); b.type = 'button';
+  b.setAttribute('aria-selected', String(!proposed && n === selected));
+  b.append(sheet(n.turns, proposed));
+  b.append(el('span', 'name', n.stem));
+  b.append(el('span', 'sub', proposed ? n.sub : n.turns.length + ' passed'));
+  if (proposed) b.append(el('span', 'pill', 'proposed'));
+  b.addEventListener('click', () => { if (!proposed) selected = n; render(); });
+  b.addEventListener('dblclick', () => openDoc(n));
+  return b;
+}
+
+function renderDocs() {
+  const host = $('docs'); host.replaceChildren();
+  const group = (label, items, proposed) => {
+    const bar = el('div', 'groupbar' + (proposed ? ' prop' : ''), label);
+    if (proposed) {
+      const act = el('div', 'act');
+      ['Accept', 'Discard'].forEach(t => { const b = el('button', null, t); b.type = 'button'; act.append(b); });
+      bar.append(act);
+    }
+    host.append(bar);
+    const grid = el('div', 'docs');
+    items.forEach(n => grid.append(docTile(n, proposed)));
+    host.append(grid);
+  };
+  group('roots', ROOTS, false);
+  ROOTS.concat(NODES).filter(n => n.kids.length).forEach(n => group('children of ' + n.stem, n.kids, false));
+  group('proposed by the explorer — ' + PROPOSED.length, PROPOSED, true);
+}
+
+/* ── frame ─────────────────────────────────────────────────────── */
+function render() {
+  $('meta').textContent = NODES.length + ' nodes · depth 3 · 518 authored turns';
+  const showDoc = opened !== null;
+  $('docview').classList.toggle('on', showDoc);
+  ['col', 'list', 'doc'].forEach(m => {
+    $('pane-' + m).classList.toggle('on', !showDoc && mode === m);
+  });
+  if (!showDoc) {
+    if (mode === 'col') renderCols();
+    else if (mode === 'list') renderList();
+    else renderDocs();
+  } else renderDocView();
+
+  const bar = $('pathbar'); bar.replaceChildren();
+  const target = opened && !opened.proposed ? opened : opened ? null : selected;
+  if (target) ancestry(target).forEach((n, i, a) => {
+    if (i) bar.append(el('span', 'sep', '›'));
+    bar.append(i === a.length - 1 ? el('b', null, n.stem) : el('span', null, n.stem));
+  });
+  else if (opened) bar.append(el('b', null, opened.stem));
+  bar.append(el('span', 'hint', showDoc ? 'Back returns to the ' + mode + ' view'
+    : 'Click selects · double-click opens the document'));
+}
+
+document.querySelectorAll('.seg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.seg button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+    mode = b.dataset.mode; opened = null; render();
+  });
+});
+render();
+</script>
+</body></html>

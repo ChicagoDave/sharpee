@@ -1,10 +1,9 @@
 // PlayHeaderView.swift
-// The Play pane's header bar: a status dot (green when a story is loaded), the
-// New Thread button (ADR-299 D8 — a restart is a new skein thread from the
-// root), and a "Play after build" toggle. That is the whole header, and D8 says
-// so: there is no Record toggle because playing always grows the skein (D1),
-// and blessing lives in the Transcript view where the output being vouched for
-// is readable. Pure view — the controller owns behaviour.
+// The Play pane's header bar: a status dot (green when a story is loaded), a
+// Restart button, and a "Play after build" toggle. That is the whole header.
+// There is no Record toggle because every turn is logged anyway — the author
+// should not have to decide to record before the interesting thing happens.
+// Pure view — the controller owns behaviour.
 // Public interface: onRestart / onPlayAfterBuildToggle callbacks; setLoaded(_:),
 // setPlayAfterBuild(_:).
 // Owner context: tools/ide — Play.
@@ -39,14 +38,14 @@ final class PlayHeaderView: NSView {
         dot.layer?.cornerRadius = 4
         dot.translatesAutoresizingMaskIntoConstraints = false
 
-        // D8: a restart IS a new skein thread from the root — the button says
-        // what it grows, not what it discards.
-        restartButton.title = "New Thread"
+        // "New Thread" while a restart minted a skein thread; with the skein
+        // retired the button says plainly what it does.
+        restartButton.title = "Restart"
         restartButton.bezelStyle = .rounded
         restartButton.controlSize = .small
         restartButton.target = self
         restartButton.action = #selector(restartClicked)
-        restartButton.toolTip = "Restart from the story's beginning — a new thread from the skein root"
+        restartButton.toolTip = "Restart from the story's beginning — a fresh boot at the pinned seed"
         restartButton.translatesAutoresizingMaskIntoConstraints = false
 
         playAfterBuildCheckbox.target = self
@@ -79,7 +78,7 @@ final class PlayHeaderView: NSView {
         fatalError("PlayHeaderView is not Storyboard-instantiable")
     }
 
-    /// Green dot + enabled New Thread when a story is loaded; dim + disabled otherwise.
+    /// Green dot + enabled Restart when a story is loaded; dim + disabled otherwise.
     func setLoaded(_ loaded: Bool) {
         dot.layer?.backgroundColor = (loaded ? NSColor.systemGreen : Theme.foregroundFaint).cgColor
         restartButton.isEnabled = loaded

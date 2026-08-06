@@ -171,6 +171,70 @@ would misreport a cascade as several failures (D13).
 and the tree run failed with the ADR-248 factory-contract error. Fixed; the gap-closing
 test earned its keep before it was even green.
 
+### 9. The type-as-value sweep — a class, not the incident #225 looked like
+The cloak fix in §2 was one instance. A detector built against each package's
+**built ESM barrel** found **1,191 type-only symbols in value-import position across
+456 files** — 589 in stories, 602 in packages/tools.
+
+**The correlation that explains the silence.** It manifests only when a story has
+**no built `dist/`**. With one, tsc elides the type import into the CJS emit and
+nothing breaks — which is why `stories/dungeo` carries 184 offending files and still
+ran clean through the package CLI earlier in this same session. Not harmless: one
+`rm -rf dist` or one `verbatimModuleSyntax` and they are 184 compile errors. Live
+exposure was the four dist-less stories (armoured, thealderman, concealment-test,
+channel-service-test).
+
+**The discriminator that made it safe.** Absent from a runtime barrel has TWO causes
+— the symbol is a type, or the symbol was **deleted**. Marking the second `type`
+would dress a real error as a valid import. Checking the package `.d.ts` surface
+splits them, and it caught **14 stale imports of names that exist nowhere**. Renamed
+where a replacement exists (`SemanticEvent`→`ISemanticEvent` ×3, `Trait`→`ITrait`,
+`GameEvent`→`IGameEvent`, `ParsedCommand`→`IParsedCommand`,
+`ValidatedCommand`→`IValidatedCommand`); left as hard errors where genuinely gone
+(`ActionResult` ×3, `ParseResult`, `BasicParser`, `standardVocabulary`,
+`createStandardEngine` — all in `examples/` and test fixtures, which is why they
+rotted unseen).
+
+The edit is one inline `type` modifier per offender, so the diff never restructures
+an import block.
+
+**One sweep edit went wrong, and the suite caught it.** A match landed inside a
+STRING LITERAL that *emits* an import — repokit's grammar generator — so the
+generator began emitting a line the committed artifact lacked, breaking the ADR-269
+D7 freshness gate. `GrammarBuilder` really is type-only, so the generator change was
+kept and `packages/parser-en-us/src/grammar.ts` regenerated to match (one line)
+rather than the generator reverted. The whole diff was re-checked for other
+emitted-string hits; that was the only one.
+
+### 10. Collateral fixes the sweep exposed
+- **devkit's real-path gate restored.** `browser-core-build.test.ts` pointed at
+  `stories/fernhill`; ADR-302 D16 moved Fernhill to `branch-stories/`. It is a rule
+  13a real-path test, so a vanished fixture turns the gate into a no-op.
+  **129 passed/2 failed → 131 passed.**
+- **`@sharpee/text-service` removed** from `stories/concealment-test` and
+  `packages/interpreter` package.json — ADR-174 deleted that package; both still
+  declared it.
+- **`cloak-of-darkness/src/browser-entry.ts`**: `DOM` added to tsconfig `lib`, the
+  three dialogs cast to `HTMLDialogElement`, `modalOverlay` dropped (ADR-170 moved to
+  native `<dialog>`, which brings its own backdrop; `DOMElements` has no such field).
+
+### 11. Cloak's demo runners revived
+`test-runner.ts` and `debug-runner.ts` had been dead since ADR-174: they imported
+`@sharpee/text-service` plus a `@sharpee/text-services` that appears never to have
+existed, and built a `GameEngine` with a `textService` field the config no longer
+has. Cloak's `play` script points at `test-runner`, so **that script had been broken
+the whole time**.
+
+Rewritten rather than deleted — they demonstrate driving the engine with static
+dependencies, and the modern shape is a small change: `text:output` carries
+`ITextBlock[]`, and a console client renders each block with `extractPlainText` from
+`@sharpee/text-blocks` (added as a dependency). **Both actually run**, not merely
+compile. `stories/cloak-of-darkness` now type-checks **clean**.
+
+Side effect verified rather than assumed: building them produces a `dist/` where
+there was none, which changes what the package CLI loads (19 → 20 failures). The
+bundle is unaffected at 81/82 — it still prefers the lone `cloak.story`.
+
 ## Key Decisions
 
 ### Extract rather than write a third copy
@@ -181,6 +245,12 @@ first: the two copies read the root's seed from **different fields**
 `parseTranscriptFile` on a Fernhill root showed the parser mirrors `seed: 42` into both.
 The divergence is **latent** — only a `seeds:` matrix root would split them. The helper
 prefers the singular pin and falls back to the matrix, with a test pinning that.
+
+### Sweep the class, but never guess a deleted symbol into a type
+The cheap version of the sweep — "not in the runtime barrel, so mark it `type`" —
+would have silently converted 14 genuine errors into valid-looking imports. The
+`.d.ts` check is what makes a mechanical sweep of 1,191 sites defensible; without it
+the sweep would have *hidden* rot while appearing to clean it.
 
 ### Keep `test:npm`
 Asked whether the npm-consumer regression is still needed. It is: it is the only thing
@@ -231,7 +301,20 @@ decide it by side effect.
   exclusive`.
 - `repokit` **81 passed, 1 skipped**; `branch-tester` **360 passed**; `devkit`
   **129 passed** (2 pre-existing `browser-core-build` failures on the moved Fernhill
-  path, untouched).
+  path, later fixed in §10).
+
+### After the repo-wide sweep (§9–§11)
+- `tsf build` **clean on both targets** (CJS and ESM).
+- core **176**, world-model **1453**, engine **627**, stdlib **1604**,
+  event-processor **24**, parser-en-us **311**, lang-en-us **430**,
+  branch-tester **360**, transcript-tester **253**, devkit **131**, repokit **81**.
+- Dungeo walkthrough chain **952 passed**; Fernhill tree **22 passed**,
+  **552 commands (518 authored + 34 replayed)**.
+- npm consumer proofs re-run against re-staged tarballs: tree **3 passing, 0
+  failures**; flat **1 passing, 0 failures**.
+- cloak via the bundle **81 passed, 1 failed** — unchanged by the new `dist/`.
+- Both revived runners executed, not merely compiled: `test-runner` renders the
+  Foyer and the grue line; `debug-runner` prints its world-state dump.
 
 ## Files Modified
 
@@ -253,26 +336,36 @@ decide it by side effect.
 
 **Story** (1): `stories/cloak-of-darkness/src/index.ts` — two type-only import fixes.
 
+**The sweep (§9–§11)** — 456 files beyond the above: 197 under `stories/` +
+`branch-stories/`, 259 under `packages/` + `tools/`. Plus
+`packages/parser-en-us/src/grammar.ts` (regenerated), `tools/repokit/src/commands/grammar.ts`,
+`packages/devkit/src/standalone/browser-core-build.test.ts`,
+`packages/interpreter/package.json`, `stories/concealment-test/package.json`, and
+`stories/cloak-of-darkness/{package.json,tsconfig.json,src/browser-entry.ts,src/test-runner.ts,src/debug-runner.ts}`.
+
 ## Open Items
 
 ### Short Term
-- **The retirement is COMPLETE** — all four steps landed. What remains is downstream:
-  [#231](https://github.com/ChicagoDave/sharpee/issues/231) and
-  [#232](https://github.com/ChicagoDave/sharpee/issues/232), neither blocking.
-- **Type-only symbols imported in value position are a repo-wide pattern, not a cloak
-  one-off.** `stories/concealment-test/src/index.ts:19` has the identical
-  `import { Story, StoryConfig } from '@sharpee/engine'`. Every module story is a
-  candidate; only cloak was fixed. A sweep is owed.
-- **`stories/concealment-test` still declares `@sharpee/text-service`** in its
-  dependencies, a package ADR-174 removed.
-- **`test:npm` is red for two stories on pre-existing stale source** — familyzoo
-  (#224) and cloak-of-darkness (`@sharpee/text-service`, removed by ADR-174). Neither
-  is caused by this branch, and both make the gate unusable as written.
+- **The retirement is COMPLETE** — all four steps landed, and so is the sweep.
+  [#231](https://github.com/ChicagoDave/sharpee/issues/231) is the only issue this
+  session opened and left open.
+- **#231 is an authoring decision, not a defect to fix.** Cloak's module story and
+  Chord story are different implementations with different prose ("You take off the
+  velvet cloak", the Cloakroom description, the darkness handling). Reconciling them
+  means writing story content to match one side — David's call. Investigated
+  expecting one root cause; it is not that.
+- **`test:npm` is still red for familyzoo (#224)** — the tutorial does not type-check
+  against the platform, and it dies at `npx tsc` before the harness is reached. Cloak's
+  half of this is now **fixed** (§10/§11). #224 matters more than it used to: the gate
+  is genuinely useful again, having caught the tree fixture's missing `createStory()`
+  within seconds of first running.
 - **Neither `cli.ts` is deleted** — removing a `bin` entry unpublishes the command
   without destroying the code. Deletion is a separate, explicit decision.
-- **Pre-existing devkit failure, untouched**: `src/standalone/browser-core-build.test.ts`
-  (2 cases) hardcodes `stories/fernhill/fernhill.story`; ADR-302 D16 moved Fernhill to
-  `branch-stories/`. Nothing this session goes near `src/standalone/`.
+- **`examples/` and test fixtures are excluded from every build**, which is how five
+  references to deleted symbols survived (`ActionResult`, `ParseResult`,
+  `BasicParser`, `standardVocabulary`, `createStandardEngine`). They are left as
+  honest errors; a decision is owed on whether those example files should be
+  repaired, compiled, or removed.
 - **The IDE Testing wire is still unstarted** — and now has a second dependant: the
   `--tree --json` guard exists only because the stream carries no tree records.
 - **ADR-303 is DRAFT and should stay there** — no ACs, no test requirements, no
@@ -290,11 +383,14 @@ decide it by side effect.
 
 - **Status**: COMPLETE
 - **Blocker**: N/A
-- **Rollback Safety**: three independently revertible commits — `56d76928` (ADR-131
+- **Rollback Safety**: seven independently revertible commits — `56d76928` (ADR-131
   widening, docs only), `86e664f9` (the retirement), `6f890e56` (the tree npm proof +
-  the #232 promotion). The bundle change is one hunk in `runBranchTree`; the extracted
-  helper is additive.
-- **Landed**: PR [#233](https://github.com/ChicagoDave/sharpee/pull/233) → `b8b2c468`,
+  the #232 promotion), `2bb994fa` (summary), `dacee31c` (stories sweep),
+  `17ba30df` (platform sweep + collateral), `b3341015` (cloak runners). The bundle
+  change is one hunk in `runBranchTree`; the extracted helper is additive; both
+  sweeps are one inline `type` modifier per site and revert cleanly.
+- **Landed**: PR [#233](https://github.com/ChicagoDave/sharpee/pull/233) → `b8b2c468`
+  and PR [#234](https://github.com/ChicagoDave/sharpee/pull/234) → `9faa82af`, both
   merged 2026-08-06. Branch level with `main`; working tree clean apart from the
   untracked `scripts/clodpod.sh`.
 - **Issues**: [#225](https://github.com/ChicagoDave/sharpee/issues/225) and
@@ -320,5 +416,10 @@ disabled in this session's configuration.
 ## Test Coverage Delta
 - **+12 tests**: 8 in `branch-tester/tests/game-factory.test.ts`, 4 in devkit's
   `test.test.ts`.
+- **+2 restored**: devkit's `browser-core-build` real-path cases, which had been
+  failing on a stale fixture path and were therefore proving nothing (§10).
+- The sweep (§9) added no tests by design — it is a type-position change with no
+  runtime semantics. Its safety comes from `tsf build` on both targets plus every
+  package suite, which is what caught the grammar-generator regression.
 - Known untested: `test-tree.ts`'s exit-3 path (a boot failure mid-tree) has no unit
   test; it is covered only by inspection. ADR-302 D6 remains unimplemented.

@@ -141,34 +141,23 @@ final class ProjectArtifactsTests: XCTestCase {
                        "every real file must land in exactly one group — missing: \(onDisk.subtracting(grouped))")
     }
 
-    // MARK: - Play Testing (ADR-299 D7)
+    // MARK: - The retired Play Testing group (ADR-300)
 
-    func testSkeinFilesGroupIntoPlayTestingBesideTheTestGroups() throws {
-        try buildFullFixture()
-        try file("play-testing/the-lost-key.skein", "{}")
-
-        XCTAssertEqual(memberNames(.playTesting), ["the-lost-key.skein"])
-        // D7 places the group beside Walkthroughs and Transcript Tests.
-        XCTAssertEqual(groups().map(\.kind),
-                       [.story, .walkthroughs, .transcriptTests, .playTesting,
-                        .assets, .webTemplate])
-        XCTAssertEqual(group(.playTesting)?.directoryURL?.lastPathComponent, "play-testing")
-    }
-
-    func testNonSkeinContentInPlayTestingIsSurfacedNotSwallowed() throws {
+    /// ADR-299 D7's "Play Testing" group was removed with the `.skein` artifact
+    /// it existed to hold. What matters is that its removal did not create a
+    /// hiding place: a `play-testing/` folder an author still has on disk must
+    /// SURFACE, in Other, rather than vanish from the sidebar. The open-view
+    /// rule ("anything matching no type lands in Other, never hidden and never
+    /// dropped") is what makes deleting the group safe, so it is pinned here.
+    func testARetiredPlayTestingFolderSurfacesInOtherRatherThanVanishing() throws {
         try file("the-lost-key.story", "story \"The Lost Key\"")
         try file("play-testing/the-lost-key.skein", "{}")
         try file("play-testing/notes.md")
 
-        XCTAssertEqual(memberNames(.playTesting), ["the-lost-key.skein"])
-        XCTAssertEqual(memberNames(.other), ["notes.md"])
-    }
-
-    func testAnEmptyPlayTestingFolderYieldsNoGroup() throws {
-        try file("the-lost-key.story", "story \"The Lost Key\"")
-        try directory("play-testing")
-
-        XCTAssertEqual(groups().map(\.kind), [.story])
+        XCTAssertFalse(groups().map(\.kind).contains(where: { "\($0)" == "playTesting" }),
+                       "the Play Testing group is retired")
+        XCTAssertEqual(memberNames(.other), ["play-testing"],
+                       "the folder itself surfaces in Other — nothing is hidden")
     }
 
     // MARK: - Absent artifact types

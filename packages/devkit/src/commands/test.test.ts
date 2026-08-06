@@ -191,11 +191,18 @@ describe('sharpee test --tree (ADR-302 tree run)', () => {
     expect(err).toContain('mutually exclusive');
   });
 
-  it('refuses --tree with --json while the record stream carries no parentage (exit 2)', async () => {
-    const { code, err } = await muted(() => runTestCommand([treeDir, '--tree', '--json']));
-
-    expect(code).toBe(2);
-    expect(err).toContain('does not yet carry tree records');
+  it('accepts --tree with --json now that the stream carries parentage and replay', async () => {
+    // This refused with exit 2 until 2026-08-06, because the record stream could
+    // not express a tree and emitting one through it would have read as a flat
+    // run. The stream now carries `parent` and `replayed`, so the refusal is
+    // gone; the shape it emits is pinned in tests/test-json.test.ts.
+    const out = vi.spyOn(process.stdout, 'write').mockImplementation((() => true) as never);
+    try {
+      const { code } = await muted(() => runTestCommand([treeDir, '--tree', '--json']));
+      expect(code).toBe(0);
+    } finally {
+      out.mockRestore();
+    }
   });
 });
 
