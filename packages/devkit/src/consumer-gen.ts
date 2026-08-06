@@ -3,14 +3,27 @@
  * `@sharpee/*` closure either from the local `tsf build --npm` staging (tarballs)
  * or from the registry (version refs).
  *
- * Owner context: @sharpee/devkit `test:npm` command (ADR-180 Phase 2). This is the
- * single, drift-free replacement for the hand-listed dep arrays in npm-test/ and
- * npm-test-dungeo/ and the standalone gen-consumer.mjs in npm-test-familyzoo/.
+ * Owner context: @sharpee/devkit (author tool). devkit's consumer of this is the
+ * standalone-build integration gate, which needs a real installed-from-tarballs
+ * project to run `sharpee build` against.
+ *
+ * ADR-187 R1 keeps repokit and devkit fully separate — each carries its own
+ * implementation, and a hardened repokit feature is **promoted by hand**. This file
+ * is that promotion, taken from `tools/repokit/src/consumer-gen.ts` in session
+ * 51b5f4: it brings across `assertVendoredClosureComplete` (the #201 fix),
+ * npm-12-shaped `npm pack --json` parsing, memoized packing, and dev-closure
+ * vendoring — four fixes the devkit copy had fallen behind on. Do NOT collapse the
+ * two into a shared module: ADR-187 rejects that by name, and repokit is private
+ * and unpublished, so a published devkit could not import it regardless.
  *
  * Public interface:
  *   scanStaging(stagingDir)                  -> name->dir map of @sharpee packages
  *   readSharpeeSeed(storyPkgPath)            -> story's direct @sharpee deps
  *   computeClosure(seed, depsOf)             -> full transitive @sharpee set (pure)
+ *   declaredSharpeeDeps(dir, staging, name)  -> a staged package's declared @sharpee deps
+ *   stagingDepsOf(dir, staging, name)        -> the subset of those that are staged
+ *   assertVendoredClosureComplete(v, depsOf) -> throws on an unvendored @sharpee dep (pure)
+ *   packFilenameFrom(stdout, packageName)    -> tarball filename from `npm pack --json` (pure)
  *   generateConsumer(opts)                   -> writes package.json (+ tarballs for local)
  */
 import { execFileSync } from 'node:child_process';
@@ -18,8 +31,16 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SHARPEE = '@sharpee/';
-/** transcript-tester supplies the `transcript-test` bin (dev-only). */
-const TT = '@sharpee/transcript-tester';
+/**
+ * devkit supplies the `sharpee` bin (dev-only), whose `test` subcommand runs a
+ * project's transcripts and `test --tree` runs its ADR-302 tree.
+ *
+ * This was `@sharpee/transcript-tester` and its `transcript-test` bin. The proof
+ * is stronger through devkit: an outside author runs `sharpee test`, never the
+ * package bin, so the consumer test now exercises the command authors actually
+ * type. It is also what lets the two package bins be retired.
+ */
+const HARNESS = '@sharpee/devkit';
 
 export type StagingMap = Record<string, string>;
 
@@ -65,12 +86,94 @@ export function computeClosure(seed: string[], depsOf: (name: string) => string[
   return closure;
 }
 
-/** `depsOf` backed by the staging map — only deps present in staging are followed. */
-export function stagingDepsOf(stagingDir: string, staging: StagingMap, name: string): string[] {
+/**
+ * Every `@sharpee/*` dependency a staged package declares — including ones that are
+ * **not** themselves staged. Used to detect vendoring gaps; the closure walk uses
+ * `stagingDepsOf` instead.
+ */
+export function declaredSharpeeDeps(
+  stagingDir: string,
+  staging: StagingMap,
+  name: string,
+): string[] {
   const dir = staging[name];
   if (!dir) return [];
   const p = JSON.parse(readFileSync(join(stagingDir, dir, 'package.json'), 'utf8'));
-  return Object.keys(p.dependencies || {}).filter((n) => n.startsWith(SHARPEE) && staging[n]);
+  return Object.keys(p.dependencies || {}).filter((n) => n.startsWith(SHARPEE));
+}
+
+/** `depsOf` backed by the staging map — only deps present in staging are followed. */
+export function stagingDepsOf(stagingDir: string, staging: StagingMap, name: string): string[] {
+  return declaredSharpeeDeps(stagingDir, staging, name).filter((n) => staging[n]);
+}
+
+/**
+ * Assert that every `@sharpee/*` dep declared by a vendored package is itself vendored.
+ *
+ * A `file:` tarball resolves none of its own `@sharpee` deps, so any gap silently falls
+ * through to the public registry — a different, older build — and surfaces far downstream
+ * as an `npm install` `ETARGET` rather than as a generation error (#201). Pure; call it
+ * before packing so a gap costs nothing.
+ *
+ * @param vendored Every package that will be `file:`-referenced, runtime and dev alike.
+ * @param declaredOf Declared `@sharpee` deps of a package, staged or not.
+ * @throws naming each missing package and the vendored package that requires it.
+ */
+export function assertVendoredClosureComplete(
+  vendored: string[],
+  declaredOf: (name: string) => string[],
+): void {
+  const have = new Set(vendored);
+  const gaps = vendored.flatMap((n) =>
+    declaredOf(n)
+      .filter((d) => !have.has(d))
+      .map((d) => `${d} (required by ${n})`),
+  );
+  if (gaps.length) {
+    throw new Error(
+      `@sharpee deps absent from local staging, so npm would resolve them from the registry ` +
+        `instead of the tarballs: ${gaps.join(', ')} — run \`tsf build --npm\` first`,
+    );
+  }
+}
+
+/**
+ * Extract the produced tarball filename from `npm pack --json` stdout.
+ *
+ * The output shape is npm-major-dependent and both are accepted here:
+ *   - npm <= 11 emits an **array** of pack results — `[{ filename, ... }]`
+ *   - npm 12 emits an **object keyed by package name** — `{ "@sharpee/core": { filename, ... } }`
+ *
+ * Only the first entry is read: each call packs exactly one directory.
+ *
+ * @param stdout Raw stdout from `npm pack --json`.
+ * @param packageName Package being packed — named in the error so a shape change is diagnosable.
+ * @returns The tarball filename written into the pack destination.
+ * @throws if stdout is not valid JSON, or if neither shape yields a `filename`.
+ */
+export function packFilenameFrom(stdout: string, packageName: string): string {
+  const fail = (why: string): never => {
+    throw new Error(`npm pack --json: ${why} for ${packageName}`);
+  };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stdout);
+  } catch {
+    return fail(`output was not valid JSON (got ${JSON.stringify(stdout.slice(0, 120))})`);
+  }
+
+  const entry = Array.isArray(parsed)
+    ? parsed[0]
+    : parsed && typeof parsed === 'object'
+      ? Object.values(parsed as Record<string, unknown>)[0]
+      : undefined;
+
+  const filename = (entry as { filename?: unknown } | undefined)?.filename;
+  if (typeof filename !== 'string' || !filename) {
+    return fail('unexpected output shape — no entry with a filename');
+  }
+  return filename;
 }
 
 export interface GenerateConsumerOptions {
@@ -91,8 +194,14 @@ export interface GenerateConsumerOptions {
 export interface GenerateConsumerResult {
   /** Packages written as runtime deps (full closure in local mode; seed in registry mode). */
   closure: string[];
-  /** true if transcript-tester is available as a dev dep (always true in registry mode). */
-  haveTranscriptTester: boolean;
+  /**
+   * Packages vendored solely to satisfy the harness's own `@sharpee` deps — those
+   * its closure reaches that the runtime closure does not. Local mode only; empty in
+   * registry mode, where npm resolves transitive deps itself.
+   */
+  devClosure: string[];
+  /** true if the harness is available as a dev dep (always true in registry mode). */
+  haveHarness: boolean;
 }
 
 /**
@@ -100,11 +209,15 @@ export interface GenerateConsumerResult {
  *
  * Local mode packs the story's **full transitive `@sharpee` closure** into tarballs
  * and `file:`-refs them — required because `file:` deps do not resolve their own
- * `@sharpee` deps from anywhere. Registry mode declares only the story's **seed**
- * `@sharpee` deps and lets npm resolve transitive deps from the registry, exactly
- * as a real consumer install would (avoids staging-vs-registry graph divergence).
+ * `@sharpee` deps from anywhere. That same reasoning applies to the dev dep, so
+ * the harness's closure is vendored too; whatever it reaches beyond the runtime
+ * closure lands in `devDependencies` rather than overstating the story's runtime
+ * surface (#201). Registry mode declares only the story's **seed** `@sharpee` deps and
+ * lets npm resolve transitive deps from the registry, exactly as a real consumer
+ * install would (avoids staging-vs-registry graph divergence).
  *
- * @throws (local mode) if any seed dep is absent from the local staging.
+ * @throws (local mode) if any seed dep is absent from the local staging, or if any
+ *   vendored package declares an `@sharpee` dep that is not itself vendored.
  */
 export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsumerResult {
   const { mode, storyPkgPath, vendorDir, outPkgPath } = opts;
@@ -113,7 +226,8 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
   const dependencies: Record<string, string> = {};
   const devDependencies: Record<string, string> = { typescript: '^5.0.0' };
   let written: string[];
-  let haveTT: boolean;
+  let devOnly: string[] = [];
+  let haveHarness: boolean;
 
   if (mode === 'local') {
     const staging = scanStaging(opts.stagingDir);
@@ -123,25 +237,50 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
         `story deps absent from local staging: ${missing.join(', ')} — run \`tsf build --npm\` first`,
       );
     }
+    // Memoized: a package reachable from both the runtime and the dev closure is
+    // packed once, not twice.
+    const packed = new Map<string, string>();
     const pack = (name: string): string => {
+      const cached = packed.get(name);
+      if (cached !== undefined) return cached;
       const dir = join(opts.stagingDir, staging[name]);
       const out = execFileSync(
         'npm',
         ['pack', dir, '--pack-destination', vendorDir, '--ignore-scripts', '--json'],
         { encoding: 'utf8' },
       );
-      return JSON.parse(out)[0].filename;
+      const filename = packFilenameFrom(out, name);
+      packed.set(name, filename);
+      return filename;
     };
-    written = [...computeClosure(seed, (n) => stagingDepsOf(opts.stagingDir, staging, n))].sort();
+
+    const depsOf = (n: string) => stagingDepsOf(opts.stagingDir, staging, n);
+    written = [...computeClosure(seed, depsOf)].sort();
+    haveHarness = Boolean(staging[HARNESS]);
+
+    // The harness gets the same closure treatment as the runtime seed: its own
+    // `@sharpee` deps resolve from nowhere once it is a `file:` tarball, so anything
+    // the runtime closure misses (bootstrap, for every story) must be vendored here.
+    const runtime = new Set(written);
+    devOnly = haveHarness
+      ? [...computeClosure([HARNESS], depsOf)].filter((n) => n !== HARNESS && !runtime.has(n)).sort()
+      : [];
+
+    // Before packing: a gap here is an `npm install` ETARGET much later (#201).
+    assertVendoredClosureComplete(
+      [...written, ...devOnly, ...(haveHarness ? [HARNESS] : [])],
+      (n) => declaredSharpeeDeps(opts.stagingDir, staging, n),
+    );
+
     for (const n of written) dependencies[n] = `file:vendor/${pack(n)}`;
-    haveTT = Boolean(staging[TT]);
-    if (haveTT) devDependencies[TT] = `file:vendor/${pack(TT)}`;
+    for (const n of devOnly) devDependencies[n] = `file:vendor/${pack(n)}`;
+    if (haveHarness) devDependencies[HARNESS] = `file:vendor/${pack(HARNESS)}`;
   } else {
     const version = opts.registryVersion || 'latest';
     written = [...seed].sort();
     for (const n of written) dependencies[n] = version;
-    haveTT = true; // transcript-tester is published; npm resolves it from the registry
-    devDependencies[TT] = version;
+    haveHarness = true; // devkit is published; npm resolves it from the registry
+    devDependencies[HARNESS] = version;
   }
 
   writeFileSync(
@@ -161,5 +300,5 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
     ) + '\n',
   );
 
-  return { closure: written, haveTranscriptTester: haveTT };
+  return { closure: written, devClosure: devOnly, haveHarness };
 }

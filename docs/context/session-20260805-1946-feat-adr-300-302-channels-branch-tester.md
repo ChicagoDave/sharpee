@@ -132,6 +132,45 @@ closed with the real cause. Two new issues filed:
 implementations) and [#232](https://github.com/ChicagoDave/sharpee/issues/232) (devkit's
 dead, drifted consumer-gen).
 
+### 7. #232 resolved by PROMOTION, and the filing was wrong
+Two of the issue's three claims did not survive checking. It is **not dead** —
+`commands/standalone-build.test.ts` uses `generateConsumer` to build the installed
+project for devkit's integration gate. And the suggested fix (delete, or re-export
+repokit's) is rejected by **ADR-187 R1** by name:
+
+> repokit is the in-repo **proving ground** … then **explicitly ported to devkit when
+> hardened**. The duplication is a deliberate staging gate … A shared module would
+> couple the shipped author tool to in-progress platform-dev work.
+
+The re-export was impossible regardless: `tools/repokit` is `"private": true` and
+absent from `ts-forge.config.json`, so a published devkit could never import it.
+
+The one true claim — four fixes behind — is, under ADR-187, an **overdue promotion**.
+repokit's hardened `consumer-gen.ts` and its tests were walked across by hand
+(`assertVendoredClosureComplete` / #201, npm-12 `npm pack --json` parsing, memoized
+packing, dev-closure vendoring), the harness constant became `@sharpee/devkit`, and
+the file header now carries the ADR-187 reasoning plus an explicit "do NOT collapse
+these" so the issue is not re-filed. devkit `consumer-gen.test.ts`: **17 passed**.
+
+### 8. The tree's npm-consumer gap, closed
+`test:npm` only ever ran the flat path, so `sharpee test --tree` was verified purely
+in-repo — on the side of the workspace-symlink line where #225's class of defect is
+invisible.
+
+**`branch-stories/tree-npm-fixture/`** is a new dedicated fixture: the smallest module
+story that forms a tree. Fernhill could not serve — it is a bare Chord `.story` with no
+`package.json` and no `src/`, both of which `test:npm` requires. The shape is one root
+with **two** children on purpose: a single child would continue the live engine and
+replay nothing, so it would not exercise D17 at all.
+
+`test:npm` gained `--tree`, mutually exclusive with `--chain` (D10), invoking the tree
+as ONE call because D11 assembles and validates before executing — a per-file tally
+would misreport a cascade as several failures (D13).
+
+**Caught a real defect on its first run**: the fixture had no `createStory()` export,
+and the tree run failed with the ADR-248 factory-contract error. Fixed; the gap-closing
+test earned its keep before it was even green.
+
 ## Key Decisions
 
 ### Extract rather than write a third copy
@@ -181,6 +220,19 @@ decide it by side effect.
 - Repo-wide grep for live `transcript-test`/`branch-test` invocations: only a stale
   `package-lock.json` entry under `tutorials/familyzoo/v2.0.0/`, which regenerates.
 
+### The tree's npm-consumer proof (§8) and the #232 promotion (§7)
+- `./repokit test:npm branch-stories/tree-npm-fixture --local --tree` → `added 75
+  packages`, `npx tsc` clean, tree run → **`3 passed`, `4 commands (3 authored + 1
+  replayed)`**, `RESULTS: 3 passing, 0 failures`. The replay count is the D17
+  arithmetic, now proven through a real install rather than only in-repo.
+- Same fixture through the bundle → identical: `3 passed`, `4 commands (3 authored +
+  1 replayed)`.
+- Guard: `./repokit test:npm … --tree --chain` → `--tree and --chain are mutually
+  exclusive`.
+- `repokit` **81 passed, 1 skipped**; `branch-tester` **360 passed**; `devkit`
+  **129 passed** (2 pre-existing `browser-core-build` failures on the moved Fernhill
+  path, untouched).
+
 ## Files Modified
 
 **Docs** (3): `adr-131-automated-world-explorer.md`,
@@ -207,11 +259,12 @@ decide it by side effect.
 - **The retirement is COMPLETE** — all four steps landed. What remains is downstream:
   [#231](https://github.com/ChicagoDave/sharpee/issues/231) and
   [#232](https://github.com/ChicagoDave/sharpee/issues/232), neither blocking.
-- **The tree path is not covered by `test:npm`.** Its glob is `tests/transcripts/*`
-  and it never runs a tree, so `sharpee test --tree` has no npm-consumer proof — only
-  the in-repo Fernhill run. A tree fixture in the consumer test would close it.
-- **`packages/devkit/src/consumer-gen.ts` is dead and drifted** — see §5. Deleting it
-  is a separate, explicit decision.
+- **Type-only symbols imported in value position are a repo-wide pattern, not a cloak
+  one-off.** `stories/concealment-test/src/index.ts:19` has the identical
+  `import { Story, StoryConfig } from '@sharpee/engine'`. Every module story is a
+  candidate; only cloak was fixed. A sweep is owed.
+- **`stories/concealment-test` still declares `@sharpee/text-service`** in its
+  dependencies, a package ADR-174 removed.
 - **`test:npm` is red for two stories on pre-existing stale source** — familyzoo
   (#224) and cloak-of-darkness (`@sharpee/text-service`, removed by ADR-174). Neither
   is caused by this branch, and both make the gate unusable as written.

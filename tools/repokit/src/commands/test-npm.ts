@@ -53,6 +53,15 @@ export interface TestNpmOptions {
   transcripts?: string;
   /** Run transcripts as one stateful chain (dungeo walkthroughs) instead of per-file. */
   chain?: boolean;
+  /**
+   * Run the transcripts as an ADR-302 TREE (`sharpee test --tree`) instead of as
+   * independent files. Mutually exclusive with `chain`, which D10 retires for trees.
+   *
+   * This is the only path that proves the tree harness survives an npm install: a
+   * tree run boots a fresh game per root AND per fork, replays ancestry, and
+   * re-pins seeds across boots — none of which the per-file path exercises.
+   */
+  tree?: boolean;
   /** Compile only; skip transcript execution. */
   quick?: boolean;
   /** Registry version/range for @sharpee deps (registry mode; default 'latest'). */
@@ -156,9 +165,21 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
       return { passed: 0, failed: 0, failures: [], ran: false };
     }
 
-    // 5. Run transcripts (chain = one stateful invocation; else per-file count).
+    // 5. Run transcripts (tree = one whole-tree invocation; chain = one stateful
+    // invocation; else per-file count).
     log('--- transcripts ---');
     const rel = transcripts.map((t) => join('transcripts', basename(t)));
+    if (opts.tree) {
+      // The whole tree is one invocation by construction (D11: assembled and
+      // validated before anything runs), so it is pass-or-fail as a unit — a
+      // per-file tally would misreport a cascade as several failures (D13).
+      try {
+        run('npx', ['sharpee', 'test', '.', '--tree', ...rel]);
+        return { passed: transcripts.length, failed: 0, failures: [], ran: true };
+      } catch {
+        return { passed: 0, failed: transcripts.length, failures: ['tree'], ran: true };
+      }
+    }
     if (opts.chain) {
       try {
         run('npx', ['sharpee', 'test', '.', '--chain', ...rel]);
@@ -200,6 +221,7 @@ function parseTestNpmArgs(args: string[]): TestNpmOptions {
     if (a === '--local') opts.mode = 'local';
     else if (a === '--registry') opts.mode = 'registry';
     else if (a === '--chain') opts.chain = true;
+    else if (a === '--tree') opts.tree = true;
     else if (a === '--quick') opts.quick = true;
     else if (a === '--keep') opts.keep = true;
     else if (a === '--version') opts.registryVersion = args[++i];
@@ -211,6 +233,9 @@ function parseTestNpmArgs(args: string[]): TestNpmOptions {
     i++;
   }
   if (!opts.location) throw new Error('test:npm requires a story <location>');
+  // ADR-302 D10 retires --chain for trees; honouring one silently would hide
+  // which run model actually produced the result.
+  if (opts.tree && opts.chain) throw new Error('--tree and --chain are mutually exclusive');
   return opts;
 }
 
