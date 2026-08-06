@@ -61,9 +61,11 @@ express the second.
 is a cyclic graph: rooms connect both ways, states repeat, and the same world
 state is reachable by many routes. The suite is a set of paths through it. The
 IDE's branch view shows the suite and must not be read as a map of the world.
-(The Miller-column treatment of that view comes from the session f2a7e6 layout
-mocks, not from an ADR: ADR-301 is TBD and specifies no surface. Named here so
-the attribution is not laundered by repetition.) This matters because the two questions below
+(The Miller-column treatment of that view came from the session f2a7e6 layout
+mocks, not from an ADR. **Superseded 2026-08-06**: it is now **ADR-301 D2**,
+which is ACCEPTED and specifies the surface — cite that, not the mocks. The
+original note stood because the decision lived only in published artifacts, and
+a later session rebuilt the view as a rejected layout for exactly that reason.) This matters because the two questions below
 both look like "the tree is wrong" and are actually "the tree is not the thing
 you are asking about."
 

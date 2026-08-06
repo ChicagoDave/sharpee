@@ -40,13 +40,44 @@ export {
   isComposeJsonPayload,
 } from './compose-diagnostics.js';
 
-// `test --json` NDJSON wire contract (ADR-277 D1): the versioned record stream.
+// The run-event stream: events emitted AS a run happens, so the IDE's Testing
+// tab fills live. Supersedes the `test-results.js` records below.
+export type {
+  RunEventEnvelope,
+  RunMode,
+  RunStartEvent,
+  PhaseEvent,
+  TranscriptStartEvent,
+  CommandResultEvent,
+  TranscriptEndEvent,
+  BudgetUse,
+  ProgressEvent,
+  CoveragePoint,
+  CoverageEvent,
+  RunEndEvent,
+  RunEvent,
+} from './run-events.js';
+export {
+  RUN_EVENT_SCHEMA_VERSION,
+  isRunStartEvent,
+  isPhaseEvent,
+  isTranscriptStartEvent,
+  isCommandResultEvent,
+  isTranscriptEndEvent,
+  isProgressEvent,
+  isCoverageEvent,
+  isRunEndEvent,
+  isRunEvent,
+} from './run-events.js';
+
+// DEPRECATED — `test --json` NDJSON wire contract (ADR-277 D1), the versioned
+// record stream superseded by the events above. Still exported because
+// transcript-tester, branch-tester and devkit import these until Phase 2.
 export type {
   RunStartRecord,
   TranscriptStartRecord,
   CommandResultRecord,
   TranscriptEndRecord,
-  CoveragePoint,
   CoverageRecord,
   RunEndRecord,
   TestResultRecord,

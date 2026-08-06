@@ -1,0 +1,327 @@
+<title>Branch view modes</title>
+<style>
+:root{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --warn:#DF8E1D;
+  --sel-soft:#1E66F51a; --fail-wash:#D20F390f;
+  --ui:system-ui,-apple-system,"SF Pro Text",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --radius:5px; --row-h:24px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF; --sel-soft:#89B4FA22; --fail-wash:#F38BA814;
+}}
+:root[data-theme="dark"]{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF; --sel-soft:#89B4FA22; --fail-wash:#F38BA814;
+}
+:root[data-theme="light"]{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --warn:#DF8E1D; --sel-soft:#1E66F51a; --fail-wash:#D20F390f;
+}
+*{box-sizing:border-box;}
+body{margin:0;padding:28px 20px 56px;background:var(--play);color:var(--fg);
+  font-family:var(--ui);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.page{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-faint);}
+h1{margin:0;font-size:21px;font-weight:600;letter-spacing:-.015em;text-wrap:balance;}
+.lede{max-width:68ch;display:flex;flex-direction:column;gap:8px;}
+.lede p{margin:0;color:var(--fg-dim);}
+.lede b{color:var(--fg);}
+
+/* the switcher, as it would sit in the tab's toolbar */
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 14px;
+  background:var(--rail);border:1px solid var(--border);border-radius:8px;}
+.toolbar .story{font-weight:600;}
+.toolbar .meta{font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);}
+.spacer{flex:1 1 auto;}
+.segmented{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.segmented span{font-size:11.5px;padding:3px 12px;color:var(--fg-dim);display:flex;align-items:center;gap:6px;}
+.segmented span.on{background:var(--accent);color:var(--on-accent);font-weight:600;}
+.glyph{font-family:var(--mono);font-size:11px;letter-spacing:-1px;}
+
+/* the matrix */
+.matrix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+@media (max-width:760px){.matrix{grid-template-columns:1fr;}}
+.cell{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--editor);
+  display:flex;flex-direction:column;}
+.cell.best{border-color:var(--pass);}
+.cell.poor{border-color:var(--fail);}
+.cell > header{display:flex;align-items:baseline;gap:8px;padding:7px 12px;background:var(--rail);
+  border-bottom:1px solid var(--border);}
+.cell h3{margin:0;font-size:12px;font-weight:600;}
+.cell .tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;
+  text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid currentColor;}
+.tag.best{color:var(--pass);} .tag.poor{color:var(--fail);} .tag.ok{color:var(--warn);}
+.cell .why{padding:7px 12px;font-size:11.5px;color:var(--fg-dim);border-bottom:1px solid var(--border);
+  background:var(--project);}
+.stage{padding:0;overflow:hidden;flex:1;min-height:190px;}
+
+/* column mode */
+.cols{display:flex;align-items:stretch;height:100%;}
+.col{flex:0 0 132px;border-right:1px solid var(--border);overflow:hidden;}
+.col.preview{flex:1 1 auto;border-right:0;background:var(--project);padding:9px 11px;}
+.col.offleft{flex:0 0 74px;background:repeating-linear-gradient(135deg,
+  transparent 0 6px,var(--fail-wash) 6px 12px);}
+.cap{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--fg-faint);padding:5px 7px 2px;}
+.col.offleft .cap{color:var(--fail);}
+.crow{display:flex;align-items:center;gap:6px;height:var(--row-h);padding:0 7px;}
+.crow.sel{background:var(--accent);color:var(--on-accent);}
+.crow.inpath{background:var(--sel-soft);}
+.crow .stem{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:10.5px;}
+.crow .n{font-family:var(--mono);font-size:9px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.crow.sel .n,.crow.sel .chev{color:var(--on-accent);opacity:.85;}
+.crow .chev{color:var(--fg-faint);font-size:9px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--pass);flex:0 0 auto;}
+.preview h4{margin:0 0 1px;font-family:var(--mono);font-size:11px;}
+.preview .sub{font-family:var(--mono);font-size:9.5px;color:var(--fg-dim);margin-bottom:7px;}
+.preview .kv{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:0;}
+.preview dt{font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-faint);}
+.preview dd{margin:0;font-family:var(--mono);font-size:10px;}
+
+/* list mode */
+.list{padding:4px 0;}
+.lrow{display:flex;align-items:center;gap:6px;height:var(--row-h);padding:0 10px;}
+.lrow.sel{background:var(--accent);color:var(--on-accent);}
+.lrow.sel .n{color:var(--on-accent);opacity:.85;}
+.lrow .tw{color:var(--fg-faint);font-size:9px;width:9px;flex:0 0 auto;}
+.lrow .stem{flex:1 1 auto;font-family:var(--mono);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;}
+.lrow .n{font-family:var(--mono);font-size:9px;color:var(--fg-dim);font-variant-numeric:tabular-nums;}
+.trunc{padding:3px 10px 6px 28px;font-family:var(--mono);font-size:9.5px;color:var(--fg-faint);font-style:italic;}
+
+/* ── document view ─────────────────────────────────────────────── */
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:12px;padding:14px;}
+.doc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;
+  border-radius:var(--radius);border:1px solid transparent;}
+.doc.sel{background:var(--sel-soft);border-color:var(--accent);}
+.doc.proposed{border-style:dashed;border-color:var(--mauve,#8839EF);}
+.sheet{width:58px;height:74px;border:1px solid var(--border);border-radius:3px;background:var(--editor);
+  padding:6px 5px;display:flex;flex-direction:column;gap:2.5px;position:relative;overflow:hidden;
+  box-shadow:0 1px 2px #00000014;}
+.sheet i{display:block;height:2px;border-radius:1px;background:var(--fg-faint);opacity:.5;}
+.sheet i.short{width:56%;} .sheet i.mid{width:76%;} .sheet i.cmd{background:var(--accent);opacity:.75;width:66%;}
+.sheet .corner{position:absolute;top:0;right:0;border-width:0 9px 9px 0;border-style:solid;
+  border-color:transparent var(--project) transparent transparent;}
+.sheet.pass{border-bottom:2px solid var(--pass);}
+.sheet.fail{border-bottom:2px solid var(--fail);}
+.sheet.prop{border-style:dashed;background:transparent;}
+.doc .name{font-family:var(--mono);font-size:10px;text-align:center;line-height:1.35;word-break:break-all;}
+.doc .sub{font-family:var(--mono);font-size:8.5px;color:var(--fg-faint);}
+.doc .pill{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;
+  padding:0 4px;border-radius:3px;border:1px solid currentColor;color:var(--mauve,#8839EF);}
+.groupbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--project);
+  border-bottom:1px solid var(--border);border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-faint);}
+.groupbar.prop{color:var(--mauve,#8839EF);}
+.groupbar .act{margin-left:auto;text-transform:none;letter-spacing:0;font-size:10.5px;
+  color:var(--fg-dim);border:1px solid var(--border);border-radius:3px;padding:1px 7px;}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px;}
+.note{border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:var(--radius);
+  padding:11px 13px;background:var(--editor);display:flex;flex-direction:column;gap:5px;}
+.note.warnb{border-left-color:var(--warn);}
+.note h4{margin:0;font-size:12.5px;font-weight:600;}
+.note p{margin:0;color:var(--fg-dim);font-size:12px;}
+code{font-family:var(--mono);font-size:11px;background:var(--project);padding:0 4px;border-radius:3px;}
+footer{color:var(--fg-faint);font-size:11.5px;max-width:68ch;}
+</style>
+
+<div class="page">
+  <div class="lede">
+    <div class="eyebrow">Sharpee IDE · Testing · proposal</div>
+    <h1>One view mode was the wrong question</h1>
+    <p>
+      The layout study measured three layouts against Fernhill and picked a winner.
+      But the right layout turns out to be a function of the <b>shape of the suite</b>,
+      not of the tool — and a project can hold both shapes at once.
+    </p>
+    <p>
+      There is already a precedent in the decision we made: we chose Finder semantics
+      for the columns, and <b>Finder ships four view modes</b> for exactly this reason.
+      Icon, List, Column and Gallery are not indecision; they are an admission that
+      directories differ.
+    </p>
+    <p>
+      Below: the two shapes a Sharpee suite takes, each rendered in both modes. The
+      diagonal is where each mode belongs. The off-diagonal is what a single global
+      choice forces on you half the time.
+    </p>
+  </div>
+
+  <div class="toolbar">
+    <span class="story">fernhill</span>
+    <span class="meta">22 nodes · depth 3</span>
+    <span class="spacer"></span>
+    <span style="font-size:11.5px;color:var(--fg-dim)">View</span>
+    <div class="segmented">
+      <span class="on"><i class="glyph">▊▊▊</i> Column</span>
+      <span><i class="glyph">☰</i> List</span>
+      <span><i class="glyph">▤▤</i> Documents</span>
+    </div>
+  </div>
+
+  <div class="matrix">
+
+    <!-- fan × column -->
+    <div class="cell best">
+      <header><h3>Fan · Column</h3><span class="tag best">belongs here</span></header>
+      <div class="why">12 siblings fill one column; the preview sits beside them. Depth 3 fits without shifting.</div>
+      <div class="stage">
+        <div class="cols">
+          <div class="col">
+            <div class="crow inpath"><span class="dot"></span><span class="stem">arrival</span><span class="n">2</span><span class="chev">›</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">compass</span><span class="n">15</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">phrasebooks</span><span class="n">18</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">recorded</span><span class="n">4</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">timeline</span><span class="n">15</span><span class="chev">›</span></div>
+          </div>
+          <div class="col">
+            <div class="crow"><span class="dot"></span><span class="stem">concealment</span><span class="n">16</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">containers</span><span class="n">20</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">e-group</span><span class="n">37</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">frost-seal</span><span class="n">12</span></div>
+            <div class="crow inpath"><span class="dot"></span><span class="stem">key</span><span class="n">2</span><span class="chev">›</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">machine</span><span class="n">8</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">npcs</span><span class="n">41</span></div>
+          </div>
+          <div class="col">
+            <div class="crow"><span class="dot"></span><span class="stem">cellar-dark</span><span class="n">14</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">doors</span><span class="n">17</span></div>
+            <div class="crow sel"><span class="dot"></span><span class="stem">smoke</span><span class="n">31</span></div>
+            <div class="crow"><span class="dot"></span><span class="stem">the-long-night</span><span class="n">54</span></div>
+          </div>
+          <div class="col preview">
+            <h4>smoke</h4>
+            <div class="sub">tests/transcripts/smoke.transcript</div>
+            <dl class="kv">
+              <dt>Result</dt><dd>31 passed</dd>
+              <dt>Ancestry</dt><dd>arrival › key</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- fan × list -->
+    <div class="cell">
+      <header><h3>Fan · List</h3><span class="tag ok">workable</span></header>
+      <div class="why">Every level interleaves vertically, so “the children of <code>arrival</code>” is something you read off indentation. No natural home for a preview.</div>
+      <div class="stage">
+        <div class="list">
+          <div class="lrow"><span class="tw">▾</span><span class="stem">arrival</span><span class="n">2</span></div>
+          <div class="lrow" style="padding-left:26px"><span class="tw"></span><span class="stem">concealment</span><span class="n">16</span></div>
+          <div class="lrow" style="padding-left:26px"><span class="tw"></span><span class="stem">containers</span><span class="n">20</span></div>
+          <div class="lrow" style="padding-left:26px"><span class="tw"></span><span class="stem">e-group</span><span class="n">37</span></div>
+          <div class="lrow" style="padding-left:26px"><span class="tw">▾</span><span class="stem">key</span><span class="n">2</span></div>
+          <div class="lrow sel" style="padding-left:42px"><span class="tw"></span><span class="stem">smoke</span><span class="n">31</span></div>
+          <div class="lrow" style="padding-left:42px"><span class="tw"></span><span class="stem">the-long-night</span><span class="n">54</span></div>
+          <div class="trunc">…15 more rows before the next root</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- chain × column -->
+    <div class="cell poor">
+      <header><h3>Chain · Column</h3><span class="tag poor">two of ten visible</span></header>
+      <div class="why">The view shifts left as it descends. Eight one-row columns are off the edge — nothing overflows, so nothing looks wrong.</div>
+      <div class="stage">
+        <div class="cols">
+          <div class="col offleft"><div class="cap">← 8 off</div></div>
+          <div class="col"><div class="crow inpath"><span class="dot"></span><span class="stem">…-7-grey</span><span class="n">14</span><span class="chev">›</span></div></div>
+          <div class="col"><div class="crow sel"><span class="dot"></span><span class="stem">…-8-dawn</span><span class="n">14</span></div></div>
+          <div class="col preview">
+            <h4>dawn-lose-8-dawn</h4>
+            <div class="sub">tests/transcripts/…-8-dawn.transcript</div>
+            <dl class="kv">
+              <dt>Result</dt><dd>14 passed</dd>
+              <dt>Depth</dt><dd>10</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- chain × list -->
+    <div class="cell best">
+      <header><h3>Chain · List</h3><span class="tag best">belongs here</span></header>
+      <div class="why">Ten rows. The whole chain is on screen, in order, with your position in it plain — the thing column view gives away.</div>
+      <div class="stage">
+        <div class="list">
+          <div class="lrow"><span class="tw">▾</span><span class="stem">timeline</span><span class="n">15</span></div>
+          <div class="lrow" style="padding-left:22px"><span class="tw">▾</span><span class="stem">dawn-lose-1-dusk</span><span class="n">14</span></div>
+          <div class="lrow" style="padding-left:34px"><span class="tw">▾</span><span class="stem">dawn-lose-2-small-hours</span><span class="n">15</span></div>
+          <div class="lrow" style="padding-left:46px"><span class="tw">▾</span><span class="stem">dawn-lose-3-cold</span><span class="n">14</span></div>
+          <div class="lrow" style="padding-left:58px"><span class="tw">▾</span><span class="stem">dawn-lose-4-lamp-out</span><span class="n">15</span></div>
+          <div class="lrow" style="padding-left:70px"><span class="tw">▾</span><span class="stem">dawn-lose-5-drift</span><span class="n">14</span></div>
+          <div class="lrow" style="padding-left:82px"><span class="tw">▾</span><span class="stem">dawn-lose-6-last-light</span><span class="n">15</span></div>
+          <div class="lrow" style="padding-left:94px"><span class="tw">▾</span><span class="stem">dawn-lose-7-grey</span><span class="n">14</span></div>
+          <div class="lrow sel" style="padding-left:106px"><span class="tw"></span><span class="stem">dawn-lose-8-dawn</span><span class="n">14</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="cell best" style="border-color:var(--pass)">
+    <header><h3>Fan · Documents — and where the explorer lands</h3><span class="tag best">the third shape</span></header>
+    <div class="why">
+      A transcript is a file you commit, diff and hand to CI. Browsing peers as documents
+      suits a 12-way fan, and it is the only surface on which a machine-proposed path can
+      be reviewed and <b>accepted or discarded as a thing</b> — which a badge on a tree
+      node cannot express.
+    </div>
+    <div class="groupbar">children of arrival</div>
+    <div class="docs">
+      <div class="doc"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="mid"></i><i class="short"></i><i class="cmd"></i><i class="mid"></i><i></i></div><span class="name">concealment</span><span class="sub">16 passed</span></div>
+      <div class="doc"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="short"></i><i class="mid"></i><i class="cmd"></i><i></i><i class="mid"></i></div><span class="name">containers</span><span class="sub">20 passed</span></div>
+      <div class="doc"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="mid"></i><i class="cmd"></i><i class="short"></i><i class="mid"></i><i></i></div><span class="name">e-group</span><span class="sub">37 passed</span></div>
+      <div class="doc sel"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="mid"></i><i class="short"></i><i class="cmd"></i><i class="mid"></i><i class="short"></i></div><span class="name">key</span><span class="sub">2 passed · 4 inside</span></div>
+      <div class="doc"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="short"></i><i class="mid"></i><i></i><i class="cmd"></i><i class="mid"></i></div><span class="name">machine</span><span class="sub">8 passed</span></div>
+      <div class="doc"><div class="sheet pass"><span class="corner"></span><i class="cmd"></i><i class="mid"></i><i class="cmd"></i><i class="mid"></i><i class="short"></i><i></i></div><span class="name">npcs</span><span class="sub">41 passed</span></div>
+    </div>
+    <div class="groupbar prop">proposed by the explorer — 2 <span class="act">Accept · Discard</span></div>
+    <div class="docs">
+      <div class="doc proposed"><div class="sheet prop"><i class="cmd"></i><i class="mid"></i><i class="short"></i><i class="cmd"></i><i></i><i class="mid"></i></div><span class="name">softlock-cellar-no-lamp</span><span class="sub">found at 12 400 states</span><span class="pill">proposed</span></div>
+      <div class="doc proposed"><div class="sheet prop"><i class="cmd"></i><i class="short"></i><i class="cmd"></i><i class="mid"></i><i></i><i class="short"></i></div><span class="name">unwinnable-shears-lost</span><span class="sub">found at depth 14</span><span class="pill">proposed</span></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4>List is nearly free</h4>
+      <p><code>TestPanelView</code> is <b>already an NSOutlineView</b> whose data source is two levels deep. What it lacks is a level above — entry-to-entry parentage — which is exactly what the run-event stream's <code>parent</code> field now carries. List mode is that data source gaining a level, not a new surface.</p>
+    </div>
+    <div class="note">
+      <h4>Three modes, and each earns one</h4>
+      <p>Column navigates a fan by path. List reads a chain in order. Documents browse peers as files and host proposals. The horizontal canvas still does not return — it lost on extent in the fan case, which is the case Column and Documents both already serve.</p>
+    </div>
+    <div class="note">
+      <h4>Where the explorer finally has a home</h4>
+      <p>ADR-299 reserved <code>origin: author | explorer</code> on every node so a machine-proposed thread could be adopted. Nothing ever set it and no adoption UI was built across nine phases, because a badge on a tree node cannot say “read this whole path and keep it or bin it”. A document can — and the explorer emits <b>transcript files</b>, which is what this view is made of.</p>
+    </div>
+    <div class="note warnb">
+      <h4>Do not auto-switch</h4>
+      <p>Picking the mode from the shape is tempting and wrong: a view that rearranges itself when you add a test is a view you stop trusting. Default to Column, remember the choice per project, and let the author switch.</p>
+    </div>
+    <div class="note">
+      <h4>This retires the coalescing rule</h4>
+      <p>The “a run shares a column” fix existed to make Column survive a chain. With a List mode, a chain simply is not viewed in columns. One switcher replaces a special case in the column layout — and special cases in a layout are what run-folding was.</p>
+    </div>
+  </div>
+
+  <footer>
+    Fernhill is the real <code>branch-stories/fernhill</code> suite — 22 nodes, depth 3,
+    12 children off <code>arrival</code>. The eight-way split of <code>dawn-lose</code>
+    is hypothetical; it is 115 commands today and nobody has proposed splitting it.
+    Rows in the fan panels are truncated for the mock, which is a limit of this page,
+    not a proposed affordance. The two proposed documents are illustrative: the explorer
+    (ADR-131 / ADR-294) is <b>unbuilt</b>, and its findings-to-file shape comes from the
+    2026-08-04 research doc, §6. Dungeo is absent by ADR-302 D9.
+  </footer>
+</div>

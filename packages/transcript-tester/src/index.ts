@@ -30,9 +30,21 @@ export { classifyChange, BlessPolicy, runCycle, startWatch } from './watch.js';
 export type { ChangeTarget, WatchRunIO, WatchConfig } from './watch.js';
 
 // Reporter
-export { reportTranscript, reportTestRun, getExitCode } from './reporter.js';
+export {
+  reportTranscript,
+  reportTranscriptStart,
+  reportCommandResult,
+  reportTranscriptEnd,
+  reportTestRun,
+  getExitCode,
+} from './reporter.js';
 
-// Aggregation + `test --json` NDJSON record builders (ADR-277 D1)
+// The run-event stream (ADR-277 D1 as amended 2026-08-06): events emitted as
+// the run happens, so a consumer sees a transcript start before it runs.
+export { RunEventStream, ndjsonEventLine, type RunEventWriter } from './run-event-stream.js';
+
+// Aggregation + the DEPRECATED `test --json` record builders (ADR-277 D1). The
+// builders are superseded by RunEventStream above; `aggregateTestRun` is not.
 export {
   aggregateTestRun,
   runStartRecord,

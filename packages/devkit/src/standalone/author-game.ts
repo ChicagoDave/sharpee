@@ -112,17 +112,36 @@ export function loadChordStory(storyFile: string, seed?: number): unknown {
 }
 
 /**
+ * Reports the boundaries of the work that happens before a test can run.
+ *
+ * For a Chord project the compile is the expensive half and it happens INSIDE
+ * this loader, so a caller wrapping the whole call can only report "loading" and
+ * cannot say where the seconds went. Hence the callback rather than timing from
+ * outside.
+ *
+ * The recompile behind `freshStory` (ADR-248's in-process RESTART) is not
+ * reported: it happens inside a command rather than before the run, and
+ * announcing a compile mid-transcript would read as a new run starting.
+ */
+export type LoadPhaseReporter = (
+  name: 'compile' | 'load',
+  status: 'started' | 'finished',
+  detail?: string,
+) => void;
+
+/**
  * Load an author project (or an explicit `.story` file) into a runnable game.
  *
  * @param target a project directory, or a path ending in `.story`
  * @param opts.entry optional story sub-entry (module projects only; ignored
  *   for `.story` sources, matching the platform bundle's contract)
+ * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
  */
 export async function loadAuthorGame(
   target: string,
-  opts?: { entry?: string; seed?: number },
+  opts?: { entry?: string; seed?: number; onPhase?: LoadPhaseReporter },
 ): Promise<LoadedGame> {
   const bootstrap = require('@sharpee/bootstrap') as typeof import('@sharpee/bootstrap');
   const chordGame = (storyFile: string): LoadedGame => {
@@ -132,13 +151,24 @@ export async function loadAuthorGame(
     // ADR-248: freshStory recompiles so an in-process RESTART reboots fresh
     // (same master seed).
     const masterSeed = opts?.seed ?? Date.now();
-    return bootstrap.assembleGame(loadChordStory(storyFile, masterSeed), {
+    const name = path.basename(storyFile);
+    opts?.onPhase?.('compile', 'started', name);
+    const compiled = loadChordStory(storyFile, masterSeed);
+    opts?.onPhase?.('compile', 'finished', name);
+    opts?.onPhase?.('load', 'started', name);
+    const game = bootstrap.assembleGame(compiled, {
       freshStory: () => loadChordStory(storyFile, masterSeed),
       seed: masterSeed,
     });
+    opts?.onPhase?.('load', 'finished', name);
+    return game;
   };
   if (target.endsWith('.story')) return chordGame(target);
   const storyFile = findStoryFile(target);
   if (storyFile) return chordGame(storyFile);
-  return bootstrap.loadStory(target, { entry: opts?.entry, seed: opts?.seed });
+  // A module project has no compile step — its build already happened.
+  opts?.onPhase?.('load', 'started', path.basename(target));
+  const loaded = await bootstrap.loadStory(target, { entry: opts?.entry, seed: opts?.seed });
+  opts?.onPhase?.('load', 'finished', path.basename(target));
+  return loaded;
 }

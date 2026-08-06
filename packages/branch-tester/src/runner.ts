@@ -190,6 +190,14 @@ export async function runTranscript(
 ): Promise<TranscriptResult> {
   const startTime = Date.now();
 
+  // Announced BEFORE any early return, so a transcript that fails validation is
+  // still a start followed by an end rather than an error from nowhere. The
+  // count comes from the parse, which has already happened.
+  options.observer?.onTranscriptStart?.({
+    file: transcript.filePath,
+    commandCount: (transcript.items ?? []).filter((item) => item.type === 'command').length,
+  });
+
   // AC-4: a transcript with parse errors executes nothing. The CLIs validate
   // up front too; this is the runner's own guarantee.
   if (transcript.parseErrors && transcript.parseErrors.length > 0) {
@@ -324,6 +332,14 @@ async function runGolden(
   }
 
   const results: CommandResult[] = [];
+  /**
+   * Accumulate and announce in one step, so the observer's live sequence is
+   * exactly `results` — no second ordering to keep in step with the first.
+   */
+  const record = (result: CommandResult): void => {
+    results.push(result);
+    options.observer?.onCommandResult?.(result);
+  };
   const turns: GoldenTurn[] = [];
   let turnIndex = 0;
   let failed = false;
@@ -338,7 +354,7 @@ async function runGolden(
         // D5: a failed directive fails the transcript, unconditionally.
         // In record mode no .golden is written — a recording made past a
         // failed directive would enshrine a broken session.
-        results.push(directiveFailResult(item.directive!, error));
+        record(directiveFailResult(item.directive!, error));
         failed = true;
         break;
       }
@@ -362,7 +378,7 @@ async function runGolden(
       if (config.events && events.length > 0) turn.events = events;
       if (channels && Object.keys(channels).length > 0) turn.channels = channels;
       turns.push(turn);
-      results.push(goldenPassResult(command, output));
+      record(goldenPassResult(command, output));
     } else {
       const turn = recording!.turns[turnIndex];
       const divergence = diffTurn(turn, actualLines, events, config.events,
@@ -381,7 +397,7 @@ async function runGolden(
             `restore one command before the divergence with --restore ${divergenceSavePath} --seed ${sessionSeed}, ` +
             `then replay: ${command.input}`;
         }
-        results.push({
+        record({
           command,
           actualOutput: output,
           actualEvents: [],
@@ -395,7 +411,7 @@ async function runGolden(
         failed = true;
         break;
       }
-      results.push(goldenPassResult(command, output));
+      record(goldenPassResult(command, output));
     }
     turnIndex++;
   }
@@ -408,7 +424,7 @@ async function runGolden(
   if (!failed) {
     const unfired = unfiredForceError(transcript, engine);
     if (unfired) {
-      results.push(forcesFailResult(transcript, unfired));
+      record(forcesFailResult(transcript, unfired));
       failed = true;
     }
   }
@@ -795,6 +811,14 @@ async function runAssertion(
   startTime: number
 ): Promise<TranscriptResult> {
   const results: CommandResult[] = [];
+  /**
+   * Accumulate and announce in one step, so the observer's live sequence is
+   * exactly `results` — no second ordering to keep in step with the first.
+   */
+  const record = (result: CommandResult): void => {
+    results.push(result);
+    options.observer?.onCommandResult?.(result);
+  };
   /** Opening assertions run once, after the first command flushes the opening. */
   let openingChecked = (transcript.opening?.length ?? 0) === 0;
 
@@ -811,7 +835,7 @@ async function runAssertion(
       if (error) {
         // D5: a failed directive fails the transcript unconditionally and
         // stops it — everything after runs against the wrong world.
-        results.push(directiveFailResult(item.directive!, error));
+        record(directiveFailResult(item.directive!, error));
         break;
       }
       continue;
@@ -822,7 +846,7 @@ async function runAssertion(
     // The tier boundary (D2): with no recording, a command must assert
     // something — a bare command list is bless material, not a passing test.
     if (command.assertions.length === 0) {
-      results.push({
+      record({
         command,
         actualOutput: '',
         actualEvents: [],
@@ -845,10 +869,10 @@ async function runAssertion(
     // ahead of the command that flushed them because that is where they read.
     if (!openingChecked) {
       openingChecked = true;
-      results.push(openingResult(transcript.opening!, engine));
+      record(openingResult(transcript.opening!, engine));
     }
 
-    results.push(result);
+    record(result);
 
     if (options.testingExtension?.setCommandContext) {
       options.testingExtension.setCommandContext(result.command.input, result.actualOutput);
@@ -865,7 +889,7 @@ async function runAssertion(
   if (!results.some(r => !r.passed && !r.expectedFailure && !r.skipped)) {
     const unfired = unfiredForceError(transcript, engine);
     if (unfired) {
-      results.push(forcesFailResult(transcript, unfired));
+      record(forcesFailResult(transcript, unfired));
     }
   }
 

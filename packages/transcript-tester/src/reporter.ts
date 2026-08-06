@@ -28,23 +28,32 @@ export interface ReporterOptions {
 }
 
 /**
- * Report results of running a single transcript
+ * The transcript's opening lines — its path and title.
+ *
+ * Split out of {@link reportTranscript} so the terminal can print it BEFORE the
+ * transcript runs, driven by the runner's observer, rather than after it has
+ * finished. A half-second transcript printed nothing until it was over; a tree
+ * or explorer run would print nothing for minutes.
  */
-export function reportTranscript(
-  result: TranscriptResult,
-  options: ReporterOptions = {}
-): void {
-  const { verbose = false, emitTraits = false } = options;
-
+export function reportTranscriptStart(info: { filePath: string; title?: string }): void {
   console.log();
-  console.log(chalk.bold(`Running: ${result.transcript.filePath}`));
-
-  if (result.transcript.header.title) {
-    console.log(chalk.gray(`  "${result.transcript.header.title}"`));
+  console.log(chalk.bold(`Running: ${info.filePath}`));
+  if (info.title) {
+    console.log(chalk.gray(`  "${info.title}"`));
   }
-
   console.log();
+}
 
+/** One command's row. The live counterpart of the per-command loop below. */
+export function reportCommandResult(result: CommandResult, options: ReporterOptions = {}): void {
+  reportCommand(result, options.verbose ?? false, options.emitTraits ?? false);
+}
+
+/**
+ * The transcript's closing lines: the error banner for a transcript that never
+ * ran (ADR-277 D1 — never a silent skip), or the bless/match line and summary.
+ */
+export function reportTranscriptEnd(result: TranscriptResult): void {
   // Error-status transcript (ADR-277 D1): it never ran — say why, loudly,
   // instead of rendering an empty command list as if nothing were wrong.
   if (result.status === 'error') {
@@ -52,11 +61,6 @@ export function reportTranscript(
     return;
   }
 
-  for (const cmd of result.commands) {
-    reportCommand(cmd, verbose, emitTraits);
-  }
-
-  // Summary line
   console.log();
   if (result.blessed) {
     console.log(chalk.green(`  ✓ blessed → ${result.goldenPath} (${result.commands.length} turns)`));
@@ -64,6 +68,31 @@ export function reportTranscript(
     console.log(chalk.green(`  ✓ matched recording ${result.goldenPath}`));
   }
   reportTranscriptSummary(result);
+}
+
+/**
+ * Report results of running a single transcript, after the fact.
+ *
+ * Retained for callers that have a finished result and no observer (the bundle,
+ * the tree runner, watch mode). Implemented in terms of the three live pieces
+ * above, so the post-hoc and live renderings cannot drift apart — there is one
+ * implementation of each line, not two.
+ */
+export function reportTranscript(
+  result: TranscriptResult,
+  options: ReporterOptions = {}
+): void {
+  const { verbose = false, emitTraits = false } = options;
+
+  reportTranscriptStart({ filePath: result.transcript.filePath, title: result.transcript.header.title });
+
+  if (result.status !== 'error') {
+    for (const cmd of result.commands) {
+      reportCommandResult(cmd, { verbose, emitTraits });
+    }
+  }
+
+  reportTranscriptEnd(result);
 }
 
 /**

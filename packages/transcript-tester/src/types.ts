@@ -444,6 +444,43 @@ export interface TestingExtensionInterface {
   addAnnotation?(type: string, text: string, world: any): any;
 }
 
+/**
+ * Watches a transcript execute, as it executes.
+ *
+ * The runner otherwise reports only by returning a finished `TranscriptResult`,
+ * which forces every consumer — the terminal reporter, the `--json` stream — to
+ * wait for the whole file. A transcript takes about half a second and a tree or
+ * an explorer run takes minutes, so "wait for the whole thing" is the difference
+ * between a progress bar and watching the story play.
+ *
+ * Deliberately domain-shaped, not wire-shaped: no schema version, no sequence
+ * number, no envelope. The runner reports what happened; translating that into
+ * the ADR-277 event stream is the CLI's job, which keeps `@sharpee/ide-protocol`
+ * out of the execution path.
+ *
+ * Every method is optional and every implementation must be non-throwing —
+ * observation must not be able to fail a test. Callbacks are synchronous and run
+ * inline, so a slow observer slows the run.
+ */
+export interface RunObserver {
+  /**
+   * A transcript is about to run — fired before its first command, and before
+   * any early validation failure, so a transcript that never executes is still
+   * announced rather than appearing from nowhere at its own error.
+   *
+   * @param info `commandCount` is the transcript's command total, known from the
+   *   parse that precedes execution.
+   */
+  onTranscriptStart?(info: { file: string; commandCount: number }): void;
+  /**
+   * One command finished, in execution order. Fires for every result the run
+   * accumulates — including the synthesized opening-assertion result and
+   * directive failures, so the live sequence matches the returned
+   * `TranscriptResult.commands` exactly.
+   */
+  onCommandResult?(result: CommandResult): void;
+}
+
 export interface RunnerOptions {
   verbose?: boolean;
   emitTraits?: boolean;  // Include trait snapshots for entities referenced in events
@@ -479,6 +516,12 @@ export interface RunnerOptions {
    * feeds it each command's `system.draw` trace events.
    */
   coverage?: CoverageTracker;
+  /**
+   * Watches execution as it happens (live terminal output, the `--json` event
+   * stream). Absent → the runner behaves exactly as it did before observers
+   * existed.
+   */
+  observer?: RunObserver;
 }
 
 /**
