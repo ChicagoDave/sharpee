@@ -110,7 +110,7 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
     // 1. Generate the consumer package.json (+ vendor tarballs for local mode).
     const vendor = join(tmp, 'vendor');
     mkdirSync(vendor, { recursive: true });
-    const { closure, devClosure, haveTranscriptTester } = generateConsumer({
+    const { closure, devClosure, haveHarness } = generateConsumer({
       mode,
       storyPkgPath,
       stagingDir,
@@ -121,12 +121,12 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
     log(`closure (${closure.length}): ${closure.map((n) => n.replace('@sharpee/', '')).join(', ')}`);
     if (devClosure.length) {
       log(
-        `dev closure (${devClosure.length}, transcript-tester only): ` +
+        `dev closure (${devClosure.length}, devkit only): ` +
           devClosure.map((n) => n.replace('@sharpee/', '')).join(', '),
       );
     }
-    if (!haveTranscriptTester) {
-      throw new Error('@sharpee/transcript-tester missing from staging — cannot run transcripts');
+    if (!haveHarness) {
+      throw new Error('@sharpee/devkit missing from staging — cannot run transcripts');
     }
 
     // 2. Copy story src (minus platform entry points) + tsconfig.
@@ -161,7 +161,7 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
     const rel = transcripts.map((t) => join('transcripts', basename(t)));
     if (opts.chain) {
       try {
-        run('npx', ['transcript-test', '.', '--chain', ...rel]);
+        run('npx', ['sharpee', 'test', '.', '--chain', ...rel]);
         return { passed: transcripts.length, failed: 0, failures: [], ran: true };
       } catch {
         return { passed: 0, failed: transcripts.length, failures: ['chain'], ran: true };
@@ -171,7 +171,7 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
     const failures: string[] = [];
     for (const r of rel) {
       try {
-        run('npx', ['transcript-test', '.', r]);
+        run('npx', ['sharpee', 'test', '.', r]);
         passed++;
       } catch {
         failures.push(basename(r, '.transcript'));

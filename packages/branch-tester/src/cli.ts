@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Branch Tester CLI (ADR-302).
+ * Branch Tester CLI (ADR-302) — dev-only entry point, NO LONGER A PUBLISHED BIN.
  *
- * Usage:
- *   branch-test <story-path> [transcript-files...]
- *   branch-test <story-path> --all
- *   branch-test <story-path> --verbose
+ * The `branch-test` bin was retired in favour of `sharpee test --tree` (devkit),
+ * which drives this package as a LIBRARY and can load a Chord `.story` — which
+ * this file never could, since Chord compilation lives in the bundle.
+ *
+ * Usage (run the file directly; there is no installed command):
+ *   node packages/branch-tester/dist/cli.js <story-path> [transcript-files...]
+ *   node packages/branch-tester/dist/cli.js <story-path> --all
  */
 
 import * as path from 'path';
@@ -14,8 +17,9 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import { parseTranscriptFile, validateTranscript } from './parser.js';
 import { runTranscript } from './runner.js';
-import { assembleTree, type TreeNode } from './tree.js';
+import { assembleTree } from './tree.js';
 import { runTree } from './tree-runner.js';
+import { createRootGameFactory } from './game-factory.js';
 import { formatTreeRun } from './tree-report.js';
 import {
   reportTranscript,
@@ -118,12 +122,17 @@ function printHelp(): void {
   console.log(`
 Branch Tester - Test Sharpee stories as a tree of transcripts
 
+This is a dev-only entry point. There is no installed \`branch-test\` command:
+authors run \`sharpee test --tree\`, and the in-repo path is
+\`dist/cli/sharpee.js --test\` over transcripts under branch-stories/.
+This entry point cannot load a Chord \`.story\` — that lives in the bundle.
+
 Usage:
-  transcript-test <story-path> [transcript-files...] [options]
-  transcript-test <story-path> --play
+  node packages/branch-tester/dist/cli.js <story-path> [transcript-files...] [options]
+  node packages/branch-tester/dist/cli.js <story-path> --play
 
 Arguments:
-  story-path         Path to the story directory (e.g., stories/dungeo)
+  story-path         Path to the story directory (e.g., branch-stories/fernhill)
   transcript-files   One or more .transcript files to run
 
 Options:
@@ -139,12 +148,11 @@ Options:
   -o, --output-dir <dir> Write timestamped results to directory (JSON + text report)
   -h, --help             Show this help message
 
-Examples:
-  transcript-test stories/dungeo --play
-  transcript-test stories/dungeo tests/navigation.transcript
-  transcript-test stories/dungeo --all
-  transcript-test stories/dungeo tests/*.transcript --verbose
-  transcript-test stories/dungeo --all -o test-results
+Examples (CLI="node packages/branch-tester/dist/cli.js"):
+  $CLI branch-stories/fernhill --all
+  $CLI branch-stories/fernhill tests/transcripts/arrival.transcript
+  $CLI branch-stories/fernhill --all --verbose
+  $CLI branch-stories/fernhill --all -o test-results
 `);
 }
 
@@ -422,21 +430,11 @@ async function main(): Promise<void> {
   // fresh clock seed per boot, and its replayed prefix would then diverge from
   // the one its first child saw. Whatever the first boot resolved is remembered
   // and re-pinned.
-  const bootedSeeds = new Map<string, number>();
-  const freshGameForRoot = async (root: TreeNode): Promise<TestableGame> => {
-    const header = root.transcript;
-    const game = await loadStory(
-      options.storyPath,
-      header.header.entry,
-      bootedSeeds.get(root.stem) ?? header.config?.seeds?.[0],
-      header.config?.channels ?? []
-    );
-    if (!bootedSeeds.has(root.stem)) {
-      const seed = (game as { engine?: { getMasterSeed?(): number } }).engine?.getMasterSeed?.();
-      if (seed !== undefined) bootedSeeds.set(root.stem, seed);
-    }
-    return game;
-  };
+  const freshGameForRoot = createRootGameFactory<TestableGame>({
+    load: (spec) => loadStory(options.storyPath, spec.entry, spec.seed, spec.channels),
+    masterSeedOf: (game) =>
+      (game as { engine?: { getMasterSeed?(): number } }).engine?.getMasterSeed?.(),
+  });
 
   let run;
   try {

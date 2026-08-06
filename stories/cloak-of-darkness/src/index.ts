@@ -10,7 +10,7 @@
  * (which would disturb the sawdust).
  */
 
-import { Story, StoryConfig } from '@sharpee/engine';
+import type { Story, StoryConfig } from '@sharpee/engine';
 import type { GameEngine, CustomVocabulary } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 // @ts-ignore - lang-en-us types not available yet
@@ -26,10 +26,12 @@ import {
   SupporterTrait,
   SceneryTrait,
   ReadableTrait,
-  IScopeRule,
   EntityType,
   Direction
 } from '@sharpee/world-model';
+// `IScopeRule` is type-only: it has no runtime export, so a value import survives
+// the ESM emit and Node rejects the module. Only the esbuild bundle hid this.
+import type { IScopeRule } from '@sharpee/world-model';
 import type { IGameEvent, Effect, WorldQuery } from '@sharpee/event-processor';
 
 /**

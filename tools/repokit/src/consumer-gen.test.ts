@@ -50,18 +50,18 @@ describe('assertVendoredClosureComplete', () => {
   });
 
   it('throws naming the unvendored dep and the package that requires it', () => {
-    // The #201 shape: transcript-tester is vendored, its bootstrap dep is not, so npm
+    // The #201 shape: devkit is vendored, its bootstrap dep is not, so npm
     // would resolve bootstrap from the registry and fail install with ETARGET.
     const declared: Record<string, string[]> = {
-      '@sharpee/transcript-tester': ['@sharpee/core', '@sharpee/bootstrap'],
+      '@sharpee/devkit': ['@sharpee/core', '@sharpee/bootstrap'],
       '@sharpee/core': [],
     };
     expect(() =>
       assertVendoredClosureComplete(
-        ['@sharpee/transcript-tester', '@sharpee/core'],
+        ['@sharpee/devkit', '@sharpee/core'],
         (n) => declared[n] ?? [],
       ),
-    ).toThrow(/@sharpee\/bootstrap \(required by @sharpee\/transcript-tester\)/);
+    ).toThrow(/@sharpee\/bootstrap \(required by @sharpee\/devkit\)/);
   });
 });
 
@@ -123,10 +123,10 @@ describe('staging-backed generation', () => {
     writePkg(join(staging, 'core'), '@sharpee/core', []);
     writePkg(join(staging, 'world-model'), '@sharpee/world-model', ['@sharpee/core']);
     writePkg(join(staging, 'engine'), '@sharpee/engine', ['@sharpee/core', '@sharpee/world-model']);
-    // Mirrors the real graph (#201): transcript-tester's deps are mostly covered by any
+    // Mirrors the real graph (#201): devkit's deps are mostly covered by any
     // story's runtime closure, except bootstrap — which no story imports at runtime.
     writePkg(join(staging, 'bootstrap'), '@sharpee/bootstrap', ['@sharpee/core']);
-    writePkg(join(staging, 'transcript-tester'), '@sharpee/transcript-tester', [
+    writePkg(join(staging, 'devkit'), '@sharpee/devkit', [
       '@sharpee/engine',
       '@sharpee/bootstrap',
     ]);
@@ -142,7 +142,7 @@ describe('staging-backed generation', () => {
   it('scanStaging maps @sharpee package names to their staging dirs', () => {
     const map = scanStaging(staging);
     expect(map['@sharpee/engine']).toBe('engine');
-    expect(map['@sharpee/transcript-tester']).toBe('transcript-tester');
+    expect(map['@sharpee/devkit']).toBe('devkit');
   });
 
   it('readSharpeeSeed returns only the @sharpee deps', () => {
@@ -160,14 +160,14 @@ describe('staging-backed generation', () => {
       registryVersion: '0.9.113',
     });
     expect(result.closure).toEqual(['@sharpee/engine']);
-    expect(result.haveTranscriptTester).toBe(true);
+    expect(result.haveHarness).toBe(true);
 
     const pkg = JSON.parse(readFileSync(out, 'utf8'));
     // Only the story's direct @sharpee seed is declared; npm pulls core/world-model transitively.
     expect(pkg.dependencies).toEqual({ '@sharpee/engine': '0.9.113' });
-    // transcript-tester is a dev dep (supplies the bin), not a runtime dep.
-    expect(pkg.devDependencies['@sharpee/transcript-tester']).toBe('0.9.113');
-    expect(pkg.dependencies['@sharpee/transcript-tester']).toBeUndefined();
+    // devkit is a dev dep (supplies the bin), not a runtime dep.
+    expect(pkg.devDependencies['@sharpee/devkit']).toBe('0.9.113');
+    expect(pkg.dependencies['@sharpee/devkit']).toBeUndefined();
     // Third-party deps are NOT declared as @sharpee deps.
     expect(pkg.dependencies.fflate).toBeUndefined();
   });
@@ -183,7 +183,7 @@ describe('staging-backed generation', () => {
   });
 
   // Real-path (rule 13a): drives the production `npm pack` subprocess, no stub.
-  it('generateConsumer (local) vendors transcript-tester\'s own closure as dev deps', () => {
+  it('generateConsumer (local) vendors devkit\'s own closure as dev deps', () => {
     const out = join(root, 'consumer-package.json');
     const vendor = join(root, 'vendor');
     mkdirSync(vendor, { recursive: true });
@@ -197,15 +197,15 @@ describe('staging-backed generation', () => {
 
     // The story's runtime closure is unchanged — bootstrap is not a runtime dep.
     expect(result.closure).toEqual(['@sharpee/core', '@sharpee/engine', '@sharpee/world-model']);
-    // bootstrap is vendored solely for transcript-tester (#201: it used to be omitted,
+    // bootstrap is vendored solely for devkit (#201: it used to be omitted,
     // so npm fell through to the registry and failed install with ETARGET).
     expect(result.devClosure).toEqual(['@sharpee/bootstrap']);
 
     const pkg = JSON.parse(readFileSync(out, 'utf8'));
     expect(pkg.dependencies['@sharpee/bootstrap']).toBeUndefined();
     expect(pkg.devDependencies['@sharpee/bootstrap']).toBe('file:vendor/sharpee-bootstrap-1.0.0.tgz');
-    expect(pkg.devDependencies['@sharpee/transcript-tester']).toBe(
-      'file:vendor/sharpee-transcript-tester-1.0.0.tgz',
+    expect(pkg.devDependencies['@sharpee/devkit']).toBe(
+      'file:vendor/sharpee-devkit-1.0.0.tgz',
     );
     // Every file: ref resolves to a tarball that actually exists on disk.
     const tarballs = new Set(readdirSync(vendor));
@@ -215,14 +215,14 @@ describe('staging-backed generation', () => {
     ]) {
       if (ref.startsWith('file:vendor/')) expect(tarballs.has(ref.slice(12))).toBe(true);
     }
-    // Runtime closure + bootstrap + transcript-tester, each packed once.
+    // Runtime closure + bootstrap + devkit, each packed once.
     expect(tarballs.size).toBe(5);
   }, 30_000);
 
   it('generateConsumer (local) throws before packing when a vendored dep is unstaged', () => {
-    // transcript-tester declares a dep that staging does not have: previously this was
+    // devkit declares a dep that staging does not have: previously this was
     // silently skipped and only surfaced as an ETARGET at `npm install`.
-    writePkg(join(staging, 'transcript-tester'), '@sharpee/transcript-tester', ['@sharpee/ghost']);
+    writePkg(join(staging, 'devkit'), '@sharpee/devkit', ['@sharpee/ghost']);
     const vendor = join(root, 'vendor');
     mkdirSync(vendor, { recursive: true });
     expect(() =>
@@ -233,7 +233,7 @@ describe('staging-backed generation', () => {
         vendorDir: vendor,
         outPkgPath: join(root, 'consumer-package.json'),
       }),
-    ).toThrow(/@sharpee\/ghost \(required by @sharpee\/transcript-tester\)/);
+    ).toThrow(/@sharpee\/ghost \(required by @sharpee\/devkit\)/);
     // "before packing": nothing was written to the vendor dir.
     expect(readdirSync(vendor)).toEqual([]);
   });

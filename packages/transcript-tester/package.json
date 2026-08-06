@@ -4,9 +4,6 @@
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "transcript-test": "./dist/cli.js"
-  },
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",

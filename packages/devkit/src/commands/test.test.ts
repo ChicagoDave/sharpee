@@ -128,6 +128,77 @@ describe('sharpee test (author project, Chord source)', () => {
   });
 });
 
+describe('sharpee test --tree (ADR-302 tree run)', () => {
+  let treeDir: string;
+
+  beforeAll(() => {
+    // A separate project: the flat suite above scans the same tests/ subtree,
+    // and a `continues:` file there would change what THAT suite runs.
+    treeDir = mkdtempSync(join(tmpdir(), 'devkit-test-tree-'));
+    writeFileSync(join(treeDir, 'mini.story'), STORY);
+    mkdirSync(join(treeDir, 'tests', 'transcripts'), { recursive: true });
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'spine.transcript'),
+      `title: Spine\nseed: 42\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+    );
+    // Two children off one parent: the prefix runs once for the first and is
+    // REPLAYED for the second (D17), which is what the tally must show.
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'lamp.transcript'),
+      `title: Lamp\ncontinues: spine\n\n---\n\n> examine the brass lamp\n[OK: contains "gleams dully"]\n`,
+    );
+    writeFileSync(
+      join(treeDir, 'tests', 'transcripts', 'den.transcript'),
+      `title: Den again\ncontinues: spine\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+    );
+  });
+
+  afterAll(() => rmSync(treeDir, { recursive: true, force: true }));
+
+  it('runs every root-to-leaf path against the REAL compiled story and passes (exit 0)', async () => {
+    const { code, out } = await muted(() => runTestCommand([treeDir, '--tree']));
+
+    expect(code).toBe(0);
+    // 3 nodes ran, and the second child replayed the parent's one command
+    // rather than the parent running twice — the D17 arithmetic, asserted.
+    expect(out).toContain('3 passed');
+    expect(out).toMatch(/4 commands \(3 authored \+ 1 replayed\)/);
+  });
+
+  it('reports a dangling parent as a tree defect and executes nothing (exit 2)', async () => {
+    const orphanDir = mkdtempSync(join(tmpdir(), 'devkit-test-orphan-'));
+    try {
+      writeFileSync(join(orphanDir, 'mini.story'), STORY);
+      mkdirSync(join(orphanDir, 'tests', 'transcripts'), { recursive: true });
+      writeFileSync(
+        join(orphanDir, 'tests', 'transcripts', 'orphan.transcript'),
+        `title: Orphan\ncontinues: nonexistent\n\n---\n\n> look\n[OK: contains "den"]\n`,
+      );
+
+      const { code, err } = await muted(() => runTestCommand([orphanDir, '--tree']));
+
+      expect(code).toBe(2);
+      expect(err).toContain('nonexistent');
+    } finally {
+      rmSync(orphanDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects --tree with --chain rather than silently picking one (exit 2)', async () => {
+    const { code, err } = await muted(() => runTestCommand([treeDir, '--tree', '--chain']));
+
+    expect(code).toBe(2);
+    expect(err).toContain('mutually exclusive');
+  });
+
+  it('refuses --tree with --json while the record stream carries no parentage (exit 2)', async () => {
+    const { code, err } = await muted(() => runTestCommand([treeDir, '--tree', '--json']));
+
+    expect(code).toBe(2);
+    expect(err).toContain('does not yet carry tree records');
+  });
+});
+
 describe('author-game story resolution', () => {
   it('finds the single root .story; two is a named error, never a guess', () => {
     expect(findStoryFile(projectDir)).toBe(join(projectDir, 'mini.story'));

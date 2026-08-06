@@ -97,6 +97,13 @@ project — the same prerequisite `build` already has. Verification (2026-06-20)
   directly — devkit + typescript as devDeps resolve on the npm-script PATH — and the straggler `npx`
   calls in the standalone toolchain are removed.
 
+  > **AMENDED 2026-08-05 (session 51b5f4).** `npx transcript-test` is no longer a
+  > choice to make: the `transcript-test` and `branch-test` bins were **retired**,
+  > so no scaffold can call them. The transcript step is `sharpee test`
+  > (`sharpee test --tree` for an ADR-302 tree), which is what this bullet already
+  > wanted — devkit's own bin, invoked directly. `tools/repokit`'s `test:npm` was
+  > re-pointed the same session and is the worked example.
+
 **The IDE uses this same scaffold.** Creating a new story runs the installed `sharpee init`; the IDE
 builds/introspects by invoking the project's local `sharpee` bin (`node_modules/.bin`) — exactly what
 the template's scripts do. One scaffold definition, shipped in `@sharpee/devkit`, serves both CLI

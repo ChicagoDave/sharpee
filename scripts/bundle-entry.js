@@ -648,24 +648,29 @@ Examples:
     // and its replayed prefix would diverge from the one its first child saw.
     // The seed the first boot actually resolved is therefore remembered and
     // re-pinned, and the announcement is made once.
-    const bootedSeeds = new Map();
-    const freshGameForRoot = async (root) => {
-      const config = root.transcript.config || {};
-      const remembered = bootedSeeds.get(root.stem);
-      const resolved = remembered ?? resolveSeed(root.transcript.seed);
-      const game = loadStoryAndCreateGame(
-        options.storyPath,
-        root.transcript.header && root.transcript.header.entry,
-        resolved.seed,
-        config.channels || []
-      );
-      if (!remembered) {
-        const seed = game.engine.getMasterSeed();
-        bootedSeeds.set(root.stem, { seed, source: resolved.source });
-        console.log(`Seed: ${seed} (${resolved.source})`);
-      }
-      return game;
-    };
+    // The re-pin rule itself lives in @sharpee/branch-tester's
+    // `createRootGameFactory` — this was a hand-copy of it, and the copy is why
+    // the rule had to be rediscovered when only the package side was updated.
+    // What stays here is what is genuinely the CLI's: `resolveSeed`, which lets
+    // `--seed` and `--vary` outrank the transcript's own pin. It runs inside
+    // `load`, so an override wins on the first boot AND on every re-boot.
+    let lastSource = 'clock';
+    const freshGameForRoot = branchTester.createRootGameFactory({
+      load: (spec) => {
+        const resolved = resolveSeed(spec.seed);
+        lastSource = resolved.source;
+        return loadStoryAndCreateGame(
+          options.storyPath,
+          spec.entry,
+          resolved.seed,
+          spec.channels
+        );
+      },
+      masterSeedOf: (game) => game.engine.getMasterSeed(),
+      // `load` runs immediately before this, awaited, so `lastSource` is that
+      // boot's. Announced once per root, not once per fork below it.
+      onFirstBoot: (stem, seed) => console.log(`Seed: ${seed} (${lastSource})`)
+    });
 
     const run = await branchTester.runTree(tree, freshGameForRoot, {
       verbose: options.verbose,

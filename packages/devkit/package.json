@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
+    "@sharpee/branch-tester": "workspace:*",
     "@sharpee/chord": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
