@@ -14,11 +14,20 @@ Started 2026-08-06.
 A Publish tab in the right panel, alongside Build / Play / Testing / Index /
 Diagnosis.
 
-Scope not yet defined. Related: ADR-284 makes an IFID a publishing
-precondition, and the Problems panel now mints one on demand
-(`StoryHeaderIFID`), so that precondition is reachable from inside the IDE.
+**Scoped 2026-08-06** — `phase-7-publish-scope.md`. ADR-284 (ACCEPTED) already
+decides the design; its one stated implementation blocker (Q-2, where Publish
+lives) is answered by this item's right-panel tab. What is missing is the
+implementation: **`sharpee publish` does not exist**, while everything beneath it
+does — the browser build already emits `dist/web/<id>/index.html` (the itch.io
+shape), already copies `assets/`, and the IFID precondition is now mintable from
+the Problems panel. Publish v1 = build + zip + a hard refusal on a missing IFID
+(ADR-298 D5).
 
-**Status**: not started.
+Needs a ruling: ADR-284's Acceptance 1 names a "customized Web Template", but
+ADR-286's `.templates` DSL is not implemented. §6.1 recommends reading it against
+the `browser/<storyId>.css` override that does exist, and amending the ADR.
+
+**Status**: scoped, not started. No dependencies — can run at any point.
 
 ### 2. Integrated documentation
 

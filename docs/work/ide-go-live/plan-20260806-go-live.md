@@ -21,7 +21,7 @@ Phase 3  Documentation tab             (item 2b)    DONE 2026-08-06 (item 8 fold
 Phase 4  Transcript discovery pass     (item 7.1)   no dependencies
 Phase 5  Transcript editor             (item 3)     needs Phase 4
 Phase 6  Transcript acceptance pass    (item 7.2)   needs Phase 5
-Phase 7  Publish tab                   (item 1)     needs scoping first
+Phase 7  Publish tab                   (item 1)     SCOPED 2026-08-06 — ready to start
 Phase 8  DMG                           (item 4)     needs Phases 3 and 6
 
 Added by Phase 2:
@@ -296,10 +296,28 @@ tests say. The resulting suite is what Phase 8 ships.
 
 ## Phase 7 — Publish tab (item 1)
 
+**Scoping step: COMPLETE** — 2026-08-06, session 20260806-1650.
+`phase-7-publish-scope.md`. The phase is unblocked and can start any time.
+
+Headline: Publish is already designed — ADR-284 (ACCEPTED) decides D1 (mechanics
+in devkit, IDE invokes the toolchain, no IDE-only path) and D2 (v1 artifact is a
+zip of the self-contained browser build). Its one stated implementation blocker,
+Q-2 "where does Publish live", is answered by item 1's right-panel tab. So Phase
+7 builds what ADR-284 specified and nobody has built: **`sharpee publish` does
+not exist** (no `publish` case in `packages/devkit/src/cli.ts`), while
+everything under it does — `dist/web/<id>/index.html` is already the itch.io
+shape, `assets/` is already copied, the IFID is already mintable in-IDE. Publish
+v1 is build + zip + the ADR-298 D5 refusal on a missing IFID.
+
+One ruling needed: ADR-284 Acceptance 1 names a "customized Web Template", but
+ADR-286's `.templates` DSL **is not implemented** (the string appears nowhere in
+devkit or chord source). Recommendation in §6.1 — read it against the
+`browser/<storyId>.css` override that does exist, and amend the ADR, rather than
+making Phase 7 wait on an unscoped DSL.
+
 **Goal.** Publishing reachable from the IDE.
 
-**Scope is not yet defined and this phase cannot start without it.** The
-scoping step is small and can happen any time:
+**Original scoping questions, now answered in the scope document:**
 
 - What "publish" means here — produce a distributable, upload somewhere,
   register an IFID, generate an iFiction record, or some subset.
