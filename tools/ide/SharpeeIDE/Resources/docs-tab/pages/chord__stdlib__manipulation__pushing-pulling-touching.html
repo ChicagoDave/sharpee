@@ -1,0 +1,71 @@
+<p><strong>push</strong> (<code>pushing</code>) covers the verbs <code>push</code>, <code>press</code>, <code>shove</code>, <code>move</code>, plus the directional form <code>move X &lt;direction&gt;</code> (ADR-230 D4 ruling: <code>move</code> is manipulation, never movement, so the direction rides into the pushing action, not going). Needs the <code>pushable</code> trait; pushing anything else gets <code>fixed_in_place</code> (scenery) or <code>pushing_does_nothing</code>. The trait's <code>pushType</code> picks the behavior. A <code>button</code> is the one genuinely stateful push: if the entity is also <code>switchable</code>, pushing toggles it (<code>button_clicks</code> when it is a button, <code>switch_toggled</code> otherwise), and a non-switchable button just clicks (<code>button_pushed</code>). A <code>heavy</code> entity needs a direction to budge (<code>pushed_with_effort</code>) and refuses without one (<code>wont_budge</code>). A <code>moveable</code> entity slides when pushed with a direction (<code>pushed_direction</code>, or <code>reveals_passage</code> when the trait says it hides something) and gets nudged without one (<code>pushed_nudged</code>). Outside the button toggle, stdlib <strong>narrates</strong> movement but relocates nothing: the story reacts to <code>pushed</code> (it carries the direction) or an <code>after pushing it</code> clause to actually change the world; which wall opens is puzzle logic, not platform logic. One honest gap: from a <code>.story</code> file, bare <code>pushable</code> composes the default button configuration, and selecting <code>heavy</code> or <code>moveable</code> is TypeScript territory today.</p>
+<p><strong>pull</strong> (<code>pulling</code>) covers the verbs <code>pull</code>, <code>drag</code>, <code>yank</code>, <code>tug</code>. Needs <code>pullable</code>. A successful pull sets the trait's state to <code>pulled</code> (a second pull refuses <code>already_pulled</code>) and bumps its <code>pullCount</code>; a worn item refuses <code>worn</code>. Everything a pull <em>means</em> (the lever opens the sluice) is story logic reacting to <code>pulled</code> or written as an <code>on pulling it</code> / <code>after pulling it</code> clause.</p>
+<p><strong>touch</strong> (<code>touching</code>) covers the verbs <code>touch</code>, <code>feel</code>, <code>rub</code>, <code>pat</code>, <code>stroke</code>, <code>poke</code>, <code>prod</code>. No trait needed, no state changed; the reply is inferred from what the thing is: a lit light source <code>feels_hot</code>, a running device <code>feels_warm</code> (or <code>device_vibrating</code>), wearables <code>feels_soft</code>, doors <code>feels_smooth</code>, containers and supporters <code>feels_hard</code> (a container with drink in it sloshes, <code>liquid_container</code>), drinkables <code>feels_wet</code>, scenery <code>immovable_object</code>. Otherwise the verb itself answers (<code>poked</code>, <code>patted</code>, <code>stroked</code>, <code>touched_gently</code>, <code>touched</code>).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Signal Box
+  a room
+
+  A cramped cabin of levers and brass above the junction.
+
+create the signal lever
+  aka lever
+  pullable
+  scenery
+  in the Signal Box
+
+  A tall iron lever, worn bright at the grip.
+
+  after pulling it
+    phrase lever-thrown
+  end after
+
+  phrase lever-thrown:
+    Somewhere down the line, the semaphore arm clanks to clear.
+
+create the brass button
+  aka button
+  pushable
+  scenery
+  in the Signal Box
+
+  A brass button labelled BELL.
+
+create the iron stove
+  aka stove
+  scenery
+  in the Signal Box
+
+  A squat iron stove, cold since spring.
+
+create the stationmaster's cap
+  aka cap
+  wearable
+  in the Signal Box
+
+  A red wool cap with a shiny peak.
+
+create the player
+  starts in the Signal Box</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; push the stove
+The iron stove is fixed in place.
+
+&gt; move the button north
+You push the brass button.
+
+&gt; pull the lever
+You pull the signal lever.
+
+Somewhere down the line, the semaphore arm clanks to clear.
+
+&gt; pull the lever
+The signal lever has already been pulled.
+
+&gt; touch the cap
+The stationmaster's cap feels soft.
+
+&gt; touch the stove
+The iron stove is solid and immovable.</code></pre>
+<p>The platform owns everything stateful here (the scenery refusal, the button push under <code>move</code>'s manipulation channel, the <code>already_pulled</code> gate, the wool and iron inferences), and the one line that changes anything beyond the signal box is the story's <code>after pulling it</code> reaction.</p>
+<table><thead><tr><th></th><th>push (<code>pushing-*</code>)</th><th>pull (<code>pulling-*</code>)</th><th>touch (<code>touching-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>fixed_in_place</code> · <code>pushing_does_nothing</code> · <code>wont_budge</code> (heavy, no direction) · <code>wearing_it</code> · <code>too_heavy</code></td><td><code>no_target</code> · <code>cant_pull_that</code> · <code>already_pulled</code> · <code>worn</code></td><td><code>no_target</code> (touch refuses almost nothing)</td></tr><tr><td>Success</td><td><code>button_pushed</code> · <code>button_clicks</code> · <code>switch_toggled</code> · <code>pushed_with_effort</code> · <code>pushed_direction</code> · <code>reveals_passage</code> · <code>pushed_nudged</code></td><td><code>pulled</code> · <code>nothing_happens</code></td><td><code>feels_hot</code> · <code>feels_warm</code> · <code>device_vibrating</code> · <code>feels_soft</code> · <code>feels_smooth</code> · <code>feels_hard</code> · <code>liquid_container</code> · <code>feels_wet</code> · <code>feels_normal</code> · <code>immovable_object</code> · <code>touched</code> · <code>touched_gently</code> · <code>poked</code> · <code>prodded</code> · <code>patted</code> · <code>stroked</code></td></tr><tr><td>Events</td><td><code>pushed</code></td><td><code>pulled</code></td><td><code>touched</code> / <code>touch_blocked</code></td></tr></tbody></table>
+<p>Interceptors: <code>on</code>/<code>after pushing it</code>, <code>pulling it</code>, <code>touching it</code> on the target. Touching, with no state of its own, is a favorite probe to hang flavor on (<code>on touching it</code>). Listening plays the same role for sound.</p>

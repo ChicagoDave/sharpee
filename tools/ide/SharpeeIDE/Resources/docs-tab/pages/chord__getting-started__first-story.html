@@ -1,0 +1,56 @@
+<p>One command scaffolds a complete, playable story project:</p>
+<pre><code class="language-shell">sharpee init orchard</code></pre>
+<p><code>init</code> asks a few questions (title, author, blurb); pass <code>-y</code> to accept the defaults. The scaffold is a Chord project. If you want the TypeScript story scaffold instead, that is <code>sharpee init orchard --ts</code>, and it belongs to the <a href="/sharpee/platform">Sharpee platform track</a>.</p>
+<pre><code class="language-text">📖 Create a new Sharpee story
+
+Creating project...
+
+  ✓ Created orchard.story
+  ✓ Created package.json
+  ✓ Created .gitignore
+
+🌐 Adding browser client to your Sharpee project
+
+  ✓ Created src/browser-entry.ts (Chord — compiles story.story at boot)
+  ✓ Created src/version.ts
+  ✓ Created browser/orchard.css
+  ✓ Updated package.json (deps + build:browser)
+
+✅ Project created!
+
+Next steps:
+  cd orchard
+  npm install
+  sharpee build             # story + playable web client → dist/web/&lt;id&gt;/
+  sharpee play              # play in the terminal
+
+Your story lives in orchard.story — edit it and rebuild.</code></pre>
+<p>Run those next steps as printed: <code>cd orchard</code>, then <code>npm install</code> to fetch the platform packages.</p>
+<h2 id="the-story-file">The story file</h2>
+<p>The whole game is <code>orchard.story</code>. The scaffold's version is a one-room world, and it already shows the shape of everything to come:</p>
+<pre><code class="language-chord">story
+  title: orchard
+  authors: you
+  id: orchard
+  story-version: 0.1.0
+  description: An interactive fiction adventure
+
+create the Landing
+  a room
+
+  A quiet place to begin. Doorways lead everywhere a story might go —
+  for now, this landing is the whole world.
+
+create the brass lantern
+  aka lamp
+
+  An old brass lantern, dented but serviceable.
+
+create the player
+  starts in the Landing
+  carries the brass lantern</code></pre>
+<p>Three things to notice, because they are the grammar of every Chord story:</p>
+<ul><li><strong>The story header</strong> opens the file: title, author, and <code>key: value</code> facts about the story as a whole.</li><li><strong><code>create</code> blocks declare entities.</strong> Indented lines state facts about them: <code>a room</code> composes a kind, <code>aka lamp</code> adds a player-facing synonym, <code>starts in</code> and <code>carries</code> place things.</li><li><strong>Bare prose is description.</strong> A paragraph after a blank line inside a <code>create</code> block is what the player sees. No quotes, no keywords; prose is a first-class part of the language.</li></ul>
+<p>Chord is line-oriented and indentation-scoped (spaces, not tabs). There are no braces and no statement terminators; the layout is the structure.</p>
+<h2 id="edit-and-go">Edit and go</h2>
+<p>Change the Landing's description, save, and the next <a href="/chord/getting-started/compose-and-run">build or play</a> picks it up. The story compiles at build time, and mistakes come back as named, line-anchored diagnostics rather than runtime surprises.</p>

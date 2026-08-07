@@ -1,0 +1,105 @@
+<p><strong>identity</strong> is every entity's who-am-I, composed implicitly by every <code>create</code> block: the name, <code>aka</code> aliases, and description land here, along with the article/proper-name machinery the sentence assembler uses, grammatical number, the narration's pronoun set, disambiguation adjectives, and optional weight/volume/size. From Chord: name, aliases, description, <code>plural</code>, <code>concealed</code>, and on persons <code>proper</code> and <code>pronouns</code> (ADR-242); the rest is TypeScript.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Gatehouse
+  a room
+
+  A stone gatehouse with an iron-barred window.
+
+create Tobias
+  aka groundskeeper
+  a person, proper
+  pronouns he
+  in the Gatehouse
+
+  A weathered man with a ring of keys.
+
+create the zookeeper
+  a person
+  in the Gatehouse
+
+  Someone in a canvas apron, name unknown.
+
+create the iron gates
+  aka gates
+  plural
+  scenery
+  in the Gatehouse
+
+  Twin gates of black iron, shut fast.
+
+create the player
+  starts in the Gatehouse</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; look
+Gatehouse
+A stone gatehouse with an iron-barred window.
+
+You can see Tobias and a zookeeper here.
+
+&gt; take the gates
+The iron gates are fixed in place.
+
+&gt; take tobias
+You can't take Tobias.
+
+&gt; take the zookeeper
+You can't take the zookeeper.</code></pre>
+<p>One word each way: <code>proper</code> (person-only) renders Tobias bare-named in the room listing and in refusals while the unmarked zookeeper keeps an article, and <code>plural</code> sets grammatical number so every message agrees: the gates &quot;are&quot; fixed in place where the statue &quot;is&quot;.</p>
+<p>The rest of the trait in one-liners:</p>
+<ul><li><code>pronouns he</code> (or <code>she</code>, <code>it</code>, <code>they</code>, or a <code>define pronouns</code> named set, per chord-language.md) names a person's narration pronoun set; absent means the by-number fallback (&quot;it&quot;/&quot;they&quot;). Nothing is inferred from a name.</li><li><code>concealed</code> marks a hidden item that searching reveals and announces.</li><li><code>points</code> awards score on the first take, deduped per entity. It is TypeScript-only today; Chord's <code>score … worth N</code> lines are the separate named-award system.</li><li>The create-line article is never read for identity: <code>create the zookeeper</code> and <code>create a zookeeper</code> load identically.</li></ul>
+<p><strong>region</strong> (<code>a region</code>, a kind noun since ADR-236) groups rooms into areas: a room carries a region id, regions nest by containing each other, and going emits <code>region_exited</code> / <code>region_entered</code> per crossed boundary. Everything is authored region-side: <code>containing</code> lists members (additive across lines), <code>after entering it</code> / <code>after leaving it</code> react to boundary crossings (<code>leaving</code> exists only on region blocks), and an <code>on every turn</code> clause on the region block is a region daemon, firing only while the player is in a member room (the daemon machinery is <a href="/chord/stdlib/plugins">the plugins layer's</a>).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Grounds
+  a region
+  containing the Orchard, the Apiary
+
+  after entering it
+    phrase under-the-boughs
+  end after
+
+  after leaving it
+    phrase back-on-the-road
+  end after
+
+  on every turn
+    phrase bees-drone
+  end on
+
+  phrase under-the-boughs:
+    You pass under the boughs; the air turns sweet with windfall.
+
+  phrase back-on-the-road:
+    The orchard smell fades behind you.
+
+  phrase bees-drone:
+    Bees drone somewhere among the trees.</code></pre>
+<p>The player sees (starting outside the region, walking east through it and back):</p>
+<pre><code class="language-transcript">&gt; east
+Orchard
+Apple trees in ragged rows.
+
+Bees drone somewhere among the trees.
+
+You pass under the boughs; the air turns sweet with windfall.
+
+&gt; east
+Apiary
+White hives stand in the grass.
+
+Bees drone somewhere among the trees.
+
+&gt; west
+Orchard
+Apple trees in ragged rows.
+
+Bees drone somewhere among the trees.
+
+&gt; west
+Gatehouse
+A stone gatehouse at the edge of the grounds.
+
+The orchard smell fades behind you.</code></pre>
+<p>Boundary reactions fire only on crossings (the Orchard-to-Apiary move inside the region says nothing extra), while the daemon speaks in every member room and falls silent the turn you leave. One honest gap: the trait's ambient-sound/smell fields are declared but nothing reads them yet (dormant).</p>
+<p><strong>scene</strong> provides narrative phases with a lifecycle: a scene waits, begins when its registered begin-condition fires, counts its active turns, and ends (or recurs) on its end-condition, evaluated every turn by an always-on engine plugin, emitting <code>scene_began</code> / <code>scene_ended</code> plus any registered reaction messages. The conditions are code (closures registered on the world, re-register after restore); the trait's state persists. It is TypeScript-only, with no Chord surface.</p>
+<p><strong>story-info</strong> is the story's masthead on an invisible system entity: title, author, version, description, plus build metadata (build date, engine/client versions, ported-by, credits). ABOUT and VERSION read it; the info channels and save metadata consume it. A Chord story never touches it directly; the header's <code>title:</code>, <code>authors:</code>, <code>story-version:</code> and <code>description:</code> flow through and the engine materializes the trait.</p>
+<p>One neighbor in the traits directory is not a trait at all: <strong>obstructor-protocol</strong> (ADR-173) is a query-helper module for walls: a wall side may name an <code>obstructedBy</code> entity, and capability consumers (today the sound system's acoustic dampening, ADR-172) ask at query time whether that obstructor is still in the room, so pushing the bookcase aside lifts the obstruction with no bookkeeping. It is TypeScript plumbing only, with no Chord surface and no verb.</p>

@@ -1,0 +1,72 @@
+<h2 id="the-fixed-timeline">The fixed timeline</h2>
+<p>A <code>define sequence</code> is a schedule. Fernhill's clock is the whole game's pressure:</p>
+<pre><code class="language-chord">define sequence the long night
+  at turn 14
+    phrase dusk-deepens
+    change the story to midnight
+  at turn 70
+    phrase small-hours
+  at turn 130
+    lose dawn-comes
+end sequence</code></pre>
+<p><code>at turn N</code> steps fire on schedule; the last one is the losing ending: dawn comes, the auction party arrives, the game ends. Note the story-state flip at turn 14: header <code>states:</code> plus <code>change the story to …</code> is how the world knows what hour it is.</p>
+<h2 id="the-fuse-a-countdown-with-stakes">The fuse: a countdown with stakes</h2>
+<p>Entering the folly (once) lights an old blasting fuse. A second sequence anchors on that <em>event</em> rather than a turn number:</p>
+<pre><code class="language-chord">create the Folly
+  a room
+
+  after entering it, once
+    change the fuse to lit
+    phrase fuse-catches
+  end after</code></pre>
+<pre><code class="language-chord">define sequence the fuse burn
+  when the fuse becomes lit
+    phrase fuse-racing
+  3 turns later
+    kill the player fuse-blast when the fuse is lit
+end sequence</code></pre>
+<p><code>when &lt;entity&gt; becomes &lt;state&gt;</code> starts the clock; <code>N turns later</code> steps follow; <code>kill the player</code> is the hard ending, gated <code>when the fuse is lit</code>, so cutting the fuse (<code>cuttable with the garden shears</code>, <em>Things</em>) defuses the death. Both branches are real: the game will kill you.</p>
+<h2 id="recurring-events-gated-on-presence">Recurring events, gated on presence</h2>
+<pre><code class="language-chord">create the Cellar
+  on every turn
+    phrase cellar-drip
+  end on
+
+  on every turn while the oil lamp is lit, once
+    phrase lamplight-startle
+  end on</code></pre>
+<p>An entity's <code>on every turn</code> clause fires only while the player is there to hear it. The <code>, once</code> modifier makes a beat that never repeats; a <code>while</code> gate makes one that tracks live state. (The fuse hisses the same way: <code>on every turn while it is lit</code>.)</p>
+<h2 id="the-boiler-a-state-machine">The boiler: a state machine</h2>
+<p>The boiler is the estate's centerpiece. The brass plate says FILL. PRIME. LIGHT, and the machine enforces it. With <code>use state-machines</code> in the header:</p>
+<pre><code class="language-chord">define machine the boiler works
+  role furnace is the boiler
+  starts cold
+
+  state cold
+    when turning the stopcock: filled
+
+  state filled
+    on enter
+      change the boiler to filled
+      phrase water-gurgles
+    end on
+    when pushing the primer plunger: primed
+
+  state primed
+    on enter
+      change the boiler to primed
+      phrase primer-thumps
+    end on
+    when switching_on the furnace: running
+
+  state running, terminal
+    on enter
+      change the boiler to running
+      change the vine to flowering
+      phrase pipes-warm
+      phrase vine-stirs
+      play sound boiler-thump when client has sound
+    end on
+end machine</code></pre>
+<p>Transitions are <em>player actions on world entities</em> (<code>when turning the stopcock: filled</code>); <code>on enter</code> bodies mirror machine truth onto the boiler's visible states, narrate, and (note the last line) reach into the greenhouse: the <code>running</code> state flowers the vine. The machine is the causal spine of the estate: the boiler runs, the frost seal opens (*The world*'s live block), the vine flowers, and the silver locket appears in the next chapter.</p>
+<p>Out-of-order attempts get their own voices, authored as refusals on the entities themselves (<code>on pushing it while the boiler is cold → refuse primer-dry</code>; the cold boiler answers <code>switch on</code> with a hollow CLANK).</p>

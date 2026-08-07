@@ -1,0 +1,17 @@
+<p><code>extend action &lt;name&gt;</code> adds grammar to an action that already exists — one of the standard library's or one of your own. The new lines drive the action's real implementation: extend <code>taking</code> and your new phrasing takes things, updates the inventory, fires the same events.</p>
+<pre><code class="language-chord">extend action taking
+  grammar
+    snag the item</code></pre>
+<p><code>snag the lamp</code> now works exactly as <code>take the lamp</code> does. Slot names refer to the slots the action already resolves — <code>taking</code> calls its object <code>the item</code>, so the extension does too (the standard names are listed on <a href="/chord/guide/vocabulary/define-action">define action</a>).</p>
+<h2 id="making-a-different-action-win">Making a different action win</h2>
+<p>Extensions also settle contests. A story's grammar always outranks the standard library's, so restating a pattern under a different action flips which one wins:</p>
+<pre><code class="language-chord">extend action examining
+  grammar
+    read the target</code></pre>
+<p>Out of the box <code>read the book</code> is reading; with this extension the restated line wins and <code>read the book</code> examines instead. No ordering syntax exists or is needed — write the line under the action you want, or <a href="/chord/guide/vocabulary/remove-from-action">remove</a> the competitor.</p>
+<h2 id="mistakes-are-loud">Mistakes are loud</h2>
+<p>An extension names an action that must exist. A misspelled name is a load error with a suggestion — never a silently minted new action:</p>
+<pre><code class="language-text">LoadError: `extend action tacking` — no story action or standard action
+has that name — did you mean `taking`?</code></pre>
+<p>Only grammar belongs in an extension block: refusals, scores, body statements, and phrases stay with the action that owns them, and the analyzer rejects them here by name.</p>
+<p>Extensions are story declarations — write them in the story file or in a spliced <code>.chord</code> fragment (<a href="/chord/guide/project/multi-file-stories">multi-file stories</a>), and pair them with <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a> when you also want standard phrasings gone.</p>

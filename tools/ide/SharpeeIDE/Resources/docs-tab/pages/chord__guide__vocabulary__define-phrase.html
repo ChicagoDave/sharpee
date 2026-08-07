@@ -1,0 +1,29 @@
+<p><code>define phrase</code> gives a phrase key one or more <code>or</code>-separated variants and a strategy for choosing between them, closing with <code>end phrase</code>. The strategy is the same five-name set as <code>select &lt;strategy&gt;</code>, because it is the same machinery: <code>select</code> chooses between statement bodies, <code>define phrase</code> chooses between texts.</p>
+<pre><code class="language-chord">define phrase parrot-chatter, randomly
+  Polly wants a cracker!
+or
+  SQUAWK! Pretty bird! Pretty bird!
+or
+  Pieces of eight! Pieces of eight!
+end phrase</code></pre>
+<p>Each variant is a prose block, the <em>only</em> form phrase text takes; the old same-line quoted and bare forms were removed. Blank lines inside a variant are paragraph breaks, and <code>{br}</code> still forces a hard line break.</p>
+<p>A phrase header may carry a trailing <code>while &lt;condition&gt;</code> gate. This is mainly for description-marker phrases: the gate decides whether the fragment appears at all, live at render time. Here a keeper line only splices into the aviary description while the zookeeper is actually present:</p>
+<pre><code class="language-chord">define phrase keeper-note, cycling while the zookeeper is here
+  where a keeper is refilling the feeders
+or
+  where a keeper is chalking today's talks on a board
+end phrase</code></pre>
+<p>Fragments spliced into prose are written <em>bare</em>, with no leading separator and no trailing full stop. The platform owns the join: a marker mid- sentence joins with a comma, a marker after a sentence joins with a space. Writing the separator yourself earns a diagnostic.</p>
+<p>The <code>verbatim</code> modifier (mutually exclusive with the strategies) exempts a phrase's text from whitespace collapse, preserving its exact line structure and relative indentation, for signs, verse, and ASCII where the layout is the point:</p>
+<pre><code class="language-chord">define phrase plaque-text, verbatim
+  MACAWS OF THE AMERICAS
+    donated by the Willowbrook Trust
+  Please do not tap the glass
+end phrase</code></pre>
+<p>A <code>verbatim</code> phrase can be spoken by a <code>phrase</code> statement but cannot splice at a description marker (<code>analysis.verbatim-marker</code>): its whole point is preserved line structure, which a mid-sentence splice would break.</p>
+<p>A phrase key is a single kebab-case word; dots are illegal (ADR-254). To override the platform's own text for a standard action, a story uses an <code>override message &lt;alias&gt;</code> block (ADR-255), where the alias is the action name and message name in kebab-case, joined by a hyphen (<code>taking-fixed-in-place</code>). Every standard-action message has such an alias (the stdlib reference catalogs them entry by entry); an <code>override message</code> block replaces the platform default story-wide, for every entity, every time that moment renders:</p>
+<pre><code class="language-chord">override message taking-fixed-in-place
+  It will not budge, and neither will anything else bolted to this place.
+end override</code></pre>
+<p>Now every fixed-in-place refusal in the story speaks this line instead of the standard one. The per-entity routes still sit on top: an <code>on</code> clause's own refusal or a per-entity override speaks for its one entity, and the story-wide <code>override message</code> sets the default underneath them.</p>
+<p>Everywhere a phrase key appears — <code>refuse</code> and <code>refuse when</code>, <code>must … otherwise refuse</code>, per-entity <code>phrase</code> headers, <code>define phrases</code> entries, and the blocked and deadly exit keys — the key is a single kebab-case word (dots are illegal, ADR-254). Overriding a standard-action message is done only through <code>override message</code> (ADR-255), never by naming a dotted id at one of these sites.</p>

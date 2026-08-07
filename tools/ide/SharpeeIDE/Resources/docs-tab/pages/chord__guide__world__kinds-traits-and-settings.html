@@ -1,0 +1,28 @@
+<p>The lines between the <code>create</code> header and the first blank line compose the entity. Each comma-separated term is either a kind noun or a trait, distinguished by the article: <code>a room</code> and <code>a supporter</code> are kind nouns (bundles of traits), while bare words like <code>scenery</code>, <code>wearable</code>, <code>switchable</code>, and <code>light-source</code> are individual traits.</p>
+<pre><code class="language-chord">create the workbench
+  a supporter with capacity 3
+  scenery
+  in the Root Cellar
+
+  A scarred oak workbench.</code></pre>
+<p><code>with</code> attaches settings. The last token of each setting is its value and the words before it are the key (<code>capacity 3</code>); several settings join with <code>and</code>. When a keyed value is an entity name, the article marks where the name starts (<code>feedable with food the handful of feed</code>, where the keyword names an authored trait's data field). The built-in capability adjectives take their entity <em>directly</em> after <code>with</code> and use no keyword: <code>lockable with the staff keycard</code> (ratchet R3, 2026-07-18: the old <code>key</code>/<code>tool</code> keywords are load errors with fix-its).</p>
+<p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional implement named directly after <code>with</code> (<code>cuttable with the rusty knife</code>) that the player must be holding; with no implement named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation, an <code>on cutting it</code> clause, its own or from a composed trait. The story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on digging it</code>.</p>
+<pre><code class="language-chord">create the straw bale
+  aka bale, twine
+  cuttable with the rusty knife
+  in the Potting Shed
+  states: bound, loose
+
+  A bale of straw, bound tight with orange twine.
+
+  on cutting it
+    change it to loose
+    phrase twine-cut
+  end on</code></pre>
+<p>A trait can be conditional: <code>while</code> puts it under the control of a condition, live at play time.</p>
+<pre><code class="language-chord">create the Root Cellar
+  a room, dark while the oil lantern is not lit
+  aka cellar
+
+  Earthen walls swallow what little light there is.</code></pre>
+<p>The blank line matters: composition lines come before the first blank line in the block, and prose comes after it. That rule is what keeps a description that happens to start with a trait-like word from being read as composition.</p>

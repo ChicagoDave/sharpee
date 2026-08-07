@@ -1,0 +1,28 @@
+<p>A <code>define sequence</code> is a scripted timeline: a named list of steps, each anchored to <em>when</em> it fires and carrying a body of ordinary statements. It replaces the hand-rolled turn-counting daemons of the old platform with one declarative block. There are three anchor forms, and this story uses all three across three sequences.</p>
+<p>The first two anchors are clock-based. <code>at turn N</code> fires at an absolute turn counted from the story's start; <code>N turns later</code> fires relative to the previous step, so you can chain a timeline without arithmetic:</p>
+<pre><code class="language-chord">define sequence gathering storm
+  at turn 2
+    phrase storm-distant
+      Thunder mutters somewhere beyond the wall.
+  3 turns later
+    phrase storm-near
+      The light goes pewter, and the first fat drops crater the dust.
+  2 turns later
+    phrase storm-breaks
+      The storm breaks all at once, rain hammering the gravel.
+    change the story to raining
+end sequence</code></pre>
+<p>The steps here land on turns 2, 5, and 7. A step body is ordinary statements: the last step both speaks and moves the story into its <code>raining</code> state.</p>
+<p>The third anchor is state-based. <code>when &lt;name&gt; becomes &lt;state&gt;</code> fires the step when that owner transitions into the named state: the story itself, or any entity. This lets one sequence react to another's effect. The storm above moved the story to <code>raining</code>; a second sequence waits on exactly that:</p>
+<pre><code class="language-chord">define sequence take shelter
+  when the story becomes raining
+    phrase shelter-note
+      Anywhere with a roof suddenly seems like a very good idea.
+end sequence</code></pre>
+<p>The same anchor works on an entity's own states. When the bonfire is lit and changes to <code>burning</code>, a third sequence notices:</p>
+<pre><code class="language-chord">define sequence smoke drifts
+  when the bonfire becomes burning
+    phrase smoke-note
+      A ribbon of blue smoke begins to drift across the garden.
+end sequence</code></pre>
+<p>A sequence name may be several words (<code>gathering storm</code>, <code>take shelter</code>), and the block always closes with an explicit <code>end sequence</code>. Within a step, prose indented under a <code>phrase</code> line is declare-and-emit text, which is why these steps need no separate <code>define phrases</code> block.</p>

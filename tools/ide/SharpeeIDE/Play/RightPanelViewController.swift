@@ -1,17 +1,19 @@
 // RightPanelViewController.swift
 // The right panel: a tab strip over the Chord build output (Build), the running
-// game (Play), the Testing surface (ADR-301 D1), and the error explainer
-// (Diagnosis) — David's ruling: the build process lives NEXT TO Play, not in the
-// bottom dock (which stays for Problems and Game Errors). A build starting
-// switches to Build; a successful play-after-build switches to Play.
+// game (Play), the Testing surface (ADR-301 D1), the error explainer
+// (Diagnosis), and the bundled author documentation (Docs, go-live Phase 3) —
+// David's ruling: the build process lives NEXT TO Play, not in the bottom dock
+// (which stays for Problems and Game Errors). A build starting switches to
+// Build; a successful play-after-build switches to Play.
 //
 // The Skein tab and its actions (replay / tag / force / bless) were removed with
 // ADR-299's retirement: ADR-300 retires the `.skein` artifact and the second
 // verification engine, and the transcript tree the Testing tab renders is what
 // replaces the skein's tree.
-// Public interface: buildPanel, play, testingTab, testPanel, index, diagnosis,
-// showBuildTab(), showPlayTab(), showTestTab(), showTestingTab(),
-// showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(), onOpenLocation.
+// Public interface: buildPanel, play, testingTab, docsTab, testPanel, index,
+// diagnosis, showBuildTab(), showPlayTab(), showTestTab(), showTestingTab(),
+// showDocsTab(page:), showDiagnosis(_:count:), revealDiagnosis(_:),
+// clearDiagnosis(), onOpenLocation.
 // Owner context: tools/ide — Play (right panel).
 
 import AppKit
@@ -26,6 +28,9 @@ final class RightPanelViewController: NSViewController {
     /// place a run is watched. The outline panel that used to sit beside it is
     /// retired — one run, one surface.
     let testingTab = TestingTabViewController()
+    /// The author documentation bundled with the app (go-live Phase 3): the same
+    /// scheme-handler machinery as the Testing tab, pointed at a different root.
+    let docsTab = DocsTabViewController()
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)? {
@@ -39,17 +44,20 @@ final class RightPanelViewController: NSViewController {
     private static let testingTabIndex = 2
     private static let indexTab = 3
     private static let diagnosisTab = 4
+    private static let docsTabIndex = 5
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
 
         addChild(play)
         addChild(testingTab)
+        addChild(docsTab)
         tabStrip.addTab(title: "Build")
         tabStrip.addTab(title: "Play")
         tabStrip.addTab(title: "Testing")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
+        tabStrip.addTab(title: "Docs")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -58,12 +66,14 @@ final class RightPanelViewController: NSViewController {
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
         testingTab.view.translatesAutoresizingMaskIntoConstraints = false
+        docsTab.view.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
         container.addSubview(testingTab.view)
+        container.addSubview(docsTab.view)
 
         NSLayoutConstraint.activate([
             tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
@@ -95,6 +105,11 @@ final class RightPanelViewController: NSViewController {
             testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             testingTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             testingTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            docsTab.view.topAnchor.constraint(equalTo: play.view.topAnchor),
+            docsTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            docsTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            docsTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -134,6 +149,12 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.testingTabIndex)
     }
 
+    /// Switches to the Documentation tab, optionally at a given page.
+    func showDocsTab(page href: String? = nil) {
+        if let href { docsTab.showPage(href) }
+        tabStrip.select(Self.docsTabIndex)
+    }
+
 
 
     private func show(tab selected: Int) {
@@ -142,6 +163,7 @@ final class RightPanelViewController: NSViewController {
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
         testingTab.view.isHidden = selected != Self.testingTabIndex
+        docsTab.view.isHidden = selected != Self.docsTabIndex
     }
 
 }

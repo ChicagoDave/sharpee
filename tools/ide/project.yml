@@ -36,6 +36,7 @@ targets:
         # copy phase would carry them twice.
         excludes:
           - "Resources/testing-tab/**"
+          - "Resources/docs-tab/**"
       # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
       # esbuild output is copied whole into Contents/Resources/testing-tab/ and
       # adding a file to it never needs a project regenerate.
@@ -48,6 +49,16 @@ targets:
       - path: SharpeeIDE/Resources/testing-tab
         type: folder
         buildPhase: resources
+      # The Documentation tab's bundle (go-live Phase 3): sharpee.net's author
+      # documentation, reduced from MDX and rendered to HTML fragments. A folder
+      # reference for the same reasons as the Testing tab above — copied whole,
+      # and adding a page never needs a project regenerate. Committed for the
+      # same reason too: XcodeGen resolves this path at generate time, so a
+      # gitignored folder would make `xcodegen generate` on a fresh clone
+      # silently produce an app with no Documentation tab.
+      - path: SharpeeIDE/Resources/docs-tab
+        type: folder
+        buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
     # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
@@ -58,6 +69,12 @@ targets:
       - name: Bundle the Testing tab (ADR-301 D1)
         basedOnDependencyAnalysis: false
         script: '"$PROJECT_DIR/build-testing-tab.sh"'
+      # Same trade as above: the docs bundler is one corpus walk plus one
+      # esbuild pass (~150ms for 143 pages), so stale documentation is not worth
+      # saving it. Deliberately NOT the website's Next build — see the script.
+      - name: Bundle the Documentation tab (go-live Phase 3)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/build-docs-tab.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds

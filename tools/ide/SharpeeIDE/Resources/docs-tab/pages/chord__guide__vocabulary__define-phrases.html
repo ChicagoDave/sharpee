@@ -1,0 +1,8 @@
+<p>Where <code>define phrase</code> declares one key with variants, <code>define phrases &lt;locale&gt;</code> declares many plain keys at once, under a named locale. This is the localizable form (the same block stdlib uses) and the one to reach for when your text is a flat catalog of keyed strings rather than a single choice:</p>
+<pre><code class="language-chord">define phrases en-US
+  rack-front:
+    The front of every card is the same beaming flamingo.
+  rack-back:
+    Each back is pre-stamped, as if the zoo expects you to write home
+    before you have even seen it.</code></pre>
+<p>Each entry is <code>key:</code> on its own line followed by an indented prose block. The block is dedent-terminated; there is no <code>end phrases</code>. A key here is a plain phrase with no strategy; for variants or a strategy, use <code>define phrase</code> instead. A key here is a single kebab-case word (dots are illegal, ADR-254). To override a standard-action message, use the parallel <code>override messages &lt;locale&gt;</code> block, whose keys are message aliases (<code>taking-fixed-in-place:</code>) rather than story phrase keys (ADR-255). Throughout this reference the small supporting texts live in exactly this kind of block at the foot of each fixture.</p>

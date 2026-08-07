@@ -1,0 +1,10 @@
+<p><code>win</code> and <code>lose</code> end the story. Each optionally names a phrase to speak on the way out, and each takes the statement-final <code>when</code> suffix, so an ending can be conditional without a wrapping block.</p>
+<pre><code class="language-chord">  on pulling it
+    remove it
+    win garden-perfect
+  end on</code></pre>
+<pre><code class="language-chord">  on poking it
+    lose stung when one chance in 2
+    phrase near-miss
+  end on</code></pre>
+<p>The first ends in victory, speaking <code>garden-perfect</code>. The second loses only on a coin-flip (<code>when one chance in 2</code>); when the flip spares you, the <code>lose</code> is skipped and <code>near-miss</code> speaks instead. The phrase name is optional: bare <code>win</code> and bare <code>lose</code> end the story with only the platform's default ending text.</p>

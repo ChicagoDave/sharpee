@@ -1,0 +1,51 @@
+<p>Examining is trait-aware: a container reports its open state and contents. Searching is the action that looks <em>inside</em> on purpose, and the one that reveals <code>concealed</code> items; a closed openable refuses first.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Study
+  a room
+
+  Book-lined walls and a smell of pipe smoke.
+
+create the portrait
+  aka painting
+  scenery
+  in the Study
+
+  A stern woman in oils, following you with her eyes.
+
+create the sea chest
+  aka chest
+  a container, openable, starts open
+  in the Study
+
+  A brass-bound sea chest.
+
+create the ship's log
+  aka log, logbook
+  in the sea chest
+
+  A salt-stained logbook.
+
+create the player
+  starts in the Study</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; examine the portrait
+A stern woman in oils, following you with her eyes.
+
+&gt; examine the sea chest
+A brass-bound sea chest.
+
+In the sea chest you see a ship's log.
+
+&gt; close the sea chest
+You close the sea chest.
+
+&gt; search the sea chest
+The sea chest is closed.
+
+&gt; open the sea chest
+You open the sea chest.
+
+Inside the sea chest you see ship's log.
+
+&gt; search the sea chest
+In the sea chest you see: a ship's log.</code></pre>

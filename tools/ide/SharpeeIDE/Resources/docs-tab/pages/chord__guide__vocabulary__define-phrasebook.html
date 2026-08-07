@@ -1,0 +1,28 @@
+<p>A phrasebook groups phrase definitions into one named collection, optionally gated by a <code>while</code> predicate. It carries no fixed meaning of its own. It is simply a way to differentiate text by world state, and whatever the predicate selects for is up to you: a narrative voice, a mood, a chapter, or a location. Whichever declared book's <code>while</code> predicate holds at render time supplies the text, matched first in declaration order, per key. A predicate-less book is the <strong>default phrasebook</strong>. It is active whenever no earlier book claims the key, and it is the feature at its simplest: one named book with no predicates, used only to group entries.</p>
+<pre><code class="language-chord">define phrasebook midnight-book while midnight
+  vane-mood, first-time:
+    The vane swings hard north, as if the night had opinions.
+  or
+    The vane holds north. Of course it does.
+end phrasebook
+
+define phrasebook evening-book
+  vane-mood, first-time:
+    The vane noses the evening breeze, unhurried.
+  or
+    The vane sits easy in the last of the light.
+
+  vane-quiet:
+    The vane keeps its own counsel.
+end phrasebook</code></pre>
+<p>Entries are ordinary phrase definitions. Each takes the form <code>&lt;key&gt;[, strategy]:</code> with <code>or</code> variants, and all five strategies apply, <code>verbatim</code> included. The consuming side is unchanged: you write <code>phrase vane-mood</code> in a clause body, or a <code>{vane-mood}</code> marker in prose. At midnight the first book wins <code>vane-mood</code>, and at any other time the default book supplies it. The default book covers <code>vane-quiet</code> alone, so <code>vane-quiet</code> renders the same in every state. Fallthrough is per key, never per book.</p>
+<p>The compiler load-checks each of the following rules.</p>
+<ul><li><strong>Story text always wins.</strong> A story-wide <code>define phrase vane-mood</code> (outside any book) beats every book, in every state; a per-entity <code>phrase vane-mood:</code> beats even that. Swapping books never changes text you wrote at those levels.</li><li><strong>Story keys only.</strong> A book entry key is a single kebab-case word in the story's own phrase namespace. A dotted platform message ID raises <code>analysis.phrasebook-dotted-key</code>. To override a platform message, use a story-level <code>override message &lt;alias&gt;</code> block (ADR-255).</li><li><strong>The book's <code>while</code> is the only gate.</strong> An entry-level <code>while</code> raises <code>analysis.phrasebook-entry-gate</code>. Split the entry into a second book instead.</li><li><strong>Counters are per book.</strong> <code>first-time</code>/<code>cycling</code>/<code>sticky</code> state belongs to the entry: two books' <code>first-time</code> texts for the same key each fire their own &quot;first&quot;, and both survive save/restore.</li><li><strong>The active book is chosen at render.</strong> The choice happens when the turn's text renders, against the turn's final state. A turn that flips a predicate renders its whole output from the newly active book.</li></ul>
+<p>Two companion forms live outside the <code>define phrasebook</code> block, in the story header and in imported files.</p>
+<pre><code class="language-chord">story
+  title: The Folly at Fernhill
+  authors: The Sharpee Project
+  use phrasebook candlewick-gothic while the player holds the locket
+  use phrasebook plain-country
+</code></pre>
+<p><code>use phrasebook &lt;name&gt; [while &lt;condition&gt;]</code> in the story header activates a packaged phrasebook by name and binds the predicate at the use site. You may write it any number of times, and an unknown name raises <code>analysis.unknown-phrasebook</code>. <code>import &quot;voices/winter&quot;</code> at the top level splices in a file of your own <code>define phrasebook</code> blocks. The file on disk is <code>voices/winter.chord</code>, and its books take their arbitration position at the import line. A phrasebook file is just one kind of fragment, because <code>import</code> pulls in any <a href="/chord/guide/project/multi-file-stories">multi-file story source</a>, not only phrasebook blocks. Header <code>use</code> lines and spliced body blocks arbitrate together, in file order.</p>

@@ -1,0 +1,13 @@
+<p>An entity (or trait, or the story itself) can declare named states with a <code>states:</code> line. The owner starts in the first state listed. States are the language's replacement for flags and ad-hoc booleans: they are declared, ordered, and visible to conditions (<code>when it is still</code>), <code>select on</code> dispatch, and <code>change</code>.</p>
+<pre><code class="language-chord">create the fountain
+  scenery
+  in the Orangery
+  states, reversible: flowing, still
+
+  A marble fountain in the middle of the floor.
+
+  on touching it
+    change it to still when it is flowing
+    phrase fountain-stopped when it is still
+  end on</code></pre>
+<p>State order is a promise. Without <code>, reversible</code>, a <code>change</code> back to an earlier state is a load error (<code>analysis.irreversible-state</code>): a marrow declared <code>states: entire, sliced</code> can never be un-sliced, and the compiler holds you to it. Add <code>, reversible</code> only when the story really does move both ways, as the fountain does.</p>

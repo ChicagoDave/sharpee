@@ -1,0 +1,41 @@
+<p>Both parse since ADR-230 D2: <code>listen</code>, <code>listen to X</code>, and the <code>hear [X]</code> alias; <code>smell</code> and <code>sniff</code>, bare or with a target.</p>
+<p><strong>listen</strong> (<code>listening</code>). With a target, a running device reports <code>device_running</code>, a stopped one <code>device_off</code>, a container sloshes (<code>liquid_sounds</code>) or rustles (<code>container_sounds</code>) by its contents, and anything else reports <code>no_sound</code>. Bare <code>listen</code> scans the room: running devices report <code>active_devices</code>, and an otherwise quiet room reports <code>silence</code>. It has no preconditions at all, making it a pure flavor seam.</p>
+<p><strong>smell</strong> (<code>smelling</code>). With a target, food and drink report <code>food_scent</code>/<code>drink_scent</code>, a lit light source <code>burning_scent</code>, an open container with food inside <code>container_food_scent</code>, and anything else <code>no_particular_scent</code>; a target in another room refuses <code>too_far</code>. Bare <code>smell</code> checks smoke first (<code>smoke_detected</code>), then food (<code>food_nearby</code>), and otherwise reports <code>no_scent</code>.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Chapel
+  a room
+
+  Candle smoke and old stone.
+
+create the pipe organ
+  aka organ
+  scenery
+  in the Chapel
+
+  A pipe organ that fills the far wall.
+
+  on listening it
+    phrase organ-breath
+  end on
+
+  phrase organ-breath:
+    Air sighs through the pipes, a chord not quite sounding.
+
+create the player
+  starts in the Chapel</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; listen
+You hear nothing out of the ordinary.
+
+&gt; listen to the organ
+Air sighs through the pipes, a chord not quite sounding.
+
+&gt; smell the organ
+The pipe organ has no particular smell.
+
+&gt; smell
+You don't smell anything unusual.</code></pre>
+<p>The organ's <code>on listening it</code> phrase replaces the stock miss entirely; where no clause answers, the platform's own misses are honest rather than errors.</p>
+<table><thead><tr><th></th><th>listen (<code>listening-*</code>)</th><th>smell (<code>smelling-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td>—</td><td><code>too_far</code></td></tr><tr><td>Success</td><td><code>device_running</code> · <code>device_off</code> · <code>liquid_sounds</code> · <code>container_sounds</code> · <code>no_sound</code> · <code>active_devices</code> · <code>silence</code></td><td><code>food_scent</code> · <code>drink_scent</code> · <code>burning_scent</code> · <code>container_food_scent</code> · <code>no_particular_scent</code> · <code>smoke_detected</code> · <code>food_nearby</code> · <code>no_scent</code></td></tr><tr><td>Events</td><td><code>listened</code> / <code>listen_blocked</code></td><td><code>smelled</code> / <code>smell_blocked</code></td></tr></tbody></table>
+<p>Interceptors: like touching, both are favorites for <code>on listening it</code> / <code>on smelling it</code> clauses.</p>
+<p>Separately from this action pair, the platform has a real <strong>sound propagation</strong> system (the acoustic traits): engine-level, per-turn, event-driven. Sounds travel through walls by acoustic cost and reach listener entities. The listening <em>action</em> does not read it; the two meet in story logic, not in stdlib.</p>

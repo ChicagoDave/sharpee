@@ -1,0 +1,50 @@
+<p><strong>openable</strong> (<code>openable</code>, adjective). It has two states, open and closed, both owned by the platform. <code>startsOpen</code> defaults to closed, and from Chord the adjective composes closed with <code>starts open</code> on the composition line seeding it open (ADR-231; chord-language.md). A required tool composes too: <code>openable with the crowbar</code>. The biscuit tin and sea chest are this trait at work. The remaining settings are TypeScript territory today: <code>canClose: false</code> (one-way openable), <code>closeRequirements</code> (a named obstacle), <code>openSound</code>/<code>closeSound</code> (ride along in events), and <code>open/closedDescription</code> (swap description text).</p>
+<p><strong>lockable</strong> (<code>lockable</code>, optionally <code>with the &lt;key&gt;</code>, adjective). It carries a locked/unlocked state, starting unlocked everywhere except on a door, where a lockable door starts locked until the author says <code>starts unlocked</code> (ADR-234's one kind-scoped default); Chord also seeds <code>starts locked</code> on any composition line (ADR-231), as the reliquary does. The key contract: <code>with the &lt;key&gt;</code> in Chord (<code>keyId</code> in TypeScript; several keys via <code>keyIds</code>, TypeScript only), and a lock without keys is a latch anyone can turn. <code>lockSound</code> / <code>unlockSound</code> decorate the events. Two declared fields are inert today: <code>autoLock</code> (relock-on-close is implemented but never invoked) and <code>acceptsMasterKey</code> (never read). Don't build a puzzle on them; they are flagged as not yet functional.</p>
+<p><strong>door</strong> (<code>a door</code>, kind noun, since ADR-234). A door is an entity that <em>is</em> the connection, but the connection is written on the room's exit line, not the door's block: <code>down to the Cellar through the cellar door</code>. The reverse exit is inferred (opposite direction, no far-room line needed; a mirrored line is legal but must agree exactly), and the door block itself is pure declaration: <code>a door</code> composes scenery and openable automatically, starting closed (<code>starts open</code> overrides) and, when lockable, locked (<code>starts unlocked</code> overrides). The loader wires everything through the one platform path (<code>connectRooms</code> with a door id, ADR-237), so going refuses <code>door_closed</code> / <code>door_locked</code> with no story code at all, and the door answers from both of its rooms, ADR-238's two-sided presence, without leaking the far room.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Landing
+  a room
+  down to the Cellar through the cellar door
+
+  A stone landing at the top of a worn stair.
+
+create the Cellar
+  a room
+
+  Casks and cobwebs, and a smell of wet earth.
+
+create the cellar door
+  a door, lockable with the iron key
+
+  Oak planks strapped with iron, set flush in the floor.
+
+create the iron key
+  aka key
+
+  A heavy iron key, cold in the hand.
+
+create the player
+  starts in the Landing
+  carries the iron key</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; down
+The cellar door is locked.
+
+&gt; unlock the cellar door with the iron key
+You unlock the cellar door with the iron key.
+
+&gt; down
+The cellar door is closed.
+
+&gt; open the cellar door
+You open the cellar door.
+
+&gt; down
+Cellar
+Casks and cobwebs, and a smell of wet earth.
+
+&gt; close the cellar door
+You close the cellar door.</code></pre>
+<p>One exit line and one declaration buy the whole protocol: the lockable door starts locked by the kind-scoped default, going refuses <code>door_locked</code> then <code>door_closed</code> with no story code, the standard lock-and-key actions work on the door itself, and the final command closes the same door from its far side, demonstrating its two-sided presence.</p>
+<p><code>through</code> never creates a door, and the compiler refuses what it can't answer, each with its own diagnostic: a declared door that no exit line connects, a placement line on a door block (its location IS its room pair), <code>through</code> naming a non-door, and conflicting room pairs.</p>
+<p>Gaps: under the trait, <code>room1</code>, <code>room2</code>, <code>bidirectional</code>: one-way doors (<code>bidirectional: false</code>, traversing room1 → room2 only) are TypeScript-only, and the <code>, one-way</code> exit-line modifier is reserved but a parse error today.</p>

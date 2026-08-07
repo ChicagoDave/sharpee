@@ -1,0 +1,29 @@
+<p><strong>about</strong> (<code>about</code>, <code>info</code>, <code>credits</code>) renders the story's own metadata. For a Chord story, that is simply the header: <code>title:</code>, <code>authors:</code>, <code>story-version:</code> and <code>description:</code> flow straight through (the platform materializes them into the story-info trait). A TypeScript story can add credits, ported-by, and build fields. One overridable message, <code>about-success</code>, retargeted story-wide with <code>override message about-success</code>.</p>
+<p><strong>version</strong> (<code>version</code>) prints a one-line story stamp (title and version) plus the engine's own version line.</p>
+<p><strong>help</strong> (<code>help</code>, <code>?</code>, <code>commands</code>) renders the platform's general help; a first-time asker gets <code>first_time</code>. Topic help (<code>help movement</code>) is implemented in the action but unreachable: the core pattern takes no topic slot (flagged, with <code>save &lt;name&gt;</code> in the same boat).</p>
+<p><strong>inventory</strong> (<code>inventory</code>, <code>inv</code>, <code>i</code>) splits what you carry from what you wear; empty hands pick a random empty-message variant. The abbreviations set a <code>brief</code> flag in the event for clients that care. Burden/weight messages exist but are dormant.</p>
+<p><strong>score</strong> (<code>score</code>, <code>points</code>) reads the platform score ledger, exactly where Chord's <code>score &lt;name&gt; worth N</code> / <code>award &lt;name&gt;</code> system deposits (chord-language.md): max score is summed from the declared worths at load, awards are idempotent, and SCORE works with zero extra setup. Ranks fall back to a computed ladder (Novice → Master); a story can override rank, moves, and achievements through the scoring capability (TypeScript today). <code>no_scoring</code> covers score-free stories.</p>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; about
+The Long Watch
+Version 1.2.0
+By Sharpee Docs
+
+One night in a lighthouse, told a turn at a time.
+
+&gt; score
+You have scored 0 out of 10, earning you the rank of a Novice.
+
+&gt; take the flare
+Taken.
+
+&gt; score
+You have achieved a perfect score of 10 points!
+
+&gt; inventory
+You are carrying:
+
+a signal flare</code></pre>
+<p>The header alone powers ABOUT. Its one <code>score … worth</code> line set the maximum, and the flare's <code>award</code> flipped SCORE from Novice to perfect, with no scoring setup beyond those two lines.</p>
+<table><thead><tr><th></th><th>Refusals</th><th>Renders</th></tr></thead><tbody><tr><td><strong>about</strong> (<code>about-*</code>)</td><td>—</td><td><code>success</code> (title, version, author, blurb in one message)</td></tr><tr><td><strong>help</strong> (<code>help-*</code>)</td><td>—</td><td><code>general</code> · <code>first_time</code> (first ask) · <code>unknown_topic</code> (topic help — unreachable)</td></tr><tr><td><strong>inventory</strong> (<code>inventory-*</code>)</td><td>—</td><td><code>carrying</code> · <code>wearing</code> · <code>carrying_and_wearing</code>, with <code>holding_list</code> / <code>worn_list</code> lines; empty hands: one of <code>empty</code> · <code>inventory_empty</code> · <code>nothing_at_all</code> · <code>hands_empty</code> · <code>pockets_empty</code>, at random</td></tr><tr><td><strong>score</strong> (<code>scoring-*</code>)</td><td><code>no_scoring</code></td><td><code>score_with_rank</code> · <code>perfect_score</code> (at max)</td></tr></tbody></table>
+<p>One honest gap: the <code>wearing</code> / <code>carrying_and_wearing</code> renders are currently unreachable: worn items go missing from INVENTORY's listing (they reappear only after an <code>undo</code> rebuilds the world). A platform fix is pending; until then the transcript above shows carried items only.</p>

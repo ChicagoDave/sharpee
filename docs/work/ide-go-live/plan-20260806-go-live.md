@@ -15,14 +15,18 @@ are not re-litigated here.
 The dependencies are real, not bureaucratic:
 
 ```
-Phase 1  Modal landing page            (item 6)     no dependencies
-Phase 2  Documentation audit           (item 2a)    no dependencies
-Phase 3  Documentation tab             (item 2b)    needs Phase 2
+Phase 1  Modal landing page            (item 6)     DONE 2026-08-06
+Phase 2  Documentation audit           (item 2a)    DONE 2026-08-06
+Phase 3  Documentation tab             (item 2b)    DONE 2026-08-06 (item 8 folded in)
 Phase 4  Transcript discovery pass     (item 7.1)   no dependencies
 Phase 5  Transcript editor             (item 3)     needs Phase 4
 Phase 6  Transcript acceptance pass    (item 7.2)   needs Phase 5
 Phase 7  Publish tab                   (item 1)     needs scoping first
 Phase 8  DMG                           (item 4)     needs Phases 3 and 6
+
+Added by Phase 2:
+  item 8   Fix 15 stale story headers on sharpee.net   DONE 2026-08-06 (in Phase 3)
+  item 9   Write transcript-testing documentation      after Phase 4
 ```
 
 Phases 1, 2, 4 and 7's scoping step are independent and can run in any order or
@@ -41,6 +45,10 @@ Two orderings matter and are easy to get wrong:
 ---
 
 ## Phase 1 — Modal landing page (item 6)
+
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Acceptance below met
+except the two noted there; details and the two out-of-scope consequences are
+recorded under item 6 in `todo-list.md`.
 
 **Goal.** The app launches into a modal landing page instead of silently
 reopening the last project.
@@ -78,9 +86,31 @@ lives there.
 **Open.** Sanitising the mirrored default for path-illegal characters and
 length. Default-quality, not correctness, since the location is editable.
 
+### Acceptance, checked
+
+| Criterion | State |
+|---|---|
+| Launch shows the modal, not the project | met — `LaunchFlowTests`, and seen live |
+| Picking a recent opens it | met — `LaunchFlowTests` |
+| …and `SessionState` still restores tabs/expansion/pane visibility | **partly** — the *decision* (`SessionState.restorable`: replay only for the project the session was saved for) is tested; the replay itself is the pre-existing `loadProject` path, unchanged and still untested for the reason `StoryHomeTests` records (it writes the developer's real Open Recent) |
+| Create Story produces a story at the mirrored location | met — real-path test, real devkit template, real files |
+| Editing the location then the title leaves the location alone | met — driven through the real field editor |
+| Closing the last story window quits | **not re-verified** — `applicationShouldTerminateAfterLastWindowClosed` is untouched, so this is unchanged rather than confirmed |
+| Tests drive the real modal, not a stub | met — real sheet on a real `MainWindowController`; only project-load, story-write and terminate are injected |
+
+There were no mock artifacts for this surface (they cover the branch view and
+the Testing tab), so the design came from the decisions in `todo-list.md`.
+
 ---
 
 ## Phase 2 — Documentation audit (item 2, first half)
+
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Decision recorded in
+`phase-2-documentation-audit.md`. Summary: ship sharpee.net's own Chord corpus
+(`website/src/app/chord` + `learn`), bundled at build time, pinned to
+`CHORD_LANGUAGE_VERSION`; exclude `docs/reference/`, `genai-api`, **and the
+book** — the book documents the retired TypeScript author path, not Chord.
+Two new items came out of it (8 and 9) and Phase 3 gained a prerequisite.
 
 **Goal.** Decide what the IDE's documentation *is*, before building anything
 to show it. This phase produces a decision document, no UI.
@@ -119,6 +149,23 @@ needs work, that becomes its own item on the list.
 
 ## Phase 3 — Documentation tab (item 2, second half)
 
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Both prerequisites
+were resolved inside the phase: item 8 was fixed and verified against the real
+compiler, and the static-export blocker was dissolved rather than solved (see
+below). 143 pages bundle in ~150ms; 10 Swift real-path tests + 25 JS unit tests.
+
+**The export decision changed.** The audit recommended `output: "export"` on the
+website. That was dropped once `website/` turned out to have no `node_modules`
+at all: the recommendation would have put `npm install` + `next build` inside an
+Xcode pre-build phase, and `project.yml` already draws exactly that line — the
+web-bundle passes are unconditional BECAUSE they are cheap, the toolchain
+vendoring is opt-in BECAUSE it is not. Instead `tools/ide/web/docs-tab/build.mjs`
+reads the same `content.mdx` sources directly, in the style of the website's own
+zero-dependency `build-search-index.mjs`, so the website need not even be
+installed. **The cost: a second renderer, so the tab can drift from
+sharpee.net's presentation.** The bundler fails loudly on any MDX component it
+does not know, which is what keeps the drift from becoming silent loss.
+
 **Goal.** Documentation reachable without leaving the IDE.
 
 **Shape — David's call, recorded.** Another **right-panel tab**, alongside
@@ -138,14 +185,37 @@ Phase 8.
 - Render the corpus Phase 2 chose, via the Testing-tab scheme-handler pattern.
 - Navigation within the docs; search if the corpus warrants it.
 
-**Acceptance.**
+**Acceptance, checked**
 
-- The tab renders the chosen corpus offline, with no network dependency.
-- Tab selection, theming and font preferences behave like the existing tabs.
-- The docs bundle is produced by the build, not committed by hand, mirroring
-  `build-testing-tab.sh`.
+| Criterion | State |
+|---|---|
+| Renders the chosen corpus offline, no network dependency | met — the whole bundle is scanned for anything that would fetch over http(s) in an asset position. Resource Timing was tried first and abandoned: WKWebView records no entries for custom-scheme loads, so an empty list looks like proof and means nothing |
+| Tab selection behaves like the existing tabs | met — `showDocsTab()` shows Docs and hides the rest |
+| Theming | met by construction — the page carries the same tokens as `Theme.swift` and follows the app's appearance through `prefers-color-scheme`, as the Testing tab does |
+| Font preferences | **not done** — the Testing tab does not honour `FontPreference` either, so this would be new behaviour for both rather than parity. Left out deliberately |
+| Bundle produced by the build, not by hand | met — `build-docs-tab.sh` runs as a pre-build step; the test asserts the script is executable AND that `project.yml` runs it |
+| Navigation within the docs | met — nav tree over all 143 pages, in-tab link following |
+| Search | met — filter over titles and body text, no Fuse dependency |
 
-**Dependencies.** Phase 2.
+Two things beyond the written acceptance, both from the audit:
+
+- **The version gate.** The bundle records the `CHORD_LANGUAGE_VERSION` it was
+  built from; a test asserts it equals both the compiler's constant and
+  `ChordVersionCheck.supportedLanguageVersion`, and the page raises a banner if
+  the installed toolchain reports something else at runtime.
+- **Unknown MDX fails the build.** A component the website adds later throws,
+  naming the page — it caught `<Callout kind="note">` (no `title`) on the first
+  run, which would otherwise have silently emptied a callout.
+
+**Dependencies.** Phase 2 — **and two things Phase 2 found**:
+
+- **Item 8** must be fixed first, or the tab bundles the same 15 pages that
+  teach a story header the compiler rejects.
+- **The website needs a static-export path.** `website/next.config.ts` has no
+  `output: "export"` and `deploy.sh` runs it as a live `next start` service, so
+  there is no directory of HTML to bundle today. Recommended: `output: "export"`
+  behind an env flag, with the three `redirects()` handled another way in that
+  mode, so one corpus serves both the live site and the bundle.
 
 ---
 

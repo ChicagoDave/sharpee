@@ -1,0 +1,7 @@
+<p>Conversation is a declared table per person: one <code>define topics for &lt;person&gt; … end topics</code> block serving both ASK and TELL. Entity rows (<code>about the silver locket:</code>) resolve like any noun and are checked first. Quoted rows declare a topic plus comma-separated aliases. Each alias is matched by normalized whole-topic equality, which is a direct lookup and never a fuzzy guess. A row's body is ordinary statements (<code>it</code> binds the owner), so a conversation can change state anywhere in the world. A miss falls to the owner's plain <code>on asking it</code> catch-all if it has one; on a hit the row fully owns the response. Overlaps are compile errors, never runtime tie-breaks.</p>
+<pre><code class="language-chord">define topics for tobias
+  about the silver locket: phrase tobias-locket-reply
+  about &quot;the folly&quot;, &quot;the fire&quot;:
+    change it to shaken
+    phrase tobias-folly-reply
+end topics</code></pre>

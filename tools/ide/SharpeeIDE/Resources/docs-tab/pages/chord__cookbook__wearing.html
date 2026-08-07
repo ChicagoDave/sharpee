@@ -1,0 +1,40 @@
+<p>One trait powers the whole family. The full entries live in <a href="/chord/stdlib/wearing">the standard library reference</a>.</p>
+<table><thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead><tbody><tr><td><strong>wear</strong></td><td><code>wear</code>/<code>don</code>/<code>equip X</code> · <code>put on X</code></td><td><code>wearable</code></td><td><code>not_wearable</code>, <code>already_wearing</code>, <code>hands_full</code>, <code>cant_wear_that</code></td></tr><tr><td><strong>take off</strong></td><td><code>take off X</code> · <code>take X off</code> · <code>remove X</code> · <code>doff</code>/<code>unequip X</code></td><td>a worn item</td><td><code>not_wearing</code>, <code>prevents_removal</code>, <code>cant_remove</code></td></tr></tbody></table>
+<h2 id="wearing-and-taking-off">wearing and taking off</h2>
+<p>You don't have to be holding a garment; wearing takes it first. A worn garment blocks dropping (<code>still_worn</code> lives on the <em>dropping</em> action): take it off, then drop it.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Dressing Room
+  a room
+
+  A tall mirror, a rack, and not much else.
+
+create the velvet cloak
+  aka cloak
+  wearable
+  in the Dressing Room
+
+  A midnight-blue cloak with a silver clasp.
+
+create the anvil
+  in the Dressing Room
+
+  A blacksmith's anvil, inexplicably.
+
+create the player
+  starts in the Dressing Room</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; wear the cloak
+(first taking the velvet cloak)
+
+Taken.
+
+You put on the velvet cloak.
+
+&gt; drop the cloak
+You'll need to take off the velvet cloak first.
+
+&gt; take off the cloak
+You take off the velvet cloak.
+
+&gt; drop the cloak
+Dropped.</code></pre>

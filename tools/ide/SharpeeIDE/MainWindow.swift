@@ -377,6 +377,9 @@ private final class RootViewController: NSViewController {
 
     fileprivate func showToolchainVersions(_ versions: ChordVersionCheck.ToolchainVersions) {
         statusBar.setToolchainVersions(versions)
+        // The Documentation tab bundles pages written against one Chord version
+        // and says so when the installed toolchain reports another.
+        mainSplitViewController.docsTab.setToolchainVersion(versions.chord ?? "")
     }
 
     /// Pill click: cancel while building, otherwise toggle the Build panel.
@@ -954,6 +957,8 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// The Testing tab (ADR-301) — likewise in the right panel.
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
+
+    fileprivate var docsTab: DocsTabViewController { rightPanelViewController.docsTab }
 
     fileprivate func showTestingTab() {
         rightPanelViewController.showTestingTab()

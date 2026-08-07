@@ -1,0 +1,12 @@
+<p>Every clause form takes an optional <code>while &lt;condition&gt;</code> gate, checked each time the clause would fire. After the gate, comma modifiers may follow. <code>, once</code> limits the clause to a single firing for the whole story, as the scarecrow's shadow moment above shows.</p>
+<p><code>, before &lt;trait&gt;</code> and <code>, after &lt;trait&gt;</code> order clauses when several traits answer the same verb on one entity:</p>
+<pre><code class="language-chord">define trait creaky
+  phrases en-US
+    hinge-creak:
+      The hinges creak horribly.
+
+  on opening it, before alarmed
+    phrase hinge-creak
+  end on
+end trait</code></pre>
+<p>A cabinet composed <code>openable, alarmed, creaky</code> creaks first, then rings its alarm bell, regardless of the order the traits were listed in.</p>

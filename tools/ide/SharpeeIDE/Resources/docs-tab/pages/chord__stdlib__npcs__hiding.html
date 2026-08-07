@@ -1,0 +1,52 @@
+<p><strong>hide</strong> (<code>hiding</code>) uses position-shaped grammar: <code>hide behind/under/on/in(side) X</code>, <code>duck behind/under/inside X</code>, <code>crouch behind/under X</code>; bare <code>hide</code> does not parse. The target needs the <code>concealment</code> trait (in a <code>.story</code>, the <code>hiding-spot</code> adjective, bare for every position or <code>with position &lt;word&gt;</code> to narrow to one) and must support the position you named (<code>cant_hide_there</code> otherwise). Success slips the player into hiding (<code>behind</code> and friends) by marking them with a dynamic concealed state that defeats NPC sight. Getting out is its own tiny action: <code>stand up</code>, <code>come out</code>, <code>unhide</code>, <code>stop hiding</code> (<strong>reveal</strong>, <code>revealing</code>).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Curio Shop
+  a room
+
+  Shelves of dubious antiques.
+
+create the velvet curtain
+  aka curtain
+  scenery
+  hiding-spot with position behind
+  in the Curio Shop
+
+  A moth-eaten curtain across the back doorway.
+
+create the wicker hamper
+  aka hamper
+  scenery
+  hiding-spot
+  in the Curio Shop
+
+  A hamper big enough for a person, currently full of crockery.
+
+  on hiding it
+    refuse hamper-crockery
+  end on
+
+  phrase hamper-crockery:
+    You lift the lid; the hamper is packed with crockery. No room for
+    you.
+
+create the player
+  starts in the Curio Shop</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; hide in the hamper
+You lift the lid; the hamper is packed with crockery. No room for you.
+
+&gt; hide behind the curtain
+You slip behind the velvet curtain.
+
+&gt; hide behind the curtain
+You're already hidden.
+
+&gt; come out
+You come out of hiding.
+
+&gt; come out
+You're not hiding.</code></pre>
+<p>Two spots, two seams: the hamper's <code>on hiding it</code> guard refuses with its own phrase, the curtain accepts exactly the position its adjective declared, and the reveal action closes the loop with its own <code>not_hidden</code> refusal when you try it standing in the open.</p>
+<table><thead><tr><th></th><th>hide (<code>hiding-*</code>)</th><th>reveal (<code>revealing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>nothing_to_hide</code> · <code>cant_hide_there</code> · <code>already_hidden</code></td><td><code>not_hidden</code></td></tr><tr><td>Success</td><td><code>behind</code> / <code>under</code> / <code>on</code> / <code>inside</code></td><td><code>revealed</code></td></tr><tr><td>Events</td><td><code>player_concealed</code></td><td><code>player_revealed</code></td></tr></tbody></table>
+<p>Interceptors: the hiding spot's <code>on hiding it</code> clauses are consulted (the hamper above); revealing has no interceptor surface (flagged as a minor asymmetry).</p>
+<p>Three more honest flags remain. The design puts every action outside a quiet allowlist (look, examine, wait, listen, smell, inventory, and the metas) down as silently breaking concealment before it runs, but in the current build that break listener is never registered, so walking, taking, and talking do <em>not</em> actually reveal you; only the NPC-can't-see-you half is wired (flagged). <code>cant_hide_there</code>'s current rendering misplaces an article (&quot;You can't hide an under …&quot;; flagged). And the trait's <code>capacity</code> field is dormant.</p>

@@ -1,0 +1,27 @@
+<p><strong>wait</strong> (<code>wait</code>, <code>z</code>) is the canonical &quot;let a turn pass&quot;: a full, snapshot-taking, daemon-ticking turn in which nothing else happens. N waits let N rounds of scheduled behavior play out. One message, <code>time_passes</code> (the lang file's twelve wait variants are dead inventory, flagged). Stories react to <code>waited</code>, or gate things on turns passing.</p>
+<p><strong>sleep</strong> (<code>sleep</code>, <code>nap</code>, <code>doze</code>, <code>rest</code>, <code>slumber</code>, all five parse since ADR-230 D2/D4). Flavor-only: one message (<code>slept</code>), no turns skipped beyond its own, no health interaction. Give it story meaning with story logic if a story needs real sleep. <code>z</code> remains a wait.</p>
+<p><strong>again</strong> (<code>again</code>, <code>g</code>) re-runs the last successful non-meta command by re-parsing its original text, so the repeat is honest: it can fail where the original succeeded if the world changed. Meta commands (undo, save, again itself) never enter history, so they can't be repeated; <code>nothing_to_repeat</code> covers an empty history.</p>
+<p><strong>undo</strong> (<code>undo</code>) rolls back one full-world snapshot, taken before every substantive turn (looks, examines, inventory, and the metas don't burn a slot). Depth is an engine setting, default 10; consecutive undos work to that depth. There is no per-story undo veto, and no undo-after-death: once the defeat ending lands the game has stopped (the veto window is the story's one chance to intervene before the ending locks).</p>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; wait
+Time passes...
+
+&gt; sleep
+You sleep for a while.
+
+&gt; take the flare
+Taken.
+
+&gt; again
+You already have the signal flare.
+
+&gt; undo
+Previous turn undone.
+
+&gt; undo
+Previous turn undone.
+
+&gt; score
+You have scored 0 out of 10, earning you the rank of a Novice.</code></pre>
+<p>AGAIN's repeat is honest (the re-parsed take refuses where the original succeeded), and two UNDOs peel back first that failed repeat, then the take itself, the score award reverting with it. For Chord stories, everything the language tracks (states, occurrence counters, <code>once</code> flags, sequence progress, awards) lives in world state, so undo (and save/restore) cover it with no author effort (ADR-210 AC-6, transcript-pinned).</p>
+<table><thead><tr><th></th><th>Refusals</th><th>Success</th></tr></thead><tbody><tr><td><strong>wait</strong> (<code>waiting-*</code>)</td><td>—</td><td><code>time_passes</code> (event <code>waited</code>)</td></tr><tr><td><strong>sleep</strong> (<code>sleeping-*</code>)</td><td>—</td><td><code>slept</code></td></tr><tr><td><strong>again</strong> (<code>again-*</code>)</td><td><code>nothing_to_repeat</code></td><td>renders whatever the repeated command renders</td></tr><tr><td><strong>undo</strong> (<code>undoing-*</code>)</td><td><code>nothing_to_undo</code> · <code>undo_failed</code></td><td><code>undo_success</code></td></tr></tbody></table>

@@ -1,19 +1,21 @@
 // StoryHomeTests.swift
-// Covers StoryHome (ADR-280 D2): the default project home is ~/Documents/Chord,
-// a title resolves to <root>/<story-id>/, and an occupied target is REFUSED with
-// the full path rather than overwritten (Acceptance 6). The real-path test drives
-// the actual resolve → StoryScaffold.create pair against a real temp root — every
-// assertion reads real files off real disk, and no test ever touches the
-// developer's own ~/Documents/Chord (the root is injected).
+// Covers StoryHome: the default root is ~/Documents itself — go-live item 6
+// supersedes ADR-280 D2's app-owned ~/Documents/Chord folder — a title resolves
+// to <root>/<Story Title>/, and an occupied target is REFUSED with the full path
+// rather than overwritten (ADR-280 Acceptance 6, which stands). The real-path
+// test drives the actual resolve → StoryScaffold.create pair against a real temp
+// root — every assertion reads real files off real disk, and no test ever
+// touches the developer's own ~/Documents (the root is injected).
 //
 // The AppDelegate half is covered through `scaffoldStoryAtDefaultHome`, the
 // exact function New Story calls — so the resolve-then-mutate-or-refuse routing
 // is tested, not just StoryHome in isolation.
 //
-// Deliberate, documented gap, narrowly: `promptNewStory` (which button the
-// writer pressed) and `presentScaffoldFailure` (the error alert) are not
-// covered — both are modal AppKit calls that cannot run headlessly without
-// stubbing the very call under test. `loadProject` is likewise not driven from
+// Deliberate, documented gap, narrowly: `presentScaffoldFailure` (the error
+// alert) is not covered — a modal AppKit call that cannot run headlessly without
+// stubbing the very call under test. The title prompt it used to sit beside is
+// gone: File → New Story now presents the same Create Story sheet the landing
+// page does, covered by CreateStorySheetTests. `loadProject` is likewise not driven from
 // here: it pushes through RecentProjectsStore into `UserDefaults.standard`, so a
 // test would inject temp folders into the developer's real Open Recent menu
 // (the same rationale AppIdentityTests records for its own gap).
@@ -33,7 +35,7 @@ final class StoryHomeTests: XCTestCase {
         tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent("SharpeeIDE-StoryHomeTests-\(UUID().uuidString)", isDirectory: true)
             .resolvingSymlinksInPath()
-        root = tmp.appendingPathComponent("Chord", isDirectory: true)
+        root = tmp.appendingPathComponent("Documents", isDirectory: true)
         templateDir = tmp.appendingPathComponent("template", isDirectory: true)
         try FileManager.default.createDirectory(at: templateDir, withIntermediateDirectories: true)
         try """
@@ -59,35 +61,45 @@ final class StoryHomeTests: XCTestCase {
 
     // MARK: - The default home
 
-    func testDefaultRootIsChordUnderDocuments() {
+    func testDefaultRootIsDocumentsWithNoAppOwnedFolder() {
         let documents = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask).first!
+        // No `Chord/`. An author keeps stories wherever source control wants
+        // them; the default is a starting point, not a home the app requires.
         XCTAssertEqual(StoryHome.defaultRoot.standardizedFileURL,
-                       documents.appendingPathComponent("Chord", isDirectory: true).standardizedFileURL)
+                       documents.standardizedFileURL)
     }
 
-    func testProjectDirectoryIsTheStoryIdUnderTheRoot() {
+    func testProjectDirectoryIsTheTitleUnderTheRoot() {
         let target = StoryHome.projectDirectory(forTitle: "The Lost Key", in: root)
         XCTAssertEqual(target.standardizedFileURL,
-                       root.appendingPathComponent("the-lost-key", isDirectory: true).standardizedFileURL)
+                       root.appendingPathComponent("The Lost Key", isDirectory: true).standardizedFileURL)
     }
 
-    func testProjectDirectoryUsesTheScaffoldsIdRuleNotASecondSlugRule() {
-        // One slug rule across the app — pinned so a future edit can't fork it.
-        // Expectations are spelled out rather than compared against
-        // StoryScaffold.storyId: comparing to the function the implementation
-        // already calls would pass even if the rule itself broke.
+    func testProjectDirectoryUsesTheOneFolderNamingRuleNotASecondOne() {
+        // One folder-naming rule across the app — pinned so a future edit can't
+        // fork it. Expectations are spelled out rather than compared against
+        // StoryLocationMirror.folderName: comparing to the function the
+        // implementation already calls would pass even if the rule itself broke.
         let expected = [
-            "The Lost Key": "the-lost-key",
-            "  Spaces & Symbols!! ": "spaces-symbols",
-            "***": "my-story",
+            "The Lost Key": "The Lost Key",
+            "  Spaces & Symbols!! ": "Spaces & Symbols!!",
+            "Act 1: Arrival": "Act 1- Arrival",
+            "***": "***",
+            "   ": StoryLocationMirror.fallbackFolderName,
         ]
-        for (title, id) in expected {
-            XCTAssertEqual(StoryHome.projectDirectory(forTitle: title, in: root).lastPathComponent, id,
-                           "id derivation diverged for \(title)")
-            XCTAssertEqual(StoryScaffold.storyId(from: title), id,
-                           "the scaffold's own id rule diverged for \(title)")
+        for (title, folder) in expected {
+            XCTAssertEqual(StoryHome.projectDirectory(forTitle: title, in: root).lastPathComponent, folder,
+                           "folder derivation diverged for “\(title)”")
+            XCTAssertEqual(StoryLocationMirror.folderName(for: title), folder,
+                           "the mirror's own rule diverged for “\(title)”")
         }
+    }
+
+    func testTheStoryFileKeepsItsKebabIdInsideTheTitledFolder() {
+        // The folder is the author's title; the `.story` file inside it stays a
+        // kebab id, because that id is what the story source and the build use.
+        XCTAssertEqual(StoryScaffold.storyId(from: "The Lost Key"), "the-lost-key")
     }
 
     // MARK: - REAL-PATH TEST (rule 13a): resolve → create, real files on real disk
@@ -96,9 +108,9 @@ final class StoryHomeTests: XCTestCase {
         let target = try StoryHome.resolveNewProjectDirectory(forTitle: "The Lost Key", in: root)
         try StoryScaffold.create(in: target, info: info("The Lost Key"), templateDirectory: templateDir)
 
-        let story = root.appendingPathComponent("the-lost-key/the-lost-key.story")
+        let story = root.appendingPathComponent("The Lost Key/the-lost-key.story")
         XCTAssertTrue(FileManager.default.fileExists(atPath: story.path),
-                      "the story must land at <root>/<story-id>/<story-id>.story")
+                      "the story must land at <root>/<Story Title>/<story-id>.story")
         let contents = try String(contentsOf: story, encoding: .utf8)
         XCTAssertTrue(contents.contains("The Lost Key"), "the title must be substituted in: \(contents)")
         XCTAssertTrue(contents.contains("id: the-lost-key"), "the id must be substituted in: \(contents)")
@@ -120,7 +132,7 @@ final class StoryHomeTests: XCTestCase {
     // MARK: - REJECTS WHEN: the target is occupied
 
     func testAnOccupiedTargetIsRefusedWithTheFullPathAndLeftUntouched() throws {
-        let target = root.appendingPathComponent("the-lost-key", isDirectory: true)
+        let target = root.appendingPathComponent("The Lost Key", isDirectory: true)
         try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
         let existing = target.appendingPathComponent("the-lost-key.story")
         try "story \"Someone Else's Work\"".write(to: existing, atomically: true, encoding: .utf8)
@@ -157,7 +169,7 @@ final class StoryHomeTests: XCTestCase {
             title: "The Lost Key", in: root, templateDirectory: realTemplates)
 
         XCTAssertEqual(created.standardizedFileURL,
-                       root.appendingPathComponent("the-lost-key", isDirectory: true).standardizedFileURL)
+                       root.appendingPathComponent("The Lost Key", isDirectory: true).standardizedFileURL)
         let story = created.appendingPathComponent("the-lost-key.story")
         XCTAssertTrue(FileManager.default.fileExists(atPath: story.path),
                       "New Story must write the story under the default home")
@@ -165,7 +177,7 @@ final class StoryHomeTests: XCTestCase {
     }
 
     func testNewStoryRoutingRefusesAnOccupiedHomeAndCreatesNothing() throws {
-        let target = root.appendingPathComponent("the-lost-key", isDirectory: true)
+        let target = root.appendingPathComponent("The Lost Key", isDirectory: true)
         try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
         let existing = target.appendingPathComponent("the-lost-key.story")
         try "story \"Someone Else's Work\"".write(to: existing, atomically: true, encoding: .utf8)
@@ -186,7 +198,7 @@ final class StoryHomeTests: XCTestCase {
     }
 
     func testAHiddenOnlyDirectoryIsNotACollision() throws {
-        let target = root.appendingPathComponent("the-lost-key", isDirectory: true)
+        let target = root.appendingPathComponent("The Lost Key", isDirectory: true)
         try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
         try "".write(to: target.appendingPathComponent(".DS_Store"), atomically: true, encoding: .utf8)
 

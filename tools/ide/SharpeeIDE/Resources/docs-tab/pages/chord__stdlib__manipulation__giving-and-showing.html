@@ -1,0 +1,59 @@
+<p><strong>give</strong> (<code>giving</code>) parses <code>give X to Y</code>, <code>give Y X</code>, and <code>offer X to Y</code>. The recipient must be a person (<code>a person</code>, the actor trait), so <code>give the sword to the door</code> refuses with <code>not_actor</code> (&quot;You can only give things to people.&quot;). Giving does an implicit take if the item is not in hand. The default NPC accepts anything: the item moves into their inventory and the player sees <code>given</code>. Three data-driven wrinkles read from the recipient's actor data: an item-count capacity (<code>inventory_full</code>) and a weight capacity (<code>too_heavy</code>), both phrased as the NPC declining, and a <code>preferences</code> object whose <code>refuses</code> list blocks matching items with <code>not_interested</code> while <code>likes</code>/<code>dislikes</code> color acceptance as <code>gratefully_accepts</code> / <code>reluctantly_accepts</code>.</p>
+<p><strong>show</strong> (<code>showing</code>) parses <code>show X to Y</code> and <code>show Y X</code>. It is purely social: nothing moves, nothing changes hands. The viewer must be a person in the same room (<code>viewer_too_far</code> otherwise); the item is implicitly taken if needed. The default reaction is <code>shown</code> (or <code>wearing_shown</code> when the item is currently worn), and a viewer with a <code>reactions</code> object in its actor data reacts by item-name match (the modern replacement for <code>reactions</code> is an <code>on showing it</code> clause on the viewer, which can do anything).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Ferry Dock
+  a room
+
+  A weathered dock; the ferry rocks at its mooring.
+
+create the ferryman
+  a person
+  in the Ferry Dock
+
+  A stooped ferryman, palm out, endlessly patient.
+
+  after giving it
+    phrase fare-paid
+      The ferryman bites the token, nods, and pockets it.
+  end after
+
+  on showing it
+    phrase ferryman-appraises
+      The ferryman leans in, squints, and names a price you pretend not to hear.
+  end on
+
+create the bone token
+  aka token
+
+  A ferry token carved from bone.
+
+create the silver locket
+  aka locket
+
+  Your mother's locket. It does not leave your neck.
+
+  on giving it
+    refuse locket-keepsake
+  end on
+
+  phrase locket-keepsake:
+    You close your fist around the locket; some things are not for trade.
+
+create the player
+  starts in the Ferry Dock
+  carries the bone token
+  carries the silver locket</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; give the locket to the ferryman
+You close your fist around the locket; some things are not for trade.
+
+&gt; show the locket to the ferryman
+The ferryman leans in, squints, and names a price you pretend not to hear.
+
+&gt; give the token to the ferryman
+You give the bone token to the ferryman.
+
+The ferryman bites the token, nods, and pockets it.</code></pre>
+<p>Both sides of the transaction are consulted: the locket's item-side guard vetoes the trade, the ferryman's <code>after giving it</code> reacts once it commits, and his <code>on showing it</code> replaces the flat <code>shown</code> line entirely. For a transaction richer still (a guard who takes the bribe and opens the gate), the Sharpee Way is a capability behavior registered for <code>giving</code> on the recipient, which takes over the whole exchange.</p>
+<table><thead><tr><th></th><th>give (<code>giving-*</code>)</th><th>show (<code>showing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_item</code> · <code>no_recipient</code> · <code>not_actor</code> · <code>self</code> · <code>not_holding</code> · <code>recipient_not_visible</code> · <code>recipient_not_reachable</code> · <code>inventory_full</code> / <code>too_heavy</code> (capacity, phrased as declining) · <code>not_interested</code> (<code>preferences.refuses</code>)</td><td><code>no_item</code> · <code>no_viewer</code> · <code>not_actor</code> · <code>self</code> · <code>not_carrying</code> · <code>viewer_not_visible</code> · <code>viewer_too_far</code></td></tr><tr><td>Success</td><td><code>given</code> · <code>gratefully_accepts</code> / <code>reluctantly_accepts</code> (likes/dislikes) · <code>accepts</code> and <code>refuses</code> exist for story use — stdlib itself never picks them</td><td><code>shown</code> · <code>wearing_shown</code> (worn item) · <code>reactions</code> matches: <code>viewer_recognizes</code> · <code>viewer_impressed</code> · <code>viewer_unimpressed</code> · <code>viewer_examines</code> · fallback <code>viewer_nods</code></td></tr><tr><td>Events</td><td><code>given</code> / <code>give_blocked</code></td><td><code>shown</code> / <code>show_blocked</code></td></tr></tbody></table>
+<p>Interceptors: <code>on giving it</code> / <code>after giving it</code> and <code>on showing it</code> / <code>after showing it</code>, on the item or on the recipient/viewer.</p>

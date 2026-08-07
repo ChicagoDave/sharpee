@@ -165,8 +165,9 @@ trait's state persists. It is TypeScript-only, with no Chord surface.
 title, author, version, description, plus build metadata (build date,
 engine/client versions, ported-by, credits). ABOUT and VERSION read it;
 the info channels and save metadata consume it. A Chord story
-never touches it directly; the header (`story "…" by "…"`, `version:`,
-`blurb:`) flows through and the engine materializes the trait.
+never touches it directly; the header's `title:`, `authors:`,
+`story-version:` and `description:` flow through and the engine
+materializes the trait.
 
 One neighbor in the traits directory is not a trait at all:
 **obstructor-protocol** (ADR-173) is a query-helper module for walls: a

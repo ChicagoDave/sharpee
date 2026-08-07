@@ -1,0 +1,18 @@
+<p>Behavior attaches to its owner as an <code>on</code> or <code>after</code> clause inside the owner's <code>create</code> block (or inside a trait). The two words divide one moment: <code>on</code> runs before the action commits and may stop it; <code>after</code> runs once it has happened and reacts.</p>
+<pre><code class="language-chord">create the hive box
+  aka hive, box
+  scenery, openable
+  in the Apiary
+  states: humming, quiet
+
+  A white wooden hive box, lid held down by a brick.
+
+  on opening it
+    refuse when it is humming: bees-disturbed
+    change it to quiet
+  end on
+
+  after opening it
+    phrase honey-smell
+  end after</code></pre>
+<p>The division is enforced: <code>refuse</code>, <code>refuse when</code>, and <code>must</code> are parse errors inside an <code>after</code> body (<code>parse.react-refusal</code>). If a reaction wants to stop something, it is not a reaction; move it to <code>on</code>. Every clause closes with an <code>end</code> line matching its opener.</p>

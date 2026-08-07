@@ -1,0 +1,56 @@
+<p>Scoring is opt-in. A story turns it on with a <code>use scoring</code> line in its header. After that, a <code>score &lt;name&gt; worth N</code> line declares a scoring identity, and <code>award &lt;name&gt;</code> grants it. Without <code>use scoring</code>, a <code>score</code> or <code>award</code> line anywhere in the story is a compile error. This is deliberate. A game with no score should say so rather than answer SCORE with a number.</p>
+<p><code>score</code> and <code>award</code> are legal under four owners: the story header, a <code>create</code> block, a <code>define trait</code>, and a <code>define action</code>. This section shows all four in one story, because where a score lives is a real design choice.</p>
+<p>The story header owns scores that belong to the whole game:</p>
+<pre><code class="language-chord">story
+  title: Scoring
+  authors: Sharpee Docs
+  id: chord-ref-scoring
+  story-version: 0.0.1
+  use scoring
+  score green-thumb worth 5</code></pre>
+<p>A trait owns a score every entity composed with it can grant, without the trait knowing which entities those are:</p>
+<pre><code class="language-chord">define trait prunable
+  score tidy-secateurs worth 5
+
+  phrases en-US
+    pruned:
+      You snip away the dead wood.
+
+  on pruning it
+    award tidy-secateurs
+    phrase pruned
+  end on
+end trait</code></pre>
+<p>A <code>create</code> block owns a score specific to that one entity, and here is the payoff of owner-scoping. The damask rose and the moss rose both declare <code>score deadheaded worth 5</code>, and those are <em>two different scores</em>, one per rose, because each is owned by its own entity:</p>
+<pre><code class="language-chord">create the damask rose
+  aka damask
+  prunable
+  in the Rose Border
+  score deadheaded worth 5
+
+  A crimson damask, badly overgrown.
+
+  after pruning it
+    award deadheaded
+    award green-thumb
+  end after</code></pre>
+<p>The damask's <code>after</code> clause awards its own <code>deadheaded</code>, and also the story-wide <code>green-thumb</code>. <code>award &lt;name&gt;</code> resolves owner-first: it looks for a score of that name on the enclosing owner, then falls back to the story header. So the same word <code>deadheaded</code> under the damask means the damask's score, and under the moss rose means the moss rose's: no collision, no prefixing.</p>
+<p>An action owns a score granted whenever the action succeeds:</p>
+<pre><code class="language-chord">define action composting
+  grammar
+    compost the stuff
+  score turned-the-heap worth 10
+  award turned-the-heap
+  phrase composted
+  phrases en-US
+    composted:
+      Straight onto the heap with it.</code></pre>
+<p>Two properties fall out of this model. First, the maximum score is the sum of every declared <code>worth</code>, computed at load time. Second, awards dedupe by identity (ADR-129): awarding the same score twice grants it once, so <code>award</code> is idempotent and the explicit <code>, once</code> modifier is never <em>needed</em> for correctness; it only documents intent. This is why the pattern is &quot;declare the score on the owner, award it in an <code>after</code> clause&quot; rather than guarding awards behind first-time checks.</p>
+<h2 id="ranks">Ranks</h2>
+<p><code>use scoring</code> can take an indented body of ranks. A rank names a threshold in absolute points, and SCORE reports the rung the player has reached:</p>
+<pre><code class="language-chord">  use scoring, announce all
+    rank &quot;Curious Visitor&quot; at 0
+    rank &quot;Attentive Guest&quot; at 40 says settled-in
+    rank &quot;Master of the Folly&quot; at 120</code></pre>
+<p>The threshold is absolute points, never a percentage of the maximum. A story that raises its ceiling mid-game would otherwise demote players who had earned nothing and lost nothing. <code>says &lt;key&gt;</code> names a phrase from your own <code>phrases</code> block, spoken on the turn the rung is crossed. A rung with no <code>says</code> speaks an overridable platform line, and <code>announce silent</code> turns announcements off.</p>
+<p>The <code>announce</code> mode sets how a single award that crosses several rungs at once reads. <code>all</code> reports each crossing in order, <code>collapsed</code> reports only the top rung, <code>combined</code> speaks one line for the whole span, and <code>silent</code> says nothing while the crossing still happens.</p>
