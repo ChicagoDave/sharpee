@@ -100,6 +100,37 @@ construction — the build already runs the gates.
 - The IDE's `.gitkeep`-only folders show as empty groups until an author adds files —
   unverified how that reads in the tree.
 
+## After the commit — documentation discussion (remote control, phone)
+
+David chose documentation over the test editor because he was on a phone. Two corrections
+came out of it, both worth recording because Claude started in the wrong place twice:
+
+1. **The v1 Sharpee book is not a concern.** It is baked. He may circle back and update it
+   for Chord, but the focus is Chord now. The Phase 2 audit's finding stands as history;
+   it is not an open decision. Do not re-raise it.
+2. **"Documentation" meant the IDE's Docs tab, not writing new pages.** Claude proposed a
+   `guide/workflow` section on sharpee.net (project layout, testing, publishing, browser
+   client) covering real gaps — but that was not the topic. The topic is that the Docs tab
+   flattened the site's 143 pages into a list plus a filter and **lost the site's
+   organization**, showing the filesystem rather than the documentation.
+
+### Decided — GH #238 (comment recorded on the issue)
+
+- **D1 — mirror the website's structure exactly**, no reordering for a mid-write author.
+  One organization is easier to keep true than two, and a Docs tab that disagrees with the
+  website authors are pointed at is its own problem.
+- **D2 — no reading-position memory.** Reopening at the top is fine.
+- **What follows**: the fix is not layout polish. The bundle must carry the site's
+  navigation AS DATA, read from the same source the site's sidebar reads. Continuity then
+  becomes possible because there is an ordering to be continuous along — prev/next within a
+  section, breadcrumbs, a next-page link instead of a dead end.
+- **Verify first**: the hypothesis that `tools/ide/web/docs-tab/build.mjs` derives its tree
+  from file paths while the site's real ordering lives in its own nav is UNCONFIRMED.
+
+The real documentation gaps Claude surfaced (no testing docs anywhere, no project-layout
+page, publishing documented only on the story-header page) are still real and still
+unwritten — but they are a separate piece of work from #238.
+
 ## Session Metadata
 
 - **Status**: COMPLETE
