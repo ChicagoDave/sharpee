@@ -123,6 +123,21 @@ final class MainWindowController: NSWindowController {
         rootViewController?.storyBuildReport()
     }
 
+    /// The Publish tab's view (ADR-284) — the finish line for a story.
+    var publishView: PublishView? {
+        rootViewController?.publishView
+    }
+
+    /// Tells the Publish tab which story it would publish (nil disables it).
+    func setPublishStory(_ storyURL: URL?) {
+        rootViewController?.publishView?.setStory(storyURL)
+    }
+
+    /// Brings the Publish tab forward.
+    func showPublishTab() {
+        rootViewController?.showPublishTab()
+    }
+
     /// The right panel's Testing tab (ADR-301) — the web surface a run streams
     /// into. Force-unwrap-free: it exists for the window's lifetime; the
     /// fallback instance only serves a window-less controller (tests).
@@ -470,6 +485,10 @@ private final class RootViewController: NSViewController {
 
     /// The right panel's Testing tab (ADR-301) — wired by TestController.
     var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
+
+    var publishView: PublishView? { mainSplitViewController.publishView }
+
+    func showPublishTab() { mainSplitViewController.showPublishTab() }
 
     func showTestingTab() {
         mainSplitViewController.showTestingTab()
@@ -959,6 +978,10 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
 
     fileprivate var docsTab: DocsTabViewController { rightPanelViewController.docsTab }
+
+    fileprivate var publishView: PublishView { rightPanelViewController.publish }
+
+    fileprivate func showPublishTab() { rightPanelViewController.showPublishTab() }
 
     fileprivate func showTestingTab() {
         rightPanelViewController.showTestingTab()

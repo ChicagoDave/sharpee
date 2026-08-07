@@ -27,7 +27,18 @@ Needs a ruling: ADR-284's Acceptance 1 names a "customized Web Template", but
 ADR-286's `.templates` DSL is not implemented. §6.1 recommends reading it against
 the `browser/<storyId>.css` override that does exist, and amending the ADR.
 
-**Status**: scoped, not started. No dependencies — can run at any point.
+**Status**: **DONE 2026-08-06**. `sharpee publish <file>.story [--out]` in devkit
+(build + zip, refusing before anything is built when the story does not compile
+or has no `ifid:`), and a Publish tab in the right panel that drives it through
+the resolved toolchain — the author picks the destination, the toolchain's own
+output streams into the tab, and a produced artifact is revealable in Finder.
+Also **Build → Publish…** in the menu (ADR-284 D1's "menu-level peer").
+
+Two things not done, both recorded rather than quietly skipped: the IFID
+precondition is not offered as an in-tab fix (that would be a second check in
+Swift, the drift D1 exists to prevent — the Problems panel already offers
+Generate IFID at compile time), and the itch.io upload has not been verified by
+hand (it needs a real account).
 
 ### 2. Integrated documentation
 

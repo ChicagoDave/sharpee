@@ -206,6 +206,16 @@ enum MenuBuilder {
         cancel.target = target
         menu.addItem(cancel)
 
+        menu.addItem(NSMenuItem.separator())
+
+        // ADR-284 D1: Publish is a menu-level peer of Build, not an export buried
+        // in a submenu. No key equivalent — it is a deliberate act, not a loop step.
+        let publish = NSMenuItem(title: "Publish…",
+                                 action: #selector(AppDelegate.publishStory(_:)),
+                                 keyEquivalent: "")
+        publish.target = target
+        menu.addItem(publish)
+
         let item = NSMenuItem()
         item.submenu = menu
         return item

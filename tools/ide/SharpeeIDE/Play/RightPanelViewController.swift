@@ -31,6 +31,9 @@ final class RightPanelViewController: NSViewController {
     /// The author documentation bundled with the app (go-live Phase 3): the same
     /// scheme-handler machinery as the Testing tab, pointed at a different root.
     let docsTab = DocsTabViewController()
+    /// The finish line (ADR-284, go-live item 1): builds and zips a
+    /// distributable browser version of the story.
+    let publish = PublishView()
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)? {
@@ -45,6 +48,7 @@ final class RightPanelViewController: NSViewController {
     private static let indexTab = 3
     private static let diagnosisTab = 4
     private static let docsTabIndex = 5
+    private static let publishTab = 6
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
@@ -58,6 +62,7 @@ final class RightPanelViewController: NSViewController {
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
         tabStrip.addTab(title: "Docs")
+        tabStrip.addTab(title: "Publish")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -67,6 +72,7 @@ final class RightPanelViewController: NSViewController {
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
         testingTab.view.translatesAutoresizingMaskIntoConstraints = false
         docsTab.view.translatesAutoresizingMaskIntoConstraints = false
+        publish.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
@@ -74,6 +80,7 @@ final class RightPanelViewController: NSViewController {
         container.addSubview(diagnosis)
         container.addSubview(testingTab.view)
         container.addSubview(docsTab.view)
+        container.addSubview(publish)
 
         NSLayoutConstraint.activate([
             tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
@@ -110,6 +117,11 @@ final class RightPanelViewController: NSViewController {
             docsTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             docsTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             docsTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            publish.topAnchor.constraint(equalTo: play.view.topAnchor),
+            publish.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            publish.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            publish.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -149,6 +161,11 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.testingTabIndex)
     }
 
+    /// Switches to the Publish tab (ADR-284) — the finish line for a story.
+    func showPublishTab() {
+        tabStrip.select(Self.publishTab)
+    }
+
     /// Switches to the Documentation tab, optionally at a given page.
     func showDocsTab(page href: String? = nil) {
         if let href { docsTab.showPage(href) }
@@ -164,6 +181,7 @@ final class RightPanelViewController: NSViewController {
         diagnosis.isHidden = selected != Self.diagnosisTab
         testingTab.view.isHidden = selected != Self.testingTabIndex
         docsTab.view.isHidden = selected != Self.docsTabIndex
+        publish.isHidden = selected != Self.publishTab
     }
 
 }

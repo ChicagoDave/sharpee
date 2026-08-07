@@ -21,7 +21,7 @@ Phase 3  Documentation tab             (item 2b)    DONE 2026-08-06 (item 8 fold
 Phase 4  Transcript discovery pass     (item 7.1)   no dependencies
 Phase 5  Transcript editor             (item 3)     needs Phase 4
 Phase 6  Transcript acceptance pass    (item 7.2)   needs Phase 5
-Phase 7  Publish tab                   (item 1)     SCOPED 2026-08-06 — ready to start
+Phase 7  Publish tab                   (item 1)     DONE 2026-08-06
 Phase 8  DMG                           (item 4)     needs Phases 3 and 6
 
 Added by Phase 2:
@@ -295,6 +295,25 @@ tests say. The resulting suite is what Phase 8 ships.
 ---
 
 ## Phase 7 — Publish tab (item 1)
+
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. `sharpee publish`
+exists in devkit and a Publish tab drives it. Acceptance below, checked:
+
+| Criterion | State |
+|---|---|
+| `publish` produces a playable zip | met — fernhill publishes to 0.4 MB; unzipped, index.html is at the root, references are relative, audio/ and images/ are carried |
+| No IFID → refuses, writes nothing | met — exit 2, nothing built (verified end to end, plus unit tests) |
+| Zip structure pinned by test | met — `index.html` at the archive root |
+| The tab runs the toolchain command, never a second path | met — `PublishController` spawns `sharpee publish`; a real-path test drives a real child process |
+| The IFID precondition is *offered as a fix* in the tab | **not done** — a second IFID check in Swift is the drift ADR-284 D1 exists to prevent. The author meets the fix earlier: Problems offers Generate IFID at compile time, and the CLI's refusal names both fixes |
+| itch.io upload verified by hand | **not done** — needs a real account; a David-only step |
+
+**Found and fixed while verifying**: `buildBrowser` writes into `dist/web/<id>`
+WITHOUT clearing it, so the first real publish of fernhill carried a
+`game.js.map` five hours older than its `game.js` despite `sourcemap: false`.
+Anything left by an earlier build was shipping to strangers. Clearing the story's
+own output first took the artifact from **1.2 MB to 0.4 MB** — the stale source
+map was two thirds of the download.
 
 **Scoping step: COMPLETE** — 2026-08-06, session 20260806-1650.
 `phase-7-publish-scope.md`. The phase is unblocked and can start any time.

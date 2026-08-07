@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var mainWindowController: MainWindowController?
     private var buildController: BuildController?
     private var testController: TestController?
+    /// Runs `sharpee publish` for the Publish tab (ADR-284). Created eagerly:
+    /// it owns the streamed output wiring, not a per-run object.
+    private let publishController = PublishController()
 
     /// Drives the landing page at launch (go-live item 6). Held for the app's
     /// lifetime rather than the launch's: it owns the sheets it presented, and
@@ -59,12 +62,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         buildController = BuildController(window: controller)
         testController = TestController(window: controller)
         controller.onBuildPillCancel = { [weak self] in self?.buildController?.cancel() }
+        wirePublish(to: controller)
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
 
         NSApp.activate(ignoringOtherApps: true)
 
         beginLaunchFlow(in: controller)
+    }
+
+    /// Connects the Publish tab to the controller that runs the toolchain: the
+    /// button asks, the stream lands in the tab, the result offers the artifact.
+    private func wirePublish(to controller: MainWindowController) {
+        guard let view = controller.publishView else { return }
+        view.onPublish = { [weak self] in self?.publishStory(nil) }
+        view.onCancel = { [weak self] in self?.publishController.cancel() }
+        view.onReveal = { url in
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
+        publishController.onOutput = { [weak view] text in view?.append(text) }
+        publishController.onFinished = { [weak view] succeeded, zipURL in
+            view?.finish(succeeded: succeeded, zipURL: zipURL)
+        }
     }
 
     /// Shows the landing page and wires what it is allowed to do (go-live item 6).
@@ -334,6 +353,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             testController?.detach()
         }
 
+        // The Publish tab acts on the same target Build does.
+        mainWindowController?.setPublishStory(currentStoryURL)
+
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
@@ -393,6 +415,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// Build → Cancel Build. Cancels the running build (SIGTERM, then SIGKILL).
     @objc func cancelBuild(_ sender: Any?) {
         buildController?.cancel()
+    }
+
+    /// Build → Publish… (ADR-284). Asks where the zip goes, then runs
+    /// `sharpee publish` through the resolved toolchain and streams it into the
+    /// Publish tab. The destination is chosen here rather than parsed back out
+    /// of the command's output.
+    @objc func publishStory(_ sender: Any?) {
+        guard let storyURL = currentStoryURL,
+              let window = mainWindowController?.window,
+              let view = mainWindowController?.publishView else { return }
+        mainWindowController?.showPublishTab()
+
+        let panel = NSSavePanel()
+        panel.title = "Publish Story"
+        panel.prompt = "Publish"
+        panel.message = "Choose where to write the distributable zip."
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = storyURL.deletingPathExtension().lastPathComponent + ".zip"
+
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard let self, response == .OK, let destination = panel.url else { return }
+            view.begin()
+            self.publishController.publish(storyFile: storyURL, to: destination)
+        }
     }
 
     // MARK: - Test menu actions (ADR-277 D2/D3)
@@ -458,6 +504,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(buildController?.isBuilding ?? false)
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
+        case #selector(publishStory(_:)):
+            return currentStoryURL != nil
+                && mainWindowController?.composedStory?.isGrammar != true
+                && !publishController.isPublishing
         case #selector(runTests(_:)):
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true
