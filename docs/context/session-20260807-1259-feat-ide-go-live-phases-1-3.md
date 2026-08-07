@@ -6,12 +6,14 @@
 - Write the first author-facing Chord Writer documentation (none existed anywhere).
 - Fix a stale-comment bug in devkit left behind by last session's ADR-284 work.
 - Execute Phase 1 of the new `ide-docs-tab` plan: make the Docs tab bundler read `nav.ts` as the source of truth.
+- Execute Phase 2: make the Docs tab UI render that nav data (rail tree, breadcrumbs, section-scoped pager).
+- Commit the work and resolve whatever the DevArch test gate found blocking it.
 
 ## Phase Context
 - **Plan**: `docs/work/ide-docs-tab/plan.md` — "Restructure the Chord Writer Documentation tab to mirror sharpee.net's real nav (GH #238)"
-- **Phase executed**: Phase 1 — "Navigation-as-data in the bundler" (Medium)
-- **Tool calls used**: 203 / 250
-- **Phase outcome**: Completed under budget
+- **Phase executed**: Phase 1 — "Navigation-as-data in the bundler" (Medium), then Phase 2 — "Tab UI mirrors the site — nav tree, breadcrumbs, and a section-scoped pager" (Medium)
+- **Tool calls used**: 203 / 250 (Phase 1); Phase 2 ran to completion in the same session, budget not separately tracked
+- **Phase outcome**: Both phases completed. Plan is now fully DONE.
 
 ## Completed
 
@@ -32,6 +34,30 @@ David ruled Getting Started in the IDE must be IDE-related (the app is already i
 - `build.mjs` transpiles `nav.ts` via esbuild's `transform` and imports it as a base64 data URL (no temp file). `SECTIONS = ['chord-writer','chord','learn']`, `NAV_SECTIONS = ['Chord Writer','Chord','Tutorial']`, `EXCLUDED_GROUPS = [{section:'Chord', group:'Getting Started'}]` (commented as a decision, not a bug). Emits a `nav` tree into `docs-index.json`; iterates in NAV order.
 - Hard invariant enforced both directions: throws on mismatch, not just warns.
 
+### 6. Commit `85d54966` landed Phase 1 + docs work, local only
+`docs+fix(ide,website): Docs tab nav-driven build, Chord Writer docs, devkit staleness fix` — 31 files, +1112/-203. Not pushed at commit time. `scripts/clodpod.sh` was excluded from the commit and verified still present on disk afterward (it is deliberately untracked, per prior-session memory). The commit script also auto-archived two older session files into `docs/context/archive/` under its retention policy.
+
+### 7. Dead package `docs/actions` blocked the commit gate — investigated and retired
+The DevArch test gate failed on `docs/actions`, a directory that was never documentation but an abandoned package: `@sharpee/actions` v0.1.0, "Event-driven action system for Sharpee IF Platform," with `src/`, `examples/`, `tsconfig.json`, and workspace deps on core and world-model. Not a pnpm workspace member (`pnpm-workspace.yaml` covers `packages/*`, four extensions, four stories — nothing under `docs/`), no dependents, never built or published; last commit touching it `25e9c868`, 2026-01-14. Its `package.json` declared `"test": "vitest"` with zero test files, so vitest exited 1 on "no files found." `~/.devarch/scripts/git-assess.sh` discovers suites by filesystem walk (`find . -maxdepth 3`, any dir with a `package.json` carrying `scripts.test`, run via `npm test --silent`) rather than by workspace membership, so it picked up a package pnpm ignores. The script itself was last written 2026-08-07 04:08, between the previous session and this one — the package didn't start failing, the gate started looking at it. David confirmed the gate fix is correct behavior and the monorepo has legacy to clean up. **David's decision: delete `docs/actions/package.json`** (via `git rm`); `src/`, `examples/`, `README.md`, `tsconfig.json` deliberately kept. Verified fix: `DEVARCH_TEST_DETECT_ONLY=1 bash ~/.devarch/scripts/git-assess.sh` → 36 suites, none of them docs/actions. Related but unactioned: the same gate detects `packages/interpreter/src-tauri` via Cargo.toml despite `pnpm-workspace.yaml` excluding `packages/interpreter` with `!packages/interpreter` — not failing, not blocking, noted for later.
+
+### 8. Phase 2 of the ide-docs-tab plan — DONE
+`tools/ide/web/docs-tab/src/main.ts`, `src/docs.css`, and `tools/ide/SharpeeIDETests/DocsTabRealPathTests.swift`:
+- The rail renders `index.nav` as section → group → item, replacing the old two-URL-segment bucketing. `groups()` and `humanize()` deleted.
+- An item's children render only while the reader is on that branch (nav.ts's own documented rule for `children`).
+- New section-scoped pager (`buildSteps`), mirroring `pagerFor` including its rule that a generic "Overview" is labeled with its group's title. Never crosses a section boundary.
+- `boot()` now opens `index.pages[0]` rather than the hardcoded `/chord/getting-started/first-story`, which is no longer bundled at all.
+- Search results stay deliberately flat, with a comment saying so.
+- `docs.css` gains three rail levels plus pager styles, built only from existing `--fg`/`--fg-dim`/`--fg-faint`/`--accent`/`--border` tokens, so both palettes are covered with no new light/dark branching (ADR-297).
+
+Evidence:
+- `xcodebuild -project SharpeeIDE.xcodeproj -scheme SharpeeIDE -destination 'platform=macOS' test -only-testing:SharpeeIDETests/DocsTabRealPathTests` → `** TEST SUCCEEDED **`, `Executed 15 tests, with 0 failures` in 4.1s.
+- `npx vitest run` in tools/ide/web/docs-tab → 43 passed (3 files).
+- `bash tools/ide/build-docs-tab.sh` → `144 pages in nav order, 3 excluded by EXCLUDED_GROUPS (Chord 3.0.0)`.
+- D2 verified by grep: no localStorage/sessionStorage/UserDefaults in the tab's JS or Swift.
+- `main.ts` typechecked against its HEAD baseline: zero NEW type errors (the 4 reported are identical before and after, caused by the file having no import/export so `declare global` is invalid; there is no tsconfig — esbuild bundles without typechecking).
+
+Technique note: the first xcodebuild run's diagnostics were lost because the command was piped through `tail -50`; the `.xcresult` bundle was read via `xcrun xcresulttool` instead of re-running.
+
 ## Key Decisions
 
 ### 1. DevArch agent standing-request lives in CLAUDE.md, not ~/.devarch/DEVARCH.md
@@ -49,16 +75,19 @@ NAV item titles are rail labels (`/chord/guide/world` is "Overview" in the rail,
 ### 5. Chord language version corrected to 3.0.0 in nav.ts
 `nav.ts` advertised the Chord section as 2.1.0 while `CHORD_LANGUAGE_VERSION` is 3.0.0. David clarified the language is frozen at 3.0.0 and its version is unrelated to package versions; set with a comment recording the distinction.
 
+### 6. On-branch children is user-visible and reversible
+Rendering an item's children only while the reader is on that branch drops the resting rail from 144 links to 87, which broke `testTheNavigationListsTheCorpusAndFiltersIt`'s `> 100` assertion. Rather than lower the number silently, that test now asserts every top-level item is present at rest, and a new test proves the reachability the old count implied. Reversing it = remove the `onBranch` guard in `renderNavTree` and restore the old assertion.
+
+### 7. A test was wrong, not the code, in the pager suite
+`testThePagerFollowsNavOrder` asserted the previous link read "Overview" and failed with "Getting Started." `buildSteps` correctly mirrors `pagerFor`'s group-title relabel; the test's expectation was corrected and the reasoning recorded inline in the test.
+
 ## Next Phase
-- **Phase 2**: "Tab UI mirrors the site — nav tree, breadcrumbs, and a section-scoped pager" — nested rail rendering from `index.nav`, section-scoped prev/next pager, forced default landing page `/chord-writer`, `docs.css` indentation/pager styles, and Swift real-path `DocsTabRealPathTests.swift` assertions (rule 13a: this phase touches the rendered surface, so the acceptance gate is a real WKWebView test, not a JS-only unit test standing in for it).
-- **Tier**: Medium (250 tool-call budget)
-- **Entry state**: `docs-index.json` carries a `nav` field (filtered, exclusion-applied tree) and `pages[]` in NAV order with NAV-derived `title`/`section`/`crumb`, 144 pages, first href `/chord-writer`. Marked CURRENT in the plan; approved by David to start next session.
+Plan complete — all phases done. `docs/work/ide-docs-tab/plan.md` has no remaining PENDING phase; GH #238 is functionally closed on the code side (deployment excepted — see Open Items).
 
 ## Open Items
 
 ### Short Term
-- Phase 2 implementation (nav tree UI, pager, Swift real-path tests).
-- Deployment to sharpee.net is David's, explicitly.
+- Deployment of the four Chord Writer pages (and the restructured Docs tab bundle) to sharpee.net is David's, explicitly.
 - `~/.npmrc` sets `ignore-scripts=true`, so `npm run build` in `website/` does NOT run the `prebuild` search-index step — a locally-built deploy ships a stale `public/search-index.json` unless the script is run manually. Affects every page added since that flag went in, not just this session's four.
 
 ### Long Term
@@ -81,27 +110,37 @@ NAV item titles are rail labels (`/chord/guide/world` is "Overview" in the rail,
 - `tools/ide/web/docs-tab/src/nav-bridge.mjs` (new) - pure `shippedNav()` module
 - `tools/ide/web/docs-tab/tests/nav-bridge.test.mjs` (new) - 18 new unit tests
 
+**Docs tab UI — Phase 2** (3 files):
+- `tools/ide/web/docs-tab/src/main.ts` - nav-tree rail (section → group → item), on-branch children, section-scoped pager (`buildSteps`), `boot()` opens `index.pages[0]`; `groups()`/`humanize()` deleted
+- `tools/ide/web/docs-tab/src/docs.css` - three rail indentation levels + pager styles, existing theme tokens only
+- `tools/ide/SharpeeIDETests/DocsTabRealPathTests.swift` - real WKWebView acceptance suite, 15 tests (rule 13a real-path gate)
+
 **Planning**:
-- `docs/work/ide-docs-tab/plan.md` (new, 2 phases, amended twice same day)
+- `docs/work/ide-docs-tab/plan.md` (2 phases, both now DONE)
 - `docs/context/.current-plan` - pointer updated to the new plan
+
+**Retired dead package**:
+- `docs/actions/package.json` - deleted (`git rm`); `src/`, `examples/`, `README.md`, `tsconfig.json` deliberately kept. Unblocked the DevArch test gate, which had begun walking it as a spurious 37th suite.
 
 **Generated build output** (produced by `build.mjs` / `next build`, not hand-edited): `tools/ide/SharpeeIDE/Resources/docs-tab/docs-index.json`, `docs.js`, 4 new `pages/chord-writer*.html`, 3 removed `pages/chord__getting-started__*.html`; `website/public/search-index.json`.
 
+**Commit**: `85d54966` — `docs+fix(ide,website): Docs tab nav-driven build, Chord Writer docs, devkit staleness fix`, 31 files, +1112/-203. Local only as of this writing (not pushed). `scripts/clodpod.sh` excluded and confirmed still on disk; commit script auto-archived two older session files into `docs/context/archive/`.
+
 ## Notes
 
-**Session duration**: ~2h15m (17:59–20:13 UTC / ~13:00–15:13 CDT)
+**Session duration**: ~2h15m Phase 1 (17:59–20:13 UTC / ~13:00–15:13 CDT) plus Phase 2 and the docs/actions cleanup in the same session.
 
-**Approach**: Verification-first (measured GH #238's hypothesis before scoping rather than trusting it), new docs grounded in cited source files rather than assumption, and test derivation via Behavior Statement for `nav-bridge.mjs` before writing its suite.
+**Approach**: Verification-first (measured GH #238's hypothesis before scoping rather than trusting it), new docs grounded in cited source files rather than assumption, test derivation via Behavior Statement for `nav-bridge.mjs` before writing its suite, and investigating the gate failure (docs/actions) to a root cause rather than overriding it.
 
 ---
 
 ## Session Metadata
 
-- **Status**: IN PROGRESS — Phase 1 COMPLETE, Phase 2 CURRENT and starting immediately after this commit
+- **Status**: COMPLETE — both plan phases done. GH #238 is functionally closed: the tab opens on Chord Writer's Overview instead of the middle of the Cookbook, the rail reads section → group → item from nav.ts, `/learn/*` is labeled Tutorial, breadcrumbs show real trails, and pages end in a section-scoped prev/next.
 - **Blocker** (if any): N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
-- **Rollback Safety**: safe to revert — feature branch, nothing merged to main; changes are additive docs/tooling plus two comment fixes
+- **Rollback Safety**: safe to revert — feature branch, nothing merged to main; commit `85d54966` is local only, not pushed. Changes are additive docs/tooling, two comment fixes, and one dead-package deletion (`docs/actions/package.json`, never a workspace member).
 
 ## Dependency/Prerequisite Check
 
@@ -121,13 +160,14 @@ NAV item titles are rail labels (`/chord/guide/world` is "Overview" in the rail,
 
 - Similar to past issue? YES (related, n=1 so far) — the stale devkit comment (item 4) was left behind by the immediately preceding session's ADR-284 IR-embedding commit (`e913dd97`), caught and fixed same-day rather than surfacing as a separate future bug report. Not yet a recurring category; worth a quick grep for other comments still describing pre-ADR-284 compile-at-boot behavior if a third instance turns up.
 - If YES: consider a one-time grep sweep of `packages/devkit` and `website/` for "compiles story.story at boot" / "compile-at-boot" language before Phase 2 ships.
+- Separately, docs/actions (item 7) is not a recurrence of a prior *bug* but is worth flagging as a category: a filesystem-walking test-discovery script picking up abandoned, non-workspace packages. Worth a one-time scan for other `docs/` or top-level dirs with a stray `package.json` carrying a `test` script but no workspace membership, so this doesn't resurface as gate friction on a different dead directory.
 
 ## Test Coverage Delta
 
-- Tests added: 18 (`tools/ide/web/docs-tab/tests/nav-bridge.test.mjs`).
-- Tests passing before: not captured pre-session → after: 43 across 3 files (evidence: `npx vitest run`, event-log `2026-08-07T20:13:04Z`, "43 passed" — fresh relative to the last edit at `20:12:59Z`).
-- Known untested areas: Phase 2's rendered UI (nav tree, pager, forced landing page) has no test yet — deferred to Phase 2's Swift real-path suite per the plan. The devkit suite count was re-run at commit time rather than carried forward as a claim: `pnpm --filter '@sharpee/devkit' test` → `Test Files 23 passed | 1 skipped (24)`, `Tests 153 passed | 1 skipped (154)` (2026-08-07).
+- Tests added: 18 (`tools/ide/web/docs-tab/tests/nav-bridge.test.mjs`, Phase 1) + 15 (`tools/ide/SharpeeIDETests/DocsTabRealPathTests.swift`, Phase 2, real WKWebView acceptance suite per rule 13a).
+- Tests passing before: not captured pre-session → after (session end): DocsTabRealPathTests 15/15 (evidence: `xcodebuild ... -only-testing:SharpeeIDETests/DocsTabRealPathTests` → `** TEST SUCCEEDED **`, "Executed 15 tests, with 0 failures" in 4.1s); docs-tab vitest 43/43 across 3 files (evidence: `npx vitest run`, event-log `2026-08-07T20:13:04Z`, "43 passed" — fresh relative to the last edit at `20:12:59Z`); `@sharpee/devkit` 153 passed, 1 skipped (evidence: `pnpm --filter '@sharpee/devkit' test` → `Test Files 23 passed | 1 skipped (24)`, `Tests 153 passed | 1 skipped (154)`, 2026-08-07); website `next build` clean.
+- Known untested areas: nothing carried from Phase 2 — the rendered UI now has real-path coverage. Deployment behavior (stale `search-index.json` under `ignore-scripts=true`) remains unverified in an actual deploy, since deployment is David's step.
 
 ---
 
-**Progressive update**: Session completed 2026-08-07 15:16 CDT
+**Progressive update**: Session completed 2026-08-07 (CDT) — Phase 1 update at 15:16 CDT, folded in Phase 2 completion, the docs/actions gate fix, and commit `85d54966` afterward.

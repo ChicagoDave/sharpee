@@ -121,8 +121,32 @@ html, body {
   background: var(--project);
 }
 
+/*
+ * Three rail levels, distinguished by weight and indent rather than by rules or
+ * disclosure arrows: section, group, item — with an item's children one step
+ * further in. The site's rail reads the same way, which is the point (GH #238).
+ */
+.nav-section {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 16px 10px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+}
+
+.nav-section:first-child { margin-top: 8px; }
+
+.nav-version {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--fg-faint);
+}
+
 .nav-group {
-  margin: 12px 10px 4px;
+  margin: 10px 10px 4px 16px;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -132,15 +156,46 @@ html, body {
 
 .nav-link {
   display: block;
-  padding: 3px 10px 3px 16px;
+  padding: 3px 10px 3px 24px;
   color: var(--fg-dim);
   text-decoration: none;
   cursor: default;
 }
 
+.nav-child { padding-left: 36px; }
+
 .nav-link:hover { background: var(--sel-soft); color: var(--fg); }
 .nav-link.is-current { color: var(--accent); background: var(--sel-soft); }
 .nav-empty { margin: 12px 10px; color: var(--fg-faint); }
+
+/*
+ * The pager. A page used to end in nothing; now it ends in where to go next,
+ * within its own section only. Prev sits left and next right even when only one
+ * of them exists, so "next" never slides into the position "previous" occupies
+ * on the page before it.
+ */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pager-link {
+  max-width: 46%;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: default;
+  font-size: 13px;
+}
+
+.pager-prev { margin-right: auto; }
+.pager-next { margin-left: auto; text-align: right; }
+.pager-prev::before { content: "← "; color: var(--fg-faint); }
+.pager-next::after { content: " →"; color: var(--fg-faint); }
+.pager-link:hover { text-decoration: underline; }
 
 .content {
   flex: 1;

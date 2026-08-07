@@ -128,12 +128,19 @@ final class DocsTabRealPathTests: XCTestCase {
                        "these bundled pages still teach the removed positional story header")
     }
 
+    /// The count changed with GH #238 and the assertion changed with it, on
+    /// purpose. The rail now mirrors the website's, where a nested item's
+    /// children appear only while the reader is on that branch, so the resting
+    /// rail lists every top-level item rather than every page. Reachability is
+    /// unchanged and is what the second half of this test now proves directly:
+    /// a child is one click from its parent. Asserting a raw `> 100` again
+    /// would only be asserting that children are never collapsed.
     func testTheNavigationListsTheCorpusAndFiltersIt() async throws {
         try await waitForPage()
         try await settle()
 
         let all = try await count(".nav-link")
-        XCTAssertGreaterThan(all, 100, "every bundled page must be reachable from the nav")
+        XCTAssertGreaterThan(all, 50, "every top-level nav item must be reachable at rest")
 
         _ = try await tab.evaluateInTab("""
             (function () {
@@ -148,6 +155,109 @@ final class DocsTabRealPathTests: XCTestCase {
         let filtered = try await count(".nav-link")
         XCTAssertGreaterThan(filtered, 0, "a real term must match something")
         XCTAssertLessThan(filtered, all, "the filter must actually narrow the list")
+    }
+
+    // MARK: - The rail mirrors the website's structure (GH #238)
+
+    /// The rail must show the documentation's organization, not the filesystem's.
+    /// Sections carry their real titles — `/learn/*` lives under "Tutorial", a
+    /// name no path segment contains, so seeing it proves the tab is reading
+    /// nav.ts rather than deriving labels from URLs.
+    func testTheRailRendersTheWebsitesSectionsAndGroups() async throws {
+        try await waitForPage()
+        try await settle()
+
+        let sections = try await textList(".nav-section")
+        XCTAssertEqual(sections, ["Chord Writer", "Chord", "Tutorial"],
+                       "the rail's sections and their order come from nav.ts")
+
+        let groups = try await textList(".nav-group")
+        XCTAssertTrue(groups.contains("Getting Started"), "groups render under their section")
+        XCTAssertGreaterThan(groups.count, 5, "the rail is grouped, not one flat list")
+
+        XCTAssertFalse(groups.contains("Ide"), "no label may be humanized from a URL segment")
+    }
+
+    /// Chord's command-line Getting Started group is deliberately excluded, and
+    /// the tab opens on Chord Writer instead. A regression here puts `npm
+    /// install -g` in front of an author who has no terminal open.
+    func testItOpensOnChordWriterAndShipsNoCommandLineInstallPages() async throws {
+        try await waitForPage()
+        try await settle()
+
+        let crumb = try await text(".crumb")
+        XCTAssertEqual(crumb, "Chord Writer › Getting Started",
+                       "the tab must land in the Chord Writer section")
+
+        let cliPages = try await tab.evaluateInTab("""
+            (function () {
+              return Array.prototype.filter.call(
+                document.querySelectorAll('.nav-link'),
+                function (a) { return a.getAttribute('href').indexOf('/chord/getting-started') === 0; }
+              ).length;
+            })()
+            """) as? Int
+        XCTAssertEqual(cliPages, 0, "the excluded CLI group must not be reachable")
+    }
+
+    /// A nested item's children are one click from their parent. This is the
+    /// reachability the resting-count assertion above no longer makes.
+    func testAnItemsChildrenAppearWhenTheReaderIsOnThatBranch() async throws {
+        try await waitForPage()
+        try await settle()
+
+        let closed = try await count(".nav-child")
+        XCTAssertEqual(closed, 0, "no branch is open before the reader is on one")
+
+        tab.showPage("/chord/guide/tooling")
+        try await settle()
+
+        let opened = try await count(".nav-child")
+        XCTAssertGreaterThan(opened, 0, "opening a parent reveals its children in the rail")
+    }
+
+    // MARK: - The pager
+
+    /// A page ends in where to go next, in nav order rather than path order.
+    ///
+    /// The previous page here is the section's "Overview" item, and the pager
+    /// labels it with its GROUP's title — "Getting Started", not "Overview".
+    /// That relabel is `pagerFor`'s rule in the website's own nav.ts, and it
+    /// exists because a link reading "Overview" tells the reader nothing about
+    /// where it goes. The rail still says "Overview"; only the pager renames it.
+    func testThePagerFollowsNavOrder() async throws {
+        try await waitForPage()
+        tab.showPage("/chord-writer/your-first-story")
+        try await settle()
+
+        let prev = try await text(".pager-prev")
+        let next = try await text(".pager-next")
+        XCTAssertEqual(prev, "Getting Started", "a generic Overview is labeled with its group")
+        XCTAssertEqual(next, "Building, playing, and testing", "next is the nav's following page")
+    }
+
+    /// The boundary that matters: the pager must not walk the reader out of one
+    /// section and into another. Chord's last page and the Tutorial's first are
+    /// adjacent in the bundle and must NOT be adjacent in the pager.
+    func testThePagerNeverCrossesASectionBoundary() async throws {
+        try await waitForPage()
+
+        // Boundaries come from the SHIPPED index, read in Swift. Asking the page
+        // to compute them would let one bug hide another: the page is the thing
+        // under test here.
+        let boundaries = try sectionEdges()
+        XCTAssertEqual(boundaries.count, 6, "three sections, each with a first and last page")
+
+        // The last page of each section must have no next; the first, no prev.
+        for (offset, href) in boundaries.enumerated() {
+            tab.showPage(href)
+            try await settle()
+            let isFirstOfSection = offset % 2 == 0
+            let selector = isFirstOfSection ? ".pager-prev" : ".pager-next"
+            let edgeLinks = try await count(selector)
+            XCTAssertEqual(edgeLinks, 0,
+                           "\(href) is at a section edge and must have no \(selector)")
+        }
     }
 
     // MARK: - The version gate
@@ -288,5 +398,45 @@ final class DocsTabRealPathTests: XCTestCase {
     private func hidden(_ selector: String) async throws -> Bool {
         let value = try await tab.evaluateInTab("document.querySelector('\(selector)').hidden")
         return (value as? Bool) ?? false
+    }
+
+    /// Every match's text, in document order.
+    private func textList(_ selector: String) async throws -> [String] {
+        let value = try await tab.evaluateInTab("""
+            Array.prototype.map.call(
+              document.querySelectorAll('\(selector)'),
+              function (n) { return n.firstChild ? n.firstChild.textContent.trim() : ''; }
+            ).join('\\u0001')
+            """)
+        let joined = (value as? String) ?? ""
+        return joined.isEmpty ? [] : joined.components(separatedBy: "\u{01}")
+    }
+
+    /// The shipped `docs-index.json`, decoded straight off disk.
+    private func shippedIndex() throws -> [String: Any] {
+        let indexURL = try XCTUnwrap(DocsTabWebRoot.indexURL())
+        let jsonURL = indexURL.deletingLastPathComponent().appendingPathComponent("docs-index.json")
+        let data = try Data(contentsOf: jsonURL)
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    /// First and last href of each shipped nav section, in section order,
+    /// flattened the way the pager flattens: items then their children.
+    private func sectionEdges() throws -> [String] {
+        let nav = try XCTUnwrap(shippedIndex()["nav"] as? [[String: Any]])
+        var edges: [String] = []
+        for section in nav {
+            var steps: [String] = []
+            for group in (section["groups"] as? [[String: Any]]) ?? [] {
+                for item in (group["items"] as? [[String: Any]]) ?? [] {
+                    if let href = item["href"] as? String { steps.append(href) }
+                    for child in (item["children"] as? [[String: Any]]) ?? [] {
+                        if let href = child["href"] as? String { steps.append(href) }
+                    }
+                }
+            }
+            if let first = steps.first, let last = steps.last { edges.append(contentsOf: [first, last]) }
+        }
+        return edges
     }
 }

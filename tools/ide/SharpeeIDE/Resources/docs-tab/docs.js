@@ -1,25 +1,66 @@
 (() => {
-  // src/main.ts
+  // tools/ide/web/docs-tab/src/main.ts
   var host = (body) => window.webkit?.messageHandlers?.docsTab?.postMessage(body);
-  var index = { chordLanguageVersion: "", pages: [] };
+  var index = { chordLanguageVersion: "", nav: [], pages: [] };
   var current = "";
+  var stepsBySection = /* @__PURE__ */ new Map();
   var el = (id) => document.getElementById(id);
-  function groups(pages) {
+  function buildSteps(nav) {
     const map = /* @__PURE__ */ new Map();
-    for (const page of pages) {
-      const segments = page.href.split("/").filter(Boolean);
-      const key = segments.slice(0, Math.min(2, segments.length - 1)).join("/") || segments[0];
-      const list = map.get(key);
-      if (list) list.push(page);
-      else map.set(key, [page]);
+    for (const section of nav) {
+      const steps = [];
+      for (const group of section.groups) {
+        for (const item of group.items) {
+          steps.push({ href: item.href, label: item.title === "Overview" ? group.title : item.title });
+          for (const child of item.children ?? []) {
+            steps.push({ href: child.href, label: child.title });
+          }
+        }
+      }
+      map.set(section.title, steps);
     }
     return map;
   }
-  function humanize(segment) {
-    const s = segment.replace(/-/g, " ");
-    return s.charAt(0).toUpperCase() + s.slice(1);
+  function navLink(href, label, className) {
+    const link = document.createElement("a");
+    link.className = className + (href === current ? " is-current" : "");
+    link.textContent = label;
+    link.dataset.href = href;
+    link.href = href;
+    return link;
   }
-  function renderNav(pages) {
+  function renderNavTree() {
+    const nav = el("nav");
+    nav.textContent = "";
+    for (const section of index.nav) {
+      const heading = document.createElement("p");
+      heading.className = "nav-section";
+      heading.textContent = section.title;
+      if (section.version) {
+        const version = document.createElement("span");
+        version.className = "nav-version";
+        version.textContent = section.version;
+        heading.appendChild(version);
+      }
+      nav.appendChild(heading);
+      for (const group of section.groups) {
+        const groupHeading = document.createElement("p");
+        groupHeading.className = "nav-group";
+        groupHeading.textContent = group.title;
+        nav.appendChild(groupHeading);
+        for (const item of group.items) {
+          nav.appendChild(navLink(item.href, item.title, "nav-link"));
+          const children = item.children ?? [];
+          const onBranch = current === item.href || children.some((c) => c.href === current);
+          if (!onBranch) continue;
+          for (const child of children) {
+            nav.appendChild(navLink(child.href, child.title, "nav-link nav-child"));
+          }
+        }
+      }
+    }
+  }
+  function renderNavMatches(pages) {
     const nav = el("nav");
     nav.textContent = "";
     if (pages.length === 0) {
@@ -29,20 +70,42 @@
       nav.appendChild(empty);
       return;
     }
-    for (const [key, list] of groups(pages)) {
-      const heading = document.createElement("p");
-      heading.className = "nav-group";
-      heading.textContent = key.split("/").map(humanize).join(" \u203A ");
-      nav.appendChild(heading);
-      for (const page of list) {
-        const link = document.createElement("a");
-        link.className = "nav-link" + (page.href === current ? " is-current" : "");
-        link.textContent = page.title;
-        link.dataset.href = page.href;
-        link.href = page.href;
-        nav.appendChild(link);
+    let section = "";
+    for (const page of pages) {
+      if (page.section !== section) {
+        section = page.section;
+        const heading = document.createElement("p");
+        heading.className = "nav-section";
+        heading.textContent = section;
+        nav.appendChild(heading);
       }
+      nav.appendChild(navLink(page.href, page.navTitle, "nav-link"));
     }
+  }
+  function renderNav() {
+    const query = el("search").value.trim();
+    if (query === "") renderNavTree();
+    else renderNavMatches(filtered());
+  }
+  function renderPager(page) {
+    const steps = stepsBySection.get(page.section) ?? [];
+    const at = steps.findIndex((s) => s.href === page.href);
+    if (at === -1) return;
+    const pager = document.createElement("nav");
+    pager.className = "pager";
+    const prev = steps[at - 1];
+    const next = steps[at + 1];
+    if (prev) {
+      const link = navLink(prev.href, prev.label, "pager-link pager-prev");
+      link.dataset.rel = "prev";
+      pager.appendChild(link);
+    }
+    if (next) {
+      const link = navLink(next.href, next.label, "pager-link pager-next");
+      link.dataset.rel = "next";
+      pager.appendChild(link);
+    }
+    if (pager.childElementCount > 0) el("content").appendChild(pager);
   }
   async function showPage(href) {
     const page = index.pages.find((p) => p.href === href);
@@ -55,8 +118,9 @@
     const response = await fetch(`pages/${page.slug}.html`);
     const html = await response.text();
     content.innerHTML = `<p class="crumb">${page.crumb}</p><h1 class="page-title">${page.title}</h1>` + html;
+    renderPager(page);
     content.scrollTop = 0;
-    renderNav(filtered());
+    renderNav();
     host({ type: "shown", href });
   }
   function filtered() {
@@ -90,12 +154,12 @@
   }
   async function boot() {
     index = await (await fetch("docs-index.json")).json();
+    stepsBySection = buildSteps(index.nav);
     el("version").textContent = `Chord ${index.chordLanguageVersion}`;
-    el("search").addEventListener("input", () => renderNav(filtered()));
+    el("search").addEventListener("input", () => renderNav());
     document.addEventListener("click", handleClick);
     window.__sharpeeDocs = { setToolchainVersion, showPage: (href) => void showPage(href) };
-    const first = index.pages.find((p) => p.href === "/chord/getting-started/first-story");
-    await showPage(first ? first.href : index.pages[0]?.href ?? "");
+    await showPage(index.pages[0]?.href ?? "");
     host({ type: "ready" });
   }
   void boot();
