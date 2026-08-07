@@ -838,7 +838,13 @@ class Analyzer {
     if (header.fields.ifid === undefined || header.fields.ifid.length === 0) {
       this.diagnostics.warning(
         'analysis.missing-ifid',
-        'The story has no `ifid:` — mint one with `sharpee ifid` (Treaty of Babel, ADR-074). Publishing requires one (ADR-284).',
+        // States the FACT and leaves the remedy to the surface reporting it
+        // (go-live item 5, ruled 2026-08-06). Naming one CLI command was wrong
+        // the moment a second remedy existed: Chord Writer's Problems panel
+        // mints an IFID on this row, and `sharpee publish` names both in its
+        // own refusal. A diagnostic that hard-codes one surface's fix is stale
+        // for every other surface.
+        'The story has no `ifid:` — a Treaty of Babel identifier (ADR-074). Publishing requires one (ADR-284).',
         // The `story` keyword, NOT `header.span`. The header's span covers the
         // whole block, so an editor underlining it paints every header line
         // yellow to report one absent field — which is what the IDE did until

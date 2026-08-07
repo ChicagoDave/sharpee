@@ -121,7 +121,16 @@ drops the remedy and keeps the fact, leaving each surface to offer its own fix:
 
 This is a `packages/` change and needs David's sign-off before it is made.
 
-**Status**: awaiting decision.
+**Status**: **DONE 2026-08-06** — David ruled yes. `packages/chord/src/analyzer.ts`
+now states the fact and leaves the remedy to whichever surface reports it. That
+was already the right shape and became clearly so once a second remedy existed:
+the Problems panel mints an IFID on this row, and `sharpee publish` names both
+remedies in its own refusal.
+
+Safe by inspection as well as by test: every consumer keys on the diagnostic
+CODE, not its message — 60-odd call sites across chord, story-loader, devkit and
+the IDE, all `d.code === 'analysis.missing-ifid'`. Suites after the change: chord
+734, story-loader 480, devkit 146, IDE 406 — all passing.
 
 ### 6. Modal landing page
 
