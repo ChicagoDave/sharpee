@@ -80,6 +80,14 @@ export interface StoryFields {
   defaultTheme?: string;
   /** `storage-prefix:` — browser storage namespace; defaults to `id` (ADR-252 D3). */
   storagePrefix?: string;
+  /**
+   * `publish-source:` — does the author's `.story` source travel in the
+   * published artifact? Absent means NO: a build ships the compiled IR, and
+   * shipping source is opt-in the way Inform's `Release along with the source
+   * text` is. The IDE's Publish checkbox is a view over this field, so a
+   * terminal publish and an IDE publish produce the same artifact (ADR-284 D1).
+   */
+  publishSource?: boolean;
 }
 
 /** `story` plus its indented fielded metadata (ADR-298 — positional form removed). */

@@ -30,7 +30,15 @@ describe('readBrowserMeta (D2 — identity from the IR)', () => {
       author: 'The Sharpee Project',
       version: '0.1.0',
       description: 'One winter night.',
+      // Absent `publish-source:` reads as false — the build owns the default.
+      publishSource: false,
     });
+  });
+
+  it('reads publish-source from the header, defaulting to false when absent', () => {
+    expect(readBrowserMeta(meta({ id: 'fernhill' })).publishSource).toBe(false);
+    expect(readBrowserMeta(meta({ id: 'fernhill', publishSource: false })).publishSource).toBe(false);
+    expect(readBrowserMeta(meta({ id: 'fernhill', publishSource: true })).publishSource).toBe(true);
   });
 
   it('joins multiple authors with ", " for the display string (ADR-298)', () => {

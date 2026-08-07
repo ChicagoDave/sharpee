@@ -694,6 +694,25 @@ class Parser {
         case 'storage-prefix':
           fields.storagePrefix = rest;
           break;
+        // The first boolean header field. `true`/`false`/`yes`/`no` are all
+        // accepted, matching the vocabulary boolean STATES already take
+        // (analyzer's BOOLEAN_STATE_WORDS) — this is an author-facing switch,
+        // so it reads the way the rest of the header reads. Anything else is a
+        // parse error rather than a silent falsey coercion: `publish-source:
+        // maybe` must not quietly mean "no".
+        case 'publish-source': {
+          const word = rest.toLowerCase();
+          if (word === 'true' || word === 'yes') fields.publishSource = true;
+          else if (word === 'false' || word === 'no') fields.publishSource = false;
+          else {
+            this.diagnostics.error(
+              'parse.header-field-not-boolean',
+              `\`publish-source:\` takes \`yes\` or \`no\` (\`true\`/\`false\` also accepted), got \`${rest}\`.`,
+              lineSpan(fieldLine),
+            );
+          }
+          break;
+        }
         case 'themes':
           fields.themes = rest
             .split(',')
@@ -763,7 +782,7 @@ class Parser {
         default:
           this.diagnostics.error(
             'parse.header-unknown-field',
-            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix (plus states/score/use/on lines).`,
+            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix, publish-source (plus states/score/use/on lines).`,
             lineSpan(fieldLine),
           );
       }

@@ -50,6 +50,7 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("walkthroughs/wt-02-cellar.transcript")
         try file("tests/transcripts/lantern.transcript")
         try file("assets/lantern.png")
+        try file("feelies/the-letter.pdf")
         try file("the-lost-key.templates", "template standard\nend template")
         try file("browser/the-lost-key.css")
         try file("browser/index.html")
@@ -77,6 +78,7 @@ final class ProjectArtifactsTests: XCTestCase {
                        ["wt-01-opening.transcript", "wt-02-cellar.transcript"])
         XCTAssertEqual(memberNames(.transcriptTests), ["lantern.transcript"])
         XCTAssertEqual(memberNames(.assets), ["lantern.png"])
+        XCTAssertEqual(memberNames(.feelies), ["the-letter.pdf"])
     }
 
     func testGroupsAppearInTheOrderTheADRNames() throws {
@@ -84,7 +86,7 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("notes.txt")
 
         XCTAssertEqual(groups().map(\.kind),
-                       [.story, .walkthroughs, .transcriptTests, .assets, .webTemplate, .other])
+                       [.story, .walkthroughs, .transcriptTests, .assets, .feelies, .webTemplate, .other])
     }
 
     func testWebTemplateGathersFilesFromTwoDifferentOnDiskLocations() throws {
@@ -134,7 +136,7 @@ final class ProjectArtifactsTests: XCTestCase {
         let grouped = Set(groups().flatMap { $0.members }.map(\.name))
         let onDisk: Set<String> = ["the-lost-key.story", "wt-01-opening.transcript",
                                    "wt-02-cellar.transcript", "lantern.transcript",
-                                   "lantern.png", "the-lost-key.templates",
+                                   "lantern.png", "the-letter.pdf", "the-lost-key.templates",
                                    "the-lost-key.css", "index.html",
                                    "notes.txt", "scratch.md"]
         XCTAssertEqual(grouped, onDisk,
@@ -197,6 +199,17 @@ final class ProjectArtifactsTests: XCTestCase {
         XCTAssertEqual(memberNames(.other), ["theme-experiment.css"])
     }
 
+    func testFeeliesAreTheirOwnGroupNotAssets() throws {
+        // The two are different in kind: an asset is media the STORY consumes,
+        // a feelie is something the PLAYER opens. Folding feelies into Assets
+        // would ship them to the same flat place and lose that distinction.
+        try buildFullFixture()
+
+        XCTAssertFalse(memberNames(.assets).contains("the-letter.pdf"))
+        XCTAssertEqual(memberNames(.feelies), ["the-letter.pdf"])
+        XCTAssertFalse(memberNames(.other).contains("feelies"))
+    }
+
     // MARK: - Reveal targets
 
     func testDirectoryBackedGroupsCarryTheirFolderForReveal() throws {
@@ -205,6 +218,7 @@ final class ProjectArtifactsTests: XCTestCase {
         XCTAssertEqual(group(.walkthroughs)?.directoryURL?.lastPathComponent, "walkthroughs")
         XCTAssertEqual(group(.transcriptTests)?.directoryURL?.lastPathComponent, "transcripts")
         XCTAssertEqual(group(.assets)?.directoryURL?.lastPathComponent, "assets")
+        XCTAssertEqual(group(.feelies)?.directoryURL?.lastPathComponent, "feelies")
         // Assembled from scattered files — no single folder to reveal.
         XCTAssertNil(group(.story)?.directoryURL)
         XCTAssertNil(group(.webTemplate)?.directoryURL)

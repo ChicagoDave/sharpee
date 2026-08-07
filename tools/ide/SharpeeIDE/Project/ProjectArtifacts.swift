@@ -29,6 +29,7 @@ final class ArtifactGroup {
         case walkthroughs
         case transcriptTests
         case assets
+        case feelies
         case webTemplate
         case other
 
@@ -38,6 +39,7 @@ final class ArtifactGroup {
             case .walkthroughs: return "Walkthroughs"
             case .transcriptTests: return "Transcript Tests"
             case .assets: return "Assets"
+            case .feelies: return "Feelies"
             case .webTemplate: return "Web Template"
             case .other: return "Other"
             }
@@ -50,6 +52,7 @@ final class ArtifactGroup {
             case .walkthroughs: return "figure.walk"
             case .transcriptTests: return "checkmark.circle"
             case .assets: return "photo"
+            case .feelies: return "envelope"
             case .webTemplate: return "rectangle.3.group"
             case .other: return "folder"
             }
@@ -82,6 +85,10 @@ enum ProjectArtifacts {
     private static let testsDirectory = "tests"
     private static let transcriptsDirectory = "transcripts"
     private static let assetsDirectory = "assets"
+    /// Player-facing extras shipped beside the game (ADR-284) — a map, a
+    /// letter, a newspaper clipping. Distinct from `assets/`, which is media
+    /// the STORY consumes.
+    private static let feeliesDirectory = "feelies"
     private static let browserDirectory = "browser"
     private static let templatesExtension = "templates"
     private static let storyExtension = "story"
@@ -104,12 +111,14 @@ enum ProjectArtifacts {
         var walkthroughs: [FileNode] = []
         var transcriptTests: [FileNode] = []
         var assets: [FileNode] = []
+        var feelies: [FileNode] = []
         var webTemplate: [FileNode] = []
         var other: [FileNode] = []
 
         var walkthroughsURL: URL?
         var transcriptTestsURL: URL?
         var assetsURL: URL?
+        var feeliesURL: URL?
 
         for node in project.rootNode.children {
             switch classify(node, storyId: storyId) {
@@ -121,6 +130,9 @@ enum ProjectArtifacts {
             case .assets:
                 assets.append(contentsOf: node.children)
                 assetsURL = node.url
+            case .feelies:
+                feelies.append(contentsOf: node.children)
+                feeliesURL = node.url
             case .webTemplate:
                 webTemplate.append(node)
             case .tests:
@@ -155,6 +167,7 @@ enum ProjectArtifacts {
             (.walkthroughs, walkthroughs, walkthroughsURL),
             (.transcriptTests, transcriptTests, transcriptTestsURL),
             (.assets, assets, assetsURL),
+            (.feelies, feelies, feeliesURL),
             (.webTemplate, webTemplate, nil),
             (.other, other, nil),
         ]
@@ -169,6 +182,7 @@ enum ProjectArtifacts {
         case story
         case walkthroughs
         case assets
+        case feelies
         case webTemplate
         case tests
         case browser
@@ -180,6 +194,7 @@ enum ProjectArtifacts {
             switch node.name {
             case walkthroughsDirectory: return .walkthroughs
             case assetsDirectory: return .assets
+            case feeliesDirectory: return .feelies
             case testsDirectory: return .tests
             case browserDirectory: return .browser
             default: return .unclassified

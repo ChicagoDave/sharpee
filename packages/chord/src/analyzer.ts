@@ -818,6 +818,9 @@ class Analyzer {
       themes: f.themes,
       ...(f.defaultTheme !== undefined ? { defaultTheme: f.defaultTheme } : {}),
       ...(f.storagePrefix !== undefined ? { storagePrefix: f.storagePrefix } : {}),
+      // Publishing (ADR-284): absent stays absent, so the build's own default
+      // (do not ship source) is the one place that rule is written down.
+      ...(f.publishSource !== undefined ? { publishSource: f.publishSource } : {}),
     };
   }
 

@@ -156,6 +156,8 @@ export interface IRStoryFields {
   themes: string[];
   defaultTheme?: string;
   storagePrefix?: string;
+  /** `publish-source:` — ship the `.story` source in the artifact. Absent = no. */
+  publishSource?: boolean;
 }
 
 export interface IRMeta {

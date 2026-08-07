@@ -36,7 +36,7 @@ final class SyntaxHighlighter {
     static let properties: Set<String> = [
         "title", "authors", "testers", "ifid", "id", "story-version",
         "prologue", "description", "client", "theme", "template",
-        "themes", "default-theme", "storage-prefix",
+        "themes", "default-theme", "storage-prefix", "publish-source",
     ]
 
     /// Color for one token, or nil to leave it at base foreground.

@@ -3,15 +3,14 @@
  * chord-author-pipeline Phase 2). REAL-PATH: the ACTUAL runInitCommand
  * (Chord default) → runBuildBrowserCommand chain against the devkit-owned
  * templates — the real chord compiler as the validation gate, the real
- * esbuild bundling the compiler INTO game.js (David's ruling 2026-07-18:
- * the bundle ships the .story source and compiles at boot), and the
- * terminal play path through the shared author-game loader. No stubs of
+ * esbuild bundling the compiled IR into game.js, and the terminal play
+ * path through the shared author-game loader. No stubs of
  * any owned dependency. The scratch project lives INSIDE the repo so
  * esbuild resolves @sharpee/* by walking up to the monorepo node_modules
  * (browser-build.test.ts precedent).
  */
 import { describe, it, expect, afterAll, beforeAll, vi } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { runInitCommand } from './init.js';
 import { runBuildBrowserCommand } from './build-browser.js';
@@ -55,8 +54,10 @@ describe('Chord-default scaffold (David 2026-07-18: .story is the default; --ts 
     expect(JSON.stringify(pkg.scripts)).not.toContain('npx');
 
     const entry = readFileSync(join(projectDir, 'src', 'browser-entry.ts'), 'utf-8');
-    expect(entry).toContain("from '@sharpee/chord'"); // compiler ships client-side
-    expect(entry).toContain("fetch('./story.story')"); // source shipped, compiled at boot
+    // The story arrives as build-stamped IR, not as source fetched at boot.
+    expect(entry).toContain("from './story-ir.js'");
+    expect(entry).not.toContain("fetch('./"); // no runtime file reads (the file:// defect)
+    expect(entry).not.toContain("from '@sharpee/chord'"); // no compiler on the page
     expect(entry).not.toContain('{{STORY_ID}}');
   });
 
@@ -67,23 +68,32 @@ describe('Chord-default scaffold (David 2026-07-18: .story is the default; --ts 
   });
 });
 
-describe('browser build: ships the source + the compiler (ruling 2)', () => {
-  it('builds dist/web/ with story.story (the source, verbatim) and a game.js containing the chord compiler', async () => {
+describe('browser build: ships the compiled IR, not the source (ADR-284)', () => {
+  it('builds dist/web/ with the story embedded in game.js, no source and no compiler', async () => {
     trapExit();
     await runBuildBrowserCommand([], projectDir);
 
     // ADR-252 D2: output keyed on the Story IR id (dist/web/<id>), not the project name.
     const outDir = join(projectDir, 'dist', 'web', 'first-light');
-    for (const f of ['game.js', 'index.html', 'story.story', 'base.css', 'engine.css', 'decorations.css']) {
+    for (const f of ['game.js', 'index.html', 'base.css', 'engine.css', 'decorations.css']) {
       expect(existsSync(join(outDir, f)), `${f} missing`).toBe(true);
     }
-    // The shipped story IS the author's source, byte for byte.
-    expect(readFileSync(join(outDir, 'story.story'), 'utf-8'))
-      .toBe(readFileSync(join(projectDir, 'first-light.story'), 'utf-8'));
-    // The compiler is IN the bundle: chord's IR format stamp only exists in
-    // @sharpee/chord source — its presence proves compile() shipped.
+    // The author's source does NOT travel — `publish-source:` is absent here.
+    expect(existsSync(join(outDir, 'first-light.story'))).toBe(false);
+
     const game = readFileSync(join(outDir, 'game.js'), 'utf-8');
+    // The story IS in the bundle: its IR carries the format stamp and the
+    // story's own id, neither of which any platform package would supply.
+    // (`sharpee init -y` titles the story after its directory.)
     expect(game).toContain('story language 2');
+    expect(game).toContain('first-light');
+    // ...and the COMPILER is not. This message exists only in chord's parser
+    // (verified by grep across chord/story-loader/engine/platform-browser),
+    // so its absence is what distinguishes embedded IR from compile-at-boot.
+    expect(game).not.toContain('Unknown story-header field');
+    // No runtime I/O at all — the defect that made a published zip fail to
+    // open from file:// was a fetch() the page could not satisfy there.
+    expect(game).not.toContain("fetch('./story.story')");
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
     // ADR-299 D5: the shipped entry honors a pre-set pinned play seed — the
     // IDE's skein surface depends on this hook being in every built bundle.
@@ -148,6 +158,74 @@ describe('browser build: ships the source + the compiler (ruling 2)', () => {
       stderr.mockRestore();
     }
   });
+});
+
+describe('the scaffold shows what the tool supports', () => {
+  it('creates the project folders, each kept by a dotfile', () => {
+    for (const folder of ['assets', 'feelies', 'walkthroughs', join('tests', 'transcripts')]) {
+      expect(existsSync(join(projectDir, folder)), `${folder}/ missing`).toBe(true);
+      // A `.gitkeep` rather than a README: the build copies assets/ and
+      // feelies/ into the artifact wholesale, and dotfiles are the only thing
+      // that copy skips — a doc file in either would ship to players.
+      expect(existsSync(join(projectDir, folder, '.gitkeep')), `${folder}/.gitkeep missing`).toBe(true);
+    }
+  });
+
+  it('writes a root README naming every folder and the publishing rules', () => {
+    const readme = readFileSync(join(projectDir, 'README.md'), 'utf-8');
+    for (const folder of ['assets/', 'feelies/', 'walkthroughs/', 'tests/transcripts/', 'browser/']) {
+      expect(readme, `README does not mention ${folder}`).toContain(folder);
+    }
+    // The distinction that is easy to get wrong, and the default that matters.
+    expect(readme).toContain('publish-source: yes');
+    expect(readme).toContain('does **not** ship by default');
+    expect(readme).toContain('first-light.story');
+  });
+
+  it('scaffolded folders do not leak into the published artifact', async () => {
+    trapExit();
+    const outDir = join(projectDir, 'dist', 'web', 'first-light');
+    rmSync(outDir, { recursive: true, force: true });
+    await runBuildBrowserCommand([], projectDir);
+
+    // The markers keeping empty folders alive must not become bundle content.
+    expect(existsSync(join(outDir, '.gitkeep'))).toBe(false);
+    expect(existsSync(join(outDir, 'feelies'))).toBe(false); // nothing but the marker in it
+    expect(existsSync(join(outDir, 'README.md'))).toBe(false);
+  }, 120_000);
+});
+
+describe('feelies/ — player-facing extras that travel with the artifact', () => {
+  it('ships the folder, preserving its name and skipping dotfiles', async () => {
+    trapExit();
+    const feeliesDir = join(projectDir, 'feelies');
+    mkdirSync(join(feeliesDir, 'maps'), { recursive: true });
+    writeFileSync(join(feeliesDir, 'the-letter.txt'), 'Dear Ada,\n');
+    writeFileSync(join(feeliesDir, 'maps', 'harbor.svg'), '<svg/>\n');
+    writeFileSync(join(feeliesDir, '.DS_Store'), 'junk');
+
+    const outDir = join(projectDir, 'dist', 'web', 'first-light');
+    rmSync(outDir, { recursive: true, force: true });
+    await runBuildBrowserCommand([], projectDir);
+
+    // Under feelies/, NOT flattened into the page's own directory: a feelie
+    // named index.html or game.js must not be able to overwrite the page.
+    expect(readFileSync(join(outDir, 'feelies', 'the-letter.txt'), 'utf-8')).toBe('Dear Ada,\n');
+    expect(readFileSync(join(outDir, 'feelies', 'maps', 'harbor.svg'), 'utf-8')).toBe('<svg/>\n');
+    expect(existsSync(join(outDir, 'the-letter.txt'))).toBe(false);
+    expect(existsSync(join(outDir, 'feelies', '.DS_Store'))).toBe(false);
+  }, 120_000);
+
+  it('ships nothing — and creates no empty folder — when there are no feelies', async () => {
+    trapExit();
+    rmSync(join(projectDir, 'feelies'), { recursive: true, force: true });
+    const outDir = join(projectDir, 'dist', 'web', 'first-light');
+    rmSync(outDir, { recursive: true, force: true });
+    await runBuildBrowserCommand([], projectDir);
+
+    expect(existsSync(join(outDir, 'game.js'))).toBe(true); // the build really ran
+    expect(existsSync(join(outDir, 'feelies'))).toBe(false);
+  }, 120_000);
 });
 
 describe('plain `sharpee build` on a Chord project', () => {

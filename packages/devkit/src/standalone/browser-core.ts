@@ -41,6 +41,13 @@ export interface BrowserMeta {
   version: string;
   /** `meta.fields.description` (ADR-298 rename of `blurb:`). */
   description: string;
+  /**
+   * `meta.fields.publishSource` — does the `.story` source travel in the
+   * bundle? The DEFAULT LIVES HERE, not in the language: an absent field is
+   * `false`, so a story that never mentions publishing ships no source
+   * (ADR-284; Inform's `Release along with the source text` precedent).
+   */
+  publishSource: boolean;
 }
 
 /** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
@@ -80,6 +87,7 @@ export function readBrowserMeta(meta: IRMeta): BrowserMeta {
     author: meta.fields.authors.join(', '),
     version: (meta.fields.storyVersion ?? '').trim(),
     description: (meta.fields.description?.value ?? '').trim(),
+    publishSource: meta.fields.publishSource === true,
   };
 }
 
@@ -442,6 +450,43 @@ ${entries}
 }
 
 /**
+ * Write `story-ir.ts` beside the entry — the compiled story, embedded.
+ *
+ * The bundle used to ship the `.story` SOURCE and compile it in the browser at
+ * boot, which cost it two runtime `fetch()` calls. `fetch` cannot read a
+ * `file://` URL in any browser, so a published zip opened by double-clicking
+ * `index.html` died before the first turn — while working over HTTP, which is
+ * why it survived to a release. Embedding the IR removes the fetches
+ * altogether, and with them the Chord compiler, which no longer has anything
+ * to compile at boot: the build already ran the load-time gates, so a boot-time
+ * gate failure was unreachable by construction.
+ *
+ * Emitted as a sibling module rather than substituted into the entry text, for
+ * the same reason `hatch-modules.ts` is: a hand-written `src/browser-entry.ts`
+ * (the D4 escape hatch) imports it like any other module and the build
+ * regenerates it in place.
+ *
+ * The IR travels as a JSON string parsed at boot rather than a JS object
+ * literal — one string literal keeps TypeScript from inferring a type over a
+ * multi-megabyte literal, and `JSON.parse` is faster than the equivalent
+ * literal for data this size.
+ */
+function stampStoryIR(entryDir: string, ir: StoryIR): void {
+  const source = `/**
+ * story-ir.ts — GENERATED at build time. Do not edit.
+ *
+ * The compiled story. This is what the page runs: no source, no fetch, no
+ * compiler. Regenerated on every build from the \`.story\` that produced it.
+ */
+import type { StoryIR } from '@sharpee/chord';
+
+export const storyIR: StoryIR = JSON.parse(${JSON.stringify(JSON.stringify(ir))}) as StoryIR;
+`;
+  fs.mkdirSync(entryDir, { recursive: true });
+  fs.writeFileSync(path.join(entryDir, 'story-ir.ts'), source);
+}
+
+/**
  * Bind every hatch in Node and build the world, so "builds" means "binds"
  * (ADR-259 D5).
  *
@@ -584,13 +629,27 @@ export function buildBrowser(
   const outDir = path.join(env.esbuildCwd, 'dist', 'web', meta.storyId);
   fs.mkdirSync(outDir, { recursive: true });
 
-  // --- Ship the source (+ imports) for compile-at-boot (ADR-210/251). ---
-  fs.copyFileSync(storyFile, path.join(outDir, 'story.story'));
-  log(`  ✓ Validated ${rel} (gate-clean) and shipped it as story.story`);
-  const importNames = Object.keys(importBundle);
-  if (importNames.length > 0) {
-    fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
-    log(`  ✓ Bundled ${importNames.length} import fragment(s) → imports.json`);
+  // --- The author's source: shipped only when the story says so (ADR-284). ---
+  //
+  // The page does NOT read these — the IR is embedded in game.js (see
+  // stampStoryIR). They travel as readable artifacts for an author releasing
+  // their source, the way Inform's `Release along with the source text` does,
+  // which is why an absent `publish-source:` ships nothing: a writer's source
+  // should never leave with the artifact by accident.
+  if (meta.publishSource) {
+    // Under the author's OWN filename. It used to be renamed `story.story`
+    // because the page fetched it at that fixed path; nothing reads it now, so
+    // the generic name only made a received source harder to place — and made
+    // two stories' sources collide in one folder.
+    fs.copyFileSync(storyFile, path.join(outDir, path.basename(storyFile)));
+    log(`  ✓ Validated ${rel} (gate-clean) and shipped its source (\`publish-source: yes\`)`);
+    const importNames = Object.keys(importBundle);
+    if (importNames.length > 0) {
+      fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
+      log(`  ✓ Shipped ${importNames.length} import fragment(s) → imports.json`);
+    }
+  } else {
+    log(`  ✓ Validated ${rel} (gate-clean) — source not shipped (\`publish-source:\` absent)`);
   }
   // Story IR artifact for the IDE/tooling surface (dist/, not dist/web/).
   const irOut = path.join(env.esbuildCwd, 'dist', `${meta.storyId}.ir.json`);
@@ -625,6 +684,12 @@ export function buildBrowser(
   if (hatchBindings.length > 0) {
     log(`  ✓ Wired ${hatchBindings.length} hatch module(s) into the bundle`);
   }
+
+  // story-ir.ts (imported by the entry as ./story-ir) — the compiled story
+  // itself. Stamped for BOTH entry paths, like the two above, so the D4
+  // escape hatch runs the same embedded IR the generated entry does.
+  stampStoryIR(entryDir, result.ir);
+  log('  ✓ Embedded the compiled story IR into the bundle');
 
   // --- The bind check (D5): a hatch that does not bind fails the BUILD,
   //     not the player's browser. ---
@@ -712,6 +777,28 @@ export function buildBrowser(
     if (count > 0) log(`  ✓ Copied assets/ (${count} ${count === 1 ? 'entry' : 'entries'})`);
   }
 
+  // Feelies: copy <storyDir>/feelies/ AS A FOLDER, skipping dotfiles.
+  //
+  // Deliberately not flattened into outDir the way assets/ is. The two are
+  // different in kind, not just in content: an asset is media the STORY
+  // consumes (audio it plays, images it renders in prose), while a feelie is
+  // something the PLAYER opens — a map, a letter, a newspaper clipping, in the
+  // Infocom sense. Keeping the folder gives them one predictable place to be
+  // found and linked from, and stops a feelie named `index.html` or `game.js`
+  // from overwriting the page that shows it.
+  const feeliesDir = path.join(storyDir, 'feelies');
+  if (fs.existsSync(feeliesDir)) {
+    const names = fs.readdirSync(feeliesDir).filter((name) => !name.startsWith('.'));
+    if (names.length > 0) {
+      const feeliesOut = path.join(outDir, 'feelies');
+      fs.mkdirSync(feeliesOut, { recursive: true });
+      for (const name of names) {
+        fs.cpSync(path.join(feeliesDir, name), path.join(feeliesOut, name), { recursive: true });
+      }
+      log(`  ✓ Copied feelies/ (${names.length} ${names.length === 1 ? 'entry' : 'entries'})`);
+    }
+  }
+
   // --- Invariant: the deliverable exists (no silent success on an empty build). ---
   const gameJs = path.join(outDir, 'game.js');
   if (!fs.existsSync(gameJs) || fs.statSync(gameJs).size === 0) {
@@ -776,6 +863,8 @@ const PLAYGROUND_META: BrowserMeta = {
   author: 'The Sharpee Project',
   version: '', // filled from the platform version at build time
   description: 'Paste a Chord story and play it in the browser.',
+  // The playground has no author source to ship — the story arrives by paste.
+  publishSource: false,
 };
 const PLAYGROUND_STORAGE_PREFIX = 'sharpee-playground';
 const PLAYGROUND_DEFAULT_THEME = 'classic';

@@ -33,6 +33,7 @@ behavior body can move it forward with `change the story to dusk`.
 | `prologue:` | Text shown before play begins. Literal prose, or a bare phrase name. |
 | `description:` | A short account of the story. Literal prose, or a bare phrase name. |
 | `client:` `theme:` `template:` `themes:` `default-theme:` `storage-prefix:` | Client configuration for the built app. |
+| `publish-source:` | `yes` to include your `.story` source in the published artifact. Absent means no. |
 
 `states:`, `score … worth N`, `use …` and `on …` lines live in the header
 too, but they are not `key: value` fields and are covered on their own
@@ -43,8 +44,43 @@ A field the compiler does not know is an error, not a passthrough:
 ```
 Unknown story-header field `mood:` — the header takes exactly: title,
 authors, testers, ifid, id, story-version, prologue, description, client,
-theme, template, themes, default-theme, storage-prefix
+theme, template, themes, default-theme, storage-prefix, publish-source
 ```
+
+### Publishing your source is a choice
+
+`publish-source:` is the only boolean field, and it takes `yes` or `no`
+(`true`/`false` are accepted too). Leave it out and your `.story` source
+stays home: a published artifact carries the compiled story, not the text
+you wrote it in. Set it to `yes` when you want to release your source
+alongside the game — the way Inform's *Release along with the source text*
+works — and the build ships the `.story` file and any `import`ed fragments
+beside the page.
+
+```
+story
+  title: The Folly at Fernhill
+  id: fernhill
+  publish-source: yes
+```
+
+The field lives in the story, not in a build setting, so publishing from
+Chord Writer and publishing from the command line produce the same
+artifact. Your source ships under its own name — `fernhill.story`, not a
+generic one — alongside any `import`ed `.chord` fragments, so whoever
+receives it can compile what you sent.
+
+### Feelies travel too
+
+Anything in a `feelies/` folder beside your story is copied into the
+published artifact, folder and all. Feelies are the things a player opens
+rather than the things your story consumes: a map, a letter, a newspaper
+clipping. That is what separates `feelies/` from `assets/` — assets are
+media the story itself plays or renders, and they land flat beside the
+page; feelies stay in `feelies/`.
+
+Create the folder when you have something to put in it. Chord Writer shows
+it as its own **Feelies** group in the project tree.
 
 ### Prose fields take a phrase name or literal text
 

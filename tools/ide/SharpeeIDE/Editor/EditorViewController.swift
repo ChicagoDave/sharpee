@@ -190,12 +190,29 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     ///   fit the buffer; nothing is inserted in that case.
     @discardableResult
     func insertText(_ text: String, at characterIndex: Int, in url: URL) -> Bool {
+        replaceText(text, in: NSRange(location: characterIndex, length: 0), in: url)
+    }
+
+    /// Replaces `range` with `text` in `url`'s buffer, opening it if needed.
+    ///
+    /// The general form of `insertText` — an insertion is a zero-length range.
+    /// Edits made here are undoable and mark the tab dirty, which is what an
+    /// outside writer (the Publish checkbox, the Problems panel's IFID fix)
+    /// wants: the author's open buffer is never bypassed.
+    ///
+    /// - Parameters:
+    ///   - text: the replacement text.
+    ///   - range: UTF-16 range in the buffer.
+    ///   - url: the file to edit.
+    /// - Returns: false when the file could not be opened or the range does not
+    ///   fit the buffer; nothing is changed in that case.
+    @discardableResult
+    func replaceText(_ text: String, in range: NSRange, in url: URL) -> Bool {
         openDocument(at: url)
         guard activeDocument?.url == url else { return false }
         let length = (textView.string as NSString).length
-        guard characterIndex >= 0, characterIndex <= length else { return false }
+        guard range.location >= 0, range.length >= 0, range.location + range.length <= length else { return false }
 
-        let range = NSRange(location: characterIndex, length: 0)
         guard textView.shouldChangeText(in: range, replacementString: text) else { return false }
         textView.setSelectedRange(range)
         textView.insertText(text, replacementRange: range)

@@ -830,6 +830,12 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.insertText(text, at: characterIndex, in: url)
     }
 
+    /// Replaces a range in `url` through the editor (undoable, re-composes).
+    @discardableResult
+    fileprivate func replaceText(_ text: String, in range: NSRange, in url: URL) -> Bool {
+        editorViewController.replaceText(text, in: range, in: url)
+    }
+
     /// Applies a compose run's records as editor underlines for `url`.
     fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         editorViewController.setDiagnostics(records, forFile: url)
