@@ -1,5 +1,5 @@
 (() => {
-  // web/docs-tab/src/main.ts
+  // src/main.ts
   var host = (body) => window.webkit?.messageHandlers?.docsTab?.postMessage(body);
   var index = { chordLanguageVersion: "", pages: [] };
   var current = "";

@@ -1,0 +1,25 @@
+<p>Publishing produces a zip: your story, the engine, and a browser client in one folder, ready to upload somewhere or hand to someone.</p>
+<h2 id="publish">Publish</h2>
+<p><strong>Build → Publish…</strong> asks where the zip should go, then runs. The <strong>Publish</strong> tab streams the toolchain's own output while it works, and on success shows you the artifact's path with a <strong>Reveal in Finder</strong> button.</p>
+<p>Publish has no keyboard shortcut, and that is deliberate. Build is a loop step you hit all day. Publishing is something you decide to do.</p>
+<h2 id="what-has-to-be-true-first">What has to be true first</h2>
+<p>Two things, both checked by the toolchain rather than by the app:</p>
+<ul><li><strong>The story compiles.</strong> Problems tells you this continuously, so you will know long before you publish.</li><li><strong>The story has an IFID</strong>, the identifier that distinguishes your work from every other piece of interactive fiction. If yours does not have one, Problems offers to generate it at compile time.</li></ul>
+<h2 id="the-artifact-opens-from-a-file">The artifact opens from a file</h2>
+<p>The published zip runs by double-clicking <code>index.html</code>. It does not need a web server, and it does not need to be uploaded anywhere first.</p>
+<p>This works because the build embeds your story already compiled. Nothing on the page fetches anything, and there is no compiler in the bundle. A page that loaded its story at startup would work over HTTP and fail on a double-click, because a browser will not let a local page fetch a local file.</p>
+<h2 id="shipping-your-source">Shipping your source</h2>
+<p>By default the zip does <strong>not</strong> include your <code>.story</code> file. Publishing your source is a choice you make, not a default you have to notice.</p>
+<p>To include it, add <code>publish-source:</code> to your story header:</p>
+<pre><code class="language-text">story:
+  title: The Orchard
+  author: A. Writer
+  publish-source: yes</code></pre>
+<p>It accepts <code>yes</code> or <code>no</code> (<code>true</code> and <code>false</code> also work). Anything else is a compile error rather than a silent fall back to the default.</p>
+<p>When you do ship it, the file keeps the name you gave it. <code>the-orchard.story</code> arrives as <code>the-orchard.story</code>.</p>
+<h2 id="feelies">Feelies</h2>
+<p>A <code>feelies/</code> folder beside your story is copied into the artifact as a folder, with its structure intact. It is for the things that come <em>with</em> a game rather than things the game consumes: a map, a letter, a newspaper clipping.</p>
+<p>This is distinct from <code>assets/</code>, which holds media your story itself refers to and which is copied flat.</p>
+<blockquote><p><strong>Feelies ship, but nothing links to them yet</strong></p>
+<p>The files are placed in the artifact. The browser client does not currently present them to the player, so anyone reading them has to open the folder.</p></blockquote>
+<p>Files beginning with a dot are skipped in both folders, which is why a new project uses <code>.gitkeep</code> to keep them in version control rather than a README that would otherwise ship to players.</p>

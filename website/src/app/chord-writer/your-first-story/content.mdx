@@ -1,0 +1,64 @@
+Chord Writer opens on a launcher: the product name, your five most recent
+projects, and three choices. **Create Story** starts something new, **Open**
+finds a project already on disk, and **Close Chord Writer** quits.
+
+There is no way to dismiss the launcher without choosing. An open app with no
+project and no route back to the launcher is the state it exists to prevent.
+
+## Create the story
+
+**File → New Story…** (`Cmd-N`) asks for two things: a title and a folder. The
+folder follows the title as you type it, so a story called *The Orchard* is
+proposed at `~/The Orchard`, and it stops following the moment you edit it
+yourself.
+
+What lands on disk is one file:
+
+```text
+The Orchard/
+  the-orchard.story
+```
+
+That is the entire project. No `package.json`, no `src/`, no `tsconfig.json`,
+no dependency install. A `.story` file needs none of them, and Chord Writer
+does not write files your story will not use.
+
+<Callout title="This differs from the command line">
+  `sharpee init` still writes a package.json for a Chord project, because a
+  command-line project is often the start of something with TypeScript in it.
+  Chord Writer scaffolds the smaller thing on purpose.
+</Callout>
+
+## Write, and watch Problems
+
+Open the `.story` file from the project pane and start writing. You do not need
+to build to find out whether it compiles.
+
+Chord Writer composes the story continuously while you type, a moment after you
+stop, and lists what it finds in the **Problems** tab in the bottom dock. It
+composes the buffer you are looking at rather than the last saved version, so
+an unsaved edit is checked like any other. Clicking a problem takes you to the
+line that caused it.
+
+Once a compose succeeds, two things update. The window title becomes the
+story's own title, taken from the story header rather than the folder name. And
+the **Index** tab fills in with what your story actually defines: its rooms,
+things, people, and the rest, read out of the composed story rather than
+scraped from the text.
+
+## Build and play
+
+**Build → Build** (`Cmd-B`) builds the story. The right panel switches to
+**Build** and streams the output. If the build succeeds, the panel switches
+again to **Play**, and the game is running.
+
+**Build → Cancel Build** (`Cmd-.`) stops a build in progress.
+
+Play in the panel exactly as a player would. Runtime errors go to the **Game
+Errors** tab in the bottom dock rather than into the transcript, so a broken
+rule does not interrupt the game text you are reading.
+
+## Next
+
+[Building, playing, and testing](/chord-writer/building-playing-and-testing) covers the
+loop in full, including transcript tests.

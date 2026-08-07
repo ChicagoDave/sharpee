@@ -137,9 +137,11 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
 
   console.log(`  Story: ${info.storyTitle} (${info.storyId})`);
 
-  // A Chord project (root `.story` file) gets the compile-at-boot entry
-  // (the bundle ships the story source + the Chord compiler — David's
-  // ruling, 2026-07-18); a module project gets the import-the-story entry.
+  // A Chord project (root `.story` file) gets the embedded-IR entry: the build
+  // stamps `story-ir.ts` beside it and the page calls `createStory(storyIR)`,
+  // so there is no compiler and no `fetch()` on the page and a published zip
+  // runs from `file://` (ADR-284, reversing the 2026-07-18 compile-at-boot
+  // ruling). A module project gets the import-the-story entry.
   const isChord = findStoryFile(projectDir) !== null;
 
   // Entry point — the one wiring file authors may customize.
@@ -157,7 +159,7 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
   }
   fs.mkdirSync(path.dirname(browserEntryPath), { recursive: true });
   fs.writeFileSync(browserEntryPath, processTemplate(fs.readFileSync(browserEntryTemplate, 'utf-8'), info));
-  console.log(`  ✓ Created src/browser-entry.ts${isChord ? ' (Chord — compiles story.story at boot)' : ''}`);
+  console.log(`  ✓ Created src/browser-entry.ts${isChord ? ' (Chord — runs the compiled story IR)' : ''}`);
 
   // Seed src/version.ts now (browser-entry imports it) so the project compiles immediately,
   // before any build runs. `sharpee build` / `build-browser` refresh it with current values.
