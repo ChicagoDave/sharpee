@@ -22,6 +22,7 @@ import { resolveStory, findMonorepoRoot } from './repo.js';
 // is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
 import { runBuildCommand } from './standalone/build.js';
 import { runBuildBrowserCommand } from './standalone/build-browser.js';
+import { runPublishCommand } from './standalone/publish.js';
 import { runInitCommand } from './standalone/init.js';
 import { runInitBrowserCommand } from './standalone/init-browser.js';
 import { runIfidCommand } from './standalone/ifid.js';
@@ -38,6 +39,7 @@ Usage:
   sharpee build-browser [options]        Build the browser client for the current project
   sharpee init <name>                    Scaffold a new story project
   sharpee init-browser                   Add a browser client to the current project
+  sharpee publish [<file>.story | dir]   Build + zip a distributable browser app (ADR-284)
   sharpee compose <file.story> [opts]    Compile a Chord story to Story IR (ADR-210)
   sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
   sharpee ifid                           IFID utilities (generate, validate)
@@ -138,6 +140,15 @@ async function main(argv: string[]): Promise<number> {
       if (flags.includes('--browser')) await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), dir);
       else await runBuildCommand(flags, dir);
       return 0;
+    }
+    case 'publish': {
+      // ADR-284 D1: the mechanics live here, and Chord Writer's Publish tab
+      // invokes THIS — there is no IDE-only publish path.
+      const positional = rest.find((a) => !a.startsWith('-'));
+      return runPublishCommand(
+        rest.filter((a) => a !== positional),
+        positional,
+      );
     }
     case 'compose':
       return runCompose(rest);
