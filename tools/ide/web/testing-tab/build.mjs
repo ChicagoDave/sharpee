@@ -31,6 +31,12 @@ const wireSource = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
 const options = {
   entryPoints: [resolve(here, 'src/main.ts')],
   outfile: resolve(outDir, 'tab.js'),
+  // Pinned, and load-bearing: esbuild renders its per-module comment banners
+  // RELATIVE to absWorkingDir, which defaults to process.cwd(). Xcode's pre-build
+  // phase runs this from tools/ide while a hand run starts at the repo root, so
+  // without this the committed bundle was dirtied by nothing but the caller's
+  // cwd. Mirrors the same pin in web/docs-tab/build.mjs.
+  absWorkingDir: repoRoot,
   bundle: true,
   format: 'iife',
   platform: 'browser',

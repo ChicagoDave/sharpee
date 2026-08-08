@@ -2,9 +2,15 @@
 // ADR-301 acceptance, as a rule-13a real-path suite: no stub stands in for
 // anything this repository owns. The bundle under test is the one shipped in
 // the app; it is served by the real scheme handler into a real WKWebView; the
-// events it renders come from a real `sharpee test --tree --json` run of the
-// real branch-stories/fernhill through the real TestRunner; and every assertion
-// reads the RENDERED page, not the bytes handed to it.
+// events it renders come from a real `sharpee test --tree --json` run of a real
+// story through the real TestRunner; and every assertion reads the RENDERED
+// page, not the bytes handed to it.
+//
+// The story is tools/ide/test-fixtures/fernhill-frozen — a FROZEN SNAPSHOT of
+// branch-stories/fernhill taken 2026-08-07, owned by this suite. It is not the
+// author's story and must never be re-synced with it: every number below is
+// pinned to this snapshot's tree, and go-live Phase 4 rewrites Fernhill's real
+// transcripts from scratch. See the fixture's README.
 //
 // Acceptance covered here: 1 (bundle over a scheme handler, no Swift mirror in
 // the tab's path), 2 (a real tree run renders live, replays marked, totals
@@ -24,16 +30,19 @@ final class TestingTabRealPathTests: XCTestCase {
     private var runner: TestRunner!
     private var relay: LineRelay!
 
-    private var fernhillStory: URL {
-        TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill/fernhill.story")
+    /// The frozen snapshot this suite owns, deliberately outside `branch-stories/`
+    /// and outside the XcodeGen `sources:` tree so nothing builds or ships it.
+    private var fixtureStory: URL {
+        TestToolchain.repoRoot
+            .appendingPathComponent("tools/ide/test-fixtures/fernhill-frozen/fernhill.story")
     }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
                           "devkit CLI not built — run `./repokit build`")
-        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhillStory.path),
-                          "branch-stories/fernhill is not present")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: fixtureStory.path),
+                          "tools/ide/test-fixtures/fernhill-frozen is not present")
         tab = TestingTabViewController()
         _ = tab.view // force loadView: installs the scheme handler and starts the page
         runner = TestRunner()
@@ -90,7 +99,7 @@ final class TestingTabRealPathTests: XCTestCase {
     /// This is a regression test for a shipped bug, not a style preference. The
     /// tab shipped with Run All / Run Tree / Run Chain; the first ran the suite
     /// flat, which is wrong for a `continues:` tree (229 passed / 287 failed on
-    /// fernhill against 516 / 0 as a tree), and the second scanned
+    /// this suite's story against 516 / 0 as a tree), and the second scanned
     /// `walkthroughs/`, which an IDE project does not have. Both "worked" — they
     /// wired through correctly and produced wrong answers, which is why a wiring
     /// test would not have caught it and this asserts the BUTTON SET.
@@ -118,7 +127,7 @@ final class TestingTabRealPathTests: XCTestCase {
 
     // MARK: - Acceptance 2 — a real tree run renders
 
-    func testARealFernhillTreeRunRendersItsTreeReplaysAndTotals() async throws {
+    func testARealTreeRunRendersItsTreeReplaysAndTotals() async throws {
         try await waitForPage()
         try await runTree()
 
@@ -139,7 +148,7 @@ final class TestingTabRealPathTests: XCTestCase {
 
         // Five roots, and the tree is nested rather than flat.
         let roots = try await count("#cols .col:first-child .crow")
-        XCTAssertEqual(roots, 5, "fernhill has five roots")
+        XCTAssertEqual(roots, 5, "the fixture has five roots")
 
         // Replayed executions are MARKED, which is what stops them reading as
         // duplicate turns (ADR-302 D17).
@@ -207,8 +216,11 @@ final class TestingTabRealPathTests: XCTestCase {
     /// marked `unreached` — never absent (which would hide work) and never red
     /// (which would multiply one bug into a wall of failures, ADR-302 D13).
     func testABrokenInteriorNodeRendersOneFailurePlusABlockedCount() async throws {
-        let key = TestToolchain.repoRoot
-            .appendingPathComponent("branch-stories/fernhill/tests/transcripts/key.transcript")
+        // Mutates the frozen fixture, never the author's story — if this test
+        // dies between the write and the defer, nothing real is left corrupted.
+        let key = fixtureStory
+            .deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/key.transcript")
         let original = try String(contentsOf: key, encoding: .utf8)
         // `key` is an interior node: 2 commands, four children hang off it.
         let broken = original.replacingOccurrences(of: "> search the doormat",
@@ -262,11 +274,11 @@ final class TestingTabRealPathTests: XCTestCase {
     private func runTree() async throws {
         let exited = expectation(description: "tree run exits")
         relay.onExit = { exited.fulfill() }
-        tab.beginRun(story: "fernhill")
+        tab.beginRun(story: "fernhill-frozen")
         runner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
                      arguments: ["node", TestToolchain.devkitCLI.path,
-                                 "test", fernhillStory.path, "--tree", "--json"],
-                     workingDirectory: fernhillStory.deletingLastPathComponent(),
+                                 "test", fixtureStory.path, "--tree", "--json"],
+                     workingDirectory: fixtureStory.deletingLastPathComponent(),
                      environment: ShellEnvironment.buildEnvironment())
         await fulfillment(of: [exited], timeout: 120)
         try await settle(times: 6)

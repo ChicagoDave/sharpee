@@ -212,9 +212,11 @@ deep spine that branches at every joint is what Column view is for.
 
 1. The Testing tab renders from a web bundle served over a scheme handler, importing
    `@sharpee/ide-protocol` with no Swift mirror of the wire types.
-2. A real `sharpee test --tree --json` run of `branch-stories/fernhill` renders live: the
-   tree fills as nodes execute, replayed executions are marked and not read as duplicate
-   turns, and the totals match the reporter's `518 authored + 34 replayed`.
+2. A real `sharpee test --tree --json` run renders live: the tree fills as nodes execute,
+   replayed executions are marked and not read as duplicate turns, and the tab's
+   independently recomputed totals match the reporter's authored/replayed split. (The
+   story is a fixture the suite owns — see Amendment A2. Agreement with the reporter is
+   the criterion; the particular story is not.)
 3. A deliberately broken interior node renders **one** failure plus a blocked count, with
    its blocked descendants present and marked `unreached` — never absent, never red.
 4. A subtree failure off the selected path is visible as a count on the parent row.
@@ -226,8 +228,9 @@ deep spine that branches at every joint is what Column view is for.
 **Met 2026-08-06 (session 322542)**, by `SharpeeIDETests/TestingTabRealPathTests.swift` —
 a rule-13a suite in which nothing this repository owns is stubbed: the bundle under test is
 the one shipped in the app, served by the real scheme handler into a real `WKWebView`,
-rendering a real `sharpee test --tree --json` run of the real `branch-stories/fernhill`
-driven through the real `TestRunner`, with every assertion read off the **rendered page**.
+rendering a real `sharpee test --tree --json` run of a real story (originally
+`branch-stories/fernhill`; a frozen snapshot of it since Amendment A2) driven through the
+real `TestRunner`, with every assertion read off the **rendered page**.
 Per criterion: **1** the page reports `location.protocol === "sharpee-test:"` and carries
 the wire's own guard; **2** the tab recomputes `552` / `518 authored · 34 replayed` from
 the stream and agrees with the reporter, with replayed executions tagged and `arrival`
@@ -238,6 +241,36 @@ it; **5** all three panes render and `key` stays selected across every switch; *
 double-clicking `concealment` lists all 16 turns and clicking the first line number
 reaches the host as `concealment.transcript:12`; **7** the whole suite at **521 tests, 0
 failures** (from a 508/21 baseline — see Amendment A1).
+
+> **Amendment A2 (2026-08-07, session a9d8ca) — the acceptance story is a fixture the suite
+> owns, not the author's.**
+> Acceptance was recorded against `branch-stories/fernhill` itself. That coupled this ADR's
+> evidence to a live author story, and go-live Phase 8's plan
+> (`docs/work/ide-go-live/plan-20260806-go-live.md`, Phase 4) moves all 22 of Fernhill's
+> transcripts out of the story and rewrites them from scratch — which would have taken the
+> suite with it, twice: once when the files vanish, and again when the rewrite lands a
+> different tree shape than the pinned constants (`552` / `518 + 34`, 22 nodes, 5 roots,
+> `arrival` 2 commands, `concealment` 16 turns at line 12).
+>
+> The suite now runs against `tools/ide/test-fixtures/fernhill-frozen/` — a frozen snapshot
+> of Fernhill taken 2026-08-07, holding only `fernhill.story` and `tests/` (23 files, 124K;
+> `assets/`, `browser/` and `dist/` are unnecessary for a `--tree` run, verified by running
+> it). Because the snapshot is frozen, every assertion above remained valid **unchanged** —
+> the numbers in this section still describe exactly what runs.
+>
+> Two things this also fixed. The broken-interior-node test writes a corrupted
+> `key.transcript` and restores it in a `defer`; it now mutates the fixture rather than the
+> author's story, so a crash between the two cannot damage real work. And the fixture sits
+> outside `tools/ide/project.yml`'s `sources: - path: SharpeeIDETests`, so XcodeGen never
+> enumerates it and no build-phase exclusion was needed.
+>
+> Evidence: `xcodebuild test -only-testing:SharpeeIDETests/TestingTabRealPathTests` →
+> `** TEST SUCCEEDED **`, `Executed 7 tests, with 0 failures`, 2026-08-07. The fixture's own
+> run: `node packages/devkit/dist/cli.js test fernhill.story --tree` → exit 0, `22 passed`,
+> `552 commands (518 authored + 34 replayed)`.
+>
+> **Criterion 2 was reworded accordingly**: agreement between the tab's recomputed totals
+> and the reporter is the acceptance property. Naming a story there was always incidental.
 
 ---
 

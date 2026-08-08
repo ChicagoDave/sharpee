@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // ../../packages/ide-protocol/src/run-events.ts
+  // packages/ide-protocol/src/run-events.ts
   var RUN_EVENT_SCHEMA_VERSION = 2;
   function isObject(v) {
     return typeof v === "object" && v !== null;
@@ -55,7 +55,7 @@
     return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isRunEndEvent(value);
   }
 
-  // web/testing-tab/src/host.ts
+  // tools/ide/web/testing-tab/src/host.ts
   var HANDLER = "testingTab";
   function decodeLine(text) {
     const trimmed = text.trim();
@@ -102,7 +102,7 @@
     };
   }
 
-  // web/testing-tab/src/model.ts
+  // tools/ide/web/testing-tab/src/model.ts
   function stemOf(file) {
     const base = file.split("/").pop() ?? file;
     return base.replace(/\.transcript$/, "");
@@ -286,7 +286,7 @@
     );
   }
 
-  // web/testing-tab/src/dom.ts
+  // tools/ide/web/testing-tab/src/dom.ts
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -299,7 +299,7 @@
     return found;
   }
 
-  // web/testing-tab/src/views.ts
+  // tools/ide/web/testing-tab/src/views.ts
   function createSurface() {
     return { mode: "column", selected: null, opened: null, follow: true, status: "" };
   }
@@ -604,7 +604,7 @@
     renderPathBar(model2, surface2);
   }
 
-  // web/testing-tab/src/main.ts
+  // tools/ide/web/testing-tab/src/main.ts
   var model = createModel();
   var surface = createSurface();
   var framePending = false;

@@ -1,0 +1,54 @@
+title: Fernhill D1 — the long night keeps its schedule
+story: fernhill
+description: The fixed timeline (`at turn 14`) fires on the clock — dusk
+  deepens and the story crosses evening → midnight, wherever the player is.
+seed: 42
+
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+# Wait out the evening (loop region unrolled to its seed-42 sequence —
+# ADR-294 migration; the last-light timeline beat lands on the 13th wait)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "the last light goes out of the sky"]
+
+> look
+[OK: contains "Gravel Drive"]

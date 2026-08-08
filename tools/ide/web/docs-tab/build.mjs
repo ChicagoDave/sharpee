@@ -243,6 +243,13 @@ writeFileSync(
 await esbuild.build({
   entryPoints: [resolve(here, 'src/main.ts')],
   outfile: join(outDir, 'docs.js'),
+  // Pinned, and load-bearing: esbuild renders its per-module comment banners
+  // RELATIVE to absWorkingDir, which defaults to process.cwd(). Xcode's pre-build
+  // phase runs this from tools/ide while a hand run starts at the repo root, so
+  // without this the same source emitted `web/docs-tab/src/main.ts` one way and
+  // `tools/ide/web/docs-tab/src/main.ts` the other — dirtying the committed
+  // bundle on every build, from nothing but the caller's cwd.
+  absWorkingDir: repoRoot,
   bundle: true,
   format: 'iife',
   platform: 'browser',
