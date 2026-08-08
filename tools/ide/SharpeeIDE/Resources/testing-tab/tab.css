@@ -357,9 +357,20 @@ body {
 
 /* ── document: the file itself ────────────────────────────── */
 .filebar {
-  flex: none; display: flex; gap: 8px; padding: 7px 14px;
+  flex: none; display: flex; gap: 8px; padding: 7px 14px; flex-wrap: wrap;
   background: var(--project); border-top: 1px solid var(--border);
 }
+.filebar .repick {
+  font: inherit; font-size: 11.5px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 6px;
+  max-width: 220px;
+}
+.filebar .reparentgo {
+  font: inherit; font-size: 11.5px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 12px; cursor: pointer;
+}
+.filebar .reparentgo:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.filebar .reparentgo:disabled { opacity: .5; cursor: default; }
 .filebar .branchinput {
   flex: 1; min-width: 0; font: inherit; font-size: 11.5px;
   color: var(--fg); background: var(--editor);
@@ -407,6 +418,55 @@ body {
 }
 .turn:hover .drop, .turn .drop:focus-visible { opacity: 1; }
 .turn .drop:hover { color: var(--fail); }
+
+/* ── document: retyping a command in place ────────────────── */
+/* The pencil shares the drop's quiet-until-hover rule: it is not destructive,
+   but a control on every row is noise on a surface meant for reading. */
+.turn .editcmd {
+  font: inherit; font-size: 10px; line-height: 1; color: var(--fg-faint);
+  background: transparent; border: 0; padding: 2px 4px; margin-left: 4px; cursor: pointer;
+  opacity: 0;
+}
+/* The glyph lives in CSS, not in the button's text: pseudo-element content
+   stays out of `.cmd`'s textContent, which is matched as the command's
+   identity elsewhere. */
+.turn .editcmd::before { content: '✎'; }
+.turn:hover .editcmd, .turn .editcmd:focus-visible { opacity: 1; }
+.turn .editcmd:hover { color: var(--accent); }
+.turn .cmdedit {
+  width: min(340px, 60%); font-family: var(--mono); font-size: 11.5px;
+  color: var(--fg); background: var(--editor);
+  border: 1px solid var(--accent); border-radius: var(--radius); padding: 1px 6px;
+}
+.turn .cmdedit:focus { outline: none; }
+.turn .editgo, .turn .editcancel {
+  font: inherit; font-size: 10px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1px 8px; margin-left: 6px; cursor: pointer;
+}
+.turn .editgo:hover { border-color: var(--accent); color: var(--accent); }
+.turn .editcancel:hover { border-color: var(--fg-faint); }
+
+/* ── document: the story's ending, where the run showed it (R9) ── */
+/* The ender is a fact worth a quiet flag; the dead tail is muted whole —
+   those commands are not failures to diagnose, they are commands that could
+   not have run, and rendering them at full strength invites debugging them. */
+.turn .endshere {
+  grid-column: 2 / -1; font-family: var(--mono); font-size: 10px;
+  letter-spacing: .05em; color: var(--warn); margin: 1px 0 4px;
+}
+.turn.dead { opacity: .55; }
+.turn .deadnote {
+  grid-column: 2 / -1; font-size: 10.5px; font-style: italic;
+  color: var(--fg-faint); margin: 1px 0 4px;
+}
+.terminalbar {
+  flex: none; padding: 7px 14px;
+  background: var(--project); border-top: 1px solid var(--border);
+  font-size: 10.5px; color: var(--fg-dim);
+}
+.filebar .branchinput:disabled { opacity: .6; }
+.filebar .branchgo:disabled { opacity: .5; cursor: default; }
 
 /* ── document: what the file claims about a turn ──────────── */
 .turn .claims { grid-column: 2 / -1; margin: 2px 0 6px; }

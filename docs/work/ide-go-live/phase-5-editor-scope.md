@@ -496,6 +496,68 @@ Evidence, 2026-08-08:
 place. Delete-and-re-add covers it today at the cost of losing the command's
 assertions, which is the right trade only for a typo in a command that has none.
 
+#### 2f — Retype a command in place. Done 2026-08-08
+
+The named remainder above, closed. A pencil on the document-face card opens a
+field prefilled with the command's text; Enter or **Change** writes it, Escape
+or **Keep** abandons it. The command's assertions stay attached — deliberately,
+even though the new wording may print something they no longer match: the next
+run is what says so, on the surface built to say it, rather than the editor
+guessing which claims survive a rewording. Retyping a command to exactly what
+it already says writes nothing — a non-edit must not normalize the file or
+stamp a "run again" note for a change that never happened.
+
+**The hazard this slice found in its NEIGHBOURS, and closed for all of them.**
+The cards address commands by the source line of the LAST RUN, and a structural
+edit between runs (a deleted turn) shifts every later command up — so a second
+line-addressed edit could silently land on a *different* command that now
+occupies the stale line. Claims are hidden between edit and run for exactly
+this reason, but `✕` and promotion stayed live. The guard is cheap because the
+card also knows the command's *text*: `commandAt` (grammar.ts) now verifies
+line and text agree and refuses with both spellings in the message
+("…the file has changed since this run. Run again, then edit."). Promote,
+delete and retype all pass the card's `turn.input` through it. Line-only
+callers are unaffected — the parameter is optional, because not every caller
+has a card in hand.
+
+Mechanics worth keeping: the retype draft lives on the surface, not in the DOM
+(the document rebuilds on every run event — a field whose contents were only
+in the element would be erased mid-word, the same reasoning as the add bar);
+Escape in the field cancels the retype with `stopPropagation`, so the global
+listener that closes the document never sees it; the pencil's glyph is CSS
+`::before` content, deliberately — text inside the button would join `.cmd`'s
+textContent, which other code and the real-path suite match as the command's
+identity.
+
+**What `mutation-verification` caught, closed the same day.** Two branches of
+the ACTION (not the grammar, whose refusals the unit suite pins) were untested
+end-to-end: the same-text no-op and a refusal reached through the real field.
+Now one real-path case (`testARetypeToTheSameTextOrToBlankWritesNothing`)
+drives both through the rendered gesture: confirming the prefilled field
+untouched leaves the file's bytes identical, renders no edit note and offers
+no undo; a blank retype leaves the bytes identical and names its reason. It
+also flagged a decision worth making out loud: a refused retype CLOSES the
+field, discarding what was typed. Kept, deliberately — it matches promote's
+refusal shape, a blank draft loses nothing, and the stale-line refusal's
+remedy is "run again", not resubmit.
+
+Evidence, 2026-08-08:
+- `npx vitest run` in the tab → `64 passed` (6 new: the editCommand suite and
+  the targeting-guard suite, which pins the refusal for edit, delete and
+  promote alike).
+- `xcodebuild test -scheme SharpeeIDE -destination 'platform=macOS'` →
+  `** TEST SUCCEEDED **`, `Executed 454 tests, with 0 failures (0 unexpected)`
+  (452 at session start; +1 rewording real-path, +1 refusals real-path).
+- The real-path case (`testEditingACommandInPlaceKeepsItsAssertionsAndTheSuiteStillPasses`)
+  rewords `examine the doormat` to `examine doormat` through the rendered
+  pencil-field-Change gesture, reads the file off disk — the claim
+  `[OK: contains "worn bald in the middle"]` sits attached to the NEW wording,
+  the old wording is gone — and re-runs the real suite requiring zero failures.
+  Premise probed before the suite: the reworded command passes in the frozen
+  fixture (`22 passed`, devkit CLI, 2026-08-08). Fixture restored, `git status`
+  clean.
+- `npx tsc --noEmit` at the repo root → clean.
+
 ### Slice 3 — Files and the tree: new, delete, `continues:`
 
 R5 and R9.
@@ -534,6 +596,23 @@ rebuilt `Project` plus the pane's current expansion, and inventing that wiring
 from inside the Testing tab is how one surface ends up owning another's refresh.
 Noted in `TestController.rediscover`.
 
+> **Closed 2026-08-08 (same session as 3b/3c).** `refreshProjectTree()` is
+> restored at the window (`MainWindowController` → `MainSplitViewController`):
+> rescan from disk, rebuild the pane, re-apply the author's expansion —
+> folders by URL, **group rows by kind**. The group half did not exist:
+> `expandedFolderURLs` deliberately skips group rows (session restore's
+> open-by-default ruling), so a bare refresh would have snapped "Transcript
+> Tests" shut over the very file the author just created. `expandedGroupKinds`
+> is the refresh path's own snapshot; session restore is unchanged. The
+> announcement is `TestController.rediscover` (create, trash) plus a
+> recording run's exit (`runLandsFiles` — a `.golden` landed; an ordinary run
+> refreshes nothing, because a rebuild costs the author their sidebar
+> selection for no file change). Proven end to end by
+> `ProjectTreeRefreshTests.testATranscriptCreatedThroughTheTabAppearsInTheSidebarWithExpansionKept`:
+> a create through the tab's real seam lands the file, and the rendered
+> Project outline shows `the-probe.transcript` with the group still open —
+> `Executed 457 tests, with 0 failures` (2026-08-08).
+
 Evidence, 2026-08-08:
 - `xcodebuild test -scheme SharpeeIDE -destination 'platform=macOS'` →
   `** TEST SUCCEEDED **`, `Executed 449 tests, with 0 failures (0 unexpected) in
@@ -552,12 +631,101 @@ Evidence, 2026-08-08:
 - Inherited state at the top of a document: where the file starts from
   (location, inventory, turn count), so a branch is legible without holding its
   ancestors in your head. **Needs the world — open question 1.**
-- A command that ends the story marks the file terminal and offers *branch a new
-  file from here* rather than *append* (R9). Buildable now: the wire reports
-  `Engine is not running` as a command error.
-- Reparenting an existing transcript (rewriting its `continues:`).
 - `[STATE:]` offered from the world rather than from the text (R3). **Needs the
   world — open question 1.**
+
+#### 3c — Reparenting. Done 2026-08-08
+
+The affordance the Trash refusal already promised ("…or reparent them"). A
+picker in the file bar, beside Branch: the author picks a parent — or "nothing
+— make it a root" — and clicks Reparent; the editor writes `continues:`
+(R5's field, picked and never typed) through the same write path as every
+other edit, so undo, claims-hidden and the "run again" note all apply
+unchanged.
+
+- **The exclusions are by construction, not refusal-after-the-fact**
+  (`model.reparentCandidates`): what the picker never offers, the author can
+  never write. Never the file itself, never its own descendants (a cycle),
+  never a file whose run reached the story's ending (its children die — the
+  same fact that disables branching from one), never the current parent
+  (re-picking it is not an edit). The exclusions are as good as the tree the
+  run proved; a cycle past that knowledge is the runner's own named error on
+  the next run, not a silent wrong write. Grammar refuses the one cycle it
+  can see alone (self-parent).
+- **The consequence rides the confirmation**: "It now runs from a different
+  history — its turn numbers and its assertions may no longer hold" (subtree
+  counted when it has descendants). Mechanically, `applyEdit` grew a general
+  carried `warning` — R4's turn-count text moved onto it verbatim, and a
+  reparent supplies its own; either way the warning lands only when the write
+  does.
+- **The real-path test pins the warning as a demonstrated fact, not prose**:
+  reparenting `concealment` under `key` goes red on the next run — `search
+  the doormat` finds no key, because key's branch already took it. Probed
+  first at the CLI (21 passed, 1 failed, 2026-08-08), then pinned through
+  the rendered control: `#tally-fail` is exactly `1` after the gesture.
+
+Evidence, 2026-08-08:
+- `npx vitest run` in the tab → `73 passed` (4 reparent grammar cases, 2
+  candidate-exclusion cases).
+- `xcodebuild test -scheme SharpeeIDE -destination 'platform=macOS'` →
+  `** TEST SUCCEEDED **`, `Executed 456 tests, with 0 failures (0 unexpected)`.
+- The real-path case (`testReparentingRewritesContinuesAndTheNextRunShowsTheNewHistory`)
+  reads the picker's exclusions off key's rendered document (no `key`, none of
+  its four descendants, no `arrival`), reparents concealment through the
+  control, reads `continues: key` off disk, reads "different history" off the
+  confirmation, and re-runs to exactly one failure. Fixture restored by
+  `defer`; `git status` clean.
+- `npx tsc --noEmit` at the repo root → clean.
+
+#### 3b — Endings mark the file terminal (R9). Done 2026-08-08
+
+The run is the evidence: a command that executes after the story ends errors as
+**exactly** `Engine is not running` — the runner normalizes the stopped-engine
+capture to that string in one place, and `model.storyEnd` matches it exactly,
+never as a prose heuristic (`STORY_OVER_ERROR`; if the runner renames it, the
+real-path test goes red rather than the marking silently vanishing). The split
+is at the first such error: the turn before it is the ender, everything from it
+on is the dead tail.
+
+What the document face does with the fact:
+
+- The ender is badged **"The story ends here."**; dead turns are muted and say
+  "The story had already ended — this command could not run" — dead commands
+  are not failures to diagnose, and rendering them at full strength invites
+  debugging them one by one (F22's wall of red, on one surface).
+- **The append bar gives way** to a terminal note naming the ender and R9's
+  affordance: "To explore another path, branch a new transcript from
+  ⟨parent⟩." — which is exactly how fuse-cut/fuse-lose are shaped (the ending
+  lives in a leaf; exploration branches from the shared parent). When the
+  story ended before the file's first command, the note says the ending is an
+  ancestor's.
+- **Branching FROM a terminal file is refused at the gesture** (field and
+  button disabled, the placeholder says why): a child replays its ancestry,
+  ending included, so every command in it would die — refusing here beats
+  discovering it as a wall of red on the child's first run.
+- The dead turns keep their `✕`: trimming the tail is the edit the marking
+  exists to invite.
+
+**Honest limit, named**: a file whose LAST command ends the story cleanly (the
+frozen `fuse-lose` as shipped) emits no wire signal at all, so it is not
+marked — R10, the editor never claims what it cannot substantiate. Marking the
+clean case needs the wire to carry "the story ended this turn", a
+`packages/ide-protocol` + emitter change: flagged for David, not assumed.
+
+Evidence, 2026-08-08:
+- `npx vitest run` in the tab → `67 passed` (3 new: no-ending runs including
+  ordinary failures stay null; ender/dead split at the first stopped-engine
+  error; ending-before-first-command has a null ender).
+- `xcodebuild test -scheme SharpeeIDE -destination 'platform=macOS'` →
+  `** TEST SUCCEEDED **`, `Executed 455 tests, with 0 failures (0 unexpected)`.
+- The real-path case (`testAStoryEndingMarksTheFileTerminalAndTheDeadTailCanBeTrimmed`)
+  stages R9's discovery moment — appends a command past `fuse-lose`'s ending,
+  runs the real suite — and reads all four affordances off the rendered page
+  (dead marking, ender badge on the third `> wait`, terminal note naming
+  `arrival`, disabled branch field), then trims the dead command through its
+  `✕` and re-runs to zero failures. Fixture restored by `defer`; `git status`
+  clean.
+- `npx tsc --noEmit` at the repo root → clean.
 
 ### Slice 4 — Turn budget (R4) — **needs a wire field**
 

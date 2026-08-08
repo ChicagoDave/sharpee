@@ -134,12 +134,10 @@ export function addAssertion(
   file: string,
   commandLine: number,
   assertion: Assertion,
+  expectedInput?: string,
 ): Draft {
   const transcript = editable(text, file);
-  const command = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
-  if (!command) {
-    throw new Error(`No command at line ${commandLine} of ${file}`);
-  }
+  const command = commandAt(transcript, file, commandLine, expectedInput);
   if (command.assertions.some((existing) => existing.type === 'todo')) {
     throw new Error(
       `"${command.input}" is marked [TODO]. Remove the TODO first — the runner stops at it, so an assertion added beside it would never be checked.`,
@@ -193,6 +191,35 @@ export function newTranscript(spec: NewTranscript): string {
     comments: [],
     config: { seeds: [], channels: [], events: false, forces: [] },
   });
+}
+
+/**
+ * Rewrites what a transcript continues from — or makes it a root.
+ *
+ * `continues:` is R5's field: load-bearing, documented nowhere an author
+ * reads, and wrong in ways that fail as walls of ordinary-looking errors. The
+ * editor owns it end to end — the author picks a parent, never types the
+ * field. The SEMANTIC weight of this one-line edit (the file now runs from a
+ * different history; its assertions may no longer hold) is the caller's to
+ * say out loud; this function only makes the file mean it.
+ *
+ * @param text the file as it is on disk
+ * @param file its path, for diagnostics
+ * @param parentStem the new parent's stem, or null to make this file a root
+ * @returns the new file text and its outlook
+ * @throws when the file is unsound, or `parentStem` names the file itself —
+ *   a transcript cannot continue from itself, and the one-node cycle is the
+ *   only one this layer can see (the caller's candidate list owns the rest)
+ */
+export function reparent(text: string, file: string, parentStem: string | null): Draft {
+  const transcript = editable(text, file);
+  const own = (file.split('/').pop() ?? file).replace(/\.transcript$/, '');
+  if (parentStem !== null && parentStem === own) {
+    throw new Error('A transcript cannot continue from itself.');
+  }
+  if (parentStem !== null) transcript.header.continues = parentStem;
+  else delete transcript.header.continues;
+  return draftFrom(transcript, file);
 }
 
 /** One of a command's assertions, as the file writes it. */
@@ -329,6 +356,42 @@ export function addCommand(text: string, file: string, input: string): Draft {
 }
 
 /**
+ * Changes a command's text in place, keeping everything asserted about it.
+ *
+ * This is the edit delete-and-re-add cannot express: re-adding loses the
+ * command's assertions, which is the right trade only for a typo in a command
+ * that has none. Here the assertions stay attached — deliberately, even though
+ * the new command may print something they no longer match. The next run is
+ * what says so, on the surface built to say it (the cards), rather than the
+ * editor guessing which claims survive a wording change.
+ *
+ * @param text the file as it is on disk
+ * @param file its path, for diagnostics
+ * @param commandLine the source line of the `> command` to change
+ * @param input the command's new text, as the player would type it
+ * @param expectedInput the text the caller believes is there now — see
+ *   {@link commandAt}
+ * @returns the new file text and its outlook
+ * @throws when the file is unsound, `input` is blank, no command sits at
+ *   `commandLine`, or the one there is not the one the caller meant
+ */
+export function editCommand(
+  text: string,
+  file: string,
+  commandLine: number,
+  input: string,
+  expectedInput?: string,
+): Draft {
+  const replacement = input.trim();
+  if (!replacement) throw new Error('A command needs some text.');
+
+  const transcript = editable(text, file);
+  const command = commandAt(transcript, file, commandLine, expectedInput);
+  command.input = replacement;
+  return draftFrom(transcript, file);
+}
+
+/**
  * Removes a command and everything asserted about it.
  *
  * The command and its assertions go together because they are one thing in the
@@ -337,12 +400,17 @@ export function addCommand(text: string, file: string, input: string): Draft {
  * it, which is the failure mode R4 exists to make visible. Half a deletion would
  * be the confusing one.
  *
- * @throws when the file is unsound, or no command sits at `commandLine`
+ * @throws when the file is unsound, no command sits at `commandLine`, or the
+ *   one there is not the one the caller meant (see {@link commandAt})
  */
-export function deleteCommand(text: string, file: string, commandLine: number): Draft {
+export function deleteCommand(
+  text: string,
+  file: string,
+  commandLine: number,
+  expectedInput?: string,
+): Draft {
   const transcript = editable(text, file);
-  const target = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
-  if (!target) throw new Error(`No command at line ${commandLine} of ${file}`);
+  const target = commandAt(transcript, file, commandLine, expectedInput);
 
   transcript.commands = transcript.commands.filter((candidate) => candidate !== target);
   transcript.items = (transcript.items ?? []).filter(
@@ -350,6 +418,36 @@ export function deleteCommand(text: string, file: string, commandLine: number): 
   );
 
   return draftFrom(transcript, file);
+}
+
+/**
+ * The command at `commandLine`, verified to be the one the caller meant.
+ *
+ * Line number alone is not a safe identity for a command an author is LOOKING
+ * at: the cards carry lines from the last run, and a structural edit since then
+ * (a deleted turn) shifts every later command up — so a stale line can land on
+ * a DIFFERENT command that now occupies it, and the edit would silently hit the
+ * wrong turn. When the caller knows what text it believes is at that line (the
+ * card shows it), the file must agree, or the edit is refused with the reason —
+ * R10's rule applied to targeting: the editor must not act on a claim it cannot
+ * substantiate.
+ *
+ * `expectedInput` is optional because not every caller has a card in hand.
+ */
+function commandAt(
+  transcript: Transcript,
+  file: string,
+  commandLine: number,
+  expectedInput?: string,
+): Transcript['commands'][number] {
+  const command = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
+  if (!command) throw new Error(`No command at line ${commandLine} of ${file}`);
+  if (expectedInput !== undefined && command.input !== expectedInput) {
+    throw new Error(
+      `Line ${commandLine} is "> ${command.input}" now, not "> ${expectedInput}" — the file has changed since this run. Run again, then edit.`,
+    );
+  }
+  return command;
 }
 
 /**

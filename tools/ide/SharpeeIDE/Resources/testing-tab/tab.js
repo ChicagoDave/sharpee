@@ -1098,12 +1098,9 @@
     if (generated === text) return { kind: "clean", generated };
     return { kind: "reformats", generated, changedLines: countChangedLines(text, generated) };
   }
-  function addAssertion(text, file, commandLine, assertion) {
+  function addAssertion(text, file, commandLine, assertion, expectedInput) {
     const transcript = editable(text, file);
-    const command = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
-    if (!command) {
-      throw new Error(`No command at line ${commandLine} of ${file}`);
-    }
+    const command = commandAt(transcript, file, commandLine, expectedInput);
     if (command.assertions.some((existing) => existing.type === "todo")) {
       throw new Error(
         `"${command.input}" is marked [TODO]. Remove the TODO first \u2014 the runner stops at it, so an assertion added beside it would never be checked.`
@@ -1127,6 +1124,16 @@
       comments: [],
       config: { seeds: [], channels: [], events: false, forces: [] }
     });
+  }
+  function reparent(text, file, parentStem) {
+    const transcript = editable(text, file);
+    const own = (file.split("/").pop() ?? file).replace(/\.transcript$/, "");
+    if (parentStem !== null && parentStem === own) {
+      throw new Error("A transcript cannot continue from itself.");
+    }
+    if (parentStem !== null) transcript.header.continues = parentStem;
+    else delete transcript.header.continues;
+    return draftFrom(transcript, file);
   }
   function assertionsByCommandLine(text, file) {
     const byLine = /* @__PURE__ */ new Map();
@@ -1178,15 +1185,32 @@
     transcript.items = [...transcript.items ?? [], { type: "command", command: added }];
     return draftFrom(transcript, file);
   }
-  function deleteCommand(text, file, commandLine) {
+  function editCommand(text, file, commandLine, input, expectedInput) {
+    const replacement = input.trim();
+    if (!replacement) throw new Error("A command needs some text.");
     const transcript = editable(text, file);
-    const target = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
-    if (!target) throw new Error(`No command at line ${commandLine} of ${file}`);
+    const command = commandAt(transcript, file, commandLine, expectedInput);
+    command.input = replacement;
+    return draftFrom(transcript, file);
+  }
+  function deleteCommand(text, file, commandLine, expectedInput) {
+    const transcript = editable(text, file);
+    const target = commandAt(transcript, file, commandLine, expectedInput);
     transcript.commands = transcript.commands.filter((candidate) => candidate !== target);
     transcript.items = (transcript.items ?? []).filter(
       (item) => !(item.type === "command" && item.command === target)
     );
     return draftFrom(transcript, file);
+  }
+  function commandAt(transcript, file, commandLine, expectedInput) {
+    const command = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
+    if (!command) throw new Error(`No command at line ${commandLine} of ${file}`);
+    if (expectedInput !== void 0 && command.input !== expectedInput) {
+      throw new Error(
+        `Line ${commandLine} is "> ${command.input}" now, not "> ${expectedInput}" \u2014 the file has changed since this run. Run again, then edit.`
+      );
+    }
+    return command;
   }
   var NO_COMMANDS = "Transcript has no commands";
   function editable(text, file, allowEmpty = false) {
@@ -1429,6 +1453,25 @@
       0
     );
   }
+  var STORY_OVER_ERROR = "Engine is not running";
+  function storyEnd(node) {
+    const first = node.turns.findIndex((turn) => turn.error === STORY_OVER_ERROR);
+    if (first < 0) return null;
+    return { endsAt: first > 0 ? node.turns[first - 1] : null, dead: node.turns.slice(first) };
+  }
+  function reparentCandidates(model2, node) {
+    const excluded = /* @__PURE__ */ new Set([node]);
+    const mark = (parent) => {
+      for (const child of parent.children) {
+        excluded.add(child);
+        mark(child);
+      }
+    };
+    mark(node);
+    return [...model2.nodes.values()].filter(
+      (candidate) => !excluded.has(candidate) && storyEnd(candidate) === null
+    );
+  }
   function descendantCount(node) {
     return node.children.reduce((total, child) => total + 1 + descendantCount(child), 0);
   }
@@ -1458,9 +1501,11 @@
       status: "",
       pending: null,
       commandDraft: "",
+      commandEdit: null,
       undoDepth: 0,
       runMatchesFile: true,
       newBranchName: "",
+      reparentChoice: "",
       confirmingTrash: false,
       goldens: /* @__PURE__ */ new Set(),
       confirmingRecord: false,
@@ -1489,15 +1534,51 @@
       }
     }
   }
-  function turnRow(node, turn, actions2, showOutput = false, claims = null) {
-    const row = el("div", `turn${turn.passed ? "" : " bad"}`);
+  function turnRow(node, turn, actions2, showOutput = false, claims = null, surface2 = null, terminal = null) {
+    const row = el("div", `turn${turn.passed ? "" : " bad"}${terminal ? ` ${terminal}` : ""}`);
     const line = el("button", "ln", String(turn.line));
     line.type = "button";
     line.title = `${node.file}:${turn.line}`;
     line.addEventListener("click", () => actions2.openLocation(node.file, turn.line));
     row.append(line);
     const command = el("div", "cmd");
-    command.append(el("b", null, "> "), document.createTextNode(turn.input));
+    command.append(el("b", null, "> "));
+    if (surface2?.commandEdit?.line === turn.line) {
+      const field = el("input", "cmdedit");
+      field.type = "text";
+      field.id = "editcommand";
+      field.autocomplete = "off";
+      field.value = surface2.commandEdit.draft;
+      field.addEventListener("input", () => {
+        surface2.commandEdit = { line: turn.line, draft: field.value };
+      });
+      field.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          actions2.editCommand(turn.line, field.value);
+        } else if (event.key === "Escape") {
+          event.stopPropagation();
+          actions2.cancelCommandEdit();
+        }
+      });
+      const change = el("button", "editgo", "Change");
+      change.type = "button";
+      change.addEventListener("click", () => actions2.editCommand(turn.line, field.value));
+      const keep = el("button", "editcancel", "Keep");
+      keep.type = "button";
+      keep.addEventListener("click", () => actions2.cancelCommandEdit());
+      command.append(field, change, keep);
+    } else {
+      command.append(document.createTextNode(turn.input));
+      if (surface2 && surface2.source?.outlook?.kind !== "unsound") {
+        const edit = el("button", "editcmd");
+        edit.type = "button";
+        edit.title = `Change "${turn.input}" \u2014 what the file asserts about it stays`;
+        edit.dataset.editLine = String(turn.line);
+        edit.addEventListener("click", () => actions2.beginCommandEdit(turn.line, turn.input));
+        command.append(edit);
+      }
+    }
     row.append(command);
     if (showOutput) {
       const turnNumber = el("span", "turnno", turn.turn !== void 0 ? `turn ${turn.turn}` : "");
@@ -1534,6 +1615,13 @@
       const list = el("div", "claims");
       claims.forEach((claim) => list.append(claimRow(turn, claim, actions2)));
       row.append(list);
+    }
+    if (terminal === "ends") {
+      row.append(el("div", "endshere", "The story ends here."));
+    } else if (terminal === "dead") {
+      row.append(
+        el("div", "deadnote", "The story had already ended \u2014 this command could not run.")
+      );
     }
     return row;
   }
@@ -1726,7 +1814,8 @@
   }
   function renderDocument(model2, surface2, actions2) {
     const view = byId("docview");
-    const typing = document.activeElement?.id === "addcommand";
+    const focused = document.activeElement?.id;
+    const typing = focused === "addcommand" || focused === "editcommand" ? focused : null;
     view.replaceChildren();
     const node = surface2.opened;
     if (!node) return;
@@ -1784,17 +1873,31 @@
       turns.append(el("div", "more", "No turns recorded."));
     } else {
       const claims = surface2.runMatchesFile && surface2.source?.file === node.file && surface2.source.text !== null ? assertionsByCommandLine(surface2.source.text, node.file) : null;
+      const end2 = storyEnd(node);
+      const firstDead = end2 ? node.turns.length - end2.dead.length : -1;
       node.turns.forEach(
-        (turn) => turns.append(turnRow(node, turn, actions2, true, claims?.get(turn.line) ?? null))
+        (turn, index) => turns.append(
+          turnRow(
+            node,
+            turn,
+            actions2,
+            true,
+            claims?.get(turn.line) ?? null,
+            surface2,
+            end2 === null ? null : index >= firstDead ? "dead" : index === firstDead - 1 ? "ends" : null
+          )
+        )
       );
     }
     view.append(turns);
+    const end = storyEnd(node);
     view.append(fileBar(model2, node, surface2, actions2));
-    view.append(commandBar(surface2, actions2));
+    if (end) view.append(terminalBar(node, end));
+    else view.append(commandBar(surface2, actions2));
     if (surface2.editNote) view.append(editNote(surface2, actions2));
     if (surface2.pending) view.append(promoteBar(surface2.pending, surface2, actions2));
     if (typing) {
-      const field = document.getElementById("addcommand");
+      const field = document.getElementById(typing);
       field?.focus();
       field?.setSelectionRange(field.value.length, field.value.length);
     }
@@ -1807,6 +1910,10 @@
     field.placeholder = "Branch from this transcript\u2026";
     field.autocomplete = "off";
     field.value = surface2.newBranchName;
+    if (storyEnd(node)) {
+      field.disabled = true;
+      field.placeholder = "The story ends in this transcript \u2014 a branch from it could never run.";
+    }
     field.addEventListener("input", () => {
       surface2.newBranchName = field.value;
     });
@@ -1823,8 +1930,40 @@
     });
     const go = el("button", "branchgo", "Branch");
     go.type = "button";
+    go.disabled = field.disabled;
     go.addEventListener("click", branch);
     bar.append(field, go);
+    const option = (label, value) => {
+      const choice = el("option", null, label);
+      choice.value = value;
+      return choice;
+    };
+    const pick = el("select", "repick");
+    const lead = option(
+      node.parent ? `Continues from ${stemOf(node.parent)}\u2026` : "A root \u2014 continues from nothing\u2026",
+      ""
+    );
+    lead.disabled = true;
+    pick.append(lead);
+    if (node.parent) pick.append(option("nothing \u2014 make it a root", "<root>"));
+    for (const candidate of reparentCandidates(model2, node)) {
+      if (candidate.file === node.parent) continue;
+      pick.append(option(candidate.stem, candidate.stem));
+    }
+    pick.value = surface2.reparentChoice || "";
+    const apply = el("button", "reparentgo", "Reparent");
+    apply.type = "button";
+    apply.disabled = surface2.reparentChoice === "";
+    pick.addEventListener("change", () => {
+      surface2.reparentChoice = pick.value;
+      apply.disabled = pick.value === "";
+    });
+    apply.addEventListener("click", () => {
+      const choice = surface2.reparentChoice;
+      if (!choice) return;
+      actions2.reparent(choice === "<root>" ? null : choice);
+    });
+    bar.append(pick, apply);
     const isGolden = surface2.goldens.has(node.file);
     if (surface2.confirmingRecord) {
       const confirm = el("button", "recordgold armed", isGolden ? "Overwrite the recording?" : "Run and record?");
@@ -1870,6 +2009,18 @@
       note.append(undo);
     }
     return note;
+  }
+  function terminalBar(node, end) {
+    const bar = el("div", "terminalbar");
+    const from = node.parent ? `branch a new transcript from ${stemOf(node.parent)}` : "branch a new transcript from an earlier point";
+    bar.append(
+      el(
+        "span",
+        "said",
+        end.endsAt ? `The story ends at "> ${end.endsAt.input}" \u2014 a command appended here could never run. To explore another path, ${from}.` : "The story had already ended when this file began \u2014 its ancestry reaches an ending, so no command here can run."
+      )
+    );
+    return bar;
   }
   function commandBar(surface2, actions2) {
     const bar = el("div", "addcmd");
@@ -2066,7 +2217,7 @@
       const pending = surface.pending;
       if (!pending) return;
       applyEdit(
-        (text, file) => addAssertion(text, file, pending.commandLine, pending.promotion.assertion),
+        (text, file) => addAssertion(text, file, pending.commandLine, pending.promotion.assertion, pending.input),
         pending.promotion.label
       );
     },
@@ -2074,7 +2225,43 @@
       applyEdit((text, file) => addCommand(text, file, input), `> ${input}`);
     },
     deleteCommand(commandLine) {
-      applyEdit((text, file) => deleteCommand(text, file, commandLine), "the removal");
+      const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
+      applyEdit(
+        (text, file) => deleteCommand(text, file, commandLine, turn?.input),
+        "the removal"
+      );
+    },
+    beginCommandEdit(commandLine, current) {
+      surface.commandEdit = { line: commandLine, draft: current };
+      scheduleRender();
+    },
+    cancelCommandEdit() {
+      surface.commandEdit = null;
+      scheduleRender();
+    },
+    editCommand(commandLine, input) {
+      const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
+      surface.commandEdit = null;
+      if (turn && input.trim() === turn.input) {
+        scheduleRender();
+        return;
+      }
+      applyEdit(
+        (text, file) => editCommand(text, file, commandLine, input, turn?.input),
+        `> ${input.trim()}`
+      );
+    },
+    reparent(stem) {
+      const node = surface.opened;
+      if (!node) return;
+      surface.reparentChoice = "";
+      const below = descendantCount(node);
+      const subtree = below > 0 ? `It and the ${below} transcript${below === 1 ? "" : "s"} below it now run from a different history \u2014 their turn numbers and their assertions may no longer hold.` : "It now runs from a different history \u2014 its turn numbers and its assertions may no longer hold.";
+      applyEdit(
+        (text, file) => reparent(text, file, stem),
+        stem ? `continues: ${stem}` : "the promotion to a root",
+        { warning: subtree }
+      );
     },
     newBranch(name) {
       const parent = surface.opened;
@@ -2138,7 +2325,9 @@
       const countAfter = commandCount(draft.text, node.file);
       if (countBefore !== null && countAfter !== null && countBefore !== countAfter) {
         const below = descendantCount(node);
-        if (below > 0) inFlightWrite.shiftsDescendants = below;
+        if (below > 0) {
+          inFlightWrite.warning = `This changed the file's turn count \u2014 ${below} transcript${below === 1 ? "" : "s"} continue${below === 1 ? "s" : ""} from it, and every turn-scheduled beat in ${below === 1 ? "it" : "them"} now falls on a different command.`;
+        }
       }
       surface.pending = null;
       surface.editNote = "Writing\u2026";
@@ -2212,10 +2401,7 @@
       surface.undoDepth = undoStack.length;
       surface.runMatchesFile = false;
       surface.editNote = `Wrote ${write.label} \u2014 the run below predates this edit. Run again to see it evaluated.`;
-      if (write.shiftsDescendants) {
-        const count = write.shiftsDescendants;
-        surface.editNote += ` This changed the file's turn count \u2014 ${count} transcript${count === 1 ? "" : "s"} continue${count === 1 ? "s" : ""} from it, and every turn-scheduled beat in ${count === 1 ? "it" : "them"} now falls on a different command.`;
-      }
+      if (write.warning) surface.editNote += ` ${write.warning}`;
       surface.commandDraft = "";
       scheduleRender();
     },
@@ -2257,9 +2443,11 @@
     surface.pending = null;
     surface.editNote = "";
     surface.commandDraft = "";
+    surface.commandEdit = null;
     surface.undoDepth = 0;
     surface.runMatchesFile = true;
     surface.newBranchName = "";
+    surface.reparentChoice = "";
     surface.confirmingTrash = false;
     surface.confirmingRecord = false;
     undoStack = [];

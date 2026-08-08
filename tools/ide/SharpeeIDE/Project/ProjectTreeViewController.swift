@@ -76,7 +76,11 @@ final class ProjectTreeViewController: NSViewController {
     /// Replace the tree with a new project's contents. Pass nil to clear.
     /// If `expandedFolderURLs` is non-empty, recursively re-expands directories whose URLs match
     /// (parents are expanded first so child matches resolve). Otherwise leaves the tree collapsed.
-    func setProject(_ project: Project?, expandedFolderURLs: [URL] = []) {
+    /// `expandedGroupKinds` non-empty re-opens exactly those group rows instead
+    /// of the default — the in-place refresh path, where the group the author
+    /// is looking at must not snap shut under them.
+    func setProject(_ project: Project?, expandedFolderURLs: [URL] = [],
+                    expandedGroupKinds: Set<ArtifactGroup.Kind> = []) {
         self.project = project
         self.groups = project.map(ProjectArtifacts.groups(for:)) ?? []
         outlineView.reloadData()
@@ -91,7 +95,11 @@ final class ProjectTreeViewController: NSViewController {
         // Story opens; every other group starts collapsed (David's ruling). A
         // mature story has dozens of transcript tests — opening them all pushes
         // the later groups below the fold, and the story is what you came for.
-        for group in groups where group.kind == .story {
+        // A refresh carries the author's ACTUAL group expansion and applies
+        // exactly that instead — the default is for arriving, not for staying.
+        let openKinds: Set<ArtifactGroup.Kind> =
+            expandedGroupKinds.isEmpty ? [.story] : expandedGroupKinds
+        for group in groups where openKinds.contains(group.kind) {
             outlineView.expandItem(group)
         }
 
@@ -103,6 +111,14 @@ final class ProjectTreeViewController: NSViewController {
         }
 
         updateEmptyState()
+    }
+
+    /// The group rows currently open, by kind — the refresh path's share of
+    /// the expansion snapshot. Groups have no URL, so `expandedFolderURLs`
+    /// cannot carry them; session restore deliberately does not want them
+    /// (open-by-default is its ruling), but an in-place refresh must.
+    var expandedGroupKinds: Set<ArtifactGroup.Kind> {
+        Set(groups.filter { outlineView.isItemExpanded($0) }.map(\.kind))
     }
 
     /// URLs of every currently-expanded directory in the displayed tree.

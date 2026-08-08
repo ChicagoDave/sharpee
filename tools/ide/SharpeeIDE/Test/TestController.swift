@@ -34,6 +34,10 @@ final class TestController: TestRunnerDelegate {
     /// the fence note needs, and reading it takes no decoder.
     private var deliveredLines = 0
 
+    /// True while the in-flight run is one that writes files (a recording run):
+    /// its exit owes the Project pane a refresh, where an ordinary run does not.
+    private var runLandsFiles = false
+
     /// The view-mode key the tab's choice is remembered under, per project
     /// (ADR-301 D4 — the mode never switches itself, so it must persist).
     private static let modeDefaultsKey = "TestingTabViewMode"
@@ -105,6 +109,9 @@ final class TestController: TestRunnerDelegate {
     /// The one run entry. `blessFile` non-nil makes it a recording run.
     private func startRun(blessFile: URL?) {
         guard !runner.isRunning, let storyFile else { return }
+        // A recording run lands a `.golden` on disk — a FILE change the
+        // Project pane must see when the run exits, same as create and trash.
+        runLandsFiles = blessFile != nil
         // Tests read DISK while the editor holds buffers — save first, or an
         // unsaved edit silently tests the old source (the build rule).
         guard window?.saveAllDocuments() != false else { return }
@@ -180,22 +187,18 @@ final class TestController: TestRunnerDelegate {
         if trashed != nil, let storyFile { rediscover(storyFile: storyFile) }
     }
 
-    /// Re-reads the suite from disk and tells the tab.
+    /// Re-reads the suite from disk and tells everything that shows files:
+    /// the tab, and the Project pane.
     ///
-    /// **The sidebar is not told, and that is a known gap.** ADR-290 D7 names
-    /// exactly this class of bug — a saved test invisible until the project was
-    /// reopened — and its fix was `refreshProjectTree()`, which went when the
-    /// outline Test panel was retired (ADR-301 A1.2). Nothing in the app rebuilds
-    /// the Project pane after a write today, so restoring that observer is its own
-    /// change rather than a line here: `MainWindowController.loadProject` needs a
-    /// rebuilt `Project` and the pane's current expansion, and inventing that
-    /// wiring from inside the Testing tab is how one surface ends up owning
-    /// another's refresh.
+    /// The sidebar's share is ADR-290 D7's observer, restored (it went with the
+    /// outline Test panel, ADR-301 A1.2): the window owns HOW its pane rebuilds
+    /// — this surface only announces that the project's files changed.
     private func rediscover(storyFile: URL) {
         discovered = TranscriptDiscovery.transcripts(
             inStoryDirectory: storyFile.deletingLastPathComponent())
         window?.testingTab.setDiscovered(discovered.map(\.path))
         window?.testingTab.setGoldens(goldenPaths())
+        window?.refreshProjectTree()
     }
 
     /// The discovered transcripts that carry a recording, as tab-ready paths.
@@ -228,6 +231,13 @@ final class TestController: TestRunnerDelegate {
         // costs one cheap re-check. Reported after EVERY exit so the tab's
         // tier facts always describe the disk as the run left it.
         tab?.setGoldens(goldenPaths())
+        // A recording run also landed a FILE, which the Project pane must see
+        // (ADR-290 D7). Only then: an ordinary run changes no files, and a
+        // rebuild would cost the author their sidebar selection for nothing.
+        if runLandsFiles {
+            runLandsFiles = false
+            window?.refreshProjectTree()
+        }
         switch result.state {
         case .cancelled:
             tab?.setStatus("Cancelled — results up to this point are kept.")

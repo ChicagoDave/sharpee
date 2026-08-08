@@ -55,6 +55,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
     }
 
+    /// Rebuilds the Project pane from disk, keeping the author's expansion.
+    ///
+    /// ADR-290 D7's sidebar observer: a write that changes the project's FILES
+    /// announces once, and this is the pane's share of the fan-out. It left
+    /// with the outline Test panel (ADR-301 A1.2); without it a transcript
+    /// created or trashed in the Testing tab stayed invisible here until the
+    /// project was reopened.
+    func refreshProjectTree() {
+        rootViewController?.refreshProjectTree()
+    }
+
     /// Forwards a Save action from the menu down to the editor.
     func saveActiveDocument() {
         rootViewController?.saveActiveDocument()
@@ -429,6 +440,10 @@ private final class RootViewController: NSViewController {
         applyWindowTitle(AppIdentity.productName)
     }
 
+    func refreshProjectTree() {
+        mainSplitViewController.refreshProjectTree()
+    }
+
     /// Sets the window's title and the centered strip that displays it. The two
     /// move together: the native title is hidden, so assigning `window.title`
     /// alone would change what the Window menu says and nothing on screen.
@@ -787,6 +802,22 @@ private final class MainSplitViewController: NSSplitViewController {
         projectPaneViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
         RecentProjectsStore.push(project.rootURL)
         persistSession()
+    }
+
+    /// Rescans the open project from disk and rebuilds the pane, re-applying
+    /// the expansion the author currently has — folders by URL, group rows by
+    /// kind (a group has no URL, and the one the author just created a file
+    /// into must not snap shut over it). Not an open: recents and the
+    /// persisted session are untouched — nothing about the author's choices
+    /// changed, only the files.
+    func refreshProjectTree() {
+        guard let project = currentProject else { return }
+        let folders = projectPaneViewController.expandedFolderURLs
+        let groups = projectPaneViewController.expandedGroupKinds
+        let rescanned = Project(rootURL: project.rootURL)
+        currentProject = rescanned
+        projectPaneViewController.setProject(rescanned, expandedFolderURLs: folders,
+                                             expandedGroupKinds: groups)
     }
 
 

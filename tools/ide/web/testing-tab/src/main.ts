@@ -24,8 +24,10 @@ import {
   addCommand as addCommandTo,
   commandCount,
   deleteCommand as deleteCommandFrom,
+  editCommand as editCommandIn,
   newTranscript,
   removeAssertion as removeAssertionFrom,
+  reparent as reparentTo,
   saveOutlook,
   type Draft,
 } from './grammar';
@@ -60,12 +62,12 @@ let inFlightWrite:
       before: string;
       popsUndo?: boolean;
       /**
-       * Descendants whose turn numbers this edit shifts (R4): set when the
-       * edit changes the file's command count and other transcripts
-       * `continues:` from it. Carried on the write so the warning lands with
-       * the confirmation — a shift that never reached disk shifted nothing.
+       * A consequence the confirmation must carry — the R4 turn-count shift,
+       * or a reparent's change of history. Carried on the write rather than
+       * shown at attempt time, because a consequence that never reached disk
+       * is not one.
        */
-      shiftsDescendants?: number;
+      warning?: string;
     }
   | null = null;
 
@@ -160,8 +162,12 @@ const actions: ViewActions = {
   promote() {
     const pending = surface.pending;
     if (!pending) return;
+    // `pending.input` rides along as the targeting check: the card's line came
+    // from the last run, and if the file has moved since, the grammar refuses
+    // rather than landing the assertion on whatever sits at that line now.
     applyEdit(
-      (text, file) => addAssertion(text, file, pending.commandLine, pending.promotion.assertion),
+      (text, file) =>
+        addAssertion(text, file, pending.commandLine, pending.promotion.assertion, pending.input),
       pending.promotion.label,
     );
   },
@@ -169,7 +175,52 @@ const actions: ViewActions = {
     applyEdit((text, file) => addCommandTo(text, file, input), `> ${input}`);
   },
   deleteCommand(commandLine: number) {
-    applyEdit((text, file) => deleteCommandFrom(text, file, commandLine), 'the removal');
+    const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
+    applyEdit(
+      (text, file) => deleteCommandFrom(text, file, commandLine, turn?.input),
+      'the removal',
+    );
+  },
+  beginCommandEdit(commandLine: number, current: string) {
+    surface.commandEdit = { line: commandLine, draft: current };
+    scheduleRender();
+  },
+  cancelCommandEdit() {
+    surface.commandEdit = null;
+    scheduleRender();
+  },
+  editCommand(commandLine: number, input: string) {
+    const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
+    surface.commandEdit = null;
+    // Retyping a command to exactly what it already says is not an edit: writing
+    // it anyway would normalize the file and stamp a "run again" note for a
+    // change that never happened.
+    if (turn && input.trim() === turn.input) {
+      scheduleRender();
+      return;
+    }
+    applyEdit(
+      (text, file) => editCommandIn(text, file, commandLine, input, turn?.input),
+      `> ${input.trim()}`,
+    );
+  },
+  reparent(stem: string | null) {
+    const node = surface.opened;
+    if (!node) return;
+    surface.reparentChoice = '';
+    // The one-line edit with the largest semantic reach in the editor: the
+    // file now runs from a different history, and so does everything beneath
+    // it. The confirmation says so — the run that follows is what shows it.
+    const below = descendantCount(node);
+    const subtree =
+      below > 0
+        ? `It and the ${below} transcript${below === 1 ? '' : 's'} below it now run from a different history — their turn numbers and their assertions may no longer hold.`
+        : 'It now runs from a different history — its turn numbers and its assertions may no longer hold.';
+    applyEdit(
+      (text, file) => reparentTo(text, file, stem),
+      stem ? `continues: ${stem}` : 'the promotion to a root',
+      { warning: subtree },
+    );
   },
   newBranch(name: string) {
     const parent = surface.opened;
@@ -245,11 +296,13 @@ const actions: ViewActions = {
  * @param label how the edit is described back to the author once it lands
  * @param options `popsUndo` for an undo, which consumes a step back rather than
  *   creating one — the only edit that shortens the stack instead of growing it.
+ *   `warning` is a consequence the caller knows and the count check cannot see
+ *   (a reparent's change of history); it joins the confirmation the same way.
  */
 function applyEdit(
   edit: (text: string, file: string) => Draft,
   label: string,
-  options: { popsUndo?: boolean } = {},
+  options: { popsUndo?: boolean; warning?: string } = {},
 ): void {
   const loaded = surface.source;
   const node = surface.opened;
@@ -271,7 +324,9 @@ function applyEdit(
     const countAfter = commandCount(draft.text, node.file);
     if (countBefore !== null && countAfter !== null && countBefore !== countAfter) {
       const below = descendantCount(node);
-      if (below > 0) inFlightWrite.shiftsDescendants = below;
+      if (below > 0) {
+        inFlightWrite.warning = `This changed the file's turn count — ${below} transcript${below === 1 ? '' : 's'} continue${below === 1 ? 's' : ''} from it, and every turn-scheduled beat in ${below === 1 ? 'it' : 'them'} now falls on a different command.`;
+      }
     }
     surface.pending = null;
     surface.editNote = 'Writing…';
@@ -364,13 +419,9 @@ const host = installHost({
     // the edited one is now describing a file that no longer exists in that
     // form, so say so rather than letting them quietly become fiction.
     surface.editNote = `Wrote ${write.label} — the run below predates this edit. Run again to see it evaluated.`;
-    if (write.shiftsDescendants) {
-      // R4's warning, delivered with the confirmation it belongs to: the edit
-      // changed this file's turn count, and everything that continues from it
-      // now runs its commands at different turn numbers.
-      const count = write.shiftsDescendants;
-      surface.editNote += ` This changed the file's turn count — ${count} transcript${count === 1 ? '' : 's'} continue${count === 1 ? 's' : ''} from it, and every turn-scheduled beat in ${count === 1 ? 'it' : 'them'} now falls on a different command.`;
-    }
+    // The consequence rides the confirmation it belongs to: R4's turn-count
+    // shift, or a reparent's change of history — whichever the write carried.
+    if (write.warning) surface.editNote += ` ${write.warning}`;
     surface.commandDraft = '';
     scheduleRender();
   },
@@ -432,9 +483,11 @@ function clearEditingState(): void {
   surface.pending = null;
   surface.editNote = '';
   surface.commandDraft = '';
+  surface.commandEdit = null;
   surface.undoDepth = 0;
   surface.runMatchesFile = true;
   surface.newBranchName = '';
+  surface.reparentChoice = '';
   surface.confirmingTrash = false;
   surface.confirmingRecord = false;
   undoStack = [];

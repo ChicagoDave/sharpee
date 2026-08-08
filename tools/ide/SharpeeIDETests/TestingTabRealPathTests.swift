@@ -536,6 +536,246 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertEqual(failures, "0", "the file left behind is still one the runner accepts")
     }
 
+    /// Retyping a command in place keeps what the file asserts about it — the
+    /// edit delete-and-re-add cannot express, because re-adding loses the
+    /// command's assertions. The rewording drops an article the parser never
+    /// needed, so the story's answer is unchanged and the surviving claim still
+    /// holds on the next run.
+    func testEditingACommandInPlaceKeepsItsAssertionsAndTheSuiteStillPasses() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+        XCTAssertTrue(original.contains("> examine the doormat"),
+                      "this test rewords that command")
+        XCTAssertTrue(original.contains("[OK: contains \"worn bald in the middle\"]"),
+                      "and expects its assertion to survive the rewording")
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // The pencil opens a field prefilled with the command's current text —
+        // a rewording starts from what is there, not from a blank.
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          row.querySelector('.editcmd').click();
+        })();
+        """)
+        try await settle()
+        let prefilled = try await tab.evaluateInTab(
+            "document.getElementById('editcommand').value") as? String
+        XCTAssertEqual(prefilled, "examine the doormat")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('editcommand');
+          field.value = 'examine doormat';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('#docview .turn .editgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let afterEdit = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(afterEdit.contains("> examine doormat\n[OK: contains \"worn bald in the middle\"]"),
+                      "the command changed and its claim stayed attached to it")
+        XCTAssertFalse(afterEdit.contains("> examine the doormat"),
+                       "the old wording is gone — this was an edit, not an addition")
+
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0",
+                       "the reworded command prints the same prose, so the surviving claim holds")
+    }
+
+    /// The retype gesture's two refusals, end to end: confirming a command
+    /// unchanged writes nothing at all — a non-edit must not normalize the file
+    /// or offer an undo step back to a state never departed — and a blank
+    /// retype is refused with the reason. The file on disk never moves in
+    /// either case.
+    func testARetypeToTheSameTextOrToBlankWritesNothing() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // Confirm the prefilled field untouched: the same-text no-op.
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          row.querySelector('.editcmd').click();
+        })();
+        """)
+        try await settle()
+        _ = try await tab.evaluateInTab("document.querySelector('#docview .turn .editgo').click();")
+        try await settle(times: 6)
+
+        XCTAssertEqual(try String(contentsOf: transcript, encoding: .utf8), original,
+                       "confirming an unchanged command must not rewrite the file")
+        let noteAfterNoop = try await count(".editnote")
+        XCTAssertEqual(noteAfterNoop, 0, "no edit happened, so nothing claims one did")
+        let undoAfterNoop = try await count(".editnote .undo")
+        XCTAssertEqual(undoAfterNoop, 0, "and there is no step back to a state never departed")
+
+        // Retype to blank: refused with the reason, and the file still never moves.
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          row.querySelector('.editcmd').click();
+        })();
+        """)
+        try await settle()
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('editcommand');
+          field.value = '   ';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('#docview .turn .editgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        XCTAssertEqual(try String(contentsOf: transcript, encoding: .utf8), original,
+                       "a refused retype reaches disk exactly as much as a refused promote: not at all")
+        let reason = try await text(".editnote .said")
+        XCTAssertTrue(reason.contains("A command needs some text."),
+                      "the refusal names its reason; got \(reason)")
+    }
+
+    /// R9 end to end. A command that runs past the story's ending errors as
+    /// `Engine is not running` — before this, "a file is terminal" was
+    /// discoverable only by going red and diagnosing each error by hand. The
+    /// run now marks the ender, mutes the dead tail, replaces the append bar
+    /// with the branch-from-parent affordance, refuses to branch from the file
+    /// itself — and the ✕ the marking invites trims the dead command, leaving
+    /// a suite that passes again.
+    func testAStoryEndingMarksTheFileTerminalAndTheDeadTailCanBeTrimmed() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/fuse-lose.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        // The discovery moment R9 describes: an author appends past the ending.
+        try (original + "\n> smell the roses\n[SKIP]\n")
+            .write(to: transcript, atomically: true, encoding: .utf8)
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "fuse-lose"])
+        try await openDocument(stem: "fuse-lose")
+
+        // The dead command reads as dead, not as a failure to diagnose.
+        let deadNote = try await text(".turn.dead .deadnote")
+        XCTAssertTrue(deadNote.contains("The story had already ended"),
+                      "got \(deadNote)")
+
+        // The ender is badged, on the turn that actually ended the story.
+        let endBadge = try await text(".turn.ends .endshere")
+        XCTAssertTrue(endBadge.contains("The story ends here."))
+        let enderCommand = try await tab.evaluateInTab(
+            "document.querySelector('#docview .turn.ends .cmd').textContent") as? String
+        XCTAssertEqual(enderCommand, "> wait",
+                       "the third wait is the last live turn — the white roar")
+
+        // The append bar gives way to the explanation and the affordance R9
+        // names: a new transcript branched from before the ending.
+        let addField = try await count("#addcommand")
+        XCTAssertEqual(addField, 0, "a terminal file must not offer to append")
+        let terminalNote = try await text(".terminalbar .said")
+        XCTAssertTrue(terminalNote.contains("The story ends at \"> wait\""), "got \(terminalNote)")
+        XCTAssertTrue(terminalNote.contains("branch a new transcript from arrival"),
+                      "the way onward is the parent's document; got \(terminalNote)")
+
+        // Branching from the file itself is refused at the gesture — a child
+        // would replay through the ending and die on its first command.
+        let branchDisabled = try await tab.evaluateInTab(
+            "document.getElementById('newbranch').disabled") as? Bool
+        XCTAssertEqual(branchDisabled, true)
+
+        // Trim the dead command — the edit the marking exists to invite.
+        _ = try await tab.evaluateInTab(
+            "document.querySelector('#docview .turn.dead .drop').click();")
+        try await settle(times: 6)
+
+        let trimmed = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertFalse(trimmed.contains("smell the roses"),
+                       "the dead command is gone from the file")
+
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "the trimmed file passes again")
+    }
+
+    /// Reparenting rewrites `continues:` — R5's field, which the author picks
+    /// and never types. The picker's exclusions are read off the rendered page
+    /// (never the file itself, never its own descendants), the write lands on
+    /// disk, and the run that follows FAILS — deliberately pinned: concealment
+    /// under key searches a doormat whose key that branch already took, which
+    /// is the "different history" the confirmation warns about, demonstrated
+    /// rather than described.
+    func testReparentingRewritesContinuesAndTheNextRunShowsTheNewHistory() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+        XCTAssertTrue(original.contains("continues: arrival"))
+
+        try await waitForPage()
+        try await runTree()
+
+        // The picker on key's own document: never key, never its descendants.
+        try await select(path: ["arrival", "key"])
+        try await openDocument(stem: "key")
+        let offered = try await tab.evaluateInTab(
+            "Array.from(document.querySelectorAll('.repick option')).map(function (o) { return o.value; }).join(',')") as? String
+        let options = (offered ?? "").split(separator: ",").map(String.init)
+        XCTAssertTrue(options.contains("concealment"), "a sibling is an ordinary candidate")
+        for forbidden in ["key", "cellar-dark", "doors", "smoke", "the-long-night", "arrival"] {
+            XCTAssertFalse(options.contains(forbidden),
+                           "\(forbidden) must not be offered — self, descendant, or the current parent")
+        }
+
+        // Reparent concealment under key, through the rendered control.
+        _ = try await tab.evaluateInTab("document.querySelector('#docview .back').click();")
+        try await settle()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var pick = document.querySelector('.repick');
+          pick.value = 'key';
+          pick.dispatchEvent(new Event('change', { bubbles: true }));
+          document.querySelector('.reparentgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let reparented = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(reparented.contains("continues: key"), "the field the author never typed")
+        XCTAssertFalse(reparented.contains("continues: arrival"))
+        let note = try await text(".editnote .said")
+        XCTAssertTrue(note.contains("different history"),
+                      "the confirmation carries the consequence; got \(note)")
+
+        // The run proves the warning: the file executes from key's state now,
+        // and the doormat's key is already gone.
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "1",
+                       "exactly the reparented file fails — its assertions were written against another history")
+    }
+
     /// Undo puts the file back, one edit at a time, byte for byte.
     ///
     /// Byte-for-byte matters more than it sounds: every edit re-emits the whole

@@ -22,9 +22,12 @@ import { assertionsByCommandLine, type SaveOutlook, type WrittenAssertion } from
 import type { Promotion } from './promote';
 import {
   ancestry,
+  reparentCandidates,
+  storyEnd,
   subtreeFailureCount,
   stemOf,
   type RunModel,
+  type StoryEnd,
   type TestNode,
   type Turn,
 } from './model';
@@ -80,6 +83,15 @@ export interface Surface {
    */
   commandDraft: string;
   /**
+   * The command being retyped in place, or null when none is.
+   *
+   * On the surface for the same reason as {@link commandDraft}: the document is
+   * rebuilt on every run event, and an edit that lived only in the DOM would be
+   * erased mid-word. `line` is the command's source line — the identity every
+   * other edit already uses — and `draft` is what the author has typed so far.
+   */
+  commandEdit: { line: number; draft: string } | null;
+  /**
    * How many edits to this document can still be taken back.
    *
    * Rendered rather than the stack itself, because the surface only needs to know
@@ -99,6 +111,13 @@ export interface Surface {
   runMatchesFile: boolean;
   /** What is typed but not yet created in the new-branch field. */
   newBranchName: string;
+  /**
+   * The parent picked in the reparent control and not yet applied. `''` when
+   * nothing is picked; the stem otherwise, with `'<root>'` standing for "no
+   * parent". On the surface for the usual reason: the document rebuilds on
+   * every run event, and a choice held only in the element would be lost.
+   */
+  reparentChoice: string;
   /**
    * True once Trash has been asked for and not yet confirmed.
    *
@@ -153,12 +172,20 @@ export interface ViewActions {
   addCommand(input: string): void;
   /** Remove the command at `commandLine`, and everything asserted about it. */
   deleteCommand(commandLine: number): void;
+  /** Start retyping the command at `commandLine`, prefilled with its text. */
+  beginCommandEdit(commandLine: number, current: string): void;
+  /** Replace the command's text at `commandLine`, keeping its assertions. */
+  editCommand(commandLine: number, input: string): void;
+  /** Stop retyping without changing anything. */
+  cancelCommandEdit(): void;
   /** Put the file back the way it was before the last edit. */
   undo(): void;
   /** Remove one of a command's assertions. */
   removeAssertion(commandLine: number, index: number): void;
   /** Create a transcript that continues from the open one. */
   newBranch(name: string): void;
+  /** Rewrite what the open transcript continues from; null makes it a root. */
+  reparent(stem: string | null): void;
   /** Move the open transcript to the Trash. */
   trashOpenDocument(): void;
   /** Arm or disarm the Trash confirmation. */
@@ -181,9 +208,11 @@ export function createSurface(): Surface {
     status: '',
     pending: null,
     commandDraft: '',
+    commandEdit: null,
     undoDepth: 0,
     runMatchesFile: true,
     newBranchName: '',
+    reparentChoice: '',
     confirmingTrash: false,
     goldens: new Set(),
     confirmingRecord: false,
@@ -235,8 +264,10 @@ function turnRow(
   actions: ViewActions,
   showOutput = false,
   claims: WrittenAssertion[] | null = null,
+  surface: Surface | null = null,
+  terminal: 'ends' | 'dead' | null = null,
 ): HTMLElement {
-  const row = el('div', `turn${turn.passed ? '' : ' bad'}`);
+  const row = el('div', `turn${turn.passed ? '' : ' bad'}${terminal ? ` ${terminal}` : ''}`);
   const line = el('button', 'ln', String(turn.line));
   line.type = 'button';
   line.title = `${node.file}:${turn.line}`;
@@ -244,7 +275,54 @@ function turnRow(
   row.append(line);
 
   const command = el('div', 'cmd');
-  command.append(el('b', null, '> '), document.createTextNode(turn.input));
+  command.append(el('b', null, '> '));
+  // Retyping a command in place (the surface carries the draft — the document is
+  // rebuilt on every run event, and text living only in the element would be
+  // erased mid-word). Document face only: `surface` arrives with the claims.
+  if (surface?.commandEdit?.line === turn.line) {
+    const field = el('input', 'cmdedit');
+    field.type = 'text';
+    field.id = 'editcommand';
+    field.autocomplete = 'off';
+    field.value = surface.commandEdit.draft;
+    field.addEventListener('input', () => {
+      surface.commandEdit = { line: turn.line, draft: field.value };
+    });
+    field.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        actions.editCommand(turn.line, field.value);
+      } else if (event.key === 'Escape') {
+        // Escape here abandons the retype, not the document — the global
+        // listener that closes the document must not also see this press.
+        event.stopPropagation();
+        actions.cancelCommandEdit();
+      }
+    });
+    const change = el('button', 'editgo', 'Change');
+    change.type = 'button';
+    change.addEventListener('click', () => actions.editCommand(turn.line, field.value));
+    const keep = el('button', 'editcancel', 'Keep');
+    keep.type = 'button';
+    keep.addEventListener('click', () => actions.cancelCommandEdit());
+    command.append(field, change, keep);
+  } else {
+    command.append(document.createTextNode(turn.input));
+    // The edit that delete-and-re-add cannot express: change the command's text
+    // and keep what is asserted about it. Withheld on an unsound file, where no
+    // edit is safe to offer.
+    if (surface && surface.source?.outlook?.kind !== 'unsound') {
+      // The glyph is CSS `::before` content, deliberately: text inside the
+      // button would join `.cmd`'s textContent, and the command's text is an
+      // identity other code (and the real-path suite) matches exactly.
+      const edit = el('button', 'editcmd');
+      edit.type = 'button';
+      edit.title = `Change "${turn.input}" — what the file asserts about it stays`;
+      edit.dataset.editLine = String(turn.line);
+      edit.addEventListener('click', () => actions.beginCommandEdit(turn.line, turn.input));
+      command.append(edit);
+    }
+  }
   row.append(command);
 
   if (showOutput) {
@@ -309,6 +387,19 @@ function turnRow(
     const list = el('div', 'claims');
     claims.forEach((claim) => list.append(claimRow(turn, claim, actions)));
     row.append(list);
+  }
+
+  // R9's two markings, both statements about the LAST RUN, never guesses about
+  // the file. The ender is where the story stopped; everything after it
+  // executed against a stopped engine and could not have done anything else.
+  // The ✕ stays live on dead turns — trimming them is the edit this marking
+  // exists to invite.
+  if (terminal === 'ends') {
+    row.append(el('div', 'endshere', 'The story ends here.'));
+  } else if (terminal === 'dead') {
+    row.append(
+      el('div', 'deadnote', 'The story had already ended — this command could not run.'),
+    );
   }
   return row;
 }
@@ -553,8 +644,11 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   const view = byId('docview');
   // A live run rebuilds this on every event. If the author is typing a command
   // when one lands, replacing the subtree takes their focus with it — so the
-  // caret is put back where it was, on the field that carries it.
-  const typing = document.activeElement?.id === 'addcommand';
+  // caret is put back where it was, on the field that carries it. Both fields
+  // that can hold a mid-word draft are covered: the add bar and the in-place
+  // retype.
+  const focused = document.activeElement?.id;
+  const typing = focused === 'addcommand' || focused === 'editcommand' ? focused : null;
   view.replaceChildren();
   const node = surface.opened;
   if (!node) return;
@@ -630,19 +724,40 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
       surface.runMatchesFile && surface.source?.file === node.file && surface.source.text !== null
         ? assertionsByCommandLine(surface.source.text, node.file)
         : null;
-    node.turns.forEach((turn) =>
-      turns.append(turnRow(node, turn, actions, true, claims?.get(turn.line) ?? null)),
+    // R9: where the last run showed the story ending, the cards say so — the
+    // ender is badged, and everything after it is marked dead rather than
+    // rendered as ordinary failures the author has to diagnose one by one.
+    const end = storyEnd(node);
+    const firstDead = end ? node.turns.length - end.dead.length : -1;
+    node.turns.forEach((turn, index) =>
+      turns.append(
+        turnRow(
+          node,
+          turn,
+          actions,
+          true,
+          claims?.get(turn.line) ?? null,
+          surface,
+          end === null ? null : index >= firstDead ? 'dead' : index === firstDead - 1 ? 'ends' : null,
+        ),
+      ),
     );
   }
   view.append(turns);
 
+  const end = storyEnd(node);
   view.append(fileBar(model, node, surface, actions));
-  view.append(commandBar(surface, actions));
+  // A file the run showed reaching the story's ending cannot grow: an appended
+  // command can only ever error. The append bar gives way to the explanation
+  // and the affordance R9 names — branch a NEW transcript from the point
+  // before the ending, which is exactly how fuse-cut and fuse-lose are shaped.
+  if (end) view.append(terminalBar(node, end));
+  else view.append(commandBar(surface, actions));
   if (surface.editNote) view.append(editNote(surface, actions));
   if (surface.pending) view.append(promoteBar(surface.pending, surface, actions));
 
   if (typing) {
-    const field = document.getElementById('addcommand') as HTMLInputElement | null;
+    const field = document.getElementById(typing) as HTMLInputElement | null;
     field?.focus();
     field?.setSelectionRange(field.value.length, field.value.length);
   }
@@ -666,6 +781,14 @@ function fileBar(model: RunModel, node: TestNode, surface: Surface, actions: Vie
   field.placeholder = 'Branch from this transcript…';
   field.autocomplete = 'off';
   field.value = surface.newBranchName;
+  // R9: a branch replays its ancestry, ending included — every command in a
+  // child of a terminal file would error against a stopped engine. Refused
+  // here, at the gesture, rather than discovered as a wall of red on the
+  // child's first run.
+  if (storyEnd(node)) {
+    field.disabled = true;
+    field.placeholder = 'The story ends in this transcript — a branch from it could never run.';
+  }
   field.addEventListener('input', () => {
     surface.newBranchName = field.value;
   });
@@ -683,8 +806,51 @@ function fileBar(model: RunModel, node: TestNode, surface: Surface, actions: Vie
 
   const go = el('button', 'branchgo', 'Branch');
   go.type = 'button';
+  // The button follows the field: a name typed before the run revealed the
+  // ending would otherwise still be submittable.
+  go.disabled = field.disabled;
   go.addEventListener('click', branch);
   bar.append(field, go);
+
+  // Reparenting: rewriting `continues:`, the field the editor owns end to end
+  // (R5) — the author picks a parent from the tree the run proved, and never
+  // types the field. The candidates already exclude this file, its own
+  // descendants (a cycle by construction) and any file whose run reached the
+  // story's ending; the current parent is dropped here because re-picking it
+  // is not an edit, so it is not an offer.
+  const option = (label: string, value: string): HTMLOptionElement => {
+    const choice = el('option', null, label);
+    choice.value = value;
+    return choice;
+  };
+  const pick = el('select', 'repick');
+  const lead = option(
+    node.parent ? `Continues from ${stemOf(node.parent)}…` : 'A root — continues from nothing…',
+    '',
+  );
+  lead.disabled = true;
+  pick.append(lead);
+  if (node.parent) pick.append(option('nothing — make it a root', '<root>'));
+  for (const candidate of reparentCandidates(model, node)) {
+    if (candidate.file === node.parent) continue;
+    pick.append(option(candidate.stem, candidate.stem));
+  }
+  pick.value = surface.reparentChoice || '';
+  const apply = el('button', 'reparentgo', 'Reparent');
+  apply.type = 'button';
+  apply.disabled = surface.reparentChoice === '';
+  // The button follows the picker directly — no repaint rides on a pick, so
+  // its enabled state cannot wait for one.
+  pick.addEventListener('change', () => {
+    surface.reparentChoice = pick.value;
+    apply.disabled = pick.value === '';
+  });
+  apply.addEventListener('click', () => {
+    const choice = surface.reparentChoice;
+    if (!choice) return;
+    actions.reparent(choice === '<root>' ? null : choice);
+  });
+  bar.append(pick, apply);
 
   // Goldens (ADR-294 D1): record — or re-record — this file's recording, by
   // running the suite with just this node blessed. Two acts, like Trash: a
@@ -752,6 +918,34 @@ function editNote(surface: Surface, actions: ViewActions): HTMLElement {
     note.append(undo);
   }
   return note;
+}
+
+/**
+ * What stands where the append bar would, on a file whose run reached the
+ * story's ending (R9).
+ *
+ * Not a disabled field with a tooltip: the fact changes what the surface IS
+ * for. A terminal file is a finished leaf — the losing and winning branches
+ * are only expressible as files whose last live command ends the story — and
+ * the way to keep exploring is a NEW transcript branched from before the
+ * ending, on the parent's document. Trimming any dead tail stays available on
+ * the cards themselves (each dead turn keeps its ✕).
+ */
+function terminalBar(node: TestNode, end: StoryEnd): HTMLElement {
+  const bar = el('div', 'terminalbar');
+  const from = node.parent
+    ? `branch a new transcript from ${stemOf(node.parent)}`
+    : 'branch a new transcript from an earlier point';
+  bar.append(
+    el(
+      'span',
+      'said',
+      end.endsAt
+        ? `The story ends at "> ${end.endsAt.input}" — a command appended here could never run. To explore another path, ${from}.`
+        : 'The story had already ended when this file began — its ancestry reaches an ending, so no command here can run.',
+    ),
+  );
+  return bar;
 }
 
 /**

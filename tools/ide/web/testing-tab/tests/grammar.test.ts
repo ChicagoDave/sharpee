@@ -11,7 +11,16 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { commandCount, parse, saveOutlook, serialize } from '../src/grammar';
+import {
+  addAssertion,
+  commandCount,
+  deleteCommand,
+  editCommand,
+  parse,
+  reparent,
+  saveOutlook,
+  serialize,
+} from '../src/grammar';
 
 /** The smallest thing the parser accepts, so a case shows only what it is about. */
 function transcript(body: string): string {
@@ -99,6 +108,96 @@ describe('commandCount', () => {
     // OTHER files' turn numbers.
     const text = transcript('> look\n[OK]\ntext\nA den.\n');
     expect(commandCount(text, 'probe.transcript')).toBeNull();
+  });
+});
+
+describe('editCommand', () => {
+  it('changes the command and keeps everything asserted about it', () => {
+    const text = transcript(
+      '> north\n[SKIP]\n\n> examine the doormat\n[OK: contains "worn bald"]\n[CHANNEL: status, contains "Porch"]\n',
+    );
+    const draft = editCommand(text, 'probe.transcript', 8, 'x doormat');
+    expect(draft.text).toContain('> x doormat\n[OK: contains "worn bald"]');
+    expect(draft.text).toContain('[CHANNEL: status, contains "Porch"]');
+    expect(draft.text).not.toContain('examine the doormat');
+    // The other command is untouched — the edit is to one command, not a rewrite.
+    expect(draft.text).toContain('> north\n[SKIP]');
+  });
+
+  it('refuses a blank replacement', () => {
+    const text = transcript('> north\n[SKIP]\n');
+    expect(() => editCommand(text, 'probe.transcript', 5, '   ')).toThrow(
+      'A command needs some text.',
+    );
+  });
+
+  it('refuses a line with no command on it', () => {
+    const text = transcript('> north\n[SKIP]\n');
+    expect(() => editCommand(text, 'probe.transcript', 6, 'south')).toThrow('No command at line 6');
+  });
+
+  it('refuses an unsound file rather than serializing a husk over it', () => {
+    expect(() => editCommand('not a transcript', 'probe.transcript', 1, 'north')).toThrow(
+      'Cannot edit',
+    );
+  });
+});
+
+// The cards address commands by the SOURCE LINE of the last run, and a
+// structural edit since that run shifts every later command up. So a stale line
+// can land on a DIFFERENT command that now occupies it — and a guard that only
+// checked "is there a command here?" would edit the wrong turn silently. The
+// caller says what it believes is at the line; the file must agree.
+describe('targeting a command the caller can see', () => {
+  const text = transcript('> north\n[SKIP]\n\n> look\n[SKIP]\n');
+
+  it('refuses when the line holds a different command than the card showed', () => {
+    expect(() => editCommand(text, 'probe.transcript', 5, 'south', 'look')).toThrow(
+      'the file has changed since this run',
+    );
+    expect(() => deleteCommand(text, 'probe.transcript', 5, 'look')).toThrow(
+      'the file has changed since this run',
+    );
+    expect(() =>
+      addAssertion(text, 'probe.transcript', 5, { type: 'ok', text: 'x' } as never, 'look'),
+    ).toThrow('the file has changed since this run');
+  });
+
+  it('proceeds when line and text agree', () => {
+    const draft = deleteCommand(text, 'probe.transcript', 5, 'north');
+    expect(draft.text).not.toContain('> north');
+    expect(draft.text).toContain('> look');
+  });
+});
+
+// `continues:` is R5's field: load-bearing, documented nowhere an author
+// reads, and owned by the editor end to end so it cannot be misspelled.
+describe('reparent', () => {
+  it('rewrites what the file continues from, touching nothing else', () => {
+    const text = `title: T\nstory: fernhill\ncontinues: arrival\n\n---\n\n> north\n[OK: contains "hall"]\n`;
+    const draft = reparent(text, 'probe.transcript', 'key');
+    expect(draft.text).toContain('continues: key');
+    expect(draft.text).not.toContain('continues: arrival');
+    expect(draft.text).toContain('[OK: contains "hall"]');
+  });
+
+  it('makes the file a root by removing the field, and can add one to a root', () => {
+    const text = `title: T\nstory: fernhill\ncontinues: arrival\n\n---\n\n> north\n[SKIP]\n`;
+    const rooted = reparent(text, 'probe.transcript', null);
+    expect(rooted.text).not.toContain('continues:');
+    const reparented = reparent(rooted.text, 'probe.transcript', 'key');
+    expect(reparented.text).toContain('continues: key');
+  });
+
+  it('refuses the one-node cycle it can see: a file continuing from itself', () => {
+    const text = `title: T\nstory: fernhill\n\n---\n\n> north\n[SKIP]\n`;
+    expect(() => reparent(text, 'tests/transcripts/probe.transcript', 'probe')).toThrow(
+      'cannot continue from itself',
+    );
+  });
+
+  it('refuses an unsound file rather than serializing a husk over it', () => {
+    expect(() => reparent('not a transcript', 'probe.transcript', 'key')).toThrow('Cannot edit');
   });
 });
 

@@ -18,7 +18,16 @@ import {
   type TranscriptEndEvent,
   type TranscriptStartEvent,
 } from '@sharpee/ide-protocol/run-events';
-import { ancestry, applyEvent, createModel, descendantCount, subtreeFailureCount } from '../src/model';
+import {
+  ancestry,
+  applyEvent,
+  createModel,
+  descendantCount,
+  reparentCandidates,
+  storyEnd,
+  STORY_OVER_ERROR,
+  subtreeFailureCount,
+} from '../src/model';
 
 let seq = 0;
 const envelope = () => ({ schemaVersion: RUN_EVENT_SCHEMA_VERSION, seq: seq++, elapsedMs: seq });
@@ -280,5 +289,80 @@ describe('the run-event fold', () => {
     const cyclic = model.nodes.get(ROOT)!;
     cyclic.parent = DEEP;
     expect(ancestry(model, cyclic).length).toBeLessThanOrEqual(model.nodes.size);
+  });
+});
+
+// R9: after an ending, every further command errors as EXACTLY the runner's
+// normalized string — the one wire signal there is. The derivation must split
+// the run at the first such error, never guess beyond the evidence, and never
+// fire on an ordinary failure.
+describe('storyEnd', () => {
+  it('is null for a run that never showed an ending — including ordinary failures', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT),
+      command(ROOT, { line: 6, passed: false, error: 'Expected output not found' }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+    expect(storyEnd(model.nodes.get(ROOT)!)).toBeNull();
+  });
+
+  it('names the ender and the dead tail, split at the first stopped-engine error', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'wait' }),
+      command(ROOT, { line: 6, input: 'cut the fuse' }),
+      command(ROOT, { line: 8, input: 'look', passed: false, error: STORY_OVER_ERROR }),
+      command(ROOT, { line: 10, input: 'inventory', passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 2, failed: 2 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('cut the fuse');
+    expect(found?.dead.map((turn) => turn.input)).toEqual(['look', 'inventory']);
+  });
+
+  it('has no ender when the story was over before the first command — the ending is an ancestor\'s', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 0, failed: 1 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found).not.toBeNull();
+    expect(found?.endsAt).toBeNull();
+    expect(found?.dead).toHaveLength(1);
+  });
+});
+
+// The exclusions are by construction, not refusal-after-the-fact: what the
+// picker never offers, the author can never write.
+describe('reparentCandidates', () => {
+  it('excludes the node itself and everything beneath it — a cycle by construction', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      end(KEY),
+      start(DEEP, { parent: KEY }),
+      end(DEEP),
+    ]);
+    const forKey = reparentCandidates(model, model.nodes.get(KEY)!).map((n) => n.stem);
+    expect(forKey).toEqual(['arrival']);
+    const forRoot = reparentCandidates(model, model.nodes.get(ROOT)!);
+    expect(forRoot).toEqual([]);
+  });
+
+  it('excludes a file whose run reached the story\'s ending — its children would die', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      command(KEY, { passed: false, error: STORY_OVER_ERROR }),
+      end(KEY, { status: 'failed', passed: 0, failed: 1 }),
+      start(DEEP, { parent: ROOT }),
+      end(DEEP),
+    ]);
+    const stems = reparentCandidates(model, model.nodes.get(DEEP)!).map((n) => n.stem);
+    expect(stems).toEqual(['arrival']);
   });
 });

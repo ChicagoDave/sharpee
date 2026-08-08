@@ -364,6 +364,72 @@ export function subtreeFailureCount(node: TestNode): number {
 }
 
 /**
+ * The runner's marker for a command that executed after the story ended.
+ *
+ * `CommandResultEvent.error` carries EXACTLY this string for such a command —
+ * branch-tester's runner normalizes the stopped-engine capture to it in one
+ * place (`runner.ts`, the `'Error: Engine is not running'` → `error` fold) —
+ * so the match here is exact, never a prose heuristic. If the runner ever
+ * renames it, the real-path suite's terminal-marking test goes red rather than
+ * the marking silently vanishing.
+ */
+export const STORY_OVER_ERROR = 'Engine is not running';
+
+/**
+ * Where the story ended inside this node's last run, if the run showed it.
+ *
+ * R9: after an ending, every further command errors as {@link STORY_OVER_ERROR}
+ * — a losing or winning branch is only expressible as a file whose last live
+ * command ends the story, and before this the fact was "discoverable only by
+ * going red". Evidence-based on purpose: a file whose LAST command ends the
+ * story cleanly emits no wire signal at all today, so it is honestly not
+ * marked (R10 — the editor never claims what it cannot substantiate).
+ */
+export interface StoryEnd {
+  /**
+   * The turn that ended the story — the last one the engine ran. Null when
+   * the story was already over before this file's first command: the ending
+   * lives somewhere in its ancestry, not here.
+   */
+  endsAt: Turn | null;
+  /** The turns that executed after the ending. Every one of them errored. */
+  dead: Turn[];
+}
+
+/** This node's story ending, or null when its last run never showed one. */
+export function storyEnd(node: TestNode): StoryEnd | null {
+  const first = node.turns.findIndex((turn) => turn.error === STORY_OVER_ERROR);
+  if (first < 0) return null;
+  return { endsAt: first > 0 ? node.turns[first - 1] : null, dead: node.turns.slice(first) };
+}
+
+/**
+ * The transcripts `node` could legitimately continue from.
+ *
+ * Excluded, each by construction rather than by refusal-after-the-fact:
+ * the node itself and everything beneath it (reparenting under your own
+ * descendant is a cycle), and any node whose last run reached the story's
+ * ending (its children replay through the ending and die — the same fact that
+ * disables branching from it). The exclusions are only as good as the tree
+ * the run proved: before a tree run, parentage is unknown and descendants
+ * cannot be excluded — a cycle that slips past this list is the runner's own
+ * named error on the next run, not a silent wrong write.
+ */
+export function reparentCandidates(model: RunModel, node: TestNode): TestNode[] {
+  const excluded = new Set<TestNode>([node]);
+  const mark = (parent: TestNode): void => {
+    for (const child of parent.children) {
+      excluded.add(child);
+      mark(child);
+    }
+  };
+  mark(node);
+  return [...model.nodes.values()].filter(
+    (candidate) => !excluded.has(candidate) && storyEnd(candidate) === null,
+  );
+}
+
+/**
  * Transcripts anywhere beneath `node` — every file that `continues:` from it,
  * directly or through another.
  *
