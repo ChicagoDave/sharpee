@@ -32,6 +32,15 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     /// The author switched view mode — the choice is remembered per project
     /// (ADR-301 D4), so the host persists it.
     var onPersistMode: ((String) -> Void)?
+    /// The page opened a document and wants that transcript's text. The page has
+    /// no filesystem; reading one is the host's job (Phase 5 slice 2a).
+    var onRequestSource: ((String) -> Void)?
+    /// The page edited a transcript and wants the whole file written (slice 2b).
+    var onWriteTranscript: ((String, String) -> Void)?
+    /// The page composed a new transcript; the host decides where it lands.
+    var onCreateTranscript: ((String, String) -> Void)?
+    /// The page asked for a transcript to be moved to the Trash.
+    var onTrashTranscript: ((String) -> Void)?
 
     // MARK: - State
 
@@ -138,6 +147,55 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         callJSON("finished", json: ok ? "true" : "false")
     }
 
+    /// Answers `requestSource` with the transcript's text.
+    ///
+    /// The file is carried back with the text because the page drops an answer
+    /// for a document the author has already closed — the request is not a
+    /// promise that they are still looking at it.
+    func deliverSource(file: String, text: String) {
+        call("source", arguments: [file, text])
+    }
+
+    /// Answers `requestSource` when the file could not be read, with the reason.
+    ///
+    /// An unreadable transcript is said out loud rather than left as a pane that
+    /// never finishes loading, which is indistinguishable from a hung host.
+    func deliverSourceFailure(file: String, message: String) {
+        call("sourceFailed", arguments: [file, message])
+    }
+
+    /// The page's edit reached disk. Answers `writeTranscript`.
+    func deliverSaved(file: String) {
+        call("saved", argument: file)
+    }
+
+    /// The page's edit did not reach disk, and why. The page keeps the author's
+    /// work and says so, rather than showing an assertion that is not in the file.
+    func deliverSaveFailure(file: String, message: String) {
+        call("saveFailed", arguments: [file, message])
+    }
+
+    /// A new transcript exists at `file`. Answers `createTranscript`.
+    func deliverCreated(file: String) {
+        call("created", argument: file)
+    }
+
+    /// It could not be created, and why. There is no path to name yet, so the
+    /// failure carries only the reason.
+    func deliverCreateFailure(message: String) {
+        call("createFailed", argument: message)
+    }
+
+    /// The transcript at `file` has been moved to the Trash.
+    func deliverTrashed(file: String) {
+        call("trashed", argument: file)
+    }
+
+    /// It could not be removed, and why.
+    func deliverTrashFailure(file: String, message: String) {
+        call("trashFailed", arguments: [file, message])
+    }
+
     // MARK: - Bridge plumbing
 
     /// Coalesces line delivery: however many lines arrive in one runloop turn,
@@ -159,7 +217,18 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     }
 
     private func call(_ function: String, argument: String) {
-        callJSON(function, json: Self.json([argument]).map { "\($0)[0]" } ?? "''")
+        call(function, arguments: [argument])
+    }
+
+    /// Calls a page function with N string arguments.
+    ///
+    /// The list is encoded as JSON and spread at the call site rather than
+    /// interpolated one argument at a time: story text and file paths carry
+    /// quotes, newlines and backslashes, and JSON is the only escaping either
+    /// side has to agree on.
+    private func call(_ function: String, arguments: [String]) {
+        guard let json = Self.json(arguments) else { return }
+        callJSON(function, json: "...\(json)")
     }
 
     private func callJSON(_ function: String, json: String) {
@@ -232,6 +301,18 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         case "persistMode":
             guard let mode = body["mode"] as? String else { return }
             onPersistMode?(mode)
+        case "requestSource":
+            guard let file = body["file"] as? String else { return }
+            onRequestSource?(file)
+        case "writeTranscript":
+            guard let file = body["file"] as? String, let text = body["text"] as? String else { return }
+            onWriteTranscript?(file, text)
+        case "createTranscript":
+            guard let name = body["name"] as? String, let text = body["text"] as? String else { return }
+            onCreateTranscript?(name, text)
+        case "trashTranscript":
+            guard let file = body["file"] as? String else { return }
+            onTrashTranscript?(file)
         default:
             break
         }

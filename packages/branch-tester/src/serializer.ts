@@ -117,8 +117,16 @@ function serializeHeader(transcript: Transcript): string[] {
   return lines;
 }
 
-/** Write one assertion tag. Its literal block, if any, is written by the caller. */
-function serializeAssertionTag(assertion: Assertion): string {
+/**
+ * Write one assertion tag. Its literal block, if any, is written by the caller.
+ *
+ * Exported because an editing tool has to SHOW an author what a single assertion
+ * says, one at a time, and the only honest answer to that is the line this
+ * function writes. Deriving it anywhere else — in a UI, in another language —
+ * would put a second spelling of the grammar next to this one, which is the
+ * drift the shared parser and serializer exist to prevent.
+ */
+export function serializeAssertionTag(assertion: Assertion): string {
   switch (assertion.type) {
     case 'ok':
       return '[OK]';
@@ -291,7 +299,12 @@ export function serializeTranscript(transcript: Transcript): string {
 
   for (const item of items) {
     if (item.type === 'comment') {
-      pendingComments.push(`# ${item.comment!.text}`);
+      // The space after the hash is a separator, so an empty comment is `#` and
+      // not `# `. Writing the space anyway put trailing whitespace into the
+      // author's file on every save — a blank comment line is the usual way to
+      // open and close a pasted block, so it was not a rare case.
+      const text = item.comment!.text;
+      pendingComments.push(text ? `# ${text}` : '#');
       continue;
     }
 

@@ -48,6 +48,17 @@ final class TestingTabRealPathTests: XCTestCase {
         runner = TestRunner()
         relay = LineRelay(tab: tab)
         runner.delegate = relay
+        // The SAME reader the app wires in TestController — not a closure written
+        // here. A test that reads the file itself proves the page can render text,
+        // never that the IDE supplies any.
+        let discovered = TranscriptDiscovery.transcripts(
+            inStoryDirectory: fixtureStory.deletingLastPathComponent())
+        tab.onRequestSource = { [weak self] file in
+            TranscriptSourceProvider(discovered: discovered).provide(file: file, to: self?.tab)
+        }
+        tab.onWriteTranscript = { [weak self] file, text in
+            TranscriptSourceProvider(discovered: discovered).write(file: file, text: text, to: self?.tab)
+        }
     }
 
     override func tearDownWithError() throws {
@@ -170,14 +181,7 @@ final class TestingTabRealPathTests: XCTestCase {
         try await runTree()
 
         try await select(path: ["arrival", "concealment"])
-        _ = try await tab.evaluateInTab("""
-        (function () {
-          var rows = Array.from(document.querySelectorAll('#cols .crow'));
-          var row = rows.find(function (r) { return r.querySelector('.stem').textContent === 'concealment'; });
-          row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-        })();
-        """)
-        try await settle()
+        try await openDocument(stem: "concealment")
 
         let turnCount = try await count("#docview .turn")
         XCTAssertEqual(turnCount, 16, "concealment is 16 turns, all present in its document")
@@ -190,6 +194,630 @@ final class TestingTabRealPathTests: XCTestCase {
         let location = try XCTUnwrap(opened, "clicking a line number must reach the host")
         XCTAssertEqual(location.file.lastPathComponent, "concealment.transcript")
         XCTAssertEqual(location.line, 12)
+    }
+
+    // MARK: - Phase 5 slice 1 — the probe
+
+    /// The editor's foundation (go-live Phase 5, R1): a document shows what the
+    /// story actually said on turns that PASSED, not only on failures.
+    ///
+    /// The assertion is deliberately not "some text appeared." It is that the
+    /// rendered bytes are the bytes an assertion matches — so it reads a turn
+    /// whose `.transcript` asserts `contains "worn bald in the middle"` and
+    /// requires that exact fragment on the page. Anything weaker would pass
+    /// against a rendering of the output rather than the output.
+    func testADocumentShowsTheStorysWordsOnPassingTurnsAndThePreviewStillDoesNot() async throws {
+        try await waitForPage()
+        try await runTree()
+
+        try await select(path: ["arrival", "concealment"])
+
+        // The preview is a glance: a passing turn shows no output there, or the
+        // pane becomes a wall of prose you cannot scan.
+        let previewOutputs = try await count(".preview .turn:not(.bad) .actual")
+        XCTAssertEqual(previewOutputs, 0, "the preview stays a glance; output belongs to the document")
+
+        try await openDocument(stem: "concealment")
+
+        let documentOutputs = try await count("#docview .turn .actual, #docview .turn .silent")
+        XCTAssertEqual(documentOutputs, 16,
+                       "every one of concealment's 16 turns carries what the story printed")
+
+        let shown = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) {
+            return r.querySelector('.cmd').textContent === '> examine the doormat';
+          });
+          if (!row) return null;
+          if (row.classList.contains('bad')) return 'FAILED — this turn must be a passing one';
+          var out = row.querySelector('.actual');
+          return out ? out.textContent : null;
+        })();
+        """) as? String
+
+        let output = try XCTUnwrap(shown, "a passing turn must carry the story's words in its document")
+        XCTAssertTrue(output.contains("worn bald in the middle"),
+                      "the shown bytes are the assertable bytes — concealment.transcript asserts "
+                      + "contains \"worn bald in the middle\" on this turn; got: \(output)")
+    }
+
+    /// Slice 2a: the source face shows the file the host read, and states what a
+    /// save would do to it — computed in the page by the SAME parser and
+    /// serializer the test run uses (`@sharpee/branch-tester`, bundled from
+    /// source), never by a second grammar that could disagree.
+    ///
+    /// `concealment` also pins WHICH grammar the page carries, in one assertion.
+    /// Measured on this exact fixture 2026-08-08: branch-tester round-trips it
+    /// byte-identically, while transcript-tester reformats it by two lines. The
+    /// two parsers give opposite answers here, so the notice below cannot read
+    /// "byte-for-byte" unless the page holds the parser the run uses.
+    func testTheSourceFaceShowsTheFileAndWhatSavingWouldDoToIt() async throws {
+        try await waitForPage()
+        try await runTree()
+
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("document.querySelector('[data-face=\"source\"]').click();")
+        try await settle(times: 3)
+
+        // The text is the file's, not a rendering of the run: it carries the
+        // header and the comments, neither of which appears in any turn.
+        let source = try await text(".sourceface .source")
+        XCTAssertTrue(source.contains("continues: arrival"),
+                      "the source face shows the file itself, header and all")
+        XCTAssertTrue(source.contains("# Before searching: the concealed key cannot be taken"),
+                      "including comments, which no run event carries")
+
+        let onDisk = try String(
+            contentsOf: fixtureStory.deletingLastPathComponent()
+                .appendingPathComponent("tests/transcripts/concealment.transcript"),
+            encoding: .utf8)
+        XCTAssertEqual(source, onDisk, "byte-for-byte what the host read, not a reformat of it")
+
+        // The notice is the point of the face: saving re-emits the whole file, so
+        // the author is told what that costs BEFORE they pay it. It is also the
+        // grammar discriminator — the other parser answers "would reformat" here.
+        let notice = try await text(".sourceface .normnote")
+        XCTAssertTrue(notice.contains("byte-for-byte"),
+                      "this fixture round-trips clean under the run's own parser; got: \(notice)")
+    }
+
+    // MARK: - Phase 5 slice 2b — promote a selection into the file
+
+    /// The gesture the editor exists for: select what the story said, and the
+    /// assertion lands in the `.transcript` on disk — then the suite still passes,
+    /// which is the only thing that proves the assertion was true.
+    ///
+    /// Nothing here is stubbed. Real page, real selection, real click, real write
+    /// through `TranscriptSourceProvider`, real second run of the real CLI.
+    func testPromotingASelectionWritesTheAssertionAndTheSuiteStillPasses() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        // Restored however this test exits, so a crash between write and assert
+        // cannot leave the fixture carrying an edit.
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // A real selection over part of one turn's output. `bald` is inside the
+        // phrase this turn already asserts, so the word is guaranteed to be in the
+        // output — but `[OK: contains "bald"]` is not itself in the file, so a pass
+        // afterwards cannot come from an assertion that was there all along.
+        XCTAssertFalse(original.contains("[OK: contains \"bald\"]"),
+                       "this test's assertion must not already be in the fixture")
+        let offered = try await tab.evaluateInTab("""
+        (function () {
+          var blocks = Array.from(document.querySelectorAll('#docview .turn .actual[data-command-line]'));
+          var pre = blocks.find(function (b) { return b.textContent.indexOf('bald') !== -1; });
+          if (!pre) return 'no turn printed the word';
+          var text = pre.textContent;
+          var at = text.indexOf('bald');
+          var range = document.createRange();
+          range.setStart(pre.firstChild, at);
+          range.setEnd(pre.firstChild, at + 'bald'.length);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          // Read back from the range: an off-screen web view has no focus, and
+          // WebKit returns an empty string from selection.toString() there while
+          // still holding the range. The page reads the range for the same reason.
+          return selection.getRangeAt(0).toString();
+        })();
+        """) as? String
+        XCTAssertEqual(offered, "bald", "the page must hold a real selection over the output")
+        try await settle(times: 3)
+
+        // The offer names the tag that will be written, not a description of it.
+        let tag = try await text(".promote .tag")
+        XCTAssertEqual(tag, "[OK: contains \"bald\"]",
+                       "a one-line span with no double quote earns the inline form")
+
+        _ = try await tab.evaluateInTab("document.querySelector('.promote .go').click();")
+        try await settle(times: 6)
+
+        let afterEdit = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertNotEqual(afterEdit, original, "the file on disk must have changed")
+        XCTAssertTrue(afterEdit.contains("[OK: contains \"bald\"]"),
+                      "the assertion the offer named is the one in the file")
+
+        // The claim only means something if it is true. Re-run the real suite.
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0",
+                       "the promoted assertion must pass — it asserts what the story printed")
+    }
+
+    /// When the write does not land, the page must say so AND keep showing the
+    /// file that is actually on disk.
+    ///
+    /// This is the branch that exists so the source face can never disagree with
+    /// disk, and it is the one a green suite would otherwise say nothing about —
+    /// the success path leaves the two agreeing by accident.
+    func testARefusedWriteSaysSoAndLeavesTheSourceFaceShowingDisk() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        // The provider is pointed at an EMPTY suite, so every write is refused by
+        // the real guard — not by a stub, and not by a flag this test invented.
+        tab.onWriteTranscript = { [weak self] file, text in
+            TranscriptSourceProvider(discovered: []).write(file: file, text: text, to: self?.tab)
+        }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var blocks = Array.from(document.querySelectorAll('#docview .turn .actual[data-command-line]'));
+          var pre = blocks.find(function (b) { return b.textContent.indexOf('bald') !== -1; });
+          var at = pre.textContent.indexOf('bald');
+          var range = document.createRange();
+          range.setStart(pre.firstChild, at);
+          range.setEnd(pre.firstChild, at + 'bald'.length);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        })();
+        """)
+        try await settle(times: 3)
+        _ = try await tab.evaluateInTab("document.querySelector('.promote .go').click();")
+        try await settle(times: 6)
+
+        let note = try await text(".editnote")
+        XCTAssertTrue(note.contains("was not written"),
+                      "a refused write must be said out loud; got: \(note)")
+
+        XCTAssertEqual(try String(contentsOf: transcript, encoding: .utf8), original,
+                       "and nothing may reach the file")
+
+        // The source face must still be the file, not the draft the page built.
+        _ = try await tab.evaluateInTab("document.querySelector('[data-face=\"source\"]').click();")
+        try await settle(times: 3)
+        let shown = try await text(".sourceface .source")
+        XCTAssertEqual(shown, original,
+                       "the source face shows disk, never an edit that did not land")
+        XCTAssertFalse(shown.contains("[OK: contains \"bald\"]"))
+    }
+
+    // MARK: - Phase 5 slice 2c — growing and pruning a transcript
+
+    /// The whole loop R1 describes, driven end to end through the page: type a
+    /// command, run, read what the story said, promote it, run again green.
+    ///
+    /// This is the acceptance that matters, because it is what Phase 6 asks an
+    /// author to do. Every step is the real thing — real file, real CLI, real
+    /// selection — and the final run is what makes the promoted claim TRUE rather
+    /// than merely written.
+    func testACommandCanBeAddedRunPromotedAndPassWithoutLeavingTheTab() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // 1. Add a command. `inventory` is chosen because its response is stable
+        // and does not depend on where in the story the turn lands.
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('addcommand');
+          field.value = 'inventory';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let afterAdd = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(afterAdd.contains("> inventory\n[SKIP]"),
+                      "a new command is a draft: it runs and asserts nothing")
+
+        // 2. Run again. The new command executes and its output arrives on the wire.
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        let printed = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> inventory'; });
+          if (!row) return null;
+          var out = row.querySelector('.actual');
+          return out ? out.textContent : null;
+        })();
+        """) as? String
+        let output = try XCTUnwrap(printed, "the added command must run and show what the story said")
+        XCTAssertFalse(output.isEmpty)
+
+        // 3. Promote a word of that output — chosen from what the story actually
+        // printed, which is the only way an author can know it is assertable.
+        // `.map(String.init)` is load-bearing: the split yields character slices,
+        // and interpolating one into the script below writes `["c","a",…]`.
+        let word = try XCTUnwrap(
+            output.split(whereSeparator: { !$0.isLetter })
+                .map(String.init)
+                .first(where: { $0.count > 3 }),
+            "the response must contain a word worth asserting; got: \(output)")
+        let selected = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> inventory'; });
+          var pre = row.querySelector('.actual');
+          var at = pre.textContent.indexOf('\(word)');
+          var range = document.createRange();
+          range.setStart(pre.firstChild, at);
+          range.setEnd(pre.firstChild, at + \(word.count));
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          return selection.getRangeAt(0).toString();
+        })();
+        """) as? String
+        XCTAssertEqual(selected, word)
+        try await settle(times: 3)
+        _ = try await tab.evaluateInTab("document.querySelector('.promote .go').click();")
+        try await settle(times: 6)
+
+        let afterPromote = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(afterPromote.contains("> inventory\n[OK: contains \"\(word)\"]"),
+                      "the draft [SKIP] gives way to the assertion — both would leave it unevaluated")
+        XCTAssertFalse(afterPromote.contains("> inventory\n[SKIP]"))
+
+        // 4. And it is true.
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "the command added and asserted in the tab must pass")
+    }
+
+    /// Removing a command takes everything asserted about it, and the file that
+    /// results is one the runner still accepts.
+    func testDeletingATurnRemovesItsAssertionsAndLeavesAPassingSuite() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+        XCTAssertTrue(original.contains("[OK: contains \"worn bald in the middle\"]"),
+                      "this test removes the turn that carries that assertion")
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          row.querySelector('.drop').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let afterDelete = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertFalse(afterDelete.contains("> examine the doormat"), "the command is gone")
+        XCTAssertFalse(afterDelete.contains("worn bald in the middle"),
+                       "and so is what was asserted about it — half a deletion is the confusing one")
+
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "the file left behind is still one the runner accepts")
+    }
+
+    /// Undo puts the file back, one edit at a time, byte for byte.
+    ///
+    /// Byte-for-byte matters more than it sounds: every edit re-emits the whole
+    /// file from the parsed model, so an undo that restored "the same transcript"
+    /// without restoring the same TEXT would quietly normalize the author's file
+    /// as the price of changing their mind.
+    func testUndoRestoresTheFileOneEditAtATime() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // Nothing has been edited, so there is nothing to take back.
+        let undoBeforeAnyEdit = try await count(".editnote .undo")
+        XCTAssertEqual(undoBeforeAnyEdit, 0)
+
+        for command in ["inventory", "score"] {
+            _ = try await tab.evaluateInTab("""
+            (function () {
+              var field = document.getElementById('addcommand');
+              field.value = '\(command)';
+              field.dispatchEvent(new Event('input', { bubbles: true }));
+              document.querySelector('.addcmd .addgo').click();
+            })();
+            """)
+            try await settle(times: 6)
+        }
+
+        let afterTwo = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(afterTwo.contains("> inventory") && afterTwo.contains("> score"))
+        let offer = try await text(".editnote .undo")
+        XCTAssertEqual(offer, "Undo (2)", "two edits, two steps back")
+
+        _ = try await tab.evaluateInTab("document.querySelector('.editnote .undo').click();")
+        try await settle(times: 6)
+        let afterFirstUndo = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(afterFirstUndo.contains("> inventory"), "one step back, not all of them")
+        XCTAssertFalse(afterFirstUndo.contains("> score"))
+
+        _ = try await tab.evaluateInTab("document.querySelector('.editnote .undo').click();")
+        try await settle(times: 6)
+        XCTAssertEqual(try String(contentsOf: transcript, encoding: .utf8), original,
+                       "back to exactly the bytes the author started with")
+        let undoAfterFullRewind = try await count(".editnote .undo")
+        XCTAssertEqual(undoAfterFullRewind, 0, "and nothing left to take back")
+    }
+
+    /// A write that never lands must not leave a way back to a state the file was
+    /// never in — the stack records departures, not attempts.
+    func testARefusedEditLeavesNothingToUndo() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        tab.onWriteTranscript = { [weak self] file, text in
+            TranscriptSourceProvider(discovered: []).write(file: file, text: text, to: self?.tab)
+        }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('addcommand');
+          field.value = 'inventory';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        XCTAssertEqual(try String(contentsOf: transcript, encoding: .utf8), original)
+        let undoAfterRefusal = try await count(".editnote .undo")
+        XCTAssertEqual(undoAfterRefusal, 0,
+                       "a refused edit offers no way back, because nothing moved")
+    }
+
+    /// A turn shows what the FILE claims about it, in the file's own words, and
+    /// one claim can be taken back without taking the turn with it.
+    func testATurnShowsItsAssertionsAndOneCanBeRemovedOnItsOwn() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // The tag is the serializer's, so it reads exactly as the file reads.
+        let claim = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          var tag = row && row.querySelector('.claim .ctag');
+          return tag ? tag.textContent : null;
+        })();
+        """) as? String
+        XCTAssertEqual(claim, "[OK: contains \"worn bald in the middle\"]",
+                       "the turn shows the assertion the file makes about it")
+
+        // A [SKIP] is shown as what it is — the run stops at it, so calling it a
+        // claim alongside real ones would misreport what the suite checks.
+        let halting = try await count("#docview .claim.halts")
+        XCTAssertEqual(halting, 0, "concealment asserts on every turn; none of them halt")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#docview .turn'));
+          var row = rows.find(function (r) { return r.querySelector('.cmd').textContent === '> examine the doormat'; });
+          row.querySelector('.claim .cdrop').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let after = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertFalse(after.contains("worn bald in the middle"), "the claim is gone")
+        XCTAssertTrue(after.contains("> examine the doormat\n[SKIP]"),
+                      "and the command stays, back in its draft state — a bare command would "
+                      + "fail the run with a named error the author did not ask for")
+
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "the file left behind still passes")
+    }
+
+    /// After an edit, a turn's claims are HIDDEN rather than shown against the
+    /// wrong turn: the join is by source line, and an edit moves lines.
+    func testClaimsAreHiddenBetweenAnEditAndTheNextRun() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        let before = try await count("#docview .claim")
+        XCTAssertGreaterThan(before, 0, "claims are shown while the run and the file agree")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('addcommand');
+          field.value = 'inventory';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let after = try await count("#docview .claim")
+        XCTAssertEqual(after, 0,
+                       "once the file has moved and the run has not, no claim can be trusted "
+                       + "against a turn — showing them would put one command's under another's")
+    }
+
+    // MARK: - Phase 5 slice 3 — whole files
+
+    /// Branching writes a real transcript, with `continues:` the editor supplied,
+    /// in the folder the host chose — and the author typed only a name.
+    func testBranchingCreatesATranscriptTheEditorParentedItself() async throws {
+        let created = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/the-vine-again.transcript")
+        defer { try? FileManager.default.removeItem(at: created) }
+        try XCTSkipIf(FileManager.default.fileExists(atPath: created.path),
+                      "a previous run left this file behind")
+
+        // The host needs the story to infer a location — that is the whole of
+        // ADR-290 D8, so it is wired the way the app wires it.
+        let storyDirectory = fixtureStory.deletingLastPathComponent()
+        tab.onCreateTranscript = { [weak self] name, text in
+            TranscriptSourceProvider(discovered: []).create(
+                name: name, text: text, in: storyDirectory, to: self?.tab)
+        }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('newbranch');
+          field.value = 'The vine again';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.filebar .branchgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: created.path),
+                      "the name became a file, slugged, in tests/transcripts/")
+        let text = try String(contentsOf: created, encoding: .utf8)
+        XCTAssertTrue(text.contains("continues: concealment"),
+                      "the editor wrote the parentage; the author never typed a stem")
+        XCTAssertTrue(text.contains("title: The vine again"))
+        XCTAssertTrue(text.contains("story: fernhill"))
+        XCTAssertFalse(text.contains("> "),
+                       "a new transcript carries no placeholder command — the first is the author's")
+    }
+
+    /// Removing a transcript that others continue FROM would orphan them, so it
+    /// is refused with the count rather than performed.
+    func testTrashingAParentIsRefusedBecauseItWouldOrphanItsChildren() async throws {
+        var asked = false
+        tab.onTrashTranscript = { _ in asked = true }
+
+        try await waitForPage()
+        try await runTree()
+        // `key` is an interior node in this fixture: four transcripts continue it.
+        try await select(path: ["arrival", "key"])
+        try await openDocument(stem: "key")
+
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .trash').click();")
+        try await settle(times: 3)
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .trash.armed').click();")
+        try await settle(times: 3)
+
+        XCTAssertFalse(asked, "the host is never asked to remove a parent")
+        let note = try await text(".editnote")
+        XCTAssertTrue(note.contains("continue from key"),
+                      "and the author is told what is in the way; got: \(note)")
+    }
+
+    /// Trash is two deliberate acts, and the second one reaches the host.
+    func testTrashingALeafTakesTwoClicksAndReachesTheHost() async throws {
+        var requested: String?
+        tab.onTrashTranscript = { requested = $0 }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .trash').click();")
+        try await settle(times: 3)
+        XCTAssertNil(requested, "the first click only arms it — nothing is removed yet")
+
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .trash.armed').click();")
+        try await settle(times: 3)
+        XCTAssertEqual(URL(fileURLWithPath: requested ?? "").lastPathComponent,
+                       "concealment.transcript",
+                       "the second click asks the host for this file and no other")
+    }
+
+    /// A selection dragged across two turns is not a claim about either command,
+    /// so the editor makes no offer rather than silently asserting half of it.
+    func testASelectionSpanningTwoTurnsOffersNothing() async throws {
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        let spanned = try await tab.evaluateInTab("""
+        (function () {
+          var blocks = Array.from(document.querySelectorAll('#docview .turn .actual[data-command-line]'));
+          if (blocks.length < 2) return false;
+          var range = document.createRange();
+          range.setStart(blocks[0].firstChild, 0);
+          range.setEnd(blocks[1].firstChild, 5);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          return selection.getRangeAt(0).toString().length > 0;
+        })();
+        """) as? Bool
+        XCTAssertEqual(spanned, true, "the test must actually make a cross-turn selection")
+        try await settle(times: 3)
+
+        let offers = try await count(".promote")
+        XCTAssertEqual(offers, 0, "a selection across two commands earns no assertion")
     }
 
     /// Acceptance 5: the modes are three shapes over ONE selection.
@@ -275,13 +903,32 @@ final class TestingTabRealPathTests: XCTestCase {
         let exited = expectation(description: "tree run exits")
         relay.onExit = { exited.fulfill() }
         tab.beginRun(story: "fernhill-frozen")
+        // The arguments come from production, not from this file. `node <cli>` is
+        // prepended only because the fixture runs the checkout's devkit rather
+        // than a resolved `sharpee` on PATH; everything after it is what the app
+        // itself asks for, so a flag lost in production is lost here too.
         runner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
-                     arguments: ["node", TestToolchain.devkitCLI.path,
-                                 "test", fixtureStory.path, "--tree", "--json"],
+                     arguments: ["node", TestToolchain.devkitCLI.path]
+                                 + TestRunner.treeRunArguments(storyPath: fixtureStory.path),
                      workingDirectory: fixtureStory.deletingLastPathComponent(),
                      environment: ShellEnvironment.buildEnvironment())
         await fulfillment(of: [exited], timeout: 120)
         try await settle(times: 6)
+    }
+
+    /// Opens the selected node's document the way the author does — a double
+    /// click on its row, not by setting the surface's state directly.
+    private func openDocument(stem: String) async throws {
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('#cols .crow'));
+          var row = rows.find(function (r) { return r.querySelector('.stem').textContent === '\(stem)'; });
+          if (!row) return false;
+          row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+          return true;
+        })();
+        """)
+        try await settle()
     }
 
     /// Selects a node by clicking down its ancestry, one column at a time —

@@ -270,11 +270,18 @@ is Phase 5's required input.
 
 ## Phase 5 — Transcript editor (item 3)
 
+**Status: CURRENT** — scoped 2026-08-08, session acc261, in
+`phase-5-editor-scope.md`. The shape: the editor is the Testing tab's document
+view grown a probe, in five slices. Slices 1–3 have no platform dependency;
+slice 4 (turn budget) needs a `turn` field on the run-event wire and slice 5
+(goldens) is blocked on #239.
+
 **Goal.** Create, edit and delete transcript tests from inside the IDE.
 
 **Scope.** Driven by Phase 4's friction log — the specific affordances are
 deliberately not fixed here, because fixing them now would be the guess this
-ordering exists to avoid.
+ordering exists to avoid. Now settled in `phase-5-editor-scope.md`, which is
+also where ADR-301's "next decision — the editing interaction" is answered.
 
 **Existing pieces.** The Testing tab (ADR-301), `TranscriptDiscovery`,
 `TranscriptHighlighter`, and the mocks in `docs/work/ide-transcript-editor/`.

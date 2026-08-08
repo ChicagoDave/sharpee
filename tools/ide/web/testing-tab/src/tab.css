@@ -248,7 +248,9 @@ body {
   display: grid; grid-template-columns: 38px minmax(0, 1fr) auto;
   gap: 8px; padding: 2px 0; align-items: baseline;
 }
-.docview .turn { padding: 3px 14px; }
+/* A fourth column only in the document, for the row's delete control — the
+   preview has no such control and must not carry a gap where one would be. */
+.docview .turn { padding: 3px 14px; grid-template-columns: 38px minmax(0, 1fr) auto auto; }
 .turn:hover { background: var(--sel-soft); }
 .turn.bad { background: var(--fail-wash); }
 .turn .ln {
@@ -266,6 +268,15 @@ body {
 .turn .actual {
   font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); margin: 3px 0 6px;
   white-space: pre-wrap; overflow-wrap: anywhere;
+  border-left: 2px solid var(--border); padding-left: 8px;
+}
+/* In the document the story's words are the content, not a footnote explaining
+   a failure. The text cursor is deliberate: selection is the gesture that will
+   become an assertion (Phase 5, R2), so the surface should read as selectable. */
+.docview .turn .actual { color: var(--fg); cursor: text; }
+.turn .silent {
+  font-family: var(--mono); font-size: 10.5px; color: var(--fg-faint);
+  font-style: italic; margin: 3px 0 6px;
   border-left: 2px solid var(--border); padding-left: 8px;
 }
 
@@ -334,6 +345,135 @@ body {
 .docmeta .v.fail { color: var(--fail); }
 .docmeta .v.replay { color: var(--replay); }
 .docview .turns { flex: 1; overflow-y: auto; margin: 0; padding: 8px 0 20px; }
+/* The face switcher sits at the far end of the header so it does not compete
+   with the file path for the eye. */
+.docview .faces { margin-left: auto; flex: none; }
+
+/* ── document: the file itself ────────────────────────────── */
+.filebar {
+  flex: none; display: flex; gap: 8px; padding: 7px 14px;
+  background: var(--project); border-top: 1px solid var(--border);
+}
+.filebar .branchinput {
+  flex: 1; min-width: 0; font: inherit; font-size: 11.5px;
+  color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 8px;
+}
+.filebar .branchinput:focus { outline: none; border-color: var(--accent); }
+.filebar button {
+  font: inherit; font-size: 11.5px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 12px; cursor: pointer;
+}
+.filebar .branchgo:hover { border-color: var(--accent); color: var(--accent); }
+.filebar .trash:hover { border-color: var(--fail); color: var(--fail); }
+/* Armed, so the second click is visibly the consequential one. */
+.filebar .trash.armed { color: var(--on-accent); background: var(--fail); border-color: var(--fail); font-weight: 600; }
+
+/* ── document: growing a transcript ───────────────────────── */
+.addcmd {
+  flex: none; display: flex; gap: 8px; padding: 7px 14px;
+  background: var(--project); border-top: 1px solid var(--border);
+}
+.addcmd .cmdinput {
+  flex: 1; min-width: 0; font-family: var(--mono); font-size: 11.5px;
+  color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 8px;
+}
+.addcmd .cmdinput:focus { outline: none; border-color: var(--accent); }
+.addcmd .cmdinput:disabled { opacity: .5; }
+.addcmd .addgo {
+  font: inherit; font-size: 11.5px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 12px; cursor: pointer;
+}
+.addcmd .addgo:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.addcmd .addgo:disabled { opacity: .5; cursor: default; }
+/* Deliberately quiet until the row is under the pointer: a destructive control
+   that catches the eye on every row invites the accident it performs. */
+.turn .drop {
+  font: inherit; font-size: 10px; line-height: 1; color: var(--fg-faint);
+  background: transparent; border: 0; padding: 2px 4px; cursor: pointer;
+  opacity: 0;
+}
+.turn:hover .drop, .turn .drop:focus-visible { opacity: 1; }
+.turn .drop:hover { color: var(--fail); }
+
+/* ── document: what the file claims about a turn ──────────── */
+.turn .claims { grid-column: 2 / -1; margin: 2px 0 6px; }
+.claim { display: flex; align-items: baseline; gap: 8px; padding: 1px 0; flex-wrap: wrap; }
+.claim .ctag {
+  font-family: var(--mono); font-size: 10.5px; color: var(--pass);
+  overflow-wrap: anywhere; min-width: 0;
+}
+/* A halting form is not a claim about the story, so it does not read as one. */
+.claim.halts .ctag { color: var(--fg-faint); }
+.claim .chalt { font-size: 10px; color: var(--fg-faint); font-style: italic; }
+.claim .cblock {
+  flex-basis: 100%; margin: 1px 0 3px; font-family: var(--mono); font-size: 10px;
+  color: var(--fg-dim); white-space: pre-wrap; overflow-wrap: anywhere;
+  border-left: 2px solid var(--border); padding-left: 8px;
+}
+.claim .cdrop {
+  margin-left: auto; font: inherit; font-size: 10px; line-height: 1; color: var(--fg-faint);
+  background: transparent; border: 0; padding: 2px 4px; cursor: pointer; opacity: 0;
+}
+.claim:hover .cdrop, .claim .cdrop:focus-visible { opacity: 1; }
+.claim .cdrop:hover { color: var(--fail); }
+
+/* ── document: promoting a selection to an assertion ──────── */
+/* Anchored to the bottom of the document so it is in the same place however far
+   down the author has scrolled to find the turn they care about. */
+.promote {
+  flex: none; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 7px 14px; background: var(--project); border-top: 1px solid var(--accent);
+}
+.promote .for { font-family: var(--mono); font-size: 10.5px; color: var(--fg-faint); }
+.promote .tag {
+  font-family: var(--mono); font-size: 11.5px; color: var(--fg);
+  overflow-wrap: anywhere; min-width: 0;
+}
+.promote .why { font-size: 10.5px; color: var(--fg-dim); }
+.promote .go {
+  margin-left: auto; font: inherit; font-size: 11.5px; font-weight: 600;
+  color: var(--on-accent); background: var(--accent);
+  border: 1px solid var(--accent); border-radius: var(--radius); padding: 3px 12px; cursor: pointer;
+}
+.promote .go:disabled { opacity: .5; cursor: default; }
+.editnote {
+  flex: none; display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 14px; font-size: 11px; color: var(--fg-dim);
+  background: var(--project); border-top: 1px solid var(--border);
+}
+.editnote .said { flex: 1; min-width: 0; }
+.editnote .undo {
+  flex: none; font: inherit; font-size: 11px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 10px; cursor: pointer;
+}
+.editnote .undo:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── document: the source face ────────────────────────────── */
+.sourceface { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+.sourceface .source {
+  font-family: var(--mono); font-size: 11px; color: var(--fg);
+  margin: 0; padding: 10px 14px 20px; white-space: pre; overflow-x: auto;
+  tab-size: 2;
+}
+/* What a save would do, stated before it is done. Neutral by default because a
+   reformat is not an error — it is a fact the author is owed in advance. */
+.normnote {
+  font-size: 11px; color: var(--fg-dim); padding: 6px 14px;
+  border-bottom: 1px solid var(--border); flex: none;
+}
+.normnote.clean { color: var(--pass); }
+.normnote.bad { color: var(--fail); }
+/* Why the runner would refuse the file — the reasons, not a count of them. */
+.problems {
+  margin: 0; padding: 8px 14px 8px 32px; flex: none;
+  font-family: var(--mono); font-size: 10.5px; color: var(--fail);
+  border-bottom: 1px solid var(--border);
+}
+.problems li { margin: 2px 0; }
+.sourceface .err { font-family: var(--mono); font-size: 11px; color: var(--fail); padding: 10px 14px; }
+.sourceface .more { padding: 10px 14px; }
 
 /* ── path bar ─────────────────────────────────────────────── */
 .pathbar {

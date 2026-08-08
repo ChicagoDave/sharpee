@@ -50,6 +50,10 @@ final class TestController: TestRunnerDelegate {
         tab.onPersistMode = { mode in
             UserDefaults.standard.set(mode, forKey: Self.modeDefaultsKey)
         }
+        tab.onRequestSource = { [weak self] file in self?.provideSource(for: file) }
+        tab.onWriteTranscript = { [weak self] file, text in self?.writeTranscript(file, text) }
+        tab.onCreateTranscript = { [weak self] name, text in self?.createTranscript(name, text) }
+        tab.onTrashTranscript = { [weak self] file in self?.trashTranscript(file) }
         if let mode = UserDefaults.standard.string(forKey: Self.modeDefaultsKey) {
             tab.restoreMode(mode)
         }
@@ -99,6 +103,78 @@ final class TestController: TestRunnerDelegate {
     /// Cancels the in-flight run (SIGTERM → SIGKILL). Results already rendered stay.
     func cancel() {
         runner.cancel()
+    }
+
+    /// Answers the page's `requestSource` against the suite discovered right now.
+    ///
+    /// The provider is built per request rather than held, because `discovered`
+    /// changes on every attach and every run — a held copy would answer from the
+    /// suite as it was when the project opened.
+    private func provideSource(for file: String) {
+        TranscriptSourceProvider(discovered: discovered).provide(file: file, to: window?.testingTab)
+    }
+
+    /// Writes the page's edit to disk, then tells everything that watches the
+    /// project that the file changed.
+    ///
+    /// The announcement is D7's rule from ADR-290 — a write into the project has
+    /// ONE owner for "who else observes this". Here that is the editor: a
+    /// transcript open in a document window still shows the text from before the
+    /// edit, and an author who then saves it puts the assertion back the way it
+    /// was without ever being told they had two copies.
+    /// Only a write that LANDED is announced, and it is announced at the resolved
+    /// path rather than the one the page sent. A refused write must not ask the
+    /// editor to reload a document — there is nothing new to read, and for a path
+    /// outside the suite it would reach a file the provider just declined to
+    /// touch.
+    private func writeTranscript(_ file: String, _ text: String) {
+        let written = TranscriptSourceProvider(discovered: discovered).write(
+            file: file, text: text, to: window?.testingTab)
+        if let written { window?.reloadFromDisk(at: written) }
+    }
+
+    /// Creates the page's new transcript and lets the project see it.
+    ///
+    /// A file appearing in the story is exactly the case ADR-290 D7 names: the
+    /// write announces once, and the announcement fans out. Here that means
+    /// re-discovering — otherwise the new transcript is invisible in the tab and
+    /// in the sidebar until the project is reopened, which is the bug D7 exists
+    /// for, in its original form.
+    private func createTranscript(_ name: String, _ text: String) {
+        guard let storyFile else {
+            window?.testingTab.deliverCreateFailure(
+                message: "No story is open, so there is nowhere to put a transcript.")
+            return
+        }
+        let created = TranscriptSourceProvider(discovered: discovered).create(
+            name: name, text: text,
+            in: storyFile.deletingLastPathComponent(),
+            to: window?.testingTab)
+        if created != nil { rediscover(storyFile: storyFile) }
+    }
+
+    /// Moves a transcript to the Trash and lets the project see it go.
+    private func trashTranscript(_ file: String) {
+        let trashed = TranscriptSourceProvider(discovered: discovered).trash(
+            file: file, to: window?.testingTab)
+        if trashed != nil, let storyFile { rediscover(storyFile: storyFile) }
+    }
+
+    /// Re-reads the suite from disk and tells the tab.
+    ///
+    /// **The sidebar is not told, and that is a known gap.** ADR-290 D7 names
+    /// exactly this class of bug — a saved test invisible until the project was
+    /// reopened — and its fix was `refreshProjectTree()`, which went when the
+    /// outline Test panel was retired (ADR-301 A1.2). Nothing in the app rebuilds
+    /// the Project pane after a write today, so restoring that observer is its own
+    /// change rather than a line here: `MainWindowController.loadProject` needs a
+    /// rebuilt `Project` and the pane's current expansion, and inventing that
+    /// wiring from inside the Testing tab is how one surface ends up owning
+    /// another's refresh.
+    private func rediscover(storyFile: URL) {
+        discovered = TranscriptDiscovery.transcripts(
+            inStoryDirectory: storyFile.deletingLastPathComponent())
+        window?.testingTab.setDiscovered(discovered.map(\.path))
     }
 
     // MARK: - TestRunnerDelegate

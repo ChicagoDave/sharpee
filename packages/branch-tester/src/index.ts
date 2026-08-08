@@ -79,7 +79,7 @@ export {
 } from './channel-assert.js';
 
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
-export { serializeTranscript } from './serializer.js';
+export { serializeTranscript, serializeAssertionTag } from './serializer.js';
 
 // Golden recordings (ADR-294 D7)
 export { serializeGolden, parseGolden, parseGoldenFile, GoldenFormatError } from './golden.js';

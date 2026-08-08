@@ -18,6 +18,8 @@
  */
 
 import { byId, el } from './dom';
+import { assertionsByCommandLine, type SaveOutlook, type WrittenAssertion } from './grammar';
+import type { Promotion } from './promote';
 import {
   ancestry,
   subtreeFailureCount,
@@ -30,6 +32,28 @@ import {
 /** The three modes. Column is the default (D4). */
 export type ViewMode = 'column' | 'list' | 'documents';
 
+/**
+ * What an open document shows: the turns the run produced, or the file itself.
+ *
+ * The source face is not a debugging aid. Saving re-emits the whole file from
+ * the parsed model, so it can reformat lines the author never touched; showing
+ * what the serializer would write is what keeps that from arriving as a surprise
+ * in a diff (ADR-301's "the generated source is visible").
+ */
+export type DocumentFace = 'cards' | 'source';
+
+/** A transcript's text as the host last read it off disk. */
+export interface LoadedSource {
+  /** Absolute path, matched against the open node before rendering. */
+  file: string;
+  /** The file's text, or null while the request is in flight. */
+  text: string | null;
+  /** Why the host could not read it, when it could not. */
+  error: string | null;
+  /** What a save would do to this file. Null while the text is still in flight. */
+  outlook: SaveOutlook | null;
+}
+
 /** What the author is looking at — the state the model does not own. */
 export interface Surface {
   mode: ViewMode;
@@ -37,10 +61,69 @@ export interface Surface {
   selected: TestNode | null;
   /** The node open as a document, or null for the mode's own pane. */
   opened: TestNode | null;
+  /** Which face of the open document is showing. */
+  face: DocumentFace;
+  /** The open document's file, once the host has answered `requestSource`. */
+  source: LoadedSource | null;
   /** Selection tracks the running node until the author clicks a row. */
   follow: boolean;
   /** A pipeline failure or host note; never silently blank. */
   status: string;
+  /** The assertion the author's current selection would write, if any. */
+  pending: PendingPromotion | null;
+  /**
+   * What is typed but not yet added in the command field.
+   *
+   * On the surface rather than left in the DOM because the document is rebuilt on
+   * every run event — a live run emits hundreds — and a field whose contents are
+   * only in the element would be erased mid-word.
+   */
+  commandDraft: string;
+  /**
+   * How many edits to this document can still be taken back.
+   *
+   * Rendered rather than the stack itself, because the surface only needs to know
+   * whether to offer Undo and how deep it goes — the texts it would restore are
+   * not something a view has any business holding.
+   */
+  undoDepth: number;
+  /**
+   * False once an edit has landed and before the next run.
+   *
+   * A turn's assertions are joined to it by SOURCE LINE, and an edit moves lines.
+   * So between a write and the next run the file's claims can no longer be
+   * trusted against the run's turns, and showing them anyway would put one
+   * command's assertions under another's output. They are hidden instead, which
+   * is the same thing the edit note already says in words.
+   */
+  runMatchesFile: boolean;
+  /** What is typed but not yet created in the new-branch field. */
+  newBranchName: string;
+  /**
+   * True once Trash has been asked for and not yet confirmed.
+   *
+   * A whole transcript is a lot of work to lose to one mis-click, so the gesture
+   * is two deliberate acts. The file goes to the Trash rather than being
+   * unlinked, so this is a speed bump rather than the only safeguard.
+   */
+  confirmingTrash: boolean;
+  /**
+   * What the last edit did, shown until the next one.
+   *
+   * A save changes the file the shown run came from, so every turn after the
+   * edited one is now describing a file that no longer exists in that form. The
+   * note says so rather than letting the cards quietly become fiction.
+   */
+  editNote: string;
+}
+
+/** A selection inside one turn's output, and the assertion it earns. */
+export interface PendingPromotion {
+  /** Source line of the `> command` the selection belongs to. */
+  commandLine: number;
+  /** The command's text, so the offer can name what it is about. */
+  input: string;
+  promotion: Promotion;
 }
 
 /** Everything a row can ask for. Rendering never reaches the host directly. */
@@ -49,12 +132,44 @@ export interface ViewActions {
   open(node: TestNode): void;
   back(): void;
   setMode(mode: ViewMode): void;
+  setFace(face: DocumentFace): void;
   openLocation(file: string, line: number): void;
+  /** Write the pending promotion into the open file. */
+  promote(): void;
+  /** Append a command to the open file, asserting nothing yet. */
+  addCommand(input: string): void;
+  /** Remove the command at `commandLine`, and everything asserted about it. */
+  deleteCommand(commandLine: number): void;
+  /** Put the file back the way it was before the last edit. */
+  undo(): void;
+  /** Remove one of a command's assertions. */
+  removeAssertion(commandLine: number, index: number): void;
+  /** Create a transcript that continues from the open one. */
+  newBranch(name: string): void;
+  /** Move the open transcript to the Trash. */
+  trashOpenDocument(): void;
+  /** Arm or disarm the Trash confirmation. */
+  setConfirmingTrash(confirming: boolean): void;
 }
 
 /** A surface with nothing selected, in the default mode. */
 export function createSurface(): Surface {
-  return { mode: 'column', selected: null, opened: null, follow: true, status: '' };
+  return {
+    mode: 'column',
+    selected: null,
+    opened: null,
+    face: 'cards',
+    source: null,
+    follow: true,
+    status: '',
+    pending: null,
+    commandDraft: '',
+    undoDepth: 0,
+    runMatchesFile: true,
+    newBranchName: '',
+    confirmingTrash: false,
+    editNote: '',
+  };
 }
 
 /** Status dot class — `running` outranks the node's own status while it runs. */
@@ -85,8 +200,23 @@ function resultLine(node: TestNode, model: RunModel): string {
   }
 }
 
-/** One turn row: source line, command, verdict. Clicking opens `file:line`. */
-function turnRow(node: TestNode, turn: Turn, actions: ViewActions): HTMLElement {
+/**
+ * One turn row: source line, command, verdict. Clicking opens `file:line`.
+ *
+ * `showOutput` is the difference between the two surfaces that share this row.
+ * The preview is a glance at a node, so it shows the story's words only where
+ * they explain a failure. The document is the editing surface (Phase 5, R1), so
+ * there the words ARE the content — you cannot promote a span you cannot see.
+ * Building the `<pre>` costs real work over a 500-turn node, which is why this
+ * is a parameter rather than a CSS rule that hides what was built anyway.
+ */
+function turnRow(
+  node: TestNode,
+  turn: Turn,
+  actions: ViewActions,
+  showOutput = false,
+  claims: WrittenAssertion[] | null = null,
+): HTMLElement {
   const row = el('div', `turn${turn.passed ? '' : ' bad'}`);
   const line = el('button', 'ln', String(turn.line));
   line.type = 'button';
@@ -108,12 +238,72 @@ function turnRow(node: TestNode, turn: Turn, actions: ViewActions): HTMLElement 
         : 'FAIL';
   row.append(verdict);
 
-  if (!turn.passed && (turn.error || turn.actualOutput)) {
+  if (showOutput) {
+    // Only in the document, where the row is an editing surface. In the preview
+    // it would be a destructive control on a pane meant for glancing.
+    const remove = el('button', 'drop', '✕');
+    remove.type = 'button';
+    remove.title = `Remove "${turn.input}" and everything asserted about it`;
+    remove.dataset.deleteLine = String(turn.line);
+    remove.addEventListener('click', () => actions.deleteCommand(turn.line));
+    row.append(remove);
+  }
+
+  // `actualOutput` is absent when the wire did not carry it (a passing turn on a
+  // run without `--capture-output`) and empty when the story genuinely printed
+  // nothing. Those are different facts and the probe must not merge them: a
+  // silent turn is a finding, not a gap, and R10 is the case where treating one
+  // as the other steers an author into pinning a bug.
+  const captured = turn.actualOutput !== undefined;
+  if (turn.error || (captured && (showOutput || !turn.passed))) {
     const detail = el('div', 'detail');
     if (turn.error) detail.append(el('div', 'err', turn.error));
-    if (turn.actualOutput) detail.append(el('pre', 'actual', turn.actualOutput));
+    if (captured) {
+      if (turn.actualOutput) {
+        const output = el('pre', 'actual', turn.actualOutput);
+        // The line is how a selection finds its way back to a command: it is the
+        // identity the wire and the parsed file already agree on, and the command
+        // TEXT is not — most transcripts run `look` more than once.
+        output.dataset.commandLine = String(turn.line);
+        detail.append(output);
+      } else {
+        detail.append(el('div', 'silent', 'The story printed nothing this turn.'));
+      }
+    }
     row.append(detail);
   }
+
+  if (claims && claims.length) {
+    const list = el('div', 'claims');
+    claims.forEach((claim) => list.append(claimRow(turn, claim, actions)));
+    row.append(list);
+  }
+  return row;
+}
+
+/**
+ * One assertion the file makes about a turn, and the way to take it back.
+ *
+ * The tag is the serializer's own, so this reads as the file reads — which is
+ * also how an author learns the grammar (R8: the palette is the documentation).
+ * `[SKIP]` and `[TODO]` are marked as halting, because a command carrying either
+ * has its later assertions silently unevaluated and a surface that listed them
+ * as equals would be lying about what the suite checks.
+ */
+function claimRow(turn: Turn, claim: WrittenAssertion, actions: ViewActions): HTMLElement {
+  const row = el('div', claim.haltsEvaluation ? 'claim halts' : 'claim');
+  row.append(el('code', 'ctag', claim.tag));
+  if (claim.block) row.append(el('pre', 'cblock', claim.block.join('\n')));
+  if (claim.haltsEvaluation) {
+    row.append(el('span', 'chalt', 'the run stops here — nothing after it is checked'));
+  }
+
+  const remove = el('button', 'cdrop', '✕');
+  remove.type = 'button';
+  remove.title = `Remove ${claim.tag}`;
+  remove.dataset.removeAssertion = `${turn.line}:${claim.index}`;
+  remove.addEventListener('click', () => actions.removeAssertion(turn.line, claim.index));
+  row.append(remove);
   return row;
 }
 
@@ -269,9 +459,70 @@ function renderDocuments(model: RunModel, surface: Surface, actions: ViewActions
   }
 }
 
+/**
+ * The source face: the transcript as it is on disk, and what a save would write.
+ *
+ * The normalization notice is the load-bearing part. Saving re-emits the whole
+ * file from the parsed model, so it can rewrite lines the author never touched —
+ * comment indentation is gone before the serializer even runs, a comment written
+ * between a command's assertions moves above the command, an empty `#` gains a
+ * trailing space. Twenty-seven of the corpus's thirty-seven files are untouched
+ * by a round trip; this is how an author learns which side of that their file is
+ * on, BEFORE the rewrite is a diff they have to review.
+ */
+function sourceFace(node: TestNode, surface: Surface): HTMLElement {
+  const pane = el('div', 'sourceface');
+  const loaded = surface.source;
+
+  if (!loaded || loaded.file !== node.file) {
+    pane.append(el('div', 'more', 'Reading the file…'));
+    return pane;
+  }
+  if (loaded.error !== null) {
+    pane.append(el('div', 'err', loaded.error));
+    return pane;
+  }
+  if (loaded.text === null) {
+    pane.append(el('div', 'more', 'Reading the file…'));
+    return pane;
+  }
+
+  const outlook = loaded.outlook;
+  if (outlook?.kind === 'unsound') {
+    // Not a formatting question. The runner refuses this file for the reasons
+    // listed, and until they are fixed the editor must not offer to rewrite it —
+    // an unsound parse serializes to a husk, so a save here would delete work.
+    const note = el('div', 'normnote bad');
+    note.textContent =
+      'The test run would refuse this file, so the editor will not rewrite it:';
+    pane.append(note);
+    const problems = el('ul', 'problems');
+    outlook.problems.forEach((problem) => problems.append(el('li', null, problem)));
+    pane.append(problems);
+  } else if (outlook?.kind === 'reformats') {
+    const n = outlook.changedLines;
+    pane.append(
+      el(
+        'div',
+        'normnote',
+        `Saving would reformat this file — ${n} line${n === 1 ? '' : 's'} differ from what the serializer writes.`,
+      ),
+    );
+  } else if (outlook?.kind === 'clean') {
+    pane.append(el('div', 'normnote clean', 'Saving would leave this file byte-for-byte as it is.'));
+  }
+
+  pane.append(el('pre', 'source', loaded.text));
+  return pane;
+}
+
 /** The reading surface: every turn with its source line, click-through to it. */
 function renderDocument(model: RunModel, surface: Surface, actions: ViewActions): void {
   const view = byId('docview');
+  // A live run rebuilds this on every event. If the author is typing a command
+  // when one lands, replacing the subtree takes their focus with it — so the
+  // caret is put back where it was, on the field that carries it.
+  const typing = document.activeElement?.id === 'addcommand';
   view.replaceChildren();
   const node = surface.opened;
   if (!node) return;
@@ -286,6 +537,23 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   path.title = 'Open this transcript in the editor';
   path.addEventListener('click', () => actions.openLocation(node.file, 1));
   header.append(path);
+
+  // The same segmented control the mode switcher uses — two readings of one
+  // document, chosen the way the author already chooses a view mode.
+  const faces = el('div', 'seg faces');
+  ([
+    ['cards', 'Cards', 'The run: each command with what the story said'],
+    ['source', 'Source', 'The file on disk, and what saving would write'],
+  ] as const).forEach(([face, label, title]) => {
+    const button = el('button', null, label);
+    button.type = 'button';
+    button.title = title;
+    button.dataset.face = face;
+    button.setAttribute('aria-pressed', String(surface.face === face));
+    button.addEventListener('click', () => actions.setFace(face));
+    faces.append(button);
+  });
+  header.append(faces);
   view.append(header);
 
   const meta = el('div', 'docmeta');
@@ -299,6 +567,13 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   cell('Children', node.children.length ? String(node.children.length) : 'leaf');
   if (node.replays) cell('Replays', `${node.replays}×`, 'replay');
   view.append(meta);
+
+  // The two faces share the header and the meta row — they are two readings of
+  // one document, not two screens.
+  if (surface.face === 'source') {
+    view.append(sourceFace(node, surface));
+    return;
+  }
 
   const turns = el('div', 'turns');
   if (node.status === 'unreached') {
@@ -314,9 +589,192 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   } else if (!node.turns.length) {
     turns.append(el('div', 'more', 'No turns recorded.'));
   } else {
-    node.turns.forEach((turn) => turns.append(turnRow(node, turn, actions)));
+    // The file's claims are joined to the run's turns by source line, so they are
+    // shown only while the two still describe the same file.
+    const claims =
+      surface.runMatchesFile && surface.source?.file === node.file && surface.source.text !== null
+        ? assertionsByCommandLine(surface.source.text, node.file)
+        : null;
+    node.turns.forEach((turn) =>
+      turns.append(turnRow(node, turn, actions, true, claims?.get(turn.line) ?? null)),
+    );
   }
   view.append(turns);
+
+  view.append(fileBar(surface, actions));
+  view.append(commandBar(surface, actions));
+  if (surface.editNote) view.append(editNote(surface, actions));
+  if (surface.pending) view.append(promoteBar(surface.pending, surface, actions));
+
+  if (typing) {
+    const field = document.getElementById('addcommand') as HTMLInputElement | null;
+    field?.focus();
+    field?.setSelectionRange(field.value.length, field.value.length);
+  }
+}
+
+/**
+ * File-level operations on the open transcript: branch from it, or bin it.
+ *
+ * Branching lives here rather than on the tree because a branch is defined by
+ * what it continues FROM, and that is the document you are reading. The author
+ * names it; the editor writes `continues:`, and the host decides the path
+ * (ADR-290 D8) — so neither the field name nor the folder is ever something to
+ * get wrong.
+ */
+function fileBar(surface: Surface, actions: ViewActions): HTMLElement {
+  const bar = el('div', 'filebar');
+
+  const field = el('input', 'branchinput');
+  field.type = 'text';
+  field.id = 'newbranch';
+  field.placeholder = 'Branch from this transcript…';
+  field.autocomplete = 'off';
+  field.value = surface.newBranchName;
+  field.addEventListener('input', () => {
+    surface.newBranchName = field.value;
+  });
+  const branch = (): void => {
+    const name = field.value.trim();
+    if (!name) return;
+    actions.newBranch(name);
+  };
+  field.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      branch();
+    }
+  });
+
+  const go = el('button', 'branchgo', 'Branch');
+  go.type = 'button';
+  go.addEventListener('click', branch);
+  bar.append(field, go);
+
+  // Two acts, not one. The file still goes to the Trash rather than being
+  // unlinked, so this is a speed bump rather than the only thing between an
+  // author and a lost afternoon.
+  if (surface.confirmingTrash) {
+    const confirm = el('button', 'trash armed', 'Move to Trash?');
+    confirm.type = 'button';
+    confirm.addEventListener('click', () => actions.trashOpenDocument());
+    const cancel = el('button', 'trashcancel', 'Keep');
+    cancel.type = 'button';
+    cancel.addEventListener('click', () => actions.setConfirmingTrash(false));
+    bar.append(confirm, cancel);
+  } else {
+    const ask = el('button', 'trash', 'Trash…');
+    ask.type = 'button';
+    ask.title = 'Move this transcript to the Trash';
+    ask.addEventListener('click', () => actions.setConfirmingTrash(true));
+    bar.append(ask);
+  }
+  return bar;
+}
+
+/**
+ * What the last edit did, and the way back from it.
+ *
+ * Undo sits here rather than in a menu because this line is where the author
+ * learns an edit happened; the reversal belongs next to the report of it. It is
+ * offered only while there is something to reverse in THIS document — the stack
+ * is dropped when the author leaves, since it holds one file's history and
+ * restoring it into another would be a different file's text.
+ */
+function editNote(surface: Surface, actions: ViewActions): HTMLElement {
+  const note = el('div', 'editnote');
+  note.append(el('span', 'said', surface.editNote));
+  if (surface.undoDepth > 0) {
+    const undo = el('button', 'undo', surface.undoDepth > 1 ? `Undo (${surface.undoDepth})` : 'Undo');
+    undo.type = 'button';
+    undo.title = 'Put the file back the way it was before the last edit';
+    undo.addEventListener('click', () => actions.undo());
+    note.append(undo);
+  }
+  return note;
+}
+
+/**
+ * Where a transcript grows: type a command, and it is appended asserting nothing.
+ *
+ * This is the other half of R1's loop. A command added here runs on the next run,
+ * its output appears on its card, and selecting that output is the assertion —
+ * so the author never types a command and an expectation in the same breath, and
+ * is never asked to predict what the story will say.
+ */
+function commandBar(surface: Surface, actions: ViewActions): HTMLElement {
+  const bar = el('div', 'addcmd');
+  const field = el('input', 'cmdinput');
+  field.type = 'text';
+  field.id = 'addcommand';
+  field.placeholder = 'Add a command…';
+  field.autocomplete = 'off';
+  field.value = surface.commandDraft;
+  field.addEventListener('input', () => {
+    // Recorded, never re-rendered from: repainting on every keystroke would move
+    // the caret out from under the author.
+    surface.commandDraft = field.value;
+  });
+  // An unsound file cannot be edited at all: serializing it would write a husk
+  // over the author's work, so the field says why rather than failing on Enter.
+  const unsound = surface.source?.outlook?.kind === 'unsound';
+  field.disabled = unsound;
+  if (unsound) field.placeholder = 'The test run would refuse this file — fix it in the editor first.';
+
+  const submit = (): void => {
+    const input = field.value.trim();
+    if (!input) return;
+    field.value = '';
+    surface.commandDraft = '';
+    actions.addCommand(input);
+  };
+  field.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submit();
+    }
+  });
+
+  const add = el('button', 'addgo', 'Add');
+  add.type = 'button';
+  add.disabled = unsound;
+  add.addEventListener('click', submit);
+
+  bar.append(field, add);
+  return bar;
+}
+
+/**
+ * The offer: what selecting this span would write, and the button that writes it.
+ *
+ * It names the assertion tag itself rather than describing it, because the tag
+ * IS what lands in the file — and because for most authors this surface is where
+ * they learn what a transcript can express (R8: the palette is the documentation).
+ * The reason is shown too, so the rule behind the choice is visible rather than
+ * magic: an inline fragment cannot hold a double quote, and being told that once
+ * beats discovering it as a parse error.
+ */
+function promoteBar(
+  pending: PendingPromotion,
+  surface: Surface,
+  actions: ViewActions,
+): HTMLElement {
+  const bar = el('div', 'promote');
+  bar.append(el('span', 'for', `> ${pending.input}`));
+  bar.append(el('code', 'tag', pending.promotion.label));
+  bar.append(el('span', 'why', pending.promotion.because));
+
+  const button = el('button', 'go', 'Add assertion');
+  button.type = 'button';
+  button.dataset.promote = pending.promotion.form;
+  // An unsound file has no safe edit: serializing it would write a husk over the
+  // author's work. Saying why beats a button that does nothing.
+  const unsound = surface.source?.outlook?.kind === 'unsound';
+  button.disabled = unsound;
+  if (unsound) button.title = 'The test run would refuse this file — fix it in the editor first.';
+  button.addEventListener('click', () => actions.promote());
+  bar.append(button);
+  return bar;
 }
 
 /** The toolbar's tallies, phase chips and progress bar. */

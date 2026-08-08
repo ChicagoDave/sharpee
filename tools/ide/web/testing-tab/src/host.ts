@@ -32,6 +32,22 @@ export interface HostInbound {
   restoreMode(mode: string): void;
   /** The run process exited; `ok` false leaves the failure visible. */
   finished(ok: boolean): void;
+  /** The text of a transcript the page asked for. Answers `requestSource`. */
+  source(file: string, text: string): void;
+  /** That file could not be read; `message` is why, in the host's words. */
+  sourceFailed(file: string, message: string): void;
+  /** The edit reached disk. Answers `writeTranscript`. */
+  saved(file: string): void;
+  /** The edit did not reach disk, and why. The page keeps the author's text. */
+  saveFailed(file: string, message: string): void;
+  /** A new transcript exists at `file`. Answers `createTranscript`. */
+  created(file: string): void;
+  /** It could not be created, and why. */
+  createFailed(message: string): void;
+  /** The transcript at `file` is gone. Answers `trashTranscript`. */
+  trashed(file: string): void;
+  /** It could not be removed, and why. */
+  trashFailed(file: string, message: string): void;
 }
 
 /** What the page asks of the host. */
@@ -46,6 +62,41 @@ export interface HostOutbound {
   cancel(): void;
   /** Remember the view mode for this project — the mode never switches itself. */
   persistMode(mode: string): void;
+  /**
+   * Ask for a transcript's text on disk. Answered by `source`/`sourceFailed`.
+   *
+   * The page cannot read files, and asking at open time rather than caching a
+   * copy from discovery is deliberate: the author edits transcripts in the
+   * editor pane too, and a cached copy would show them a file that no longer
+   * exists.
+   */
+  requestSource(file: string): void;
+  /**
+   * Write a transcript back to disk, whole. Answered by `saved`/`saveFailed`.
+   *
+   * The whole file, not a patch: the serializer re-emits from the parsed model,
+   * which is what makes the editor unable to write a file the runner would read
+   * differently. The source face has already shown the author what that costs.
+   */
+  writeTranscript(file: string, text: string): void;
+  /**
+   * Create a transcript named `name` holding `text`.
+   *
+   * The page composes the content, because only the grammar knows what a
+   * transcript is; the host chooses the path, because only it knows where the
+   * story keeps its tests. ADR-290 D8: the location is inferred, never asked —
+   * there is exactly one right answer and an unbounded set of wrong ones, and
+   * the wrong ones fail silently as a test that simply never appears.
+   */
+  createTranscript(name: string, text: string): void;
+  /**
+   * Remove a transcript.
+   *
+   * "Trash", not "delete", and the name says so: the host moves the file to the
+   * Finder's Trash. A test suite is work, and the only undo an editor can offer
+   * for a whole file is the one the operating system already has.
+   */
+  trashTranscript(file: string): void;
   /** The page is built and ready to receive lines. */
   ready(): void;
 }
@@ -59,6 +110,14 @@ export interface PageHandlers {
   onDiscovered(files: string[]): void;
   onRestoreMode(mode: string): void;
   onFinished(ok: boolean): void;
+  onSource(file: string, text: string): void;
+  onSourceFailed(file: string, message: string): void;
+  onSaved(file: string): void;
+  onSaveFailed(file: string, message: string): void;
+  onCreated(file: string): void;
+  onCreateFailed(message: string): void;
+  onTrashed(file: string): void;
+  onTrashFailed(file: string, message: string): void;
 }
 
 interface WebKitBridge {
@@ -113,6 +172,14 @@ export function installHost(handlers: PageHandlers): HostOutbound {
     discovered: (files) => handlers.onDiscovered(files),
     restoreMode: (mode) => handlers.onRestoreMode(mode),
     finished: (ok) => handlers.onFinished(ok),
+    source: (file, text) => handlers.onSource(file, text),
+    sourceFailed: (file, message) => handlers.onSourceFailed(file, message),
+    saved: (file) => handlers.onSaved(file),
+    saveFailed: (file, message) => handlers.onSaveFailed(file, message),
+    created: (file) => handlers.onCreated(file),
+    createFailed: (message) => handlers.onCreateFailed(message),
+    trashed: (file) => handlers.onTrashed(file),
+    trashFailed: (file, message) => handlers.onTrashFailed(file, message),
   };
   (window as unknown as Record<string, unknown>).__sharpeeTesting = inbound;
 
@@ -131,6 +198,10 @@ export function installHost(handlers: PageHandlers): HostOutbound {
     run: () => send({ action: 'run' }),
     cancel: () => send({ action: 'cancel' }),
     persistMode: (mode) => send({ action: 'persistMode', mode }),
+    requestSource: (file) => send({ action: 'requestSource', file }),
+    writeTranscript: (file, text) => send({ action: 'writeTranscript', file, text }),
+    createTranscript: (name, text) => send({ action: 'createTranscript', name, text }),
+    trashTranscript: (file) => send({ action: 'trashTranscript', file }),
     ready: () => send({ action: 'ready' }),
   };
 }

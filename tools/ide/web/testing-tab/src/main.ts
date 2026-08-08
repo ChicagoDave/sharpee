@@ -19,13 +19,51 @@
  */
 
 import { installHost } from './host';
+import {
+  addAssertion,
+  addCommand as addCommandTo,
+  deleteCommand as deleteCommandFrom,
+  newTranscript,
+  removeAssertion as removeAssertionFrom,
+  saveOutlook,
+  type Draft,
+} from './grammar';
+import { promotionFor } from './promote';
 import { applyEvent, createModel, stemOf, type RunModel, type TestNode } from './model';
 import { byId } from './dom';
-import { createSurface, render, type ViewActions, type ViewMode } from './views';
+import {
+  createSurface,
+  render,
+  type DocumentFace,
+  type PendingPromotion,
+  type ViewActions,
+  type ViewMode,
+} from './views';
 
 let model: RunModel = createModel();
 const surface = createSurface();
 let framePending = false;
+
+/**
+ * The edit sent to the host and not yet answered for.
+ *
+ * Held here rather than on the surface because it is deliberately not rendered:
+ * until the host says the write landed, the file on disk is still the old one,
+ * and the source face must show what is on disk.
+ */
+let inFlightWrite:
+  | { file: string; draft: Draft; label: string; before: string; popsUndo?: boolean }
+  | null = null;
+
+/**
+ * The open document's file text as it was before each edit, oldest first.
+ *
+ * Pushed only when a write is CONFIRMED, so an edit that never reached disk does
+ * not leave a way back to a state that was never departed. Dropped whenever the
+ * author leaves the document: it holds one file's history, and restoring it into
+ * another would write one file's text over another's.
+ */
+let undoStack: string[] = [];
 
 /**
  * Coalesces repaints: one render per frame however many events land in it.
@@ -70,22 +108,143 @@ const actions: ViewActions = {
   open(node: TestNode) {
     surface.opened = node;
     surface.selected = node;
+    // Ask on open rather than on the switch to the source face: the answer is
+    // what tells the author whether saving would rewrite the file, and finding
+    // that out should not require going looking for it.
+    loadSource(node.file);
+    clearEditingState();
     scheduleRender();
   },
   back() {
     surface.opened = null;
+    surface.source = null;
+    surface.face = 'cards';
+    clearEditingState();
     scheduleRender();
   },
   setMode(mode: ViewMode) {
     surface.mode = mode;
     surface.opened = null;
+    surface.source = null;
+    surface.face = 'cards';
+    clearEditingState();
     host.persistMode(mode);
+    scheduleRender();
+  },
+  setFace(face: DocumentFace) {
+    surface.face = face;
+    // A document opened before the file was readable, or reopened after an edit
+    // elsewhere, gets another chance here rather than showing a stale answer.
+    if (face === 'source' && surface.opened && surface.source?.file !== surface.opened.file) {
+      loadSource(surface.opened.file);
+    }
     scheduleRender();
   },
   openLocation(file: string, line: number) {
     host.openLocation(file, line);
   },
+  promote() {
+    const pending = surface.pending;
+    if (!pending) return;
+    applyEdit(
+      (text, file) => addAssertion(text, file, pending.commandLine, pending.promotion.assertion),
+      pending.promotion.label,
+    );
+  },
+  addCommand(input: string) {
+    applyEdit((text, file) => addCommandTo(text, file, input), `> ${input}`);
+  },
+  deleteCommand(commandLine: number) {
+    applyEdit((text, file) => deleteCommandFrom(text, file, commandLine), 'the removal');
+  },
+  newBranch(name: string) {
+    const parent = surface.opened;
+    if (!parent) return;
+    // The editor owns `continues:` — the author typed a name, nothing more.
+    const text = newTranscript({
+      story: byId('story').textContent ?? '',
+      title: name,
+      continuesFrom: parent.stem,
+    });
+    surface.editNote = 'Creating…';
+    host.createTranscript(name, text);
+    scheduleRender();
+  },
+  setConfirmingTrash(confirming: boolean) {
+    surface.confirmingTrash = confirming;
+    scheduleRender();
+  },
+  trashOpenDocument() {
+    const node = surface.opened;
+    surface.confirmingTrash = false;
+    if (!node) return;
+    // A node with children is a parent: removing it orphans every transcript that
+    // continues from it, and they would fail as a wall of ordinary-looking errors
+    // rather than as the one thing that went wrong.
+    if (node.children.length) {
+      const count = node.children.length;
+      surface.editNote = `${count} transcript${count === 1 ? '' : 's'} continue from ${node.stem}. Remove ${count === 1 ? 'it' : 'them'} first, or reparent ${count === 1 ? 'it' : 'them'}.`;
+      scheduleRender();
+      return;
+    }
+    host.trashTranscript(node.file);
+  },
+  removeAssertion(commandLine: number, index: number) {
+    applyEdit((text, file) => removeAssertionFrom(text, file, commandLine, index), 'the removal');
+  },
+  undo() {
+    const previous = undoStack[undoStack.length - 1];
+    if (previous === undefined) return;
+    // The restored text goes through the same write path and the same outlook,
+    // so an undo is an edit like any other — including in what it reports and in
+    // what happens when the write is refused. The stack entry is popped only on
+    // confirmation, by the same rule that put it there.
+    applyEdit((_, file) => ({ text: previous, outlook: saveOutlook(previous, file) }), 'the undo', {
+      popsUndo: true,
+    });
+  },
 };
+
+/**
+ * Runs one edit against the open file and sends the result to the host.
+ *
+ * Every edit is the same three steps — build the new whole file, hold it out of
+ * sight, ask the host to write it — so they share a path rather than each
+ * repeating it. The differences between them live entirely in the callback.
+ *
+ * @param edit produces the new file from the current one
+ * @param label how the edit is described back to the author once it lands
+ * @param options `popsUndo` for an undo, which consumes a step back rather than
+ *   creating one — the only edit that shortens the stack instead of growing it.
+ */
+function applyEdit(
+  edit: (text: string, file: string) => Draft,
+  label: string,
+  options: { popsUndo?: boolean } = {},
+): void {
+  const loaded = surface.source;
+  const node = surface.opened;
+  if (!node || !loaded || loaded.text === null) return;
+
+  try {
+    const draft = edit(loaded.text, node.file);
+    // The draft is held OUT of the surface until the host confirms the write.
+    // Showing it first would tell the author the edit had landed while the file
+    // on disk still said otherwise — and the source face is the one place that
+    // must never disagree with disk.
+    inFlightWrite = { file: node.file, draft, label, before: loaded.text, ...options };
+    surface.pending = null;
+    surface.editNote = 'Writing…';
+    host.writeTranscript(node.file, draft.text);
+  } catch (error) {
+    // A refused edit is reported and nothing is sent. `addAssertion` refusing a
+    // `[TODO]` command lands here, and the author reads the reason rather than
+    // watching a click do nothing.
+    surface.pending = null;
+    surface.editNote = error instanceof Error ? error.message : String(error);
+  }
+  scheduleRender();
+}
 
 const host = installHost({
   onEvent(event) {
@@ -130,7 +289,103 @@ const host = installHost({
     if (!ok && !surface.status) surface.status = 'The test run ended without completing its stream.';
     scheduleRender();
   },
+  onSource(file, text) {
+    // A late answer for a document the author has already left is dropped, not
+    // rendered over whatever they are looking at now.
+    if (surface.source?.file !== file) return;
+    surface.source = { file, text, error: null, outlook: saveOutlook(text, file) };
+    scheduleRender();
+  },
+  onSourceFailed(file, message) {
+    if (surface.source?.file !== file) return;
+    surface.source = { file, text: null, error: message, outlook: null };
+    scheduleRender();
+  },
+  onSaved(file) {
+    const write = inFlightWrite;
+    inFlightWrite = null;
+    if (!write || write.file !== file) return;
+    surface.source = { file, text: write.draft.text, error: null, outlook: write.draft.outlook };
+    // The way back is recorded only now, on confirmation — an edit that never
+    // reached disk must not leave a way back to a state that was never left.
+    if (write.popsUndo) undoStack.pop();
+    else undoStack.push(write.before);
+    surface.undoDepth = undoStack.length;
+    // The file has moved and the run has not. Source lines are how a turn finds
+    // its assertions, so until the next run they can no longer be matched up.
+    surface.runMatchesFile = false;
+    // The cards below came from a run of the file as it was. Every turn after
+    // the edited one is now describing a file that no longer exists in that
+    // form, so say so rather than letting them quietly become fiction.
+    surface.editNote = `Wrote ${write.label} — the run below predates this edit. Run again to see it evaluated.`;
+    surface.commandDraft = '';
+    scheduleRender();
+  },
+  onCreated(file) {
+    // The suite has a new member. `setDiscovered` follows from the host, which is
+    // what puts it in the tree; this only reports it and clears the form.
+    surface.newBranchName = '';
+    surface.editNote = `Created ${stemOf(file)}. Add its first command, then run.`;
+    scheduleRender();
+  },
+  onCreateFailed(message) {
+    surface.editNote = message;
+    scheduleRender();
+  },
+  onTrashed(file) {
+    // The open document is that file, so there is nothing left to look at.
+    if (surface.opened?.file === file) {
+      surface.opened = null;
+      surface.source = null;
+      clearEditingState();
+    }
+    surface.status = `Moved ${stemOf(file)} to the Trash.`;
+    scheduleRender();
+  },
+  onTrashFailed(file, message) {
+    surface.editNote = `${stemOf(file)} was not removed. ${message}`;
+    scheduleRender();
+  },
+  onSaveFailed(file, message) {
+    const write = inFlightWrite;
+    inFlightWrite = null;
+    if (!write || write.file !== file) return;
+    // The surface is untouched: the file on disk is what it was, and that is
+    // exactly what the source face is still showing.
+    surface.editNote = `The assertion was not written. ${message}`;
+    scheduleRender();
+  },
 });
+
+/**
+ * Asks the host for a transcript's text and marks the request in flight.
+ *
+ * The in-flight record carries the file, which is what lets a late answer for a
+ * document the author has already closed be recognised and dropped.
+ */
+function loadSource(file: string): void {
+  surface.source = { file, text: null, error: null, outlook: null };
+  host.requestSource(file);
+}
+
+/**
+ * Drops the offer and the last edit's note when the author leaves a document.
+ *
+ * Both are about one file. Carrying either to the next document would show an
+ * offer for a command that is not on screen, or claim an edit to a file the
+ * author is no longer looking at.
+ */
+function clearEditingState(): void {
+  surface.pending = null;
+  surface.editNote = '';
+  surface.commandDraft = '';
+  surface.undoDepth = 0;
+  surface.runMatchesFile = true;
+  surface.newBranchName = '';
+  surface.confirmingTrash = false;
+  undoStack = [];
+  inFlightWrite = null;
+}
 
 /**
  * Puts the transcripts found on disk into the model as `pending` nodes, so the
@@ -164,6 +419,65 @@ function seedDiscovered(files: string[]): void {
   }
 }
 
+/**
+ * Watches for a selection inside one turn's output and offers the assertion it
+ * earns.
+ *
+ * Bound to `selectionchange` on the document rather than to each `<pre>`, because
+ * the turns are re-rendered on every event of a live run and per-element
+ * listeners would be rebound hundreds of times.
+ *
+ * A selection that starts in one turn and ends in another is refused rather than
+ * clamped: it is not a claim about either command, and silently asserting half
+ * of what was dragged over would be the editor making a claim the author did not.
+ */
+function installSelectionWatcher(): void {
+  document.addEventListener('selectionchange', () => {
+    const next = selectionPromotion();
+    // Cheap identity check — this fires on every caret move, and re-rendering
+    // the document on each one would fight the author's drag.
+    const same =
+      next?.commandLine === surface.pending?.commandLine &&
+      next?.promotion.label === surface.pending?.promotion.label;
+    if (same) return;
+    surface.pending = next;
+    scheduleRender();
+  });
+}
+
+/** The pending promotion for the current selection, or null if there is none. */
+function selectionPromotion(): PendingPromotion | null {
+  if (!surface.opened || surface.face !== 'cards') return null;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  // The selected text is read from the RANGE, not from `selection.toString()`.
+  // They agree while the page has focus and diverge when it does not: WebKit
+  // keeps the range but returns an empty string for the selection in an
+  // unfocused web view. The range is the authoritative source in both cases, so
+  // reading it is both more correct and what makes this reachable from a test
+  // driving an off-screen view.
+  const range = selection.getRangeAt(0);
+  if (range.collapsed) return null;
+
+  const output = outputElementFor(range.startContainer);
+  if (!output || output !== outputElementFor(range.endContainer)) return null;
+
+  const commandLine = Number(output.dataset.commandLine);
+  const turn = surface.opened.turns.find((candidate) => candidate.line === commandLine);
+  if (!turn || turn.actualOutput === undefined) return null;
+
+  const promotion = promotionFor(turn.actualOutput, range.toString());
+  if (!promotion) return null;
+  return { commandLine, input: turn.input, promotion };
+}
+
+/** The `.actual` block a node sits inside, or null if it is not in one. */
+function outputElementFor(node: Node | null): HTMLElement | null {
+  const start = node instanceof Element ? node : node?.parentElement ?? null;
+  return start?.closest<HTMLElement>('#docview .turn .actual[data-command-line]') ?? null;
+}
+
 function installToolbar(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => actions.setMode(button.dataset.mode as ViewMode));
@@ -178,5 +492,6 @@ function installToolbar(): void {
 }
 
 installToolbar();
+installSelectionWatcher();
 render(model, surface, actions);
 host.ready();
