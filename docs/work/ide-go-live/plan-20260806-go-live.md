@@ -258,6 +258,14 @@ reference the old paths; no build script, config or CI job does.
 
 **Before starting.** Explicit go-ahead from David for the move.
 
+**Status: COMPLETE** — 2026-08-07, session 6ad977. 22 originals `git mv`'d to
+`docs/work/ide-go-live/fernhill-transcripts-baseline/` (frozen ADR-301/302
+fixture confirmed to hold its own copy first). 15 transcripts (161 authored
+commands) rewritten blind, then diffed against the baseline. Deliverables:
+`docs/work/ide-go-live/phase-4-friction-log.md` (F1–F27) and
+`docs/work/ide-go-live/phase-5-editor-requirements.md` (R1–R11) — the latter
+is Phase 5's required input.
+
 ---
 
 ## Phase 5 — Transcript editor (item 3)

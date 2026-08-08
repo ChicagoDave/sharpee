@@ -1,0 +1,45 @@
+title: Cutting the fuse
+story: fernhill
+continues: folly
+description: The winning branch out of the folly — cut the cord, then open the
+  box with the locket. Both tool gates need the explicit `with` phrasing.
+
+---
+
+# The shears came from the Kitchen in vine.transcript, the locket out of the
+# vine. Both are required below and both are in hand.
+> inventory
+[OK: contains "garden shears"]
+[OK: contains "silver locket"]
+
+# `cuttable with the garden shears` — but the instrument must be NAMED. Holding
+# the only tool that works is not enough; see fuse-lose.transcript for what the
+# bare `cut the fuse` does instead.
+> cut the fuse with the garden shears
+[OK: contains "The shears bite through the waxed cord"]
+[OK: contains "dies a hand's breadth from the cache"]
+
+# The turn phrase stops with the fuse — `on every turn while it is lit` no
+# longer holds, and the three-turn kill never arrives.
+> look
+[OK: not contains "Sparks walk the waxed cord"]
+[OK: not contains "The fuse hisses on"]
+[OK: contains "Soot still ghosts the walls in here"]
+
+# `openable with the silver locket` — the same explicit-instrument rule.
+> open the deed box with the silver locket
+[OK: contains "You open the deed box"]
+[OK: contains "Inside the deed box you see deed"]
+
+# Now that the box is open, `deed` resolves to the deed rather than the box,
+# and the message says which container it came out of.
+> take the deed
+[OK: contains "You take the deed from the deed box"]
+[STATE: true, player.inventory contains deed]
+
+> read the deed
+[OK: contains "held in perpetuity by the family and heirs of the bearer"]
+
+# nerve (5) + recovered (10) on top of the 20 carried in: 35.
+> score
+[OK: contains "You have scored 35 out of 50"]

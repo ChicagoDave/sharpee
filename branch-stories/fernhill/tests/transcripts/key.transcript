@@ -1,13 +1,39 @@
-title: Fernhill — the tarnished key under the doormat
+title: The key under the mat
 story: fernhill
 continues: arrival
-description: The doormat gives up the key that opens the house. Every test
-  that needs to be inside starts here; its position in the tree IS its setup.
+description: The tarnished key is concealed on the doormat — invisible to
+  reference until it is searched for, and worth the first five points.
 
 ---
 
+# The mat's own description is the only clue: it "sits a little proud of the
+# flagstone, as if something kept it from lying flat."
+> examine the doormat
+[OK: contains "It sits a little proud of the flagstone"]
+
+# Concealed means unreferenceable, not merely unlisted — the key cannot be
+# named at all before the search.
+> take the tarnished key
+[OK: contains "You can't see any such thing"]
+[EVENT: false, type="if.event.taken"]
+
 > search the doormat
-[OK: contains "key"]
+[OK: contains "Hidden on the doormat, you discover: a tarnished key"]
+
+# Turn 14 lands here: the long-night sequence moves the story to midnight.
+# This is a function of how many turns `arrival` spent, not of this file.
+[OK: contains "the last light goes out of the sky"]
 
 > take the tarnished key
-[OK: contains "You take the tarnished key"]
+[OK: contains "You take the tarnished key from the doormat"]
+[EVENT: true, type="if.event.taken"]
+[STATE: true, player.inventory contains tarnished key]
+
+# `score found worth 5`, awarded by the key's own `after taking it, once`.
+> score
+[OK: contains "You have scored 5 out of 50"]
+[OK: contains "the rank of a Trespasser"]
+
+> inventory
+[OK: contains "tarnished key"]
+[OK: contains "solicitor"]

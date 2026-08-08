@@ -1,60 +1,62 @@
-title: Fernhill B3/B4 — the key under the mat, the pocketed winding key,
-  hiding
+title: Behind the curtains
 story: fernhill
-continues: arrival
-description: Concealed items are invisible until SEARCH reveals them (the
-  tarnished key on/under the doormat; the winding key in Verity's overcoat).
-  The study curtains are a hiding-spot (position behind). The overcoat wears.
+continues: npcs
+description: The study Mrs Kettle was guarding — the hiding spot, the trunk,
+  and the diary page that changes what the photograph shows.
 
 ---
 
-# Before searching: the concealed key cannot be taken
-> take the tarnished key
-[OK: not contains "Taken"]
+> examine the long curtains
+[OK: contains "deep enough to swallow a person whole"]
 
-> examine the doormat
-[OK: contains "worn bald in the middle"]
-
-> search the doormat
-[OK: contains "key"]
-
-> take the tarnished key
-[OK: contains "You take the tarnished key"]
-
-# The overcoat: wearable, with a concealed pocket find
-> north
-[OK: contains "Entrance Hall"]
-
-> take the grey overcoat
-[OK: contains "Taken"]
-
-> take the winding key
-[OK: not contains "Taken"]
-
-> search the overcoat
-[OK: contains "winding key"]
-
-> take the winding key
-[OK: contains "You take the winding key"]
-
-> wear the overcoat
-[OK: contains "put on"]
-
-# The hiding-spot: behind the study curtains (pay the sherry toll first)
-> east
-[OK: contains "Kitchen"]
-
-> take the sherry bottle
-[OK: contains "Taken"]
-
-> west
-[OK: contains "Entrance Hall"]
-
-> give the sherry bottle to kettle
-[OK: contains "oloroso"]
-
-> west
-[OK: contains "study"]
-
+# `hiding-spot with position behind`.
 > hide behind the curtains
-[OK: contains "curtains"]
+[OK: contains "You slip behind the long curtains"]
+
+# FINDING: hiding changes nothing the player can observe. The room description
+# is identical from behind the curtains, the contents list is unchanged, and no
+# line marks the player as concealed. Whatever `hiding-spot` protects against,
+# nothing in Fernhill exercises it — there is no NPC who enters the study.
+> look
+[OK: contains "Verity's study, exactly as she left it"]
+[OK: contains "You can see a travelling trunk"]
+
+> come out
+[OK: contains "You come out of hiding"]
+
+# `a container with max items 3`, holding two.
+> open the travelling trunk
+[OK: contains "You open the travelling trunk"]
+[OK: contains "Inside the travelling trunk you see diary page, half-burned letter"]
+
+# Implicit take: reading something in an open container picks it up first and
+# says so in parentheses.
+> read the diary page
+[OK: contains "(first taking the diary page)"]
+[OK: contains "What matters is safe where the fire went, and only the little silver thing will open it"]
+
+# The red herring, and the reason `ask tobias about the bank` exists.
+> read the half-burned letter
+[OK: contains "(first taking the half-burned letter)"]
+[OK: contains "where the deed may rest secure until"]
+
+# `define phrase mantel-hint while the diary page is read` — the room's own
+# description grows a clause now that the diary has been read.
+#
+# RENDERING NIT, asserted as it behaves: the source reads
+# `a wide mantel{mantel-hint}, and a tall case clock`, and the interpolation
+# lands after the comma, so the output says "mantel, — and over it", with a
+# comma-dash collision the author did not write.
+> east
+[OK: contains "a dead fireplace under a wide mantel, — and over it Verity's photograph"]
+
+# `phrase detail while the diary page is read` — the same object, examined
+# before and after the diary, says different things. Compare arrival.transcript,
+# where nothing extra is available.
+> examine the framed photograph
+[OK: contains "Verity at thirty, on the folly steps"]
+[OK: contains "on her knee a small steel box with a bright slot in its lid"]
+
+> examine the mantel
+[OK: contains "dusted but bare except for a single framed photograph"]
+[OK: contains "On the mantel you see a framed photograph"]

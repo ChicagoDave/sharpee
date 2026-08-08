@@ -1,54 +1,41 @@
-title: Fernhill A5 — the frost-sealed glasshouse door thaws when the boiler
-  runs
+title: Sealed under frost
 story: fernhill
-continues: arrival
-description: The Greenhouse's north exit is blocked while the boiler is off
-  (conditional blocked exit reading live switchable state). Turning the boiler
-  on flips the condition; the way to Folly Hill (and the warped folly door)
-  opens up. (Phase 5 replaces the bare switchable flip with the 3-stage
-  machine — this transcript pins the A5 condition itself.)
+description: The greenhouse's north door and the vine, both refusing for the
+  same reason — no warmth in the pipes. The state of the world before
+  machine.transcript lights the boiler.
+seed: 1
 
 ---
 
-> west
-[OK: contains "Glass panes furred with frost"]
-
-# Frost-sealed while the boiler is off
 > north
-[OK: contains "sealed fast under a rind of frost"]
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Greenhouse"]
+[OK: contains "leads up toward the folly, if it would open"]
+
+# `states: seedling, flowering, fruiting` — the vine is at the first of them,
+# and its description says so without naming the state.
+> examine the vine
+[OK: contains "barely more than a seedling now"]
+
+# `north is blocked while the boiler is off: frost-sealed`. The exit exists;
+# the condition speaks.
+> north
+[OK: contains "The glass door to the folly path is sealed fast under a rind of frost"]
 [OK: not contains "Folly Hill"]
+[STATE: true, player.location = Greenhouse]
+[EVENT: false, type="if.event.actor_moved"]
 
-# Wake the boiler — the full D5 startup: FILL, PRIME, LIGHT, in that order
-> east
-[OK: contains "Fountain Court"]
+# Two refusals stack on pruning, and the tool check comes first: without the
+# shears the vine's own `when seedling` branch is never reached, so the player
+# never learns the plant is too young.
+> prune the vine
+[OK: contains "Bare-fingered pinching will mangle it. This wants the garden shears"]
+[OK: not contains "It is all stem and hope"]
 
-> east
-[OK: contains "old coal dust"]
-
-> turn the stopcock
-[OK: contains "water gurgles"]
-
-> push the primer
-[OK: contains "thumps home"]
-
-> turn on the boiler
-[OK: contains "warmth crawls toward the greenhouse"]
-
-# The condition has flipped: north now opens
-> west
-[OK: contains "Fountain Court"]
-
-> west
-[OK: contains "Glass"]
-
-> north
-[OK: contains "Folly Hill"]
-[OK: contains "fire-scarred"]
-
-# The warped folly door is jammed until Tobias's blessing (the topics beat —
-# see npcs.transcript for the full lift; this pins the refusal)
-> open the folly door
-[OK: contains "Twenty years of weather have set it like a jaw"]
-
-> north
-[OK: not contains "Soot still ghosts the walls"]
+> examine the staging benches
+[OK: contains "empty but for one determined vine at the warm end"]

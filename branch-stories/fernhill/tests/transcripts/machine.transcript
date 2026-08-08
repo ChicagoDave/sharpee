@@ -1,42 +1,77 @@
-title: Fernhill D5 — the boiler's three-stage startup, order enforced
+title: The boiler, in that order
 story: fernhill
-continues: arrival
-description: The `define machine` flagship — FILL, PRIME, LIGHT, in that
-  order. Out-of-order attempts are rejected with their own voices (the dry
-  primer, the clanking cold light); each legal transition mirrors onto the
-  boiler's visible states and speaks its on-enter line.
+description: The state machine on the boiler — FILL, PRIME, LIGHT — and what it
+  says when the order is wrong. Also the crate's tool gate, unopened.
+
+seed: 1
 
 ---
 
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
 > east
-[OK: contains "old coal dust"]
+[OK: contains "Boiler Shed"]
+[OK: contains "You can see a nailed crate and a furnace poker here"]
 
-# Out of order: prime before filling — the dry wheeze
-> push the primer
-[OK: contains "Nothing to prime"]
-
-# Out of order: light before priming — the clank
-> turn on the boiler
-[OK: contains "hollow CLANK"]
-
-# FILL
-> turn the stopcock
-[OK: contains "You crank the stopcock"]
-[OK: contains "water gurgles"]
-
-# Still can't light: primed is the gate, filled is not enough
-> turn on the boiler
-[OK: contains "hollow CLANK"]
-
-# PRIME
-> push the primer
-[OK: contains "thumps home"]
-
-# LIGHT
-> turn on the boiler
-[OK: contains "warmth crawls toward the greenhouse"]
-
-# The machine's terminal state is mirrored onto the entity's states —
-# and the A5 frost seal reads the switchable flank of the same beat
+# The brass plate is the instruction sheet for the machine below.
 > examine the boiler
-[OK: contains "FILL. PRIME. LIGHT."]
+[OK: contains "FILL. PRIME. LIGHT. IN THAT ORDER"]
+
+# LIGHT out of order, from `cold`. `on switching_on it` refuses before the
+# machine's `when switching_on the furnace: running` transition can be reached.
+> switch on the boiler
+[OK: contains "a hollow CLANK, like church bells dropped down a well"]
+[OK: not contains "hums to life"]
+
+# PRIME out of order. The plunger's own refusal replaces the action's text —
+# note there is no "You push the primer plunger." line here, and there is one
+# below once the jacket is full.
+> push the primer plunger
+[OK: contains "Nothing to prime — the jacket is empty"]
+[OK: not contains "You push the primer plunger"]
+
+# The crate is `openable with the crowbar`, and the crowbar is in the Cellar.
+# Tool gates report the need without naming the tool.
+> open the nailed crate
+[OK: contains "You need something to open the nailed crate with"]
+[EVENT: false, type="if.event.opened"]
+
+# FILL. `state cold / when turning the stopcock: filled`, and the entering
+# state's `on enter` is what speaks.
+> turn the stopcock
+[OK: contains "You crank the stopcock a hard quarter-turn"]
+[OK: contains "water gurgles down into the jacket"]
+
+# LIGHT still out of order — `filled` is not `primed`, and the refusal is the
+# same line, which is the story's point: the boiler has one complaint.
+> switch on the boiler
+[OK: contains "a hollow CLANK, like church bells dropped down a well"]
+
+# PRIME, in order this time. The default action text now survives.
+> push the primer plunger
+[OK: contains "You push the primer plunger"]
+[OK: contains "The plunger meets resistance at last and thumps home"]
+
+# LIGHT, in order. The terminal state warms the pipes and, at a distance,
+# moves the vine from `seedling` to `flowering` in a room the player is not in.
+> switch on the boiler
+[OK: contains "The boiler hums to life"]
+[OK: contains "Flame catches with a soft whump"]
+[OK: contains "At the warm end of the greenhouse staging, something green stirs"]
+
+# `score lit worth 10` takes the total to 10 and promotes the rank.
+[OK: contains "The house has stopped listening for your footsteps"]
+
+# `on taking it while the boiler is running` — the poker was takeable a moment
+# ago and is not any more.
+> take the furnace poker
+[OK: contains "it would take the skin off your palm"]
+[EVENT: false, type="if.event.taken"]
+
+> score
+[OK: contains "You have scored 10 out of 50"]
+[OK: contains "Guest of the House"]

@@ -1,0 +1,36 @@
+title: Out through the gates
+story: fernhill
+continues: fuse-cut
+description: Carrying the deed back to where the cab dropped you. The room that
+  opened the story closes it.
+
+---
+
+> south
+[OK: contains "Folly Hill"]
+
+> south
+[OK: contains "Greenhouse"]
+
+> east
+[OK: contains "Fountain Court"]
+
+> south
+[OK: contains "Gravel Drive"]
+
+# `after entering it while the player has the deed / win fernhill-saved`.
+#
+# DUPLICATE-EMISSION BUG, asserted as best the grammar allows: the ending
+# paragraph prints TWICE, back to back, in the same response. The story names
+# the phrase once, as the argument to `win`, and something emits it a second
+# time on top of the ending itself.
+#
+# There is no assertion that can express "this appears exactly once" — the
+# grammar has `contains`, `not contains` and exact match, and no count form —
+# so a `contains` here passes identically whether the line prints once or
+# twice. An exact match would catch it, but only by pinning the atmospherics
+# and the cat line alongside it.
+> south
+[OK: contains "Iron Gates"]
+[OK: contains "At dawn the hammer will fall on nothing: the proof came out of the fire after all"]
+[STATE: true, player.location = Iron Gates]

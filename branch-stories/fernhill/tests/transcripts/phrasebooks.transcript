@@ -1,80 +1,84 @@
-title: Fernhill phrasebooks — the night changes the voice (ADR-250 E2E)
+title: The night changes the voice
 story: fernhill
-description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives only
-  in the two books — evening-voice (the default book) speaks until the turn-14
-  midnight flip, then midnight-voice wins arbitration. vane-story is story
-  text no book may beat, in both states. vane-quiet is covered only by the
-  default book and still renders at midnight (per-key fallthrough). Each book
-  keeps its OWN first-time counter for vane-mood: if counters were keyed by
-  the bare key, midnight's first examine would show a second-variant text —
-  the assertions below distinguish per-(book, key) from shared state.
-seed: 42
+description: The ADR-250 phrasebook probe. The weathervane answers three ways —
+  a line only books provide, a line no book may beat, and a line only the
+  default book covers — before and after the story turns to midnight.
+seed: 1
 
 ---
 
-# A root by necessity: the per-(book, key) counters must be untouched AND the
-# turn budget to the turn-14 flip is spent on this test's own commands, so a
-# parent would both consume turns and pre-advance the counters.
-# Evening: the default book speaks; its first-time counter advances.
+# EVENING. `evening-voice` has no `while` clause, so it is the default book and
+# is active now. Its `vane-mood` is `, first-time`, and this is the first time.
 > examine the weathervane
-[OK: contains "noses the evening breeze"]
+[OK: contains "The vane noses the evening breeze, unhurried"]
+
+# Second look, same book: the alternative after the `or`.
+> examine the weathervane
+[OK: contains "The vane sits easy in the last of the light"]
+[OK: not contains "noses the evening breeze"]
+
+# Twelve turns to reach turn 14. `wait` is a real turn; `score` and `inventory`
+# are not, which is worth knowing before counting turns for a sequence.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 14: `define sequence the long night / at turn 14 / phrase dusk-deepens /
+# change the story to midnight`. The story state flips here, and with it the
+# active phrasebook.
+> wait
+[OK: contains "Somewhere beyond the grounds the last light goes out of the sky"]
+[OK: contains "Midnight is coming on"]
+
+# MIDNIGHT. `midnight-voice while midnight` now wins `vane-mood`, and it has
+# its OWN first-time counter — the evening book already spent its first-time
+# above, and that has no effect on this one.
+> examine the weathervane
+[OK: contains "The vane swings hard north, as if the night had opinions"]
 
 > examine the weathervane
-[OK: contains "sits easy in the last of the light"]
+[OK: contains "The vane holds north. Of course it does"]
 
-# Story text beats every book, in every state.
+# `vane-story` is story text. Both books define a line for it, and both lose,
+# in both states — compare arrival.transcript, which asserts the identical
+# sentence during evening.
 > push the weathervane
-[OK: contains "same one story it always tells"]
+[OK: contains "creaks the same one story it always tells, whatever the hour"]
+[OK: not contains "A book must never win this line"]
+[OK: not contains "Nor this one"]
 
+# `vane-quiet` appears only in `evening-voice`. At midnight the midnight book
+# has no entry for it, and the line still arrives — the default book is
+# consulted for keys the active book does not carry, rather than being
+# replaced by it.
 > touch the weathervane
-[OK: contains "keeps its own counsel"]
-
-# Cross the turn-14 midnight transition (the long night sequence).
-# Cross the midnight transition (loop region unrolled to its seed-42
-# sequence — ADR-294 migration; the last-light beat lands on the 10th wait)
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "the last light goes out of the sky"]
-
-# Midnight: midnight-voice wins arbitration — and starts at ITS OWN
-# first variant (per-(book, key) counters, ADR-250 D5).
-> examine the weathervane
-[OK: contains "swings hard north"]
-
-> examine the weathervane
-[OK: contains "holds north"]
-
-# The story override is stable across the flip.
-> push the weathervane
-[OK: contains "same one story it always tells"]
-
-# midnight-voice does not cover vane-quiet — the default book still
-# supplies it (fallthrough is per key, never per book).
-> touch the weathervane
-[OK: contains "keeps its own counsel"]
+[OK: contains "The vane keeps its own counsel"]

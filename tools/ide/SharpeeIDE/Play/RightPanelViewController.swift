@@ -1,7 +1,8 @@
 // RightPanelViewController.swift
 // The right panel: a tab strip over the Chord build output (Build), the running
 // game (Play), the Testing surface (ADR-301 D1), the error explainer
-// (Diagnosis), and the bundled author documentation (Docs, go-live Phase 3) —
+// (Diagnosis), and the bundled author documentation (Documentation, go-live
+// Phase 3) —
 // David's ruling: the build process lives NEXT TO Play, not in the bottom dock
 // (which stays for Problems and Game Errors). A build starting switches to
 // Build; a successful play-after-build switches to Play.
@@ -61,7 +62,7 @@ final class RightPanelViewController: NSViewController {
         tabStrip.addTab(title: "Testing")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
-        tabStrip.addTab(title: "Docs")
+        tabStrip.addTab(title: "Documentation")
         tabStrip.addTab(title: "Publish")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false

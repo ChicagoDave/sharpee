@@ -1,77 +1,40 @@
-title: Fernhill D2 — the fuse: fail to cut it and die
+title: Losing to the fuse
 story: fernhill
-continues: arrival
-description: The failure branch, not skipped — enter the folly without the
-  shears' mercy, let the anchored countdown run, and the cache goes up (kill
-  the player through the ADR-227 death sink).
+continues: folly
+description: The other branch out of the same folly doorway — the bare `cut the
+  fuse` that does nothing, and the three turns that end the story.
 
 ---
 
-> east
-[OK: contains "old coal dust"]
+# The trap that makes this branch reachable at all: the player IS holding the
+# garden shears (see fuse-cut.transcript, same starting state), and the bare
+# command still refuses. The instrument has to be named.
+> cut the fuse
+[OK: contains "You need something to cut the fuse with"]
+[OK: not contains "The shears bite through the waxed cord"]
+[STATE: true, player.inventory contains shears]
 
-> turn the stopcock
-[OK: contains "water gurgles"]
-
-> push the primer
-[OK: contains "thumps home"]
-
-> turn on the boiler
-[OK: contains "warmth crawls"]
-
-# Wait for Tobias's rounds to bring him here (loop region unrolled to its
-# seed-42 sequence — ADR-294 migration; he enters on the eighth wait)
+# `on every turn while it is lit` — the cycling hiss is the clock the player
+# can hear.
 > wait
-[OK: contains "Time passes"]
+[OK: contains "The fuse hisses on, eating its slow way toward the fireworks"]
 
+# `3 turns later / kill the player fuse-blast when the fuse is lit`.
 > wait
-[OK: contains "Time passes"]
+[OK: contains "The cache goes up in one white roar, and the folly keeps its secrets after all"]
 
-> wait
-[OK: contains "Time passes"]
+# ORDERING BUG, asserted as it behaves: the fuse's per-turn phrase still fires
+# on the turn that kills the player, so a spark line prints AFTER the blast
+# that ended the story.
+[OK: contains "Sparks walk the waxed cord, closer now"]
 
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "enters from the"]
-
-> ask tobias about the fire
-[OK: contains "warped, not cursed"]
-
-> west
-[OK: contains "Fountain Court"]
-
-> west
-[OK: contains "Glass"]
-
-> north
-[OK: contains "Folly Hill"]
-
-> open the folly door
-[OK: contains "You open the folly door"]
-
-> north
-[OK: contains "wakes a thread of sparks"]
-
-# The hiss marks the stakes each turn (cycling; at this point in the
-# seed-42 run the cycle lands "closer now" first, then "hisses on" —
-# ADR-294 migration off contains_any)…
-> wait
-[OK: contains "closer now"]
-
-> wait
-[OK: contains "hisses on"]
-
-# …and the third turn is the last
-> wait
-[OK: contains "white roar"]
+# The transcript has to STOP here. Any further command — even `score` — comes
+# back as `Error: Engine is not running`, and the runner classifies that as a
+# command error rather than as output, so no assertion can catch it:
+#
+#     > look                                             FAIL
+#       Error: Engine is not running
+#
+# A losing branch is therefore only expressible as a file whose last command is
+# the one that ends the story. There is no way to assert on what a player sees
+# after an ending, and nothing says so until the run goes red.

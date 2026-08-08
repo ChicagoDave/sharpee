@@ -1,0 +1,62 @@
+title: The vine and the locket
+story: fernhill
+continues: machine
+description: Warmth in the pipes moved the vine to flowering from a room away.
+  Pruning it is how Verity's locket comes out of the ground.
+
+---
+
+> west
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> take the garden shears
+[OK: contains "Taken"]
+[STATE: true, player.inventory contains shears]
+
+> west
+[OK: contains "Entrance Hall"]
+
+# Leaving the House for the Grounds fires `cold-returns`, and this is its
+# first-time variant — the player has not been out and back before.
+> south
+[OK: contains "The cold finds you the moment you step out, and means it"]
+
+> west
+[OK: contains "Greenhouse"]
+
+# KNOWN STORY BUG, asserted as it behaves. The boiler moved the vine to
+# `flowering` (machine.transcript, terminal state `on enter`), but the vine's
+# description is static prose and still says seedling. The next command acts on
+# `flowering`, so the description and the state disagree in front of the player.
+> examine the vine
+[OK: contains "barely more than a seedling now"]
+
+# `when flowering` — three clean cuts, and the locket is moved into the room.
+> prune the vine
+[OK: contains "a single heavy fruit swells, splits"]
+[OK: contains "something small and silver slides out into the leaf mould"]
+[STATE: true, locket.location = Greenhouse]
+
+> take the silver locket
+[OK: contains "Taken"]
+[STATE: true, player.inventory contains locket]
+
+# `when fruiting` — the third branch, and the vine is done.
+> prune the vine
+[OK: contains "The vine has given everything it kept"]
+
+# The same north door frost-seal.transcript could not open. Warmth shifted it.
+> north
+[OK: contains "Folly Hill"]
+[OK: contains "on its crown stands the folly"]
+[STATE: true, player.location = Folly Hill]
+
+# lit (10) + fruited (5).
+> score
+[OK: contains "You have scored 15 out of 50"]
