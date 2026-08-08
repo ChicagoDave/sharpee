@@ -208,6 +208,28 @@ enum MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
+        // go-live Phase 6c (P-1): the corral — which built-in themes this story
+        // SHIPS. Toggling writes the `.story` header's `themes:` line through
+        // the editor (undoable); the author never types the field. Classic is
+        // the client's `:root` baseline, always present, so it has no toggle.
+        // The list comes from the same vendored mirror the Play picker reads —
+        // one source of truth for "the built-ins".
+        let shippedThemes = NSMenuItem(title: "Shipped Themes", action: nil, keyEquivalent: "")
+        let shippedThemesMenu = NSMenu(title: "Shipped Themes")
+        for theme in PlayThemeCatalog.themes(inResources: Bundle.main.resourceURL)
+        where theme.id != PlayThemeCatalog.classic.id {
+            let item = NSMenuItem(title: theme.name,
+                                  action: #selector(AppDelegate.toggleShippedTheme(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = theme.id
+            shippedThemesMenu.addItem(item)
+        }
+        shippedThemes.submenu = shippedThemesMenu
+        menu.addItem(shippedThemes)
+
+        menu.addItem(NSMenuItem.separator())
+
         // ADR-284 D1: Publish is a menu-level peer of Build, not an export buried
         // in a submenu. No key equivalent — it is a deliberate act, not a loop step.
         let publish = NSMenuItem(title: "Publish…",

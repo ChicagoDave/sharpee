@@ -441,6 +441,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
+    /// Build → Shipped Themes → <theme>. Toggles the built-in in the story
+    /// header's `themes:` line via the editor — undoable, tab left dirty
+    /// (go-live Phase 6c).
+    @objc func toggleShippedTheme(_ sender: NSMenuItem) {
+        guard let themeId = sender.representedObject as? String else { return }
+        mainWindowController?.toggleShippedTheme(themeId)
+    }
+
     // MARK: - Test menu actions (ADR-277 D2/D3)
 
     /// Test → Run Tests (⌘U). Runs the story's suite as a tree, streaming into
@@ -514,6 +522,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false
+        case #selector(toggleShippedTheme(_:)):
+            guard let shipped = mainWindowController?.shippedThemeIds() else { return false }
+            let themeId = menuItem.representedObject as? String
+            menuItem.state = themeId.map { shipped.contains($0) } == true ? .on : .off
+            return true
         case #selector(toggleProjectPane(_:)):
             menuItem.state = (mainWindowController?.isProjectPaneVisible ?? false) ? .on : .off
             return true

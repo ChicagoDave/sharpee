@@ -86,6 +86,66 @@ final class PlayURLSchemeHandlerTests: XCTestCase {
         XCTAssertNil(task.error)
     }
 
+    // MARK: - Vendored-theme backfill (Phase 6b)
+
+    /// A theme the story did not ship is served from the IDE's vendored mirror.
+    func testAnUnshippedThemeIsServedFromTheVendoredMirror() throws {
+        let mirror = tmp.appendingPathComponent("mirror", isDirectory: true)
+        try FileManager.default.createDirectory(at: mirror, withIntermediateDirectories: true)
+        try Data("[data-theme=\"paper\"] { color: red; }".utf8)
+            .write(to: mirror.appendingPathComponent("paper.css"))
+        handler.themesFallbackDirectory = mirror
+
+        let task = serve("/themes/paper.css")
+        XCTAssertEqual((task.response as? HTTPURLResponse)?.statusCode, 200)
+        XCTAssertEqual((task.response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type"),
+                       "text/css; charset=utf-8")
+        XCTAssertEqual(String(data: task.data, encoding: .utf8),
+                       "[data-theme=\"paper\"] { color: red; }")
+    }
+
+    /// A theme the story DID ship wins — the page sees exactly the version its
+    /// build wired, never the IDE's copy.
+    func testAShippedThemeFileWinsOverTheMirror() throws {
+        let shipped = tmp.appendingPathComponent("themes", isDirectory: true)
+        try FileManager.default.createDirectory(at: shipped, withIntermediateDirectories: true)
+        try Data("/* shipped */".utf8).write(to: shipped.appendingPathComponent("paper.css"))
+        let mirror = tmp.appendingPathComponent("mirror", isDirectory: true)
+        try FileManager.default.createDirectory(at: mirror, withIntermediateDirectories: true)
+        try Data("/* vendored */".utf8).write(to: mirror.appendingPathComponent("paper.css"))
+        handler.themesFallbackDirectory = mirror
+
+        let task = serve("/themes/paper.css")
+        XCTAssertEqual(String(data: task.data, encoding: .utf8), "/* shipped */")
+    }
+
+    /// The mirror backfills ONLY `themes/…` — any other miss stays a 404 even
+    /// when a mirror is configured.
+    func testANonThemesMissStaysA404WithAMirrorConfigured() throws {
+        let mirror = tmp.appendingPathComponent("mirror", isDirectory: true)
+        try FileManager.default.createDirectory(at: mirror, withIntermediateDirectories: true)
+        try Data("{}".utf8).write(to: mirror.appendingPathComponent("imports.json"))
+        handler.themesFallbackDirectory = mirror
+
+        let task = serve("/imports.json")
+        XCTAssertEqual((task.response as? HTTPURLResponse)?.statusCode, 404)
+    }
+
+    /// A `themes/../…` path cannot climb out of the mirror.
+    func testTraversalOutOfTheMirrorIsA404() throws {
+        let bundle = tmp.appendingPathComponent("bundle", isDirectory: true)
+        try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+        let mirror = tmp.appendingPathComponent("mirror", isDirectory: true)
+        try FileManager.default.createDirectory(at: mirror, withIntermediateDirectories: true)
+        try Data("outside both roots".utf8).write(to: tmp.appendingPathComponent("secret.txt"))
+        handler.rootDirectory = bundle
+        handler.themesFallbackDirectory = mirror
+
+        let task = serve("/themes/../secret.txt")
+        XCTAssertEqual((task.response as? HTTPURLResponse)?.statusCode, 404)
+        XCTAssertTrue(task.data.isEmpty, "traversal must leak no bytes")
+    }
+
     // MARK: - MIME mapping
 
     func testCoreWebAssetTypes() {

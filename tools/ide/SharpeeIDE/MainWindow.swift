@@ -212,6 +212,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.composedStory
     }
 
+    /// The open story's shipped-theme ids (Build → Shipped Themes), or nil
+    /// when the corral does not apply (no story / grammar-header file).
+    func shippedThemeIds() -> [String]? {
+        rootViewController?.shippedThemeIds()
+    }
+
+    /// Toggles a built-in theme in the story header's `themes:` line (6c).
+    func toggleShippedTheme(_ themeId: String) {
+        rootViewController?.toggleShippedTheme(themeId)
+    }
+
     /// Shows the empty project state with a one-line reason (D8: a restored
     /// session pointing at a retired TypeScript project explains itself).
     func showEmptyStateExplanation(_ text: String) {
@@ -563,6 +574,63 @@ private final class RootViewController: NSViewController {
         // (GH #188, ADR-279 D1 Amendment A1). Runs on failure too: the tree
         // keeps the last populated IR, so the title stays with it.
         applyWindowTitle(WindowTitle.title(for: mainSplitViewController.composedIR))
+    }
+
+    /// The shipped-theme ids the open story's header declares (Build → Shipped
+    /// Themes checkmarks), or nil when no story is open / it is a grammar file.
+    /// Reads the editor's unsaved buffer first, disk second — the corral must
+    /// reflect what the author sees, not what was last saved.
+    func shippedThemeIds() -> [String]? {
+        guard let story = composedStory, !story.isGrammar else { return nil }
+        let source = mainSplitViewController.currentText(at: story.url)
+            ?? (try? String(contentsOf: story.url, encoding: .utf8))
+        return source.map { StoryHeaderThemes.read(from: $0) }
+    }
+
+    /// Toggles one built-in theme in the story header's `themes:` line
+    /// (go-live Phase 6c). The edit goes through the editor — undoable, and
+    /// the tab is left dirty for the author to save — exactly like the IFID
+    /// fix above. Order is the author's: an added theme appends, a removed
+    /// one leaves the rest in place.
+    ///
+    /// - Parameter themeId: the built-in's id (never `classic` — the baseline
+    ///   always ships and is not a `themes:` entry).
+    func toggleShippedTheme(_ themeId: String) {
+        guard let story = composedStory, !story.isGrammar else { return }
+        let url = story.url
+        let source = mainSplitViewController.currentText(at: url)
+            ?? (try? String(contentsOf: url, encoding: .utf8))
+        guard let source else {
+            presentThemeToggleFailure(for: url)
+            return
+        }
+        var ids = StoryHeaderThemes.read(from: source)
+        if let index = ids.firstIndex(of: themeId) {
+            ids.remove(at: index)
+        } else {
+            ids.append(themeId)
+        }
+        // nil here means "already says that" — nothing to do, not a failure.
+        guard let edit = StoryHeaderThemes.edit(setting: ids, in: source) else { return }
+        if !mainSplitViewController.replaceText(edit.text,
+                                                in: NSRange(location: edit.offset, length: edit.length),
+                                                in: url) {
+            presentThemeToggleFailure(for: url)
+        }
+    }
+
+    /// Reports a toggle that could not be applied, rather than doing nothing
+    /// and leaving the author to wonder whether the menu worked.
+    private func presentThemeToggleFailure(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t update shipped themes"
+        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// Runs a Problems row's inline fix.

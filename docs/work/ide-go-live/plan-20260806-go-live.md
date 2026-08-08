@@ -371,19 +371,68 @@ ThemeManager renders the menu at runtime — in the SHARED build core
 Evidence: platform-browser + devkit vitest, a real CLI build inspected, both
 packages rebuilt dist + dist-esm, tsc clean.
 
-**Phase 6b — Play-surface theme picker** (P-2, Small) **Status: PENDING**.
+**Phase 6b — Play-surface theme picker** (P-2, Small) **Status: CURRENT
+(since 2026-08-08) — implementation landed same day** (session acf4d5).
 Picker lists Classic + all built-ins regardless of the story's list; applies
 live + at boot, no flash; persists in UserDefaults; CSS supply is IDE chrome —
 vendored platform-browser theme CSS injected into the play page
 (playSurfaceScript precedent); the built bundle untouched. Evidence:
 real-path Swift test asserts `data-theme` on the loaded play page.
+As built: NSPopUpButton in the Play header — **Story Default** (nil pick, no
+IDE interference; the escape back to what the story actually wears) + Classic
++ the four built-ins from the vendored mirror
+(`SharpeeIDE/Resources/play-themes/`, mirrored by `vendor-play-themes.sh` as a
+committed folder resource + non-opt-in preBuild phase, docs-tab pattern).
+Persistence: `SharpeeIDEPlayThemeChoice` in UserDefaults (absent = Story
+Default). Boot: the document-start surface script injects `<link>`s for
+unshipped built-ins (`PlayURLSchemeHandler.themesFallbackDirectory` backfills
+`themes/…` misses from the mirror; bundle files win; traversal refused) and
+enforces the pick with a MutationObserver — load-bearing, because the
+client's own boot `applyTheme` (BrowserClient.ts) re-applies its saved/default
+theme after document start and would silently undo the pick. Live pick
+restyles the running page in place (a played session is never rebooted);
+Story Default live hands `data-theme` back to the client's stored theme.
+Evidence: PlayThemeChromeTests (8, new — real WKWebView over the real scheme
+handler with the app's real vendored mirror: picked-theme-wins-boot-clobber,
+story-default non-interference, live restyle + persistence, unloaded pick
+dresses the next boot, CSS fetch through the backfill, catalog real-path),
+PlayHeaderViewTests (5, new), PlayURLSchemeHandlerTests +4 backfill cases;
+full SharpeeIDETests suite 472 passing, 0 failures (2026-08-08);
+mutation-verification's 2 warnings closed same day. Remaining 6b acceptance:
+David's in-app click-through.
 
-**Phase 6c — IDE theme corral** (P-1, Medium) **Status: PENDING**. Author
+**Phase 6c — IDE theme corral** (P-1, Medium) **Status: CURRENT
+(since 2026-08-08) — implementation landed same day** (session acf4d5; 6b
+awaits David's click-through in parallel — he is remote). Author
 picks which built-ins their story ships; toggling writes the `.story`
 header's `themes:` line via a header-writing seam beside
 StoryHeaderIFID/PublishSource (ADR-298 fielded schema; editor owns the field
 like `continues:`); build/publish honor the list unchanged. Evidence:
 real-path toggle → header changes → next build's `dist/web/themes/` matches.
+As built: **Build → Shipped Themes** submenu — checkmark item per vendored
+built-in (from `PlayThemeCatalog`, 6b's mirror; Classic is the `:root`
+baseline, always ships, no toggle); enablement + checkmarks via
+`validateMenuItem` reading the buffer-first header state
+(`shippedThemeIds()`). Toggling routes AppDelegate →
+`RootViewController.toggleShippedTheme` → new `StoryHeaderThemes` seam
+(read/edit/apply on the shared `StoryHeaderLines` scanner: replace in place
+preserving author field order, insert after last header field, empty list
+REMOVES the line, nil for no-story-block/unchanged) → the editor's undoable
+`replaceText` path — tab left dirty, disk untouched until the author saves.
+Evidence: StoryHeaderThemesTests 11 passing; ShippedThemesRealPathTests 3
+passing — (1) the exit criterion end-to-end: temp fernhill-frozen copy,
+toggle-on edit, header read back, REAL devkit `build` (NODE_PATH supplies
+the workspace walk tmp lacks), `dist/web/fernhill/themes/` = exactly
+{paper.css, system-6.css, system-6/} with untoggled themes absent, then a
+toggle-off edit reads back in place; (2) menu-construction pin (ids, classic
+excluded, action selector); (3) the menu toggle path through a real
+MainWindowController + real compose outcome + real NSTextView buffer —
+buffer gains the line, tab dirty, DISK UNCHANGED until save, in-place
+add/remove — first-ever coverage of the editor `replaceText` seam
+(mutation-verification found it untested repo-wide, the IFID fix included).
+Full SharpeeIDETests 491 passing, 0 failures (run before that last test was
+added; it passed in its class after). Remaining 6c acceptance: David's
+in-app click-through.
 
 **Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status:
 PENDING**. Built to D1–D4 exactly: Testing tab moves Play to the left pane;

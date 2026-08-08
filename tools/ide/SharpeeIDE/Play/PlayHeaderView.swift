@@ -1,11 +1,13 @@
 // PlayHeaderView.swift
 // The Play pane's header bar: a status dot (green when a story is loaded), a
-// Restart button, and a "Play after build" toggle. That is the whole header.
+// Restart button, a theme picker (IDE chrome over the play surface — Phase 6b),
+// and a "Play after build" toggle. That is the whole header.
 // There is no Record toggle because every turn is logged anyway — the author
 // should not have to decide to record before the interesting thing happens.
 // Pure view — the controller owns behaviour.
-// Public interface: onRestart / onPlayAfterBuildToggle callbacks; setLoaded(_:),
-// setPlayAfterBuild(_:).
+// Public interface: onRestart / onPlayAfterBuildToggle / onThemeSelect
+// callbacks; setLoaded(_:), setPlayAfterBuild(_:),
+// setThemes(_:selectedThemeId:).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -14,11 +16,18 @@ final class PlayHeaderView: NSView {
 
     static let height: CGFloat = 30
 
+    /// The picker's first entry: no IDE interference, the story wears whatever
+    /// its own build wired. Reported to `onThemeSelect` as nil.
+    static let storyDefaultTitle = "Story Default"
+
     var onRestart: (() -> Void)?
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
+    /// A theme id from the catalog, or nil for Story Default.
+    var onThemeSelect: ((String?) -> Void)?
 
     private let dot = NSView()
     private let restartButton = NSButton()
+    private let themePicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -26,6 +35,7 @@ final class PlayHeaderView: NSView {
         // Header controls never dictate the pane's width (divider stays free);
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        themePicker.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -48,6 +58,13 @@ final class PlayHeaderView: NSView {
         restartButton.toolTip = "Restart from the story's beginning — a fresh boot at the pinned seed"
         restartButton.translatesAutoresizingMaskIntoConstraints = false
 
+        themePicker.controlSize = .small
+        themePicker.font = NSFont.systemFont(ofSize: 11)
+        themePicker.target = self
+        themePicker.action = #selector(themePicked)
+        themePicker.toolTip = "Preview theme — IDE-only, never changes what the story ships"
+        themePicker.translatesAutoresizingMaskIntoConstraints = false
+
         playAfterBuildCheckbox.target = self
         playAfterBuildCheckbox.action = #selector(playAfterBuildChanged)
         playAfterBuildCheckbox.controlSize = .small
@@ -56,6 +73,7 @@ final class PlayHeaderView: NSView {
 
         addSubview(dot)
         addSubview(restartButton)
+        addSubview(themePicker)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -66,6 +84,9 @@ final class PlayHeaderView: NSView {
 
             restartButton.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 10),
             restartButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            themePicker.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 10),
+            themePicker.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -88,8 +109,26 @@ final class PlayHeaderView: NSView {
         playAfterBuildCheckbox.state = on ? .on : .off
     }
 
+    /// Populates the picker: Story Default, then the catalog (Classic + every
+    /// built-in). Selects the item whose theme id matches, or Story Default
+    /// for nil / an id no longer in the catalog.
+    func setThemes(_ themes: [PlayTheme], selectedThemeId: String?) {
+        themePicker.removeAllItems()
+        themePicker.addItem(withTitle: Self.storyDefaultTitle)
+        for theme in themes {
+            themePicker.addItem(withTitle: theme.name)
+            themePicker.lastItem?.representedObject = theme.id
+        }
+        let match = themePicker.itemArray.first { ($0.representedObject as? String) == selectedThemeId }
+        themePicker.select(match ?? themePicker.itemArray.first)
+    }
+
     @objc private func restartClicked() {
         onRestart?()
+    }
+
+    @objc private func themePicked() {
+        onThemeSelect?(themePicker.selectedItem?.representedObject as? String)
     }
 
     @objc private func playAfterBuildChanged() {

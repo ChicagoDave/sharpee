@@ -1,0 +1,31 @@
+/*
+ * modern-dark.css — Modern Dark (Catppuccin Mocha) built-in theme (ADR-188).
+ *
+ * Owner: @sharpee/platform-browser (a platform-shipped built-in theme).
+ *
+ * A theme is data: a `[data-theme="<id>"]` token override block that targets
+ * the `--theme-*` contract consumed by the engine layer (engine.css).
+ * modern-dark is a *simple* theme — pure token overrides, no flourishes (it was
+ * the token-pure source from which the engine's un-scoped component layer was
+ * de-scoped, so the engine already paints it).
+ *
+ * Built-in themes ship with platform-browser under styles/themes/ and are wired
+ * into a story by listing their id in `sharpee.themes`. Load order (ADR-188):
+ * base.css → engine.css → THIS FILE → [author override].
+ */
+
+[data-theme="modern-dark"] {
+  --theme-bg: #1e1e2e;
+  --theme-bg-alt: #181825;
+  --theme-text: #cdd6f4;
+  --theme-text-muted: #a6adc8;
+  --theme-accent: #89b4fa;
+  --theme-accent-text: #1e1e2e;
+  --theme-border: #313244;
+  --theme-input-bg: #11111b;
+  --theme-menu-bg: #181825;
+  --theme-menu-hover: #313244;
+  --theme-font: "Inter", system-ui, -apple-system, sans-serif;
+  --theme-font-size: 15px;
+  --theme-line-height: 1.6;
+}

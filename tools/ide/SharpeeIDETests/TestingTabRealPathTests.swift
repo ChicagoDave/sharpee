@@ -1148,9 +1148,9 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertEqual(newCards, 1, "the authored command renders immediately")
         let badge = try await text("#docview .turn.new .newbadge")
         XCTAssertEqual(badge, "NEW")
-        let note = try await text("#docview .turn.new .newnote")
-        XCTAssertTrue(note.contains("Run Tests"),
-                      "the guidance names the next step; got: \(note)")
+        let newNote = try await text("#docview .turn.new .newnote")
+        XCTAssertTrue(newNote.contains("Run Tests"),
+                      "the guidance names the next step; got: \(newNote)")
 
         // Detach announces its sentinel as if it were a story; the page maps
         // it back to "no story" and withdraws the bar.

@@ -37,6 +37,7 @@ targets:
         excludes:
           - "Resources/testing-tab/**"
           - "Resources/docs-tab/**"
+          - "Resources/play-themes/**"
       # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
       # esbuild output is copied whole into Contents/Resources/testing-tab/ and
       # adding a file to it never needs a project regenerate.
@@ -59,6 +60,13 @@ targets:
       - path: SharpeeIDE/Resources/docs-tab
         type: folder
         buildPhase: resources
+      # The platform-browser built-in theme set, mirrored by
+      # vendor-play-themes.sh (go-live Phase 6b): the Play pane offers every
+      # built-in theme as IDE chrome regardless of what the open story ships.
+      # A committed folder reference for the same reasons as the two above.
+      - path: SharpeeIDE/Resources/play-themes
+        type: folder
+        buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
     # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
@@ -75,6 +83,11 @@ targets:
       - name: Bundle the Documentation tab (go-live Phase 3)
         basedOnDependencyAnalysis: false
         script: '"$PROJECT_DIR/build-docs-tab.sh"'
+      # One directory copy — too cheap to be opt-in, and a stale theme mirror
+      # would quietly diverge from what `sharpee build` ships (Phase 6b).
+      - name: Vendor play themes (go-live Phase 6b)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/vendor-play-themes.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds
