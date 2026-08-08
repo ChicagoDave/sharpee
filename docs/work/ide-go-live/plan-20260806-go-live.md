@@ -430,9 +430,11 @@ MainWindowController + real compose outcome + real NSTextView buffer —
 buffer gains the line, tab dirty, DISK UNCHANGED until save, in-place
 add/remove — first-ever coverage of the editor `replaceText` seam
 (mutation-verification found it untested repo-wide, the IFID fix included).
-Full SharpeeIDETests 491 passing, 0 failures (run before that last test was
-added; it passed in its class after). Remaining 6c acceptance: David's
-in-app click-through.
+Full SharpeeIDETests 492 passing, 0 failures, 116.4s, `** TEST SUCCEEDED **`
+(2026-08-08 18:43 CDT, session bd3d6b) — includes the late-added editor-path
+test, closing the earlier 491-run's predates-that-test caveat;
+ShippedThemesRealPathTests re-run standalone the same session, 3 passing,
+0 failures. Remaining 6c acceptance: David's in-app click-through.
 
 **Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status:
 PENDING**. Built to D1–D4 exactly: Testing tab moves Play to the left pane;
