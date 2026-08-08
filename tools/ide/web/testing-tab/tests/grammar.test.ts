@@ -170,6 +170,29 @@ describe('targeting a command the caller can see', () => {
   });
 });
 
+// R3: a world-change chip writes a [STATE:] assertion through the same
+// addAssertion path a promoted selection uses. The serializer owns the
+// spelling, so what lands is exactly what the runner parses back.
+describe('state assertions from world changes', () => {
+  it('writes [STATE:] in the serializer\'s spelling, replacing a [SKIP] like any promotion', () => {
+    const text = transcript('> take key\n[SKIP]\n');
+    const draft = addAssertion(text, 'probe.transcript', 5, {
+      type: 'state-assert',
+      assertTrue: true,
+      stateExpression: 'player.inventory contains key',
+    } as never);
+    expect(draft.text).toContain('[STATE: true, player.inventory contains key]');
+    expect(draft.text).not.toContain('[SKIP]');
+
+    const negative = addAssertion(text, 'probe.transcript', 5, {
+      type: 'state-assert',
+      assertTrue: false,
+      stateExpression: 'player.inventory contains sherry',
+    } as never);
+    expect(negative.text).toContain('[STATE: false, player.inventory contains sherry]');
+  });
+});
+
 // `continues:` is R5's field: load-bearing, documented nowhere an author
 // reads, and owned by the editor end to end so it cannot be misspelled.
 describe('reparent', () => {

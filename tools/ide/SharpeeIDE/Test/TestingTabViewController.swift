@@ -43,6 +43,7 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     var onTrashTranscript: ((String) -> Void)?
     /// The page asked for a transcript's golden to be recorded (ADR-294 D1).
     var onRecordGolden: ((String) -> Void)?
+    var onRestoreGolden: ((String) -> Void)?
 
     // MARK: - State
 
@@ -205,6 +206,17 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         call("trashFailed", arguments: [file, message])
     }
 
+    /// `file`'s previous recording is back on disk. Answers `restoreGolden` (R6).
+    func deliverGoldenRestored(file: String) {
+        call("goldenRestored", argument: file)
+    }
+
+    /// It could not be restored, and why. The page keeps its review open — a
+    /// failed restore must never read as a restore that happened.
+    func deliverGoldenRestoreFailure(file: String, message: String) {
+        call("goldenRestoreFailed", arguments: [file, message])
+    }
+
     // MARK: - Bridge plumbing
 
     /// Coalesces line delivery: however many lines arrive in one runloop turn,
@@ -325,6 +337,9 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         case "recordGolden":
             guard let file = body["file"] as? String else { return }
             onRecordGolden?(file)
+        case "restoreGolden":
+            guard let file = body["file"] as? String else { return }
+            onRestoreGolden?(file)
         default:
             break
         }

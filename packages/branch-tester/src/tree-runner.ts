@@ -39,8 +39,8 @@
  * @see ADR-302 — Transcript Branches — D3, D10, D13, D17
  */
 
-import { RunnerOptions, TranscriptResult } from './types.js';
-import { runTranscript } from './runner.js';
+import { RunnerOptions, TranscriptResult, WorldSnapshot } from './types.js';
+import { captureWorldSnapshot, runTranscript } from './runner.js';
 import {
   TranscriptTree,
   TreeNode,
@@ -108,8 +108,18 @@ export interface NodeRunOutcome {
  * other's compromises.
  */
 export interface TreeObserver {
-  /** A node is about to execute. `replayed` = it runs to build a sibling's state. */
-  onNodeStart?(info: { node: TreeNode; replayed: boolean; commandCount: number }): void;
+  /**
+   * A node is about to execute. `replayed` = it runs to build a sibling's
+   * state. `entryWorld` = the world the node ENTERS (after its ancestry,
+   * before its first command) — R5's inherited-state header, present under
+   * `captureWorld`.
+   */
+  onNodeStart?(info: {
+    node: TreeNode;
+    replayed: boolean;
+    commandCount: number;
+    entryWorld?: WorldSnapshot;
+  }): void;
   /** That execution finished. Fires for replays too. */
   onNodeEnd?(info: { node: TreeNode; replayed: boolean; result: TranscriptResult }): void;
   /**
@@ -260,10 +270,15 @@ export async function runTree(
   const execute = async (node: TreeNode, replay: boolean): Promise<boolean> => {
     const config = effectiveConfig(node);
     applyReseed(engine, node);
+    // R5: the world this node ENTERS — its ancestry has replayed, its first
+    // command has not run. What the inherited-state header shows, captured
+    // only when asked for.
+    const entryWorld = options.captureWorld ? captureWorldSnapshot(engine as never) : undefined;
     options.treeObserver?.onNodeStart?.({
       node,
       replayed: replay,
       commandCount: (node.transcript.items ?? []).filter((item) => item.type === 'command').length,
+      ...(entryWorld !== undefined ? { entryWorld } : {}),
     });
     const result = await runTranscript(node.transcript, engine as never, {
       ...options,

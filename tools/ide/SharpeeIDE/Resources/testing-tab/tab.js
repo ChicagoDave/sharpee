@@ -21,11 +21,24 @@
   }
   function isTranscriptStartEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "transcript-start") && typeof value.file === "string" && typeof value.index === "number" && (value.commandCount === void 0 || typeof value.commandCount === "number") && (value.parent === void 0 || typeof value.parent === "string") && (value.replayed === void 0 || typeof value.replayed === "boolean");
+    return hasEnvelopeAndType(value, "transcript-start") && typeof value.file === "string" && typeof value.index === "number" && (value.commandCount === void 0 || typeof value.commandCount === "number") && (value.parent === void 0 || typeof value.parent === "string") && (value.replayed === void 0 || typeof value.replayed === "boolean") && (value.world === void 0 || isWorldSnapshot(value.world));
   }
   function isCommandResultEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number");
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.diff === void 0 || isCommandDiff(value.diff)) && (value.world === void 0 || isWorldSnapshot(value.world));
+  }
+  function isCommandDiff(value) {
+    if (!isObject(value)) return false;
+    const lines2 = (v) => Array.isArray(v) && v.every((line) => typeof line === "string");
+    return lines2(value.recorded) && lines2(value.actual) && (value.channel === void 0 || typeof value.channel === "string");
+  }
+  function isWorldEntityRef(value) {
+    if (!isObject(value)) return false;
+    return typeof value.name === "string" && typeof value.token === "string";
+  }
+  function isWorldSnapshot(value) {
+    if (!isObject(value)) return false;
+    return (value.location === void 0 || isWorldEntityRef(value.location)) && Array.isArray(value.inventory) && value.inventory.every(isWorldEntityRef);
   }
   function isTranscriptEndEvent(value) {
     if (!isObject(value)) return false;
@@ -91,7 +104,9 @@
       created: (file) => handlers.onCreated(file),
       createFailed: (message) => handlers.onCreateFailed(message),
       trashed: (file) => handlers.onTrashed(file),
-      trashFailed: (file, message) => handlers.onTrashFailed(file, message)
+      trashFailed: (file, message) => handlers.onTrashFailed(file, message),
+      goldenRestored: (file) => handlers.onGoldenRestored(file),
+      goldenRestoreFailed: (file, message) => handlers.onGoldenRestoreFailed(file, message)
     };
     window.__sharpeeTesting = inbound;
     const webkit = window.webkit;
@@ -112,6 +127,7 @@
       createTranscript: (name, text) => send({ action: "createTranscript", name, text }),
       trashTranscript: (file) => send({ action: "trashTranscript", file }),
       recordGolden: (file) => send({ action: "recordGolden", file }),
+      restoreGolden: (file) => send({ action: "restoreGolden", file }),
       ready: () => send({ action: "ready" })
     };
   }
@@ -1338,6 +1354,7 @@
     node.failed = 0;
     node.expectedFailures = 0;
     node.skipped = 0;
+    if (event.world !== void 0) node.entryWorld = event.world;
     model2.running = node;
   }
   function applyCommandResult(model2, event) {
@@ -1355,7 +1372,10 @@
       skipped: event.skipped,
       error: event.error,
       actualOutput: event.actualOutput,
-      turn: event.turn
+      turn: event.turn,
+      ending: event.ending,
+      diff: event.diff,
+      world: event.world
     });
   }
   function applyTranscriptEnd(model2, event) {
@@ -1455,6 +1475,8 @@
   }
   var STORY_OVER_ERROR = "Engine is not running";
   function storyEnd(node) {
+    const ender = node.turns.findIndex((turn) => turn.ending !== void 0);
+    if (ender >= 0) return { endsAt: node.turns[ender], dead: node.turns.slice(ender + 1) };
     const first = node.turns.findIndex((turn) => turn.error === STORY_OVER_ERROR);
     if (first < 0) return null;
     return { endsAt: first > 0 ? node.turns[first - 1] : null, dead: node.turns.slice(first) };
@@ -1471,6 +1493,25 @@
     return [...model2.nodes.values()].filter(
       (candidate) => !excluded.has(candidate) && storyEnd(candidate) === null
     );
+  }
+  function worldDelta(before, after) {
+    if (!before || !after) return null;
+    const movedTo = after.location && before.location?.token !== after.location.token ? after.location : void 0;
+    const carried = new Set(before.inventory.map((item) => item.token));
+    const carriedNow = new Set(after.inventory.map((item) => item.token));
+    const took = after.inventory.filter((item) => !carried.has(item.token));
+    const dropped = before.inventory.filter((item) => !carriedNow.has(item.token));
+    if (!movedTo && took.length === 0 && dropped.length === 0) return null;
+    return { ...movedTo !== void 0 ? { movedTo } : {}, took, dropped };
+  }
+  function worldBefore(node, index) {
+    return index > 0 ? node.turns[index - 1].world : node.entryWorld;
+  }
+  function recordingChanges(node) {
+    return node.turns.filter((turn) => turn.passed && turn.diff !== void 0);
+  }
+  function dismissRecordingChanges(node) {
+    for (const turn of node.turns) delete turn.diff;
   }
   function descendantCount(node) {
     return node.children.reduce((total, child) => total + 1 + descendantCount(child), 0);
@@ -1534,8 +1575,11 @@
       }
     }
   }
-  function turnRow(node, turn, actions2, showOutput = false, claims = null, surface2 = null, terminal = null) {
-    const row = el("div", `turn${turn.passed ? "" : " bad"}${terminal ? ` ${terminal}` : ""}`);
+  function turnRow(node, turn, actions2, showOutput = false, claims = null, surface2 = null, terminal = null, delta = null) {
+    const row = el(
+      "div",
+      `turn${turn.passed ? "" : " bad"}${terminal ? ` ${terminal}` : ""}${turn.passed && turn.diff ? " rerecorded" : ""}`
+    );
     const line = el("button", "ln", String(turn.line));
     line.type = "button";
     line.title = `${node.file}:${turn.line}`;
@@ -1610,6 +1654,52 @@
         }
       }
       row.append(detail);
+    }
+    if (turn.diff && (showOutput || !turn.passed)) {
+      const prior = el("div", "recordedside");
+      prior.append(
+        el("div", "recordedlabel", turn.passed ? "Previously recorded:" : "The recording expects:")
+      );
+      prior.append(el("pre", "recorded", turn.diff.recorded.join("\n")));
+      row.append(prior);
+    }
+    if (delta && surface2 && surface2.source?.outlook?.kind !== "unsound") {
+      const changes = el("div", "worldrow");
+      const chip = (label, title, assertTrue, expression) => {
+        const button = el("button", "worldchip", label);
+        button.type = "button";
+        button.title = title;
+        button.addEventListener(
+          "click",
+          () => actions2.assertWorldChange(turn.line, assertTrue, expression)
+        );
+        changes.append(button);
+      };
+      if (delta.movedTo) {
+        chip(
+          `\u2192 ${delta.movedTo.name}`,
+          `Assert the player ends this turn in ${delta.movedTo.name}`,
+          true,
+          `player.location = ${delta.movedTo.token}`
+        );
+      }
+      for (const item of delta.took) {
+        chip(
+          `+ ${item.name}`,
+          `Assert the player is carrying ${item.name} after this turn`,
+          true,
+          `player.inventory contains ${item.token}`
+        );
+      }
+      for (const item of delta.dropped) {
+        chip(
+          `\u2212 ${item.name}`,
+          `Assert the player is no longer carrying ${item.name} after this turn`,
+          false,
+          `player.inventory contains ${item.token}`
+        );
+      }
+      row.append(changes);
     }
     if (claims && claims.length) {
       const list = el("div", "claims");
@@ -1855,6 +1945,15 @@
     cell("Children", node.children.length ? String(node.children.length) : "leaf");
     if (node.replays) cell("Replays", `${node.replays}\xD7`, "replay");
     if (surface2.goldens.has(node.file)) cell("Tier", "golden \u2014 the recording is the assertion", "gold");
+    if (node.entryWorld) {
+      const entry = node.entryWorld;
+      const carrying = entry.inventory.length ? entry.inventory.map((item) => item.name).join(", ") : "nothing";
+      cell(
+        "Starts",
+        `${entry.location ? `in ${entry.location.name}` : "in an unnamed place"} \xB7 carrying ${carrying}`,
+        "entry"
+      );
+    }
     view.append(meta);
     if (surface2.face === "source") {
       view.append(sourceFace(node, surface2));
@@ -1884,12 +1983,17 @@
             true,
             claims?.get(turn.line) ?? null,
             surface2,
-            end2 === null ? null : index >= firstDead ? "dead" : index === firstDead - 1 ? "ends" : null
+            end2 === null ? null : index >= firstDead ? "dead" : index === firstDead - 1 ? "ends" : null,
+            worldDelta(worldBefore(node, index), turn.world)
           )
         )
       );
     }
     view.append(turns);
+    const changed = recordingChanges(node);
+    if (changed.length && surface2.goldens.has(node.file)) {
+      view.append(reviewBar(changed.length, actions2));
+    }
     const end = storyEnd(node);
     view.append(fileBar(model2, node, surface2, actions2));
     if (end) view.append(terminalBar(node, end));
@@ -2009,6 +2113,25 @@
       note.append(undo);
     }
     return note;
+  }
+  function reviewBar(changed, actions2) {
+    const bar = el("div", "reviewbar");
+    bar.append(
+      el(
+        "span",
+        "said",
+        `${changed} turn${changed === 1 ? "" : "s"} changed from the previous recording \u2014 the changed cards show both sides.`
+      )
+    );
+    const keep = el("button", "keepnew", "Keep the new recording");
+    keep.type = "button";
+    keep.addEventListener("click", () => actions2.keepNewRecording());
+    const restore = el("button", "restoreold", "Restore the previous recording");
+    restore.type = "button";
+    restore.title = "Put back the recording as it was before this re-record \u2014 the next run replays against it, and stays red until the story matches it again";
+    restore.addEventListener("click", () => actions2.restorePreviousRecording());
+    bar.append(keep, restore);
+    return bar;
   }
   function terminalBar(node, end) {
     const bar = el("div", "terminalbar");
@@ -2294,6 +2417,16 @@
     removeAssertion(commandLine, index) {
       applyEdit((text, file) => removeAssertion(text, file, commandLine, index), "the removal");
     },
+    assertWorldChange(commandLine, assertTrue, expression) {
+      applyEdit(
+        (text, file) => addAssertion(text, file, commandLine, {
+          type: "state-assert",
+          assertTrue,
+          stateExpression: expression
+        }),
+        `[STATE: ${assertTrue}, ${expression}]`
+      );
+    },
     setConfirmingRecord(confirming) {
       surface.confirmingRecord = confirming;
       scheduleRender();
@@ -2304,6 +2437,20 @@
       if (!node) return;
       surface.editNote = "";
       host.recordGolden(node.file);
+      scheduleRender();
+    },
+    keepNewRecording() {
+      const node = surface.opened;
+      if (!node) return;
+      dismissRecordingChanges(node);
+      surface.editNote = "The new recording stands \u2014 future runs replay against it.";
+      scheduleRender();
+    },
+    restorePreviousRecording() {
+      const node = surface.opened;
+      if (!node) return;
+      surface.editNote = "Restoring the previous recording\u2026";
+      host.restoreGolden(node.file);
       scheduleRender();
     },
     undo() {
@@ -2432,6 +2579,18 @@
       inFlightWrite = null;
       if (!write || write.file !== file) return;
       surface.editNote = `The assertion was not written. ${message}`;
+      scheduleRender();
+    },
+    onGoldenRestored(file) {
+      const node = model.nodes.get(file);
+      if (node) dismissRecordingChanges(node);
+      if (surface.opened?.file === file) {
+        surface.editNote = "The previous recording was restored \u2014 the next run replays against it, and stays red until the story matches it again.";
+      }
+      scheduleRender();
+    },
+    onGoldenRestoreFailed(file, message) {
+      surface.editNote = `${stemOf(file)}'s previous recording was not restored. ${message}`;
       scheduleRender();
     }
   });

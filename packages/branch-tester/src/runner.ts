@@ -38,7 +38,9 @@ import {
   EntityTraitSnapshot,
   GoldenRecording,
   GoldenTurn,
-  GoldenEvent
+  GoldenEvent,
+  WorldEntityRef,
+  WorldSnapshot
 } from './types.js';
 import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
@@ -316,6 +318,22 @@ async function runGolden(
   const storyName = transcript.header.story ?? options.storyName;
   const locale = config.locale ?? options.locale ?? DEFAULT_LOCALE;
 
+  // 5b (R6): a RE-record is a review, not a blind overwrite. When a recording
+  // already exists, record mode diffs each captured turn against it and the
+  // divergence rides that turn's (passing) result — record mode never stops,
+  // so the consumer gets the whole before/after walk while the new recording
+  // still lands. A previous recording that no longer parses, or whose command
+  // at an index differs from the transcript's, has nothing comparable to say
+  // for that turn and says nothing.
+  let previous: GoldenRecording | null = null;
+  if (mode === 'record' && fs.existsSync(goldenPath)) {
+    try {
+      previous = parseGoldenFile(goldenPath);
+    } catch (e) {
+      if (!(e instanceof GoldenFormatError)) throw e;
+    }
+  }
+
   let recording: GoldenRecording | null = null;
   if (mode === 'replay') {
     try {
@@ -381,8 +399,8 @@ async function runGolden(
     // faithfully. In-memory until a divergence actually happens.
     const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
 
-    const { output, events, channels, turn: executedTurn } = await executeForGolden(
-      command, engine, config.events, capturedChannelIds);
+    const { output, events, channels, turn: executedTurn, ending, world } = await executeForGolden(
+      command, engine, config.events, capturedChannelIds, options.captureWorld === true);
     options.coverage?.collectFrom(engine.lastEvents);
     const actualLines = output.split('\n');
 
@@ -391,7 +409,11 @@ async function runGolden(
       if (config.events && events.length > 0) turn.events = events;
       if (channels && Object.keys(channels).length > 0) turn.channels = channels;
       turns.push(turn);
-      record(goldenPassResult(command, output, executedTurn));
+      const prior = previous?.turns[turnIndex];
+      const reDiff = prior && prior.command === command.input
+        ? diffTurn(prior, actualLines, events, config.events, capturedChannelIds, channels)
+        : null;
+      record(goldenPassResult(command, output, executedTurn, ending, reDiff ?? undefined, world));
     } else {
       const turn = recording!.turns[turnIndex];
       const divergence = diffTurn(turn, actualLines, events, config.events,
@@ -420,12 +442,14 @@ async function runGolden(
           assertionResults: [],
           error,
           diff: divergence,
-          ...(executedTurn !== undefined ? { turn: executedTurn } : {})
+          ...(executedTurn !== undefined ? { turn: executedTurn } : {}),
+          ...(ending !== undefined ? { ending } : {}),
+          ...(world !== undefined ? { world } : {})
         });
         failed = true;
         break;
       }
-      record(goldenPassResult(command, output, executedTurn));
+      record(goldenPassResult(command, output, executedTurn, ending, undefined, world));
     }
     turnIndex++;
   }
@@ -514,10 +538,20 @@ async function executeForGolden(
   command: TranscriptCommand,
   engine: GameEngine,
   captureEvents: boolean,
-  capturedChannelIds: string[] = []
-): Promise<{ output: string; events: GoldenEvent[]; channels?: Record<string, string[]>; turn?: number }> {
+  capturedChannelIds: string[] = [],
+  captureWorld = false
+): Promise<{
+  output: string;
+  events: GoldenEvent[];
+  channels?: Record<string, string[]>;
+  turn?: number;
+  ending?: CommandResult['ending'];
+  world?: WorldSnapshot;
+}> {
   let output: string;
   let turn: number | undefined;
+  let ending: CommandResult['ending'];
+  let world: WorldSnapshot | undefined;
   try {
     const result = await engine.executeCommand(command.input);
     // The turn the command executed as (R4) — read inside the try for the
@@ -525,6 +559,11 @@ async function executeForGolden(
     // the PREVIOUS command's record in `lastTurnResult`, and a stale turn
     // on a crashed command is a lie.
     turn = engine.lastTurnResult?.turn;
+    // The ending too (R9), same staleness argument.
+    ending = endingFrom(engine);
+    // And the world after the command (R3), when asked for — a crashed
+    // command gets no snapshot, never a stale one.
+    if (captureWorld) world = captureWorldSnapshot(engine);
     output = typeof result === 'string' ? result : (engine.getOutput?.() || '');
   } catch (e) {
     // A throw still produces a turn — its "output" is the error text, which
@@ -552,7 +591,14 @@ async function executeForGolden(
       }
     }
   }
-  return { output, events, channels, ...(turn !== undefined ? { turn } : {}) };
+  return {
+    output,
+    events,
+    channels,
+    ...(turn !== undefined ? { turn } : {}),
+    ...(ending !== undefined ? { ending } : {}),
+    ...(world !== undefined ? { world } : {})
+  };
 }
 
 /**
@@ -587,8 +633,77 @@ function openingResult(
   };
 }
 
-/** A passing golden-tier command result. */
-function goldenPassResult(command: TranscriptCommand, output: string, turn?: number): CommandResult {
+/**
+ * The story ending the engine announced during the command that just executed,
+ * read off the same per-command event capture both tiers already consume.
+ *
+ * Exactly ONE place maps `game.ended` to `CommandResult.ending` (R9), so the
+ * exclusions live here and nowhere else: `restart` is not an ending — the
+ * engine stops but the harness reboots the story within the same command;
+ * `abort` is not an ending — it is a runtime failure the result already
+ * carries as `error`. Returns undefined when the story did not end this turn
+ * or the engine seam does not expose events.
+ */
+function endingFrom(engine: GameEngine): CommandResult['ending'] {
+  const ended = engine.lastEvents?.find((e) => e.type === 'game.ended');
+  const type = (ended?.data as { ending?: { type?: string } } | undefined)?.ending?.type;
+  return type === 'victory' || type === 'defeat' || type === 'quit' ? type : undefined;
+}
+
+/**
+ * One entity as a snapshot names it (R3): the display name, and the single
+ * whitespace-free token the `[STATE:]` evaluator's own `findEntity` resolves
+ * back to this entity — an alias when one qualifies, the identity name or the
+ * entity's own name when they are single tokens, else the id (which always
+ * resolves). The runner picks the token because only the runner can vouch for
+ * the round-trip; a consumer that emitted `name` instead would trip the
+ * single-token parse rule R3 exists to bury.
+ */
+function worldEntityRef(entity: any): WorldEntityRef {
+  const identity =
+    entity.get?.('identity') ?? entity.traits?.get?.('identity') ?? entity.traits?.identity;
+  const name: string = identity?.name ?? entity.name ?? entity.id;
+  const singleToken = (value: unknown): value is string =>
+    typeof value === 'string' && value.length > 0 && !/\s/.test(value);
+  const aliasToken = (identity?.aliases as unknown[] | undefined)?.find(singleToken);
+  const token = aliasToken ?? (singleToken(name) ? name : entity.id);
+  return { name, token };
+}
+
+/**
+ * The world as it stands right now (R3/R5): player location and inventory,
+ * through the same structural seam the `[STATE:]` evaluator reads. Undefined
+ * when the seam has no world or no player — absent, never guessed, like every
+ * other optional fact on the wire.
+ */
+export function captureWorldSnapshot(engine: { world?: WorldModel }): WorldSnapshot | undefined {
+  const world = engine.world;
+  const player = world?.getPlayer?.();
+  if (!world || !player) return undefined;
+  const locationId = world.getLocation?.(player.id);
+  const location = locationId
+    ? (world.getEntity?.(locationId) ?? world.getEntityById?.(locationId))
+    : undefined;
+  const inventory = (world.getContents?.(player.id) ?? []).map(worldEntityRef);
+  return {
+    ...(location ? { location: worldEntityRef(location) } : {}),
+    inventory,
+  };
+}
+
+/**
+ * A passing golden-tier command result. `diff` rides a PASSING result only on
+ * a re-record (R6): the turn changed from the previous recording, and the
+ * review is the point — the run itself did not fail.
+ */
+function goldenPassResult(
+  command: TranscriptCommand,
+  output: string,
+  turn?: number,
+  ending?: CommandResult['ending'],
+  diff?: CommandResult['diff'],
+  world?: WorldSnapshot
+): CommandResult {
   return {
     command,
     actualOutput: output,
@@ -597,7 +712,10 @@ function goldenPassResult(command: TranscriptCommand, output: string, turn?: num
     expectedFailure: false,
     skipped: false,
     assertionResults: [],
-    ...(turn !== undefined ? { turn } : {})
+    ...(turn !== undefined ? { turn } : {}),
+    ...(ending !== undefined ? { ending } : {}),
+    ...(diff !== undefined ? { diff } : {}),
+    ...(world !== undefined ? { world } : {})
   };
 }
 
@@ -1118,6 +1236,8 @@ async function runCommand(
   let actualEvents: TestEventInfo[] = [];
   let error: string | undefined;
   let turn: number | undefined;
+  let ending: CommandResult['ending'];
+  let world: WorldSnapshot | undefined;
 
   try {
     const result = await engine.executeCommand(command.input);
@@ -1128,6 +1248,12 @@ async function runCommand(
     // wrapper that DID throw would leave the previous command's record in
     // place — and a stale turn on a crashed command is a lie.
     turn = engine.lastTurnResult?.turn;
+    // Same staleness argument for the ending: read inside the try, so a
+    // throwing wrapper can never pin a previous command's ending here.
+    ending = endingFrom(engine);
+    // The world AFTER the command (R3), only when asked for. Inside the try
+    // for the same reason: a crashed command gets no snapshot, not a stale one.
+    if (options.captureWorld) world = captureWorldSnapshot(engine);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
 
     // A stopped engine (player death ended the game) surfaces as this exact
@@ -1176,7 +1302,9 @@ async function runCommand(
           message: `Engine error during skipped command: ${error}`
         }],
         error,
-        ...(turn !== undefined ? { turn } : {})
+        ...(turn !== undefined ? { turn } : {}),
+        ...(ending !== undefined ? { ending } : {}),
+        ...(world !== undefined ? { world } : {})
       };
     }
     return {
@@ -1191,7 +1319,9 @@ async function runCommand(
         passed: true,
         message: skipAssertion.reason || 'Skipped'
       }],
-      ...(turn !== undefined ? { turn } : {})
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
 
@@ -1214,7 +1344,9 @@ async function runCommand(
         message: 'Blank output — command produced no visible text'
       }],
       error: 'blank output',
-      ...(turn !== undefined ? { turn } : {})
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
 
@@ -1245,7 +1377,9 @@ async function runCommand(
       skipped: false,
       assertionResults,
       error,
-      ...(turn !== undefined ? { turn } : {})
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
 
@@ -1258,7 +1392,9 @@ async function runCommand(
     skipped: false,
     assertionResults,
     error,
-    ...(turn !== undefined ? { turn } : {})
+    ...(turn !== undefined ? { turn } : {}),
+    ...(ending !== undefined ? { ending } : {}),
+    ...(world !== undefined ? { world } : {})
   };
 }
 

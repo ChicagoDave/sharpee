@@ -717,6 +717,41 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertEqual(failures, "0", "the trimmed file passes again")
     }
 
+    /// R9's clean half. A file whose LAST command ends the story leaves no
+    /// dead tail to observe, so until the wire grew `ending` this file
+    /// rendered as an ordinary passing leaf and nothing said it was terminal
+    /// — the honest limit the scope doc named. The runner now maps the
+    /// engine's `game.ended` onto the blast turn itself, so the UNMODIFIED
+    /// frozen file is marked: ender badged, append bar gone, branching
+    /// refused — and with nothing dead to trim.
+    func testACleanEndingMarksTheFileTerminalWithNothingDeadToTrim() async throws {
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "fuse-lose"])
+        try await openDocument(stem: "fuse-lose")
+
+        // Nothing is dead — the file is the frozen shipping shape, untouched.
+        let dead = try await count("#docview .turn.dead")
+        XCTAssertEqual(dead, 0, "a clean ending has no dead tail")
+
+        // The ender is badged on the command that actually ended the story.
+        let endBadge = try await text(".turn.ends .endshere")
+        XCTAssertTrue(endBadge.contains("The story ends here."))
+        let enderCommand = try await tab.evaluateInTab(
+            "document.querySelector('#docview .turn.ends .cmd').textContent") as? String
+        XCTAssertEqual(enderCommand, "> wait", "the blast turn is the ender")
+
+        // The terminal surface: no append, the note names the ender, and
+        // branching from the file is refused at the gesture.
+        let addField = try await count("#addcommand")
+        XCTAssertEqual(addField, 0, "a terminal file must not offer to append")
+        let terminalNote = try await text(".terminalbar .said")
+        XCTAssertTrue(terminalNote.contains("The story ends at \"> wait\""), "got \(terminalNote)")
+        let branchDisabled = try await tab.evaluateInTab(
+            "document.getElementById('newbranch').disabled") as? Bool
+        XCTAssertEqual(branchDisabled, true)
+    }
+
     /// Reparenting rewrites `continues:` — R5's field, which the author picks
     /// and never types. The picker's exclusions are read off the rendered page
     /// (never the file itself, never its own descendants), the write lands on
@@ -1197,6 +1232,178 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertEqual(reoffer, "Re-record golden…")
         let tier = try await text(".docmeta .v.gold")
         XCTAssertTrue(tier.contains("golden"), "the meta row names the tier; got: \(tier)")
+    }
+
+    /// R6's second half, end to end: a re-record is a review, not a blind
+    /// overwrite. The baseline recording is DOCTORED — one output line lies —
+    /// so the next re-record genuinely diverges from it without the story
+    /// changing at all. The re-record lands the true recording, the changed
+    /// card shows both sides, the review bar counts it, and BOTH decisions
+    /// run for real: "keep the new recording" closes the review touching
+    /// nothing on disk, and (after a second doctor + re-record) "restore the
+    /// previous recording" drives the production `GoldenBackupStore` through
+    /// the page wiring — the doctored bytes come back and the page closes the
+    /// review with the stays-red warning.
+    func testARerecordShowsBothSidesAndCanRestoreThePreviousRecording() async throws {
+        let transcripts = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts")
+        let golden = transcripts.appendingPathComponent("concealment.golden")
+        try XCTSkipIf(FileManager.default.fileExists(atPath: golden.path),
+                      "a previous run left a recording behind")
+        defer { try? FileManager.default.removeItem(at: golden) }
+
+        let storyDirectory = fixtureStory.deletingLastPathComponent()
+        let store = GoldenBackupStore()
+        var blessExited: XCTestExpectation?
+        tab.onRecordGolden = { [weak self] file in
+            guard let self else { return }
+            // As TestController does when a recording run starts: the bytes
+            // being overwritten are set aside for the review's restore.
+            store.setAside(file)
+            self.tab.beginRun(story: "fernhill-frozen")
+            self.runner.start(
+                executable: URL(fileURLWithPath: "/usr/bin/env"),
+                arguments: ["node", TestToolchain.devkitCLI.path]
+                    + TestRunner.treeRunArguments(storyPath: self.fixtureStory.path, blessFile: file),
+                workingDirectory: storyDirectory,
+                environment: ShellEnvironment.buildEnvironment())
+        }
+        tab.onRestoreGolden = { [weak self] file in
+            store.restore(file, deliverTo: self?.tab)
+        }
+        let recordOnce: () async throws -> Void = { [self] in
+            _ = try await tab.evaluateInTab("document.querySelector('.filebar .recordgold').click();")
+            try await settle(times: 3)
+            blessExited = expectation(description: "record run exits")
+            relay.onExit = { blessExited?.fulfill() }
+            _ = try await tab.evaluateInTab("document.querySelector('.filebar .recordgold.armed').click();")
+            await fulfillment(of: [blessExited!], timeout: 120)
+            try await settle(times: 6)
+        }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // The baseline. A FIRST record has no previous recording, so nothing
+        // offers a review — that absence is part of the contract.
+        try await recordOnce()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: golden.path))
+        tab.setGoldens([transcripts.appendingPathComponent("concealment.transcript").path])
+        try await settle(times: 3)
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+        let reviewAfterFirst = try await count(".reviewbar")
+        XCTAssertEqual(reviewAfterFirst, 0, "a first record has nothing to review against")
+
+        // Doctor the baseline: the doormat's line now lies. The divergence the
+        // next re-record reports is real, and exactly one turn wide.
+        let truthful = try String(contentsOf: golden, encoding: .utf8)
+        XCTAssertTrue(truthful.contains("worn bald in the middle"),
+                      "the recording carries the doormat's line the fixture asserts on")
+        let doctored = truthful.replacingOccurrences(
+            of: "worn bald in the middle", with: "worn DOCTORED in the middle")
+        try doctored.write(to: golden, atomically: true, encoding: .utf8)
+
+        // Re-record: the true output diverges from the doctored baseline.
+        try await recordOnce()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // The changed card carries both sides; the bar counts exactly it.
+        let changed = try await count("#docview .turn.rerecorded")
+        XCTAssertEqual(changed, 1, "exactly the doormat turn changed")
+        let recordedSide = try await text("#docview .turn.rerecorded .recorded")
+        XCTAssertTrue(recordedSide.contains("worn DOCTORED in the middle"),
+                      "the recording's side is the doctored line; got: \(recordedSide.prefix(120))")
+        let said = try await text(".reviewbar .said")
+        XCTAssertTrue(said.contains("1 turn changed from the previous recording"), "got \(said)")
+        // The re-record already landed the true recording on disk.
+        let relanded = try String(contentsOf: golden, encoding: .utf8)
+        XCTAssertFalse(relanded.contains("DOCTORED"))
+
+        // Keep the new recording: nothing to write — the review just closes,
+        // and the file on disk is exactly what the re-record landed.
+        _ = try await tab.evaluateInTab("document.querySelector('.reviewbar .keepnew').click();")
+        try await settle(times: 3)
+        let reviewAfterKeep = try await count(".reviewbar")
+        XCTAssertEqual(reviewAfterKeep, 0, "keeping closes the review")
+        XCTAssertEqual(try String(contentsOf: golden, encoding: .utf8), relanded,
+                       "keeping writes nothing — the new recording already stood")
+
+        // Doctor and re-record AGAIN, for the other decision: restore. The
+        // production store hands the doctored bytes back, the page confirms,
+        // and the review closes with the stays-red warning.
+        try doctored.write(to: golden, atomically: true, encoding: .utf8)
+        try await recordOnce()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+        _ = try await tab.evaluateInTab("document.querySelector('.reviewbar .restoreold').click();")
+        try await settle(times: 6)
+        let restored = try String(contentsOf: golden, encoding: .utf8)
+        XCTAssertTrue(restored.contains("worn DOCTORED in the middle"),
+                      "the previous recording's bytes are back on disk")
+        let reviewAfterRestore = try await count(".reviewbar")
+        XCTAssertEqual(reviewAfterRestore, 0, "the review closes on the host's confirmation")
+        let note = try await text(".editnote .said")
+        XCTAssertTrue(note.contains("previous recording was restored"), "got \(note)")
+    }
+
+    /// R3/R5 end to end: the run carries the world, and the world is an
+    /// assertion source. The document header says where the file STARTS from
+    /// (its ancestry's world — R5's inherited-state header), the take-key turn
+    /// offers "+ tarnished key" as a chip, and clicking the chip writes a
+    /// `[STATE:]` assertion spelled with the runner-picked token — proved
+    /// sound by re-running the real suite and staying green, which exercises
+    /// parse AND evaluation of exactly what the editor wrote.
+    func testTheDocumentShowsInheritedStateAndAWorldChipWritesAStateAssertion() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // R5: where this file starts from, without opening its ancestors.
+        let entry = try await text(".docmeta .v.entry")
+        XCTAssertTrue(entry.contains("in "), "the header names a location; got \(entry)")
+        XCTAssertTrue(entry.contains("carrying"), "the header names the inventory; got \(entry)")
+
+        // R3: the successful take offers the key as a change worth asserting.
+        let chipLabel = try await tab.evaluateInTab("""
+        (function () {
+          var chips = Array.from(document.querySelectorAll('#docview .worldchip'));
+          var chip = chips.find(function (c) { return c.textContent.indexOf('+ tarnished key') === 0; });
+          return chip ? chip.textContent : chips.map(function (c) { return c.textContent; }).join('|');
+        })();
+        """) as? String
+        XCTAssertEqual(chipLabel, "+ tarnished key",
+                       "the take turn offers the key it took; chips seen: \(chipLabel ?? "none")")
+
+        _ = try await tab.evaluateInTab("""
+        Array.from(document.querySelectorAll('#docview .worldchip'))
+          .find(function (c) { return c.textContent.indexOf('+ tarnished key') === 0; })
+          .click();
+        """)
+        try await settle(times: 6)
+
+        // The assertion is in the file, spelled by the serializer with the
+        // runner's token — never the display name with its space.
+        let written = try String(contentsOf: transcript, encoding: .utf8)
+        XCTAssertTrue(written.contains("[STATE: true, player.inventory contains "),
+                      "the chip wrote a state assertion")
+        XCTAssertFalse(written.contains("contains tarnished key]"),
+                       "the expression carries the token, not the two-word display name")
+
+        // The proof the token round-trips: the suite still passes with the
+        // editor's assertion evaluated by the real runner.
+        try await runTree()
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "the written [STATE:] parses and evaluates true")
     }
 
     /// A selection dragged across two turns is not a claim about either command,

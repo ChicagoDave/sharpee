@@ -22,14 +22,18 @@ import { assertionsByCommandLine, type SaveOutlook, type WrittenAssertion } from
 import type { Promotion } from './promote';
 import {
   ancestry,
+  recordingChanges,
   reparentCandidates,
   storyEnd,
   subtreeFailureCount,
   stemOf,
+  worldBefore,
+  worldDelta,
   type RunModel,
   type StoryEnd,
   type TestNode,
   type Turn,
+  type WorldDelta,
 } from './model';
 
 /** The three modes. Column is the default (D4). */
@@ -194,6 +198,16 @@ export interface ViewActions {
   recordGolden(): void;
   /** Arm or disarm the Record golden confirmation. */
   setConfirmingRecord(confirming: boolean): void;
+  /** Close a re-record review, keeping the recording already on disk (R6). */
+  keepNewRecording(): void;
+  /** Ask the host for the pre-re-record recording back (R6). */
+  restorePreviousRecording(): void;
+  /**
+   * Write a `[STATE: assertTrue, expression]` assertion onto the command at
+   * `commandLine` (R3) — a world change the author clicked, already spelled
+   * with the token that parses.
+   */
+  assertWorldChange(commandLine: number, assertTrue: boolean, expression: string): void;
 }
 
 /** A surface with nothing selected, in the default mode. */
@@ -266,8 +280,12 @@ function turnRow(
   claims: WrittenAssertion[] | null = null,
   surface: Surface | null = null,
   terminal: 'ends' | 'dead' | null = null,
+  delta: WorldDelta | null = null,
 ): HTMLElement {
-  const row = el('div', `turn${turn.passed ? '' : ' bad'}${terminal ? ` ${terminal}` : ''}`);
+  const row = el(
+    'div',
+    `turn${turn.passed ? '' : ' bad'}${terminal ? ` ${terminal}` : ''}${turn.passed && turn.diff ? ' rerecorded' : ''}`,
+  );
   const line = el('button', 'ln', String(turn.line));
   line.type = 'button';
   line.title = `${node.file}:${turn.line}`;
@@ -381,6 +399,61 @@ function turnRow(
       }
     }
     row.append(detail);
+  }
+
+  // The recording's side of a changed turn (R6). On a PASSING turn this is a
+  // re-record's before — the actual output above is the after. On a FAILED
+  // replay it is what the recording expects — the other half of the old-vs-new
+  // failure view. Verbatim from the runner; the page never re-diffs.
+  if (turn.diff && (showOutput || !turn.passed)) {
+    const prior = el('div', 'recordedside');
+    prior.append(
+      el('div', 'recordedlabel', turn.passed ? 'Previously recorded:' : 'The recording expects:'),
+    );
+    prior.append(el('pre', 'recorded', turn.diff.recorded.join('\n')));
+    row.append(prior);
+  }
+
+  // R3: what this command changed in the world, each change a click from
+  // being asserted. The chip emits the runner-picked TOKEN, so the [STATE:]
+  // single-token parse rule never reaches the author. Withheld on an unsound
+  // file for the same reason every other edit control is.
+  if (delta && surface && surface.source?.outlook?.kind !== 'unsound') {
+    const changes = el('div', 'worldrow');
+    const chip = (label: string, title: string, assertTrue: boolean, expression: string): void => {
+      const button = el('button', 'worldchip', label);
+      button.type = 'button';
+      button.title = title;
+      button.addEventListener('click', () =>
+        actions.assertWorldChange(turn.line, assertTrue, expression),
+      );
+      changes.append(button);
+    };
+    if (delta.movedTo) {
+      chip(
+        `→ ${delta.movedTo.name}`,
+        `Assert the player ends this turn in ${delta.movedTo.name}`,
+        true,
+        `player.location = ${delta.movedTo.token}`,
+      );
+    }
+    for (const item of delta.took) {
+      chip(
+        `+ ${item.name}`,
+        `Assert the player is carrying ${item.name} after this turn`,
+        true,
+        `player.inventory contains ${item.token}`,
+      );
+    }
+    for (const item of delta.dropped) {
+      chip(
+        `− ${item.name}`,
+        `Assert the player is no longer carrying ${item.name} after this turn`,
+        false,
+        `player.inventory contains ${item.token}`,
+      );
+    }
+    row.append(changes);
   }
 
   if (claims && claims.length) {
@@ -695,6 +768,19 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   // Tier is a filesystem fact the host reports (ADR-294 D2/D7): a recording
   // exists, or the file's own assertions are what the run checks.
   if (surface.goldens.has(node.file)) cell('Tier', 'golden — the recording is the assertion', 'gold');
+  // R5: where this file STARTS from — its ancestry's world, legible without
+  // holding the ancestors in your head. Shown only when the run captured it.
+  if (node.entryWorld) {
+    const entry = node.entryWorld;
+    const carrying = entry.inventory.length
+      ? entry.inventory.map((item) => item.name).join(', ')
+      : 'nothing';
+    cell(
+      'Starts',
+      `${entry.location ? `in ${entry.location.name}` : 'in an unnamed place'} · carrying ${carrying}`,
+      'entry',
+    );
+  }
   view.append(meta);
 
   // The two faces share the header and the meta row — they are two readings of
@@ -739,11 +825,19 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
           claims?.get(turn.line) ?? null,
           surface,
           end === null ? null : index >= firstDead ? 'dead' : index === firstDead - 1 ? 'ends' : null,
+          worldDelta(worldBefore(node, index), turn.world),
         ),
       ),
     );
   }
   view.append(turns);
+
+  // R6: a re-record is a review, not a blind overwrite. The changed cards
+  // above carry their before/after; this bar is the decision that closes it.
+  const changed = recordingChanges(node);
+  if (changed.length && surface.goldens.has(node.file)) {
+    view.append(reviewBar(changed.length, actions));
+  }
 
   const end = storyEnd(node);
   view.append(fileBar(model, node, surface, actions));
@@ -931,6 +1025,34 @@ function editNote(surface: Surface, actions: ViewActions): HTMLElement {
  * ending, on the parent's document. Trimming any dead tail stays available on
  * the cards themselves (each dead turn keeps its ✕).
  */
+/**
+ * Closes a re-record review (R6): the recording already on disk is the new
+ * one, so keeping it writes nothing — the review was the chance to read what
+ * changed. Restoring asks the host for the pre-run bytes back, and the review
+ * stays open until the host confirms; the restored recording becomes the
+ * baseline again, red until the story matches it.
+ */
+function reviewBar(changed: number, actions: ViewActions): HTMLElement {
+  const bar = el('div', 'reviewbar');
+  bar.append(
+    el(
+      'span',
+      'said',
+      `${changed} turn${changed === 1 ? '' : 's'} changed from the previous recording — the changed cards show both sides.`,
+    ),
+  );
+  const keep = el('button', 'keepnew', 'Keep the new recording');
+  keep.type = 'button';
+  keep.addEventListener('click', () => actions.keepNewRecording());
+  const restore = el('button', 'restoreold', 'Restore the previous recording');
+  restore.type = 'button';
+  restore.title =
+    'Put back the recording as it was before this re-record — the next run replays against it, and stays red until the story matches it again';
+  restore.addEventListener('click', () => actions.restorePreviousRecording());
+  bar.append(keep, restore);
+  return bar;
+}
+
 function terminalBar(node: TestNode, end: StoryEnd): HTMLElement {
   const bar = el('div', 'terminalbar');
   const from = node.parent

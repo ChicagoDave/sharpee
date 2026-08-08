@@ -30,7 +30,7 @@ import { lookupStory } from '../registry.js';
 import { runTreeTestCommand } from './test-tree.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output] [--bless] [--bless-file <path>]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output] [--capture-world] [--bless] [--bless-file <path>]';
 
 /**
  * Run `sharpee test`.
@@ -78,6 +78,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   let json = false;
   let coverage = false;
   let captureOutput = false;
+  let captureWorld = false;
   let bless = false;
   const blessFiles: string[] = [];
   let projectDir: string | undefined;
@@ -92,6 +93,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     else if (arg === '--json') json = true;
     else if (arg === '--coverage') coverage = true;
     else if (arg === '--capture-output') captureOutput = true;
+    else if (arg === '--capture-world') captureWorld = true;
     else if (arg === '--bless') bless = true;
     else if (arg === '--bless-file') {
       // "Record THIS file as a golden" as a tree operation (ADR-294 D1): the
@@ -183,7 +185,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // transcripts before executing any, and its reporting distinguishes unreached
   // from failed (D13). Hand off whole rather than branching through the loop.
   if (tree) {
-    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput, bless, blessFiles });
+    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput, captureWorld, bless, blessFiles });
   }
 
   // In --json mode, stdout is exclusively the NDJSON stream: informational

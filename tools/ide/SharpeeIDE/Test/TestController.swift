@@ -38,6 +38,10 @@ final class TestController: TestRunnerDelegate {
     /// its exit owes the Project pane a refresh, where an ordinary run does not.
     private var runLandsFiles = false
 
+    /// The pre-re-record `.golden` bytes, set aside per transcript (R6) — the
+    /// "restore the previous recording" half of the re-record review.
+    private let goldenBackups = GoldenBackupStore()
+
     /// The view-mode key the tab's choice is remembered under, per project
     /// (ADR-301 D4 — the mode never switches itself, so it must persist).
     private static let modeDefaultsKey = "TestingTabViewMode"
@@ -59,6 +63,9 @@ final class TestController: TestRunnerDelegate {
         tab.onCreateTranscript = { [weak self] name, text in self?.createTranscript(name, text) }
         tab.onTrashTranscript = { [weak self] file in self?.trashTranscript(file) }
         tab.onRecordGolden = { [weak self] file in self?.recordGolden(file) }
+        tab.onRestoreGolden = { [weak self] file in
+            self?.goldenBackups.restore(file, deliverTo: self?.window?.testingTab)
+        }
         if let mode = UserDefaults.standard.string(forKey: Self.modeDefaultsKey) {
             tab.restoreMode(mode)
         }
@@ -103,6 +110,11 @@ final class TestController: TestRunnerDelegate {
             window?.testingTab.setStatus("\(url.lastPathComponent) is not in the discovered suite, so it was not recorded.")
             return
         }
+        // A re-record overwrites the baseline; set the current bytes aside so
+        // the review's "restore the previous recording" has something real to
+        // give back (R6). A first record has no previous recording — and any
+        // stale backup from an earlier session state must not outlive that fact.
+        goldenBackups.setAside(file)
         startRun(blessFile: url)
     }
 
@@ -256,6 +268,53 @@ final class TestController: TestRunnerDelegate {
             tab?.setStatus(status)
         default:
             break // the stream's own run-end is already rendered
+        }
+    }
+}
+
+/// The pre-re-record `.golden` bytes, set aside per transcript path (R6).
+///
+/// A re-record overwrites the baseline every future run is judged against, so
+/// the bytes it replaces are held here for the review's "restore the previous
+/// recording". One sibling-path derivation and one writer, so backup and
+/// restore can never disagree about which file they mean. Owned by
+/// TestController in production; the real-path suite drives this same type
+/// through the same page wiring, so there is no second implementation to
+/// drift.
+@MainActor
+final class GoldenBackupStore {
+
+    private var backups: [String: Data] = [:]
+
+    /// The recording that sits beside a transcript (ADR-294 D7).
+    static func goldenURL(for transcript: URL) -> URL {
+        transcript.deletingPathExtension().appendingPathExtension("golden")
+    }
+
+    /// Sets aside `file`'s current recording bytes as a recording run starts.
+    /// A first record has no previous recording — and any stale backup from an
+    /// earlier record of a since-removed golden must not outlive that fact.
+    func setAside(_ file: String) {
+        backups[file] = try? Data(contentsOf: Self.goldenURL(for: URL(fileURLWithPath: file)))
+    }
+
+    /// Answers the page's `restoreGolden`: writes the set-aside bytes back
+    /// atomically and confirms, or refuses out loud. The page keeps its review
+    /// open on a refusal — a failed restore must never read as one that
+    /// happened.
+    func restore(_ file: String, deliverTo tab: TestingTabViewController?) {
+        guard let backup = backups[file] else {
+            tab?.deliverGoldenRestoreFailure(
+                file: file,
+                message: "No earlier recording from this session is set aside to restore.")
+            return
+        }
+        do {
+            try backup.write(to: Self.goldenURL(for: URL(fileURLWithPath: file)), options: .atomic)
+            backups[file] = nil
+            tab?.deliverGoldenRestored(file: file)
+        } catch {
+            tab?.deliverGoldenRestoreFailure(file: file, message: error.localizedDescription)
         }
     }
 }

@@ -33,6 +33,8 @@ import type {
   RunMode,
   TranscriptEndEvent,
   TranscriptStartEvent,
+  WorldEntityRef,
+  WorldSnapshot,
 } from '@sharpee/ide-protocol/run-events';
 
 /** One executed command, kept for the preview and the document view. */
@@ -52,6 +54,27 @@ export interface Turn {
    * wire did not carry it.
    */
   turn?: number;
+  /**
+   * The story ended during this command (R9). Engine knowledge too — the
+   * `game.ended` announcement, mapped to the wire by the runner. What lets
+   * {@link storyEnd} mark a file terminal when its LAST command ends the
+   * story cleanly, with no dead tail behind it to observe. Absent when the
+   * story did not end this turn or the stream predates the field.
+   */
+  ending?: CommandResultEvent['ending'];
+  /**
+   * Golden divergence (R6). On a FAILED turn: a replay stopped here, and
+   * these are the two sides. On a PASSING turn: a re-record changed this
+   * turn from the previous recording — the review {@link recordingChanges}
+   * collects. Verbatim from the runner; the page never re-diffs.
+   */
+  diff?: CommandResultEvent['diff'];
+  /**
+   * The world after this command (R3), under `--capture-world`. What the
+   * command CHANGED is derived by {@link worldDelta} against the previous
+   * turn's snapshot (or the node's entry snapshot for the first turn).
+   */
+  world?: WorldSnapshot;
 }
 
 /**
@@ -87,6 +110,12 @@ export interface TestNode {
   errorMessage?: string;
   /** 0-based position in the run's execution order, from the authored start. */
   index: number;
+  /**
+   * The world this node ENTERS — its ancestry replayed, its first command not
+   * yet run (R5's inherited-state header). From the authored execution's
+   * `transcript-start`, under `--capture-world`.
+   */
+  entryWorld?: WorldSnapshot;
 }
 
 /** A `phase` pair in flight or finished — the time before the first command. */
@@ -220,6 +249,10 @@ function applyTranscriptStart(model: RunModel, event: TranscriptStartEvent): voi
   node.failed = 0;
   node.expectedFailures = 0;
   node.skipped = 0;
+  // R5: where this file starts from, captured as the authored execution
+  // entered it. Left in place when the stream carries none, so an older
+  // producer does not blank a header a newer run already filled.
+  if (event.world !== undefined) node.entryWorld = event.world;
   model.running = node;
 }
 
@@ -239,6 +272,9 @@ function applyCommandResult(model: RunModel, event: CommandResultEvent): void {
     error: event.error,
     actualOutput: event.actualOutput,
     turn: event.turn,
+    ending: event.ending,
+    diff: event.diff,
+    world: event.world,
   });
 }
 
@@ -378,12 +414,14 @@ export const STORY_OVER_ERROR = 'Engine is not running';
 /**
  * Where the story ended inside this node's last run, if the run showed it.
  *
- * R9: after an ending, every further command errors as {@link STORY_OVER_ERROR}
- * — a losing or winning branch is only expressible as a file whose last live
- * command ends the story, and before this the fact was "discoverable only by
- * going red". Evidence-based on purpose: a file whose LAST command ends the
- * story cleanly emits no wire signal at all today, so it is honestly not
- * marked (R10 — the editor never claims what it cannot substantiate).
+ * R9, evidence-based both ways. The primary evidence is the wire saying so: a
+ * turn carrying `ending` is the one the engine announced `game.ended` on,
+ * which covers the file whose LAST command ends the story cleanly — no dead
+ * tail exists to observe there. Streams that predate the field fall back to
+ * the dead tail itself: after an ending, every further command errors as
+ * {@link STORY_OVER_ERROR}, so the ender is the turn before the first such
+ * error. A clean ending on an old stream stays honestly unmarked (R10 — the
+ * editor never claims what it cannot substantiate).
  */
 export interface StoryEnd {
   /**
@@ -398,6 +436,8 @@ export interface StoryEnd {
 
 /** This node's story ending, or null when its last run never showed one. */
 export function storyEnd(node: TestNode): StoryEnd | null {
+  const ender = node.turns.findIndex((turn) => turn.ending !== undefined);
+  if (ender >= 0) return { endsAt: node.turns[ender], dead: node.turns.slice(ender + 1) };
   const first = node.turns.findIndex((turn) => turn.error === STORY_OVER_ERROR);
   if (first < 0) return null;
   return { endsAt: first > 0 ? node.turns[first - 1] : null, dead: node.turns.slice(first) };
@@ -427,6 +467,70 @@ export function reparentCandidates(model: RunModel, node: TestNode): TestNode[] 
   return [...model.nodes.values()].filter(
     (candidate) => !excluded.has(candidate) && storyEnd(candidate) === null,
   );
+}
+
+/**
+ * What one command changed in the world (R3), derived from the snapshot
+ * before it and the snapshot after it.
+ */
+export interface WorldDelta {
+  /** The location the player arrived in — present only when it changed. */
+  movedTo?: WorldEntityRef;
+  /** Now carried, and not carried before. */
+  took: WorldEntityRef[];
+  /** Carried before, and no longer. */
+  dropped: WorldEntityRef[];
+}
+
+/**
+ * Diffs two consecutive world snapshots into the changes a turn card offers
+ * as `[STATE:]` assertions (R3). Null when either side is missing — a change
+ * cannot be claimed against an unknown before — or when nothing changed.
+ * Identity is the TOKEN, the same key the emitted assertion will resolve by.
+ */
+export function worldDelta(
+  before: WorldSnapshot | undefined,
+  after: WorldSnapshot | undefined,
+): WorldDelta | null {
+  if (!before || !after) return null;
+  const movedTo =
+    after.location && before.location?.token !== after.location.token ? after.location : undefined;
+  const carried = new Set(before.inventory.map((item) => item.token));
+  const carriedNow = new Set(after.inventory.map((item) => item.token));
+  const took = after.inventory.filter((item) => !carried.has(item.token));
+  const dropped = before.inventory.filter((item) => !carriedNow.has(item.token));
+  if (!movedTo && took.length === 0 && dropped.length === 0) return null;
+  return { ...(movedTo !== undefined ? { movedTo } : {}), took, dropped };
+}
+
+/**
+ * The snapshot a turn's delta reads AGAINST: the previous turn's, or the
+ * node's entry snapshot for the first turn — the same chain R5's header
+ * starts.
+ */
+export function worldBefore(node: TestNode, index: number): WorldSnapshot | undefined {
+  return index > 0 ? node.turns[index - 1].world : node.entryWorld;
+}
+
+/**
+ * The turns of `node`'s last run that a re-record changed from the previous
+ * recording (R6's review). A PASSING turn carrying a diff can only mean
+ * "recorded anew, differently": a replay either matches (no diff) or fails at
+ * its first divergence, so the passing-diff combination is the record tier's
+ * signature and needs no run-mode flag to recognize.
+ */
+export function recordingChanges(node: TestNode): Turn[] {
+  return node.turns.filter((turn) => turn.passed && turn.diff !== undefined);
+}
+
+/**
+ * Ends a re-record review: drops every turn's diff so the cards return to
+ * their plain reading. Called when the author keeps the new recording, or
+ * when the host confirms the previous one was restored — either way the
+ * before/after walk is over.
+ */
+export function dismissRecordingChanges(node: TestNode): void {
+  for (const turn of node.turns) delete turn.diff;
 }
 
 /**

@@ -110,9 +110,10 @@ final class TestRunner {
     /// removed from production while every test still passes, because the test
     /// supplies it itself. `--capture-output` is exactly that kind of flag: drop
     /// it and the tab still renders, just with the story's words missing from
-    /// every passing turn.
+    /// every passing turn. `--capture-world` is another: drop it and the
+    /// inherited-state header and the per-turn world changes quietly vanish.
     static func treeRunArguments(storyPath: String, blessFile: String? = nil) -> [String] {
-        var arguments = ["test", storyPath, "--tree", "--capture-output", "--json"]
+        var arguments = ["test", storyPath, "--tree", "--capture-output", "--capture-world", "--json"]
         if let blessFile {
             arguments.append(contentsOf: ["--bless-file", blessFile])
         }

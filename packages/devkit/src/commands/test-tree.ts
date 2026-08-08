@@ -27,6 +27,8 @@ export interface TreeTestOptions {
   json?: boolean;
   /** Carry `actualOutput` on every command result, not only failures. */
   captureOutput?: boolean;
+  /** Carry a world snapshot on every command result and node entry (R3/R5). */
+  captureWorld?: boolean;
   /** Record/overwrite every node's golden instead of diffing (ADR-294 D1). */
   bless?: boolean;
   /**
@@ -62,7 +64,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
   // covers the runner and its report, not the wire, which has one owner.
   const { RunEventStream, ndjsonEventLine } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
-  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, bless = false, blessFiles = [] } = options;
+  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false, bless = false, blessFiles = [] } = options;
 
   const stream = json
     ? new RunEventStream((event) => {
@@ -160,17 +162,19 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
       storyName,
       bless,
       blessFiles,
+      captureWorld,
       observer: stream && {
         onCommandResult: (command) =>
           stream.commandResult(currentFile ?? '', command, captureOutput),
       },
       treeObserver: stream && {
-        onNodeStart: ({ node, replayed, commandCount }) => {
+        onNodeStart: ({ node, replayed, commandCount, entryWorld }) => {
           currentFile = node.transcript.filePath;
           stream.transcriptStart(node.transcript.filePath, executionIndex++, {
             commandCount,
             ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
             ...(replayed ? { replayed: true } : {}),
+            ...(entryWorld !== undefined ? { world: entryWorld } : {}),
           });
         },
         onNodeEnd: ({ result }) => stream.transcriptEnd(result),

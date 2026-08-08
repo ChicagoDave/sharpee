@@ -120,6 +120,46 @@ export interface TranscriptStartEvent extends RunEventEnvelope {
    * collapses these rather than reading them as duplicate turns.
    */
   replayed?: boolean;
+  /**
+   * The world as this transcript ENTERS — after its ancestry replayed, before
+   * its first command (R5's inherited-state header: where the file starts
+   * from, without holding its ancestors in your head). Present when the
+   * producer captured world state (`--capture-world`).
+   */
+  world?: WorldSnapshot;
+}
+
+/**
+ * One entity as a {@link WorldSnapshot} names it.
+ *
+ * `token` is the single whitespace-free token that parses inside a `[STATE:]`
+ * expression — an alias when the entity has one, else its id. A consumer that
+ * emits state assertions emits the TOKEN, never `name`, so the grammar's
+ * single-token rule never reaches an author (R3). The runner picks it, because
+ * only the runner's own `findEntity` can vouch that it resolves back.
+ */
+export interface WorldEntityRef {
+  /** Display name — what a surface shows. */
+  name: string;
+  /** The single token a `[STATE:]` expression resolves back to this entity. */
+  token: string;
+}
+
+/**
+ * A compact world snapshot: where the player is and what they carry (R3/R5).
+ *
+ * Deliberately small — the two facts the runner's `[STATE:]` evaluator can
+ * provably check (`player.location = …`, `player.inventory contains …`).
+ * Entity trait states (open/lit/worn) are NOT here: the evaluator does not
+ * reliably read trait properties yet, and offering an assertion that cannot
+ * be evaluated would be the editor claiming what it cannot substantiate.
+ * A consumer derives "what changed" by comparing consecutive snapshots.
+ */
+export interface WorldSnapshot {
+  /** The player's location. Absent when the seam could not name one. */
+  location?: WorldEntityRef;
+  /** What the player carries, in world order. */
+  inventory: WorldEntityRef[];
 }
 
 /** One command's outcome, emitted as the command completes. */
@@ -154,6 +194,40 @@ export interface CommandResultEvent extends RunEventEnvelope {
    * error result) or its harness predates the field.
    */
   turn?: number;
+  /**
+   * The story ended during this command — the engine announced it
+   * (`game.ended`) on the turn this command executed. This is what lets a
+   * consumer mark a file terminal when its LAST command ends the story
+   * cleanly: no later command exists to die against the stopped engine, so
+   * without this field the ending leaves no wire trace at all (R9's honest
+   * limit, now closed). `restart` is deliberately not a value here — the
+   * engine stops but the harness reboots the story within the same command,
+   * so nothing ended from the transcript's point of view. `abort` is not
+   * carried either: an aborted story is a runtime failure surfaced through
+   * `error`, not an ending an author would badge. Absent when the story did
+   * not end this turn or the producer predates the field.
+   */
+  ending?: 'victory' | 'defeat' | 'quit';
+  /**
+   * Golden divergence: the recorded lines and the actual lines, verbatim
+   * (build-date banner masked on both sides — the runner's one normalization,
+   * ADR-294 D6). Present in two situations, distinguishable by `passed`:
+   * a REPLAY that diverged (`passed: false` — the failure view's old-vs-new),
+   * and a RE-record over an existing recording (`passed: true` — record mode
+   * never stops, so every changed turn carries its before/after and a
+   * consumer can walk the whole review while the new recording lands).
+   * `channel` names the surface the first mismatch lies in (a declared
+   * channel id, or the runner's prose surface constant).
+   */
+  diff?: { recorded: string[]; actual: string[]; channel?: string };
+  /**
+   * The world AFTER this command (R3). A consumer diffs consecutive
+   * snapshots — this one against the previous command's, or against the
+   * transcript-start snapshot for the first command — to show what the
+   * command changed and offer each change as a `[STATE:]` assertion.
+   * Present when the producer captured world state (`--capture-world`).
+   */
+  world?: WorldSnapshot;
 }
 
 /**
@@ -335,7 +409,8 @@ export function isTranscriptStartEvent(value: unknown): value is TranscriptStart
     typeof value.index === 'number' &&
     (value.commandCount === undefined || typeof value.commandCount === 'number') &&
     (value.parent === undefined || typeof value.parent === 'string') &&
-    (value.replayed === undefined || typeof value.replayed === 'boolean')
+    (value.replayed === undefined || typeof value.replayed === 'boolean') &&
+    (value.world === undefined || isWorldSnapshot(value.world))
   );
 }
 
@@ -352,7 +427,40 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
     typeof value.skipped === 'boolean' &&
     (value.error === undefined || typeof value.error === 'string') &&
     (value.actualOutput === undefined || typeof value.actualOutput === 'string') &&
-    (value.turn === undefined || typeof value.turn === 'number')
+    (value.turn === undefined || typeof value.turn === 'number') &&
+    (value.ending === undefined ||
+      value.ending === 'victory' ||
+      value.ending === 'defeat' ||
+      value.ending === 'quit') &&
+    (value.diff === undefined || isCommandDiff(value.diff)) &&
+    (value.world === undefined || isWorldSnapshot(value.world))
+  );
+}
+
+/** The `diff` member of a command-result: two verbatim line arrays. */
+function isCommandDiff(value: unknown): value is { recorded: string[]; actual: string[]; channel?: string } {
+  if (!isObject(value)) return false;
+  const lines = (v: unknown): boolean => Array.isArray(v) && v.every((line) => typeof line === 'string');
+  return (
+    lines(value.recorded) &&
+    lines(value.actual) &&
+    (value.channel === undefined || typeof value.channel === 'string')
+  );
+}
+
+/** Narrow a value to a valid {@link WorldEntityRef}. */
+function isWorldEntityRef(value: unknown): value is WorldEntityRef {
+  if (!isObject(value)) return false;
+  return typeof value.name === 'string' && typeof value.token === 'string';
+}
+
+/** Narrow a value to a valid {@link WorldSnapshot}. */
+function isWorldSnapshot(value: unknown): value is WorldSnapshot {
+  if (!isObject(value)) return false;
+  return (
+    (value.location === undefined || isWorldEntityRef(value.location)) &&
+    Array.isArray(value.inventory) &&
+    value.inventory.every(isWorldEntityRef)
   );
 }
 

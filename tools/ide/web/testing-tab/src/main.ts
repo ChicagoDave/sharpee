@@ -32,7 +32,15 @@ import {
   type Draft,
 } from './grammar';
 import { promotionFor } from './promote';
-import { applyEvent, createModel, descendantCount, stemOf, type RunModel, type TestNode } from './model';
+import {
+  applyEvent,
+  createModel,
+  descendantCount,
+  dismissRecordingChanges,
+  stemOf,
+  type RunModel,
+  type TestNode,
+} from './model';
 import { byId } from './dom';
 import {
   createSurface,
@@ -257,6 +265,20 @@ const actions: ViewActions = {
   removeAssertion(commandLine: number, index: number) {
     applyEdit((text, file) => removeAssertionFrom(text, file, commandLine, index), 'the removal');
   },
+  assertWorldChange(commandLine: number, assertTrue: boolean, expression: string) {
+    // R3: the chip already spelled the expression with the runner-picked
+    // token, so this is an ordinary assertion write — same path, same undo,
+    // same refusals as a promoted selection.
+    applyEdit(
+      (text, file) =>
+        addAssertion(text, file, commandLine, {
+          type: 'state-assert',
+          assertTrue,
+          stateExpression: expression,
+        }),
+      `[STATE: ${assertTrue}, ${expression}]`,
+    );
+  },
   setConfirmingRecord(confirming: boolean) {
     surface.confirmingRecord = confirming;
     scheduleRender();
@@ -270,6 +292,24 @@ const actions: ViewActions = {
     // host re-reports `goldens` when the recording is on disk.
     surface.editNote = '';
     host.recordGolden(node.file);
+    scheduleRender();
+  },
+  keepNewRecording() {
+    const node = surface.opened;
+    if (!node) return;
+    // Nothing to write: the re-record already landed the new recording. The
+    // review was the chance to read what changed; keeping it just closes it.
+    dismissRecordingChanges(node);
+    surface.editNote = 'The new recording stands — future runs replay against it.';
+    scheduleRender();
+  },
+  restorePreviousRecording() {
+    const node = surface.opened;
+    if (!node) return;
+    // The review stays on the page until the host confirms the bytes are
+    // back — a restore that failed must not read as a restore that happened.
+    surface.editNote = 'Restoring the previous recording…';
+    host.restoreGolden(node.file);
     scheduleRender();
   },
   undo() {
@@ -457,6 +497,23 @@ const host = installHost({
     // The surface is untouched: the file on disk is what it was, and that is
     // exactly what the source face is still showing.
     surface.editNote = `The assertion was not written. ${message}`;
+    scheduleRender();
+  },
+  onGoldenRestored(file) {
+    // The review closes only now, on confirmation. The last run's outputs
+    // still diverge from the restored baseline, and the note says what that
+    // means rather than letting the next red run look like a new surprise.
+    const node = model.nodes.get(file);
+    if (node) dismissRecordingChanges(node);
+    if (surface.opened?.file === file) {
+      surface.editNote =
+        'The previous recording was restored — the next run replays against it, and stays red until the story matches it again.';
+    }
+    scheduleRender();
+  },
+  onGoldenRestoreFailed(file, message) {
+    // The review stays: the new recording is still the one on disk.
+    surface.editNote = `${stemOf(file)}'s previous recording was not restored. ${message}`;
     scheduleRender();
   },
 });

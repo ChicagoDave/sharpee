@@ -504,6 +504,37 @@ describe('sharpee test --tree --json (ADR-302 over the run-event stream)', () =>
     expect({ authored, replayed }).toEqual({ authored: 3, replayed: 1 });
   });
 
+  it('--capture-world carries world snapshots on node entries and command results (R3/R5)', async () => {
+    const { code, records } = await run(['--json', '--tree', '--capture-world', treeDir]);
+    expect(code).toBe(0);
+
+    // Every transcript-start carries the world its node ENTERS, and every
+    // command-result the world after the command — the runner names the
+    // player's location with a token its own [STATE:] evaluator resolves.
+    const starts = records.filter((r) => r.type === 'transcript-start') as Array<{
+      world?: { location?: { name: string; token: string }; inventory: unknown[] };
+    }>;
+    expect(starts.length).toBeGreaterThan(0);
+    for (const start of starts) {
+      expect(start.world?.location?.name).toBeTruthy();
+      expect(start.world?.location?.token).not.toMatch(/\s/);
+      expect(Array.isArray(start.world?.inventory)).toBe(true);
+    }
+    const commands = records.filter((r) => r.type === 'command-result') as Array<{
+      world?: { location?: { token: string } };
+    }>;
+    expect(commands.length).toBeGreaterThan(0);
+    expect(commands.every((c) => c.world?.location?.token !== undefined)).toBe(true);
+
+    // And without the flag, the stream stays exactly as small as it was.
+    const bare = await run(['--json', '--tree', treeDir]);
+    expect(
+      bare.records
+        .filter((r) => r.type === 'transcript-start' || r.type === 'command-result')
+        .every((r) => !('world' in r)),
+    ).toBe(true);
+  });
+
   it('announces a blocked subtree as unreached, naming what blocked it (D13)', async () => {
     // A failing root blocks both children. They must appear in the stream —
     // absent nodes would render as a tree that silently lost two tests, and

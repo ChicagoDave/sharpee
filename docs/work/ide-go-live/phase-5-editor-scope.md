@@ -634,6 +634,59 @@ Evidence, 2026-08-08:
 - `[STATE:]` offered from the world rather than from the text (R3). **Needs the
   world — open question 1.**
 
+#### Slice 3 remainder — the world on the wire. Done 2026-08-08 (session 3c1b4d)
+
+Open question 1 resolved the cheap way: no new engine event and no separate
+introspection call — the runner already holds `engine.world` (it evaluates
+`[STATE:]` there), so it can also SAY what it sees. `--capture-world` (devkit;
+the IDE always passes it) makes both tiers attach a `WorldSnapshot` — player
+location + inventory — to every executed command result, and the tree runner
+captures each node's ENTRY snapshot (ancestry replayed, first command not yet
+run) onto `transcript-start`.
+
+Every entity in a snapshot is `{ name, token }`: the display name, and the
+single whitespace-free token the evaluator's own `findEntity` resolves back
+(an identity alias when one qualifies, else the id). The token is picked by
+the runner because only the runner can vouch for the round-trip — R3's
+"the editor emits the alias that parses, so the single-token rule never
+reaches the author", made literal.
+
+- **R5 header**: the document's meta row grows
+  "Starts · in ⟨location⟩ · carrying ⟨a, b⟩" from the entry snapshot.
+- **R3 chips**: each card shows what its command changed — `→ place`,
+  `+ item`, `− item` — derived page-side by `worldDelta` over consecutive
+  snapshots (token-keyed, the same key the emitted assertion resolves by).
+  Clicking writes `[STATE: true, player.location = token]` /
+  `[STATE: true|false, player.inventory contains token]` through the standard
+  addAssertion → applyEdit path: same undo, same refusals, serializer
+  spelling.
+- **Honest v1 bound, named**: location and inventory only — the two forms
+  `evaluateStateExpression` provably checks. Trait-state offers (open/lit/
+  worn) are NOT offered: the evaluator's property lookup does not survive the
+  real world-model's Map-based traits, so offering them would emit assertions
+  that cannot be evaluated (R10). That is evaluator work for another slice.
+
+Evidence, 2026-08-08: branch-tester `world-capture.test.ts` (5: per-command
+snapshots with alias-first/id-fallback tokens, off-by-default, worldless seam
++ crash omit, golden tier, live `captureWorldSnapshot`); run-observer + guard
+carriage tests; tab vitest 82 passed (+4: fold keeps entry/after snapshots,
+`worldDelta` took/dropped/moved + null sides, `[STATE:]` serializer spelling
+through addAssertion). CLI probe on fernhill: 161 passed with 214 snapshots,
+real tokens (`summons`, `court`, `shears`). Real-path
+`testTheDocumentShowsInheritedStateAndAWorldChipWritesAStateAssertion`: the
+header reads off the ancestry's world, "+ tarnished key" clicked on the
+rendered page writes the token-spelled `[STATE:]` into the fixture, and the
+re-run stays green — parse AND evaluation of exactly what the editor wrote.
+Xcode `passedTests: 460, failedTests: 0` (xcresult); fixtures restored.
+
+`mutation-verification` named three gaps, all closed same session: the
+`keepnew` button now clicked in the real-path re-record test (review closes,
+disk untouched); tree-runner's `entryWorld` wiring covered at the vitest
+level (`world-capture.test.ts`, root vs child entry snapshots — 395 passed);
+devkit's `--capture-world` covered by a real-CLI test beside its
+`--capture-output` precedent (snapshots on every start and result; flag off →
+no `world` key anywhere — 19 passed).
+
 #### 3c — Reparenting. Done 2026-08-08
 
 The affordance the Trash refusal already promised ("…or reparent them"). A
@@ -711,6 +764,51 @@ frozen `fuse-lose` as shipped) emits no wire signal at all, so it is not
 marked — R10, the editor never claims what it cannot substantiate. Marking the
 clean case needs the wire to carry "the story ended this turn", a
 `packages/ide-protocol` + emitter change: flagged for David, not assumed.
+*Closed 2026-08-08 — see "The clean case" below.*
+
+#### 3b remainder — the clean case, on the wire. Done 2026-08-08
+
+David's go-ahead for the platform change, same session. Smaller than the limit
+feared: the engine already announces every ending — `stop()` emits
+`game.ending`/`game.won`|`game.lost`|`game.quit`/`game.ended` and bootstrap's
+event buffer lands them on exactly the command that caused it — so no engine
+or bootstrap change at all. Three thin layers:
+
+- **Wire**: `CommandResultEvent.ending?: 'victory' | 'defeat' | 'quit'` —
+  additive and optional, `turn`'s twin. `restart` is deliberately not a value
+  (the harness reboots in place — the story continues); `abort` is not either
+  (a runtime failure, already carried as `error`). The guard enforces the
+  closed set.
+- **Runner** (branch-tester, both tiers): one place maps `game.ended` to the
+  field (`endingFrom`), read inside the `try` like `turn` so a throwing
+  wrapper can never pin a stale ending; `run-event-stream` carries it like it
+  carries `turn`.
+- **Tab**: `model.storyEnd` prefers the field — a turn carrying `ending` is
+  the ender, dead = whatever follows — and falls back to the exact-match dead
+  tail for streams predating the field. The whole document face (badge,
+  terminal note, branch refusal) and `reparentCandidates`' terminal exclusion
+  fell out of `storyEnd` unchanged.
+
+Evidence, 2026-08-08:
+- `npx vitest run` in the tab → 76 passed (+3: clean ending marks the last
+  turn ender with an empty dead tail; the field splits before a dead tail
+  too; a cleanly-ended file drops out of the reparent picker).
+- branch-tester `npx vitest run` → 385 passed (8 new in
+  `ending-field.test.ts`: per-tier carriage, restart/abort exclusion,
+  eventless seam omits, stale-read-on-crash, golden record/replay/divergence);
+  transcript-tester 264 passed (+1: the stream hop's `ending` carriage and
+  key-absence, `turn`'s twin — the one gap `mutation-verification` found,
+  closed); ide-protocol 43 passed (guard accepts the closed set, rejects
+  `restart`/`abort`).
+- Real path, the frozen fixtures untouched: `sharpee test --tree --json` on
+  fernhill → 161 passed, exit 0, and exactly two command-results carry the
+  field — `fuse-lose`'s blast turn (`"ending":"defeat"`) and `win`'s last
+  command (`"ending":"victory"`). `git status` clean on `branch-stories` and
+  `tools/ide/test-fixtures`.
+- New real-path test `testACleanEndingMarksTheFileTerminalWithNothingDeadToTrim`:
+  the UNMODIFIED frozen `fuse-lose` renders terminal — ender badged on the
+  blast `> wait`, zero dead turns, no append bar, branch refused.
+- `npx tsc --noEmit` at the repo root → clean.
 
 Evidence, 2026-08-08:
 - `npx vitest run` in the tab → `67 passed` (3 new: no-ending runs including
@@ -823,7 +921,7 @@ runner, so chain-member goldens were refused with the message that says to use
   land `concealment.golden` on disk, keep the run green, and flip the surface
   to Re-record + tier badge via the production disk scan.
 
-#### 5b — per-command accept on re-record: NOT built, and why
+#### 5b — per-command accept on re-record: the two constraints (built below)
 
 The R6 sentence's second half. Two constraints found before building it:
 
@@ -841,6 +939,44 @@ The R6 sentence's second half. Two constraints found before building it:
 
 Decision deferred to David with this scope note: the honest 5b is a runner
 mode + a wire addition, which is its own platform conversation.
+
+#### 5b — Done 2026-08-08 (session 3c1b4d, David's "finish phase 5")
+
+The runner mode already existed under another name: **record mode never stops
+at a divergence** — it records everything — so a re-record IS the
+"replay past divergence, carrying diffs" this section asked for. Constraint 1
+stands untouched: per-command accept means REVIEW, never merge; the two
+decisions offered are exactly "accept the whole new recording" and "keep the
+old one".
+
+- **Runner**: record mode over an existing parseable `.golden` diffs each
+  captured turn against it with the one canonical `diffTurn` (normalization
+  stays runner-side — the drift this phase kept refusing never happens) and
+  attaches `diff` to that turn's PASSING result while the new recording still
+  lands. First records, unparseable priors, and command-text mismatches say
+  nothing.
+- **Wire**: `CommandResultEvent.diff?: { recorded, actual, channel? }` —
+  additive; also carried on replay-divergence FAILURES, giving the failure
+  view its old-vs-new pair from the same field.
+- **Tab**: changed cards show "Previously recorded:" beneath the new output;
+  a review bar counts the changes and closes the review. **Keep the new
+  recording** writes nothing (it is already on disk). **Restore the previous
+  recording** asks the host: `GoldenBackupStore` (Swift) set the old bytes
+  aside when the recording run started and writes them back atomically,
+  confirming `goldenRestored` / refusing `goldenRestoreFailed` — the review
+  stays open on a refusal, so a failed restore never reads as one that
+  happened.
+
+Evidence, 2026-08-08: branch-tester `rerecord-review.test.ts` (4: changed turn
+carries both sides + overwrite lands; first record silent; edited command not
+compared; corrupt prior replaced silently); run-observer + guard carriage
+tests; real-path
+`testARerecordShowsBothSidesAndCanRestoreThePreviousRecording` — doctors the
+baseline recording, re-records through the production argument list, reads
+both sides and the count off the rendered page, restores through the
+production store, and finds the doctored bytes back on disk. Xcode
+`Executed 459 tests, with 0 failures` at that point; `git status` clean on
+fixtures.
 
 ---
 
@@ -865,6 +1001,9 @@ mode + a wire addition, which is its own platform conversation.
 1. **Where the world state for `[STATE:]` comes from (R3).** The run-event wire
    carries text, not world. Offering state assertions from the world means either
    a new event or a separate introspection call. Deferred to slice 3, named now.
+   *Resolved 2026-08-08 — neither: the runner reads `engine.world` directly
+   (it always could — the `[STATE:]` evaluator lives there) and the snapshots
+   ride the existing events under `--capture-world`. See "Slice 3 remainder".*
 2. **Does an edit invalidate the run in view?** The cards show the last run's
    output; editing a command makes that output stale for every turn after it. The
    honest options are re-run on edit (R1's "cheap enough to do after every line")

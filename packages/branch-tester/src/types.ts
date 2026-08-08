@@ -418,11 +418,53 @@ export interface CommandResult {
   turn?: number;
 
   /**
-   * Golden replay divergence (ADR-294 D1): the recorded output and the
-   * actual output for this turn, verbatim. Present exactly when a golden
-   * diff failed this command; the reporter renders the line diff.
+   * The story ended during this command — the engine emitted `game.ended`
+   * with a real ending (`victory`/`defeat`/`quit`) on this turn. What lets
+   * the IDE mark a file terminal when its LAST command ends the story
+   * cleanly (R9): such a command leaves no dead tail behind it to observe.
+   * `restart` never sets this (the harness reboots in place — the story
+   * continues); `abort` never sets it (a runtime failure, carried as
+   * `error`, not an ending).
    */
-  diff?: { recorded: string[]; actual: string[] };
+  ending?: 'victory' | 'defeat' | 'quit';
+
+  /**
+   * Golden divergence (ADR-294 D1): the recorded output and the actual
+   * output for this turn, verbatim. Present when a golden REPLAY failed this
+   * command (the reporter renders the line diff), and on a RE-record over an
+   * existing recording for every turn that changed (`passed` stays true —
+   * record mode never stops; the diff is the review, R6). `channel` names
+   * the surface the first mismatch lies in.
+   */
+  diff?: { recorded: string[]; actual: string[]; channel?: string };
+
+  /**
+   * The world AFTER this command (R3), captured under `captureWorld`:
+   * player location and inventory, each named with a display name and the
+   * single token a `[STATE:]` expression resolves back to the entity.
+   * Deliberately only the two facts the state evaluator can provably check.
+   * (Own copy of the wire shape, like the rest of this type — ADR-302 D15.)
+   */
+  world?: WorldSnapshot;
+}
+
+/** One entity as a {@link WorldSnapshot} names it (R3). */
+export interface WorldEntityRef {
+  /** Display name — what a surface shows. */
+  name: string;
+  /** The single whitespace-free token `[STATE:]`'s evaluator resolves back. */
+  token: string;
+}
+
+/**
+ * A compact world snapshot: where the player is and what they carry (R3/R5).
+ * A consumer derives "what changed" by comparing consecutive snapshots.
+ */
+export interface WorldSnapshot {
+  /** The player's location. Absent when the seam could not name one. */
+  location?: WorldEntityRef;
+  /** What the player carries, in world order. */
+  inventory: WorldEntityRef[];
 }
 
 /**
@@ -573,6 +615,13 @@ export interface RunnerOptions {
    * Absent (unit stubs, legacy callers) → the check is skipped.
    */
   assembledChannels?: string[];
+  /**
+   * Capture a {@link WorldSnapshot} after every executed command (R3), and
+   * at each tree node's entry (R5's inherited-state header). Off by default:
+   * the IDE's runs always ask for it; a CLI consumer's green stream stays
+   * exactly as small as it was.
+   */
+  captureWorld?: boolean;
   /** Story name for recording provenance; falls back to the `story:` header. */
   storyName?: string;
   /** Locale for recording provenance when the transcript declares none (D19). */

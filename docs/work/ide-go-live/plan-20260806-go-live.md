@@ -272,13 +272,21 @@ is Phase 5's required input.
 
 **Status: CURRENT** — scoped 2026-08-08, session acc261, in
 `phase-5-editor-scope.md`. The shape: the editor is the Testing tab's document
-view grown a probe, in five slices. Slices 1–3a done (session acc261). Slice 4
-(turn budget) done and slice 5's record/re-record gesture (5a) done — session
-648342, 2026-08-08, on David's go-ahead for the `turn` wire field and the
-#239 `--bless` port (which needed `resolvedConfig`/`blessFiles` seams; see the
-scope doc). Still open in the scope: slice 3's remainder (inherited state,
-terminal marking, reparenting), in-place command editing, and 5b (per-command
-accept on re-record — deferred with a named soundness constraint).
+view grown a probe, in five slices. All buildable work is done: slices 1–3a
+(session acc261); slice 4 (turn budget) and 5a (record/re-record) — session
+648342, on David's go-ahead for the `turn` wire field and the #239 `--bless`
+port; 2f (in-place retype), 3b (terminal marking, R9), 3c (reparenting), and
+the ADR-290 D7 sidebar refresh — session a45deb, commit e7d47119. The three
+platform remainders all closed 2026-08-08, session 3c1b4d, on David's
+go-ahead ("finish phase 5"): R9's clean case (`CommandResultEvent.ending`),
+5b's re-record review (`diff` on the wire; record mode already replays past
+divergence), and R3/R5's world on the wire (`WorldSnapshot` under
+`--capture-world`: inherited-state header + click-to-assert `[STATE:]`
+chips). See the scope doc's Done sections. **The slice list is now fully
+built.** One named v1 bound: state-assertion offers cover location and
+inventory only — trait-state offers need `[STATE:]` evaluator work first
+(scope doc, slice 3 remainder). The phase stays CURRENT because its
+acceptance is Phase 6 — Fernhill's transcripts written through the editor.
 
 **Goal.** Create, edit and delete transcript tests from inside the IDE.
 

@@ -54,6 +54,10 @@ export interface HostInbound {
   trashed(file: string): void;
   /** It could not be removed, and why. */
   trashFailed(file: string, message: string): void;
+  /** `file`'s previous recording is back on disk. Answers `restoreGolden`. */
+  goldenRestored(file: string): void;
+  /** It could not be restored, and why. The review stays on the page. */
+  goldenRestoreFailed(file: string, message: string): void;
 }
 
 /** What the page asks of the host. */
@@ -110,6 +114,14 @@ export interface HostOutbound {
    * the tab like any other. When it finishes, the host re-reports `goldens`.
    */
   recordGolden(file: string): void;
+  /**
+   * Put back the recording `file` had before its last re-record (R6): the
+   * host set the bytes aside when the recording run started, and this asks
+   * for them again. Answered by `goldenRestored`/`goldenRestoreFailed`. The
+   * restored recording is the baseline again — the next run replays against
+   * it, and stays red until the story's output matches it once more.
+   */
+  restoreGolden(file: string): void;
   /** The page is built and ready to receive lines. */
   ready(): void;
 }
@@ -132,6 +144,8 @@ export interface PageHandlers {
   onCreateFailed(message: string): void;
   onTrashed(file: string): void;
   onTrashFailed(file: string, message: string): void;
+  onGoldenRestored(file: string): void;
+  onGoldenRestoreFailed(file: string, message: string): void;
 }
 
 interface WebKitBridge {
@@ -195,6 +209,8 @@ export function installHost(handlers: PageHandlers): HostOutbound {
     createFailed: (message) => handlers.onCreateFailed(message),
     trashed: (file) => handlers.onTrashed(file),
     trashFailed: (file, message) => handlers.onTrashFailed(file, message),
+    goldenRestored: (file) => handlers.onGoldenRestored(file),
+    goldenRestoreFailed: (file, message) => handlers.onGoldenRestoreFailed(file, message),
   };
   (window as unknown as Record<string, unknown>).__sharpeeTesting = inbound;
 
@@ -218,6 +234,7 @@ export function installHost(handlers: PageHandlers): HostOutbound {
     createTranscript: (name, text) => send({ action: 'createTranscript', name, text }),
     trashTranscript: (file) => send({ action: 'trashTranscript', file }),
     recordGolden: (file) => send({ action: 'recordGolden', file }),
+    restoreGolden: (file) => send({ action: 'restoreGolden', file }),
     ready: () => send({ action: 'ready' }),
   };
 }

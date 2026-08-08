@@ -246,6 +246,55 @@ describe('RunEventStream sequences what the observer reports', () => {
     expect('turn' in (events[1] as object)).toBe(false);
   });
 
+  it('carries the story ending when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+
+    stream.commandResult('/t/a.transcript', { ...passing, ending: 'victory' });
+    stream.commandResult('/t/a.transcript', passing);
+
+    const endings = events.map((e) => (e.type === 'command-result' ? e.ending : undefined));
+    expect(endings[0]).toBe('victory');
+    expect(endings[1]).toBeUndefined();
+    // Key-absence for the same reason as `turn` above.
+    expect('ending' in (events[1] as object)).toBe(false);
+  });
+
+  it('carries the golden diff when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+    const diff = { recorded: ['You north.'], actual: ['A wall.'] };
+
+    stream.commandResult('/t/a.transcript', { ...passing, diff });
+    stream.commandResult('/t/a.transcript', passing);
+
+    expect(events[0].type === 'command-result' ? events[0].diff : undefined).toEqual(diff);
+    // Key-absence for the same reason as `turn` above.
+    expect('diff' in (events[1] as object)).toBe(false);
+  });
+
+  it('carries the world snapshot on command results and transcript starts, and omits it when not reported', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+    const world = { location: { name: 'Hall', token: 'hall' }, inventory: [] };
+
+    stream.commandResult('/t/a.transcript', { ...passing, world });
+    stream.commandResult('/t/a.transcript', passing);
+    stream.transcriptStart('/t/a.transcript', 0, { world });
+    stream.transcriptStart('/t/a.transcript', 1);
+
+    expect(events[0].type === 'command-result' ? events[0].world : undefined).toEqual(world);
+    expect('world' in (events[1] as object)).toBe(false);
+    expect(events[2].type === 'transcript-start' ? events[2].world : undefined).toEqual(world);
+    expect('world' in (events[3] as object)).toBe(false);
+  });
+
   it('serializes one newline-terminated JSON object per event', () => {
     const { events, stream } = collect();
     stream.runStart('tests', 1);

@@ -123,6 +123,79 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, turn: '7' })).toBe(false);
   });
 
+  it('accepts a command-result with and without a story ending, rejecting values off the closed set', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'wait',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, ending: 'victory' })).toBe(true);
+    expect(isCommandResultEvent({ ...base, ending: 'defeat' })).toBe(true);
+    expect(isCommandResultEvent({ ...base, ending: 'quit' })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    // `restart` and `abort` are deliberately NOT endings on this wire.
+    expect(isCommandResultEvent({ ...base, ending: 'restart' })).toBe(false);
+    expect(isCommandResultEvent({ ...base, ending: 'abort' })).toBe(false);
+  });
+
+  it('accepts a command-result with and without a golden diff, rejecting malformed line arrays', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'east',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, diff: { recorded: ['You east.'], actual: ['A wall.'] } })).toBe(true);
+    expect(
+      isCommandResultEvent({ ...base, diff: { recorded: [], actual: ['A wall.'], channel: 'main' } }),
+    ).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, diff: { recorded: ['ok'] } })).toBe(false);
+    expect(isCommandResultEvent({ ...base, diff: { recorded: ['ok'], actual: [7] } })).toBe(false);
+    expect(isCommandResultEvent({ ...base, diff: 'changed' })).toBe(false);
+  });
+
+  it('accepts world snapshots on transcript-start and command-result, rejecting malformed ones', () => {
+    const world = {
+      location: { name: 'Entrance Hall', token: 'hall' },
+      inventory: [{ name: "solicitor's letter", token: 'summons' }],
+    };
+    const start: TranscriptStartEvent = {
+      ...envelope,
+      type: 'transcript-start',
+      file: '/t/a.transcript',
+      index: 0,
+    };
+    expect(isTranscriptStartEvent({ ...start, world })).toBe(true);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: [] } })).toBe(true);
+    expect(isTranscriptStartEvent(start)).toBe(true);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: 'letter' } })).toBe(false);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: [{ name: 'x' }] } })).toBe(false);
+
+    const result: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 4,
+      input: 'north',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...result, world })).toBe(true);
+    expect(isCommandResultEvent(result)).toBe(true);
+    expect(isCommandResultEvent({ ...result, world: { location: 'hall', inventory: [] } })).toBe(false);
+  });
+
   it('accepts every transcript-end status, including the two that never ran', () => {
     const base = {
       ...envelope,

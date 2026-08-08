@@ -465,8 +465,51 @@ body {
   background: var(--project); border-top: 1px solid var(--border);
   font-size: 10.5px; color: var(--fg-dim);
 }
+
+/* ── document: a re-record's review (R6) ──────────────────── */
+/* A changed turn carries both sides; the flag is quiet, like the ender's —
+   nothing failed, something moved, and the bar below is the decision. */
+.turn.rerecorded { border-left: 2px solid var(--warn); }
+.turn .recordedside { grid-column: 2 / -1; margin: 1px 0 6px; }
+.turn .recordedlabel {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
+  color: var(--warn); margin-bottom: 1px;
+}
+.turn .recorded {
+  margin: 0; font-family: var(--mono); font-size: 10px; color: var(--fg-dim);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  border-left: 2px solid var(--border); padding-left: 8px;
+}
+.reviewbar {
+  flex: none; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 7px 14px; background: var(--project); border-top: 1px solid var(--warn);
+  font-size: 10.5px; color: var(--fg-dim);
+}
+.reviewbar .said { flex: 1; min-width: 0; }
+.reviewbar .keepnew {
+  flex: none; font: inherit; font-size: 11px; font-weight: 600;
+  color: var(--on-accent); background: var(--accent);
+  border: 1px solid var(--accent); border-radius: var(--radius); padding: 2px 10px; cursor: pointer;
+}
+.reviewbar .restoreold {
+  flex: none; font: inherit; font-size: 11px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 10px; cursor: pointer;
+}
+.reviewbar .restoreold:hover { border-color: var(--warn); color: var(--warn); }
 .filebar .branchinput:disabled { opacity: .6; }
 .filebar .branchgo:disabled { opacity: .5; cursor: default; }
+
+/* ── document: what the command changed in the world (R3) ── */
+/* Each chip is one click from being a [STATE:] assertion — quiet until
+   hovered, like the claim controls, because the changes are an offer. */
+.turn .worldrow { grid-column: 2 / -1; margin: 1px 0 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+.turn .worldchip {
+  font-family: var(--mono); font-size: 10px; color: var(--fg-dim);
+  background: var(--project); border: 1px solid var(--border);
+  border-radius: 9px; padding: 1px 8px; cursor: pointer;
+}
+.turn .worldchip:hover { border-color: var(--accent); color: var(--accent); }
+.docmeta .v.entry { color: var(--fg-dim); }
 
 /* ── document: what the file claims about a turn ──────────── */
 .turn .claims { grid-column: 2 / -1; margin: 2px 0 6px; }

@@ -23,10 +23,14 @@ import {
   applyEvent,
   createModel,
   descendantCount,
+  dismissRecordingChanges,
+  recordingChanges,
   reparentCandidates,
   storyEnd,
   STORY_OVER_ERROR,
   subtreeFailureCount,
+  worldBefore,
+  worldDelta,
 } from '../src/model';
 
 let seq = 0;
@@ -292,11 +296,37 @@ describe('the run-event fold', () => {
   });
 });
 
-// R9: after an ending, every further command errors as EXACTLY the runner's
-// normalized string — the one wire signal there is. The derivation must split
-// the run at the first such error, never guess beyond the evidence, and never
-// fire on an ordinary failure.
+// R9, two kinds of evidence: the wire naming the ender (`ending`, which alone
+// covers a file whose LAST command ends the story cleanly), and — for streams
+// predating the field — the dead tail, where every further command errors as
+// EXACTLY the runner's normalized string. The derivation must never guess
+// beyond either, and never fire on an ordinary failure.
 describe('storyEnd', () => {
+  it('marks a clean ending — the last command carries `ending`, and there is no dead tail', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'wait' }),
+      command(ROOT, { line: 6, input: 'wait', ending: 'defeat' }),
+      end(ROOT, { status: 'passed', passed: 2 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('wait');
+    expect(found?.endsAt?.line).toBe(6);
+    expect(found?.dead).toEqual([]);
+  });
+
+  it('splits at the `ending`-carrying turn when a dead tail follows it too', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'cut the fuse', ending: 'victory' }),
+      command(ROOT, { line: 6, input: 'look', passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('cut the fuse');
+    expect(found?.dead.map((turn) => turn.input)).toEqual(['look']);
+  });
+
   it('is null for a run that never showed an ending — including ordinary failures', () => {
     const model = fold([
       start(ROOT),
@@ -364,5 +394,108 @@ describe('reparentCandidates', () => {
     ]);
     const stems = reparentCandidates(model, model.nodes.get(DEEP)!).map((n) => n.stem);
     expect(stems).toEqual(['arrival']);
+  });
+
+  it('excludes a CLEANLY-ended file the same way — the wire field is the only sign it has', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      command(KEY, { ending: 'defeat' }),
+      end(KEY, { status: 'passed', passed: 1 }),
+      start(DEEP, { parent: ROOT }),
+      end(DEEP),
+    ]);
+    const stems = reparentCandidates(model, model.nodes.get(DEEP)!).map((n) => n.stem);
+    expect(stems).toEqual(['arrival']);
+  });
+});
+
+// R6: a re-record is a review. A PASSING turn carrying a diff is the record
+// tier's signature — a replay either matches (no diff) or FAILS at its first
+// divergence — so the review needs no run-mode flag to recognize itself.
+describe('recordingChanges', () => {
+  const DIFF = { recorded: ['You east.'], actual: ['A wall bars the way.'] };
+
+  it('collects passing turns that changed from the previous recording, and only those', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'north' }),
+      command(ROOT, { line: 6, input: 'east', diff: DIFF }),
+      command(ROOT, { line: 8, input: 'look', passed: false, diff: DIFF, error: 'diverged' }),
+      end(ROOT, { status: 'failed', passed: 2, failed: 1 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    // The failed turn's diff is a replay divergence — a failure to show, not a
+    // review to close — and the unchanged turn has nothing to say.
+    expect(recordingChanges(node).map((turn) => turn.input)).toEqual(['east']);
+    expect(node.turns[1].diff).toEqual(DIFF);
+  });
+
+  it('kept separate from world snapshots — a diff review and a snapshot coexist on one turn', () => {
+    const world = { location: { name: 'Hall', token: 'hall' }, inventory: [] };
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'east', diff: DIFF, world }),
+      end(ROOT, { status: 'passed', passed: 1 }),
+    ]);
+    const turn = model.nodes.get(ROOT)!.turns[0];
+    expect(turn.diff).toEqual(DIFF);
+    expect(turn.world).toEqual(world);
+  });
+
+  it('dismissing the review drops every diff, both kinds, and is idempotent', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'east', diff: DIFF }),
+      command(ROOT, { line: 6, input: 'look', passed: false, diff: DIFF, error: 'diverged' }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    dismissRecordingChanges(node);
+    expect(node.turns.every((turn) => !('diff' in turn))).toBe(true);
+    expect(recordingChanges(node)).toEqual([]);
+    dismissRecordingChanges(node);
+    expect(recordingChanges(node)).toEqual([]);
+  });
+});
+
+// R3/R5: the world on the wire. The fold keeps the entry snapshot and each
+// turn's after-snapshot; `worldDelta` derives what a command changed, keyed
+// by TOKEN — the same key an emitted [STATE:] assertion resolves by.
+describe('world snapshots and their deltas', () => {
+  const HALL = { name: 'Entrance Hall', token: 'hall' };
+  const STUDY = { name: 'Study', token: 'study' };
+  const LETTER = { name: "solicitor's letter", token: 'summons' };
+  const KEY = { name: 'tarnished key', token: 'key' };
+
+  it('keeps the entry snapshot from the authored start and each turn\'s after-snapshot', () => {
+    const entry = { location: HALL, inventory: [LETTER] };
+    const after = { location: HALL, inventory: [LETTER, KEY] };
+    const model = fold([
+      start(ROOT, { world: entry }),
+      command(ROOT, { input: 'take key', world: after }),
+      end(ROOT, { status: 'passed', passed: 1 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    expect(node.entryWorld).toEqual(entry);
+    expect(node.turns[0].world).toEqual(after);
+    // The first turn's before IS the entry snapshot; later turns chain.
+    expect(worldBefore(node, 0)).toEqual(entry);
+    expect(worldBefore(node, 1)).toEqual(after);
+  });
+
+  it('derives took/dropped/movedTo by token, and nothing from an unknown before', () => {
+    const before = { location: HALL, inventory: [LETTER] };
+    const after = { location: STUDY, inventory: [KEY] };
+    const delta = worldDelta(before, after);
+    expect(delta?.movedTo).toEqual(STUDY);
+    expect(delta?.took).toEqual([KEY]);
+    expect(delta?.dropped).toEqual([LETTER]);
+    // No before, no claims — a change cannot be derived from one side.
+    expect(worldDelta(undefined, after)).toBeNull();
+    expect(worldDelta(before, undefined)).toBeNull();
+    // Nothing changed, nothing offered.
+    expect(worldDelta(before, { location: HALL, inventory: [LETTER] })).toBeNull();
   });
 });
