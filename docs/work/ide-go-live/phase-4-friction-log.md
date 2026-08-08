@@ -17,24 +17,72 @@ first-time author.
 
 ## Before writing a single line
 
-### F1 — The author-facing docs never show a transcript file
+### F1 — The author docs stop exactly where the work starts
 
-`website/src/app/chord-writer/building-playing-and-testing/content.mdx` is the
-page an author lands on. It explains the Testing tab, explains *why* tests run
-as a tree, and even carries a callout about running a `continues:` tree flat.
-It never shows what a `.transcript` file looks like. Not one line of syntax, not
-one example, no link to a page that has one.
+> **Corrected after the exercise.** This originally read "The author-facing docs
+> never show a transcript file." That is **wrong**, and it was wrong because I
+> searched the Chord Writer section and never looked at Chord's own
+> getting-started section. `website/src/app/chord/getting-started/compose-and-run`
+> shows a correct, minimal transcript. The corrected finding below is narrower
+> and, I think, more useful.
 
-So the very first thing an author needs — "what do I type into the file?" — has
-no author-facing answer at all. I had to leave the author docs entirely.
+The site does show a transcript — one, in getting-started:
 
-**Weight:** high. This is the entry point.
+```text
+title: The lantern is in hand at the start
+story: orchard
+description: The player starts in the Landing carrying the brass lantern.
+---
+
+> look
+[OK: contains "Landing"]
+
+> inventory
+[OK: contains "brass lantern"]
+```
+
+That is the whole author-facing corpus on the format. Everything past two
+`contains` assertions is undocumented for authors:
+
+| Not on the site | Why it matters |
+| --- | --- |
+| `continues:` and the tree | The thing the whole suite is built on (ADR-302) |
+| `seed:` | Without it every run is a fresh random seed (F8) |
+| `[OK]` + `text` … `end text` | The golden tier — the only assertion that catches F25's text defects |
+| `[STATE:]` | The one assertion that survives prose edits (F17) |
+| `[EVENT:]`, `[CHANNEL:]`, `[SKIP]` | Three whole families, `[CHANNEL:]` documented nowhere at all (F24) |
+
+Worse than the omissions: that page recommends **`--chain`** ("runs several
+transcripts against one continuing game state") and never mentions `--tree`.
+ADR-302 D10 retires `--chain` for trees precisely because a tree run has no
+other meaning. So the one place the site talks about running more than one
+transcript points at the retired mechanism.
+
+Meanwhile `chord-writer/building-playing-and-testing` — the page an IDE author
+lands on — explains at length *why* tests form a tree, carries a callout warning
+that running a `continues:` tree flat "fails as a large number of
+ordinary-looking test failures", and never once names the field as `continues:`
+or says a file without it is a root.
+
+So the shape is: hello-world is covered, the tree is motivated but not
+specified, and everything else is absent.
+
+**Weight:** high, and this is the one that matters. Per the standing direction
+that sharpee.net is the maintained home of author docs and `docs/reference/`
+lags, this gap is on the site, which is where it counts.
 
 ### F2 — The reference doc that does have the format teaches removed grammar
 
-`docs/reference/transcript-testing.md` is the only document in the repo with
-the file format in it. It is not on sharpee.net and it is out of date in ways
-that would actively break an author's first file:
+> **Corrected after the exercise**: this originally called
+> `docs/reference/transcript-testing.md` "the only document in the repo with the
+> file format in it." There is a second — `docs/guides/transcript-testing.md` —
+> which I never found during the exercise despite looking. That I missed it is
+> itself the F1 discoverability finding; that it is *also* wrong (three full
+> chapters of removed grammar, per issue #213 T1) makes the point below worse,
+> not better.
+
+`docs/reference/transcript-testing.md` is not on sharpee.net and is out of date
+in ways that would actively break an author's first file:
 
 | Doc teaches | Reality |
 | --- | --- |
@@ -51,7 +99,31 @@ the document says the IDE itself writes that form, and gets a parse error whose
 message tells them the form was removed. The document is not merely stale; the
 parser has a named rejection for four of the things it teaches.
 
-**Weight:** high. Wrong docs are worse than missing docs — F1 at least fails fast.
+**Weight:** ~~high~~ **low — re-weighted after the exercise.** David's ruling:
+`docs/reference/` is low priority and mostly a repo-centric reference; sharpee.net
+is the author canon. That is right, and it reverses this entry's original claim
+that "wrong docs are worse than missing docs."
+
+An author following sharpee.net never opens this file, so its staleness costs
+them nothing. What it cost *me* was an afternoon, because I went looking for a
+format spec, found this, and believed it — which is a finding about **me
+searching the repo like a contributor rather than the site like an author**, not
+about the document.
+
+The real weight lives in F1: the *site* stops after hello-world. Fixing that is
+the work. Fixing this file is #213 T1's business, and #213 is low priority by
+the same ruling.
+
+Two things here do still matter regardless of where the doc sits, because they
+are claims about the system rather than stale prose:
+
+- The "Fenced Literal Payloads" section (F18) documents a syntax that shipped
+  and was replaced the same day. It is ordinary staleness, not a false claim —
+  see the correction on F18 — but it is still the section that cost me an
+  afternoon, because anyone grepping the repo for the format finds it and it
+  reads as current.
+- The `[CHANNEL:]` family (F24) is absent from *every* document, site included.
+  That is an F1 problem wearing this file's clothes.
 
 ### F3 — The format's real spec is source code, in two copies
 
@@ -167,7 +239,11 @@ an undocumented header field.
 **Weight:** high. Everything downstream — every removed-directive error message
 — assumes a pinned seed the author was never told to pin.
 
-### F9 — The failure message for an unasserted command names a flag that does not exist
+### F9 — The failure message names `--bless`, which the author CLI does not have
+
+> **Corrected after the exercise** (see "Corrections" at the end). The original
+> entry said `--bless` did not exist. It does — just not where the message is
+> shown. The corrected finding is sharper, not weaker.
 
 A command with no assertion is a hard error, which is right. The message is:
 
@@ -181,11 +257,30 @@ $ ./sharpee test branch-stories/fernhill --tree --bless
 test: unknown flag '--bless'
 ```
 
-The one instruction the error gives cannot be followed from the author CLI. An
-author reading this reasonably concludes recording exists and they have the
-invocation slightly wrong, and goes looking for it.
+`--bless` is real. It exists on the platform bundle
+(`scripts/bundle-entry.js:201`) and on `packages/transcript-tester/src/cli.ts:83`.
+It does **not** exist on `packages/devkit` — `sharpee test`, the author tool,
+and the only test command an author is ever told to run.
 
-**Weight:** high — it is a dead end presented as the recommended path.
+Comparing the two flag sets is the actual finding:
+
+| Flag | bundle (`dist/cli/sharpee.js`) | `sharpee test` (author) |
+| --- | --- | --- |
+| `--tree`, `--chain`, `--stop-on-failure`, `--verbose` | ✓ | ✓ |
+| `--json`, `--coverage`, `--capture-output` | ✓ | ✓ |
+| **`--bless`** (golden recordings, ADR-294 D1) | ✓ | **✗** |
+| **`--watch`** (targeted rerun + inline bless, ADR-294 D14) | ✓ | **✗** |
+| **`--vary`**, **`--search`**, `--search-budget` | ✓ | **✗** |
+
+So the two headline testing-intelligence features — goldens and watch — are
+available for in-repo platform work and unavailable to the authors they were
+designed for, while the author CLI's own runner instructs authors to use one of
+them. I read the error, tried the flag, got `unknown flag`, concluded recording
+did not exist, and never used goldens for the rest of the exercise. The baseline
+has `recorded.transcript`; the mode was there the whole time.
+
+**Weight:** high, and higher than first written — this is a product-surface gap,
+not a message bug.
 
 ### F10 — Two different help texts, and the useful flags are only in the second
 
@@ -361,24 +456,49 @@ length, markdown's wrap-in-four rule, five named validation errors, and a
 closing caveat claiming the collision window was "checked across all 183"
 transcripts in the repository.
 
-None of it is real. Both parsers define:
+> **Corrected 2026-08-07, and this was my worst error of the session.** The
+> original entry said "None of it is real … a full specification, with invented
+> verification, for a syntax that was never implemented in the shape described."
+> That is **false**, and it accused the document of fabrication. David: "there
+> WAS a backtick syntax — I hated it." Checked, and he is right:
+>
+> - `e49c0460` (2026-07-28) — *"ADR-287 fenced literal payloads, all 3 phases
+>   complete"*, implementing `const FENCE_DELIMITER = /^\`{3,}$/`, exactly the
+>   grammar the doc describes: three-or-more backticks, closed by a run of the
+>   same length, markdown's wrap-in-four rule for nested runs.
+> - `a217b8dd` (**the same day**) — *"ADR-287 reopened under its own revisit
+>   note and re-decided: backtick fences replaced by `text` … `end text` at
+>   column 0."* Indentation was considered and rejected on evidence.
+>
+> So the syntax shipped, and was replaced within a day. The doc was **accurate
+> when written** and was never updated when the decision was revisited hours
+> later. The "checked across all 183 transcripts" line I called invented was
+> almost certainly a true statement at the time — #213 notes there are 216 now,
+> which is consistent with it being a real count that has since grown.
+
+The current syntax is a `text` … `end text` block. Both parsers define:
 
 ```
 const BLOCK_OPEN = 'text';
 const BLOCK_CLOSE = 'end text';
 ```
 
-The actual syntax is a `text` … `end text` block (ADR-287 D1). I wrote the
-backtick form for Mrs Kettle's quoted dialogue, straight from the document, and
-got `[OK: contains] with no inline payload requires a text block on the next
-line` — an error message that is correct, and that contradicts the only
-documentation of the feature.
+I wrote the backtick form for Mrs Kettle's quoted dialogue, straight from the
+document, and got `[OK: contains] with no inline payload requires a text block
+on the next line` — a correct error contradicting the documentation.
 
-This is worse than F2's four removed forms. Those were features that existed and
-were withdrawn. This is a full specification, with invented verification, for a
-syntax that was never implemented in the shape described.
+**Weight:** ~~high~~ **low.** This is the same class as F2's removed forms after
+all — a feature that existed and was withdrawn — and it is the mildest case of
+it, because the withdrawal happened within hours of shipping. `docs/reference/`
+is low priority (F2), so nobody following the site meets this. Only someone
+grepping the repo for the format does. That was me.
 
-**Weight:** high.
+**What I got wrong, and why it matters.** I inferred fabrication from absence:
+the syntax was not in the parser, so I concluded it had never been there and the
+verification claim was invented. One `git log -S` would have shown otherwise —
+the same command I ran to check *after* being corrected. Reaching for
+"the document is dishonest" before "the document is old" is a bad instinct, and
+it produced a confident accusation in a work artifact and in two GitHub comments.
 
 ### F19 — `[STATE:]` entity names must be a single token on the left, but not on the right
 
@@ -627,3 +747,98 @@ one, and it says the editor's job is to make modes and long-schedule beats
 | `frost-seal` | (root) | 7 | Conditional blocked exit, stacked refusals |
 | `phrasebooks` | (root) | 18 | ADR-250 book switching, per-book first-time counters |
 | `channels` | (root) | 15 | `[CHANNEL:]` family, `windable`, gated-channel silence (F23) |
+
+---
+
+## Corrections (made after the exercise, on reading the existing issue backlog)
+
+The rewrite was done blind to the issue tracker, which was right for the
+exercise and wrong for accuracy. Checking afterwards changed three things.
+
+0. **F1 was wrong, and it was the headline.** The author-facing site *does*
+   show a transcript, in `chord/getting-started/compose-and-run`. I searched the
+   Chord Writer section, did not find one, and generalised to "the author docs
+   never show a transcript file." Corrected in place above: the real finding is
+   that the site covers hello-world and stops — no `continues:`, no `seed:`, no
+   goldens, no `[STATE:]`/`[EVENT:]`/`[CHANNEL:]` — and recommends `--chain`,
+   which ADR-302 D10 retires for trees.
+
+0a. **F2 is re-weighted from high to low.** `docs/reference/` is a repo-centric
+   reference and low priority; sharpee.net is the author canon. An author never
+   opens that file. That I did is a finding about how I searched, not about the
+   document.
+
+1. **F9 — `--bless` exists.** It is on the platform bundle and on
+   `transcript-tester`'s CLI; it is absent from `sharpee test` (devkit). The
+   corrected entry is a stronger finding than the original: goldens and
+   `--watch` are in-repo-only, so the two testing-intelligence features are
+   unavailable to authors. Corrected in place above.
+
+2. **F2 — there is a second document.** `docs/guides/transcript-testing.md`
+   exists and I never found it. Corrected in place above.
+
+3. **F18 — the fence finding was overstated into an accusation, and is now
+   downgraded.** I wrote that the backtick syntax "never existed" and that the
+   doc carried "invented verification". Both false. It shipped in `e49c0460`
+   and was replaced by `text` … `end text` in `a217b8dd` **the same day**
+   (2026-07-28), after ADR-287 was reopened and re-decided. The doc was correct
+   when written. #213 T1's "never shipped" wording is wrong for the same reason.
+   Corrected in place above, with the weight dropped from high to low.
+
+   The dungeo fixture I cited as evidence — `adr-287-fenced-literals.transcript`,
+   whose *name* says fenced literals and whose *content* uses `text` /
+   `end text` — is not proof of fabrication. It is the artifact of exactly that
+   same-day rename: the commit says the grammar was "carried through
+   parser/types/runner/reporter, the IDE serializer, and the one in-repo
+   fixture." The filename simply did not follow.
+
+**What was already tracked.** Issue #213 T1 covers rewriting both transcript
+docs and had already found most of F2 and F18, plus two things I did not:
+`[FAIL: contains …]` is documented as an inverted check but the parser treats
+everything after `FAIL:` as an opaque reason, and the golden tier is absent from
+the reference entirely. Issues #192/#193/#194 cover the IDE's Record/Bless flow
+— #193's opening line is David's report that "the bless feature is implemented,
+but it's unclear how anyone would use it," which is the same wall F9 hit from
+the CLI side a week later.
+
+**What this says about the exercise.** The overlap is corroboration, not waste:
+two independent passes, one auditing docs against source and one writing tests
+as an author, converged on the same defects. The findings that did *not* overlap
+are the ones only the author path could produce — F7 (no way to script the
+game), F14 and the two-command-root convention, F20 (named-instrument tool
+gates), F23 (a guidance message that pins a bug), and the nine defects in F26.
+
+---
+
+## Where the findings went (filed 2026-08-07)
+
+| Issue | Covers | Findings |
+| --- | --- | --- |
+| [#239](https://github.com/ChicagoDave/sharpee/issues/239) | `sharpee test` lacks `--bless` and `--watch` — goldens and watch are in-repo-only | F9 |
+| [#240](https://github.com/ChicagoDave/sharpee/issues/240) | `sharpee play` drops piped commands; no scriptable runner for authors | F7, F11 |
+| [#241](https://github.com/ChicagoDave/sharpee/issues/241) | Tool gates need the instrument named even when held | F20 |
+| [#242](https://github.com/ChicagoDave/sharpee/issues/242) | Entity topics scope-degrade to the generic `ask` reply | F12 |
+| [#243](https://github.com/ChicagoDave/sharpee/issues/243) | Gated channels unassertable; the message pins the bug | F23, F24 |
+| [#244](https://github.com/ChicagoDave/sharpee/issues/244) | No count assertion; a transcript cannot continue past an ending | F22, F27 |
+| [#245](https://github.com/ChicagoDave/sharpee/issues/245) | Nine Fernhill defects (behaviour + text) | F25, F26 |
+| [#246](https://github.com/ChicagoDave/sharpee/issues/246) | **sharpee.net stops after hello-world**; recommends the retired `--chain` | F1, F4, F8, F24 |
+| [#213 comment](https://github.com/ChicagoDave/sharpee/issues/213#issuecomment-5224574657) | Repo-side doc rewrite — corroborates T1, adds `[CHANNEL:]`, seeds, `[STATE:]` asymmetry. **Low priority** per the ruling below. | F2, F18, F19 |
+| [#241 comment](https://github.com/ChicagoDave/sharpee/issues/241#issuecomment-5224585914) | The cookbook's tool-in-command page reframes F20 as a design question | F20 |
+
+**Where the documentation findings landed.** David's ruling mid-session:
+`docs/reference/` is low priority and mostly a repo-centric reference —
+sharpee.net is the author canon. That re-sorted this section. The author-facing
+gap (F1, F4) became **#246** and is the one worth doing; the repo-side rewrite
+stayed a comment on #213, which is low priority by the same ruling.
+
+**Not filed**, as pre-existing or environmental: F3 (two parser copies), F5 (stale in-repo bundle), F6 (`sharpee play` path
+handling — minor, and #240 touches the same file), F10 (two help texts), F13/F14/
+F15/F16/F17/F21 (authoring semantics — these are Phase 5 editor input, captured
+in `phase-5-editor-requirements.md`, not platform bugs).
+
+F14's turn-budget entanglement and the two-command-root convention deserve a
+decision at some point — whether the convention gets written down, or whether
+the runner should report a transcript's turn span so descendants stop inheriting
+a hidden input. It is R4 in the requirements doc and the highest-value
+correctness item there, but it is a design question rather than a bug, so it has
+no issue.

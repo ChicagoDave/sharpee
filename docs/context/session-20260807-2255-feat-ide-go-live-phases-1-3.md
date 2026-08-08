@@ -82,13 +82,97 @@ David reframed the phase mid-session from "reproduce the 22-file baseline" to "p
 
 ---
 
+## Continuation — 2026-08-08 (session 6ad977 crossed midnight; work below is unrecorded until now)
+
+Everything below happened after commit `60393d68` (the Docs→Documentation rename + Phase 4, recorded above). No new plan phase started — Phase 4 stays COMPLETE, Phase 5 has not begun. Tool calls for the full session now total 341 (up from 167 at the point above), per `.session-state-6ad977.json`.
+
+### Loose-ends routing — 8 GitHub issues filed
+
+Phase 4's findings were routed to the tracker [verified — `gh issue list`, all nine present]:
+
+- **#239** — `sharpee test` lacks `--bless`/`--watch`; goldens and watch mode exist only on the platform bundle (`scripts/bundle-entry.js:201,203`) and `packages/transcript-tester/src/cli.ts:83`, absent from `packages/devkit`, whose own runner tells authors to use a flag it doesn't have.
+- **#240** — `sharpee play` drops every piped command after the first (`packages/devkit/src/commands/play.ts:71` re-arms `rl.question` only after an `await`; EOF's `rl.on('close')` wins the race). No author-facing way to script a story run.
+- **#241** — tool gates require the instrument NAMED even when held, identical refusal text either way. Corrected afterward (see below) — it's a design question, not a plain bug.
+- **#242** — entity topics silently fall through to the generic `ask` reply when the topic entity is out of scope.
+- **#243** — a `gated by` channel is silent in transcripts and unassertable [verified by probe — 46 ticking turns, `[CHANNEL: clock, is absent]` passes every time].
+- **#244** — transcript grammar gaps: no count assertion, and a transcript cannot continue past a story ending (`Error: Engine is not running` is misclassified as a command error).
+- **#245** — nine Fernhill defects from the rewrite (win text twice, post-death phrase ordering, stale vine description, noun-prefix mis-take, folly refusal bypass, hiding-spot no-op, Smoke follows unfed, article/pluralisation bugs, the Dungeo grue line).
+- **#246** — sharpee.net documents the hello-world transcript and stops: no `continues:`/tree, no `seed:`, no goldens, no `[STATE:]`/`[EVENT:]`/`[CHANNEL:]`; recommends `--chain`, which ADR-302 D10 retires for trees.
+- Commented on **#213** (docs sweep) twice: once corroborating, once correcting (see F1/F18 below).
+
+### Three factual corrections to Phase 4's own findings
+
+Recorded in a new Corrections section of `docs/work/ide-go-live/phase-4-friction-log.md`:
+
+- **F9 overstated.** Reported `--bless` as "a flag that does not exist" — it exists on the platform bundle and transcript-tester CLI, just not on `sharpee test`. Corrected finding is sharper (author-tool parity gap), not weaker.
+- **F1 wrong, and it was the headline finding.** Claimed the author-facing docs never show a transcript file; they do, at `website/src/app/chord/getting-started/compose-and-run`. I searched only the Chord Writer section and generalised. Corrected to the real gap: the site covers hello-world and stops (#246). F2 re-weighted high→low after David ruled `docs/reference/` low-priority.
+- **F18 — accused a document of fabrication.** Wrote that the backtick-fence syntax "never existed in either parser" and its verification claim was "invented." Both false — David: "there WAS a backtick syntax — I hated it." Verified: `e49c0460` (2026-07-28) shipped `FENCE_DELIMITER = /^`{3,}$/` as ADR-287 all three phases; `a217b8dd` the SAME DAY replaced it after ADR-287 was reopened [verified — `git log -S`, both commits confirmed]. Retracted in the friction log, in R8 of `phase-5-editor-requirements.md`, and in a correction comment on #213. Root error: inferring fabrication from absence instead of running `git log -S`.
+
+Also corrected #241's own framing in a follow-up comment: `website/src/app/chord/cookbook/containers-and-locks/opening-with-a-tool-in-the-command` documents `open X with Y` as a consulted-command-entity path (ADR-230 D3b) and notes the trait-side requirement is "TypeScript territory today" — a design question, not a bug, running the opposite polarity from Fernhill's worked example.
+
+### Memory updated
+
+`project_sharpee_net_canon_docs.md` — added David's history of the docs arc (repo docs → website → Book → Chord, each step moving the landing place further from `docs/`), extended scope to `docs/guides/`, and added the rule: when a repo doc describes something the code lacks, run `git log -S` before calling it wrong — never escalate "stale" to "invented" [verified — file content read back, contains the F18 retraction language].
+
+### New proposal: `docs/proposals/docs-consolidation.md`
+
+Produced via `/devarch:proposal`, reviewed via `/devarch:proposal-review` twice (initial + re-review after edits). 14 items; **P-1 through P-8 ACCEPTED**, P-9 through P-14 PROPOSED [verified — grep of the file's own Status markers matches this split].
+
+Inventory: `docs/` held 31 top-level directories + `README.md`. Keep-list settled at eight: `architecture`, `context`, `design`, `work`, `proposals`, `book`, `core-concepts`, `brainstorm`.
+
+- **P-1** — `docs/unofficial/` is an in-repo quarantine: unmaintained, unpublished, out of scope for proposal/planning/research, and using anything requires moving it out first. Path revised from repo-root to `docs/unofficial/` to match DevArch's `resolution-anchors.sh` default.
+- **P-2** — `docs/guides/` + `docs/reference/` (22 files) move to quarantine; the site already carries 53 `chord/stdlib` + 55 `chord/guide` + 23 `chord/cookbook` pages superseding them.
+- **P-3** — three archive trees resolve to two destinations by content: `docs/archive/` (27 dirs, 24 with a `plan.md`) → `docs/work/archive/<slug>/` per DevArch Phase 3; `_archive/` (site/web-save/website, 39M) + `_archived/` (28 loose docs) → `docs/unofficial/archive/`. Principle: an archived plan is history to consult; archived documentation is junk mail.
+- **P-4** — fourteen git-cold trees archived; `brainstorm/` excluded (it's a DevArch output dir, not dead).
+- **P-5** — `actions/`, `api/`, `publish/` archived, plus `scripts/publish-npm.sh`.
+- **P-6** — reversed same day: first ruled "stays," then moved to `docs/unofficial/` with **#247** filed to revisit its purpose. Consequence: the engine has no citable written contract until that issue is picked up.
+- **P-7** — `docs/book/` stays. **P-8** — `docs/proposals/` stays (mechanically forced by ADR-0008 D5 + DEVARCH.md rule 18a).
+
+Two signal errors caught and corrected, both recorded in the proposal itself:
+- **git-cold ≠ dead** — `brainstorm/` was cold because `/devarch:brainstorm` hadn't run, not because it was abandoned.
+- **git-warm ≠ alive** — `actions/` was warm because commit `85d54966` was actively dismantling it (deleting its `package.json`). Abandoned package `@sharpee/actions` v0.1.0, last substantive commit 2026-01-14.
+
+Review findings that mattered: P-3 self-contradicted after the DevArch read (fixed, re-accepted); **P-14 had drifted outside the `## Items` section**, which would have made it invisible to `session-planner` and `proposal-review` (fixed); P-4's title said "thirteen" over a 14-directory scope (fixed); `unofficial/` vs `docs/unofficial/` inconsistent across four items (fixed).
+
+Also found: `packages/sharpee/README.md` (published to npm) carries three absolute GitHub links into `docs/`; the accepted items break two (L96 `docs/getting-started/authors/`, L97 `docs/api/`) — the most externally-visible breakage in the consolidation, invisible to a relative-path grep. Recorded in P-12.
+
+### DevArch interlock
+
+Read `../devarch/docs/work/plan-lifecycle-and-folder-controls/plan.md` at David's direction. It overlaps this proposal in four places, and DevArch owns all four: Phases 1-3 (plan terminal state, disposition prompt, archival), Phase 4 (`Read|Grep|Glob` gate on `unofficial/`), Phase 5 (immutability gate on six anchors).
+
+That plan names MY inference — "`packages/media` exists — shipped" — as its own cautionary case, under a governing constraint that disposition is the user's call: "not on a timer, not on a heuristic, and **not on evidence**." I had reported six long-CURRENT plans as shipped/obsolete; those are questions, not findings.
+
+**P-9 rewritten** around David's rule: "only active plans cannot be swept" + "we're only ever working on one plan at a time." `.current-plan` names the active plan; that target stays, all others get explicit disposition and move. Backlog: **110 targets, 1 active (`ide-go-live`), 109 needing disposition** — larger than #214's "86 stale entries." Second self-correction here: I initially measured "active" as "has a CURRENT phase," which is wrong — `ide-go-live` has five COMPLETE phases and no CURRENT one, yet `.current-plan` already names it. Both errors were building a classifier where a pointer already existed.
+
+Anchor gap recorded: DevArch's six anchors protect five of the eight survivors; `design/`, `book/`, `core-concepts/` get no immutability protection.
+
+### Open items added this continuation
+
+- **P-14 is PROPOSED while P-2 is ACCEPTED** — filling the quarantine before writing the rule that makes it one. Should land together.
+- Anchor gap on `design/`, `book/`, `core-concepts/` (noted above).
+- Suggested to David (not a change request): DevArch rule 18b triggers on `session-planner` writing `.current-plan`; a hand-written pointer change wouldn't ask. May be worth triggering on the write rather than the writer.
+- Issue **#247** (docs/spec/ purpose) is new and unscoped — no owner yet.
+
+### Files touched this continuation
+
+- `docs/work/ide-go-live/phase-4-friction-log.md` — modified, Corrections section added (F1, F9, F18).
+- `docs/work/ide-go-live/phase-5-editor-requirements.md` — modified, R6/R8 corrections.
+- `docs/proposals/docs-consolidation.md` — new, 14 items.
+- `/Users/david/.claude/projects/-Users-david-repos-sharpee/memory/project_sharpee_net_canon_docs.md` — memory file, outside repo, not part of any commit.
+
+All three repo files are uncommitted at finalize time. `scripts/clodpod.sh` remains untracked and out of scope per the prior project note (parallel, deliberately-untracked artifact).
+
+**Mutation note**: no side-effect source functions were written after commit `60393d68` — this stretch was entirely markdown, GitHub issues, and one memory file. Rule 15 (mutation-verification) did not fire during the continuation either.
+
+---
+
 ## Session Metadata
 
 - **Status**: COMPLETE (unverified: xcodebuild 423-test pass count, `./sharpee test --tree` 15-passed/196-command count)
 - **Blocker** (if any): N/A
 - **Blocker Category**: N/A
-- **Estimated Remaining**: N/A (Phase 4 complete; Phase 5 scoping is the next session's work, not a remainder of this one)
-- **Rollback Safety**: safe to revert — the move used `git mv` (baseline preserved, not deleted), and the rewritten suite plus both markdown deliverables are new/untracked additions.
+- **Estimated Remaining**: N/A (Phase 4 complete; Phase 5 scoping is the next session's work, not a remainder of this one). The continuation's own next step — David deciding how to proceed on the docs-consolidation proposal's six remaining PROPOSED items and the P-9 disposition backlog (109 targets) — is unscoped, not estimated.
+- **Rollback Safety**: safe to revert — the move used `git mv` (baseline preserved, not deleted); the rewritten suite and both markdown deliverables are new/untracked additions; the continuation's three repo files (`phase-4-friction-log.md`, `phase-5-editor-requirements.md`, `docs-consolidation.md`) are uncommitted markdown edits/additions with no code touched.
 
 ## Dependency/Prerequisite Check
 
@@ -108,6 +192,7 @@ David reframed the phase mid-session from "reproduce the 22-file baseline" to "p
 ## Recurrence Check
 
 - Similar to past issue? Uncertain — the `packages/devkit/src/commands/play.ts:71` piped-input bug and the `docs/reference/transcript-testing.md` staleness were not confirmed against prior session summaries in this pass; both read as newly-surfaced findings specific to Phase 4's blind-authoring method rather than repeats of a previously logged blocker.
+- **Continuation addendum**: the "git-cold ≠ dead" and "git-warm ≠ alive" classifier errors (P-4/P-9 in the proposal) are the same shape as F1/F9/F18 above — inferring a conclusion from an indirect signal (staleness heuristic, doc absence) instead of checking the direct source (`.current-plan`, `git log -S`). Three instances in one session is a pattern worth naming even though none repeats a *prior* session's specific finding; not escalated to `pattern-recurrence-detector` because Status is COMPLETE, not INCOMPLETE/BLOCKED, and rule 19 gates that agent on blocker status.
 - If YES: N/A
 
 ## Test Coverage Delta
@@ -118,4 +203,4 @@ David reframed the phase mid-session from "reproduce the 22-file baseline" to "p
 
 ---
 
-**Progressive update**: Session completed 2026-08-07 23:35 CDT
+**Progressive update**: Session completed 2026-08-07 23:35 CDT; continuation (loose-ends routing, corrections, docs-consolidation proposal, DevArch interlock) added 2026-08-08, session still open at update time.

@@ -117,10 +117,18 @@ points (a node with more than one child) are worth drawing as branch points.
 
 **Evidence.** This is the clearest discovery failure of the exercise. The
 runner's own error says *"record the transcript with `--bless`"*; `sharpee test`
-has no `--bless` (F9). I concluded recording did not exist and never used it.
-The baseline has `recorded.transcript` — byte-exact `[OK]` + `text` blocks, with
-`[SKIP]` on the opening turns — expressible entirely in the grammar I already
-had.
+rejects it with `unknown flag`. I concluded recording did not exist and never
+used it. The baseline has `recorded.transcript` — byte-exact `[OK]` + `text`
+blocks, with `[SKIP]` on the opening turns — expressible entirely in the grammar
+I already had.
+
+`--bless` is real (corrected F9). It is on the platform bundle
+(`scripts/bundle-entry.js:201`) and on `transcript-tester`'s CLI. It is missing
+from `packages/devkit`, along with **`--watch`** (ADR-294 D14), `--vary` and
+`--search`. So the testing-intelligence features are present for in-repo
+platform work and absent from the author tool — which, per the standing
+direction that these are product surface rather than dev conveniences, is a gap
+worth naming as such.
 
 Meanwhile the text defects in F25 (`The Smoke`, `a garden shears`, `Inside the
 deed box you see deed`, the grue line, the comma-dash collision) are exactly what
@@ -128,9 +136,15 @@ goldens catch and `contains` never will.
 
 **Requirement.** "Record this file as a golden" is a visible action, not a flag.
 It writes `[OK]` + `text` blocks for every command from the probe run. Re-record
-shows a diff of what changed and lets the author accept per-command. Either fix
-`--bless` on the CLI or drop the suggestion from the error message — an
-instruction that cannot be followed is worse than none.
+shows a diff of what changed and lets the author accept per-command.
+
+**Prerequisite, and not the editor's to fix:** `sharpee test` needs `--bless`
+and `--watch`, or the author-side story has a hole under it that no editor UI
+can cover. See also issues #192/#193/#194 — the IDE's existing Record/Bless flow
+hit the same wall from the UI side, with #193 opening on David's report that
+"the bless feature is implemented, but it's unclear how anyone would use it."
+Phase 5 should treat ADR-290 (test creation as an atomic mode, DRAFT) as the
+design already in flight rather than starting fresh.
 
 ## R7 — Pin the seed by default, and say why (F8)
 
@@ -150,16 +164,35 @@ exact assertions and no pinned seed as unsound. `forces:` and `point-seed:`
 **Evidence.** The only document with the file format teaches `[OK: any]`,
 `[OK: matches]`, `[EVENTS: N]` and `[ENSURES:]` — all removed and each rejected
 by name — plus a 40-line specification of a backtick fence syntax that has never
-existed in either parser, including an invented claim that it was "checked
-across all 183" transcripts. Conversely, the `[CHANNEL:]` family (six forms,
-plus dotted paths into a channel record) is documented nowhere and was found by
-grepping `parser.ts`.
+shipped in `e49c0460` and was replaced by `text` … `end text` in `a217b8dd`
+**the same day** (2026-07-28), when ADR-287 was reopened and re-decided. The
+document was accurate when written and never caught up — ordinary staleness, and
+the mildest kind, since the window was hours. Conversely, the `[CHANNEL:]`
+family (six forms, plus dotted paths into a channel record) is documented
+nowhere and was found by grepping `parser.ts`.
 
 **Requirement.** The editor's assertion palette is generated from the parser, not
 from prose. Removed forms are not offerable. `[CHANNEL:]` is offerable, with its
-six forms, wherever the story declares a channel. And
-`docs/reference/transcript-testing.md` needs rewriting or deleting regardless of
-what the editor does — it is currently the most misleading document in the repo.
+six forms, wherever the story declares a channel.
+
+**The documentation gap that matters is on the site, not in the repo.**
+`docs/reference/` is a repo-centric reference and low priority; sharpee.net is
+the author canon. sharpee.net documents exactly one transcript — the
+hello-world in `chord/getting-started/compose-and-run` — and stops. No
+`continues:`, no `seed:`, no goldens, no `[STATE:]`/`[EVENT:]`/`[CHANNEL:]`, and
+it recommends `--chain`, which ADR-302 D10 retires for trees. Filed as **#246**.
+
+That reframes this requirement for the editor: since the site does not teach the
+format past two `contains` assertions, **the editor is where most authors will
+learn what a transcript can express.** The palette is not a convenience; it is
+the documentation. Generating it from the parser rather than from prose is what
+keeps it honest.
+
+The repo-side rewrite (`docs/reference/` + `docs/guides/`) is tracked as #213
+T1, low priority. It independently found the fence defect and two I did not:
+`[FAIL: contains …]` is documented as an inverted check while the parser treats
+everything after `FAIL:` as an opaque reason, and the golden tier is absent from
+the reference entirely.
 
 ## R9 — Endings terminate a file, and the editor must know it (F22)
 
