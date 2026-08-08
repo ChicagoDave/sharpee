@@ -143,6 +143,17 @@ export interface CommandResultEvent extends RunEventEnvelope {
    * inflated by every transcript's full text.
    */
   actualOutput?: string;
+  /**
+   * The engine turn this command executed as (1-based, the engine's own
+   * counter). Engine knowledge, not text knowledge: meta commands (`score`,
+   * `inventory`) do not advance the counter — consecutive results legitimately
+   * share a turn — while a refused action still consumes one. This is what
+   * lets a consumer show turn numbers against a transcript and warn when an
+   * edit moves a turn-scheduled beat in a descendant (R4). Absent when the
+   * producer did not execute the command against a live engine (a synthesized
+   * error result) or its harness predates the field.
+   */
+  turn?: number;
 }
 
 /**
@@ -340,7 +351,8 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
     typeof value.expectedFailure === 'boolean' &&
     typeof value.skipped === 'boolean' &&
     (value.error === undefined || typeof value.error === 'string') &&
-    (value.actualOutput === undefined || typeof value.actualOutput === 'string')
+    (value.actualOutput === undefined || typeof value.actualOutput === 'string') &&
+    (value.turn === undefined || typeof value.turn === 'number')
   );
 }
 

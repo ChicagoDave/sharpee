@@ -22,6 +22,7 @@ import { installHost } from './host';
 import {
   addAssertion,
   addCommand as addCommandTo,
+  commandCount,
   deleteCommand as deleteCommandFrom,
   newTranscript,
   removeAssertion as removeAssertionFrom,
@@ -29,7 +30,7 @@ import {
   type Draft,
 } from './grammar';
 import { promotionFor } from './promote';
-import { applyEvent, createModel, stemOf, type RunModel, type TestNode } from './model';
+import { applyEvent, createModel, descendantCount, stemOf, type RunModel, type TestNode } from './model';
 import { byId } from './dom';
 import {
   createSurface,
@@ -52,7 +53,20 @@ let framePending = false;
  * and the source face must show what is on disk.
  */
 let inFlightWrite:
-  | { file: string; draft: Draft; label: string; before: string; popsUndo?: boolean }
+  | {
+      file: string;
+      draft: Draft;
+      label: string;
+      before: string;
+      popsUndo?: boolean;
+      /**
+       * Descendants whose turn numbers this edit shifts (R4): set when the
+       * edit changes the file's command count and other transcripts
+       * `continues:` from it. Carried on the write so the warning lands with
+       * the confirmation — a shift that never reached disk shifted nothing.
+       */
+      shiftsDescendants?: number;
+    }
   | null = null;
 
 /**
@@ -192,6 +206,21 @@ const actions: ViewActions = {
   removeAssertion(commandLine: number, index: number) {
     applyEdit((text, file) => removeAssertionFrom(text, file, commandLine, index), 'the removal');
   },
+  setConfirmingRecord(confirming: boolean) {
+    surface.confirmingRecord = confirming;
+    scheduleRender();
+  },
+  recordGolden() {
+    const node = surface.opened;
+    surface.confirmingRecord = false;
+    if (!node) return;
+    // Recording is a run: the host launches the suite with just this node
+    // blessed (--bless-file), the stream fills the tab like any run, and the
+    // host re-reports `goldens` when the recording is on disk.
+    surface.editNote = '';
+    host.recordGolden(node.file);
+    scheduleRender();
+  },
   undo() {
     const previous = undoStack[undoStack.length - 1];
     if (previous === undefined) return;
@@ -233,6 +262,17 @@ function applyEdit(
     // on disk still said otherwise — and the source face is the one place that
     // must never disagree with disk.
     inFlightWrite = { file: node.file, draft, label, before: loaded.text, ...options };
+    // R4: a parent's command count is a hidden input to every descendant's
+    // turn numbers. If this edit changes the count and anything continues from
+    // this file, the confirmation must say what it moved. Both counts read
+    // through the runner's own parser; an unreadable side yields no warning
+    // rather than a guessed one.
+    const countBefore = commandCount(loaded.text, node.file);
+    const countAfter = commandCount(draft.text, node.file);
+    if (countBefore !== null && countAfter !== null && countBefore !== countAfter) {
+      const below = descendantCount(node);
+      if (below > 0) inFlightWrite.shiftsDescendants = below;
+    }
     surface.pending = null;
     surface.editNote = 'Writing…';
     host.writeTranscript(node.file, draft.text);
@@ -280,6 +320,12 @@ const host = installHost({
     trackRunning();
     scheduleRender();
   },
+  onGoldens(files) {
+    // Tier is a filesystem fact; the host owns it. Replaced whole, never
+    // merged — a trashed recording must disappear from the surface too.
+    surface.goldens = new Set(files);
+    scheduleRender();
+  },
   onRestoreMode(mode) {
     if (mode === 'column' || mode === 'list' || mode === 'documents') surface.mode = mode;
     scheduleRender();
@@ -318,6 +364,13 @@ const host = installHost({
     // the edited one is now describing a file that no longer exists in that
     // form, so say so rather than letting them quietly become fiction.
     surface.editNote = `Wrote ${write.label} — the run below predates this edit. Run again to see it evaluated.`;
+    if (write.shiftsDescendants) {
+      // R4's warning, delivered with the confirmation it belongs to: the edit
+      // changed this file's turn count, and everything that continues from it
+      // now runs its commands at different turn numbers.
+      const count = write.shiftsDescendants;
+      surface.editNote += ` This changed the file's turn count — ${count} transcript${count === 1 ? '' : 's'} continue${count === 1 ? 's' : ''} from it, and every turn-scheduled beat in ${count === 1 ? 'it' : 'them'} now falls on a different command.`;
+    }
     surface.commandDraft = '';
     scheduleRender();
   },
@@ -383,6 +436,7 @@ function clearEditingState(): void {
   surface.runMatchesFile = true;
   surface.newBranchName = '';
   surface.confirmingTrash = false;
+  surface.confirmingRecord = false;
   undoStack = [];
   inFlightWrite = null;
 }

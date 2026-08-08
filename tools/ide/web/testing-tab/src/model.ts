@@ -46,6 +46,12 @@ export interface Turn {
   error?: string;
   /** What the story printed. Present on failures by default (see the wire doc). */
   actualOutput?: string;
+  /**
+   * The engine turn the command executed as (R4). Engine knowledge: meta
+   * commands share a number, a refused action consumes one. Absent when the
+   * wire did not carry it.
+   */
+  turn?: number;
 }
 
 /**
@@ -232,6 +238,7 @@ function applyCommandResult(model: RunModel, event: CommandResultEvent): void {
     skipped: event.skipped,
     error: event.error,
     actualOutput: event.actualOutput,
+    turn: event.turn,
   });
 }
 
@@ -354,4 +361,18 @@ export function subtreeFailureCount(node: TestNode): number {
       total + (child.status === 'failed' || child.status === 'error' ? 1 : 0) + subtreeFailureCount(child),
     0,
   );
+}
+
+/**
+ * Transcripts anywhere beneath `node` — every file that `continues:` from it,
+ * directly or through another.
+ *
+ * This is the blast radius of a turn-count edit (R4): a parent's command count
+ * is a hidden input to every descendant's turn numbers, so adding or removing
+ * a command here shifts each of theirs. Known only after a tree run has
+ * announced parentage — before one, discovered nodes sit as roots and the
+ * count is honestly zero.
+ */
+export function descendantCount(node: TestNode): number {
+  return node.children.reduce((total, child) => total + 1 + descendantCount(child), 0);
 }

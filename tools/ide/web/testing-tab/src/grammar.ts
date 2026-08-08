@@ -244,6 +244,26 @@ export function assertionsByCommandLine(text: string, file: string): Map<number,
 }
 
 /**
+ * How many commands a transcript runs — the number every descendant's turn
+ * numbers are offset by (R4).
+ *
+ * Null for text the grammar cannot read: a count that might be wrong is worse
+ * than none, because it feeds a warning about other files' correctness.
+ */
+export function commandCount(text: string, file: string): number | null {
+  try {
+    const transcript = parse(text, file);
+    // The parser is lenient: it collects errors rather than throwing, and a
+    // file it half-read has an untrustworthy count — an unclosed block can
+    // swallow the commands after it.
+    if (transcript.parseErrors?.length) return null;
+    return transcript.commands.length;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Removes one of a command's assertions.
  *
  * Removing the LAST one leaves `[SKIP]` behind rather than a bare command. A

@@ -42,6 +42,12 @@ export interface StreamableCommandResult {
   skipped: boolean;
   error?: string;
   actualOutput?: string;
+  /**
+   * The engine turn the command executed as. Optional because only harnesses
+   * whose engine seam reports it (branch-tester's) can say; a result without
+   * it emits an event without one, never a guess.
+   */
+  turn?: number;
 }
 
 /** What the stream needs from a whole run's aggregate. Same reasoning. */
@@ -187,6 +193,7 @@ export class RunEventStream {
       skipped: result.skipped,
       ...(result.error !== undefined ? { error: result.error } : {}),
       ...(captureOutput || !result.passed ? { actualOutput: result.actualOutput } : {}),
+      ...(result.turn !== undefined ? { turn: result.turn } : {}),
     });
   }
 

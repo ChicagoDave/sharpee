@@ -18,7 +18,7 @@ import {
   type TranscriptEndEvent,
   type TranscriptStartEvent,
 } from '@sharpee/ide-protocol/run-events';
-import { ancestry, applyEvent, createModel, subtreeFailureCount } from '../src/model';
+import { ancestry, applyEvent, createModel, descendantCount, subtreeFailureCount } from '../src/model';
 
 let seq = 0;
 const envelope = () => ({ schemaVersion: RUN_EVENT_SCHEMA_VERSION, seq: seq++, elapsedMs: seq });
@@ -190,6 +190,35 @@ describe('the run-event fold', () => {
     const model = fold([start(ROOT), end(ROOT), command(ROOT)]);
     expect(model.nodes.get(ROOT)!.turns).toHaveLength(0);
     expect(model.authoredCommands).toBe(0);
+  });
+
+  it('keeps the engine turn a command executed as, and its absence when the wire had none', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { turn: 1 }),
+      command(ROOT, { line: 6, input: 'score', turn: 2 }),
+      // A meta command shares its turn with the next action — the model must
+      // hold what the wire said, never re-derive a count of its own.
+      command(ROOT, { line: 8, input: 'east', turn: 2 }),
+      command(ROOT, { line: 10, input: 'west' }),
+      end(ROOT),
+    ]);
+    const turns = model.nodes.get(ROOT)!.turns;
+    expect(turns.map((t) => t.turn)).toEqual([1, 2, 2, undefined]);
+  });
+
+  it('counts every transcript beneath a node — the blast radius of a turn-count edit', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      end(KEY),
+      start(DEEP, { parent: KEY }),
+      end(DEEP),
+    ]);
+    expect(descendantCount(model.nodes.get(ROOT)!)).toBe(2);
+    expect(descendantCount(model.nodes.get(KEY)!)).toBe(1);
+    expect(descendantCount(model.nodes.get(DEEP)!)).toBe(0);
   });
 
   it('pairs phase events and keeps their elapsed span', () => {

@@ -107,6 +107,22 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, line: '7' })).toBe(false);
   });
 
+  it('accepts a command-result with and without an engine turn, rejecting a non-numeric one', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'north',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, turn: 7 })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, turn: '7' })).toBe(false);
+  });
+
   it('accepts every transcript-end status, including the two that never ran', () => {
     const base = {
       ...envelope,

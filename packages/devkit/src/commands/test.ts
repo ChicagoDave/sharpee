@@ -30,7 +30,7 @@ import { lookupStory } from '../registry.js';
 import { runTreeTestCommand } from './test-tree.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output] [--bless] [--bless-file <path>]';
 
 /**
  * Run `sharpee test`.
@@ -42,7 +42,9 @@ const USAGE =
  *   `--stop-on-failure`, `--verbose`, `--json` (NDJSON record stream on
  *   stdout — ADR-277 D1), `--capture-output` (ADR-299 replay capture: with
  *   `--json`, every executed command-result carries `actualOutput`, not
- *   only failures; without `--json` it is inert).
+ *   only failures; without `--json` it is inert), `--bless` (create or
+ *   overwrite golden recordings — ADR-294 D1), and `--bless-file <path>`
+ *   (tree runs only: bless just the named node(s); repeatable).
  * @returns process exit code — 0 all passed, 1 failures or transcript
  *   errors, 2 usage error, 3 story load error (transcript-tester's
  *   convention). Never calls `process.exit()` — a piped `--json` stream
@@ -76,10 +78,13 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   let json = false;
   let coverage = false;
   let captureOutput = false;
+  let bless = false;
+  const blessFiles: string[] = [];
   let projectDir: string | undefined;
   const transcriptPaths: string[] = [];
 
-  for (const arg of rest) {
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
     if (arg === '--tree') tree = true;
     else if (arg === '--chain' || arg === '-c') chain = true;
     else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
@@ -87,6 +92,18 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     else if (arg === '--json') json = true;
     else if (arg === '--coverage') coverage = true;
     else if (arg === '--capture-output') captureOutput = true;
+    else if (arg === '--bless') bless = true;
+    else if (arg === '--bless-file') {
+      // "Record THIS file as a golden" as a tree operation (ADR-294 D1): the
+      // whole tree runs — the file needs its ancestry to reach its state —
+      // and only the named node records. Repeatable.
+      const value = rest[++i];
+      if (!value || value.startsWith('-')) {
+        console.error(`test: --bless-file needs a .transcript path\n${USAGE}`);
+        return 2;
+      }
+      blessFiles.push(path.resolve(value));
+    }
     else if (arg.startsWith('-')) {
       console.error(`test: unknown flag '${arg}'\n${USAGE}`);
       return 2;
@@ -129,6 +146,13 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     console.error(`test: --tree and --chain are mutually exclusive (ADR-302 D10 retires --chain for trees)\n${USAGE}`);
     return 2;
   }
+  // Per-file bless is a tree operation: a flat run already targets exactly the
+  // files it was given, so "bless only this one" there is spelled
+  // `sharpee test <file> --bless`. Refusing beats silently blessing nothing.
+  if (blessFiles.length > 0 && !tree) {
+    console.error(`test: --bless-file requires --tree (for a flat run, pass the file and --bless)\n${USAGE}`);
+    return 2;
+  }
 
   const dir = path.resolve(projectDir ?? process.cwd());
   let transcripts = transcriptPaths.map((p) => path.resolve(p));
@@ -159,7 +183,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // transcripts before executing any, and its reporting distinguishes unreached
   // from failed (D13). Hand off whole rather than branching through the loop.
   if (tree) {
-    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput });
+    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput, bless, blessFiles });
   }
 
   // In --json mode, stdout is exclusively the NDJSON stream: informational
@@ -313,6 +337,13 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       verbose,
       stopOnFailure,
       coverage: coverageTracker,
+      // ADR-294 D1: `--bless` records instead of diffing. `chain` rides along
+      // because the golden tier's seed rules depend on it (D3/D7): a chain
+      // member after the first legally pins no seed, and without the flag the
+      // runner refused chain-member goldens with the message that says to use
+      // --chain — while --chain was exactly what was running.
+      bless,
+      chain,
       // Live emission: the runner announces the transcript before its first
       // command and each command as it completes, so the stream is a log of
       // the run rather than a summary of it.

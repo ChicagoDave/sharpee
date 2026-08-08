@@ -409,6 +409,15 @@ export interface CommandResult {
   error?: string;
 
   /**
+   * The engine turn this command executed as (1-based, the engine's own
+   * counter via `lastTurnResult`). Engine knowledge the transcript text
+   * cannot supply: meta commands do not advance the counter, a refused
+   * action does. Absent when nothing executed (a synthesized error result,
+   * an engine seam that does not report turns).
+   */
+  turn?: number;
+
+  /**
    * Golden replay divergence (ADR-294 D1): the recorded output and the
    * actual output for this turn, verbatim. Present exactly when a golden
    * diff failed this command; the reporter renders the line diff.
@@ -540,6 +549,17 @@ export interface RunnerOptions {
   bless?: boolean;
   /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
   goldenPath?: string;
+  /**
+   * The transcript's EFFECTIVE config when it runs as a tree node (ADR-302
+   * D8): seeds, channels, events, forces as inherited root-to-here. The
+   * golden tier reads this in place of the transcript's declared config —
+   * a child declares no seed yet runs at its root's, and judging it by its
+   * declared (empty) config refuses every child golden. Declared-keyed
+   * behaviour (session instruments, reseeds) deliberately does NOT read
+   * this: declaring an instrument is an instruction, inheriting one is not
+   * (D8/D9). Absent for flat and chain runs, where declared IS effective.
+   */
+  resolvedConfig?: TranscriptRunConfig;
   /**
    * This transcript runs as a chain member (one session across transcripts).
    * Later members legally pin no seed; their recordings carry the session

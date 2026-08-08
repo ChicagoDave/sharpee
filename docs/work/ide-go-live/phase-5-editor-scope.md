@@ -574,6 +574,32 @@ a *refused* action does — engine knowledge, not text knowledge. So
 **That is a `packages/` change** (`@sharpee/ide-protocol` + the emitter) and per
 CLAUDE.md waits on David. Flagged here rather than assumed.
 
+#### Done — 2026-08-08, session 648342, on David's go-ahead
+
+- **Wire**: `CommandResultEvent.turn` (optional; schema stays v2 — additive) +
+  guard. `turn` = the engine turn the command executed as, read off bootstrap's
+  `lastTurnResult` — INSIDE the try around `executeCommand`, because a wrapper
+  that threw would leave the previous command's record in place, and a stale
+  turn on a crashed command is a lie (found by `mutation-verification`, which
+  also flagged five untested emission branches; all closed in
+  `turn-field.test.ts`, 8 cases). Absent when nothing executed, never guessed.
+- **Emitters**: both tiers of branch-tester's runner; `RunEventStream` carries
+  the field structurally. Real path: fernhill tree run under
+  `--capture-output --json` → **196/196** command-results carry `turn`, run
+  green, baseline unchanged.
+- **Tab**: a `turn N` column on document-face cards only — the preview stays a
+  glance. Meta commands repeat their number; the title says why. The R4 fact is
+  pinned real-path: a child document's FIRST turn is > 1, because its numbers
+  inherit its ancestors' command count.
+- **The warning**: an edit that changes the file's command count, in a file
+  others `continues:` from, appends the blast radius to the write confirmation
+  ("…4 transcripts continue from it, and every turn-scheduled beat in them now
+  falls on a different command."). Counts read through the runner's own parser;
+  a half-parsed file yields NO warning rather than a guessed one
+  (`commandCount` → null on parseErrors — an unclosed block can swallow the
+  commands after it). Real-path: parent add warns with the fixture's true
+  count; the same edit in a leaf carries no warning.
+
 ### Slice 5 — Goldens as a mode (R6) — **blocked on #239**
 
 "Record this file as a golden" as a visible action, with per-command accept on
@@ -584,6 +610,69 @@ Also missing there: `--watch` (ADR-294 D14), `--vary`, `--search`.
 Until #239 lands, the editor has no honest way to offer the mode. Issues
 #192/#193/#194 are the same wall hit from the UI side, and ADR-290's D5–D8 are
 the surviving design for it.
+
+#### The port, and what it actually took — 2026-08-08, on David's go-ahead
+
+`--bless` is now on `sharpee test` (flat, chain, tree), plus `--bless-file
+<path>` (tree only, repeatable). Two seams surfaced by reading before building:
+
+1. **Tree × golden was unplumbed.** The golden tier judged a node by its
+   DECLARED config, but a tree child inherits seed and channels from its root
+   (ADR-302 D8) and declares none — so blessing or replaying any child errored
+   "must pin a seed", and `--bless --tree` only ever worked on roots. Fixed
+   with `RunnerOptions.resolvedConfig`: the tree runner hands `runTranscript`
+   the node's effective config, which only the golden tier's checks read.
+   A child's recording carries the root's session seed and replays only
+   through the tree — D7's chain-member semantics, falling out for free.
+   Declared-keyed behaviour (instruments, reseeds) deliberately unchanged.
+2. **Replays never bless.** A replayed execution exists to rebuild a sibling's
+   state; under global bless it now runs in REPLAY mode against the recording
+   its authored execution just wrote — reproducibility verified for free.
+
+Also fixed en route: devkit's chain path never passed `chain: true` to the
+runner, so chain-member goldens were refused with the message that says to use
+`--chain` — while `--chain` was exactly what was running.
+
+#### 5a — Record and re-record from the document view. Done 2026-08-08
+
+- The file bar gains **Record golden…** (or **Re-record golden…** when a
+  recording exists), two acts like Trash — a first record starts a whole suite
+  run, and a re-record overwrites the baseline every future run is judged
+  against. Disabled mid-run: recording IS a run.
+- The gesture runs the real suite with `--bless-file <file>`
+  (`TestRunner.treeRunArguments(storyPath:blessFile:)`) — the whole tree,
+  because the file needs its ancestry executed to reach its state. The stream
+  fills the tab like any run.
+- **Tier is a filesystem fact the host reports** (`TranscriptDiscovery.goldens`,
+  re-sent after every run exit): the page never infers tier from run output.
+  The document's meta row names the tier; the record offer switches label.
+- The record tooltip carries the D2 consequence out loud: once a recording
+  exists, the file's per-command assertions stop being evaluated — the
+  recording is the assertion.
+- Real-path (`testRecordingAGoldenRunsTheSuiteAndTheSurfaceFlipsToTheGoldenTier`):
+  two clicks on `concealment` — a CHILD, inheriting arrival's `seed: 42`, so
+  the resolvedConfig seam is what makes it possible at all — run the real CLI,
+  land `concealment.golden` on disk, keep the run green, and flip the surface
+  to Re-record + tier badge via the production disk scan.
+
+#### 5b — per-command accept on re-record: NOT built, and why
+
+The R6 sentence's second half. Two constraints found before building it:
+
+1. **A spliced recording is unsound.** A recording is one deterministic run.
+   "Keep command 3's old output, take command 4's new one" produces a file no
+   run ever emitted, and its next replay fails — so per-command accept cannot
+   mean per-command MERGE. It can only mean a per-command REVIEW of the whole
+   re-record (walk the diff, then accept all or keep the old recording).
+2. **The wire does not carry the diff.** A golden replay stops at the first
+   divergence and `CommandResultEvent` carries `error` + `actualOutput`, not
+   the recorded-vs-actual pair per command. A review surface needs either a
+   "replay past divergence, carrying diffs" runner mode or the tab reading the
+   `.golden` and re-implementing the normalization contract page-side — the
+   second is the drift this phase keeps refusing.
+
+Decision deferred to David with this scope note: the honest 5b is a runner
+mode + a wire addition, which is its own platform conversation.
 
 ---
 

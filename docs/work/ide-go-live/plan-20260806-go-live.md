@@ -272,9 +272,13 @@ is Phase 5's required input.
 
 **Status: CURRENT** — scoped 2026-08-08, session acc261, in
 `phase-5-editor-scope.md`. The shape: the editor is the Testing tab's document
-view grown a probe, in five slices. Slices 1–3 have no platform dependency;
-slice 4 (turn budget) needs a `turn` field on the run-event wire and slice 5
-(goldens) is blocked on #239.
+view grown a probe, in five slices. Slices 1–3a done (session acc261). Slice 4
+(turn budget) done and slice 5's record/re-record gesture (5a) done — session
+648342, 2026-08-08, on David's go-ahead for the `turn` wire field and the
+#239 `--bless` port (which needed `resolvedConfig`/`blessFiles` seams; see the
+scope doc). Still open in the scope: slice 3's remainder (inherited state,
+terminal marking, reparenting), in-place command editing, and 5b (per-command
+accept on re-record — deferred with a named soundness constraint).
 
 **Goal.** Create, edit and delete transcript tests from inside the IDE.
 

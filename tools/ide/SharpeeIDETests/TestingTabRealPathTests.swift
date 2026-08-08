@@ -792,6 +792,173 @@ final class TestingTabRealPathTests: XCTestCase {
                        "the second click asks the host for this file and no other")
     }
 
+    // MARK: - Phase 5 slice 4 — the turn budget
+
+    /// Every turn card in a document carries the ENGINE's turn number (R4) —
+    /// not a count of the file's own commands, which would be wrong twice over:
+    /// meta commands share a turn, and a child transcript starts wherever its
+    /// ancestors' commands left the counter.
+    func testADocumentShowsTheEngineTurnBesideEachCommand() async throws {
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        let numbers = try await tab.evaluateInTab("""
+        (function () {
+          return Array.from(document.querySelectorAll('#docview .turn .turnno'))
+            .map(function (t) { return t.textContent; });
+        })();
+        """) as? [String]
+        let turnLabels = try XCTUnwrap(numbers, "the document rows carry a turn column")
+        XCTAssertEqual(turnLabels.count, 16, "one per turn card")
+        for label in turnLabels {
+            XCTAssertTrue(label.range(of: #"^turn \d+$"#, options: .regularExpression) != nil,
+                          "every executed command names its engine turn; got: \(label)")
+        }
+
+        // The R4 fact itself: concealment `continues: arrival`, so its first
+        // command executes wherever arrival's commands left the engine counter —
+        // never at turn 1. A per-file count would say 1 here and be wrong.
+        let first = try XCTUnwrap(turnLabels.first.flatMap { Int($0.dropFirst("turn ".count)) })
+        XCTAssertGreaterThan(first, 1,
+                             "a child's turn numbers inherit its ancestors' command count")
+    }
+
+    /// An edit that changes a file's turn count, in a file other transcripts
+    /// continue from, warns with the blast radius (R4). The same edit in a leaf
+    /// carries no warning — there is nothing beneath it to shift.
+    func testATurnCountEditOnAParentWarnsAboutItsDescendants() async throws {
+        let transcript = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/key.transcript")
+        let original = try String(contentsOf: transcript, encoding: .utf8)
+        defer { try? original.write(to: transcript, atomically: true, encoding: .utf8) }
+
+        try await waitForPage()
+        try await runTree()
+
+        // `key` is an interior node: four transcripts continue from it.
+        try await select(path: ["arrival", "key"])
+        try await openDocument(stem: "key")
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('addcommand');
+          field.value = 'inventory';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        XCTAssertTrue(try String(contentsOf: transcript, encoding: .utf8).contains("> inventory"),
+                      "the edit itself must have landed for the warning to mean anything")
+        let note = try await text(".editnote")
+        XCTAssertTrue(note.contains("changed the file's turn count"),
+                      "the confirmation names what moved; got: \(note)")
+        XCTAssertTrue(note.contains("4 transcripts continue from it"),
+                      "and the blast radius is the fixture's real one; got: \(note)")
+
+        // The same edit in a leaf: no descendants, no warning.
+        _ = try await tab.evaluateInTab("document.querySelector('.back').click();")
+        try await settle()
+        let leaf = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.transcript")
+        let leafOriginal = try String(contentsOf: leaf, encoding: .utf8)
+        defer { try? leafOriginal.write(to: leaf, atomically: true, encoding: .utf8) }
+
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var field = document.getElementById('addcommand');
+          field.value = 'inventory';
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let leafNote = try await text(".editnote")
+        XCTAssertTrue(leafNote.contains("Wrote"), "the edit landed; got: \(leafNote)")
+        XCTAssertFalse(leafNote.contains("turn count"),
+                       "a leaf shifts nothing beneath it; got: \(leafNote)")
+    }
+
+    // MARK: - Phase 5 slice 5 — goldens as a mode
+
+    /// The golden gesture (ADR-294 D1), end to end and real-path: two clicks in
+    /// the document view run the real CLI with `--bless-file`, the recording
+    /// lands beside the transcript, and the surface flips to the golden tier.
+    ///
+    /// `concealment` is a CHILD — it pins no seed of its own and inherits
+    /// arrival's `seed: 42` — so this also exercises the resolvedConfig seam:
+    /// before it, blessing any non-root node errored "must pin a seed".
+    func testRecordingAGoldenRunsTheSuiteAndTheSurfaceFlipsToTheGoldenTier() async throws {
+        let golden = fixtureStory.deletingLastPathComponent()
+            .appendingPathComponent("tests/transcripts/concealment.golden")
+        try XCTSkipIf(FileManager.default.fileExists(atPath: golden.path),
+                      "a previous run left a recording behind")
+        defer { try? FileManager.default.removeItem(at: golden) }
+
+        // The page's recordGolden reaches the real CLI with the PRODUCTION
+        // argument list — treeRunArguments(storyPath:blessFile:) — the same
+        // no-hand-written-arguments rule every run in this suite follows.
+        let storyDirectory = fixtureStory.deletingLastPathComponent()
+        var blessExited: XCTestExpectation?
+        tab.onRecordGolden = { [weak self] file in
+            guard let self else { return }
+            self.tab.beginRun(story: "fernhill-frozen")
+            self.runner.start(
+                executable: URL(fileURLWithPath: "/usr/bin/env"),
+                arguments: ["node", TestToolchain.devkitCLI.path]
+                    + TestRunner.treeRunArguments(storyPath: self.fixtureStory.path, blessFile: file),
+                workingDirectory: storyDirectory,
+                environment: ShellEnvironment.buildEnvironment())
+        }
+
+        try await waitForPage()
+        try await runTree()
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+
+        // Not yet golden: the offer reads "Record", and the meta row has no tier.
+        let offer = try await text(".filebar .recordgold")
+        XCTAssertEqual(offer, "Record golden…")
+        let tierBefore = try await count(".docmeta .v.gold")
+        XCTAssertEqual(tierBefore, 0)
+
+        // Two deliberate acts, like Trash. The second launches the real run.
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .recordgold').click();")
+        try await settle(times: 3)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: golden.path),
+                       "the first click only arms — nothing is recorded yet")
+        blessExited = expectation(description: "bless run exits")
+        relay.onExit = { blessExited?.fulfill() }
+        _ = try await tab.evaluateInTab("document.querySelector('.filebar .recordgold.armed').click();")
+        await fulfillment(of: [blessExited!], timeout: 120)
+        try await settle(times: 6)
+
+        // The recording is on disk, and the run it rode on stayed green.
+        XCTAssertTrue(FileManager.default.fileExists(atPath: golden.path),
+                      "the recording lands beside the transcript (ADR-294 D7)")
+        let failures = try await text("#tally-fail")
+        XCTAssertEqual(failures, "0", "recording rides an ordinary green run")
+
+        // The host reports tier from disk — the REAL scan, the one production
+        // calls — and the surface flips: golden badge, re-record offer.
+        let goldens = TranscriptDiscovery.goldens(
+            among: TranscriptDiscovery.transcripts(inStoryDirectory: storyDirectory))
+        XCTAssertEqual(goldens.map(\.lastPathComponent), ["concealment.transcript"])
+        tab.setGoldens(goldens.map(\.path))
+        try await settle(times: 3)
+        try await select(path: ["arrival", "concealment"])
+        try await openDocument(stem: "concealment")
+        let reoffer = try await text(".filebar .recordgold")
+        XCTAssertEqual(reoffer, "Re-record golden…")
+        let tier = try await text(".docmeta .v.gold")
+        XCTAssertTrue(tier.contains("golden"), "the meta row names the tier; got: \(tier)")
+    }
+
     /// A selection dragged across two turns is not a claim about either command,
     /// so the editor makes no offer rather than silently asserting half of it.
     func testASelectionSpanningTwoTurnsOffersNothing() async throws {

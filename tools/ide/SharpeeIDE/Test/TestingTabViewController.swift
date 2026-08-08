@@ -41,6 +41,8 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     var onCreateTranscript: ((String, String) -> Void)?
     /// The page asked for a transcript to be moved to the Trash.
     var onTrashTranscript: ((String) -> Void)?
+    /// The page asked for a transcript's golden to be recorded (ADR-294 D1).
+    var onRecordGolden: ((String) -> Void)?
 
     // MARK: - State
 
@@ -135,6 +137,13 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     /// The transcripts found on disk, so the tab is not blank before a run.
     func setDiscovered(_ files: [String]) {
         callJSON("discovered", json: Self.json(files) ?? "[]")
+    }
+
+    /// The transcripts that have a `.golden` recording on disk (ADR-294 D1).
+    /// Tier is a filesystem fact, so the host reports it; the page never
+    /// infers it from run output.
+    func setGoldens(_ files: [String]) {
+        callJSON("goldens", json: Self.json(files) ?? "[]")
     }
 
     /// The view mode remembered for this project (ADR-301 D4).
@@ -313,6 +322,9 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         case "trashTranscript":
             guard let file = body["file"] as? String else { return }
             onTrashTranscript?(file)
+        case "recordGolden":
+            guard let file = body["file"] as? String else { return }
+            onRecordGolden?(file)
         default:
             break
         }

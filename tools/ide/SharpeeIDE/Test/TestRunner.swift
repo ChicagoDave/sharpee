@@ -83,7 +83,10 @@ final class TestRunner {
     /// default stream carries `actualOutput` on failures only. The cost is the
     /// full text of every command crossing the wire on a green run, which is the
     /// trade the tab is here to make — the CLI's default is untouched.
-    func runTests(storyFile: URL) {
+    /// - Parameter blessFile: when set, the run records this transcript's
+    ///   golden (`--bless-file`, ADR-294 D1) — the suite still runs whole,
+    ///   because the file needs its ancestry executed to reach its state.
+    func runTests(storyFile: URL, blessFile: URL? = nil) {
         // Executable resolution is the build/compose one: workspace shim, else
         // PATH, never node_modules. A miss is an explicit failure with a hint,
         // not a silent no-run.
@@ -95,7 +98,7 @@ final class TestRunner {
             return
         }
         start(executable: sharpee,
-              arguments: Self.treeRunArguments(storyPath: storyFile.path),
+              arguments: Self.treeRunArguments(storyPath: storyFile.path, blessFile: blessFile?.path),
               workingDirectory: storyFile.deletingLastPathComponent(),
               environment: ShellEnvironment.buildEnvironment())
     }
@@ -108,8 +111,12 @@ final class TestRunner {
     /// supplies it itself. `--capture-output` is exactly that kind of flag: drop
     /// it and the tab still renders, just with the story's words missing from
     /// every passing turn.
-    static func treeRunArguments(storyPath: String) -> [String] {
-        ["test", storyPath, "--tree", "--capture-output", "--json"]
+    static func treeRunArguments(storyPath: String, blessFile: String? = nil) -> [String] {
+        var arguments = ["test", storyPath, "--tree", "--capture-output", "--json"]
+        if let blessFile {
+            arguments.append(contentsOf: ["--bless-file", blessFile])
+        }
+        return arguments
     }
 
     // MARK: - Spawn

@@ -228,6 +228,24 @@ describe('RunEventStream sequences what the observer reports', () => {
     expect(outputs[2]).toBe(passing.actualOutput);
   });
 
+  it('carries the engine turn when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+
+    stream.commandResult('/t/a.transcript', { ...passing, turn: 7 });
+    stream.commandResult('/t/a.transcript', passing);
+
+    const turns = events.map((e) => (e.type === 'command-result' ? e.turn : undefined));
+    expect(turns[0]).toBe(7);
+    expect(turns[1]).toBeUndefined();
+    // The key is ABSENT, not present-and-undefined — the wire is NDJSON and
+    // JSON.stringify would keep an explicit undefined key out either way, but
+    // the guard-facing shape should already be clean.
+    expect('turn' in (events[1] as object)).toBe(false);
+  });
+
   it('serializes one newline-terminated JSON object per event', () => {
     const { events, stream } = collect();
     stream.runStart('tests', 1);

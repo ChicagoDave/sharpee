@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { parse, saveOutlook, serialize } from '../src/grammar';
+import { commandCount, parse, saveOutlook, serialize } from '../src/grammar';
 
 /** The smallest thing the parser accepts, so a case shows only what it is about. */
 function transcript(body: string): string {
@@ -83,6 +83,22 @@ describe('saveOutlook', () => {
   it('never offers generated text for an unsound file', () => {
     const outlook = saveOutlook('nothing here', 'probe.transcript');
     expect(outlook).not.toHaveProperty('generated');
+  });
+});
+
+describe('commandCount', () => {
+  it('counts the commands a transcript runs, through the runner\'s own parser', () => {
+    const text = transcript('> north\n[SKIP]\n\n> look\n[OK: contains "hall"]\n');
+    expect(commandCount(text, 'probe.transcript')).toBe(2);
+  });
+
+  it('answers null for text the grammar half-read, never a guess', () => {
+    // An unclosed text block is a parse ERROR the lenient parser records
+    // rather than throws, and it can swallow the commands after it — so the
+    // count is untrustworthy. A wrong count here would feed a warning about
+    // OTHER files' turn numbers.
+    const text = transcript('> look\n[OK]\ntext\nA den.\n');
+    expect(commandCount(text, 'probe.transcript')).toBeNull();
   });
 });
 

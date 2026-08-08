@@ -248,9 +248,15 @@ body {
   display: grid; grid-template-columns: 38px minmax(0, 1fr) auto;
   gap: 8px; padding: 2px 0; align-items: baseline;
 }
-/* A fourth column only in the document, for the row's delete control — the
-   preview has no such control and must not carry a gap where one would be. */
-.docview .turn { padding: 3px 14px; grid-template-columns: 38px minmax(0, 1fr) auto auto; }
+/* Two extra columns only in the document: the engine turn number (R4) and the
+   row's delete control — the preview has neither and must not carry a gap
+   where one would be. */
+.docview .turn { padding: 3px 14px; grid-template-columns: 38px minmax(0, 1fr) auto auto auto; }
+.turn .turnno {
+  font-family: var(--mono); font-size: 9.5px; color: var(--fg-faint);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.docmeta .v.gold { color: var(--warn); }
 .turn:hover { background: var(--sel-soft); }
 .turn.bad { background: var(--fail-wash); }
 .turn .ln {
@@ -368,6 +374,11 @@ body {
 .filebar .trash:hover { border-color: var(--fail); color: var(--fail); }
 /* Armed, so the second click is visibly the consequential one. */
 .filebar .trash.armed { color: var(--on-accent); background: var(--fail); border-color: var(--fail); font-weight: 600; }
+.filebar .recordgold:hover:not(:disabled) { border-color: var(--warn); color: var(--warn); }
+.filebar .recordgold:disabled { opacity: .45; cursor: default; }
+/* Armed in the golden tier's own color — consequential, but not destructive-red:
+   the old recording is replaced, not work lost. */
+.filebar .recordgold.armed { color: var(--editor); background: var(--warn); border-color: var(--warn); font-weight: 600; }
 
 /* ── document: growing a transcript ───────────────────────── */
 .addcmd {

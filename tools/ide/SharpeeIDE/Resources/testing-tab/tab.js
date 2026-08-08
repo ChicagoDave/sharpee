@@ -25,7 +25,7 @@
   }
   function isCommandResultEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string");
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number");
   }
   function isTranscriptEndEvent(value) {
     if (!isObject(value)) return false;
@@ -81,6 +81,7 @@
       reset: (story) => handlers.onReset(story),
       status: (text) => handlers.onStatus(text),
       discovered: (files) => handlers.onDiscovered(files),
+      goldens: (files) => handlers.onGoldens(files),
       restoreMode: (mode) => handlers.onRestoreMode(mode),
       finished: (ok) => handlers.onFinished(ok),
       source: (file, text) => handlers.onSource(file, text),
@@ -110,6 +111,7 @@
       writeTranscript: (file, text) => send({ action: "writeTranscript", file, text }),
       createTranscript: (name, text) => send({ action: "createTranscript", name, text }),
       trashTranscript: (file) => send({ action: "trashTranscript", file }),
+      recordGolden: (file) => send({ action: "recordGolden", file }),
       ready: () => send({ action: "ready" })
     };
   }
@@ -1147,6 +1149,15 @@
     }
     return byLine;
   }
+  function commandCount(text, file) {
+    try {
+      const transcript = parse(text, file);
+      if (transcript.parseErrors?.length) return null;
+      return transcript.commands.length;
+    } catch {
+      return null;
+    }
+  }
   function removeAssertion(text, file, commandLine, index) {
     const transcript = editable(text, file);
     const command = transcript.commands.find((candidate) => candidate.lineNumber === commandLine);
@@ -1319,7 +1330,8 @@
       expectedFailure: event.expectedFailure,
       skipped: event.skipped,
       error: event.error,
-      actualOutput: event.actualOutput
+      actualOutput: event.actualOutput,
+      turn: event.turn
     });
   }
   function applyTranscriptEnd(model2, event) {
@@ -1417,6 +1429,9 @@
       0
     );
   }
+  function descendantCount(node) {
+    return node.children.reduce((total, child) => total + 1 + descendantCount(child), 0);
+  }
 
   // tools/ide/web/testing-tab/src/dom.ts
   function el(tag, className, text) {
@@ -1447,6 +1462,8 @@
       runMatchesFile: true,
       newBranchName: "",
       confirmingTrash: false,
+      goldens: /* @__PURE__ */ new Set(),
+      confirmingRecord: false,
       editNote: ""
     };
   }
@@ -1482,6 +1499,11 @@
     const command = el("div", "cmd");
     command.append(el("b", null, "> "), document.createTextNode(turn.input));
     row.append(command);
+    if (showOutput) {
+      const turnNumber = el("span", "turnno", turn.turn !== void 0 ? `turn ${turn.turn}` : "");
+      turnNumber.title = turn.turn !== void 0 ? "The engine turn this command executed as \u2014 meta commands share their turn with the next action" : "";
+      row.append(turnNumber);
+    }
     const verdict = el("div", "verdict");
     verdict.textContent = turn.skipped ? "SKIP" : turn.expectedFailure ? "XFAIL" : turn.passed ? "PASS" : "FAIL";
     row.append(verdict);
@@ -1743,6 +1765,7 @@
     cell("Ancestry", ancestry(model2, node).map((a) => a.stem).join(" \u203A "));
     cell("Children", node.children.length ? String(node.children.length) : "leaf");
     if (node.replays) cell("Replays", `${node.replays}\xD7`, "replay");
+    if (surface2.goldens.has(node.file)) cell("Tier", "golden \u2014 the recording is the assertion", "gold");
     view.append(meta);
     if (surface2.face === "source") {
       view.append(sourceFace(node, surface2));
@@ -1766,7 +1789,7 @@
       );
     }
     view.append(turns);
-    view.append(fileBar(surface2, actions2));
+    view.append(fileBar(model2, node, surface2, actions2));
     view.append(commandBar(surface2, actions2));
     if (surface2.editNote) view.append(editNote(surface2, actions2));
     if (surface2.pending) view.append(promoteBar(surface2.pending, surface2, actions2));
@@ -1776,7 +1799,7 @@
       field?.setSelectionRange(field.value.length, field.value.length);
     }
   }
-  function fileBar(surface2, actions2) {
+  function fileBar(model2, node, surface2, actions2) {
     const bar = el("div", "filebar");
     const field = el("input", "branchinput");
     field.type = "text";
@@ -1802,6 +1825,23 @@
     go.type = "button";
     go.addEventListener("click", branch);
     bar.append(field, go);
+    const isGolden = surface2.goldens.has(node.file);
+    if (surface2.confirmingRecord) {
+      const confirm = el("button", "recordgold armed", isGolden ? "Overwrite the recording?" : "Run and record?");
+      confirm.type = "button";
+      confirm.addEventListener("click", () => actions2.recordGolden());
+      const keep = el("button", "recordcancel", "Keep as is");
+      keep.type = "button";
+      keep.addEventListener("click", () => actions2.setConfirmingRecord(false));
+      bar.append(confirm, keep);
+    } else {
+      const ask = el("button", "recordgold", isGolden ? "Re-record golden\u2026" : "Record golden\u2026");
+      ask.type = "button";
+      ask.disabled = model2.inFlight;
+      ask.title = isGolden ? "Run the suite and overwrite this file\u2019s recording with what the story says now" : "Run the suite and record this file\u2019s output as its golden \u2014 the recording becomes the assertion, and any per-command assertions in the file stop being evaluated (ADR-294 D2)";
+      ask.addEventListener("click", () => actions2.setConfirmingRecord(true));
+      bar.append(ask);
+    }
     if (surface2.confirmingTrash) {
       const confirm = el("button", "trash armed", "Move to Trash?");
       confirm.type = "button";
@@ -2067,6 +2107,18 @@
     removeAssertion(commandLine, index) {
       applyEdit((text, file) => removeAssertion(text, file, commandLine, index), "the removal");
     },
+    setConfirmingRecord(confirming) {
+      surface.confirmingRecord = confirming;
+      scheduleRender();
+    },
+    recordGolden() {
+      const node = surface.opened;
+      surface.confirmingRecord = false;
+      if (!node) return;
+      surface.editNote = "";
+      host.recordGolden(node.file);
+      scheduleRender();
+    },
     undo() {
       const previous = undoStack[undoStack.length - 1];
       if (previous === void 0) return;
@@ -2082,6 +2134,12 @@
     try {
       const draft = edit(loaded.text, node.file);
       inFlightWrite = { file: node.file, draft, label, before: loaded.text, ...options };
+      const countBefore = commandCount(loaded.text, node.file);
+      const countAfter = commandCount(draft.text, node.file);
+      if (countBefore !== null && countAfter !== null && countBefore !== countAfter) {
+        const below = descendantCount(node);
+        if (below > 0) inFlightWrite.shiftsDescendants = below;
+      }
       surface.pending = null;
       surface.editNote = "Writing\u2026";
       host.writeTranscript(node.file, draft.text);
@@ -2121,6 +2179,10 @@
       trackRunning();
       scheduleRender();
     },
+    onGoldens(files) {
+      surface.goldens = new Set(files);
+      scheduleRender();
+    },
     onRestoreMode(mode) {
       if (mode === "column" || mode === "list" || mode === "documents") surface.mode = mode;
       scheduleRender();
@@ -2150,6 +2212,10 @@
       surface.undoDepth = undoStack.length;
       surface.runMatchesFile = false;
       surface.editNote = `Wrote ${write.label} \u2014 the run below predates this edit. Run again to see it evaluated.`;
+      if (write.shiftsDescendants) {
+        const count = write.shiftsDescendants;
+        surface.editNote += ` This changed the file's turn count \u2014 ${count} transcript${count === 1 ? "" : "s"} continue${count === 1 ? "s" : ""} from it, and every turn-scheduled beat in ${count === 1 ? "it" : "them"} now falls on a different command.`;
+      }
       surface.commandDraft = "";
       scheduleRender();
     },
@@ -2195,6 +2261,7 @@
     surface.runMatchesFile = true;
     surface.newBranchName = "";
     surface.confirmingTrash = false;
+    surface.confirmingRecord = false;
     undoStack = [];
     inFlightWrite = null;
   }

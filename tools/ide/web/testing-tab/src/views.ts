@@ -108,6 +108,19 @@ export interface Surface {
    */
   confirmingTrash: boolean;
   /**
+   * Transcripts with a `.golden` recording on disk (ADR-294 D1) — the golden
+   * tier, where the recording IS the assertion. Reported by the host, because
+   * tier is a filesystem fact the page cannot observe itself.
+   */
+  goldens: Set<string>;
+  /**
+   * True once Record golden has been asked for and not yet confirmed.
+   *
+   * Same two-act shape as Trash: a first record starts a whole suite run, and
+   * a RE-record overwrites the baseline every future run is judged against.
+   */
+  confirmingRecord: boolean;
+  /**
    * What the last edit did, shown until the next one.
    *
    * A save changes the file the shown run came from, so every turn after the
@@ -150,6 +163,10 @@ export interface ViewActions {
   trashOpenDocument(): void;
   /** Arm or disarm the Trash confirmation. */
   setConfirmingTrash(confirming: boolean): void;
+  /** Record (or re-record) the open transcript's golden — runs the suite. */
+  recordGolden(): void;
+  /** Arm or disarm the Record golden confirmation. */
+  setConfirmingRecord(confirming: boolean): void;
 }
 
 /** A surface with nothing selected, in the default mode. */
@@ -168,6 +185,8 @@ export function createSurface(): Surface {
     runMatchesFile: true,
     newBranchName: '',
     confirmingTrash: false,
+    goldens: new Set(),
+    confirmingRecord: false,
     editNote: '',
   };
 }
@@ -227,6 +246,19 @@ function turnRow(
   const command = el('div', 'cmd');
   command.append(el('b', null, '> '), document.createTextNode(turn.input));
   row.append(command);
+
+  if (showOutput) {
+    // The engine turn this command executed as (R4) — document face only, where
+    // turn numbers are what an author schedules beats against. Always appended,
+    // even empty, so rows without one keep the grid's columns aligned. Meta
+    // commands legitimately repeat a number; that is the fact, not a bug.
+    const turnNumber = el('span', 'turnno', turn.turn !== undefined ? `turn ${turn.turn}` : '');
+    turnNumber.title =
+      turn.turn !== undefined
+        ? 'The engine turn this command executed as — meta commands share their turn with the next action'
+        : '';
+    row.append(turnNumber);
+  }
 
   const verdict = el('div', 'verdict');
   verdict.textContent = turn.skipped
@@ -566,6 +598,9 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   cell('Ancestry', ancestry(model, node).map((a) => a.stem).join(' › '));
   cell('Children', node.children.length ? String(node.children.length) : 'leaf');
   if (node.replays) cell('Replays', `${node.replays}×`, 'replay');
+  // Tier is a filesystem fact the host reports (ADR-294 D2/D7): a recording
+  // exists, or the file's own assertions are what the run checks.
+  if (surface.goldens.has(node.file)) cell('Tier', 'golden — the recording is the assertion', 'gold');
   view.append(meta);
 
   // The two faces share the header and the meta row — they are two readings of
@@ -601,7 +636,7 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   }
   view.append(turns);
 
-  view.append(fileBar(surface, actions));
+  view.append(fileBar(model, node, surface, actions));
   view.append(commandBar(surface, actions));
   if (surface.editNote) view.append(editNote(surface, actions));
   if (surface.pending) view.append(promoteBar(surface.pending, surface, actions));
@@ -622,7 +657,7 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
  * (ADR-290 D8) — so neither the field name nor the folder is ever something to
  * get wrong.
  */
-function fileBar(surface: Surface, actions: ViewActions): HTMLElement {
+function fileBar(model: RunModel, node: TestNode, surface: Surface, actions: ViewActions): HTMLElement {
   const bar = el('div', 'filebar');
 
   const field = el('input', 'branchinput');
@@ -650,6 +685,31 @@ function fileBar(surface: Surface, actions: ViewActions): HTMLElement {
   go.type = 'button';
   go.addEventListener('click', branch);
   bar.append(field, go);
+
+  // Goldens (ADR-294 D1): record — or re-record — this file's recording, by
+  // running the suite with just this node blessed. Two acts, like Trash: a
+  // first record starts a whole run, and a re-record overwrites the baseline
+  // every future run is judged against. Disabled mid-run — recording IS a run,
+  // and two runs cannot share the engine.
+  const isGolden = surface.goldens.has(node.file);
+  if (surface.confirmingRecord) {
+    const confirm = el('button', 'recordgold armed', isGolden ? 'Overwrite the recording?' : 'Run and record?');
+    confirm.type = 'button';
+    confirm.addEventListener('click', () => actions.recordGolden());
+    const keep = el('button', 'recordcancel', 'Keep as is');
+    keep.type = 'button';
+    keep.addEventListener('click', () => actions.setConfirmingRecord(false));
+    bar.append(confirm, keep);
+  } else {
+    const ask = el('button', 'recordgold', isGolden ? 'Re-record golden…' : 'Record golden…');
+    ask.type = 'button';
+    ask.disabled = model.inFlight;
+    ask.title = isGolden
+      ? 'Run the suite and overwrite this file’s recording with what the story says now'
+      : 'Run the suite and record this file’s output as its golden — the recording becomes the assertion, and any per-command assertions in the file stop being evaluated (ADR-294 D2)';
+    ask.addEventListener('click', () => actions.setConfirmingRecord(true));
+    bar.append(ask);
+  }
 
   // Two acts, not one. The file still goes to the Trash rather than being
   // unlinked, so this is a speed bump rather than the only thing between an

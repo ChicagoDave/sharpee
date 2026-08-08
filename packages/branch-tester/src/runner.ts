@@ -51,6 +51,14 @@ interface GameEngine {
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   /**
+   * The engine's own record of the last executed turn — bootstrap's
+   * `LoadedGame` sets it after every `executeCommand`. The runner reads only
+   * `turn`: the 1-based counter the command executed as, which is engine
+   * knowledge (meta commands share a turn, refused actions consume one) and
+   * rides each `CommandResult` for the IDE's turn-budget view (R4).
+   */
+  lastTurnResult?: { turn: number } | null;
+  /**
    * Declared channel captures for the last command (ADR-294 D15): flattened
    * lines per channel id. Populated by bootstrap's assembleGame when the
    * session declared any channels. The turn's composed prose is not among
@@ -219,8 +227,9 @@ export async function runTranscript(
   }
 
   // A seeds: matrix records per-seed siblings (D8); the session's live seed
-  // selects which recording this run belongs to.
-  const seeds = transcript.config?.seeds ?? [];
+  // selects which recording this run belongs to. A tree node's matrix is its
+  // EFFECTIVE one (resolvedConfig) — a child inherits the root's matrix.
+  const seeds = (options.resolvedConfig ?? transcript.config)?.seeds ?? [];
   const matrixSeed = seeds.length > 1 ? engine.engine?.getMasterSeed?.() : undefined;
   const goldenPath = options.goldenPath ?? goldenPathFor(transcript.filePath, matrixSeed);
 
@@ -245,8 +254,12 @@ async function runGolden(
   mode: 'record' | 'replay',
   startTime: number
 ): Promise<TranscriptResult> {
+  // A tree node is judged by its EFFECTIVE config (ADR-302 D8), which the
+  // tree runner supplies as `resolvedConfig` — a child's seed and channels
+  // are its root's unless it declared its own, and reading the declared
+  // (empty) config here refused every child golden as unpinned.
   const config: TranscriptRunConfig =
-    transcript.config ?? { seeds: [], channels: [], events: false, forces: [] };
+    options.resolvedConfig ?? transcript.config ?? { seeds: [], channels: [], events: false, forces: [] };
 
   // ADR-294 D15: the capability profile and capture set are fixed at game
   // assembly, so a transcript whose channels: disagrees with the session it
@@ -368,7 +381,7 @@ async function runGolden(
     // faithfully. In-memory until a divergence actually happens.
     const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
 
-    const { output, events, channels } = await executeForGolden(
+    const { output, events, channels, turn: executedTurn } = await executeForGolden(
       command, engine, config.events, capturedChannelIds);
     options.coverage?.collectFrom(engine.lastEvents);
     const actualLines = output.split('\n');
@@ -378,7 +391,7 @@ async function runGolden(
       if (config.events && events.length > 0) turn.events = events;
       if (channels && Object.keys(channels).length > 0) turn.channels = channels;
       turns.push(turn);
-      record(goldenPassResult(command, output));
+      record(goldenPassResult(command, output, executedTurn));
     } else {
       const turn = recording!.turns[turnIndex];
       const divergence = diffTurn(turn, actualLines, events, config.events,
@@ -406,12 +419,13 @@ async function runGolden(
           skipped: false,
           assertionResults: [],
           error,
-          diff: divergence
+          diff: divergence,
+          ...(executedTurn !== undefined ? { turn: executedTurn } : {})
         });
         failed = true;
         break;
       }
-      record(goldenPassResult(command, output));
+      record(goldenPassResult(command, output, executedTurn));
     }
     turnIndex++;
   }
@@ -501,10 +515,16 @@ async function executeForGolden(
   engine: GameEngine,
   captureEvents: boolean,
   capturedChannelIds: string[] = []
-): Promise<{ output: string; events: GoldenEvent[]; channels?: Record<string, string[]> }> {
+): Promise<{ output: string; events: GoldenEvent[]; channels?: Record<string, string[]>; turn?: number }> {
   let output: string;
+  let turn: number | undefined;
   try {
     const result = await engine.executeCommand(command.input);
+    // The turn the command executed as (R4) — read inside the try for the
+    // same reason as the assertion tier: a wrapper that threw would leave
+    // the PREVIOUS command's record in `lastTurnResult`, and a stale turn
+    // on a crashed command is a lie.
+    turn = engine.lastTurnResult?.turn;
     output = typeof result === 'string' ? result : (engine.getOutput?.() || '');
   } catch (e) {
     // A throw still produces a turn — its "output" is the error text, which
@@ -532,7 +552,7 @@ async function executeForGolden(
       }
     }
   }
-  return { output, events, channels };
+  return { output, events, channels, ...(turn !== undefined ? { turn } : {}) };
 }
 
 /**
@@ -568,7 +588,7 @@ function openingResult(
 }
 
 /** A passing golden-tier command result. */
-function goldenPassResult(command: TranscriptCommand, output: string): CommandResult {
+function goldenPassResult(command: TranscriptCommand, output: string, turn?: number): CommandResult {
   return {
     command,
     actualOutput: output,
@@ -576,7 +596,8 @@ function goldenPassResult(command: TranscriptCommand, output: string): CommandRe
     passed: true,
     expectedFailure: false,
     skipped: false,
-    assertionResults: []
+    assertionResults: [],
+    ...(turn !== undefined ? { turn } : {})
   };
 }
 
@@ -1096,9 +1117,17 @@ async function runCommand(
   let actualOutput: string;
   let actualEvents: TestEventInfo[] = [];
   let error: string | undefined;
+  let turn: number | undefined;
 
   try {
     const result = await engine.executeCommand(command.input);
+    // The turn this command executed as, read off the engine's own record of
+    // the turn it just ran (R4). Meta commands legitimately repeat the number.
+    // Read HERE, not after the catch: production `executeCommand` never
+    // throws (bootstrap catches internally and nulls `lastTurnResult`), but a
+    // wrapper that DID throw would leave the previous command's record in
+    // place — and a stale turn on a crashed command is a lie.
+    turn = engine.lastTurnResult?.turn;
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
 
     // A stopped engine (player death ended the game) surfaces as this exact
@@ -1146,7 +1175,8 @@ async function runCommand(
           passed: false,
           message: `Engine error during skipped command: ${error}`
         }],
-        error
+        error,
+        ...(turn !== undefined ? { turn } : {})
       };
     }
     return {
@@ -1160,7 +1190,8 @@ async function runCommand(
         assertion: skipAssertion,
         passed: true,
         message: skipAssertion.reason || 'Skipped'
-      }]
+      }],
+      ...(turn !== undefined ? { turn } : {})
     };
   }
 
@@ -1182,7 +1213,8 @@ async function runCommand(
         passed: false,
         message: 'Blank output — command produced no visible text'
       }],
-      error: 'blank output'
+      error: 'blank output',
+      ...(turn !== undefined ? { turn } : {})
     };
   }
 
@@ -1212,7 +1244,8 @@ async function runCommand(
       expectedFailure: true,
       skipped: false,
       assertionResults,
-      error
+      error,
+      ...(turn !== undefined ? { turn } : {})
     };
   }
 
@@ -1224,7 +1257,8 @@ async function runCommand(
     expectedFailure: false,
     skipped: false,
     assertionResults,
-    error
+    error,
+    ...(turn !== undefined ? { turn } : {})
   };
 }
 

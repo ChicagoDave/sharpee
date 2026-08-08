@@ -27,6 +27,13 @@ export interface TreeTestOptions {
   json?: boolean;
   /** Carry `actualOutput` on every command result, not only failures. */
   captureOutput?: boolean;
+  /** Record/overwrite every node's golden instead of diffing (ADR-294 D1). */
+  bless?: boolean;
+  /**
+   * Bless only these nodes (absolute paths); the rest of the tree runs
+   * normally. The IDE's "record this file as a golden" gesture.
+   */
+  blessFiles?: string[];
 }
 
 /**
@@ -55,7 +62,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
   // covers the runner and its report, not the wire, which has one owner.
   const { RunEventStream, ndjsonEventLine } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
-  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false } = options;
+  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, bless = false, blessFiles = [] } = options;
 
   const stream = json
     ? new RunEventStream((event) => {
@@ -151,6 +158,8 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
       verbose,
       stopOnFailure,
       storyName,
+      bless,
+      blessFiles,
       observer: stream && {
         onCommandResult: (command) =>
           stream.commandResult(currentFile ?? '', command, captureOutput),
