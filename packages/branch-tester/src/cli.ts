@@ -379,6 +379,14 @@ async function main(): Promise<void> {
   for (const transcriptPath of transcriptPaths) {
     const transcript = parseTranscriptFile(transcriptPath);
     const errors = validateTranscript(transcript);
+    // A transcript that is merely EMPTY is not a defect: it is the editor's
+    // designed starting state, and it runs as a skip (phase-6 F1, David's
+    // ruling 2026-08-08). Zero commands + exactly one problem means that
+    // problem is the no-commands one; anything else keeps the D11 gate.
+    if (transcript.commands.length === 0 && errors.length === 1) {
+      parsed.push(transcript);
+      continue;
+    }
     if (errors.length > 0) {
       parseFailures.push({
         transcript,

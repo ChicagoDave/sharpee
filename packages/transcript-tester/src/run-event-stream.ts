@@ -248,6 +248,25 @@ export class RunEventStream {
   }
 
   /**
+   * A transcript with no commands, run as a skip (phase-6 F1, David's ruling
+   * 2026-08-08): the editor's designed starting state, not a defect and not
+   * a block. Also has no result behind it — nothing executed.
+   */
+  transcriptSkipped(file: string): void {
+    this.write({
+      ...this.envelope(),
+      type: 'transcript-end',
+      file,
+      status: 'skipped',
+      passed: 0,
+      failed: 0,
+      expectedFailures: 0,
+      skipped: 0,
+      duration: 0,
+    });
+  }
+
+  /**
    * A transcript that could not run at all — a parse failure, or a structural
    * tree defect (ADR-302 D11, where nothing in the tree runs). Also has no
    * result behind it, and for the same reason.

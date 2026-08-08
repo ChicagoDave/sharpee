@@ -100,19 +100,34 @@ export class MenuManager {
       await this.handlers.onRestart();
     });
 
+    document.getElementById('menu-reset')?.addEventListener('click', async () => {
+      this.closeAllMenus();
+      await this.handlers.onReset();
+    });
+
     document.getElementById('menu-quit')?.addEventListener('click', () => {
       this.closeAllMenus();
       this.handlers.onQuit();
     });
 
-    document.querySelectorAll('.sharpee-menu-option[data-theme]').forEach(opt => {
-      opt.addEventListener('click', () => {
-        const theme = (opt as HTMLElement).dataset.theme;
-        if (theme) {
-          this.handlers.onThemeSelect(theme);
-          this.closeAllMenus();
-        }
-      });
+    // Theme selection is DELEGATED to the menu bar rather than bound per
+    // item: the items are rendered at runtime by ThemeManager.renderMenu()
+    // (P-4), and per-item binding would quietly go dead for any item
+    // rendered after setup — an ordering trap delegation removes for good.
+    // The payload attribute is `data-theme-choice` (theme CSS scopes with
+    // bare `[data-theme=…]` selectors, so an item carrying `data-theme`
+    // paints itself in its own theme's colors); `data-theme` is still
+    // honored for custom pages' hand-written static menus (ADR-253).
+    document.getElementById('menu-bar')?.addEventListener('click', (event) => {
+      const opt = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+        '.sharpee-menu-option[data-theme-choice], .sharpee-menu-option[data-theme]',
+      );
+      if (!opt) return;
+      const theme = opt.dataset.themeChoice ?? opt.dataset.theme;
+      if (theme) {
+        this.handlers.onThemeSelect(theme);
+        this.closeAllMenus();
+      }
     });
 
     document.getElementById('menu-help')?.addEventListener('click', () => {

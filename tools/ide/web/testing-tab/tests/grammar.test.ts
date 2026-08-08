@@ -13,9 +13,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAssertion,
+  addCommand,
   commandCount,
   deleteCommand,
   editCommand,
+  newTranscript,
   parse,
   reparent,
   saveOutlook,
@@ -78,6 +80,39 @@ describe('saveOutlook', () => {
     const outlook = saveOutlook('not a transcript at all', 'probe.transcript');
     expect(outlook.kind).toBe('unsound');
     expect(outlook.kind === 'unsound' && outlook.problems).toContain('Transcript has no commands');
+  });
+
+  // D2 (phase-6 log): a newly created transcript is empty BY DESIGN, and the
+  // add-command bar is its fix — so the outlook must not lump it in with
+  // damage. `empty`, never `unsound`, for exactly this file.
+  it('calls a newly created transcript empty, not unsound', () => {
+    const text = newTranscript({ story: 'fernhill', title: 'begin', continuesFrom: null });
+    const outlook = saveOutlook(text, 'begin.transcript');
+    expect(outlook.kind).toBe('empty');
+    expect(outlook.kind === 'empty' && outlook.generated).toBe(text);
+  });
+
+  it('keeps zero-command text with any OTHER defect unsound', () => {
+    // No title and no story alongside the missing commands: two problems, so
+    // the empty classification must not fire.
+    const outlook = saveOutlook('---\n', 'probe.transcript');
+    expect(outlook.kind).toBe('unsound');
+  });
+
+  it('keeps zero-command text the serializer cannot reproduce unsound', () => {
+    // Parses to zero commands with a legal header, but the round trip loses
+    // the stray text — the husk hazard, not a new file.
+    const text = newTranscript({ story: 'fernhill', title: 'begin', continuesFrom: null });
+    const outlook = saveOutlook(`${text}\nstray line the serializer drops\n`, 'begin.transcript');
+    expect(outlook.kind).not.toBe('empty');
+  });
+
+  it('addCommand turns an empty transcript into a sound one-command file', () => {
+    const text = newTranscript({ story: 'fernhill', title: 'begin', continuesFrom: null });
+    const draft = addCommand(text, 'begin.transcript', 'look');
+    expect(draft.text).toContain('\n> look\n');
+    expect(draft.outlook.kind).not.toBe('unsound');
+    expect(draft.outlook.kind).not.toBe('empty');
   });
 
   it('is unsound for a file the runner would refuse, and says why', () => {

@@ -343,6 +343,11 @@ final class TestingTabRealPathTests: XCTestCase {
 
         let afterEdit = try String(contentsOf: transcript, encoding: .utf8)
         XCTAssertNotEqual(afterEdit, original, "the file on disk must have changed")
+        // F2: the just-written assertion is visible immediately, marked new-
+        // and-untested — not hidden with the stale claims until the re-run.
+        let freshChips = try await count("#docview .claim.fresh")
+        XCTAssertEqual(freshChips, 1,
+                       "the promoted assertion shows in the untested color before the re-run")
         XCTAssertTrue(afterEdit.contains("[OK: contains \"bald\"]"),
                       "the assertion the offer named is the one in the file")
 
@@ -1021,6 +1026,139 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertTrue(text.contains("story: fernhill"))
         XCTAssertFalse(text.contains("> "),
                        "a new transcript carries no placeholder command — the first is the author's")
+    }
+
+    /// D1 (phase-6 log): the suite's FIRST transcript is creatable from the
+    /// browse surface — no document open, nothing to branch from. Over an
+    /// EMPTY suite the page says how to begin instead of rendering blank
+    /// panes, and a name typed into the New-transcript bar becomes a ROOT
+    /// file on disk: no `continues:`, path decided by the host (ADR-290 D8).
+    func testAnEmptySuiteOffersRootCreationAndTheFirstTranscriptLandsOnDisk() async throws {
+        let scratch = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sharpee-empty-suite-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        tab.onCreateTranscript = { [weak self] name, text in
+            TranscriptSourceProvider(discovered: []).create(
+                name: name, text: text, in: scratch, to: self?.tab)
+        }
+
+        try await waitForPage()
+        // Before any story attaches there is nowhere for a create to land
+        // (ADR-290 D8 infers the path from the story), so the bar must not
+        // offer one — and "no transcripts yet" would be a claim about a suite
+        // the page has not seen.
+        let shownBeforeAttach = try await tab.evaluateInTab(
+            "document.getElementById('newbar').classList.contains('on')") as? Bool
+        XCTAssertEqual(shownBeforeAttach, false, "no story, no create bar")
+
+        // What attach does for a story whose tests/transcripts/ is empty:
+        // announce the story, discover nothing.
+        tab.beginRun(story: "fernhill")
+        tab.setDiscovered([])
+        try await settle(times: 3)
+
+        let note = try await text(".emptysuite")
+        XCTAssertTrue(note.contains("no transcripts"),
+                      "an empty suite explains itself; got: \(note)")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          document.getElementById('newroot').value = 'Arrival';
+          document.getElementById('newroot-create').click();
+        })();
+        """)
+        try await settle(times: 6)
+
+        let created = scratch.appendingPathComponent("tests/transcripts/arrival.transcript")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: created.path),
+                      "the name became a root file, slugged, in tests/transcripts/")
+        let written = try String(contentsOf: created, encoding: .utf8)
+        XCTAssertTrue(written.contains("title: Arrival"))
+        XCTAssertTrue(written.contains("story: fernhill"))
+        XCTAssertFalse(written.contains("continues:"), "a root carries no parentage")
+        XCTAssertFalse(written.contains("> "),
+                       "a new transcript carries no placeholder command — the first is the author's")
+
+        // The confirmation lands on the surface the author is looking at —
+        // the browse status line, since no document is open.
+        let status = try await text("#status")
+        XCTAssertTrue(status.contains("Created arrival"),
+                      "the browse surface confirms the create; got: \(status)")
+
+        // The form is spent: a name left in the box after a successful create
+        // is an accidental duplicate waiting for a second Enter.
+        let fieldAfter = try await tab.evaluateInTab(
+            "document.getElementById('newroot').value") as? String
+        XCTAssertEqual(fieldAfter, "", "the field clears once the create lands")
+
+        // A REFUSED create reaches the same surface: the same name again is
+        // "already exists", and in browse mode that must land on the status
+        // line — the edit note it used to go to renders only inside a document.
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          document.getElementById('newroot').value = 'Arrival';
+          document.getElementById('newroot-create').click();
+        })();
+        """)
+        try await settle(times: 6)
+        let refusal = try await text("#status")
+        XCTAssertTrue(refusal.contains("already exists"),
+                      "the browse surface carries the refusal; got: \(refusal)")
+
+        // D2: the designed loop continues — open the new document and give it
+        // its first command, all through the page. The file is EMPTY, and the
+        // add bar must be the fix, not another refusal (the outlook's `empty`
+        // kind, arriving through the real source seam).
+        let discovered = TranscriptDiscovery.transcripts(inStoryDirectory: scratch)
+        tab.setDiscovered(discovered.map(\.path))
+        tab.onRequestSource = { [weak self] file in
+            TranscriptSourceProvider(discovered: discovered).provide(file: file, to: self?.tab)
+        }
+        tab.onWriteTranscript = { [weak self] file, text in
+            TranscriptSourceProvider(discovered: discovered).write(file: file, text: text, to: self?.tab)
+        }
+        try await settle(times: 3)
+        try await openDocument(stem: "arrival")
+        try await settle(times: 3)
+
+        let placeholder = try await tab.evaluateInTab(
+            "document.getElementById('addcommand').placeholder") as? String
+        XCTAssertEqual(placeholder, "Add the first command…",
+                       "an empty file's add bar is the beginning, not a refusal")
+        let addDisabled = try await tab.evaluateInTab(
+            "document.getElementById('addcommand').disabled") as? Bool
+        XCTAssertEqual(addDisabled, false, "the one edit that fixes an empty file stays open")
+
+        _ = try await tab.evaluateInTab("""
+        (function () {
+          var f = document.getElementById('addcommand');
+          f.value = 'take the lantern';
+          document.querySelector('.addcmd .addgo').click();
+        })();
+        """)
+        try await settle(times: 6)
+        let grown = try String(contentsOf: created, encoding: .utf8)
+        XCTAssertTrue(grown.contains("> take the lantern"),
+                      "the first command landed in the file on disk")
+
+        // F2: the add is visible NOW — a [NEW] card with the next step said
+        // out loud, not a blank pane until the next run.
+        let newCards = try await count("#docview .turn.new")
+        XCTAssertEqual(newCards, 1, "the authored command renders immediately")
+        let badge = try await text("#docview .turn.new .newbadge")
+        XCTAssertEqual(badge, "NEW")
+        let note = try await text("#docview .turn.new .newnote")
+        XCTAssertTrue(note.contains("Run Tests"),
+                      "the guidance names the next step; got: \(note)")
+
+        // Detach announces its sentinel as if it were a story; the page maps
+        // it back to "no story" and withdraws the bar.
+        tab.beginRun(story: "No story open")
+        try await settle(times: 3)
+        let shownAfterDetach = try await tab.evaluateInTab(
+            "document.getElementById('newbar').classList.contains('on')") as? Bool
+        XCTAssertEqual(shownAfterDetach, false, "detached again, the bar withdraws")
     }
 
     /// Removing a transcript that others continue FROM would orphan them, so it

@@ -34,6 +34,11 @@ beforeEach(() => {
       storageBacking.delete(k);
     },
     clear: () => storageBacking.clear(),
+    // Index access too: handleReset's wipeStoryStorage walks by key(i)/length.
+    key: (i: number) => [...storageBacking.keys()][i] ?? null,
+    get length() {
+      return storageBacking.size;
+    },
   });
 });
 
@@ -265,5 +270,40 @@ describe('ADR-248 restart reboot (BrowserClient)', () => {
     expect(reboot).toHaveBeenCalledTimes(1);
     const texts = textDisplay.displayText.mock.calls.map((c: unknown[]) => c[0]);
     expect(texts).toContain('[Restart failed: assignRoom: room r01 not found]');
+  });
+});
+
+describe('Reset Story Data (issue 248 / phase 6a) — the full handleReset flow', () => {
+  it('declined: every key survives and nothing reboots', async () => {
+    const reboot = vi.fn(async () => undefined);
+    const { client, saveManager, engine } = makeHarness({ confirmAnswer: false, reboot });
+    seedAutosave(saveManager);
+    localStorage.setItem(`${PREFIX}theme`, 'paper');
+    localStorage.setItem('other-story-theme', 'classic');
+
+    await (client as any).handleReset();
+
+    expect(saveManager.loadAutosaveEnvelope()).not.toBeNull();
+    expect(localStorage.getItem(`${PREFIX}theme`)).toBe('paper');
+    expect(localStorage.getItem('other-story-theme')).toBe('classic');
+    expect(reboot).not.toHaveBeenCalled();
+    expect(engine.stop).not.toHaveBeenCalled();
+  });
+
+  it('confirmed: the story\'s keys are gone from real storage, foreign keys survive, and the reboot runs', async () => {
+    const reboot = vi.fn(async () => undefined);
+    const { client, saveManager, engine } = makeHarness({ confirmAnswer: true, reboot });
+    seedAutosave(saveManager);
+    localStorage.setItem(`${PREFIX}theme`, 'paper');
+    localStorage.setItem('other-story-theme', 'classic');
+
+    await (client as any).handleReset();
+
+    expect(saveManager.loadAutosaveEnvelope()).toBeNull();
+    expect(localStorage.getItem(`${PREFIX}theme`)).toBeNull();
+    // Another story on the same origin is untouched.
+    expect(localStorage.getItem('other-story-theme')).toBe('classic');
+    expect(engine.stop).toHaveBeenCalled();
+    expect(reboot).toHaveBeenCalledTimes(1);
   });
 });

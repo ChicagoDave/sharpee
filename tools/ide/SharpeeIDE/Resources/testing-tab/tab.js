@@ -42,7 +42,7 @@
   }
   function isTranscriptEndEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "transcript-end") && typeof value.file === "string" && (value.status === "passed" || value.status === "failed" || value.status === "error" || value.status === "unreached") && typeof value.passed === "number" && typeof value.failed === "number" && typeof value.expectedFailures === "number" && typeof value.skipped === "number" && typeof value.duration === "number" && (value.errorMessage === void 0 || typeof value.errorMessage === "string") && (value.blockedBy === void 0 || typeof value.blockedBy === "string");
+    return hasEnvelopeAndType(value, "transcript-end") && typeof value.file === "string" && (value.status === "passed" || value.status === "failed" || value.status === "error" || value.status === "unreached" || value.status === "skipped") && typeof value.passed === "number" && typeof value.failed === "number" && typeof value.expectedFailures === "number" && typeof value.skipped === "number" && typeof value.duration === "number" && (value.errorMessage === void 0 || typeof value.errorMessage === "string") && (value.blockedBy === void 0 || typeof value.blockedBy === "string");
   }
   function isBudgetUse(value) {
     if (!isObject(value)) return false;
@@ -1109,6 +1109,10 @@
       return { kind: "unsound", problems: [error instanceof Error ? error.message : String(error)] };
     }
     const problems = validateTranscript(transcript);
+    if (transcript.commands.length === 0 && problems.length === 1) {
+      const generated2 = serialize(transcript);
+      if (generated2 === text) return { kind: "empty", generated: generated2 };
+    }
     if (problems.length > 0) return { kind: "unsound", problems };
     const generated = serialize(transcript);
     if (generated === text) return { kind: "clean", generated };
@@ -1550,7 +1554,9 @@
       confirmingTrash: false,
       goldens: /* @__PURE__ */ new Set(),
       confirmingRecord: false,
-      editNote: ""
+      editNote: "",
+      story: null,
+      freshClaims: /* @__PURE__ */ new Map()
     };
   }
   function dotClass(node, model2) {
@@ -1564,6 +1570,8 @@
         return "queued";
       case "running":
         return `${node.turns.length} of ${node.commandCount ?? "?"} commands\u2026`;
+      case "skipped":
+        return "skipped \u2014 no commands yet; open it and add the first one";
       case "error":
         return node.errorMessage ? `error \u2014 ${node.errorMessage}` : "error \u2014 the transcript never ran";
       default: {
@@ -1703,8 +1711,23 @@
     }
     if (claims && claims.length) {
       const list = el("div", "claims");
-      claims.forEach((claim) => list.append(claimRow(turn, claim, actions2)));
+      claims.forEach((claim) => list.append(claimRow(turn.line, claim, actions2)));
       row.append(list);
+    }
+    const fresh = surface2?.freshClaims.get(turn.input);
+    if (fresh && fresh.size) {
+      const shown = new Set((claims ?? []).map((claim) => claim.tag));
+      const list = el("div", "claims");
+      let any = false;
+      fresh.forEach((tag) => {
+        if (shown.has(tag)) return;
+        const claim = el("div", "claim fresh");
+        claim.append(el("code", "ctag", tag));
+        claim.append(el("span", "cfresh", "new \u2014 not tested until the next run"));
+        list.append(claim);
+        any = true;
+      });
+      if (any) row.append(list);
     }
     if (terminal === "ends") {
       row.append(el("div", "endshere", "The story ends here."));
@@ -1715,7 +1738,38 @@
     }
     return row;
   }
-  function claimRow(turn, claim, actions2) {
+  function authoredRow(node, line, input, claims, actions2) {
+    const row = el("div", "turn new");
+    const ln = el("button", "ln", String(line));
+    ln.type = "button";
+    ln.title = `${node.file}:${line}`;
+    ln.addEventListener("click", () => actions2.openLocation(node.file, line));
+    row.append(ln);
+    const command = el("div", "cmd");
+    command.append(el("b", null, "> "));
+    command.append(document.createTextNode(input));
+    row.append(command);
+    row.append(el("span", "verdict newbadge", "NEW"));
+    const real = claims.filter((claim) => !(claim.tag === "[SKIP]" && claims.length === 1));
+    if (real.length) {
+      const list = el("div", "claims");
+      real.forEach((claim) => {
+        const item = claimRow(line, claim, actions2);
+        item.classList.add("fresh");
+        list.append(item);
+      });
+      row.append(list);
+    }
+    row.append(
+      el(
+        "div",
+        "newnote",
+        real.length ? "Not yet run \u2014 Run Tests to check it." : "Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion."
+      )
+    );
+    return row;
+  }
+  function claimRow(commandLine, claim, actions2) {
     const row = el("div", claim.haltsEvaluation ? "claim halts" : "claim");
     row.append(el("code", "ctag", claim.tag));
     if (claim.block) row.append(el("pre", "cblock", claim.block.join("\n")));
@@ -1725,8 +1779,8 @@
     const remove = el("button", "cdrop", "\u2715");
     remove.type = "button";
     remove.title = `Remove ${claim.tag}`;
-    remove.dataset.removeAssertion = `${turn.line}:${claim.index}`;
-    remove.addEventListener("click", () => actions2.removeAssertion(turn.line, claim.index));
+    remove.dataset.removeAssertion = `${commandLine}:${claim.index}`;
+    remove.addEventListener("click", () => actions2.removeAssertion(commandLine, claim.index));
     row.append(remove);
     return row;
   }
@@ -1887,6 +1941,14 @@
       const problems = el("ul", "problems");
       outlook.problems.forEach((problem) => problems.append(el("li", null, problem)));
       pane.append(problems);
+    } else if (outlook?.kind === "empty") {
+      pane.append(
+        el(
+          "div",
+          "normnote",
+          "No commands yet \u2014 a new transcript starts empty so the first command is yours. Add it on the Cards face; the run refuses the file until then."
+        )
+      );
     } else if (outlook?.kind === "reformats") {
       const n = outlook.changedLines;
       pane.append(
@@ -1959,6 +2021,19 @@
       view.append(sourceFace(node, surface2));
       return;
     }
+    let authoredTail = [];
+    if (surface2.source?.file === node.file && surface2.source.text !== null) {
+      try {
+        const transcript = parse(surface2.source.text, node.file);
+        const byLine = assertionsByCommandLine(surface2.source.text, node.file);
+        authoredTail = transcript.commands.slice(node.turns.length).map((command) => ({
+          line: command.lineNumber,
+          input: command.input,
+          claims: byLine.get(command.lineNumber) ?? []
+        }));
+      } catch {
+      }
+    }
     const turns = el("div", "turns");
     if (node.status === "unreached") {
       turns.append(
@@ -1969,7 +2044,7 @@
         )
       );
     } else if (!node.turns.length) {
-      turns.append(el("div", "more", "No turns recorded."));
+      if (!authoredTail.length) turns.append(el("div", "more", "No turns recorded."));
     } else {
       const claims = surface2.runMatchesFile && surface2.source?.file === node.file && surface2.source.text !== null ? assertionsByCommandLine(surface2.source.text, node.file) : null;
       const end2 = storyEnd(node);
@@ -1989,6 +2064,11 @@
         )
       );
     }
+    if (node.status !== "unreached") {
+      authoredTail.forEach(
+        (command) => turns.append(authoredRow(node, command.line, command.input, command.claims, actions2))
+      );
+    }
     view.append(turns);
     const changed = recordingChanges(node);
     if (changed.length && surface2.goldens.has(node.file)) {
@@ -1999,7 +2079,10 @@
     if (end) view.append(terminalBar(node, end));
     else view.append(commandBar(surface2, actions2));
     if (surface2.editNote) view.append(editNote(surface2, actions2));
-    if (surface2.pending) view.append(promoteBar(surface2.pending, surface2, actions2));
+    const slot = el("div");
+    slot.id = "promoteslot";
+    view.append(slot);
+    renderPromoteSlot(surface2, actions2);
     if (typing) {
       const field = document.getElementById(typing);
       field?.focus();
@@ -2159,6 +2242,7 @@
     const unsound = surface2.source?.outlook?.kind === "unsound";
     field.disabled = unsound;
     if (unsound) field.placeholder = "The test run would refuse this file \u2014 fix it in the editor first.";
+    if (surface2.source?.outlook?.kind === "empty") field.placeholder = "Add the first command\u2026";
     const submit = () => {
       const input = field.value.trim();
       if (!input) return;
@@ -2253,6 +2337,12 @@
       )
     );
   }
+  function renderPromoteSlot(surface2, actions2) {
+    const slot = document.getElementById("promoteslot");
+    if (!slot) return;
+    slot.replaceChildren();
+    if (surface2.pending) slot.append(promoteBar(surface2.pending, surface2, actions2));
+  }
   function render(model2, surface2, actions2) {
     renderHeader(model2, surface2);
     const showing = surface2.opened !== null;
@@ -2268,10 +2358,21 @@
     document.querySelectorAll("[data-mode]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.mode === surface2.mode));
     });
+    byId("newbar").classList.toggle("on", !showing && surface2.story !== null);
     if (showing) renderDocument(model2, surface2, actions2);
     else if (surface2.mode === "column") renderColumns(model2, surface2, actions2);
     else if (surface2.mode === "list") renderList(model2, surface2, actions2);
     else renderDocuments(model2, surface2, actions2);
+    if (!showing && surface2.story !== null && model2.nodes.size === 0) {
+      const containers = { column: "cols", list: "list", documents: "docs" };
+      byId(containers[surface2.mode]).replaceChildren(
+        el(
+          "div",
+          "emptysuite",
+          "This story has no transcripts yet. Name the first one above and press Create \u2014 it starts empty, and its first command is yours."
+        )
+      );
+    }
     renderPathBar(model2, surface2);
   }
 
@@ -2341,7 +2442,8 @@
       if (!pending) return;
       applyEdit(
         (text, file) => addAssertion(text, file, pending.commandLine, pending.promotion.assertion, pending.input),
-        pending.promotion.label
+        pending.promotion.label,
+        { freshClaim: { input: pending.input, tag: pending.promotion.label } }
       );
     },
     addCommand(input) {
@@ -2418,13 +2520,15 @@
       applyEdit((text, file) => removeAssertion(text, file, commandLine, index), "the removal");
     },
     assertWorldChange(commandLine, assertTrue, expression) {
+      const chipTurn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
       applyEdit(
         (text, file) => addAssertion(text, file, commandLine, {
           type: "state-assert",
           assertTrue,
           stateExpression: expression
         }),
-        `[STATE: ${assertTrue}, ${expression}]`
+        `[STATE: ${assertTrue}, ${expression}]`,
+        chipTurn ? { freshClaim: { input: chipTurn.input, tag: `[STATE: ${assertTrue}, ${expression}]` } } : {}
       );
     },
     setConfirmingRecord(confirming) {
@@ -2504,6 +2608,7 @@
       surface.follow = true;
       surface.status = "";
       byId("story").textContent = story;
+      surface.story = story === "No story open" ? null : story;
       scheduleRender();
     },
     onStatus(text) {
@@ -2545,6 +2650,11 @@
       surface.source = { file, text: write.draft.text, error: null, outlook: write.draft.outlook };
       if (write.popsUndo) undoStack.pop();
       else undoStack.push(write.before);
+      if (write.freshClaim) {
+        const tags = surface.freshClaims.get(write.freshClaim.input) ?? /* @__PURE__ */ new Set();
+        tags.add(write.freshClaim.tag);
+        surface.freshClaims.set(write.freshClaim.input, tags);
+      }
       surface.undoDepth = undoStack.length;
       surface.runMatchesFile = false;
       surface.editNote = `Wrote ${write.label} \u2014 the run below predates this edit. Run again to see it evaluated.`;
@@ -2554,11 +2664,12 @@
     },
     onCreated(file) {
       surface.newBranchName = "";
-      surface.editNote = `Created ${stemOf(file)}. Add its first command, then run.`;
+      byId("newroot").value = "";
+      noteCreation(`Created ${stemOf(file)}. Add its first command, then run.`);
       scheduleRender();
     },
     onCreateFailed(message) {
-      surface.editNote = message;
+      noteCreation(message);
       scheduleRender();
     },
     onTrashed(file) {
@@ -2609,6 +2720,7 @@
     surface.reparentChoice = "";
     surface.confirmingTrash = false;
     surface.confirmingRecord = false;
+    surface.freshClaims = /* @__PURE__ */ new Map();
     undoStack = [];
     inFlightWrite = null;
   }
@@ -2641,7 +2753,7 @@
       const same = next?.commandLine === surface.pending?.commandLine && next?.promotion.label === surface.pending?.promotion.label;
       if (same) return;
       surface.pending = next;
-      scheduleRender();
+      renderPromoteSlot(surface, actions);
     });
   }
   function selectionPromotion() {
@@ -2663,6 +2775,35 @@
     const start = node instanceof Element ? node : node?.parentElement ?? null;
     return start?.closest("#docview .turn .actual[data-command-line]") ?? null;
   }
+  function noteCreation(message) {
+    if (surface.opened) surface.editNote = message;
+    else surface.status = message;
+  }
+  function createRootTranscript(name) {
+    const text = newTranscript({
+      story: surface.story ?? "",
+      title: name,
+      continuesFrom: null
+    });
+    noteCreation("Creating\u2026");
+    host.createTranscript(name, text);
+    scheduleRender();
+  }
+  function installNewTranscriptBar() {
+    const field = byId("newroot");
+    const create = () => {
+      const name = field.value.trim();
+      if (!name) return;
+      createRootTranscript(name);
+    };
+    field.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        create();
+      }
+    });
+    byId("newroot-create").addEventListener("click", create);
+  }
   function installToolbar() {
     document.querySelectorAll("[data-mode]").forEach((button) => {
       button.addEventListener("click", () => actions.setMode(button.dataset.mode));
@@ -2674,6 +2815,7 @@
     });
   }
   installToolbar();
+  installNewTranscriptBar();
   installSelectionWatcher();
   render(model, surface, actions);
   host.ready();

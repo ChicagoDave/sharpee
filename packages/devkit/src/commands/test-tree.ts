@@ -88,6 +88,14 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
     try {
       const transcript = parseTranscriptFile(transcriptPath);
       const errors = validateTranscript(transcript);
+      // A transcript that is merely EMPTY is not a defect: it is the editor's
+      // designed starting state, and it runs as a skip (phase-6 F1, David's
+      // ruling 2026-08-08). Zero commands + exactly one problem means that
+      // problem is the no-commands one; anything else keeps the D11 gate.
+      if (transcript.commands.length === 0 && errors.length === 1) {
+        parsed.push(transcript);
+        continue;
+      }
       if (errors.length > 0) {
         parseFailures.push(`${transcriptPath}: ${errors.join('; ')}`);
         continue;
@@ -186,6 +194,15 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
             ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
           });
           stream.transcriptUnreached(node.transcript.filePath, origin.transcript.filePath);
+        },
+        onNodeSkipped: ({ node }) => {
+          // Announced like an unreached node — start carries the parentage the
+          // tree view joins on, end says why nothing follows (phase-6 F1).
+          stream.transcriptStart(node.transcript.filePath, executionIndex++, {
+            commandCount: 0,
+            ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
+          });
+          stream.transcriptSkipped(node.transcript.filePath);
         },
       },
     });

@@ -13,12 +13,13 @@
  *   Column shows only the selected path, so a failure in an unexplored branch has
  *   nowhere else to appear.
  *
- * Public interface: ViewMode, Surface, ViewActions, createSurface, render.
+ * Public interface: ViewMode, Surface, ViewActions, createSurface, render,
+ * renderPromoteSlot (the selection watcher's render-free patch, F3).
  * Owner context: tools/ide — the Testing tab's web bundle.
  */
 
 import { byId, el } from './dom';
-import { assertionsByCommandLine, type SaveOutlook, type WrittenAssertion } from './grammar';
+import { assertionsByCommandLine, parse, type SaveOutlook, type WrittenAssertion } from './grammar';
 import type { Promotion } from './promote';
 import {
   ancestry,
@@ -151,6 +152,24 @@ export interface Surface {
    * note says so rather than letting the cards quietly become fiction.
    */
   editNote: string;
+  /**
+   * The attached story's id, or null when none is attached.
+   *
+   * Gates the New-transcript bar and the empty-suite note: before a story
+   * arrives, "no transcripts yet" would be a claim about a suite the page has
+   * not seen, and a create would have nowhere to land (ADR-290 D8 — the host
+   * infers the path from the story).
+   */
+  story: string | null;
+  /**
+   * Assertions written through the editor since the open document's last run,
+   * command input → the tags written on it (F2: new and untested shows in
+   * orange, immediately). Keyed by INPUT rather than source line because later
+   * edits shift lines but not what the author typed. Confirmed writes only —
+   * an orange chip for a write that never reached disk would be fiction.
+   * Cleared with the rest of the per-document state.
+   */
+  freshClaims: Map<string, Set<string>>;
 }
 
 /** A selection inside one turn's output, and the assertion it earns. */
@@ -231,6 +250,8 @@ export function createSurface(): Surface {
     goldens: new Set(),
     confirmingRecord: false,
     editNote: '',
+    story: null,
+    freshClaims: new Map(),
   };
 }
 
@@ -250,6 +271,8 @@ function resultLine(node: TestNode, model: RunModel): string {
       return 'queued';
     case 'running':
       return `${node.turns.length} of ${node.commandCount ?? '?'} commands…`;
+    case 'skipped':
+      return 'skipped — no commands yet; open it and add the first one';
     case 'error':
       return node.errorMessage ? `error — ${node.errorMessage}` : 'error — the transcript never ran';
     default: {
@@ -458,8 +481,28 @@ function turnRow(
 
   if (claims && claims.length) {
     const list = el('div', 'claims');
-    claims.forEach((claim) => list.append(claimRow(turn, claim, actions)));
+    claims.forEach((claim) => list.append(claimRow(turn.line, claim, actions)));
     row.append(list);
+  }
+
+  // F2: an assertion written since the last run is visible NOW, in the new-
+  // and-untested color — not hidden until the next run the way stale claims
+  // are. Tracked by the editor at write time (surface.freshClaims), so this
+  // needs no line join against a file the run predates.
+  const fresh = surface?.freshClaims.get(turn.input);
+  if (fresh && fresh.size) {
+    const shown = new Set((claims ?? []).map((claim) => claim.tag));
+    const list = el('div', 'claims');
+    let any = false;
+    fresh.forEach((tag) => {
+      if (shown.has(tag)) return;
+      const claim = el('div', 'claim fresh');
+      claim.append(el('code', 'ctag', tag));
+      claim.append(el('span', 'cfresh', 'new — not tested until the next run'));
+      list.append(claim);
+      any = true;
+    });
+    if (any) row.append(list);
   }
 
   // R9's two markings, both statements about the LAST RUN, never guesses about
@@ -478,6 +521,56 @@ function turnRow(
 }
 
 /**
+ * A command the file has and the shown run does not — authored since that run,
+ * or before any run at all (F2). Rendered the moment it exists: [NEW] badge,
+ * its assertions in the untested color, and the next step said out loud, so an
+ * add is never invisible and never doubles from being retried.
+ */
+function authoredRow(
+  node: TestNode,
+  line: number,
+  input: string,
+  claims: WrittenAssertion[],
+  actions: ViewActions,
+): HTMLElement {
+  const row = el('div', 'turn new');
+  const ln = el('button', 'ln', String(line));
+  ln.type = 'button';
+  ln.title = `${node.file}:${line}`;
+  ln.addEventListener('click', () => actions.openLocation(node.file, line));
+  row.append(ln);
+
+  const command = el('div', 'cmd');
+  command.append(el('b', null, '> '));
+  command.append(document.createTextNode(input));
+  row.append(command);
+  row.append(el('span', 'verdict newbadge', 'NEW'));
+
+  // The auto-written [SKIP] placeholder is not a claim the author made — the
+  // guidance line below is what stands in for it until a real assertion does.
+  const real = claims.filter((claim) => !(claim.tag === '[SKIP]' && claims.length === 1));
+  if (real.length) {
+    const list = el('div', 'claims');
+    real.forEach((claim) => {
+      const item = claimRow(line, claim, actions);
+      item.classList.add('fresh');
+      list.append(item);
+    });
+    row.append(list);
+  }
+  row.append(
+    el(
+      'div',
+      'newnote',
+      real.length
+        ? 'Not yet run — Run Tests to check it.'
+        : 'Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion.',
+    ),
+  );
+  return row;
+}
+
+/**
  * One assertion the file makes about a turn, and the way to take it back.
  *
  * The tag is the serializer's own, so this reads as the file reads — which is
@@ -486,7 +579,7 @@ function turnRow(
  * has its later assertions silently unevaluated and a surface that listed them
  * as equals would be lying about what the suite checks.
  */
-function claimRow(turn: Turn, claim: WrittenAssertion, actions: ViewActions): HTMLElement {
+function claimRow(commandLine: number, claim: WrittenAssertion, actions: ViewActions): HTMLElement {
   const row = el('div', claim.haltsEvaluation ? 'claim halts' : 'claim');
   row.append(el('code', 'ctag', claim.tag));
   if (claim.block) row.append(el('pre', 'cblock', claim.block.join('\n')));
@@ -497,8 +590,8 @@ function claimRow(turn: Turn, claim: WrittenAssertion, actions: ViewActions): HT
   const remove = el('button', 'cdrop', '✕');
   remove.type = 'button';
   remove.title = `Remove ${claim.tag}`;
-  remove.dataset.removeAssertion = `${turn.line}:${claim.index}`;
-  remove.addEventListener('click', () => actions.removeAssertion(turn.line, claim.index));
+  remove.dataset.removeAssertion = `${commandLine}:${claim.index}`;
+  remove.addEventListener('click', () => actions.removeAssertion(commandLine, claim.index));
   row.append(remove);
   return row;
 }
@@ -695,6 +788,16 @@ function sourceFace(node: TestNode, surface: Surface): HTMLElement {
     const problems = el('ul', 'problems');
     outlook.problems.forEach((problem) => problems.append(el('li', null, problem)));
     pane.append(problems);
+  } else if (outlook?.kind === 'empty') {
+    // Not damage — the file simply hasn't begun (D2). Point at the fix rather
+    // than listing the refusal it will earn if run as-is.
+    pane.append(
+      el(
+        'div',
+        'normnote',
+        'No commands yet — a new transcript starts empty so the first command is yours. Add it on the Cards face; the run refuses the file until then.',
+      ),
+    );
   } else if (outlook?.kind === 'reformats') {
     const n = outlook.changedLines;
     pane.append(
@@ -790,6 +893,25 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
     return;
   }
 
+  // F2: what the author wrote exists before any run does. Commands beyond the
+  // run's turns render as cards the moment they land — [NEW] — instead of
+  // waiting for the next run. Beyond-count is the honest join: adds append to
+  // the file, and mid-file edits already carry the "run again" edit note.
+  let authoredTail: { line: number; input: string; claims: WrittenAssertion[] }[] = [];
+  if (surface.source?.file === node.file && surface.source.text !== null) {
+    try {
+      const transcript = parse(surface.source.text, node.file);
+      const byLine = assertionsByCommandLine(surface.source.text, node.file);
+      authoredTail = transcript.commands.slice(node.turns.length).map((command) => ({
+        line: command.lineNumber,
+        input: command.input,
+        claims: byLine.get(command.lineNumber) ?? [],
+      }));
+    } catch {
+      // An unreadable file has no authored tail to show — the source face says why.
+    }
+  }
+
   const turns = el('div', 'turns');
   if (node.status === 'unreached') {
     turns.append(
@@ -802,7 +924,7 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
       ),
     );
   } else if (!node.turns.length) {
-    turns.append(el('div', 'more', 'No turns recorded.'));
+    if (!authoredTail.length) turns.append(el('div', 'more', 'No turns recorded.'));
   } else {
     // The file's claims are joined to the run's turns by source line, so they are
     // shown only while the two still describe the same file.
@@ -830,6 +952,11 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
       ),
     );
   }
+  if (node.status !== 'unreached') {
+    authoredTail.forEach((command) =>
+      turns.append(authoredRow(node, command.line, command.input, command.claims, actions)),
+    );
+  }
   view.append(turns);
 
   // R6: a re-record is a review, not a blind overwrite. The changed cards
@@ -848,7 +975,14 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   if (end) view.append(terminalBar(node, end));
   else view.append(commandBar(surface, actions));
   if (surface.editNote) view.append(editNote(surface, actions));
-  if (surface.pending) view.append(promoteBar(surface.pending, surface, actions));
+  // The promote offer lives in a persistent slot, filled in place — never by a
+  // document render. A render rebuilds the turns subtree, and rebuilding the
+  // nodes a selection lives in collapses the selection mid-drag (F3, phase-6
+  // log) — the exact gesture the offer exists to answer.
+  const slot = el('div');
+  slot.id = 'promoteslot';
+  view.append(slot);
+  renderPromoteSlot(surface, actions);
 
   if (typing) {
     const field = document.getElementById(typing) as HTMLInputElement | null;
@@ -1093,9 +1227,12 @@ function commandBar(surface: Surface, actions: ViewActions): HTMLElement {
   });
   // An unsound file cannot be edited at all: serializing it would write a husk
   // over the author's work, so the field says why rather than failing on Enter.
+  // An EMPTY file is the exception the kind exists for (D2): this field is the
+  // fix, so it stays open and says it is the beginning.
   const unsound = surface.source?.outlook?.kind === 'unsound';
   field.disabled = unsound;
   if (unsound) field.placeholder = 'The test run would refuse this file — fix it in the editor first.';
+  if (surface.source?.outlook?.kind === 'empty') field.placeholder = 'Add the first command…';
 
   const submit = (): void => {
     const input = field.value.trim();
@@ -1227,6 +1364,22 @@ function renderPathBar(model: RunModel, surface: Surface): void {
 }
 
 /** Repaints the whole surface. Called on every applied event and every click. */
+/**
+ * Fills (or empties) the promote-offer slot in place.
+ *
+ * The selection watcher calls THIS instead of a document render: a render
+ * rebuilds the turns subtree, and replacing the nodes a selection anchors in
+ * collapses it mid-drag (F3, phase-6 log). The slot is the one region a
+ * selection change is allowed to touch. Document renders also call it, so a
+ * full repaint and a selection patch agree on what the slot shows.
+ */
+export function renderPromoteSlot(surface: Surface, actions: ViewActions): void {
+  const slot = document.getElementById('promoteslot');
+  if (!slot) return;
+  slot.replaceChildren();
+  if (surface.pending) slot.append(promoteBar(surface.pending, surface, actions));
+}
+
 export function render(model: RunModel, surface: Surface, actions: ViewActions): void {
   renderHeader(model, surface);
 
@@ -1244,10 +1397,29 @@ export function render(model: RunModel, surface: Surface, actions: ViewActions):
     button.setAttribute('aria-pressed', String(button.dataset.mode === surface.mode));
   });
 
+  // The browse surface owns ROOT creation: a branch is defined by its parent
+  // and so lives on the open document, but the suite's FIRST transcript has no
+  // parent and no document to be reached from. Without this bar an empty suite
+  // is a dead end (phase-6 log, D1).
+  byId('newbar').classList.toggle('on', !showing && surface.story !== null);
+
   if (showing) renderDocument(model, surface, actions);
   else if (surface.mode === 'column') renderColumns(model, surface, actions);
   else if (surface.mode === 'list') renderList(model, surface, actions);
   else renderDocuments(model, surface, actions);
+
+  // An empty suite says how to begin, over whichever pane is showing —
+  // three blank panes claim the tab is broken, not that nothing exists yet.
+  if (!showing && surface.story !== null && model.nodes.size === 0) {
+    const containers: Record<ViewMode, string> = { column: 'cols', list: 'list', documents: 'docs' };
+    byId(containers[surface.mode]).replaceChildren(
+      el(
+        'div',
+        'emptysuite',
+        'This story has no transcripts yet. Name the first one above and press Create — it starts empty, and its first command is yours.',
+      ),
+    );
+  }
 
   renderPathBar(model, surface);
 }

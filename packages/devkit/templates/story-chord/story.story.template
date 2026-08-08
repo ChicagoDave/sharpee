@@ -5,6 +5,7 @@ story
   story-version: 0.1.0
   ifid: {{IFID}}
   description: {{DESCRIPTION}}
+  themes: modern-dark, retro-terminal, paper, system-6
 
 create the Landing
   a room

@@ -69,6 +69,11 @@ export function serialize(transcript: Transcript): string {
 export type SaveOutlook =
   | { kind: 'clean'; generated: string }
   | { kind: 'reformats'; generated: string; changedLines: number }
+  /** Parses, zero commands, nothing else wrong — a newly created transcript.
+   *  The runner refuses it, but the editor can (and must) still edit it:
+   *  `addCommand` is the fix, so the add bar stays open where every other
+   *  gate may treat this like `unsound`. */
+  | { kind: 'empty'; generated: string }
   | { kind: 'unsound'; problems: string[] };
 
 /**
@@ -77,7 +82,9 @@ export type SaveOutlook =
  * @param text the file's current contents
  * @param file its path, for the parser's diagnostics
  * @returns `unsound` when the runner would refuse this file — in which case
- *   there is nothing to preview and nothing that may be written over it.
+ *   there is nothing to preview and nothing that may be written over it —
+ *   except the one refusal the editor exists to fix: a file that is merely
+ *   EMPTY (zero commands, no other defect) is `empty`, not `unsound`.
  */
 export function saveOutlook(text: string, file: string): SaveOutlook {
   let transcript: Transcript;
@@ -88,6 +95,18 @@ export function saveOutlook(text: string, file: string): SaveOutlook {
   }
 
   const problems = validateTranscript(transcript);
+  // Zero commands is what a newly created transcript IS (newTranscript writes
+  // no placeholder), and addCommand is allowed to fix exactly that. Three
+  // conditions, all load-bearing: zero commands; exactly one problem (so that
+  // problem is necessarily the no-commands one — any other defect keeps the
+  // refusal); and the serializer reproduces the text byte-for-byte. The last
+  // is the husk hazard's own test: unreadable text ALSO parses to zero
+  // commands, but its round trip loses the text — a file the serializer
+  // cannot reproduce is not empty, it is unreadable.
+  if (transcript.commands.length === 0 && problems.length === 1) {
+    const generated = serialize(transcript);
+    if (generated === text) return { kind: 'empty', generated };
+  }
   if (problems.length > 0) return { kind: 'unsound', problems };
 
   const generated = serialize(transcript);

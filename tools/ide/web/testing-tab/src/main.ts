@@ -45,6 +45,7 @@ import { byId } from './dom';
 import {
   createSurface,
   render,
+  renderPromoteSlot,
   type DocumentFace,
   type PendingPromotion,
   type ViewActions,
@@ -76,6 +77,13 @@ let inFlightWrite:
        * is not one.
        */
       warning?: string;
+      /**
+       * An assertion this write adds, for the new-and-untested marking (F2):
+       * the command's input and the tag written on it. Folded into
+       * `surface.freshClaims` only on confirmation — orange for a write that
+       * never landed would be fiction.
+       */
+      freshClaim?: { input: string; tag: string };
     }
   | null = null;
 
@@ -177,6 +185,7 @@ const actions: ViewActions = {
       (text, file) =>
         addAssertion(text, file, pending.commandLine, pending.promotion.assertion, pending.input),
       pending.promotion.label,
+      { freshClaim: { input: pending.input, tag: pending.promotion.label } },
     );
   },
   addCommand(input: string) {
@@ -269,6 +278,7 @@ const actions: ViewActions = {
     // R3: the chip already spelled the expression with the runner-picked
     // token, so this is an ordinary assertion write — same path, same undo,
     // same refusals as a promoted selection.
+    const chipTurn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
     applyEdit(
       (text, file) =>
         addAssertion(text, file, commandLine, {
@@ -277,6 +287,9 @@ const actions: ViewActions = {
           stateExpression: expression,
         }),
       `[STATE: ${assertTrue}, ${expression}]`,
+      chipTurn
+        ? { freshClaim: { input: chipTurn.input, tag: `[STATE: ${assertTrue}, ${expression}]` } }
+        : {},
     );
   },
   setConfirmingRecord(confirming: boolean) {
@@ -342,7 +355,7 @@ const actions: ViewActions = {
 function applyEdit(
   edit: (text: string, file: string) => Draft,
   label: string,
-  options: { popsUndo?: boolean; warning?: string } = {},
+  options: { popsUndo?: boolean; warning?: string; freshClaim?: { input: string; tag: string } } = {},
 ): void {
   const loaded = surface.source;
   const node = surface.opened;
@@ -404,6 +417,11 @@ const host = installHost({
     surface.follow = true;
     surface.status = '';
     byId('story').textContent = story;
+    // The host's detach path announces "No story open" as if it were a story
+    // (TestController's one sentinel on this wire); the surface holds null so
+    // every gate downstream asks "is a story attached?" instead of matching
+    // display text.
+    surface.story = story === 'No story open' ? null : story;
     scheduleRender();
   },
   onStatus(text) {
@@ -451,6 +469,12 @@ const host = installHost({
     // reached disk must not leave a way back to a state that was never left.
     if (write.popsUndo) undoStack.pop();
     else undoStack.push(write.before);
+    // F2: the assertion is on disk, so it may now show as new-and-untested.
+    if (write.freshClaim) {
+      const tags = surface.freshClaims.get(write.freshClaim.input) ?? new Set<string>();
+      tags.add(write.freshClaim.tag);
+      surface.freshClaims.set(write.freshClaim.input, tags);
+    }
     surface.undoDepth = undoStack.length;
     // The file has moved and the run has not. Source lines are how a turn finds
     // its assertions, so until the next run they can no longer be matched up.
@@ -467,13 +491,14 @@ const host = installHost({
   },
   onCreated(file) {
     // The suite has a new member. `setDiscovered` follows from the host, which is
-    // what puts it in the tree; this only reports it and clears the form.
+    // what puts it in the tree; this only reports it and clears both create forms.
     surface.newBranchName = '';
-    surface.editNote = `Created ${stemOf(file)}. Add its first command, then run.`;
+    byId<HTMLInputElement>('newroot').value = '';
+    noteCreation(`Created ${stemOf(file)}. Add its first command, then run.`);
     scheduleRender();
   },
   onCreateFailed(message) {
-    surface.editNote = message;
+    noteCreation(message);
     scheduleRender();
   },
   onTrashed(file) {
@@ -547,6 +572,7 @@ function clearEditingState(): void {
   surface.reparentChoice = '';
   surface.confirmingTrash = false;
   surface.confirmingRecord = false;
+  surface.freshClaims = new Map();
   undoStack = [];
   inFlightWrite = null;
 }
@@ -598,14 +624,17 @@ function seedDiscovered(files: string[]): void {
 function installSelectionWatcher(): void {
   document.addEventListener('selectionchange', () => {
     const next = selectionPromotion();
-    // Cheap identity check — this fires on every caret move, and re-rendering
-    // the document on each one would fight the author's drag.
+    // Cheap identity check — this fires on every caret move.
     const same =
       next?.commandLine === surface.pending?.commandLine &&
       next?.promotion.label === surface.pending?.promotion.label;
     if (same) return;
     surface.pending = next;
-    scheduleRender();
+    // Patch the offer slot ONLY — never a document render from here. A render
+    // rebuilds the turns subtree, and replacing the nodes the selection
+    // anchors in collapses it mid-drag (F3): the author could never finish
+    // the very gesture the offer answers.
+    renderPromoteSlot(surface, actions);
   });
 }
 
@@ -642,6 +671,55 @@ function outputElementFor(node: Node | null): HTMLElement | null {
   return start?.closest<HTMLElement>('#docview .turn .actual[data-command-line]') ?? null;
 }
 
+/**
+ * Where a create's answer lands: the open document's edit note, or the browse
+ * surface's status line. The host answers `created`/`createFailed` without
+ * saying which surface asked, and a confirmation rendered only inside a
+ * document is invisible to the browse-mode create that needs it most (D1).
+ */
+function noteCreation(message: string): void {
+  if (surface.opened) surface.editNote = message;
+  else surface.status = message;
+}
+
+/**
+ * Creates a ROOT transcript — the browse surface's create, and the only way to
+ * make an empty suite's first file (phase-6 log, D1). A root carries no
+ * `continues:`; the host decides the path (ADR-290 D8). The name comes in from
+ * the static `#newroot` field, already trimmed and non-empty.
+ */
+function createRootTranscript(name: string): void {
+  const text = newTranscript({
+    story: surface.story ?? '',
+    title: name,
+    continuesFrom: null,
+  });
+  noteCreation('Creating…');
+  host.createTranscript(name, text);
+  scheduleRender();
+}
+
+/**
+ * Wires the New-transcript bar once, statically — like Run and Cancel, and
+ * unlike the re-rendered document bars: the field keeps its own value, so a
+ * render storm from a live run never clobbers what the author is typing.
+ */
+function installNewTranscriptBar(): void {
+  const field = byId<HTMLInputElement>('newroot');
+  const create = (): void => {
+    const name = field.value.trim();
+    if (!name) return;
+    createRootTranscript(name);
+  };
+  field.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      create();
+    }
+  });
+  byId('newroot-create').addEventListener('click', create);
+}
+
 function installToolbar(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => actions.setMode(button.dataset.mode as ViewMode));
@@ -656,6 +734,7 @@ function installToolbar(): void {
 }
 
 installToolbar();
+installNewTranscriptBar();
 installSelectionWatcher();
 render(model, surface, actions);
 host.ready();

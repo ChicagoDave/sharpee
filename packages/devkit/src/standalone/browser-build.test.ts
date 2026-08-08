@@ -39,6 +39,32 @@ describe('browser scaffold (real path)', () => {
     vi.restoreAllMocks();
   });
 
+  it('Chord scaffold: init seeds the themes: header and wires all four into the hand-written entry', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+    tmp = mkdtempSync(join(REPO_ROOT, '.tmp-browser-verify-'));
+    projectDir = join(tmp, 'my-story');
+
+    // Default mode IS Chord (David's 2026-07-18 ruling) — no --ts flag. Chord
+    // init chains into init-browser itself, so one call scaffolds everything.
+    await runInitCommand([projectDir, '-y']);
+
+    // #249: a fresh story starts with the full built-in set; the author trims.
+    const story = readFileSync(join(projectDir, 'my-story.story'), 'utf-8');
+    expect(story).toContain('themes: modern-dark, retro-terminal, paper, system-6');
+
+    // The hand-written entry (build's escape hatch) starts in sync with the
+    // same set. isChord routes to chord-browser-entry.ts.template — the one
+    // template whose {{THEMES_JSON}} substitution is live.
+    const entry = readFileSync(join(projectDir, 'src', 'browser-entry.ts'), 'utf-8');
+    expect(entry).not.toContain('{{THEMES_JSON}}');
+    for (const id of ['modern-dark', 'retro-terminal', 'paper', 'system-6']) {
+      expect(entry, `${id} missing from scaffolded entry`).toContain(`id: '${id}'`);
+    }
+  }, 60_000);
+
   it('scaffolds, adds deps, and builds a complete dist/web/', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {}); // quiet command chatter; keep console.error
     // process.exit(1) on a build failure would kill vitest; surface it as a test failure instead.
@@ -118,6 +144,8 @@ describe('browser scaffold (real path)', () => {
     const html = readFileSync(join(web, 'index.html'), 'utf-8');
     expect(html).not.toContain('{{STORY_ID}}');
     expect(html).toContain('<script src="game.js">');
+    // P-3: the Reset menu item ships in the built page — the id MenuManager binds.
+    expect(html).toContain('id="menu-reset"');
     expect(html).toContain('href="engine.css"');
     expect(html).toContain('href="my-story.css"');
 
@@ -125,17 +153,28 @@ describe('browser scaffold (real path)', () => {
     for (const css of ['base.css', 'engine.css', 'decorations.css']) {
       expect(existsSync(join(web, css)), `${css} missing`).toBe(true);
     }
-    // AC-4: with no themes listed, no theme CSS/fonts ship — and no stale monolith.
+    // No stale monolith (AC-4's other half).
     expect(existsSync(join(web, 'styles.css')), 'styles.css should not ship').toBe(false);
-    expect(existsSync(join(web, 'themes')), 'themes/ should not ship when none listed').toBe(false);
+    // #249: the scaffold seeds all four built-ins, so a fresh project's first
+    // build ships them — CSS copied and linked, no silent menu-without-CSS.
+    for (const id of ['modern-dark', 'retro-terminal', 'paper', 'system-6']) {
+      expect(existsSync(join(web, 'themes', `${id}.css`)), `${id}.css missing from scaffold build`).toBe(true);
+      expect(html).toContain(`href="themes/${id}.css"`);
+    }
 
     // Author override emitted (stubbed if absent; here seeded by init-browser).
     expect(existsSync(join(web, 'my-story.css'))).toBe(true);
 
-    // ADR-188 (AC-3/AC-5/AC-9): `sharpee.themes` wires a BUILT-IN theme (by id, from
-    // platform-browser) AND an AUTHOR theme (inline { id, name }, CSS in the override).
+    // AC-4: de-listing every theme un-ships them — no theme CSS/fonts linger.
     const pkgPath = join(projectDir, 'package.json');
     const proj = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    proj.sharpee = { ...(proj.sharpee || {}), themes: [] };
+    writeFileSync(pkgPath, JSON.stringify(proj, null, 2));
+    await runBuildBrowserCommand([], projectDir);
+    expect(existsSync(join(web, 'themes')), 'themes/ should not ship when none listed').toBe(false);
+
+    // ADR-188 (AC-3/AC-5/AC-9): `sharpee.themes` wires a BUILT-IN theme (by id, from
+    // platform-browser) AND an AUTHOR theme (inline { id, name }, CSS in the override).
     proj.sharpee = {
       ...(proj.sharpee || {}),
       themes: ['modern-dark', { id: 'my-theme', name: 'My Theme' }],
@@ -152,11 +191,14 @@ describe('browser scaffold (real path)', () => {
     expect(themed.indexOf('engine.css')).toBeLessThan(themed.indexOf('themes/modern-dark.css'));
     expect(themed.indexOf('themes/modern-dark.css')).toBeLessThan(themed.indexOf('my-story.css'));
     // Author theme: NO CSS copied (it lives in the override stylesheet), but it DOES
-    // get a menu entry.
+    // reach the menu — via the page's wired-themes DATA block, which is what
+    // ThemeManager renders the menu from at runtime (P-4). The build no longer
+    // writes menu MARKUP at all; the static page carries the list as JSON and
+    // an untouched #theme-menu for the client to fill.
     expect(existsSync(join(web, 'themes', 'my-theme.css')), 'author theme must not copy CSS').toBe(false);
-    // Menu regenerated: classic default + built-in {id,name} + author {id,name}.
-    expect(themed).toContain('data-theme="classic">Classic<');
-    expect(themed).toContain('data-theme="modern-dark">Modern Dark<');
-    expect(themed).toContain('data-theme="my-theme">My Theme<');
+    expect(themed).toContain('<script id="sharpee-wired-themes" type="application/json">');
+    expect(themed).toContain('{"id":"modern-dark","name":"Modern Dark"}');
+    expect(themed).toContain('{"id":"my-theme","name":"My Theme"}');
+    expect(themed).not.toContain('data-theme="modern-dark">');
   }, 240_000);
 });

@@ -36,6 +36,7 @@
           <li role="menuitem" id="menu-restore" class="sharpee-menu-option">Restore Game...</li>
           <li role="separator" class="sharpee-menu-separator"></li>
           <li role="menuitem" id="menu-restart" class="sharpee-menu-option">Restart</li>
+          <li role="menuitem" id="menu-reset" class="sharpee-menu-option">Reset Story Data…</li>
           <li role="menuitem" id="menu-quit" class="sharpee-menu-option">Quit</li>
         </ul>
       </li>
@@ -46,10 +47,10 @@
             <span>Theme</span>
             <span class="sharpee-menu-submenu-indicator" aria-hidden="true">&#9656;</span>
             <ul role="menu" id="theme-menu" class="sharpee-menu-dropdown">
-              <!-- THEME_MENU_ITEMS: the build regenerates this list — the "classic"
-                   default (no package; the :root baseline) + one item per wired
-                   @sharpee/theme-* package (ADR-188 Phase 4). -->
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>
+              <!-- Populated at runtime by ThemeManager.renderMenu() from the
+                   client config's theme list: "classic" (the :root baseline,
+                   no CSS to wire) + one item per wired built-in (ADR-188).
+                   The build injects the theme <link>s only, never this list. -->
             </ul>
           </li>
         </ul>

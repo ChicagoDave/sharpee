@@ -80,8 +80,10 @@ export interface Turn {
 /**
  * A node's lifecycle. `pending` is local to this model — a node that a parent
  * announced but which has not started; the wire has no event for it.
+ * `skipped` is the wire's empty-transcript outcome (phase-6 F1): no commands,
+ * nothing ran, children unaffected — never a failure.
  */
-export type NodeStatus = 'pending' | 'running' | 'passed' | 'failed' | 'error' | 'unreached';
+export type NodeStatus = 'pending' | 'running' | 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
 
 /** One transcript in the tree, identified by its absolute path. */
 export interface TestNode {

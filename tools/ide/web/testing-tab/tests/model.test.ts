@@ -161,6 +161,17 @@ describe('the run-event fold', () => {
   });
 
   // ADR-302 D13.
+  it('records a skipped node — empty transcript, never a failure (phase-6 F1)', () => {
+    const model = fold([
+      start(ROOT, { commandCount: 0 }),
+      end(ROOT, { status: 'skipped', passed: 0 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    expect(node.status).toBe('skipped');
+    expect(node.turns).toHaveLength(0);
+    expect(model.running).toBeNull();
+  });
+
   it('records an unreached node with what blocked it, and never as a failure', () => {
     const model = fold([
       start(ROOT),

@@ -181,6 +181,9 @@ which \`sharpee init\` has already minted for you.
 
 function processTemplate(templatePath: string, options: StoryOptions): string {
   const content = fs.readFileSync(templatePath, 'utf-8');
+  // No browser-entry tokens here: the story/story-chord templates carry none.
+  // Browser-entry client config is init-browser's job (scaffold) and the
+  // build's generated entry (from the .story header) everywhere else.
   return content
     .replace(/\{\{STORY_ID\}\}/g, options.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, options.storyTitle)
@@ -188,15 +191,7 @@ function processTemplate(templatePath: string, options: StoryOptions): string {
     .replace(/\{\{DESCRIPTION\}\}/g, options.description)
     .replace(/\{\{IFID\}\}/g, options.ifid)
     .replace(/\{\{SHARPEE_VERSION\}\}/g, options.sharpeeRange)
-    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange)
-    // Browser-entry client config (ADR-252 D3): the scaffold's concrete defaults.
-    // (The build's generated entry fills these from the .story header instead.)
-    .replace(/\{\{STORAGE_PREFIX\}\}/g, options.storyId)
-    .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
-    .replace(
-      /\{\{THEMES_JSON\}\}/g,
-      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
-    );
+    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange);
 }
 
 /**

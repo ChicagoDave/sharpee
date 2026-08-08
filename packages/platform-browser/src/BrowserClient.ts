@@ -21,7 +21,7 @@ import type {
 } from './types.js';
 
 import { ThemeManager } from './managers/ThemeManager.js';
-import { SaveManager } from './managers/SaveManager.js';
+import { SaveManager, wipeStoryStorage } from './managers/SaveManager.js';
 import { DialogManager } from './managers/DialogManager.js';
 import { MenuManager } from './managers/MenuManager.js';
 import { InputManager } from './managers/InputManager.js';
@@ -211,12 +211,17 @@ export class BrowserClient implements BrowserClientInterface {
       themes: this.config.themes,
       defaultTheme: this.config.defaultTheme,
     });
+    // The menu's items come from the theme list itself (P-4) — rendered here,
+    // once, before any handler setup could care about them (selection is
+    // delegated in MenuManager regardless, so order is a nicety, not a trap).
+    this.themeManager.renderMenu();
 
     // Create menu manager with handlers
     const menuHandlers: MenuHandlers = {
       onSave: () => this.handleSave(),
       onRestore: () => this.handleRestore(),
       onRestart: () => this.handleRestart(),
+      onReset: () => this.handleReset(),
       onQuit: () => this.handleQuit(),
       onThemeSelect: (theme) => this.themeManager.applyTheme(theme),
       onHelp: () => this.engine.executeTurn('help'),
@@ -801,6 +806,29 @@ export class BrowserClient implements BrowserClientInterface {
       this.pendingReboot = false;
       await this.disposeAndReboot();
     }
+  }
+
+  /**
+   * Reset this story's client-side state (issue 248): after an explicit
+   * confirmation that names the blast radius, delete every localStorage key
+   * under the story's storage prefix — saves index, save slots, autosave,
+   * theme preference — and reboot fresh. Prefix-scoped, deliberately: two
+   * stories on one origin never touch each other's keys.
+   */
+  private async handleReset(): Promise<void> {
+    const confirmed = confirm(
+      'Reset this story? This deletes ALL of its data saved in this browser — ' +
+        'every save, the autosave, and its settings — and restarts from the beginning.',
+    );
+    if (!confirmed) return;
+    wipeStoryStorage(this.config.storagePrefix);
+    // The reboot re-runs the story's boot, not this client's initialize —
+    // nothing downstream re-reads the (now deleted) saved theme, so the
+    // page must be put back on the default here, unsaved, or it keeps
+    // wearing the wiped theme until the next manual refresh.
+    this.themeManager?.resetToDefault();
+    this.pendingReboot = false;
+    await this.disposeAndReboot();
   }
 
   private handleQuit(): void {

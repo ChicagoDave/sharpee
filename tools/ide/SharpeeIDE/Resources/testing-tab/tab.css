@@ -199,6 +199,9 @@ body {
 .dot.passed { background: var(--pass); }
 .dot.failed, .dot.error { background: var(--fail); }
 .dot.unreached { background: transparent; border: 1px solid var(--unreached); }
+/* Empty transcript, ran as a skip (phase-6 F1): waiting for content, in the
+   same not-yet color the [NEW] card wears — never failure red. */
+.dot.skipped { background: transparent; border: 1px solid var(--warn); }
 .dot.pending { background: transparent; border: 1px solid var(--fg-faint); }
 .dot.running { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .3; } }
@@ -354,6 +357,43 @@ body {
 /* The face switcher sits at the far end of the header so it does not compete
    with the file path for the eye. */
 .docview .faces { margin-left: auto; flex: none; }
+
+/* ── document: authored-but-unrun content (F2) ─────────────── */
+/* New and untested wears the warn color end to end: the [NEW] badge on a
+   command the run has not seen, and the fresh chip on an assertion written
+   since the run. A run turns both into ordinary outcomes. */
+.turn.new { border-left: 2px solid var(--warn); }
+.newbadge {
+  color: var(--warn); border: 1px solid var(--warn); border-radius: var(--radius);
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em;
+  padding: 0 5px; align-self: center;
+}
+.turn.new .newnote { grid-column: 2 / -1; font-size: 11px; color: var(--fg-dim); }
+.claim.fresh .ctag { color: var(--warn); }
+.claim .cfresh { font-size: 10.5px; color: var(--warn); }
+
+/* ── browse: creating a root transcript (phase-6 log, D1) ──── */
+.newbar {
+  flex: none; display: none; gap: 8px; padding: 7px 14px;
+  background: var(--project); border-bottom: 1px solid var(--border);
+}
+.newbar.on { display: flex; }
+.newbar input {
+  flex: 0 1 320px; min-width: 0; font: inherit; font-size: 11.5px;
+  color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 8px;
+}
+.newbar input:focus { outline: none; border-color: var(--accent); }
+.newbar button {
+  font: inherit; font-size: 11.5px; color: var(--fg); background: var(--editor);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 12px; cursor: pointer;
+}
+.newbar button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* An empty suite explains itself instead of rendering a blank pane. */
+.emptysuite {
+  padding: 28px 16px; font-size: 12.5px; color: var(--fg-dim); max-width: 460px;
+}
 
 /* ── document: the file itself ────────────────────────────── */
 .filebar {

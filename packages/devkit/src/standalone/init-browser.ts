@@ -77,9 +77,11 @@ function processTemplate(content: string, info: ProjectInfo): string {
     // (The build's generated entry fills these from the .story header instead.)
     .replace(/\{\{STORAGE_PREFIX\}\}/g, info.storyId)
     .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
+    // All four built-ins (#249): the scaffold starts with the full platform set
+    // and the author trims, rather than opting in from a pair.
     .replace(
       /\{\{THEMES_JSON\}\}/g,
-      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
+      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'retro-terminal', name: 'Retro Terminal' },\n        { id: 'paper', name: 'Paper' },\n        { id: 'system-6', name: 'System 6' },\n      ]",
     );
 }
 

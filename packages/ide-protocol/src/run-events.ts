@@ -239,11 +239,18 @@ export interface CommandResultEvent extends RunEventEnvelope {
  * silently absent from the stream. `unreached` is not a failure — one broken
  * node produces one failure and a count of what it blocked, not a wall of red
  * proportional to how much of the story depends on it.
+ *
+ * `skipped` covers a transcript with no commands: the editor's designed
+ * starting state (a new transcript carries no placeholder), so it runs as a
+ * skip rather than aborting the suite as a parse failure (David's ruling
+ * 2026-08-08, go-live phase-6 F1). Not a failure either — and never a block:
+ * an empty node contributes zero commands to a child's replay, so its
+ * children run normally.
  */
 export interface TranscriptEndEvent extends RunEventEnvelope {
   type: 'transcript-end';
   file: string;
-  status: 'passed' | 'failed' | 'error' | 'unreached';
+  status: 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
   passed: number;
   failed: number;
   expectedFailures: number;
@@ -473,7 +480,8 @@ export function isTranscriptEndEvent(value: unknown): value is TranscriptEndEven
     (value.status === 'passed' ||
       value.status === 'failed' ||
       value.status === 'error' ||
-      value.status === 'unreached') &&
+      value.status === 'unreached' ||
+      value.status === 'skipped') &&
     typeof value.passed === 'number' &&
     typeof value.failed === 'number' &&
     typeof value.expectedFailures === 'number' &&

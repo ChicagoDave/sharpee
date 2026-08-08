@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { RunEvent } from '@sharpee/ide-protocol';
+import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol';
 import { parseTranscript } from '../src/parser.js';
 import { runTranscript } from '../src/runner.js';
 import { RunEventStream, ndjsonEventLine } from '../src/run-event-stream.js';
@@ -195,6 +195,25 @@ describe('RunEventStream sequences what the observer reports', () => {
       'transcript-end',
       'run-end',
     ]);
+  });
+
+  it('announces an empty transcript as skipped, decodable at the wire (phase-6 F1)', () => {
+    const { events, stream } = collect();
+
+    stream.runStart('tree', 2);
+    stream.transcriptSkipped('/t/hollow.transcript');
+
+    const end = events.find((e) => e.type === 'transcript-end');
+    expect(end).toMatchObject({
+      type: 'transcript-end',
+      file: '/t/hollow.transcript',
+      status: 'skipped',
+      passed: 0,
+      failed: 0,
+      duration: 0,
+    });
+    // The line survives the wire's own guard — the hop the tab performs.
+    expect(isRunEvent(JSON.parse(ndjsonEventLine(end!)))).toBe(true);
   });
 
   it('numbers events monotonically from zero and stamps a rising clock', () => {

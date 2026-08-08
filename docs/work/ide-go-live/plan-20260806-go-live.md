@@ -309,6 +309,9 @@ The parser rejects each by name.
 
 ## Phase 6 — Transcript acceptance pass (item 7, pass 2)
 
+**Status: CURRENT** — started 2026-08-08, session c29681. Log:
+`phase-6-acceptance-log.md`. Passing this phase is Phase 5's acceptance.
+
 **Goal.** Prove the editor by using it.
 
 **Scope.** Write Fernhill's transcripts again, through the editor this time.
@@ -318,6 +321,96 @@ editor or a terminal. If that is painful, Phase 5 is not done, whatever its own
 tests say. The resulting suite is what Phase 8 ships.
 
 **Dependencies.** Phase 5.
+
+### Phase 6 remediation track (6a–6f) — the fallout, folded in
+
+The first hours of the exercise produced fixes landed on the spot (D1/D2
+create-and-first-command, F2 [NEW]/orange, F3 selection, F1 skip semantics —
+see the log) and seven larger items captured as proposal
+`docs/proposals/phase-6-fallout.md` (issues 248–254, all PLANNED). David's
+ruling 2026-08-08: **this is part of go-live** — "it's all about the testing
+editor" — so the six planned phases live here as 6a–6f, not in a separate
+plan. Full per-phase detail (references consulted, budgets, evidence lists)
+is in `../phase-6-fallout/plan-20260808-phase-6-fallout.md`, MERGED here and
+tracked HERE. Two independent clusters: theming/web-client (6a–6c) and
+authoring UX (6d–6f); only within-cluster order and 6e→6f are real
+dependencies. Phase 8 (DMG) should ship after this track.
+
+**Phase 6a — Web-client Reset menu + ThemeManager owns its menu** (P-3+P-4,
+Medium) **Status: CURRENT (since 2026-08-08) — implementation landed same
+day** (session c29681): `wipeStoryStorage` + `handleReset` + `#menu-reset`
+(template, fernhill custom page); `ThemeManager.renderMenu` from the page's
+`#sharpee-wired-themes` JSON data block (build injects DATA + links, never
+menu markup; the TS-path stale-entry hazard and dungeo's classic-doubling
+both handled); theme clicks delegated. Evidence: platform-browser 126,
+devkit browser 36, real fernhill build carries data block + Reset item, tsc
+clean, both packages rebuilt dist+dist-esm. Mutation-verification's four
+findings all closed same day: handleReset's full flow tested both ways in
+the restart-reboot harness (declined = keys survive + no reboot; confirmed =
+real keys gone + engine.stop + reboot); the `</script>` neutralization
+pinned with a hostile-name unit test; the legacy Dungeo template got the
+Reset item too (P-3 reaches every published client); the built page's
+`id="menu-reset"` asserted in the real-path build test. Final: devkit
+browser 38, platform-browser 128, tsc clean. David's click-through then
+surfaced three live defects, all fixed + pinned in a NEW real-browser
+Playwright spec (`tests/visual/live-client.spec.ts`, serves the real
+fernhill build over http in Chromium): (1) menu items carried `data-theme`,
+which theme CSS scopes by — every row painted itself in its own palette;
+payload renamed `data-theme-choice` (legacy attr still honored for custom
+static menus); (2+3 were ONE bug) Reset wiped storage and rebooted but
+nothing re-applied the theme — page kept wearing the wiped theme, and the
+next manual refresh "reset to classic"; `ThemeManager.resetToDefault()`
+(apply without persisting) now runs in handleReset. Live spec: menu one
+palette/no data-theme, picked theme survives refresh, Reset wipes + reboots
+to classic — 3 passing; full visual suite 12 passing; platform-browser 128;
+fernhill rebuilt; tsc clean. Reset deletes every storage
+key under the story's prefix and restarts, on confirmation; the `#theme-menu`
+build-time regex is deleted from `injectThemes` (link injection stays),
+ThemeManager renders the menu at runtime — in the SHARED build core
+(browser-core.ts, ADR-252 D5), custom pages keeping `#theme-menu` included.
+Evidence: platform-browser + devkit vitest, a real CLI build inspected, both
+packages rebuilt dist + dist-esm, tsc clean.
+
+**Phase 6b — Play-surface theme picker** (P-2, Small) **Status: PENDING**.
+Picker lists Classic + all built-ins regardless of the story's list; applies
+live + at boot, no flash; persists in UserDefaults; CSS supply is IDE chrome —
+vendored platform-browser theme CSS injected into the play page
+(playSurfaceScript precedent); the built bundle untouched. Evidence:
+real-path Swift test asserts `data-theme` on the loaded play page.
+
+**Phase 6c — IDE theme corral** (P-1, Medium) **Status: PENDING**. Author
+picks which built-ins their story ships; toggling writes the `.story`
+header's `themes:` line via a header-writing seam beside
+StoryHeaderIFID/PublishSource (ADR-298 fielded schema; editor owns the field
+like `continues:`); build/publish honor the list unchanged. Evidence:
+real-path toggle → header changes → next build's `dist/web/themes/` matches.
+
+**Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status:
+PENDING**. Built to D1–D4 exactly: Testing tab moves Play to the left pane;
+modal, one unmissable Exit Testing; the Play web view reparents without
+reload (a played session survives); editor document/cursor/scroll restore on
+exit. Evidence: real-path Swift tests for the real reparent and the state
+round-trip; David's next exercise round is the acceptance signal.
+
+**Phase 6e — Auto-assertion policy** (P-6, Medium) **Status: PENDING**.
+Design step first: settle the setting's home (per-story vs per-user) and
+confirm the "all emitted text" form captures David's definition — **any
+ordered emission (before text, room name, description, list contents, NPC
+activity), asserted in order, all of them** — as a per-command `[OK]` +
+literal block (ADR-287 exact-match; assertion tier, NOT a golden recording,
+ADR-294 D1/D2). Then: the four-way setting (default "let me decide"
+unchanged); on a new command's first run the policy auto-writes the
+assertion, identically from CLI and editor; only retained grammar ever
+written (ADR-294 D4).
+
+**Phase 6f — Create Transcript from played commands** (P-7, Large) **Status:
+PENDING — hard-depends on 6e; composes with 6d**. Design step first: seed
+pinning (session seed as provenance, ADR-294 D3), mid-session selections'
+ancestry prefix, meta commands in the selection. Then: left-margin selection
+over played turns + Create Transcript; the file holds exactly the selected
+commands, seed pinned, 6e's policy applied at creation. Evidence: real-path
+test plays, selects, creates, and the resulting transcript passes a real run
+(rule 13a — no stubbed runner).
 
 ---
 

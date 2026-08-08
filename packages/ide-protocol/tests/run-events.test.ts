@@ -196,7 +196,7 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...result, world: { location: 'hall', inventory: [] } })).toBe(false);
   });
 
-  it('accepts every transcript-end status, including the two that never ran', () => {
+  it('accepts every transcript-end status, including the three that never ran', () => {
     const base = {
       ...envelope,
       type: 'transcript-end' as const,
@@ -209,10 +209,13 @@ describe('per-variant round trips', () => {
     };
     const error: TranscriptEndEvent = { ...base, status: 'error', errorMessage: 'story failed to load' };
     const unreached: TranscriptEndEvent = { ...base, status: 'unreached', blockedBy: '/t/spine.transcript' };
+    // phase-6 F1 (ruling 2026-08-08): an empty transcript runs as a skip.
+    const skipped: TranscriptEndEvent = { ...base, status: 'skipped' };
     expect(isTranscriptEndEvent({ ...base, status: 'passed', passed: 12 })).toBe(true);
     expect(isTranscriptEndEvent({ ...base, status: 'failed', failed: 1 })).toBe(true);
     expect(isTranscriptEndEvent(error)).toBe(true);
     expect(isTranscriptEndEvent(unreached)).toBe(true);
+    expect(isTranscriptEndEvent(skipped)).toBe(true);
     expect(isTranscriptEndEvent({ ...base, status: 'blocked' })).toBe(false);
   });
 

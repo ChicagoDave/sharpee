@@ -191,11 +191,12 @@ describe('adding and removing commands', () => {
     expect(parse(draft.text, file).commands).toHaveLength(1);
   });
 
-  // A transcript with no commands is one the runner refuses, so deleting the last
-  // command must be reported rather than written as a husk.
-  it('reports that removing the only command leaves an unsound file', () => {
+  // A transcript with no commands is one the runner refuses — but it is also a
+  // state the editor can walk back out of (D2: the add bar is the fix), so the
+  // outlook says `empty`, not damage.
+  it('reports that removing the only command leaves an empty file', () => {
     const draft = deleteCommand(before, file, 6);
-    expect(draft.outlook.kind).toBe('unsound');
+    expect(draft.outlook.kind).toBe('empty');
   });
 
   it('refuses to remove a command that is not there', () => {
@@ -218,26 +219,27 @@ describe('a new transcript', () => {
   });
 
   // Empty rather than seeded with a placeholder command: the author's first
-  // command should be their own, not one they have to notice and delete.
-  it('carries no command, and says so as a problem rather than pretending', () => {
+  // command should be their own, not one they have to notice and delete. The
+  // outlook names the state (`empty`, D2) rather than lumping it with damage.
+  it('carries no command, and the outlook says empty rather than unsound', () => {
     const text = newTranscript({ story: 'fernhill', title: 'The vine', continuesFrom: 'arrival' });
     const outlook = saveOutlook(text, file);
-    expect(outlook.kind).toBe('unsound');
-    expect(outlook.kind === 'unsound' && outlook.problems).toEqual(['Transcript has no commands']);
+    expect(outlook.kind).toBe('empty');
+    expect(outlook.kind === 'empty' && outlook.generated).toBe(text);
   });
 
-  // …and that one problem must not lock the file: the edit that fixes it is the
+  // …and that state must not lock the file: the edit that fixes it is the
   // one the editor has to allow.
-  it('accepts its first command despite being unsound until it has one', () => {
+  it('accepts its first command while empty', () => {
     const text = newTranscript({ story: 'fernhill', title: 'The vine', continuesFrom: 'arrival' });
     const draft = addCommand(text, file, 'north');
     expect(draft.outlook.kind).toBe('clean');
     expect(draft.text).toContain('> north\n[SKIP]');
   });
 
-  it('still refuses edits that would not fix the emptiness', () => {
+  it('still refuses edits aimed at commands it does not have', () => {
     const text = newTranscript({ story: 'fernhill', title: 'The vine', continuesFrom: 'arrival' });
-    expect(() => deleteCommand(text, file, 1)).toThrow(/Cannot edit/);
+    expect(() => deleteCommand(text, file, 1)).toThrow(/No command at line 1/);
   });
 
   it('is canonical from its first byte, so its first save changes nothing', () => {

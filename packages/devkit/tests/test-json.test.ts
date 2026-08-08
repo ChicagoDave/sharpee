@@ -584,4 +584,40 @@ describe('sharpee test --tree --json (ADR-302 over the run-event stream)', () =>
       rmSync(broken, { recursive: true, force: true });
     }
   });
+
+  it('an empty transcript runs as skipped and never aborts the suite (phase-6 F1, ruling 2026-08-08)', async () => {
+    // The editor's designed starting state: a just-created transcript has a
+    // header and no commands. Before the ruling this aborted the whole run
+    // ("failed to parse — nothing ran", exit 2) — the regression this pins.
+    const withEmpty = mkdtempSync(join(tmpdir(), 'devkit-tree-empty-'));
+    try {
+      writeFileSync(join(withEmpty, 'mini.story'), STORY);
+      mkdirSync(join(withEmpty, 'tests', 'transcripts'), { recursive: true });
+      writeFileSync(
+        join(withEmpty, 'tests', 'transcripts', 'begin.transcript'),
+        `title: Begin\nstory: mini\n\n---\n`,
+      );
+      writeFileSync(
+        join(withEmpty, 'tests', 'transcripts', 'spine.transcript'),
+        `title: Spine\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+      );
+
+      const { code, records } = await run(['--json', '--tree', withEmpty]);
+      expect(code).toBe(0);
+
+      const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
+      const begin = join(withEmpty, 'tests', 'transcripts', 'begin.transcript');
+      const skipped = ends.filter((e) => e.status === 'skipped');
+      expect(skipped.map((e) => e.file)).toEqual([begin]);
+      // The sibling executed and passed — the suite is not poisoned.
+      expect(ends.filter((e) => e.status === 'passed')).toHaveLength(1);
+      // The skipped node was announced first, like every other node.
+      const startIndex = records.findIndex((r) => r.type === 'transcript-start' && r.file === begin);
+      const endIndex = records.findIndex((r) => r.type === 'transcript-end' && r.file === begin);
+      expect(startIndex).toBeGreaterThanOrEqual(0);
+      expect(startIndex).toBeLessThan(endIndex);
+    } finally {
+      rmSync(withEmpty, { recursive: true, force: true });
+    }
+  });
 });

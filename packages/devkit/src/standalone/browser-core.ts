@@ -225,10 +225,15 @@ export function escapeHtml(s: string): string {
 }
 
 /**
- * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
- * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
- * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
- * `classic` default + one item per listed theme (ADR-188).
+ * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme
+ * at the THEME_LINKS marker (after the engine CSS; author themes need no link,
+ * their CSS is in the override stylesheet), plus the wired list as page DATA —
+ * a JSON script tag ThemeManager renders the `#theme-menu` from at runtime
+ * (P-4, issue 251). The split is deliberate: what the build WIRED is a build
+ * fact (the entry's scaffold-time theme constant can go stale on the TS path,
+ * which would silently drop author themes from the menu — ADR-188 AC-5), but
+ * the menu MARKUP has exactly one owner, ThemeManager. Links stay build-time
+ * because they belong in `<head>` before first paint (no flash of default).
  */
 export function injectThemes(html: string, themes: WiredTheme[]): string {
   const links = themes
@@ -239,17 +244,14 @@ export function injectThemes(html: string, themes: WiredTheme[]): string {
     /[ \t]*<!--\s*THEME_LINKS:[\s\S]*?-->/,
     links || '  <!-- no built-in themes wired -->',
   );
-  const items = [
-    '              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>',
-    ...themes.map(
-      (t) =>
-        `              <li role="menuitemradio" class="sharpee-menu-option" data-theme="${t.id}">${escapeHtml(t.name)}</li>`,
-    ),
-  ].join('\n');
-  return html.replace(
-    /(<ul role="menu" id="theme-menu"[^>]*>)[\s\S]*?(<\/ul>)/,
-    `$1\n${items}\n            $2`,
-  );
+  const wired = JSON.stringify(themes.map((t) => ({ id: t.id, name: t.name })));
+  // `escapeHtml` is for attribute/text contexts and would corrupt JSON; a
+  // script-type=application/json block only needs `</script>` neutralized.
+  const data = `  <script id="sharpee-wired-themes" type="application/json">${wired.replace(/<\//g, '<\\/')}</script>\n`;
+  // Custom pages (ADR-253) own their whole layout but still carry a <head>
+  // (the engine.css contract); a page without one simply gets no data block
+  // and the client falls back to its entry config.
+  return html.replace(/<\/head>/, `${data}</head>`);
 }
 
 /** Substitute the story tokens index.html carries (the override stylesheet link). */
@@ -540,10 +542,13 @@ function generateEntry(
   scratchDir: string,
   meta: BrowserMeta,
   config: BrowserClientConfig,
+  wiredThemes: WiredTheme[],
 ): string {
   const tpl = fs.readFileSync(path.join(templatesDir, 'chord-browser-entry.ts.template'), 'utf-8');
-  // Menu ids from the D3 `themes:` field → BrowserClient theme entries.
-  const themesLiteral = JSON.stringify(config.themes.map((id) => ({ id, name: id })));
+  // The D3 `themes:` field, resolved to {id, name} through the manifest —
+  // the entry's list is what ThemeManager renders as the menu (P-4), so it
+  // carries display names, not id-as-name.
+  const themesLiteral = JSON.stringify(wiredThemes.map((t) => ({ id: t.id, name: t.name })));
   const entry = tpl
     .replace(/\{\{STORY_ID\}\}/g, meta.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, meta.storyTitle)
@@ -657,6 +662,12 @@ export function buildBrowser(
   fs.writeFileSync(irOut, JSON.stringify(result.ir, null, 2) + '\n');
   log(`  ✓ Story IR → ${path.relative(env.esbuildCwd, irOut)}`);
 
+  // Resolve the listed themes BEFORE the entry is generated: with the menu
+  // rendered at runtime from the entry's theme entries (P-4), the entry must
+  // carry the manifest's display NAMES — id-as-name would put raw ids in the
+  // author's Settings menu.
+  const wiredThemes = resolveWiredThemes(path.join(env.stylesDir, 'themes'), config.themes);
+
   // --- Entry: hand-written escape hatch (D4) wins; else generate from template. ---
   const handWritten = path.join(storyDir, 'src', 'browser-entry.ts');
   let entryFile: string;
@@ -667,7 +678,7 @@ export function buildBrowser(
     log('  Using hand-written src/browser-entry.ts (escape hatch)');
   } else {
     entryDir = path.join(env.esbuildCwd, 'dist', '.browser-entry', meta.storyId);
-    entryFile = generateEntry(env.templatesDir, entryDir, meta, config);
+    entryFile = generateEntry(env.templatesDir, entryDir, meta, config, wiredThemes);
     log('  Generated browser entry from template');
   }
 
@@ -733,7 +744,6 @@ export function buildBrowser(
   //     D3 layout escape hatch). `browser/index.html` present → the author owns
   //     the whole page; the build swaps it in, still filling story tokens + theme
   //     wiring, and validates the sharpee-* named-style contract. ---
-  const wiredThemes = resolveWiredThemes(path.join(env.stylesDir, 'themes'), config.themes);
   const customPage = path.join(storyDir, 'browser', 'index.html');
   const usingCustomPage = fs.existsSync(customPage);
   let html = fs.readFileSync(usingCustomPage ? customPage : path.join(env.templatesDir, 'index.html'), 'utf-8');
