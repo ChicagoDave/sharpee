@@ -37,6 +37,8 @@ export interface TreeRunSummary {
   readonly passed: number;
   readonly failed: number;
   readonly unreached: number;
+  /** Nodes with no commands, run as skips (phase-6 F1) — never failures. */
+  readonly skipped: number;
   /** One entry per originating failure, each carrying what it blocked. */
   readonly blocked: BlockedGroup[];
   /** Structural defects; non-empty means nothing ran (D11). */
@@ -55,9 +57,16 @@ export interface TreeRunSummary {
 export function summarizeTreeRun(run: TreeRunResult): TreeRunSummary {
   let passed = 0;
   let failed = 0;
+  let skipped = 0;
   const groups = new Map<string, BlockedGroup>();
 
   for (const outcome of run.outcomes) {
+    // An empty node ran as a skip — without this arm it would fall through
+    // to the failure count, which is exactly what the ruling retired.
+    if (outcome.status === 'skipped') {
+      skipped += 1;
+      continue;
+    }
     if (outcome.status === 'unreached') {
       const origin = outcome.blockedBy ?? '(unknown)';
       const group = groups.get(origin) ?? { origin, unreached: [] };
@@ -86,6 +95,7 @@ export function summarizeTreeRun(run: TreeRunResult): TreeRunSummary {
     passed,
     failed,
     unreached,
+    skipped,
     blocked,
     defects: run.defects,
     ok: run.defects.length === 0 && failed === 0,
@@ -127,6 +137,7 @@ export function formatTreeRun(run: TreeRunResult): string[] {
   const parts = [`${summary.passed} passed`];
   if (summary.failed > 0) parts.push(`${summary.failed} failed`);
   if (summary.unreached > 0) parts.push(`${summary.unreached} unreached`);
+  if (summary.skipped > 0) parts.push(`${summary.skipped} skipped (no commands yet)`);
   lines.push(parts.join(', '));
 
   // AC-5 (D17): the replay share is shown, not inferred. A story that grows a

@@ -19,7 +19,7 @@ describe('[OK: any] removal', () => {
     expect(transcript.commands[0].assertions.map((a) => a.type)).not.toContain('ok-any');
     expect(validateTranscript(transcript)).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/Line 5: \[OK: any\] was removed \(ADR-294 D2\).*golden recording.*\[OK: contains/)
+        expect.stringMatching(/Line 5: \[OK: any\] was removed \(ADR-294 D2\).*\[OK: contains/)
       ])
     );
   });

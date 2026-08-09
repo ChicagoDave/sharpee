@@ -1,0 +1,65 @@
+title: Arrival at the gates
+story: fernhill
+description: The opening beat — the notice, the letter, the weathervane in its
+  evening voice, and the walk up the drive to the Fountain Court.
+seed: 1
+
+---
+
+# The `first time` block REPLACES the standing description on the first visit
+# rather than preceding it — the wrought-iron sentence is not here yet.
+> look
+[OK: contains "The cab is already grinding away down the lane"]
+[OK: contains "BY ORDER OF THE ESTATE, AT DAWN"]
+[OK: not contains "Wrought-iron gates stand open"]
+
+# Second look, same visit: now the standing description, and the opening is gone
+# for good.
+> look
+[OK: contains "Wrought-iron gates stand open on one hinge apiece"]
+[OK: not contains "The cab is already grinding away"]
+
+# Both documents state the stakes: the deed has to be produced before dawn.
+> read the auction notice
+[OK: contains "Sale to be conducted at the property at first light"]
+
+> read the letter
+[OK: contains "must produce the original deed of the estate"]
+
+# The weathervane is the phrasebook probe (ADR-250). At evening, the mood line
+# comes from the evening-voice book, and this is its first-time variant.
+> examine the weathervane
+[OK: contains "An iron weathervane on the gatepost"]
+[OK: contains "The vane noses the evening breeze, unhurried"]
+
+# vane-story is story text; no book may beat it, in either state.
+> push the weathervane
+[OK: contains "creaks the same one story it always tells"]
+
+# vane-quiet is covered only by the evening book — see phrasebooks.transcript
+# for what midnight does to each of these three lines.
+> touch the weathervane
+[OK: contains "The vane keeps its own counsel"]
+
+# South is blocked by story text, not by a missing exit.
+> south
+[OK: contains "The lane runs three dark miles to the village"]
+[OK: not contains "Gravel Drive"]
+[STATE: true, player.location = Iron Gates]
+
+> north
+[OK: contains "Gravel Drive"]
+[OK: contains "The drive curves between bare lime trees"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> examine the lime trees
+[OK: contains "Bare pollarded limes"]
+
+> north
+[OK: contains "Fountain Court"]
+[OK: contains "A paved court before the front door"]
+
+# Tobias is on patrol and reaches the court on his round.
+> examine the fountain
+[OK: contains "A dry stone basin drifted with last summer"]
+[STATE: true, player.location = Fountain Court]

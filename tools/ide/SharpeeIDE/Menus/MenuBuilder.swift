@@ -206,6 +206,38 @@ enum MenuBuilder {
         cancel.target = target
         menu.addItem(cancel)
 
+        menu.addItem(NSMenuItem.separator())
+
+        // go-live Phase 6c (P-1): the corral — which built-in themes this story
+        // SHIPS. Toggling writes the `.story` header's `themes:` line through
+        // the editor (undoable); the author never types the field. Classic is
+        // the client's `:root` baseline, always present, so it has no toggle.
+        // The list comes from the same vendored mirror the Play picker reads —
+        // one source of truth for "the built-ins".
+        let shippedThemes = NSMenuItem(title: "Shipped Themes", action: nil, keyEquivalent: "")
+        let shippedThemesMenu = NSMenu(title: "Shipped Themes")
+        for theme in PlayThemeCatalog.themes(inResources: Bundle.main.resourceURL)
+        where theme.id != PlayThemeCatalog.classic.id {
+            let item = NSMenuItem(title: theme.name,
+                                  action: #selector(AppDelegate.toggleShippedTheme(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = theme.id
+            shippedThemesMenu.addItem(item)
+        }
+        shippedThemes.submenu = shippedThemesMenu
+        menu.addItem(shippedThemes)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // ADR-284 D1: Publish is a menu-level peer of Build, not an export buried
+        // in a submenu. No key equivalent — it is a deliberate act, not a loop step.
+        let publish = NSMenuItem(title: "Publish…",
+                                 action: #selector(AppDelegate.publishStory(_:)),
+                                 keyEquivalent: "")
+        publish.target = target
+        menu.addItem(publish)
+
         let item = NSMenuItem()
         item.submenu = menu
         return item
@@ -230,10 +262,46 @@ enum MenuBuilder {
         runTests.target = target
         menu.addItem(runTests)
 
+        // ADR-306 Phase 3: the dedicated testing page — playing IS writing
+        // the test suite. Beside the ADR-304 workspace until Phase 6 retires
+        // the workspace machinery.
+        let testingSurface = NSMenuItem(title: "Testing Play Surface",
+                                        action: #selector(AppDelegate.openTestingSurface(_:)),
+                                        keyEquivalent: "u")
+        testingSurface.keyEquivalentModifierMask = [.command, .option]
+        testingSurface.target = target
+        menu.addItem(testingSurface)
+
         // No Bless / Checkpoint items: ADR-299 D8 moved blessing into the
         // Transcript view, where the output being vouched for is readable, and
         // export lives beside it. A menu command acting on "the thread shown in
         // a tab you may not be looking at" would be worse than the button.
+
+        menu.addItem(NSMenuItem.separator())
+
+        // go-live Phase 6e (P-6): the transcript auto-assertion policy — what a
+        // NEW command's first run writes. Choosing writes the `.story` header's
+        // `auto-assertion:` line through the editor (undoable); the author
+        // never types the field. "Let Me Decide" is the default and REMOVES
+        // the line (today's flow: the [SKIP]-placeholder gesture).
+        let autoAssertion = NSMenuItem(title: "Auto-Assertion", action: nil, keyEquivalent: "")
+        let autoAssertionMenu = NSMenu(title: "Auto-Assertion")
+        let letMeDecide = NSMenuItem(title: "Let Me Decide",
+                                     action: #selector(AppDelegate.selectAutoAssertion(_:)),
+                                     keyEquivalent: "")
+        letMeDecide.target = target
+        autoAssertionMenu.addItem(letMeDecide)
+        autoAssertionMenu.addItem(NSMenuItem.separator())
+        for policy in StoryHeaderAutoAssertion.Policy.allCases {
+            let item = NSMenuItem(title: policy.displayName,
+                                  action: #selector(AppDelegate.selectAutoAssertion(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = policy.rawValue
+            autoAssertionMenu.addItem(item)
+        }
+        autoAssertion.submenu = autoAssertionMenu
+        menu.addItem(autoAssertion)
 
         menu.addItem(NSMenuItem.separator())
 

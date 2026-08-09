@@ -107,7 +107,92 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, line: '7' })).toBe(false);
   });
 
-  it('accepts every transcript-end status, including the two that never ran', () => {
+  it('accepts a command-result with and without an engine turn, rejecting a non-numeric one', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'north',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, turn: 7 })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, turn: '7' })).toBe(false);
+  });
+
+  it('accepts a command-result with and without a story ending, rejecting values off the closed set', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'wait',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, ending: 'victory' })).toBe(true);
+    expect(isCommandResultEvent({ ...base, ending: 'defeat' })).toBe(true);
+    expect(isCommandResultEvent({ ...base, ending: 'quit' })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    // `restart` and `abort` are deliberately NOT endings on this wire.
+    expect(isCommandResultEvent({ ...base, ending: 'restart' })).toBe(false);
+    expect(isCommandResultEvent({ ...base, ending: 'abort' })).toBe(false);
+  });
+
+  it('accepts a command-result with and without a failure message, rejecting non-string failures', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'east',
+      passed: false,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, failure: 'Output does not contain "boiler"' })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, failure: 7 })).toBe(false);
+    expect(isCommandResultEvent({ ...base, failure: ['two', 'messages'] })).toBe(false);
+  });
+
+  it('accepts world snapshots on transcript-start and command-result, rejecting malformed ones', () => {
+    const world = {
+      location: { name: 'Entrance Hall', token: 'hall' },
+      inventory: [{ name: "solicitor's letter", token: 'summons' }],
+    };
+    const start: TranscriptStartEvent = {
+      ...envelope,
+      type: 'transcript-start',
+      file: '/t/a.transcript',
+      index: 0,
+    };
+    expect(isTranscriptStartEvent({ ...start, world })).toBe(true);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: [] } })).toBe(true);
+    expect(isTranscriptStartEvent(start)).toBe(true);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: 'letter' } })).toBe(false);
+    expect(isTranscriptStartEvent({ ...start, world: { inventory: [{ name: 'x' }] } })).toBe(false);
+
+    const result: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 4,
+      input: 'north',
+      passed: true,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...result, world })).toBe(true);
+    expect(isCommandResultEvent(result)).toBe(true);
+    expect(isCommandResultEvent({ ...result, world: { location: 'hall', inventory: [] } })).toBe(false);
+  });
+
+  it('accepts every transcript-end status, including the three that never ran', () => {
     const base = {
       ...envelope,
       type: 'transcript-end' as const,
@@ -120,10 +205,13 @@ describe('per-variant round trips', () => {
     };
     const error: TranscriptEndEvent = { ...base, status: 'error', errorMessage: 'story failed to load' };
     const unreached: TranscriptEndEvent = { ...base, status: 'unreached', blockedBy: '/t/spine.transcript' };
+    // phase-6 F1 (ruling 2026-08-08): an empty transcript runs as a skip.
+    const skipped: TranscriptEndEvent = { ...base, status: 'skipped' };
     expect(isTranscriptEndEvent({ ...base, status: 'passed', passed: 12 })).toBe(true);
     expect(isTranscriptEndEvent({ ...base, status: 'failed', failed: 1 })).toBe(true);
     expect(isTranscriptEndEvent(error)).toBe(true);
     expect(isTranscriptEndEvent(unreached)).toBe(true);
+    expect(isTranscriptEndEvent(skipped)).toBe(true);
     expect(isTranscriptEndEvent({ ...base, status: 'blocked' })).toBe(false);
   });
 

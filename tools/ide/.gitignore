@@ -29,5 +29,10 @@ release/
 .build/
 .swiftpm/
 
+# In-checkout compose scratches (TestingWorkspaceRealPathTests): copies of the
+# frozen fixture placed inside the repo so the app's compose can resolve the
+# toolchain by walking up. Removed by the test; this is the abort backstop.
+test-fixtures/.compose-scratch-*/
+
 # macOS
 .DS_Store

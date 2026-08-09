@@ -1,0 +1,15 @@
+<p>A <code>score &lt;name&gt; worth N</code> line declares a scoring identity on the owner it appears under: the story header, a <code>create</code> block, a trait, or an action. <code>award &lt;name&gt;</code> grants it from any behavior body. Scoring is enabled once, with a <code>use scoring</code> line in the story header. Without it, <code>score</code> and <code>award</code> are compile errors.</p>
+<pre><code class="language-chord">create the prize marrow
+  aka marrow
+  in the Orangery
+  states: entire, sliced
+  score sliced-the-marrow worth 10
+
+  A rosette-winning marrow of absurd size.
+
+  on cutting it
+    change it to sliced
+    award sliced-the-marrow
+    phrase marrow-sliced
+  end on</code></pre>
+<p>Score identities are owner-scoped: two entities can each declare <code>score fed worth 10</code> and they are different scores. Awards dedupe by identity, so awarding the same score twice grants it once; there is no need to guard <code>award</code> behind a first-time check. The full scoring model, including trait- and action-owned scores, is described elsewhere in the guide.</p>

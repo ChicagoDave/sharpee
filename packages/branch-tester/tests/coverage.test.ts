@@ -193,30 +193,6 @@ describe('runner integration — trace to tracker over a real EngineRandomServic
     expect(report.points.find((p) => p.name === 'tt-coverage.never-fired')?.fired).toBe(0);
   });
 
-  it('the golden tier collects trace too — bless then replay both feed the tracker', async () => {
-    const source = 'title: T\nstory: s\nseed: 42\n---\n> fight\n\n> listen\n';
-    const bless = await runTranscript(
-      parseTranscript(source, path.join(dir, 'g.transcript')),
-      tracedEngine() as never,
-      { bless: true, coverage: new CoverageTracker() }
-    );
-    expect(bless.status).toBe('passed');
-
-    // Replay (mode: 'replay' — the golden loop, not the assertion loop).
-    const tracker = new CoverageTracker();
-    const replay = await runTranscript(
-      parseTranscript(source, path.join(dir, 'g.transcript')),
-      tracedEngine() as never,
-      { coverage: tracker }
-    );
-
-    expect(replay.status).toBe('passed');
-    expect(replay.tier).toBe('golden');
-    const report = tracker.buildReport(PREFIX);
-    expect(report.points.find((p) => p.name === 'tt-coverage.blow')?.fired).toBe(1);
-    expect(report.points.find((p) => p.name === 'tt-coverage.ambience')?.fired).toBe(1);
-  });
-
   it('one tracker folds a chain into one report (D15 aggregation ruling)', async () => {
     const engine = tracedEngine();
     const tracker = new CoverageTracker();

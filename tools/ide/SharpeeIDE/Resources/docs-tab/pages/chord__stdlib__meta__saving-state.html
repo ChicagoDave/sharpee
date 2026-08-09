@@ -1,0 +1,9 @@
+<p>These four are signals, not implementations: each emits a platform event that the engine processes after the turn through client-registered hooks. The client owns persistence and the confirmation UI. Verbs that parse: <code>save</code>/<code>save game</code>, <code>restore</code>/<code>load</code>/<code>load game</code>/<code>restore game</code>, <code>quit</code>/<code>q</code>/<code>exit game</code>, <code>restart</code>. Named saves are dormant (no slot in the grammar). Quit asks for confirmation through a client query, but with no client hook registered it auto-confirms and stops; restart computes whether confirmation is warranted (unsaved progress, more than a few moves) and leaves honoring it to the hook.</p>
+<p>The player sees (in a client that registers no hooks, like the bare test harness, where the signal side is all there is):</p>
+<pre><code class="language-transcript">&gt; save
+Save failed.
+
+&gt; restore
+No saved games found.</code></pre>
+<p>&quot;Save failed.&quot; is the engine reporting an unhandled <code>platform-save-requested</code>; a real client's hook would have completed it. Quit and restart print nothing of their own here for the same reason.</p>
+<table><thead><tr><th></th><th>Refusals</th><th>Platform event</th></tr></thead><tbody><tr><td><strong>save</strong></td><td><code>save_not_allowed</code> · <code>save_in_progress</code> · <code>invalid_save_name</code></td><td><code>platform-save-requested</code></td></tr><tr><td><strong>restore</strong></td><td><code>restore_not_allowed</code> · <code>no_saves</code></td><td><code>platform-restore-requested</code></td></tr><tr><td><strong>restart</strong></td><td>—</td><td><code>platform-restart-requested</code></td></tr><tr><td><strong>quit</strong></td><td>—</td><td><code>platform-quit-requested</code></td></tr></tbody></table>

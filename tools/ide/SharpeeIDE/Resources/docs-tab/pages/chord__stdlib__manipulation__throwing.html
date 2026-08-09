@@ -1,0 +1,46 @@
+<p><strong>throw</strong> (<code>throwing</code>) covers <code>throw X at Y</code> and <code>throw X to Y</code>, with <code>toss</code> and <code>hurl</code> in both forms. (The action also implements bare and directional throws, <code>throw the rock</code> and <code>throw the rock north</code>, but no core grammar reaches them today; a story must add those patterns itself.) The item is implicitly taken if needed; the target must be in the same room; anything heavier than 10 kg refuses with <code>too_heavy</code>.</p>
+<p>What happens next is probabilistic: document-worthy behavior, not a bug, and per project policy the dice are never disabled. The platform infers fragility from the item's name and description (glass, crystal, bottle, vase, china, porcelain, &quot;delicate&quot;, &quot;fragile&quot;). Throwing <strong>at a person</strong> hits about 70% of the time. A nimble target may duck (<code>target_ducks</code>), a catcher may catch (<code>target_catches</code>, and then they hold it), a hit lands <code>hits_target</code> and annoys them (<code>target_angry</code>); a fragile item that hits usually breaks (<code>breaks_against</code>). Throwing <strong>at anything else</strong> hits about 90% of the time; the item lands on a supporter (<code>lands_on</code>), in an open container (<code>lands_in</code>), bounces off a closed one (<code>bounces_off</code>), and fragile items usually break. A broken item is removed from play entirely, with an <code>item_destroyed</code> event (<code>cause: 'thrown'</code>).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Taproom
+  a room
+
+  A low-beamed taproom, all smoke and sawdust.
+
+create the stone hearth
+  aka hearth
+  scenery
+  in the Taproom
+
+  A soot-blackened stone hearth.
+
+create the gilt mirror
+  aka mirror
+  scenery
+  in the Taproom
+
+  The landlord's prized gilt mirror, hung above the bar.
+
+  on throwing it
+    refuse mirror-luck
+  end on
+
+  phrase mirror-luck:
+    Seven years' bad luck, and the landlord watching? You lower your arm.
+
+create the green bottle
+  aka bottle
+
+  An empty green glass bottle.
+
+create the player
+  starts in the Taproom
+  carries the green bottle</code></pre>
+<p>The player sees (one genuine run, where the second command rolls live dice):</p>
+<pre><code class="language-transcript">&gt; throw the bottle at the mirror
+Seven years' bad luck, and the landlord watching? You lower your arm.
+
+&gt; throw the bottle at the hearth
+The green bottle smashes against the stone hearth!</code></pre>
+<p>The mirror's target-side guard is deterministic; the hearth throw is not: the same command can also miss, or hit without breaking. This run's &quot;bottle&quot; name made the item fragile, and the smash removed it from play.</p>
+<table><thead><tr><th></th><th>throw (<code>throwing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_item</code> · <code>not_holding</code> · <code>target_not_visible</code> · <code>target_not_here</code> · <code>no_exit</code> · <code>too_heavy</code> (over 10 kg) · <code>self</code></td></tr><tr><td>Outcomes</td><td><code>hits_target</code> · <code>misses_target</code> · <code>target_ducks</code> · <code>target_catches</code> · <code>target_angry</code> · <code>lands_on</code> · <code>lands_in</code> · <code>bounces_off</code> · <code>breaks_against</code> · <code>breaks_on_impact</code> · <code>fragile_breaks</code> · <code>thrown_down</code> · <code>thrown_gently</code> · <code>sails_through</code></td></tr><tr><td>Events</td><td><code>thrown</code> (<code>throwType</code>, <code>hit</code>, <code>willBreak</code>, <code>finalLocation</code> in the payload — enough for a story reaction to know exactly what happened) / <code>throw_blocked</code> · <code>item_destroyed</code> (<code>cause: 'thrown'</code>)</td></tr></tbody></table>
+<p>Interceptors: both the item and the target are consulted (<code>on throwing it</code> on either). A glacier can react to being hit in the same command as an explosive reacts to being thrown; a capability behavior registered for <code>throwing</code> on the target takes over the whole throw.</p>

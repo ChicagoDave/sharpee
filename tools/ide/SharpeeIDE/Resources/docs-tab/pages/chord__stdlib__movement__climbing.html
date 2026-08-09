@@ -1,0 +1,46 @@
+<p><strong>climb</strong> (<code>climbing</code>) handles <code>climb X</code>, <code>climb up/down X</code>, <code>scale</code>, <code>ascend</code>, <code>descend X</code>, all gated on the <code>climbable</code> trait (<code>climb into the basket</code> is entering; <code>climb out</code> is exiting). Climbing something puts you <em>on</em> it, the same place putting yourself on an enterable supporter gets you; an unclimbable target refuses with <code>not_climbable</code>, and trying to climb something you are already on refuses with <code>already_there</code>.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Orchard Corner
+  a room
+
+  One great pear tree leans over the garden wall here.
+
+create the pear tree
+  aka tree
+  a supporter, climbable
+  scenery
+  in the Orchard Corner
+
+  Low branches all the way up, practically a ladder.
+
+  after climbing it
+    phrase over-the-wall
+      From up here you can see clear over the wall into the lane.
+  end after
+
+create the garden wall
+  aka wall
+  scenery
+  in the Orchard Corner
+
+  Twelve feet of smooth brick, no handholds.
+
+create the player
+  starts in the Orchard Corner</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; climb the wall
+You can't climb the garden wall.
+
+&gt; climb the tree
+You climb onto the pear tree.
+
+From up here you can see clear over the wall into the lane.
+
+&gt; climb the tree
+You're already on the pear tree.
+
+&gt; climb out
+You get out of the pear tree.</code></pre>
+<p>The supporter composed alongside <code>climbable</code> is what makes the perch real, somewhere to actually be, so the second climb can refuse and <code>climb out</code> has something to leave; with bare <code>climbable</code> alone the climb speaks success but the player never leaves the room floor (nothing can hold them).</p>
+<table><thead><tr><th></th><th>climb (<code>climbing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_climbable</code> · <code>already_there</code> · <code>cant_go_that_way</code> (directional, off-vertical) — <code>too_high</code>/<code>too_dangerous</code> reserved</td></tr><tr><td>Success</td><td><code>climbed_onto</code> (object) · <code>climbed_up</code> / <code>climbed_down</code> (directional)</td></tr><tr><td>Events</td><td><code>climbed</code>, plus <code>entered</code> (object) or <code>moved</code> (directional)</td></tr></tbody></table>
+<p>Interceptors: <code>after climbing it</code> on the target, the pear tree's comment above, and how a cliff would teleport (below). There are two honest footnotes. First, the action also implements directional climbing (<code>climb up</code> meaning &quot;take the up exit&quot;), but no core grammar reaches it today: bare <code>up</code>/<code>down</code> parse as going, which is usually what you want, and a story adding <code>climb up</code> as grammar gets room-exit climbing for free. Second, the trait's <code>destination</code>/<code>direction</code> fields are unread by the standard action, so climbing never teleports you to a destination room; put an <code>after climbing it</code> clause on the cliff if you want that (<code>blockedMessage</code>/<code>successMessage</code> are likewise story data).</p>

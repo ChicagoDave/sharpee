@@ -156,6 +156,13 @@ export interface IRStoryFields {
   themes: string[];
   defaultTheme?: string;
   storagePrefix?: string;
+  /** `publish-source:` — ship the `.story` source in the artifact. Absent = no. */
+  publishSource?: boolean;
+  /**
+   * `auto-assertion:` — transcript auto-assertion policy (Phase 6e, #253).
+   * Consumed by the test harness; inert at play time. Absent = "let me decide".
+   */
+  autoAssertion?: 'all-emitted-text' | 'room-description' | 'room-name-and-description';
 }
 
 export interface IRMeta {

@@ -1,0 +1,54 @@
+<p><strong>kill the player</strong> (statement, peer to <code>win</code> and <code>lose</code>) has the forms <code>kill the player</code>, <code>kill the player &lt;phrase-key&gt;</code>, and an optional <code>when &lt;condition&gt;</code> suffix; it is legal anywhere statements go: <code>on</code> and <code>after</code> clauses (entity or trait), <code>on every turn [while …]</code> daemons, <code>define action</code> bodies, and inside <code>select</code> and <code>each</code> blocks. The phrase key is the death text (define it like any phrase) and doubles as the recorded cause; a bare <code>kill the player</code> records the cause <code>killed</code> and shows only the platform's ending text.</p>
+<p>The machinery, in order: the death text speaks, the platform's <code>player-died</code> event fires, and at end of turn the engine re-checks the player's actual life state; that re-check, not the event, is the final word. A story policy that revives the player during the turn (Dungeo's death-penalty machinery works this way) vetoes the ending; otherwise the game ends in defeat (<code>game-lost</code>, the <code>death</code> and <code>endgame</code> channels). Because the decision waits for end of turn, statements after the <code>kill</code> in the same body still run. There is no built-in &quot;restart or undo?&quot; prompt; that is client/story territory.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Generator Room
+  a room
+
+  Pipes and cables hum along every wall.
+
+create the bare wire
+  aka wire
+  scenery
+  in the Generator Room
+  states: live, dead
+
+  A stripped cable sags from the ceiling conduit.
+
+  on touching it
+    kill the player shock-death when it is live
+    phrase wire-cold when it is dead
+  end on
+
+create the breaker lever
+  aka lever, breaker
+  scenery
+  pullable
+  in the Generator Room
+
+  A heavy knife-switch bolted beside the door.
+
+  on pulling it
+    change the bare wire to dead
+    phrase breaker-thrown
+  end on
+
+create the player
+  starts in the Generator Room
+
+define phrases en-US
+  shock-death:
+    The current takes you before you can let go.
+  wire-cold:
+    Cold and inert. The breaker did its job.
+  breaker-thrown:
+    The breaker slams over and the hum dies with it.</code></pre>
+<p>The player who touches the wire straight away sees the death text and nothing after it; the game has ended in defeat:</p>
+<pre><code class="language-transcript">&gt; touch the wire
+The current takes you before you can let go.</code></pre>
+<p>The player who throws the breaker first (a fresh game) lives:</p>
+<pre><code class="language-transcript">&gt; pull the lever
+The breaker slams over and the hum dies with it.
+
+&gt; touch the wire
+Cold and inert. The breaker did its job.</code></pre>
+<p>The <code>when</code> suffix is the whole gate: with a live wire, the <code>kill</code> fires; with a dead wire, it is skipped. Note the second <code>when</code> on <code>phrase wire-cold</code>: statements after a <code>kill</code> still run, so follow-up text must gate itself off the fatal case.</p>

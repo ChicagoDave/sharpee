@@ -2,8 +2,8 @@
 // The project pane: the filesystem tree (ProjectTreeViewController). The former
 // "Structure" toggle is gone — the story's entity/reference view is the right
 // panel's Index tab (one IR rendering, not two; David's ruling).
-// Public interface: setProject(_:expandedFolderURLs:), expandedFolderURLs,
-//   onActivateFile, onExpansionChanged.
+// Public interface: setProject(_:expandedFolderURLs:expandedGroupKinds:),
+//   expandedFolderURLs, expandedGroupKinds, onActivateFile, onExpansionChanged.
 // Owner context: tools/ide — Project.
 
 import AppKit
@@ -36,11 +36,18 @@ final class ProjectPaneViewController: NSViewController, ProjectTreeDelegate {
         view = pane
     }
 
-    func setProject(_ project: Project?, expandedFolderURLs: [URL] = []) {
-        filesController.setProject(project, expandedFolderURLs: expandedFolderURLs)
+    func setProject(_ project: Project?, expandedFolderURLs: [URL] = [],
+                    expandedGroupKinds: Set<ArtifactGroup.Kind> = []) {
+        filesController.setProject(project, expandedFolderURLs: expandedFolderURLs,
+                                   expandedGroupKinds: expandedGroupKinds)
     }
 
     var expandedFolderURLs: [URL] { filesController.expandedFolderURLs }
+
+    /// The group rows currently open — the refresh path's share of the
+    /// expansion snapshot, since groups have no URL for `expandedFolderURLs`
+    /// to carry.
+    var expandedGroupKinds: Set<ArtifactGroup.Kind> { filesController.expandedGroupKinds }
 
     // MARK: - Child delegate
 

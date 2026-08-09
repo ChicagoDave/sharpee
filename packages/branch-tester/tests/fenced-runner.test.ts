@@ -66,7 +66,8 @@ describe("ADR-287 — [OK] + text block is an exact match", () => {
   it('round-trips a payload that quotes the block syntax itself', async () => {
     // `end text` at column 0 is reserved with no escape (David's ruling,
     // 2026-07-28), but INDENTED it is ordinary content — which is how a story,
-    // or Sharpee's own tutorial, can print the syntax and still be blessed.
+    // or Sharpee's own tutorial, can print the syntax and still pass an
+    // exact [OK] block.
     const response = 'To close a block, write:\n  end text\nDone.';
     const result = await runAgainst(
       'title: T\n---\n\n> read note\n[OK]\ntext\n' + response + '\nend text\n',

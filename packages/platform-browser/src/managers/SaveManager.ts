@@ -3,7 +3,7 @@
  * persistence and exposes a small UI surface (save index, autosave,
  * transcript decompression).
  *
- * Public interface: {@link SaveManager} class.
+ * Public interface: {@link SaveManager} class, {@link wipeStoryStorage}.
  *
  * Bounded context: `@sharpee/platform-browser` host. The host registers
  * `ISaveRestoreHooks` with the engine; on save the engine produces a
@@ -41,6 +41,29 @@ export interface SaveManagerConfig {
 }
 
 const ENVELOPE_VERSION: BrowserSaveEnvelope['envelopeVersion'] = '4.0.0';
+
+/**
+ * Delete every localStorage key under one story's storage prefix — saves
+ * index, save slots, autosave, theme preference, all of it — and return the
+ * removed keys. The Reset menu action (issue 248) behind a confirmation.
+ *
+ * Prefix-scoped, deliberately: two stories on one origin never touch each
+ * other's keys. Keys are collected before removal because deleting while
+ * iterating shifts localStorage indices (the same hazard `listSaves`
+ * documents).
+ *
+ * @param storagePrefix the story's key prefix (e.g. "fernhill-")
+ * @returns the keys that were removed, for feedback and for tests
+ */
+export function wipeStoryStorage(storagePrefix: string): string[] {
+  const doomed: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(storagePrefix)) doomed.push(key);
+  }
+  for (const key of doomed) localStorage.removeItem(key);
+  return doomed;
+}
 
 export class SaveManager {
   private storagePrefix: string;

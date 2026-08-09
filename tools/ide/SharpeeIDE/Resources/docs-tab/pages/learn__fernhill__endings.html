@@ -1,0 +1,48 @@
+<h2 id="scores-live-on-their-owners">Scores live on their owners</h2>
+<p>There is no score table. Each of Fernhill's eight scores (perfect: 50) is declared on the thing that earns it, and awarded from that owner's own clauses:</p>
+<pre><code class="language-chord">create the tarnished key
+  score found worth 5
+
+  after taking it, once
+    award found
+  end after</code></pre>
+<p>Awards ride whatever rule marks the achievement: a topic row (<code>award truth, once</code> when Tobias finally talks about the fire), a give-gate (<code>award softened, once when it is softened</code>), or the boiler's own switch-on clause. The <code>, once</code> modifier keeps repeats honest.</p>
+<h2 id="three-endings-all-real">Three endings, all real</h2>
+<p><strong>Win</strong> comes from walking out the gates carrying the deed:</p>
+<pre><code class="language-chord">create the Iron Gates
+  after entering it while the player has the deed
+    play music dawn-theme when client has music
+    win fernhill-saved
+  end after</code></pre>
+<p><strong>Lose</strong> comes from the timeline's <code>at turn 130 → lose dawn-comes</code> (<em>The long night</em>).</p>
+<p><strong>Die</strong> comes from the fuse's <code>kill the player fuse-blast when the fuse is lit</code>.</p>
+<p><code>win</code> / <code>lose</code> / <code>kill the player</code> each name their ending phrase. Write all your endings for real and test all of them; Fernhill's transcript suite drives each branch, including the death.</p>
+<h2 id="phrase-strategies">Phrase strategies</h2>
+<p>Prose that repeats verbatim goes dead. A strategy adverb on a phrase declaration gives it variants and a selection rule:</p>
+<pre><code class="language-chord">define phrase night-wind, randomly
+  The wind comes off the downs and worries at the bare limes.
+or
+  A gust rattles every pane in the greenhouse at once.
+or
+  The wind drops for a moment, and the night is very quiet.
+end phrase
+
+define phrase cold-returns, first-time
+  The cold finds you the moment you step out, and means it.
+or
+  The cold again, familiar now.
+end phrase
+
+define phrase cellar-drip, cycling
+  Somewhere back in the vaults, a drop falls.
+or
+  Drip. The dark keeps its own time.
+end phrase</code></pre>
+<p><code>randomly</code> shuffles, <code>cycling</code> rotates in order, <code>first-time</code> speaks its first variant once and settles on the rest (there are also <code>stopping</code> and <code>sticky</code>). When you transcript-test strategy lines, assert structurally (&quot;one of these appeared&quot;), never on an exact variant.</p>
+<h2 id="detail-that-unlocks-markers-and-gates">Detail that unlocks: markers and gates</h2>
+<p>The hall's description carries a marker (<code>a wide mantel{mantel-hint}</code>) whose snippet only exists once the diary has been read:</p>
+<pre><code class="language-chord">define phrase mantel-hint while the diary page is read
+   — and over it Verity's photograph, which you cannot stop looking
+  at now
+end phrase</code></pre>
+<p>Before the diary is read, the sentence reads clean, with no seam. After it is read, the same room points you at the photograph. The photograph itself gains a <code>phrase detail while the diary page is read:</code> paragraph the same way: the world literally reads differently as the player learns. Name states for what a thing IS (<code>folded</code>/<code>read</code>), and gates like these stay legible.</p>

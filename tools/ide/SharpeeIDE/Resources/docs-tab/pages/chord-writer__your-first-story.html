@@ -1,0 +1,20 @@
+<p>Chord Writer opens on a launcher: the product name, your five most recent projects, and three choices. <strong>Create Story</strong> starts something new, <strong>Open</strong> finds a project already on disk, and <strong>Close Chord Writer</strong> quits.</p>
+<p>There is no way to dismiss the launcher without choosing. An open app with no project and no route back to the launcher is the state it exists to prevent.</p>
+<h2 id="create-the-story">Create the story</h2>
+<p><strong>File → New Story…</strong> (<code>Cmd-N</code>) asks for two things: a title and a folder. The folder follows the title as you type it, so a story called <em>The Orchard</em> is proposed at <code>~/The Orchard</code>, and it stops following the moment you edit it yourself.</p>
+<p>What lands on disk is one file:</p>
+<pre><code class="language-text">The Orchard/
+  the-orchard.story</code></pre>
+<p>That is the entire project. No <code>package.json</code>, no <code>src/</code>, no <code>tsconfig.json</code>, no dependency install. A <code>.story</code> file needs none of them, and Chord Writer does not write files your story will not use.</p>
+<blockquote><p><strong>This differs from the command line</strong></p>
+<p><code>sharpee init</code> still writes a package.json for a Chord project, because a command-line project is often the start of something with TypeScript in it. Chord Writer scaffolds the smaller thing on purpose.</p></blockquote>
+<h2 id="write-and-watch-problems">Write, and watch Problems</h2>
+<p>Open the <code>.story</code> file from the project pane and start writing. You do not need to build to find out whether it compiles.</p>
+<p>Chord Writer composes the story continuously while you type, a moment after you stop, and lists what it finds in the <strong>Problems</strong> tab in the bottom dock. It composes the buffer you are looking at rather than the last saved version, so an unsaved edit is checked like any other. Clicking a problem takes you to the line that caused it.</p>
+<p>Once a compose succeeds, two things update. The window title becomes the story's own title, taken from the story header rather than the folder name. And the <strong>Index</strong> tab fills in with what your story actually defines: its rooms, things, people, and the rest, read out of the composed story rather than scraped from the text.</p>
+<h2 id="build-and-play">Build and play</h2>
+<p><strong>Build → Build</strong> (<code>Cmd-B</code>) builds the story. The right panel switches to <strong>Build</strong> and streams the output. If the build succeeds, the panel switches again to <strong>Play</strong>, and the game is running.</p>
+<p><strong>Build → Cancel Build</strong> (<code>Cmd-.</code>) stops a build in progress.</p>
+<p>Play in the panel exactly as a player would. Runtime errors go to the <strong>Game Errors</strong> tab in the bottom dock rather than into the transcript, so a broken rule does not interrupt the game text you are reading.</p>
+<h2 id="next">Next</h2>
+<p><a href="/chord-writer/building-playing-and-testing">Building, playing, and testing</a> covers the loop in full, including transcript tests.</p>

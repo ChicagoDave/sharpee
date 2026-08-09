@@ -1,17 +1,24 @@
 // RightPanelViewController.swift
 // The right panel: a tab strip over the Chord build output (Build), the running
-// game (Play), the Testing surface (ADR-301 D1), and the error explainer
-// (Diagnosis) — David's ruling: the build process lives NEXT TO Play, not in the
-// bottom dock (which stays for Problems and Game Errors). A build starting
-// switches to Build; a successful play-after-build switches to Play.
+// game (Play), the Testing surface (ADR-301 D1), the error explainer
+// (Diagnosis), and the bundled author documentation (Documentation, go-live
+// Phase 3) —
+// David's ruling: the build process lives NEXT TO Play, not in the bottom dock
+// (which stays for Problems and Game Errors). A build starting switches to
+// Build; a successful play-after-build switches to Play.
 //
 // The Skein tab and its actions (replay / tag / force / bless) were removed with
 // ADR-299's retirement: ADR-300 retires the `.skein` artifact and the second
 // verification engine, and the transcript tree the Testing tab renders is what
 // replaces the skein's tree.
-// Public interface: buildPanel, play, testingTab, testPanel, index, diagnosis,
-// showBuildTab(), showPlayTab(), showTestTab(), showTestingTab(),
-// showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(), onOpenLocation.
+// The ADR-304 testing workspace is RETIRED (ADR-306 D1, David's shred ruling
+// 2026-08-09): the Testing tab shows inline like every other tab, and test
+// AUTHORING lives in the dedicated testing play surface window. The tab is
+// the reading surface only (ADR-306 D4).
+// Public interface: buildPanel, play, testingTab, docsTab, index, diagnosis,
+// showBuildTab(), showPlayTab(), showTestingTab(), showDocsTab(page:),
+// showPublishTab(), showDiagnosis(_:count:), revealDiagnosis(_:),
+// clearDiagnosis(), onOpenLocation.
 // Owner context: tools/ide — Play (right panel).
 
 import AppKit
@@ -26,6 +33,12 @@ final class RightPanelViewController: NSViewController {
     /// place a run is watched. The outline panel that used to sit beside it is
     /// retired — one run, one surface.
     let testingTab = TestingTabViewController()
+    /// The author documentation bundled with the app (go-live Phase 3): the same
+    /// scheme-handler machinery as the Testing tab, pointed at a different root.
+    let docsTab = DocsTabViewController()
+    /// The finish line (ADR-284, go-live item 1): builds and zips a
+    /// distributable browser version of the story.
+    let publish = PublishView()
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)? {
@@ -39,17 +52,22 @@ final class RightPanelViewController: NSViewController {
     private static let testingTabIndex = 2
     private static let indexTab = 3
     private static let diagnosisTab = 4
+    private static let docsTabIndex = 5
+    private static let publishTab = 6
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
 
         addChild(play)
         addChild(testingTab)
+        addChild(docsTab)
         tabStrip.addTab(title: "Build")
         tabStrip.addTab(title: "Play")
         tabStrip.addTab(title: "Testing")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
+        tabStrip.addTab(title: "Documentation")
+        tabStrip.addTab(title: "Publish")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -58,43 +76,56 @@ final class RightPanelViewController: NSViewController {
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
         testingTab.view.translatesAutoresizingMaskIntoConstraints = false
+        docsTab.view.translatesAutoresizingMaskIntoConstraints = false
+        publish.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
         container.addSubview(testingTab.view)
+        container.addSubview(docsTab.view)
+        container.addSubview(publish)
 
         NSLayoutConstraint.activate([
-            tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
-            tabStrip.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            tabStrip.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-
             play.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             play.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             play.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             play.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            buildPanel.topAnchor.constraint(equalTo: play.view.topAnchor),
+            tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
+            tabStrip.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            tabStrip.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            buildPanel.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             buildPanel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             buildPanel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             buildPanel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            index.topAnchor.constraint(equalTo: play.view.topAnchor),
+            index.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             index.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             index.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             index.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            diagnosis.topAnchor.constraint(equalTo: play.view.topAnchor),
+            diagnosis.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             diagnosis.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             diagnosis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             diagnosis.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-
-            testingTab.view.topAnchor.constraint(equalTo: play.view.topAnchor),
+            testingTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             testingTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             testingTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            docsTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
+            docsTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            docsTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            docsTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            publish.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
+            publish.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            publish.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            publish.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -134,6 +165,17 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.testingTabIndex)
     }
 
+    /// Switches to the Publish tab (ADR-284) — the finish line for a story.
+    func showPublishTab() {
+        tabStrip.select(Self.publishTab)
+    }
+
+    /// Switches to the Documentation tab, optionally at a given page.
+    func showDocsTab(page href: String? = nil) {
+        if let href { docsTab.showPage(href) }
+        tabStrip.select(Self.docsTabIndex)
+    }
+
 
 
     private func show(tab selected: Int) {
@@ -142,6 +184,8 @@ final class RightPanelViewController: NSViewController {
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
         testingTab.view.isHidden = selected != Self.testingTabIndex
+        docsTab.view.isHidden = selected != Self.docsTabIndex
+        publish.isHidden = selected != Self.publishTab
     }
 
 }

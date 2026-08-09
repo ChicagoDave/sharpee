@@ -5,10 +5,8 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import {
   Transcript,
-  TranscriptHeader,
   TranscriptCommand,
   TranscriptItem,
   TranscriptRunConfig,
@@ -125,7 +123,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[ENSURES\s*:/i,
     form: '[ENSURES:]',
-    message: '[ENSURES:] was removed (ADR-294 D4) — durable regression protection is a golden recording; for unit intent use [OK: contains "..."] or [STATE:]'
+    message: '[ENSURES:] was removed (ADR-294 D4) — durable regression protection is the transcript\'s own assertions; for unit intent use [OK: contains "..."] or [STATE:]'
   },
   {
     pattern: /^\[REQUIRES\s*:/i,
@@ -150,7 +148,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[OK\s*:\s*matches\s/i,
     form: '[OK: matches]',
-    message: '[OK: matches] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] or a golden recording'
+    message: '[OK: matches] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] or an [OK] exact block'
   },
   {
     pattern: /^\[NAVIGATE\s+TO\s*:/i,
@@ -160,7 +158,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[OK\s*:\s*any\s*\]$/i,
     form: '[OK: any]',
-    message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'
+    message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use [OK: contains "..."], or [SKIP] for deliberately unasserted output'
   },
   {
     pattern: /^\[EVENTS\s*:/i,
@@ -228,6 +226,29 @@ function readTextBlock(
   }
 
   return null;
+}
+
+/**
+ * The text of a `#` comment, with the author's indentation intact.
+ *
+ * `# a note` and `#     > look` differ only in what follows the hash, and that
+ * difference carries meaning: an indented block under a comment marker is how an
+ * author pastes captured output into a transcript. This trimmed it until
+ * 2026-08-08, which made the two spellings identical in the model — so no
+ * serializer could tell them apart, and a round trip through an editing tool
+ * flattened the paste into one unreadable line.
+ *
+ * Exactly one leading space is consumed because the serializer writes exactly
+ * one back. Trailing whitespace is dropped: it is never meaningful, and keeping
+ * it would carry it forward through every save.
+ *
+ * @param trimmedLine the comment line, already trimmed of outer whitespace,
+ *   beginning with `#`.
+ * @returns the comment's text, indentation preserved.
+ */
+function commentBody(trimmedLine: string): string {
+  const afterHash = trimmedLine.slice(1).replace(/\s+$/, '');
+  return afterHash.startsWith(' ') ? afterHash.slice(1) : afterHash;
 }
 
 /**
@@ -324,7 +345,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
 
     // Comments - add to both comments array (legacy) and items array (for annotation context)
     if (trimmed.startsWith('#') && !trimmed.startsWith('#[')) {
-      const commentText = trimmed.slice(1).trim();
+      const commentText = commentBody(trimmed);
       transcript.comments.push(commentText);
       // Also add as item for annotation processing
       transcript.items!.push({
@@ -724,7 +745,7 @@ function parseConfigField(
     case 'forces': {
       // ADR-293 D8/D9 (Phase C): each entry is `point[#occurrence]=CLASS`,
       // parsed to a structured spec at transcript-default mode `once`.
-      // `(none)` is the explicit empty form the .golden provenance uses.
+      // `(none)` is the explicit empty form.
       if (value === '(none)' || value === '') {
         config.forces = [];
         return;
@@ -1171,10 +1192,9 @@ export function validateTranscript(transcript: Transcript): string[] {
     if (!cmd.input) {
       errors.push(`Line ${cmd.lineNumber}: Empty command`);
     }
-    // No per-command assertion requirement here: a bare command list is the
-    // golden tier's legal shape (ADR-294 D1 — the recording is the assertion).
-    // The runner enforces the boundary instead: an assertion-less command in a
-    // transcript with NO recording fails with a named error.
+    // No per-command assertion requirement here: the runner enforces the
+    // boundary instead — an assertion-less command fails with a named error
+    // unless the story's auto-assertion: policy writes one (Phase 6e).
   }
 
   return errors;

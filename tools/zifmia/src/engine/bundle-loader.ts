@@ -25,11 +25,17 @@ import { unzipSync } from 'fflate';
 import type { Story } from '@sharpee/engine';
 
 interface StoryModuleShape {
+  /** ADR-248: the factory-only story contract — the sole export of a
+   *  current story build; every boot gets fully fresh story state. */
+  createStory?: () => Story;
   story?: Story;
   default?: Story | { story?: Story };
 }
 
-const storyCache = new Map<string, Story>();
+/** Cached FACTORIES, not instances (ADR-248): every `loadStoryFromBundle`
+ *  call returns a fresh Story, so two rooms of the same story can never
+ *  share per-playthrough state through a common instance. */
+const storyCache = new Map<string, () => Story>();
 
 function bundleCacheDir(): string {
   // `__dirname` resolves to `tools/zifmia/dist/engine` (compiled) or
@@ -50,14 +56,24 @@ function sanitize(token: string): string {
   return token.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-function resolveStoryExport(mod: StoryModuleShape): Story | undefined {
-  if (mod.story) return mod.story;
+function resolveStoryFactory(mod: StoryModuleShape): (() => Story) | undefined {
+  // ADR-248 factory contract first — the shape every current build emits.
+  const factory = mod.createStory;
+  if (typeof factory === 'function') return () => factory();
+  // Instance-export shapes (pre-ADR-248 bundles): one instance is all the
+  // module has, so the factory degenerates to returning it.
+  if (mod.story) {
+    const instance = mod.story;
+    return () => instance;
+  }
   const def = mod.default;
   if (!def) return undefined;
   if (typeof def === 'object' && 'story' in def && def.story) {
-    return def.story;
+    const instance = def.story;
+    return () => instance;
   }
-  return def as Story;
+  const instance = def as Story;
+  return () => instance;
 }
 
 /**
@@ -65,11 +81,13 @@ function resolveStoryExport(mod: StoryModuleShape): Story | undefined {
  *
  * DOES: writes `story.js` bytes to `.bundle-cache/<id>-<version>.mjs`
  * inside the zifmia package on first call, then dynamic-imports the
- * file and resolves the exported `Story`. Caches the resolved Story
- * keyed on `${storyId}@${version}` for subsequent calls.
+ * file and resolves the story FACTORY (ADR-248 `createStory`, with the
+ * pre-factory instance shapes as fallback). Caches the factory keyed on
+ * `${storyId}@${version}`; every call returns a fresh Story instance.
  *
  * REJECTS WHEN: the bundle is missing `story.js`, or the module's
- * exports do not include a `Story` with a `config` field.
+ * exports include neither `createStory` nor a `Story` with a `config`
+ * field.
  */
 export async function loadStoryFromBundle(input: {
   storyId: string;
@@ -78,7 +96,7 @@ export async function loadStoryFromBundle(input: {
 }): Promise<Story> {
   const cacheKey = `${input.storyId}@${input.version}`;
   const cached = storyCache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) return cached();
 
   const files = unzipSync(input.bundle);
   const storyBytes = files['story.js'];
@@ -95,13 +113,13 @@ export async function loadStoryFromBundle(input: {
   fs.writeFileSync(target, storyBytes);
 
   const mod = (await import(target)) as StoryModuleShape;
-  const story = resolveStoryExport(mod);
-  if (!story?.config) {
+  const factory = resolveStoryFactory(mod);
+  if (!factory || !factory()?.config) {
     throw new Error(`bundle-loader: ${cacheKey} story.js does not export a valid Story`);
   }
 
-  storyCache.set(cacheKey, story);
-  return story;
+  storyCache.set(cacheKey, factory);
+  return factory();
 }
 
 /**

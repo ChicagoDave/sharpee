@@ -1,5 +1,12 @@
 # Sharpee IDE — Go-Live Plan
 
+**Superseded by**: docs/work/testing/plan-20260809-testing-surface-revamp.md
+(2026-08-09) — the testing-surface revamp supersedes parts of Phase 6d
+(ADR-304 workspace layout) and Phase 6f (ADR-305's in-page margin chrome,
+Create button, save panel, per-turn-checkbox selection). This plan stays
+live and resumable at exactly the phase it reached (Phase 5 / 6a-6f) — no
+phase status below is changed by this stamp.
+
 Plan for the seven items in `todo-list.md`. Written 2026-08-06.
 
 The list is the source of truth for *what* and *why*; this is *in what order*
@@ -15,14 +22,18 @@ are not re-litigated here.
 The dependencies are real, not bureaucratic:
 
 ```
-Phase 1  Modal landing page            (item 6)     no dependencies
-Phase 2  Documentation audit           (item 2a)    no dependencies
-Phase 3  Documentation tab             (item 2b)    needs Phase 2
+Phase 1  Modal landing page            (item 6)     DONE 2026-08-06
+Phase 2  Documentation audit           (item 2a)    DONE 2026-08-06
+Phase 3  Documentation tab             (item 2b)    DONE 2026-08-06 (item 8 folded in)
 Phase 4  Transcript discovery pass     (item 7.1)   no dependencies
 Phase 5  Transcript editor             (item 3)     needs Phase 4
 Phase 6  Transcript acceptance pass    (item 7.2)   needs Phase 5
-Phase 7  Publish tab                   (item 1)     needs scoping first
+Phase 7  Publish tab                   (item 1)     DONE 2026-08-06
 Phase 8  DMG                           (item 4)     needs Phases 3 and 6
+
+Added by Phase 2:
+  item 8   Fix 15 stale story headers on sharpee.net   DONE 2026-08-06 (in Phase 3)
+  item 9   Write transcript-testing documentation      after Phase 4
 ```
 
 Phases 1, 2, 4 and 7's scoping step are independent and can run in any order or
@@ -41,6 +52,10 @@ Two orderings matter and are easy to get wrong:
 ---
 
 ## Phase 1 — Modal landing page (item 6)
+
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Acceptance below met
+except the two noted there; details and the two out-of-scope consequences are
+recorded under item 6 in `todo-list.md`.
 
 **Goal.** The app launches into a modal landing page instead of silently
 reopening the last project.
@@ -78,9 +93,31 @@ lives there.
 **Open.** Sanitising the mirrored default for path-illegal characters and
 length. Default-quality, not correctness, since the location is editable.
 
+### Acceptance, checked
+
+| Criterion | State |
+|---|---|
+| Launch shows the modal, not the project | met — `LaunchFlowTests`, and seen live |
+| Picking a recent opens it | met — `LaunchFlowTests` |
+| …and `SessionState` still restores tabs/expansion/pane visibility | **partly** — the *decision* (`SessionState.restorable`: replay only for the project the session was saved for) is tested; the replay itself is the pre-existing `loadProject` path, unchanged and still untested for the reason `StoryHomeTests` records (it writes the developer's real Open Recent) |
+| Create Story produces a story at the mirrored location | met — real-path test, real devkit template, real files |
+| Editing the location then the title leaves the location alone | met — driven through the real field editor |
+| Closing the last story window quits | **not re-verified** — `applicationShouldTerminateAfterLastWindowClosed` is untouched, so this is unchanged rather than confirmed |
+| Tests drive the real modal, not a stub | met — real sheet on a real `MainWindowController`; only project-load, story-write and terminate are injected |
+
+There were no mock artifacts for this surface (they cover the branch view and
+the Testing tab), so the design came from the decisions in `todo-list.md`.
+
 ---
 
 ## Phase 2 — Documentation audit (item 2, first half)
+
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Decision recorded in
+`phase-2-documentation-audit.md`. Summary: ship sharpee.net's own Chord corpus
+(`website/src/app/chord` + `learn`), bundled at build time, pinned to
+`CHORD_LANGUAGE_VERSION`; exclude `docs/reference/`, `genai-api`, **and the
+book** — the book documents the retired TypeScript author path, not Chord.
+Two new items came out of it (8 and 9) and Phase 3 gained a prerequisite.
 
 **Goal.** Decide what the IDE's documentation *is*, before building anything
 to show it. This phase produces a decision document, no UI.
@@ -119,6 +156,23 @@ needs work, that becomes its own item on the list.
 
 ## Phase 3 — Documentation tab (item 2, second half)
 
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. Both prerequisites
+were resolved inside the phase: item 8 was fixed and verified against the real
+compiler, and the static-export blocker was dissolved rather than solved (see
+below). 143 pages bundle in ~150ms; 10 Swift real-path tests + 25 JS unit tests.
+
+**The export decision changed.** The audit recommended `output: "export"` on the
+website. That was dropped once `website/` turned out to have no `node_modules`
+at all: the recommendation would have put `npm install` + `next build` inside an
+Xcode pre-build phase, and `project.yml` already draws exactly that line — the
+web-bundle passes are unconditional BECAUSE they are cheap, the toolchain
+vendoring is opt-in BECAUSE it is not. Instead `tools/ide/web/docs-tab/build.mjs`
+reads the same `content.mdx` sources directly, in the style of the website's own
+zero-dependency `build-search-index.mjs`, so the website need not even be
+installed. **The cost: a second renderer, so the tab can drift from
+sharpee.net's presentation.** The bundler fails loudly on any MDX component it
+does not know, which is what keeps the drift from becoming silent loss.
+
 **Goal.** Documentation reachable without leaving the IDE.
 
 **Shape — David's call, recorded.** Another **right-panel tab**, alongside
@@ -138,14 +192,37 @@ Phase 8.
 - Render the corpus Phase 2 chose, via the Testing-tab scheme-handler pattern.
 - Navigation within the docs; search if the corpus warrants it.
 
-**Acceptance.**
+**Acceptance, checked**
 
-- The tab renders the chosen corpus offline, with no network dependency.
-- Tab selection, theming and font preferences behave like the existing tabs.
-- The docs bundle is produced by the build, not committed by hand, mirroring
-  `build-testing-tab.sh`.
+| Criterion | State |
+|---|---|
+| Renders the chosen corpus offline, no network dependency | met — the whole bundle is scanned for anything that would fetch over http(s) in an asset position. Resource Timing was tried first and abandoned: WKWebView records no entries for custom-scheme loads, so an empty list looks like proof and means nothing |
+| Tab selection behaves like the existing tabs | met — `showDocsTab()` shows Docs and hides the rest |
+| Theming | met by construction — the page carries the same tokens as `Theme.swift` and follows the app's appearance through `prefers-color-scheme`, as the Testing tab does |
+| Font preferences | **not done** — the Testing tab does not honour `FontPreference` either, so this would be new behaviour for both rather than parity. Left out deliberately |
+| Bundle produced by the build, not by hand | met — `build-docs-tab.sh` runs as a pre-build step; the test asserts the script is executable AND that `project.yml` runs it |
+| Navigation within the docs | met — nav tree over all 143 pages, in-tab link following |
+| Search | met — filter over titles and body text, no Fuse dependency |
 
-**Dependencies.** Phase 2.
+Two things beyond the written acceptance, both from the audit:
+
+- **The version gate.** The bundle records the `CHORD_LANGUAGE_VERSION` it was
+  built from; a test asserts it equals both the compiler's constant and
+  `ChordVersionCheck.supportedLanguageVersion`, and the page raises a banner if
+  the installed toolchain reports something else at runtime.
+- **Unknown MDX fails the build.** A component the website adds later throws,
+  naming the page — it caught `<Callout kind="note">` (no `title`) on the first
+  run, which would otherwise have silently emptied a callout.
+
+**Dependencies.** Phase 2 — **and two things Phase 2 found**:
+
+- **Item 8** must be fixed first, or the tab bundles the same 15 pages that
+  teach a story header the compiler rejects.
+- **The website needs a static-export path.** `website/next.config.ts` has no
+  `output: "export"` and `deploy.sh` runs it as a live `next start` service, so
+  there is no directory of HTML to bundle today. Recommended: `output: "export"`
+  behind an env flag, with the three `redirects()` handled another way in that
+  mode, so one corpus serves both the live site and the bundle.
 
 ---
 
@@ -188,15 +265,42 @@ reference the old paths; no build script, config or CI job does.
 
 **Before starting.** Explicit go-ahead from David for the move.
 
+**Status: COMPLETE** — 2026-08-07, session 6ad977. 22 originals `git mv`'d to
+`docs/work/ide-go-live/fernhill-transcripts-baseline/` (frozen ADR-301/302
+fixture confirmed to hold its own copy first). 15 transcripts (161 authored
+commands) rewritten blind, then diffed against the baseline. Deliverables:
+`docs/work/ide-go-live/phase-4-friction-log.md` (F1–F27) and
+`docs/work/ide-go-live/phase-5-editor-requirements.md` (R1–R11) — the latter
+is Phase 5's required input.
+
 ---
 
 ## Phase 5 — Transcript editor (item 3)
+
+**Status: CURRENT** — scoped 2026-08-08, session acc261, in
+`phase-5-editor-scope.md`. The shape: the editor is the Testing tab's document
+view grown a probe, in five slices. All buildable work is done: slices 1–3a
+(session acc261); slice 4 (turn budget) and 5a (record/re-record) — session
+648342, on David's go-ahead for the `turn` wire field and the #239 `--bless`
+port; 2f (in-place retype), 3b (terminal marking, R9), 3c (reparenting), and
+the ADR-290 D7 sidebar refresh — session a45deb, commit e7d47119. The three
+platform remainders all closed 2026-08-08, session 3c1b4d, on David's
+go-ahead ("finish phase 5"): R9's clean case (`CommandResultEvent.ending`),
+5b's re-record review (`diff` on the wire; record mode already replays past
+divergence), and R3/R5's world on the wire (`WorldSnapshot` under
+`--capture-world`: inherited-state header + click-to-assert `[STATE:]`
+chips). See the scope doc's Done sections. **The slice list is now fully
+built.** One named v1 bound: state-assertion offers cover location and
+inventory only — trait-state offers need `[STATE:]` evaluator work first
+(scope doc, slice 3 remainder). The phase stays CURRENT because its
+acceptance is Phase 6 — Fernhill's transcripts written through the editor.
 
 **Goal.** Create, edit and delete transcript tests from inside the IDE.
 
 **Scope.** Driven by Phase 4's friction log — the specific affordances are
 deliberately not fixed here, because fixing them now would be the guess this
-ordering exists to avoid.
+ordering exists to avoid. Now settled in `phase-5-editor-scope.md`, which is
+also where ADR-301's "next decision — the editing interaction" is answered.
 
 **Existing pieces.** The Testing tab (ADR-301), `TranscriptDiscovery`,
 `TranscriptHighlighter`, and the mocks in `docs/work/ide-transcript-editor/`.
@@ -212,6 +316,9 @@ The parser rejects each by name.
 
 ## Phase 6 — Transcript acceptance pass (item 7, pass 2)
 
+**Status: CURRENT** — started 2026-08-08, session c29681. Log:
+`phase-6-acceptance-log.md`. Passing this phase is Phase 5's acceptance.
+
 **Goal.** Prove the editor by using it.
 
 **Scope.** Write Fernhill's transcripts again, through the editor this time.
@@ -222,14 +329,332 @@ tests say. The resulting suite is what Phase 8 ships.
 
 **Dependencies.** Phase 5.
 
+### Phase 6 remediation track (6a–6f) — the fallout, folded in
+
+The first hours of the exercise produced fixes landed on the spot (D1/D2
+create-and-first-command, F2 [NEW]/orange, F3 selection, F1 skip semantics —
+see the log) and seven larger items captured as proposal
+`docs/proposals/phase-6-fallout.md` (issues 248–254, all PLANNED). David's
+ruling 2026-08-08: **this is part of go-live** — "it's all about the testing
+editor" — so the six planned phases live here as 6a–6f, not in a separate
+plan. Full per-phase detail (references consulted, budgets, evidence lists)
+is in `../phase-6-fallout/plan-20260808-phase-6-fallout.md`, MERGED here and
+tracked HERE. Two independent clusters: theming/web-client (6a–6c) and
+authoring UX (6d–6f); only within-cluster order and 6e→6f are real
+dependencies. Phase 8 (DMG) should ship after this track.
+
+**Phase 6a — Web-client Reset menu + ThemeManager owns its menu** (P-3+P-4,
+Medium) **Status: CURRENT (since 2026-08-08) — implementation landed same
+day** (session c29681): `wipeStoryStorage` + `handleReset` + `#menu-reset`
+(template, fernhill custom page); `ThemeManager.renderMenu` from the page's
+`#sharpee-wired-themes` JSON data block (build injects DATA + links, never
+menu markup; the TS-path stale-entry hazard and dungeo's classic-doubling
+both handled); theme clicks delegated. Evidence: platform-browser 126,
+devkit browser 36, real fernhill build carries data block + Reset item, tsc
+clean, both packages rebuilt dist+dist-esm. Mutation-verification's four
+findings all closed same day: handleReset's full flow tested both ways in
+the restart-reboot harness (declined = keys survive + no reboot; confirmed =
+real keys gone + engine.stop + reboot); the `</script>` neutralization
+pinned with a hostile-name unit test; the legacy Dungeo template got the
+Reset item too (P-3 reaches every published client); the built page's
+`id="menu-reset"` asserted in the real-path build test. Final: devkit
+browser 38, platform-browser 128, tsc clean. David's click-through then
+surfaced three live defects, all fixed + pinned in a NEW real-browser
+Playwright spec (`tests/visual/live-client.spec.ts`, serves the real
+fernhill build over http in Chromium): (1) menu items carried `data-theme`,
+which theme CSS scopes by — every row painted itself in its own palette;
+payload renamed `data-theme-choice` (legacy attr still honored for custom
+static menus); (2+3 were ONE bug) Reset wiped storage and rebooted but
+nothing re-applied the theme — page kept wearing the wiped theme, and the
+next manual refresh "reset to classic"; `ThemeManager.resetToDefault()`
+(apply without persisting) now runs in handleReset. Live spec: menu one
+palette/no data-theme, picked theme survives refresh, Reset wipes + reboots
+to classic — 3 passing; full visual suite 12 passing; platform-browser 128;
+fernhill rebuilt; tsc clean. Reset deletes every storage
+key under the story's prefix and restarts, on confirmation; the `#theme-menu`
+build-time regex is deleted from `injectThemes` (link injection stays),
+ThemeManager renders the menu at runtime — in the SHARED build core
+(browser-core.ts, ADR-252 D5), custom pages keeping `#theme-menu` included.
+Evidence: platform-browser + devkit vitest, a real CLI build inspected, both
+packages rebuilt dist + dist-esm, tsc clean.
+
+**Phase 6b — Play-surface theme picker** (P-2, Small) **Status: CURRENT
+(since 2026-08-08) — implementation landed same day** (session acf4d5).
+Picker lists Classic + all built-ins regardless of the story's list; applies
+live + at boot, no flash; persists in UserDefaults; CSS supply is IDE chrome —
+vendored platform-browser theme CSS injected into the play page
+(playSurfaceScript precedent); the built bundle untouched. Evidence:
+real-path Swift test asserts `data-theme` on the loaded play page.
+As built: NSPopUpButton in the Play header — **Story Default** (nil pick, no
+IDE interference; the escape back to what the story actually wears) + Classic
++ the four built-ins from the vendored mirror
+(`SharpeeIDE/Resources/play-themes/`, mirrored by `vendor-play-themes.sh` as a
+committed folder resource + non-opt-in preBuild phase, docs-tab pattern).
+Persistence: `SharpeeIDEPlayThemeChoice` in UserDefaults (absent = Story
+Default). Boot: the document-start surface script injects `<link>`s for
+unshipped built-ins (`PlayURLSchemeHandler.themesFallbackDirectory` backfills
+`themes/…` misses from the mirror; bundle files win; traversal refused) and
+enforces the pick with a MutationObserver — load-bearing, because the
+client's own boot `applyTheme` (BrowserClient.ts) re-applies its saved/default
+theme after document start and would silently undo the pick. Live pick
+restyles the running page in place (a played session is never rebooted);
+Story Default live hands `data-theme` back to the client's stored theme.
+Evidence: PlayThemeChromeTests (8, new — real WKWebView over the real scheme
+handler with the app's real vendored mirror: picked-theme-wins-boot-clobber,
+story-default non-interference, live restyle + persistence, unloaded pick
+dresses the next boot, CSS fetch through the backfill, catalog real-path),
+PlayHeaderViewTests (5, new), PlayURLSchemeHandlerTests +4 backfill cases;
+full SharpeeIDETests suite 472 passing, 0 failures (2026-08-08);
+mutation-verification's 2 warnings closed same day. Remaining 6b acceptance:
+David's in-app click-through.
+
+**Phase 6c — IDE theme corral** (P-1, Medium) **Status: CURRENT
+(since 2026-08-08) — implementation landed same day** (session acf4d5; 6b
+awaits David's click-through in parallel — he is remote). Author
+picks which built-ins their story ships; toggling writes the `.story`
+header's `themes:` line via a header-writing seam beside
+StoryHeaderIFID/PublishSource (ADR-298 fielded schema; editor owns the field
+like `continues:`); build/publish honor the list unchanged. Evidence:
+real-path toggle → header changes → next build's `dist/web/themes/` matches.
+As built: **Build → Shipped Themes** submenu — checkmark item per vendored
+built-in (from `PlayThemeCatalog`, 6b's mirror; Classic is the `:root`
+baseline, always ships, no toggle); enablement + checkmarks via
+`validateMenuItem` reading the buffer-first header state
+(`shippedThemeIds()`). Toggling routes AppDelegate →
+`RootViewController.toggleShippedTheme` → new `StoryHeaderThemes` seam
+(read/edit/apply on the shared `StoryHeaderLines` scanner: replace in place
+preserving author field order, insert after last header field, empty list
+REMOVES the line, nil for no-story-block/unchanged) → the editor's undoable
+`replaceText` path — tab left dirty, disk untouched until the author saves.
+Evidence: StoryHeaderThemesTests 11 passing; ShippedThemesRealPathTests 3
+passing — (1) the exit criterion end-to-end: temp fernhill-frozen copy,
+toggle-on edit, header read back, REAL devkit `build` (NODE_PATH supplies
+the workspace walk tmp lacks), `dist/web/fernhill/themes/` = exactly
+{paper.css, system-6.css, system-6/} with untoggled themes absent, then a
+toggle-off edit reads back in place; (2) menu-construction pin (ids, classic
+excluded, action selector); (3) the menu toggle path through a real
+MainWindowController + real compose outcome + real NSTextView buffer —
+buffer gains the line, tab dirty, DISK UNCHANGED until save, in-place
+add/remove — first-ever coverage of the editor `replaceText` seam
+(mutation-verification found it untested repo-wide, the IFID fix included).
+Full SharpeeIDETests 492 passing, 0 failures, 116.4s, `** TEST SUCCEEDED **`
+(2026-08-08 18:43 CDT, session bd3d6b) — includes the late-added editor-path
+test, closing the earlier 491-run's predates-that-test caveat;
+ShippedThemesRealPathTests re-run standalone the same session, 3 passing,
+0 failures. Remaining 6c acceptance: David's in-app click-through.
+
+**Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status: CURRENT
+(since 2026-08-08, session bd3d6b) — implementation landed same day; David
+exercised it live the same evening**. Built to D1–D4 exactly: Testing tab
+moves Play to the left pane; modal, one unmissable Exit Testing; the Play web
+view reparents without reload (a played session survives); editor
+document/cursor/scroll restore on exit. As built: any route to the Testing
+tab (click or the Test menu's run entry) enters the workspace;
+`RightPanelViewController` lends/reclaims the Play surface (content
+constraints re-anchored strip-side so the surface can leave); a new
+`LeftPaneHostViewController` hosts the editor permanently (hidden, never
+removed — D4 for free) and overlays Play under an accent
+`TestingWorkspaceExitBar`; while modal, all other tab switches and the
+build's play-tab-forward are suppressed. Evidence:
+TestingWorkspaceRealPathTests 4 passing — layout+modality+single exit;
+WKWebView JS-world marker survives the reparent round-trip alive (D3, same
+instance); editor document/cursor/scroll byte-identical across the trip (D4,
+real NSTextView); a build finishing inside the workspace loads Play on the
+left without breaking modality (fixture composes via a real in-checkout
+compose — scratch under `test-fixtures/.compose-scratch-*`, gitignored).
+Full SharpeeIDETests 496 passing, 0 failures, 119.3s, `** TEST SUCCEEDED **`
+(2026-08-08 20:05 CDT). Fallout fixed en route, same session: (1)
+pre-existing `LineNumberRulerView` infinite draw loop on files without a
+trailing newline (found by the D4 test; one loop guard); (2) Testing tab's
+Cards/Source face switcher stranded at the window edge in the full-width
+workspace pane — moved into the title cluster (David's live finding;
+web suite 87 passing, bundle re-vendored). David's live exercise also
+confirmed the play surface jump; remaining 6d acceptance: his next
+exercise round on the rebuilt app. The missing turn-selection margin he
+noted is 6f scope, not a 6d defect.
+
+**Phase 6e — Auto-assertion policy** (P-6, Medium) **Status: CURRENT
+(since 2026-08-08, session c30771) — design settled AND implementation
+landed the same session; remaining acceptance: David's in-app
+click-through**. As built, platform half: chord accepts the closed-set
+`auto-assertion:` header field (bad value = parse error, never silent
+"let me decide"; projected AST→IR→StoryConfig→`LoadedGame.
+autoAssertionPolicy`); BOTH harnesses (branch-tester + transcript-tester,
+the D15 full-copy pair) hook the ADR-294 D2 tier boundary — a bare
+command under a policy executes once, gets its assertions synthesized
+from the turn's REAL output ([OK]+literal block for all-emitted-text;
+contains-form read from the STRUCTURED room-name/room-description
+channel captures for the middle policies, [SKIP] when neither emitted —
+the flattened capture is a JSON rendering and was the first real-path
+failure), evaluated through the normal loop, marked `autoAsserted`, and
+the file rewritten via the round-tripping serializer; bootstrap
+auto-unions the two room channels into capture under a room policy.
+Rejection paths (no policy / engine error / blank output / deliberate
+[SKIP]) byte-identically untouched. IDE half: Test → Auto-Assertion
+submenu (Let Me Decide + three, 6c's validateMenuItem/checkmark
+pattern) → `StoryHeaderAutoAssertion` seam (scalar sibling of
+StoryHeaderThemes; nil REMOVES the line) → the editor's undoable
+`replaceText`, buffer-first, disk untouched until save; TestController
+reports the on-disk policy to the tab at attach + run start (documents
+saved first, so report and run agree); the tab's add-command writes
+BARE under a policy ([SKIP] placeholder kept for let-me-decide) and the
+[NEW] card guidance names the policy. Evidence: chord 744; branch-tester
+420 (10 new); transcript-tester 287 (10 new); devkit 4-test REAL-PATH
+suite (real compile→loader→bootstrap→runner, bare `> look` run writes
+`[OK: contains "Den"]` + `[OK: contains "A small square den."]` to disk
+and the written file passes a fresh run, flat + --tree, no-policy D2
+failure byte-identical); story-loader 480, bootstrap 40, engine 627 —
+all 0 failures; tab vitest 88; full SharpeeIDETests **509 passing, 0
+failures** (2026-08-08 21:26 CDT) incl. StoryHeaderAutoAssertionTests
+(11) + AutoAssertionMenuTests (2 — real-buffer menu path: buffer gains
+the line, tab dirty, DISK UNCHANGED; menu-construction pin). Both
+mutation-verification passes ran: platform half clean (advisory: the
+policy union is declared inline at 5 sites, rule-8b extraction if the
+set ever grows); IDE half raised ONE warning — the TestController →
+webview → surface hop had no assertion on either side — closed the same
+evening: the page reflects the stored policy onto `document.body`
+(observable state), `host.test.ts` pins the bridge wiring (2 tests, tab
+vitest 90), and a new real-path test drives `TestController.attach` on a
+header-carrying fixture and reads the policy back out of the LIVE
+webview (`testAttachReportsTheOnDiskPolicyIntoTheLivePage`). Full suite
+after closure: **510 passing, 0 failures** (2026-08-08 21:33 CDT).
+Residual acknowledged, not closed: the menu checkmark state
+(validateMenuItem) and the [NEW]-guidance text branch are unpinned —
+both cosmetic reflections of state that IS pinned. Known interaction,
+David to rule:
+a transcript open in the EDITOR pane during a policy-writing run does
+not auto-refresh from disk (no file watching) — same class as any
+external edit. Design as settled: (1) the setting is
+**per-story, a fielded `.story` header line** `auto-assertion:
+all-emitted-text | room-description | room-name-and-description`, absent =
+"let me decide" (today's flow unchanged) — per-user was ruled out by CLI
+parity (UserDefaults can't reach `sharpee test`) and by the suite being a
+committed, shared artifact; the author never types the field (editor-owned,
+6c's `StoryHeaderThemes` ownership pattern; a `packages/chord` schema
+change, approved in the design step). (2) "All emitted text" = on a new
+command's first run, write `[OK]` + literal ADR-287 block holding **every
+ordered emission — before text, room name, description, list contents, NPC
+activity — in order, all of them** (assertion tier, NOT a golden, ADR-294
+D1/D2). The two middle options write **contains-form** from the R3 world
+capture (`[OK: contains "<room name>"]` / contains on description) —
+churn-survival is their point. (3) **Bare command = awaiting policy;
+`[SKIP]` = deliberately skipped, never trampled** (no new grammar, D4-safe):
+under a policy the editor writes new commands bare and the runner
+auto-writes the assertion on first run (`--bless`-spirit file mutation, one
+code path for CLI and editor); under "let me decide" the editor keeps
+writing the `[SKIP]` placeholder. (4) Settings UI is **Test →
+Auto-Assertion**, a check-marked submenu mirroring Build → Shipped Themes
+(buffer-first `validateMenuItem`, header seam, undoable `replaceText`, tab
+dirty until save). Build order: chord header field → runner policy engine →
+header seam + Test menu → editor/tab display; real-path tests at runner and
+editor level (P-6 done-when).
+
+**Phase 6f — Create Transcript from played commands** (P-7, Large) **Status:
+IMPLEMENTED (2026-08-09, session 1dd6d3 — designed AND built the same
+session; remaining acceptance: David's in-app click-through)**. As built:
+branch-tester owns the extracted synthesis module (`auto-assertion.ts`) +
+`createTranscriptFromPlay` (`from-play.ts`, 12 tests); devkit ships
+`sharpee transcript-from-play` (stdin JSON → transcript text, REAL-PATH
+replay test: created file passes a genuine compile→run); the browser client
+stamps `data-turn` per rendered element, posts `{turn, command, output,
+captures}` per turn over the extended `turnEvents` bridge (structured
+captures; boot look recorded as each lineage's turn 1 for replay alignment;
+restart posts a fence; ordinals page-lifetime monotonic; capture-parity now
+pins boot-turn alignment); the IDE injects `IDE_PLAY_SEED = 42`, overlays the
+margin chrome (checkbox per turn group, floor-fenced from Swift on in-page
+restart), holds a `PlayTurnLog`, and the Play header's Create Transcript
+button drives save-docs-first → on-disk policy → real CLI → NSSavePanel into
+`tests/` (refusals alert and write nothing). Evidence and the four as-built
+deviations (turnEvents name, per-element stamps, boot-look recording, D15
+module ownership) are recorded in ADR-305's "As built" section: branch-tester
+422, devkit 171, platform-browser 131, SharpeeIDETests **527 passing, 0
+failures**, tsc clean (2026-08-09 ~00:05 CDT). Original design record: Design as settled: (1) **Seed** — the play
+session boots at a fixed IDE default seed, injected via the surviving
+`__SHARPEE_PLAY_SEED__` hook (ADR-300 removed the setter, the client template
+still honors it; today's play is clock-seeded); created transcripts pin it
+(`seed:` header, ADR-294 D3). (2) **Selection = what's asserted, not what
+runs** — the file always carries every command from the origin through the
+last selected turn (determinism needs the full sequence; no mid-session
+snapshots); selected turns are asserted, unselected turns (ancestry prefix
+and gaps) are `[SKIP]` — 6e's deliberate-skip marker, executed for state,
+never trampled. No anchoring restriction on the margin. (3) **Meta
+commands** — restart (typed or Play-header) is a fence: it resets the
+promotion log's origin, the margin only reaches back to the most recent
+restart, and `restart` never appears in a created file (the transcript's
+fresh boot plays that role). All other meta commands (save, restore, undo,
+verbose, score…) are carried as ordinary commands — self-contained and
+deterministic because every play boot is storage-clean (the chrome clears
+localStorage/sessionStorage). (4) **The margin lives in the play surface,
+over the played turns themselves** (David's ruling, overriding the
+session-log-in-Testing-tab lean): the gesture is "I just played this — these
+N commands are a test," and it happens where the play happened. The DOM
+contract is absorbed, not assumed: the platform client gains a small stable
+per-turn anchor (`data-turn`), a contract like `#menu-bar`; authors who
+customize the client keep the anchors to keep the IDE affordance. The
+turn feed (client → Swift bridge: command, ordered output, channel captures,
+restart events) is rebuilt against THIS decision, as PlayViewController's
+ADR-300 removal note instructed. (5) **Assertions are synthesized at
+creation** from the played turns' captures — the play surface holds the real
+output, so the file is born whole, no first run needed. One code path is
+preserved structurally: the captures→assertions synthesis becomes a shared
+toolchain-owned module (rule 8b) imported by BOTH harness runners and the
+creation flow — never a Swift-side or chrome-side reimplementation. Under
+"let me decide," creation follows 6e's editor rule: selected turns get the
+`[SKIP]` placeholder, nothing auto-writes. **The design's authoritative record
+is [ADR-305](../../architecture/adrs/adr-305-create-transcript-from-play.md)**
+(ACCEPTED, reviewed and findings folded same session): it adds the D6 write
+contract (save panel into `tests/`, single `seed:` header field,
+`IDE_PLAY_SEED = 42`, refuse-writes-nothing paths), the `data-turn` anchor and
+`playTurns` bridge shapes, and the boundary/rejection test list. Evidence:
+real-path test plays, selects, creates, and the resulting transcript passes a
+real run (rule 13a — no stubbed runner), plus ADR-305's three boundary tests
+(restart fence, bridge round-trip, anchor contract) and three rejection tests.
+
 ---
 
 ## Phase 7 — Publish tab (item 1)
 
+**Status: COMPLETE** — 2026-08-06, session 20260806-1650. `sharpee publish`
+exists in devkit and a Publish tab drives it. Acceptance below, checked:
+
+| Criterion | State |
+|---|---|
+| `publish` produces a playable zip | met — fernhill publishes to 0.4 MB; unzipped, index.html is at the root, references are relative, audio/ and images/ are carried |
+| No IFID → refuses, writes nothing | met — exit 2, nothing built (verified end to end, plus unit tests) |
+| Zip structure pinned by test | met — `index.html` at the archive root |
+| The tab runs the toolchain command, never a second path | met — `PublishController` spawns `sharpee publish`; a real-path test drives a real child process |
+| The IFID precondition is *offered as a fix* in the tab | **not done** — a second IFID check in Swift is the drift ADR-284 D1 exists to prevent. The author meets the fix earlier: Problems offers Generate IFID at compile time, and the CLI's refusal names both fixes |
+| itch.io upload verified by hand | **not done** — needs a real account; a David-only step |
+
+**Found and fixed while verifying**: `buildBrowser` writes into `dist/web/<id>`
+WITHOUT clearing it, so the first real publish of fernhill carried a
+`game.js.map` five hours older than its `game.js` despite `sourcemap: false`.
+Anything left by an earlier build was shipping to strangers. Clearing the story's
+own output first took the artifact from **1.2 MB to 0.4 MB** — the stale source
+map was two thirds of the download.
+
+**Scoping step: COMPLETE** — 2026-08-06, session 20260806-1650.
+`phase-7-publish-scope.md`. The phase is unblocked and can start any time.
+
+Headline: Publish is already designed — ADR-284 (ACCEPTED) decides D1 (mechanics
+in devkit, IDE invokes the toolchain, no IDE-only path) and D2 (v1 artifact is a
+zip of the self-contained browser build). Its one stated implementation blocker,
+Q-2 "where does Publish live", is answered by item 1's right-panel tab. So Phase
+7 builds what ADR-284 specified and nobody has built: **`sharpee publish` does
+not exist** (no `publish` case in `packages/devkit/src/cli.ts`), while
+everything under it does — `dist/web/<id>/index.html` is already the itch.io
+shape, `assets/` is already copied, the IFID is already mintable in-IDE. Publish
+v1 is build + zip + the ADR-298 D5 refusal on a missing IFID.
+
+One ruling needed: ADR-284 Acceptance 1 names a "customized Web Template", but
+ADR-286's `.templates` DSL **is not implemented** (the string appears nowhere in
+devkit or chord source). Recommendation in §6.1 — read it against the
+`browser/<storyId>.css` override that does exist, and amend the ADR, rather than
+making Phase 7 wait on an unscoped DSL.
+
 **Goal.** Publishing reachable from the IDE.
 
-**Scope is not yet defined and this phase cannot start without it.** The
-scoping step is small and can happen any time:
+**Original scoping questions, now answered in the scope document:**
 
 - What "publish" means here — produce a distributable, upload somewhere,
   register an IFID, generate an iFiction record, or some subset.

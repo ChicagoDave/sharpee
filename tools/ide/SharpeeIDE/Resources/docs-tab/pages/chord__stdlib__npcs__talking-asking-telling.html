@@ -1,0 +1,65 @@
+<p><strong>talk</strong> (<code>talking</code>) covers the verbs <code>talk to/with X</code>, <code>speak to/with X</code>, <code>chat with X</code>, and <code>converse with X</code> (core grammar since ADR-229; story grammar still outranks it). The action is not gated on being a person: talking to the mailbox reaches the action and refuses <code>not_actor</code>, hook-visibly, so a story can intercept even that. A bare person answers <code>no_response</code>, which is honest: talk is shallow by design. A <code>conversation</code> object in the actor's custom properties unlocks greeting flavor (first meeting vs. <code>greets_again</code>, <code>formal_</code>/<code>casual_greeting</code>, <code>remembers_you</code>, <code>has_topics</code> / <code>nothing_to_say</code>), but per-topic dialogue lives on ask/tell's declared table instead.</p>
+<p><strong>ask</strong> (<code>asking</code>) and <strong>tell</strong> (<code>telling</code>) take <code>ask X about Y</code> (also <code>question X about Y</code>, <code>inquire of X about Y</code>) and <code>tell X about Y</code> (also <code>inform X about Y</code>); a non-person recipient refuses <code>not_actor</code>. The topic is a first-class free-text slot (ADR-231), resolved entity-first: a topic naming something in scope carries that entity along, any other wording flows through as plain text, and a topic is never scope-rejected. Bare, both actions validate the social preconditions, mutate nothing, and report a default: asking's <code>unknown_topic</code> and telling's <code>not_interested</code>. Real per-topic dialogue is a declared Chord table (ADR-239): <code>define topics for &lt;person&gt; … end topics</code>, one block per person, one table serving ask AND tell. Entity rows (<code>about the great lamp:</code>) ride the platform's quiet topic-entity resolution and are checked first; quoted rows (<code>about &quot;the storm&quot;, &quot;the weather&quot;:</code>) match free text, with comma-separated aliases; a response is a one-line statement or an indented body (<code>it</code> binds the person). Matching is normalized whole-topic lookup: case-insensitive, article-stripped, and never fuzzy. On a hit the row fully owns the reply; the person's <code>on asking it</code> / <code>on telling it</code> clause is the catch-all, firing only on a miss; with neither, the stdlib defaults speak.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Lantern Gallery
+  a room
+
+  The top of the lighthouse, all glass and brass.
+
+create the great lamp
+  aka lamp
+  scenery
+  in the Lantern Gallery
+
+  A first-order lens taller than a man.
+
+create the keeper
+  a person
+  in the Lantern Gallery
+
+  The keeper polishes the lens without looking up.
+
+  on asking it
+    phrase keeper-shrug
+  end on
+
+define topics for the keeper
+  about the great lamp: phrase keeper-lamp
+  about &quot;the storm&quot;, &quot;the weather&quot;:
+    phrase keeper-storm
+end topics
+
+create the player
+  starts in the Lantern Gallery
+
+define phrases en-US
+  keeper-lamp:
+    &quot;Eighty years that lens has burned,&quot; the keeper says. &quot;It will
+    outlast us both.&quot;
+  keeper-storm:
+    &quot;Glass is falling,&quot; she says. &quot;You'll want to be off the rock by
+    dark.&quot;
+  keeper-shrug:
+    The keeper shrugs. &quot;Lamp and weather. That's all I know.&quot;</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; talk to the lamp
+You can only talk to people.
+
+&gt; talk to the keeper
+The keeper doesn't respond.
+
+&gt; ask the keeper about the lamp
+&quot;Eighty years that lens has burned,&quot; the keeper says. &quot;It will outlast us both.&quot;
+
+&gt; ask the keeper about the weather
+&quot;Glass is falling,&quot; she says. &quot;You'll want to be off the rock by dark.&quot;
+
+&gt; tell the keeper about the storm
+&quot;Glass is falling,&quot; she says. &quot;You'll want to be off the rock by dark.&quot;
+
+&gt; ask the keeper about the tide
+The keeper shrugs. &quot;Lamp and weather. That's all I know.&quot;</code></pre>
+<p>The whole dispatch order in one scene: <code>not_actor</code> for a non-person, the honest <code>no_response</code> on bare talk, the entity row riding scope resolution, the quoted row answering either alias for ask and tell alike, and the <code>on asking it</code> catch-all speaking only on a miss.</p>
+<table><thead><tr><th></th><th>talk (<code>talking-*</code>)</th><th>ask / tell (<code>asking-*</code> / <code>telling-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_actor</code> · <code>too_far</code> (same room required) · <code>self</code> · <code>not_available</code></td><td><code>no_target</code> · <code>not_visible</code> · <code>too_far</code> · <code>not_actor</code></td></tr><tr><td>Success</td><td><code>no_response</code> · greeting flavor with <code>conversation</code> data (<code>first_meeting</code>, <code>greets_again</code>, <code>formal_</code>/<code>casual_greeting</code>, <code>remembers_you</code>, <code>has_topics</code> / <code>nothing_to_say</code>)</td><td><code>unknown_topic</code> (ask) · <code>not_interested</code> (tell) — a topics row replaces both</td></tr><tr><td>Events</td><td><code>talked</code></td><td><code>asked</code> / <code>ask_blocked</code> · <code>told</code> / <code>tell_blocked</code></td></tr></tbody></table>
+<p>Interceptors: <code>on talking it</code> on the person is talk's override seam. The canonical TypeScript rendition is Dungeo's troll, whose <code>preValidate</code> vetoes with its own message when he is out cold and whose <code>postReport</code> <strong>overrides</strong> the core reply with GROWLS when he isn't (swap the standard message, keep the event); the zoo's characters skip talking entirely and speak through every-turn daemons, which is also a legitimate pattern. The topic reaches interceptor data (<code>topic</code>, <code>topicEntityId</code>) via the lifecycle seed, for <code>while</code> conditions and TypeScript hooks.</p>
+<p>Gone the other way in the ADR-239 pass: the <code>say X [to Y]</code>, <code>shout</code>, and <code>whisper X to Y</code> patterns were <strong>removed</strong>, as was the <code>write X [on Y]</code> family. Those action ids had no implementations (they parsed, then runtime-failed in every story); both return with real conversation/writing systems, and story-grammar verbs (Dungeo's SAY) are unaffected.</p>

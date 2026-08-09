@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  index.html — the Documentation tab's shell.
+
+  Purpose: the fixed markup main.ts paints into. Ids here are the contract it
+    looks up by name. The corpus itself is not in this file — it is fetched from
+    ./docs-index.json and ./pages/*.html, both bundled beside it.
+  Owner context: tools/ide — the Documentation tab's web bundle. Served over
+    sharpee-docs://app/ from the app's Resources, never file://.
+-->
+<title>Sharpee — Documentation</title>
+<link rel="stylesheet" href="./docs.css">
+</head>
+<body>
+<div class="tab">
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Filter documentation" autocomplete="off" spellcheck="false">
+    <span class="spacer"></span>
+    <span class="version" id="version"></span>
+  </div>
+
+  <p class="version-banner" id="version-banner" hidden></p>
+
+  <div class="body">
+    <nav class="nav" id="nav"></nav>
+    <article class="content" id="content"></article>
+  </div>
+
+</div>
+<script src="./docs.js"></script>
+</body>
+</html>

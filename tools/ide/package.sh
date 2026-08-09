@@ -43,6 +43,10 @@ readonly IDE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "$IDE_DIR/../.." && pwd)"
 readonly RELEASE_DIR="$IDE_DIR/release"
 readonly NODE_ENTITLEMENTS="$IDE_DIR/bundled-node.entitlements"
+# Window geometry and the layout itself belong to dmg/assemble-dmg.sh. Only the
+# background's PRESENCE is checked here, at preflight, because discovering it
+# missing at step 8 costs the whole build.
+readonly DMG_BACKGROUND="$IDE_DIR/dmg/background.tiff"
 
 NOTARY_PROFILE="${NOTARY_PROFILE:-dc-notary}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
@@ -76,13 +80,17 @@ step "Preflight"
 
 [ "$(uname -s)" = "Darwin" ] || die "packaging is macOS-only (uname: $(uname -s))."
 
-for tool in xcodebuild xcodegen pnpm node hdiutil codesign xcrun shasum; do
+for tool in xcodebuild xcodegen pnpm node hdiutil codesign xcrun shasum osascript; do
   command -v "$tool" >/dev/null || die "'$tool' is not on PATH but is required."
 done
 ok "toolchain present"
 
 [ -f "$NODE_ENTITLEMENTS" ] || die "missing $NODE_ENTITLEMENTS — the vendored Node
   runtime cannot be signed without it (see the file's own header for why)."
+
+# Checked here rather than at step 8, which sits 10+ minutes into a cold run.
+[ -f "$DMG_BACKGROUND" ] || die "missing $DMG_BACKGROUND — the DMG window background.
+  Regenerate it with tools/ide/dmg/make-background.swift and commit the result."
 
 # --- Credential 1: the Developer ID Application certificate ---------
 if [ -z "$SIGN_IDENTITY" ]; then
@@ -381,21 +389,16 @@ ok "ticket stapled to the app"
 # =====================================================================
 # 8. Assemble the DMG
 # =====================================================================
+# Staging, the Finder window layout and compression live in assemble-dmg.sh.
+# They are split out because everything around them here needs credentials and
+# a ten-minute build, which would leave the layout testable only by shipping;
+# dmg-layout-test.sh drives that script directly. This step owns WHAT goes in
+# and where the result lands — the script owns how the image is built.
 step "DMG"
-readonly DMG_STAGE="$WORK/dmg"
-mkdir -p "$DMG_STAGE"
-cp -R "$APP" "$DMG_STAGE/" || die "failed to stage the app for the DMG."
-ln -s /Applications "$DMG_STAGE/Applications"
-
 mkdir -p "$RELEASE_DIR"
 readonly DMG_PATH="$RELEASE_DIR/$DMG_NAME"
-rm -f "$DMG_PATH"
-hdiutil create \
-  -volname "Chord Writer $VERSION" \
-  -srcfolder "$DMG_STAGE" \
-  -ov -format UDZO \
-  "$DMG_PATH" >/dev/null \
-  || die "hdiutil failed to create the DMG."
+"$IDE_DIR/dmg/assemble-dmg.sh" "$APP" "Chord Writer $VERSION" "$DMG_PATH" \
+  || die "failed to assemble the DMG."
 ok "created $DMG_NAME ($(du -h "$DMG_PATH" | cut -f1))"
 
 # The DMG is itself a distributed artifact and is signed too — but NOT via

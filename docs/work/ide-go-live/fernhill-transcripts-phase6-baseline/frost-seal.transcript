@@ -1,0 +1,41 @@
+title: Sealed under frost
+story: fernhill
+description: The greenhouse's north door and the vine, both refusing for the
+  same reason — no warmth in the pipes. The state of the world before
+  machine.transcript lights the boiler.
+seed: 1
+
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Greenhouse"]
+[OK: contains "leads up toward the folly, if it would open"]
+
+# `states: seedling, flowering, fruiting` — the vine is at the first of them,
+# and its description says so without naming the state.
+> examine the vine
+[OK: contains "barely more than a seedling now"]
+
+# `north is blocked while the boiler is off: frost-sealed`. The exit exists;
+# the condition speaks.
+> north
+[OK: contains "The glass door to the folly path is sealed fast under a rind of frost"]
+[OK: not contains "Folly Hill"]
+[STATE: true, player.location = Greenhouse]
+[EVENT: false, type="if.event.actor_moved"]
+
+# Two refusals stack on pruning, and the tool check comes first: without the
+# shears the vine's own `when seedling` branch is never reached, so the player
+# never learns the plant is too young.
+> prune the vine
+[OK: contains "Bare-fingered pinching will mangle it. This wants the garden shears"]
+[OK: not contains "It is all stem and hope"]
+
+> examine the staging benches
+[OK: contains "empty but for one determined vine at the warm end"]

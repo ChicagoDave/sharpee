@@ -46,6 +46,29 @@ struct SessionState: Codable {
     }
 }
 
+extension SessionState {
+
+    /// The persisted session, but only when it describes the project actually
+    /// being opened.
+    ///
+    /// Launch no longer reopens the last project silently — the landing page
+    /// offers it alongside the other recents (go-live item 6). So the open tabs,
+    /// expansion and pane visibility in the persisted session may belong to a
+    /// different project than the one the author just picked, and replaying them
+    /// there would open another story's files.
+    ///
+    /// - Parameters:
+    ///   - state: the persisted session, or nil on first launch.
+    ///   - url: the project being opened.
+    /// - Returns: `state` when it was saved for `url`; nil otherwise, meaning the
+    ///   project opens with its own defaults.
+    static func restorable(_ state: SessionState?, opening url: URL) -> SessionState? {
+        guard let state, let saved = state.projectURL,
+              saved.standardizedFileURL == url.standardizedFileURL else { return nil }
+        return state
+    }
+}
+
 enum SessionStateStore {
 
     static let key = "SharpeeSessionState"

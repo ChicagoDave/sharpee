@@ -1,0 +1,52 @@
+title: The warped door
+story: fernhill
+continues: vine
+description: The folly door will not open until Tobias has been made to talk
+  about the fire. Ends the moment the door's draught lights the fuse — the
+  branch point both fuse endings continue from.
+
+---
+
+# `on opening it while tobias is not shaken: refuse folly-jammed`. This is the
+# story's own refusal, and it is only reachable by opening the door explicitly.
+> open the folly door
+[OK: contains "The warped door doesn't shift. Twenty years of weather have set it like a jaw"]
+
+# The natural command gets the stock line instead — the story's refusal is
+# bypassed by the phrasing a player is more likely to type.
+> north
+[OK: contains "The folly door is closed"]
+[OK: not contains "Twenty years of weather"]
+[STATE: true, player.location = Folly Hill]
+
+> south
+[OK: contains "Greenhouse"]
+
+> east
+[OK: contains "Fountain Court"]
+
+# The folly topic flips Tobias to `shaken` — the door's condition — and awards
+# `truth worth 5`. Same reply as npcs.transcript; here it is load-bearing.
+> ask tobias about the folly
+[OK: contains "The door's only warped, not cursed. Shoulder it"]
+
+> west
+[OK: contains "Greenhouse"]
+
+> north
+[OK: contains "Folly Hill"]
+
+# Same command as the first line of this file, opposite outcome.
+> open the folly door
+[OK: contains "You open the folly door"]
+[EVENT: true, type="if.event.opened"]
+
+# `after entering it, once` — the draught lights the fuse, and the sequence
+# `when the fuse becomes lit` starts its three-turn count. Everything below
+# this line is a race.
+> north
+[OK: contains "Folly"]
+[OK: contains "a cache of ancient estate fireworks slumps against the far wall"]
+[OK: contains "wakes a thread of sparks in the old blasting cord"]
+[OK: contains "It is racing you"]
+[STATE: true, player.location = Folly]

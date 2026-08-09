@@ -98,6 +98,18 @@ export class SharpeeRuntimeBridge {
 
   // ─── Handlers ─────────────────────────────────────────────────
 
+  /**
+   * Clears the eval contract's global. Deliberately a method, not an inline
+   * assignment: TS flow analysis narrows `window.SharpeeStory` to
+   * `undefined` at an inline `= undefined` and carries that across the
+   * eval call (calls don't invalidate property narrowing), typing the
+   * loaded story as `never` at its guards. Behind a call boundary the
+   * caller keeps the declared `Story | undefined`.
+   */
+  private resetLoadedStoryGlobal(): void {
+    window.SharpeeStory = undefined;
+  }
+
   private handleLoadStory(code: string): void {
     try {
       // Clear any previous story
@@ -107,7 +119,7 @@ export class SharpeeRuntimeBridge {
 
       // Eval the story code — it must set window.SharpeeStory
       // The code runs in the same context where window.Sharpee has the full API
-      window.SharpeeStory = undefined;
+      this.resetLoadedStoryGlobal();
 
       // Use Function constructor instead of eval for slightly better CSP compat
       const fn = new Function(code);
@@ -134,7 +146,9 @@ export class SharpeeRuntimeBridge {
       this.send({
         type: 'sharpee:story-loaded',
         title: story.config.title,
-        author: story.config.author,
+        // ADR-298: StoryConfig carries `authors`; the wire's byline is the
+        // engine's join convention.
+        author: story.config.authors.join(', '),
       });
     } catch (err) {
       this.sendError('load', err);

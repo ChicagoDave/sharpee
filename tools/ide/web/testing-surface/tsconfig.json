@@ -1,0 +1,32 @@
+{
+  // Typecheck only — esbuild does the emitting (build.mjs). The one import
+  // outside this directory is the synthesis module's channel-prose extractor
+  // (ADR-306 D2: imported, never reimplemented); its `paths` entry must stay
+  // in step with build.mjs's `alias` and vitest.config.ts — all three point
+  // at the SOURCE file, so what is checked is what the bundle carries.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/branch-tester/auto-assertion": ["../../../../packages/branch-tester/src/auto-assertion.ts"],
+      "@sharpee/branch-tester/serializer": ["../../../../packages/branch-tester/src/serializer.ts"],
+      "@sharpee/branch-tester/parser": ["../../../../packages/branch-tester/src/parser.ts"],
+      "@sharpee/branch-tester/types": ["../../../../packages/branch-tester/src/types.ts"],
+      "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}

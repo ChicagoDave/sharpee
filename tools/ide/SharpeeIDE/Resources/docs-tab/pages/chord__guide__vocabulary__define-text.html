@@ -1,0 +1,8 @@
+<p>Some text cannot be authored as static variants: it depends on computation the language deliberately does not do (the &quot;no counting&quot; rule). A <strong>text hatch</strong> bridges to a small piece of TypeScript that produces the text. <code>define text &lt;name&gt; from &quot;&lt;module&gt;&quot;</code> binds a marker name to a named export of an author-supplied module:</p>
+<pre><code class="language-chord">define text weather from &quot;./extras.ts&quot;</code></pre>
+<p><code>{weather}</code> in prose now renders whatever the module's <code>weather</code> export produces. The TypeScript side implements the platform's <code>PhraseProducer</code> contract and touches the world only through the narrow, typed context the loader hands it:</p>
+<pre><code class="language-typescript">
+  kind: 'literal',
+  text: 'something ominous with the clouds',
+});</code></pre>
+<p>The name <code>br</code> is reserved and cannot be a hatch name. One limitation to state plainly: this reference's compile-check harness runs the Chord compiler, which validates the <code>define text</code> line and the marker binding but does <em>not</em> load the TypeScript module. Hatch <em>binding</em> happens at story-load time, under the author's own build. So the <code>.story</code> side of every hatch example here is verified; the TypeScript stub is illustrative, checked by the author's toolchain, not by this document's harness.</p>

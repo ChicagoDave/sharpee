@@ -143,6 +143,13 @@ export interface BrowserMeta {
     version: string;
     /** `meta.fields.description` (ADR-298 rename of `blurb:`). */
     description: string;
+    /**
+     * `meta.fields.publishSource` — does the `.story` source travel in the
+     * bundle? The DEFAULT LIVES HERE, not in the language: an absent field is
+     * `false`, so a story that never mentions publishing ships no source
+     * (ADR-284; Inform's `Release along with the source text` precedent).
+     */
+    publishSource: boolean;
 }
 /** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
 export interface BrowserClientConfig {
@@ -221,10 +228,15 @@ export declare function copyWiredThemes(themes: WiredTheme[], outDir: string): v
 /** Escape the four HTML-significant characters for text injected into index.html. */
 export declare function escapeHtml(s: string): string;
 /**
- * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
- * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
- * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
- * `classic` default + one item per listed theme (ADR-188).
+ * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme
+ * at the THEME_LINKS marker (after the engine CSS; author themes need no link,
+ * their CSS is in the override stylesheet), plus the wired list as page DATA —
+ * a JSON script tag ThemeManager renders the `#theme-menu` from at runtime
+ * (P-4, issue 251). The split is deliberate: what the build WIRED is a build
+ * fact (the entry's scaffold-time theme constant can go stale on the TS path,
+ * which would silently drop author themes from the menu — ADR-188 AC-5), but
+ * the menu MARKUP has exactly one owner, ThemeManager. Links stay build-time
+ * because they belong in `<head>` before first paint (no flash of default).
  */
 export declare function injectThemes(html: string, themes: WiredTheme[]): string;
 /**
@@ -703,7 +715,22 @@ export interface CommandResult {
         recorded: string[];
         actual: string[];
     };
+    /**
+     * The auto-assertion policy wrote this command's assertions on THIS run
+     * (Phase 6e, #253): the command arrived bare, the story declares
+     * `auto-assertion:`, and the runner synthesized + evaluated the policy's
+     * assertions from the turn's real output, then rewrote the transcript
+     * file. A consumer shows "assertion written" rather than a plain pass.
+     */
+    autoAsserted?: boolean;
 }
+/**
+ * The story's `auto-assertion:` policy as the runner consumes it (Phase 6e,
+ * #253). Matches the `.story` header's closed value set; the loaded game
+ * carries it (`GameEngine.autoAssertionPolicy`). Absent = "let me decide" —
+ * a bare command keeps the ADR-294 D2 tier-boundary failure.
+ */
+export type AutoAssertionPolicy = 'all-emitted-text' | 'room-description' | 'room-name-and-description';
 /**
  * Result of a single assertion check
  */
@@ -991,7 +1018,7 @@ export declare function parseGoldenFile(filePath: string): GoldenRecording;
  * transcript-tester (testing tooling).
  */
 import { type RandomForceSpec, type RandomForceStatus } from '@sharpee/core';
-import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
+import { Transcript, AutoAssertionPolicy, TranscriptResult, RunnerOptions } from './types.js';
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
  */
@@ -1003,12 +1030,26 @@ interface GameEngine {
         data?: any;
     }>;
     /**
+     * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
+     * loaded game — bootstrap sets it from `story.config.autoAssertion`.
+     * Consulted only at the assertion tier's D2 boundary; absent = "let me
+     * decide" (the boundary failure stands).
+     */
+    autoAssertionPolicy?: AutoAssertionPolicy;
+    /**
      * Declared channel captures for the last command (ADR-294 D15): flattened
      * lines per channel id. Populated by bootstrap's assembleGame when the
      * session declared any channels. The turn's composed prose is not among
      * them — it rides the command's return value (ADR-300 D8/D9).
      */
     lastChannels?: Record<string, string[]>;
+    /**
+     * The same emissions as `lastChannels`, kept as their STRUCTURED values
+     * (ADR-300 D13). The auto-assertion policy reads its room-channel text
+     * out of these — the flattened line is a JSON rendering, unusable as a
+     * `contains` fragment.
+     */
+    lastChannelValues?: Record<string, unknown[]>;
     world?: WorldModel;
     /**
      * The underlying platform engine. $save/$restore go through its real
@@ -1274,6 +1315,42 @@ export interface StreamableCommandResult {
     skipped: boolean;
     error?: string;
     actualOutput?: string;
+    /**
+     * The engine turn the command executed as. Optional because only harnesses
+     * whose engine seam reports it (branch-tester's) can say; a result without
+     * it emits an event without one, never a guess.
+     */
+    turn?: number;
+    /**
+     * The story ended during this command (R9). Same optionality reasoning as
+     * `turn`: only a harness whose engine seam surfaces the `game.ended`
+     * announcement can say, and a result without it emits an event without one.
+     */
+    ending?: 'victory' | 'defeat' | 'quit';
+    /**
+     * Golden divergence (replay failure) or re-record review (passing turn that
+     * changed from the previous recording, R6). Carried verbatim — the runner
+     * computed it, the wire only moves it.
+     */
+    diff?: {
+        recorded: string[];
+        actual: string[];
+        channel?: string;
+    };
+    /**
+     * The world after this command (R3), captured under `--capture-world`.
+     * Carried verbatim; structurally the wire's `WorldSnapshot`.
+     */
+    world?: {
+        location?: {
+            name: string;
+            token: string;
+        };
+        inventory: Array<{
+            name: string;
+            token: string;
+        }>;
+    };
 }
 /** What the stream needs from a whole run's aggregate. Same reasoning. */
 export interface StreamableRunResult {
@@ -1347,6 +1424,8 @@ export declare class RunEventStream {
         commandCount?: number;
         parent?: string;
         replayed?: boolean;
+        /** The world at this transcript's entry (R5), under `--capture-world`. */
+        world?: StreamableCommandResult['world'];
     }): void;
     /**
      * One command finished.
@@ -1365,6 +1444,12 @@ export declare class RunEventStream {
      * through a type that promises it can.
      */
     transcriptUnreached(file: string, blockedBy: string): void;
+    /**
+     * A transcript with no commands, run as a skip (phase-6 F1, David's ruling
+     * 2026-08-08): the editor's designed starting state, not a defect and not
+     * a block. Also has no result behind it — nothing executed.
+     */
+    transcriptSkipped(file: string): void;
     /**
      * A transcript that could not run at all — a parse failure, or a structural
      * tree defect (ADR-302 D11, where nothing in the tree runs). Also has no

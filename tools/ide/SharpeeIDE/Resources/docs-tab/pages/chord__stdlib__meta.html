@@ -1,0 +1,28 @@
+<p>The actions every story gets for free, with no traits, no eligibility, and (deliberately) no interceptor surface: there is no entity to hang an <code>on</code>/<code>after</code> clause on, so none of these consult one. One small fixture serves the whole chapter, a story header, a room, and a single scored item:</p>
+<pre><code class="language-chord">story
+  title: The Long Watch
+  authors: Sharpee Docs
+  id: stdlib-ref-meta
+  story-version: 1.2.0
+  description: One night in a lighthouse, told a turn at a time.
+  use scoring
+  score found-the-flare worth 10
+
+create the Lamp Gallery
+  a room
+
+  The top of the lighthouse, glass on every side.
+
+create the signal flare
+  aka flare
+  in the Lamp Gallery
+
+  A stubby red signal flare, sealed in wax paper.
+
+  after taking it
+    award found-the-flare
+  end after
+
+create the player
+  starts in the Lamp Gallery</code></pre>
+<ul><li><a href="/chord/stdlib/meta/information">Information</a></li><li><a href="/chord/stdlib/meta/saving-state">Saving state</a></li><li><a href="/chord/stdlib/meta/turns-and-undo">Turns and undo</a></li></ul>

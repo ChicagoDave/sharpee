@@ -1,0 +1,52 @@
+<p><strong>enter</strong> (<code>entering</code>): <code>enter X</code>, <code>get in/into X</code>, <code>climb in/into X</code>, <code>go in/into X</code>, <code>board X</code>, <code>get on X</code>. One gate: the target needs the <code>enterable</code> trait; anything else refuses with <code>not_enterable</code> (checked in the action: parse by syntax, refuse by world, since ADR-231). A closed openable refuses with <code>container_closed</code>; if you are already inside, it refuses with <code>already_inside</code>. The trait's one setting, its preposition, decides whether you are <em>in</em> the bathtub or <em>on</em> the park bench (<code>entered</code> vs <code>entered_on</code>); <code>on</code> is a TypeScript setting today. There is no occupancy limit; <code>too_full</code> is reserved but never fires.</p>
+<p><strong>exit</strong> (<code>exiting</code>): bare <code>exit</code>, <code>leave</code>, <code>get out</code>, <code>go out</code>, <code>climb out</code>, <code>disembark</code>, <code>alight</code>. A named target parses too (<code>exit the chair</code>), and naming something you aren't inside refuses with <code>not_in_that</code> (ADR-231). EXIT undoes an ENTER: out of the container, off the supporter. Standing in a plain room refuses with <code>already_outside</code>; leaving rooms is GO's job. A closed openable container refuses with <code>container_closed</code>: you can shut yourself in.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Laundry
+  a room
+
+  Copper tubs, drying racks, and a mangle with an evil reputation.
+
+create the laundry chest
+  aka chest
+  a container, enterable, openable, starts open
+  in the Laundry
+
+  A wicker chest big enough to hide in.
+
+create the mangle
+  scenery
+  in the Laundry
+
+  Two iron rollers and a crank. Keep your fingers clear.
+
+create the player
+  starts in the Laundry</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; enter the mangle
+You can't enter the mangle.
+
+&gt; get into the chest
+You get into the laundry chest.
+
+&gt; close the chest
+You close the laundry chest.
+
+&gt; exit
+The laundry chest is closed.
+
+&gt; open the chest
+You open the laundry chest.
+
+Inside the laundry chest you see yourself.
+
+&gt; exit
+You get out of the laundry chest.
+
+&gt; exit the chest
+But you aren't in the laundry chest.
+
+&gt; exit
+You're not inside anything.</code></pre>
+<p>One trait draws the line (the mangle turns you away, the chest lets you in), and the composed openable makes the lid real: closed, it holds you until you open it from the inside (revealing, honestly, yourself).</p>
+<table><thead><tr><th></th><th>enter (<code>entering-*</code>)</th><th>exit (<code>exiting-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>not_enterable</code> · <code>container_closed</code> · <code>already_inside</code> (<code>too_full</code> reserved, never fires)</td><td><code>already_outside</code> · <code>not_in_that</code> · <code>container_closed</code> (shut in) · <code>nowhere_to_go</code></td></tr><tr><td>Success</td><td><code>entered</code> · <code>entered_on</code> (<code>on</code>-preposition supporters)</td><td><code>exited</code> · <code>exited_from</code></td></tr><tr><td>Events</td><td><code>entered</code></td><td><code>exited</code></td></tr></tbody></table>
+<p>Cross-references: <code>climb into X</code> is entering and <code>climb out</code> is exiting; the <code>enterable</code> trait and the vehicle trait that rides on it are documented separately.</p>

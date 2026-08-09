@@ -33,6 +33,8 @@ import type {
   RunMode,
   TranscriptEndEvent,
   TranscriptStartEvent,
+  WorldEntityRef,
+  WorldSnapshot,
 } from '@sharpee/ide-protocol/run-events';
 
 /** One executed command, kept for the preview and the document view. */
@@ -46,13 +48,41 @@ export interface Turn {
   error?: string;
   /** What the story printed. Present on failures by default (see the wire doc). */
   actualOutput?: string;
+  /**
+   * The engine turn the command executed as (R4). Engine knowledge: meta
+   * commands share a number, a refused action consumes one. Absent when the
+   * wire did not carry it.
+   */
+  turn?: number;
+  /**
+   * The story ended during this command (R9). Engine knowledge too — the
+   * `game.ended` announcement, mapped to the wire by the runner. What lets
+   * {@link storyEnd} mark a file terminal when its LAST command ends the
+   * story cleanly, with no dead tail behind it to observe. Absent when the
+   * story did not end this turn or the stream predates the field.
+   */
+  ending?: CommandResultEvent['ending'];
+  /**
+   * The first failed assertion's message, verbatim from the runner
+   * (`Output does not contain "…"`). Present exactly when an assertion —
+   * rather than a runtime throw, which rides `error` — failed the command.
+   */
+  failure?: string;
+  /**
+   * The world after this command (R3), under `--capture-world`. What the
+   * command CHANGED is derived by {@link worldDelta} against the previous
+   * turn's snapshot (or the node's entry snapshot for the first turn).
+   */
+  world?: WorldSnapshot;
 }
 
 /**
  * A node's lifecycle. `pending` is local to this model — a node that a parent
  * announced but which has not started; the wire has no event for it.
+ * `skipped` is the wire's empty-transcript outcome (phase-6 F1): no commands,
+ * nothing ran, children unaffected — never a failure.
  */
-export type NodeStatus = 'pending' | 'running' | 'passed' | 'failed' | 'error' | 'unreached';
+export type NodeStatus = 'pending' | 'running' | 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
 
 /** One transcript in the tree, identified by its absolute path. */
 export interface TestNode {
@@ -81,6 +111,12 @@ export interface TestNode {
   errorMessage?: string;
   /** 0-based position in the run's execution order, from the authored start. */
   index: number;
+  /**
+   * The world this node ENTERS — its ancestry replayed, its first command not
+   * yet run (R5's inherited-state header). From the authored execution's
+   * `transcript-start`, under `--capture-world`.
+   */
+  entryWorld?: WorldSnapshot;
 }
 
 /** A `phase` pair in flight or finished — the time before the first command. */
@@ -214,6 +250,10 @@ function applyTranscriptStart(model: RunModel, event: TranscriptStartEvent): voi
   node.failed = 0;
   node.expectedFailures = 0;
   node.skipped = 0;
+  // R5: where this file starts from, captured as the authored execution
+  // entered it. Left in place when the stream carries none, so an older
+  // producer does not blank a header a newer run already filled.
+  if (event.world !== undefined) node.entryWorld = event.world;
   model.running = node;
 }
 
@@ -232,6 +272,10 @@ function applyCommandResult(model: RunModel, event: CommandResultEvent): void {
     skipped: event.skipped,
     error: event.error,
     actualOutput: event.actualOutput,
+    turn: event.turn,
+    ending: event.ending,
+    failure: event.failure,
+    world: event.world,
   });
 }
 
@@ -354,4 +398,131 @@ export function subtreeFailureCount(node: TestNode): number {
       total + (child.status === 'failed' || child.status === 'error' ? 1 : 0) + subtreeFailureCount(child),
     0,
   );
+}
+
+/**
+ * The runner's marker for a command that executed after the story ended.
+ *
+ * `CommandResultEvent.error` carries EXACTLY this string for such a command —
+ * branch-tester's runner normalizes the stopped-engine capture to it in one
+ * place (`runner.ts`, the `'Error: Engine is not running'` → `error` fold) —
+ * so the match here is exact, never a prose heuristic. If the runner ever
+ * renames it, the real-path suite's terminal-marking test goes red rather than
+ * the marking silently vanishing.
+ */
+export const STORY_OVER_ERROR = 'Engine is not running';
+
+/**
+ * Where the story ended inside this node's last run, if the run showed it.
+ *
+ * R9, evidence-based both ways. The primary evidence is the wire saying so: a
+ * turn carrying `ending` is the one the engine announced `game.ended` on,
+ * which covers the file whose LAST command ends the story cleanly — no dead
+ * tail exists to observe there. Streams that predate the field fall back to
+ * the dead tail itself: after an ending, every further command errors as
+ * {@link STORY_OVER_ERROR}, so the ender is the turn before the first such
+ * error. A clean ending on an old stream stays honestly unmarked (R10 — the
+ * editor never claims what it cannot substantiate).
+ */
+export interface StoryEnd {
+  /**
+   * The turn that ended the story — the last one the engine ran. Null when
+   * the story was already over before this file's first command: the ending
+   * lives somewhere in its ancestry, not here.
+   */
+  endsAt: Turn | null;
+  /** The turns that executed after the ending. Every one of them errored. */
+  dead: Turn[];
+}
+
+/** This node's story ending, or null when its last run never showed one. */
+export function storyEnd(node: TestNode): StoryEnd | null {
+  const ender = node.turns.findIndex((turn) => turn.ending !== undefined);
+  if (ender >= 0) return { endsAt: node.turns[ender], dead: node.turns.slice(ender + 1) };
+  const first = node.turns.findIndex((turn) => turn.error === STORY_OVER_ERROR);
+  if (first < 0) return null;
+  return { endsAt: first > 0 ? node.turns[first - 1] : null, dead: node.turns.slice(first) };
+}
+
+/**
+ * The transcripts `node` could legitimately continue from.
+ *
+ * Excluded, each by construction rather than by refusal-after-the-fact:
+ * the node itself and everything beneath it (reparenting under your own
+ * descendant is a cycle), and any node whose last run reached the story's
+ * ending (its children replay through the ending and die — the same fact that
+ * disables branching from it). The exclusions are only as good as the tree
+ * the run proved: before a tree run, parentage is unknown and descendants
+ * cannot be excluded — a cycle that slips past this list is the runner's own
+ * named error on the next run, not a silent wrong write.
+ */
+export function reparentCandidates(model: RunModel, node: TestNode): TestNode[] {
+  const excluded = new Set<TestNode>([node]);
+  const mark = (parent: TestNode): void => {
+    for (const child of parent.children) {
+      excluded.add(child);
+      mark(child);
+    }
+  };
+  mark(node);
+  return [...model.nodes.values()].filter(
+    (candidate) => !excluded.has(candidate) && storyEnd(candidate) === null,
+  );
+}
+
+/**
+ * What one command changed in the world (R3), derived from the snapshot
+ * before it and the snapshot after it.
+ */
+export interface WorldDelta {
+  /** The location the player arrived in — present only when it changed. */
+  movedTo?: WorldEntityRef;
+  /** Now carried, and not carried before. */
+  took: WorldEntityRef[];
+  /** Carried before, and no longer. */
+  dropped: WorldEntityRef[];
+}
+
+/**
+ * Diffs two consecutive world snapshots into the changes a turn card offers
+ * as `[STATE:]` assertions (R3). Null when either side is missing — a change
+ * cannot be claimed against an unknown before — or when nothing changed.
+ * Identity is the TOKEN, the same key the emitted assertion will resolve by.
+ */
+export function worldDelta(
+  before: WorldSnapshot | undefined,
+  after: WorldSnapshot | undefined,
+): WorldDelta | null {
+  if (!before || !after) return null;
+  const movedTo =
+    after.location && before.location?.token !== after.location.token ? after.location : undefined;
+  const carried = new Set(before.inventory.map((item) => item.token));
+  const carriedNow = new Set(after.inventory.map((item) => item.token));
+  const took = after.inventory.filter((item) => !carried.has(item.token));
+  const dropped = before.inventory.filter((item) => !carriedNow.has(item.token));
+  if (!movedTo && took.length === 0 && dropped.length === 0) return null;
+  return { ...(movedTo !== undefined ? { movedTo } : {}), took, dropped };
+}
+
+/**
+ * The snapshot a turn's delta reads AGAINST: the previous turn's, or the
+ * node's entry snapshot for the first turn — the same chain R5's header
+ * starts.
+ */
+export function worldBefore(node: TestNode, index: number): WorldSnapshot | undefined {
+  return index > 0 ? node.turns[index - 1].world : node.entryWorld;
+}
+
+/**
+ * Transcripts anywhere beneath `node` — every file that `continues:` from it,
+ * directly or through another.
+ *
+ * This is the blast radius of a turn-count edit (R4): a parent's command count
+ * is a hidden input to every descendant's turn numbers, so adding or removing
+ * a command here shifts each of theirs. Known only after a tree run has
+ * announced parentage — before one, discovered nodes sit as roots and the
+ * count is honestly zero.
+ */
+export function descendantCount(node: TestNode): number {
+  return node.children.reduce((total, child) => total + 1 + descendantCount(child), 0);
 }

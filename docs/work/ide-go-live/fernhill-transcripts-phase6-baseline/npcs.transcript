@@ -1,0 +1,82 @@
+title: Tobias and Mrs Kettle
+story: fernhill
+description: The two people on the estate — a patrolling groundskeeper whose
+  topics unlock the folly, and a housekeeper who is a door until she is bribed.
+seed: 1
+
+---
+
+> north
+[OK: contains "Gravel Drive"]
+[OK: contains "You can see Tobias here"]
+
+# A string topic (`about "the folly", "the fire"`) fires wherever Tobias is.
+# It flips him to `shaken`, which is what unjams the folly door, and awards
+# `truth worth 5`. The reply is quoted speech, so the exact form needs a fence.
+> ask tobias about the folly
+[OK: contains]
+text
+The lantern stops swinging. "Twenty years I've not opened that door, and her ladyship neither." He looks up the dark hill for a long moment. "Go on then, if you must. The door's only warped, not cursed. Shoulder it."
+end text
+
+> ask tobias about the bank
+[OK: contains]
+text
+"Bank?" He snorts. "Bank never had it. Her ladyship trusted banks the way foxes trust hounds."
+end text
+
+# 5 points, from the folly topic alone — nothing else has scored yet.
+> score
+[OK: contains "You have scored 5 out of 50"]
+
+> north
+[OK: contains "Fountain Court"]
+
+# Entering the House region fires `house-hush`; leaving the Grounds fires
+# `out-of-the-wind`. Both region hooks land on the same command.
+> north
+[OK: contains "Entrance Hall"]
+[OK: contains "You step out of the wind, and your ears sing in the sudden quiet"]
+[OK: contains "The house holds its old hush"]
+[OK: contains "Mrs Kettle blocks your way"]
+
+# `west is blocked while Mrs Kettle is guarded` — she is scenery with an opinion.
+> west
+[OK: contains "Mrs Kettle does not move from the study door"]
+[STATE: true, player.location = Entrance Hall]
+
+# Her study topic states the price without naming the bottle.
+> ask mrs kettle about the study
+[OK: contains "you were to bring me something that made the evening kinder"]
+
+> ask mrs kettle about the grey overcoat
+[OK: contains "Her walking coat. Twenty winters old"]
+
+> east
+[OK: contains "Kitchen"]
+[OK: contains "sherry bottle"]
+
+> take the sherry bottle
+[OK: contains "Taken"]
+
+> take the garden shears
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+# Giving the bottle flips her to `softened`, awards `softened worth 5`, and
+# takes the total to 10 — the "Guest of the House" rank, whose promotion line
+# is the only sentence the platform speaks for a rise (ADR-261 D7).
+> give the sherry bottle to mrs kettle
+[OK: contains "She steps away from the study door"]
+[OK: contains "The house has stopped listening for your footsteps"]
+
+> west
+[OK: contains "Study"]
+[OK: contains "a travelling trunk against the wall"]
+[STATE: true, player.location = Study]
+
+> score
+[OK: contains "You have scored 10 out of 50"]
+[OK: contains "Guest of the House"]

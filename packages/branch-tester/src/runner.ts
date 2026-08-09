@@ -1,46 +1,42 @@
 /**
- * Transcript Runner — golden replay/record and assertion-tier execution
- * (ADR-294).
+ * Transcript Runner — assertion-tier execution (ADR-294, golden tier
+ * retired by ADR-306: the author world's regression baseline is the tree
+ * passing, with byte-strength claims per-turn via `[OK]` blocks).
  *
- * Two tiers, one source grammar (D2): a transcript with a `.golden` sibling
- * replays against the recording (the recording IS the assertion); `--bless`
- * creates or overwrites the recording; a transcript with no recording runs
- * the retained per-command assertion DSL. Any failed directive fails the
- * transcript unconditionally (D5) — `--stop-on-failure` only ever controls
- * whether the RUN continues to other transcripts.
+ * Every transcript runs the per-command assertion DSL. Any failed directive
+ * fails the transcript unconditionally (D5) — `--stop-on-failure` only ever
+ * controls whether the RUN continues to other transcripts.
  *
- * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
- * branch-tester (testing tooling).
+ * Public interface: `runTranscript`. Owner context: branch-tester
+ * (testing tooling).
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  SEED_DERIVATION_VERSION,
   getPoint,
   forceKey,
   type RandomForceSpec,
   type RandomForceStatus,
   RandomForceLoadError
 } from '@sharpee/core';
-import { SAVE_FORMAT_VERSION } from '@sharpee/engine';
 import {
   Transcript,
   TranscriptCommand,
   Directive,
   Assertion,
+  AutoAssertionPolicy,
   CommandResult,
   AssertionResult,
   TranscriptResult,
-  TranscriptRunConfig,
   RunnerOptions,
   TestEventInfo,
   EntityTraitSnapshot,
-  GoldenRecording,
-  GoldenTurn,
-  GoldenEvent
+  WorldEntityRef,
+  WorldSnapshot
 } from './types.js';
-import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
+import { synthesizePolicyAssertions } from './auto-assertion.js';
+import { serializeTranscript } from './serializer.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
 /**
@@ -51,6 +47,21 @@ interface GameEngine {
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   /**
+   * The engine's own record of the last executed turn — bootstrap's
+   * `LoadedGame` sets it after every `executeCommand`. The runner reads only
+   * `turn`: the 1-based counter the command executed as, which is engine
+   * knowledge (meta commands share a turn, refused actions consume one) and
+   * rides each `CommandResult` for the IDE's turn-budget view (R4).
+   */
+  lastTurnResult?: { turn: number } | null;
+  /**
+   * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
+   * loaded game — bootstrap sets it from `story.config.autoAssertion`.
+   * Consulted only at the assertion tier's D2 boundary; absent = "let me
+   * decide" (the boundary failure stands).
+   */
+  autoAssertionPolicy?: AutoAssertionPolicy;
+  /**
    * Declared channel captures for the last command (ADR-294 D15): flattened
    * lines per channel id. Populated by bootstrap's assembleGame when the
    * session declared any channels. The turn's composed prose is not among
@@ -60,8 +71,8 @@ interface GameEngine {
   /**
    * The same emissions as `lastChannels`, kept as their STRUCTURED values
    * (ADR-300 D13). A dotted-path assertion (`banner.title`) reads these; a
-   * golden recording reads the flattened lines. A flattened line cannot be
-   * un-flattened, which is why both exist.
+   * flattened-line consumer reads `lastChannels`. A flattened line cannot
+   * be un-flattened, which is why both exist.
    */
   lastChannelValues?: Record<string, unknown[]>;
   world?: WorldModel;
@@ -69,8 +80,7 @@ interface GameEngine {
    * The underlying platform engine. $save/$restore go through its real
    * save format (version, turn counter, RNG stream states — ADR-293 D7)
    * rather than a hand-rolled world snapshot; the tester owns only WHERE
-   * the file lives, never WHAT is in it. Golden provenance reads the
-   * session's master seed from here (ADR-294 D3).
+   * the file lives, never WHAT is in it.
    */
   engine?: {
     /**
@@ -141,47 +151,11 @@ function allAssertionsOf(transcript: Transcript): Assertion[] {
   return assertions;
 }
 
-/** Locale stamped into provenance when neither transcript nor caller declares one (D19). */
-const DEFAULT_LOCALE = 'en-US';
-
-/**
- * Name for the turn's composed prose when a divergence has to say which
- * surface moved. It is not a channel id: after ADR-300 D8 the prose is
- * composed from seven channels in `preferred-layout` order, so the thing
- * that diverged is the composition, not any one of them. Reported as
- * `(prose)`, matching how the opening reports as `(opening)`.
- */
-const PROSE_SURFACE = '(prose)';
-
-/**
- * The one story-output line excluded from golden diffs (ADR-294 D6): the
- * banner's build-date line. Both sides are masked before comparison — the
- * recording keeps the real line, so nothing else is normalized. Growing
- * this exclusion requires amending ADR-294.
- */
-const BUILD_DATE_LINE = /^Story v\S+ \(built [^)]+\)$/;
-
-/**
- * Recording path for a transcript (D7/D8). A single-seed transcript records
- * to its `.golden` sibling; a `seeds:` matrix records one file per seed as
- * `<name>.<seed>.golden` — each replay diffs only against its own seed's
- * recording.
- */
-export function goldenPathFor(transcriptPath: string, matrixSeed?: number): string {
-  const suffix = matrixSeed === undefined ? '.golden' : `.${matrixSeed}.golden`;
-  return transcriptPath.replace(/\.transcript$/, suffix);
-}
-
-/** Divergence-save path for a transcript (D18). Working artifact, never committed. */
-export function divergencePathFor(transcriptPath: string): string {
-  return transcriptPath.replace(/\.transcript$/, '.divergence.json');
-}
-
 /**
  * Run a single transcript against an engine.
  *
- * Tier selection (D2): `--bless` records; an existing recording replays;
- * otherwise the assertion tier runs. Parse errors never execute (AC-4).
+ * Parse errors never execute (AC-4); everything else runs the assertion
+ * tier — the only tier there is since ADR-306 retired author-world goldens.
  */
 export async function runTranscript(
   transcript: Transcript,
@@ -218,321 +192,7 @@ export async function runTranscript(
     return errorResult(transcript, startTime, instrumentError);
   }
 
-  // A seeds: matrix records per-seed siblings (D8); the session's live seed
-  // selects which recording this run belongs to.
-  const seeds = transcript.config?.seeds ?? [];
-  const matrixSeed = seeds.length > 1 ? engine.engine?.getMasterSeed?.() : undefined;
-  const goldenPath = options.goldenPath ?? goldenPathFor(transcript.filePath, matrixSeed);
-
-  if (options.bless) {
-    return runGolden(transcript, engine, options, goldenPath, 'record', startTime);
-  }
-  if (fs.existsSync(goldenPath)) {
-    return runGolden(transcript, engine, options, goldenPath, 'replay', startTime);
-  }
   return runAssertion(transcript, engine, options, startTime);
-}
-
-// ============================================================================
-// Golden tier (D1/D3/D6/D7)
-// ============================================================================
-
-async function runGolden(
-  transcript: Transcript,
-  engine: GameEngine,
-  options: RunnerOptions,
-  goldenPath: string,
-  mode: 'record' | 'replay',
-  startTime: number
-): Promise<TranscriptResult> {
-  const config: TranscriptRunConfig =
-    transcript.config ?? { seeds: [], channels: [], events: false, forces: [] };
-
-  // ADR-294 D15: the capability profile and capture set are fixed at game
-  // assembly, so a transcript whose channels: disagrees with the session it
-  // runs in is a named failure, never a silent partial capture. Bites chains
-  // whose members declare different channels (one session, one profile).
-  if (
-    options.assembledChannels &&
-    (options.assembledChannels.length !== config.channels.length ||
-      !options.assembledChannels.every((id, i) => id === config.channels[i]))
-  ) {
-    return errorResult(transcript, startTime,
-      `transcript declares channels: ${config.channels.join(', ') || '(none)'} but the session was assembled with ` +
-      `channels: ${options.assembledChannels.join(', ') || '(none)'} — chain members must declare identical channels (ADR-294 D15)`,
-      'golden', goldenPath);
-  }
-  // ADR-300 D14: the capture set is INFERRED from the assertions, not declared.
-  // What a transcript asserts about is what gets captured, so a `channels:`
-  // header cannot drift out of step with the assertions beneath it. A declared
-  // list is still honoured — a golden recording may want a channel nothing
-  // asserts on — so the two union rather than compete.
-  const capturedChannelIds = [
-    ...new Set([...config.channels, ...channelsReferencedBy(allAssertionsOf(transcript))]),
-  ];
-
-  // A golden transcript must pin a seed (D3). The exception is a chain
-  // member after the first: the chain is one session and its recording
-  // carries the session seed — which is also why replaying one standalone
-  // is refused (D7).
-  if (config.seeds.length === 0 && !options.chain) {
-    return errorResult(transcript, startTime,
-      mode === 'record'
-        ? 'a golden transcript must pin a seed — declare seed: N in the header (ADR-294 D3)'
-        : `${path.basename(goldenPath)} is a chain-member recording (its transcript pins no seed) — replay it with --chain (ADR-294 D7)`,
-      'golden', goldenPath);
-  }
-
-  const sessionSeed = engine.engine?.getMasterSeed?.();
-  if (sessionSeed === undefined) {
-    return errorResult(transcript, startTime,
-      'golden runs need the platform engine (engine.getMasterSeed) to stamp and verify the seed (ADR-294 D3)',
-      'golden', goldenPath);
-  }
-  if (config.seeds.length === 1 && sessionSeed !== config.seeds[0]) {
-    return errorResult(transcript, startTime,
-      `session seed ${sessionSeed} disagrees with the transcript's pin ${config.seeds[0]} — ` +
-      `run at the pinned seed (drop --seed/--vary)`, 'golden', goldenPath);
-  }
-  if (config.seeds.length > 1 && !config.seeds.includes(sessionSeed)) {
-    return errorResult(transcript, startTime,
-      `session seed ${sessionSeed} is not in the transcript's seeds: matrix (${config.seeds.join(', ')}) — ` +
-      `run at one of the declared seeds (ADR-294 D8)`, 'golden', goldenPath);
-  }
-
-  const storyName = transcript.header.story ?? options.storyName;
-  const locale = config.locale ?? options.locale ?? DEFAULT_LOCALE;
-
-  let recording: GoldenRecording | null = null;
-  if (mode === 'replay') {
-    try {
-      recording = parseGoldenFile(goldenPath);
-    } catch (e) {
-      if (e instanceof GoldenFormatError) {
-        return errorResult(transcript, startTime, e.message, 'golden', goldenPath);
-      }
-      throw e;
-    }
-
-    // Provenance staleness (D3): every mismatch is named; a stale recording
-    // NEVER presents as a content diff.
-    const stale = staleProvenanceFields(recording, transcript, config, sessionSeed, storyName, locale);
-    if (stale.length > 0) {
-      return errorResult(transcript, startTime,
-        `stale recording — re-bless (${goldenPath}): ${stale.join('; ')}`, 'golden', goldenPath);
-    }
-
-    // Command-list drift is the same stale class: the SOURCE changed since
-    // the bless. Checked statically before anything executes.
-    const drift = commandListDrift(transcript, recording);
-    if (drift) {
-      return errorResult(transcript, startTime,
-        `stale recording — re-bless (${goldenPath}): ${drift}`, 'golden', goldenPath);
-    }
-  }
-
-  const results: CommandResult[] = [];
-  /**
-   * Accumulate and announce in one step, so the observer's live sequence is
-   * exactly `results` — no second ordering to keep in step with the first.
-   */
-  const record = (result: CommandResult): void => {
-    results.push(result);
-    options.observer?.onCommandResult?.(result);
-  };
-  const turns: GoldenTurn[] = [];
-  let turnIndex = 0;
-  let failed = false;
-  let divergenceSavePath: string | undefined;
-
-  for (const item of transcript.items ?? []) {
-    if (item.type === 'comment') continue;
-
-    if (item.type === 'directive') {
-      const error = await executeDirective(item.directive!, engine, options);
-      if (error) {
-        // D5: a failed directive fails the transcript, unconditionally.
-        // In record mode no .golden is written — a recording made past a
-        // failed directive would enshrine a broken session.
-        record(directiveFailResult(item.directive!, error));
-        failed = true;
-        break;
-      }
-      continue;
-    }
-
-    const command = item.command!;
-
-    // D18: capture a real save BEFORE the command runs, so a divergence can
-    // drop the author at the last matching turn with RNG streams positioned
-    // faithfully. In-memory until a divergence actually happens.
-    const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
-
-    const { output, events, channels } = await executeForGolden(
-      command, engine, config.events, capturedChannelIds);
-    options.coverage?.collectFrom(engine.lastEvents);
-    const actualLines = output.split('\n');
-
-    if (mode === 'record') {
-      const turn: GoldenTurn = { command: command.input, output: actualLines };
-      if (config.events && events.length > 0) turn.events = events;
-      if (channels && Object.keys(channels).length > 0) turn.channels = channels;
-      turns.push(turn);
-      record(goldenPassResult(command, output));
-    } else {
-      const turn = recording!.turns[turnIndex];
-      const divergence = diffTurn(turn, actualLines, events, config.events,
-        capturedChannelIds, channels);
-      if (divergence) {
-        // D15: name the surface that moved — the composed prose, or a
-        // declared channel.
-        let error = divergence.channel && divergence.channel !== PROSE_SURFACE
-          ? `channel '${divergence.channel}' diverged from the recording (${path.basename(goldenPath)})`
-          : `output diverged from the recording (${path.basename(goldenPath)})`;
-        if (preTurnSave !== null) {
-          divergenceSavePath = divergencePathFor(transcript.filePath);
-          fs.writeFileSync(divergenceSavePath, JSON.stringify(preTurnSave), 'utf-8');
-          error +=
-            `; divergence save written: ${divergenceSavePath} — ` +
-            `restore one command before the divergence with --restore ${divergenceSavePath} --seed ${sessionSeed}, ` +
-            `then replay: ${command.input}`;
-        }
-        record({
-          command,
-          actualOutput: output,
-          actualEvents: [],
-          passed: false,
-          expectedFailure: false,
-          skipped: false,
-          assertionResults: [],
-          error,
-          diff: divergence
-        });
-        failed = true;
-        break;
-      }
-      record(goldenPassResult(command, output));
-    }
-    turnIndex++;
-  }
-
-  // An unfired `once` force is a hard failure of the same severity as any
-  // other failed run (ADR-293 D9 / AC-9) — checked only when the run
-  // otherwise passed, since an early failure legitimately leaves later
-  // forces unreached. In record mode this also blocks the bless: a recording
-  // made under a force that never fired would enshrine a lie.
-  if (!failed) {
-    const unfired = unfiredForceError(transcript, engine);
-    if (unfired) {
-      record(forcesFailResult(transcript, unfired));
-      failed = true;
-    }
-  }
-
-  // A green replay clears any divergence save a previous failing run left
-  // behind — it describes a divergence that no longer exists.
-  if (mode === 'replay' && !failed) {
-    fs.rmSync(divergencePathFor(transcript.filePath), { force: true });
-  }
-
-  if (mode === 'record' && !failed) {
-    const recording: GoldenRecording = {
-      provenance: {
-        transcript: path.basename(transcript.filePath),
-        story: storyName ?? 'unknown',
-        seed: sessionSeed,
-        derivation: SEED_DERIVATION_VERSION,
-        saveFormat: SAVE_FORMAT_VERSION,
-        channels: config.channels,
-        events: config.events,
-        locale,
-        forces: config.forces,
-        ...(config.pointSeeds && config.pointSeeds.length > 0
-          ? { pointSeeds: config.pointSeeds.map((p) => `${p.point}=${p.seed}`) }
-          : {})
-      },
-      turns
-    };
-    fs.writeFileSync(goldenPath, serializeGolden(recording), 'utf-8');
-  }
-
-  const passed = results.filter(r => r.passed).length;
-  const failedCount = results.filter(r => !r.passed).length;
-  return {
-    transcript,
-    commands: results,
-    status: failedCount > 0 ? 'failed' : 'passed',
-    passed,
-    failed: failedCount,
-    expectedFailures: 0,
-    skipped: 0,
-    duration: Date.now() - startTime,
-    tier: 'golden',
-    goldenPath,
-    blessed: mode === 'record' && !failed,
-    ...(divergenceSavePath !== undefined ? { divergenceSavePath } : {})
-  };
-}
-
-/**
- * Capture the engine's current save payload in memory (D18). Returns null
- * when the platform engine is unavailable or the save fails — divergence
- * saves degrade to absent, never to a run failure.
- */
-async function captureEngineSave(engine: GameEngine): Promise<unknown | null> {
-  const platform = engine.engine;
-  if (!platform) return null;
-  try {
-    let captured: unknown = null;
-    platform.registerSaveRestoreHooks({
-      onSaveRequested: async (data) => { captured = data; },
-      onRestoreRequested: async () => null
-    });
-    const saved = await platform.save();
-    return saved ? captured : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Execute one command for the golden tier, capturing verbatim output and events. */
-async function executeForGolden(
-  command: TranscriptCommand,
-  engine: GameEngine,
-  captureEvents: boolean,
-  capturedChannelIds: string[] = []
-): Promise<{ output: string; events: GoldenEvent[]; channels?: Record<string, string[]> }> {
-  let output: string;
-  try {
-    const result = await engine.executeCommand(command.input);
-    output = typeof result === 'string' ? result : (engine.getOutput?.() || '');
-  } catch (e) {
-    // A throw still produces a turn — its "output" is the error text, which
-    // will never match a recording and shows up in the diff.
-    output = `Error: ${e instanceof Error ? e.message : String(e)}`;
-  }
-
-  const events: GoldenEvent[] = [];
-  if (captureEvents && engine.lastEvents) {
-    for (const event of engine.lastEvents) {
-      if (event.type.startsWith('system.')) continue;
-      events.push({ type: event.type, json: JSON.stringify(event.data ?? {}) });
-    }
-  }
-
-  // ADR-294 D15: pull the declared channels' captures for this command.
-  // Filtered to the declared set so a stub or over-eager capture can never
-  // smuggle an undeclared channel into a recording.
-  let channels: Record<string, string[]> | undefined;
-  if (capturedChannelIds.length > 0 && engine.lastChannels) {
-    for (const id of capturedChannelIds) {
-      const lines = engine.lastChannels[id];
-      if (lines && lines.length > 0) {
-        (channels ??= {})[id] = [...lines];
-      }
-    }
-  }
-  return { output, events, channels };
 }
 
 /**
@@ -555,62 +215,79 @@ function openingResult(
   const assertionResults = opening.map((assertion) =>
     checkAssertion(assertion, '', '', [], engine.world, engine.lastChannelValues)
   );
+  const passed = assertionResults.every((r) => r.passed);
+  const firstFailure = assertionResults.find((r) => !r.passed && r.message)?.message;
 
   return {
     command,
     actualOutput: '',
     actualEvents: [],
-    passed: assertionResults.every((r) => r.passed),
+    passed,
     expectedFailure: false,
     skipped: false,
-    assertionResults
+    assertionResults,
+    ...(!passed && firstFailure !== undefined ? { failure: firstFailure } : {})
   };
 }
 
-/** A passing golden-tier command result. */
-function goldenPassResult(command: TranscriptCommand, output: string): CommandResult {
+/**
+ * The story ending the engine announced during the command that just executed,
+ * read off the same per-command event capture both tiers already consume.
+ *
+ * Exactly ONE place maps `game.ended` to `CommandResult.ending` (R9), so the
+ * exclusions live here and nowhere else: `restart` is not an ending — the
+ * engine stops but the harness reboots the story within the same command;
+ * `abort` is not an ending — it is a runtime failure the result already
+ * carries as `error`. Returns undefined when the story did not end this turn
+ * or the engine seam does not expose events.
+ */
+function endingFrom(engine: GameEngine): CommandResult['ending'] {
+  const ended = engine.lastEvents?.find((e) => e.type === 'game.ended');
+  const type = (ended?.data as { ending?: { type?: string } } | undefined)?.ending?.type;
+  return type === 'victory' || type === 'defeat' || type === 'quit' ? type : undefined;
+}
+
+/**
+ * One entity as a snapshot names it (R3): the display name, and the single
+ * whitespace-free token the `[STATE:]` evaluator's own `findEntity` resolves
+ * back to this entity — an alias when one qualifies, the identity name or the
+ * entity's own name when they are single tokens, else the id (which always
+ * resolves). The runner picks the token because only the runner can vouch for
+ * the round-trip; a consumer that emitted `name` instead would trip the
+ * single-token parse rule R3 exists to bury.
+ */
+function worldEntityRef(entity: any): WorldEntityRef {
+  const identity =
+    entity.get?.('identity') ?? entity.traits?.get?.('identity') ?? entity.traits?.identity;
+  const name: string = identity?.name ?? entity.name ?? entity.id;
+  const singleToken = (value: unknown): value is string =>
+    typeof value === 'string' && value.length > 0 && !/\s/.test(value);
+  const aliasToken = (identity?.aliases as unknown[] | undefined)?.find(singleToken);
+  const token = aliasToken ?? (singleToken(name) ? name : entity.id);
+  return { name, token };
+}
+
+/**
+ * The world as it stands right now (R3/R5): player location and inventory,
+ * through the same structural seam the `[STATE:]` evaluator reads. Undefined
+ * when the seam has no world or no player — absent, never guessed, like every
+ * other optional fact on the wire.
+ */
+export function captureWorldSnapshot(engine: { world?: WorldModel }): WorldSnapshot | undefined {
+  const world = engine.world;
+  const player = world?.getPlayer?.();
+  if (!world || !player) return undefined;
+  const locationId = world.getLocation?.(player.id);
+  const location = locationId
+    ? (world.getEntity?.(locationId) ?? world.getEntityById?.(locationId))
+    : undefined;
+  const inventory = (world.getContents?.(player.id) ?? []).map(worldEntityRef);
   return {
-    command,
-    actualOutput: output,
-    actualEvents: [],
-    passed: true,
-    expectedFailure: false,
-    skipped: false,
-    assertionResults: []
+    ...(location ? { location: worldEntityRef(location) } : {}),
+    inventory,
   };
 }
 
-/** List every provenance field that disagrees with the runtime (D3). */
-function staleProvenanceFields(
-  recording: GoldenRecording,
-  transcript: Transcript,
-  config: TranscriptRunConfig,
-  sessionSeed: number,
-  storyName: string | undefined,
-  locale: string
-): string[] {
-  const p = recording.provenance;
-  const stale: string[] = [];
-  const check = (field: string, recorded: string, runtime: string) => {
-    if (recorded !== runtime) stale.push(`${field} recorded ${recorded}, runtime ${runtime}`);
-  };
-
-  check('transcript', p.transcript, path.basename(transcript.filePath));
-  if (storyName !== undefined) check('story', p.story, storyName);
-  check('seed', String(p.seed), String(sessionSeed));
-  check('derivation', String(p.derivation), String(SEED_DERIVATION_VERSION));
-  check('save-format', p.saveFormat, SAVE_FORMAT_VERSION);
-  check('channels', p.channels.join(', ') || '(none)', config.channels.join(', ') || '(none)');
-  check('events', String(p.events), String(config.events));
-  check('locale', p.locale, locale);
-  check('forces', p.forces.join(', ') || '(none)', config.forces.join(', ') || '(none)');
-  check(
-    'point-seeds',
-    (p.pointSeeds ?? []).join(', ') || '(none)',
-    (config.pointSeeds ?? []).map((entry) => `${entry.point}=${entry.seed}`).join(', ') || '(none)'
-  );
-  return stale;
-}
 
 // ============================================================================
 // ADR-293 Phase C session instruments (forces / point-seed / trace)
@@ -727,79 +404,6 @@ function forcesFailResult(transcript: Transcript, error: string): CommandResult 
   };
 }
 
-/** Compare the transcript's command list against the recording's turns. */
-function commandListDrift(transcript: Transcript, recording: GoldenRecording): string | null {
-  const commands = transcript.commands;
-  const turns = recording.turns;
-  const shared = Math.min(commands.length, turns.length);
-  for (let i = 0; i < shared; i++) {
-    if (commands[i].input !== turns[i].command) {
-      return `command ${i + 1} is "${commands[i].input}" in the transcript but "${turns[i].command}" in the recording`;
-    }
-  }
-  if (commands.length !== turns.length) {
-    return `the transcript has ${commands.length} command(s) but the recording has ${turns.length} turn(s)`;
-  }
-  return null;
-}
-
-/**
- * Diff one replayed turn against its recording. Returns the divergence, or
- * null when they match. The build-date banner line is masked on both sides
- * (D6); nothing else is normalized. Declared channels (ADR-294 D15)
- * are compared in their serialized `◦ <id> <line>` form, appended after
- * output/events in declaration order — absence is meaningful (a cue that
- * stops firing diverges). The returned `channel` names the surface the first
- * mismatch lies in (`PROSE_SURFACE` for prose/events).
- */
-function diffTurn(
-  turn: GoldenTurn,
-  actualLines: string[],
-  actualEvents: GoldenEvent[],
-  compareEvents: boolean,
-  capturedChannelIds: string[] = [],
-  actualChannels?: Record<string, string[]>
-): { recorded: string[]; actual: string[]; channel?: string } | null {
-  const channelLines = (source?: Record<string, string[]>) =>
-    capturedChannelIds.flatMap((id) =>
-      (source?.[id] ?? []).map((line) => (line === '' ? `◦ ${id}` : `◦ ${id} ${line}`)));
-
-  const recordedFull = [
-    ...(compareEvents
-      ? [...turn.output, ...(turn.events ?? []).map(e => `• ${e.type} ${e.json}`)]
-      : turn.output),
-    ...channelLines(turn.channels)
-  ];
-  const actualFull = [
-    ...(compareEvents
-      ? [...actualLines, ...actualEvents.map(e => `• ${e.type} ${e.json}`)]
-      : actualLines),
-    ...channelLines(actualChannels)
-  ];
-
-  const mask = (line: string) => (BUILD_DATE_LINE.test(line) ? '<build-date>' : line);
-  const same =
-    recordedFull.length === actualFull.length &&
-    recordedFull.every((line, i) => mask(line) === mask(actualFull[i]));
-  if (same) return null;
-
-  // Name the first mismatched surface: walk to the first differing index and
-  // classify whichever side has a line there (length mismatches included).
-  let channel: string | undefined;
-  const limit = Math.max(recordedFull.length, actualFull.length);
-  for (let i = 0; i < limit; i++) {
-    const a = recordedFull[i];
-    const b = actualFull[i];
-    if (a !== undefined && b !== undefined && mask(a) === mask(b)) continue;
-    const line = a ?? b ?? '';
-    const m = /^◦ (\S+)/.exec(line);
-    channel = m ? m[1] : PROSE_SURFACE;
-    break;
-  }
-
-  return { recorded: recordedFull, actual: actualFull, channel };
-}
-
 // ============================================================================
 // Assertion tier (D2)
 // ============================================================================
@@ -821,6 +425,8 @@ async function runAssertion(
   };
   /** Opening assertions run once, after the first command flushes the opening. */
   let openingChecked = (transcript.opening?.length ?? 0) === 0;
+  /** Any command's assertions were policy-written this run → rewrite the file. */
+  let policyWroteAssertions = false;
 
   for (const item of transcript.items ?? []) {
     if (item.type === 'comment') {
@@ -843,9 +449,14 @@ async function runAssertion(
 
     const command = item.command!;
 
-    // The tier boundary (D2): with no recording, a command must assert
-    // something — a bare command list is bless material, not a passing test.
-    if (command.assertions.length === 0) {
+    // The assertion boundary (D2): a command must assert something — a bare
+    // command list is not a passing test. Under an `auto-assertion:` policy
+    // (Phase 6e, #253) a bare command is instead the policy's trigger: its
+    // first run writes the assertion. A deliberate [SKIP] is never bare, so
+    // it is never trampled.
+    const synthesize =
+      command.assertions.length === 0 ? engine.autoAssertionPolicy : undefined;
+    if (command.assertions.length === 0 && synthesize === undefined) {
       record({
         command,
         actualOutput: '',
@@ -855,13 +466,14 @@ async function runAssertion(
         skipped: false,
         assertionResults: [],
         error:
-          `command "${command.input}" has no assertion and no recording exists — ` +
-          `record the transcript with --bless or add an assertion (ADR-294 D2)`
+          `command "${command.input}" has no assertion — ` +
+          `add one, or declare an auto-assertion: policy (ADR-294 D2)`
       });
       break;
     }
 
-    const result = await runCommand(command, engine, options);
+    const result = await runCommand(command, engine, options, synthesize);
+    if (result.autoAsserted) policyWroteAssertions = true;
     options.coverage?.collectFrom(engine.lastEvents);
 
     // The banner and the prologue are said on the way to the first command, so
@@ -893,6 +505,14 @@ async function runAssertion(
     }
   }
 
+  // Phase 6e (#253): the policy's writes land in the FILE — the runner
+  // mutated the parsed transcript in memory (assertions pushed onto bare
+  // commands); one serialize makes disk agree. The serializer round-trips
+  // comments and formatting, so untouched content survives byte-for-byte.
+  if (policyWroteAssertions && transcript.filePath) {
+    fs.writeFileSync(transcript.filePath, serializeTranscript(transcript));
+  }
+
   const passed = results.filter(r => r.passed && !r.skipped).length;
   const failed = results.filter(r => !r.passed && !r.expectedFailure && !r.skipped).length;
   const expectedFailures = results.filter(r => r.expectedFailure).length;
@@ -906,13 +526,12 @@ async function runAssertion(
     failed,
     expectedFailures,
     skipped,
-    duration: Date.now() - startTime,
-    tier: 'assertion'
+    duration: Date.now() - startTime
   };
 }
 
 // ============================================================================
-// Directives ($save / $restore / ext-testing) — shared by both tiers
+// Directives ($save / $restore / ext-testing)
 // ============================================================================
 
 /**
@@ -1056,9 +675,7 @@ function directiveFailResult(directive: Directive, error: string): CommandResult
 function errorResult(
   transcript: Transcript,
   startTime: number,
-  message: string,
-  tier?: 'golden' | 'assertion',
-  goldenPath?: string
+  message: string
 ): TranscriptResult {
   return {
     transcript,
@@ -1069,9 +686,7 @@ function errorResult(
     expectedFailures: 0,
     skipped: 0,
     duration: Date.now() - startTime,
-    errorMessage: message,
-    tier,
-    goldenPath
+    errorMessage: message
   };
 }
 
@@ -1082,23 +697,47 @@ function errorResult(
 /**
  * Run a single command and check assertions
  */
+
 async function runCommand(
   command: TranscriptCommand,
   engine: GameEngine,
-  options: RunnerOptions
+  options: RunnerOptions,
+  /**
+   * Phase 6e (#253): the command arrived bare and the story declares this
+   * `auto-assertion:` policy — after execution, synthesize the policy's
+   * assertions from the turn's REAL output, push them onto the command, and
+   * evaluate them through the normal loop.
+   */
+  synthesize?: AutoAssertionPolicy
 ): Promise<CommandResult> {
   // [SKIP]/[TODO] commands still execute below — they advance world state
   // (ADR-294 D2: "output is deliberately not asserted", not "command is not
   // run"); only assertion evaluation is bypassed, after execution.
-  const skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
+  let skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
 
   // Execute the command
   let actualOutput: string;
   let actualEvents: TestEventInfo[] = [];
   let error: string | undefined;
+  let turn: number | undefined;
+  let ending: CommandResult['ending'];
+  let world: WorldSnapshot | undefined;
 
   try {
     const result = await engine.executeCommand(command.input);
+    // The turn this command executed as, read off the engine's own record of
+    // the turn it just ran (R4). Meta commands legitimately repeat the number.
+    // Read HERE, not after the catch: production `executeCommand` never
+    // throws (bootstrap catches internally and nulls `lastTurnResult`), but a
+    // wrapper that DID throw would leave the previous command's record in
+    // place — and a stale turn on a crashed command is a lie.
+    turn = engine.lastTurnResult?.turn;
+    // Same staleness argument for the ending: read inside the try, so a
+    // throwing wrapper can never pin a previous command's ending here.
+    ending = endingFrom(engine);
+    // The world AFTER the command (R3), only when asked for. Inside the try
+    // for the same reason: a crashed command gets no snapshot, not a stale one.
+    if (options.captureWorld) world = captureWorldSnapshot(engine);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
 
     // A stopped engine (player death ended the game) surfaces as this exact
@@ -1130,6 +769,20 @@ async function runCommand(
     error = e instanceof Error ? e.message : String(e);
   }
 
+  // Phase 6e (#253): write the policy's assertions from what the turn really
+  // said. Skipped on an engine error or blank output — both are failures in
+  // their own right below, and a policy must never enshrine them as the
+  // expected assertion. A policy with nothing to assert (a room policy on a
+  // turn that emitted neither room channel) writes [SKIP]: "which emissions
+  // get asserted — these; this command emitted none of them" is a deliberate
+  // skip, distinguishable in the file from a command still awaiting its run.
+  let autoAsserted = false;
+  if (synthesize && !error && normalizeOutput(actualOutput)) {
+    command.assertions.push(...synthesizePolicyAssertions(synthesize, actualOutput, engine.lastChannelValues));
+    autoAsserted = true;
+    skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
+  }
+
   // [SKIP]/[TODO]: the command has executed and advanced state; no assertion
   // is evaluated. An engine error during the skipped turn still fails.
   if (skipAssertion) {
@@ -1146,7 +799,10 @@ async function runCommand(
           passed: false,
           message: `Engine error during skipped command: ${error}`
         }],
-        error
+        error,
+        ...(turn !== undefined ? { turn } : {}),
+        ...(ending !== undefined ? { ending } : {}),
+        ...(world !== undefined ? { world } : {})
       };
     }
     return {
@@ -1160,7 +816,11 @@ async function runCommand(
         assertion: skipAssertion,
         passed: true,
         message: skipAssertion.reason || 'Skipped'
-      }]
+      }],
+      ...(autoAsserted ? { autoAsserted: true } : {}),
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
 
@@ -1182,7 +842,10 @@ async function runCommand(
         passed: false,
         message: 'Blank output — command produced no visible text'
       }],
-      error: 'blank output'
+      error: 'blank output',
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
 
@@ -1212,9 +875,16 @@ async function runCommand(
       expectedFailure: true,
       skipped: false,
       assertionResults,
-      error
+      error,
+      ...(turn !== undefined ? { turn } : {}),
+      ...(ending !== undefined ? { ending } : {}),
+      ...(world !== undefined ? { world } : {})
     };
   }
+
+  // The one-line answer a minimal consumer shows for this command: the
+  // first failed assertion's own message, never re-derived downstream.
+  const firstFailure = assertionResults.find(r => !r.passed && r.message)?.message;
 
   return {
     command,
@@ -1224,7 +894,12 @@ async function runCommand(
     expectedFailure: false,
     skipped: false,
     assertionResults,
-    error
+    error,
+    ...(!allPassed && firstFailure !== undefined ? { failure: firstFailure } : {}),
+    ...(autoAsserted ? { autoAsserted: true } : {}),
+    ...(turn !== undefined ? { turn } : {}),
+    ...(ending !== undefined ? { ending } : {}),
+    ...(world !== undefined ? { world } : {})
   };
 }
 

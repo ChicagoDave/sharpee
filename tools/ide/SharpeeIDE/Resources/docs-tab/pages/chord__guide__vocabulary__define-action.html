@@ -1,0 +1,78 @@
+<p><code>define action &lt;name&gt; … end</code> (dedent-terminated) declares a brand-new action: its grammar, its requirements, its refusals, and its body. This one action shows the whole surface:</p>
+<pre><code class="language-chord">define action petting
+  grammar
+    pet the animal
+    pat the animal
+    stroke the animal → each nearby creature
+  the animal must be reachable
+  score gentle-hands worth 5
+  refuse without animal: pet-what
+  refuse when the animal is a snake: glass-way
+  otherwise refuse cant-pet
+  award gentle-hands
+  phrase petted
+
+  phrases en-US
+    pet-what:
+      Pet what?
+    glass-way:
+      You settle for pressing a hand to the cool glass.
+    cant-pet:
+      {capitalize the animal} really is not the sort of thing you can pet.
+    petted:
+      You give a good long scritch.</code></pre>
+<p>Reading it line by line:</p>
+<ul><li><strong><code>grammar</code></strong> lists the surface patterns. <code>the &lt;word&gt;</code> marks a slot, and the slot name <em>is</em> the value name used everywhere else in the action. Because the pattern says <code>the animal</code>, the requirements and phrases all refer to <code>the animal</code>. The <code>→</code> gives a pattern's cardinality: <code>stroke the animal → each nearby creature</code> marks that form as applying to each match rather than a single object.</li><li><strong><code>the animal must be reachable</code></strong> is a scope constraint (no colon): a precondition on a slot the parser enforces during resolution. Reachable means what it does in play: the animal is in the same place or in an open container — a closed glass case blocks reach even though you can see through it (that is why the example's refusal settles for the glass), another creature's possessions are out of reach, and reaching requires seeing, so darkness refuses too.</li><li><strong><code>score</code></strong> attaches an action-owned score.</li><li><strong><code>refuse without &lt;slot&gt;: &lt;key&gt;</code></strong> refuses when the slot was not filled at all (nothing to pet); <strong><code>refuse when &lt;condition&gt;: &lt;key&gt;</code></strong> refuses on a condition; <strong><code>otherwise refuse &lt;key&gt;</code></strong> is the last-resort refusal when no trait claimed the action on this target.</li><li>The remaining lines are the ordinary body: statements (<code>award</code>, <code>phrase</code>) that run when the action proceeds.</li><li><strong><code>phrases</code></strong> is the action's locale block.</li></ul>
+<h2 id="everything-a-pattern-can-say">Everything a pattern can say</h2>
+<p>Pattern lines read exactly like the commands a player types. Beyond words and slots, three shapes cover the rest.</p>
+<p><strong>Alternation</strong> — <code>or</code> between single words makes them alternates of one pattern; <strong>optional words</strong> go in square brackets:</p>
+<pre><code class="language-chord">define action peering
+  grammar
+    peer in or into the target
+    peer [closely] at the target</code></pre>
+<p><code>peer in the box</code>, <code>peer into the box</code>, <code>peer at the box</code>, and <code>peer closely at the box</code> all match.</p>
+<p><strong>A slot that takes the rest of the line</strong> — stated as a slot property, so the pattern still reads like the typed command:</p>
+<pre><code class="language-chord">define action inscribing
+  grammar
+    inscribe the message
+  the message takes the rest of the line</code></pre>
+<p><code>inscribe meet me at the mill at dawn</code> puts the whole phrase in <code>the message</code>.</p>
+<h2 id="slot-properties">Slot properties</h2>
+<p>Every statement about a slot is one idiom — a <code>the &lt;slot&gt; …</code> line under the grammar. You have seen <code>must be reachable</code>; slots can also require <code>must be visible</code> (seen but not necessarily touchable) or <code>must be held</code> (carried by the player):</p>
+<pre><code class="language-chord">define action flourishing
+  grammar
+    flourish the item
+  the item must be held</code></pre>
+<p>A slot can carry a type. <code>is an instrument</code> marks the tool something is done <em>with</em>; <code>is a topic</code> marks free text the player refers to rather than an object in the world:</p>
+<pre><code class="language-chord">define action prying
+  grammar
+    pry the target with the tool
+  the tool is an instrument
+  the target must be reachable</code></pre>
+<h2 id="pattern-meanings">Pattern meanings</h2>
+<p>An indented <code>means &lt;key&gt; &lt;value&gt;</code> line under a pattern hands the action a fact about <em>which phrasing</em> the player chose:</p>
+<pre><code class="language-chord">define action lurking
+  grammar
+    lurk under the target
+      means position under
+    lurk behind the target
+      means position behind</code></pre>
+<p>Both patterns run the same action; <code>position</code> arrives as <code>under</code> or <code>behind</code> depending on the line that matched.</p>
+<h2 id="direction-words">Direction words</h2>
+<p>A <code>directions</code> block binds to the slot named <code>direction</code>, declares the word set with <code>or</code>-joined aliases, and expands every pattern using that slot — including the bare form, so the words work as commands on their own. It is vocabulary, not a compass: declare whatever directions your story's geometry needs.</p>
+<pre><code class="language-chord">define action sailing
+  grammar
+    sail the direction
+    the direction
+  directions
+    port or p
+    starboard or sb
+    fore
+    aft</code></pre>
+<p><code>sail port</code>, <code>sail sb</code>, and a bare <code>starboard</code> all reach <code>sailing</code>, each carrying its canonical direction.</p>
+<h2 id="which-pattern-wins">Which pattern wins</h2>
+<p>When two patterns could match the same command, the more specific one — the one that spells out more of what was typed — wins. Between equally specific patterns, the one listed first wins, so the order of grammar lines (and of <code>define action</code> blocks) is meaningful. A story's grammar always outranks the standard library's, which is what makes <a href="/chord/guide/vocabulary/extend-action">extend action</a> and <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a> work.</p>
+<h2 id="the-standard-slot-names">The standard slot names</h2>
+<p>The standard library's grammar uses seventeen slot names, most-used first: <code>target</code>, <code>item</code>, <code>recipient</code>, <code>device</code>, <code>container</code>, <code>door</code>, <code>portal</code>, <code>topic</code>, <code>tool</code>, <code>weapon</code>, <code>vehicle</code>, <code>key</code>, <code>supporter</code>, <code>hook</code>, <code>object</code>, <code>location</code>, <code>destination</code>. Reuse them when you extend a standard action — an extension's lines refer to the same slots the action already resolves.</p>
+<h2 id="actions-and-traits">Actions and traits</h2>
+<p>The relationship to traits: <code>define action</code> declares the verb, its grammar, and its default outcomes; a <code>define trait</code> with an <code>on &lt;verb&gt;</code> clause is how a <em>particular kind of thing</em> responds to that verb. Together they are the story-author's version of stdlib's action-plus- behavior pattern: the animals above are pettable because <code>petting</code> exists as an action and something makes the animals respond to it.</p>

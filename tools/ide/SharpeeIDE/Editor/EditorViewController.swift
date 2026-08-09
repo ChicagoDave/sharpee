@@ -34,6 +34,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
 
     private var documents: [Document] = []
     private var activeIndex: Int?
+
+    /// D9 (ADR-306): per-document file watchers — an external change to a
+    /// CLEAN buffer reloads it silently; a DIRTY buffer is badged and the
+    /// author chooses. One rule for every tool-written file (the testing
+    /// surface's auto-save writer, restructure renames, 6e policy runs).
+    private var fileWatchers: [URL: DispatchSourceFileSystemObject] = [:]
+
+    /// Documents whose file changed under unsaved edits, awaiting the
+    /// author's choice (D9: never resolved silently in either direction).
+    private(set) var conflictedURLs: Set<URL> = []
     /// Guards `textDidChange` while we replace the text view's contents programmatically.
     private var isSwappingContent = false
 
@@ -134,6 +144,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         do {
             let document = try Document.load(from: url)
             documents.append(document)
+            startWatching(url)
             switchTo(index: documents.count - 1)
             // switchTo already fires onStateChanged. The append is part of the same logical
             // change so a single notification is correct.
@@ -190,12 +201,29 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     ///   fit the buffer; nothing is inserted in that case.
     @discardableResult
     func insertText(_ text: String, at characterIndex: Int, in url: URL) -> Bool {
+        replaceText(text, in: NSRange(location: characterIndex, length: 0), in: url)
+    }
+
+    /// Replaces `range` with `text` in `url`'s buffer, opening it if needed.
+    ///
+    /// The general form of `insertText` — an insertion is a zero-length range.
+    /// Edits made here are undoable and mark the tab dirty, which is what an
+    /// outside writer (the Publish checkbox, the Problems panel's IFID fix)
+    /// wants: the author's open buffer is never bypassed.
+    ///
+    /// - Parameters:
+    ///   - text: the replacement text.
+    ///   - range: UTF-16 range in the buffer.
+    ///   - url: the file to edit.
+    /// - Returns: false when the file could not be opened or the range does not
+    ///   fit the buffer; nothing is changed in that case.
+    @discardableResult
+    func replaceText(_ text: String, in range: NSRange, in url: URL) -> Bool {
         openDocument(at: url)
         guard activeDocument?.url == url else { return false }
         let length = (textView.string as NSString).length
-        guard characterIndex >= 0, characterIndex <= length else { return false }
+        guard range.location >= 0, range.length >= 0, range.location + range.length <= length else { return false }
 
-        let range = NSRange(location: characterIndex, length: 0)
         guard textView.shouldChangeText(in: range, replacementString: text) else { return false }
         textView.setSelectedRange(range)
         textView.insertText(text, replacementRange: range)
@@ -207,14 +235,111 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     ///
     /// For use after something outside the editor rewrote the file, so the tab
     /// stops showing text that is no longer on disk. A dirty tab is left alone —
-    /// callers must check `hasUnsavedChanges(at:)` BEFORE writing, not rely on
-    /// this to arbitrate afterwards.
+    /// the D9 watcher badges it and the author chooses; nothing arbitrates
+    /// silently in either direction.
     func reloadFromDisk(at url: URL) {
         guard let index = documents.firstIndex(where: { $0.url == url }),
               !documents[index].isDirty,
               let reloaded = try? Document.load(from: url) else { return }
+        reloadPreservingCaret(index: index, reloaded: reloaded)
+    }
+
+    // MARK: - D9: external-change watching (ADR-306, AC-3)
+
+    /// Watches `url` for external writes. Atomic replaces rename a new file
+    /// over the old vnode, killing the descriptor — so the source re-arms
+    /// itself after every event.
+    private func startWatching(_ url: URL) {
+        stopWatching(url)
+        let descriptor = open(url.path, O_EVTONLY)
+        guard descriptor >= 0 else { return }
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: descriptor,
+            eventMask: [.write, .rename, .delete, .extend],
+            queue: .main)
+        source.setEventHandler { [weak self] in
+            guard let self else { return }
+            self.handleExternalChange(at: url)
+            // Re-arm: the vnode may be gone (atomic replace); a fresh open
+            // binds the NEW file at the same path.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+                guard let self, self.documents.contains(where: { $0.url == url }) else { return }
+                self.startWatching(url)
+            }
+        }
+        source.setCancelHandler { close(descriptor) }
+        source.resume()
+        fileWatchers[url] = source
+    }
+
+    private func stopWatching(_ url: URL) {
+        fileWatchers.removeValue(forKey: url)?.cancel()
+    }
+
+    /// The one D9 rule: clean buffer → silent reload (caret and scroll kept
+    /// where the content allows); dirty buffer → badge + the author chooses.
+    private func handleExternalChange(at url: URL) {
+        guard let index = documents.firstIndex(where: { $0.url == url }) else { return }
+        persistTextViewToActiveDocument()
+        let document = documents[index]
+        guard let reloaded = try? Document.load(from: url) else { return }
+        if reloaded.content == document.content {
+            // Our own save (or an identical write) — nothing to arbitrate.
+            if conflictedURLs.remove(url) != nil { refreshUI() }
+            return
+        }
+        if document.isDirty {
+            guard !conflictedURLs.contains(url) else { return }
+            conflictedURLs.insert(url)
+            refreshUI()
+            presentConflictChoice(at: url)
+        } else {
+            reloadPreservingCaret(index: index, reloaded: reloaded)
+        }
+    }
+
+    /// Replaces a document with its reloaded content, restoring the caret and
+    /// scroll position where the new content allows (D9's "silently").
+    private func reloadPreservingCaret(index: Int, reloaded: Document) {
+        let wasActive = (activeIndex == index)
+        let selection = wasActive ? textView.selectedRange() : NSRange(location: 0, length: 0)
+        let visibleRect = wasActive ? textView.visibleRect : .zero
         documents[index] = reloaded
-        if activeIndex == index { switchTo(index: index) }
+        if wasActive {
+            switchTo(index: index)
+            let length = (textView.string as NSString).length
+            let location = min(selection.location, length)
+            textView.setSelectedRange(NSRange(location: location, length: 0))
+            textView.scrollToVisible(visibleRect)
+        }
+        onStateChanged?()
+    }
+
+    /// D9's choice, when the window can present it: reload (discard edits) or
+    /// keep the buffer (stays dirty and conflicted-cleared; the author's next
+    /// save overwrites deliberately). Window-less hosts (tests) keep the badge
+    /// and the author resolves via save-or-reload APIs.
+    private func presentConflictChoice(at url: URL) {
+        guard let window = view.window else { return }
+        let alert = NSAlert()
+        alert.messageText = "\(url.lastPathComponent) changed on disk"
+        alert.informativeText =
+            "This file was rewritten outside the editor while you have unsaved edits. "
+            + "Neither version has been discarded."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Keep My Version")
+        alert.addButton(withTitle: "Reload From Disk")
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard let self else { return }
+            self.conflictedURLs.remove(url)
+            if response == .alertSecondButtonReturn,
+               let index = self.documents.firstIndex(where: { $0.url == url }),
+               let reloaded = try? Document.load(from: url) {
+                self.documents[index].isDirty = false
+                self.reloadPreservingCaret(index: index, reloaded: reloaded)
+            }
+            self.refreshUI()
+        }
     }
 
     /// Opens (or focuses) `url`, then selects the exact diagnostic span — the
@@ -374,6 +499,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         guard documents.indices.contains(index) else { return }
 
         let wasActive = (activeIndex == index)
+        stopWatching(documents[index].url)
+        conflictedURLs.remove(documents[index].url)
         documents.remove(at: index)
 
         if documents.isEmpty {

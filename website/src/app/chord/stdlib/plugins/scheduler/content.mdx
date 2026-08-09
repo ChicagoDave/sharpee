@@ -19,9 +19,11 @@ wall clock, `N turns later` against the previous step's firing,
 The author writes:
 
 ```chord
-story "The Scullery" by "ref"
+story
+  title: The Scullery
+  authors: ref
   id: plugins-sequence
-  version: 0.0.1
+  story-version: 0.0.1
   states: quiet, boiling
 
 create the Scullery
@@ -93,9 +95,11 @@ simulation; ADR-236).
 The author writes:
 
 ```chord
-story "The Lighthouse" by "ref"
+story
+  title: The Lighthouse
+  authors: ref
   id: plugins-daemons
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
     phrase tide-works

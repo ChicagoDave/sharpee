@@ -27,6 +27,8 @@ export interface TreeTestOptions {
   json?: boolean;
   /** Carry `actualOutput` on every command result, not only failures. */
   captureOutput?: boolean;
+  /** Carry a world snapshot on every command result and node entry (R3/R5). */
+  captureWorld?: boolean;
 }
 
 /**
@@ -55,7 +57,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
   // covers the runner and its report, not the wire, which has one owner.
   const { RunEventStream, ndjsonEventLine } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
-  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false } = options;
+  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false } = options;
 
   const stream = json
     ? new RunEventStream((event) => {
@@ -79,6 +81,14 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
     try {
       const transcript = parseTranscriptFile(transcriptPath);
       const errors = validateTranscript(transcript);
+      // A transcript that is merely EMPTY is not a defect: it is the editor's
+      // designed starting state, and it runs as a skip (phase-6 F1, David's
+      // ruling 2026-08-08). Zero commands + exactly one problem means that
+      // problem is the no-commands one; anything else keeps the D11 gate.
+      if (transcript.commands.length === 0 && errors.length === 1) {
+        parsed.push(transcript);
+        continue;
+      }
       if (errors.length > 0) {
         parseFailures.push(`${transcriptPath}: ${errors.join('; ')}`);
         continue;
@@ -150,18 +160,19 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
     run = await runTree(tree, freshGameForRoot as never, {
       verbose,
       stopOnFailure,
-      storyName,
+      captureWorld,
       observer: stream && {
         onCommandResult: (command) =>
           stream.commandResult(currentFile ?? '', command, captureOutput),
       },
       treeObserver: stream && {
-        onNodeStart: ({ node, replayed, commandCount }) => {
+        onNodeStart: ({ node, replayed, commandCount, entryWorld }) => {
           currentFile = node.transcript.filePath;
           stream.transcriptStart(node.transcript.filePath, executionIndex++, {
             commandCount,
             ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
             ...(replayed ? { replayed: true } : {}),
+            ...(entryWorld !== undefined ? { world: entryWorld } : {}),
           });
         },
         onNodeEnd: ({ result }) => stream.transcriptEnd(result),
@@ -173,6 +184,15 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
             ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
           });
           stream.transcriptUnreached(node.transcript.filePath, origin.transcript.filePath);
+        },
+        onNodeSkipped: ({ node }) => {
+          // Announced like an unreached node — start carries the parentage the
+          // tree view joins on, end says why nothing follows (phase-6 F1).
+          stream.transcriptStart(node.transcript.filePath, executionIndex++, {
+            commandCount: 0,
+            ...(node.parent ? { parent: node.parent.transcript.filePath } : {}),
+          });
+          stream.transcriptSkipped(node.transcript.filePath);
         },
       },
     });

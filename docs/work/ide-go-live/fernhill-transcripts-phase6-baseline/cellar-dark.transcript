@@ -1,0 +1,64 @@
+title: The dark cellar
+story: fernhill
+continues: key
+description: The tarnished key's door, and the room behind it that cannot be
+  seen without the lamp from the landing.
+
+---
+
+> north
+[OK: contains "Entrance Hall"]
+
+> north
+[OK: contains "Cellar Stairs"]
+[OK: contains "An oil lamp sits in a wall niche"]
+
+> take the oil lamp
+[OK: contains "Taken"]
+[STATE: true, player.inventory contains lamp]
+
+# `lockable with the tarnished key` — and unlike the fuse and the deed box,
+# `unlock` takes its instrument naturally because the phrasing names it.
+> unlock the cellar door with the tarnished key
+[OK: contains "You unlock the cellar door with the tarnished key"]
+
+# `after opening it, once / award unsealed` — 5 points, taking the total to 10
+# and triggering the Guest of the House promotion line.
+> open the cellar door
+[OK: contains "You open the cellar door"]
+[OK: contains "The house has stopped listening for your footsteps"]
+
+# PLATFORM TEXT LEAK, asserted as it behaves. The stdlib default for entering
+# an unlit room is Dungeo's grue line, in a story with no grues, no Dungeo, and
+# a 1920s English country-house register. An author gets this sentence for free
+# and has no obvious place to override it.
+> down
+[OK: contains "It is pitch dark. You are likely to be eaten by a grue"]
+[STATE: true, player.location = Cellar]
+
+# The room's `on every turn / phrase cellar-drip` runs in the dark — the player
+# cannot see but can hear.
+> look
+[OK: contains "It's pitch dark, and you can't see a thing"]
+[OK: contains "The dark keeps its own time"]
+
+# `light-source, switchable`. Switching it on re-describes the room in the
+# same turn, and `on every turn while the oil lamp is lit, once` fires.
+> switch on the oil lamp
+[OK: contains "The oil lamp switches on, banishing the darkness"]
+[OK: contains "Brick vaults run off into the dark"]
+[OK: contains "You can see a crowbar here"]
+[OK: contains "Something small skitters away from your lamplight and is gone"]
+
+# `, once` — the startle does not repeat.
+> look
+[OK: contains "Brick vaults run off into the dark"]
+[OK: not contains "Something small skitters away"]
+
+> take the crowbar
+[OK: contains "Taken"]
+[STATE: true, player.inventory contains crowbar]
+
+# found (5) + unsealed (5).
+> score
+[OK: contains "You have scored 10 out of 50"]

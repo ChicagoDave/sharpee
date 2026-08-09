@@ -283,6 +283,10 @@ export class ChordStory implements Story {
       ifid: ir.meta.fields.ifid,
       description: descriptionText(ir.meta.fields.description, ir),
       prologue: ir.meta.fields.prologue,
+      // Phase 6e (#253): the transcript auto-assertion policy rides the
+      // config so the test harness reads it off the loaded story; absent
+      // stays absent ("let me decide" is the runner's default).
+      ...(ir.meta.fields.autoAssertion !== undefined ? { autoAssertion: ir.meta.fields.autoAssertion } : {}),
     };
     this.bindHatches(options);
     this.evaluator = new Evaluator(ir, this, options.seed);

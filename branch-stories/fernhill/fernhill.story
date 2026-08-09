@@ -1,13 +1,11 @@
-## The Folly at Fernhill — one winter night to find the deed.
-## File-header comment (ADR-249): `##` lines are legal between
-## top-level constructs and contribute nothing to the compile.
-
 story
   title: The Folly at Fernhill
   authors: The Sharpee Project
   id: fernhill
   ifid: 8221EC69-3D96-4F60-A057-99D1FE72000F
   story-version: 0.3.0
+  publish-source: yes
+  themes: modern-dark, retro-terminal, paper, system-6
   description: One cold winter night to find the deed that keeps Fernhill in the family.
   states: evening, midnight
   use state-machines

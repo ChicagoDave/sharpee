@@ -1,0 +1,88 @@
+<p><strong>go</strong> (<code>going</code>): <code>go north</code>, <code>walk</code>/<code>run</code>/<code>head</code>/<code>travel north</code>, or just the direction (the synonym forms and a fixed <code>go &lt;direction&gt;</code> rule landed with ADR-230 D4). Twelve direction words parse: <code>north</code>/<code>n</code>, <code>south</code>/<code>s</code>, <code>east</code>/<code>e</code>, <code>west</code>/<code>w</code>, <code>northeast</code>/<code>ne</code>, <code>northwest</code>/<code>nw</code>, <code>southeast</code>/<code>se</code>, <code>southwest</code>/<code>sw</code>, <code>up</code>/<code>u</code>, <code>down</code>/<code>d</code>, plus <code>in</code>/<code>inside</code> and <code>out</code>/<code>outside</code>.</p>
+<p>Exits are room data: the direction lines of a room's <code>create</code> block, including blocked and conditionally blocked exits (chord-language.md owns that syntax) and deadly exits. A blocked exit refuses with <code>movement_blocked</code> and speaks the story's own phrase, and a direction can be blocked without leading anywhere, which is how &quot;the hedge is too thick&quot; works. An exit may route through a door, which refuses while locked (<code>door_locked</code>) or closed (<code>door_closed</code>). Darkness gates seeing, not moving: walking into a dark room succeeds and only the arrival description is lost, replaced by <code>too_dark</code> (anything worse than not-seeing, a grue, is death machinery). Vehicles change whose feet move: one line, TypeScript-only today.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Walled Garden
+  a room
+  north to the Potting Shed through the green door
+  east to the Grotto
+  south is blocked: wall-too-high
+
+  Espaliered pears line the old brick walls.
+
+create the green door
+  a door
+  aka door
+
+  A green door in the north wall, painted and peeling.
+
+  on going it
+    refuse when the player holds the wheelbarrow: barrow-too-wide
+  end on
+
+  phrase barrow-too-wide:
+    The wheelbarrow jams in the doorway. You back out again.
+
+create the Potting Shed
+  a room
+
+  Clay pots on every shelf, and the smell of compost.
+
+  after entering it, once
+    phrase shed-memory
+      You spent a whole summer in here once, pricking out seedlings.
+  end after
+
+create the Grotto
+  a room, dark
+  west to the Walled Garden
+
+  Dripping stone and ferns nobody planted.
+
+create the wheelbarrow
+  aka barrow
+  in the Walled Garden
+
+  A wooden wheelbarrow, wider than it needs to be.
+
+create the player
+  starts in the Walled Garden
+
+define phrases en-US
+  wall-too-high:
+    The south wall is twelve feet of smooth brick. Not without a ladder.</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; south
+The south wall is twelve feet of smooth brick. Not without a ladder.
+
+&gt; east
+It is pitch dark. You are likely to be eaten by a grue.
+
+&gt; west
+Walled Garden
+Espaliered pears line the old brick walls.
+
+You can see a wheelbarrow here.
+
+&gt; north
+The green door is closed.
+
+&gt; open the green door
+You open the green door.
+
+&gt; take the wheelbarrow
+Taken.
+
+&gt; north
+The wheelbarrow jams in the doorway. You back out again.
+
+&gt; drop the wheelbarrow
+Dropped.
+
+&gt; north
+Potting Shed
+Clay pots on every shelf, and the smell of compost.
+
+You spent a whole summer in here once, pricking out seedlings.</code></pre>
+<p>One walk covers the seams: the blocked wall speaks the story's phrase, the dark Grotto lets you in but shows you nothing, the closed door refuses, the door's own <code>on going it</code> guard vetoes the wheelbarrow, and the shed's <code>after entering it, once</code> greets the first arrival.</p>
+<table><thead><tr><th></th><th>go (<code>going-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_direction</code> · <code>not_in_room</code> (in a vehicle, not a room) · <code>no_exits</code> · <code>no_exit_that_way</code> · <code>movement_blocked</code> (the story's blocked phrase) · <code>door_locked</code> · <code>door_closed</code> · <code>destination_not_found</code></td></tr><tr><td>Success</td><td><code>moved</code> · <code>moved_to</code> · <code>first_visit</code> · <code>too_dark</code> (you arrived; you just can't see)</td></tr><tr><td>Events</td><td><code>actor_exited</code> / <code>actor_moved</code> / <code>actor_entered</code>, plus <code>region_exited</code> / <code>region_entered</code> on region crossings: what <code>after going</code> clauses and daemons key off</td></tr></tbody></table>
+<p>Interceptors: going consults three parties in order: the room being left (<code>on going it</code>), the room being entered (its clauses bind as <code>entering_room</code> conditions; this is how a room refuses entry rather than refusing exit), and the door being passed through (<code>on going it</code> on the door, as the green door shows). First refusal wins. Regions can react to the crossing events on their own blocks: <code>after entering it</code> / <code>after leaving it</code>.</p>

@@ -1,0 +1,31 @@
+<p>A <code>##</code> line is a comment: skipped at compile, contributing nothing to the game. Comments annotate the source for whoever reads it next.</p>
+<pre><code class="language-chord">## The locket drives chapter 3. Everything below is the winter voice.
+
+define phrasebook winter
+  cold-returns:
+    The cold finds you.
+end phrasebook</code></pre>
+<p>Stack <code>##</code> lines for a multi-line comment. There is no block-comment form and no end-of-line comment: one form, whole lines only.</p>
+<h2 id="comments-sit-between-things-blank-line-delimited">Comments sit between things, blank-line delimited</h2>
+<p>A comment lives <strong>between</strong> top-level declarations (or before the story header, or after the last one), with a blank line before and after:</p>
+<pre><code class="language-chord">create the Hall
+  a room
+
+  A cold entrance hall.
+
+## The cellar is sealed until the boiler runs.
+
+create the cellar door
+  a door, lockable with the tarnished key
+
+  A grey door, locked as long as anyone can remember.</code></pre>
+<p>The blank lines are required: a <code>##</code> run touching a declaration is <code>lex.comment-blank-lines</code>. The top of the file is the one exception: a <code>##</code> line may open the file with no blank line above it.</p>
+<h2 id="not-inside-a-block">Not inside a block</h2>
+<p>A declaration spans its header through its last line, so a <code>##</code> line <em>inside</em> that span is a <code>parse.comment-inside-block</code> error (&quot;create is a block; no comments in blocks&quot;):</p>
+<pre><code class="language-chord">create the Hall
+  a room
+  ## no comment here — this line is inside the block
+  north to the Drive
+
+  A cold entrance hall.</code></pre>
+<p>An indented <code>##</code> inside a prose paragraph is not a comment at all: it renders verbatim as text, so descriptions can use <code>#</code> freely.</p>

@@ -31,8 +31,24 @@ export { DialogManager } from './managers/DialogManager.js';
 export { MenuManager } from './managers/MenuManager.js';
 export { InputManager } from './managers/InputManager.js';
 
-// IDE recording bridge (ADR-277 D5)
-export { emitTurnEvent, type TurnEventPayload } from './turn-events.js';
+// IDE recording bridge (ADR-277 D5; lineage + digest per ADR-306 Phase 2)
+export {
+  emitTurnEvent,
+  emitRestartEvent,
+  nextPlayTurnOrdinal,
+  currentPlayLineage,
+  turnEventsBridgeActive,
+  capturesOf,
+  type TurnCapture,
+  type TurnEventPayload,
+  type TurnEventRecord,
+  type RestartEventPayload,
+  type DigestEntityRef,
+  type WorldDigest,
+  type WorldDigestEntity,
+  type WorldDigestMachine
+} from './turn-events.js';
+export { buildWorldDigest } from './world-digest.js';
 
 // Display components
 export { TextDisplay } from './display/TextDisplay.js';

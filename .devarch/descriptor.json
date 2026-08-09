@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
-  "version": "6.0.1",
+  "version": "6.2.0",
   "capabilities": [
     "base"
   ],
-  "initializedAt": "2026-05-10T03:21:49Z"
+  "initializedAt": "2026-05-10T03:21:49Z",
+  "documentationStandard": "always"
 }

@@ -82,9 +82,11 @@ the `use` line is a compile error.
 The author writes:
 
 ```chord
-story "The Ferry" by "ref"
+story
+  title: The Ferry
+  authors: ref
   id: plugins-machine
-  version: 0.0.1
+  story-version: 0.0.1
   states: waiting, signaled
   use state-machines
 

@@ -20,7 +20,7 @@ Creating project...
 
 🌐 Adding browser client to your Sharpee project
 
-  ✓ Created src/browser-entry.ts (Chord — compiles story.story at boot)
+  ✓ Created src/browser-entry.ts (Chord — runs the compiled story IR)
   ✓ Created src/version.ts
   ✓ Created browser/orchard.css
   ✓ Updated package.json (deps + build:browser)
@@ -45,10 +45,12 @@ The whole game is `orchard.story`. The scaffold's version is a one-room
 world, and it already shows the shape of everything to come:
 
 ```chord
-story "orchard" by "you"
+story
+  title: orchard
+  authors: you
   id: orchard
-  version: 0.1.0
-  blurb: An interactive fiction adventure
+  story-version: 0.1.0
+  description: An interactive fiction adventure
 
 create the Landing
   a room

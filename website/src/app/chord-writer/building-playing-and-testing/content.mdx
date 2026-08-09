@@ -1,0 +1,63 @@
+On the command line these are four commands. In Chord Writer they are two menus
+and four tabs, running the same toolchain underneath.
+
+## Compose happens on its own
+
+Composing is not something you invoke. Chord Writer composes the story you are
+editing a moment after you stop typing, and keeps **Problems** current.
+
+Problems lists structured compile diagnostics, not raw compiler text. Each one
+points at a place in your story, and clicking it takes you there. Some carry a
+fix you can apply directly, which is where a missing IFID gets generated for
+you.
+
+When an error needs more than a line to explain, the **Diagnosis** tab in the
+right panel carries the longer version.
+
+## Build
+
+**Build → Build** (`Cmd-B`) builds the story, and **Build → Cancel Build**
+(`Cmd-.`) stops one in progress.
+
+The right panel switches to **Build** when a build starts, so you are looking
+at the output while it happens rather than finding it afterwards. On a build
+that succeeds and goes on to run, the panel switches to **Play**.
+
+## Play
+
+The **Play** tab is the game, running, in the panel. Type as a player types.
+
+Errors raised by the running game go to the **Game Errors** tab in the bottom
+dock instead of into the game text. This keeps the transcript readable as a
+transcript: what a player would have seen, uninterrupted, with the machinery
+kept somewhere else.
+
+## Index
+
+The **Index** tab lists what your story defines, read out of the composed story
+rather than parsed from the source. It is one rendering of one composed result,
+which is why there is no separate structure view in the project pane.
+
+## Testing
+
+The **Testing** tab holds your transcript tests. **Test → Run Tests** runs
+them; **Test → Cancel Test Run** stops a run.
+
+Transcript tests form a tree rather than a flat list, because a transcript can
+continue another one. A test that begins where a previous transcript left off
+only means anything if that ancestry runs first. Chord Writer therefore runs a
+test **with its ancestors**, and it is the reason there is a single run command
+rather than several.
+
+<Callout title="Why this matters more than it sounds">
+  Running a `continues:` tree flat rather than as a tree does not fail loudly.
+  It fails as a large number of ordinary-looking test failures, because every
+  transcript downstream of the first one starts from the wrong world state.
+</Callout>
+
+Results land back on the tree as it runs. A failure can be opened at the exact
+transcript line that produced it.
+
+## Next
+
+[Publishing](/chord-writer/publishing) covers packaging a story for release.

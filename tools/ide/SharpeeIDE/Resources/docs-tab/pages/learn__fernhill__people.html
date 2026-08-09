@@ -1,0 +1,43 @@
+<h2 id="a-guard-and-the-state-that-moves-her">A guard, and the state that moves her</h2>
+<p>Mrs Kettle stands between you and the study. She is three facts working together: an NPC with the <code>guard</code> role, her own states, and the blocked exit from <em>The world</em> reading those states live:</p>
+<pre><code class="language-chord">create Mrs Kettle
+  aka housekeeper, kettle
+  a person, guard
+  in the Entrance Hall
+  states: guarded, softened
+
+  on giving it
+    change it to softened when it has the sherry bottle
+    award softened, once when it is softened
+    phrase kettle-softened when it is softened
+  end on</code></pre>
+<pre><code class="language-chord">create the Entrance Hall
+  west is blocked while Mrs Kettle is guarded: kettle-blocks</code></pre>
+<p>The <code>on giving it</code> clause is the <strong>give-gate</strong>: hand her the right bottle and she softens. Because the block is a live condition, the study door opens the same instant, with no extra wiring. The <code>when</code> tails on each statement keep wrong gifts from softening anyone.</p>
+<h2 id="a-patrol">A patrol</h2>
+<pre><code class="language-chord">create Tobias
+  aka groundskeeper
+  a person, patrol with route [the Gravel Drive, the Fountain Court, the Boiler Shed] and wait-turns 5 and announces-movement true
+  in the Gravel Drive
+  states: steady, shaken</code></pre>
+<p>The NPC library's <code>patrol</code> role takes its route as a name list and walks it on its own schedule. <code>announces-movement true</code> narrates his comings and goings (announcements default to off).</p>
+<h2 id="topic-tables">Topic tables</h2>
+<p>Conversation is a declared table per person; <code>ask</code>/<code>tell</code> both consult it. Rows come in two tiers: entity rows (the player asked about a thing in the world) and quoted free-text rows with comma-separated aliases:</p>
+<pre><code class="language-chord">define topics for tobias
+  about the boiler:
+    phrase tobias-boiler-reply
+  about the silver locket:
+    phrase tobias-locket-reply
+  about &quot;the folly&quot;, &quot;the fire&quot;:
+    change it to shaken
+    award truth, once
+    phrase tobias-folly-reply
+  about &quot;the bank&quot;: phrase tobias-bank-reply
+end topics</code></pre>
+<p>A row's body is ordinary statements: the folly row <em>changes Tobias's state</em> (which is what unsticks the folly door two chapters from now) and scores the discovery. A miss falls to the owner's <code>on asking it</code> catch-all if it has one:</p>
+<pre><code class="language-chord">  on asking it
+    phrase tobias-shrug
+  end on</code></pre>
+<p>Mrs Kettle's table has no catch-all, so her misses get the platform's polite default. Both shapes are legitimate; pick per character.</p>
+<h2 id="a-follower-you-recruit">A follower you recruit</h2>
+<p>Smoke the cat previews the next chapters: she is <code>a person, follower</code>, but feeding her uses an <em>authored trait</em>, so she waits for the <a href="/learn/fernhill/state">state &amp; verbs chapter</a>. The short version is that you bring the kipper.</p>

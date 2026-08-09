@@ -1,0 +1,13 @@
+<p>Three placement forms position an entity when the story starts: <code>in</code> puts it inside a room or container, <code>on</code> puts it on a supporter, and <code>starts in</code> is how actors (usually the player) name their starting room. Two more lines dress and equip an actor. <code>wears</code> puts a wearable onto an actor so that the actor is wearing it from the start, and <code>carries</code> puts an item into an actor's hands as starting inventory, so the actor holds it but does not wear it.</p>
+<pre><code class="language-chord">create the seed packet
+  on the potting table
+
+  A paper packet of runner-bean seeds.
+
+create the player
+  starts in the Greenhouse
+  wears the straw hat
+  carries the trowel
+
+  Mud on your boots, dirt under your nails.</code></pre>
+<p>Note the disambiguation: <code>on</code> followed by an article is placement (<code>on the potting table</code>); <code>on</code> followed by a bare word opens a behavior clause (<code>on watching it</code>).</p>

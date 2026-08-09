@@ -1,0 +1,81 @@
+<p>Two actions share the surface English of &quot;put&quot;. <code>put X on/onto Y</code> (and <code>hang X on Y</code>) is <strong>putting</strong> (<code>putting</code>); <code>put X in/into/inside Y</code> and <code>insert X in Y</code> parse as <strong>inserting</strong> (<code>inserting</code>), which delegates its work back into putting with the preposition forced to &quot;in&quot;. <code>place</code> works in both phrasings, and <code>move X to Y</code> lands in putting since ADR-230 D4, which lets the destination's kind decide in versus on (the D4 ruling: <code>move</code> is a manipulation verb, never movement; see also pushing). The destination decides eligibility: <code>on</code> needs a supporter, <code>in</code> needs a container, and a closed openable container refuses. The item does not need to be in hand: putting performs an implicit take first, and refuses with the taking refusal if that fails (a fused-down ring cannot be put anywhere). Because inserting delegates its report into putting, a successful INSERT renders <code>putting-put-in</code> (override <code>put_in</code> / <code>put_on</code> for success text in both phrasings), while inserting's <em>failures</em> render under <code>inserting-&lt;key&gt;</code>.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Sorting Office
+  a room
+
+  Pigeonholes and parcel shelves, floor to ceiling.
+
+create the oak counter
+  aka counter
+  a supporter
+  scenery
+  in the Sorting Office
+
+  A long oak counter, polished by a century of elbows.
+
+create the outgoing pigeonhole
+  aka pigeonhole
+  a container
+  scenery
+  in the Sorting Office
+
+  A brass-framed pigeonhole marked OUTGOING.
+
+create the dead letters bin
+  aka bin
+  a container
+  scenery
+  in the Sorting Office
+
+  A wire bin for letters no one will ever claim.
+
+  on putting it
+    refuse bin-sealed
+  end on
+
+  phrase bin-sealed:
+    The bin is sealed under a wire grille; only the postmaster may add to it.
+
+create the letter
+  in the Sorting Office
+
+  A letter sealed with red wax.
+
+create the stamp
+  in the Sorting Office
+
+  A commemorative stamp, unlicked.
+
+create the player
+  starts in the Sorting Office
+
+override message putting-put-in
+  It slides in with a papery whisper.
+end override</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; put the letter in the pigeonhole
+(first taking the letter)
+
+Taken.
+
+It slides in with a papery whisper.
+
+&gt; insert the stamp into the pigeonhole
+(first taking the stamp)
+
+Taken.
+
+It slides in with a papery whisper.
+
+&gt; insert the letter into the bin
+The bin is sealed under a wire grille; only the postmaster may add to it.
+
+&gt; put the letter on the counter
+(first taking the letter)
+
+You take the letter from the outgoing pigeonhole.
+
+You put the letter on the oak counter.</code></pre>
+<p>The delegation in one scene: a single <code>override message</code> under putting's <code>put_in</code> re-voices both phrasings, and the bin's single <code>on putting it</code> guard catches the <code>insert</code> command too, while <code>put … on</code> renders <code>put_on</code> untouched.</p>
+<table><thead><tr><th></th><th>putting (<code>putting-*</code>)</th><th>inserting (<code>inserting-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>no_destination</code> · <code>cant_put_in_itself</code> / <code>cant_put_on_itself</code> · <code>already_there</code> · <code>not_container</code> / <code>not_surface</code> · <code>container_closed</code> · <code>no_room</code> (container) · <code>no_space</code> (supporter)</td><td>the same checks, rendered under <code>inserting-&lt;key&gt;</code> when the command was an INSERT</td></tr><tr><td>Success</td><td><code>put_in</code> · <code>put_on</code> (INSERT reports through <code>put_in</code>)</td><td>— (delegates to putting)</td></tr><tr><td>Events</td><td><code>put_in</code> / <code>put_on</code> / <code>put_blocked</code></td><td><code>insert_blocked</code></td></tr></tbody></table>
+<p>Interceptors: <code>on putting it</code> / <code>on inserting it</code> on the item or the container. An INSERT consults <code>on inserting it</code> first, then (through the delegation) <code>on putting it</code> on both entities, so register a given entity under <strong>one</strong> of the two gerunds, not both, or it will run twice; <code>on putting it</code> covers both phrasings, and in <code>put all in the case</code> a container-side clause runs once per deposited item.</p>

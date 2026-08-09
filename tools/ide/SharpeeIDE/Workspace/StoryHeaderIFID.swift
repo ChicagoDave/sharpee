@@ -40,8 +40,8 @@ enum StoryHeaderIFID {
     /// - Returns: the offset and line text, or nil when the source has no
     ///   top-level `story` block or already declares an `ifid:`.
     static func insertion(of ifid: String, into source: String) -> Insertion? {
-        let lines = splitKeepingLineEndings(source)
-        guard let storyIndex = lines.firstIndex(where: { isStoryKeywordLine($0) }) else { return nil }
+        let lines = StoryHeaderLines.split(source)
+        guard let storyIndex = lines.firstIndex(where: { StoryHeaderLines.isStoryKeyword($0) }) else { return nil }
 
         var idIndex: Int?
         var idIndent: String?
@@ -49,7 +49,7 @@ enum StoryHeaderIFID {
         var lastIndent = "  "
 
         for index in (storyIndex + 1)..<lines.count {
-            guard let field = headerField(in: lines[index]) else { break }
+            guard let field = StoryHeaderLines.field(in: lines[index]) else { break }
             if field.key == "ifid" { return nil }
             if field.key == "id", idIndex == nil {
                 idIndex = index
@@ -66,40 +66,4 @@ enum StoryHeaderIFID {
         return Insertion(offset: offset, text: "\(indent)ifid: \(ifid)\n")
     }
 
-    // MARK: - Line reading
-
-    /// The `story` keyword on its own line at column 1 — the header block's opener.
-    private static func isStoryKeywordLine(_ line: String) -> Bool {
-        guard let first = line.first, !first.isWhitespace else { return false }
-        return line.trimmingCharacters(in: .whitespacesAndNewlines) == "story"
-    }
-
-    /// An indented `key: value` header field, or nil for anything else — a blank
-    /// line, a comment, a nested `use`/`on` block, or the end of the header.
-    private static func headerField(in line: String) -> (indent: String, key: String)? {
-        let indent = String(line.prefix { $0 == " " || $0 == "\t" })
-        guard !indent.isEmpty else { return nil }
-        let rest = line.dropFirst(indent.count)
-        guard let colon = rest.firstIndex(of: ":") else { return nil }
-        let key = String(rest[rest.startIndex..<colon])
-        guard !key.isEmpty,
-              key.allSatisfy({ $0.isLowercase || $0.isNumber || $0 == "-" }) else { return nil }
-        return (indent, key)
-    }
-
-    /// Splits into lines that still carry their newline, so offsets computed by
-    /// summing line lengths match the original string exactly.
-    private static func splitKeepingLineEndings(_ source: String) -> [String] {
-        var lines: [String] = []
-        var current = ""
-        for character in source {
-            current.append(character)
-            if character == "\n" {
-                lines.append(current)
-                current = ""
-            }
-        }
-        if !current.isEmpty { lines.append(current) }
-        return lines
-    }
 }

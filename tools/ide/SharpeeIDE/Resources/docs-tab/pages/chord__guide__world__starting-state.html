@@ -1,0 +1,14 @@
+<p>A stateful trait opens for business in its default state: a lockable thing starts unlocked, a switchable thing starts off, and an openable thing starts closed. Declare <code>starts open</code> to begin open (ADR-231 D5b: the trait default is authoritative everywhere; container kinds are no exception). When the story needs otherwise, such as a safe that stays locked until the player finds the key or a space heater that is already running, <code>starts &lt;state&gt;</code> on the composition line sets the trait's initial value.</p>
+<pre><code class="language-chord">create the safe
+  a container, openable, lockable with the brass key, starts locked
+  in the Back Office
+
+  A squat floor safe with a brass keyhole.</code></pre>
+<p>Six state words are accepted, each paired with the trait it initializes: <code>locked</code> and <code>unlocked</code> set <code>lockable</code>, <code>closed</code> and <code>open</code> set <code>openable</code>, <code>off</code> and <code>on</code> set <code>switchable</code>. The pairing is enforced: <code>starts locked</code> on an entity that does not compose <code>lockable</code> is a load error (<code>analysis.starts-state-pairing</code>), never a silent no-op. Any other word after <code>starts</code> is a parse error (<code>parse.starts-state</code>), except <code>in</code>, which is the placement line. <code>starts in</code> names where something begins; <code>starts &lt;state&gt;</code> names how.</p>
+<pre><code class="language-chord">create the space heater
+  switchable, starts on
+  in the Back Office
+  aka heater
+
+  An old space heater, ticking as it warms.</code></pre>
+<p>Note what <code>starts</code> does not do: the state word is an initializer, not stored story state. <code>locked</code>, <code>open</code>, and <code>on</code> remain derivable facts read live from the trait (the state adjectives), and a <code>states:</code> line reproducing one of those pairs is still the shadow-state error (the boolean-state gate). <code>starts</code> merely chooses the trait's first value; from there the world moves it the usual ways: keys, hands, and switches.</p>

@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { RunEvent } from '@sharpee/ide-protocol';
+import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol';
 import { parseTranscript } from '../src/parser.js';
 import { runTranscript } from '../src/runner.js';
 import { RunEventStream, ndjsonEventLine } from '../src/run-event-stream.js';
@@ -197,6 +197,25 @@ describe('RunEventStream sequences what the observer reports', () => {
     ]);
   });
 
+  it('announces an empty transcript as skipped, decodable at the wire (phase-6 F1)', () => {
+    const { events, stream } = collect();
+
+    stream.runStart('tree', 2);
+    stream.transcriptSkipped('/t/hollow.transcript');
+
+    const end = events.find((e) => e.type === 'transcript-end');
+    expect(end).toMatchObject({
+      type: 'transcript-end',
+      file: '/t/hollow.transcript',
+      status: 'skipped',
+      passed: 0,
+      failed: 0,
+      duration: 0,
+    });
+    // The line survives the wire's own guard — the hop the tab performs.
+    expect(isRunEvent(JSON.parse(ndjsonEventLine(end!)))).toBe(true);
+  });
+
   it('numbers events monotonically from zero and stamps a rising clock', () => {
     const { events, stream } = collect();
 
@@ -226,6 +245,73 @@ describe('RunEventStream sequences what the observer reports', () => {
     expect(outputs[0]).toBeUndefined();
     expect(outputs[1]).toBe(passing.actualOutput);
     expect(outputs[2]).toBe(passing.actualOutput);
+  });
+
+  it('carries the engine turn when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+
+    stream.commandResult('/t/a.transcript', { ...passing, turn: 7 });
+    stream.commandResult('/t/a.transcript', passing);
+
+    const turns = events.map((e) => (e.type === 'command-result' ? e.turn : undefined));
+    expect(turns[0]).toBe(7);
+    expect(turns[1]).toBeUndefined();
+    // The key is ABSENT, not present-and-undefined — the wire is NDJSON and
+    // JSON.stringify would keep an explicit undefined key out either way, but
+    // the guard-facing shape should already be clean.
+    expect('turn' in (events[1] as object)).toBe(false);
+  });
+
+  it('carries the story ending when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+
+    stream.commandResult('/t/a.transcript', { ...passing, ending: 'victory' });
+    stream.commandResult('/t/a.transcript', passing);
+
+    const endings = events.map((e) => (e.type === 'command-result' ? e.ending : undefined));
+    expect(endings[0]).toBe('victory');
+    expect(endings[1]).toBeUndefined();
+    // Key-absence for the same reason as `turn` above.
+    expect('ending' in (events[1] as object)).toBe(false);
+  });
+
+  it('carries the failure message when the result reports one, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+    const failure = 'Output does not contain "wall"';
+
+    stream.commandResult('/t/a.transcript', { ...passing, failure });
+    stream.commandResult('/t/a.transcript', passing);
+
+    expect(events[0].type === 'command-result' ? events[0].failure : undefined).toBe(failure);
+    // Key-absence for the same reason as `turn` above.
+    expect('failure' in (events[1] as object)).toBe(false);
+  });
+
+  it('carries the world snapshot on command results and transcript starts, and omits it when not reported', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    const passing = result.commands[0];
+    const world = { location: { name: 'Hall', token: 'hall' }, inventory: [] };
+
+    stream.commandResult('/t/a.transcript', { ...passing, world });
+    stream.commandResult('/t/a.transcript', passing);
+    stream.transcriptStart('/t/a.transcript', 0, { world });
+    stream.transcriptStart('/t/a.transcript', 1);
+
+    expect(events[0].type === 'command-result' ? events[0].world : undefined).toEqual(world);
+    expect('world' in (events[1] as object)).toBe(false);
+    expect(events[2].type === 'transcript-start' ? events[2].world : undefined).toEqual(world);
+    expect('world' in (events[3] as object)).toBe(false);
   });
 
   it('serializes one newline-terminated JSON object per event', () => {

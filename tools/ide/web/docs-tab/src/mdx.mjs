@@ -1,0 +1,86 @@
+/**
+ * mdx.mjs — reduces sharpee.net's MDX content to plain markdown.
+ *
+ * Purpose: the corpus is MDX, but only barely — a survey of every
+ *   `content.mdx` under `website/src/app/chord` and `.../learn` finds exactly
+ *   two components in use, `<GrammarBlock>` (55) and `<Callout>` (4), plus a
+ *   handful of `import`/`export` lines. Everything else is ordinary markdown.
+ *   So the tab does not need an MDX engine; it needs those two components
+ *   turned into markdown the renderer already handles.
+ *
+ *   Anything else that looks like JSX is REPORTED, not dropped. A component
+ *   added to the website later must fail this build loudly rather than vanish
+ *   from the IDE's copy of the page.
+ *
+ * Public interface: reduceMdx(source, {grammarBlocks}), parseGrammarBlocks(ts).
+ * Owner context: tools/ide — the Documentation tab's web bundle.
+ */
+
+/**
+ * Parse the generated `grammar-blocks.ts` data module.
+ *
+ * It is generated (`repokit grammar`) and its body is a plain object of
+ * double-quoted string pairs, so the object literal is JSON once the TypeScript
+ * wrapper is off.
+ *
+ * @param {string} source contents of website/src/app/chord/stdlib/reference/grammar-blocks.ts
+ * @returns {Record<string,string>} action id -> `define action` block text
+ * @throws when the module's shape has changed — silently returning {} would
+ *   empty 55 grammar blocks out of the stdlib reference with no signal.
+ */
+export function parseGrammarBlocks(source) {
+  const start = source.indexOf('{', source.indexOf('grammarBlocks'));
+  const end = source.lastIndexOf('}');
+  if (start < 0 || end <= start) {
+    throw new Error('grammar-blocks.ts: could not find the grammarBlocks object literal');
+  }
+  const literal = source.slice(start, end + 1).replace(/,(\s*})$/, '$1');
+  return JSON.parse(literal);
+}
+
+/**
+ * Reduce one MDX document to markdown.
+ *
+ * @param {string} source the `content.mdx` text
+ * @param {{grammarBlocks: Record<string,string>}} context
+ * @returns {{markdown: string, unsupported: string[]}} `unsupported` lists any
+ *   JSX left over; a caller that ignores it ships silently-missing content.
+ */
+export function reduceMdx(source, { grammarBlocks }) {
+  let text = source.replace(/\r\n/g, '\n');
+
+  // `import x from '…'` / `export const … = …` lines are module plumbing for
+  // the website's bundler and have no rendered form.
+  text = text.replace(/^(import|export)\s+[^\n]*\n/gm, '');
+
+  // <GrammarBlock action="id" /> — the generated `define action` block,
+  // verbatim, as a chord fence. Same content and same code path as every other
+  // chord block on the page.
+  text = text.replace(/<GrammarBlock\s+action="([^"]+)"\s*\/>/g, (all, action) => {
+    const block = grammarBlocks[action];
+    if (block === undefined) {
+      // Mirrors the website component, which throws at build time on an
+      // unknown id rather than rendering an empty block.
+      throw new Error(`<GrammarBlock action="${action}">: no such action in grammar-blocks.ts`);
+    }
+    return '```chord\n' + block + '\n```';
+  });
+
+  // <Callout [kind="note"|"warn"] [title="…"]> body </Callout> — an admonition.
+  // Both attributes are optional on the website component, so both are optional
+  // here. Markdown's nearest primitive is a blockquote, led by the bolded title
+  // when there is one.
+  text = text.replace(/<Callout\b([^>]*)>\n([\s\S]*?)\n<\/Callout>/g, (all, attrs, body) => {
+    const title = attrs.match(/\btitle="([^"]*)"/)?.[1];
+    const quoted = body
+      .split('\n')
+      .map((line) => ('> ' + line.replace(/^\s{0,2}/, '')).trimEnd())
+      .join('\n');
+    return title ? `> **${title}**\n>\n${quoted}` : quoted;
+  });
+
+  // Whatever is left that opens like a component.
+  const unsupported = [...new Set((text.match(/<[A-Z][A-Za-z]*/g) ?? []).map((m) => m.slice(1)))];
+
+  return { markdown: text, unsupported };
+}

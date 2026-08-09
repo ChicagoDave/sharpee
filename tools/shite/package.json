@@ -18,7 +18,6 @@
     "dev": "tsc --watch",
     "dev:web": "vite --config web/vite.config.ts",
     "test": "vitest",
-    "test:ci": "vitest run",
     "test:e2e": "playwright test",
     "lint": "eslint src --ext .ts",
     "perf:baseline": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-look.js",

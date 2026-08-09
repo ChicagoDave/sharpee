@@ -34,10 +34,10 @@ enum TestToolchain {
 
     /// The story's real responses to `commands`, in order.
     ///
-    /// ADR-282's loop is capture-then-replay, so a test that blesses text the
+    /// ADR-282's loop is capture-then-replay, so a test that asserts text the
     /// story never printed proves nothing about the serializer. This plays the
     /// commands through the real engine and hands back what it actually said,
-    /// which the caller then blesses.
+    /// which the caller then asserts on.
     ///
     /// Standing in for the Play pane's capture here is sound because
     /// `packages/platform-browser/tests/capture-parity.test.ts` pins the two as

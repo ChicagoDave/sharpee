@@ -1,0 +1,58 @@
+<p><strong>search</strong> (<code>searching</code>) parses <code>search X</code>, <code>look in/inside X</code>, <code>look through X</code>, <code>rummage in/through X</code>, or bare <code>search</code> for the room (<code>find</code>/<code>locate</code> were removed from the vocabulary in ADR-230, since searching is the wrong semantics for them). A closed openable container refuses <code>container_closed</code>; otherwise searching reports contents, and it is the action that <strong>reveals hidden items</strong>: a thing whose identity is marked <code>concealed</code> (in Chord, the <code>concealed</code> adjective on the composition line) is invisible to the parser until a search finds it, permanently reveals it, and announces <code>found_concealed</code>. This hidden-*item* flag is not the <code>concealment</code> trait, which is about hiding <em>actors</em>.</p>
+<p><strong>read</strong> (<code>reading</code>) parses <code>read X</code>, <code>peruse X</code>, and <code>study X</code>, gated on the <code>readable</code> trait (<code>not_readable</code>: &quot;There's nothing written on it&quot;). Portable reading matter is implicitly taken first, while scenery such as signs and inscriptions reads in place. The text comes from the trait: <code>text</code> (in Chord, <code>readable with text ...</code>), or a page of <code>pageContent</code> for multi-page books, and the message key follows <code>readableType</code>: <code>read_text</code>, <code>read_book</code> / <code>read_book_page</code> (with page numbers), <code>read_sign</code>, <code>read_inscription</code>. A readable can be switched off, with <code>isReadable: false</code> plus a <code>cannotReadMessage</code> producing <code>cannot_read_now</code>, as with glowing runes that only read when lit. Reading marks <code>hasBeenRead</code> (story logic can gate on it).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Attic
+  a room
+
+  Dust, rafters, and one bar of grey light.
+
+create the loose floorboard
+  aka floorboard, board
+  scenery, a supporter
+  in the Attic
+
+  One board sits a little proud of its neighbors.
+
+create the faded letter
+  aka letter
+  concealed
+  readable with text &quot;My dear Edmund - the deed went to the county bank.&quot;
+  on the loose floorboard
+
+  A single page in browned ink.
+
+create the beam inscription
+  aka inscription
+  scenery
+  readable with text &quot;T.W. + E.W. 1893&quot;
+  in the Attic
+
+  Letters cut into the lowest rafter.
+
+create the player
+  starts in the Attic</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; take the letter
+You can't see any such thing.
+
+&gt; search the floorboard
+Hidden an on, you discover: a faded letter.
+
+&gt; read the letter
+(first taking the faded letter)
+
+You take the faded letter from the loose floorboard.
+
+The faded letter reads:
+My dear Edmund - the deed went to the county bank.
+
+&gt; read the floorboard
+There's nothing written on the loose floorboard.
+
+&gt; read the inscription
+The beam inscription reads:
+T.W. + E.W. 1893</code></pre>
+<p>Until the search, the concealed letter is invisible even to the parser; once revealed, reading takes the portable letter first, while the scenery inscription reads in place.</p>
+<table><thead><tr><th></th><th>search (<code>searching-*</code>)</th><th>read (<code>reading-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>container_closed</code></td><td><code>not_readable</code> · <code>cannot_read_now</code></td></tr><tr><td>Success</td><td><code>found_concealed</code> · <code>container_contents</code> · <code>supporter_contents</code> · <code>empty_container</code> · <code>searched_location</code> · <code>searched_object</code> · <code>nothing_special</code></td><td><code>read_text</code> · <code>read_book</code> · <code>read_book_page</code> · <code>read_sign</code> · <code>read_inscription</code></td></tr><tr><td>Events</td><td><code>searched</code></td><td><code>read</code></td></tr></tbody></table>
+<p>Interceptors: <code>on searching it</code> (a false bottom that only yields to a second, gated search is one <code>while</code> clause) and <code>on reading it</code>.</p>
+<p>The readable trait's literacy fields (<code>requiresAbility</code>) are declared but not enforced today.</p>

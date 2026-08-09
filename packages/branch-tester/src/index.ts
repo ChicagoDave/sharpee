@@ -79,16 +79,18 @@ export {
 } from './channel-assert.js';
 
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
-export { serializeTranscript } from './serializer.js';
+export { serializeTranscript, serializeAssertionTag } from './serializer.js';
 
-// Golden recordings (ADR-294 D7)
-export { serializeGolden, parseGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
+// Phase 6f (ADR-305): the auto-assertion synthesis engine and play promotion.
+export { synthesizePolicyAssertions, proseTextLinesOf } from './auto-assertion.js';
+export { createTranscriptFromPlay, FromPlayError } from './from-play.js';
+export type { PlayedTurnRecord, CreateFromPlayOptions } from './from-play.js';
 
 // Runner
-export { runTranscript, goldenPathFor, divergencePathFor } from './runner.js';
+export { runTranscript } from './runner.js';
 
 // Watch mode (ADR-294 D14)
-export { classifyChange, BlessPolicy, runCycle, startWatch } from './watch.js';
+export { classifyChange, runCycle, startWatch } from './watch.js';
 export type { ChangeTarget, WatchRunIO, WatchConfig } from './watch.js';
 
 // Reporter

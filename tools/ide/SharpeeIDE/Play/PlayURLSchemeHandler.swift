@@ -3,7 +3,8 @@
 // (sharpee-play://app/…) instead of file://. A custom-scheme origin is a real,
 // non-opaque origin, so localStorage / relative URLs / storage APIs the browser
 // client relies on work — which they do not for file:// (null origin → SecurityError).
-// Public interface: PlayURLSchemeHandler (set rootDirectory, register on a config).
+// Public interface: PlayURLSchemeHandler (set rootDirectory and optionally
+// themesFallbackDirectory, register on a config).
 // Owner context: tools/ide — Play.
 
 import Foundation
@@ -17,6 +18,23 @@ final class PlayURLSchemeHandler: NSObject, WKURLSchemeHandler {
     /// The bundle directory served as the web root. Set before loading.
     var rootDirectory: URL?
 
+    /// The IDE's vendored theme mirror (Resources/play-themes), consulted only
+    /// for `themes/…` requests the bundle itself cannot satisfy — the built
+    /// story ships just its own `themes:` list, but the Play pane offers every
+    /// built-in (Phase 6b), so the vendored copy backfills the CSS and assets
+    /// of themes the author did not ship. Bundle files always win: a shipped
+    /// theme is served at exactly the version the build wired.
+    var themesFallbackDirectory: URL?
+
+    /// The testing play surface's web bundle (Resources/testing-surface,
+    /// ADR-306 Phase 3), serving `ide-testing-surface/…` requests. IDE-owned
+    /// chrome injected into the testing page — never resolved from the
+    /// story's bundle, so an author file cannot shadow the surface.
+    var testingSurfaceDirectory: URL?
+
+    /// The reserved prefix the testing surface's assets load under.
+    static let testingSurfacePrefix = "ide-testing-surface/"
+
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
         guard let root = rootDirectory, let url = task.request.url else {
             task.didFailWithError(URLError(.badURL))
@@ -27,21 +45,50 @@ final class PlayURLSchemeHandler: NSObject, WKURLSchemeHandler {
         if relativePath.hasPrefix("/") { relativePath.removeFirst() }
         if relativePath.isEmpty { relativePath = "index.html" }
 
-        let fileURL = root.appendingPathComponent(relativePath).standardizedFileURL
+        if relativePath.hasPrefix(Self.testingSurfacePrefix) {
+            let name = String(relativePath.dropFirst(Self.testingSurfacePrefix.count))
+            if let surfaceRoot = testingSurfaceDirectory,
+               let data = read(name, under: surfaceRoot) {
+                respond(task, url: url, statusCode: 200, data: data,
+                        contentType: Self.mimeType(forExtension: (name as NSString).pathExtension))
+            } else {
+                respond(task, url: url, statusCode: 404, data: Data(),
+                        contentType: "text/plain; charset=utf-8")
+            }
+            return
+        }
+
+        if let data = read(relativePath, under: root) {
+            respond(task, url: url, statusCode: 200, data: data,
+                    contentType: Self.mimeType(forExtension: (relativePath as NSString).pathExtension))
+            return
+        }
+
+        // Vendored-theme backfill: `themes/modern-dark.css` when the story
+        // shipped only `paper`. The mirror's layout matches the built bundle's
+        // `themes/` (vendor-play-themes.sh copies the same tree the build
+        // copies from), so the prefix maps 1:1.
+        if relativePath.hasPrefix("themes/"), let fallback = themesFallbackDirectory,
+           let data = read(String(relativePath.dropFirst("themes/".count)), under: fallback) {
+            respond(task, url: url, statusCode: 200, data: data,
+                    contentType: Self.mimeType(forExtension: (relativePath as NSString).pathExtension))
+            return
+        }
+
         // A missing file (or a traversal attempt) is an HTTP 404 RESPONSE, not a
         // network failure: on a real server `fetch` of an absent optional file
         // (the client's `./imports.json` probe) resolves with `ok == false` and
         // the client takes its no-imports path. `didFailWithError` would make
         // the same fetch REJECT — surfacing as "Load failed" and killing boot.
-        guard fileURL.path.hasPrefix(root.standardizedFileURL.path),
-              let data = try? Data(contentsOf: fileURL) else {
-            respond(task, url: url, statusCode: 404, data: Data(),
-                    contentType: "text/plain; charset=utf-8")
-            return
-        }
+        respond(task, url: url, statusCode: 404, data: Data(),
+                contentType: "text/plain; charset=utf-8")
+    }
 
-        respond(task, url: url, statusCode: 200, data: data,
-                contentType: Self.mimeType(forExtension: fileURL.pathExtension))
+    /// Reads a relative path under a root, refusing traversal outside it.
+    private func read(_ relativePath: String, under root: URL) -> Data? {
+        let fileURL = root.appendingPathComponent(relativePath).standardizedFileURL
+        guard fileURL.path.hasPrefix(root.standardizedFileURL.path) else { return nil }
+        return try? Data(contentsOf: fileURL)
     }
 
     private func respond(_ task: WKURLSchemeTask, url: URL, statusCode: Int,

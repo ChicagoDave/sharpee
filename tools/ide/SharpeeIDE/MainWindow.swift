@@ -55,6 +55,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
     }
 
+    /// Rebuilds the Project pane from disk, keeping the author's expansion.
+    ///
+    /// ADR-290 D7's sidebar observer: a write that changes the project's FILES
+    /// announces once, and this is the pane's share of the fan-out. It left
+    /// with the outline Test panel (ADR-301 A1.2); without it a transcript
+    /// created or trashed in the Testing tab stayed invisible here until the
+    /// project was reopened.
+    func refreshProjectTree() {
+        rootViewController?.refreshProjectTree()
+    }
+
     /// Forwards a Save action from the menu down to the editor.
     func saveActiveDocument() {
         rootViewController?.saveActiveDocument()
@@ -123,6 +134,21 @@ final class MainWindowController: NSWindowController {
         rootViewController?.storyBuildReport()
     }
 
+    /// The Publish tab's view (ADR-284) — the finish line for a story.
+    var publishView: PublishView? {
+        rootViewController?.publishView
+    }
+
+    /// Tells the Publish tab which story it would publish (nil disables it).
+    func setPublishStory(_ storyURL: URL?) {
+        rootViewController?.publishView?.setStory(storyURL)
+    }
+
+    /// Brings the Publish tab forward.
+    func showPublishTab() {
+        rootViewController?.showPublishTab()
+    }
+
     /// The right panel's Testing tab (ADR-301) — the web surface a run streams
     /// into. Force-unwrap-free: it exists for the window's lifetime; the
     /// fallback instance only serves a window-less controller (tests).
@@ -130,9 +156,22 @@ final class MainWindowController: NSWindowController {
         rootViewController?.testingTab ?? TestingTabViewController()
     }
 
-    /// Switches the right panel to the Testing tab (a test run just started).
+    /// Brings the Testing tab forward — the reading surface (ADR-306 D4).
     func showTestingTab() {
         rootViewController?.showTestingTab()
+    }
+
+    /// Opens the testing play surface window (ADR-306) — the dedicated
+    /// testing page with the card/segment UI, the one test-authoring surface
+    /// (the ADR-304 workspace is retired; David's shred ruling 2026-08-09).
+    func openTestingSurface() {
+        rootViewController?.openTestingSurface()
+    }
+
+    /// The Play surface (right panel). Fallback serves a window-less
+    /// controller (tests), like testingTab above.
+    var playSurface: PlayViewController {
+        rootViewController?.playSurface ?? PlayViewController()
     }
 
     /// The editor's focused document (Run Current Test File target), or nil.
@@ -184,6 +223,36 @@ final class MainWindowController: NSWindowController {
     /// a compose has run; `isGrammar` disables Build for grammar-header files.
     var composedStory: (url: URL, isGrammar: Bool)? {
         rootViewController?.composedStory
+    }
+
+    /// The open story's shipped-theme ids (Build → Shipped Themes), or nil
+    /// when the corral does not apply (no story / grammar-header file).
+    func shippedThemeIds() -> [String]? {
+        rootViewController?.shippedThemeIds()
+    }
+
+    /// Toggles a built-in theme in the story header's `themes:` line (6c).
+    func toggleShippedTheme(_ themeId: String) {
+        rootViewController?.toggleShippedTheme(themeId)
+    }
+
+    /// The open story's `auto-assertion:` policy (Test → Auto-Assertion), or
+    /// nil for "let me decide" / no story / a grammar-header file (6e).
+    func autoAssertionPolicy() -> StoryHeaderAutoAssertion.Policy? {
+        rootViewController?.autoAssertionPolicy()
+    }
+
+    /// Whether the Auto-Assertion menu applies at all (a story is open and
+    /// is not a grammar-header file) — nil-policy alone cannot say, because
+    /// nil is also the legitimate "let me decide" state (6e).
+    var autoAssertionMenuApplies: Bool {
+        guard let story = composedStory else { return false }
+        return !story.isGrammar
+    }
+
+    /// Sets the story header's `auto-assertion:` line; nil removes it (6e).
+    func selectAutoAssertion(_ policy: StoryHeaderAutoAssertion.Policy?) {
+        rootViewController?.selectAutoAssertion(policy)
     }
 
     /// Shows the empty project state with a one-line reason (D8: a restored
@@ -377,6 +446,9 @@ private final class RootViewController: NSViewController {
 
     fileprivate func showToolchainVersions(_ versions: ChordVersionCheck.ToolchainVersions) {
         statusBar.setToolchainVersions(versions)
+        // The Documentation tab bundles pages written against one Chord version
+        // and says so when the installed toolchain reports another.
+        mainSplitViewController.docsTab.setToolchainVersion(versions.chord ?? "")
     }
 
     /// Pill click: cancel while building, otherwise toggle the Build panel.
@@ -409,6 +481,10 @@ private final class RootViewController: NSViewController {
         // Deliberately NOT read from composedIR here: the compose tree is not
         // reset on project switch, so it still holds the old project's IR.
         applyWindowTitle(AppIdentity.productName)
+    }
+
+    func refreshProjectTree() {
+        mainSplitViewController.refreshProjectTree()
     }
 
     /// Sets the window's title and the centered strip that displays it. The two
@@ -468,9 +544,21 @@ private final class RootViewController: NSViewController {
     /// The right panel's Testing tab (ADR-301) — wired by TestController.
     var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
 
+    var publishView: PublishView? { mainSplitViewController.publishView }
+
+    func showPublishTab() { mainSplitViewController.showPublishTab() }
+
     func showTestingTab() {
         mainSplitViewController.showTestingTab()
     }
+
+    /// The testing play surface window (ADR-306 Phase 3).
+    func openTestingSurface() {
+        mainSplitViewController.openTestingSurface()
+    }
+
+    /// The Play surface (right panel).
+    var playSurface: PlayViewController { mainSplitViewController.playViewController }
 
     /// The editor's focused document (Run Current Test File enablement/target).
     var activeDocumentURL: URL? { mainSplitViewController.activeDocumentURL }
@@ -526,6 +614,110 @@ private final class RootViewController: NSViewController {
         // (GH #188, ADR-279 D1 Amendment A1). Runs on failure too: the tree
         // keeps the last populated IR, so the title stays with it.
         applyWindowTitle(WindowTitle.title(for: mainSplitViewController.composedIR))
+    }
+
+    /// The shipped-theme ids the open story's header declares (Build → Shipped
+    /// Themes checkmarks), or nil when no story is open / it is a grammar file.
+    /// Reads the editor's unsaved buffer first, disk second — the corral must
+    /// reflect what the author sees, not what was last saved.
+    func shippedThemeIds() -> [String]? {
+        guard let story = composedStory, !story.isGrammar else { return nil }
+        let source = mainSplitViewController.currentText(at: story.url)
+            ?? (try? String(contentsOf: story.url, encoding: .utf8))
+        return source.map { StoryHeaderThemes.read(from: $0) }
+    }
+
+    /// Toggles one built-in theme in the story header's `themes:` line
+    /// (go-live Phase 6c). The edit goes through the editor — undoable, and
+    /// the tab is left dirty for the author to save — exactly like the IFID
+    /// fix above. Order is the author's: an added theme appends, a removed
+    /// one leaves the rest in place.
+    ///
+    /// - Parameter themeId: the built-in's id (never `classic` — the baseline
+    ///   always ships and is not a `themes:` entry).
+    func toggleShippedTheme(_ themeId: String) {
+        guard let story = composedStory, !story.isGrammar else { return }
+        let url = story.url
+        let source = mainSplitViewController.currentText(at: url)
+            ?? (try? String(contentsOf: url, encoding: .utf8))
+        guard let source else {
+            presentThemeToggleFailure(for: url)
+            return
+        }
+        var ids = StoryHeaderThemes.read(from: source)
+        if let index = ids.firstIndex(of: themeId) {
+            ids.remove(at: index)
+        } else {
+            ids.append(themeId)
+        }
+        // nil here means "already says that" — nothing to do, not a failure.
+        guard let edit = StoryHeaderThemes.edit(setting: ids, in: source) else { return }
+        if !mainSplitViewController.replaceText(edit.text,
+                                                in: NSRange(location: edit.offset, length: edit.length),
+                                                in: url) {
+            presentThemeToggleFailure(for: url)
+        }
+    }
+
+    /// Reports a toggle that could not be applied, rather than doing nothing
+    /// and leaving the author to wonder whether the menu worked.
+    private func presentThemeToggleFailure(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t update shipped themes"
+        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
+    }
+
+    /// The open story's `auto-assertion:` policy (Test → Auto-Assertion
+    /// checkmarks), or nil for "let me decide" / no story / a grammar file.
+    /// Reads the editor's unsaved buffer first, disk second — the menu must
+    /// reflect what the author sees, not what was last saved (Phase 6e).
+    func autoAssertionPolicy() -> StoryHeaderAutoAssertion.Policy? {
+        guard let story = composedStory, !story.isGrammar else { return nil }
+        let source = mainSplitViewController.currentText(at: story.url)
+            ?? (try? String(contentsOf: story.url, encoding: .utf8))
+        return source.flatMap { StoryHeaderAutoAssertion.read(from: $0) }
+    }
+
+    /// Sets the story header's `auto-assertion:` line (go-live Phase 6e) —
+    /// nil removes it ("let me decide" says nothing). The edit goes through
+    /// the editor exactly like the theme corral's: undoable, tab left dirty
+    /// for the author to save, disk untouched until then.
+    func selectAutoAssertion(_ policy: StoryHeaderAutoAssertion.Policy?) {
+        guard let story = composedStory, !story.isGrammar else { return }
+        let url = story.url
+        let source = mainSplitViewController.currentText(at: url)
+            ?? (try? String(contentsOf: url, encoding: .utf8))
+        guard let source else {
+            presentAutoAssertionFailure(for: url)
+            return
+        }
+        // nil here means "already says that" — nothing to do, not a failure.
+        guard let edit = StoryHeaderAutoAssertion.edit(setting: policy, in: source) else { return }
+        if !mainSplitViewController.replaceText(edit.text,
+                                                in: NSRange(location: edit.offset, length: edit.length),
+                                                in: url) {
+            presentAutoAssertionFailure(for: url)
+        }
+    }
+
+    /// Reports a policy change that could not be applied, rather than doing
+    /// nothing and leaving the author to wonder whether the menu worked.
+    private func presentAutoAssertionFailure(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t update the auto-assertion policy"
+        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// Runs a Problems row's inline fix.
@@ -633,9 +825,13 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Last-ok-IR retention behind the project tree (ADR-258 D6).
     private var treeState = IRTreeState()
     private let editorViewController = EditorViewController()
+    /// The left split item's real occupant: hosts the editor always, and the
+    /// borrowed Play surface while the testing workspace is open (ADR-304).
+    private let leftPaneHostViewController = LeftPaneHostViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
-    private var playViewController: PlayViewController { rightPanelViewController.play }
+    /// (Fileprivate: RootViewController's playSurface facade reads it too.)
+    fileprivate var playViewController: PlayViewController { rightPanelViewController.play }
 
     /// Invoked when the rail's Build button is clicked. Owned by RootViewController.
     fileprivate var onBuildPanelToggle: (() -> Void)?
@@ -698,6 +894,7 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
+        leftPaneHostViewController.host(editor: editorViewController)
 
         addSplitViewItem(makeRailItem())
         addSplitViewItem(makeProjectItem())
@@ -762,9 +959,28 @@ private final class MainSplitViewController: NSSplitViewController {
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         currentProject = project
+        // The testing surface's sidecar is per-story (ADR-306 D8): a project
+        // switch closes the window; the next open binds the new story's.
+        closeTestingSurface()
         projectPaneViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
         RecentProjectsStore.push(project.rootURL)
         persistSession()
+    }
+
+    /// Rescans the open project from disk and rebuilds the pane, re-applying
+    /// the expansion the author currently has — folders by URL, group rows by
+    /// kind (a group has no URL, and the one the author just created a file
+    /// into must not snap shut over it). Not an open: recents and the
+    /// persisted session are untouched — nothing about the author's choices
+    /// changed, only the files.
+    func refreshProjectTree() {
+        guard let project = currentProject else { return }
+        let folders = projectPaneViewController.expandedFolderURLs
+        let groups = projectPaneViewController.expandedGroupKinds
+        let rescanned = Project(rootURL: project.rootURL)
+        currentProject = rescanned
+        projectPaneViewController.setProject(rescanned, expandedFolderURLs: folders,
+                                             expandedGroupKinds: groups)
     }
 
 
@@ -806,6 +1022,12 @@ private final class MainSplitViewController: NSSplitViewController {
     @discardableResult
     fileprivate func insertText(_ text: String, at characterIndex: Int, in url: URL) -> Bool {
         editorViewController.insertText(text, at: characterIndex, in: url)
+    }
+
+    /// Replaces a range in `url` through the editor (undoable, re-composes).
+    @discardableResult
+    fileprivate func replaceText(_ text: String, in range: NSRange, in url: URL) -> Bool {
+        editorViewController.replaceText(text, in: range, in: url)
     }
 
     /// Applies a compose run's records as editor underlines for `url`.
@@ -922,13 +1144,70 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// After a successful build, load the freshly-built `dist/web/<id>/` bundle
     /// (honours the toggle) and bring the Play tab forward. The id comes from
-    /// the retained IR header (D4).
+    /// the retained IR header (D4). An open testing surface reloads too
+    /// (Phase 5): a fresh page against the new build, restored by replay —
+    /// its cards then show the CURRENT story's real output (ADR-306 D8).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
         playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
         if playViewController.isLoaded {
             rightPanelViewController.showPlayTab()
         }
+        if let surface = testingSurfaceWindowController,
+           surface.window?.isVisible == true {
+            surface.load(bundleDirectory: bundleDir)
+        }
+    }
+
+    // MARK: Testing play surface (ADR-306 Phase 3)
+
+    /// The surface's window, created on first open and kept for the project's
+    /// lifetime — its D8 session sidecar is per-story, so a project switch
+    /// closes it (see loadProject).
+    fileprivate var testingSurfaceWindowController: TestingSurfaceWindowController?
+
+    /// Opens (or refocuses) the testing play surface. A fresh show loads the
+    /// story's testing page and runs the D8 restore; refocusing a visible
+    /// window never reboots the running session.
+    fileprivate func openTestingSurface() {
+        guard let storyURL = treeState.storyURL,
+              case .populated(let ir, _) = treeState.display,
+              let id = ir.meta.fields.id else {
+            NSSound.beep()
+            return
+        }
+        let projectRoot = storyURL.deletingLastPathComponent()
+        let controller: TestingSurfaceWindowController
+        if let existing = testingSurfaceWindowController {
+            controller = existing
+        } else {
+            let store = TestingSessionStore(
+                fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
+            controller = TestingSurfaceWindowController(storyTitle: id, sessionStore: store)
+            testingSurfaceWindowController = controller
+        }
+        // Fresh context every show: the writer's destination and the story's
+        // on-disk `auto-assertion:` policy (6e — the ON-DISK policy governs
+        // creation exactly as it will govern the file's future runs).
+        controller.surface.testsDirectory =
+            projectRoot.appendingPathComponent("tests", isDirectory: true)
+        controller.surface.storyFile = storyURL
+        controller.surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
+        let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+        controller.surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
+
+        let wasVisible = controller.window?.isVisible == true
+        controller.showWindow(nil)
+        if !wasVisible {
+            controller.load(bundleDirectory: bundleDirectory())
+        }
+    }
+
+    /// Closes the surface for a project switch — the next open builds a new
+    /// controller against the new story's sidecar.
+    fileprivate func closeTestingSurface() {
+        testingSurfaceWindowController?.close()
+        testingSurfaceWindowController = nil
     }
 
     /// Build-output plumbing — the Build tab lives in the right panel next to Play.
@@ -954,6 +1233,12 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// The Testing tab (ADR-301) — likewise in the right panel.
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
+
+    fileprivate var docsTab: DocsTabViewController { rightPanelViewController.docsTab }
+
+    fileprivate var publishView: PublishView { rightPanelViewController.publish }
+
+    fileprivate func showPublishTab() { rightPanelViewController.showPublishTab() }
 
     fileprivate func showTestingTab() {
         rightPanelViewController.showTestingTab()
@@ -1075,7 +1360,7 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     private func makeEditorItem() -> NSSplitViewItem {
-        let item = NSSplitViewItem(viewController: editorViewController)
+        let item = NSSplitViewItem(viewController: leftPaneHostViewController)
         item.minimumThickness = Self.editorMinWidth
         item.holdingPriority = .defaultLow
         return item
@@ -1183,6 +1468,36 @@ private final class RailViewController: NSViewController {
 
     @objc private func toggleBuild() {
         onBuildToggle?()
+    }
+}
+
+// MARK: - Left pane host (the editor)
+
+/// The left split item's content: the editor, its permanent occupant. (The
+/// ADR-304 testing workspace that used to borrow this pane for Play is
+/// retired — ADR-306 D1, David's shred ruling 2026-08-09; test authoring
+/// lives in the testing play surface window.)
+/// Public interface (fileprivate): host(editor:).
+private final class LeftPaneHostViewController: NSViewController {
+
+    override func loadView() {
+        view = ThemedPane(color: Theme.editorBackground)
+    }
+
+    /// Installs the editor as the pane's permanent occupant. Called once,
+    /// before the split items are assembled.
+    ///
+    /// - Parameter editor: the editor view controller this pane hosts.
+    func host(editor: NSViewController) {
+        addChild(editor)
+        editor.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(editor.view)
+        NSLayoutConstraint.activate([
+            editor.view.topAnchor.constraint(equalTo: view.topAnchor),
+            editor.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            editor.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            editor.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
 }
 

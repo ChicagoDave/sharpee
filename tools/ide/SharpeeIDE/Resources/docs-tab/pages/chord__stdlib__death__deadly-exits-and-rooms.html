@@ -1,0 +1,49 @@
+<p><strong><code>&lt;direction&gt; is deadly: &lt;phrase&gt;</code></strong> marks one fatal direction, mirroring <code>is blocked:</code>. The fatal direction is deliberately not an exit at all. Typing <code>north</code> (or <code>n</code>) never runs the going action: the command is rewritten before validation into the internal death action, so the player sees the death text and nothing else, no movement prose, no refusal.</p>
+<p><strong><code>deadly: &lt;phrase&gt;</code></strong> on a room is the rarer, harsher form: every verb except a safe allowlist (look and examine by default) is fatal, including objectless ones like WAIT and INVENTORY that no per-entity clause could catch. In TypeScript the underlying trait adds two more dials: <code>safeVerbs</code> (verb names or full action ids, matched tolerantly) and <code>chance</code> (0–1) for probabilistic hazards à la grue, rolled on the engine's seeded RNG; a survived roll simply lets the verb run normally, with no message. Neither dial is expressible from Chord today.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Basalt Ledge
+  a room
+  down to the Steam Vault
+  north is deadly: geyser-death
+
+  Black rock, slick with spray. The geyser mutters somewhere north;
+  a crevice drops away underfoot.
+
+create the Steam Vault
+  a room
+  deadly: steam-death
+
+  Scalding fog, wall to wall. There is no air to spare in here.
+
+create the player
+  starts in the Basalt Ledge
+
+define phrases en-US
+  geyser-death:
+    The geyser chooses that moment. The column of boiling water makes
+    the question of footing irrelevant.
+  steam-death:
+    The steam finds your lungs.</code></pre>
+<p>The player who walks north sees no movement prose and no refusal, only the death text:</p>
+<pre><code class="language-transcript">&gt; north
+The geyser chooses that moment. The column of boiling water makes the question of footing irrelevant.</code></pre>
+<p>The player who climbs down (a fresh game) arrives safely (looking is on the allowlist) and dies to the first verb that is not:</p>
+<pre><code class="language-transcript">&gt; down
+Steam Vault
+Scalding fog, wall to wall. There is no air to spare in here.
+
+&gt; look
+Steam Vault
+Scalding fog, wall to wall. There is no air to spare in here.
+
+&gt; inventory
+The steam finds your lungs.</code></pre>
+<p>The deadly exit killed without going ever running; the deadly room let LOOK repeat but made INVENTORY (an objectless verb no <code>on</code> clause could catch) fatal.</p>
+<p>One gap: the conditional form <code>is deadly while &lt;condition&gt;:</code> parses but is not wired yet. This compiles clean:</p>
+<pre><code class="language-chord">create the Dam Top
+  a room
+  states: holding, burst
+  east is deadly while it is burst: flood-death
+
+  The dam hums underfoot.</code></pre>
+<p>The loader then refuses the story with: `<code> </code>is deadly while &lt;condition&gt;<code> is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional </code>is deadly:<code> or an </code>on going<code> clause with </code>kill the player when &lt;condition&gt;<code>. </code><code> The suggested </code>kill the player when …<code> clause is the </code>kill the player` pattern.</p>

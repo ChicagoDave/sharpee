@@ -133,6 +133,32 @@ describe('canonical form (ADR-300 D17)', () => {
     expect(out).toContain('[SKIP]\n\n# why the second\n> two');
   });
 
+  // An indented block under a comment marker is how an author pastes captured
+  // output into a transcript. The parser trimmed it until 2026-08-08, which made
+  // `#     > look` and `# > look` the same comment in the model — so a round trip
+  // through an editing tool flattened a pasted failure into one unreadable line.
+  it('keeps the indentation an author wrote inside a comment', () => {
+    const pasted = '#\n#     > look                     FAIL\n#       Error: Engine is not running\n#\n';
+    const out = sample(`${pasted}> north\n[SKIP]\n`);
+    expect(out).toContain('#     > look                     FAIL\n');
+    expect(out).toContain('#       Error: Engine is not running\n');
+  });
+
+  // The space after the hash is a separator, so an empty comment is `#`. Writing
+  // `# ` put trailing whitespace into the file on every save, and a blank comment
+  // line is the usual way to open and close a pasted block.
+  it('writes an empty comment as "#", with no trailing space', () => {
+    const out = sample('#\n> look\n[SKIP]\n');
+    expect(out).toContain('\n#\n');
+    expect(out).not.toContain('# \n');
+  });
+
+  it('round-trips a pasted comment block byte-for-byte', () => {
+    const source =
+      'title: T\nstory: s\n\n---\n\n#\n#     > look                     FAIL\n#       Error: Engine is not running\n#\n> north\n[SKIP]\n';
+    expect(serializeTranscript(parseTranscript(source))).toBe(source);
+  });
+
   it('puts a blank line after a goal label and does not double it', () => {
     const out = sample('[GOAL: Reach the cave]\n> look\n[SKIP]\n[END GOAL]\n');
     expect(out).toContain('[GOAL: Reach the cave]\n\n> look');

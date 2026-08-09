@@ -1,0 +1,11 @@
+<p><code>use hunger</code> adds a depleting meter. It is a second metering extension, built from the same bands and <code>announce</code> modes as a rank ladder, over a severity value that climbs on its own.</p>
+<pre><code class="language-chord">use hunger, announce all
+  grows 1 each turn
+  peckish  at 30 says feeling-peckish
+  hungry   at 60 says stomach-growls
+  starving at 90 says the-gnawing
+  fatal at 100</code></pre>
+<p><code>grows 1 each turn</code> raises hunger severity by one on every turn. Each band is a bareword name at an absolute threshold, and it announces on the turn severity reaches it, exactly as a rank does. <code>says &lt;key&gt;</code> names a phrase from your own <code>phrases</code> block. A band with no <code>says</code> speaks the overridable platform line, and <code>announce silent</code> turns announcements off. The four modes read the same here as they do for scoring.</p>
+<p><code>fatal at 100</code> is a death threshold above the top band. Reaching it ends the run through the same death path that <code>kill the player</code> uses. It is not a band, so it announces nothing of its own.</p>
+<p>Eating lowers severity. A food item carries a <code>nutrition</code> value, and eating it subtracts that value from hunger. Food with no nutrition counts as zero and fills nothing. Recovery is a fall rather than a rise, so it is silent by design. If you want the player to feel the relief, announce it yourself from an <code>on</code> clause.</p>
+<p>Severity starts at zero, below every band, so a fresh game reports nothing until the player first grows hungry. The value cannot fall below zero, and it is saved and restored with the world, so a reload does not send the player back to full.</p>

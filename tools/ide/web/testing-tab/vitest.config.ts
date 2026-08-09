@@ -18,6 +18,21 @@ export default defineConfig({
         __dirname,
         '../../../../packages/ide-protocol/src/run-events.ts',
       ),
+      // The transcript grammar, likewise from source — and likewise the same file
+      // the bundle carries. `branch-tester`, not `transcript-tester`: the two are
+      // different grammars and the run uses this one.
+      '@sharpee/branch-tester/parser': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/parser.ts',
+      ),
+      '@sharpee/branch-tester/serializer': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/serializer.ts',
+      ),
+      '@sharpee/branch-tester/types': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/types.ts',
+      ),
     },
   },
   test: {

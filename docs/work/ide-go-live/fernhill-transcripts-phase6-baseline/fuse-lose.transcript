@@ -1,0 +1,40 @@
+title: Losing to the fuse
+story: fernhill
+continues: folly
+description: The other branch out of the same folly doorway — the bare `cut the
+  fuse` that does nothing, and the three turns that end the story.
+
+---
+
+# The trap that makes this branch reachable at all: the player IS holding the
+# garden shears (see fuse-cut.transcript, same starting state), and the bare
+# command still refuses. The instrument has to be named.
+> cut the fuse
+[OK: contains "You need something to cut the fuse with"]
+[OK: not contains "The shears bite through the waxed cord"]
+[STATE: true, player.inventory contains shears]
+
+# `on every turn while it is lit` — the cycling hiss is the clock the player
+# can hear.
+> wait
+[OK: contains "The fuse hisses on, eating its slow way toward the fireworks"]
+
+# `3 turns later / kill the player fuse-blast when the fuse is lit`.
+> wait
+[OK: contains "The cache goes up in one white roar, and the folly keeps its secrets after all"]
+
+# ORDERING BUG, asserted as it behaves: the fuse's per-turn phrase still fires
+# on the turn that kills the player, so a spark line prints AFTER the blast
+# that ended the story.
+[OK: contains "Sparks walk the waxed cord, closer now"]
+
+# The transcript has to STOP here. Any further command — even `score` — comes
+# back as `Error: Engine is not running`, and the runner classifies that as a
+# command error rather than as output, so no assertion can catch it:
+#
+#     > look                                             FAIL
+#       Error: Engine is not running
+#
+# A losing branch is therefore only expressible as a file whose last command is
+# the one that ends the story. There is no way to assert on what a player sees
+# after an ending, and nothing says so until the run goes red.

@@ -1,0 +1,70 @@
+<p><strong>switch on</strong> (<code>switching_on</code>) takes the verbs <code>turn on X</code>, <code>switch on X</code>, <code>flip on X</code>, the bare transitives <code>activate X</code>, <code>start X</code>, <code>power on X</code> (ADR-230 D4), and the reversed <code>turn X on</code>. Only <code>turn</code> gets the reversed form; <code>switch X on</code> does not parse. All forms check the <code>switchable</code> trait in validation (bare <code>turn X</code> with no on/off is the separate per-entity turning verb). Turning on a device that is also a <code>light-source</code> lights it. If that banishes darkness in the player's room, the action follows with an automatic LOOK, so the newly visible room describes itself before the switch-on message lands.</p>
+<p><strong>switch off</strong> (<code>switching_off</code>) takes the verbs <code>turn off X</code>, <code>switch off X</code>, <code>flip off X</code>, <code>deactivate X</code>, <code>stop X</code>, <code>power off X</code>, and the reversed <code>turn X off</code>. Turning the sole light off says <code>light_off</code> (&quot;… plunging the area into darkness&quot;) and leaves the player in the dark-room world.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Darkroom
+  a room
+  dark
+
+  Developing trays line the counter, and finished prints hang from a
+  wire overhead.
+
+create the safelight
+  aka lamp
+  switchable, light-source
+  in the Darkroom
+
+  A red-globed safelight with a spring clamp.
+
+  phrase detail while it is lit:
+    Its red glow pools over the developing trays.
+
+create the enlarger
+  switchable
+  scenery
+  in the Darkroom
+
+  A photographic enlarger on a steel column.
+
+  on switching_on it
+    refuse enlarger-unplugged
+  end on
+
+  phrase enlarger-unplugged:
+    The enlarger's plug dangles loose behind the counter.
+
+create the ventilation fan
+  aka fan
+  switchable, starts on
+  scenery
+  in the Darkroom
+
+  A boxy ventilation fan set into the wall.
+
+create the player
+  starts in the Darkroom
+  carries the safelight</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; look
+It's pitch dark, and you can't see a thing.
+
+&gt; turn the safelight on
+Darkroom
+Developing trays line the counter, and finished prints hang from a wire overhead.
+
+The safelight switches on, banishing the darkness.
+
+&gt; examine the safelight
+A red-globed safelight with a spring clamp. Its red glow pools over the developing trays.
+
+&gt; switch on the enlarger
+The enlarger's plug dangles loose behind the counter.
+
+&gt; stop the fan
+The ventilation fan powers down with a soft whir.
+
+&gt; turn off the safelight
+You switch off the safelight, plunging the area into darkness.</code></pre>
+<p>Four seams in one scene: illumination triggers the automatic LOOK (room text first, then <code>illuminates_darkness</code>), the lit safelight's examine picks up its <code>detail while it is lit</code> sentence, the enlarger's <code>on switching_on it</code> guard refuses with its own phrase, and the <code>starts on</code> fan goes down to the bare <code>stop</code> synonym.</p>
+<table><thead><tr><th></th><th>switch on (<code>switching_on-*</code>)</th><th>switch off (<code>switching_off-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>not_switchable</code> · <code>already_on</code> · <code>no_power</code> (declared power requirement)</td><td><code>not_switchable</code> · <code>already_off</code></td></tr><tr><td>Success</td><td><code>switched_on</code> · <code>light_on</code> · <code>illuminates_darkness</code> (dark room, after the automatic LOOK) · <code>with_sound</code> (trait's on sound) · <code>device_humming</code></td><td><code>switched_off</code> · <code>light_off</code> (sole light out) · <code>light_off_still_lit</code> (other lit lights share the room) · <code>silence_falls</code> (a running hum stops) · <code>device_stops</code></td></tr><tr><td>Events</td><td><code>switched_on</code> / <code>switch_on_blocked</code></td><td><code>switched_off</code> / <code>switch_off_blocked</code></td></tr></tbody></table>
+<p>The success key is chosen by what the device is (light, sound, flavor, or plain), and event payloads carry light, sound, power, and timer facts for story reactions. The interceptors are <code>on switching_on it</code> / <code>on switching_off it</code> on the device, as with the enlarger above.</p>
+<p>In Chord, <code>on</code>/<code>off</code> and <code>lit</code> work as state predicates (<code>while the flashlight is on</code>, <code>while the lantern is lit</code>), and declaring your own on/off state pair on a switchable gets a fix-it telling you to compose the trait instead. One subtlety: <code>is lit</code> reads the stored flag strictly, so a light that has never been switched counts as not-lit in Chord conditions even where the platform's own default would call it lit; switch it once and the two agree.</p>

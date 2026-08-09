@@ -205,3 +205,15 @@ describe('formatTreeRun', () => {
     expect(lines).toEqual(['2 passed']);
   });
 });
+
+describe('skipped nodes in the report (phase-6 F1, ruling 2026-08-08)', () => {
+  it('an empty node counts as skipped — never as a failure — and the run stays ok', async () => {
+    const tree = assembleTree([ok('root', '', ['a']), ok('hollow', 'continues: root\n', [])]);
+    const run = await runTree(tree, stubGame as never);
+    const summary = summarizeTreeRun(run);
+    expect(summary.skipped).toBe(1);
+    expect(summary.failed).toBe(0);
+    expect(summary.ok).toBe(true);
+    expect(formatTreeRun(run)).toEqual(['1 passed, 1 skipped (no commands yet)']);
+  });
+});

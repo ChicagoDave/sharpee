@@ -1,0 +1,62 @@
+<p><strong>wear</strong> (<code>wearing</code>) has verbs <code>wear X</code>, <code>don X</code>, <code>equip X</code>, <code>put on X</code> (the phrasal form outranks generic <code>put</code>). Needs the <code>wearable</code> trait (<code>not_wearable</code> otherwise). You don't have to be holding it; wearing performs an implicit take first, refusing with the take's own refusal if that fails. The conflict rules key on the trait's body part and layer: you cannot put a garment on <em>under</em> something already worn over it, but because every wearable defaults to the same layer, default-built garments never conflict and simply stack (the layer-default quirk). Wearing something you already wear yields <code>already_wearing</code>. Success sets the worn state and says <code>worn</code>; event <code>worn</code> carries <code>bodyPart</code> and <code>layer</code> in the payload.</p>
+<p><strong>take off</strong> (<code>taking_off</code>) has verbs <code>take off X</code>, <code>take X off</code>, <code>remove X</code>, <code>doff X</code>, <code>unequip X</code>. (Yes, bare <code>remove X</code> means undressing, which is why take-from-container needed its own action.) Refuses when the thing is not worn by you (<code>not_wearing</code>), when a higher layer is worn over it (<code>prevents_removal</code>), and when the garment is cursed (<code>cant_remove</code>), all validate-phase since ADR-229, so a refused removal never half-happens. Success clears the worn state (<code>removed</code>); the item stays in inventory.</p>
+<p>A <code>wears</code> line on an actor starts the story dressed (load error unless the item is <code>wearable</code>), and <code>worn</code>/<code>unworn</code> are live state predicates: <code>while the cloak is worn</code> is story logic.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Vestry
+  a room
+
+  Robes and vestments hang from a row of pegs.
+
+create the woolen tunic
+  aka tunic
+  wearable
+
+  A plain tunic, scratchy but warm.
+
+create the brocade vest
+  aka vest
+  wearable
+  in the Vestry
+
+  A stiff vest sewn with gold thread.
+
+create the iron torc
+  aka torc
+  wearable
+  in the Vestry
+
+  A ring of black iron, hinged like a shackle.
+
+  on taking_off it
+    refuse torc-stuck
+  end on
+
+  phrase torc-stuck:
+    The torc's hinge has seized; it will not open.
+
+create the player
+  starts in the Vestry
+  wears the woolen tunic</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-transcript">&gt; wear the vest
+(first taking the brocade vest)
+
+Taken.
+
+You put on the brocade vest.
+
+&gt; take off the tunic
+You take off the woolen tunic.
+
+&gt; wear the torc
+(first taking the iron torc)
+
+Taken.
+
+You put on the iron torc.
+
+&gt; take off the torc
+The torc's hinge has seized; it will not open.</code></pre>
+<p>Three seams in one scene: <code>wears</code> starts the player dressed in the tunic, the default layers let the vest stack straight over it and the tunic slide out from underneath (the layer-default quirk, live), and the torc's <code>on taking_off it</code> guard is a cursed garment in one clause.</p>
+<table><thead><tr><th></th><th>wear (<code>wearing-*</code>)</th><th>take off (<code>taking_off-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_wearable</code> · <code>not_held</code> · <code>already_wearing</code> · <code>cant_wear_that</code> · <code>hands_full</code> (worn under a higher layer)</td><td><code>no_target</code> · <code>not_wearing</code> · <code>prevents_removal</code> (higher layer on top) · <code>cant_remove</code> (cursed)</td></tr><tr><td>Success</td><td><code>worn</code></td><td><code>removed</code> (the item stays in inventory)</td></tr><tr><td>Events</td><td><code>worn</code> / <code>wear_blocked</code></td><td><code>removed</code> / <code>take_off_blocked</code></td></tr></tbody></table>
+<p>Interceptors: <code>on wearing it</code> / <code>on taking_off it</code> on the garment: a cloak that reacts to being donned is one clause on the cloak.</p>

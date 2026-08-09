@@ -39,8 +39,8 @@
  * @see ADR-302 — Transcript Branches — D3, D10, D13, D17
  */
 
-import { RunnerOptions, TranscriptResult } from './types.js';
-import { runTranscript } from './runner.js';
+import { RunnerOptions, TranscriptResult, WorldSnapshot } from './types.js';
+import { captureWorldSnapshot, runTranscript } from './runner.js';
 import {
   TranscriptTree,
   TreeNode,
@@ -86,8 +86,13 @@ export interface NodeRunOutcome {
    * `ran` — the node's transcript executed, and `result` says how it went.
    * `unreached` — an ancestor failed, so this node never executed (D13). Its
    * `result` is absent and `blockedBy` names the originating failure.
+   * `skipped` — the transcript has no commands (the editor's designed
+   * starting state), so there is nothing to execute and nothing to judge
+   * (David's ruling 2026-08-08, go-live phase-6 F1). Not a failure and never
+   * a block: an empty node contributes zero commands to a child's replay, so
+   * its children run normally.
    */
-  readonly status: 'ran' | 'unreached';
+  readonly status: 'ran' | 'unreached' | 'skipped';
   readonly result?: TranscriptResult;
   /** Stem of the ancestor whose failure blocked this node. */
   readonly blockedBy?: string;
@@ -108,8 +113,18 @@ export interface NodeRunOutcome {
  * other's compromises.
  */
 export interface TreeObserver {
-  /** A node is about to execute. `replayed` = it runs to build a sibling's state. */
-  onNodeStart?(info: { node: TreeNode; replayed: boolean; commandCount: number }): void;
+  /**
+   * A node is about to execute. `replayed` = it runs to build a sibling's
+   * state. `entryWorld` = the world the node ENTERS (after its ancestry,
+   * before its first command) — R5's inherited-state header, present under
+   * `captureWorld`.
+   */
+  onNodeStart?(info: {
+    node: TreeNode;
+    replayed: boolean;
+    commandCount: number;
+    entryWorld?: WorldSnapshot;
+  }): void;
   /** That execution finished. Fires for replays too. */
   onNodeEnd?(info: { node: TreeNode; replayed: boolean; result: TranscriptResult }): void;
   /**
@@ -119,10 +134,18 @@ export interface TreeObserver {
    * would force a second lookup table.
    */
   onNodeUnreached?(info: { node: TreeNode; origin: TreeNode }): void;
+  /**
+   * A node with no commands, run as a skip (phase-6 F1): nothing to execute,
+   * nothing to judge, children unaffected. Fires instead of start/end — a
+   * skip is one fact, not an execution with an empty middle.
+   */
+  onNodeSkipped?(info: { node: TreeNode }): void;
 }
 
 /** Runner options plus the tree-shaped observation the flat runner has no concept of. */
-export type TreeRunnerOptions = RunnerOptions & { treeObserver?: TreeObserver };
+export type TreeRunnerOptions = RunnerOptions & {
+  treeObserver?: TreeObserver;
+};
 
 /** The outcome of running one story's tree. */
 export interface TreeRunResult {
@@ -246,12 +269,35 @@ export async function runTree(
    * D13's "one broken spine node, one failure" true.
    */
   const execute = async (node: TreeNode, replay: boolean): Promise<boolean> => {
+    // No commands, no execution (phase-6 F1, David's ruling 2026-08-08): the
+    // editor's designed starting state runs as a SKIP, not a failure and not
+    // an abort. Authored visits report it; a replay visit just contributes
+    // its zero commands to the walk, which is nothing. `true` either way —
+    // an empty node never blocks its children.
+    const commandCount = (node.transcript.items ?? []).filter((item) => item.type === 'command').length;
+    if (commandCount === 0) {
+      // A declared reseed is a real mutation even with nothing to execute
+      // after it: an empty node's `seed:`/`point-seed:` pins its SUBTREE's
+      // dice, and a replay visit must roll them identically or a sibling's
+      // rebuilt state diverges from the one the first child saw.
+      applyReseed(engine, node);
+      if (!replay) {
+        outcomes.push({ stem: node.stem, status: 'skipped' });
+        options.treeObserver?.onNodeSkipped?.({ node });
+      }
+      return true;
+    }
     const config = effectiveConfig(node);
     applyReseed(engine, node);
+    // R5: the world this node ENTERS — its ancestry has replayed, its first
+    // command has not run. What the inherited-state header shows, captured
+    // only when asked for.
+    const entryWorld = options.captureWorld ? captureWorldSnapshot(engine as never) : undefined;
     options.treeObserver?.onNodeStart?.({
       node,
       replayed: replay,
-      commandCount: (node.transcript.items ?? []).filter((item) => item.type === 'command').length,
+      commandCount,
+      ...(entryWorld !== undefined ? { entryWorld } : {}),
     });
     const result = await runTranscript(node.transcript, engine as never, {
       ...options,
@@ -259,7 +305,9 @@ export async function runTree(
       // the flat runner has no concept of. Forwarding `onTranscriptStart` too
       // would announce every execution twice, in two different shapes.
       observer: options.observer && { onCommandResult: options.observer.onCommandResult },
-      // D8: the node runs at its RESOLVED header, not its declared one.
+      // D8: the node runs at its RESOLVED header, not its declared one —
+      // a child's seed pin is its root's (ADR-294 D3 × ADR-302 D8).
+      resolvedConfig: config,
       assembledChannels: options.assembledChannels ?? config.channels,
     });
     options.treeObserver?.onNodeEnd?.({ node, replayed: replay, result });

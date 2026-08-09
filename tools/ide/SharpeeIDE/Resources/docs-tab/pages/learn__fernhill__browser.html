@@ -1,0 +1,64 @@
+<p>Everything so far runs identically in the terminal and the browser. This chapter is the layer that only the browser can hear and see, and the discipline that keeps text players whole.</p>
+<h2 id="the-degradation-rule">The degradation rule</h2>
+<p>Every media beat in Fernhill follows one shape: <strong>gate the cue on <code>client has &lt;capability&gt;</code>, and let the prose you already wrote be the text-mode experience.</strong> A text client reads every gate as false, so nothing breaks, nothing leaks, and nobody gets a lesser story: they get the story.</p>
+<h2 id="declared-assets">Declared assets</h2>
+<p>Media files are declared data, typo-checked at compile like everything else. The files themselves live in your project's <code>assets/</code> directory (<code>assets/audio/…</code>, <code>assets/images/…</code>) and ship with the browser build:</p>
+<pre><code class="language-chord">define sound night-wind from &quot;audio/night-wind.wav&quot;
+define sound boiler-thump from &quot;audio/boiler-thump.wav&quot;
+define music dawn-theme from &quot;audio/dawn-theme.wav&quot;
+define image folly-photograph from &quot;images/folly-photograph.png&quot;</code></pre>
+<h2 id="sound-music-image-cues">Sound, music, image cues</h2>
+<p>Cues are one-line statements wherever a rule already narrates:</p>
+<pre><code class="language-chord">  state running, terminal
+    on enter
+      …
+      phrase pipes-warm
+      play sound boiler-thump when client has sound
+    end on</code></pre>
+<pre><code class="language-chord">create the framed photograph
+  after examining it
+    show image folly-photograph when client has images
+  end after</code></pre>
+<pre><code class="language-chord">  after entering it while the player has the deed
+    play music dawn-theme when client has music
+    win fernhill-saved
+  end after</code></pre>
+<p>The thump rides the boiler's ignition line; the photograph appears when examined (its prose <em>is</em> the text degradation); the dawn theme plays under the winning ending.</p>
+<h2 id="ambient-beds">Ambient beds</h2>
+<p>An ambient is a looping bed of sound. The Grounds' crossing reactions (<em>The world</em>) start and stop the night wind:</p>
+<pre><code class="language-chord">  after entering it
+    phrase cold-returns
+    play ambient night-wind when client has sound
+  end after
+
+  after leaving it
+    stop ambient when client has sound
+  end after</code></pre>
+<p>A bare <code>play ambient</code> plays into the default bed, <code>main</code>; a bare <code>stop ambient</code> stops only that bed. Stories that want layers name them (<code>play ambient surf in shore</code>, <code>stop ambient in shore</code>) after declaring each named bed with a one-liner beside the assets:</p>
+<pre><code class="language-chord">define ambient shore</code></pre>
+<p>Named beds and custom image layers (<code>define layer floorplan</code>, then <code>show image map in floorplan</code>) must be declared before use; a typo is a load error with a suggestion, and it never leaves you with a silently empty second bed.</p>
+<h2 id="dynamic-channels-throw-anything-at-the-client">Dynamic channels: throw anything at the client</h2>
+<p>A <strong>dynamic channel</strong> is a story-declared data feed to the client, not media-specific; it can carry any JSON your story projects. Fernhill's case clock feeds one. The chime daemon emits a payloaded event, and a channel declaration projects it:</p>
+<pre><code class="language-chord">  on every turn while it is ticking and one chance in 8
+    phrase clock-chime
+    emit estate-clock with hour &quot;evening&quot; when evening
+    emit estate-clock with hour &quot;past midnight&quot; when midnight
+  end on</code></pre>
+<pre><code class="language-chord">define channel clock
+  mode replace
+  gated by sidebar
+  return &quot;The clock: (hour)&quot; from estate-clock
+end channel</code></pre>
+<p><code>emit &lt;event-id&gt; with &lt;field&gt; &lt;value&gt;</code> carries data; the channel <code>return</code>s finished text from the turn's last matching event, its <code>(hour)</code> slot projecting the named field. Text clients never see any of it (the <code>sidebar</code> gate reads false); the chime prose is their whole experience, which is exactly the degradation rule again.</p>
+<p><strong>In the browser, every dynamic channel is visible by default.</strong> A channel you don't place renders in the generic sidebar panel, so a pure-Chord story gets working client output with zero TypeScript. When you want its text to land somewhere specific, name an element for it in a custom <code>browser/index.html</code> — the channel's returned text renders into the element whose id matches the channel id. Fernhill's status bar carries one:</p>
+<pre><code class="language-html">&lt;span id=&quot;clock&quot;&gt;&lt;/span&gt;</code></pre>
+<p>The <code>clock</code> channel returns <code>&quot;The clock: (hour)&quot;</code>, and that finished text renders straight into <code>#clock</code> by the channel-id ↔ element-name convention — no story TypeScript, and Fernhill ships no <code>browser-entry.ts</code>. If no named element exists, the value falls back to the generic sidebar panel.</p>
+<h2 id="building-and-shipping">Building and shipping</h2>
+<pre><code class="language-shell">sharpee build</code></pre>
+<p>produces <code>dist/web/&lt;id&gt;/</code>, a self-contained page carrying your <code>.story</code> source (compiled in the browser at boot), the engine, your assets, and the client. Serve it from any static host:</p>
+<pre><code class="language-shell">npx serve dist/web/&lt;id&gt;</code></pre>
+<p>The build also writes <code>dist/&lt;story&gt;.ir.json</code>, the compiled story IR, for IDE and tooling use.</p>
+<h2 id="testing-both-worlds">Testing both worlds</h2>
+<p>Fernhill's transcript suite runs the whole game text-only, including a <code>media-degrade</code> transcript asserting every media beat's prose shows and no asset name or event key ever leaks into text. The browser side is proven by driving the built page in a real browser and observing the cues: the photograph mounting, the wind bed and the thump actually fetching, the clock panel updating. Test the degradation in transcripts; trust the browser only after you've seen it.</p>
+<hr>
+<p>That's the estate, top to bottom: a world model, a tool chain, three people, a machine, a night that runs out, and a deed in a steel box. All of it is fact. Back to the <a href="/learn/fernhill">overview</a>.</p>

@@ -42,6 +42,30 @@ export interface StreamableCommandResult {
   skipped: boolean;
   error?: string;
   actualOutput?: string;
+  /**
+   * The engine turn the command executed as. Optional because only harnesses
+   * whose engine seam reports it (branch-tester's) can say; a result without
+   * it emits an event without one, never a guess.
+   */
+  turn?: number;
+  /**
+   * The story ended during this command (R9). Same optionality reasoning as
+   * `turn`: only a harness whose engine seam surfaces the `game.ended`
+   * announcement can say, and a result without it emits an event without one.
+   */
+  ending?: 'victory' | 'defeat' | 'quit';
+  /**
+   * The first failed assertion's message (`Output does not contain "…"`).
+   * Carried verbatim — the runner computed it, the wire only moves it.
+   * Optional because only harnesses that compute it (branch-tester's) say;
+   * a result without it emits an event without one.
+   */
+  failure?: string;
+  /**
+   * The world after this command (R3), captured under `--capture-world`.
+   * Carried verbatim; structurally the wire's `WorldSnapshot`.
+   */
+  world?: { location?: { name: string; token: string }; inventory: Array<{ name: string; token: string }> };
 }
 
 /** What the stream needs from a whole run's aggregate. Same reasoning. */
@@ -155,7 +179,13 @@ export class RunEventStream {
   transcriptStart(
     file: string,
     index: number,
-    extra: { commandCount?: number; parent?: string; replayed?: boolean } = {},
+    extra: {
+      commandCount?: number;
+      parent?: string;
+      replayed?: boolean;
+      /** The world at this transcript's entry (R5), under `--capture-world`. */
+      world?: StreamableCommandResult['world'];
+    } = {},
   ): void {
     this.write({
       ...this.envelope(),
@@ -165,6 +195,7 @@ export class RunEventStream {
       ...(extra.commandCount !== undefined ? { commandCount: extra.commandCount } : {}),
       ...(extra.parent !== undefined ? { parent: extra.parent } : {}),
       ...(extra.replayed !== undefined ? { replayed: extra.replayed } : {}),
+      ...(extra.world !== undefined ? { world: extra.world } : {}),
     });
   }
 
@@ -187,6 +218,10 @@ export class RunEventStream {
       skipped: result.skipped,
       ...(result.error !== undefined ? { error: result.error } : {}),
       ...(captureOutput || !result.passed ? { actualOutput: result.actualOutput } : {}),
+      ...(result.turn !== undefined ? { turn: result.turn } : {}),
+      ...(result.ending !== undefined ? { ending: result.ending } : {}),
+      ...(result.failure !== undefined ? { failure: result.failure } : {}),
+      ...(result.world !== undefined ? { world: result.world } : {}),
     });
   }
 
@@ -210,6 +245,25 @@ export class RunEventStream {
       skipped: 0,
       duration: 0,
       blockedBy,
+    });
+  }
+
+  /**
+   * A transcript with no commands, run as a skip (phase-6 F1, David's ruling
+   * 2026-08-08): the editor's designed starting state, not a defect and not
+   * a block. Also has no result behind it — nothing executed.
+   */
+  transcriptSkipped(file: string): void {
+    this.write({
+      ...this.envelope(),
+      type: 'transcript-end',
+      file,
+      status: 'skipped',
+      passed: 0,
+      failed: 0,
+      expectedFailures: 0,
+      skipped: 0,
+      duration: 0,
     });
   }
 

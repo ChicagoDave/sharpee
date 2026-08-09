@@ -76,14 +76,17 @@ final class TestRunner {
     /// not have. Tree mode is also correct for a suite with no `continues:` at
     /// all — every transcript is simply a root (verified on
     /// `stories/cloak-of-darkness`, zero parentage, 81 passed).
+    ///
+    /// `--capture-output` rides along because the tab is an editing surface, not
+    /// only a reporting one (go-live Phase 5, R1): promoting what the story said
+    /// into an assertion needs the story's words on a PASSING turn, and the
+    /// default stream carries `actualOutput` on failures only. The cost is the
+    /// full text of every command crossing the wire on a green run, which is the
+    /// trade the tab is here to make — the CLI's default is untouched.
     func runTests(storyFile: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: ["--tree"])
-    }
-
-    /// Shared production spawn: `sharpee test <file>.story … --json` with the
-    /// build/compose executable resolution (workspace shim, else PATH; never
-    /// node_modules). A miss surfaces as an explicit failure with a hint.
-    private func startSharpee(storyFile: URL, extraArguments: [String]) {
+        // Executable resolution is the build/compose one: workspace shim, else
+        // PATH, never node_modules. A miss is an explicit failure with a hint,
+        // not a silent no-run.
         guard let sharpee = ComposeRunner.resolveSharpee(near: storyFile) else {
             delegate?.runner(self, didEmitStderr:
                 "sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to run tests.\n")
@@ -92,9 +95,22 @@ final class TestRunner {
             return
         }
         start(executable: sharpee,
-              arguments: ["test", storyFile.path] + extraArguments + ["--json"],
+              arguments: Self.treeRunArguments(storyPath: storyFile.path),
               workingDirectory: storyFile.deletingLastPathComponent(),
               environment: ShellEnvironment.buildEnvironment())
+    }
+
+    /// The argument list a Testing-tab run uses, named rather than inlined so a
+    /// test can drive the real CLI with the REAL arguments.
+    ///
+    /// The alternative — a hand-written list in the test — is how a flag can be
+    /// removed from production while every test still passes, because the test
+    /// supplies it itself. `--capture-output` is exactly that kind of flag: drop
+    /// it and the tab still renders, just with the story's words missing from
+    /// every passing turn. `--capture-world` is another: drop it and the
+    /// inherited-state header and the per-turn world changes quietly vanish.
+    static func treeRunArguments(storyPath: String) -> [String] {
+        ["test", storyPath, "--tree", "--capture-output", "--capture-world", "--json"]
     }
 
     // MARK: - Spawn

@@ -1,0 +1,84 @@
+title: The night changes the voice
+story: fernhill
+description: The ADR-250 phrasebook probe. The weathervane answers three ways —
+  a line only books provide, a line no book may beat, and a line only the
+  default book covers — before and after the story turns to midnight.
+seed: 1
+
+---
+
+# EVENING. `evening-voice` has no `while` clause, so it is the default book and
+# is active now. Its `vane-mood` is `, first-time`, and this is the first time.
+> examine the weathervane
+[OK: contains "The vane noses the evening breeze, unhurried"]
+
+# Second look, same book: the alternative after the `or`.
+> examine the weathervane
+[OK: contains "The vane sits easy in the last of the light"]
+[OK: not contains "noses the evening breeze"]
+
+# Twelve turns to reach turn 14. `wait` is a real turn; `score` and `inventory`
+# are not, which is worth knowing before counting turns for a sequence.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 14: `define sequence the long night / at turn 14 / phrase dusk-deepens /
+# change the story to midnight`. The story state flips here, and with it the
+# active phrasebook.
+> wait
+[OK: contains "Somewhere beyond the grounds the last light goes out of the sky"]
+[OK: contains "Midnight is coming on"]
+
+# MIDNIGHT. `midnight-voice while midnight` now wins `vane-mood`, and it has
+# its OWN first-time counter — the evening book already spent its first-time
+# above, and that has no effect on this one.
+> examine the weathervane
+[OK: contains "The vane swings hard north, as if the night had opinions"]
+
+> examine the weathervane
+[OK: contains "The vane holds north. Of course it does"]
+
+# `vane-story` is story text. Both books define a line for it, and both lose,
+# in both states — compare arrival.transcript, which asserts the identical
+# sentence during evening.
+> push the weathervane
+[OK: contains "creaks the same one story it always tells, whatever the hour"]
+[OK: not contains "A book must never win this line"]
+[OK: not contains "Nor this one"]
+
+# `vane-quiet` appears only in `evening-voice`. At midnight the midnight book
+# has no entry for it, and the line still arrives — the default book is
+# consulted for keys the active book does not carry, rather than being
+# replaced by it.
+> touch the weathervane
+[OK: contains "The vane keeps its own counsel"]

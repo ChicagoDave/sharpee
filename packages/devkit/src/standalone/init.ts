@@ -96,8 +96,94 @@ function toStoryId(title: string): string {
 /**
  * Read template file and replace placeholders
  */
+/**
+ * The folders a story project can use, scaffolded empty so a new author can
+ * SEE what the tool supports instead of having to read for it.
+ *
+ * Each is kept alive by a `.gitkeep` rather than a README: the build copies
+ * `assets/` and `feelies/` into the published artifact wholesale, so a doc file
+ * inside either would ship to players. Dotfiles are already skipped by that
+ * copy, which is what makes `.gitkeep` the safe marker. The explanation lives
+ * in the project's one root README.
+ */
+const PROJECT_FOLDERS: { path: string; purpose: string }[] = [
+  { path: 'assets', purpose: 'Media your STORY uses — audio it plays, images it renders in prose.' },
+  { path: 'feelies', purpose: 'Extras the PLAYER opens — a map, a letter, a clipping. Shipped as a folder.' },
+  { path: 'walkthroughs', purpose: 'Transcripts that play the story through, run in order as one chain.' },
+  { path: 'tests/transcripts', purpose: 'Focused transcript tests, each run on its own.' },
+];
+
+/** Creates the project folders and the root README that explains them. */
+function scaffoldProjectFolders(target: string, options: StoryOptions): void {
+  for (const folder of PROJECT_FOLDERS) {
+    const dir = path.join(target, folder.path);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.gitkeep'), '');
+  }
+  console.log(`  ✓ Created ${PROJECT_FOLDERS.map((f) => `${f.path}/`).join(', ')}`);
+
+  const readmePath = path.join(target, 'README.md');
+  if (!fs.existsSync(readmePath)) {
+    fs.writeFileSync(readmePath, projectReadme(options));
+    console.log('  ✓ Created README.md');
+  }
+}
+
+/** The root README: what each folder is for, and what publishing does. */
+function projectReadme(options: StoryOptions): string {
+  const rows = PROJECT_FOLDERS.map((f) => `| \`${f.path}/\` | ${f.purpose} |`).join('\n');
+  return `# ${options.storyTitle}
+
+An interactive fiction story written in Chord, for the Sharpee engine.
+
+## Playing it while you write
+
+\`\`\`
+sharpee play    # play in the terminal
+sharpee build   # build the playable web client into dist/web/
+\`\`\`
+
+## Project layout
+
+| Folder | What goes in it |
+| --- | --- |
+| \`${options.storyId}.story\` | Your story. One file to begin with; \`import\` more as it grows. |
+${rows}
+| \`browser/\` | Your own CSS (and, if you want it, your own \`index.html\`). |
+
+The folders start empty — they are here so you can see what the tool
+supports. Delete any you do not want; nothing depends on them existing.
+
+\`assets/\` and \`feelies/\` are easy to confuse. An asset is media the story
+itself consumes, and it lands flat beside the page. A feelie is something a
+player opens on their own, and it keeps its folder in the published artifact.
+
+## Publishing
+
+\`\`\`
+sharpee publish
+\`\`\`
+
+Builds the story and zips it — unzip anywhere, open \`index.html\`, and it
+runs. Upload that same zip to itch.io as an HTML project.
+
+Your \`.story\` source does **not** ship by default. To release it alongside
+the game, add this to the story header:
+
+\`\`\`
+  publish-source: yes
+\`\`\`
+
+Publishing requires an \`ifid:\` in the header — a Treaty of Babel identifier,
+which \`sharpee init\` has already minted for you.
+`;
+}
+
 function processTemplate(templatePath: string, options: StoryOptions): string {
   const content = fs.readFileSync(templatePath, 'utf-8');
+  // No browser-entry tokens here: the story/story-chord templates carry none.
+  // Browser-entry client config is init-browser's job (scaffold) and the
+  // build's generated entry (from the .story header) everywhere else.
   return content
     .replace(/\{\{STORY_ID\}\}/g, options.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, options.storyTitle)
@@ -105,15 +191,7 @@ function processTemplate(templatePath: string, options: StoryOptions): string {
     .replace(/\{\{DESCRIPTION\}\}/g, options.description)
     .replace(/\{\{IFID\}\}/g, options.ifid)
     .replace(/\{\{SHARPEE_VERSION\}\}/g, options.sharpeeRange)
-    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange)
-    // Browser-entry client config (ADR-252 D3): the scaffold's concrete defaults.
-    // (The build's generated entry fills these from the .story header instead.)
-    .replace(/\{\{STORAGE_PREFIX\}\}/g, options.storyId)
-    .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
-    .replace(
-      /\{\{THEMES_JSON\}\}/g,
-      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
-    );
+    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange);
 }
 
 /**
@@ -200,6 +278,8 @@ export async function runInitCommand(args: string[]): Promise<void> {
       console.warn(`  ⚠ Template not found: ${template.src}`);
     }
   }
+
+  scaffoldProjectFolders(absoluteTarget, options);
 
   // Create .gitignore
   const gitignore = `node_modules/

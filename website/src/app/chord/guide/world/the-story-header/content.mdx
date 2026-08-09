@@ -1,18 +1,131 @@
-The header names the story and carries its identity fields. `story` and
-the quoted title are required if a header is present at all; `by` is
-optional; the indented lines below are free `key: value` fields, of
-which `id`, `version`, and `blurb` are the conventional set. The header
-may also own story-wide states and scores, using the same two line forms
-every other owner uses:
+The header names the story and carries its identity fields. `story` opens
+it on a line of its own, and the indented lines below are a **closed set**
+of `key: value` fields — the compiler knows every key, and an unknown one
+is an error rather than a fact that quietly rides along. `title:` is the
+only required field. The header may also own story-wide states and scores,
+using the same two line forms every other owner uses:
 
 ```chord
-story "The Walled Garden" by "Sharpee Docs"
+story
+  title: The Walled Garden
+  authors: Sharpee Docs
   id: walled-garden
-  version: 1.0.0
-  blurb: A pocket world for the Chord language reference.
+  story-version: 1.0.0
+  description: A pocket world for the Chord language reference.
   states: daylight, dusk
+  use scoring
   score explorer worth 5
 ```
 
 The story starts in the first declared state (`daylight` here), and any
 behavior body can move it forward with `change the story to dusk`.
+
+## The fields
+
+| Field | What it carries |
+| --- | --- |
+| `title:` | The story's name. The one required field. |
+| `authors:` | Who wrote it. One name inline, or one per indented line. |
+| `testers:` | Who tested it. Same shape as `authors:`. |
+| `id:` | The kebab-case identifier the build uses for its output folder. |
+| `ifid:` | The story's Treaty of Babel identifier. |
+| `story-version:` | The story's own version — nothing to do with Sharpee's or Chord's. |
+| `prologue:` | Text shown before play begins. Literal prose, or a bare phrase name. |
+| `description:` | A short account of the story. Literal prose, or a bare phrase name. |
+| `client:` `theme:` `template:` `themes:` `default-theme:` `storage-prefix:` | Client configuration for the built app. |
+| `publish-source:` | `yes` to include your `.story` source in the published artifact. Absent means no. |
+
+`states:`, `score … worth N`, `use …` and `on …` lines live in the header
+too, but they are not `key: value` fields and are covered on their own
+pages.
+
+A field the compiler does not know is an error, not a passthrough:
+
+```
+Unknown story-header field `mood:` — the header takes exactly: title,
+authors, testers, ifid, id, story-version, prologue, description, client,
+theme, template, themes, default-theme, storage-prefix, publish-source
+```
+
+### Publishing your source is a choice
+
+`publish-source:` is the only boolean field, and it takes `yes` or `no`
+(`true`/`false` are accepted too). Leave it out and your `.story` source
+stays home: a published artifact carries the compiled story, not the text
+you wrote it in. Set it to `yes` when you want to release your source
+alongside the game — the way Inform's *Release along with the source text*
+works — and the build ships the `.story` file and any `import`ed fragments
+beside the page.
+
+```
+story
+  title: The Folly at Fernhill
+  id: fernhill
+  publish-source: yes
+```
+
+The field lives in the story, not in a build setting, so publishing from
+Chord Writer and publishing from the command line produce the same
+artifact. Your source ships under its own name — `fernhill.story`, not a
+generic one — alongside any `import`ed `.chord` fragments, so whoever
+receives it can compile what you sent.
+
+### Feelies travel too
+
+Anything in a `feelies/` folder beside your story is copied into the
+published artifact, folder and all. Feelies are the things a player opens
+rather than the things your story consumes: a map, a letter, a newspaper
+clipping. That is what separates `feelies/` from `assets/` — assets are
+media the story itself plays or renders, and they land flat beside the
+page; feelies stay in `feelies/`.
+
+Create the folder when you have something to put in it. Chord Writer shows
+it as its own **Feelies** group in the project tree.
+
+### Prose fields take a phrase name or literal text
+
+`prologue:` and `description:` classify their value structurally: a lone
+kebab-case word is **always** read as the name of a phrase, and anything
+else is literal prose. There is no resolve-if-it-exists rule to be caught
+out by.
+
+```chord
+story
+  title: The Walled Garden
+  description: A pocket world for the Chord language reference.
+  prologue: garden-opening
+
+define phrase garden-opening, verbatim
+  The gate stands open. Beyond it, the walled garden waits.
+end phrase
+```
+
+### Two names per author
+
+Both list fields accept one name inline or a name per indented line:
+
+```chord
+story
+  title: The Walled Garden
+  authors:
+    Sharpee Docs
+    A Second Author
+```
+
+### The IFID
+
+`ifid:` is the story's permanent identifier under the Treaty of Babel — the
+number archives and IF databases use to tell one work from another. A story
+without one compiles with a warning, and cannot be published. Mint one per
+story; never copy another story's.
+
+### Spellings that were removed
+
+Three earlier field names are gone. The compiler names the replacement when
+it sees one:
+
+| Was | Now |
+| --- | --- |
+| `version:` | `story-version:` |
+| `blurb:` | `description:` |
+| `by:`, and the old `story "Title" by "Author"` line | `authors:` |

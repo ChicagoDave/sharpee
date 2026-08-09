@@ -1,0 +1,67 @@
+<h2 id="containers-and-supporters-with-limits">Containers and supporters, with limits</h2>
+<pre><code class="language-chord">create the travelling trunk
+  aka trunk
+  a container with max items 3
+  openable
+  in the Study
+
+create the mantel
+  aka mantelpiece, shelf
+  scenery, a supporter with capacity 2
+  in the Entrance Hall</code></pre>
+<p><code>in</code> and <code>on</code> placement lines put things inside/atop other things at load; capacities are config on the kind. Note the article in placement and naming lines: <code>the grey overcoat</code>, not a possessive like <code>Verity's overcoat</code> (a leading possessive parses as a trait adjective).</p>
+<h2 id="the-declarative-capability-family-headline-pattern">The declarative capability family: headline pattern</h2>
+<p>This is the family to internalize. Wherever an action needs a specific instrument, you declare the capability <em>with the instrument named on it</em>, with no key tables and no handlers:</p>
+<pre><code class="language-chord">create the cellar door
+  a door, lockable with the tarnished key
+
+create the nailed crate
+  a container
+  openable with the crowbar
+
+create the kipper tin
+  a container
+  openable with the tin opener
+
+create the fuse
+  cuttable with the garden shears
+
+create the deed box
+  a container
+  openable with the silver locket</code></pre>
+<p><code>open the crate with the crowbar</code>, <code>cut the fuse with the shears</code>, <code>unlock the door with the key</code>: all of it works from these single lines, and each refuses legibly without its instrument. If you find yourself wishing for <code>unlockable by the key</code>: you already have it, spelled <code>lockable with the tarnished key</code>.</p>
+<p>Fernhill chains the family into its opening puzzle: the crowbar (cellar) opens the crate, the crate holds the tin opener, the opener opens the kipper tin, and the kipper matters in the next chapter.</p>
+<h2 id="concealment-and-searching">Concealment and searching</h2>
+<pre><code class="language-chord">create the tarnished key
+  aka key
+  concealed
+  on the doormat</code></pre>
+<p>A <code>concealed</code> item is invisible until the player SEARCHes its holder: the doormat gives up the cellar key, the grey overcoat's pocket gives up the winding key. The study curtains show the companion pattern, a place to hide yourself: <code>hiding-spot with position behind</code>.</p>
+<h2 id="readables-two-ways">Readables, two ways</h2>
+<pre><code class="language-chord">create the half-burned letter
+  readable with text &quot;…arrangements with the county bank, where the deed may rest secure until…&quot;
+
+create the diary page
+  readable
+  states: folded, read
+
+  on reading it
+    change it to read
+    phrase diary-text
+      &quot;K. says the greenhouse will take the worst of the frost…&quot;
+  end on</code></pre>
+<p>Short texts fit on the config form; anything that should <em>do</em> something when read gets an <code>on reading it</code> clause: the diary flips its own state (the gated-detail chapter builds on <code>read</code>) and speaks its text. The half-burned letter, incidentally, is a red herring: it points to the bank, and it is wrong.</p>
+<h2 id="wearables">Wearables</h2>
+<pre><code class="language-chord">create the grey overcoat
+  aka overcoat, coat, verity's overcoat
+  wearable, a container</code></pre>
+<p><code>wear the overcoat</code> works; the pocket (it's also a container) carries the concealed winding key.</p>
+<h2 id="scenery-discipline">Scenery discipline</h2>
+<p>Every noun the prose mentions exists: lime trees, the dry fountain, the copper pans, the wall niche, the scorched dome. Each is two lines and a description:</p>
+<pre><code class="language-chord">create the fountain
+  aka basin
+  scenery
+  in the Fountain Court
+
+  A dry stone basin drifted with last summer's leaves.</code></pre>
+<p><code>scenery</code> means fixed in place and quietly present. This is craft, not a feature: a player who examines what you wrote about should never hear &quot;You can't see any such thing.&quot;</p>

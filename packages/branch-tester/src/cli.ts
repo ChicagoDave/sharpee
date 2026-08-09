@@ -43,7 +43,6 @@ interface CliOptions {
   all: boolean;
   outputDir: string | null;
   play: boolean;
-  bless: boolean;
   coverage: boolean;
 }
 
@@ -60,7 +59,6 @@ function parseArgs(args: string[]): CliOptions {
     all: false,
     outputDir: null,
     play: false,
-    bless: false,
     coverage: false
   };
 
@@ -87,8 +85,6 @@ function parseArgs(args: string[]): CliOptions {
           'Delete the flag.'
       );
       process.exit(2);
-    } else if (arg === '--bless') {
-      options.bless = true;
     } else if (arg === '--coverage') {
       options.coverage = true;
     } else if (arg === '--play' || arg === '-p') {
@@ -138,7 +134,6 @@ Arguments:
 Options:
   -p, --play             Interactive play mode (REPL)
   -a, --all              Run all transcripts in the story's tests/ directory
-  --bless                Create/overwrite golden recordings (ADR-294 D1)
   --coverage             Print the full per-point outcome-class coverage
                          breakdown (ADR-293 D15); the one-line summary always
                          prints, and --output-dir also writes the report JSON
@@ -379,6 +374,14 @@ async function main(): Promise<void> {
   for (const transcriptPath of transcriptPaths) {
     const transcript = parseTranscriptFile(transcriptPath);
     const errors = validateTranscript(transcript);
+    // A transcript that is merely EMPTY is not a defect: it is the editor's
+    // designed starting state, and it runs as a skip (phase-6 F1, David's
+    // ruling 2026-08-08). Zero commands + exactly one problem means that
+    // problem is the no-commands one; anything else keeps the D11 gate.
+    if (transcript.commands.length === 0 && errors.length === 1) {
+      parsed.push(transcript);
+      continue;
+    }
     if (errors.length > 0) {
       parseFailures.push({
         transcript,
@@ -442,8 +445,6 @@ async function main(): Promise<void> {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure,
-      bless: options.bless,
-      storyName,
       coverage: coverageTracker
     });
   } catch (error) {

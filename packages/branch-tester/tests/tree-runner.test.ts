@@ -378,3 +378,94 @@ describe('reseedFor — which streams a child re-rolls (ADR-302 D8 amendment)', 
     expect(harness.reseeds).toEqual([['troll.blow']]);
   });
 });
+
+describe('runTree — empty transcripts run as skips (phase-6 F1, ruling 2026-08-08)', () => {
+  it('an empty interior node is skipped, and its children run anyway', async () => {
+    // root has commands; `hollow` is the editor's designed starting state
+    // (zero commands); its child continues through it. The old behavior — the
+    // parse gate aborting the whole suite — lived above this layer; here the
+    // runner must treat the node as a structural no-op.
+    const tree = assembleTree([
+      write('root', '', ['look']),
+      write('hollow', 'continues: root\n', []),
+      write('leaf', 'continues: hollow\n', ['north']),
+    ]);
+    expect(tree.defects).toEqual([]);
+
+    const skippedNodes: string[] = [];
+    const harness = stubHarness();
+    const run = await runTree(tree, harness.factory as never, {
+      treeObserver: { onNodeSkipped: ({ node }) => skippedNodes.push(node.stem) },
+    });
+
+    // The empty node contributed nothing to the walk: the leaf's commands ran
+    // against the state root left behind.
+    expect(commandsOf(harness)).toEqual(['look', 'north']);
+    expect(skippedNodes).toEqual(['hollow']);
+
+    const byStem = new Map(run.outcomes.map((o) => [o.stem, o]));
+    expect(byStem.get('hollow')?.status).toBe('skipped');
+    expect(byStem.get('hollow')?.result).toBeUndefined();
+    expect(byStem.get('root')?.status).toBe('ran');
+    expect(byStem.get('leaf')?.status).toBe('ran');
+    expect(byStem.get('leaf')?.result?.status).toBe('passed');
+  });
+
+  it('a lone empty root skips without touching the engine', async () => {
+    const tree = assembleTree([write('bare', '', [])]);
+    expect(tree.defects).toEqual([]);
+
+    const harness = stubHarness();
+    const run = await runTree(tree, harness.factory as never, {});
+
+    expect(run.outcomes).toEqual([{ stem: 'bare', status: 'skipped' }]);
+    expect(commandsOf(harness)).toEqual([]);
+    expect(run.executedCommands).toBe(0);
+  });
+});
+
+describe('runTree — empty nodes under forks and reseeds (mutation-verification follow-ups)', () => {
+  it('an empty node that forks replays cleanly: both grandchildren run from root state', async () => {
+    // hollow forks: the second grandchild boots and replays [root, hollow] —
+    // the replay visit of the empty ancestor must contribute exactly nothing.
+    const tree = assembleTree([
+      write('root', '', ['look']),
+      write('hollow', 'continues: root\n', []),
+      write('alpha', 'continues: hollow\n', ['east']),
+      write('beta', 'continues: hollow\n', ['west']),
+    ]);
+    expect(tree.defects).toEqual([]);
+
+    const harness = stubHarness();
+    const run = await runTree(tree, harness.factory as never);
+
+    // alpha continues the live engine; beta boots and replays root (hollow
+    // adds nothing), then runs its own command from the same state alpha saw.
+    expect(commandsOf(harness)).toEqual(['look', 'east', 'look', 'west']);
+    expect(harness.counters.boots).toBe(2);
+
+    const byStem = new Map(run.outcomes.map((o) => [o.stem, o]));
+    expect(byStem.get('hollow')?.status).toBe('skipped');
+    expect(byStem.get('alpha')?.result?.status).toBe('passed');
+    expect(byStem.get('beta')?.result?.status).toBe('passed');
+  });
+
+  it("an empty node's declared reseed still fires, on the authored visit and on every replay", async () => {
+    // The pin is the node's one effect; dropping it would leave the whole
+    // subtree's dice unpinned, and a replay that skipped it would rebuild a
+    // DIFFERENT state than the first child ran from.
+    const tree = assembleTree([
+      write('root', 'seed: 42\n', ['look']),
+      write('hollow', 'continues: root\npoint-seed: troll.blow=7\n', []),
+      write('alpha', 'continues: hollow\n', ['east']),
+      write('beta', 'continues: hollow\n', ['west']),
+    ]);
+    expect(tree.defects).toEqual([]);
+
+    const harness = stubHarness();
+    await runTree(tree, harness.factory as never);
+
+    // Once on hollow's authored (skipped) visit, once on its replay for beta.
+    expect(harness.reseeds).toEqual([['troll.blow'], ['troll.blow']]);
+  });
+});

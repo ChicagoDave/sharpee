@@ -13,6 +13,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var mainWindowController: MainWindowController?
     private var buildController: BuildController?
     private var testController: TestController?
+    /// Runs `sharpee publish` for the Publish tab (ADR-284). Created eagerly:
+    /// it owns the streamed output wiring, not a per-run object.
+    private let publishController = PublishController()
+
+    /// Drives the landing page at launch (go-live item 6). Held for the app's
+    /// lifetime rather than the launch's: it owns the sheets it presented, and
+    /// releasing it mid-flow would drop their callbacks.
+    private var launchCoordinator: LaunchCoordinator?
+
+    /// The toolchain version check runs once per launch, at the first project
+    /// open. It used to run at launch, but with the landing page in front there
+    /// is no story to resolve a toolchain near until the author has picked one.
+    private var hasFetchedToolchainVersions = false
 
     /// Root folder of the currently loaded project (the folder around the story,
     /// ADR-258 D2). Nil when no project is loaded.
@@ -49,16 +62,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         buildController = BuildController(window: controller)
         testController = TestController(window: controller)
         controller.onBuildPillCancel = { [weak self] in self?.buildController?.cancel() }
+        wirePublish(to: controller)
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
 
         NSApp.activate(ignoringOtherApps: true)
 
-        restoreSession(into: controller)
+        beginLaunchFlow(in: controller)
+    }
 
-        // One `sharpee --version` serves two consumers: ADR-279 D1's status-bar
-        // version line, and D9's non-blocking warning when the installed
-        // toolchain speaks a newer Chord than this IDE was written against.
+    /// Connects the Publish tab to the controller that runs the toolchain: the
+    /// button asks, the stream lands in the tab, the result offers the artifact.
+    private func wirePublish(to controller: MainWindowController) {
+        guard let view = controller.publishView else { return }
+        view.onPublish = { [weak self] in self?.publishStory(nil) }
+        view.onCancel = { [weak self] in self?.publishController.cancel() }
+        view.onReveal = { url in
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
+        publishController.onOutput = { [weak view] text in view?.append(text) }
+        publishController.onFinished = { [weak view] succeeded, zipURL in
+            view?.finish(succeeded: succeeded, zipURL: zipURL)
+        }
+    }
+
+    /// Shows the landing page and wires what it is allowed to do (go-live item 6).
+    /// Launch does NOT reopen the last project — it is offered in the modal
+    /// instead, alongside the other recents.
+    private func beginLaunchFlow(in controller: MainWindowController) {
+        guard let window = controller.window else { return }
+        let actions = LaunchCoordinator.Actions(
+            openProject: { [weak self] url in self?.openProjectFromLaunch(url) },
+            createStory: { [weak self] request in
+                guard let self else { throw StoryScaffold.ScaffoldError.templateMissing("story.story.template") }
+                return try self.createStory(request)
+            })
+        let coordinator = LaunchCoordinator(window: window, actions: actions)
+        launchCoordinator = coordinator
+        coordinator.begin(lastProject: SessionStateStore.load()?.projectURL)
+    }
+
+    /// One `sharpee --version` serves two consumers: ADR-279 D1's status-bar
+    /// version line, and D9's non-blocking warning when the installed toolchain
+    /// speaks a newer Chord than this IDE was written against. Runs once — a
+    /// second project open must not re-warn.
+    private func fetchToolchainVersionsOnce() {
+        guard !hasFetchedToolchainVersions else { return }
+        hasFetchedToolchainVersions = true
         ChordVersionCheck.fetchVersions(near: currentStoryURL) { [weak self] versions in
             self?.toolchainVersions = versions
             self?.mainWindowController?.showToolchainVersions(versions)
@@ -102,33 +152,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
-    /// Reads the persisted session and replays it: project, open tabs, active tab.
-    /// Silently skips a project whose folder no longer exists, and individual files that
-    /// no longer exist. If the saved active index is out of range after skips, falls back
-    /// to the last surviving tab. A restored project that is no longer a story
-    /// target — an ADR-185-era TypeScript project — opens the empty state with a
-    /// one-line explanation instead (ADR-258 D8).
-    private func restoreSession(into controller: MainWindowController) {
-        guard let state = SessionStateStore.load() else { return }
+    /// Opens the project the author chose on the landing page, replaying the
+    /// persisted session on top of it when that session belongs to THIS project
+    /// (`SessionState.restorable`) — tabs, expansion, pane visibility.
+    ///
+    /// A folder that is not a story target — an ADR-185-era TypeScript project —
+    /// opens the empty state with a one-line explanation instead (ADR-258 D8).
+    /// Recents and the landing page already filter those out; the Open panel
+    /// cannot.
+    func openProjectFromLaunch(_ url: URL) {
+        guard let controller = mainWindowController else { return }
 
-        let fm = FileManager.default
-
-        guard let projectURL = state.projectURL,
-              fm.fileExists(atPath: projectURL.path) else {
-            return
-        }
-
-        guard StoryTarget.isStoryProject(projectURL) else {
+        guard StoryTarget.isStoryProject(url) else {
             controller.showEmptyStateExplanation(
-                "“\(projectURL.lastPathComponent)” is not a Chord story — the IDE opens .story files (the TypeScript author path was retired)")
+                "“\(url.lastPathComponent)” is not a Chord story — the IDE opens .story files (the TypeScript author path was retired)")
             return
         }
 
-        loadProject(at: projectURL, expandedFolderURLs: state.expandedFolderURLs)
+        let restored = SessionState.restorable(SessionStateStore.load(), opening: url)
+        loadProject(at: url, expandedFolderURLs: restored?.expandedFolderURLs ?? [])
+        if let restored {
+            replaySession(restored, into: controller)
+        }
+        fetchToolchainVersionsOnce()
+    }
+
+    /// Replays a session that belongs to the project now open: pane state first,
+    /// then the tabs. Individual files that no longer exist are skipped; if the
+    /// saved active index is out of range after skips, falls back to the last
+    /// surviving tab.
+    private func replaySession(_ state: SessionState, into controller: MainWindowController) {
         controller.setProjectPaneVisible(state.projectPaneVisible)
         controller.setBuildPanelVisible(state.buildPanelVisible)
         controller.setPlayAfterBuild(state.playAfterBuild)
 
+        let fm = FileManager.default
         var survivingURLs: [URL] = []
         for url in state.openDocumentURLs where fm.fileExists(atPath: url.path) {
             controller.openDocument(at: url)
@@ -174,90 +232,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         loadProject(at: url)
     }
 
-    /// What the writer asked for in the New Story prompt.
-    private enum NewStoryRequest {
-        /// Create under the default project home — the path the writer never has to think about.
-        case createAtDefaultHome(title: String)
-        /// The writer explicitly asked to place the story themselves.
-        case chooseLocation(title: String)
-        case cancel
-    }
-
-    /// File → New Story… (⌘N). Prompts for a title and scaffolds into
-    /// `~/Documents/Chord/<story-id>/` — no location picker (ADR-280 D2). The
-    /// picker remains reachable from the prompt for writers who want it.
+    /// File → New Story… (⌘N). Presents the same Create Story sheet the landing
+    /// page uses — one create path, so the title/location rules cannot fork.
     @objc func newStory(_ sender: Any?) {
-        switch promptNewStory() {
-        case .cancel:
-            return
-        case .createAtDefaultHome(let title):
-            createStoryAtDefaultHome(title: title)
-        case .chooseLocation(let title):
-            chooseLocationAndScaffold(title: title)
+        guard let presenter = mainWindowController?.window?.contentViewController else { return }
+        let sheet = CreateStoryViewController()
+        sheet.onFinish = { [weak self] request in
+            presenter.dismiss(sheet)
+            guard let self, let request else { return }
+            do {
+                self.loadProject(at: try self.createStory(request))
+            } catch {
+                self.presentScaffoldFailure(error)
+            }
         }
+        presenter.presentAsSheet(sheet)
     }
 
-    /// Scaffolds into the default project home and opens the result, presenting
-    /// the refusal when a story of that name is already there.
-    private func createStoryAtDefaultHome(title: String) {
-        do {
-            loadProject(at: try scaffoldStoryAtDefaultHome(title: title))
-        } catch {
-            presentScaffoldFailure(error)
-        }
-    }
-
-    /// The explicit "choose location" path — the pre-ADR-280 flow, now opt-in
-    /// rather than mandatory.
-    private func chooseLocationAndScaffold(title: String) {
-        let panel = NSSavePanel()
-        panel.title = "New Sharpee Story"
-        panel.prompt = "Create"
-        panel.message = "Choose where to create the story project folder."
-        panel.canCreateDirectories = true
-        panel.nameFieldStringValue = StoryScaffold.storyId(from: title)
-
-        let handle: (NSApplication.ModalResponse) -> Void = { [weak self] response in
-            guard response == .OK, let url = panel.url else { return }
-            self?.scaffoldAndOpen(at: url, title: title)
-        }
-        if let window = mainWindowController?.window {
-            panel.beginSheetModal(for: window, completionHandler: handle)
-        } else {
-            handle(panel.runModal())
-        }
-    }
-
-    /// Prompts for the new story's title with a modal alert + text field, and for
-    /// whether the writer wants the default home or to place the story themselves.
-    /// An empty title is treated as a cancel.
-    private func promptNewStory() -> NewStoryRequest {
-        let alert = NSAlert()
-        alert.messageText = "New Story"
-        alert.informativeText = "Enter a title for your story."
-        alert.addButton(withTitle: "Create")
-        alert.addButton(withTitle: "Choose Location…")
-        alert.addButton(withTitle: "Cancel")
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        field.placeholderString = "My Adventure"
-        alert.accessoryView = field
-        alert.window.initialFirstResponder = field
-
-        let response = alert.runModal()
-        guard response != .alertThirdButtonReturn else { return .cancel }
-        let title = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return .cancel }
-        return response == .alertFirstButtonReturn
-            ? .createAtDefaultHome(title: title)
-            : .chooseLocation(title: title)
-    }
-
-    private func scaffoldAndOpen(at url: URL, title: String) {
-        do {
-            loadProject(at: try scaffoldStory(at: url, title: title))
-        } catch {
-            presentScaffoldFailure(error)
-        }
+    /// Creates the story the Create Story sheet asked for. The single mutation
+    /// behind both entry points — File → New Story and the landing page.
+    ///
+    /// - Parameters:
+    ///   - request: the author's title and chosen folder.
+    ///   - templateDirectory: overrides the bundled devkit template; tests pass
+    ///     the in-repo `packages/devkit/templates/story-chord`.
+    /// - Returns: the folder now holding the story — the value `loadProject` opens.
+    /// - Throws: `StoryHome.HomeError.projectAlreadyExists` when the folder is
+    ///   occupied, or `StoryScaffold.ScaffoldError` when the template is missing.
+    ///   Nothing is created on either throwing path.
+    @discardableResult
+    func createStory(_ request: CreateStoryViewController.Request,
+                     templateDirectory: URL? = nil) throws -> URL {
+        // Checked before scaffolding so the refusal can name the FULL path
+        // (ADR-280 Acceptance 6) rather than just the folder's leaf.
+        try StoryHome.resolveNewProjectDirectory(at: request.directory)
+        return try scaffoldStory(at: request.directory, title: request.title,
+                                 templateDirectory: templateDirectory)
     }
 
     /// Creates a new story on disk at `directory`. The mutation half of New
@@ -343,6 +353,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             testController?.detach()
         }
 
+        // The Publish tab acts on the same target Build does.
+        mainWindowController?.setPublishStory(currentStoryURL)
+
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
@@ -404,6 +417,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         buildController?.cancel()
     }
 
+    /// Build → Publish… (ADR-284). Asks where the zip goes, then runs
+    /// `sharpee publish` through the resolved toolchain and streams it into the
+    /// Publish tab. The destination is chosen here rather than parsed back out
+    /// of the command's output.
+    @objc func publishStory(_ sender: Any?) {
+        guard let storyURL = currentStoryURL,
+              let window = mainWindowController?.window,
+              let view = mainWindowController?.publishView else { return }
+        mainWindowController?.showPublishTab()
+
+        let panel = NSSavePanel()
+        panel.title = "Publish Story"
+        panel.prompt = "Publish"
+        panel.message = "Choose where to write the distributable zip."
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = storyURL.deletingPathExtension().lastPathComponent + ".zip"
+
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard let self, response == .OK, let destination = panel.url else { return }
+            view.begin()
+            self.publishController.publish(storyFile: storyURL, to: destination)
+        }
+    }
+
+    /// Build → Shipped Themes → <theme>. Toggles the built-in in the story
+    /// header's `themes:` line via the editor — undoable, tab left dirty
+    /// (go-live Phase 6c).
+    @objc func toggleShippedTheme(_ sender: NSMenuItem) {
+        guard let themeId = sender.representedObject as? String else { return }
+        mainWindowController?.toggleShippedTheme(themeId)
+    }
+
     // MARK: - Test menu actions (ADR-277 D2/D3)
 
     /// Test → Run Tests (⌘U). Runs the story's suite as a tree, streaming into
@@ -415,6 +460,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
     @objc func cancelTestRun(_ sender: Any?) {
         testController?.cancel()
+    }
+
+    /// Test → Testing Play Surface (⌥⌘U). Opens the dedicated testing page
+    /// (ADR-306 Phase 3) — cards, segments, and the session that restores.
+    @objc func openTestingSurface(_ sender: Any?) {
+        mainWindowController?.openTestingSurface()
+    }
+
+    /// Test → Auto-Assertion → <choice>. Sets the story header's
+    /// `auto-assertion:` line via the editor — undoable, tab left dirty
+    /// (go-live Phase 6e). "Let Me Decide" carries no representedObject and
+    /// REMOVES the line, matching the runner's default.
+    @objc func selectAutoAssertion(_ sender: NSMenuItem) {
+        let policy = (sender.representedObject as? String)
+            .flatMap(StoryHeaderAutoAssertion.Policy.init(rawValue:))
+        mainWindowController?.selectAutoAssertion(policy)
     }
 
     /// Chord Writer → Settings… (⌘,). App-wide author preferences; per-project
@@ -467,12 +528,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(buildController?.isBuilding ?? false)
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
+        case #selector(publishStory(_:)):
+            return currentStoryURL != nil
+                && mainWindowController?.composedStory?.isGrammar != true
+                && !publishController.isPublishing
         case #selector(runTests(_:)):
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false
+        case #selector(toggleShippedTheme(_:)):
+            guard let shipped = mainWindowController?.shippedThemeIds() else { return false }
+            let themeId = menuItem.representedObject as? String
+            menuItem.state = themeId.map { shipped.contains($0) } == true ? .on : .off
+            return true
+        case #selector(selectAutoAssertion(_:)):
+            guard mainWindowController?.autoAssertionMenuApplies == true else { return false }
+            let current = mainWindowController?.autoAssertionPolicy()
+            let raw = menuItem.representedObject as? String
+            menuItem.state = (raw == current?.rawValue) ? .on : .off
+            return true
         case #selector(toggleProjectPane(_:)):
             menuItem.state = (mainWindowController?.isProjectPaneVisible ?? false) ? .on : .off
             return true

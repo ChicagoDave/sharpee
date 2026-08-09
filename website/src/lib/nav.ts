@@ -35,8 +35,28 @@ export interface NavSection {
 
 export const NAV: NavSection[] = [
   {
+    title: 'Chord Writer',
+    version: '1.0.0',
+    groups: [
+      {
+        title: 'Getting Started',
+        open: true,
+        items: [
+          { title: 'Overview', href: '/chord-writer' },
+          { title: 'Your first story', href: '/chord-writer/your-first-story' },
+          { title: 'Building, playing, and testing', href: '/chord-writer/building-playing-and-testing' },
+          { title: 'Publishing', href: '/chord-writer/publishing' },
+        ],
+      },
+    ],
+  },
+  {
     title: 'Chord',
-    version: '2.1.0',
+    // The Chord LANGUAGE version (`CHORD_LANGUAGE_VERSION`), currently frozen
+    // at 3.0.0. Not a package version, and not tied to one — each section shows
+    // the version of the thing it documents, which is why this, Sharpee's, and
+    // Chord Writer's move independently.
+    version: '3.0.0',
     groups: [
       {
         title: 'Getting Started',

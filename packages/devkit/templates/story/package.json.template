@@ -10,6 +10,14 @@
     "introspect": "sharpee introspect",
     "dev": "tsc --watch"
   },
+  "sharpee": {
+    "themes": [
+      "modern-dark",
+      "retro-terminal",
+      "paper",
+      "system-6"
+    ]
+  },
   "dependencies": {
     "@sharpee/sharpee": "{{SHARPEE_VERSION}}",
     "@sharpee/world-model": "{{SHARPEE_VERSION}}"

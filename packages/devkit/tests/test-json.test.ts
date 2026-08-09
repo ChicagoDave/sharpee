@@ -412,6 +412,37 @@ describe('sharpee test --tree --json (ADR-302 over the run-event stream)', () =>
     expect({ authored, replayed }).toEqual({ authored: 3, replayed: 1 });
   });
 
+  it('--capture-world carries world snapshots on node entries and command results (R3/R5)', async () => {
+    const { code, records } = await run(['--json', '--tree', '--capture-world', treeDir]);
+    expect(code).toBe(0);
+
+    // Every transcript-start carries the world its node ENTERS, and every
+    // command-result the world after the command — the runner names the
+    // player's location with a token its own [STATE:] evaluator resolves.
+    const starts = records.filter((r) => r.type === 'transcript-start') as Array<{
+      world?: { location?: { name: string; token: string }; inventory: unknown[] };
+    }>;
+    expect(starts.length).toBeGreaterThan(0);
+    for (const start of starts) {
+      expect(start.world?.location?.name).toBeTruthy();
+      expect(start.world?.location?.token).not.toMatch(/\s/);
+      expect(Array.isArray(start.world?.inventory)).toBe(true);
+    }
+    const commands = records.filter((r) => r.type === 'command-result') as Array<{
+      world?: { location?: { token: string } };
+    }>;
+    expect(commands.length).toBeGreaterThan(0);
+    expect(commands.every((c) => c.world?.location?.token !== undefined)).toBe(true);
+
+    // And without the flag, the stream stays exactly as small as it was.
+    const bare = await run(['--json', '--tree', treeDir]);
+    expect(
+      bare.records
+        .filter((r) => r.type === 'transcript-start' || r.type === 'command-result')
+        .every((r) => !('world' in r)),
+    ).toBe(true);
+  });
+
   it('announces a blocked subtree as unreached, naming what blocked it (D13)', async () => {
     // A failing root blocks both children. They must appear in the stream —
     // absent nodes would render as a tree that silently lost two tests, and
@@ -459,6 +490,42 @@ describe('sharpee test --tree --json (ADR-302 over the run-event stream)', () =>
       }
     } finally {
       rmSync(broken, { recursive: true, force: true });
+    }
+  });
+
+  it('an empty transcript runs as skipped and never aborts the suite (phase-6 F1, ruling 2026-08-08)', async () => {
+    // The editor's designed starting state: a just-created transcript has a
+    // header and no commands. Before the ruling this aborted the whole run
+    // ("failed to parse — nothing ran", exit 2) — the regression this pins.
+    const withEmpty = mkdtempSync(join(tmpdir(), 'devkit-tree-empty-'));
+    try {
+      writeFileSync(join(withEmpty, 'mini.story'), STORY);
+      mkdirSync(join(withEmpty, 'tests', 'transcripts'), { recursive: true });
+      writeFileSync(
+        join(withEmpty, 'tests', 'transcripts', 'begin.transcript'),
+        `title: Begin\nstory: mini\n\n---\n`,
+      );
+      writeFileSync(
+        join(withEmpty, 'tests', 'transcripts', 'spine.transcript'),
+        `title: Spine\n\n---\n\n> look\n[OK: contains "A small square den"]\n`,
+      );
+
+      const { code, records } = await run(['--json', '--tree', withEmpty]);
+      expect(code).toBe(0);
+
+      const ends = ofType<TranscriptEndEvent>(records, 'transcript-end');
+      const begin = join(withEmpty, 'tests', 'transcripts', 'begin.transcript');
+      const skipped = ends.filter((e) => e.status === 'skipped');
+      expect(skipped.map((e) => e.file)).toEqual([begin]);
+      // The sibling executed and passed — the suite is not poisoned.
+      expect(ends.filter((e) => e.status === 'passed')).toHaveLength(1);
+      // The skipped node was announced first, like every other node.
+      const startIndex = records.findIndex((r) => r.type === 'transcript-start' && r.file === begin);
+      const endIndex = records.findIndex((r) => r.type === 'transcript-end' && r.file === begin);
+      expect(startIndex).toBeGreaterThanOrEqual(0);
+      expect(startIndex).toBeLessThan(endIndex);
+    } finally {
+      rmSync(withEmpty, { recursive: true, force: true });
     }
   });
 });

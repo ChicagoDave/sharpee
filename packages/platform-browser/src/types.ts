@@ -203,6 +203,12 @@ export interface MenuHandlers {
   onSave: () => Promise<void>;
   onRestore: () => Promise<void>;
   onRestart: () => Promise<void>;
+  /**
+   * Wipe every stored key under the story's storage prefix and reboot fresh
+   * (issue 248): saves, autosave, theme preference — this story's data only,
+   * never another story's on the same origin.
+   */
+  onReset: () => Promise<void>;
   onQuit: () => void;
   onThemeSelect: (theme: string) => void;
   onHelp: () => void;

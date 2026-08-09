@@ -147,9 +147,8 @@ final class TestRunnerTests: XCTestCase {
 
     /// A broken transcript is an error ROW, not a vanished file, and fails the
     /// run. "Broken" means a real parse error — a removed form (ADR-294 D2). An
-    /// assertion-less command is NOT broken post-rebuild: it is a golden-tier
-    /// candidate that fails at runtime with "no recording exists" (transcript
-    /// status `failed`, not `error`).
+    /// assertion-less command is NOT broken post-rebuild: it fails at runtime
+    /// with a named boundary error (transcript status `failed`, not `error`).
     ///
     /// Exit 2, not 1: a tree ASSEMBLES before it executes (ADR-302 D11), so a
     /// transcript that cannot be parsed is a defect in the tree rather than a

@@ -59,6 +59,13 @@ final class LineNumberRulerView: NSRulerView {
 
         while charIndex <= end {
             let lineRange = content.lineRange(for: NSRange(location: min(charIndex, content.length), length: 0))
+            // End reached without a trailing newline: lineRange is the LAST
+            // line again (its start is behind charIndex), so the loop would
+            // re-number that range forever without advancing. The line is
+            // already drawn — stop. (A trailing newline instead yields an
+            // empty range AT charIndex, numbered below then exited via the
+            // zero-length break.)
+            if charIndex == content.length && lineRange.location < charIndex { break }
             let glyphIndex = layoutManager.glyphIndexForCharacter(at: lineRange.location)
             let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
             let y = fragment.minY + yOffset + inset

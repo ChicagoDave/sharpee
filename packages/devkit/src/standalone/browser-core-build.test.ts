@@ -63,8 +63,17 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     // The deliverable exists and traces to the IR (fernhill id + header version).
     expect(outDir).toBe(join(root, 'dist', 'web', 'fernhill'));
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
-    // story.story is the source, byte for byte (compile-at-boot, ADR-210).
-    expect(readFileSync(join(outDir, 'story.story'), 'utf-8')).toBe(readFileSync(FERNHILL, 'utf-8'));
+    // The story is EMBEDDED as compiled IR — always, whatever the header says.
+    expect(readFileSync(join(root, 'dist', '.browser-entry', 'fernhill', 'story-ir.ts'), 'utf-8'))
+      .toContain('story language 2');
+    // Whether the SOURCE also travels follows fernhill's own header (ADR-284).
+    // Read from the story rather than pinned here: fernhill is a living example
+    // and an author toggling `publish-source:` must not fail this test — it
+    // already did once. Note the generic `story.story` name is gone either way;
+    // a shipped source keeps the author's filename.
+    const publishesSource = /^\s*publish-source:\s*(yes|true)\s*$/mi.test(readFileSync(FERNHILL, 'utf-8'));
+    expect(existsSync(join(outDir, 'fernhill.story'))).toBe(publishesSource);
+    expect(existsSync(join(outDir, 'story.story'))).toBe(false);
     // NO package.json / src/index.ts anywhere in the output tree — the ADR-252 point.
     expect(existsSync(join(outDir, 'package.json'))).toBe(false);
     // ADR-253: fernhill has no src/browser-entry.ts — the entry is GENERATED, and its

@@ -1,10 +1,12 @@
 /**
  * Browser entry point for {{STORY_TITLE}} — a Chord (`.story`) project.
  *
- * The bundle ships the story SOURCE (story.story beside this page) and the
- * Chord compiler; the story compiles here, in the browser, at boot
- * (compile → Story IR → story-loader → engine). Add any story-specific
- * channel/audio renderers before `client.start()`.
+ * The bundle carries the story already COMPILED: the build stamps `story-ir.ts`
+ * beside this file, so boot is Story IR → story-loader → engine, with no fetch
+ * and no compiler on the page. That is what lets a published zip run from
+ * `file://` — `fetch()` cannot read a `file://` URL, so a page that loaded its
+ * own story over the network worked on a server and died on a double-click.
+ * Add any story-specific channel/audio renderers before `client.start()`.
  */
 
 import { GameEngine, type Story } from '@sharpee/engine';
@@ -13,26 +15,16 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
-import { compile } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
 // The story's TypeScript hatches (ADR-259 D1/D2), generated beside this file
 // at build time exactly as version.ts is. Empty for a pure-IR story.
 import { hatchModules } from './hatch-modules.js';
+// The compiled story, generated beside this file at build time the same way.
+import { storyIR } from './story-ir.js';
 
 const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
-
-/**
- * The story's imported fragments (ADR-251), shipped as one bundle keyed by
- * `<name>.chord`. Absent when the story imports nothing — then the map is
- * empty and the compiler never consults the resolver.
- */
-async function fetchImports(): Promise<Record<string, string>> {
-  const response = await fetch('./imports.json');
-  if (!response.ok) return {};
-  return (await response.json()) as Record<string, string>;
-}
 
 /**
  * The IDE's pinned play seed (ADR-299 D5), or undefined on a published page.
@@ -82,21 +74,15 @@ function applyPinnedPlayForces(engine: GameEngine): void {
   }
 }
 
-/** Compile the shipped .story source; surface diagnostics on the page. */
-async function loadStory(): Promise<Story> {
-  const response = await fetch('./story.story');
-  if (!response.ok) {
-    throw new Error(`could not fetch story.story (${response.status})`);
-  }
-  const source = await response.text();
-  // ADR-251: resolve `import "<file>"` fragments from the shipped bundle.
-  const imports = await fetchImports();
-  const result = compile(source, { importResolver: (name) => imports[name] ?? null });
-  if (!result.ok) {
-    const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    const lines = errors.map((d) => `story.story:${d.span.line}:${d.span.column} [${d.code}] ${d.message}`);
-    throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
-  }
+/**
+ * Build the story from the IR embedded in this bundle.
+ *
+ * There is no compile step and no diagnostics path here on purpose: the build
+ * ran the load-time gates before it emitted the IR (ADR-251 imports are
+ * resolved there too), so a gate failure cannot reach a player's browser. It
+ * fails the build instead, which is where an author can act on it.
+ */
+function loadStory(): Story {
   const playSeed = pinnedPlaySeed();
   // A pure-IR story gets an empty map and is unaffected; a hatched story
   // gets its author-written modules, bound by the loader against the same
@@ -105,7 +91,7 @@ async function loadStory(): Promise<Story> {
   // from the session seed (ADR-293 D1) — omitting it leaves chord draws
   // clock-seeded even when the engine runs pinned (the author-game.ts
   // precedent, re-learned here in ADR-299 Phase 5).
-  return createStory(result.ir, {
+  return createStory(storyIR, {
     hatchModules,
     ...(playSeed !== undefined ? { seed: playSeed } : {}),
   }) as unknown as Story;
@@ -119,11 +105,11 @@ async function loadStory(): Promise<Story> {
 let client: BrowserClient | null = null;
 
 async function start(): Promise<void> {
-  // Fresh compile + build per boot (ADR-248): a restart reboot re-runs
-  // start() and gets a fully fresh story from the bundled source.
+  // Fresh build per boot (ADR-248): a restart reboot re-runs start() and gets
+  // a fully fresh story built from the same embedded IR.
   let story: Story;
   try {
-    story = await loadStory();
+    story = loadStory();
   } catch (error) {
     const target = document.getElementById('text-content');
     const message = error instanceof Error ? error.message : String(error);

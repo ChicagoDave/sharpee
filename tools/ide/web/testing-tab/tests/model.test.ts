@@ -18,7 +18,18 @@ import {
   type TranscriptEndEvent,
   type TranscriptStartEvent,
 } from '@sharpee/ide-protocol/run-events';
-import { ancestry, applyEvent, createModel, subtreeFailureCount } from '../src/model';
+import {
+  ancestry,
+  applyEvent,
+  createModel,
+  descendantCount,
+  reparentCandidates,
+  storyEnd,
+  STORY_OVER_ERROR,
+  subtreeFailureCount,
+  worldBefore,
+  worldDelta,
+} from '../src/model';
 
 let seq = 0;
 const envelope = () => ({ schemaVersion: RUN_EVENT_SCHEMA_VERSION, seq: seq++, elapsedMs: seq });
@@ -89,6 +100,22 @@ describe('the run-event fold', () => {
     expect(model.running).toBeNull();
   });
 
+  it('folds a failed command\'s failure message onto its turn, and only then', () => {
+    // The one-line "why" the wire carries for an assertion mismatch — the
+    // detail pane renders it, since an ordinary failure sets no `error`.
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { line: 4, input: 'east', passed: false,
+                      failure: 'Output does not contain "Boiler Shed"' }),
+      command(ROOT, { line: 6, input: 'look' }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+
+    const turns = model.nodes.get(ROOT)!.turns;
+    expect(turns[0].failure).toBe('Output does not contain "Boiler Shed"');
+    expect(turns[1].failure).toBeUndefined();
+  });
+
   it('builds parentage from the wire and keeps a node under one parent across executions', () => {
     const model = fold([
       start(ROOT),
@@ -148,6 +175,17 @@ describe('the run-event fold', () => {
   });
 
   // ADR-302 D13.
+  it('records a skipped node — empty transcript, never a failure (phase-6 F1)', () => {
+    const model = fold([
+      start(ROOT, { commandCount: 0 }),
+      end(ROOT, { status: 'skipped', passed: 0 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    expect(node.status).toBe('skipped');
+    expect(node.turns).toHaveLength(0);
+    expect(model.running).toBeNull();
+  });
+
   it('records an unreached node with what blocked it, and never as a failure', () => {
     const model = fold([
       start(ROOT),
@@ -190,6 +228,35 @@ describe('the run-event fold', () => {
     const model = fold([start(ROOT), end(ROOT), command(ROOT)]);
     expect(model.nodes.get(ROOT)!.turns).toHaveLength(0);
     expect(model.authoredCommands).toBe(0);
+  });
+
+  it('keeps the engine turn a command executed as, and its absence when the wire had none', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { turn: 1 }),
+      command(ROOT, { line: 6, input: 'score', turn: 2 }),
+      // A meta command shares its turn with the next action — the model must
+      // hold what the wire said, never re-derive a count of its own.
+      command(ROOT, { line: 8, input: 'east', turn: 2 }),
+      command(ROOT, { line: 10, input: 'west' }),
+      end(ROOT),
+    ]);
+    const turns = model.nodes.get(ROOT)!.turns;
+    expect(turns.map((t) => t.turn)).toEqual([1, 2, 2, undefined]);
+  });
+
+  it('counts every transcript beneath a node — the blast radius of a turn-count edit', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      end(KEY),
+      start(DEEP, { parent: KEY }),
+      end(DEEP),
+    ]);
+    expect(descendantCount(model.nodes.get(ROOT)!)).toBe(2);
+    expect(descendantCount(model.nodes.get(KEY)!)).toBe(1);
+    expect(descendantCount(model.nodes.get(DEEP)!)).toBe(0);
   });
 
   it('pairs phase events and keeps their elapsed span', () => {
@@ -251,5 +318,157 @@ describe('the run-event fold', () => {
     const cyclic = model.nodes.get(ROOT)!;
     cyclic.parent = DEEP;
     expect(ancestry(model, cyclic).length).toBeLessThanOrEqual(model.nodes.size);
+  });
+});
+
+// R9, two kinds of evidence: the wire naming the ender (`ending`, which alone
+// covers a file whose LAST command ends the story cleanly), and — for streams
+// predating the field — the dead tail, where every further command errors as
+// EXACTLY the runner's normalized string. The derivation must never guess
+// beyond either, and never fire on an ordinary failure.
+describe('storyEnd', () => {
+  it('marks a clean ending — the last command carries `ending`, and there is no dead tail', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'wait' }),
+      command(ROOT, { line: 6, input: 'wait', ending: 'defeat' }),
+      end(ROOT, { status: 'passed', passed: 2 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('wait');
+    expect(found?.endsAt?.line).toBe(6);
+    expect(found?.dead).toEqual([]);
+  });
+
+  it('splits at the `ending`-carrying turn when a dead tail follows it too', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'cut the fuse', ending: 'victory' }),
+      command(ROOT, { line: 6, input: 'look', passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('cut the fuse');
+    expect(found?.dead.map((turn) => turn.input)).toEqual(['look']);
+  });
+
+  it('is null for a run that never showed an ending — including ordinary failures', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT),
+      command(ROOT, { line: 6, passed: false, error: 'Expected output not found' }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+    expect(storyEnd(model.nodes.get(ROOT)!)).toBeNull();
+  });
+
+  it('names the ender and the dead tail, split at the first stopped-engine error', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { input: 'wait' }),
+      command(ROOT, { line: 6, input: 'cut the fuse' }),
+      command(ROOT, { line: 8, input: 'look', passed: false, error: STORY_OVER_ERROR }),
+      command(ROOT, { line: 10, input: 'inventory', passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 2, failed: 2 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found?.endsAt?.input).toBe('cut the fuse');
+    expect(found?.dead.map((turn) => turn.input)).toEqual(['look', 'inventory']);
+  });
+
+  it('has no ender when the story was over before the first command — the ending is an ancestor\'s', () => {
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { passed: false, error: STORY_OVER_ERROR }),
+      end(ROOT, { status: 'failed', passed: 0, failed: 1 }),
+    ]);
+    const found = storyEnd(model.nodes.get(ROOT)!);
+    expect(found).not.toBeNull();
+    expect(found?.endsAt).toBeNull();
+    expect(found?.dead).toHaveLength(1);
+  });
+});
+
+// The exclusions are by construction, not refusal-after-the-fact: what the
+// picker never offers, the author can never write.
+describe('reparentCandidates', () => {
+  it('excludes the node itself and everything beneath it — a cycle by construction', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      end(KEY),
+      start(DEEP, { parent: KEY }),
+      end(DEEP),
+    ]);
+    const forKey = reparentCandidates(model, model.nodes.get(KEY)!).map((n) => n.stem);
+    expect(forKey).toEqual(['arrival']);
+    const forRoot = reparentCandidates(model, model.nodes.get(ROOT)!);
+    expect(forRoot).toEqual([]);
+  });
+
+  it('excludes a file whose run reached the story\'s ending — its children would die', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      command(KEY, { passed: false, error: STORY_OVER_ERROR }),
+      end(KEY, { status: 'failed', passed: 0, failed: 1 }),
+      start(DEEP, { parent: ROOT }),
+      end(DEEP),
+    ]);
+    const stems = reparentCandidates(model, model.nodes.get(DEEP)!).map((n) => n.stem);
+    expect(stems).toEqual(['arrival']);
+  });
+
+  it('excludes a CLEANLY-ended file the same way — the wire field is the only sign it has', () => {
+    const model = fold([
+      start(ROOT),
+      end(ROOT),
+      start(KEY, { parent: ROOT }),
+      command(KEY, { ending: 'defeat' }),
+      end(KEY, { status: 'passed', passed: 1 }),
+      start(DEEP, { parent: ROOT }),
+      end(DEEP),
+    ]);
+    const stems = reparentCandidates(model, model.nodes.get(DEEP)!).map((n) => n.stem);
+    expect(stems).toEqual(['arrival']);
+  });
+});
+
+describe('world snapshots and their deltas', () => {
+  const HALL = { name: 'Entrance Hall', token: 'hall' };
+  const STUDY = { name: 'Study', token: 'study' };
+  const LETTER = { name: "solicitor's letter", token: 'summons' };
+  const KEY = { name: 'tarnished key', token: 'key' };
+
+  it('keeps the entry snapshot from the authored start and each turn\'s after-snapshot', () => {
+    const entry = { location: HALL, inventory: [LETTER] };
+    const after = { location: HALL, inventory: [LETTER, KEY] };
+    const model = fold([
+      start(ROOT, { world: entry }),
+      command(ROOT, { input: 'take key', world: after }),
+      end(ROOT, { status: 'passed', passed: 1 }),
+    ]);
+    const node = model.nodes.get(ROOT)!;
+    expect(node.entryWorld).toEqual(entry);
+    expect(node.turns[0].world).toEqual(after);
+    // The first turn's before IS the entry snapshot; later turns chain.
+    expect(worldBefore(node, 0)).toEqual(entry);
+    expect(worldBefore(node, 1)).toEqual(after);
+  });
+
+  it('derives took/dropped/movedTo by token, and nothing from an unknown before', () => {
+    const before = { location: HALL, inventory: [LETTER] };
+    const after = { location: STUDY, inventory: [KEY] };
+    const delta = worldDelta(before, after);
+    expect(delta?.movedTo).toEqual(STUDY);
+    expect(delta?.took).toEqual([KEY]);
+    expect(delta?.dropped).toEqual([LETTER]);
+    // No before, no claims — a change cannot be derived from one side.
+    expect(worldDelta(undefined, after)).toBeNull();
+    expect(worldDelta(before, undefined)).toBeNull();
+    // Nothing changed, nothing offered.
+    expect(worldDelta(before, { location: HALL, inventory: [LETTER] })).toBeNull();
   });
 });

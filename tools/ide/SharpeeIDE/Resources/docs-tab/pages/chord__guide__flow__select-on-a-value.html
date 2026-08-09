@@ -1,0 +1,13 @@
+<p><code>select on &lt;value&gt;</code> dispatches to the arm whose <code>when</code> matches the value, and runs nothing if none do. The classic use is a state machine: one arm per declared state, each speaking for that state.</p>
+<pre><code class="language-chord">  on examining it
+    select on its state
+      when dormant
+        phrase bulb-dormant
+      when sprouting
+        phrase bulb-sprouting
+      when blooming
+        phrase bulb-blooming
+    end select
+  end on</code></pre>
+<p>The value after <code>on</code> is any value expression: here <code>its state</code>, the amaryllis bulb's current state out of <code>dormant, sprouting, blooming</code>. Each <code>when &lt;word&gt;</code> heads an arm whose body is ordinary statements. The block closes with <code>end select</code>, and each <code>or</code>-free arm simply dedents. Coverage is not enforced: an unmatched value falls through silently, which is what you want for &quot;react only to these states.&quot;</p>
+<p>Do not confuse this arm-header <code>when &lt;word&gt;</code> with the statement-final <code>when &lt;condition&gt;</code> suffix. Same word, different job: the suffix gates one statement on a condition, while the arm header names a value to match. <code>select on</code> compares values; it does not evaluate conditions.</p>

@@ -1,0 +1,68 @@
+<p>These actions get an actor from place to place. Full entries live in <a href="/chord/stdlib/movement">the standard library reference</a>; hiding is covered in <a href="/chord/stdlib/npcs">the NPCs reference</a>.</p>
+<table><thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead><tbody><tr><td><strong>go</strong></td><td><code>&lt;direction&gt;</code> · <code>go</code>/<code>walk</code>/<code>run</code>/<code>head</code>/<code>travel &lt;direction&gt;</code></td><td>a room exit that way</td><td><code>no_exit_that_way</code>, <code>movement_blocked</code>, <code>door_closed</code>, <code>door_locked</code>, <code>not_in_room</code>, <code>no_exits</code></td></tr><tr><td><strong>enter</strong></td><td><code>enter X</code> · <code>get in</code>/<code>into X</code> · <code>climb in</code>/<code>into X</code> · <code>go in</code>/<code>into X</code> · <code>board X</code> · <code>get on X</code></td><td><code>enterable</code></td><td><code>container_closed</code>, <code>already_inside</code>, <code>not_enterable</code></td></tr><tr><td><strong>exit</strong></td><td><code>exit</code> · <code>leave</code> · <code>get out</code> · <code>go out</code> · <code>climb out</code> · <code>disembark</code> · <code>alight</code></td><td>being inside or on something</td><td><code>already_outside</code>, <code>container_closed</code>, <code>nowhere_to_go</code></td></tr><tr><td><strong>climb</strong></td><td><code>climb [up</code>/<code>down] X</code> · <code>scale</code>/<code>ascend</code>/<code>descend X</code></td><td><code>climbable</code></td><td><code>not_climbable</code>, <code>already_there</code>, <code>cant_go_that_way</code></td></tr><tr><td><strong>hide</strong></td><td><code>hide</code>/<code>duck</code>/<code>crouch behind</code>/<code>under X</code> · <code>hide [in</code>/<code>inside</code>/<code>on] X</code></td><td><code>concealment</code> — the <code>hiding-spot</code> adjective</td><td><code>cant_hide_there</code></td></tr><tr><td><strong>reveal</strong></td><td><code>stand up</code> · <code>come out</code> · <code>unhide</code> · <code>stop hiding</code></td><td>being hidden</td><td>—</td></tr></tbody></table>
+<h2 id="going">going</h2>
+<p>Exits are lines in the room's <code>create</code> block; a blocked exit speaks the story's own phrase. <code>go north</code> and the <code>walk</code>/<code>run</code>/<code>head</code>/<code>travel</code> synonyms all parse since ADR-230, as does the bare direction, which is what players actually type.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Meadow
+  a room
+  north to the Orchard
+  east is blocked: hedge-thick
+
+  Knee-high grass, and a dark hedge along the eastern edge.
+
+create the Orchard
+  a room
+  south to the Meadow
+
+  Apple trees in crooked rows.
+
+create the player
+  starts in the Meadow
+
+define phrases en-US
+  hedge-thick:
+    The hedge is a wall of blackthorn. Not that way.</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; east
+The hedge is a wall of blackthorn. Not that way.
+
+&gt; go north
+Orchard
+Apple trees in crooked rows.
+
+&gt; walk south
+Meadow
+Knee-high grass, and a dark hedge along the eastern edge.
+
+&gt; west
+You can't go that way.</code></pre>
+<h2 id="entering-and-exiting">entering and exiting</h2>
+<p>One trait, <code>enterable</code>, is checked in the action, which turns everything else away with <code>not_enterable</code>. Compose <code>openable</code> alongside it and a closed door refuses entry with <code>container_closed</code>. All the phrasings are equivalent: <code>get in</code>/<code>get into</code> land on the enterable target even when it is scenery (ADR-231).</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Carriage House
+  a room
+
+  Straw on the flagstones and one relic of better days.
+
+create the sedan chair
+  aka chair, sedan
+  enterable, openable
+  scenery
+  in the Carriage House
+
+  A gilt sedan chair with a door on the near side.
+
+create the player
+  starts in the Carriage House</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; enter the sedan chair
+The sedan chair is closed.
+
+&gt; open the sedan chair
+You open the sedan chair.
+
+&gt; enter the sedan chair
+You get into the sedan chair.
+
+&gt; exit
+You get out of the sedan chair.</code></pre>

@@ -1,0 +1,94 @@
+title: The clock channel
+story: fernhill
+description: The case clock is the story's only addressable channel — a
+  sidebar-gated `clock` channel fed by `emit estate-clock`. This is the
+  `[CHANNEL:]` assertion family, which no document mentions.
+seed: 1
+channels: clock
+
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+[OK: contains "a tall case clock standing silent against the stairs"]
+
+# The clock is stopped, so nothing has ever been emitted on `estate-clock` and
+# the channel has never carried a value. Sparse-channel silence is assertable.
+[CHANNEL: clock, is absent]
+
+# `wearable, a container` — the coat is searchable and the key is `concealed`,
+# the same pattern as the doormat in key.transcript.
+> examine the grey overcoat
+[OK: contains "The pockets are deep"]
+
+> search the grey overcoat
+[OK: contains "winding key"]
+
+> take the winding key
+[OK: contains "You take the winding key from the grey overcoat"]
+
+# `define trait windable` — the player must hold the key, and the clock must be
+# `stopped`.
+> wind the case clock
+[OK: contains "the old clock clears its throat and begins to walk again: tick, tock"]
+
+# `it must be stopped: clock-already-going` — the second winding is refused,
+# and it still costs a turn, which the count below depends on.
+> wind the case clock
+[OK: contains "It is wound and walking. Tick, tock"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 14. Two things land together: the long-night sequence flips the story to
+# `midnight`, and the clock's `on every turn while it is ticking and one chance
+# in 8` rolls a chime. The chime's `emit estate-clock with hour "past midnight"
+# when midnight` sees the state AFTER the flip.
+#
+# This is only reliable because the seed is pinned — at one chance in 8, an
+# unpinned run puts the chime somewhere else entirely, or nowhere in this file.
+> wait
+[OK: contains "Midnight is coming on"]
+[OK: contains "The case clock counts the quarter, bright and even, through the whole house"]
+
+# FINDING, asserted as it behaves: the channel says NOTHING, on this turn or
+# any other. The chime fired — its prose is in the output above — and
+# `emit estate-clock with hour "past midnight" when midnight` sits directly
+# under that chime in the story, but `return "The clock: (hour)" from
+# estate-clock` never produces a value in a transcript run.
+#
+# Checked by probe rather than inferred: a 46-turn run with the clock ticking
+# throughout, asserting `[CHANNEL: clock, is absent]` on every single turn,
+# passes on every single turn. The channel is silent for the whole story.
+#
+# The channel is declared `gated by sidebar`, and a transcript session has no
+# sidebar. `channels: clock` in this header declares which channels the run
+# CAPTURES; it does not open a gate. So a gated channel appears to be
+# unassertable from a transcript at all — which means the sidebar clock, one of
+# the four things this story exists to demonstrate, has no test coverage
+# available to it.
+#
+# The failure message when this was written as `is present` does not mention
+# gating. It says the channel "said nothing this turn — if that is the claim,
+# write [CHANNEL: clock, is absent]", which reads as a normal sparse turn and
+# sends the author to write exactly the assertion below, concluding their story
+# works.
+[CHANNEL: clock, is absent]

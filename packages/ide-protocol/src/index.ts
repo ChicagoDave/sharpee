@@ -56,6 +56,8 @@ export type {
   CoverageEvent,
   RunEndEvent,
   RunEvent,
+  WorldEntityRef,
+  WorldSnapshot,
 } from './run-events.js';
 export {
   RUN_EVENT_SCHEMA_VERSION,

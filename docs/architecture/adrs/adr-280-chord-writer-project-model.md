@@ -1,6 +1,6 @@
 # ADR-280: Chord Writer project model — typed artifacts, a default home, devkit-owned scaffolding
 
-## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)
+## Status: ACCEPTED — **Amended A1** (2026-08-06, session daeb64): D2's app-owned `~/Documents/Chord/` home is **superseded**. New stories default to `~/Documents/<Story Title>/` and the location is an editable field, not a convention. D2's *reasoning* (the app owns a default so a writer never confronts a path picker) survives; the folder it named does not. Acceptance 6 stands unchanged. See **Amendment A1** at the foot of this document. (Original accept: 2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking.)
 
 ## Date: 2026-07-27
 
@@ -49,6 +49,11 @@ artifact type still appear (an "Other" group), never hidden and never
 deleted. The typed groups are a lens over the real folder, not a cage.
 
 ### D2 — The default project home is `~/Documents/Chord`
+
+> **Superseded by Amendment A1 (2026-08-06).** The folder is now
+> `~/Documents/<Story Title>/` — no `Chord/` parent — and the location is a
+> field the author can edit. Read the paragraph below for its reasoning, not
+> its path.
 
 New Story defaults to `~/Documents/Chord/<story-name>/`. Writers never
 confront a path picker unless they ask for one (a standard "choose
@@ -131,3 +136,44 @@ the file-list mindset showing through.)
 
 Drafted 2026-07-27, session fda0f0, from David's first-install walk and
 the project-model conversation (`docs/context/session-20260727-2100-main.md`).
+
+Amendment A1: 2026-08-06, session daeb64.
+
+---
+
+## Amendment A1 — no app-owned home; the story's own title names its folder (2026-08-06, session daeb64)
+
+**What changed.** D2's `~/Documents/Chord/<story-name>/` is gone. A new story
+defaults to `~/Documents/<Story Title>/`, and the Create Story sheet shows that
+location in an editable field that mirrors the title as it is typed — until the
+author edits the location, after which mirroring stops for good.
+
+**Why.** Two reasons, in the order they mattered:
+
+1. **An author keeps stories where source control wants them.** An app-owned
+   parent folder is a claim on the author's filesystem that a version-controlled
+   project cannot honour. Inform made the same retreat from its own forced
+   `Inform/` folder.
+2. **The folder is the author's title, not a slug.** `~/Documents/The Folly at
+   Fernhill/` is what they will look for in Finder. The `.story` file inside
+   keeps its kebab-case id, because that id is what the story source and the
+   build consume — the two names have different jobs.
+
+**What survives from D2.** Its actual point: the app owns a default so a writer
+never has to think about a path. That default is now a *starting value in a
+visible field* rather than a location they must discover — strictly more of what
+D2 wanted, not less.
+
+**What is unaffected.** Acceptance 6 (a colliding target is refused with the
+full path shown, never overwritten) stands and is still tested — the refusal
+matters more now that the location is author-editable, not less. D3's
+devkit-owned scaffolding rule is untouched.
+
+**Where it lives.** `StoryHome.defaultRoot` is `~/Documents`;
+`StoryLocationMirror.folderName` is the single folder-naming rule, and
+`StoryHome` delegates to it so the app cannot grow a second one.
+
+**One consequence to expect.** Stories created under the old rule are still at
+`~/Documents/Chord/<story-id>/` and nothing moves them. They open exactly as
+before — the landing page lists them from the recents store, which is
+location-agnostic by construction.

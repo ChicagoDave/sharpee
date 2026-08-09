@@ -1,0 +1,13 @@
+<p>An ordinal block runs its body only on the Nth time the enclosing clause fires. The ordinals <code>first time</code> through <code>tenth time</code> appear in statement position, interleaved with ordinary statements:</p>
+<pre><code class="language-chord">  on knocking it
+    phrase knock-echo
+    first time
+      phrase knock-first
+    second time
+      change it to smudged
+      phrase knock-second
+    fifth time
+      phrase knock-fifth
+  end on</code></pre>
+<p>Every knock speaks <code>knock-echo</code>; the ordinal blocks add to it on the first, second, and fifth knock only. The ordinals need not be contiguous; jumping <code>first</code>, <code>second</code>, <code>fifth</code> is fine, and the gaps simply do nothing. Each block dedents to close; there is no <code>end</code> keyword.</p>
+<p>This is the same keyword pair as the create-block <code>first time</code> description, and the collision is worth naming. Inside a <code>create</code> block, at the top level of the block, <code>first time</code> opens the room's first-visit description and only <code>first time</code> is legal there. Inside a behavior body, <code>first time</code> opens an ordinal block and the whole family through <code>tenth time</code> is available. Position decides which one you get: a <code>first time</code> directly under <code>create</code> is a description, a <code>first time</code> inside <code>on</code>/<code>after</code> is an ordinal.</p>

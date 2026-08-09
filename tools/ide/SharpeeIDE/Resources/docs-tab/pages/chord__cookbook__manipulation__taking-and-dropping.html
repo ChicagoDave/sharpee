@@ -1,0 +1,49 @@
+<p>Anything is takeable unless something says otherwise. The two classic &quot;otherwise&quot;s: the <code>scenery</code> trait, which refuses with the platform's <code>fixed_in_place</code>, and an <code>on taking it</code> guard, which refuses with the entity's own words.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Lamp Room
+  a room
+
+  Shelves of unlit lamps line every wall.
+
+create the brass lantern
+  aka lantern
+  in the Lamp Room
+
+  A dented brass lantern with a wire handle.
+
+create the marble statue
+  aka statue
+  scenery
+  in the Lamp Room
+
+  A blank-eyed statue, far too heavy to move.
+
+create the iron ring
+  aka ring
+  scenery
+  in the Lamp Room
+
+  A ring set into the floor slab.
+
+  on taking it
+    refuse ring-fused
+  end on
+
+create the player
+  starts in the Lamp Room
+
+define phrase ring-fused
+  The ring is fused to the slab; your fingers just slip off it.
+end phrase</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; take the statue
+The marble statue is fixed in place.
+
+&gt; take the ring
+The ring is fused to the slab; your fingers just slip off it.
+
+&gt; take the lantern
+Taken.
+
+&gt; drop the lantern
+Dropped.</code></pre>

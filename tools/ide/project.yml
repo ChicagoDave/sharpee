@@ -36,6 +36,9 @@ targets:
         # copy phase would carry them twice.
         excludes:
           - "Resources/testing-tab/**"
+          - "Resources/docs-tab/**"
+          - "Resources/play-themes/**"
+          - "Resources/testing-surface/**"
       # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
       # esbuild output is copied whole into Contents/Resources/testing-tab/ and
       # adding a file to it never needs a project regenerate.
@@ -48,6 +51,29 @@ targets:
       - path: SharpeeIDE/Resources/testing-tab
         type: folder
         buildPhase: resources
+      # The Documentation tab's bundle (go-live Phase 3): sharpee.net's author
+      # documentation, reduced from MDX and rendered to HTML fragments. A folder
+      # reference for the same reasons as the Testing tab above — copied whole,
+      # and adding a page never needs a project regenerate. Committed for the
+      # same reason too: XcodeGen resolves this path at generate time, so a
+      # gitignored folder would make `xcodegen generate` on a fresh clone
+      # silently produce an app with no Documentation tab.
+      - path: SharpeeIDE/Resources/docs-tab
+        type: folder
+        buildPhase: resources
+      # The platform-browser built-in theme set, mirrored by
+      # vendor-play-themes.sh (go-live Phase 6b): the Play pane offers every
+      # built-in theme as IDE chrome regardless of what the open story ships.
+      # A committed folder reference for the same reasons as the two above.
+      - path: SharpeeIDE/Resources/play-themes
+        type: folder
+        buildPhase: resources
+      # The testing play surface's web bundle (ADR-306 Phase 3): the card /
+      # segment UI injected into the story's testing page. A committed folder
+      # reference for the same reasons as the tabs above.
+      - path: SharpeeIDE/Resources/testing-surface
+        type: folder
+        buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
     # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
@@ -58,6 +84,22 @@ targets:
       - name: Bundle the Testing tab (ADR-301 D1)
         basedOnDependencyAnalysis: false
         script: '"$PROJECT_DIR/build-testing-tab.sh"'
+      # Same trade as above: the docs bundler is one corpus walk plus one
+      # esbuild pass (~150ms for 143 pages), so stale documentation is not worth
+      # saving it. Deliberately NOT the website's Next build — see the script.
+      - name: Bundle the Documentation tab (go-live Phase 3)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/build-docs-tab.sh"'
+      # One directory copy — too cheap to be opt-in, and a stale theme mirror
+      # would quietly diverge from what `sharpee build` ships (Phase 6b).
+      - name: Vendor play themes (go-live Phase 6b)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/vendor-play-themes.sh"'
+      # Same trade as the Testing tab: one esbuild pass, and a stale surface
+      # is a wrong surface (ADR-306 Phase 3).
+      - name: Bundle the testing play surface (ADR-306 Phase 3)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/build-testing-surface.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds

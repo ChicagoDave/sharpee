@@ -77,9 +77,11 @@ function processTemplate(content: string, info: ProjectInfo): string {
     // (The build's generated entry fills these from the .story header instead.)
     .replace(/\{\{STORAGE_PREFIX\}\}/g, info.storyId)
     .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
+    // All four built-ins (#249): the scaffold starts with the full platform set
+    // and the author trims, rather than opting in from a pair.
     .replace(
       /\{\{THEMES_JSON\}\}/g,
-      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
+      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'retro-terminal', name: 'Retro Terminal' },\n        { id: 'paper', name: 'Paper' },\n        { id: 'system-6', name: 'System 6' },\n      ]",
     );
 }
 
@@ -137,9 +139,11 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
 
   console.log(`  Story: ${info.storyTitle} (${info.storyId})`);
 
-  // A Chord project (root `.story` file) gets the compile-at-boot entry
-  // (the bundle ships the story source + the Chord compiler — David's
-  // ruling, 2026-07-18); a module project gets the import-the-story entry.
+  // A Chord project (root `.story` file) gets the embedded-IR entry: the build
+  // stamps `story-ir.ts` beside it and the page calls `createStory(storyIR)`,
+  // so there is no compiler and no `fetch()` on the page and a published zip
+  // runs from `file://` (ADR-284, reversing the 2026-07-18 compile-at-boot
+  // ruling). A module project gets the import-the-story entry.
   const isChord = findStoryFile(projectDir) !== null;
 
   // Entry point — the one wiring file authors may customize.
@@ -157,7 +161,7 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
   }
   fs.mkdirSync(path.dirname(browserEntryPath), { recursive: true });
   fs.writeFileSync(browserEntryPath, processTemplate(fs.readFileSync(browserEntryTemplate, 'utf-8'), info));
-  console.log(`  ✓ Created src/browser-entry.ts${isChord ? ' (Chord — compiles story.story at boot)' : ''}`);
+  console.log(`  ✓ Created src/browser-entry.ts${isChord ? ' (Chord — runs the compiled story IR)' : ''}`);
 
   // Seed src/version.ts now (browser-entry imports it) so the project compiles immediately,
   // before any build runs. `sharpee build` / `build-browser` refresh it with current values.

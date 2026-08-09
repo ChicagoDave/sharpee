@@ -1,0 +1,39 @@
+<p>Asking and telling are deliberately minimal (ADR-230): the platform validates the social preconditions and reports an interceptable default, which is <code>unknown_topic</code> when the action is asking and <code>not_interested</code> when the action is telling. An <code>on asking it</code> clause on the person is where real dialogue hooks in; the topic slot is free text, resolved entity-first (ADR-231): a topic naming something in scope carries that entity along, and anything else (for example, <code>ask the hermit about the weather</code>) flows through as plain text. A topic is never scope-rejected.</p>
+<p>The author writes:</p>
+<pre><code class="language-chord">create the Hermitage
+  a room
+
+  A driftwood hut above the tide line.
+
+create the hermit
+  a person
+  in the Hermitage
+
+  A weathered hermit mending a net.
+
+  on asking it
+    phrase hermit-answers
+  end on
+
+create the gull
+  aka seagull
+  a person
+  in the Hermitage
+
+  A herring gull with an air of officialdom.
+
+create the player
+  starts in the Hermitage
+
+define phrases en-US
+  hermit-answers:
+    The hermit squints seaward. &quot;Weather's turning. It always is.&quot;</code></pre>
+<p>The player sees:</p>
+<pre><code class="language-text">&gt; ask the gull about the hermit
+The gull says, &quot;I don't know anything about that.&quot;
+
+&gt; ask the hermit about the gull
+The hermit squints seaward. &quot;Weather's turning. It always is.&quot;
+
+&gt; tell the gull about the hermit
+The gull doesn't seem interested.</code></pre>

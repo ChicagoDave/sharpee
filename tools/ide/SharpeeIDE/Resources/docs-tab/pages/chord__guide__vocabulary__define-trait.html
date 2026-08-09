@@ -1,0 +1,33 @@
+<p>A trait is a reusable bundle of data, states, scores, phrases, and behavior that entities compose with. <code>define trait &lt;name&gt; … end trait</code> declares one. The block below carries one of everything:</p>
+<pre><code class="language-chord">define trait feedable
+  data
+    food: entity
+    ration: optional number
+    diet: one of hay, seed, fish
+  states, reversible: hungry, content
+  score fed worth 10
+
+  phrases en-US
+    no-food:
+      You have nothing {the item} would want.
+    already-fed:
+      {capitalize the item} has had quite enough already.
+    fed:
+      The feed vanishes in seconds.
+
+  on feeding it
+    the player must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
+    award fed
+    phrase fed
+  end on
+end trait</code></pre>
+<p>The parts, top to bottom:</p>
+<ul><li><strong><code>data</code></strong> declares fields. Each is <code>&lt;name&gt;: &lt;type&gt;</code>, where the type is <code>entity</code>, <code>number</code>, <code>name</code>, or <code>one of &lt;word&gt;, &lt;word&gt;, …</code> for a fixed set. <code>optional</code> before the type makes the field omittable; <code>, starts &lt;value&gt;</code> (not shown here) gives a default. Fields are read and written with <code>its &lt;field&gt;</code> / <code>set its &lt;field&gt; to …</code>.</li><li><strong><code>states</code></strong> and <strong><code>score</code></strong> are the same owner lines as everywhere else, here owned by the trait: every entity composed with <code>feedable</code> gets the <code>hungry</code>/<code>content</code> states and can award <code>fed</code>.</li><li><strong><code>phrases</code></strong> is a locale block scoped to the trait.</li><li><strong><code>on</code>/<code>after</code> clauses</strong> are the trait's behavior, with <code>it</code> meaning the composed entity.</li></ul>
+<p>An entity picks the trait up on a composition line, passing its data with <code>with</code>:</p>
+<pre><code class="language-chord">create the pygmy goats
+  aka goats
+  feedable with food the handful of feed and diet hay
+  in the Petting Zoo</code></pre>
+<p>A state name declared by two different composed traits on one entity is a collision (<code>analysis.state-collision</code>), caught at load time.</p>

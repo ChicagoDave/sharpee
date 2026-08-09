@@ -1,0 +1,419 @@
+/*
+ * surface.css — the testing play surface's chrome (ADR-306 Phase 3).
+ *
+ * Layers the cards / source / run columns over the testing page
+ * (index-testing.html). Palette = tools/ide/SharpeeIDE/Theme.swift verbatim,
+ * light and dark — same values as the design mock
+ * (docs/work/testing/mock-testing-play-surface.html). Prose inside a card
+ * keeps the client's own classes and engine.css styling; everything ts-*
+ * here is IDE chrome, never shipped to authors' players.
+ * Owner context: tools/ide — the testing play surface's web bundle.
+ */
+
+:root {
+  --ts-play-bg:  #E6E9EF;
+  --ts-block-bg: #EFF1F5;
+  --ts-rail-bg:  #DCE0E8;
+  --ts-border:   #ACB0BE;
+  --ts-fg:       #4C4F69;
+  --ts-fg-dim:   #6C6F85;
+  --ts-fg-faint: #9CA0B0;
+  --ts-accent:   #1E66F5;
+  --ts-assert:   #40A02B;
+  --ts-fail:     #D20F39;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ts-play-bg:  #13141A;
+    --ts-block-bg: #1E1F26;
+    --ts-rail-bg:  #16171D;
+    --ts-border:   #3A3C48;
+    --ts-fg:       #D8D9E0;
+    --ts-fg-dim:   #8E90A0;
+    --ts-fg-faint: #5C5F6D;
+    --ts-accent:   #89B4FA;
+    --ts-assert:   #A6E3A1;
+    --ts-fail:     #F38BA8;
+  }
+}
+
+/* The surface takes the page over: the client's own window chrome hides
+   (its #text-content keeps receiving turns as a staging area the cards
+   drain), the input bar is reparented into the cards column. */
+body.ts-active {
+  display: block;
+  background: var(--ts-play-bg);
+  color: var(--ts-fg);
+  font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+}
+body.ts-active .sharpee-window { display: none; }
+
+#ts-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+}
+
+/* ── left: the cards column — rail gradient, cards, the prompt ────────── */
+
+.ts-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ts-session {
+  flex: 1;
+  overflow-y: auto;
+  background: linear-gradient(to right, var(--ts-rail-bg) 0, var(--ts-rail-bg) 44px,
+                              var(--ts-border) 44px, var(--ts-border) 45px,
+                              var(--ts-play-bg) 45px);
+}
+#ts-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 14px 0;
+  max-width: 76ch;
+}
+
+.ts-turn { display: flex; align-items: flex-start; }
+.ts-pick {
+  flex: 0 0 45px;
+  text-align: center;
+  padding-top: 12px;
+}
+.ts-pick input {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--ts-fg-faint);
+  border-radius: 3px;
+  background: var(--ts-block-bg);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+}
+.ts-pick input:checked { background: var(--ts-accent); border-color: var(--ts-accent); }
+/* An implied range member: between the ticked ends — included, not ticked. */
+.ts-pick input.ts-implied {
+  background: color-mix(in srgb, var(--ts-accent) 35%, var(--ts-block-bg));
+  border-color: var(--ts-accent);
+}
+.ts-pick input:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 4px; height: 8px;
+  border: solid var(--ts-play-bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ts-card-column { flex: 1; min-width: 0; margin-left: 13px; }
+.ts-block {
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.ts-turn.ts-selected .ts-block { border-color: var(--ts-accent); }
+.ts-turn.ts-segment-start { margin-top: 16px; }
+
+.ts-meta {
+  color: var(--ts-fg-faint);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+/* The turn's prose: the client's real elements, engine.css styling kept.
+   Echo styling piggybacks on the client's own command class names. */
+.ts-prose p { margin: 0 0 8px; }
+.ts-prose > :last-child { margin-bottom: 0; }
+
+.ts-strip-note {
+  color: var(--ts-fg-faint);
+  font-size: 10px;
+  margin: 0 0 4px 2px;
+}
+.ts-title-strip { display: flex; gap: 6px; margin-bottom: 6px; }
+.ts-auto-name {
+  flex: 1;
+  min-width: 0;
+  font: 700 12px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg);
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-accent);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-auto-name .ts-saved {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--ts-fg-faint);
+  margin-left: 8px;
+}
+.ts-title-strip button, .ts-actions button {
+  font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+.ts-title-strip button:hover, .ts-actions button:hover {
+  color: var(--ts-fg);
+  border-color: var(--ts-fg-faint);
+}
+.ts-actions {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ts-border);
+  display: flex;
+  gap: 6px;
+}
+.ts-actions button { background: transparent; border-radius: 4px; padding: 2px 8px; }
+
+/* A collapsed transcript: one named summary card standing in for its range. */
+.ts-block.ts-summary { cursor: pointer; border-color: var(--ts-accent); }
+.ts-summary-title { font-weight: 700; }
+.ts-summary-span { color: var(--ts-fg-dim); font-size: 11px; margin-top: 2px; }
+
+/* A branch point (design §6): sibling transcripts side by side under one
+   parent — main line first, then each alternate; the selected chip is the
+   lineage the column shows (and plays — view is live). */
+.ts-branch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ts-branch-chip {
+  flex: 1;
+  min-width: 150px;
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.ts-branch-chip:hover { border-color: var(--ts-fg-faint); }
+.ts-branch-chip.ts-chip-selected {
+  border-color: var(--ts-accent);
+  cursor: default;
+}
+.ts-chip-title { font-size: 12px; font-weight: 700; }
+.ts-chip-span { color: var(--ts-fg-dim); font-size: 10.5px; margin-top: 2px; }
+
+.ts-input-row { display: flex; border-top: 1px solid var(--ts-border); }
+.ts-input-row .ts-gutter-cap {
+  flex: 0 0 44px;
+  background: var(--ts-rail-bg);
+  border-right: 1px solid var(--ts-border);
+}
+/* The client's own input bar rides here; neutralize its window styling. */
+.ts-input-row .sharpee-input-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--ts-play-bg);
+  border: none;
+}
+.ts-input-row .sharpee-input-field {
+  flex: 1;
+  font: 13px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* Card action buttons (gestures — design §5). */
+.ts-actions button.ts-active {
+  color: var(--ts-accent);
+  border-color: var(--ts-accent);
+}
+.ts-actions input {
+  flex: 1;
+  min-width: 120px;
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg);
+  background: var(--ts-play-bg);
+  border: 1px solid var(--ts-accent);
+  border-radius: 4px;
+  padding: 3px 8px;
+  outline: none;
+}
+.ts-actions input::placeholder { color: var(--ts-fg-faint); }
+
+/* Contains-by-selection: select prose in a card and Add contains floats. */
+#ts-add-contains {
+  position: fixed;
+  display: none;
+  z-index: 30;
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-play-bg);
+  background: var(--ts-accent);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* Pickers (design §5 / D6): the author asserts from a LIST of what the
+   world or the turn actually holds — never a blank field. */
+.ts-picker {
+  position: fixed;
+  z-index: 20;
+  min-width: 260px;
+  max-width: 340px;
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  padding: 4px;
+}
+.ts-picker-head {
+  color: var(--ts-fg-faint);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ts-picker-group-toggle {
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+  background: transparent;
+  border: 1px solid var(--ts-border);
+  border-radius: 4px;
+  padding: 1px 7px;
+  cursor: pointer;
+}
+.ts-picker-group-toggle.ts-active {
+  color: var(--ts-accent);
+  border-color: var(--ts-accent);
+}
+.ts-picker-filter {
+  width: calc(100% - 16px);
+  margin: 0 8px 6px;
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg);
+  background: var(--ts-play-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  outline: none;
+}
+.ts-picker-list { max-height: 260px; overflow-y: auto; }
+.ts-picker .ts-item {
+  font-size: 11px;
+  color: var(--ts-fg);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ts-picker .ts-item:hover { background: var(--ts-rail-bg); color: var(--ts-accent); }
+.ts-picker-section {
+  font-size: 10px;
+  color: var(--ts-fg-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 8px 3px;
+  cursor: pointer;
+}
+.ts-picker-empty {
+  font-size: 11px;
+  color: var(--ts-fg-faint);
+  font-style: italic;
+  padding: 4px 8px;
+}
+
+/* ── middle: the source panel — the active segment's generated transcript ── */
+
+.ts-source-col {
+  flex: 0 0 340px;
+  border-left: 1px solid var(--ts-border);
+  background: var(--ts-block-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ts-col-head {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ts-border);
+  color: var(--ts-fg-faint);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#ts-source {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+#ts-source .ts-hdr { color: var(--ts-fg-dim); }
+#ts-source .ts-cmd { color: var(--ts-accent); }
+#ts-source .ts-ok  { color: var(--ts-assert); }
+#ts-source .ts-skip { color: var(--ts-fg-faint); }
+#ts-source .ts-lit { color: var(--ts-fg); }
+
+/* Assertions are deleted HERE — hover a line, hit its ✕. Inline, because
+   the source pane is pre-wrap: a block-level line would double-space. */
+#ts-source .ts-line .ts-del {
+  visibility: hidden;
+  color: var(--ts-fg-faint);
+  cursor: pointer;
+  margin-left: 6px;
+}
+#ts-source .ts-line:hover .ts-del { visibility: visible; }
+#ts-source .ts-line .ts-del:hover { color: var(--ts-fg); }
+
+/* ── right: the run column skeleton — rows land in the run-column phase ── */
+
+.ts-run-col {
+  flex: 0 0 280px;
+  border-left: 1px solid var(--ts-border);
+  background: var(--ts-block-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ts-run-btn {
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-play-bg);
+  background: var(--ts-accent);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 12px;
+}
+.ts-run-btn:disabled { opacity: 0.45; }
+#ts-run-results { flex: 1; overflow-y: auto; padding: 8px 12px; }
+.ts-run-row { padding: 6px 0; border-bottom: 1px solid var(--ts-border); }
+.ts-run-row:last-child { border-bottom: none; }
+.ts-run-row .ts-name { font-size: 11.5px; font-weight: 700; }
+.ts-run-row .ts-badge { float: right; font-size: 10.5px; color: var(--ts-fg-faint); }
+.ts-run-row .ts-badge.ts-pass { color: var(--ts-assert); font-weight: 700; }
+.ts-run-row .ts-badge.ts-fail { color: var(--ts-fail); font-weight: 700; }
+.ts-run-row .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
+.ts-run-tally {
+  padding: 8px 0 2px; font-size: 10.5px; font-weight: 700;
+  color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;
+}
+.ts-run-note { padding: 6px 0; font-size: 10.5px; color: var(--ts-fail); }
+.ts-pending-note { color: var(--ts-fg-faint); font-style: italic; }

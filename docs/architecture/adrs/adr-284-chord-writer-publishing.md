@@ -1,6 +1,6 @@
 # ADR-284: Chord Writer publishing — a first-class Publish action for finished stories
 
-## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)
+## Status: ACCEPTED — **IMPLEMENTED**, and **Amended A1** (2026-08-06, session daeb64): D1 and D2 shipped as `sharpee publish` plus a Publish tab. Acceptance 1's "customized Web Template" is read against the `browser/<storyId>.css` override that exists, NOT ADR-286's `.templates` DSL, which is unimplemented; Q-2 is answered (a right-panel tab). See **Amendment A1** at the foot of this document. (Original accept: 2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking.)
 
 ## Date: 2026-07-27
 
@@ -86,3 +86,52 @@ root). Further targets are Q-1.
 
 Drafted 2026-07-27, session fda0f0, from the basic-features conversation
 (`docs/context/session-20260727-2100-main.md`).
+
+Amendment A1: 2026-08-06, session daeb64.
+
+---
+
+## Amendment A1 — implemented, with Acceptance 1 read against what exists (2026-08-06, session daeb64)
+
+**Shipped.** `sharpee publish [<file>.story | dir] [--out]` in devkit (D1's
+"working form", now real) and a Publish tab in Chord Writer's right panel, plus
+**Build → Publish…**. The tab drives the toolchain and owns none of the
+mechanics, so a terminal author and an IDE author get the identical artifact —
+D1's rule, enforced by there being exactly one implementation.
+
+**Q-2 is answered: a right-panel tab**, per go-live item 1. That was this ADR's
+stated implementation blocker.
+
+**Acceptance 1 is read against the override that exists.** It says "a story with
+customized Web Template and referenced assets". Assets are real and copied
+(`build-browser.ts`). But ADR-286's `.templates` layout DSL **is not
+implemented** — the string appears nowhere in `packages/devkit/src` or
+`packages/chord/src`, and no `.templates` file exists in the repo. Customization
+today means the escape hatch: `browser/<storyId>.css` (and `browser/index.html`).
+Acceptance 1 is satisfied against that, and this ADR does not wait on ADR-286.
+Nothing about producing a distributable zip depends on the DSL; when ADR-286
+lands, Publish carries whatever the build emits, unchanged.
+
+**A defect this implementation found, worth recording because it predates it.**
+`buildBrowser` writes into `dist/web/<id>` *without clearing it*. The first real
+publish of fernhill therefore shipped a `game.js.map` five hours older than its
+`game.js`, despite `sourcemap: false` — and, in general, anything an earlier
+build left behind. Publish now clears the story's own output directory first,
+which took that artifact from 1.2 MB to 0.4 MB. **`sharpee build` still does
+not clear**, which is right for an iterative build and is why the fix lives in
+publish rather than in the shared core.
+
+**Acceptance, checked.**
+
+| # | Criterion | State |
+|---|---|---|
+| 1 | Customized + assets survive the zip | met, read as above — fernhill publishes with `fernhill.css`, `audio/` and `images/` intact |
+| 2 | Uploads to itch.io and runs unmodified | **not verified** — needs a real account; the structure it depends on (`index.html` at the archive root) is pinned by test |
+| 3 | Failures surface in the IDE's existing surfaces | met — the toolchain's output streams into the tab; a zero exit that wrote no file is reported as a failure rather than claiming an artifact |
+
+**Deliberately not built: an in-tab fix for the missing-IFID refusal.** It would
+mean a second IFID check in Swift, which is the drift D1 exists to prevent. The
+author meets the fix earlier — the Problems panel offers Generate IFID at
+compile time (ADR-298's warning), and the CLI's refusal names both remedies.
+
+**Q-1 (targets beyond the zip) remains open and blocks nothing.**

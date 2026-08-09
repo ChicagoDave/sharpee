@@ -107,6 +107,16 @@ export interface StoryConfig {
   custom?: Record<string, any>;
 
   /**
+   * Transcript auto-assertion policy (go-live Phase 6e, #253): what the
+   * test runner writes for a NEW command's first run. Consumed by the test
+   * harness only — inert at play time. Absent = "let me decide" (the runner
+   * writes nothing; an unasserted command keeps its ADR-294 D2 failure).
+   * Sourced from the `.story` header's `auto-assertion:` field so the CLI
+   * and the IDE apply the identical policy.
+   */
+  autoAssertion?: 'all-emitted-text' | 'room-description' | 'room-name-and-description';
+
+  /**
    * Narrative settings (perspective, tense)
    *
    * ADR-089: Controls how the story narrates player actions.

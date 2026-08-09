@@ -120,6 +120,46 @@ export interface TranscriptStartEvent extends RunEventEnvelope {
    * collapses these rather than reading them as duplicate turns.
    */
   replayed?: boolean;
+  /**
+   * The world as this transcript ENTERS — after its ancestry replayed, before
+   * its first command (R5's inherited-state header: where the file starts
+   * from, without holding its ancestors in your head). Present when the
+   * producer captured world state (`--capture-world`).
+   */
+  world?: WorldSnapshot;
+}
+
+/**
+ * One entity as a {@link WorldSnapshot} names it.
+ *
+ * `token` is the single whitespace-free token that parses inside a `[STATE:]`
+ * expression — an alias when the entity has one, else its id. A consumer that
+ * emits state assertions emits the TOKEN, never `name`, so the grammar's
+ * single-token rule never reaches an author (R3). The runner picks it, because
+ * only the runner's own `findEntity` can vouch that it resolves back.
+ */
+export interface WorldEntityRef {
+  /** Display name — what a surface shows. */
+  name: string;
+  /** The single token a `[STATE:]` expression resolves back to this entity. */
+  token: string;
+}
+
+/**
+ * A compact world snapshot: where the player is and what they carry (R3/R5).
+ *
+ * Deliberately small — the two facts the runner's `[STATE:]` evaluator can
+ * provably check (`player.location = …`, `player.inventory contains …`).
+ * Entity trait states (open/lit/worn) are NOT here: the evaluator does not
+ * reliably read trait properties yet, and offering an assertion that cannot
+ * be evaluated would be the editor claiming what it cannot substantiate.
+ * A consumer derives "what changed" by comparing consecutive snapshots.
+ */
+export interface WorldSnapshot {
+  /** The player's location. Absent when the seam could not name one. */
+  location?: WorldEntityRef;
+  /** What the player carries, in world order. */
+  inventory: WorldEntityRef[];
 }
 
 /** One command's outcome, emitted as the command completes. */
@@ -143,6 +183,50 @@ export interface CommandResultEvent extends RunEventEnvelope {
    * inflated by every transcript's full text.
    */
   actualOutput?: string;
+  /**
+   * The engine turn this command executed as (1-based, the engine's own
+   * counter). Engine knowledge, not text knowledge: meta commands (`score`,
+   * `inventory`) do not advance the counter — consecutive results legitimately
+   * share a turn — while a refused action still consumes one. This is what
+   * lets a consumer show turn numbers against a transcript and warn when an
+   * edit moves a turn-scheduled beat in a descendant (R4). Absent when the
+   * producer did not execute the command against a live engine (a synthesized
+   * error result) or its harness predates the field.
+   */
+  turn?: number;
+  /**
+   * The story ended during this command — the engine announced it
+   * (`game.ended`) on the turn this command executed. This is what lets a
+   * consumer mark a file terminal when its LAST command ends the story
+   * cleanly: no later command exists to die against the stopped engine, so
+   * without this field the ending leaves no wire trace at all (R9's honest
+   * limit, now closed). `restart` is deliberately not a value here — the
+   * engine stops but the harness reboots the story within the same command,
+   * so nothing ended from the transcript's point of view. `abort` is not
+   * carried either: an aborted story is a runtime failure surfaced through
+   * `error`, not an ending an author would badge. Absent when the story did
+   * not end this turn or the producer predates the field.
+   */
+  ending?: 'victory' | 'defeat' | 'quit';
+  /**
+   * The first failed assertion's message, verbatim from the runner
+   * (`Output does not contain "…"`, `player.location = … (actual: …)`).
+   * Present exactly when `passed` is false and an assertion (rather than a
+   * runtime error) failed the command — `error` keeps carrying the throw
+   * case. One message, not the list: the consumer this exists for (the
+   * testing surface's run column) shows one line per transcript, and a
+   * consumer that wants every failure re-runs with the file open in the
+   * Testing tab, which has the full old-vs-new view.
+   */
+  failure?: string;
+  /**
+   * The world AFTER this command (R3). A consumer diffs consecutive
+   * snapshots — this one against the previous command's, or against the
+   * transcript-start snapshot for the first command — to show what the
+   * command changed and offer each change as a `[STATE:]` assertion.
+   * Present when the producer captured world state (`--capture-world`).
+   */
+  world?: WorldSnapshot;
 }
 
 /**
@@ -154,11 +238,18 @@ export interface CommandResultEvent extends RunEventEnvelope {
  * silently absent from the stream. `unreached` is not a failure — one broken
  * node produces one failure and a count of what it blocked, not a wall of red
  * proportional to how much of the story depends on it.
+ *
+ * `skipped` covers a transcript with no commands: the editor's designed
+ * starting state (a new transcript carries no placeholder), so it runs as a
+ * skip rather than aborting the suite as a parse failure (David's ruling
+ * 2026-08-08, go-live phase-6 F1). Not a failure either — and never a block:
+ * an empty node contributes zero commands to a child's replay, so its
+ * children run normally.
  */
 export interface TranscriptEndEvent extends RunEventEnvelope {
   type: 'transcript-end';
   file: string;
-  status: 'passed' | 'failed' | 'error' | 'unreached';
+  status: 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
   passed: number;
   failed: number;
   expectedFailures: number;
@@ -324,7 +415,8 @@ export function isTranscriptStartEvent(value: unknown): value is TranscriptStart
     typeof value.index === 'number' &&
     (value.commandCount === undefined || typeof value.commandCount === 'number') &&
     (value.parent === undefined || typeof value.parent === 'string') &&
-    (value.replayed === undefined || typeof value.replayed === 'boolean')
+    (value.replayed === undefined || typeof value.replayed === 'boolean') &&
+    (value.world === undefined || isWorldSnapshot(value.world))
   );
 }
 
@@ -340,7 +432,30 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
     typeof value.expectedFailure === 'boolean' &&
     typeof value.skipped === 'boolean' &&
     (value.error === undefined || typeof value.error === 'string') &&
-    (value.actualOutput === undefined || typeof value.actualOutput === 'string')
+    (value.actualOutput === undefined || typeof value.actualOutput === 'string') &&
+    (value.turn === undefined || typeof value.turn === 'number') &&
+    (value.ending === undefined ||
+      value.ending === 'victory' ||
+      value.ending === 'defeat' ||
+      value.ending === 'quit') &&
+    (value.failure === undefined || typeof value.failure === 'string') &&
+    (value.world === undefined || isWorldSnapshot(value.world))
+  );
+}
+
+/** Narrow a value to a valid {@link WorldEntityRef}. */
+function isWorldEntityRef(value: unknown): value is WorldEntityRef {
+  if (!isObject(value)) return false;
+  return typeof value.name === 'string' && typeof value.token === 'string';
+}
+
+/** Narrow a value to a valid {@link WorldSnapshot}. */
+function isWorldSnapshot(value: unknown): value is WorldSnapshot {
+  if (!isObject(value)) return false;
+  return (
+    (value.location === undefined || isWorldEntityRef(value.location)) &&
+    Array.isArray(value.inventory) &&
+    value.inventory.every(isWorldEntityRef)
   );
 }
 
@@ -353,7 +468,8 @@ export function isTranscriptEndEvent(value: unknown): value is TranscriptEndEven
     (value.status === 'passed' ||
       value.status === 'failed' ||
       value.status === 'error' ||
-      value.status === 'unreached') &&
+      value.status === 'unreached' ||
+      value.status === 'skipped') &&
     typeof value.passed === 'number' &&
     typeof value.failed === 'number' &&
     typeof value.expectedFailures === 'number' &&

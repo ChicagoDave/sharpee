@@ -26,11 +26,26 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../../..');
 const outDir = resolve(repoRoot, 'tools/ide/SharpeeIDE/Resources/testing-tab');
 const wireSource = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
+// The transcript grammar, from source for the same reason as the wire. This is
+// `branch-tester` and not `transcript-tester` because `sharpee test --tree` — the
+// only run model the IDE offers — loads branch-tester (test-tree.ts). The two
+// parsers do NOT implement the same grammar: transcript-tester rejects
+// `[CHANNEL: id, is absent]` as an unknown assertion and returns null, so a tab
+// built on it would drop assertions on save.
+const grammarParser = resolve(repoRoot, 'packages/branch-tester/src/parser.ts');
+const grammarSerializer = resolve(repoRoot, 'packages/branch-tester/src/serializer.ts');
+const noFilesystem = resolve(here, 'src/no-filesystem.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
   entryPoints: [resolve(here, 'src/main.ts')],
   outfile: resolve(outDir, 'tab.js'),
+  // Pinned, and load-bearing: esbuild renders its per-module comment banners
+  // RELATIVE to absWorkingDir, which defaults to process.cwd(). Xcode's pre-build
+  // phase runs this from tools/ide while a hand run starts at the repo root, so
+  // without this the committed bundle was dirtied by nothing but the caller's
+  // cwd. Mirrors the same pin in web/docs-tab/build.mjs.
+  absWorkingDir: repoRoot,
   bundle: true,
   format: 'iife',
   platform: 'browser',
@@ -45,7 +60,16 @@ const options = {
   sourcemap: false,
   minify: false,
   logLevel: 'info',
-  alias: { '@sharpee/ide-protocol/run-events': wireSource },
+  alias: {
+    '@sharpee/ide-protocol/run-events': wireSource,
+    '@sharpee/branch-tester/parser': grammarParser,
+    '@sharpee/branch-tester/serializer': grammarSerializer,
+    // The parser reaches for `fs`/`path` in `parseTranscriptFile` alone. The page
+    // has no filesystem, so they resolve to stubs that say so by name rather than
+    // to `{}`, which would surface as "readFileSync is not a function".
+    fs: noFilesystem,
+    path: noFilesystem,
+  },
 };
 
 async function copyStatic() {

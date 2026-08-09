@@ -41,6 +41,13 @@ export interface BrowserMeta {
   version: string;
   /** `meta.fields.description` (ADR-298 rename of `blurb:`). */
   description: string;
+  /**
+   * `meta.fields.publishSource` — does the `.story` source travel in the
+   * bundle? The DEFAULT LIVES HERE, not in the language: an absent field is
+   * `false`, so a story that never mentions publishing ships no source
+   * (ADR-284; Inform's `Release along with the source text` precedent).
+   */
+  publishSource: boolean;
 }
 
 /** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
@@ -80,6 +87,7 @@ export function readBrowserMeta(meta: IRMeta): BrowserMeta {
     author: meta.fields.authors.join(', '),
     version: (meta.fields.storyVersion ?? '').trim(),
     description: (meta.fields.description?.value ?? '').trim(),
+    publishSource: meta.fields.publishSource === true,
   };
 }
 
@@ -217,10 +225,15 @@ export function escapeHtml(s: string): string {
 }
 
 /**
- * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
- * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
- * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
- * `classic` default + one item per listed theme (ADR-188).
+ * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme
+ * at the THEME_LINKS marker (after the engine CSS; author themes need no link,
+ * their CSS is in the override stylesheet), plus the wired list as page DATA —
+ * a JSON script tag ThemeManager renders the `#theme-menu` from at runtime
+ * (P-4, issue 251). The split is deliberate: what the build WIRED is a build
+ * fact (the entry's scaffold-time theme constant can go stale on the TS path,
+ * which would silently drop author themes from the menu — ADR-188 AC-5), but
+ * the menu MARKUP has exactly one owner, ThemeManager. Links stay build-time
+ * because they belong in `<head>` before first paint (no flash of default).
  */
 export function injectThemes(html: string, themes: WiredTheme[]): string {
   const links = themes
@@ -231,17 +244,14 @@ export function injectThemes(html: string, themes: WiredTheme[]): string {
     /[ \t]*<!--\s*THEME_LINKS:[\s\S]*?-->/,
     links || '  <!-- no built-in themes wired -->',
   );
-  const items = [
-    '              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>',
-    ...themes.map(
-      (t) =>
-        `              <li role="menuitemradio" class="sharpee-menu-option" data-theme="${t.id}">${escapeHtml(t.name)}</li>`,
-    ),
-  ].join('\n');
-  return html.replace(
-    /(<ul role="menu" id="theme-menu"[^>]*>)[\s\S]*?(<\/ul>)/,
-    `$1\n${items}\n            $2`,
-  );
+  const wired = JSON.stringify(themes.map((t) => ({ id: t.id, name: t.name })));
+  // `escapeHtml` is for attribute/text contexts and would corrupt JSON; a
+  // script-type=application/json block only needs `</script>` neutralized.
+  const data = `  <script id="sharpee-wired-themes" type="application/json">${wired.replace(/<\//g, '<\\/')}</script>\n`;
+  // Custom pages (ADR-253) own their whole layout but still carry a <head>
+  // (the engine.css contract); a page without one simply gets no data block
+  // and the client falls back to its entry config.
+  return html.replace(/<\/head>/, `${data}</head>`);
 }
 
 /** Substitute the story tokens index.html carries (the override stylesheet link). */
@@ -442,6 +452,43 @@ ${entries}
 }
 
 /**
+ * Write `story-ir.ts` beside the entry — the compiled story, embedded.
+ *
+ * The bundle used to ship the `.story` SOURCE and compile it in the browser at
+ * boot, which cost it two runtime `fetch()` calls. `fetch` cannot read a
+ * `file://` URL in any browser, so a published zip opened by double-clicking
+ * `index.html` died before the first turn — while working over HTTP, which is
+ * why it survived to a release. Embedding the IR removes the fetches
+ * altogether, and with them the Chord compiler, which no longer has anything
+ * to compile at boot: the build already ran the load-time gates, so a boot-time
+ * gate failure was unreachable by construction.
+ *
+ * Emitted as a sibling module rather than substituted into the entry text, for
+ * the same reason `hatch-modules.ts` is: a hand-written `src/browser-entry.ts`
+ * (the D4 escape hatch) imports it like any other module and the build
+ * regenerates it in place.
+ *
+ * The IR travels as a JSON string parsed at boot rather than a JS object
+ * literal — one string literal keeps TypeScript from inferring a type over a
+ * multi-megabyte literal, and `JSON.parse` is faster than the equivalent
+ * literal for data this size.
+ */
+function stampStoryIR(entryDir: string, ir: StoryIR): void {
+  const source = `/**
+ * story-ir.ts — GENERATED at build time. Do not edit.
+ *
+ * The compiled story. This is what the page runs: no source, no fetch, no
+ * compiler. Regenerated on every build from the \`.story\` that produced it.
+ */
+import type { StoryIR } from '@sharpee/chord';
+
+export const storyIR: StoryIR = JSON.parse(${JSON.stringify(JSON.stringify(ir))}) as StoryIR;
+`;
+  fs.mkdirSync(entryDir, { recursive: true });
+  fs.writeFileSync(path.join(entryDir, 'story-ir.ts'), source);
+}
+
+/**
  * Bind every hatch in Node and build the world, so "builds" means "binds"
  * (ADR-259 D5).
  *
@@ -495,10 +542,13 @@ function generateEntry(
   scratchDir: string,
   meta: BrowserMeta,
   config: BrowserClientConfig,
+  wiredThemes: WiredTheme[],
 ): string {
   const tpl = fs.readFileSync(path.join(templatesDir, 'chord-browser-entry.ts.template'), 'utf-8');
-  // Menu ids from the D3 `themes:` field → BrowserClient theme entries.
-  const themesLiteral = JSON.stringify(config.themes.map((id) => ({ id, name: id })));
+  // The D3 `themes:` field, resolved to {id, name} through the manifest —
+  // the entry's list is what ThemeManager renders as the menu (P-4), so it
+  // carries display names, not id-as-name.
+  const themesLiteral = JSON.stringify(wiredThemes.map((t) => ({ id: t.id, name: t.name })));
   const entry = tpl
     .replace(/\{\{STORY_ID\}\}/g, meta.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, meta.storyTitle)
@@ -584,19 +634,39 @@ export function buildBrowser(
   const outDir = path.join(env.esbuildCwd, 'dist', 'web', meta.storyId);
   fs.mkdirSync(outDir, { recursive: true });
 
-  // --- Ship the source (+ imports) for compile-at-boot (ADR-210/251). ---
-  fs.copyFileSync(storyFile, path.join(outDir, 'story.story'));
-  log(`  ✓ Validated ${rel} (gate-clean) and shipped it as story.story`);
-  const importNames = Object.keys(importBundle);
-  if (importNames.length > 0) {
-    fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
-    log(`  ✓ Bundled ${importNames.length} import fragment(s) → imports.json`);
+  // --- The author's source: shipped only when the story says so (ADR-284). ---
+  //
+  // The page does NOT read these — the IR is embedded in game.js (see
+  // stampStoryIR). They travel as readable artifacts for an author releasing
+  // their source, the way Inform's `Release along with the source text` does,
+  // which is why an absent `publish-source:` ships nothing: a writer's source
+  // should never leave with the artifact by accident.
+  if (meta.publishSource) {
+    // Under the author's OWN filename. It used to be renamed `story.story`
+    // because the page fetched it at that fixed path; nothing reads it now, so
+    // the generic name only made a received source harder to place — and made
+    // two stories' sources collide in one folder.
+    fs.copyFileSync(storyFile, path.join(outDir, path.basename(storyFile)));
+    log(`  ✓ Validated ${rel} (gate-clean) and shipped its source (\`publish-source: yes\`)`);
+    const importNames = Object.keys(importBundle);
+    if (importNames.length > 0) {
+      fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
+      log(`  ✓ Shipped ${importNames.length} import fragment(s) → imports.json`);
+    }
+  } else {
+    log(`  ✓ Validated ${rel} (gate-clean) — source not shipped (\`publish-source:\` absent)`);
   }
   // Story IR artifact for the IDE/tooling surface (dist/, not dist/web/).
   const irOut = path.join(env.esbuildCwd, 'dist', `${meta.storyId}.ir.json`);
   fs.mkdirSync(path.dirname(irOut), { recursive: true });
   fs.writeFileSync(irOut, JSON.stringify(result.ir, null, 2) + '\n');
   log(`  ✓ Story IR → ${path.relative(env.esbuildCwd, irOut)}`);
+
+  // Resolve the listed themes BEFORE the entry is generated: with the menu
+  // rendered at runtime from the entry's theme entries (P-4), the entry must
+  // carry the manifest's display NAMES — id-as-name would put raw ids in the
+  // author's Settings menu.
+  const wiredThemes = resolveWiredThemes(path.join(env.stylesDir, 'themes'), config.themes);
 
   // --- Entry: hand-written escape hatch (D4) wins; else generate from template. ---
   const handWritten = path.join(storyDir, 'src', 'browser-entry.ts');
@@ -608,7 +678,7 @@ export function buildBrowser(
     log('  Using hand-written src/browser-entry.ts (escape hatch)');
   } else {
     entryDir = path.join(env.esbuildCwd, 'dist', '.browser-entry', meta.storyId);
-    entryFile = generateEntry(env.templatesDir, entryDir, meta, config);
+    entryFile = generateEntry(env.templatesDir, entryDir, meta, config, wiredThemes);
     log('  Generated browser entry from template');
   }
 
@@ -625,6 +695,12 @@ export function buildBrowser(
   if (hatchBindings.length > 0) {
     log(`  ✓ Wired ${hatchBindings.length} hatch module(s) into the bundle`);
   }
+
+  // story-ir.ts (imported by the entry as ./story-ir) — the compiled story
+  // itself. Stamped for BOTH entry paths, like the two above, so the D4
+  // escape hatch runs the same embedded IR the generated entry does.
+  stampStoryIR(entryDir, result.ir);
+  log('  ✓ Embedded the compiled story IR into the bundle');
 
   // --- The bind check (D5): a hatch that does not bind fails the BUILD,
   //     not the player's browser. ---
@@ -668,7 +744,6 @@ export function buildBrowser(
   //     D3 layout escape hatch). `browser/index.html` present → the author owns
   //     the whole page; the build swaps it in, still filling story tokens + theme
   //     wiring, and validates the sharpee-* named-style contract. ---
-  const wiredThemes = resolveWiredThemes(path.join(env.stylesDir, 'themes'), config.themes);
   const customPage = path.join(storyDir, 'browser', 'index.html');
   const usingCustomPage = fs.existsSync(customPage);
   let html = fs.readFileSync(usingCustomPage ? customPage : path.join(env.templatesDir, 'index.html'), 'utf-8');
@@ -676,6 +751,17 @@ export function buildBrowser(
   if (usingCustomPage) validateCustomPage(html, result.ir.channels, warn);
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
   log(usingCustomPage ? '  ✓ Used browser/index.html (custom layout, ADR-253 D3)' : '  ✓ Copied index.html');
+
+  // The TESTING page (ADR-306 Phase 2): a second rendering of the same
+  // bundle for the IDE's testing play surface — no chrome, no theme links,
+  // ALWAYS the platform template (never the author's custom page; the card
+  // UI needs the default skeleton). `sharpee publish` excludes it by name.
+  const testingHtml = processTemplate(
+    fs.readFileSync(path.join(env.templatesDir, 'index-testing.html'), 'utf-8'),
+    meta,
+  );
+  fs.writeFileSync(path.join(outDir, 'index-testing.html'), testingHtml);
+  log('  ✓ Copied index-testing.html (IDE testing surface — excluded from publish)');
 
   // Engine CSS (base/engine/decorations) — platform-browser-owned (ADR-188).
   for (const css of ['base.css', 'engine.css', 'decorations.css']) {
@@ -710,6 +796,28 @@ export function buildBrowser(
       count++;
     }
     if (count > 0) log(`  ✓ Copied assets/ (${count} ${count === 1 ? 'entry' : 'entries'})`);
+  }
+
+  // Feelies: copy <storyDir>/feelies/ AS A FOLDER, skipping dotfiles.
+  //
+  // Deliberately not flattened into outDir the way assets/ is. The two are
+  // different in kind, not just in content: an asset is media the STORY
+  // consumes (audio it plays, images it renders in prose), while a feelie is
+  // something the PLAYER opens — a map, a letter, a newspaper clipping, in the
+  // Infocom sense. Keeping the folder gives them one predictable place to be
+  // found and linked from, and stops a feelie named `index.html` or `game.js`
+  // from overwriting the page that shows it.
+  const feeliesDir = path.join(storyDir, 'feelies');
+  if (fs.existsSync(feeliesDir)) {
+    const names = fs.readdirSync(feeliesDir).filter((name) => !name.startsWith('.'));
+    if (names.length > 0) {
+      const feeliesOut = path.join(outDir, 'feelies');
+      fs.mkdirSync(feeliesOut, { recursive: true });
+      for (const name of names) {
+        fs.cpSync(path.join(feeliesDir, name), path.join(feeliesOut, name), { recursive: true });
+      }
+      log(`  ✓ Copied feelies/ (${names.length} ${names.length === 1 ? 'entry' : 'entries'})`);
+    }
   }
 
   // --- Invariant: the deliverable exists (no silent success on an empty build). ---
@@ -776,6 +884,8 @@ const PLAYGROUND_META: BrowserMeta = {
   author: 'The Sharpee Project',
   version: '', // filled from the platform version at build time
   description: 'Paste a Chord story and play it in the browser.',
+  // The playground has no author source to ship — the story arrives by paste.
+  publishSource: false,
 };
 const PLAYGROUND_STORAGE_PREFIX = 'sharpee-playground';
 const PLAYGROUND_DEFAULT_THEME = 'classic';

@@ -21,11 +21,18 @@ import type {
 } from './types.js';
 
 import { ThemeManager } from './managers/ThemeManager.js';
-import { SaveManager } from './managers/SaveManager.js';
+import { SaveManager, wipeStoryStorage } from './managers/SaveManager.js';
 import { DialogManager } from './managers/DialogManager.js';
 import { MenuManager } from './managers/MenuManager.js';
 import { InputManager } from './managers/InputManager.js';
-import { emitTurnEvent } from './turn-events.js';
+import {
+  capturesOf,
+  emitRestartEvent,
+  emitTurnEvent,
+  nextPlayTurnOrdinal,
+  turnEventsBridgeActive,
+} from './turn-events.js';
+import { buildWorldDigest } from './world-digest.js';
 import { TextDisplay } from './display/TextDisplay.js';
 import { StatusLine } from './display/StatusLine.js';
 import { AudioManager } from './audio/AudioManager.js';
@@ -108,6 +115,19 @@ export class BrowserClient implements BrowserClientInterface {
    * `sharpee test`. Reset at the top of each executeCommand().
    */
   private turnProseText: string[] = [];
+
+  /**
+   * This turn's channel packet payloads, structure preserved, for the play
+   * feed's captures (ADR-305 D4). Reset with `turnProseText`.
+   */
+  private turnCapturePayloads: Array<Readonly<Record<string, unknown>>> = [];
+
+  /**
+   * This turn's emitted semantic-event types, in emission order, for the
+   * play feed's `events` field (ADR-306 Phase 2 — the Event picker's
+   * source). Reset with `turnProseText`; empty when the turn threw.
+   */
+  private turnEventTypes: string[] = [];
 
   // DOM elements reference
   private elements!: DOMElements;
@@ -211,12 +231,17 @@ export class BrowserClient implements BrowserClientInterface {
       themes: this.config.themes,
       defaultTheme: this.config.defaultTheme,
     });
+    // The menu's items come from the theme list itself (P-4) — rendered here,
+    // once, before any handler setup could care about them (selection is
+    // delegated in MenuManager regardless, so order is a nicety, not a trap).
+    this.themeManager.renderMenu();
 
     // Create menu manager with handlers
     const menuHandlers: MenuHandlers = {
       onSave: () => this.handleSave(),
       onRestore: () => this.handleRestore(),
       onRestart: () => this.handleRestart(),
+      onReset: () => this.handleReset(),
       onQuit: () => this.handleQuit(),
       onThemeSelect: (theme) => this.themeManager.applyTheme(theme),
       onHelp: () => this.engine.executeTurn('help'),
@@ -389,6 +414,10 @@ export class BrowserClient implements BrowserClientInterface {
     });
     this.engine.on('channel:packet', (packet: TurnPacket, turn: number) => {
       this.channelRenderer?.applyTurnPacket(packet);
+
+      // Play feed (ADR-305 D4): keep the turn's payloads, structured, for
+      // the feed record's captures.
+      this.turnCapturePayloads.push(packet.payload);
 
       if (debugChannels) {
         // eslint-disable-next-line no-console
@@ -593,9 +622,17 @@ export class BrowserClient implements BrowserClientInterface {
           await this.engine.executeTurn('look');
         }
       } else {
-        // New game - execute initial look
+        // New game - execute initial look. Recorded as the lineage's FIRST
+        // feed turn (ADR-305 D3): the headless harness boots with no such
+        // turn, so a transcript created from play must carry it — as `[SKIP]`
+        // setup — or every replayed turn number would be off by one (daemons
+        // and fuses key on turn numbers). No echo: the opening reads as the
+        // story speaking, not the player typing.
         console.log('Executing initial look command...');
-        await this.engine.executeTurn('look');
+        const stampFrom = this.beginPlayTurn();
+        const bootResult = await this.engine.executeTurn('look');
+        this.turnEventTypes = (bootResult?.events ?? []).map((e) => e.type);
+        this.finishPlayTurn('look', stampFrom);
         console.log('Initial look complete');
       }
 
@@ -608,6 +645,59 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   /**
+   * Open the play feed's bracket around one turn (ADR-305 D4): reset the
+   * per-turn accumulators and mark where this turn's rendering will start in
+   * the prose slot. Returns that mark for `finishPlayTurn`.
+   */
+  private beginPlayTurn(): number {
+    // Recording bridge (ADR-277 D5): the turn's response is whatever lands in
+    // the prose slot after this point — channel prose AND system messages.
+    // The engine's own text for this turn, accumulated by the
+    // `preferred-layout` renderer's onEntriesText as packets arrive
+    // (ADR-282 D2). Reset here so each accumulator holds exactly one turn.
+    this.turnProseText = [];
+    this.turnCapturePayloads = [];
+    this.turnEventTypes = [];
+    return this.elements?.textContent?.children.length ?? 0;
+  }
+
+  /**
+   * Close the play feed's bracket (ADR-305 D4): claim the turn's ordinal,
+   * stamp `data-turn` on every element the turn rendered — the anchor is a
+   * published client contract, stamped in AND outside the IDE — and post the
+   * feed record (a no-op outside a WKWebView with the bridge).
+   *
+   * The record's output is the ENGINE's text, not the DOM's: packets composed
+   * and joined the same way the headless harness does (`packetProseText` per
+   * packet, then '\n' across packets — `@sharpee/bootstrap`'s outputBuffer
+   * rule). Reading it back off the DOM instead loses the tight/loose
+   * distinction, so an `all-emitted-text` assertion written from play would
+   * never match headless replay (ADR-282 D2 and its 2026-07-28 amendment).
+   */
+  private finishPlayTurn(command: string, stampFrom: number): void {
+    const ordinal = nextPlayTurnOrdinal();
+    const slot = this.elements?.textContent;
+    if (slot) {
+      for (let i = stampFrom; i < slot.children.length; i++) {
+        slot.children[i].setAttribute('data-turn', String(ordinal));
+      }
+    }
+    emitTurnEvent({
+      turn: ordinal,
+      command,
+      output: this.turnProseText.join('\n'),
+      captures: capturesOf(this.turnCapturePayloads),
+      events: this.turnEventTypes,
+      // The digest is IDE-only observation (ADR-306 Phase 2): built when the
+      // bridge is live, absent in published players so they never pay the
+      // per-turn world enumeration.
+      ...(turnEventsBridgeActive()
+        ? { world: buildWorldDigest(this.world, this.engine) }
+        : {})
+    });
+  }
+
+  /**
    * Execute a command
    */
   async executeCommand(command: string): Promise<void> {
@@ -616,19 +706,16 @@ export class BrowserClient implements BrowserClientInterface {
     // completes before any queued events fire into a still-suspended context.
     await this.audioManager.unlock();
 
-    // Recording bridge (ADR-277 D5): the turn's response is whatever lands in
-    // the prose slot after this point — channel prose AND system messages.
-    // The engine's own text for this turn, accumulated by the
-    // `preferred-layout` renderer's onEntriesText as packets arrive
-    // (ADR-282 D2). Reset here so it holds exactly one turn.
-    this.turnProseText = [];
+    // The turn's rendering starts with its echo — the anchor covers both.
+    const stampFrom = this.beginPlayTurn();
 
     // Display command echo
     this.textDisplay.displayCommand(command);
 
     // Execute command
     try {
-      await this.engine.executeTurn(command);
+      const result = await this.engine.executeTurn(command);
+      this.turnEventTypes = (result?.events ?? []).map((e) => e.type);
       // Sync score from world after each turn
       this.syncScoreFromWorld();
     } catch (error) {
@@ -636,17 +723,8 @@ export class BrowserClient implements BrowserClientInterface {
       this.textDisplay.displayText(`[Error: ${message}]`);
     }
 
-    // Emit the completed turn to an embedding IDE (no-op outside one) —
-    // BEFORE any deferred reboot clears the slot.
-    //
-    // The payload is the ENGINE's text, not the DOM's: packets composed and
-    // joined the same way the headless harness does (`packetProseText` per
-    // packet, then '\n' across packets — `@sharpee/bootstrap`'s outputBuffer
-    // rule). Reading
-    // it back off the DOM instead loses the tight/loose distinction, so a
-    // blessed multi-paragraph assertion would never match headless
-    // (ADR-282 D2 and its 2026-07-28 amendment).
-    emitTurnEvent(command, this.turnProseText.join('\n'));
+    // Stamp + emit BEFORE any deferred reboot clears the slot.
+    this.finishPlayTurn(command, stampFrom);
 
     // ADR-248: a confirmed restart defers its reboot to here — the turn is
     // fully complete, so the ack ("The story restarts.") has rendered.
@@ -668,6 +746,12 @@ export class BrowserClient implements BrowserClientInterface {
    */
   private async disposeAndReboot(): Promise<void> {
     this.engine.stop('restart');
+
+    // Play feed fence (ADR-305 D3): everything recorded so far is dead
+    // lineage. Posted before the reboot so the embedder never attributes the
+    // new boot's turns to the old lineage. The page-reload fallback needs no
+    // event — the embedder sees the navigation itself.
+    emitRestartEvent();
 
     if (!this.config.reboot) {
       window.location.reload();
@@ -801,6 +885,29 @@ export class BrowserClient implements BrowserClientInterface {
       this.pendingReboot = false;
       await this.disposeAndReboot();
     }
+  }
+
+  /**
+   * Reset this story's client-side state (issue 248): after an explicit
+   * confirmation that names the blast radius, delete every localStorage key
+   * under the story's storage prefix — saves index, save slots, autosave,
+   * theme preference — and reboot fresh. Prefix-scoped, deliberately: two
+   * stories on one origin never touch each other's keys.
+   */
+  private async handleReset(): Promise<void> {
+    const confirmed = confirm(
+      'Reset this story? This deletes ALL of its data saved in this browser — ' +
+        'every save, the autosave, and its settings — and restarts from the beginning.',
+    );
+    if (!confirmed) return;
+    wipeStoryStorage(this.config.storagePrefix);
+    // The reboot re-runs the story's boot, not this client's initialize —
+    // nothing downstream re-reads the (now deleted) saved theme, so the
+    // page must be put back on the default here, unsaved, or it keeps
+    // wearing the wiped theme until the next manual refresh.
+    this.themeManager?.resetToDefault();
+    this.pendingReboot = false;
+    await this.disposeAndReboot();
   }
 
   private handleQuit(): void {

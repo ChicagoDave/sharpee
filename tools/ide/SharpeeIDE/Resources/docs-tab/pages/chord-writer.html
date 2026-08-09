@@ -1,0 +1,19 @@
+<p>Chord Writer is a macOS app for writing parser-based interactive fiction in Chord. You write the story, and the app composes it as you type, builds it, plays it, runs its transcript tests, and packages it for release.</p>
+<h2 id="nothing-to-install">Nothing to install</h2>
+<p>Chord Writer ships the whole toolchain inside its own application bundle: a Node runtime and the Sharpee command-line tool, vendored at build time. There is no <code>npm install</code>, no global CLI, and no Node on your machine to keep current. Building works on a Mac that has never seen a terminal.</p>
+<p>The status bar names what you are actually running, the app's own version first and the toolchain it resolved second:</p>
+<pre><code class="language-text">Chord Writer 1.0.0 · Sharpee 4.2.0 / Chord 2.1.0</code></pre>
+<p>Those versions move independently. Chord Writer is versioned as an app; Sharpee and Chord are versioned as a platform and a language.</p>
+<h2 id="what-you-need">What you need</h2>
+<p>macOS 26 or newer. That is the whole list.</p>
+<h2 id="the-window">The window</h2>
+<p>Four regions, each with a fixed job.</p>
+<p><strong>The project pane</strong>, on the left, shows your story as typed groups: Story, Walkthroughs, Transcript Tests, Assets, Web Template, and Other. These are lenses over the folder rather than a mirror of it, so a file's position in the tree does not tell you which directory it sits in on disk. Anything that matches no group lands in Other, so nothing is ever hidden from you.</p>
+<p><strong>The editor</strong>, in the middle, is a tabbed text editor. Opening a file from the project pane opens a tab.</p>
+<p><strong>The right panel</strong> carries seven tabs:</p>
+<table><thead><tr><th>Tab</th><th>What it shows</th></tr></thead><tbody><tr><td>Build</td><td>Output from the build, as it runs</td></tr><tr><td>Play</td><td>The running game</td></tr><tr><td>Testing</td><td>Your transcript tests, as a tree, and their results</td></tr><tr><td>Index</td><td>Everything your story defines, read out of the composed story</td></tr><tr><td>Diagnosis</td><td>A longer explanation of an error you hit</td></tr><tr><td>Documentation</td><td>This documentation, bundled into the app</td></tr><tr><td>Publish</td><td>Packaging a release</td></tr></tbody></table>
+<p><strong>The bottom dock</strong> carries two: Problems, which lists compile diagnostics for the story you are editing, and Game Errors, which collects runtime errors from the game while you play it.</p>
+<blockquote><p><strong>Why build output is not in the dock</strong></p>
+<p>Build output sits beside Play rather than in the bottom dock because you read it in the same breath as you play. The dock is for problems you have not addressed yet.</p></blockquote>
+<h2 id="next">Next</h2>
+<p><a href="/chord-writer/your-first-story">Your first story</a> walks from an empty screen to a game you can play.</p>

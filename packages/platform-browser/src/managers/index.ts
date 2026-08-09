@@ -5,7 +5,7 @@
 export { ThemeManager } from './ThemeManager.js';
 export type { ThemeManagerConfig } from './ThemeManager.js';
 
-export { SaveManager } from './SaveManager.js';
+export { SaveManager, wipeStoryStorage } from './SaveManager.js';
 export type { SaveManagerConfig } from './SaveManager.js';
 
 export { DialogManager } from './DialogManager.js';

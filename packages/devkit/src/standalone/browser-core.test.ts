@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { IRMeta, IRStoryFields } from '@sharpee/chord';
-import { readBrowserMeta, readClientConfig } from './browser-core.js';
+import { injectThemes, readBrowserMeta, readClientConfig } from './browser-core.js';
 
 /** Build an IRMeta with the given typed header fields (title/authors defaulted). */
 function meta(
@@ -30,7 +30,15 @@ describe('readBrowserMeta (D2 — identity from the IR)', () => {
       author: 'The Sharpee Project',
       version: '0.1.0',
       description: 'One winter night.',
+      // Absent `publish-source:` reads as false — the build owns the default.
+      publishSource: false,
     });
+  });
+
+  it('reads publish-source from the header, defaulting to false when absent', () => {
+    expect(readBrowserMeta(meta({ id: 'fernhill' })).publishSource).toBe(false);
+    expect(readBrowserMeta(meta({ id: 'fernhill', publishSource: false })).publishSource).toBe(false);
+    expect(readBrowserMeta(meta({ id: 'fernhill', publishSource: true })).publishSource).toBe(true);
   });
 
   it('joins multiple authors with ", " for the display string (ADR-298)', () => {
@@ -125,5 +133,30 @@ describe('readClientConfig (D3 — client config from typed header fields)', () 
       meta({ id: 'x', client: 'browser', theme: 'v', template: 'v', defaultTheme: 'v', storagePrefix: 'v' }),
     );
     expect(warnings).toEqual([]);
+  });
+});
+
+describe('injectThemes — the wired-themes data block (P-4)', () => {
+  const PAGE = '<html><head>\n  <!-- THEME_LINKS: filled by the build -->\n</head><body></body></html>';
+
+  it('a hostile author-theme name cannot break out of the JSON script block', () => {
+    // Author theme names come from the story's own config — the one line
+    // written to defend the block is the one under test here.
+    const hostile = '</script><script>alert(1)</script>';
+    const html = injectThemes(PAGE, [{ id: 'x', name: hostile, cssPath: null, srcDir: null } as never]);
+
+    const open = '<script id="sharpee-wired-themes" type="application/json">';
+    const start = html.indexOf(open) + open.length;
+    const block = html.slice(start, html.indexOf('</script>', start));
+    // The block's first real close tag comes after the WHOLE payload: the
+    // embedded name parses back intact, escapes and all.
+    const parsed = JSON.parse(block) as Array<{ id: string; name: string }>;
+    expect(parsed).toEqual([{ id: 'x', name: hostile }]);
+  });
+
+  it('an empty wired list still yields a valid, empty data block', () => {
+    const html = injectThemes(PAGE, []);
+    expect(html).toContain('<script id="sharpee-wired-themes" type="application/json">[]</script>');
+    expect(html).toContain('<!-- no built-in themes wired -->');
   });
 });
