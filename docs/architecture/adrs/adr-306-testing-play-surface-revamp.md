@@ -62,6 +62,15 @@ pointer to this ADR in ADR-301's "The next decision" section (whose Status never
 changes — D4/D5 bound it, nothing supersedes it). A future session finding these
 files unflipped before Phase 6 lands is looking at correct state, not an omission.
 
+> **Flip landed early** (2026-08-09, session d54d7e): David's shred ruling — "you have
+> my authority to shred the old UX completely for testing… nothing from the old
+> testing UX survives" — pulled the IDE-side retirements forward of Phases 4/5. The
+> ADR-304 workspace, 6f margin chrome, Create Transcript button, and save-panel flow
+> are removed and the ADR-304/305/294/301 edits above are in place. Still pending
+> under Phase 6: the run column, and the author-world golden machinery's retirement
+> (tab affordance + `packages/branch-tester` — awaiting its platform discussion,
+> since live `.golden` files need both sides cut together).
+
 ### D2 — 6f's platform substrate is kept unchanged; it is the foundation
 
 Carried verbatim from design doc §9:

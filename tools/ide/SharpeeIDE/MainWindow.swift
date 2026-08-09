@@ -156,35 +156,22 @@ final class MainWindowController: NSWindowController {
         rootViewController?.testingTab ?? TestingTabViewController()
     }
 
-    /// Enters the ADR-304 testing workspace (selecting the Testing tab IS the
-    /// entrance): Play takes the left pane, Testing the right.
+    /// Brings the Testing tab forward — the reading surface (ADR-306 D4).
     func showTestingTab() {
         rootViewController?.showTestingTab()
     }
 
-    /// Opens the testing play surface window (ADR-306 Phase 3) — the
-    /// dedicated testing page with the card/segment UI. Lives beside the
-    /// ADR-304 workspace until the Phase 6 retirements.
+    /// Opens the testing play surface window (ADR-306) — the dedicated
+    /// testing page with the card/segment UI, the one test-authoring surface
+    /// (the ADR-304 workspace is retired; David's shred ruling 2026-08-09).
     func openTestingSurface() {
         rootViewController?.openTestingSurface()
     }
 
-    /// The Play surface, wherever it currently sits (ADR-304 moves it to the
-    /// left pane while the testing workspace is open). Fallback serves a
-    /// window-less controller (tests), like testingTab above.
+    /// The Play surface (right panel). Fallback serves a window-less
+    /// controller (tests), like testingTab above.
     var playSurface: PlayViewController {
         rootViewController?.playSurface ?? PlayViewController()
-    }
-
-    /// Whether the ADR-304 testing workspace is open (Play left, Testing right).
-    var isTestingWorkspaceActive: Bool {
-        rootViewController?.isTestingWorkspaceActive ?? false
-    }
-
-    /// Leaves the testing workspace, restoring the normal editor layout — the
-    /// workspace's one exit (ADR-304 D2), reachable for tests and menu wiring.
-    func exitTestingWorkspace() {
-        rootViewController?.exitTestingWorkspace()
     }
 
     /// The editor's focused document (Run Current Test File target), or nil.
@@ -570,17 +557,8 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.openTestingSurface()
     }
 
-    /// The Play surface, wherever it currently sits (right panel normally, the
-    /// left pane while the testing workspace is open — ADR-304).
+    /// The Play surface (right panel).
     var playSurface: PlayViewController { mainSplitViewController.playViewController }
-
-    /// Whether the ADR-304 testing workspace is open.
-    var isTestingWorkspaceActive: Bool { mainSplitViewController.isTestingWorkspaceActive }
-
-    /// Leaves the testing workspace (its one exit also lands here for menus/tests).
-    func exitTestingWorkspace() {
-        mainSplitViewController.exitTestingWorkspace()
-    }
 
     /// The editor's focused document (Run Current Test File enablement/target).
     var activeDocumentURL: URL? { mainSplitViewController.activeDocumentURL }
@@ -916,15 +894,6 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
-        playViewController.onCreateTranscript = { [weak self] log in self?.createTranscriptFromPlay(log) }
-
-        // The testing workspace's one entrance and one exit (ADR-304 D2).
-        rightPanelViewController.onTestingWorkspaceRequested = { [weak self] in
-            self?.enterTestingWorkspace()
-        }
-        leftPaneHostViewController.onExitTesting = { [weak self] in
-            self?.exitTestingWorkspace()
-        }
         leftPaneHostViewController.host(editor: editorViewController)
 
         addSplitViewItem(makeRailItem())
@@ -942,84 +911,6 @@ private final class MainSplitViewController: NSSplitViewController {
     /// - Parameter url: the activated file.
     private func activateFile(at url: URL) {
         editorViewController.openDocument(at: url)
-    }
-
-    // MARK: Create Transcript from play (ADR-305)
-
-    /// The creation flow (ADR-305 D5/D6): documents are saved first so the
-    /// ON-DISK `auto-assertion:` policy governs creation exactly as it will
-    /// govern the file's future runs (6e's report-and-run-agree rule); the
-    /// toolchain's `transcript-from-play` synthesizes through the one shared
-    /// code path; the save panel owns destination and collision; a refusal
-    /// alerts and writes nothing.
-    private func createTranscriptFromPlay(_ log: PlayTurnLog) {
-        guard let story = composedStory, !story.isGrammar else { return }
-        guard saveAllDocuments() else { return }
-        let storyFile = story.url
-        let source = (try? String(contentsOf: storyFile, encoding: .utf8)) ?? ""
-        let policy = StoryHeaderAutoAssertion.read(from: source)?.rawValue
-        let suggested = PlayTranscriptCreation.suggestedFilename(storyFile: storyFile,
-                                                                span: log.selectionSpan)
-        let title = (suggested as NSString).deletingPathExtension
-        guard let payload = log.payloadJSON(policy: policy,
-                                            seed: PlayViewController.idePlaySeed,
-                                            title: title) else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let text = try await PlayTranscriptCreation.createText(payload: payload,
-                                                                       storyFile: storyFile)
-                self.presentTranscriptSavePanel(text: text, storyFile: storyFile,
-                                                suggestedName: suggested)
-            } catch {
-                let reason = (error as? PlayTranscriptCreation.Refusal)?.message
-                    ?? error.localizedDescription
-                self.presentCreateTranscriptFailure(reason)
-            }
-        }
-    }
-
-    /// The save panel (ADR-305 D6): anchored at the project's `tests/`
-    /// directory — `TranscriptDiscovery`'s scan root, so the Testing tab finds
-    /// the file without configuration — with the native overwrite confirmation
-    /// as the collision path, never a silent replace.
-    private func presentTranscriptSavePanel(text: String, storyFile: URL, suggestedName: String) {
-        let testsDirectory = storyFile.deletingLastPathComponent()
-            .appendingPathComponent("tests", isDirectory: true)
-        try? FileManager.default.createDirectory(at: testsDirectory,
-                                                 withIntermediateDirectories: true)
-        let panel = NSSavePanel()
-        panel.directoryURL = testsDirectory
-        panel.nameFieldStringValue = suggestedName
-        panel.canCreateDirectories = true
-        let write: (URL) -> Void = { [weak self] url in
-            do {
-                try text.write(to: url, atomically: true, encoding: .utf8)
-            } catch {
-                self?.presentCreateTranscriptFailure(
-                    "could not write \(url.lastPathComponent): \(error.localizedDescription)")
-            }
-        }
-        if let window = view.window {
-            panel.beginSheetModal(for: window) { response in
-                guard response == .OK, let url = panel.url else { return }
-                write(url)
-            }
-        } else if panel.runModal() == .OK, let url = panel.url {
-            write(url)
-        }
-    }
-
-    private func presentCreateTranscriptFailure(_ reason: String) {
-        let alert = NSAlert()
-        alert.messageText = "Create Transcript failed"
-        alert.informativeText = reason
-        alert.alertStyle = .warning
-        if let window = view.window {
-            alert.beginSheetModal(for: window)
-        } else {
-            alert.runModal()
-        }
     }
 
     /// The composed story's identity for Build/Play gating: its URL and whether
@@ -1257,9 +1148,7 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
         playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
-        // In the testing workspace the surface is already on screen (left
-        // pane) — and the workspace is modal, so no tab is brought forward.
-        if playViewController.isLoaded, !isTestingWorkspaceActive {
+        if playViewController.isLoaded {
             rightPanelViewController.showPlayTab()
         }
     }
@@ -1303,32 +1192,6 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate func closeTestingSurface() {
         testingSurfaceWindowController?.close()
         testingSurfaceWindowController = nil
-    }
-
-    // MARK: Testing workspace (ADR-304)
-
-    /// Whether the testing workspace is open: Play on the left, Testing on the
-    /// right (D1). Never persisted — a fresh launch is always the editor layout.
-    fileprivate var isTestingWorkspaceActive = false
-
-    /// Enters the testing workspace. The Play surface is REPARENTED into the
-    /// left pane — never torn down or reloaded — so a running story survives
-    /// (D3); the editor's view only hides, so its document, cursor, and scroll
-    /// are untouched for the exit to reveal (D4).
-    fileprivate func enterTestingWorkspace() {
-        guard !isTestingWorkspaceActive else { return }
-        isTestingWorkspaceActive = true
-        let play = rightPanelViewController.lendPlaySurfaceForTestingWorkspace()
-        leftPaneHostViewController.enterTestingWorkspace(play: play)
-    }
-
-    /// The workspace's one exit (D2): returns the Play surface to the right
-    /// panel and restores the normal editor layout.
-    fileprivate func exitTestingWorkspace() {
-        guard isTestingWorkspaceActive else { return }
-        isTestingWorkspaceActive = false
-        leftPaneHostViewController.exitTestingWorkspace()
-        rightPanelViewController.reclaimPlaySurfaceFromTestingWorkspace()
     }
 
     /// Build-output plumbing — the Build tab lives in the right panel next to Play.
@@ -1592,24 +1455,14 @@ private final class RailViewController: NSViewController {
     }
 }
 
-// MARK: - Left pane host (editor always; Play during the testing workspace)
+// MARK: - Left pane host (the editor)
 
-/// The left split item's content. The editor is its permanent occupant; while
-/// the ADR-304 testing workspace is open, the borrowed Play surface sits over
-/// it beneath an Exit Testing bar. The editor's view never leaves the
-/// hierarchy — it only hides — which is what keeps its document, cursor, and
-/// scroll position intact for the exit to reveal (D4).
-/// Public interface (fileprivate): host(editor:), enterTestingWorkspace(play:),
-/// exitTestingWorkspace(), onExitTesting.
+/// The left split item's content: the editor, its permanent occupant. (The
+/// ADR-304 testing workspace that used to borrow this pane for Play is
+/// retired — ADR-306 D1, David's shred ruling 2026-08-09; test authoring
+/// lives in the testing play surface window.)
+/// Public interface (fileprivate): host(editor:).
 private final class LeftPaneHostViewController: NSViewController {
-
-    /// Invoked by the bar's Exit Testing button. Owned by MainSplitViewController.
-    var onExitTesting: (() -> Void)?
-
-    private weak var hostedEditor: NSViewController?
-    private weak var borrowedPlay: NSViewController?
-    private let exitBar = TestingWorkspaceExitBar()
-    private var workspaceConstraints: [NSLayoutConstraint] = []
 
     override func loadView() {
         view = ThemedPane(color: Theme.editorBackground)
@@ -1620,7 +1473,6 @@ private final class LeftPaneHostViewController: NSViewController {
     ///
     /// - Parameter editor: the editor view controller this pane hosts.
     func host(editor: NSViewController) {
-        hostedEditor = editor
         addChild(editor)
         editor.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(editor.view)
@@ -1630,101 +1482,6 @@ private final class LeftPaneHostViewController: NSViewController {
             editor.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             editor.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-    }
-
-    /// Enters the testing workspace: hides the editor and shows the borrowed
-    /// Play surface beneath the Exit Testing bar (ADR-304 D1/D2).
-    ///
-    /// - Parameter play: the Play surface lent by the right panel.
-    func enterTestingWorkspace(play: NSViewController) {
-        guard borrowedPlay == nil else { return }
-        borrowedPlay = play
-        hostedEditor?.view.isHidden = true
-
-        exitBar.onExit = { [weak self] in self?.onExitTesting?() }
-        addChild(play)
-        play.view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(exitBar)
-        view.addSubview(play.view)
-        workspaceConstraints = [
-            exitBar.topAnchor.constraint(equalTo: view.topAnchor),
-            exitBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            exitBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            play.view.topAnchor.constraint(equalTo: exitBar.bottomAnchor),
-            play.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            play.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            play.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ]
-        NSLayoutConstraint.activate(workspaceConstraints)
-    }
-
-    /// Exits the workspace: detaches the Play surface (the caller returns it to
-    /// the right panel) and reveals the editor exactly as it was left (D4).
-    func exitTestingWorkspace() {
-        guard let play = borrowedPlay else { return }
-        NSLayoutConstraint.deactivate(workspaceConstraints)
-        workspaceConstraints = []
-        play.view.removeFromSuperview()
-        play.removeFromParent()
-        exitBar.removeFromSuperview()
-        hostedEditor?.view.isHidden = false
-        borrowedPlay = nil
-    }
-}
-
-// MARK: - Exit Testing bar
-
-/// The testing workspace's one, unmissable exit (ADR-304 D2): a full-width
-/// accent-colored bar naming the mode, carrying the single Exit Testing button.
-private final class TestingWorkspaceExitBar: NSView {
-
-    /// Accessibility identifier — the exit button's stable handle for tests.
-    static let exitButtonIdentifier = "testing.workspace.exit"
-
-    private static let barHeight: CGFloat = 36
-
-    /// Invoked when Exit Testing is clicked.
-    var onExit: (() -> Void)?
-
-    init() {
-        super.init(frame: .zero)
-        wantsLayer = true
-        translatesAutoresizingMaskIntoConstraints = false
-
-        let label = NSTextField(labelWithString: "Testing Workspace")
-        label.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
-        label.textColor = Theme.statusBarText
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        let button = NSButton(title: "Exit Testing", target: self, action: #selector(exitClicked))
-        button.bezelStyle = .rounded
-        button.controlSize = .regular
-        button.setAccessibilityIdentifier(Self.exitButtonIdentifier)
-        button.translatesAutoresizingMaskIntoConstraints = false
-
-        addSubview(label)
-        addSubview(button)
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Self.barHeight),
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            button.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            button.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("TestingWorkspaceExitBar is not Storyboard-instantiable")
-    }
-
-    override var wantsUpdateLayer: Bool { true }
-
-    override func updateLayer() {
-        layer?.backgroundColor = Theme.accent.cgColor
-    }
-
-    @objc private func exitClicked() {
-        onExit?()
     }
 }
 

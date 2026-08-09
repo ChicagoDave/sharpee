@@ -4,6 +4,14 @@
 
 > **D15 superseded in part** by [ADR-300 D11](adr-300-addressable-channels-and-canonical-transcript.md) (2026-08-04): golden recordings still capture declared channels exactly as D15 says, but recordings are no longer the only consumer — the assertion tier reads channels too, via `[CHANNEL: <id>, contains "…"]`.
 
+> **D1 scoped** by [ADR-306 D3](adr-306-testing-play-surface-revamp.md) (2026-08-09): "golden
+> transcripts are the regression baseline" stays true only in the **frozen
+> transcript-tester world** (Dungeo's walkthrough goldens, deliberately untouched —
+> ADR-302 D9/D12/D15). The author world (branch-tester, Chord stories, the IDE) has no
+> golden tier: its regression baseline is the transcript tree passing at the pinned
+> seed. The author-world golden machinery retires under the ADR-306 plan's Phase 6
+> (platform side pending its `packages/` discussion).
+
 **Platform change; requires its own discussion before implementation starts.** Packages: `packages/transcript-tester` (rebuilt), `scripts/bundle-entry.js` (CLI flags), `tools/repokit` (test command surface). **Story change**: every story's transcript corpus migrates (`stories/dungeo` 17 walkthroughs + ~100 unit transcripts, plus `cloak-of-darkness`, `friendly-zoo`, `family-zoo-tutorial`, `fernhill`).
 
 ## Date: 2026-08-01

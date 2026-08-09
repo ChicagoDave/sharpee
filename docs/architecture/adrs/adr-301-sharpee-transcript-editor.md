@@ -304,6 +304,11 @@ failures** (from a 508/21 baseline — see Amendment A1).
 
 ## The next decision — the editing interaction
 
+> **Decided** by [ADR-306 D4](adr-306-testing-play-surface-revamp.md) (2026-08-09):
+> editing lives in the testing play surface (cards, gesture-authored assertions, the
+> source panel as the editor); the tab reads. The surviving ADR-299 ideas below
+> shipped in that design.
+
 Deliberately out of scope. This ADR decides the tab; how a transcript is *edited* in it is
 the next decision, and these ideas from ADR-299 survive as design for it:
 

@@ -5,19 +5,18 @@
 // bundle is built. Errors from the running story are symbolicated and forwarded
 // to the Diagnosis tab; judging what the story PRINTED is not this pane's job.
 //
-// The turn feed is BACK (ADR-305, rebuilt against that decision after
-// ADR-300 removed the consumer-less ADR-299 version): the client posts every
-// turn's record over `turnEvents`, the pane pins the play seed
-// (`idePlaySeed`, D1), holds the lineage in a `PlayTurnLog` (D3 fences it),
-// overlays the selection margin keyed off the client's `data-turn` anchors
-// (D4), and the header's Create Transcript hands the log to the controller's
-// creation flow (D5/D6).
+// The 6f margin chrome, Create Transcript flow, and the pane's turn-feed
+// consumer are RETIRED (ADR-306 D1, David's shred ruling 2026-08-09): test
+// authoring lives in the testing play surface window, which registers its
+// own `turnEvents` bridge. This pane registers none, so the client's
+// `turnEventsBridgeActive()` is false here and published-player behavior
+// (no per-turn world digest) is exactly what regular Play exercises.
 // Public interface: load(bundleDirectory:), reloadAfterBuild(projectRoot:),
 // restart(), invalidateForSourceChange(), showUnplayable(reason:), isLoaded,
 // playAfterBuild, onPlayAfterBuildChanged, onConsoleError,
 // evaluateInPlaySurface(_:), themeChoice, applyThemeChoice(_:) (Phase 6b —
 // the play-surface theme picker, IDE chrome persisted in UserDefaults),
-// turnLog, onCreateTranscript, idePlaySeed (ADR-305).
+// idePlaySeed (ADR-305 D1).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -26,8 +25,6 @@ import WebKit
 final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     private static let consoleHandlerName = "playConsole"
-    private static let turnEventsHandlerName = "turnEvents"
-    private static let marginHandlerName = "playMargin"
 
     /// The fixed IDE play seed (ADR-305 D1): every play boot is deterministic
     /// and every session is promotable. 42 is the corpus's canonical example
@@ -108,91 +105,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         """
     }
 
-    /// The selection margin (ADR-305 D4): IDE chrome keyed off the client's
-    /// `data-turn` anchors — the published contract is the ENTIRE DOM
-    /// assumption. A fixed left rail carries one checkbox per turn group,
-    /// positioned at the group's first element; every selection change posts
-    /// the ordinal set to the `playMargin` handler. `setFloor(n)` hides turns
-    /// with ordinal ≤ n — the Swift side pushes it on a restart fence (D3),
-    /// covering clients that keep dead-lineage scrollback in the DOM.
-    private static let marginScript = """
-    (function () {
-      if (window.__sharpeePlayMargin) return;
-      var api = { floor: 0 };
-      window.__sharpeePlayMargin = api;
-      var selected = new Set();
-      var boxes = new Map();
-      var rail = document.createElement('div');
-      rail.id = 'sharpee-play-margin';
-      rail.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:20px;z-index:2147483647;pointer-events:none;';
-      function post() {
-        try {
-          window.webkit.messageHandlers.playMargin.postMessage(
-            JSON.stringify({ selected: Array.from(selected).sort(function (a, b) { return a - b; }) }));
-        } catch (e) {}
-      }
-      api.setFloor = function (n) {
-        api.floor = n;
-        selected.clear();
-        sync();
-        post();
-      };
-      function groupHeads() {
-        var heads = new Map();
-        var all = document.querySelectorAll('[data-turn]');
-        for (var i = 0; i < all.length; i++) {
-          var n = parseInt(all[i].getAttribute('data-turn'), 10);
-          if (!(n > api.floor)) continue;
-          if (!heads.has(n)) heads.set(n, all[i]);
-        }
-        return heads;
-      }
-      function sync() {
-        var heads = groupHeads();
-        boxes.forEach(function (box, n) {
-          if (!heads.has(n)) {
-            box.remove();
-            boxes.delete(n);
-            if (selected.delete(n)) post();
-          }
-        });
-        heads.forEach(function (el, n) {
-          var box = boxes.get(n);
-          if (!box) {
-            box = document.createElement('input');
-            box.type = 'checkbox';
-            box.setAttribute('data-turn-select', String(n));
-            box.title = 'Include turn ' + n + ' in Create Transcript';
-            box.style.cssText = 'position:fixed;left:3px;width:13px;height:13px;margin:0;pointer-events:auto;';
-            box.addEventListener('change', function () {
-              if (box.checked) selected.add(n); else selected.delete(n);
-              post();
-            });
-            rail.appendChild(box);
-            boxes.set(n, box);
-          }
-          var rect = el.getBoundingClientRect();
-          var visible = rect.bottom > 0 && rect.top < window.innerHeight;
-          box.style.display = visible ? '' : 'none';
-          box.style.top = Math.max(0, rect.top + 2) + 'px';
-        });
-      }
-      function boot() {
-        (document.body || document.documentElement).appendChild(rail);
-        sync();
-        new MutationObserver(function () { sync(); })
-          .observe(document.documentElement, { childList: true, subtree: true });
-        window.addEventListener('scroll', sync, true);
-        window.addEventListener('resize', sync);
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
-      } else {
-        boot();
-      }
-    })();
-    """
-
     /// A Swift string (or nil) as a JavaScript literal, JSON-escaped.
     private static func javascriptString(_ value: String?) -> String {
         guard let value,
@@ -257,15 +169,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
-    /// The play session's promotion log (ADR-305): this lineage's turns and
-    /// the margin selection. Reset on every page load; fenced on restart.
-    let turnLog = PlayTurnLog()
-
-    /// Fired when the header's Create Transcript is clicked with a non-empty
-    /// selection — the controller owns the creation flow (policy, CLI, save
-    /// panel); this pane only owns the log.
-    var onCreateTranscript: ((PlayTurnLog) -> Void)?
-
     override func loadView() {
         let pane = ThemedPane(color: Theme.playBackground)
 
@@ -277,8 +180,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
         let contentController = configuration.userContentController
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
-        contentController.add(WeakScriptMessageHandler(self), name: Self.turnEventsHandlerName)
-        contentController.add(WeakScriptMessageHandler(self), name: Self.marginHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true // right-click → Inspect Element to debug the running story
         webView.translatesAutoresizingMaskIntoConstraints = false
@@ -294,10 +195,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setThemes(PlayThemeCatalog.themes(inResources: resourcesURL),
                          selectedThemeId: themeChoice)
         header.onThemeSelect = { [weak self] themeId in self?.applyThemeChoice(themeId) }
-        header.onCreateTranscript = { [weak self] in
-            guard let self, !self.turnLog.selection.isEmpty else { return }
-            self.onCreateTranscript?(self.turnLog)
-        }
 
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
@@ -341,10 +238,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         }
         installUserScripts()
         loaded = bundleDirectory
-        // A load is a fresh page: the log starts empty (ADR-305 D3 — the new
-        // boot's turns are the only live lineage).
-        turnLog.reset()
-        header.setCanCreateTranscript(false)
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
         schemeHandler.rootDirectory = bundleDirectory
         placeholder.isHidden = true
@@ -363,7 +256,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         let surfaceScript = Self.playSurfaceScript(
             themeChoice: themeChoice,
             themeStylesheets: PlayThemeCatalog.stylesheetPaths(inResources: resourcesURL))
-        for source in [Self.consoleHookScript, surfaceScript, Self.marginScript] {
+        for source in [Self.consoleHookScript, surfaceScript] {
             contentController.addUserScript(WKUserScript(source: source,
                                                          injectionTime: .atDocumentStart,
                                                          forMainFrameOnly: true))
@@ -441,13 +334,8 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     /// Restarts the running story by reloading from origin — a fresh boot, since
     /// playSurfaceScript clears the origin's storage before the client runs.
-    /// The reload is the fence (ADR-305 D3): a new page starts a new lineage,
-    /// so the log resets here rather than waiting for a feed event the
-    /// navigation never posts.
     func restart() {
         guard loaded != nil else { return }
-        turnLog.reset()
-        header.setCanCreateTranscript(false)
         webView.reloadFromOrigin()
     }
 
@@ -492,29 +380,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                 return
             }
             onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: loaded))
-        case Self.turnEventsHandlerName:
-            guard let body = message.body as? String else { return }
-            switch turnLog.ingest(messageBody: body) {
-            case .restart(let firstOrdinal):
-                // In-page reboot (typed restart): fence the margin too — a
-                // client that keeps dead-lineage scrollback must not offer it
-                // (ADR-305 D3). The selection was cleared with the log.
-                header.setCanCreateTranscript(false)
-                let floor = firstOrdinal - 1
-                Task {
-                    _ = try? await evaluateInPlaySurface(
-                        "window.__sharpeePlayMargin && window.__sharpeePlayMargin.setFloor(\(floor));")
-                }
-            case .turn, .malformed:
-                break
-            }
-        case Self.marginHandlerName:
-            guard let body = message.body as? String,
-                  let data = body.data(using: .utf8),
-                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                  let ordinals = object["selected"] as? [Int] else { return }
-            turnLog.setSelection(ordinals)
-            header.setCanCreateTranscript(!turnLog.selection.isEmpty)
         default:
             break
         }

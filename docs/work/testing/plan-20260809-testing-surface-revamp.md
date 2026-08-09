@@ -107,6 +107,23 @@ Real dependencies, not a linear pipeline:
 - **Exit state**: A real branch (not the mock's placeholder) replays deterministically and lands as ordinary feed turns; switching between siblings shows exactly one coherent lineage.
 - **Status**: PENDING
 
+### DIRECTIVE (David, 2026-08-09, session d54d7e) — old testing UX dies NOW
+David, after seeing the old workspace still in place: "you have my authority to
+shred the old UX completely for testing… we have the spec — implement it in
+the IDE. This is the direction and nothing from the old testing UX survives."
+This overrides this plan's Phase 6 ordering rationale ("retire only after the
+replacement works"). **Executed same session (d54d7e)**: ADR-304 workspace
+modal machinery, 6f margin chrome + `turnEvents` consumer in the Play pane,
+Create Transcript button, save-panel flow, `PlayTranscriptCreation.swift`,
+`PlayTurnLog.swift`, and their four test suites — all removed; ADR-306 D1's
+flip edits landed early (ADR-304 SUPERSEDED, ADR-305 SUPERSEDED IN PART,
+ADR-294 D1 scoping note, ADR-301 pointer). Suite after: 523 passing, 0
+failures. **Held back deliberately**: the tab's golden affordances + the
+`packages/`-side golden machinery (branch-tester `golden.ts`) — live
+`.golden` files need both sides cut together, and `packages/` needs its
+platform discussion. Phase 6's remaining scope: the run column + that
+golden pair.
+
 ### Phase 6: Run column + retirements
 - **Tier**: Medium
 - **Budget**: ~250 tool calls

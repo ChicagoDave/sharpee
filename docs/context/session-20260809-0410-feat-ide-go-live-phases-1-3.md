@@ -30,6 +30,32 @@ The client's `executeCommand` awaits `AudioManager.unlock()` → `AudioContext.r
 ### Design doc §14 — response-coverage checks (David, mid-session)
 Captured David's second-kind-of-test idea in `design-testing-play-surface.md` §14: which NPCs lack TALK TO responses; which objects/nouns lack EXAMINE responses. Split recorded: NPC-talk and declared-entity-examine coverage are mechanical (world-model enumeration, ADR-294 D13 discipline, surfaces in the Testing tab per D4); undeclared-nouns-in-prose needs POS tagging — candidates spaCy/Stanza (Python), and David's preferred **NLTagger** (Apple NaturalLanguage, built-in, moves the check IDE-side). Captured, not yet ruled — needs a platform discussion before it becomes scope. Also repaired a pre-existing §12/§13 paragraph misplacement while in the file.
 
+## Late addition — David's shred ruling (after waking to "still showing old UX")
+
+David: "you have my authority to shred the old UX completely for testing… we have
+the spec — implement it in the IDE. This is the direction and nothing from the old
+testing UX survives." Executed same session (commit follows the Phase 3 one):
+
+- **Removed**: ADR-304's workspace modal machinery (enter/exit, Play reparenting,
+  LeftPaneHost workspace bits, TestingWorkspaceExitBar; Testing tab now shows inline
+  as an ordinary tab), 6f's margin checkbox overlay + `playMargin`/`turnEvents`
+  handlers in the Play pane, the Create Transcript header button, the save-panel
+  creation flow (`PlayTranscriptCreation.swift`), and `PlayTurnLog.swift` — plus
+  their four test files (margin real-path, transcript creation, turn log, workspace
+  real-path; David-authorized deletions). The Play pane registers no `turnEvents`
+  bridge anymore, so regular Play exercises exactly the published-player path (no
+  per-turn world digest).
+- **ADR flips landed early** (ADR-306 D1's edit set, pulled forward by the ruling):
+  ADR-304 → SUPERSEDED; ADR-305 → SUPERSEDED IN PART (UI half retired, platform
+  decisions standing); ADR-294 D1 scoping note added; ADR-301 "next decision"
+  pointer added; ADR-306 D1 annotated with the early-flip record.
+- **Deliberately NOT cut yet**: the Testing tab's golden affordances + branch-tester's
+  golden machinery — live `.golden` files need the tab UI and the `packages/` side
+  cut together, and `packages/` needs its platform discussion first. Queued with
+  Phase 6's remaining scope (run column).
+- **Evidence**: app builds clean; full IDE suite **523 passing, 0 failures** after
+  the retirements (was 544; the deleted old-UX suites carried ~21 tests).
+
 ## Key Decisions
 1. **Surface ships as an IDE-owned web bundle injected into the platform's testing page** — not a devkit template change, not IDE-drawn native UI. Keeps Phase 3 entirely inside `tools/ide` (no `packages/` discussion needed) and keeps prose rendering the client's own.
 2. **Hosting: its own window** (Test → Testing Play Surface), isolated non-persistent web store. ADR-304's workspace machinery untouched until Phase 6; hosting can be revisited then if David prefers a pane.

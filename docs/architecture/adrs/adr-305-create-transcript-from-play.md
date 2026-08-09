@@ -1,6 +1,17 @@
 # ADR-305: Create Transcript from Play — Promotion in the Play Surface
 
-**Status**: ACCEPTED (2026-08-08, session 1dd6d3) — the play session boots at a fixed
+**Status**: ACCEPTED, SUPERSEDED IN PART by ADR-306 (UI retirement landed
+2026-08-09, session d54d7e — David's shred ruling pulled ADR-306 D1's flip
+forward). **Retired**: the margin selection UI (D4's margin location), the
+Create Transcript button, the save-panel write flow and user naming (D6's UI
+half), and the per-turn-checkbox selection model (D2 as built) — replaced by
+the testing play surface's ranges + pruning. **Standing**: every platform
+decision — the fixed IDE seed (D1), selection-as-assertion semantics now
+expressed by ranges (D2), the restart fence (D3), the `data-turn` anchor
+contract and the turn feed (D4's platform half), and the one shared synthesis
+module (D5), which the testing surface serializes through.
+
+*Original acceptance (2026-08-08, session 1dd6d3)*: the play session boots at a fixed
 IDE seed (D1); a margin in the play surface selects which played turns a created
 transcript *asserts*, while the file always carries the full command sequence from the
 origin (D2); restart is a fence and every other meta command is an ordinary command

@@ -1,11 +1,18 @@
 # ADR-304: The Testing Workspace — a Modal Play-Left Layout
 
-**Status**: ACCEPTED (2026-08-08, session c29681) — selecting the Testing tab enters a
-testing workspace: the Play surface takes over the left pane and the Testing tab holds
-the right (D1); the workspace is modal, with one entrance and one unmissable exit,
-deliberately rejecting Inform's any-tab-in-any-pane (D2); the running story survives
-entry and exit — the Play web view is reparented, never reloaded (D3); the editor's
-state is restored on exit (D4).
+**Status**: SUPERSEDED by ADR-306 (retirement landed 2026-08-09, session d54d7e —
+David's shred ruling pulled ADR-306 D1's flip forward). The modal workspace (D1/D2)
+and its invariants (D3 reparenting, D4 editor-state restore) are removed from the
+IDE: the Testing tab shows inline as an ordinary tab (the reading surface, ADR-306
+D4), and test AUTHORING lives in the dedicated testing play surface window. The
+rejected any-tab-in-any-pane alternative stays rejected — nothing revives it.
+
+*Original acceptance (2026-08-08, session c29681)*: selecting the Testing tab entered a
+testing workspace: the Play surface took over the left pane and the Testing tab held
+the right (D1); the workspace was modal, with one entrance and one unmissable exit,
+deliberately rejecting Inform's any-tab-in-any-pane (D2); the running story survived
+entry and exit — the Play web view was reparented, never reloaded (D3); the editor's
+state was restored on exit (D4).
 
 **Date**: 2026-08-08 (session c29681)
 **Depends on**: ADR-301 (the Testing tab this workspace hosts), ADR-252 (the browser

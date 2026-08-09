@@ -11,18 +11,14 @@
 // ADR-299's retirement: ADR-300 retires the `.skein` artifact and the second
 // verification engine, and the transcript tree the Testing tab renders is what
 // replaces the skein's tree.
-// The testing workspace (ADR-304): selecting the Testing tab does not show it
-// inline — it asks the main split to enter the workspace, which borrows the
-// Play surface for the left pane (lendPlaySurfaceForTestingWorkspace) and
-// locks this panel into a modal shape: strip hidden, Testing full-bleed. The
-// workspace's one exit hands the surface back (reclaimPlaySurface…), restoring
-// the tab that was showing before.
+// The ADR-304 testing workspace is RETIRED (ADR-306 D1, David's shred ruling
+// 2026-08-09): the Testing tab shows inline like every other tab, and test
+// AUTHORING lives in the dedicated testing play surface window. The tab is
+// the reading surface only (ADR-306 D4).
 // Public interface: buildPanel, play, testingTab, docsTab, index, diagnosis,
 // showBuildTab(), showPlayTab(), showTestingTab(), showDocsTab(page:),
 // showPublishTab(), showDiagnosis(_:count:), revealDiagnosis(_:),
-// clearDiagnosis(), onOpenLocation, onTestingWorkspaceRequested,
-// isTestingWorkspaceActive, lendPlaySurfaceForTestingWorkspace(),
-// reclaimPlaySurfaceFromTestingWorkspace().
+// clearDiagnosis(), onOpenLocation.
 // Owner context: tools/ide — Play (right panel).
 
 import AppKit
@@ -49,27 +45,6 @@ final class RightPanelViewController: NSViewController {
         get { diagnosis.onOpenLocation }
         set { diagnosis.onOpenLocation = newValue }
     }
-
-    /// The testing workspace's one entrance (ADR-304 D2): invoked when the
-    /// Testing tab is selected, instead of showing the tab inline. Set by
-    /// MainSplitViewController; nil (standalone use in tests) falls back to
-    /// the inline Testing view.
-    var onTestingWorkspaceRequested: (() -> Void)?
-
-    /// Whether the panel is locked into its testing-workspace shape (strip
-    /// hidden, Testing full-bleed, Play surface lent to the left pane).
-    private(set) var isTestingWorkspaceActive = false
-
-    /// The last tab actually shown inline — what the workspace's exit restores.
-    private var lastShownTab = RightPanelViewController.playTab
-
-    /// The Play surface's constraints, kept so the surface can leave for the
-    /// testing workspace and come back without re-deriving its layout.
-    private var playSurfaceConstraints: [NSLayoutConstraint] = []
-    /// Testing's two top edges: below the strip normally, at the container top
-    /// while the workspace hides the strip. Exactly one is active.
-    private var testingTopToStrip: NSLayoutConstraint!
-    private var testingTopToContainer: NSLayoutConstraint!
 
     private let tabStrip = TabStripView()
     private static let buildTab = 0
@@ -112,19 +87,12 @@ final class RightPanelViewController: NSViewController {
         container.addSubview(docsTab.view)
         container.addSubview(publish)
 
-        // Every content view hangs off the STRIP, not off play.view: the Play
-        // surface leaves this panel during the testing workspace, and any
-        // constraint anchored to it would die with the removal.
-        playSurfaceConstraints = [
+        NSLayoutConstraint.activate([
             play.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             play.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             play.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             play.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ]
-        testingTopToStrip = testingTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor)
-        testingTopToContainer = testingTab.view.topAnchor.constraint(equalTo: container.topAnchor)
 
-        NSLayoutConstraint.activate(playSurfaceConstraints + [
             tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
             tabStrip.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             tabStrip.trailingAnchor.constraint(equalTo: container.trailingAnchor),
@@ -144,7 +112,7 @@ final class RightPanelViewController: NSViewController {
             diagnosis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             diagnosis.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            testingTopToStrip,
+            testingTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             testingTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             testingTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
@@ -211,15 +179,6 @@ final class RightPanelViewController: NSViewController {
 
 
     private func show(tab selected: Int) {
-        // Modal (ADR-304 D2): while the workspace is open there is exactly one
-        // exit, and it is not a tab — programmatic switches wait until then.
-        if isTestingWorkspaceActive { return }
-        // Selecting Testing ENTERS the workspace (D1) — the tab never shows
-        // inline when a workspace host is wired.
-        if selected == Self.testingTabIndex, let requestWorkspace = onTestingWorkspaceRequested {
-            requestWorkspace()
-            return
-        }
         buildPanel.isHidden = selected != Self.buildTab
         play.view.isHidden = selected != Self.playTab
         index.isHidden = selected != Self.indexTab
@@ -227,47 +186,6 @@ final class RightPanelViewController: NSViewController {
         testingTab.view.isHidden = selected != Self.testingTabIndex
         docsTab.view.isHidden = selected != Self.docsTabIndex
         publish.isHidden = selected != Self.publishTab
-        lastShownTab = selected
-    }
-
-    // MARK: Testing workspace (ADR-304)
-
-    /// Lends the Play surface to the left pane and locks this panel into its
-    /// workspace shape: strip hidden, Testing full-bleed, everything else
-    /// hidden (D1/D2). The surface's view controller and view are detached
-    /// here — never torn down — so the caller reparents a LIVE web view (D3).
-    ///
-    /// - Returns: the Play surface for the left pane to host.
-    func lendPlaySurfaceForTestingWorkspace() -> PlayViewController {
-        guard !isTestingWorkspaceActive else { return play }
-        isTestingWorkspaceActive = true
-        play.view.removeFromSuperview()
-        play.removeFromParent()
-        tabStrip.isHidden = true
-        testingTopToStrip.isActive = false
-        testingTopToContainer.isActive = true
-        buildPanel.isHidden = true
-        index.isHidden = true
-        diagnosis.isHidden = true
-        docsTab.view.isHidden = true
-        publish.isHidden = true
-        testingTab.view.isHidden = false
-        return play
-    }
-
-    /// Takes the Play surface back from the left pane and restores the tabbed
-    /// shape, re-showing the tab that was inline before the workspace opened.
-    /// The workspace's one exit (D2) lands here.
-    func reclaimPlaySurfaceFromTestingWorkspace() {
-        guard isTestingWorkspaceActive else { return }
-        isTestingWorkspaceActive = false
-        addChild(play)
-        view.addSubview(play.view)
-        NSLayoutConstraint.activate(playSurfaceConstraints)
-        testingTopToContainer.isActive = false
-        testingTopToStrip.isActive = true
-        tabStrip.isHidden = false
-        tabStrip.select(lastShownTab)
     }
 
 }
