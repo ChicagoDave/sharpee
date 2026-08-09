@@ -230,18 +230,22 @@ async function runInBrowserClient(
     await client.executeCommand(command);
   }
 
-  if (posted.length !== commands.length) {
+  // The boot look is a real feed record now (ADR-305 D3: replay turn numbers
+  // must align with play), so the bridge posts commands.length + 1 records
+  // and the first one is the echo-less boot turn.
+  if (posted.length !== commands.length + 1) {
     throw new Error(
-      `bridge posted ${posted.length} turns for ${commands.length} commands: `
+      `bridge posted ${posted.length} turns for ${commands.length} commands + boot look: `
       + JSON.stringify(posted.map((p) => p.command)),
     );
   }
+  expect(posted[0].command).toBe('look');
   for (let i = 0; i < commands.length; i += 1) {
     // A misaligned pairing would compare the wrong turns and could pass by
     // accident, so pin the pairing itself rather than assuming it.
-    expect(posted[i].command).toBe(commands[i]);
+    expect(posted[i + 1].command).toBe(commands[i]);
   }
-  return posted.map((p) => p.response);
+  return posted.map((p) => p.output);
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -257,15 +261,21 @@ describe.skipIf(!BUNDLE_PRESENT)(
 
     beforeAll(async () => {
       const source = readFileSync(FIXTURE, 'utf-8');
-      // The priming `look` matches the client's own start()-time look; only
-      // the turns after it are comparable.
-      headless = runHeadless([PRIMING_COMMAND, ...COMMANDS]).slice(1);
+      // The priming `look` matches the client's own start()-time look — and
+      // since ADR-305 the bridge records that boot turn too, so both arrays
+      // carry it at index 0 and the typed turns align 1:1 behind it. The boot
+      // turn itself is NOT byte-compared: this harness's runHeadless shim
+      // folds the boot banner into the priming look's slice, which the real
+      // runner does not do (`bootstrap` resets outputBuffer per command) and
+      // the browser prose slot never sees. Alignment of the boot record is
+      // pinned in runInBrowserClient; content parity is a typed-turn claim.
+      headless = runHeadless([PRIMING_COMMAND, ...COMMANDS]);
       recorded = await runInBrowserClient(source, COMMANDS);
     }, 120_000);
 
-    it('records byte-identical text for every compared turn', () => {
-      for (let i = 0; i < COMMANDS.length; i += 1) {
-        expect(recorded[i], `turn ${i + 1} (\`${COMMANDS[i]}\`)`).toBe(headless[i]);
+    it('records byte-identical text for every compared typed turn', () => {
+      for (let i = 1; i < recorded.length; i += 1) {
+        expect(recorded[i], `turn ${i + 1} (\`${COMMANDS[i - 1]}\`)`).toBe(headless[i]);
       }
     });
 
@@ -275,27 +285,27 @@ describe.skipIf(!BUNDLE_PRESENT)(
       // answers with two paragraphs. If either side collapsed the boundary
       // to a single newline the equality above could still hold while both
       // sides were wrong together, so assert the boundary is really there.
-      const look = recorded[COMMANDS.indexOf('look')];
+      const look = recorded[COMMANDS.indexOf('look') + 1];
       expect(look).toContain('\n\n');
-      expect(look).toBe(headless[COMMANDS.indexOf('look')]);
+      expect(look).toBe(headless[COMMANDS.indexOf('look') + 1]);
     });
 
     it('captures bracket-shaped lines and quotes intact (the fence content)', () => {
       // Acceptance 5's named content shape. These characters are what
       // ADR-287's fences exist for; a capture that mangled them would make
       // the blessed fence unrunnable no matter how the serializer behaves.
-      const notice = recorded[COMMANDS.indexOf('read notice')];
+      const notice = recorded[COMMANDS.indexOf('read notice') + 1];
       expect(notice).toContain('[posted by order of the proving board]');
       expect(notice).toContain('She said "take it" and would not look at you.');
       expect(notice).toContain('[the lamp gutters]');
-      expect(notice).toBe(headless[COMMANDS.indexOf('read notice')]);
+      expect(notice).toBe(headless[COMMANDS.indexOf('read notice') + 1]);
     });
 
     it('spans a multi-packet turn without dropping or reordering text', () => {
       // `read notice` reports an implicit take BEFORE the notice text, so the
       // turn arrives as several packets. Packet-level accumulation is the
       // half of the capture the DOM read used to hide.
-      const notice = recorded[COMMANDS.indexOf('read notice')];
+      const notice = recorded[COMMANDS.indexOf('read notice') + 1];
       expect(notice.indexOf('taking the notice'))
         .toBeLessThan(notice.indexOf('[posted by order of the proving board]'));
       expect(notice.indexOf('[posted by order of the proving board]'))
@@ -303,8 +313,9 @@ describe.skipIf(!BUNDLE_PRESENT)(
     });
 
     it('records no turn as empty — an empty capture would pass equality vacuously', () => {
-      for (let i = 0; i < COMMANDS.length; i += 1) {
-        expect(recorded[i].trim(), `turn ${i + 1} (\`${COMMANDS[i]}\`)`).not.toBe('');
+      const labels = [PRIMING_COMMAND, ...COMMANDS];
+      for (let i = 0; i < labels.length; i += 1) {
+        expect(recorded[i].trim(), `turn ${i + 1} (\`${labels[i]}\`)`).not.toBe('');
       }
     });
   },

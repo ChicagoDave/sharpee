@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mock — Testing Play Surface (testing index.html)</title>
+<style>
+  /* Palette = tools/ide/SharpeeIDE/Theme.swift, verbatim. Light : Dark. */
+  :root {
+    --play-bg:    #E6E9EF;
+    --block-bg:   #EFF1F5;
+    --rail-bg:    #DCE0E8;
+    --border:     #ACB0BE;
+    --fg:         #4C4F69;
+    --fg-dim:     #6C6F85;
+    --fg-faint:   #9CA0B0;
+    --accent:     #1E66F5;
+    --assert:     #40A02B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --play-bg:  #13141A;
+      --block-bg: #1E1F26;
+      --rail-bg:  #16171D;
+      --border:   #3A3C48;
+      --fg:       #D8D9E0;
+      --fg-dim:   #8E90A0;
+      --fg-faint: #5C5F6D;
+      --accent:   #89B4FA;
+      --assert:   #A6E3A1;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--play-bg);
+    color: var(--fg);
+    font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+    display: flex;
+  }
+
+  /* Left column: the play surface — checkbox rail, one outlined block per
+     selectable thing (the opening, then every turn), the prompt at the
+     bottom. No banner chrome, no status bar, no menu, no themes.
+     Assertions NEVER render here — the card is the story's words plus the
+     author's controls; what gets written is the right panel's job. */
+  .left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .session {
+    flex: 1;
+    overflow-y: auto;
+    background: linear-gradient(to right, var(--rail-bg) 0, var(--rail-bg) 44px,
+                                var(--border) 44px, var(--border) 45px,
+                                var(--play-bg) 45px);
+  }
+  .turns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 18px 14px 0;
+    max-width: 76ch;
+  }
+
+  .turn { display: flex; align-items: flex-start; }
+  .turn .pick {
+    flex: 0 0 45px;
+    text-align: center;
+    padding-top: 12px;
+  }
+  .pick input {
+    appearance: none;
+    width: 14px; height: 14px;
+    border: 1px solid var(--fg-faint);
+    border-radius: 3px;
+    background: var(--block-bg);
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+  }
+  .pick input:checked { background: var(--accent); border-color: var(--accent); }
+  /* An implied range member: between the two ticked ends — included, not
+     itself ticked. Tinted, no checkmark. */
+  .pick input.implied {
+    background: color-mix(in srgb, var(--accent) 35%, var(--block-bg));
+    border-color: var(--accent);
+  }
+  .pick input:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 4px; height: 8px;
+    border: solid var(--play-bg);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .card-column { flex: 1; min-width: 0; margin-left: 13px; }
+  .block {
+    background: var(--block-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px 10px;
+  }
+  .turn.selected .block { border-color: var(--accent); }
+
+  /* A segment boundary: the start card stands off from what precedes it,
+     and a child names its parent right where the file will. */
+  .turn.segment-start { margin-top: 16px; }
+  .strip-note {
+    color: var(--fg-faint);
+    font-size: 10px;
+    margin: 0 0 4px 2px;
+  }
+
+  /* The transcript's title, riding the range's first card — editable, with
+     Collapse once the range is closed. */
+  .title-strip { display: flex; gap: 6px; margin-bottom: 6px; }
+  .title-strip .auto-name {
+    flex: 1;
+    min-width: 0;
+    font: 700 12px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--fg);
+    background: var(--block-bg);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: default;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .title-strip .saved {
+    font-weight: 400;
+    font-size: 10px;
+    color: var(--fg-faint);
+    margin-left: 8px;
+  }
+  .title-strip .collapse, .title-strip .merge {
+    font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--fg-dim);
+    background: var(--block-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    cursor: pointer;
+  }
+  .title-strip .collapse:hover, .title-strip .merge:hover {
+    color: var(--fg);
+    border-color: var(--fg-faint);
+  }
+
+  /* A collapsed transcript: one named summary card standing in for its
+     whole range. Click to expand. */
+  .block.summary { cursor: pointer; border-color: var(--accent); }
+  .summary-title { font-weight: 700; }
+  .summary-span { color: var(--fg-dim); font-size: 11px; margin-top: 2px; }
+
+  /* A branch point: two sibling transcripts side by side under one parent.
+     Select one and it expands; the other stays a summary. */
+  .branch-row { display: flex; gap: 10px; }
+  .branch-chip {
+    flex: 1;
+    background: var(--block-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  .branch-chip:hover { border-color: var(--fg-faint); }
+  .branch-chip.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--block-bg));
+  }
+  .branch-chip .summary-title { font-size: 12px; }
+  .pending-note { color: var(--fg-faint); font-style: italic; }
+
+  .meta {
+    color: var(--fg-faint);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .echo { color: var(--accent); margin-bottom: 6px; }
+  .room { font-weight: 700; margin-bottom: 4px; }
+  .block p { margin-bottom: 8px; }
+  .banner { margin: 10px 0 0; }
+  .banner .title { font-weight: 700; }
+  .banner .line { color: var(--fg-dim); }
+  .banner p { margin: 8px 0; }
+
+  /* The card's action row: assertion tools for THIS turn. The buttons write
+     into the generated source (right panel) — never into the card. */
+  .actions {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .actions button {
+    font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--fg-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  .actions button:hover { color: var(--fg); border-color: var(--fg-faint); }
+  .actions button.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .actions input {
+    flex: 1;
+    min-width: 120px;
+    font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--fg);
+    background: var(--play-bg);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 3px 8px;
+    outline: none;
+  }
+  .actions input::placeholder { color: var(--fg-faint); }
+
+  /* State/Event pickers: the author asserts from a LIST of what the world
+     (or the turn's event stream) actually holds — never a blank field. */
+  .picker {
+    position: fixed;
+    z-index: 20;
+    min-width: 240px;
+    max-width: 320px;
+    background: var(--block-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    padding: 4px;
+  }
+  .picker .picker-head {
+    color: var(--fg-faint);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 8px 6px;
+  }
+  .picker .item {
+    font-size: 11px;
+    color: var(--fg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .picker .item:hover { background: var(--rail-bg); color: var(--accent); }
+
+  /* Contains-by-selection (ADR-301): select text in a turn's output and an
+     Override button appears; clicking it adds contains-of-exactly-that. */
+  #override-btn {
+    position: fixed;
+    display: none;
+    z-index: 10;
+    font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--play-bg);
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  .input-row { display: flex; border-top: 1px solid var(--border); }
+  .input-row .gutter-cap {
+    flex: 0 0 44px;
+    background: var(--rail-bg);
+    border-right: 1px solid var(--border);
+  }
+  .input-row .prompt { padding: 10px 14px; }
+  .caret {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--fg);
+    vertical-align: text-bottom;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Right column: the generated transcript, read-only — exactly what Create
+     Transcript will write for the current selection and card actions. */
+  .preview {
+    flex: 0 0 340px;
+    border-left: 1px solid var(--border);
+    background: var(--block-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .preview .source {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+  .source .hdr { color: var(--fg-dim); }
+  .source .cmd { color: var(--accent); }
+  .source .ok  { color: var(--assert); }
+  .source .lit { color: var(--fg); }
+  .source .kw  { color: var(--fg-dim); }
+  .source .skip { color: var(--fg-faint); }
+
+  /* Assertions are deleted HERE — hover a line, hit its ✕. Inline, because
+     the source pane is pre-wrap: a block-level line would double-space. */
+  .source .line .del {
+    visibility: hidden;
+    color: var(--fg-faint);
+    cursor: pointer;
+    margin-left: 6px;
+  }
+  .source .line:hover .del { visibility: visible; }
+  .source .line .del:hover { color: var(--fg); }
+
+  /* Third column: the run — button, a status row per transcript, first
+     failure named, a tally. Nothing more; the Testing tab owns depth. */
+  .run-col {
+    flex: 0 0 280px;
+    border-left: 1px solid var(--border);
+    background: var(--block-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .run-col .head {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-faint);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .run-col .run-btn {
+    font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--play-bg);
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    padding: 3px 12px;
+    cursor: pointer;
+  }
+  .run-col .results { flex: 1; overflow-y: auto; padding: 8px 12px; }
+  .run-row { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .run-row:last-child { border-bottom: none; }
+  .run-row .name { font-size: 11.5px; font-weight: 700; }
+  .run-row .badge { float: right; font-size: 10.5px; font-weight: 700; }
+  .badge.pass { color: var(--assert); }
+  .badge.fail { color: #D20F39; }
+  @media (prefers-color-scheme: dark) { .badge.fail { color: #F38BA8; } }
+  .badge.norun { color: var(--fg-faint); font-weight: 400; }
+  .run-row .why {
+    font-size: 10.5px;
+    color: var(--fg-dim);
+    margin-top: 2px;
+    overflow-wrap: break-word;
+  }
+  .run-col .tally {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+</style>
+</head>
+<body>
+
+<div class="left">
+  <div class="session">
+    <div class="turns" id="turns"></div>
+  </div>
+  <div class="input-row">
+    <div class="gutter-cap"></div>
+    <div class="prompt">&gt; <span class="caret"></span></div>
+  </div>
+</div>
+
+<div class="preview">
+  <div class="head" id="preview-title">created transcript</div>
+  <div class="source" id="source"></div>
+</div>
+
+<div class="run-col">
+  <div class="head"><span>test run</span><button class="run-btn" id="run-btn">Run</button></div>
+  <div class="results" id="run-results"><span class="pending-note">not run yet</span></div>
+  <div class="tally" id="run-tally"></div>
+</div>
+
+<button id="override-btn">Add contains</button>
+
+<script>
+  // Assembled from data so block markup and the preview generator share one
+  // source. Text is the REAL Folly at Fernhill (fernhill.story /
+  // beginning.transcript) — nothing invented.
+  //
+  // SEGMENTS: a transcript is a contiguous range of turns. Tick a box to
+  // START one (a title strip appears on that card); tick a later box to END
+  // it; turns between are implied. A finished segment can COLLAPSE into one
+  // named summary card. The next tick after that starts a NEW segment, whose
+  // file CONTINUES from the previous one (`continues:` — ADR-302's parent
+  // pointer) instead of replaying [SKIP] ancestry. The opening is ordinal 0 —
+  // the nameable BEGINNING of a root transcript: ticking it starts a segment
+  // at the true beginning (no [SKIP] prefix at all).
+  const turns = [
+    {
+      opening: true, n: 0,
+      paras: [
+        "The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."
+      ],
+      banner: {
+        title: "The Folly at Fernhill",
+        version: "Story v0.3.0",
+        tagline: "One cold winter night to find the deed that keeps Fernhill in the family.",
+        byline: "By The Sharpee Project"
+      }
+    },
+    {
+      n: 1, boot: true, command: "look", room: "Iron Gates",
+      paras: [
+        "Wrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north toward the dark shape of the house."
+      ]
+    },
+    {
+      n: 2, command: "north", echo: "> north", room: "Gravel Drive",
+      paras: [
+        "The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.",
+        "You can see Tobias here."
+      ],
+      stateOptions: [
+        "tobias.location = drive",
+        "kettle.location = hall",
+        "overcoat.location = hall",
+        "score = 0",
+        "state = evening"
+      ],
+      eventOptions: ["if.event.actor_exited", "if.event.actor_moved", "if.event.actor_entered"],
+      channelOptions: [
+        { id: "room-name", text: "Gravel Drive" },
+        { id: "room-description", text: "The drive curves between bare lime trees, gravel crunching underfoot…" },
+        { id: "score", value: 0 },
+        { id: "turn", value: 2 }
+      ]
+    },
+    {
+      n: 3, command: "north", echo: "> north", room: "Fountain Court",
+      paras: [
+        "A paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhouse glimmers palely to the west; a squat brick shed hunches to the east; the front door of the house is north."
+      ],
+      stateOptions: [
+        "tobias.location = drive",
+        "kettle.location = hall",
+        "overcoat.location = hall",
+        "score = 0",
+        "state = evening"
+      ],
+      eventOptions: ["if.event.actor_exited", "if.event.actor_moved", "if.event.actor_entered"],
+      channelOptions: [
+        { id: "room-name", text: "Fountain Court" },
+        { id: "room-description", text: "A paved court before the front door, holding a dry fountain crusted…" },
+        { id: "score", value: 0 },
+        { id: "turn", value: 3 }
+      ]
+    },
+    {
+      n: 4, command: "north", echo: "> north", room: "Entrance Hall",
+      paras: [
+        "The heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock standing silent against the stairs. Doors lead west to the study and east to the kitchen; a colder passage runs north.",
+        "You can see a grey overcoat and Mrs Kettle here.",
+        "You step out of the wind, and your ears sing in the sudden quiet.",
+        "The house holds its old hush — mothballs, cold ash, and wax.",
+        "Mrs Kettle blocks your way!"
+      ],
+      stateOptions: [
+        "kettle.location = hall",
+        "overcoat.location = hall",
+        "tobias.location = drive",
+        "score = 0",
+        "state = evening"
+      ],
+      eventOptions: [
+        "if.event.actor_exited",
+        "if.event.actor_moved",
+        "if.event.actor_entered",
+        "if.event.region_entered"
+      ],
+      channelOptions: [
+        { id: "room-name", text: "Entrance Hall" },
+        { id: "room-description", text: "The heart of the house: a cold marble floor, a dead fireplace under…" },
+        { id: "score", value: 0 },
+        { id: "turn", value: 4 }
+      ]
+    }
+  ];
+  for (const t of turns) {
+    t.exact = false;
+    t.contains = [];
+    t.notContains = [];
+    t.states = [];
+    t.events = [];
+    t.channels = [];
+    t.noDefaults = false; // true once the author deleted the policy defaults
+    t.skipped = false;    // an in-range turn pruned down to [SKIP]
+  }
+  // The canned divergence for the mock: at turn 3's position the author
+  // played EAST instead of north. Real Boiler Shed text from fernhill.story.
+  function makeAltTurn(command, atN) {
+    // The mock knows one real divergence (east → Boiler Shed, text from
+    // fernhill.story). Any other command shows honestly where the live
+    // replay's output would land — the mock never invents story text.
+    const known = atN === 3 && command.toLowerCase() === 'east';
+    return {
+      n: atN, branchAlt: true, command, echo: `> ${command}`,
+      room: known ? 'Boiler Shed' : undefined,
+      paras: known ? [
+        "Brick, low, and bitter with old coal dust. The estate's boiler sits cold as a tomb against the back wall, its pipes running off through the earth toward the greenhouse."
+      ] : [],
+      pending: !known,
+      exact: false, contains: [], notContains: [], states: [], events: [],
+      channels: [], noDefaults: false, skipped: false
+    };
+  }
+  // Branching is general and unbounded: any point in a closed transcript
+  // can fork, any fork can fork again — a point holds the main line plus N
+  // alternates, all continuing from the same auto-managed parent.
+  const branchPoints = [];  // { atN, parent, main, alts: [{turn, customTitle, row}], selected, row }
+  let activeAlt = null;     // { bp, index } — preview shows that alt's transcript
+  const altTitleOf = (bp, i) => {
+    const from = slug(turnByN(bp.atN - 1)?.room ?? turnByN(1).room);
+    const t = bp.alts[i].turn;
+    return t.room ? `${from}-to-${slug(t.room)}-1` : `${from}-${slug(t.command)}-1`;
+  };
+
+  // The opening's exact block covers prologue + banner (it has no room).
+  turns[0].exactParas = [...turns[0].paras, turns[0].banner.title,
+                         turns[0].banner.version, turns[0].banner.tagline,
+                         turns[0].banner.byline];
+
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  // ── the segment model ───────────────────────────────────────────────
+
+  /** { start, end (null while open), customTitle, collapsed, summaryRow } */
+  const segments = [];
+  let activeSegment = null;
+
+  const playedTurns = () => turns.filter(t => t.n >= 1);
+  const turnByN = n => turns.find(t => t.n === n);
+  const endOf = s => s.end ?? s.start;
+  const segmentOf = n => segments.find(s => n >= s.start && n <= endOf(s));
+  const openSegment = () => segments.find(s => s.end === null);
+  /** The segment this one continues from: nearest earlier one. */
+  const parentOf = s =>
+    segments.filter(x => x !== s && endOf(x) < s.start)
+            .sort((a, b) => endOf(b) - endOf(a))[0] ?? null;
+
+  /** Auto-name: start-location + end-location + turn count (David's rule —
+      the author never types a name; rename lives in the Testing tab if ever
+      needed, and ADR-302 D14 makes renames mechanical). */
+  const slug = x => x.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  function startRoomOf(s) {
+    // Where the player STOOD when the range began: the previous turn's room
+    // (the boot room for a range starting at the beginning).
+    return (s.start <= 1 ? turnByN(1) : turnByN(s.start - 1)).room;
+  }
+  function titleOf(s) {
+    const from = slug(startRoomOf(s));
+    const to = slug(turnByN(endOf(s)).room);
+    const count = Math.max(1, endOf(s) - Math.max(s.start, 1) + 1);
+    return from === to ? `${from}-${count}` : `${from}-to-${to}-${count}`;
+  }
+
+  function clearAuthored(t) {
+    t.exact = false; t.contains = []; t.notContains = [];
+    t.states = []; t.events = []; t.channels = [];
+    t.noDefaults = false; t.skipped = false;
+    syncActions(t);
+  }
+
+  /** The earliest fork viewing an alternate — every MAIN-lineage turn at or
+      past it was played under a different branch and must not show: those
+      commands are sticky to the lineage that produced them (a viable parent
+      exists only there). */
+  function lineageCut() {
+    const cuts = branchPoints.filter(bp => bp.selected !== 'main').map(bp => bp.atN);
+    return cuts.length ? Math.min(...cuts) : null;
+  }
+
+  /** Re-derive every card's visuals from the segment list. */
+  function applySegments() {
+    const cut = lineageCut();
+    for (const t of turns) {
+      const s = segmentOf(t.n);
+      const assigned = !!s;
+      const ticked = assigned && (t.n === s.start || t.n === s.end);
+      const collapsed = assigned && s.collapsed;
+
+      t.row.style.display =
+        (collapsed || (cut !== null && t.n >= cut)) ? 'none' : '';
+      t.row.classList.toggle('selected', assigned && !collapsed);
+      t.checkbox.checked = ticked;
+      t.checkbox.classList.toggle('implied', assigned && !ticked);
+      t.checkbox.title = assigned
+        ? (t.n === s.start ? `Starts "${titleOf(s)}"`
+           : t.n === s.end ? `Ends "${titleOf(s)}"`
+           : `In "${titleOf(s)}"`)
+        : t.opening ? 'Start a transcript at the beginning'
+        : (openSegment() ? `End the transcript at turn ${t.n}`
+                         : `Start a new transcript at turn ${t.n}`);
+      if (!assigned && (t.exact || t.contains.length || t.notContains.length ||
+                        t.states.length || t.events.length || t.channels.length ||
+                        t.skipped)) {
+        clearAuthored(t); // leaving a segment discards authored assertions
+      }
+
+      // The title strip rides the segment's FIRST card, and the boundary
+      // shows: the start card stands off, and a child names its parent.
+      const isFirst = assigned && t.n === s.start && !collapsed;
+      t.row.classList.toggle('segment-start', isFirst);
+      t.titleStrip.style.display = isFirst ? '' : 'none';
+      t.stripNote.style.display = 'none';
+      if (isFirst) {
+        t.titleInput.innerHTML =
+          `${esc(titleOf(s))} <span class="saved">tests/${esc(titleOf(s))}.transcript · auto-saved</span>`;
+        t.collapseBtn.style.display = s.end !== null ? '' : 'none';
+        const parent = parentOf(s);
+        t.mergeBtn.style.display = parent ? '' : 'none';
+        if (parent) {
+          t.stripNote.textContent = `\u21b3 continues from \u201c${titleOf(parent)}\u201d`;
+          t.stripNote.style.display = '';
+        }
+        t.stripSegment = s;
+      }
+      // Split here: any turn a closed range covers past its first command.
+      if (t.splitBtn) {
+        t.splitBtn.style.display =
+          (assigned && s.end !== null && !collapsed && t.n > Math.max(s.start, 1))
+            ? '' : 'none';
+      }
+      if (t.branchBtn) {
+        t.branchBtn.style.display =
+          (assigned && s.end !== null && !collapsed && t.n >= 1 &&
+           (t.n > Math.max(s.start, 1) || parentOf(s))) ? '' : 'none';
+      }
+    }
+    syncSummaries();
+    syncBranchPoints();
+    renderPreview();
+  }
+
+  /** One summary card per collapsed segment, sitting where its range was.
+      A summary wholly past the lineage cut is main-lineage — hidden while an
+      alternate is viewed. */
+  function syncSummaries() {
+    const cut = lineageCut();
+    for (const s of segments) {
+      if (s.collapsed && !s.summaryRow) {
+        const row = document.createElement('div');
+        row.className = 'turn';
+        row.innerHTML =
+          `<div class="pick"></div>
+           <div class="card-column">
+             <div class="block summary" title="Click to expand">
+               <div class="meta">transcript</div>
+               <div class="summary-title"></div>
+               <div class="summary-span"></div>
+             </div>
+           </div>`;
+        row.querySelector('.summary').addEventListener('click', () => {
+          s.collapsed = false;
+          activeSegment = s;
+          applySegments();
+        });
+        const firstRow = turnByN(s.start).row;
+        firstRow.parentElement.insertBefore(row, firstRow);
+        s.summaryRow = row;
+      }
+      if (s.summaryRow) {
+        s.summaryRow.style.display =
+          (s.collapsed && !(cut !== null && s.start >= cut)) ? '' : 'none';
+        if (s.collapsed) {
+          const asserted = rangeTurns(s).filter(t => !t.skipped).length;
+          s.summaryRow.querySelector('.summary-title').textContent = titleOf(s);
+          s.summaryRow.querySelector('.summary-span').textContent =
+            `turns ${s.start}–${endOf(s)} · ${asserted} asserted`;
+        }
+      }
+    }
+  }
+
+  const rangeTurns = s => playedTurns().filter(t => t.n >= s.start && t.n <= endOf(s));
+
+  // ── branch points: sibling chips + each alternate's card ──
+
+  /** Fork at `atN` with a typed `command` — creates the point (auto-splitting
+      so the shared prefix is the parent) or adds another sibling to it. */
+  function performBranch(atN, command) {
+    let bp = branchPoints.find(b => b.atN === atN);
+    if (!bp) {
+      let seg = segmentOf(atN);
+      if (!seg || seg.end === null) return;
+      let main, parent;
+      if (seg.start < atN) {              // auto-split: prefix becomes parent
+        main = { start: atN, end: seg.end, customTitle: null, collapsed: false, summaryRow: null };
+        seg.end = atN - 1;
+        segments.push(main);
+        parent = seg;
+      } else {
+        main = seg;
+        parent = parentOf(seg);
+        if (!parent) return;              // nothing shared to fork from
+      }
+      parent.collapsed = true;
+      bp = { atN, parent, main, alts: [], selected: 'main', row: null };
+      branchPoints.push(bp);
+      buildBranchRow(bp);
+    }
+    const alt = { turn: makeAltTurn(command, atN), customTitle: null, row: null };
+    bp.alts.push(alt);
+    buildAltRow(bp, alt);
+    bp.main.collapsed = true;
+    bp.selected = bp.alts.length - 1;     // the new sibling opens selected
+    activeAlt = { bp, index: bp.selected };
+    applySegments();
+  }
+
+  function buildBranchRow(bp) {
+    const row = document.createElement('div');
+    row.className = 'turn';
+    row.innerHTML = `<div class="pick"></div>
+                     <div class="card-column"><div class="branch-row"></div></div>`;
+    const anchor = turnByN(bp.atN).row;
+    anchor.parentElement.insertBefore(row, anchor);
+    bp.row = row;
+  }
+
+  function buildAltRow(bp, alt) {
+    const t = alt.turn;
+    const row = document.createElement('div');
+    row.className = 'turn selected';
+    row.style.display = 'none';
+    row.innerHTML =
+      `<div class="pick"></div>
+       <div class="card-column">
+         <div class="title-strip"><div class="auto-name"></div></div>
+         <div class="block">
+           <div class="meta">turn ${bp.atN} · branch</div>
+           <div class="echo">${t.echo}</div>
+           ${t.room ? `<div class="room">${t.room}</div>` : ''}
+           ${t.pending
+             ? '<p class="pending-note">mock — the live surface replays to this point, plays the command, and its real output lands here</p>'
+             : t.paras.map(p => `<p>${p}</p>`).join('')}
+         </div>
+       </div>`;
+    row.querySelector('.auto-name').addEventListener('click', () => {
+      activeAlt = { bp, index: bp.alts.indexOf(alt) };
+      renderPreview();
+    });
+    const anchor = turnByN(bp.atN).row;
+    anchor.parentElement.insertBefore(row, anchor);
+    alt.row = row;
+  }
+
+  /** Refresh every branch point: chips (main + all siblings), alt cards.
+      A fork wholly past the lineage cut is itself main-lineage — hidden. */
+  function syncBranchPoints() {
+    const cut = lineageCut();
+    for (const bp of branchPoints) {
+      bp.row.style.display = (cut !== null && bp.atN > cut) ? 'none' : '';
+      const container = bp.row.querySelector('.branch-row');
+      container.innerHTML = '';
+      const mainChip = document.createElement('div');
+      mainChip.className = 'branch-chip' + (bp.selected === 'main' ? ' selected' : '');
+      mainChip.innerHTML =
+        `<div class="meta">branch</div>
+         <div class="summary-title">${titleOf(bp.main)}</div>
+         <div class="summary-span">&gt; ${turnByN(bp.atN).command} · turns ${bp.main.start}–${endOf(bp.main)}</div>`;
+      mainChip.addEventListener('click', () => {
+        bp.selected = 'main';
+        bp.main.collapsed = false;
+        activeSegment = bp.main;
+        activeAlt = null;
+        applySegments();
+      });
+      container.appendChild(mainChip);
+      bp.alts.forEach((alt, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'branch-chip' + (bp.selected === i ? ' selected' : '');
+        chip.innerHTML =
+          `<div class="meta">branch</div>
+           <div class="summary-title">${altTitleOf(bp, i)}</div>
+           <div class="summary-span">&gt; ${alt.turn.command} · 1 turn</div>`;
+        chip.addEventListener('click', () => {
+          bp.selected = i;
+          bp.main.collapsed = true;
+          activeAlt = { bp, index: i };
+          applySegments();
+        });
+        container.appendChild(chip);
+      });
+      bp.row.title = `all continue from "${titleOf(bp.parent)}"`;
+      if (bp.main.summaryRow) bp.main.summaryRow.style.display = 'none';
+      bp.alts.forEach((alt, i) => {
+        alt.row.style.display = bp.selected === i ? '' : 'none';
+        alt.row.querySelector('.auto-name').innerHTML = alt.turn.pending
+          ? `${esc(altTitleOf(bp, i))} <span class="saved">saves when the replay lands</span>`
+          : `${esc(altTitleOf(bp, i))} <span class="saved">tests/${esc(altTitleOf(bp, i))}.transcript · auto-saved</span>`;
+      });
+    }
+  }
+
+  // ── left: the play surface ──────────────────────────────────────────
+
+  const host = document.getElementById('turns');
+  for (const t of turns) {
+    const row = document.createElement('div');
+    row.className = 'turn';
+
+    const pick = document.createElement('label');
+    pick.className = 'pick';
+    pick.innerHTML = `<input type="checkbox">`;
+    const checkbox = pick.querySelector('input');
+    checkbox.addEventListener('change', (e) => {
+      activeAlt = null;
+      const s = segmentOf(t.n);
+      if (e.target.checked) {
+        if (s) { applySegments(); return; } // implied box — a no-op, re-render
+        const open = openSegment();
+        if (open) {
+          if (t.n < open.start) open.start = t.n; else open.end = t.n;
+          activeSegment = open;
+        } else {
+          const fresh = { start: t.n, end: null, customTitle: null, collapsed: false, summaryRow: null };
+          segments.push(fresh);
+          activeSegment = fresh;
+        }
+      } else if (s) {
+        if (t.n === s.start && s.end === null) {
+          segments.splice(segments.indexOf(s), 1);      // lone start — gone
+          if (activeSegment === s) activeSegment = segments[0] ?? null;
+        } else if (t.n === s.end) {
+          s.end = null;                                  // reopen at the end
+          activeSegment = s;
+        } else if (t.n === s.start) {
+          segments.splice(segments.indexOf(s), 1);      // unticking start drops it
+          if (activeSegment === s) activeSegment = segments[0] ?? null;
+        }
+      }
+      applySegments();
+    });
+
+    const column = document.createElement('div');
+    column.className = 'card-column';
+
+    {
+      // The editable title strip — shown above a segment's first card
+      // (the opening's card when the transcript starts at the beginning).
+      const strip = document.createElement('div');
+      strip.className = 'title-strip';
+      strip.style.display = 'none';
+      strip.innerHTML = `<div class="auto-name" title="Auto-named: start location + end location + turns — auto-saved to tests/"></div><button class="merge"
+        title="Merge this transcript into the previous one — former gap turns ride as [SKIP]">Merge ↑</button><button class="collapse"
+        title="Collapse this transcript into its summary card">Collapse</button>`;
+      const titleInput = strip.querySelector('.auto-name');
+      titleInput.addEventListener('click', () => {
+        if (t.stripSegment) { activeSegment = t.stripSegment; activeAlt = null; renderPreview(); }
+      });
+      strip.querySelector('.collapse').addEventListener('click', () => {
+        if (t.stripSegment) {
+          t.stripSegment.collapsed = true;
+          applySegments();
+        }
+      });
+      strip.querySelector('.merge').addEventListener('click', () => {
+        const seg = t.stripSegment;
+        const parent = seg && parentOf(seg);
+        if (!parent) return;
+        // Former gap turns join the merged range as deliberate [SKIP]s — the
+        // merged file is the true concatenation of the two.
+        for (const gap of playedTurns().filter(x => x.n > endOf(parent) && x.n < seg.start)) {
+          gap.skipped = true;
+        }
+        parent.end = endOf(seg);
+        if (seg.summaryRow) seg.summaryRow.remove();
+        segments.splice(segments.indexOf(seg), 1);
+        activeSegment = parent;
+        applySegments();
+      });
+      const note = document.createElement('div');
+      note.className = 'strip-note';
+      note.style.display = 'none';
+      column.appendChild(note);
+      column.appendChild(strip);
+      t.stripNote = note;
+      t.titleStrip = strip;
+      t.titleInput = titleInput;
+      t.collapseBtn = strip.querySelector('.collapse');
+      t.mergeBtn = strip.querySelector('.merge');
+    }
+
+    const block = document.createElement('div');
+    block.className = 'block';
+    block.innerHTML =
+      `<div class="meta">${t.opening ? 'opening' : `turn ${t.n}${t.boot ? ' · boot' : ''}`}</div>` +
+      (t.echo ? `<div class="echo">${t.echo}</div>` : '') +
+      (t.room ? `<div class="room">${t.room}</div>` : '') +
+      t.paras.map(p => `<p>${p}</p>`).join('') +
+      (t.banner
+        ? `<div class="banner">
+             <div class="title">${t.banner.title}</div>
+             <div class="line">${t.banner.version}</div>
+             <p>${t.banner.tagline}</p>
+             <div class="line">${t.banner.byline}</div>
+           </div>`
+        : '');
+
+    // The action row: assertion tools for this turn. Buttons write into the
+    // source panel's generated transcript, never into the card. State,
+    // Event and Channel are PICKERS over what the world/turn actually holds.
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const notBtn = document.createElement('button');
+    notBtn.textContent = 'Not contains…';
+    const exactBtn = document.createElement('button');
+    exactBtn.textContent = 'Exact';
+    exactBtn.title = 'This turn asserts its whole output — [OK] + literal block';
+    actions.append(notBtn, exactBtn);
+    if (!t.opening) {
+      const splitBtn = document.createElement('button');
+      splitBtn.textContent = 'Split here';
+      splitBtn.title = 'Start a new transcript at this turn — it continues from the one it left';
+      splitBtn.style.display = 'none';
+      splitBtn.addEventListener('click', () => {
+        const seg = segmentOf(t.n);
+        if (!seg || seg.end === null || t.n <= Math.max(seg.start, 1)) return;
+        const tail = { start: t.n, end: seg.end, customTitle: null, collapsed: false, summaryRow: null };
+        seg.end = t.n - 1;
+        segments.push(tail);
+        activeSegment = tail;
+        applySegments();
+      });
+      actions.appendChild(splitBtn);
+      t.splitBtn = splitBtn;
+
+      // Branch…: play a different command from this point. Branching is
+      // infinite — the button stays; each use adds another sibling under the
+      // same auto-managed parent (the shared prefix).
+      const branchBtn = document.createElement('button');
+      branchBtn.textContent = 'Branch…';
+      branchBtn.title = 'Try a different command at this point — the shared prefix becomes the parent of all siblings';
+      branchBtn.style.display = 'none';
+      branchBtn.addEventListener('click', () =>
+        promptText('alternate command, e.g. east', (command) => performBranch(t.n, command)));
+      actions.appendChild(branchBtn);
+      t.branchBtn = branchBtn;
+    }
+    if (t.stateOptions) {
+      const stateBtn = document.createElement('button');
+      stateBtn.textContent = 'State…';
+      stateBtn.title = 'Assert something the world holds after this turn';
+      stateBtn.addEventListener('click', () =>
+        showPicker(stateBtn, 'world after this turn', t.stateOptions,
+                   v => t.states.push(v), t));
+      actions.appendChild(stateBtn);
+    }
+    if (t.eventOptions) {
+      const eventBtn = document.createElement('button');
+      eventBtn.textContent = 'Event…';
+      eventBtn.title = 'Assert an event this turn emitted';
+      eventBtn.addEventListener('click', () =>
+        showPicker(eventBtn, 'events this turn emitted', t.eventOptions,
+                   v => t.events.push(v), t));
+      actions.appendChild(eventBtn);
+    }
+    if (t.channelOptions) {
+      const channelBtn = document.createElement('button');
+      channelBtn.textContent = 'Channel…';
+      channelBtn.title = 'Assert on a channel this turn captured';
+      channelBtn.addEventListener('click', () =>
+        showPicker(channelBtn, 'channels this turn captured',
+                   t.channelOptions.map(c =>
+                     c.text !== undefined ? `${c.id} — "${c.text}"` : `${c.id} — ${c.value}`),
+                   (v, i) => t.channels.push(t.channelOptions[i]), t));
+      actions.appendChild(channelBtn);
+    }
+    block.appendChild(actions);
+
+    /** Swap a button row for an inline input; Enter commits, Esc cancels. */
+    function promptText(placeholder, commit) {
+      const input = document.createElement('input');
+      input.placeholder = placeholder;
+      actions.appendChild(input);
+      input.focus();
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+          commit(input.value.trim());
+          input.remove();
+          include(t);
+        } else if (e.key === 'Escape') {
+          input.remove();
+        }
+      });
+      input.addEventListener('blur', () => input.remove());
+    }
+
+    notBtn.addEventListener('click', () =>
+      promptText('text that must NOT appear…', v => t.notContains.push(v)));
+    exactBtn.addEventListener('click', () => {
+      t.exact = !t.exact;
+      syncActions(t);
+      if (t.exact) include(t); else renderPreview();
+    });
+
+    column.appendChild(block);
+    row.appendChild(pick);
+    row.appendChild(column);
+    host.appendChild(row);
+    t.row = row;
+    t.checkbox = checkbox;
+    t.exactBtn = exactBtn;
+  }
+
+  /** Authoring a claim includes the turn: the opening selects itself; a
+      played turn joins its segment, the open one, or starts a fresh one. */
+  function include(t) {
+    activeAlt = null;
+    t.skipped = false;
+    let s = segmentOf(t.n);
+    if (!s) {
+      const open = openSegment();
+      if (open) {
+        if (t.n < open.start) open.start = t.n; else open.end = t.n;
+        s = open;
+      } else {
+        s = { start: t.n, end: null, customTitle: null, collapsed: false, summaryRow: null };
+        segments.push(s);
+      }
+    }
+    activeSegment = s;
+    applySegments();
+  }
+
+  function syncActions(t) {
+    t.exactBtn.classList.toggle('active', t.exact);
+  }
+
+  /** A picker menu under `anchor`: pick an entry → commit → preview. */
+  let openPicker = null;
+  function showPicker(anchor, headText, options, commit, t) {
+    closePicker();
+    const menu = document.createElement('div');
+    menu.className = 'picker';
+    const rect = anchor.getBoundingClientRect();
+    menu.style.left = `${rect.left}px`;
+    menu.style.top = `${rect.bottom + 4}px`;
+    menu.innerHTML = `<div class="picker-head">${headText}</div>`;
+    options.forEach((option, index) => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = option;
+      item.addEventListener('click', () => {
+        commit(option, index);
+        include(t);
+        closePicker();
+      });
+      menu.appendChild(item);
+    });
+    document.body.appendChild(menu);
+    openPicker = menu;
+    setTimeout(() => document.addEventListener('mousedown', closeOnOutside), 0);
+  }
+  function closeOnOutside(e) {
+    if (openPicker && !openPicker.contains(e.target)) closePicker();
+  }
+  function closePicker() {
+    if (openPicker) { openPicker.remove(); openPicker = null; }
+    document.removeEventListener('mousedown', closeOnOutside);
+  }
+
+  // ── contains-by-selection: the floating Add contains button ─────────
+
+  const overrideBtn = document.getElementById('override-btn');
+  let pendingContains = null; // { turn, text }
+
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : '';
+    if (!text || !sel.rangeCount) { overrideBtn.style.display = 'none'; pendingContains = null; return; }
+    const node = sel.anchorNode instanceof Element ? sel.anchorNode : sel.anchorNode.parentElement;
+    const blockEl = node && node.closest ? node.closest('.block') : null;
+    const turn = turns.find(t => t.row && t.row.contains(blockEl));
+    if (!turn) { overrideBtn.style.display = 'none'; pendingContains = null; return; }
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    overrideBtn.style.left = `${Math.max(8, rect.left)}px`;
+    overrideBtn.style.top = `${rect.bottom + 6}px`;
+    overrideBtn.style.display = 'block';
+    pendingContains = { turn, text };
+  });
+
+  overrideBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // keep the selection alive through the click
+    if (!pendingContains) return;
+    const { turn, text } = pendingContains;
+    turn.contains.push(text);   // fragments accumulate — one per selection
+    include(turn);
+    window.getSelection().removeAllRanges();
+    overrideBtn.style.display = 'none';
+    pendingContains = null;
+  });
+
+  // ── right-of-cards: the ACTIVE segment's generated transcript ───────
+  // A root segment carries [SKIP] ancestry from the origin. A follow-on
+  // segment CONTINUES from its parent (`continues:` — it begins in the state
+  // the parent ended in), so only the gap turns between parent's end and its
+  // own start ride as [SKIP]. The opening belongs to root transcripts only.
+
+  const ok = s => `<span class="ok">[OK: contains "${esc(s)}"]</span>`;
+  const notOk = s => `<span class="ok">[OK: not contains "${esc(s)}"]</span>`;
+  const state = s => `<span class="ok">[STATE: true, ${esc(s)}]</span>`;
+  const event = s => `<span class="ok">[EVENT: true, type="${esc(s)}"]</span>`;
+  const channel = c => c.text !== undefined
+    ? `<span class="ok">[CHANNEL: ${esc(c.id)}, contains "${esc(c.text)}"]</span>`
+    : `<span class="ok">[CHANNEL: ${esc(c.id)}, is ${c.value}]</span>`;
+
+  /** Per-render registry of ✕ handlers, addressed by data-del index. */
+  let delActions = [];
+  function deletable(html, onDelete) {
+    delActions.push(onDelete);
+    return `<span class="line">${html}<span class="del" data-del="${delActions.length - 1}" title="Delete this assertion">✕</span></span>`;
+  }
+
+  /** After a deletion: a turn with nothing left to claim becomes [SKIP]
+      (for the opening, "skipped" just means the file makes no opening claim —
+      absence IS its no-claim form, there is no [SKIP] line above a command). */
+  function afterDelete(t) {
+    const claims = t.exact || t.contains.length || t.notContains.length ||
+                   t.states.length || t.events.length || t.channels.length ||
+                   (!t.noDefaults);
+    if (!claims) t.skipped = true;
+    renderPreview();
+  }
+
+  /** The default prose lines a policy writes for `t`, as deletable lines.
+      Deleting one keeps the OTHER as an authored contains — the author is
+      narrowing the claim, not abandoning it. */
+  function defaultLines(t, defaults) {
+    return defaults.map((text, index) =>
+      deletable(ok(text), () => {
+        t.contains = defaults.filter((_, i) => i !== index);
+        t.noDefaults = true;
+        afterDelete(t);
+      }));
+  }
+
+  function authoredLines(t) {
+    const lines = [];
+    for (const [i, c] of t.contains.entries()) {
+      lines.push(deletable(ok(c), () => { t.contains.splice(i, 1); t.noDefaults = true; afterDelete(t); }));
+    }
+    for (const [i, n] of t.notContains.entries()) {
+      lines.push(deletable(notOk(n), () => { t.notContains.splice(i, 1); afterDelete(t); }));
+    }
+    for (const [i, s] of t.states.entries()) {
+      lines.push(deletable(state(s), () => { t.states.splice(i, 1); afterDelete(t); }));
+    }
+    for (const [i, e] of t.events.entries()) {
+      lines.push(deletable(event(e), () => { t.events.splice(i, 1); afterDelete(t); }));
+    }
+    for (const [i, c] of t.channels.entries()) {
+      lines.push(deletable(channel(c), () => { t.channels.splice(i, 1); afterDelete(t); }));
+    }
+    return lines;
+  }
+
+  function turnAssertions(t, defaults) {
+    const lines = [];
+    if (t.exact) {
+      // One ✕ on the [OK] removes the whole literal block.
+      lines.push(deletable(`<span class="ok">[OK]</span>`, () => { t.exact = false; syncActions(t); afterDelete(t); }));
+      lines.push(`<span class="kw">text</span>`);
+      if (t.room) lines.push(`<span class="lit">${esc(t.room)}</span>`);
+      for (const p of (t.exactParas || t.paras)) lines.push(`<span class="lit">${esc(p)}</span>`);
+      lines.push(`<span class="kw">end text</span>`);
+      // Exact supersedes contains; the non-prose families still apply.
+      const saved = t.contains;
+      t.contains = [];
+      lines.push(...authoredLines(t));
+      t.contains = saved;
+      return lines;
+    }
+    if (t.contains.length === 0 && !t.noDefaults) {
+      lines.push(...defaultLines(t, defaults));
+    }
+    lines.push(...authoredLines(t));
+    return lines;
+  }
+
+  function renderPreview() {
+    const opening = turns[0];
+    const s = activeSegment;
+    const lines = [];
+    delActions = [];
+
+    // A selected alternate's file: it CONTINUES from the shared prefix —
+    // the parent every sibling names (ADR-302 D2), managed automatically.
+    if (activeAlt) {
+      const { bp, index } = activeAlt;
+      const alt = bp.alts[index].turn;
+      const title = altTitleOf(bp, index);
+      document.getElementById('preview-title').textContent =
+        `created transcript · ${title}`;
+      lines.push(`<span class="hdr">title: ${esc(title)}</span>`);
+      lines.push(`<span class="hdr">continues: ${esc(titleOf(bp.parent))}</span>`);
+      lines.push('');
+      lines.push(`<span class="hdr">---</span>`);
+      lines.push('');
+      lines.push(`<span class="cmd">&gt; ${alt.command}</span>`);
+      if (alt.pending) {
+        lines.push(`<span class="skip"># assertions synthesize from the replayed output</span>`);
+      } else {
+        lines.push(...turnAssertions(alt, [alt.room, alt.paras[0]]));
+      }
+      document.getElementById('source').innerHTML = lines.join('\n');
+      return;
+    }
+
+    if (!s) {
+      document.getElementById('source').innerHTML =
+        `<span class="skip"># tick the opening or a turn to start a transcript</span>`;
+      document.getElementById('preview-title').textContent = 'created transcript';
+      return;
+    }
+
+    const parent = parentOf(s);
+    document.getElementById('preview-title').textContent =
+      `created transcript · ${titleOf(s)}`;
+
+    lines.push(`<span class="hdr">title: ${esc(titleOf(s))}</span>`);
+    if (parent) {
+      lines.push(`<span class="hdr">continues: ${esc(titleOf(parent))}</span>`);
+    } else {
+      lines.push(`<span class="hdr">seed: 42</span>`);
+    }
+    lines.push('');
+    lines.push(`<span class="hdr">---</span>`);
+    lines.push('');
+
+    // A segment that starts at the OPENING (ordinal 0) claims the boot's
+    // emissions above the first command. Only a root can — a continuation
+    // never re-boots, and parentOf can't produce one for start 0 anyway.
+    if (s.start === 0 && !opening.skipped) {
+      const openingDefaults = [
+        opening.banner.title,
+        opening.paras[0].slice(opening.paras[0].indexOf('An auction'))
+      ];
+      lines.push(...turnAssertions(opening, openingDefaults));
+      lines.push('');
+    }
+
+    const from = parent ? endOf(parent) + 1 : 1;
+    for (const t of playedTurns().filter(t => t.n >= from && t.n <= endOf(s))) {
+      lines.push(`<span class="cmd">&gt; ${t.command}</span>`);
+      if (t.n >= Math.max(s.start, 1) && !t.skipped) {
+        lines.push(...turnAssertions(t, t.room ? [t.room, t.paras[0]] : [t.paras[0]]));
+      } else {
+        lines.push(`<span class="skip">[SKIP]</span>`);
+      }
+      lines.push('');
+    }
+
+    document.getElementById('source').innerHTML = lines.join('\n').replace(/\n$/, '');
+  }
+
+  document.getElementById('source').addEventListener('click', (e) => {
+    const del = e.target.closest('.del');
+    if (!del) return;
+    const action = delActions[Number(del.dataset.del)];
+    if (action) action();
+  });
+
+  // ── the run column: evaluate the session's transcripts ──────────────
+  // Prose claims (exact / contains / not contains) evaluate for REAL against
+  // the played text; world/event/channel claims assume the engine (the mock
+  // has no world). A pending branch (no replayed output yet) does not run.
+
+  function turnText(t) {
+    return [t.room, ...t.paras, ...(t.banner
+      ? [t.banner.title, t.banner.version, t.banner.tagline, t.banner.byline] : [])]
+      .filter(Boolean).join('\n');
+  }
+
+  function evaluateTurn(t) {
+    const text = turnText(t);
+    const failures = [];
+    const label = t.opening ? 'opening' : `turn ${t.n}`;
+    const claims = t.contains.length || t.noDefaults
+      ? t.contains
+      : [t.room, t.paras[0]].filter(Boolean);   // the policy defaults
+    if (!t.exact) {
+      for (const c of claims) {
+        if (!text.includes(c)) failures.push(`${label} — does not contain \u201c${c}\u201d`);
+      }
+    }
+    for (const c of t.notContains) {
+      if (text.includes(c)) failures.push(`${label} — output CONTAINS \u201c${c}\u201d`);
+    }
+    return failures;
+  }
+
+  function evaluateSegment(seg) {
+    const failures = [];
+    if (seg.start === 0 && !turns[0].skipped) failures.push(...evaluateTurn(turns[0]));
+    for (const t of rangeTurns(seg)) {
+      if (!t.skipped) failures.push(...evaluateTurn(t));
+    }
+    return failures;
+  }
+
+  function runTests() {
+    const results = [];
+    for (const seg of segments) {
+      if (seg.end === null) continue;              // an open range is not a file yet
+      results.push({ name: titleOf(seg), failures: evaluateSegment(seg) });
+    }
+    for (const bp of branchPoints) {
+      bp.alts.forEach((alt, i) => {
+        results.push(alt.turn.pending
+          ? { name: altTitleOf(bp, i), norun: 'no replayed output yet' }
+          : { name: altTitleOf(bp, i), failures: evaluateTurn(alt.turn) });
+      });
+    }
+    const host = document.getElementById('run-results');
+    host.innerHTML = '';
+    let passed = 0, failed = 0;
+    for (const r of results) {
+      const row = document.createElement('div');
+      row.className = 'run-row';
+      if (r.norun) {
+        row.innerHTML = `<span class="badge norun">\u2014</span>
+                         <div class="name">${esc(r.name)}</div>
+                         <div class="why">${esc(r.norun)}</div>`;
+      } else if (r.failures.length === 0) {
+        passed += 1;
+        row.innerHTML = `<span class="badge pass">PASS</span>
+                         <div class="name">${esc(r.name)}</div>`;
+      } else {
+        failed += 1;
+        row.innerHTML = `<span class="badge fail">FAIL</span>
+                         <div class="name">${esc(r.name)}</div>
+                         <div class="why">${esc(r.failures[0])}${r.failures.length > 1
+                           ? ` <span class="pending-note">+${r.failures.length - 1} more</span>` : ''}</div>`;
+      }
+      host.appendChild(row);
+    }
+    if (results.length === 0) {
+      host.innerHTML = '<span class="pending-note">no transcripts yet</span>';
+    }
+    document.getElementById('run-tally').textContent =
+      results.length ? `${passed} passed, ${failed} failed` : '';
+  }
+
+  document.getElementById('run-btn').addEventListener('click', runTests);
+
+  // Start with one closed segment so the mock opens mid-story.
+  segments.push({ start: 2, end: 3, customTitle: null, collapsed: false, summaryRow: null });
+  activeSegment = segments[0];
+  applySegments();
+</script>
+
+</body>
+</html>

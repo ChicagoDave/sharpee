@@ -81,6 +81,11 @@ export {
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript, serializeAssertionTag } from './serializer.js';
 
+// Phase 6f (ADR-305): the auto-assertion synthesis engine and play promotion.
+export { synthesizePolicyAssertions, proseTextLinesOf } from './auto-assertion.js';
+export { createTranscriptFromPlay, FromPlayError } from './from-play.js';
+export type { PlayedTurnRecord, CreateFromPlayOptions } from './from-play.js';
+
 // Golden recordings (ADR-294 D7)
 export { serializeGolden, parseGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
 

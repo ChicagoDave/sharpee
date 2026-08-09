@@ -1,17 +1,20 @@
 /**
- * turn-events.test.ts — the IDE recording bridge (ADR-277 D5).
+ * turn-events.test.ts — the IDE play-session turn feed (ADR-277 D5, rebuilt
+ * for ADR-305 D4).
  *
- * Pins: emitTurnEvent posts `{command, response}` JSON to the WKWebView
- * `turnEvents` handler when present, is a true no-op without one (plain
- * browser play — same client bundle), and never throws even if the bridge
- * does. The BrowserClient path is real: executeCommand captures whatever the
- * turn rendered into the main text slot (channel prose AND system messages,
- * echo excluded) and emits it after the turn completes.
+ * Pins: emitTurnEvent posts the `{turn, command, output, captures}` record to
+ * the WKWebView `turnEvents` handler when present, is a true no-op without one
+ * (plain browser play — same client bundle), and never throws even if the
+ * bridge does. The BrowserClient path is real: executeCommand brackets the
+ * turn, stamps `data-turn` on everything the turn rendered (echo included —
+ * the anchor contract), and emits the engine-composed output with structured
+ * channel captures. Ordinals are page-lifetime monotonic; a reboot posts a
+ * restart fence and never resets them (ADR-305 D3/D4).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { CmgtPacket } from '@sharpee/if-domain';
 import { BrowserClient } from '../src/BrowserClient';
-import { emitTurnEvent } from '../src/turn-events';
+import { emitTurnEvent, capturesOf } from '../src/turn-events';
 import { packetProseText } from '@sharpee/channel-service';
 
 function installBridge(): string[] {
@@ -29,15 +32,22 @@ afterEach(() => {
 });
 
 describe('emitTurnEvent', () => {
-  it('posts the {command, response} payload when the bridge is present', () => {
+  it('posts the {turn, command, output, captures} record when the bridge is present', () => {
     const posted = installBridge();
-    emitTurnEvent('take lamp', 'Taken.');
+    emitTurnEvent({ turn: 3, command: 'take lamp', output: 'Taken.', captures: [] });
     expect(posted).toHaveLength(1);
-    expect(JSON.parse(posted[0])).toEqual({ command: 'take lamp', response: 'Taken.' });
+    expect(JSON.parse(posted[0])).toEqual({
+      turn: 3,
+      command: 'take lamp',
+      output: 'Taken.',
+      captures: [],
+    });
   });
 
   it('is a no-op without window.webkit (plain browser play)', () => {
-    expect(() => emitTurnEvent('look', 'A room.')).not.toThrow();
+    expect(() =>
+      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [] })
+    ).not.toThrow();
   });
 
   it('swallows a throwing bridge — play never breaks on observation', () => {
@@ -46,11 +56,27 @@ describe('emitTurnEvent', () => {
         turnEvents: { postMessage: () => { throw new Error('bridge gone'); } },
       },
     };
-    expect(() => emitTurnEvent('look', 'A room.')).not.toThrow();
+    expect(() =>
+      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [] })
+    ).not.toThrow();
   });
 });
 
-// ── BrowserClient real-path: capture what the turn actually rendered ──
+describe('capturesOf', () => {
+  it('merges packet payloads per channel, structure preserved, scalars wrapped', () => {
+    expect(
+      capturesOf([
+        { 'room-name': ['Den'], score: 5 },
+        { 'room-name': [{ content: ['Still the Den'] }] },
+      ])
+    ).toEqual([
+      { channel: 'room-name', values: ['Den', { content: ['Still the Den'] }] },
+      { channel: 'score', values: [5] },
+    ]);
+  });
+});
+
+// ── BrowserClient real-path: bracket what the turn actually rendered ──
 
 interface FakeEngine {
   on(event: string, handler: (...args: any[]) => void): void;
@@ -58,6 +84,7 @@ interface FakeEngine {
   executeTurn(command: string): Promise<void>;
   start(options?: unknown): Promise<void>;
   setStory(story: unknown): void;
+  stop(reason?: string): void;
 }
 
 const MANIFEST: CmgtPacket = {
@@ -72,6 +99,7 @@ const MANIFEST: CmgtPacket = {
 
 function makeEngine(responseParagraphs: string[][]): FakeEngine {
   const handlers = new Map<string, Set<(...args: any[]) => void>>();
+  let turn = 0;
   const engine: FakeEngine = {
     on(event, handler) {
       let s = handlers.get(event);
@@ -82,17 +110,19 @@ function makeEngine(responseParagraphs: string[][]): FakeEngine {
       handlers.get(event)?.forEach((h) => h(...args));
     },
     async executeTurn() {
+      turn += 1;
       engine.emit('channel:packet', {
         kind: 'turn',
-        turn_id: 'turn-1',
+        turn_id: `turn-${turn}`,
         payload: {
           'game-message': responseParagraphs,
           'preferred-layout': responseParagraphs.map(() => 'game-message'),
         },
-      }, 1);
+      }, turn);
     },
     async start() { /* no-op */ },
     setStory() { /* no-op */ },
+    stop() { /* no-op */ },
   };
   return engine;
 }
@@ -137,7 +167,7 @@ function mountHostElements() {
   };
 }
 
-function makeClient(engine: FakeEngine) {
+function makeClient(engine: FakeEngine, reboot?: () => Promise<void>) {
   const elements = mountHostElements();
   const client = new BrowserClient({
     storagePrefix: 'turn-events-test-',
@@ -145,6 +175,7 @@ function makeClient(engine: FakeEngine) {
     themes: [{ id: 'classic-light', name: 'Classic Light' }],
     storyInfo: { title: 'Test', author: 'Test', version: '1.0' },
     autoSave: false,
+    ...(reboot ? { reboot } : {}),
   });
   client.initialize(elements);
   (client as any).audioManager = { unlock: async () => undefined };
@@ -153,12 +184,12 @@ function makeClient(engine: FakeEngine) {
   return { client, elements };
 }
 
-describe('BrowserClient turn capture (real render path)', () => {
+describe('BrowserClient turn feed (real render path)', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  it('emits the turn with the channel-rendered response, echo excluded', async () => {
+  it('emits the record: engine-composed output (echo excluded), structured captures', async () => {
     const posted = installBridge();
     const { client } = makeClient(makeEngine([['You stand at the cave mouth.'], ['A lamp glints.']]));
 
@@ -170,19 +201,23 @@ describe('BrowserClient turn capture (real render path)', () => {
     // The BLANK LINE is load-bearing — do not "tidy" it to a single newline.
     // Two non-tight entries are separate paragraphs, and the headless harness
     // (`@sharpee/bootstrap`, what `sharpee test` compares against) joins them
-    // with '\n\n'. normalizeOutput preserves blank lines, so a single newline
-    // here means every blessed multi-paragraph assertion fails on its first
-    // headless run — the exact bug ADR-282's 2026-07-28 amendment fixed.
-    // Both sides now share `composeProse` + `joinProseEntries`; this pins the
-    // observable result.
-    expect(payload.response).toBe('You stand at the cave mouth.\n\nA lamp glints.');
-    expect(payload.response).not.toContain('> look');
+    // with '\n\n'. A single newline here means every all-emitted-text
+    // assertion written from play fails on its first headless replay — the
+    // exact bug ADR-282's 2026-07-28 amendment fixed.
+    expect(payload.output).toBe('You stand at the cave mouth.\n\nA lamp glints.');
+    expect(payload.output).not.toContain('> look');
+    // Captures stay structured — flattening is the synthesis module's job.
+    expect(payload.captures).toEqual(
+      expect.arrayContaining([
+        {
+          channel: 'game-message',
+          values: [['You stand at the cave mouth.'], ['A lamp glints.']],
+        },
+      ])
+    );
   });
 
   it('continues a tight entry on the next line, not as a new paragraph', () => {
-    // The distinction the old DOM-reading bridge could not see: it read
-    // `textContent` off each <p> and joined everything with '\n', so tight and
-    // loose entries were indistinguishable in the recorded transcript.
     expect(packetProseText({
       'game-message': [{ content: ['Score: 10'] }],
       'room-name': [{ content: ['Turns: 4'], tight: true }],
@@ -190,20 +225,60 @@ describe('BrowserClient turn capture (real render path)', () => {
     })).toBe('Score: 10\nTurns: 4');
   });
 
-  it('captures only the current turn — a second command emits its own response', async () => {
+  it('stamps data-turn on everything the turn rendered — echo included — matching the record', async () => {
     const posted = installBridge();
-    const { client } = makeClient(makeEngine([['Taken.']]));
+    const { client, elements } = makeClient(makeEngine([['Taken.']]));
 
     await client.executeCommand('take lamp');
-    await client.executeCommand('drop lamp');
 
-    expect(posted).toHaveLength(2);
-    expect(JSON.parse(posted[1])).toEqual({ command: 'drop lamp', response: 'Taken.' });
+    const { turn } = JSON.parse(posted[0]);
+    const stamped = elements.textContent.querySelectorAll(`[data-turn="${turn}"]`);
+    expect(stamped.length).toBeGreaterThanOrEqual(2); // echo + at least one entry
+    expect(stamped[0].textContent).toBe('> take lamp');
+    expect([...stamped].map((el) => el.textContent).join(' ')).toContain('Taken.');
   });
 
-  it('runs clean without a bridge — normal play unaffected', async () => {
+  it('ordinals are monotonic across turns; each turn stamps only its own elements', async () => {
+    const posted = installBridge();
+    const { client, elements } = makeClient(makeEngine([['Done.']]));
+
+    await client.executeCommand('north');
+    await client.executeCommand('south');
+
+    const first = JSON.parse(posted[0]);
+    const second = JSON.parse(posted[1]);
+    expect(second.turn).toBe(first.turn + 1);
+    const firstStamped = elements.textContent.querySelectorAll(`[data-turn="${first.turn}"]`);
+    expect([...firstStamped].some((el) => el.textContent === '> south')).toBe(false);
+    // Every rendered element belongs to exactly one turn.
+    expect(elements.textContent.querySelectorAll('[data-turn]').length).toBe(
+      elements.textContent.children.length
+    );
+  });
+
+  it('an in-page reboot posts the restart fence and ordinals do NOT reset', async () => {
+    const posted = installBridge();
+    const engine = makeEngine([['Done.']]);
+    const { client } = makeClient(engine, async () => undefined);
+
+    await client.executeCommand('wait');
+    const before = JSON.parse(posted[0]);
+
+    await (client as any).disposeAndReboot();
+    const fence = JSON.parse(posted[1]);
+    expect(fence).toEqual({ restart: true, turn: before.turn + 1 });
+
+    // The same page keeps counting — the anchor invariant (ADR-305 D4).
+    await client.executeCommand('look');
+    const after = JSON.parse(posted[2]);
+    expect(after.turn).toBe(fence.turn);
+  });
+
+  it('runs clean without a bridge — normal play unaffected, anchors still stamped', async () => {
     const { client, elements } = makeClient(makeEngine([['A room.']]));
     await client.executeCommand('look');
     expect(elements.textContent.textContent).toContain('A room.');
+    // The anchor is a published client contract, not IDE chrome.
+    expect(elements.textContent.querySelectorAll('[data-turn]').length).toBeGreaterThan(0);
   });
 });

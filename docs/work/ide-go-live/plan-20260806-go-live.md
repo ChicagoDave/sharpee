@@ -543,13 +543,65 @@ header seam + Test menu → editor/tab display; real-path tests at runner and
 editor level (P-6 done-when).
 
 **Phase 6f — Create Transcript from played commands** (P-7, Large) **Status:
-PENDING — hard-depends on 6e; composes with 6d**. Design step first: seed
-pinning (session seed as provenance, ADR-294 D3), mid-session selections'
-ancestry prefix, meta commands in the selection. Then: left-margin selection
-over played turns + Create Transcript; the file holds exactly the selected
-commands, seed pinned, 6e's policy applied at creation. Evidence: real-path
-test plays, selects, creates, and the resulting transcript passes a real run
-(rule 13a — no stubbed runner).
+IMPLEMENTED (2026-08-09, session 1dd6d3 — designed AND built the same
+session; remaining acceptance: David's in-app click-through)**. As built:
+branch-tester owns the extracted synthesis module (`auto-assertion.ts`) +
+`createTranscriptFromPlay` (`from-play.ts`, 12 tests); devkit ships
+`sharpee transcript-from-play` (stdin JSON → transcript text, REAL-PATH
+replay test: created file passes a genuine compile→run); the browser client
+stamps `data-turn` per rendered element, posts `{turn, command, output,
+captures}` per turn over the extended `turnEvents` bridge (structured
+captures; boot look recorded as each lineage's turn 1 for replay alignment;
+restart posts a fence; ordinals page-lifetime monotonic; capture-parity now
+pins boot-turn alignment); the IDE injects `IDE_PLAY_SEED = 42`, overlays the
+margin chrome (checkbox per turn group, floor-fenced from Swift on in-page
+restart), holds a `PlayTurnLog`, and the Play header's Create Transcript
+button drives save-docs-first → on-disk policy → real CLI → NSSavePanel into
+`tests/` (refusals alert and write nothing). Evidence and the four as-built
+deviations (turnEvents name, per-element stamps, boot-look recording, D15
+module ownership) are recorded in ADR-305's "As built" section: branch-tester
+422, devkit 171, platform-browser 131, SharpeeIDETests **527 passing, 0
+failures**, tsc clean (2026-08-09 ~00:05 CDT). Original design record: Design as settled: (1) **Seed** — the play
+session boots at a fixed IDE default seed, injected via the surviving
+`__SHARPEE_PLAY_SEED__` hook (ADR-300 removed the setter, the client template
+still honors it; today's play is clock-seeded); created transcripts pin it
+(`seed:` header, ADR-294 D3). (2) **Selection = what's asserted, not what
+runs** — the file always carries every command from the origin through the
+last selected turn (determinism needs the full sequence; no mid-session
+snapshots); selected turns are asserted, unselected turns (ancestry prefix
+and gaps) are `[SKIP]` — 6e's deliberate-skip marker, executed for state,
+never trampled. No anchoring restriction on the margin. (3) **Meta
+commands** — restart (typed or Play-header) is a fence: it resets the
+promotion log's origin, the margin only reaches back to the most recent
+restart, and `restart` never appears in a created file (the transcript's
+fresh boot plays that role). All other meta commands (save, restore, undo,
+verbose, score…) are carried as ordinary commands — self-contained and
+deterministic because every play boot is storage-clean (the chrome clears
+localStorage/sessionStorage). (4) **The margin lives in the play surface,
+over the played turns themselves** (David's ruling, overriding the
+session-log-in-Testing-tab lean): the gesture is "I just played this — these
+N commands are a test," and it happens where the play happened. The DOM
+contract is absorbed, not assumed: the platform client gains a small stable
+per-turn anchor (`data-turn`), a contract like `#menu-bar`; authors who
+customize the client keep the anchors to keep the IDE affordance. The
+turn feed (client → Swift bridge: command, ordered output, channel captures,
+restart events) is rebuilt against THIS decision, as PlayViewController's
+ADR-300 removal note instructed. (5) **Assertions are synthesized at
+creation** from the played turns' captures — the play surface holds the real
+output, so the file is born whole, no first run needed. One code path is
+preserved structurally: the captures→assertions synthesis becomes a shared
+toolchain-owned module (rule 8b) imported by BOTH harness runners and the
+creation flow — never a Swift-side or chrome-side reimplementation. Under
+"let me decide," creation follows 6e's editor rule: selected turns get the
+`[SKIP]` placeholder, nothing auto-writes. **The design's authoritative record
+is [ADR-305](../../architecture/adrs/adr-305-create-transcript-from-play.md)**
+(ACCEPTED, reviewed and findings folded same session): it adds the D6 write
+contract (save panel into `tests/`, single `seed:` header field,
+`IDE_PLAY_SEED = 42`, refuse-writes-nothing paths), the `data-turn` anchor and
+`playTurns` bridge shapes, and the boundary/rejection test list. Evidence:
+real-path test plays, selects, creates, and the resulting transcript passes a
+real run (rule 13a — no stubbed runner), plus ADR-305's three boundary tests
+(restart fence, bridge round-trip, anchor contract) and three rejection tests.
 
 ---
 

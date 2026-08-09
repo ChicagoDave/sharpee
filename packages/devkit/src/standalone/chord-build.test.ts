@@ -98,6 +98,11 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // ADR-299 D5: the shipped entry honors a pre-set pinned play seed — the
     // IDE's skein surface depends on this hook being in every built bundle.
     expect(game).toContain('__SHARPEE_PLAY_SEED__');
+    // ADR-305 D4: the anchor contract and the turn feed ship in every built
+    // bundle — `data-turn` stamps (what the IDE margin keys off) and the
+    // `turnEvents` bridge (a no-op outside a WKWebView that registered it).
+    expect(game).toContain('data-turn');
+    expect(game).toContain('turnEvents');
     // Presence alone proves nothing: the seed has TWO distinct sinks, and
     // ADR-299 Phase 5 (2026-08-03) found both shipped dead. Assert each.
     //

@@ -904,6 +904,7 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
+        playViewController.onCreateTranscript = { [weak self] log in self?.createTranscriptFromPlay(log) }
 
         // The testing workspace's one entrance and one exit (ADR-304 D2).
         rightPanelViewController.onTestingWorkspaceRequested = { [weak self] in
@@ -929,6 +930,84 @@ private final class MainSplitViewController: NSSplitViewController {
     /// - Parameter url: the activated file.
     private func activateFile(at url: URL) {
         editorViewController.openDocument(at: url)
+    }
+
+    // MARK: Create Transcript from play (ADR-305)
+
+    /// The creation flow (ADR-305 D5/D6): documents are saved first so the
+    /// ON-DISK `auto-assertion:` policy governs creation exactly as it will
+    /// govern the file's future runs (6e's report-and-run-agree rule); the
+    /// toolchain's `transcript-from-play` synthesizes through the one shared
+    /// code path; the save panel owns destination and collision; a refusal
+    /// alerts and writes nothing.
+    private func createTranscriptFromPlay(_ log: PlayTurnLog) {
+        guard let story = composedStory, !story.isGrammar else { return }
+        guard saveAllDocuments() else { return }
+        let storyFile = story.url
+        let source = (try? String(contentsOf: storyFile, encoding: .utf8)) ?? ""
+        let policy = StoryHeaderAutoAssertion.read(from: source)?.rawValue
+        let suggested = PlayTranscriptCreation.suggestedFilename(storyFile: storyFile,
+                                                                span: log.selectionSpan)
+        let title = (suggested as NSString).deletingPathExtension
+        guard let payload = log.payloadJSON(policy: policy,
+                                            seed: PlayViewController.idePlaySeed,
+                                            title: title) else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let text = try await PlayTranscriptCreation.createText(payload: payload,
+                                                                       storyFile: storyFile)
+                self.presentTranscriptSavePanel(text: text, storyFile: storyFile,
+                                                suggestedName: suggested)
+            } catch {
+                let reason = (error as? PlayTranscriptCreation.Refusal)?.message
+                    ?? error.localizedDescription
+                self.presentCreateTranscriptFailure(reason)
+            }
+        }
+    }
+
+    /// The save panel (ADR-305 D6): anchored at the project's `tests/`
+    /// directory — `TranscriptDiscovery`'s scan root, so the Testing tab finds
+    /// the file without configuration — with the native overwrite confirmation
+    /// as the collision path, never a silent replace.
+    private func presentTranscriptSavePanel(text: String, storyFile: URL, suggestedName: String) {
+        let testsDirectory = storyFile.deletingLastPathComponent()
+            .appendingPathComponent("tests", isDirectory: true)
+        try? FileManager.default.createDirectory(at: testsDirectory,
+                                                 withIntermediateDirectories: true)
+        let panel = NSSavePanel()
+        panel.directoryURL = testsDirectory
+        panel.nameFieldStringValue = suggestedName
+        panel.canCreateDirectories = true
+        let write: (URL) -> Void = { [weak self] url in
+            do {
+                try text.write(to: url, atomically: true, encoding: .utf8)
+            } catch {
+                self?.presentCreateTranscriptFailure(
+                    "could not write \(url.lastPathComponent): \(error.localizedDescription)")
+            }
+        }
+        if let window = view.window {
+            panel.beginSheetModal(for: window) { response in
+                guard response == .OK, let url = panel.url else { return }
+                write(url)
+            }
+        } else if panel.runModal() == .OK, let url = panel.url {
+            write(url)
+        }
+    }
+
+    private func presentCreateTranscriptFailure(_ reason: String) {
+        let alert = NSAlert()
+        alert.messageText = "Create Transcript failed"
+        alert.informativeText = reason
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// The composed story's identity for Build/Play gating: its URL and whether

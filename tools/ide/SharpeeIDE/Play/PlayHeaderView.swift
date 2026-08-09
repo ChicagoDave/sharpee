@@ -1,13 +1,14 @@
 // PlayHeaderView.swift
 // The Play pane's header bar: a status dot (green when a story is loaded), a
 // Restart button, a theme picker (IDE chrome over the play surface — Phase 6b),
-// and a "Play after build" toggle. That is the whole header.
+// a Create Transcript button (ADR-305 — enabled while the margin selection is
+// non-empty), and a "Play after build" toggle. That is the whole header.
 // There is no Record toggle because every turn is logged anyway — the author
 // should not have to decide to record before the interesting thing happens.
 // Pure view — the controller owns behaviour.
-// Public interface: onRestart / onPlayAfterBuildToggle / onThemeSelect
-// callbacks; setLoaded(_:), setPlayAfterBuild(_:),
-// setThemes(_:selectedThemeId:).
+// Public interface: onRestart / onPlayAfterBuildToggle / onThemeSelect /
+// onCreateTranscript callbacks; setLoaded(_:), setPlayAfterBuild(_:),
+// setThemes(_:selectedThemeId:), setCanCreateTranscript(_:).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -24,10 +25,13 @@ final class PlayHeaderView: NSView {
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
     /// A theme id from the catalog, or nil for Story Default.
     var onThemeSelect: ((String?) -> Void)?
+    /// Create Transcript clicked (ADR-305) — the controller owns the flow.
+    var onCreateTranscript: (() -> Void)?
 
     private let dot = NSView()
     private let restartButton = NSButton()
     private let themePicker = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let createTranscriptButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -36,6 +40,7 @@ final class PlayHeaderView: NSView {
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         themePicker.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        createTranscriptButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -65,6 +70,15 @@ final class PlayHeaderView: NSView {
         themePicker.toolTip = "Preview theme — IDE-only, never changes what the story ships"
         themePicker.translatesAutoresizingMaskIntoConstraints = false
 
+        createTranscriptButton.title = "Create Transcript"
+        createTranscriptButton.bezelStyle = .rounded
+        createTranscriptButton.controlSize = .small
+        createTranscriptButton.target = self
+        createTranscriptButton.action = #selector(createTranscriptClicked)
+        createTranscriptButton.toolTip =
+            "Create a transcript from the selected played turns (ADR-305) — select turns in the play margin first"
+        createTranscriptButton.translatesAutoresizingMaskIntoConstraints = false
+
         playAfterBuildCheckbox.target = self
         playAfterBuildCheckbox.action = #selector(playAfterBuildChanged)
         playAfterBuildCheckbox.controlSize = .small
@@ -74,6 +88,7 @@ final class PlayHeaderView: NSView {
         addSubview(dot)
         addSubview(restartButton)
         addSubview(themePicker)
+        addSubview(createTranscriptButton)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -88,11 +103,15 @@ final class PlayHeaderView: NSView {
             themePicker.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 10),
             themePicker.centerYAnchor.constraint(equalTo: centerYAnchor),
 
+            createTranscriptButton.leadingAnchor.constraint(equalTo: themePicker.trailingAnchor, constant: 10),
+            createTranscriptButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
 
         setLoaded(false)
+        setCanCreateTranscript(false)
     }
 
     required init?(coder: NSCoder) {
@@ -123,8 +142,19 @@ final class PlayHeaderView: NSView {
         themePicker.select(match ?? themePicker.itemArray.first)
     }
 
+    /// Enabled while the margin selection is non-empty (ADR-305 D6: an empty
+    /// selection cannot create — the refusal is a disabled button, not a
+    /// failed run).
+    func setCanCreateTranscript(_ can: Bool) {
+        createTranscriptButton.isEnabled = can
+    }
+
     @objc private func restartClicked() {
         onRestart?()
+    }
+
+    @objc private func createTranscriptClicked() {
+        onCreateTranscript?()
     }
 
     @objc private func themePicked() {

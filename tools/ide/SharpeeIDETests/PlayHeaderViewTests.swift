@@ -94,4 +94,42 @@ final class PlayHeaderViewTests: XCTestCase {
         _ = picker.target?.perform(picker.action, with: picker)
         XCTAssertNil(reported, "Story Default is the nil pick")
     }
+
+    // MARK: - Create Transcript (ADR-305 D6)
+
+    /// The Create Transcript button — found by title, same real-control rule
+    /// as `picker`.
+    private var createButton: NSButton {
+        func find(in view: NSView) -> NSButton? {
+            for subview in view.subviews {
+                if let button = subview as? NSButton, button.title == "Create Transcript" {
+                    return button
+                }
+                if let nested = find(in: subview) { return nested }
+            }
+            return nil
+        }
+        guard let button = find(in: header) else {
+            XCTFail("the header has no Create Transcript button")
+            return NSButton()
+        }
+        return button
+    }
+
+    func testCreateTranscriptStartsDisabledAndFollowsSelectionState() {
+        XCTAssertFalse(createButton.isEnabled,
+                       "an empty selection cannot create — the refusal is a disabled button")
+        header.setCanCreateTranscript(true)
+        XCTAssertTrue(createButton.isEnabled)
+        header.setCanCreateTranscript(false)
+        XCTAssertFalse(createButton.isEnabled)
+    }
+
+    func testClickingCreateTranscriptFiresTheCallback() {
+        header.setCanCreateTranscript(true)
+        var fired = false
+        header.onCreateTranscript = { fired = true }
+        _ = createButton.target?.perform(createButton.action, with: createButton)
+        XCTAssertTrue(fired)
+    }
 }

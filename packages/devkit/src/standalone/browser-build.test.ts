@@ -131,6 +131,9 @@ describe('browser scaffold (real path)', () => {
     const bundle = readFileSync(gameJs, 'utf-8');
     expect(bundle).toContain('__SHARPEE_PLAY_SEED__');
     expect(bundle).toMatch(/config:\s*\{\s*seed:/);
+    // ADR-305 D4: anchor contract + turn feed ship in every built bundle.
+    expect(bundle).toContain('data-turn');
+    expect(bundle).toContain('turnEvents');
     // ADR-299 D5: the same page must be able to run a forced branch — the
     // global alone proves nothing without the loadForces call behind it.
     expect(bundle).toContain('__SHARPEE_PLAY_FORCES__');
