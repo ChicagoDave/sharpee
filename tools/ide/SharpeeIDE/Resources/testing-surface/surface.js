@@ -71,6 +71,47 @@
       if (inputBar) root.querySelector(".ts-input-row").appendChild(inputBar);
       this.host = document.getElementById("ts-cards");
       this.session = root.querySelector(".ts-session");
+      this.installSelectionGesture();
+    }
+    /** Contains-by-selection (design §5, ADR-301's default gesture): select
+     *  prose in a card and a floating Add contains button appears. */
+    installSelectionGesture() {
+      const button = document.createElement("button");
+      button.id = "ts-add-contains";
+      button.textContent = "Add contains";
+      document.body.appendChild(button);
+      let pending = null;
+      document.addEventListener("selectionchange", () => {
+        const selection = window.getSelection();
+        const text = selection ? selection.toString().trim() : "";
+        if (!text || !selection || selection.rangeCount === 0) {
+          button.style.display = "none";
+          pending = null;
+          return;
+        }
+        const node = selection.anchorNode instanceof Element ? selection.anchorNode : selection.anchorNode?.parentElement;
+        const prose = node?.closest?.(".ts-prose");
+        const row = prose?.closest?.("[data-ts-ordinal]");
+        const ordinal = row ? Number(row.getAttribute("data-ts-ordinal")) : NaN;
+        if (!Number.isFinite(ordinal)) {
+          button.style.display = "none";
+          pending = null;
+          return;
+        }
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        button.style.left = `${Math.max(8, rect.left)}px`;
+        button.style.top = `${rect.bottom + 6}px`;
+        button.style.display = "block";
+        pending = { ordinal, text };
+      });
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        if (!pending) return;
+        this.delegate.onAddContains(pending.ordinal, pending.text);
+        window.getSelection()?.removeAllRanges();
+        button.style.display = "none";
+        pending = null;
+      });
     }
     /** The prose staging pane the client renders into. */
     stagingPane() {
@@ -134,18 +175,64 @@
       proseHost.className = "ts-prose";
       for (const el of prose) proseHost.appendChild(el);
       block.append(meta, proseHost);
+      const actions = document.createElement("div");
+      actions.className = "ts-actions";
+      const promptText = (placeholder, commit) => {
+        const input = document.createElement("input");
+        input.placeholder = placeholder;
+        actions.appendChild(input);
+        input.focus();
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && input.value.trim()) {
+            commit(input.value.trim());
+            input.remove();
+          } else if (event.key === "Escape") {
+            input.remove();
+          }
+        });
+        input.addEventListener("blur", () => input.remove());
+      };
+      const notButton = document.createElement("button");
+      notButton.textContent = "Not contains\u2026";
+      notButton.title = "Text that must NOT appear in this turn";
+      notButton.addEventListener("click", () => promptText(
+        "text that must NOT appear\u2026",
+        (text) => this.delegate.onNotContains(ordinal, text)
+      ));
+      actions.appendChild(notButton);
+      let exactButton = null;
+      if (ordinal > 0) {
+        exactButton = document.createElement("button");
+        exactButton.textContent = "Exact";
+        exactButton.title = "This turn asserts its whole output \u2014 [OK] + literal block";
+        exactButton.addEventListener("click", () => this.delegate.onToggleExact(ordinal));
+        actions.appendChild(exactButton);
+        const stateButton = document.createElement("button");
+        stateButton.textContent = "State\u2026";
+        stateButton.title = "Assert something the world holds after this turn";
+        stateButton.addEventListener("click", () => this.delegate.onStatePicker(ordinal, stateButton));
+        actions.appendChild(stateButton);
+        const eventButton = document.createElement("button");
+        eventButton.textContent = "Event\u2026";
+        eventButton.title = "Assert an event this turn emitted";
+        eventButton.addEventListener("click", () => this.delegate.onEventPicker(ordinal, eventButton));
+        actions.appendChild(eventButton);
+        const channelButton = document.createElement("button");
+        channelButton.textContent = "Channel\u2026";
+        channelButton.title = "Assert on a channel this turn captured";
+        channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
+        actions.appendChild(channelButton);
+      }
       let splitButton = null;
       if (ordinal > 0) {
-        const actions = document.createElement("div");
-        actions.className = "ts-actions";
-        actions.style.display = "none";
         splitButton = document.createElement("button");
         splitButton.textContent = "Split here";
         splitButton.title = "Start a new transcript at this turn \u2014 it continues from the one it left";
+        splitButton.style.display = "none";
         splitButton.addEventListener("click", () => this.delegate.onSplitAt(ordinal));
         actions.appendChild(splitButton);
-        block.appendChild(actions);
       }
+      block.appendChild(actions);
       column.append(stripNote, strip, block);
       row.append(pick, column);
       this.host.appendChild(row);
@@ -157,7 +244,8 @@
         autoName,
         collapseButton,
         mergeButton,
-        splitButton
+        splitButton,
+        exactButton
       });
     }
     /** Dead lineage (restart fence): every card and summary goes. */
@@ -186,8 +274,12 @@
         if (isFirst && segment) this.renderStrip(card, segment);
         if (card.splitButton) {
           const splittable = assigned && segment.end !== null && !collapsed && ordinal > Math.max(segment.start, 1);
-          card.splitButton.parentElement.style.display = splittable ? "" : "none";
+          card.splitButton.style.display = splittable ? "" : "none";
         }
+        card.exactButton?.classList.toggle(
+          "ts-active",
+          this.model.claimsOf(ordinal).exact
+        );
       }
       this.renderSummaries();
       this.renderRunColumn();
@@ -975,6 +1067,132 @@
     }
   };
 
+  // tools/ide/web/testing-surface/src/picker.ts
+  var openPickerElement = null;
+  var outsideListener = null;
+  function closePicker() {
+    openPickerElement?.remove();
+    openPickerElement = null;
+    if (outsideListener) {
+      document.removeEventListener("mousedown", outsideListener);
+      outsideListener = null;
+    }
+  }
+  function mountPicker(anchor) {
+    closePicker();
+    const menu = document.createElement("div");
+    menu.className = "ts-picker";
+    const rect = anchor.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 340))}px`;
+    menu.style.top = `${rect.bottom + 4}px`;
+    document.body.appendChild(menu);
+    openPickerElement = menu;
+    outsideListener = (event) => {
+      if (openPickerElement && !openPickerElement.contains(event.target)) closePicker();
+    };
+    setTimeout(() => {
+      if (outsideListener) document.addEventListener("mousedown", outsideListener);
+    }, 0);
+    return menu;
+  }
+  function showListPicker(anchor, head, items, onPick) {
+    const menu = mountPicker(anchor);
+    const header = document.createElement("div");
+    header.className = "ts-picker-head";
+    header.textContent = head;
+    menu.appendChild(header);
+    if (items.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "ts-picker-empty";
+      empty.textContent = "nothing captured this turn";
+      menu.appendChild(empty);
+      return;
+    }
+    items.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "ts-item";
+      row.textContent = item;
+      row.addEventListener("click", () => {
+        onPick(item, index);
+        closePicker();
+      });
+      menu.appendChild(row);
+    });
+  }
+  function showStatePicker(anchor, facts, onPick) {
+    const menu = mountPicker(anchor);
+    const header = document.createElement("div");
+    header.className = "ts-picker-head";
+    const title = document.createElement("span");
+    title.textContent = "world after this turn";
+    const groupToggle = document.createElement("button");
+    groupToggle.className = "ts-picker-group-toggle";
+    groupToggle.textContent = "Grouped";
+    header.append(title, groupToggle);
+    menu.appendChild(header);
+    const filter = document.createElement("input");
+    filter.className = "ts-picker-filter";
+    filter.placeholder = "filter\u2026";
+    menu.appendChild(filter);
+    const list = document.createElement("div");
+    list.className = "ts-picker-list";
+    menu.appendChild(list);
+    let grouped = false;
+    const collapsed = /* @__PURE__ */ new Set();
+    const factRow = (fact) => {
+      const row = document.createElement("div");
+      row.className = "ts-item";
+      row.textContent = fact.label;
+      row.title = fact.expression;
+      row.addEventListener("click", () => {
+        onPick(fact);
+        closePicker();
+      });
+      return row;
+    };
+    const render = () => {
+      const query = filter.value.trim().toLowerCase();
+      const hits = facts.filter((fact) => query === "" || fact.label.toLowerCase().includes(query) || fact.expression.toLowerCase().includes(query));
+      list.textContent = "";
+      if (hits.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "ts-picker-empty";
+        empty.textContent = facts.length === 0 ? "no unseen facts this turn" : "no matches";
+        list.appendChild(empty);
+        return;
+      }
+      if (!grouped) {
+        for (const fact of hits) list.appendChild(factRow(fact));
+        return;
+      }
+      const kinds = [...new Set(hits.map((fact) => fact.kind))];
+      for (const kind of kinds) {
+        const sectionHead = document.createElement("div");
+        sectionHead.className = "ts-picker-section";
+        const folded = query === "" && collapsed.has(kind);
+        sectionHead.textContent = `${folded ? "\u25B8" : "\u25BE"} ${kind}`;
+        sectionHead.addEventListener("click", () => {
+          if (collapsed.has(kind)) collapsed.delete(kind);
+          else collapsed.add(kind);
+          render();
+        });
+        list.appendChild(sectionHead);
+        if (folded) continue;
+        for (const fact of hits.filter((f) => f.kind === kind)) {
+          list.appendChild(factRow(fact));
+        }
+      }
+    };
+    groupToggle.addEventListener("click", () => {
+      grouped = !grouped;
+      groupToggle.classList.toggle("ts-active", grouped);
+      render();
+    });
+    filter.addEventListener("input", render);
+    render();
+    filter.focus();
+  }
+
   // tools/ide/web/testing-surface/src/source.ts
   var kindClass = {
     header: "ts-hdr",
@@ -1108,6 +1326,66 @@
     onActivate(segment) {
       activeSegment = segment;
       renderSource(model, activeSegment, sourceContext());
+    },
+    onAddContains(ordinal, text) {
+      if (model.addContains(ordinal, text)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    },
+    onNotContains(ordinal, text) {
+      if (model.addNotContains(ordinal, text)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    },
+    onToggleExact(ordinal) {
+      if (model.setExact(ordinal, !model.claimsOf(ordinal).exact)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    },
+    onStatePicker(ordinal, anchor) {
+      const entities = records.get(ordinal)?.world?.entities ?? [];
+      const facts = entities.map((entity) => ({
+        label: `${entity.name} \u2014 ${entity.location.name}`,
+        expression: `${entity.token}.location = ${entity.location.token}`,
+        kind: entity.kind === "npc" ? "NPC locations" : "item locations"
+      }));
+      showStatePicker(anchor, facts, (fact) => {
+        if (model.addState(ordinal, fact.expression)) {
+          activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+          update();
+        }
+      });
+    },
+    onEventPicker(ordinal, anchor) {
+      const events = records.get(ordinal)?.events ?? [];
+      showListPicker(anchor, "events this turn emitted", events, (event) => {
+        if (model.addEvent(ordinal, event)) {
+          activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+          update();
+        }
+      });
+    },
+    onChannelPicker(ordinal, anchor) {
+      const captures = records.get(ordinal)?.captures ?? [];
+      const labels = captures.map((capture) => {
+        const flat = proseTextLinesOf(capture.values).join(" ");
+        const scalar = capture.values.length === 1 && typeof capture.values[0] !== "object" ? String(capture.values[0]) : null;
+        return `${capture.channel} \u2014 ${scalar ?? `"${flat.slice(0, 40)}"`}`;
+      });
+      showListPicker(anchor, "channels this turn captured", labels, (_label, index) => {
+        const capture = captures[index];
+        if (!capture) return;
+        const scalarValue = capture.values.length === 1 && (typeof capture.values[0] === "number" || typeof capture.values[0] === "boolean") ? capture.values[0] : null;
+        const flat = proseTextLinesOf(capture.values).join(" ");
+        const claim = scalarValue !== null ? { id: capture.channel, is: scalarValue } : { id: capture.channel, contains: flat.slice(0, 60) };
+        if (model.addChannel(ordinal, claim)) {
+          activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+          update();
+        }
+      });
     }
   });
   function update() {

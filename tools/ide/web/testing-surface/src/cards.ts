@@ -25,6 +25,14 @@ export interface CardsDelegate {
   onMergeUp(segment: Segment): void;
   onSplitAt(ordinal: number): void;
   onActivate(segment: Segment): void;
+  /** Authoring gestures (design §5) — all routed to model mutators. */
+  onAddContains(ordinal: number, text: string): void;
+  onNotContains(ordinal: number, text: string): void;
+  onToggleExact(ordinal: number): void;
+  /** Pickers open anchored to their buttons; main.ts owns the options. */
+  onStatePicker(ordinal: number, anchor: HTMLElement): void;
+  onEventPicker(ordinal: number, anchor: HTMLElement): void;
+  onChannelPicker(ordinal: number, anchor: HTMLElement): void;
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
@@ -37,6 +45,7 @@ interface CardRow {
   collapseButton: HTMLButtonElement;
   mergeButton: HTMLButtonElement;
   splitButton: HTMLButtonElement | null;
+  exactButton: HTMLButtonElement | null;
 }
 
 export class CardsView {
@@ -85,6 +94,52 @@ export class CardsView {
 
     this.host = document.getElementById('ts-cards')!;
     this.session = root.querySelector('.ts-session')!;
+    this.installSelectionGesture();
+  }
+
+  /** Contains-by-selection (design §5, ADR-301's default gesture): select
+   *  prose in a card and a floating Add contains button appears. */
+  private installSelectionGesture(): void {
+    const button = document.createElement('button');
+    button.id = 'ts-add-contains';
+    button.textContent = 'Add contains';
+    document.body.appendChild(button);
+    let pending: { ordinal: number; text: string } | null = null;
+
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      const text = selection ? selection.toString().trim() : '';
+      if (!text || !selection || selection.rangeCount === 0) {
+        button.style.display = 'none';
+        pending = null;
+        return;
+      }
+      const node = selection.anchorNode instanceof Element
+        ? selection.anchorNode
+        : selection.anchorNode?.parentElement;
+      const prose = node?.closest?.('.ts-prose');
+      const row = prose?.closest?.('[data-ts-ordinal]');
+      const ordinal = row ? Number(row.getAttribute('data-ts-ordinal')) : NaN;
+      if (!Number.isFinite(ordinal)) {
+        button.style.display = 'none';
+        pending = null;
+        return;
+      }
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      button.style.left = `${Math.max(8, rect.left)}px`;
+      button.style.top = `${rect.bottom + 6}px`;
+      button.style.display = 'block';
+      pending = { ordinal, text };
+    });
+
+    button.addEventListener('mousedown', event => {
+      event.preventDefault(); // keep the selection alive through the click
+      if (!pending) return;
+      this.delegate.onAddContains(pending.ordinal, pending.text);
+      window.getSelection()?.removeAllRanges();
+      button.style.display = 'none';
+      pending = null;
+    });
   }
 
   /** The prose staging pane the client renders into. */
@@ -164,25 +219,84 @@ export class CardsView {
     for (const el of prose) proseHost.appendChild(el);
     block.append(meta, proseHost);
 
+    // The action row: assertion gestures for THIS turn (design §5). The
+    // buttons write into the source panel's transcript, never into the card.
+    const actions = document.createElement('div');
+    actions.className = 'ts-actions';
+
+    /** Swaps the row for an inline input; Enter commits, Esc cancels. */
+    const promptText = (placeholder: string, commit: (text: string) => void): void => {
+      const input = document.createElement('input');
+      input.placeholder = placeholder;
+      actions.appendChild(input);
+      input.focus();
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && input.value.trim()) {
+          commit(input.value.trim());
+          input.remove();
+        } else if (event.key === 'Escape') {
+          input.remove();
+        }
+      });
+      input.addEventListener('blur', () => input.remove());
+    };
+
+    const notButton = document.createElement('button');
+    notButton.textContent = 'Not contains…';
+    notButton.title = 'Text that must NOT appear in this turn';
+    notButton.addEventListener('click', () =>
+      promptText('text that must NOT appear…',
+                 text => this.delegate.onNotContains(ordinal, text)));
+    actions.appendChild(notButton);
+
+    let exactButton: HTMLButtonElement | null = null;
+    if (ordinal > 0) {
+      exactButton = document.createElement('button');
+      exactButton.textContent = 'Exact';
+      exactButton.title = 'This turn asserts its whole output — [OK] + literal block';
+      exactButton.addEventListener('click', () => this.delegate.onToggleExact(ordinal));
+      actions.appendChild(exactButton);
+
+      const stateButton = document.createElement('button');
+      stateButton.textContent = 'State…';
+      stateButton.title = 'Assert something the world holds after this turn';
+      stateButton.addEventListener('click', () =>
+        this.delegate.onStatePicker(ordinal, stateButton));
+      actions.appendChild(stateButton);
+
+      const eventButton = document.createElement('button');
+      eventButton.textContent = 'Event…';
+      eventButton.title = 'Assert an event this turn emitted';
+      eventButton.addEventListener('click', () =>
+        this.delegate.onEventPicker(ordinal, eventButton));
+      actions.appendChild(eventButton);
+
+      const channelButton = document.createElement('button');
+      channelButton.textContent = 'Channel…';
+      channelButton.title = 'Assert on a channel this turn captured';
+      channelButton.addEventListener('click', () =>
+        this.delegate.onChannelPicker(ordinal, channelButton));
+      actions.appendChild(channelButton);
+    }
+
     let splitButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
-      const actions = document.createElement('div');
-      actions.className = 'ts-actions';
-      actions.style.display = 'none';
       splitButton = document.createElement('button');
       splitButton.textContent = 'Split here';
       splitButton.title =
         'Start a new transcript at this turn — it continues from the one it left';
+      splitButton.style.display = 'none';
       splitButton.addEventListener('click', () => this.delegate.onSplitAt(ordinal));
       actions.appendChild(splitButton);
-      block.appendChild(actions);
     }
+    block.appendChild(actions);
 
     column.append(stripNote, strip, block);
     row.append(pick, column);
     this.host.appendChild(row);
     this.cards.set(ordinal, {
-      row, checkbox, stripNote, strip, autoName, collapseButton, mergeButton, splitButton,
+      row, checkbox, stripNote, strip, autoName, collapseButton, mergeButton,
+      splitButton, exactButton,
     });
   }
 
@@ -218,9 +332,10 @@ export class CardsView {
       if (card.splitButton) {
         const splittable = assigned && segment.end !== null && !collapsed &&
           ordinal > Math.max(segment.start, 1);
-        (card.splitButton.parentElement as HTMLElement).style.display =
-          splittable ? '' : 'none';
+        card.splitButton.style.display = splittable ? '' : 'none';
       }
+      card.exactButton?.classList.toggle('ts-active',
+        this.model.claimsOf(ordinal).exact);
     }
     this.renderSummaries();
     this.renderRunColumn();

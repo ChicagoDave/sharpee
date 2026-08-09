@@ -19,7 +19,16 @@ import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { CardsView } from './cards';
 import { composeSegmentTranscript, type DeleteRef, type TurnSource } from './compose';
 import { SessionModel, type Segment, type SessionSnapshot } from './model';
+import { showListPicker, showStatePicker, type StateFact } from './picker';
 import { renderSource } from './source';
+
+/** One world-digest entity as the feed carries it (ADR-306 Phase 2). */
+interface DigestEntity {
+  kind: 'npc' | 'item';
+  name: string;
+  token: string;
+  location: { name: string; token: string };
+}
 
 /** A turn-feed record as forwarded by the IDE (TurnEventRecord / fence). */
 interface FeedRecord {
@@ -28,6 +37,8 @@ interface FeedRecord {
   command?: string;
   output?: string;
   captures?: { channel: string; values: unknown[] }[];
+  events?: string[];
+  world?: { entities?: DigestEntity[] };
 }
 
 /** The boot global the IDE injects for restore-by-replay (ADR-306 D8),
@@ -113,6 +124,75 @@ const cards = new CardsView(model, {
   onActivate(segment) {
     activeSegment = segment;
     renderSource(model, activeSegment, sourceContext());
+  },
+  onAddContains(ordinal, text) {
+    if (model.addContains(ordinal, text)) {
+      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+      update();
+    }
+  },
+  onNotContains(ordinal, text) {
+    if (model.addNotContains(ordinal, text)) {
+      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+      update();
+    }
+  },
+  onToggleExact(ordinal) {
+    if (model.setExact(ordinal, !model.claimsOf(ordinal).exact)) {
+      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+      update();
+    }
+  },
+  onStatePicker(ordinal, anchor) {
+    // The unseen slice (design §5): entity locations from the digest —
+    // never player.location, and only expressions the runner's evaluator
+    // accepts (entity.property = value). Score and machine facts join when
+    // the evaluator grows their forms.
+    const entities = records.get(ordinal)?.world?.entities ?? [];
+    const facts: StateFact[] = entities.map(entity => ({
+      label: `${entity.name} — ${entity.location.name}`,
+      expression: `${entity.token}.location = ${entity.location.token}`,
+      kind: entity.kind === 'npc' ? 'NPC locations' : 'item locations',
+    }));
+    showStatePicker(anchor, facts, fact => {
+      if (model.addState(ordinal, fact.expression)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    });
+  },
+  onEventPicker(ordinal, anchor) {
+    const events = records.get(ordinal)?.events ?? [];
+    showListPicker(anchor, 'events this turn emitted', events, event => {
+      if (model.addEvent(ordinal, event)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    });
+  },
+  onChannelPicker(ordinal, anchor) {
+    const captures = records.get(ordinal)?.captures ?? [];
+    const labels = captures.map(capture => {
+      const flat = proseTextLinesOf(capture.values).join(' ');
+      const scalar = capture.values.length === 1 && typeof capture.values[0] !== 'object'
+        ? String(capture.values[0]) : null;
+      return `${capture.channel} — ${scalar ?? `"${flat.slice(0, 40)}"`}`;
+    });
+    showListPicker(anchor, 'channels this turn captured', labels, (_label, index) => {
+      const capture = captures[index];
+      if (!capture) return;
+      const scalarValue = capture.values.length === 1
+        && (typeof capture.values[0] === 'number' || typeof capture.values[0] === 'boolean')
+        ? capture.values[0] as number | boolean : null;
+      const flat = proseTextLinesOf(capture.values).join(' ');
+      const claim = scalarValue !== null
+        ? { id: capture.channel, is: scalarValue }
+        : { id: capture.channel, contains: flat.slice(0, 60) };
+      if (model.addChannel(ordinal, claim)) {
+        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
+        update();
+      }
+    });
   },
 });
 

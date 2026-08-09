@@ -69,10 +69,14 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         p.textContent = 'You are in the ' + current + '.';
         p.setAttribute('data-turn', n);
         tc.appendChild(p);
+        var token = current.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         post({ turn: n, command: command,
                output: current + '\\nYou are in the ' + current + '.',
                captures: [{ channel: 'room-name', values: [current] }],
-               events: [], lineage: 1 });
+               events: ['if.event.actor_moved'],
+               world: { entities: [{ kind: 'npc', name: 'Tobias', token: 'tobias',
+                                     location: { name: current, token: token } }] },
+               lineage: 1 });
       }
       var tc = document.getElementById('text-content');
       var opening = document.createElement('p');
@@ -402,6 +406,75 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         let tailText = try String(contentsOf: tail, encoding: .utf8)
         XCTAssertTrue(tailText.contains("continues: iron-gates-to-gravel-drive-1"),
                       "the tail continues from the head's NEW stem")
+    }
+
+    func testGesturesAuthorClaimsIntoTheWrittenFile() async throws {
+        try await boot()
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 3", "cards")
+        try await tick(1)
+        try await tick(2)   // closed 1–2 → iron-gates-to-gravel-drive-2
+        let file = transcriptOnDisk("iron-gates-to-gravel-drive-2")
+
+        // Exact gesture: the file gains [OK] + the literal block.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'Exact') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        try await waitForFileContaining(file, "end text", "the Exact literal block")
+
+        // State picker (D6): open on turn 2, pick the digest fact — the file
+        // gains an evaluable [STATE:] line, picker-sourced by construction.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'State…') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        try await waitFor("document.querySelectorAll('.ts-picker .ts-item').length > 0",
+                         "state picker facts")
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-picker .ts-item').click();")
+        try await waitForFileContaining(file, "tobias.location = gravel-drive",
+                                        "the picked [STATE:] claim")
+
+        // Source-panel ✕: deleting the state claim removes it from the file.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var lines = document.querySelectorAll('#ts-source .ts-line');
+          for (var i = 0; i < lines.length; i++) {
+            if (lines[i].textContent.indexOf('STATE') !== -1) {
+              lines[i].querySelector('.ts-del').click();
+              return;
+            }
+          }
+        })();
+        """)
+        for _ in 0..<100 {
+            if let text = try? String(contentsOf: file, encoding: .utf8),
+               !text.contains("tobias.location") { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertFalse(text.contains("tobias.location"),
+                       "the x'd claim is gone from the file on disk")
+        XCTAssertTrue(text.contains("end text"), "the Exact block survives the delete")
+    }
+
+    private func waitForFileContaining(_ file: URL, _ fragment: String,
+                                       _ what: String) async throws {
+        for _ in 0..<100 {
+            if let text = try? String(contentsOf: file, encoding: .utf8),
+               text.contains(fragment) { return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTFail("timed out waiting for \(what) in \(file.lastPathComponent)")
     }
 
     // MARK: - The restart fence
