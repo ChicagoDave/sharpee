@@ -44,7 +44,7 @@ Captured David's second-kind-of-test idea in `design-testing-play-surface.md` §
 ### Short Term
 - Surface window doesn't auto-reload on ⌘B — reopen picks up the new build; wire reload-after-build with Phase 4's writer.
 - Replaying a logged `save`/`restore` that opens a client dialog would stall the replay driver — resolve inside Phase 5's replay work (D7).
-- `sharpee test --tree` drops the root `channels:` field — GitHub issue STILL not filed (carried).
+- `sharpee test --tree` drops the root `channels:` field — **filed** as [#255](https://github.com/ChicagoDave/sharpee/issues/255) (2026-08-09, post-commit; call sites re-verified against source first). Carried item cleared.
 ### Long Term
 - §13 author-annotated coverage and §14 response-coverage checks — both need platform discussions before entering a plan.
 
