@@ -344,20 +344,26 @@ export function removeAssertion(
 /**
  * Appends a command to the end of the transcript, asserting nothing.
  *
- * `[SKIP]` is the draft state of every command, and that is not a convenience —
- * it is what the grammar already means (ADR-294 D2: "output is deliberately not
- * asserted", not "the command is not run"). A command added this way executes,
- * so the next run shows what the story said, and promoting that output to an
- * assertion is the edit. Adding a command and asserting about it are therefore
- * two gestures, never one, and an author is never asked to predict output.
+ * `[SKIP]` is the draft state of a command under "let me decide", and that is
+ * not a convenience — it is what the grammar already means (ADR-294 D2:
+ * "output is deliberately not asserted", not "the command is not run"). A
+ * command added this way executes, so the next run shows what the story said,
+ * and promoting that output to an assertion is the edit.
+ *
+ * Under an `auto-assertion:` policy (Phase 6e, #253) the command is written
+ * BARE instead: a bare command is the policy's trigger — its first run writes
+ * the chosen assertion — while `[SKIP]` means deliberately unasserted and the
+ * runner never touches it. Writing `[SKIP]` here would make the policy
+ * unreachable from the editor.
  *
  * @param text the file as it is on disk
  * @param file its path, for diagnostics
  * @param input the command, as the player would type it
+ * @param bare write no placeholder — the story has an auto-assertion policy
  * @returns the new file text and its outlook
  * @throws when the file is unsound, or `input` is blank
  */
-export function addCommand(text: string, file: string, input: string): Draft {
+export function addCommand(text: string, file: string, input: string, bare = false): Draft {
   const command = input.trim();
   if (!command) throw new Error('A command needs some text.');
 
@@ -367,7 +373,12 @@ export function addCommand(text: string, file: string, input: string): Draft {
   // `lineNumber` is transient: nothing serializes it, and the parse that follows
   // this write establishes the real one. Zero rather than a guess, so a stale
   // value can never be mistaken for a position in the file.
-  const added = { lineNumber: 0, input: command, expectedOutput: [], assertions: [{ type: 'skip' } as Assertion] };
+  const added = {
+    lineNumber: 0,
+    input: command,
+    expectedOutput: [],
+    assertions: bare ? [] : [{ type: 'skip' } as Assertion],
+  };
   transcript.commands.push(added);
   transcript.items = [...(transcript.items ?? []), { type: 'command', command: added }];
 

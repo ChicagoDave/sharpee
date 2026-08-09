@@ -821,6 +821,9 @@ class Analyzer {
       // Publishing (ADR-284): absent stays absent, so the build's own default
       // (do not ship source) is the one place that rule is written down.
       ...(f.publishSource !== undefined ? { publishSource: f.publishSource } : {}),
+      // Testing (Phase 6e): absent stays absent — "let me decide" is the
+      // runner's default, written down only there.
+      ...(f.autoAssertion !== undefined ? { autoAssertion: f.autoAssertion } : {}),
     };
   }
 

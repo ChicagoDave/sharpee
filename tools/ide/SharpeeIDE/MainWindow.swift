@@ -242,6 +242,25 @@ final class MainWindowController: NSWindowController {
         rootViewController?.toggleShippedTheme(themeId)
     }
 
+    /// The open story's `auto-assertion:` policy (Test → Auto-Assertion), or
+    /// nil for "let me decide" / no story / a grammar-header file (6e).
+    func autoAssertionPolicy() -> StoryHeaderAutoAssertion.Policy? {
+        rootViewController?.autoAssertionPolicy()
+    }
+
+    /// Whether the Auto-Assertion menu applies at all (a story is open and
+    /// is not a grammar-header file) — nil-policy alone cannot say, because
+    /// nil is also the legitimate "let me decide" state (6e).
+    var autoAssertionMenuApplies: Bool {
+        guard let story = composedStory else { return false }
+        return !story.isGrammar
+    }
+
+    /// Sets the story header's `auto-assertion:` line; nil removes it (6e).
+    func selectAutoAssertion(_ policy: StoryHeaderAutoAssertion.Policy?) {
+        rootViewController?.selectAutoAssertion(policy)
+    }
+
     /// Shows the empty project state with a one-line reason (D8: a restored
     /// session pointing at a retired TypeScript project explains itself).
     func showEmptyStateExplanation(_ text: String) {
@@ -655,6 +674,53 @@ private final class RootViewController: NSViewController {
     private func presentThemeToggleFailure(for url: URL) {
         let alert = NSAlert()
         alert.messageText = "Couldn’t update shipped themes"
+        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
+    }
+
+    /// The open story's `auto-assertion:` policy (Test → Auto-Assertion
+    /// checkmarks), or nil for "let me decide" / no story / a grammar file.
+    /// Reads the editor's unsaved buffer first, disk second — the menu must
+    /// reflect what the author sees, not what was last saved (Phase 6e).
+    func autoAssertionPolicy() -> StoryHeaderAutoAssertion.Policy? {
+        guard let story = composedStory, !story.isGrammar else { return nil }
+        let source = mainSplitViewController.currentText(at: story.url)
+            ?? (try? String(contentsOf: story.url, encoding: .utf8))
+        return source.flatMap { StoryHeaderAutoAssertion.read(from: $0) }
+    }
+
+    /// Sets the story header's `auto-assertion:` line (go-live Phase 6e) —
+    /// nil removes it ("let me decide" says nothing). The edit goes through
+    /// the editor exactly like the theme corral's: undoable, tab left dirty
+    /// for the author to save, disk untouched until then.
+    func selectAutoAssertion(_ policy: StoryHeaderAutoAssertion.Policy?) {
+        guard let story = composedStory, !story.isGrammar else { return }
+        let url = story.url
+        let source = mainSplitViewController.currentText(at: url)
+            ?? (try? String(contentsOf: url, encoding: .utf8))
+        guard let source else {
+            presentAutoAssertionFailure(for: url)
+            return
+        }
+        // nil here means "already says that" — nothing to do, not a failure.
+        guard let edit = StoryHeaderAutoAssertion.edit(setting: policy, in: source) else { return }
+        if !mainSplitViewController.replaceText(edit.text,
+                                                in: NSRange(location: edit.offset, length: edit.length),
+                                                in: url) {
+            presentAutoAssertionFailure(for: url)
+        }
+    }
+
+    /// Reports a policy change that could not be applied, rather than doing
+    /// nothing and leaving the author to wonder whether the menu worked.
+    private func presentAutoAssertionFailure(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t update the auto-assertion policy"
         alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
         alert.alertStyle = .warning
         if let window = view.window {

@@ -78,6 +78,14 @@ export interface LoadedGame {
    * exactly what it saw before (ADR-302 D15's freeze).
    */
   lastChannelValues: Record<string, unknown[]>;
+  /**
+   * The story's transcript auto-assertion policy (Phase 6e, #253), read off
+   * `story.config.autoAssertion` at assembly. The test runner consults it at
+   * the ADR-294 D2 tier boundary: under a policy, a bare (assertion-less)
+   * command's first run auto-writes the policy's assertion instead of
+   * failing. Absent = "let me decide" — the boundary failure stands.
+   */
+  autoAssertionPolicy?: 'all-emitted-text' | 'room-description' | 'room-name-and-description';
   /** Proxy for runner save/restore plugin state. */
   getPluginRegistry(): {
     getStates(): Record<string, unknown>;
@@ -196,7 +204,19 @@ export function assembleGame(
   // captured here as well as composed into `lastOutput` — the two are
   // different questions ("what did this channel say" vs "what did the turn
   // read like"), so neither shadows the other.
-  const capturedChannels = opts?.channels ?? [];
+  // Phase 6e (#253): a room-scoped auto-assertion policy needs the turn's
+  // room-name/room-description EMISSIONS (the honest source of "what it
+  // said" — the world snapshot has no rendered description), so those two
+  // standard channels join the capture set. Unioned, not replacing: a
+  // transcript's own declared channels are untouched, and the extra capture
+  // is invisible to golden recordings (they read only the ids they name).
+  const policy = (story?.config as { autoAssertion?: LoadedGame['autoAssertionPolicy'] } | undefined)
+    ?.autoAssertion;
+  const policyChannels =
+    policy === 'room-description' || policy === 'room-name-and-description'
+      ? ['room-name', 'room-description']
+      : [];
+  const capturedChannels = [...new Set([...(opts?.channels ?? []), ...policyChannels])];
   const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
   for (const id of capturedChannels) {
     const channel = channelRegistry.get(id);
@@ -301,6 +321,7 @@ export function assembleGame(
       return world;
     },
     testingExtension,
+    ...(policy !== undefined ? { autoAssertionPolicy: policy } : {}),
     lastOutput: '',
     lastEvents: [],
     lastTurnResult: null,

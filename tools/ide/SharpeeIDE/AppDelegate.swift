@@ -462,6 +462,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         testController?.cancel()
     }
 
+    /// Test → Auto-Assertion → <choice>. Sets the story header's
+    /// `auto-assertion:` line via the editor — undoable, tab left dirty
+    /// (go-live Phase 6e). "Let Me Decide" carries no representedObject and
+    /// REMOVES the line, matching the runner's default.
+    @objc func selectAutoAssertion(_ sender: NSMenuItem) {
+        let policy = (sender.representedObject as? String)
+            .flatMap(StoryHeaderAutoAssertion.Policy.init(rawValue:))
+        mainWindowController?.selectAutoAssertion(policy)
+    }
+
     /// Chord Writer → Settings… (⌘,). App-wide author preferences; per-project
     /// build options stay in the Build Settings sheet.
     @objc func showSettings(_ sender: Any?) {
@@ -526,6 +536,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             guard let shipped = mainWindowController?.shippedThemeIds() else { return false }
             let themeId = menuItem.representedObject as? String
             menuItem.state = themeId.map { shipped.contains($0) } == true ? .on : .off
+            return true
+        case #selector(selectAutoAssertion(_:)):
+            guard mainWindowController?.autoAssertionMenuApplies == true else { return false }
+            let current = mainWindowController?.autoAssertionPolicy()
+            let raw = menuItem.representedObject as? String
+            menuItem.state = (raw == current?.rawValue) ? .on : .off
             return true
         case #selector(toggleProjectPane(_:)):
             menuItem.state = (mainWindowController?.isProjectPaneVisible ?? false) ? .on : .off

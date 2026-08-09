@@ -446,7 +446,27 @@ export interface CommandResult {
    * (Own copy of the wire shape, like the rest of this type — ADR-302 D15.)
    */
   world?: WorldSnapshot;
+
+  /**
+   * The auto-assertion policy wrote this command's assertions on THIS run
+   * (Phase 6e, #253): the command arrived bare, the story declares
+   * `auto-assertion:`, and the runner synthesized + evaluated the policy's
+   * assertions from the turn's real output, then rewrote the transcript
+   * file. A consumer shows "assertion written" rather than a plain pass.
+   */
+  autoAsserted?: boolean;
 }
+
+/**
+ * The story's `auto-assertion:` policy as the runner consumes it (Phase 6e,
+ * #253). Matches the `.story` header's closed value set; the loaded game
+ * carries it (`GameEngine.autoAssertionPolicy`). Absent = "let me decide" —
+ * a bare command keeps the ADR-294 D2 tier-boundary failure.
+ */
+export type AutoAssertionPolicy =
+  | 'all-emitted-text'
+  | 'room-description'
+  | 'room-name-and-description';
 
 /** One entity as a {@link WorldSnapshot} names it (R3). */
 export interface WorldEntityRef {

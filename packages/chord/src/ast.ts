@@ -88,7 +88,27 @@ export interface StoryFields {
    * terminal publish and an IDE publish produce the same artifact (ADR-284 D1).
    */
   publishSource?: boolean;
+  /**
+   * `auto-assertion:` — the story's transcript auto-assertion policy
+   * (go-live Phase 6e, issue #253): what the test runner writes for a NEW
+   * command's first run. Closed value set (`all-emitted-text` |
+   * `room-description` | `room-name-and-description`); absent means "let me
+   * decide" — the runner writes nothing and an unasserted command keeps its
+   * ADR-294 D2 tier-boundary failure. Editor-owned like `themes:` — the IDE's
+   * Test menu writes it; authors never type it.
+   */
+  autoAssertion?: AutoAssertionPolicy;
 }
+
+/**
+ * The `auto-assertion:` header values (Phase 6e). Per-story by design: the
+ * policy shapes committed test files and must reach the CLI runner, so it
+ * cannot live in per-user (IDE-side) preferences.
+ */
+export type AutoAssertionPolicy =
+  | 'all-emitted-text'
+  | 'room-description'
+  | 'room-name-and-description';
 
 /** `story` plus its indented fielded metadata (ADR-298 — positional form removed). */
 export interface StoryHeader {

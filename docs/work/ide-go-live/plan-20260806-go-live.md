@@ -466,16 +466,81 @@ confirmed the play surface jump; remaining 6d acceptance: his next
 exercise round on the rebuilt app. The missing turn-selection margin he
 noted is 6f scope, not a 6d defect.
 
-**Phase 6e — Auto-assertion policy** (P-6, Medium) **Status: PENDING**.
-Design step first: settle the setting's home (per-story vs per-user) and
-confirm the "all emitted text" form captures David's definition — **any
-ordered emission (before text, room name, description, list contents, NPC
-activity), asserted in order, all of them** — as a per-command `[OK]` +
-literal block (ADR-287 exact-match; assertion tier, NOT a golden recording,
-ADR-294 D1/D2). Then: the four-way setting (default "let me decide"
-unchanged); on a new command's first run the policy auto-writes the
-assertion, identically from CLI and editor; only retained grammar ever
-written (ADR-294 D4).
+**Phase 6e — Auto-assertion policy** (P-6, Medium) **Status: CURRENT
+(since 2026-08-08, session c30771) — design settled AND implementation
+landed the same session; remaining acceptance: David's in-app
+click-through**. As built, platform half: chord accepts the closed-set
+`auto-assertion:` header field (bad value = parse error, never silent
+"let me decide"; projected AST→IR→StoryConfig→`LoadedGame.
+autoAssertionPolicy`); BOTH harnesses (branch-tester + transcript-tester,
+the D15 full-copy pair) hook the ADR-294 D2 tier boundary — a bare
+command under a policy executes once, gets its assertions synthesized
+from the turn's REAL output ([OK]+literal block for all-emitted-text;
+contains-form read from the STRUCTURED room-name/room-description
+channel captures for the middle policies, [SKIP] when neither emitted —
+the flattened capture is a JSON rendering and was the first real-path
+failure), evaluated through the normal loop, marked `autoAsserted`, and
+the file rewritten via the round-tripping serializer; bootstrap
+auto-unions the two room channels into capture under a room policy.
+Rejection paths (no policy / engine error / blank output / deliberate
+[SKIP]) byte-identically untouched. IDE half: Test → Auto-Assertion
+submenu (Let Me Decide + three, 6c's validateMenuItem/checkmark
+pattern) → `StoryHeaderAutoAssertion` seam (scalar sibling of
+StoryHeaderThemes; nil REMOVES the line) → the editor's undoable
+`replaceText`, buffer-first, disk untouched until save; TestController
+reports the on-disk policy to the tab at attach + run start (documents
+saved first, so report and run agree); the tab's add-command writes
+BARE under a policy ([SKIP] placeholder kept for let-me-decide) and the
+[NEW] card guidance names the policy. Evidence: chord 744; branch-tester
+420 (10 new); transcript-tester 287 (10 new); devkit 4-test REAL-PATH
+suite (real compile→loader→bootstrap→runner, bare `> look` run writes
+`[OK: contains "Den"]` + `[OK: contains "A small square den."]` to disk
+and the written file passes a fresh run, flat + --tree, no-policy D2
+failure byte-identical); story-loader 480, bootstrap 40, engine 627 —
+all 0 failures; tab vitest 88; full SharpeeIDETests **509 passing, 0
+failures** (2026-08-08 21:26 CDT) incl. StoryHeaderAutoAssertionTests
+(11) + AutoAssertionMenuTests (2 — real-buffer menu path: buffer gains
+the line, tab dirty, DISK UNCHANGED; menu-construction pin). Both
+mutation-verification passes ran: platform half clean (advisory: the
+policy union is declared inline at 5 sites, rule-8b extraction if the
+set ever grows); IDE half raised ONE warning — the TestController →
+webview → surface hop had no assertion on either side — closed the same
+evening: the page reflects the stored policy onto `document.body`
+(observable state), `host.test.ts` pins the bridge wiring (2 tests, tab
+vitest 90), and a new real-path test drives `TestController.attach` on a
+header-carrying fixture and reads the policy back out of the LIVE
+webview (`testAttachReportsTheOnDiskPolicyIntoTheLivePage`). Full suite
+after closure: **510 passing, 0 failures** (2026-08-08 21:33 CDT).
+Residual acknowledged, not closed: the menu checkmark state
+(validateMenuItem) and the [NEW]-guidance text branch are unpinned —
+both cosmetic reflections of state that IS pinned. Known interaction,
+David to rule:
+a transcript open in the EDITOR pane during a policy-writing run does
+not auto-refresh from disk (no file watching) — same class as any
+external edit. Design as settled: (1) the setting is
+**per-story, a fielded `.story` header line** `auto-assertion:
+all-emitted-text | room-description | room-name-and-description`, absent =
+"let me decide" (today's flow unchanged) — per-user was ruled out by CLI
+parity (UserDefaults can't reach `sharpee test`) and by the suite being a
+committed, shared artifact; the author never types the field (editor-owned,
+6c's `StoryHeaderThemes` ownership pattern; a `packages/chord` schema
+change, approved in the design step). (2) "All emitted text" = on a new
+command's first run, write `[OK]` + literal ADR-287 block holding **every
+ordered emission — before text, room name, description, list contents, NPC
+activity — in order, all of them** (assertion tier, NOT a golden, ADR-294
+D1/D2). The two middle options write **contains-form** from the R3 world
+capture (`[OK: contains "<room name>"]` / contains on description) —
+churn-survival is their point. (3) **Bare command = awaiting policy;
+`[SKIP]` = deliberately skipped, never trampled** (no new grammar, D4-safe):
+under a policy the editor writes new commands bare and the runner
+auto-writes the assertion on first run (`--bless`-spirit file mutation, one
+code path for CLI and editor); under "let me decide" the editor keeps
+writing the `[SKIP]` placeholder. (4) Settings UI is **Test →
+Auto-Assertion**, a check-marked submenu mirroring Build → Shipped Themes
+(buffer-first `validateMenuItem`, header seam, undoable `replaceText`, tab
+dirty until save). Build order: chord header field → runner policy engine →
+header seam + Test menu → editor/tab display; real-path tests at runner and
+editor level (P-6 done-when).
 
 **Phase 6f — Create Transcript from played commands** (P-7, Large) **Status:
 PENDING — hard-depends on 6e; composes with 6d**. Design step first: seed

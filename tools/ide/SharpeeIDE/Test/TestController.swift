@@ -85,6 +85,7 @@ final class TestController: TestRunnerDelegate {
         tab?.beginRun(story: storyFile.deletingPathExtension().lastPathComponent)
         tab?.setDiscovered(discovered.map(\.path))
         tab?.setGoldens(goldenPaths())
+        tab?.setAutoAssertion(autoAssertionPolicy())
     }
 
     /// Clears the tab (project closed).
@@ -136,12 +137,26 @@ final class TestController: TestRunnerDelegate {
         tab?.beginRun(story: storyFile.deletingPathExtension().lastPathComponent)
         tab?.setDiscovered(discovered.map(\.path))
         tab?.setGoldens(goldenPaths())
+        // Documents were just saved, so disk is exactly what this run reads —
+        // the reported policy and the run's behavior cannot disagree.
+        tab?.setAutoAssertion(autoAssertionPolicy())
         runner.runTests(storyFile: storyFile, blessFile: blessFile)
     }
 
     /// Cancels the in-flight run (SIGTERM → SIGKILL). Results already rendered stay.
     func cancel() {
         runner.cancel()
+    }
+
+    /// The story's `auto-assertion:` policy as the header on DISK declares it
+    /// (Phase 6e). Disk rather than the editor buffer, because it is reported
+    /// at attach (no compose yet) and at run start (documents just saved, so
+    /// disk is what the run reads); the Test menu's checkmarks stay
+    /// buffer-first through their own read.
+    private func autoAssertionPolicy() -> String? {
+        guard let storyFile,
+              let source = try? String(contentsOf: storyFile, encoding: .utf8) else { return nil }
+        return StoryHeaderAutoAssertion.read(from: source)?.rawValue
     }
 
     /// Answers the page's `requestSource` against the suite discovered right now.

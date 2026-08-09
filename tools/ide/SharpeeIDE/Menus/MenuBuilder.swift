@@ -269,6 +269,32 @@ enum MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
+        // go-live Phase 6e (P-6): the transcript auto-assertion policy — what a
+        // NEW command's first run writes. Choosing writes the `.story` header's
+        // `auto-assertion:` line through the editor (undoable); the author
+        // never types the field. "Let Me Decide" is the default and REMOVES
+        // the line (today's flow: the [SKIP]-placeholder gesture).
+        let autoAssertion = NSMenuItem(title: "Auto-Assertion", action: nil, keyEquivalent: "")
+        let autoAssertionMenu = NSMenu(title: "Auto-Assertion")
+        let letMeDecide = NSMenuItem(title: "Let Me Decide",
+                                     action: #selector(AppDelegate.selectAutoAssertion(_:)),
+                                     keyEquivalent: "")
+        letMeDecide.target = target
+        autoAssertionMenu.addItem(letMeDecide)
+        autoAssertionMenu.addItem(NSMenuItem.separator())
+        for policy in StoryHeaderAutoAssertion.Policy.allCases {
+            let item = NSMenuItem(title: policy.displayName,
+                                  action: #selector(AppDelegate.selectAutoAssertion(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = policy.rawValue
+            autoAssertionMenu.addItem(item)
+        }
+        autoAssertion.submenu = autoAssertionMenu
+        menu.addItem(autoAssertion)
+
+        menu.addItem(NSMenuItem.separator())
+
         let cancel = NSMenuItem(title: "Cancel Test Run",
                                 action: #selector(AppDelegate.cancelTestRun(_:)),
                                 keyEquivalent: "")

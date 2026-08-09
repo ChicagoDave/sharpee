@@ -96,6 +96,7 @@
       discovered: (files) => handlers.onDiscovered(files),
       goldens: (files) => handlers.onGoldens(files),
       restoreMode: (mode) => handlers.onRestoreMode(mode),
+      autoAssertion: (policy) => handlers.onAutoAssertion(policy),
       finished: (ok) => handlers.onFinished(ok),
       source: (file, text) => handlers.onSource(file, text),
       sourceFailed: (file, message) => handlers.onSourceFailed(file, message),
@@ -1196,11 +1197,16 @@
     command.assertions = kept.length > 0 ? kept : [{ type: "skip" }];
     return draftFrom(transcript, file);
   }
-  function addCommand(text, file, input) {
+  function addCommand(text, file, input, bare = false) {
     const command = input.trim();
     if (!command) throw new Error("A command needs some text.");
     const transcript = editable(text, file, true);
-    const added = { lineNumber: 0, input: command, expectedOutput: [], assertions: [{ type: "skip" }] };
+    const added = {
+      lineNumber: 0,
+      input: command,
+      expectedOutput: [],
+      assertions: bare ? [] : [{ type: "skip" }]
+    };
     transcript.commands.push(added);
     transcript.items = [...transcript.items ?? [], { type: "command", command: added }];
     return draftFrom(transcript, file);
@@ -1556,7 +1562,8 @@
       confirmingRecord: false,
       editNote: "",
       story: null,
-      freshClaims: /* @__PURE__ */ new Map()
+      freshClaims: /* @__PURE__ */ new Map(),
+      autoAssertionPolicy: null
     };
   }
   function dotClass(node, model2) {
@@ -1738,7 +1745,7 @@
     }
     return row;
   }
-  function authoredRow(node, line, input, claims, actions2) {
+  function authoredRow(node, line, input, claims, actions2, policy) {
     const row = el("div", "turn new");
     const ln = el("button", "ln", String(line));
     ln.type = "button";
@@ -1764,7 +1771,7 @@
       el(
         "div",
         "newnote",
-        real.length ? "Not yet run \u2014 Run Tests to check it." : "Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion."
+        real.length ? "Not yet run \u2014 Run Tests to check it." : policy ? `Not yet run. Run Tests \u2014 the story's auto-assertion policy (${policy}) writes this command's assertion from what it says.` : "Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion."
       )
     );
     return row;
@@ -2066,7 +2073,9 @@
     }
     if (node.status !== "unreached") {
       authoredTail.forEach(
-        (command) => turns.append(authoredRow(node, command.line, command.input, command.claims, actions2))
+        (command) => turns.append(
+          authoredRow(node, command.line, command.input, command.claims, actions2, surface2.autoAssertionPolicy)
+        )
       );
     }
     view.append(turns);
@@ -2447,7 +2456,10 @@
       );
     },
     addCommand(input) {
-      applyEdit((text, file) => addCommand(text, file, input), `> ${input}`);
+      applyEdit(
+        (text, file) => addCommand(text, file, input, surface.autoAssertionPolicy !== null),
+        `> ${input}`
+      );
     },
     deleteCommand(commandLine) {
       const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
@@ -2626,6 +2638,11 @@
     },
     onRestoreMode(mode) {
       if (mode === "column" || mode === "list" || mode === "documents") surface.mode = mode;
+      scheduleRender();
+    },
+    onAutoAssertion(policy) {
+      surface.autoAssertionPolicy = policy;
+      document.body.dataset.autoAssertionPolicy = policy ?? "";
       scheduleRender();
     },
     onFinished(ok) {

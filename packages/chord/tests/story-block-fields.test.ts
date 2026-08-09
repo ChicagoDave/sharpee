@@ -155,6 +155,43 @@ describe('publish-source (ADR-284 — the first boolean header field)', () => {
   });
 });
 
+describe('auto-assertion (Phase 6e, #253 — the transcript auto-assertion policy)', () => {
+  const withValue = (value: string) => `story\n  title: T\n  authors: N\n  auto-assertion: ${value}\n`;
+
+  it('reads each closed-set value, case-insensitively', () => {
+    for (const value of ['all-emitted-text', 'room-description', 'room-name-and-description', 'All-Emitted-Text']) {
+      const result = parse(withValue(value));
+      expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+      expect(result.ast.header?.fields.autoAssertion).toBe(value.toLowerCase());
+    }
+  });
+
+  it('projects the declared value into IRMeta.fields', () => {
+    expect(compile(withValue('all-emitted-text')).ir?.meta.fields.autoAssertion).toBe('all-emitted-text');
+    expect(compile(withValue('room-description')).ir?.meta.fields.autoAssertion).toBe('room-description');
+  });
+
+  it('stays absent when the field is omitted — "let me decide" is the runner default', () => {
+    const { ir } = compile('story\n  title: T\n  authors: N\n');
+    expect(ir?.meta.fields.autoAssertion).toBeUndefined();
+  });
+
+  it('rejects an unknown value rather than reading it as "let me decide"', () => {
+    const result = parse(withValue('everything'));
+    const error = result.diagnostics.find((d) => d.code === 'parse.header-field-bad-value');
+    expect(error).toBeDefined();
+    expect(error?.message).toContain('all-emitted-text');
+    // A typo must not silently disable the policy the author chose.
+    expect(result.ast.header?.fields.autoAssertion).toBeUndefined();
+  });
+
+  it('is named in the closed-schema error, so a misspelling can find it', () => {
+    const result = parse('story\n  title: T\n  authors: N\n  auto_assertion: all-emitted-text\n');
+    const error = result.diagnostics.find((d) => d.code === 'parse.header-unknown-field');
+    expect(error?.message).toContain('auto-assertion');
+  });
+});
+
 describe('removed positional form (AC-2)', () => {
   it('errors with a fix-it naming the fielded shape', () => {
     const result = parse('story "Cloak of Darkness" by "Roger Firth"\n  id: cloak\n');

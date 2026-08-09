@@ -713,6 +713,26 @@ class Parser {
           }
           break;
         }
+        // Phase 6e (issue #253): closed value set, mirroring `publish-source`'s
+        // reject-don't-coerce rule — `auto-assertion: everything` must not
+        // quietly mean "let me decide".
+        case 'auto-assertion': {
+          const value = rest.toLowerCase();
+          if (
+            value === 'all-emitted-text' ||
+            value === 'room-description' ||
+            value === 'room-name-and-description'
+          ) {
+            fields.autoAssertion = value;
+          } else {
+            this.diagnostics.error(
+              'parse.header-field-bad-value',
+              `\`auto-assertion:\` takes \`all-emitted-text\`, \`room-description\` or \`room-name-and-description\`, got \`${rest}\`. Omit the field for "let me decide".`,
+              lineSpan(fieldLine),
+            );
+          }
+          break;
+        }
         case 'themes':
           fields.themes = rest
             .split(',')
@@ -782,7 +802,7 @@ class Parser {
         default:
           this.diagnostics.error(
             'parse.header-unknown-field',
-            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix, publish-source (plus states/score/use/on lines).`,
+            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix, publish-source, auto-assertion (plus states/score/use/on lines).`,
             lineSpan(fieldLine),
           );
       }

@@ -36,6 +36,13 @@ export interface HostInbound {
   goldens(files: string[]): void;
   /** The host's persisted view mode for this project (ADR-301 D4). */
   restoreMode(mode: string): void;
+  /**
+   * The story's `auto-assertion:` policy, or null for "let me decide"
+   * (Phase 6e, #253). A header fact, so the host reports it — refreshed at
+   * attach and at every run start (documents are saved before a run, so the
+   * run always reads what was reported).
+   */
+  autoAssertion(policy: string | null): void;
   /** The run process exited; `ok` false leaves the failure visible. */
   finished(ok: boolean): void;
   /** The text of a transcript the page asked for. Answers `requestSource`. */
@@ -135,6 +142,7 @@ export interface PageHandlers {
   onDiscovered(files: string[]): void;
   onGoldens(files: string[]): void;
   onRestoreMode(mode: string): void;
+  onAutoAssertion(policy: string | null): void;
   onFinished(ok: boolean): void;
   onSource(file: string, text: string): void;
   onSourceFailed(file: string, message: string): void;
@@ -200,6 +208,7 @@ export function installHost(handlers: PageHandlers): HostOutbound {
     discovered: (files) => handlers.onDiscovered(files),
     goldens: (files) => handlers.onGoldens(files),
     restoreMode: (mode) => handlers.onRestoreMode(mode),
+    autoAssertion: (policy) => handlers.onAutoAssertion(policy),
     finished: (ok) => handlers.onFinished(ok),
     source: (file, text) => handlers.onSource(file, text),
     sourceFailed: (file, message) => handlers.onSourceFailed(file, message),

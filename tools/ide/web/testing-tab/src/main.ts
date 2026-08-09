@@ -189,7 +189,13 @@ const actions: ViewActions = {
     );
   },
   addCommand(input: string) {
-    applyEdit((text, file) => addCommandTo(text, file, input), `> ${input}`);
+    // Phase 6e: under an auto-assertion policy the command is written BARE —
+    // the policy's trigger — where `[SKIP]` would mean deliberately
+    // unasserted and the runner would never touch it.
+    applyEdit(
+      (text, file) => addCommandTo(text, file, input, surface.autoAssertionPolicy !== null),
+      `> ${input}`,
+    );
   },
   deleteCommand(commandLine: number) {
     const turn = surface.opened?.turns.find((candidate) => candidate.line === commandLine);
@@ -441,6 +447,14 @@ const host = installHost({
   },
   onRestoreMode(mode) {
     if (mode === 'column' || mode === 'list' || mode === 'documents') surface.mode = mode;
+    scheduleRender();
+  },
+  onAutoAssertion(policy) {
+    surface.autoAssertionPolicy = policy;
+    // Reflected onto the body so the stored policy is OBSERVABLE — the Swift
+    // real-path test reads it back through the live page, which is what pins
+    // the host → bridge → handler hop end to end (Phase 6e).
+    document.body.dataset.autoAssertionPolicy = policy ?? '';
     scheduleRender();
   },
   onFinished(ok) {

@@ -170,6 +170,14 @@ export interface Surface {
    * Cleared with the rest of the per-document state.
    */
   freshClaims: Map<string, Set<string>>;
+  /**
+   * The story's `auto-assertion:` policy (Phase 6e, #253), or null for "let
+   * me decide". Reported by the host from the `.story` header. Under a
+   * policy, an added command is written BARE — a bare command is the
+   * policy's trigger (its first run writes the assertion), where `[SKIP]`
+   * means deliberately unasserted and is never touched by the runner.
+   */
+  autoAssertionPolicy: string | null;
 }
 
 /** A selection inside one turn's output, and the assertion it earns. */
@@ -252,6 +260,7 @@ export function createSurface(): Surface {
     editNote: '',
     story: null,
     freshClaims: new Map(),
+    autoAssertionPolicy: null,
   };
 }
 
@@ -532,6 +541,7 @@ function authoredRow(
   input: string,
   claims: WrittenAssertion[],
   actions: ViewActions,
+  policy: string | null,
 ): HTMLElement {
   const row = el('div', 'turn new');
   const ln = el('button', 'ln', String(line));
@@ -564,7 +574,9 @@ function authoredRow(
       'newnote',
       real.length
         ? 'Not yet run — Run Tests to check it.'
-        : 'Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion.',
+        : policy
+          ? `Not yet run. Run Tests — the story's auto-assertion policy (${policy}) writes this command's assertion from what it says.`
+          : 'Not yet run. Run Tests to see what the story says, then select the part that matters to turn it into an assertion.',
     ),
   );
   return row;
@@ -958,7 +970,9 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   }
   if (node.status !== 'unreached') {
     authoredTail.forEach((command) =>
-      turns.append(authoredRow(node, command.line, command.input, command.claims, actions)),
+      turns.append(
+        authoredRow(node, command.line, command.input, command.claims, actions, surface.autoAssertionPolicy),
+      ),
     );
   }
   view.append(turns);

@@ -29,6 +29,7 @@ import {
   TranscriptCommand,
   Directive,
   Assertion,
+  AutoAssertionPolicy,
   CommandResult,
   AssertionResult,
   TranscriptResult,
@@ -42,6 +43,7 @@ import {
   WorldEntityRef,
   WorldSnapshot
 } from './types.js';
+import { serializeTranscript } from './serializer.js';
 import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
@@ -60,6 +62,13 @@ interface GameEngine {
    * rides each `CommandResult` for the IDE's turn-budget view (R4).
    */
   lastTurnResult?: { turn: number } | null;
+  /**
+   * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
+   * loaded game — bootstrap sets it from `story.config.autoAssertion`.
+   * Consulted only at the assertion tier's D2 boundary; absent = "let me
+   * decide" (the boundary failure stands).
+   */
+  autoAssertionPolicy?: AutoAssertionPolicy;
   /**
    * Declared channel captures for the last command (ADR-294 D15): flattened
    * lines per channel id. Populated by bootstrap's assembleGame when the
@@ -960,6 +969,8 @@ async function runAssertion(
   };
   /** Opening assertions run once, after the first command flushes the opening. */
   let openingChecked = (transcript.opening?.length ?? 0) === 0;
+  /** Any command's assertions were policy-written this run → rewrite the file. */
+  let policyWroteAssertions = false;
 
   for (const item of transcript.items ?? []) {
     if (item.type === 'comment') {
@@ -984,7 +995,12 @@ async function runAssertion(
 
     // The tier boundary (D2): with no recording, a command must assert
     // something — a bare command list is bless material, not a passing test.
-    if (command.assertions.length === 0) {
+    // Under an `auto-assertion:` policy (Phase 6e, #253) a bare command is
+    // instead the policy's trigger: its first run writes the assertion. A
+    // deliberate [SKIP] is never bare, so it is never trampled.
+    const synthesize =
+      command.assertions.length === 0 ? engine.autoAssertionPolicy : undefined;
+    if (command.assertions.length === 0 && synthesize === undefined) {
       record({
         command,
         actualOutput: '',
@@ -1000,7 +1016,8 @@ async function runAssertion(
       break;
     }
 
-    const result = await runCommand(command, engine, options);
+    const result = await runCommand(command, engine, options, synthesize);
+    if (result.autoAsserted) policyWroteAssertions = true;
     options.coverage?.collectFrom(engine.lastEvents);
 
     // The banner and the prologue are said on the way to the first command, so
@@ -1030,6 +1047,15 @@ async function runAssertion(
     if (unfired) {
       record(forcesFailResult(transcript, unfired));
     }
+  }
+
+  // Phase 6e (#253): the policy's writes land in the FILE, in `--bless`'s
+  // spirit — the runner mutated the parsed transcript in memory (assertions
+  // pushed onto bare commands); one serialize makes disk agree. The
+  // serializer round-trips comments and formatting, so untouched content
+  // survives byte-for-byte.
+  if (policyWroteAssertions && transcript.filePath) {
+    fs.writeFileSync(transcript.filePath, serializeTranscript(transcript));
   }
 
   const passed = results.filter(r => r.passed && !r.skipped).length;
@@ -1221,15 +1247,97 @@ function errorResult(
 /**
  * Run a single command and check assertions
  */
+/**
+ * Phase 6e (#253): build the assertions an `auto-assertion:` policy writes for
+ * a bare command's first run, from the turn's real output.
+ *
+ * - `all-emitted-text` — `[OK]` + literal block of the whole composed turn
+ *   (ADR-287 exact match): every ordered emission — before text, room name,
+ *   description, list contents, NPC activity — in order, all of them.
+ * - `room-description` / `room-name-and-description` — contains-form built
+ *   from the turn's `room-name`/`room-description` STRUCTURED channel
+ *   captures (churn survival is the point of choosing less than all-text;
+ *   the flattened capture is a JSON rendering, so the text is read out of
+ *   the structured values). A turn that emitted neither chosen channel gets
+ *   `[SKIP]` — under a policy, "nothing of what I assert on was said" is a
+ *   deliberate skip, and the file then distinguishes it from a command
+ *   still awaiting its first run.
+ *
+ * @param policy the story's declared policy
+ * @param actualOutput the turn's composed prose, as captured
+ * @param channelValues the turn's structured channel captures (bootstrap
+ *   auto-captures the two room channels whenever a room policy is declared)
+ * @returns the assertions to push onto the command — never empty
+ */
+function synthesizePolicyAssertions(
+  policy: AutoAssertionPolicy,
+  actualOutput: string,
+  channelValues?: Record<string, unknown[]>
+): Assertion[] {
+  if (policy === 'all-emitted-text') {
+    return [{ type: 'ok', block: actualOutput.replace(/\s+$/, '').split('\n') }];
+  }
+
+  /** Inline `[OK: contains "…"]` for a clean single line; block form when a
+   *  quote would corrupt the inline grammar or the fragment spans lines. */
+  const containsOf = (lines: string[]): Assertion =>
+    lines.length === 1 && !lines[0].includes('"')
+      ? { type: 'ok-contains', value: lines[0] }
+      : { type: 'ok-contains', block: lines };
+
+  const nameLines = proseTextLinesOf(channelValues?.['room-name']);
+  const descriptionLines = proseTextLinesOf(channelValues?.['room-description']);
+
+  const assertions: Assertion[] = [];
+  if (policy === 'room-name-and-description' && nameLines.length > 0) {
+    assertions.push(containsOf(nameLines));
+  }
+  if (descriptionLines.length > 0) {
+    assertions.push(containsOf(descriptionLines));
+  }
+  return assertions.length > 0 ? assertions : [{ type: 'skip' }];
+}
+
+/**
+ * Extract the player-visible text of a prose channel's structured capture,
+ * one line per captured entry. A prose entry is `{ content: [...] }` where
+ * content items are plain strings or decorations (`{ className, content }`,
+ * ADR-174) — decorations flatten to their inner text, exactly what a
+ * `contains` fragment should hold. Plain strings pass through, so unit
+ * stubs and simple channels need no wrapping.
+ */
+function proseTextLinesOf(values: unknown[] | undefined): string[] {
+  const textOf = (v: unknown): string => {
+    if (typeof v === 'string') return v;
+    if (Array.isArray(v)) return v.map(textOf).join('');
+    if (v !== null && typeof v === 'object' && 'content' in (v as Record<string, unknown>)) {
+      return textOf((v as { content: unknown }).content);
+    }
+    return '';
+  };
+  return (values ?? [])
+    .map(textOf)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
 async function runCommand(
   command: TranscriptCommand,
   engine: GameEngine,
-  options: RunnerOptions
+  options: RunnerOptions,
+  /**
+   * Phase 6e (#253): the command arrived bare and the story declares this
+   * `auto-assertion:` policy — after execution, synthesize the policy's
+   * assertions from the turn's REAL output, push them onto the command, and
+   * evaluate them through the normal loop. Passed only by the assertion
+   * tier (a bare command in the golden tier is bless material, untouched).
+   */
+  synthesize?: AutoAssertionPolicy
 ): Promise<CommandResult> {
   // [SKIP]/[TODO] commands still execute below — they advance world state
   // (ADR-294 D2: "output is deliberately not asserted", not "command is not
   // run"); only assertion evaluation is bypassed, after execution.
-  const skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
+  let skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
 
   // Execute the command
   let actualOutput: string;
@@ -1285,6 +1393,20 @@ async function runCommand(
     error = e instanceof Error ? e.message : String(e);
   }
 
+  // Phase 6e (#253): write the policy's assertions from what the turn really
+  // said. Skipped on an engine error or blank output — both are failures in
+  // their own right below, and a policy must never enshrine them as the
+  // expected assertion. A policy with nothing to assert (a room policy on a
+  // turn that emitted neither room channel) writes [SKIP]: "which emissions
+  // get asserted — these; this command emitted none of them" is a deliberate
+  // skip, distinguishable in the file from a command still awaiting its run.
+  let autoAsserted = false;
+  if (synthesize && !error && normalizeOutput(actualOutput)) {
+    command.assertions.push(...synthesizePolicyAssertions(synthesize, actualOutput, engine.lastChannelValues));
+    autoAsserted = true;
+    skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
+  }
+
   // [SKIP]/[TODO]: the command has executed and advanced state; no assertion
   // is evaluated. An engine error during the skipped turn still fails.
   if (skipAssertion) {
@@ -1319,6 +1441,7 @@ async function runCommand(
         passed: true,
         message: skipAssertion.reason || 'Skipped'
       }],
+      ...(autoAsserted ? { autoAsserted: true } : {}),
       ...(turn !== undefined ? { turn } : {}),
       ...(ending !== undefined ? { ending } : {}),
       ...(world !== undefined ? { world } : {})
@@ -1392,6 +1515,7 @@ async function runCommand(
     skipped: false,
     assertionResults,
     error,
+    ...(autoAsserted ? { autoAsserted: true } : {}),
     ...(turn !== undefined ? { turn } : {}),
     ...(ending !== undefined ? { ending } : {}),
     ...(world !== undefined ? { world } : {})

@@ -152,6 +152,18 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         call("restoreMode", argument: mode)
     }
 
+    /// The story's `auto-assertion:` policy, or nil for "let me decide"
+    /// (Phase 6e, #253). A header fact, so the host reports it — the page's
+    /// add-command gesture writes a bare command under a policy (the policy's
+    /// trigger) and the `[SKIP]` placeholder without one.
+    func setAutoAssertion(_ policy: String?) {
+        if let policy {
+            call("autoAssertion", argument: policy)
+        } else {
+            callJSON("autoAssertion", json: "null")
+        }
+    }
+
     /// The run process exited; `ok` false leaves the failure on screen.
     func runFinished(ok: Bool) {
         callJSON("finished", json: ok ? "true" : "false")
