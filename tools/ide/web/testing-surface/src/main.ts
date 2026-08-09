@@ -15,7 +15,9 @@
  */
 
 import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { CardsView } from './cards';
+import { composeSegmentTranscript, type DeleteRef, type TurnSource } from './compose';
 import { SessionModel, type Segment, type SessionSnapshot } from './model';
 import { renderSource } from './source';
 
@@ -24,19 +26,61 @@ interface FeedRecord {
   restart?: boolean;
   turn: number;
   command?: string;
+  output?: string;
   captures?: { channel: string; values: unknown[] }[];
 }
 
-/** The boot global the IDE injects for restore-by-replay (ADR-306 D8). */
+/** The boot global the IDE injects for restore-by-replay (ADR-306 D8),
+ *  plus the story's `auto-assertion:` policy for synthesis. */
 interface BootSession {
   replay?: string[];
   snapshot?: SessionSnapshot;
+  policy?: AutoAssertionPolicy;
 }
 
 interface DeliverShim { q?: unknown[]; deliver(record: unknown): void; }
 
 const model = new SessionModel();
 let activeSegment: Segment | null = null;
+
+/** Every delivered record by ordinal — synthesis reads outputs/captures. */
+const records = new Map<number, FeedRecord>();
+/** The story's `auto-assertion:` policy, injected by the IDE at boot. */
+let policy: AutoAssertionPolicy | undefined;
+
+/** Per-ordinal synthesis source for compose (ADR-306 D2). */
+function turnSource(ordinal: number): TurnSource | undefined {
+  const record = records.get(ordinal);
+  if (!record || typeof record.output !== 'string') return undefined;
+  const channelValues: Record<string, unknown[]> = {};
+  for (const capture of record.captures ?? []) {
+    channelValues[capture.channel] =
+      [...(channelValues[capture.channel] ?? []), ...capture.values];
+  }
+  return { output: record.output, channelValues };
+}
+
+/** Routes a source-panel ✕ onto the model (design §5's delete semantics). */
+function applyDelete(ref: DeleteRef): void {
+  switch (ref.kind) {
+    case 'default': model.removeDefault(ref.ordinal, ref.index, ref.defaults); break;
+    case 'defaultWhole': model.removeDefault(ref.ordinal, -1, []); break;
+    case 'contains': model.removeContains(ref.ordinal, ref.index); break;
+    case 'notContains': model.removeNotContains(ref.ordinal, ref.index); break;
+    case 'state': model.removeState(ref.ordinal, ref.index); break;
+    case 'event': model.removeEvent(ref.ordinal, ref.index); break;
+    case 'channel': model.removeChannel(ref.ordinal, ref.index); break;
+    case 'exact': model.setExact(ref.ordinal, false); break;
+  }
+  update();
+}
+
+const sourceContext = () => ({
+  policy,
+  seed: 42,
+  source: turnSource,
+  onDelete: applyDelete,
+});
 
 const cards = new CardsView(model, {
   onTick(ordinal, checked) {
@@ -68,18 +112,75 @@ const cards = new CardsView(model, {
   },
   onActivate(segment) {
     activeSegment = segment;
-    renderSource(model, activeSegment);
+    renderSource(model, activeSegment, sourceContext());
   },
 });
 
-/** Re-render and persist: every model change lands in the sidecar (D8). */
+/** Re-render and persist: every model change lands in the sidecar (D8)
+ *  and every closed segment lands on disk (design §4's auto-save). */
 function update(): void {
   if (activeSegment && !model.segments.includes(activeSegment)) {
     activeSegment = null;
   }
   cards.render();
-  renderSource(model, activeSegment);
+  renderSource(model, activeSegment, sourceContext());
   postState();
+  syncWrites();
+}
+
+// ── the auto-save writer (design §4): a closed segment IS a file ──────────
+
+/** What each tracked segment last wrote: its stem and its exact text. */
+const written = new Map<Segment, { name: string; text: string }>();
+
+function postToBridge(payload: Record<string, unknown>): void {
+  try {
+    (window as unknown as {
+      webkit?: { messageHandlers?: { testingSurface?: { postMessage(b: string): void } } };
+    }).webkit?.messageHandlers?.testingSurface?.postMessage(JSON.stringify(payload));
+  } catch {
+    // Observation only — the surface must keep working without the bridge.
+  }
+}
+
+/**
+ * Mirrors the session onto disk: every CLOSED segment writes immediately and
+ * rewrites on every edit; a restructure that renames posts `previousName` so
+ * the Swift side deletes the old file and cascades children's `continues:`;
+ * a segment the author removed (untick, merge) removes its file. An open
+ * range is not a file yet (design §3) and a fence only forgets tracking —
+ * files already in `tests/` are durable artifacts, never deleted by a
+ * restart (ADR-305 D3 fences the SESSION, not the suite).
+ */
+function syncWrites(): void {
+  for (const [segment, last] of [...written]) {
+    if (!model.segments.includes(segment)) {
+      written.delete(segment);
+      postToBridge({ remove: { name: last.name } });
+    }
+  }
+  for (const segment of model.segments) {
+    if (segment.end === null) {
+      const last = written.get(segment);
+      if (last) {
+        // A reopened range is no longer a complete file — take it back.
+        written.delete(segment);
+        postToBridge({ remove: { name: last.name } });
+      }
+      continue;
+    }
+    const { title, text } = composeSegmentTranscript({
+      model, segment, policy, seed: 42, source: turnSource,
+    });
+    const last = written.get(segment);
+    if (last && last.name === title && last.text === text) continue;
+    const payload: Record<string, unknown> = { write: { name: title, text } };
+    if (last && last.name !== title) {
+      (payload.write as Record<string, unknown>).previousName = last.name;
+    }
+    written.set(segment, { name: title, text });
+    postToBridge(payload);
+  }
 }
 
 /** Posts the view snapshot over the `testingSurface` bridge (D8 sidecar). */
@@ -118,6 +219,8 @@ function deliver(raw: unknown): void {
   if (record.restart === true) {
     cards.clear();
     model.fence();
+    records.clear();
+    written.clear();  // files stay — only the session's tracking resets
     activeSegment = null;
     expectBoot = true;
     update();
@@ -127,6 +230,7 @@ function deliver(raw: unknown): void {
   cards.ensureLayout();
   const boot = expectBoot;
   expectBoot = false;
+  records.set(record.turn, record);
   const room = roomOf(record);
   model.addTurn({
     ordinal: record.turn,
@@ -205,6 +309,7 @@ cards.ensureLayout();
 for (const record of queued) deliver(record);
 
 const bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
+policy = bootSession?.policy;
 if (bootSession && ((bootSession.replay?.length ?? 0) > 0 || bootSession.snapshot)) {
   void (async () => {
     // The boot look is automatic — wait for it (unless it already arrived

@@ -1180,6 +1180,14 @@ private final class MainSplitViewController: NSSplitViewController {
             controller = TestingSurfaceWindowController(storyTitle: id, sessionStore: store)
             testingSurfaceWindowController = controller
         }
+        // Fresh context every show: the writer's destination and the story's
+        // on-disk `auto-assertion:` policy (6e — the ON-DISK policy governs
+        // creation exactly as it will govern the file's future runs).
+        controller.surface.testsDirectory =
+            projectRoot.appendingPathComponent("tests", isDirectory: true)
+        let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+        controller.surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
+
         let wasVisible = controller.window?.isVisible == true
         controller.showWindow(nil)
         if !wasVisible {

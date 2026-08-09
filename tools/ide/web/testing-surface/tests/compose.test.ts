@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { parseTranscript } from '@sharpee/branch-tester/parser';
-import { composeSegmentTranscript, type TurnSource } from '../src/compose';
+import { composeSegmentLines, composeSegmentTranscript, type TurnSource } from '../src/compose';
 import { SessionModel } from '../src/model';
 
 function playedSession(): SessionModel {
@@ -134,6 +134,49 @@ describe('composeSegmentTranscript', () => {
     });
     const parsed = parse(text);
     expect(parsed.commands.at(-1)!.assertions.map(a => a.type)).toEqual(['skip']);
+  });
+
+  it('source lines mirror the file and carry delete refs onto the model', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.addContains(2, 'drive curves');
+    const lines = composeSegmentLines({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
+    });
+    expect(lines[0]).toEqual({ text: 'title: iron-gates-to-gravel-drive-1', kind: 'header' });
+    expect(lines[1]).toEqual({ text: 'seed: 42', kind: 'header' });
+    // Ancestry turn 1 shows its command + [SKIP], no delete ref.
+    const skip = lines.find(l => l.kind === 'skip');
+    expect(skip?.del).toBeUndefined();
+    // The authored contains line renders the real tag with its ref.
+    const authored = lines.find(l => l.del?.kind === 'contains');
+    expect(authored?.text).toBe('[OK: contains "drive curves"]');
+    expect(authored?.del).toEqual({ kind: 'contains', ordinal: 2, index: 0 });
+    // Executing the ref against the model narrows exactly like the panel will.
+    m.removeContains(2, 0);
+    expect(m.isSkipped(2)).toBe(true);
+  });
+
+  it('default lines carry narrowing refs; exact renders a block with a whole-delete ref', () => {
+    const m = playedSession();
+    m.tick(2);
+    const defaultLines = composeSegmentLines({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
+    });
+    const defaults = defaultLines.filter(l => l.del?.kind === 'default');
+    expect(defaults.length).toBeGreaterThan(0);
+    const ref = defaults[0].del as { kind: 'default'; defaults: string[] };
+    expect(ref.defaults.length).toBe(defaults.length);
+
+    m.setExact(2, true);
+    const exactLines = composeSegmentLines({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
+    });
+    const ok = exactLines.find(l => l.del?.kind === 'exact');
+    expect(ok?.text).toBe('[OK]');
+    expect(exactLines.map(l => l.text)).toContain('text');
+    expect(exactLines.map(l => l.text)).toContain('end text');
+    expect(exactLines.map(l => l.text)).toContain('Gravel Drive');
   });
 
   it('a segment from the opening writes authored opening claims above the first command', () => {

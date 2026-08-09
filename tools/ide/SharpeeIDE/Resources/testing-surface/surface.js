@@ -1,6 +1,22 @@
 "use strict";
 (() => {
   // packages/branch-tester/src/auto-assertion.ts
+  function synthesizePolicyAssertions(policy2, actualOutput, channelValues) {
+    if (policy2 === "all-emitted-text") {
+      return [{ type: "ok", block: actualOutput.replace(/\s+$/, "").split("\n") }];
+    }
+    const containsOf = (lines) => lines.length === 1 && !lines[0].includes('"') ? { type: "ok-contains", value: lines[0] } : { type: "ok-contains", block: lines };
+    const nameLines = proseTextLinesOf(channelValues?.["room-name"]);
+    const descriptionLines = proseTextLinesOf(channelValues?.["room-description"]);
+    const assertions = [];
+    if (policy2 === "room-name-and-description" && nameLines.length > 0) {
+      assertions.push(containsOf(nameLines));
+    }
+    if (descriptionLines.length > 0) {
+      assertions.push(containsOf(descriptionLines));
+    }
+    return assertions.length > 0 ? assertions : [{ type: "skip" }];
+  }
   function proseTextLinesOf(values) {
     const textOf = (v) => {
       if (typeof v === "string") return v;
@@ -277,6 +293,336 @@
       this.session.scrollTop = this.session.scrollHeight;
     }
   };
+
+  // packages/branch-tester/src/serializer.ts
+  var HEADER_ORDER = [
+    "title",
+    "story",
+    "entry",
+    // ADR-302 D1: the parent pointer sits with the other identity fields, above
+    // the prose ones — a reader asking "where does this start?" should not have
+    // to read past the description to find out.
+    "continues",
+    "author",
+    "description",
+    "seed",
+    "seeds",
+    "channels",
+    "events",
+    "locale",
+    "forces",
+    "point-seed"
+  ];
+  var FOLD_WIDTH = 78;
+  var FOLD_INDENT = "  ";
+  var DEFAULT_FAIL_REASON = "Expected failure";
+  var DEFAULT_TODO_REASON = "Not implemented";
+  function foldHeaderField(key, value) {
+    const words = value.split(/\s+/).filter((w) => w.length > 0);
+    if (words.length === 0) return [`${key}:`];
+    const lines = [];
+    let current = `${key}:`;
+    let indent = "";
+    for (const word of words) {
+      const candidate = current === indent ? `${indent}${word}` : `${current} ${word}`;
+      if (candidate.length > FOLD_WIDTH && current !== indent) {
+        lines.push(current);
+        indent = FOLD_INDENT;
+        current = `${indent}${word}`;
+      } else {
+        current = candidate;
+      }
+    }
+    lines.push(current);
+    return lines;
+  }
+  function serializeHeader(transcript) {
+    const lines = [];
+    const emitted = /* @__PURE__ */ new Set();
+    for (const key of HEADER_ORDER) {
+      const value = transcript.header[key];
+      if (value === void 0) continue;
+      lines.push(...foldHeaderField(key, value));
+      emitted.add(key);
+    }
+    for (const key of Object.keys(transcript.header)) {
+      if (emitted.has(key)) continue;
+      const value = transcript.header[key];
+      if (value === void 0) continue;
+      lines.push(...foldHeaderField(key, value));
+    }
+    return lines;
+  }
+  function serializeAssertionTag(assertion) {
+    switch (assertion.type) {
+      case "ok":
+        return "[OK]";
+      case "ok-contains":
+        return assertion.value === void 0 ? "[OK: contains]" : `[OK: contains "${assertion.value}"]`;
+      case "ok-not-contains":
+        return `[OK: not contains "${assertion.value}"]`;
+      case "skip":
+        return "[SKIP]";
+      case "fail":
+        return assertion.reason === DEFAULT_FAIL_REASON ? "[FAIL]" : `[FAIL: ${assertion.reason}]`;
+      case "todo":
+        return assertion.reason === DEFAULT_TODO_REASON ? "[TODO]" : `[TODO: ${assertion.reason}]`;
+      case "event-assert": {
+        const parts = [String(assertion.assertTrue)];
+        if (assertion.eventPosition !== void 0) {
+          parts.push(String(assertion.eventPosition));
+        }
+        const props = [`type="${assertion.eventType}"`];
+        for (const [key, value] of Object.entries(assertion.eventData ?? {})) {
+          props.push(`${key}="${value}"`);
+        }
+        return `[EVENT: ${parts.join(", ")}, ${props.join(" ")}]`;
+      }
+      case "state-assert":
+        return `[STATE: ${assertion.assertTrue}, ${assertion.stateExpression}]`;
+      case "channel-contains":
+        return `[CHANNEL: ${channelTarget(assertion)}, contains "${assertion.value}"]`;
+      case "channel-not-contains":
+        return `[CHANNEL: ${channelTarget(assertion)}, not contains "${assertion.value}"]`;
+      case "channel-is":
+        return `[CHANNEL: ${channelTarget(assertion)}, is ${literal(assertion.channelExpected)}]`;
+      case "channel-is-not":
+        return `[CHANNEL: ${channelTarget(assertion)}, is not ${literal(assertion.channelExpected)}]`;
+      case "channel-absent":
+        return `[CHANNEL: ${channelTarget(assertion)}, is absent]`;
+      case "channel-present":
+        return `[CHANNEL: ${channelTarget(assertion)}, is present]`;
+    }
+  }
+  function channelTarget(assertion) {
+    const path = assertion.channelPath ?? [];
+    return path.length > 0 ? `${assertion.channelId}.${path.join(".")}` : `${assertion.channelId}`;
+  }
+  function literal(value) {
+    return typeof value === "string" ? `"${value}"` : String(value);
+  }
+  function serializeAssertion(assertion) {
+    const lines = [serializeAssertionTag(assertion)];
+    if (assertion.block !== void 0) {
+      lines.push("text", ...assertion.block, "end text");
+    }
+    return lines;
+  }
+  function serializeCommand(command) {
+    const lines = [`> ${command.input}`];
+    for (const assertion of command.assertions) {
+      lines.push(...serializeAssertion(assertion));
+    }
+    lines.push(...command.expectedOutput);
+    return lines;
+  }
+  function serializeDirective(directive) {
+    switch (directive.type) {
+      case "goal":
+        return [`[GOAL: ${directive.goalName}]`];
+      case "end_goal":
+        return ["[END GOAL]"];
+      case "save":
+        return [`$save ${directive.saveName}`];
+      case "restore":
+        return [`$restore ${directive.saveName}`];
+      case "test-command":
+        return [directive.testCommand];
+    }
+  }
+  function opensStanza(item) {
+    return item.type === "command" || item.type === "directive";
+  }
+  function serializeTranscript(transcript) {
+    const lines = [];
+    lines.push(...serializeHeader(transcript));
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+    for (const assertion of transcript.opening ?? []) {
+      lines.push(...serializeAssertion(assertion));
+    }
+    if (transcript.opening && transcript.opening.length > 0) lines.push("");
+    const items = transcript.items ?? [];
+    let pendingComments = [];
+    let firstStanza = true;
+    const openStanza = () => {
+      if (!firstStanza) lines.push("");
+      firstStanza = false;
+      lines.push(...pendingComments);
+      pendingComments = [];
+    };
+    for (const item of items) {
+      if (item.type === "comment") {
+        const text = item.comment.text;
+        pendingComments.push(text ? `# ${text}` : "#");
+        continue;
+      }
+      if (!opensStanza(item)) continue;
+      openStanza();
+      if (item.type === "command") {
+        lines.push(...serializeCommand(item.command));
+      } else {
+        const directive = item.directive;
+        lines.push(...serializeDirective(directive));
+        if (directive.type === "goal") {
+          lines.push("");
+          firstStanza = true;
+        }
+      }
+    }
+    if (pendingComments.length > 0) {
+      if (!firstStanza) lines.push("");
+      lines.push(...pendingComments);
+    }
+    return lines.join("\n") + "\n";
+  }
+
+  // tools/ide/web/testing-surface/src/compose.ts
+  function nonProseEntries(claims, ordinal) {
+    const entries = [];
+    claims.states.forEach((expression, index) => entries.push({
+      assertion: { type: "state-assert", assertTrue: true, stateExpression: expression },
+      del: { kind: "state", ordinal, index }
+    }));
+    claims.events.forEach((type, index) => entries.push({
+      assertion: { type: "event-assert", assertTrue: true, eventType: type },
+      del: { kind: "event", ordinal, index }
+    }));
+    claims.channels.forEach((channel, index) => entries.push({
+      assertion: channel.contains !== void 0 ? { type: "channel-contains", channelId: channel.id, value: channel.contains } : { type: "channel-is", channelId: channel.id, channelExpected: channel.is },
+      del: { kind: "channel", ordinal, index }
+    }));
+    return entries;
+  }
+  function turnEntries(claims, ordinal, policy2, source) {
+    if (claims.exact) {
+      const block = (source?.output ?? "").split("\n");
+      return [
+        { assertion: { type: "ok", block }, del: { kind: "exact", ordinal } },
+        ...nonProseEntries(claims, ordinal)
+      ];
+    }
+    const entries = [];
+    if (claims.contains.length === 0 && !claims.noDefaults && policy2 && source) {
+      const synthesized = synthesizePolicyAssertions(policy2, source.output, source.channelValues);
+      const containsDefaults = synthesized.filter((a) => a.type === "ok-contains" && a.value !== void 0).map((a) => a.value);
+      let containsIndex = 0;
+      for (const assertion of synthesized) {
+        if (assertion.type === "ok-contains" && assertion.value !== void 0) {
+          entries.push({
+            assertion,
+            del: { kind: "default", ordinal, index: containsIndex, defaults: containsDefaults }
+          });
+          containsIndex += 1;
+        } else {
+          entries.push({ assertion, del: { kind: "defaultWhole", ordinal } });
+        }
+      }
+    }
+    claims.contains.forEach((value, index) => entries.push({
+      assertion: { type: "ok-contains", value },
+      del: { kind: "contains", ordinal, index }
+    }));
+    claims.notContains.forEach((value, index) => entries.push({
+      assertion: { type: "ok-not-contains", value },
+      del: { kind: "notContains", ordinal, index }
+    }));
+    entries.push(...nonProseEntries(claims, ordinal));
+    if (entries.length === 0) return [{ assertion: { type: "skip" } }];
+    return entries;
+  }
+  function segmentPlan(options) {
+    const { model: model2, segment, policy: policy2, seed, source } = options;
+    void seed;
+    const title = model2.titleOf(segment);
+    const parent = model2.parentOf(segment);
+    const end = segment.end ?? segment.start;
+    const from = parent ? (parent.end ?? parent.start) + 1 : 1;
+    const turns = [];
+    for (const turn of model2.turns) {
+      if (turn.ordinal < from || turn.ordinal > end || turn.ordinal === 0) continue;
+      const inRange = turn.ordinal >= Math.max(segment.start, 1) && !model2.isSkipped(turn.ordinal);
+      turns.push({
+        ordinal: turn.ordinal,
+        command: turn.command,
+        entries: inRange ? turnEntries(model2.claimsOf(turn.ordinal), turn.ordinal, policy2, source(turn.ordinal)) : [{ assertion: { type: "skip" } }]
+      });
+    }
+    const opening = [];
+    if (segment.start === 0) {
+      const claims = model2.claimsOf(0);
+      claims.contains.forEach((value, index) => opening.push({
+        assertion: { type: "ok-contains", value },
+        del: { kind: "contains", ordinal: 0, index }
+      }));
+      claims.notContains.forEach((value, index) => opening.push({
+        assertion: { type: "ok-not-contains", value },
+        del: { kind: "notContains", ordinal: 0, index }
+      }));
+      opening.push(...nonProseEntries(claims, 0));
+    }
+    return parent ? { title, parentTitle: model2.titleOf(parent), turns, opening } : { title, turns, opening };
+  }
+  function composeSegmentTranscript(options) {
+    const plan = segmentPlan(options);
+    const header = plan.parentTitle !== void 0 ? { title: plan.title, continues: plan.parentTitle } : { title: plan.title, seed: String(options.seed) };
+    const commands = plan.turns.map((turn) => ({
+      lineNumber: 0,
+      input: turn.command,
+      expectedOutput: [],
+      assertions: turn.entries.map((entry) => entry.assertion)
+    }));
+    const items = commands.map((command) => ({ type: "command", command }));
+    const transcript = {
+      filePath: `tests/${plan.title}.transcript`,
+      header,
+      commands,
+      items,
+      comments: []
+    };
+    if (plan.opening.length > 0) {
+      transcript.opening = plan.opening.map((entry) => entry.assertion);
+    }
+    return { title: plan.title, text: serializeTranscript(transcript) };
+  }
+  function entryLines(entry) {
+    const { assertion } = entry;
+    if (assertion.type === "skip") {
+      return [{ text: "[SKIP]", kind: "skip" }];
+    }
+    const tag = {
+      text: serializeAssertionTag(assertion),
+      kind: "assertion",
+      ...entry.del ? { del: entry.del } : {}
+    };
+    if (!assertion.block) return [tag];
+    return [
+      tag,
+      { text: "text", kind: "block" },
+      ...assertion.block.map((line) => ({ text: line, kind: "block" })),
+      { text: "end text", kind: "block" }
+    ];
+  }
+  function composeSegmentLines(options) {
+    const plan = segmentPlan(options);
+    const lines = [];
+    lines.push({ text: `title: ${plan.title}`, kind: "header" });
+    lines.push(plan.parentTitle !== void 0 ? { text: `continues: ${plan.parentTitle}`, kind: "header" } : { text: `seed: ${options.seed}`, kind: "header" });
+    lines.push({ text: "", kind: "blank" });
+    lines.push({ text: "---", kind: "separator" });
+    lines.push({ text: "", kind: "blank" });
+    if (plan.opening.length > 0) {
+      for (const entry of plan.opening) lines.push(...entryLines(entry));
+      lines.push({ text: "", kind: "blank" });
+    }
+    plan.turns.forEach((turn, index) => {
+      lines.push({ text: `> ${turn.command}`, kind: "command" });
+      for (const entry of turn.entries) lines.push(...entryLines(entry));
+      if (index < plan.turns.length - 1) lines.push({ text: "", kind: "blank" });
+    });
+    return lines;
+  }
 
   // tools/ide/web/testing-surface/src/model.ts
   function slugify(text) {
@@ -630,44 +976,104 @@
   };
 
   // tools/ide/web/testing-surface/src/source.ts
-  var escapeHTML = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  function renderSource(model2, active) {
-    const source = document.getElementById("ts-source");
+  var kindClass = {
+    header: "ts-hdr",
+    separator: "ts-hdr",
+    command: "ts-cmd",
+    assertion: "ts-ok",
+    skip: "ts-skip",
+    block: "ts-lit",
+    blank: ""
+  };
+  function renderSource(model2, active, context) {
+    const sourceHost = document.getElementById("ts-source");
     const title = document.getElementById("ts-source-title");
-    if (!source || !title) return;
+    if (!sourceHost || !title) return;
     if (!active || !model2.segments.includes(active)) {
       title.textContent = "created transcript";
-      source.innerHTML = '<span class="ts-skip"># tick the opening or a turn to start a transcript</span>';
+      sourceHost.textContent = "";
+      const hint = document.createElement("span");
+      hint.className = "ts-skip";
+      hint.textContent = "# tick the opening or a turn to start a transcript";
+      sourceHost.appendChild(hint);
       return;
     }
-    const name = model2.titleOf(active);
-    title.textContent = `created transcript \xB7 ${name}`;
-    const parent = model2.parentOf(active);
-    const end = active.end ?? active.start;
-    const lines = [];
-    lines.push(`<span class="ts-hdr">title: ${escapeHTML(name)}</span>`);
-    lines.push(parent ? `<span class="ts-hdr">continues: ${escapeHTML(model2.titleOf(parent))}</span>` : `<span class="ts-hdr">seed: 42</span>`);
-    lines.push("");
-    lines.push('<span class="ts-hdr">---</span>');
-    lines.push("");
-    lines.push(`<span class="ts-skip"># in-range turns assert via the story's auto-assertion policy \u2014 authoring lands in Phase 4</span>`);
-    lines.push("");
-    const from = parent ? (parent.end ?? parent.start) + 1 : 1;
-    for (const turn of model2.turns) {
-      if (turn.ordinal < from || turn.ordinal > end || turn.ordinal === 0) continue;
-      lines.push(`<span class="ts-cmd">&gt; ${escapeHTML(turn.command)}</span>`);
-      const inRange = turn.ordinal >= Math.max(active.start, 1);
-      if (!inRange || model2.isSkipped(turn.ordinal)) {
-        lines.push('<span class="ts-skip">[SKIP]</span>');
+    const lines = composeSegmentLines({
+      model: model2,
+      segment: active,
+      policy: context.policy,
+      seed: context.seed,
+      source: context.source
+    });
+    title.textContent = `created transcript \xB7 ${model2.titleOf(active)}`;
+    sourceHost.textContent = "";
+    lines.forEach((line, index) => {
+      const row = document.createElement("span");
+      row.className = `ts-line ${kindClass[line.kind] ?? ""}`.trim();
+      row.appendChild(document.createTextNode(line.text));
+      if (line.del) {
+        const del = document.createElement("span");
+        del.className = "ts-del";
+        del.textContent = "\u2715";
+        del.title = "Delete this assertion";
+        const ref = line.del;
+        del.addEventListener("click", () => context.onDelete(ref));
+        row.appendChild(del);
       }
-      lines.push("");
-    }
-    source.innerHTML = lines.join("\n").replace(/\n$/, "");
+      sourceHost.appendChild(row);
+      if (index < lines.length - 1) sourceHost.appendChild(document.createTextNode("\n"));
+    });
   }
 
   // tools/ide/web/testing-surface/src/main.ts
   var model = new SessionModel();
   var activeSegment = null;
+  var records = /* @__PURE__ */ new Map();
+  var policy;
+  function turnSource(ordinal) {
+    const record = records.get(ordinal);
+    if (!record || typeof record.output !== "string") return void 0;
+    const channelValues = {};
+    for (const capture of record.captures ?? []) {
+      channelValues[capture.channel] = [...channelValues[capture.channel] ?? [], ...capture.values];
+    }
+    return { output: record.output, channelValues };
+  }
+  function applyDelete(ref) {
+    switch (ref.kind) {
+      case "default":
+        model.removeDefault(ref.ordinal, ref.index, ref.defaults);
+        break;
+      case "defaultWhole":
+        model.removeDefault(ref.ordinal, -1, []);
+        break;
+      case "contains":
+        model.removeContains(ref.ordinal, ref.index);
+        break;
+      case "notContains":
+        model.removeNotContains(ref.ordinal, ref.index);
+        break;
+      case "state":
+        model.removeState(ref.ordinal, ref.index);
+        break;
+      case "event":
+        model.removeEvent(ref.ordinal, ref.index);
+        break;
+      case "channel":
+        model.removeChannel(ref.ordinal, ref.index);
+        break;
+      case "exact":
+        model.setExact(ref.ordinal, false);
+        break;
+    }
+    update();
+  }
+  var sourceContext = () => ({
+    policy,
+    seed: 42,
+    source: turnSource,
+    onDelete: applyDelete
+  });
   var cards = new CardsView(model, {
     onTick(ordinal, checked) {
       if (checked) {
@@ -701,7 +1107,7 @@
     },
     onActivate(segment) {
       activeSegment = segment;
-      renderSource(model, activeSegment);
+      renderSource(model, activeSegment, sourceContext());
     }
   });
   function update() {
@@ -709,8 +1115,49 @@
       activeSegment = null;
     }
     cards.render();
-    renderSource(model, activeSegment);
+    renderSource(model, activeSegment, sourceContext());
     postState();
+    syncWrites();
+  }
+  var written = /* @__PURE__ */ new Map();
+  function postToBridge(payload) {
+    try {
+      window.webkit?.messageHandlers?.testingSurface?.postMessage(JSON.stringify(payload));
+    } catch {
+    }
+  }
+  function syncWrites() {
+    for (const [segment, last] of [...written]) {
+      if (!model.segments.includes(segment)) {
+        written.delete(segment);
+        postToBridge({ remove: { name: last.name } });
+      }
+    }
+    for (const segment of model.segments) {
+      if (segment.end === null) {
+        const last2 = written.get(segment);
+        if (last2) {
+          written.delete(segment);
+          postToBridge({ remove: { name: last2.name } });
+        }
+        continue;
+      }
+      const { title, text } = composeSegmentTranscript({
+        model,
+        segment,
+        policy,
+        seed: 42,
+        source: turnSource
+      });
+      const last = written.get(segment);
+      if (last && last.name === title && last.text === text) continue;
+      const payload = { write: { name: title, text } };
+      if (last && last.name !== title) {
+        payload.write.previousName = last.name;
+      }
+      written.set(segment, { name: title, text });
+      postToBridge(payload);
+    }
   }
   function postState() {
     try {
@@ -732,6 +1179,8 @@
     if (record.restart === true) {
       cards.clear();
       model.fence();
+      records.clear();
+      written.clear();
       activeSegment = null;
       expectBoot = true;
       update();
@@ -740,6 +1189,7 @@
     cards.ensureLayout();
     const boot = expectBoot;
     expectBoot = false;
+    records.set(record.turn, record);
     const room = roomOf(record);
     model.addTurn({
       ordinal: record.turn,
@@ -797,6 +1247,7 @@
   cards.ensureLayout();
   for (const record of queued) deliver(record);
   var bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
+  policy = bootSession?.policy;
   if (bootSession && ((bootSession.replay?.length ?? 0) > 0 || bootSession.snapshot)) {
     void (async () => {
       if (model.turns.length === 0) await awaitNextTurn(15e3);

@@ -243,6 +243,18 @@ body.ts-active .sharpee-window { display: none; }
 #ts-source .ts-cmd { color: var(--ts-accent); }
 #ts-source .ts-ok  { color: var(--ts-assert); }
 #ts-source .ts-skip { color: var(--ts-fg-faint); }
+#ts-source .ts-lit { color: var(--ts-fg); }
+
+/* Assertions are deleted HERE — hover a line, hit its ✕. Inline, because
+   the source pane is pre-wrap: a block-level line would double-space. */
+#ts-source .ts-line .ts-del {
+  visibility: hidden;
+  color: var(--ts-fg-faint);
+  cursor: pointer;
+  margin-left: 6px;
+}
+#ts-source .ts-line:hover .ts-del { visibility: visible; }
+#ts-source .ts-line .ts-del:hover { color: var(--ts-fg); }
 
 /* ── right: the run column skeleton — rows land in the run-column phase ── */
 

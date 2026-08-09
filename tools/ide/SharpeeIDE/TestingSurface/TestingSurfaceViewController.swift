@@ -9,8 +9,8 @@
 // seed (ADR-305 D1), so cards always show the current build's real output.
 // The web view uses a non-persistent store — a testing session never touches
 // the Play pane's origin storage, and every load is a guaranteed fresh boot.
-// Public interface: load(bundleDirectory:), isLoaded,
-// evaluateInSurface(_:), showPlaceholder(_:), sessionStore.
+// Public interface: load(bundleDirectory:), isLoaded, testsDirectory,
+// policy, evaluateInSurface(_:), showPlaceholder(_:), sessionStore.
 // Owner context: tools/ide — TestingSurface.
 
 import AppKit
@@ -96,6 +96,14 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
 
     /// The D8 session sidecar for the loaded story.
     let sessionStore: TestingSessionStore
+
+    /// The project's `tests/` directory — where the auto-save writer lands
+    /// (design §4). Set by the opener before load; nil disables writes.
+    var testsDirectory: URL?
+
+    /// The story's `auto-assertion:` policy raw value, read from the story
+    /// header at open; injected for in-page synthesis (6e).
+    var policy: String?
 
     /// True until the next feed record, which is a lineage's automatic boot
     /// look — logged with `boot: true` so replay plans can skip it.
@@ -200,6 +208,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         var session: [String: Any] = [:]
         if !plan.replay.isEmpty { session["replay"] = plan.replay }
         if let viewState = plan.viewState { session["snapshot"] = viewState }
+        if let policy { session["policy"] = policy }
         let sessionJSON = (try? JSONSerialization.data(withJSONObject: session))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
@@ -237,6 +246,65 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         Task { _ = try? await evaluateInSurface(script) }
     }
 
+    // MARK: - The auto-save writer (design §4)
+
+    /// A transcript stem the page derived — path-safe by construction
+    /// (slugified), but verified anyway: a name with a separator writes
+    /// nowhere.
+    private func transcriptURL(stem: String) -> URL? {
+        guard let testsDirectory,
+              !stem.isEmpty,
+              !stem.contains("/"), !stem.contains("\\"), !stem.contains("..") else { return nil }
+        return testsDirectory.appendingPathComponent(stem + ".transcript")
+    }
+
+    /// Writes one composed transcript; a rename deletes the old file and
+    /// cascades `continues:` in every child (the stem is the reference —
+    /// ADR-302 D14's mechanical rename, IDE-side over `tests/`).
+    private func performWrite(name: String, text: String, previousName: String?) {
+        guard let url = transcriptURL(stem: name) else { return }
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? text.data(using: .utf8)?.write(to: url, options: .atomic)
+        if let previousName, previousName != name,
+           let previousURL = transcriptURL(stem: previousName) {
+            try? FileManager.default.removeItem(at: previousURL)
+            cascadeContinues(from: previousName, to: name)
+        }
+    }
+
+    /// The auto-save mirror of a segment the author removed (untick, merge,
+    /// reopened range): its file goes; children keep their `continues:` and
+    /// surface the dangling parent in the tab's run, visibly.
+    private func performRemove(name: String) {
+        guard let url = transcriptURL(stem: name) else { return }
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    /// Rewrites `continues: old` header lines to the new stem in every
+    /// transcript under `tests/` — header lines only (before `---`).
+    private func cascadeContinues(from oldStem: String, to newStem: String) {
+        guard let testsDirectory,
+              let files = try? FileManager.default.contentsOfDirectory(
+                  at: testsDirectory, includingPropertiesForKeys: nil) else { return }
+        for file in files where file.pathExtension == "transcript" {
+            guard let content = try? String(contentsOf: file, encoding: .utf8) else { continue }
+            var lines = content.components(separatedBy: "\n")
+            var changed = false
+            for index in lines.indices {
+                if lines[index].trimmingCharacters(in: .whitespaces) == "---" { break }
+                if lines[index].trimmingCharacters(in: .whitespaces) == "continues: \(oldStem)" {
+                    lines[index] = "continues: \(newStem)"
+                    changed = true
+                }
+            }
+            if changed {
+                try? lines.joined(separator: "\n").data(using: .utf8)?
+                    .write(to: file, options: .atomic)
+            }
+        }
+    }
+
     // MARK: - WKScriptMessageHandler
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -260,9 +328,20 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         case Self.stateHandlerName:
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
-                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                  let state = object["state"] as? [String: Any] else { return }
-            sessionStore.updateViewState(state)
+                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }
+            if let state = object["state"] as? [String: Any] {
+                sessionStore.updateViewState(state)
+            }
+            if let write = object["write"] as? [String: Any],
+               let name = write["name"] as? String,
+               let text = write["text"] as? String {
+                performWrite(name: name, text: text,
+                             previousName: write["previousName"] as? String)
+            }
+            if let remove = object["remove"] as? [String: Any],
+               let name = remove["name"] as? String {
+                performRemove(name: name)
+            }
         case Self.consoleHandlerName:
             if let text = message.body as? String {
                 NSLog("[testing-surface] %@", text)

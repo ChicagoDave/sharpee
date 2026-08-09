@@ -124,8 +124,13 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         surface = TestingSurfaceViewController(
             sessionStore: TestingSessionStore(fileURL: sidecarURL))
         _ = surface.view
+        surface.testsDirectory = tmp.appendingPathComponent("tests", isDirectory: true)
         surface.load(bundleDirectory: bundleDir)
         try await waitFor("window.bootProbeReady === true", "fixture boot")
+    }
+
+    private func transcriptOnDisk(_ stem: String) -> URL {
+        tmp.appendingPathComponent("tests/\(stem).transcript")
     }
 
     /// Polls until `probe` evaluates true, failing after 5s.
@@ -325,6 +330,78 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(segments.count, 1)
         XCTAssertEqual(segments.first?["start"] as? Int, 1)
         XCTAssertEqual(segments.first?["end"] as? Int, 3)
+    }
+
+    // MARK: - The auto-save writer (Phase 4, design §4)
+
+    func testClosingARangeWritesItsTranscriptAndReopeningRemovesIt() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
+
+        try await tick(2)
+        try await tick(3)   // closed 2–3 → iron-gates-to-fountain-court-2
+        let file = transcriptOnDisk("iron-gates-to-fountain-court-2")
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: file.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertTrue(text.contains("title: iron-gates-to-fountain-court-2"))
+        XCTAssertTrue(text.contains("seed: 42"))
+        XCTAssertTrue(text.contains("> north"))
+        // No policy in this fixture: in-range turns carry the 6e placeholder.
+        XCTAssertTrue(text.contains("[SKIP]"))
+
+        // Reopening the range takes the file back — an open range is not a
+        // file yet (design §3).
+        try await tick(3)   // untick the end
+        for _ in 0..<100 {
+            if !FileManager.default.fileExists(atPath: file.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path),
+                       "a reopened range's file is removed until it closes again")
+    }
+
+    func testExtendingAClosedRangeRenamesItsFileOnDisk() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
+        try await tick(2)
+        try await tick(3)   // closed 2–3
+        let before = transcriptOnDisk("iron-gates-to-fountain-court-2")
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: before.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: before.path))
+
+        // Split at 3: head 2–2 renames, tail 3–3 continues from it — the old
+        // stem's file goes, both new files land, the child names its parent.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="3"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'Split here') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        let head = transcriptOnDisk("iron-gates-to-gravel-drive-1")
+        let tail = transcriptOnDisk("gravel-drive-to-fountain-court-1")
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: head.path),
+               FileManager.default.fileExists(atPath: tail.path),
+               !FileManager.default.fileExists(atPath: before.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: before.path),
+                       "the pre-split stem is renamed away")
+        let tailText = try String(contentsOf: tail, encoding: .utf8)
+        XCTAssertTrue(tailText.contains("continues: iron-gates-to-gravel-drive-1"),
+                      "the tail continues from the head's NEW stem")
     }
 
     // MARK: - The restart fence

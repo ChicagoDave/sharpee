@@ -1,61 +1,84 @@
 /**
- * source.ts — the source panel's structural render (ADR-306 Phase 3).
+ * source.ts — the source panel, which IS the editor (ADR-306 Phase 4,
+ * design §5).
  *
- * Purpose: shows the ACTIVE segment as the transcript it will become —
- *   title, `seed:` / `continues:` header, `[SKIP]` ancestry, and the range's
- *   commands. Structure only: assertion synthesis is the toolchain's one
- *   code path (ADR-306 D2) and lands with Phase 4's writer, so this panel
- *   deliberately writes no claims — it marks where they will synthesize.
+ * Purpose: renders the active segment's transcript from the same plan the
+ *   auto-save writer serializes (`composeSegmentLines`), so the panel shows
+ *   exactly what the file carries. Every assertion line deletes via hover-✕;
+ *   the DeleteRef on each line maps straight onto a SessionModel mutator in
+ *   main.ts — narrowing, whole-block deletion, and `[SKIP]` demotion are
+ *   model semantics, never re-derived here.
  *
- * Public interface: renderSource(model, active).
+ * Public interface: renderSource(model, active, context).
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
+import { composeSegmentLines, type DeleteRef, type TurnSource } from './compose';
+import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import type { Segment, SessionModel } from './model';
 
-const escapeHTML = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+/** What rendering needs beyond the model. */
+export interface SourceContext {
+  policy?: AutoAssertionPolicy;
+  seed: number;
+  source: (ordinal: number) => TurnSource | undefined;
+  onDelete: (ref: DeleteRef) => void;
+}
 
-/** Renders the active segment's generated-transcript structure. */
-export function renderSource(model: SessionModel, active: Segment | null): void {
-  const source = document.getElementById('ts-source');
+const kindClass: Record<string, string> = {
+  header: 'ts-hdr',
+  separator: 'ts-hdr',
+  command: 'ts-cmd',
+  assertion: 'ts-ok',
+  skip: 'ts-skip',
+  block: 'ts-lit',
+  blank: '',
+};
+
+/** Renders the active segment's generated transcript, editable by ✕. */
+export function renderSource(
+  model: SessionModel,
+  active: Segment | null,
+  context: SourceContext,
+): void {
+  const sourceHost = document.getElementById('ts-source');
   const title = document.getElementById('ts-source-title');
-  if (!source || !title) return;
+  if (!sourceHost || !title) return;
 
   if (!active || !model.segments.includes(active)) {
     title.textContent = 'created transcript';
-    source.innerHTML =
-      '<span class="ts-skip"># tick the opening or a turn to start a transcript</span>';
+    sourceHost.textContent = '';
+    const hint = document.createElement('span');
+    hint.className = 'ts-skip';
+    hint.textContent = '# tick the opening or a turn to start a transcript';
+    sourceHost.appendChild(hint);
     return;
   }
 
-  const name = model.titleOf(active);
-  title.textContent = `created transcript · ${name}`;
+  const lines = composeSegmentLines({
+    model,
+    segment: active,
+    policy: context.policy,
+    seed: context.seed,
+    source: context.source,
+  });
+  title.textContent = `created transcript · ${model.titleOf(active)}`;
 
-  const parent = model.parentOf(active);
-  const end = active.end ?? active.start;
-  const lines: string[] = [];
-  lines.push(`<span class="ts-hdr">title: ${escapeHTML(name)}</span>`);
-  lines.push(parent
-    ? `<span class="ts-hdr">continues: ${escapeHTML(model.titleOf(parent))}</span>`
-    : `<span class="ts-hdr">seed: 42</span>`);
-  lines.push('');
-  lines.push('<span class="ts-hdr">---</span>');
-  lines.push('');
-  lines.push('<span class="ts-skip"># in-range turns assert via the story\'s'
-    + ' auto-assertion policy — authoring lands in Phase 4</span>');
-  lines.push('');
-
-  const from = parent ? (parent.end ?? parent.start) + 1 : 1;
-  for (const turn of model.turns) {
-    if (turn.ordinal < from || turn.ordinal > end || turn.ordinal === 0) continue;
-    lines.push(`<span class="ts-cmd">&gt; ${escapeHTML(turn.command)}</span>`);
-    const inRange = turn.ordinal >= Math.max(active.start, 1);
-    if (!inRange || model.isSkipped(turn.ordinal)) {
-      lines.push('<span class="ts-skip">[SKIP]</span>');
+  sourceHost.textContent = '';
+  lines.forEach((line, index) => {
+    const row = document.createElement('span');
+    row.className = `ts-line ${kindClass[line.kind] ?? ''}`.trim();
+    row.appendChild(document.createTextNode(line.text));
+    if (line.del) {
+      const del = document.createElement('span');
+      del.className = 'ts-del';
+      del.textContent = '✕';
+      del.title = 'Delete this assertion';
+      const ref = line.del;
+      del.addEventListener('click', () => context.onDelete(ref));
+      row.appendChild(del);
     }
-    lines.push('');
-  }
-
-  source.innerHTML = lines.join('\n').replace(/\n$/, '');
+    sourceHost.appendChild(row);
+    if (index < lines.length - 1) sourceHost.appendChild(document.createTextNode('\n'));
+  });
 }
