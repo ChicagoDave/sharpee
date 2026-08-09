@@ -477,6 +477,89 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTFail("timed out waiting for \(what) in \(file.lastPathComponent)")
     }
 
+    // MARK: - AC-5: the D6 picker at a synthetic large-story digest
+
+    func testStatePickerFiltersGroupsFoldsAndAutoExpandsAtScale() async throws {
+        try await boot()
+        // A synthetic large digest: the fixture's next turn carries 60 facts.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var entities = [];
+          for (var i = 0; i < 30; i++) {
+            entities.push({ kind: 'npc', name: 'Guard ' + i, token: 'guard-' + i,
+                            location: { name: 'Post ' + i, token: 'post-' + i } });
+            entities.push({ kind: 'item', name: 'Relic ' + i, token: 'relic-' + i,
+                            location: { name: 'Vault ' + i, token: 'vault-' + i } });
+          }
+          window.webkit.messageHandlers.turnEvents.postMessage(JSON.stringify({
+            turn: 2, command: 'wait', output: 'Time passes.',
+            captures: [{ channel: 'room-name', values: ['Iron Gates'] }],
+            events: [], world: { entities: entities }, lineage: 1 }));
+          var tc = document.getElementById('text-content');
+          var p = document.createElement('p');
+          p.textContent = 'Time passes.';
+          p.setAttribute('data-turn', 2);
+          tc.appendChild(p);
+        })();
+        """)
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 3", "cards")
+
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'State…') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        try await waitFor("document.querySelectorAll('.ts-picker .ts-item').length === 60",
+                         "all 60 facts flat")
+
+        // Filter narrows the one list.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var filter = document.querySelector('.ts-picker-filter');
+          filter.value = 'relic 7';
+          filter.dispatchEvent(new Event('input'));
+        })();
+        """)
+        try await waitFor("document.querySelectorAll('.ts-picker .ts-item').length === 1",
+                         "filter narrows to the one hit")
+
+        // Grouped folds the SAME list into kind sections; folding hides rows.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          document.querySelector('.ts-picker-filter').value = '';
+          document.querySelector('.ts-picker-filter').dispatchEvent(new Event('input'));
+          document.querySelector('.ts-picker-group-toggle').click();
+        })();
+        """)
+        try await waitFor("document.querySelectorAll('.ts-picker-section').length === 2",
+                         "two kind sections")
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-picker-section').click();")
+        try await waitFor("document.querySelectorAll('.ts-picker .ts-item').length === 30",
+                         "a folded section hides its rows")
+
+        // A live filter auto-expands every fold — a hit never hides (D6).
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var filter = document.querySelector('.ts-picker-filter');
+          filter.value = 'guard 3';
+          filter.dispatchEvent(new Event('input'));
+        })();
+        """)
+        try await waitFor("""
+        (function () {
+          var items = document.querySelectorAll('.ts-picker .ts-item');
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].textContent.indexOf('Guard 3 —') !== -1) return true;
+          }
+          return false;
+        })()
+        """, "the folded group's hit is visible under a live filter")
+    }
+
     // MARK: - The restart fence
 
     func testRestartFenceClearsCardsAndSidecarTail() async throws {
