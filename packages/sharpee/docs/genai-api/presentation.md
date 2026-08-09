@@ -69,6 +69,17 @@ export declare class BrowserClient implements BrowserClientInterface {
      * `sharpee test`. Reset at the top of each executeCommand().
      */
     private turnProseText;
+    /**
+     * This turn's channel packet payloads, structure preserved, for the play
+     * feed's captures (ADR-305 D4). Reset with `turnProseText`.
+     */
+    private turnCapturePayloads;
+    /**
+     * This turn's emitted semantic-event types, in emission order, for the
+     * play feed's `events` field (ADR-306 Phase 2 — the Event picker's
+     * source). Reset with `turnProseText`; empty when the turn threw.
+     */
+    private turnEventTypes;
     private elements;
     /**
      * ADR-165 channel renderer host. Constructed in `connectEngine()`
@@ -159,6 +170,26 @@ export declare class BrowserClient implements BrowserClientInterface {
      */
     start(): Promise<void>;
     /**
+     * Open the play feed's bracket around one turn (ADR-305 D4): reset the
+     * per-turn accumulators and mark where this turn's rendering will start in
+     * the prose slot. Returns that mark for `finishPlayTurn`.
+     */
+    private beginPlayTurn;
+    /**
+     * Close the play feed's bracket (ADR-305 D4): claim the turn's ordinal,
+     * stamp `data-turn` on every element the turn rendered — the anchor is a
+     * published client contract, stamped in AND outside the IDE — and post the
+     * feed record (a no-op outside a WKWebView with the bridge).
+     *
+     * The record's output is the ENGINE's text, not the DOM's: packets composed
+     * and joined the same way the headless harness does (`packetProseText` per
+     * packet, then '\n' across packets — `@sharpee/bootstrap`'s outputBuffer
+     * rule). Reading it back off the DOM instead loses the tight/loose
+     * distinction, so an `all-emitted-text` assertion written from play would
+     * never match headless replay (ADR-282 D2 and its 2026-07-28 amendment).
+     */
+    private finishPlayTurn;
+    /**
      * Execute a command
      */
     executeCommand(command: string): Promise<void>;
@@ -192,6 +223,14 @@ export declare class BrowserClient implements BrowserClientInterface {
      */
     private runRestoreDialog;
     private handleRestart;
+    /**
+     * Reset this story's client-side state (issue 248): after an explicit
+     * confirmation that names the blast radius, delete every localStorage key
+     * under the story's storage prefix — saves index, save slots, autosave,
+     * theme preference — and reboot fresh. Prefix-scoped, deliberately: two
+     * stories on one origin never touch each other's keys.
+     */
+    private handleReset;
     private handleQuit;
     displayText(text: string): void;
     displayCommand(command: string): void;
@@ -424,6 +463,12 @@ export interface MenuHandlers {
     onSave: () => Promise<void>;
     onRestore: () => Promise<void>;
     onRestart: () => Promise<void>;
+    /**
+     * Wipe every stored key under the story's storage prefix and reboot fresh
+     * (issue 248): saves, autosave, theme preference — this story's data only,
+     * never another story's on the same origin.
+     */
+    onReset: () => Promise<void>;
     onQuit: () => void;
     onThemeSelect: (theme: string) => void;
     onHelp: () => void;
@@ -501,6 +546,35 @@ export declare class ThemeManager {
      */
     saveTheme(theme: string): void;
     /**
+     * Render the theme menu's items from the wired theme list.
+     *
+     * The menu is DATA — `classic` (the `:root` baseline, ADR-188) plus
+     * whatever themes the build wired — so the manager that owns the data
+     * renders it (proposal phase-6-fallout P-4). Replaces the build-time
+     * `#theme-menu` regex rewrite in devkit's `injectThemes`, which produced
+     * markup for a list this class already held.
+     *
+     * The list PREFERS the page's `#sharpee-wired-themes` JSON (what the build
+     * actually wired — the authoritative fact) and falls back to this
+     * manager's configured themes (the entry's list): on the TS path the entry
+     * constant is scaffold-time-static and can go stale against
+     * `sharpee.themes`, and a menu drawn from it alone would silently drop an
+     * author theme (ADR-188 AC-5). Safe on custom pages that omit the menu
+     * (ADR-253): no element, no work.
+     */
+    renderMenu(): void;
+    /**
+     * Put the page back on the default theme WITHOUT persisting it.
+     *
+     * Reset's companion (issue 248): the wipe just deleted the saved theme
+     * key, and `applyTheme` would write one straight back. The page must
+     * simply look the way a first visit does — attribute and checkmarks
+     * only, storage untouched.
+     */
+    resetToDefault(): void;
+    /** The page-declared wired list when present and readable, else the configured one. */
+    private wiredThemes;
+    /**
      * Apply a theme to the document and update menu checkmarks
      */
     applyTheme(theme: string): void;
@@ -529,7 +603,7 @@ export declare class ThemeManager {
  * persistence and exposes a small UI surface (save index, autosave,
  * transcript decompression).
  *
- * Public interface: {@link SaveManager} class.
+ * Public interface: {@link SaveManager} class, {@link wipeStoryStorage}.
  *
  * Bounded context: `@sharpee/platform-browser` host. The host registers
  * `ISaveRestoreHooks` with the engine; on save the engine produces a
@@ -557,6 +631,20 @@ export interface SaveManagerConfig {
     /** Callback when state changes (for UI updates) */
     onStateChange?: () => void;
 }
+/**
+ * Delete every localStorage key under one story's storage prefix — saves
+ * index, save slots, autosave, theme preference, all of it — and return the
+ * removed keys. The Reset menu action (issue 248) behind a confirmation.
+ *
+ * Prefix-scoped, deliberately: two stories on one origin never touch each
+ * other's keys. Keys are collected before removal because deleting while
+ * iterating shifts localStorage indices (the same hazard `listSaves`
+ * documents).
+ *
+ * @param storagePrefix the story's key prefix (e.g. "fernhill-")
+ * @returns the keys that were removed, for feedback and for tests
+ */
+export declare function wipeStoryStorage(storagePrefix: string): string[];
 export declare class SaveManager {
     private storagePrefix;
     private indexKey;
@@ -788,31 +876,187 @@ export declare class InputManager {
 
 ```typescript
 /**
- * turn-events.ts — the IDE recording bridge (ADR-277 D5).
+ * turn-events.ts — the IDE play-session turn feed (ADR-277 D5, rebuilt for
+ * ADR-305 D4).
  *
- * Purpose: after a turn's response has fully rendered, post
- *   `{ command, response }` to the embedding WKWebView's `turnEvents`
- *   message handler so the Sharpee IDE can record play into a draft
- *   `.transcript`. This ships in the same client bundle authors' players
- *   use, so outside the IDE (no `window.webkit`) it MUST be a true no-op —
- *   never a throw, never a behavior difference.
- * Public interface: emitTurnEvent(command, response).
+ * Purpose: after a turn fully renders, post its record — monotonic ordinal,
+ * typed command, engine-composed output, structured channel captures — to the
+ * embedding WKWebView's `turnEvents` message handler, so the Sharpee IDE can
+ * promote played turns into a `.transcript` (ADR-305). A restart posts a
+ * fence record instead: everything before it is dead lineage (ADR-305 D3).
+ * This ships in the same client bundle authors' players use, so outside the
+ * IDE (no `window.webkit`) every export MUST be a true no-op — never a
+ * throw, never a behavior difference.
+ *
+ * The ordinal counter is module state, not client state: an in-page restart
+ * boots a NEW BrowserClient but the anchors' one invariant is page-lifetime
+ * uniqueness (ADR-305 D4), so the counter must never reset while the page
+ * lives.
+ *
+ * Lineage (ADR-306 Phase 2): every record names the lineage it belongs to.
+ * A lineage is the run of turns between restart fences; the id starts at 1
+ * (or at `__SHARPEE_PLAY_LINEAGE__.id` when the embedder injected one — the
+ * IDE's branch-replay boot, the sibling of `__SHARPEE_PLAY_SEED__`) and
+ * increments at each fence. Boot-lineage records carry `parentLineage` /
+ * `forkOrdinal` when the boot global names them; post-fence lineages never
+ * do — a restart is a fence, not a fork (ADR-305 D3).
+ *
+ * Public interface: nextPlayTurnOrdinal(), currentPlayLineage(),
+ * turnEventsBridgeActive(), emitTurnEvent(payload), emitRestartEvent(),
+ * capturesOf(payloads); types TurnCapture, TurnEventPayload,
+ * RestartEventPayload, TurnEventRecord.
  * Owner context: @sharpee/platform-browser (browser player client).
  */
-/** One recorded turn on the wire: the typed command and its rendered response. */
-export interface TurnEventPayload {
-    command: string;
-    response: string;
+/** One channel's captured values for a single turn, structure preserved. */
+export interface TurnCapture {
+    channel: string;
+    /**
+     * The channel's values as the turn packet carried them — structured, never
+     * flattened here: flattening to assertion fragments is the synthesis
+     * module's job, the one implementation (ADR-305 D5).
+     */
+    values: unknown[];
+}
+/** One entity as the world digest names it: display name + the single
+ *  whitespace-free token a `[STATE:]` expression resolves back to it. */
+export interface DigestEntityRef {
+    name: string;
+    token: string;
+}
+/** One non-room, non-player entity and where it sits (the unseen slice). */
+export interface WorldDigestEntity {
+    kind: 'npc' | 'item';
+    name: string;
+    token: string;
+    location: DigestEntityRef;
+}
+/** One state machine's current state (plugin-state-machine registry). */
+export interface WorldDigestMachine {
+    id: string;
+    state: string;
 }
 /**
- * Posts a completed turn to the IDE's `turnEvents` bridge when embedded in a
- * WKWebView that registered one; silently does nothing otherwise.
- *
- * @param command  The player's typed command (no `> ` prefix).
- * @param response The turn's rendered response text (paragraphs joined with
- *                 blank lines), as displayed.
+ * The world digest (ADR-306 Phase 2): the slice the prose does not show —
+ * the State picker's source (design §5). Never includes `player.location`.
  */
-export declare function emitTurnEvent(command: string, response: string): void;
+export interface WorldDigest {
+    entities: WorldDigestEntity[];
+    score?: number;
+    machines: WorldDigestMachine[];
+}
+/** What a caller supplies per turn; the lineage fields are stamped here. */
+export interface TurnEventPayload {
+    /** Monotonic 1-based ordinal, matching the turn's `data-turn` anchors. */
+    turn: number;
+    /** The player's typed command (no `> ` prefix). */
+    command: string;
+    /**
+     * The turn's composed prose — the ENGINE's text, packets joined the way
+     * the headless harness joins them (`packetProseText` per packet, then
+     * '\n' across packets — `@sharpee/bootstrap`'s outputBuffer rule), so an
+     * `all-emitted-text` block written from play matches replay.
+     */
+    output: string;
+    /** The turn's channel captures. */
+    captures: TurnCapture[];
+    /** The turn's emitted semantic-event types, in emission order. */
+    events: string[];
+    /** The world digest after this turn; absent when the bridge is inactive
+     *  (published players never pay for it — see turnEventsBridgeActive). */
+    world?: WorldDigest;
+}
+/** The record as posted: the payload plus the lineage stamp. */
+export interface TurnEventRecord extends TurnEventPayload {
+    /** The lineage this turn belongs to (fence-delimited, page-lifetime id). */
+    lineage: number;
+    /** Boot-lineage records only: the lineage this one forked from. */
+    parentLineage?: number;
+    /** Boot-lineage records only: which sibling at the fork point this is. */
+    forkOrdinal?: number;
+}
+/** A restart fence on the wire (ADR-305 D3): `turn` is the first ordinal of
+ *  the NEW lineage, `lineage` its id (ADR-306 Phase 2). */
+export interface RestartEventPayload {
+    restart: true;
+    turn: number;
+    lineage: number;
+}
+/** The lineage id the next record will carry. */
+export declare function currentPlayLineage(): number;
+/**
+ * Whether the IDE's `turnEvents` bridge is present. Callers use this to skip
+ * work that only feeds the bridge (the world digest) in published players.
+ */
+export declare function turnEventsBridgeActive(): boolean;
+/**
+ * Claim the next turn ordinal. Monotonic and 1-based for the page's lifetime;
+ * the same value goes on the turn's `data-turn` anchors and its feed record.
+ */
+export declare function nextPlayTurnOrdinal(): number;
+/**
+ * Merge the turn's packet payloads into per-channel capture lists, structure
+ * preserved. Scalar payload values wrap into one-element lists; list payloads
+ * pass through, so downstream consumers always see `unknown[]` per channel.
+ */
+export declare function capturesOf(payloads: ReadonlyArray<Readonly<Record<string, unknown>>>): TurnCapture[];
+/**
+ * Posts a completed turn's record to the IDE's `turnEvents` bridge when
+ * embedded in a WKWebView that registered one; silently does nothing
+ * otherwise. Stamps the lineage fields centrally so callers never manage
+ * lineage state.
+ */
+export declare function emitTurnEvent(payload: TurnEventPayload): void;
+/**
+ * Posts a restart fence (ADR-305 D3) naming the first ordinal AND the
+ * lineage id of the new lineage (ADR-306 Phase 2). Call when an in-page
+ * reboot begins; a full page reload needs no event — the embedder sees the
+ * navigation itself.
+ */
+export declare function emitRestartEvent(): void;
+```
+
+### world-digest
+
+```typescript
+/**
+ * world-digest.ts — the play feed's world digest (ADR-306 Phase 2).
+ *
+ * Purpose: after a turn, capture the slice of the world the prose does not
+ * show — non-room, non-player entity locations, the score, and each state
+ * machine's current state — as the source the testing surface's State picker
+ * lists from (design §5: pickers list what the world actually holds, never
+ * free text). Built only when the IDE's `turnEvents` bridge is active
+ * (turnEventsBridgeActive), so published players never pay the enumeration.
+ *
+ * Token rule: each entity ref carries the single whitespace-free token the
+ * `[STATE:]` evaluator's `findEntity` resolves back to that entity — an alias
+ * when one qualifies, the identity/entity name when it is a single token,
+ * else the id (which always resolves). This MIRRORS @sharpee/branch-tester's
+ * `worldEntityRef` (runner.ts) — the browser bundle cannot import the Node
+ * harness, so the rule is a deliberately narrowed mirror pinned by tests on
+ * BOTH sides (the ADR-301 A1 pattern); change one and you must change both.
+ *
+ * Public interface: buildWorldDigest(world, engine).
+ * Owner context: @sharpee/platform-browser (browser player client).
+ */
+import type { WorldModel } from '@sharpee/world-model';
+import type { WorldDigest } from './turn-events.js';
+/** The slice of GameEngine this module reads — plugin lookup only. */
+interface PluginHost {
+    getPluginRegistry?: () => {
+        getById(id: string): unknown;
+    } | undefined;
+}
+/**
+ * Build the world digest for one completed turn.
+ *
+ * Every field degrades to absence, never a throw: a world without a scoring
+ * capability has no `score`, an engine without the state-machine plugin has
+ * empty `machines`, an entity whose location cannot be resolved is skipped.
+ * The digest is observation — play must never break on it.
+ */
+export declare function buildWorldDigest(world: WorldModel, engine: PluginHost): WorldDigest;
+export {};
 ```
 
 ### display/TextDisplay

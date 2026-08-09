@@ -25,7 +25,7 @@ class HelpersBoundaryStory {
     this.config = {
       id: 'helpers-boundary-fixture',
       title: 'Helpers Boundary Fixture',
-      author: 'Sharpee',
+      authors: ['Sharpee'],
       version: '1.0.0',
       description: 'External story exercising @sharpee/helpers across the bundle boundary.',
     };

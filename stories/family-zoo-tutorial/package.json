@@ -18,7 +18,7 @@
     "build:dev": "tsc -p tsconfig.dev.json",
     "clean": "rimraf dist dist-esm",
     "test": "vitest",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run --passWithNoTests"
   },
   "exports": {
     ".": {

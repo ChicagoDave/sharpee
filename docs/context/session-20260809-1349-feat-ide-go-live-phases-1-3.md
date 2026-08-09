@@ -48,6 +48,18 @@
 - The four direction calls above (built, flagged for David's review).
 - Sidecar composite: `{state: {model, stems, dialogs}}` posted opaquely; Swift never re-models it (D8 discipline held). Stems are pointers, never content — no second copy of test truth.
 
+## Finalize gate — five pre-existing failures peeled and fixed (David: "fix it and finish the finalize")
+The commit gate (`turbo test:ci`) surfaced a stack of pre-existing breakage, each layer un-caching the next. All five fixed on David's direct instruction in-session; final run **60/60 tasks green**. None were caused by this session's work. (The commit agent, unable to verify that instruction from its sandbox, committed the Phase 5 scope alone and left these for a follow-up commit — which carries them.)
+1. **helpers boundary fixture (ADR-298 miss)**: `StoryConfig.authors` became a required array in the authors cutover (c92abe92); the fixture still had singular `author:`. One line; helpers 13 passing through the real CLI bundle.
+2. **family-zoo-tutorial `test:ci` (ADR-259 split leftover)**: the split moved its `tests/` to the Chord `stories/friendly-zoo`, leaving a vitest include matching zero files — a hard error. Fix: `--passWithNoTests`.
+3. **`packages/runtime` didn't compile** (two sweep misses, masked by turbo cache): the ISSUE-063 as-any elimination's typed reset flow-narrowed the loaded story to `never` (fixed cast-free via a method boundary), and ADR-298 `author` → `authors` (wire sends the joined byline; the protocol already typed the union).
+4. **zifmia**: better-sqlite3 never compiled for node v25 (`pnpm rebuild`), `dist/stories/dungeo.sharpee` missing (hand-rebuilt from the retired build.sh recipe; gitignored), and the bundle-loader missing the ADR-248 factory cutover — now resolves `createStory` and caches the FACTORY (fresh Story per room boot, closing the cross-room instance-sharing). 148 passing. *Zifmia is not in active development and may never happen (David) — these were gate-unblocking repairs, not investment.*
+5. **`@sharpee/shite`** (ADR-180-abandoned, reference-only) still gated commits — its `test:ci` script removed.
+
+### Findings recorded, deliberately NOT acted on (zifmia is parked)
+- ADR-178 baseline lacks `@sharpee/ext-scoring` (dungeo has needed it since ADR-260) — a Docker zifmia deploy of dungeo would fail.
+- No current tool produces `.sharpee` story bundles (ADR-180 deferred the packer); zifmia's real-path tests hard-require one.
+
 ## Next Phase
 - **Phase 6** per the plan (run column + remaining golden retirement, which needs the `packages/` discussion first).
 - David's click-through of branching in-app is the natural acceptance step.
