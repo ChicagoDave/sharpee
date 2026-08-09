@@ -43,7 +43,6 @@ interface CliOptions {
   all: boolean;
   outputDir: string | null;
   play: boolean;
-  bless: boolean;
   coverage: boolean;
 }
 
@@ -60,7 +59,6 @@ function parseArgs(args: string[]): CliOptions {
     all: false,
     outputDir: null,
     play: false,
-    bless: false,
     coverage: false
   };
 
@@ -87,8 +85,6 @@ function parseArgs(args: string[]): CliOptions {
           'Delete the flag.'
       );
       process.exit(2);
-    } else if (arg === '--bless') {
-      options.bless = true;
     } else if (arg === '--coverage') {
       options.coverage = true;
     } else if (arg === '--play' || arg === '-p') {
@@ -138,7 +134,6 @@ Arguments:
 Options:
   -p, --play             Interactive play mode (REPL)
   -a, --all              Run all transcripts in the story's tests/ directory
-  --bless                Create/overwrite golden recordings (ADR-294 D1)
   --coverage             Print the full per-point outcome-class coverage
                          breakdown (ADR-293 D15); the one-line summary always
                          prints, and --output-dir also writes the report JSON
@@ -450,8 +445,6 @@ async function main(): Promise<void> {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure,
-      bless: options.bless,
-      storyName,
       coverage: coverageTracker
     });
   } catch (error) {

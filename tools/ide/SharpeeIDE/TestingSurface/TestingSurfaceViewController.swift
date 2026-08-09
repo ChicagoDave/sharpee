@@ -10,13 +10,14 @@
 // The web view uses a non-persistent store — a testing session never touches
 // the Play pane's origin storage, and every load is a guaranteed fresh boot.
 // Public interface: load(bundleDirectory:), isLoaded, testsDirectory,
-// policy, evaluateInSurface(_:), showPlaceholder(_:), sessionStore.
+// storyFile, saveDocuments, policy, evaluateInSurface(_:),
+// showPlaceholder(_:), sessionStore.
 // Owner context: tools/ide — TestingSurface.
 
 import AppKit
 import WebKit
 
-final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandler {
+final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandler, TestRunnerDelegate {
 
     private static let turnEventsHandlerName = "turnEvents"
     private static let stateHandlerName = "testingSurface"
@@ -108,6 +109,23 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// (design §4). Set by the opener before load; nil disables writes.
     var testsDirectory: URL?
 
+    /// The story file the run column's runs execute against (design §7).
+    /// Set by the opener before load; nil disables the Run button's work.
+    var storyFile: URL?
+
+    /// Saves the IDE's open documents before a run — the run reads DISK.
+    /// Returns false to abort the run. Set by the opener; nil = nothing to save.
+    var saveDocuments: (() -> Bool)?
+
+    /// The run column's child `sharpee test --tree --json` process (§7).
+    private let testRunner = TestRunner()
+
+    /// Overrides run-executable resolution — the real-path suite injects the
+    /// repo's devkit CLI, because a temp-dir story resolves neither a
+    /// workspace shim nor a PATH install. Production leaves it nil and
+    /// resolves exactly as the Testing tab does.
+    var sharpeeExecutableOverride: URL?
+
     /// The story's `auto-assertion:` policy raw value, read from the story
     /// header at open; injected for in-page synthesis (6e).
     var policy: String?
@@ -130,6 +148,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         self.sessionStore = sessionStore
         self.resourcesURL = resourcesURL
         super.init(nibName: nil, bundle: nil)
+        testRunner.delegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -337,6 +356,79 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         }
     }
 
+    // MARK: - The run column (design §7)
+
+    /// Runs the project's whole tree — the same `sharpee test --tree --json`
+    /// the Testing tab runs — and relays the stream into the page, which owns
+    /// decoding (DEVARCH 8b). One run at a time; the page's button already
+    /// guards, and this guard makes the property true rather than assumed.
+    private func startTestRun() {
+        guard !testRunner.isRunning else { return }
+        guard let storyFile else {
+            relayRunExit(ok: false, note: "No story file is wired to the surface — reopen the window.")
+            return
+        }
+        // The run reads disk; unsaved story edits would silently test stale
+        // source (the Testing tab's rule, same reason).
+        guard saveDocuments?() != false else {
+            relayRunExit(ok: false, note: "A document could not be saved, so the run did not start.")
+            return
+        }
+        if let executable = sharpeeExecutableOverride {
+            // Through `env node`, not exec'd directly: a freshly compiled
+            // dist/cli.js carries no execute bit (the tab's real-path suite
+            // spawns it the same way).
+            testRunner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
+                             arguments: ["node", executable.path]
+                                + TestRunner.treeRunArguments(storyPath: storyFile.path),
+                             workingDirectory: storyFile.deletingLastPathComponent(),
+                             environment: ShellEnvironment.buildEnvironment())
+        } else {
+            testRunner.runTests(storyFile: storyFile)
+        }
+    }
+
+    /// Forwards one raw NDJSON line into the page's run column.
+    private func relayRunLine(_ line: String) {
+        guard let data = try? JSONSerialization.data(withJSONObject: line, options: .fragmentsAllowed),
+              let literal = String(data: data, encoding: .utf8) else { return }
+        let script = "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runLine && window.__sharpeeTestingSurface.runLine(\(literal));"
+        Task { _ = try? await evaluateInSurface(script) }
+    }
+
+    private func relayRunExit(ok: Bool, note: String? = nil) {
+        var arguments = ok ? "true" : "false"
+        if let note,
+           let data = try? JSONSerialization.data(withJSONObject: note, options: .fragmentsAllowed),
+           let literal = String(data: data, encoding: .utf8) {
+            arguments += ", \(literal)"
+        }
+        let script = "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runExit && window.__sharpeeTestingSurface.runExit(\(arguments));"
+        Task { _ = try? await evaluateInSurface(script) }
+    }
+
+    // MARK: - TestRunnerDelegate (the run column's stream)
+
+    func runner(_ runner: TestRunner, didReceiveLine line: String) {
+        relayRunLine(line)
+    }
+
+    func runner(_ runner: TestRunner, didEmitStderr text: String) {
+        // Diagnostics stay out of the column; a stream-less death is caught
+        // by didExit below, with the exit code.
+    }
+
+    func runner(_ runner: TestRunner, didChangeState state: TestRunner.State) {
+        // The page drives its own button state off the stream and runExit.
+    }
+
+    func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {
+        relayRunExit(ok: result.state == .passed,
+                     note: result.state == .passed
+                        ? nil
+                        : "The run exited \(result.exitCode) — see the Testing tab for the full report.")
+    }
+
     // MARK: - WKScriptMessageHandler
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -379,6 +471,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             if let remove = object["remove"] as? [String: Any],
                let name = remove["name"] as? String {
                 performRemove(name: name)
+            }
+            if object["run"] as? Bool == true {
+                startTestRun()
             }
         case Self.consoleHandlerName:
             if let text = message.body as? String {

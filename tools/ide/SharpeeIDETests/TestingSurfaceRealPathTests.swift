@@ -1095,6 +1095,105 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertTrue(restored, "switching back must restore the main lineage's cards")
     }
 
+    // MARK: - Phase 6 — the run column (design §7)
+
+    /// The Run button, end to end and real-path: a click in the page posts
+    /// over the bridge, Swift spawns the REAL `sharpee test --tree --json`
+    /// over a real story project, the NDJSON stream relays back into the
+    /// page, and the column fills — a PASS row, a FAIL row carrying the
+    /// first failure on one line (the wire's new `failure` message), and
+    /// the tally. The failing transcript also proves the run reads the
+    /// files on DISK, not the session (no play happened in this session).
+    func testRunButtonRunsTheRealTreeAndTheColumnFillsWithRowsAndTally() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let story = """
+        story
+          title: Mini
+          authors: T
+          id: mini
+          story-version: 0.0.1
+          ifid: CF7091CC-6182-43A4-8FE0-516273849FA0
+
+        create the Den
+          a room
+
+          A small square den.
+
+        create the brass lamp
+          in the Den
+
+          It gleams dully.
+
+        create the player
+          starts in the Den
+
+          You.
+
+        """
+        try Data(story.utf8).write(to: tmp.appendingPathComponent("mini.story"))
+        let testsDir = tmp.appendingPathComponent("tests", isDirectory: true)
+        try FileManager.default.createDirectory(at: testsDir, withIntermediateDirectories: true)
+        try Data("""
+        title: den
+        ---
+
+        > look
+        [OK: contains "square den"]
+
+        """.utf8).write(to: testsDir.appendingPathComponent("den.transcript"))
+        try Data("""
+        title: lamp
+        continues: den
+        ---
+
+        > take lamp
+        [OK: contains "no such text anywhere"]
+
+        """.utf8).write(to: testsDir.appendingPathComponent("den-take-lamp-1.transcript"))
+
+        try await boot()
+        surface.storyFile = tmp.appendingPathComponent("mini.story")
+        // A temp-dir story resolves no workspace shim and no PATH install —
+        // inject the repo's real CLI, exactly as the tab's real-path suite
+        // drives the same TestRunner.
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+
+        _ = try await surface.evaluateInSurface(
+            "document.getElementById('ts-run-btn').click();")
+
+        // A real compile + tree run: generous, like the tab's real-CLI waits.
+        for _ in 0..<1200 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        let tally = try await surface.evaluateInSurface(
+            "(document.querySelector('.ts-run-tally') || {}).textContent || ''") as? String
+        XCTAssertEqual(tally, "1 passing, 1 failures",
+                       "the tree ran both files: den passed, den-take-lamp-1 failed")
+
+        let rows = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-run-row')).map(function (row) {
+          return row.querySelector('.ts-badge').textContent + '|' +
+                 row.querySelector('.ts-name').textContent + '|' +
+                 row.querySelector('.ts-why').textContent;
+        }).join('\\n')
+        """) as? String
+        let lines = (rows ?? "").split(separator: "\n").map(String.init)
+        XCTAssertEqual(lines.count, 2, "one row per transcript, branches included; got: \(rows ?? "")")
+        XCTAssertEqual(lines.first, "PASS|den|1 turn")
+        XCTAssertTrue(lines.last?.hasPrefix("FAIL|den-take-lamp-1|turn ") == true,
+                      "the FAIL row leads with the failing turn; got: \(lines.last ?? "")")
+        XCTAssertTrue(lines.last?.contains("does not contain \"no such text anywhere\"") == true,
+                      "the first failure rides the row, verbatim from the runner; got: \(lines.last ?? "")")
+
+        let buttonLabel = try await surface.evaluateInSurface(
+            "document.getElementById('ts-run-btn').textContent") as? String
+        XCTAssertEqual(buttonLabel, "Run", "the button re-arms when the run ends")
+    }
+
     // MARK: - Placeholder states
 
     func testABundleWithoutTheTestingPageNamesTheFix() async throws {

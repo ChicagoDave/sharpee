@@ -259,7 +259,6 @@ body {
   font-family: var(--mono); font-size: 9.5px; color: var(--fg-faint);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.docmeta .v.gold { color: var(--warn); }
 .turn:hover { background: var(--sel-soft); }
 .turn.bad { background: var(--fail-wash); }
 .turn .ln {
@@ -426,11 +425,6 @@ body {
 .filebar .trash:hover { border-color: var(--fail); color: var(--fail); }
 /* Armed, so the second click is visibly the consequential one. */
 .filebar .trash.armed { color: var(--on-accent); background: var(--fail); border-color: var(--fail); font-weight: 600; }
-.filebar .recordgold:hover:not(:disabled) { border-color: var(--warn); color: var(--warn); }
-.filebar .recordgold:disabled { opacity: .45; cursor: default; }
-/* Armed in the golden tier's own color — consequential, but not destructive-red:
-   the old recording is replaced, not work lost. */
-.filebar .recordgold.armed { color: var(--editor); background: var(--warn); border-color: var(--warn); font-weight: 600; }
 
 /* ── document: growing a transcript ───────────────────────── */
 .addcmd {
@@ -507,36 +501,6 @@ body {
   font-size: 10.5px; color: var(--fg-dim);
 }
 
-/* ── document: a re-record's review (R6) ──────────────────── */
-/* A changed turn carries both sides; the flag is quiet, like the ender's —
-   nothing failed, something moved, and the bar below is the decision. */
-.turn.rerecorded { border-left: 2px solid var(--warn); }
-.turn .recordedside { grid-column: 2 / -1; margin: 1px 0 6px; }
-.turn .recordedlabel {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
-  color: var(--warn); margin-bottom: 1px;
-}
-.turn .recorded {
-  margin: 0; font-family: var(--mono); font-size: 10px; color: var(--fg-dim);
-  white-space: pre-wrap; overflow-wrap: anywhere;
-  border-left: 2px solid var(--border); padding-left: 8px;
-}
-.reviewbar {
-  flex: none; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  padding: 7px 14px; background: var(--project); border-top: 1px solid var(--warn);
-  font-size: 10.5px; color: var(--fg-dim);
-}
-.reviewbar .said { flex: 1; min-width: 0; }
-.reviewbar .keepnew {
-  flex: none; font: inherit; font-size: 11px; font-weight: 600;
-  color: var(--on-accent); background: var(--accent);
-  border: 1px solid var(--accent); border-radius: var(--radius); padding: 2px 10px; cursor: pointer;
-}
-.reviewbar .restoreold {
-  flex: none; font: inherit; font-size: 11px; color: var(--fg); background: var(--editor);
-  border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 10px; cursor: pointer;
-}
-.reviewbar .restoreold:hover { border-color: var(--warn); color: var(--warn); }
 .filebar .branchinput:disabled { opacity: .6; }
 .filebar .branchgo:disabled { opacity: .5; cursor: default; }
 

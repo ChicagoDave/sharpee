@@ -23,8 +23,6 @@ import {
   applyEvent,
   createModel,
   descendantCount,
-  dismissRecordingChanges,
-  recordingChanges,
   reparentCandidates,
   storyEnd,
   STORY_OVER_ERROR,
@@ -100,6 +98,22 @@ describe('the run-event fold', () => {
     expect(node.passed).toBe(1);
     expect(node.duration).toBe(7);
     expect(model.running).toBeNull();
+  });
+
+  it('folds a failed command\'s failure message onto its turn, and only then', () => {
+    // The one-line "why" the wire carries for an assertion mismatch — the
+    // detail pane renders it, since an ordinary failure sets no `error`.
+    const model = fold([
+      start(ROOT),
+      command(ROOT, { line: 4, input: 'east', passed: false,
+                      failure: 'Output does not contain "Boiler Shed"' }),
+      command(ROOT, { line: 6, input: 'look' }),
+      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
+    ]);
+
+    const turns = model.nodes.get(ROOT)!.turns;
+    expect(turns[0].failure).toBe('Output does not contain "Boiler Shed"');
+    expect(turns[1].failure).toBeUndefined();
   });
 
   it('builds parentage from the wire and keeps a node under one parent across executions', () => {
@@ -422,58 +436,6 @@ describe('reparentCandidates', () => {
   });
 });
 
-// R6: a re-record is a review. A PASSING turn carrying a diff is the record
-// tier's signature — a replay either matches (no diff) or FAILS at its first
-// divergence — so the review needs no run-mode flag to recognize itself.
-describe('recordingChanges', () => {
-  const DIFF = { recorded: ['You east.'], actual: ['A wall bars the way.'] };
-
-  it('collects passing turns that changed from the previous recording, and only those', () => {
-    const model = fold([
-      start(ROOT),
-      command(ROOT, { input: 'north' }),
-      command(ROOT, { line: 6, input: 'east', diff: DIFF }),
-      command(ROOT, { line: 8, input: 'look', passed: false, diff: DIFF, error: 'diverged' }),
-      end(ROOT, { status: 'failed', passed: 2, failed: 1 }),
-    ]);
-    const node = model.nodes.get(ROOT)!;
-    // The failed turn's diff is a replay divergence — a failure to show, not a
-    // review to close — and the unchanged turn has nothing to say.
-    expect(recordingChanges(node).map((turn) => turn.input)).toEqual(['east']);
-    expect(node.turns[1].diff).toEqual(DIFF);
-  });
-
-  it('kept separate from world snapshots — a diff review and a snapshot coexist on one turn', () => {
-    const world = { location: { name: 'Hall', token: 'hall' }, inventory: [] };
-    const model = fold([
-      start(ROOT),
-      command(ROOT, { input: 'east', diff: DIFF, world }),
-      end(ROOT, { status: 'passed', passed: 1 }),
-    ]);
-    const turn = model.nodes.get(ROOT)!.turns[0];
-    expect(turn.diff).toEqual(DIFF);
-    expect(turn.world).toEqual(world);
-  });
-
-  it('dismissing the review drops every diff, both kinds, and is idempotent', () => {
-    const model = fold([
-      start(ROOT),
-      command(ROOT, { input: 'east', diff: DIFF }),
-      command(ROOT, { line: 6, input: 'look', passed: false, diff: DIFF, error: 'diverged' }),
-      end(ROOT, { status: 'failed', passed: 1, failed: 1 }),
-    ]);
-    const node = model.nodes.get(ROOT)!;
-    dismissRecordingChanges(node);
-    expect(node.turns.every((turn) => !('diff' in turn))).toBe(true);
-    expect(recordingChanges(node)).toEqual([]);
-    dismissRecordingChanges(node);
-    expect(recordingChanges(node)).toEqual([]);
-  });
-});
-
-// R3/R5: the world on the wire. The fold keeps the entry snapshot and each
-// turn's after-snapshot; `worldDelta` derives what a command changed, keyed
-// by TOKEN — the same key an emitted [STATE:] assertion resolves by.
 describe('world snapshots and their deltas', () => {
   const HALL = { name: 'Entrance Hall', token: 'hall' };
   const STUDY = { name: 'Study', token: 'study' };

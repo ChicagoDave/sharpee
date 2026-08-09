@@ -174,7 +174,7 @@ describe('the boundary and its exclusions hold', () => {
     const result = await runTranscript(transcript, roomEngine(undefined) as never, {});
 
     expect(result.status).toBe('failed');
-    expect(result.commands[0].error).toMatch(/has no assertion and no recording exists/);
+    expect(result.commands[0].error).toMatch(/has no assertion — add one, or declare an auto-assertion: policy/);
     expect(fs.readFileSync(filePath, 'utf-8')).toBe(before);
   });
 

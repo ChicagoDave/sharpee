@@ -145,16 +145,6 @@ export interface TreeObserver {
 /** Runner options plus the tree-shaped observation the flat runner has no concept of. */
 export type TreeRunnerOptions = RunnerOptions & {
   treeObserver?: TreeObserver;
-  /**
-   * Bless ONLY these nodes (absolute `.transcript` paths); every other node
-   * runs as it normally would. This is "record this file as a golden" as a
-   * tree operation — the file needs its ancestry executed to reach its
-   * state, so the tree runs, and just the named nodes record (ADR-294 D1).
-   * Ignored for a node's REPLAYED executions, which exist to rebuild a
-   * sibling's state, not to vouch for anything. Independent of `bless`,
-   * which records every node in the run.
-   */
-  blessFiles?: readonly string[];
 };
 
 /** The outcome of running one story's tree. */
@@ -315,18 +305,10 @@ export async function runTree(
       // the flat runner has no concept of. Forwarding `onTranscriptStart` too
       // would announce every execution twice, in two different shapes.
       observer: options.observer && { onCommandResult: options.observer.onCommandResult },
-      // D8: the node runs at its RESOLVED header, not its declared one. The
-      // golden tier needs the whole resolved config, not just the channels —
-      // a child's seed pin is its root's, and judging it by its declared
-      // (empty) config refused every child golden (ADR-294 D3 × ADR-302 D8).
+      // D8: the node runs at its RESOLVED header, not its declared one —
+      // a child's seed pin is its root's (ADR-294 D3 × ADR-302 D8).
       resolvedConfig: config,
       assembledChannels: options.assembledChannels ?? config.channels,
-      // A replay never records: it exists to rebuild a sibling's state, and
-      // its authored execution already wrote (or verified) the recording this
-      // run. Replaying an ancestor that HAS a recording verifies it instead —
-      // reproducibility checked for free.
-      bless: !replay && (options.bless === true ||
-        options.blessFiles?.includes(node.transcript.filePath) === true),
     });
     options.treeObserver?.onNodeEnd?.({ node, replayed: replay, result });
     const ran = result.commands?.length ?? 0;

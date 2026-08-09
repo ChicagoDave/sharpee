@@ -141,15 +141,6 @@ describe('world snapshots on command results (R3)', () => {
     expect('world' in crashed.commands[1]).toBe(false);
   });
 
-  it('golden record mode carries snapshots the same way', async () => {
-    const transcript = fixture('title: T\nstory: t\nseed: 42\n---\n> look\n\n> take key\n', 'golden.transcript');
-
-    const result = await runTranscript(transcript, worldEngine() as never, { bless: true, captureWorld: true });
-
-    expect(result.status).toBe('passed');
-    expect(result.commands[1].world?.inventory.map((i) => i.token)).toEqual(['summons', 'o02']);
-  });
-
   it('the tree runner hands each node its ENTRY world — after ancestry, before its own commands', async () => {
     // A root that takes the key, and a child continuing from it: the child's
     // entry snapshot must already carry the key (the ancestry ran), while the

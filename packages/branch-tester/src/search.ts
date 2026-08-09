@@ -92,7 +92,7 @@ const BUDGET_MULTIPLIER = 10;
  * override wins over a transcript `point-seed:` on the target itself.
  *
  * @param transcript - the parsed driver transcript (its commands walk the
- *   world to the firing; assertions and goldens are ignored)
+ *   world to the firing; assertions are ignored)
  * @param engine - the loaded game (the REAL engine — D12)
  * @param target - point name and desired declared class
  * @param options - `budget` overrides the 10 × class-count default

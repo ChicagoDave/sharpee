@@ -23,7 +23,6 @@ import { assertionsByCommandLine, parse, type SaveOutlook, type WrittenAssertion
 import type { Promotion } from './promote';
 import {
   ancestry,
-  recordingChanges,
   reparentCandidates,
   storyEnd,
   subtreeFailureCount,
@@ -132,19 +131,6 @@ export interface Surface {
    */
   confirmingTrash: boolean;
   /**
-   * Transcripts with a `.golden` recording on disk (ADR-294 D1) — the golden
-   * tier, where the recording IS the assertion. Reported by the host, because
-   * tier is a filesystem fact the page cannot observe itself.
-   */
-  goldens: Set<string>;
-  /**
-   * True once Record golden has been asked for and not yet confirmed.
-   *
-   * Same two-act shape as Trash: a first record starts a whole suite run, and
-   * a RE-record overwrites the baseline every future run is judged against.
-   */
-  confirmingRecord: boolean;
-  /**
    * What the last edit did, shown until the next one.
    *
    * A save changes the file the shown run came from, so every turn after the
@@ -221,14 +207,6 @@ export interface ViewActions {
   trashOpenDocument(): void;
   /** Arm or disarm the Trash confirmation. */
   setConfirmingTrash(confirming: boolean): void;
-  /** Record (or re-record) the open transcript's golden — runs the suite. */
-  recordGolden(): void;
-  /** Arm or disarm the Record golden confirmation. */
-  setConfirmingRecord(confirming: boolean): void;
-  /** Close a re-record review, keeping the recording already on disk (R6). */
-  keepNewRecording(): void;
-  /** Ask the host for the pre-re-record recording back (R6). */
-  restorePreviousRecording(): void;
   /**
    * Write a `[STATE: assertTrue, expression]` assertion onto the command at
    * `commandLine` (R3) — a world change the author clicked, already spelled
@@ -255,8 +233,6 @@ export function createSurface(): Surface {
     newBranchName: '',
     reparentChoice: '',
     confirmingTrash: false,
-    goldens: new Set(),
-    confirmingRecord: false,
     editNote: '',
     story: null,
     freshClaims: new Map(),
@@ -316,7 +292,7 @@ function turnRow(
 ): HTMLElement {
   const row = el(
     'div',
-    `turn${turn.passed ? '' : ' bad'}${terminal ? ` ${terminal}` : ''}${turn.passed && turn.diff ? ' rerecorded' : ''}`,
+    `turn${turn.passed ? '' : ' bad'}${terminal ? ` ${terminal}` : ''}`,
   );
   const line = el('button', 'ln', String(turn.line));
   line.type = 'button';
@@ -415,9 +391,15 @@ function turnRow(
   // silent turn is a finding, not a gap, and R10 is the case where treating one
   // as the other steers an author into pinning a bug.
   const captured = turn.actualOutput !== undefined;
-  if (turn.error || (captured && (showOutput || !turn.passed))) {
+  if (turn.error || turn.failure || (captured && (showOutput || !turn.passed))) {
     const detail = el('div', 'detail');
     if (turn.error) detail.append(el('div', 'err', turn.error));
+    // WHY the turn failed, in the runner's own words — an ordinary assertion
+    // mismatch sets no `error` (that is the throw channel), so without this
+    // line a failed turn showed its output with no explanation.
+    if (turn.failure && turn.failure !== turn.error) {
+      detail.append(el('div', 'err', turn.failure));
+    }
     if (captured) {
       if (turn.actualOutput) {
         const output = el('pre', 'actual', turn.actualOutput);
@@ -431,19 +413,6 @@ function turnRow(
       }
     }
     row.append(detail);
-  }
-
-  // The recording's side of a changed turn (R6). On a PASSING turn this is a
-  // re-record's before — the actual output above is the after. On a FAILED
-  // replay it is what the recording expects — the other half of the old-vs-new
-  // failure view. Verbatim from the runner; the page never re-diffs.
-  if (turn.diff && (showOutput || !turn.passed)) {
-    const prior = el('div', 'recordedside');
-    prior.append(
-      el('div', 'recordedlabel', turn.passed ? 'Previously recorded:' : 'The recording expects:'),
-    );
-    prior.append(el('pre', 'recorded', turn.diff.recorded.join('\n')));
-    row.append(prior);
   }
 
   // R3: what this command changed in the world, each change a click from
@@ -884,9 +853,6 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   cell('Ancestry', ancestry(model, node).map((a) => a.stem).join(' › '));
   cell('Children', node.children.length ? String(node.children.length) : 'leaf');
   if (node.replays) cell('Replays', `${node.replays}×`, 'replay');
-  // Tier is a filesystem fact the host reports (ADR-294 D2/D7): a recording
-  // exists, or the file's own assertions are what the run checks.
-  if (surface.goldens.has(node.file)) cell('Tier', 'golden — the recording is the assertion', 'gold');
   // R5: where this file STARTS from — its ancestry's world, legible without
   // holding the ancestors in your head. Shown only when the run captured it.
   if (node.entryWorld) {
@@ -976,13 +942,6 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
     );
   }
   view.append(turns);
-
-  // R6: a re-record is a review, not a blind overwrite. The changed cards
-  // above carry their before/after; this bar is the decision that closes it.
-  const changed = recordingChanges(node);
-  if (changed.length && surface.goldens.has(node.file)) {
-    view.append(reviewBar(changed.length, actions));
-  }
 
   const end = storyEnd(node);
   view.append(fileBar(model, node, surface, actions));
@@ -1098,31 +1057,6 @@ function fileBar(model: RunModel, node: TestNode, surface: Surface, actions: Vie
   });
   bar.append(pick, apply);
 
-  // Goldens (ADR-294 D1): record — or re-record — this file's recording, by
-  // running the suite with just this node blessed. Two acts, like Trash: a
-  // first record starts a whole run, and a re-record overwrites the baseline
-  // every future run is judged against. Disabled mid-run — recording IS a run,
-  // and two runs cannot share the engine.
-  const isGolden = surface.goldens.has(node.file);
-  if (surface.confirmingRecord) {
-    const confirm = el('button', 'recordgold armed', isGolden ? 'Overwrite the recording?' : 'Run and record?');
-    confirm.type = 'button';
-    confirm.addEventListener('click', () => actions.recordGolden());
-    const keep = el('button', 'recordcancel', 'Keep as is');
-    keep.type = 'button';
-    keep.addEventListener('click', () => actions.setConfirmingRecord(false));
-    bar.append(confirm, keep);
-  } else {
-    const ask = el('button', 'recordgold', isGolden ? 'Re-record golden…' : 'Record golden…');
-    ask.type = 'button';
-    ask.disabled = model.inFlight;
-    ask.title = isGolden
-      ? 'Run the suite and overwrite this file’s recording with what the story says now'
-      : 'Run the suite and record this file’s output as its golden — the recording becomes the assertion, and any per-command assertions in the file stop being evaluated (ADR-294 D2)';
-    ask.addEventListener('click', () => actions.setConfirmingRecord(true));
-    bar.append(ask);
-  }
-
   // Two acts, not one. The file still goes to the Trash rather than being
   // unlinked, so this is a speed bump rather than the only thing between an
   // author and a lost afternoon.
@@ -1177,34 +1111,6 @@ function editNote(surface: Surface, actions: ViewActions): HTMLElement {
  * ending, on the parent's document. Trimming any dead tail stays available on
  * the cards themselves (each dead turn keeps its ✕).
  */
-/**
- * Closes a re-record review (R6): the recording already on disk is the new
- * one, so keeping it writes nothing — the review was the chance to read what
- * changed. Restoring asks the host for the pre-run bytes back, and the review
- * stays open until the host confirms; the restored recording becomes the
- * baseline again, red until the story matches it.
- */
-function reviewBar(changed: number, actions: ViewActions): HTMLElement {
-  const bar = el('div', 'reviewbar');
-  bar.append(
-    el(
-      'span',
-      'said',
-      `${changed} turn${changed === 1 ? '' : 's'} changed from the previous recording — the changed cards show both sides.`,
-    ),
-  );
-  const keep = el('button', 'keepnew', 'Keep the new recording');
-  keep.type = 'button';
-  keep.addEventListener('click', () => actions.keepNewRecording());
-  const restore = el('button', 'restoreold', 'Restore the previous recording');
-  restore.type = 'button';
-  restore.title =
-    'Put back the recording as it was before this re-record — the next run replays against it, and stays red until the story matches it again';
-  restore.addEventListener('click', () => actions.restorePreviousRecording());
-  bar.append(keep, restore);
-  return bar;
-}
-
 function terminalBar(node: TestNode, end: StoryEnd): HTMLElement {
   const bar = el('div', 'terminalbar');
   const from = node.parent

@@ -143,25 +143,21 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, ending: 'abort' })).toBe(false);
   });
 
-  it('accepts a command-result with and without a golden diff, rejecting malformed line arrays', () => {
+  it('accepts a command-result with and without a failure message, rejecting non-string failures', () => {
     const base: CommandResultEvent = {
       ...envelope,
       type: 'command-result',
       file: '/t/a.transcript',
       line: 7,
       input: 'east',
-      passed: true,
+      passed: false,
       expectedFailure: false,
       skipped: false,
     };
-    expect(isCommandResultEvent({ ...base, diff: { recorded: ['You east.'], actual: ['A wall.'] } })).toBe(true);
-    expect(
-      isCommandResultEvent({ ...base, diff: { recorded: [], actual: ['A wall.'], channel: 'main' } }),
-    ).toBe(true);
+    expect(isCommandResultEvent({ ...base, failure: 'Output does not contain "boiler"' })).toBe(true);
     expect(isCommandResultEvent(base)).toBe(true);
-    expect(isCommandResultEvent({ ...base, diff: { recorded: ['ok'] } })).toBe(false);
-    expect(isCommandResultEvent({ ...base, diff: { recorded: ['ok'], actual: [7] } })).toBe(false);
-    expect(isCommandResultEvent({ ...base, diff: 'changed' })).toBe(false);
+    expect(isCommandResultEvent({ ...base, failure: 7 })).toBe(false);
+    expect(isCommandResultEvent({ ...base, failure: ['two', 'messages'] })).toBe(false);
   });
 
   it('accepts world snapshots on transcript-start and command-result, rejecting malformed ones', () => {

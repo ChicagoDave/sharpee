@@ -408,5 +408,12 @@ body.ts-active .sharpee-window { display: none; }
 .ts-run-row:last-child { border-bottom: none; }
 .ts-run-row .ts-name { font-size: 11.5px; font-weight: 700; }
 .ts-run-row .ts-badge { float: right; font-size: 10.5px; color: var(--ts-fg-faint); }
+.ts-run-row .ts-badge.ts-pass { color: var(--ts-assert); font-weight: 700; }
+.ts-run-row .ts-badge.ts-fail { color: var(--ts-fail); font-weight: 700; }
 .ts-run-row .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
+.ts-run-tally {
+  padding: 8px 0 2px; font-size: 10.5px; font-weight: 700;
+  color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;
+}
+.ts-run-note { padding: 6px 0; font-size: 10.5px; color: var(--ts-fail); }
 .ts-pending-note { color: var(--ts-fg-faint); font-style: italic; }

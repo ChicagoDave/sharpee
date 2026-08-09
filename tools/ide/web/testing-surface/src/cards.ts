@@ -18,6 +18,7 @@
  */
 
 import type { BranchPoint, Segment, SessionModel } from './model';
+import type { RunColumnState } from './run';
 
 /** Chip labels interpolate model strings into innerHTML — escape them. */
 function escapeHtml(text: string): string {
@@ -44,6 +45,10 @@ export interface CardsDelegate {
   onBranch(ordinal: number, command: string): void;
   /** A sibling chip was clicked — replay that lineage live and view it. */
   onSelectLineage(lineage: number): void;
+  /** The Run button (design §7): run the real tree over `tests/`. */
+  onRun(): void;
+  /** The run column's current state — main.ts owns the fold. */
+  runColumn(): RunColumnState;
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
@@ -96,12 +101,14 @@ export class CardsView {
       </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
-          <button class="ts-run-btn" disabled
-                  title="Runs land with the run column phase (ADR-306 plan Phase 6)">Run</button>
+          <button class="ts-run-btn" id="ts-run-btn"
+                  title="Run every transcript in tests/ as a tree, at the pinned seed">Run</button>
         </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
     document.body.appendChild(root);
+    document.getElementById('ts-run-btn')!
+      .addEventListener('click', () => this.delegate.onRun());
 
     const inputBar = document.getElementById('input-area');
     if (inputBar) root.querySelector('.ts-input-row')!.appendChild(inputBar);
@@ -607,31 +614,94 @@ export class CardsView {
       : 'all continue from the shared prefix';
   }
 
-  /** Run-column skeleton: a row per closed transcript, unrun ("—") until the
-   *  run column phase wires the real harness. */
+  /** The run column (design §7): one row per transcript — branches
+   *  included — with PASS/FAIL, the first failure on one line, and a tally.
+   *  An open range isn't a file and doesn't run; a pending branch (no
+   *  landed turn yet) shows a dash. */
   private renderRunColumn(): void {
     const results = document.getElementById('ts-run-results');
     if (!results) return;
+    const run = this.delegate.runColumn();
+
+    const button = document.getElementById('ts-run-btn') as HTMLButtonElement | null;
+    if (button) {
+      button.disabled = run.inFlight;
+      button.textContent = run.inFlight ? 'Running…' : 'Run';
+    }
+
     const closed = this.model.segments.filter(s => s.end !== null);
-    if (closed.length === 0) {
+    const pending = this.model.lineages.filter(
+      info => this.model.pendingTitleOf(info.id) !== undefined);
+    results.innerHTML = '';
+    if (closed.length === 0 && pending.length === 0 && run.results.size === 0) {
       results.innerHTML = '<span class="ts-pending-note">no transcripts yet</span>';
       return;
     }
-    results.innerHTML = '';
-    for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
-      const row = document.createElement('div');
-      row.className = 'ts-run-row';
+
+    if (run.note) {
+      const note = document.createElement('div');
+      note.className = 'ts-run-note';
+      note.textContent = run.note;
+      results.appendChild(note);
+    }
+
+    const row = (badgeText: string, badgeClass: string, title: string, why: string): void => {
+      const line = document.createElement('div');
+      line.className = 'ts-run-row';
       const badge = document.createElement('span');
-      badge.className = 'ts-badge';
-      badge.textContent = '—';
+      badge.className = `ts-badge${badgeClass ? ` ${badgeClass}` : ''}`;
+      badge.textContent = badgeText;
       const name = document.createElement('div');
       name.className = 'ts-name';
-      name.textContent = this.model.titleOf(segment);
-      const why = document.createElement('div');
-      why.className = 'ts-why';
-      why.textContent = 'not run yet';
-      row.append(badge, name, why);
-      results.appendChild(row);
+      name.textContent = title;
+      const why_ = document.createElement('div');
+      why_.className = 'ts-why';
+      why_.textContent = why;
+      line.append(badge, name, why_);
+      results.appendChild(line);
+    };
+
+    // Every transcript the run touched, in run order — the tree on disk is
+    // the suite (files from earlier sessions included), not just this
+    // session's segments. Map insertion order IS the run's execution order.
+    for (const [stem, result] of run.results) {
+      switch (result.status) {
+        case 'passed':
+          row('PASS', 'ts-pass', stem, `${result.passed} turn${result.passed === 1 ? '' : 's'}`);
+          break;
+        case 'skipped':
+          row('—', '', stem, 'no commands — ran as a skip');
+          break;
+        case 'unreached':
+          row('—', '', stem, result.firstFailure ?? 'blocked by an ancestor');
+          break;
+        default: {
+          const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
+          row('FAIL', 'ts-fail', stem, `${result.firstFailure ?? 'failed'}${more}`);
+        }
+      }
+    }
+    // This session's closed transcripts the run has not reached (or before
+    // any run): a dash — never a guess.
+    for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
+      const title = this.model.titleOf(segment);
+      if (run.results.has(title)) continue;
+      row('—', '', title, run.inFlight ? 'running…' : 'not run yet');
+    }
+    // A registered branch whose replayed turn hasn't landed is not a file
+    // yet — its row is a dash by rule (design §7).
+    for (const info of pending) {
+      row('—', '', this.model.pendingTitleOf(info.id) ?? 'pending branch', 'pending branch');
+    }
+
+    if (run.tally) {
+      const tally = document.createElement('div');
+      tally.className = 'ts-run-tally';
+      const parts = [`${run.tally.passed} passing`, `${run.tally.failed} failures`];
+      if (run.tally.errors > 0) parts.push(`${run.tally.errors} errors`);
+      if (run.tally.unreached > 0) parts.push(`${run.tally.unreached} unreached`);
+      tally.textContent = parts.join(', ');
+      results.appendChild(tally);
     }
   }
 

@@ -120,7 +120,7 @@ describe('saveOutlook', () => {
     // A bare command is the policy's trigger — its first run writes the
     // assertion — where [SKIP] means deliberately unasserted and the runner
     // never touches it. The bare file must still be sound: a bare command
-    // list is legal grammar (the golden tier's shape, ADR-294 D2).
+    // list is legal grammar (ADR-294 D2; the runner enforces the boundary).
     const text = newTranscript({ story: 'fernhill', title: 'begin', continuesFrom: null });
     const draft = addCommand(text, 'begin.transcript', 'look', true);
     expect(draft.text).toContain('\n> look\n');

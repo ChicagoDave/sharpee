@@ -71,6 +71,17 @@ files unflipped before Phase 6 lands is looking at correct state, not an omissio
 > (tab affordance + `packages/branch-tester` — awaiting its platform discussion,
 > since live `.golden` files need both sides cut together).
 
+> **Phase 6 landed** (2026-08-09, session fdfe6a, David's per-file confirmation):
+> the golden pair is retired on both sides — branch-tester's `golden.ts`, golden
+> tier, `--bless`/`--bless-file` (cli + devkit), watch bless flow, rename's
+> golden/divergence carry; the tab's Record golden…/restore affordances, R6
+> review, tier facts, and Swift bless plumbing. No author-world `.golden` files
+> existed on disk, so machinery only. The wire's golden-divergence `diff?` left
+> `CommandResultEvent` and an additive `failure?` (first failed assertion's
+> message, populated by the runner) replaced it — the run column's one-line
+> failure source. `transcript-tester`'s frozen copy verified untouched. The run
+> column shipped per design §7 over the same NDJSON stream the tab decodes.
+
 ### D2 — 6f's platform substrate is kept unchanged; it is the foundation
 
 Carried verbatim from design doc §9:

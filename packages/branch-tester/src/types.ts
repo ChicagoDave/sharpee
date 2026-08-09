@@ -93,7 +93,7 @@ export interface TranscriptHeader {
 }
 
 // ============================================================================
-// Run configuration and golden recordings (ADR-294)
+// Run configuration (ADR-294)
 // ============================================================================
 
 /**
@@ -104,16 +104,15 @@ export interface TranscriptHeader {
  */
 export interface TranscriptRunConfig {
   /**
-   * Pinned seeds: one entry from `seed: N`, several from `seeds: A, B` (D8 —
-   * each seed gets its own recording). Empty when the transcript pins nothing
-   * (legal in the assertion tier; a golden transcript must pin at least one).
+   * Pinned seeds: one entry from `seed: N`, several from `seeds: A, B`.
+   * Empty when the transcript pins nothing.
    */
   seeds: number[];
-  /** Channels the recording scopes to (D15). Default: `[]` (ADR-300 D8). */
+  /** Channels the run scopes to (D15). Default: `[]` (ADR-300 D8). */
   channels: string[];
-  /** Record the event stream alongside prose (D6). Default: `false`. */
+  /** Capture the event stream alongside prose (D6). Default: `false`. */
   events: boolean;
-  /** Locale the recording is bound to (D19). Absent = the story's primary. */
+  /** Locale the transcript is bound to (D19). Absent = the story's primary. */
   locale?: string;
   /**
    * Declared outcome forces (ADR-293 D8/D9, surfaced per ADR-294 D13), as
@@ -138,75 +137,6 @@ export interface TranscriptRunConfig {
   pointSeeds?: Array<{ point: string; seed: number }>;
   /** Line the `point-seed:` header field appeared on, for error reporting. */
   pointSeedsLineNumber?: number;
-}
-
-/**
- * Provenance header of a `.golden` recording (ADR-294 D3/D7).
- *
- * A replay whose runtime disagrees with any of these fails with the named
- * "stale recording — re-bless" error, never a raw content diff.
- */
-export interface GoldenProvenance {
-  /** Source transcript filename the recording was made from. */
-  transcript: string;
-  /** Story name the recording was made against. */
-  story: string;
-  /** The seed the session was pinned to. One recording per seed (D8). */
-  seed: number;
-  /** `SEED_DERIVATION_VERSION` at record time (ADR-293). */
-  derivation: number;
-  /** Save-format version at record time (e.g. `3.0.0`). */
-  saveFormat: string;
-  /** Channels captured by this recording (D15). */
-  channels: string[];
-  /** Whether the recording includes event lines (D6). */
-  events: boolean;
-  /** Locale the recorded prose is bound to (D19). */
-  locale: string;
-  /** Forces the recording was made under (D13). Serialized as `(none)` when empty. */
-  forces: string[];
-  /**
-   * Point-seed overrides the recording was made under (ADR-293 D11), as
-   * `point=seed` strings. OPTIONAL in the format: the `point-seeds:` line is
-   * written only when non-empty, so pre-Phase-C recordings stay valid, and
-   * absence parses as empty.
-   */
-  pointSeeds?: string[];
-}
-
-/**
- * One recorded event line (`• type {json}`) inside a golden turn.
- *
- * The JSON payload is kept as its raw string so a parse → serialize round
- * trip is byte-faithful (re-stringifying could reorder keys or reformat
- * numbers, which would show up as phantom recording diffs).
- */
-export interface GoldenEvent {
-  type: string;
-  json: string;
-}
-
-/** One recorded turn: the command and its output, verbatim (ADR-294 D7). */
-export interface GoldenTurn {
-  /** The command as typed, without the `> ` prefix. */
-  command: string;
-  /** Recorded output lines, verbatim — blank lines and indentation preserved. */
-  output: string[];
-  /** Present only when the recording's provenance says `events: true`. */
-  events?: GoldenEvent[];
-  /**
-   * Declared non-`main` channel captures (ADR-294 D15): flattened lines per
-   * channel id, in emission order. Present only when the provenance declares
-   * channels beyond `main` AND the channel emitted this turn — a declared
-   * channel that emitted nothing has no key (sparse; absence is diffed).
-   */
-  channels?: Record<string, string[]>;
-}
-
-/** A parsed `.golden` recording: provenance plus the recorded turns. */
-export interface GoldenRecording {
-  provenance: GoldenProvenance;
-  turns: GoldenTurn[];
 }
 
 /**
@@ -429,14 +359,13 @@ export interface CommandResult {
   ending?: 'victory' | 'defeat' | 'quit';
 
   /**
-   * Golden divergence (ADR-294 D1): the recorded output and the actual
-   * output for this turn, verbatim. Present when a golden REPLAY failed this
-   * command (the reporter renders the line diff), and on a RE-record over an
-   * existing recording for every turn that changed (`passed` stays true —
-   * record mode never stops; the diff is the review, R6). `channel` names
-   * the surface the first mismatch lies in.
+   * The first failed assertion's message, verbatim (`Output does not
+   * contain "…"`). Present exactly when an assertion failed this command —
+   * the one-line answer a minimal consumer (the testing surface's run
+   * column) shows without re-deriving it from `assertionResults`, which
+   * never crosses the wire. Runtime throws keep riding `error` instead.
    */
-  diff?: { recorded: string[]; actual: string[]; channel?: string };
+  failure?: string;
 
   /**
    * The world AFTER this command (R3), captured under `captureWorld`:
@@ -516,22 +445,6 @@ export interface TranscriptResult {
   /** Present exactly when `status` is `'error'`: why the transcript never ran. */
   errorMessage?: string;
 
-  /**
-   * Which tier ran (ADR-294 D2): `golden` when a recording exists (or was
-   * being created), `assertion` otherwise. Absent on `error` results that
-   * never reached tier selection.
-   */
-  tier?: 'golden' | 'assertion';
-  /** Path of the `.golden` recording this run diffed against or created. */
-  goldenPath?: string;
-  /** True when this run created or overwrote the recording (`--bless`). */
-  blessed?: boolean;
-  /**
-   * Path of the divergence save written on a failed golden replay (ADR-294
-   * D18): a real save (world, turn counter, RNG stream states) captured at
-   * the last matching turn. Working artifact, never committed.
-   */
-  divergenceSavePath?: string;
 }
 
 /**
@@ -607,25 +520,18 @@ export interface RunnerOptions {
   savesDirectory?: string;  // Directory for $save/$restore checkpoints
   testingExtension?: TestingExtensionInterface;  // Optional ext-testing integration
 
-  /** Create/overwrite the recording instead of diffing against it (ADR-294 D1). */
-  bless?: boolean;
-  /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
-  goldenPath?: string;
   /**
    * The transcript's EFFECTIVE config when it runs as a tree node (ADR-302
-   * D8): seeds, channels, events, forces as inherited root-to-here. The
-   * golden tier reads this in place of the transcript's declared config —
-   * a child declares no seed yet runs at its root's, and judging it by its
-   * declared (empty) config refuses every child golden. Declared-keyed
-   * behaviour (session instruments, reseeds) deliberately does NOT read
-   * this: declaring an instrument is an instruction, inheriting one is not
-   * (D8/D9). Absent for flat and chain runs, where declared IS effective.
+   * D8): seeds, channels, events, forces as inherited root-to-here.
+   * Declared-keyed behaviour (session instruments, reseeds) deliberately
+   * does NOT read this: declaring an instrument is an instruction,
+   * inheriting one is not (D8/D9). Absent for flat and chain runs, where
+   * declared IS effective.
    */
   resolvedConfig?: TranscriptRunConfig;
   /**
    * This transcript runs as a chain member (one session across transcripts).
-   * Later members legally pin no seed; their recordings carry the session
-   * seed, and replaying one standalone is refused (D7).
+   * Later members legally pin no seed and run at the session's.
    */
   chain?: boolean;
   /**
@@ -642,10 +548,6 @@ export interface RunnerOptions {
    * exactly as small as it was.
    */
   captureWorld?: boolean;
-  /** Story name for recording provenance; falls back to the `story:` header. */
-  storyName?: string;
-  /** Locale for recording provenance when the transcript declares none (D19). */
-  locale?: string;
   /**
    * Run-scoped coverage accumulator (ADR-293 D15). One tracker per run —
    * the CLI owns it so a chain's members fold into one report; the runner

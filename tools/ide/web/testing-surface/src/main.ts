@@ -36,6 +36,7 @@ import {
 } from './compose';
 import { SessionModel, type Segment, type SessionSnapshot } from './model';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
+import { beginRun, createRunState, finishRun, foldRunLine } from './run';
 import { renderSource } from './source';
 
 /** One world-digest entity as the feed carries it (ADR-306 Phase 2). */
@@ -83,7 +84,14 @@ interface BootSession {
   files?: Record<string, string>;
 }
 
-interface DeliverShim { q?: unknown[]; deliver(record: unknown): void; }
+interface DeliverShim {
+  q?: unknown[];
+  deliver(record: unknown): void;
+  /** One raw NDJSON line of a `sharpee test --tree --json` run (design §7). */
+  runLine?(text: string): void;
+  /** The run process exited; `ok` false with no run-end is a pipeline death. */
+  runExit?(ok: boolean, note?: string): void;
+}
 
 /** A command to type during replay, keyed for dialog outcome lookup. */
 interface ReplayStep { command: string; key: string }
@@ -269,7 +277,30 @@ const cards = new CardsView(model, {
   onSelectLineage(lineage) {
     void selectLineage(lineage);
   },
+  onRun() {
+    // One run at a time, and never during a driver replay — the run reads
+    // the files on disk, which a mid-replay session hasn't finished writing.
+    if (runState.inFlight || driverBusy || replayActive) return;
+    beginRun(runState);
+    cards.render();
+    postToBridge({ run: true });
+  },
+  runColumn: () => runState,
 });
+
+// ── the run column (design §7): fold the relayed NDJSON stream ────────────
+
+const runState = createRunState();
+
+function deliverRunLine(text: string): void {
+  foldRunLine(runState, text);
+  cards.render();
+}
+
+function deliverRunExit(ok: boolean, note?: string): void {
+  finishRun(runState, ok, note);
+  cards.render();
+}
 
 /** Re-render and persist: every model change lands in the sidecar (D8)
  *  and every closed segment lands on disk (design §4's auto-save). */
@@ -815,7 +846,11 @@ const surfaceWindow = window as unknown as {
 };
 
 const queued = surfaceWindow.__sharpeeTestingSurface?.q ?? [];
-surfaceWindow.__sharpeeTestingSurface = { deliver };
+surfaceWindow.__sharpeeTestingSurface = {
+  deliver,
+  runLine: deliverRunLine,
+  runExit: deliverRunExit,
+};
 
 cards.ensureLayout();
 installDialogHooks();

@@ -22,7 +22,6 @@ function recordingHandlers(): { handlers: PageHandlers; policies: (string | null
     onReset: nothing,
     onStatus: nothing,
     onDiscovered: nothing,
-    onGoldens: nothing,
     onRestoreMode: nothing,
     onAutoAssertion: (policy) => policies.push(policy),
     onFinished: nothing,
@@ -34,8 +33,6 @@ function recordingHandlers(): { handlers: PageHandlers; policies: (string | null
     onCreateFailed: nothing,
     onTrashed: nothing,
     onTrashFailed: nothing,
-    onGoldenRestored: nothing,
-    onGoldenRestoreFailed: nothing,
   };
   return { handlers, policies };
 }

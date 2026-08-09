@@ -66,12 +66,13 @@
       </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
-          <button class="ts-run-btn" disabled
-                  title="Runs land with the run column phase (ADR-306 plan Phase 6)">Run</button>
+          <button class="ts-run-btn" id="ts-run-btn"
+                  title="Run every transcript in tests/ as a tree, at the pinned seed">Run</button>
         </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
       document.body.appendChild(root);
+      document.getElementById("ts-run-btn").addEventListener("click", () => this.delegate.onRun());
       const inputBar = document.getElementById("input-area");
       if (inputBar) root.querySelector(".ts-input-row").appendChild(inputBar);
       this.host = document.getElementById("ts-cards");
@@ -492,31 +493,82 @@
       const prefix = mainSegment ? this.model.parentOf(mainSegment) : void 0;
       row.title = prefix ? `all continue from "${this.model.titleOf(prefix)}"` : "all continue from the shared prefix";
     }
-    /** Run-column skeleton: a row per closed transcript, unrun ("—") until the
-     *  run column phase wires the real harness. */
+    /** The run column (design §7): one row per transcript — branches
+     *  included — with PASS/FAIL, the first failure on one line, and a tally.
+     *  An open range isn't a file and doesn't run; a pending branch (no
+     *  landed turn yet) shows a dash. */
     renderRunColumn() {
       const results = document.getElementById("ts-run-results");
       if (!results) return;
+      const run = this.delegate.runColumn();
+      const button = document.getElementById("ts-run-btn");
+      if (button) {
+        button.disabled = run.inFlight;
+        button.textContent = run.inFlight ? "Running\u2026" : "Run";
+      }
       const closed = this.model.segments.filter((s) => s.end !== null);
-      if (closed.length === 0) {
+      const pending = this.model.lineages.filter(
+        (info) => this.model.pendingTitleOf(info.id) !== void 0
+      );
+      results.innerHTML = "";
+      if (closed.length === 0 && pending.length === 0 && run.results.size === 0) {
         results.innerHTML = '<span class="ts-pending-note">no transcripts yet</span>';
         return;
       }
-      results.innerHTML = "";
-      for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
-        const row = document.createElement("div");
-        row.className = "ts-run-row";
+      if (run.note) {
+        const note = document.createElement("div");
+        note.className = "ts-run-note";
+        note.textContent = run.note;
+        results.appendChild(note);
+      }
+      const row = (badgeText, badgeClass, title, why) => {
+        const line = document.createElement("div");
+        line.className = "ts-run-row";
         const badge = document.createElement("span");
-        badge.className = "ts-badge";
-        badge.textContent = "\u2014";
+        badge.className = `ts-badge${badgeClass ? ` ${badgeClass}` : ""}`;
+        badge.textContent = badgeText;
         const name = document.createElement("div");
         name.className = "ts-name";
-        name.textContent = this.model.titleOf(segment);
-        const why = document.createElement("div");
-        why.className = "ts-why";
-        why.textContent = "not run yet";
-        row.append(badge, name, why);
-        results.appendChild(row);
+        name.textContent = title;
+        const why_ = document.createElement("div");
+        why_.className = "ts-why";
+        why_.textContent = why;
+        line.append(badge, name, why_);
+        results.appendChild(line);
+      };
+      for (const [stem, result] of run.results) {
+        switch (result.status) {
+          case "passed":
+            row("PASS", "ts-pass", stem, `${result.passed} turn${result.passed === 1 ? "" : "s"}`);
+            break;
+          case "skipped":
+            row("\u2014", "", stem, "no commands \u2014 ran as a skip");
+            break;
+          case "unreached":
+            row("\u2014", "", stem, result.firstFailure ?? "blocked by an ancestor");
+            break;
+          default: {
+            const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
+            row("FAIL", "ts-fail", stem, `${result.firstFailure ?? "failed"}${more}`);
+          }
+        }
+      }
+      for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
+        const title = this.model.titleOf(segment);
+        if (run.results.has(title)) continue;
+        row("\u2014", "", title, run.inFlight ? "running\u2026" : "not run yet");
+      }
+      for (const info of pending) {
+        row("\u2014", "", this.model.pendingTitleOf(info.id) ?? "pending branch", "pending branch");
+      }
+      if (run.tally) {
+        const tally = document.createElement("div");
+        tally.className = "ts-run-tally";
+        const parts = [`${run.tally.passed} passing`, `${run.tally.failed} failures`];
+        if (run.tally.errors > 0) parts.push(`${run.tally.errors} errors`);
+        if (run.tally.unreached > 0) parts.push(`${run.tally.unreached} unreached`);
+        tally.textContent = parts.join(", ");
+        results.appendChild(tally);
       }
     }
     scrollToLatest() {
@@ -584,7 +636,7 @@
     {
       pattern: /^\[ENSURES\s*:/i,
       form: "[ENSURES:]",
-      message: '[ENSURES:] was removed (ADR-294 D4) \u2014 durable regression protection is a golden recording; for unit intent use [OK: contains "..."] or [STATE:]'
+      message: `[ENSURES:] was removed (ADR-294 D4) \u2014 durable regression protection is the transcript's own assertions; for unit intent use [OK: contains "..."] or [STATE:]`
     },
     {
       pattern: /^\[REQUIRES\s*:/i,
@@ -609,7 +661,7 @@
     {
       pattern: /^\[OK\s*:\s*matches\s/i,
       form: "[OK: matches]",
-      message: '[OK: matches] was removed (ADR-294 D2) \u2014 output is deterministic at a pinned seed; use [OK: contains "..."] or a golden recording'
+      message: '[OK: matches] was removed (ADR-294 D2) \u2014 output is deterministic at a pinned seed; use [OK: contains "..."] or an [OK] exact block'
     },
     {
       pattern: /^\[NAVIGATE\s+TO\s*:/i,
@@ -619,7 +671,7 @@
     {
       pattern: /^\[OK\s*:\s*any\s*\]$/i,
       form: "[OK: any]",
-      message: '[OK: any] was removed (ADR-294 D2) \u2014 presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'
+      message: '[OK: any] was removed (ADR-294 D2) \u2014 presence-only assertion masks failure; use [OK: contains "..."], or [SKIP] for deliberately unasserted output'
     },
     {
       pattern: /^\[EVENTS\s*:/i,
@@ -2452,6 +2504,165 @@
     filter.focus();
   }
 
+  // packages/ide-protocol/src/run-events.ts
+  var RUN_EVENT_SCHEMA_VERSION = 2;
+  function isObject(v) {
+    return typeof v === "object" && v !== null;
+  }
+  function isStringArray(v) {
+    return Array.isArray(v) && v.every((entry) => typeof entry === "string");
+  }
+  function hasEnvelopeAndType(v, type) {
+    return v.schemaVersion === RUN_EVENT_SCHEMA_VERSION && v.type === type && typeof v.seq === "number" && typeof v.elapsedMs === "number";
+  }
+  function isRunStartEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "run-start") && (value.mode === "tests" || value.mode === "chain" || value.mode === "tree" || value.mode === "explore") && (value.transcriptCount === void 0 || typeof value.transcriptCount === "number");
+  }
+  function isPhaseEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "phase") && (value.name === "compile" || value.name === "load" || value.name === "assemble" || value.name === "execute") && (value.status === "started" || value.status === "finished") && (value.detail === void 0 || typeof value.detail === "string");
+  }
+  function isTranscriptStartEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "transcript-start") && typeof value.file === "string" && typeof value.index === "number" && (value.commandCount === void 0 || typeof value.commandCount === "number") && (value.parent === void 0 || typeof value.parent === "string") && (value.replayed === void 0 || typeof value.replayed === "boolean") && (value.world === void 0 || isWorldSnapshot(value.world));
+  }
+  function isCommandResultEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world));
+  }
+  function isWorldEntityRef(value) {
+    if (!isObject(value)) return false;
+    return typeof value.name === "string" && typeof value.token === "string";
+  }
+  function isWorldSnapshot(value) {
+    if (!isObject(value)) return false;
+    return (value.location === void 0 || isWorldEntityRef(value.location)) && Array.isArray(value.inventory) && value.inventory.every(isWorldEntityRef);
+  }
+  function isTranscriptEndEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "transcript-end") && typeof value.file === "string" && (value.status === "passed" || value.status === "failed" || value.status === "error" || value.status === "unreached" || value.status === "skipped") && typeof value.passed === "number" && typeof value.failed === "number" && typeof value.expectedFailures === "number" && typeof value.skipped === "number" && typeof value.duration === "number" && (value.errorMessage === void 0 || typeof value.errorMessage === "string") && (value.blockedBy === void 0 || typeof value.blockedBy === "string");
+  }
+  function isBudgetUse(value) {
+    if (!isObject(value)) return false;
+    return (value.unit === "states" || value.unit === "seconds" || value.unit === "depth" || value.unit === "commands") && typeof value.spent === "number" && typeof value.limit === "number";
+  }
+  function isProgressEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "progress") && (value.scope === "commands" || value.scope === "transcripts" || value.scope === "nodes" || value.scope === "states") && typeof value.done === "number" && (value.total === void 0 || typeof value.total === "number") && (value.budgets === void 0 || Array.isArray(value.budgets) && value.budgets.every(isBudgetUse));
+  }
+  function isCoveragePoint(value) {
+    if (!isObject(value)) return false;
+    return typeof value.name === "string" && typeof value.fired === "number" && (value.classes === void 0 || isStringArray(value.classes)) && (value.observed === void 0 || isStringArray(value.observed)) && (value.unobserved === void 0 || isStringArray(value.unobserved));
+  }
+  function isCoverageEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "coverage") && Array.isArray(value.points) && value.points.every(isCoveragePoint) && typeof value.pointsFired === "number" && typeof value.pointsNeverFired === "number" && typeof value.classesUnobserved === "number";
+  }
+  function isRunEndEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
+  }
+  function isRunEvent(value) {
+    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isRunEndEvent(value);
+  }
+
+  // tools/ide/web/testing-surface/src/run.ts
+  function createRunState() {
+    return { inFlight: false, results: /* @__PURE__ */ new Map(), replaying: /* @__PURE__ */ new Set() };
+  }
+  function beginRun(state) {
+    state.inFlight = true;
+    state.results.clear();
+    state.replaying.clear();
+    delete state.tally;
+    delete state.note;
+  }
+  function stemOf(file) {
+    const base = file.split("/").at(-1) ?? file;
+    return base.replace(/\.transcript$/, "");
+  }
+  function foldRunLine(state, text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      return;
+    }
+    if (!isRunEvent(parsed)) return;
+    fold(state, parsed);
+  }
+  function fold(state, event) {
+    switch (event.type) {
+      case "transcript-start": {
+        if (event.replayed === true) state.replaying.add(event.file);
+        else state.replaying.delete(event.file);
+        return;
+      }
+      case "command-result": {
+        if (event.passed || event.skipped || state.replaying.has(event.file)) return;
+        const stem = stemOf(event.file);
+        const existing = state.results.get(stem);
+        if (existing?.firstFailure !== void 0) {
+          existing.moreFailures += 1;
+          return;
+        }
+        const message = event.failure ?? event.error ?? "failed";
+        const where = event.turn !== void 0 ? `turn ${event.turn}` : `line ${event.line}`;
+        state.results.set(stem, {
+          status: "failed",
+          passed: 0,
+          failed: 1,
+          firstFailure: `${where} \u2014 ${message}`,
+          moreFailures: existing?.moreFailures ?? 0
+        });
+        return;
+      }
+      case "transcript-end": {
+        if (state.replaying.has(event.file)) {
+          state.replaying.delete(event.file);
+          return;
+        }
+        const stem = stemOf(event.file);
+        const partial = state.results.get(stem);
+        const result = {
+          status: event.status,
+          passed: event.passed,
+          failed: event.failed,
+          moreFailures: Math.max(0, event.failed - 1)
+        };
+        if (partial?.firstFailure !== void 0) result.firstFailure = partial.firstFailure;
+        else if (event.status === "error" && event.errorMessage !== void 0) {
+          result.firstFailure = event.errorMessage;
+        } else if (event.status === "unreached") {
+          result.firstFailure = event.blockedBy !== void 0 ? `blocked by ${stemOf(event.blockedBy)}` : "blocked by an ancestor";
+        }
+        state.results.set(stem, result);
+        return;
+      }
+      case "run-end": {
+        state.inFlight = false;
+        state.tally = {
+          passed: event.totalPassed,
+          failed: event.totalFailed,
+          errors: event.totalErrors,
+          unreached: event.totalUnreached
+        };
+        return;
+      }
+      default:
+        return;
+    }
+  }
+  function finishRun(state, ok, note) {
+    state.inFlight = false;
+    if (!ok && state.tally === void 0) {
+      state.note = note ?? "The run ended without completing its stream.";
+    }
+  }
+
   // tools/ide/web/testing-surface/src/source.ts
   var kindClass = {
     header: "ts-hdr",
@@ -2668,8 +2879,24 @@
     },
     onSelectLineage(lineage) {
       void selectLineage(lineage);
-    }
+    },
+    onRun() {
+      if (runState.inFlight || driverBusy || replayActive) return;
+      beginRun(runState);
+      cards.render();
+      postToBridge({ run: true });
+    },
+    runColumn: () => runState
   });
+  var runState = createRunState();
+  function deliverRunLine(text) {
+    foldRunLine(runState, text);
+    cards.render();
+  }
+  function deliverRunExit(ok, note) {
+    finishRun(runState, ok, note);
+    cards.render();
+  }
   function update() {
     if (activeSegment && !model.segments.includes(activeSegment)) {
       activeSegment = null;
@@ -3072,7 +3299,11 @@
   }
   var surfaceWindow = window;
   var queued = surfaceWindow.__sharpeeTestingSurface?.q ?? [];
-  surfaceWindow.__sharpeeTestingSurface = { deliver };
+  surfaceWindow.__sharpeeTestingSurface = {
+    deliver,
+    runLine: deliverRunLine,
+    runExit: deliverRunExit
+  };
   cards.ensureLayout();
   installDialogHooks();
   for (const record of queued) deliver(record);

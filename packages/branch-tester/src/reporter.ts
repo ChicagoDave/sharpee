@@ -58,11 +58,6 @@ export function reportTranscript(
 
   // Summary line
   console.log();
-  if (result.blessed) {
-    console.log(chalk.green(`  ✓ blessed → ${result.goldenPath} (${result.commands.length} turns)`));
-  } else if (result.tier === 'golden' && result.status === 'passed') {
-    console.log(chalk.green(`  ✓ matched recording ${result.goldenPath}`));
-  }
   reportTranscriptSummary(result);
 }
 
@@ -89,13 +84,6 @@ function reportCommand(result: CommandResult, verbose: boolean, emitTraits: bool
 
   // Compact format
   console.log(`  ${inputDisplay.padEnd(50)} ${status}`);
-
-  // Golden divergence (ADR-294 D1): the diff IS the failure report.
-  if (result.diff) {
-    console.log(chalk.red(`    Error: ${error}`));
-    reportGoldenDiff(result.diff);
-    return;
-  }
 
   // Verbose output
   if (verbose || (!passed && !skipped && !expectedFailure)) {
@@ -174,32 +162,6 @@ function reportCommand(result: CommandResult, verbose: boolean, emitTraits: bool
       console.log(chalk.gray(`      (${reason})`));
     }
   }
-}
-
-/**
- * Render a golden divergence as a line diff: matching context in gray,
- * recorded lines as `-` (red), actual lines as `+` (green). Line-count
- * mismatches print both tails.
- */
-function reportGoldenDiff(diff: { recorded: string[]; actual: string[] }): void {
-  const { recorded, actual } = diff;
-  console.log(chalk.gray('    ─── Diff (recorded vs actual) ───'));
-  const shared = Math.min(recorded.length, actual.length);
-  for (let i = 0; i < shared; i++) {
-    if (recorded[i] === actual[i]) {
-      console.log(chalk.gray(`      ${recorded[i]}`));
-    } else {
-      console.log(chalk.red(`    - ${recorded[i]}`));
-      console.log(chalk.green(`    + ${actual[i]}`));
-    }
-  }
-  for (let i = shared; i < recorded.length; i++) {
-    console.log(chalk.red(`    - ${recorded[i]}`));
-  }
-  for (let i = shared; i < actual.length; i++) {
-    console.log(chalk.green(`    + ${actual[i]}`));
-  }
-  console.log(chalk.gray('    ─────────────'));
 }
 
 /**

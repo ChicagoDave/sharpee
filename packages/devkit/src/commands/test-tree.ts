@@ -29,13 +29,6 @@ export interface TreeTestOptions {
   captureOutput?: boolean;
   /** Carry a world snapshot on every command result and node entry (R3/R5). */
   captureWorld?: boolean;
-  /** Record/overwrite every node's golden instead of diffing (ADR-294 D1). */
-  bless?: boolean;
-  /**
-   * Bless only these nodes (absolute paths); the rest of the tree runs
-   * normally. The IDE's "record this file as a golden" gesture.
-   */
-  blessFiles?: string[];
 }
 
 /**
@@ -64,7 +57,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
   // covers the runner and its report, not the wire, which has one owner.
   const { RunEventStream, ndjsonEventLine } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
-  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false, bless = false, blessFiles = [] } = options;
+  const { dir, transcripts, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false } = options;
 
   const stream = json
     ? new RunEventStream((event) => {
@@ -167,9 +160,6 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
     run = await runTree(tree, freshGameForRoot as never, {
       verbose,
       stopOnFailure,
-      storyName,
-      bless,
-      blessFiles,
       captureWorld,
       observer: stream && {
         onCommandResult: (command) =>

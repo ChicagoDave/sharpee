@@ -123,7 +123,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[ENSURES\s*:/i,
     form: '[ENSURES:]',
-    message: '[ENSURES:] was removed (ADR-294 D4) — durable regression protection is a golden recording; for unit intent use [OK: contains "..."] or [STATE:]'
+    message: '[ENSURES:] was removed (ADR-294 D4) — durable regression protection is the transcript\'s own assertions; for unit intent use [OK: contains "..."] or [STATE:]'
   },
   {
     pattern: /^\[REQUIRES\s*:/i,
@@ -148,7 +148,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[OK\s*:\s*matches\s/i,
     form: '[OK: matches]',
-    message: '[OK: matches] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] or a golden recording'
+    message: '[OK: matches] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] or an [OK] exact block'
   },
   {
     pattern: /^\[NAVIGATE\s+TO\s*:/i,
@@ -158,7 +158,7 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
   {
     pattern: /^\[OK\s*:\s*any\s*\]$/i,
     form: '[OK: any]',
-    message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'
+    message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use [OK: contains "..."], or [SKIP] for deliberately unasserted output'
   },
   {
     pattern: /^\[EVENTS\s*:/i,
@@ -745,7 +745,7 @@ function parseConfigField(
     case 'forces': {
       // ADR-293 D8/D9 (Phase C): each entry is `point[#occurrence]=CLASS`,
       // parsed to a structured spec at transcript-default mode `once`.
-      // `(none)` is the explicit empty form the .golden provenance uses.
+      // `(none)` is the explicit empty form.
       if (value === '(none)' || value === '') {
         config.forces = [];
         return;
@@ -1192,10 +1192,9 @@ export function validateTranscript(transcript: Transcript): string[] {
     if (!cmd.input) {
       errors.push(`Line ${cmd.lineNumber}: Empty command`);
     }
-    // No per-command assertion requirement here: a bare command list is the
-    // golden tier's legal shape (ADR-294 D1 — the recording is the assertion).
-    // The runner enforces the boundary instead: an assertion-less command in a
-    // transcript with NO recording fails with a named error.
+    // No per-command assertion requirement here: the runner enforces the
+    // boundary instead — an assertion-less command fails with a named error
+    // unless the story's auto-assertion: policy writes one (Phase 6e).
   }
 
   return errors;

@@ -12,8 +12,7 @@
 // Only `tests/` is scanned. `walkthroughs/` is not: the chain run model is gone
 // (ADR-302 D10 retires `--chain` for trees) and an IDE project does not have
 // walkthroughs — they are a platform-repository shape, not an author's.
-// Public interface: TranscriptDiscovery.transcripts(inStoryDirectory:),
-// TranscriptDiscovery.goldens(among:).
+// Public interface: TranscriptDiscovery.transcripts(inStoryDirectory:).
 // Owner context: tools/ide — Test.
 
 import Foundation
@@ -36,15 +35,4 @@ enum TranscriptDiscovery {
             .sorted { $0.path < $1.path }
     }
 
-    /// The transcripts among `transcripts` that have a `.golden` recording
-    /// beside them (ADR-294 D7: the recording is the transcript's sibling).
-    ///
-    /// Tier is a filesystem fact — a recording exists or it does not — so the
-    /// tab is told from a disk check, never from inferring over run output.
-    static func goldens(among transcripts: [URL]) -> [URL] {
-        transcripts.filter { transcript in
-            let golden = transcript.deletingPathExtension().appendingPathExtension("golden")
-            return FileManager.default.fileExists(atPath: golden.path)
-        }
-    }
 }

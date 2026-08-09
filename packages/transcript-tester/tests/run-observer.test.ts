@@ -281,19 +281,19 @@ describe('RunEventStream sequences what the observer reports', () => {
     expect('ending' in (events[1] as object)).toBe(false);
   });
 
-  it('carries the golden diff when the result reports one, and omits it when not', async () => {
+  it('carries the failure message when the result reports one, and omits it when not', async () => {
     const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
     const { events, stream } = collect();
     const result = await runTranscript(transcript, echoEngine() as never, {});
     const passing = result.commands[0];
-    const diff = { recorded: ['You north.'], actual: ['A wall.'] };
+    const failure = 'Output does not contain "wall"';
 
-    stream.commandResult('/t/a.transcript', { ...passing, diff });
+    stream.commandResult('/t/a.transcript', { ...passing, failure });
     stream.commandResult('/t/a.transcript', passing);
 
-    expect(events[0].type === 'command-result' ? events[0].diff : undefined).toEqual(diff);
+    expect(events[0].type === 'command-result' ? events[0].failure : undefined).toBe(failure);
     // Key-absence for the same reason as `turn` above.
-    expect('diff' in (events[1] as object)).toBe(false);
+    expect('failure' in (events[1] as object)).toBe(false);
   });
 
   it('carries the world snapshot on command results and transcript starts, and omits it when not reported', async () => {

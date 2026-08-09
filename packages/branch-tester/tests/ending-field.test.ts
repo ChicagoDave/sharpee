@@ -164,34 +164,4 @@ describe('the ending command carries the story ending (R9)', () => {
     expect('ending' in result.commands[1]).toBe(false);
   });
 
-  it('golden record mode carries the ending on the recorded ending command', async () => {
-    const transcript = fixture('title: T\nstory: t\nseed: 42\n---\n> north\n\n> die\n', 'golden.transcript');
-
-    const result = await runTranscript(transcript, endingEngine() as never, { bless: true });
-
-    expect(result.status).toBe('passed');
-    expect('ending' in result.commands[0]).toBe(false);
-    expect(result.commands[1].ending).toBe('defeat');
-  });
-
-  it('golden replay carries the ending on matching and diverging commands alike', async () => {
-    const source = 'title: T\nstory: t\nseed: 42\n---\n> north\n\n> die\n';
-    const transcript = fixture(source, 'replay.transcript');
-    const blessed = await runTranscript(transcript, endingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    const replay = await runTranscript(transcript, endingEngine() as never, {});
-    expect(replay.status).toBe('passed');
-    expect(replay.tier).toBe('golden');
-    expect(replay.commands[1].ending).toBe('defeat');
-
-    // Diverging replay: the ending command's output moved, and the result
-    // still says the story ended there — the divergence is about text, not
-    // about whether the ending happened.
-    const diverging = endingEngine((cmd) => (cmd === 'die' ? 'You survive somehow.' : undefined));
-    const diverged = await runTranscript(transcript, diverging as never, {});
-    expect(diverged.status).toBe('failed');
-    expect(diverged.commands[1].diff).toBeDefined();
-    expect(diverged.commands[1].ending).toBe('defeat');
-  });
 });

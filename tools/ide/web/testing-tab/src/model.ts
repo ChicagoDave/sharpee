@@ -63,12 +63,11 @@ export interface Turn {
    */
   ending?: CommandResultEvent['ending'];
   /**
-   * Golden divergence (R6). On a FAILED turn: a replay stopped here, and
-   * these are the two sides. On a PASSING turn: a re-record changed this
-   * turn from the previous recording — the review {@link recordingChanges}
-   * collects. Verbatim from the runner; the page never re-diffs.
+   * The first failed assertion's message, verbatim from the runner
+   * (`Output does not contain "…"`). Present exactly when an assertion —
+   * rather than a runtime throw, which rides `error` — failed the command.
    */
-  diff?: CommandResultEvent['diff'];
+  failure?: string;
   /**
    * The world after this command (R3), under `--capture-world`. What the
    * command CHANGED is derived by {@link worldDelta} against the previous
@@ -275,7 +274,7 @@ function applyCommandResult(model: RunModel, event: CommandResultEvent): void {
     actualOutput: event.actualOutput,
     turn: event.turn,
     ending: event.ending,
-    diff: event.diff,
+    failure: event.failure,
     world: event.world,
   });
 }
@@ -512,27 +511,6 @@ export function worldDelta(
  */
 export function worldBefore(node: TestNode, index: number): WorldSnapshot | undefined {
   return index > 0 ? node.turns[index - 1].world : node.entryWorld;
-}
-
-/**
- * The turns of `node`'s last run that a re-record changed from the previous
- * recording (R6's review). A PASSING turn carrying a diff can only mean
- * "recorded anew, differently": a replay either matches (no diff) or fails at
- * its first divergence, so the passing-diff combination is the record tier's
- * signature and needs no run-mode flag to recognize.
- */
-export function recordingChanges(node: TestNode): Turn[] {
-  return node.turns.filter((turn) => turn.passed && turn.diff !== undefined);
-}
-
-/**
- * Ends a re-record review: drops every turn's diff so the cards return to
- * their plain reading. Called when the author keeps the new recording, or
- * when the host confirms the previous one was restored — either way the
- * before/after walk is over.
- */
-export function dismissRecordingChanges(node: TestNode): void {
-  for (const turn of node.turns) delete turn.diff;
 }
 
 /**

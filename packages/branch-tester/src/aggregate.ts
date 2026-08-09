@@ -73,7 +73,7 @@ export function runStartRecord(mode: 'tests' | 'chain', transcriptCount: number)
  * source line for click-through), and the closing `transcript-end` whose
  * `status: 'error'` carries `errorMessage` (never a silent skip). A FAILED
  * command result also carries `actualOutput` — what the story really printed
- * (ADR-282 D2), which the IDE's failure view shows against the blessed text.
+ * (ADR-282 D2), which the IDE's failure view shows against the expected text.
  *
  * With `captureOutput` (ADR-299's replay capture — `--capture-output`),
  * `actualOutput` rides EVERY executed command result instead: the transcript

@@ -36,7 +36,6 @@ import {
   applyEvent,
   createModel,
   descendantCount,
-  dismissRecordingChanges,
   stemOf,
   type RunModel,
   type TestNode,
@@ -298,39 +297,6 @@ const actions: ViewActions = {
         : {},
     );
   },
-  setConfirmingRecord(confirming: boolean) {
-    surface.confirmingRecord = confirming;
-    scheduleRender();
-  },
-  recordGolden() {
-    const node = surface.opened;
-    surface.confirmingRecord = false;
-    if (!node) return;
-    // Recording is a run: the host launches the suite with just this node
-    // blessed (--bless-file), the stream fills the tab like any run, and the
-    // host re-reports `goldens` when the recording is on disk.
-    surface.editNote = '';
-    host.recordGolden(node.file);
-    scheduleRender();
-  },
-  keepNewRecording() {
-    const node = surface.opened;
-    if (!node) return;
-    // Nothing to write: the re-record already landed the new recording. The
-    // review was the chance to read what changed; keeping it just closes it.
-    dismissRecordingChanges(node);
-    surface.editNote = 'The new recording stands — future runs replay against it.';
-    scheduleRender();
-  },
-  restorePreviousRecording() {
-    const node = surface.opened;
-    if (!node) return;
-    // The review stays on the page until the host confirms the bytes are
-    // back — a restore that failed must not read as a restore that happened.
-    surface.editNote = 'Restoring the previous recording…';
-    host.restoreGolden(node.file);
-    scheduleRender();
-  },
   undo() {
     const previous = undoStack[undoStack.length - 1];
     if (previous === undefined) return;
@@ -439,12 +405,6 @@ const host = installHost({
     trackRunning();
     scheduleRender();
   },
-  onGoldens(files) {
-    // Tier is a filesystem fact; the host owns it. Replaced whole, never
-    // merged — a trashed recording must disappear from the surface too.
-    surface.goldens = new Set(files);
-    scheduleRender();
-  },
   onRestoreMode(mode) {
     if (mode === 'column' || mode === 'list' || mode === 'documents') surface.mode = mode;
     scheduleRender();
@@ -538,23 +498,6 @@ const host = installHost({
     surface.editNote = `The assertion was not written. ${message}`;
     scheduleRender();
   },
-  onGoldenRestored(file) {
-    // The review closes only now, on confirmation. The last run's outputs
-    // still diverge from the restored baseline, and the note says what that
-    // means rather than letting the next red run look like a new surprise.
-    const node = model.nodes.get(file);
-    if (node) dismissRecordingChanges(node);
-    if (surface.opened?.file === file) {
-      surface.editNote =
-        'The previous recording was restored — the next run replays against it, and stays red until the story matches it again.';
-    }
-    scheduleRender();
-  },
-  onGoldenRestoreFailed(file, message) {
-    // The review stays: the new recording is still the one on disk.
-    surface.editNote = `${stemOf(file)}'s previous recording was not restored. ${message}`;
-    scheduleRender();
-  },
 });
 
 /**
@@ -585,7 +528,6 @@ function clearEditingState(): void {
   surface.newBranchName = '';
   surface.reparentChoice = '';
   surface.confirmingTrash = false;
-  surface.confirmingRecord = false;
   surface.freshClaims = new Map();
   undoStack = [];
   inFlightWrite = null;

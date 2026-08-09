@@ -41,9 +41,6 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     var onCreateTranscript: ((String, String) -> Void)?
     /// The page asked for a transcript to be moved to the Trash.
     var onTrashTranscript: ((String) -> Void)?
-    /// The page asked for a transcript's golden to be recorded (ADR-294 D1).
-    var onRecordGolden: ((String) -> Void)?
-    var onRestoreGolden: ((String) -> Void)?
 
     // MARK: - State
 
@@ -140,13 +137,6 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         callJSON("discovered", json: Self.json(files) ?? "[]")
     }
 
-    /// The transcripts that have a `.golden` recording on disk (ADR-294 D1).
-    /// Tier is a filesystem fact, so the host reports it; the page never
-    /// infers it from run output.
-    func setGoldens(_ files: [String]) {
-        callJSON("goldens", json: Self.json(files) ?? "[]")
-    }
-
     /// The view mode remembered for this project (ADR-301 D4).
     func restoreMode(_ mode: String) {
         call("restoreMode", argument: mode)
@@ -216,17 +206,6 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
     /// It could not be removed, and why.
     func deliverTrashFailure(file: String, message: String) {
         call("trashFailed", arguments: [file, message])
-    }
-
-    /// `file`'s previous recording is back on disk. Answers `restoreGolden` (R6).
-    func deliverGoldenRestored(file: String) {
-        call("goldenRestored", argument: file)
-    }
-
-    /// It could not be restored, and why. The page keeps its review open — a
-    /// failed restore must never read as a restore that happened.
-    func deliverGoldenRestoreFailure(file: String, message: String) {
-        call("goldenRestoreFailed", arguments: [file, message])
     }
 
     // MARK: - Bridge plumbing
@@ -346,12 +325,6 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
         case "trashTranscript":
             guard let file = body["file"] as? String else { return }
             onTrashTranscript?(file)
-        case "recordGolden":
-            guard let file = body["file"] as? String else { return }
-            onRecordGolden?(file)
-        case "restoreGolden":
-            guard let file = body["file"] as? String else { return }
-            onRestoreGolden?(file)
         default:
             break
         }

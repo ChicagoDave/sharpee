@@ -34,14 +34,6 @@ final class TestController: TestRunnerDelegate {
     /// the fence note needs, and reading it takes no decoder.
     private var deliveredLines = 0
 
-    /// True while the in-flight run is one that writes files (a recording run):
-    /// its exit owes the Project pane a refresh, where an ordinary run does not.
-    private var runLandsFiles = false
-
-    /// The pre-re-record `.golden` bytes, set aside per transcript (R6) — the
-    /// "restore the previous recording" half of the re-record review.
-    private let goldenBackups = GoldenBackupStore()
-
     /// The view-mode key the tab's choice is remembered under, per project
     /// (ADR-301 D4 — the mode never switches itself, so it must persist).
     private static let modeDefaultsKey = "TestingTabViewMode"
@@ -62,10 +54,6 @@ final class TestController: TestRunnerDelegate {
         tab.onWriteTranscript = { [weak self] file, text in self?.writeTranscript(file, text) }
         tab.onCreateTranscript = { [weak self] name, text in self?.createTranscript(name, text) }
         tab.onTrashTranscript = { [weak self] file in self?.trashTranscript(file) }
-        tab.onRecordGolden = { [weak self] file in self?.recordGolden(file) }
-        tab.onRestoreGolden = { [weak self] file in
-            self?.goldenBackups.restore(file, deliverTo: self?.window?.testingTab)
-        }
         if let mode = UserDefaults.standard.string(forKey: Self.modeDefaultsKey) {
             tab.restoreMode(mode)
         }
@@ -84,7 +72,6 @@ final class TestController: TestRunnerDelegate {
         // A blank pane reads as "no tests", which is a different and wrong claim.
         tab?.beginRun(story: storyFile.deletingPathExtension().lastPathComponent)
         tab?.setDiscovered(discovered.map(\.path))
-        tab?.setGoldens(goldenPaths())
         tab?.setAutoAssertion(autoAssertionPolicy())
     }
 
@@ -99,32 +86,7 @@ final class TestController: TestRunnerDelegate {
     /// `TestRunner.runTests` for why the flat and chain modes were not merely
     /// redundant but wrong for an IDE project.
     func runTests() {
-        startRun(blessFile: nil)
-    }
-
-    /// Records `file`'s golden (ADR-294 D1): the same tree run, with just that
-    /// node blessed (`--bless-file`). Only a file in the discovered suite may
-    /// be recorded — the same boundary every read and write already honours.
-    private func recordGolden(_ file: String) {
-        let url = URL(fileURLWithPath: file)
-        guard discovered.contains(where: { $0.path == url.path }) else {
-            window?.testingTab.setStatus("\(url.lastPathComponent) is not in the discovered suite, so it was not recorded.")
-            return
-        }
-        // A re-record overwrites the baseline; set the current bytes aside so
-        // the review's "restore the previous recording" has something real to
-        // give back (R6). A first record has no previous recording — and any
-        // stale backup from an earlier session state must not outlive that fact.
-        goldenBackups.setAside(file)
-        startRun(blessFile: url)
-    }
-
-    /// The one run entry. `blessFile` non-nil makes it a recording run.
-    private func startRun(blessFile: URL?) {
         guard !runner.isRunning, let storyFile else { return }
-        // A recording run lands a `.golden` on disk — a FILE change the
-        // Project pane must see when the run exits, same as create and trash.
-        runLandsFiles = blessFile != nil
         // Tests read DISK while the editor holds buffers — save first, or an
         // unsaved edit silently tests the old source (the build rule).
         guard window?.saveAllDocuments() != false else { return }
@@ -136,11 +98,10 @@ final class TestController: TestRunnerDelegate {
         let tab = window?.testingTab
         tab?.beginRun(story: storyFile.deletingPathExtension().lastPathComponent)
         tab?.setDiscovered(discovered.map(\.path))
-        tab?.setGoldens(goldenPaths())
         // Documents were just saved, so disk is exactly what this run reads —
         // the reported policy and the run's behavior cannot disagree.
         tab?.setAutoAssertion(autoAssertionPolicy())
-        runner.runTests(storyFile: storyFile, blessFile: blessFile)
+        runner.runTests(storyFile: storyFile)
     }
 
     /// Cancels the in-flight run (SIGTERM → SIGKILL). Results already rendered stay.
@@ -224,13 +185,7 @@ final class TestController: TestRunnerDelegate {
         discovered = TranscriptDiscovery.transcripts(
             inStoryDirectory: storyFile.deletingLastPathComponent())
         window?.testingTab.setDiscovered(discovered.map(\.path))
-        window?.testingTab.setGoldens(goldenPaths())
         window?.refreshProjectTree()
-    }
-
-    /// The discovered transcripts that carry a recording, as tab-ready paths.
-    private func goldenPaths() -> [String] {
-        TranscriptDiscovery.goldens(among: discovered).map(\.path)
     }
 
     // MARK: - TestRunnerDelegate
@@ -254,17 +209,6 @@ final class TestController: TestRunnerDelegate {
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {
         let tab = window?.testingTab
         tab?.runFinished(ok: result.state == .passed)
-        // A recording run just changed which files have goldens; a plain run
-        // costs one cheap re-check. Reported after EVERY exit so the tab's
-        // tier facts always describe the disk as the run left it.
-        tab?.setGoldens(goldenPaths())
-        // A recording run also landed a FILE, which the Project pane must see
-        // (ADR-290 D7). Only then: an ordinary run changes no files, and a
-        // rebuild would cost the author their sidebar selection for nothing.
-        if runLandsFiles {
-            runLandsFiles = false
-            window?.refreshProjectTree()
-        }
         switch result.state {
         case .cancelled:
             tab?.setStatus("Cancelled — results up to this point are kept.")
@@ -283,53 +227,6 @@ final class TestController: TestRunnerDelegate {
             tab?.setStatus(status)
         default:
             break // the stream's own run-end is already rendered
-        }
-    }
-}
-
-/// The pre-re-record `.golden` bytes, set aside per transcript path (R6).
-///
-/// A re-record overwrites the baseline every future run is judged against, so
-/// the bytes it replaces are held here for the review's "restore the previous
-/// recording". One sibling-path derivation and one writer, so backup and
-/// restore can never disagree about which file they mean. Owned by
-/// TestController in production; the real-path suite drives this same type
-/// through the same page wiring, so there is no second implementation to
-/// drift.
-@MainActor
-final class GoldenBackupStore {
-
-    private var backups: [String: Data] = [:]
-
-    /// The recording that sits beside a transcript (ADR-294 D7).
-    static func goldenURL(for transcript: URL) -> URL {
-        transcript.deletingPathExtension().appendingPathExtension("golden")
-    }
-
-    /// Sets aside `file`'s current recording bytes as a recording run starts.
-    /// A first record has no previous recording — and any stale backup from an
-    /// earlier record of a since-removed golden must not outlive that fact.
-    func setAside(_ file: String) {
-        backups[file] = try? Data(contentsOf: Self.goldenURL(for: URL(fileURLWithPath: file)))
-    }
-
-    /// Answers the page's `restoreGolden`: writes the set-aside bytes back
-    /// atomically and confirms, or refuses out loud. The page keeps its review
-    /// open on a refusal — a failed restore must never read as one that
-    /// happened.
-    func restore(_ file: String, deliverTo tab: TestingTabViewController?) {
-        guard let backup = backups[file] else {
-            tab?.deliverGoldenRestoreFailure(
-                file: file,
-                message: "No earlier recording from this session is set aside to restore.")
-            return
-        }
-        do {
-            try backup.write(to: Self.goldenURL(for: URL(fileURLWithPath: file)), options: .atomic)
-            backups[file] = nil
-            tab?.deliverGoldenRestored(file: file)
-        } catch {
-            tab?.deliverGoldenRestoreFailure(file: file, message: error.localizedDescription)
         }
     }
 }

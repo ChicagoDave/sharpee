@@ -39,7 +39,7 @@ function fixture(source: string, name = 'fixture.transcript') {
  * meta command that does not advance the counter, everything else does.
  * `crash` throws BEFORE updating the record — the previous command's turn
  * stays behind, exactly the stale-read hazard the runner must not fall for.
- * `respond` overrides a command's output (blank output, replay divergence).
+ * `respond` overrides a command's output (blank output).
  */
 function turnCountingEngine(respond?: (cmd: string) => string | undefined) {
   const service = new EngineRandomService(42);
@@ -120,15 +120,6 @@ describe('command results carry the engine turn (R4)', () => {
     expect('turn' in result.commands[0]).toBe(false);
   });
 
-  it('golden record mode carries the turn on every recorded command', async () => {
-    const transcript = fixture('title: T\nstory: t\nseed: 42\n---\n> north\n\n> east\n', 'golden.transcript');
-
-    const result = await runTranscript(transcript, turnCountingEngine() as never, { bless: true });
-
-    expect(result.status).toBe('passed');
-    expect(result.commands.map((c) => c.turn)).toEqual([1, 2]);
-  });
-
   it('a crash mid-transcript never reports the previous command\'s turn as its own', async () => {
     // `crash` throws before the engine updates its record, so `lastTurnResult`
     // still holds `north`'s turn. Reading it after the catch would stamp the
@@ -161,32 +152,4 @@ describe('command results carry the engine turn (R4)', () => {
     expect(result.commands[1].turn).toBe(2);
   });
 
-  it('golden replay carries the turn on matching and diverging commands alike', async () => {
-    const source = 'title: T\nstory: t\nseed: 42\n---\n> north\n\n> east\n';
-    const transcript = fixture(source, 'replay.transcript');
-    const blessed = await runTranscript(transcript, turnCountingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    // Matching replay: every command carries its turn.
-    const replay = await runTranscript(transcript, turnCountingEngine() as never, {});
-    expect(replay.status).toBe('passed');
-    expect(replay.tier).toBe('golden');
-    expect(replay.commands.map((c) => c.turn)).toEqual([1, 2]);
-
-    // Diverging replay: the diverging command still says which turn diverged.
-    const diverging = turnCountingEngine((cmd) => (cmd === 'east' ? 'A wall.' : undefined));
-    const diverged = await runTranscript(transcript, diverging as never, {});
-    expect(diverged.status).toBe('failed');
-    expect(diverged.commands[1].diff).toBeDefined();
-    expect(diverged.commands[1].turn).toBe(2);
-  });
-
-  it('golden record mode omits the field against a turnless seam', async () => {
-    const transcript = fixture('title: T\nstory: t\nseed: 42\n---\n> north\n', 'turnless.transcript');
-
-    const result = await runTranscript(transcript, turnlessEngine() as never, { bless: true });
-
-    expect(result.status).toBe('passed');
-    expect('turn' in result.commands[0]).toBe(false);
-  });
 });

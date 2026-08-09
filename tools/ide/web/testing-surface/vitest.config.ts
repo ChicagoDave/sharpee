@@ -31,6 +31,10 @@ export default defineConfig({
         __dirname,
         '../../../../packages/branch-tester/src/types.ts',
       ),
+      '@sharpee/ide-protocol/run-events': resolve(
+        __dirname,
+        '../../../../packages/ide-protocol/src/run-events.ts',
+      ),
     },
   },
   test: {

@@ -1,8 +1,7 @@
 /**
  * runner-forces.test.ts — ADR-293 Phase C session instruments in the runner:
  * `forces:` loading and the unfired-`once` hard failure (D8/D9), `point-seed:`
- * overrides (D11), trace opt-in (D16), chain instrument hygiene, and the
- * `point-seeds` golden-provenance round trip.
+ * overrides (D11), trace opt-in (D16), and chain instrument hygiene.
  *
  * Derived from the Behavior Statement. The random service here is the REAL
  * `EngineRandomService` (the owned dependency under test runs its real path);
@@ -19,8 +18,7 @@ import * as path from 'path';
 import { definePoint, createSeededRandom, deriveStreamSeed } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
 import { parseTranscript } from '../src/parser.js';
-import { runTranscript, goldenPathFor } from '../src/runner.js';
-import { parseGoldenFile } from '../src/golden.js';
+import { runTranscript } from '../src/runner.js';
 
 let dir: string;
 
@@ -102,18 +100,6 @@ describe('forces: loading and firing (D8/D9)', () => {
     expect(failure?.error).toMatch(/ADR-293 D9/);
   });
 
-  it('an unfired force blocks a bless — no recording is written', async () => {
-    const transcript = fixture(
-      'title: T\nstory: s\nseed: 42\nforces: tt-forces.steal=yes\n---\n> walk\n'
-    );
-
-    const result = await runTranscript(transcript, forcingEngine() as never, { bless: true });
-
-    expect(result.status).toBe('failed');
-    expect(result.blessed).toBe(false);
-    expect(fs.existsSync(goldenPathFor(transcript.filePath))).toBe(false);
-  });
-
   it('a force naming an unknown point is a named error-status result with file:line', async () => {
     const transcript = fixture(
       'title: T\nforces: tt-forces.never-declared=yes\n---\n> walk\n[OK: contains "walk"]\n'
@@ -191,30 +177,8 @@ describe('chain instrument hygiene (D9 — session state scoped to the declaring
   });
 });
 
-describe('an earlier failure suppresses the unfired-force check (both tiers)', () => {
-  it('golden tier: a divergence before the force fires reports the divergence, not an unfired force', async () => {
-    const source =
-      'title: T\nstory: s\nseed: 42\nforces: tt-forces.steal=yes\n---\n> walk\n\n> steal\n';
-    const blessed = await runTranscript(fixture(source), forcingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    // Replay with a story whose "walk" output changed: turn 1 diverges and
-    // the run breaks before the force's firing point ("steal") is reached.
-    const diverging = forcingEngine() as unknown as { executeCommand(cmd: string): string };
-    const original = diverging.executeCommand.bind(diverging);
-    diverging.executeCommand = (cmd: string) =>
-      cmd === 'walk' ? 'You wander off.' : original(cmd);
-
-    const replayed = await runTranscript(fixture(source), diverging as never, {});
-
-    expect(replayed.status).toBe('failed');
-    const failures = replayed.commands.filter((c) => !c.passed);
-    expect(failures).toHaveLength(1);
-    expect(failures[0].error).toMatch(/output diverged from the recording/);
-    expect(failures[0].error).not.toMatch(/unfired/);
-  });
-
-  it('assertion tier: a failed assertion before the force fires reports that failure alone', async () => {
+describe('an earlier failure suppresses the unfired-force check', () => {
+  it('a failed assertion before the force fires reports that failure alone', async () => {
     const transcript = fixture(
       'title: T\nforces: tt-forces.steal=yes\n---\n> walk\n[OK: contains "xyzzy"]\n'
     );
@@ -268,75 +232,5 @@ describe('trace opt-in (D16)', () => {
     await runTranscript(transcript, engine as never, {});
 
     expect(engine.traceCalls).toEqual([true]);
-  });
-});
-
-describe('point-seeds golden provenance (D11 — optional key)', () => {
-  it('bless records the overrides; replay at the same header is green; a changed override is a named stale error', async () => {
-    const source =
-      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> roll\n';
-    const transcript = fixture(source);
-    const engine = () => forcingEngine();
-
-    const blessed = await runTranscript(transcript, engine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    const recording = parseGoldenFile(goldenPathFor(transcript.filePath));
-    expect(recording.provenance.pointSeeds).toEqual(['tt-forces.plain=777001']);
-
-    // Deterministic replay under the same overrides.
-    const replayed = await runTranscript(fixture(source), engine() as never, {});
-    expect(replayed.status).toBe('passed');
-
-    // A changed override is staleness by name, never a content diff.
-    const changed = await runTranscript(
-      fixture(source.replace('777001', '777002')),
-      engine() as never,
-      {}
-    );
-    expect(changed.status).toBe('error');
-    expect(changed.errorMessage).toMatch(/stale recording — re-bless/);
-    expect(changed.errorMessage).toMatch(/point-seeds recorded tt-forces\.plain=777001, runtime tt-forces\.plain=777002/);
-  });
-
-  it('a recording made without overrides carries no point-seeds line (pre-Phase-C byte compatibility)', async () => {
-    const transcript = fixture('title: T\nstory: s\nseed: 42\n---\n> walk\n');
-
-    const blessed = await runTranscript(transcript, forcingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    const raw = fs.readFileSync(goldenPathFor(transcript.filePath), 'utf-8');
-    expect(raw).not.toContain('point-seeds:');
-    expect(parseGoldenFile(goldenPathFor(transcript.filePath)).provenance.pointSeeds).toBeUndefined();
-  });
-
-  it('adding a point-seed: header after bless is a named stale error (recorded (none), runtime declares)', async () => {
-    const withoutOverride = 'title: T\nstory: s\nseed: 42\n---\n> walk\n';
-    const blessed = await runTranscript(fixture(withoutOverride), forcingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    const withOverride =
-      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> walk\n';
-    const replayed = await runTranscript(fixture(withOverride), forcingEngine() as never, {});
-
-    expect(replayed.status).toBe('error');
-    expect(replayed.errorMessage).toMatch(
-      /point-seeds recorded \(none\), runtime tt-forces\.plain=777001/
-    );
-  });
-
-  it('removing the point-seed: header after bless is a named stale error (recorded has, runtime (none))', async () => {
-    const withOverride =
-      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> walk\n';
-    const blessed = await runTranscript(fixture(withOverride), forcingEngine() as never, { bless: true });
-    expect(blessed.status).toBe('passed');
-
-    const withoutOverride = 'title: T\nstory: s\nseed: 42\n---\n> walk\n';
-    const replayed = await runTranscript(fixture(withoutOverride), forcingEngine() as never, {});
-
-    expect(replayed.status).toBe('error');
-    expect(replayed.errorMessage).toMatch(
-      /point-seeds recorded tt-forces\.plain=777001, runtime \(none\)/
-    );
   });
 });

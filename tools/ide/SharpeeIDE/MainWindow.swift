@@ -1191,6 +1191,8 @@ private final class MainSplitViewController: NSSplitViewController {
         // creation exactly as it will govern the file's future runs).
         controller.surface.testsDirectory =
             projectRoot.appendingPathComponent("tests", isDirectory: true)
+        controller.surface.storyFile = storyURL
+        controller.surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         controller.surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
 

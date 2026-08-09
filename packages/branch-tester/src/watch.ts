@@ -1,14 +1,14 @@
 /**
- * Watch mode (ADR-294 D14) — targeted reruns with an inline bless affordance.
+ * Watch mode (ADR-294 D14) — targeted reruns.
  *
- * A change to a watched transcript (or one of its recordings) reruns that one
- * test; a change to the story's files reruns every watched transcript. Golden
- * failures offer `bless? [y/n/all]` when a prompt is available; an unattended
- * watch (no prompt wired) never blesses anything — it only reports.
+ * A change to a watched transcript reruns that one test; a change to the
+ * story's files reruns every watched transcript. Failures report — durable
+ * regression protection is the transcript's own assertions (ADR-306 retired
+ * the author-world golden tier, and the bless affordance with it).
  *
- * Public interface: `classifyChange`, `BlessPolicy`, `runCycle`, `startWatch`.
- * The host CLI supplies the run/prompt/log callbacks; this module owns only
- * the watch/decision logic, so both are testable without a real terminal.
+ * Public interface: `classifyChange`, `runCycle`, `startWatch`.
+ * The host CLI supplies the run/log callbacks; this module owns only the
+ * watch/decision logic, so both are testable without a real terminal.
  * Owner context: branch-tester (testing tooling).
  */
 
@@ -22,18 +22,13 @@ export type ChangeTarget =
   | { kind: 'story' }
   | { kind: 'ignored' };
 
-/** Escape a string for literal use inside a RegExp. */
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
  * Classify one changed path against the watch set.
  *
- * Order matters: a watched transcript's own artifacts map to that transcript;
- * OTHER transcript artifacts are noise even inside a story dir (an unwatched
- * suite's files must not retrigger this one); save churn from our own runs is
- * noise; anything else under a story dir is a story change (rerun all).
+ * Order matters: a watched transcript maps to itself; OTHER transcripts are
+ * noise even inside a story dir (an unwatched suite's files must not
+ * retrigger this one); save churn from our own runs is noise; anything else
+ * under a story dir is a story change (rerun all).
  */
 export function classifyChange(
   changedPath: string,
@@ -43,17 +38,12 @@ export function classifyChange(
   const resolved = path.resolve(changedPath);
 
   for (const transcriptPath of watchedTranscripts) {
-    const resolvedTranscript = path.resolve(transcriptPath);
-    if (resolved === resolvedTranscript) {
-      return { kind: 'transcript', transcriptPath };
-    }
-    const base = escapeRegExp(resolvedTranscript.replace(/\.transcript$/, ''));
-    if (new RegExp(`^${base}(\\.\\d+)?\\.golden$`).test(resolved)) {
+    if (resolved === path.resolve(transcriptPath)) {
       return { kind: 'transcript', transcriptPath };
     }
   }
 
-  if (/\.(transcript|golden)$/.test(resolved) || resolved.endsWith('.divergence.json')) {
+  if (resolved.endsWith('.transcript')) {
     return { kind: 'ignored' };
   }
 
@@ -70,73 +60,18 @@ export function classifyChange(
   return { kind: 'ignored' };
 }
 
-/**
- * The bless decision state machine (D14). With no prompt wired (headless,
- * no TTY), `decide` is always false — an unattended watch never blesses.
- * An explicit `all` answer is sticky for the rest of the watch session.
- */
-export class BlessPolicy {
-  private blessAll = false;
-
-  constructor(
-    private readonly promptBless?: (transcriptPath: string) => Promise<'y' | 'n' | 'all'>
-  ) {}
-
-  async decide(transcriptPath: string): Promise<boolean> {
-    if (!this.promptBless) return false;
-    if (this.blessAll) return true;
-    const answer = await this.promptBless(transcriptPath);
-    if (answer === 'all') {
-      this.blessAll = true;
-      return true;
-    }
-    return answer === 'y';
-  }
-}
-
 /** Host-supplied callbacks: run one transcript (all its matrix seeds), log. */
 export interface WatchRunIO {
   /** Run one transcript file fresh; returns one result per matrix seed. */
-  run(transcriptPath: string, bless: boolean): Promise<TranscriptResult[]>;
+  run(transcriptPath: string): Promise<TranscriptResult[]>;
   log(message: string): void;
 }
 
-/**
- * Run one watch cycle over the affected transcripts. A golden-tier non-pass
- * offers bless via the policy; assertion-tier failures only report (bless is
- * a golden affordance). Returns the golden paths this cycle wrote, so the
- * watcher can suppress its own write events.
- */
-export async function runCycle(
-  transcriptPaths: string[],
-  io: WatchRunIO,
-  policy: BlessPolicy,
-  onBlessed?: (goldenPath: string) => void
-): Promise<{ blessedGoldens: string[] }> {
-  const blessedGoldens: string[] = [];
-
+/** Run one watch cycle over the affected transcripts. Failures only report. */
+export async function runCycle(transcriptPaths: string[], io: WatchRunIO): Promise<void> {
   for (const transcriptPath of transcriptPaths) {
-    const results = await io.run(transcriptPath, false);
-    const goldenFailed = results.some(r => r.tier === 'golden' && r.status !== 'passed');
-    if (!goldenFailed) continue;
-
-    if (await policy.decide(transcriptPath)) {
-      const blessed = await io.run(transcriptPath, true);
-      for (const result of blessed) {
-        if (result.blessed && result.goldenPath) {
-          blessedGoldens.push(result.goldenPath);
-          // Immediately — the write's fs event may already be in flight, and
-          // suppression registered only after the cycle would miss it.
-          onBlessed?.(result.goldenPath);
-          io.log(`blessed: ${result.goldenPath}`);
-        } else if (result.status !== 'passed') {
-          io.log(`bless failed: ${result.errorMessage ?? 'see the report above'}`);
-        }
-      }
-    }
+    await io.run(transcriptPath);
   }
-
-  return { blessedGoldens };
 }
 
 export interface WatchConfig {
@@ -154,27 +89,15 @@ export interface WatchConfig {
  */
 export function startWatch(
   config: WatchConfig,
-  io: WatchRunIO,
-  policy: BlessPolicy
+  io: WatchRunIO
 ): { close(): void } {
   const debounceMs = config.debounceMs ?? 200;
   const pending = new Set<string>();
   let storyPending = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = false;
-  /** Goldens our own bless just wrote: path → written-at. */
-  const selfWrites = new Map<string, number>();
-  const SELF_WRITE_WINDOW_MS = 2000;
-
-  const markSelfWrite = (writtenPath: string) => {
-    selfWrites.set(path.resolve(writtenPath), Date.now());
-  };
 
   const onChange = (changedPath: string) => {
-    const wroteAt = selfWrites.get(path.resolve(changedPath));
-    if (wroteAt !== undefined && Date.now() - wroteAt < SELF_WRITE_WINDOW_MS) {
-      return;
-    }
     const target = classifyChange(changedPath, config.transcripts, config.storyDirs);
     if (target.kind === 'ignored') return;
     if (target.kind === 'story') storyPending = true;
@@ -201,20 +124,10 @@ export function startWatch(
     running = true;
     try {
       io.log(`\nchange detected — rerunning ${affected.length} transcript(s)`);
-      // Self-writes are registered the moment each bless lands (the write's
-      // fs event may arrive while the cycle is still running).
-      await runCycle(affected, io, policy, markSelfWrite);
+      await runCycle(affected, io);
       io.log('watching…');
     } finally {
       running = false;
-    }
-    // Drop anything the in-flight suppression window caught late: a pending
-    // entry whose only cause was our own bless write must not re-run.
-    for (const transcriptPath of [...pending]) {
-      const stillReal = ![...selfWrites.entries()].some(([written, at]) =>
-        Date.now() - at < SELF_WRITE_WINDOW_MS &&
-        classifyChange(written, [transcriptPath], []).kind === 'transcript');
-      if (!stillReal) pending.delete(transcriptPath);
     }
     if (pending.size > 0 || storyPending) schedule();
   };

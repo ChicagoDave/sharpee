@@ -55,11 +55,12 @@ export interface StreamableCommandResult {
    */
   ending?: 'victory' | 'defeat' | 'quit';
   /**
-   * Golden divergence (replay failure) or re-record review (passing turn that
-   * changed from the previous recording, R6). Carried verbatim — the runner
-   * computed it, the wire only moves it.
+   * The first failed assertion's message (`Output does not contain "…"`).
+   * Carried verbatim — the runner computed it, the wire only moves it.
+   * Optional because only harnesses that compute it (branch-tester's) say;
+   * a result without it emits an event without one.
    */
-  diff?: { recorded: string[]; actual: string[]; channel?: string };
+  failure?: string;
   /**
    * The world after this command (R3), captured under `--capture-world`.
    * Carried verbatim; structurally the wire's `WorldSnapshot`.
@@ -219,7 +220,7 @@ export class RunEventStream {
       ...(captureOutput || !result.passed ? { actualOutput: result.actualOutput } : {}),
       ...(result.turn !== undefined ? { turn: result.turn } : {}),
       ...(result.ending !== undefined ? { ending: result.ending } : {}),
-      ...(result.diff !== undefined ? { diff: result.diff } : {}),
+      ...(result.failure !== undefined ? { failure: result.failure } : {}),
       ...(result.world !== undefined ? { world: result.world } : {}),
     });
   }

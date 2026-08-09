@@ -209,17 +209,16 @@ export interface CommandResultEvent extends RunEventEnvelope {
    */
   ending?: 'victory' | 'defeat' | 'quit';
   /**
-   * Golden divergence: the recorded lines and the actual lines, verbatim
-   * (build-date banner masked on both sides — the runner's one normalization,
-   * ADR-294 D6). Present in two situations, distinguishable by `passed`:
-   * a REPLAY that diverged (`passed: false` — the failure view's old-vs-new),
-   * and a RE-record over an existing recording (`passed: true` — record mode
-   * never stops, so every changed turn carries its before/after and a
-   * consumer can walk the whole review while the new recording lands).
-   * `channel` names the surface the first mismatch lies in (a declared
-   * channel id, or the runner's prose surface constant).
+   * The first failed assertion's message, verbatim from the runner
+   * (`Output does not contain "…"`, `player.location = … (actual: …)`).
+   * Present exactly when `passed` is false and an assertion (rather than a
+   * runtime error) failed the command — `error` keeps carrying the throw
+   * case. One message, not the list: the consumer this exists for (the
+   * testing surface's run column) shows one line per transcript, and a
+   * consumer that wants every failure re-runs with the file open in the
+   * Testing tab, which has the full old-vs-new view.
    */
-  diff?: { recorded: string[]; actual: string[]; channel?: string };
+  failure?: string;
   /**
    * The world AFTER this command (R3). A consumer diffs consecutive
    * snapshots — this one against the previous command's, or against the
@@ -439,19 +438,8 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
       value.ending === 'victory' ||
       value.ending === 'defeat' ||
       value.ending === 'quit') &&
-    (value.diff === undefined || isCommandDiff(value.diff)) &&
+    (value.failure === undefined || typeof value.failure === 'string') &&
     (value.world === undefined || isWorldSnapshot(value.world))
-  );
-}
-
-/** The `diff` member of a command-result: two verbatim line arrays. */
-function isCommandDiff(value: unknown): value is { recorded: string[]; actual: string[]; channel?: string } {
-  if (!isObject(value)) return false;
-  const lines = (v: unknown): boolean => Array.isArray(v) && v.every((line) => typeof line === 'string');
-  return (
-    lines(value.recorded) &&
-    lines(value.actual) &&
-    (value.channel === undefined || typeof value.channel === 'string')
   );
 }
 

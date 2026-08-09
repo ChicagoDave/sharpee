@@ -25,6 +25,7 @@ const outDir = resolve(repoRoot, 'tools/ide/SharpeeIDE/Resources/testing-surface
 // rule 8b / ADR-306 D2 exist to prevent exactly that drift. The module is
 // dependency-free beyond its own types, so bundling from source costs nothing.
 const autoAssertion = resolve(repoRoot, 'packages/branch-tester/src/auto-assertion.ts');
+const runEvents = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
 const btSerializer = resolve(repoRoot, 'packages/branch-tester/src/serializer.ts');
 const btParser = resolve(repoRoot, 'packages/branch-tester/src/parser.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
@@ -44,6 +45,7 @@ const options = {
     '@sharpee/branch-tester/serializer': btSerializer,
     '@sharpee/branch-tester/parser': btParser,
     '@sharpee/branch-tester/types': btTypes,
+    '@sharpee/ide-protocol/run-events': runEvents,
     // The parser imports node's fs for its file-loading helper only; the
     // surface parses text it already holds, so the browser build shims it.
     'fs': resolve(here, 'src/shims/fs.ts'),
