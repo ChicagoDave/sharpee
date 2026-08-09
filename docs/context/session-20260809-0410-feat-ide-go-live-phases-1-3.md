@@ -56,6 +56,45 @@ testing UX survives." Executed same session (commit follows the Phase 3 one):
 - **Evidence**: app builds clean; full IDE suite **523 passing, 0 failures** after
   the retirements (was 544; the deleted old-UX suites carried ~21 tests).
 
+## Phase 4 — implemented same session under the directive (all DONE)
+
+After the shred, "implement it in the IDE" ran Phase 4 to completion across four
+increments (commits `ef3d4341`, `15a89da6`, `baf79bc9`, + the D9/AC-5 closer):
+
+1. **Authoring model**: `TurnClaims` on `SessionModel` — every §5 family,
+   authoring-includes-the-turn, default-narrowing, prune-to-`[SKIP]`,
+   opening-never-skips (vitest 40).
+2. **Composer through the toolchain's own modules (D2)**: `compose.ts` builds each
+   segment via imported `synthesizePolicyAssertions` + `serializeTranscript` from
+   branch-tester SOURCE (no branch-tester edits); one shared `segmentPlan` feeds
+   both the file text and the source panel's lines (with DeleteRefs), so the panel
+   shows exactly what the file carries; every compose test round-trips the real
+   parser (vitest 49 total).
+3. **Auto-save writer end to end (design §4)**: closed segments post
+   `{write:{name,text,previousName?}}`/`{remove:{name}}`; Swift lands them
+   atomically in the project's `tests/`, renames cascade children's `continues:`
+   header lines, a reopened range takes its file back, a fence forgets tracking
+   but never deletes files. Real-path tests assert the files on disk.
+4. **Gestures + D6 pickers**: card action rows (Not contains…, Exact toggle,
+   State…/Event…/Channel…), contains-by-selection float; `picker.ts` implements
+   D6 (one filterable list, Grouped toggle, collapsible sections, filter
+   auto-expands folds) — State facts are digest entity locations only, because
+   the runner's evaluator accepts only `entity.property = value`/`contains`
+   forms (score/machine facts need an evaluator extension — `packages/`
+   discussion for David). AC-5 pinned at a synthetic 60-fact digest.
+5. **D9 (AC-3)**: editor file watchers (re-armed across atomic replaces) —
+   clean buffers reload silently with caret/scroll kept; dirty buffers badge +
+   Keep/Reload choice; own saves never conflict. `EditorExternalChangeTests`
+   asserts buffer AND file content both sides. Closes the 6e loose thread.
+
+**Final evidence**: IDE suite **531 passing, 0 failures**; vitest **49 passing**.
+Phase 4 exit state met: play → range → gesture → correct parseable `.transcript`
+on disk, no manual save step; restructures rename with cascade.
+
+**Deferred honestly** (in the plan): score/machine picker facts (evaluator
+extension, `packages/`), hand-rename pinning (awaits tab-rename wiring),
+open-range claims not persisted (D8's letter), selection-float human drag.
+
 ## Key Decisions
 1. **Surface ships as an IDE-owned web bundle injected into the platform's testing page** — not a devkit template change, not IDE-drawn native UI. Keeps Phase 3 entirely inside `tools/ide` (no `packages/` discussion needed) and keeps prose rendering the client's own.
 2. **Hosting: its own window** (Test → Testing Play Surface), isolated non-persistent web store. ADR-304's workspace machinery untouched until Phase 6; hosting can be revisited then if David prefers a pane.
