@@ -28,6 +28,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     /// The client's part, in fixture form: an opening (unstamped), a boot
     /// look, and a room graph walked by typed commands — each turn stamped
     /// into the DOM and posted over the feed exactly as `BrowserClient` does.
+    /// Phase 5 parity: a typed `restart` behind confirm() replays the real
+    /// client's sequence (ack turn → fence → fresh boot look), and a typed
+    /// `save` opens a real `<dialog>` that resolves the turn only on close —
+    /// the shapes the branch driver and the D7 dialog auto-drive ride on.
     private static let fixtureHTML = """
     <html><head><meta charset="utf-8"></head><body>
     <div class="sharpee-window">
@@ -36,19 +40,27 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         <input id="command-input" type="text">
       </div>
     </div>
+    <dialog id="save-dialog">
+      <input type="text" id="save-name-input">
+      <div id="save-slots-list"></div>
+      <button id="save-confirm-btn">Save</button>
+      <button id="save-cancel-btn">Cancel</button>
+    </dialog>
     <script>
     (function () {
       var route = {
         'Iron Gates':    { north: 'Gravel Drive' },
-        'Gravel Drive':  { north: 'Fountain Court', south: 'Iron Gates' },
+        'Gravel Drive':  { north: 'Fountain Court', south: 'Iron Gates', east: 'Boiler Shed' },
+        'Boiler Shed':   { west: 'Gravel Drive' },
         'Fountain Court':{ north: 'Entrance Hall', south: 'Gravel Drive' }
       };
       var current = 'Iron Gates';
       var n = 0;
+      var lineage = 1;
       function post(o) {
         try { window.webkit.messageHandlers.turnEvents.postMessage(JSON.stringify(o)); } catch (e) {}
       }
-      function renderTurn(command, echo) {
+      function renderTurn(command, echo, output) {
         n += 1;
         var tc = document.getElementById('text-content');
         if (echo) {
@@ -60,39 +72,68 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         }
         var dest = (route[current] || {})[command];
         if (dest) current = dest;
+        var bodyText = output || ('You are in the ' + current + '.');
         var r = document.createElement('p');
         r.className = 'room-name';
         r.textContent = current;
         r.setAttribute('data-turn', n);
         tc.appendChild(r);
         var p = document.createElement('p');
-        p.textContent = 'You are in the ' + current + '.';
+        p.textContent = bodyText;
         p.setAttribute('data-turn', n);
         tc.appendChild(p);
         var token = current.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         post({ turn: n, command: command,
-               output: current + '\\nYou are in the ' + current + '.',
+               output: current + '\\n' + bodyText,
                captures: [{ channel: 'room-name', values: [current] }],
                events: ['if.event.actor_moved'],
                world: { entities: [{ kind: 'npc', name: 'Tobias', token: 'tobias',
                                      location: { name: current, token: token } }] },
-               lineage: 1 });
+               lineage: lineage });
       }
+      function bootLook() { renderTurn('look', false); }
       var tc = document.getElementById('text-content');
       var opening = document.createElement('p');
       opening.textContent = 'The cab is already grinding away down the lane.';
       tc.appendChild(opening);
-      renderTurn('look', false);
+      bootLook();
       var input = document.getElementById('command-input');
       input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && input.value.trim()) {
-          var command = input.value.trim();
-          input.value = '';
-          renderTurn(command, true);
+        if (e.key !== 'Enter' || !input.value.trim()) return;
+        var command = input.value.trim();
+        input.value = '';
+        if (command === 'restart') {
+          // The client's sequence (ADR-248): confirm, ack turn, fence, boot.
+          if (!window.confirm('Are you sure?')) { renderTurn(command, true, 'Restart declined.'); return; }
+          renderTurn(command, true, 'The story restarts.');
+          lineage += 1;
+          post({ restart: true, turn: n + 1, lineage: lineage });
+          current = 'Iron Gates';
+          bootLook();
+          return;
         }
+        if (command === 'save') {
+          // The turn completes only when the dialog closes (the D7 shape).
+          var dialog = document.getElementById('save-dialog');
+          var handler = function () {
+            dialog.removeEventListener('close', handler);
+            var name = document.getElementById('save-name-input').value;
+            var saved = dialog.returnValue === 'confirm' && name;
+            window.fixtureLastSave = saved ? name : null;
+            renderTurn(command, true, saved ? 'Saved as ' + name + '.' : 'Save cancelled.');
+          };
+          dialog.addEventListener('close', handler);
+          document.getElementById('save-confirm-btn').onclick = function () { dialog.close('confirm'); };
+          document.getElementById('save-cancel-btn').onclick = function () { dialog.close('cancel'); };
+          document.getElementById('save-name-input').value = 'generated-name';
+          dialog.showModal();
+          return;
+        }
+        renderTurn(command, true);
       });
       window.fixtureRestart = function () {
-        post({ restart: true, turn: n + 1, lineage: 2 });
+        lineage += 1;
+        post({ restart: true, turn: n + 1, lineage: lineage });
       };
       window.bootProbeReady = true;
     })();
@@ -229,24 +270,30 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         """)
         XCTAssertEqual(implied as? Bool, true)
 
-        // The view state landed in the sidecar (D8 continuous persistence).
+        // The view state landed in the sidecar (D8 continuous persistence) —
+        // the composite's model snapshot is position-keyed (Phase 5).
         try await waitForSidecarSegments()
         let object = try sidecarJSON()
-        let state = try XCTUnwrap(object["viewState"] as? [String: Any])
-        let segments = try XCTUnwrap(state["segments"] as? [[String: Any]])
-        XCTAssertEqual(segments.first?["start"] as? Int, 2)
-        XCTAssertEqual(segments.first?["end"] as? Int, 3)
+        let segments = try sidecarSegments(object)
+        XCTAssertEqual(segments.first?["startPos"] as? Int, 2)
+        XCTAssertEqual(segments.first?["endPos"] as? Int, 3)
         // And the command log carries the session (boot look + two norths).
         let commands = try XCTUnwrap(object["commands"] as? [[String: Any]])
         XCTAssertEqual(commands.map { $0["command"] as? String }, ["look", "north", "north"])
         XCTAssertEqual(commands.first?["boot"] as? Bool, true)
     }
 
+    /// The composite view state's model segments (Phase 5 sidecar shape).
+    private func sidecarSegments(_ object: [String: Any]) throws -> [[String: Any]] {
+        let state = try XCTUnwrap(object["viewState"] as? [String: Any])
+        let modelSnap = try XCTUnwrap(state["model"] as? [String: Any])
+        return try XCTUnwrap(modelSnap["segments"] as? [[String: Any]])
+    }
+
     private func waitForSidecarSegments() async throws {
         for _ in 0..<100 {
             if let object = try? sidecarJSON(),
-               let state = object["viewState"] as? [String: Any],
-               let segments = state["segments"] as? [[String: Any]],
+               let segments = try? sidecarSegments(object),
                !segments.isEmpty { return }
             try await Task.sleep(nanoseconds: 50_000_000)
         }
@@ -322,18 +369,16 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         """, "one strip on the merged range's first card")
         for _ in 0..<100 {
             if let object = try? sidecarJSON(),
-               let state = object["viewState"] as? [String: Any],
-               let segments = state["segments"] as? [[String: Any]],
+               let segments = try? sidecarSegments(object),
                segments.count == 1,
-               segments.first?["start"] as? Int == 1,
-               segments.first?["end"] as? Int == 3 { break }
+               segments.first?["startPos"] as? Int == 1,
+               segments.first?["endPos"] as? Int == 3 { break }
             try await Task.sleep(nanoseconds: 50_000_000)
         }
-        let state = try XCTUnwrap(try sidecarJSON()["viewState"] as? [String: Any])
-        let segments = try XCTUnwrap(state["segments"] as? [[String: Any]])
+        let segments = try sidecarSegments(try sidecarJSON())
         XCTAssertEqual(segments.count, 1)
-        XCTAssertEqual(segments.first?["start"] as? Int, 1)
-        XCTAssertEqual(segments.first?["end"] as? Int, 3)
+        XCTAssertEqual(segments.first?["startPos"] as? Int, 1)
+        XCTAssertEqual(segments.first?["endPos"] as? Int, 3)
     }
 
     // MARK: - The auto-save writer (Phase 4, design §4)
@@ -681,6 +726,373 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         }
         XCTAssertTrue(strip?.contains("iron-gates-to-gravel-drive-1") == true,
                       "route-derived name from the real world's rooms — strip was: \(strip ?? "nil")")
+    }
+
+    // MARK: - Phase 5: branching, lineage stickiness, and dialog auto-drive
+
+    /// Clicks a labelled button in a card's action row.
+    private func clickAction(_ ordinal: Int, _ label: String) async throws {
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="\(ordinal)"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === \(jsString(label))) { buttons[i].click(); return; }
+          }
+        })();
+        """)
+    }
+
+    /// Commits text into the inline action-row prompt (Branch…'s input).
+    private func commitActionPrompt(_ ordinal: Int, _ text: String) async throws {
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var input = document.querySelector('[data-ts-ordinal="\(ordinal)"] .ts-actions input');
+          input.value = \(jsString(text));
+          input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        })();
+        """)
+    }
+
+    /// Plays north twice and ranges 1–3 closed — the branch tests' opening.
+    private func playAndRangeThreeTurns() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
+        try await tick(1)
+        try await tick(3)
+    }
+
+    func testBranchGestureForksReplaysAndLandsTheAlternate() async throws {
+        try await playAndRangeThreeTurns()
+
+        // Branch… at turn 3 with `east`: the driver restarts the client,
+        // replays the prefix suppressed, and types the alternate live.
+        try await clickAction(3, "Branch…")
+        try await commitActionPrompt(3, "east")
+
+        // The alternate lands as an ordinary feed turn (ordinal 7: ack and
+        // replay consumed 4–6) — a visible branch card with real prose.
+        try await waitFor("""
+        (function () {
+          var card = document.querySelector('[data-ts-ordinal="7"] .ts-prose');
+          return !!card && card.textContent.indexOf('Boiler Shed') !== -1;
+        })()
+        """, "the alternate's card from the live replay")
+        let meta = try await surface.evaluateInSurface(
+            "document.querySelector('[data-ts-ordinal=\"7\"] .ts-meta').textContent")
+        XCTAssertEqual(meta as? String, "turn 7 · branch")
+
+        // Lineage stickiness: the main line's turn 3 hides while the branch
+        // is viewed. The shared prefix collapsed into its parent summary at
+        // the fork (design §6), so it shows as the named summary card.
+        let stuck = try await surface.evaluateInSurface("""
+        (function () {
+          var summaries = document.querySelectorAll('#ts-cards .ts-summary');
+          var prefixShown = false;
+          for (var i = 0; i < summaries.length; i++) {
+            if (summaries[i].textContent.indexOf('iron-gates-to-gravel-drive-2') !== -1 &&
+                summaries[i].closest('.ts-turn').style.display !== 'none') prefixShown = true;
+          }
+          return document.querySelector('[data-ts-ordinal="3"]').style.display === 'none' &&
+                 prefixShown;
+        })()
+        """)
+        XCTAssertEqual(stuck as? Bool, true)
+
+        // The chip row: main line first, then the sibling — sibling selected.
+        try await waitFor("document.querySelectorAll('.ts-branch-chip').length === 2",
+                         "two sibling chips")
+        let chips = try await surface.evaluateInSurface("""
+        (function () {
+          var chips = document.querySelectorAll('.ts-branch-chip');
+          return !chips[0].className.match('ts-chip-selected') &&
+                 !!chips[1].className.match('ts-chip-selected') &&
+                 chips[1].textContent.indexOf('gravel-drive-to-boiler-shed-1') !== -1;
+        })()
+        """)
+        let chipsHTML = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-branch-row').outerHTML") as? String
+        XCTAssertEqual(chips as? Bool, true, "chip row was: \(chipsHTML ?? "nil")")
+
+        // The branch's transcript landed in tests/, continuing from the
+        // auto-split prefix — the durable artifact of the fork.
+        let file = transcriptOnDisk("gravel-drive-to-boiler-shed-1")
+        try await waitForFileContaining(file, "> east", "the branch transcript")
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertTrue(text.contains("continues: iron-gates-to-gravel-drive-2"),
+                      "the branch continues from the auto-split prefix")
+    }
+
+    func testChipSwitchMakesTheSiblingLiveAndTypingContinuesIt() async throws {
+        try await playAndRangeThreeTurns()
+        try await clickAction(3, "Branch…")
+        try await commitActionPrompt(3, "east")
+        // Wait for the branch replay to COMPLETE — the driver re-enables the
+        // input when done (a chip click during a replay is deliberately
+        // swallowed).
+        try await waitFor("""
+        (function () {
+          var card = document.querySelector('[data-ts-ordinal="7"] .ts-prose');
+          return !!card && card.textContent.indexOf('Boiler Shed') !== -1 &&
+                 document.getElementById('command-input').disabled === false;
+        })()
+        """, "the branch replay finishing")
+
+        // Click the MAIN chip: the driver replays the main lineage live and
+        // the retained cards come back — nothing was deleted by viewing.
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-branch-chip')[0].click();")
+        try await waitFor("""
+        document.querySelector('[data-ts-ordinal="3"]').style.display !== 'none' &&
+        document.querySelector('[data-ts-ordinal="7"]').style.display === 'none'
+        """, "the main lineage restored, the branch hidden")
+
+        // Typing now continues the MAIN lineage — the viewed lineage is the
+        // live one, so the new turn goes north from Fountain Court. (Wait
+        // out the switch replay first: typing is held while it drives.)
+        try await waitFor("document.getElementById('command-input').disabled === false",
+                         "the switch replay finishing")
+        try await type("north")
+        try await waitFor("""
+        (function () {
+          var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+          var last = cards[cards.length - 1];
+          return !!last && last.style.display !== 'none' &&
+                 last.textContent.indexOf('Entrance Hall') !== -1;
+        })()
+        """, "a fresh main-lineage turn after the switch")
+    }
+
+    func testReopenRestoresTheForkTreeAndAuthoredClaimsSurvive() async throws {
+        try await playAndRangeThreeTurns()
+
+        // An authored claim (Exact on turn 2) — it must survive the reopen.
+        try await clickAction(2, "Exact")
+        try await clickAction(3, "Branch…")
+        try await commitActionPrompt(3, "east")
+        try await waitFor("document.querySelectorAll('.ts-branch-chip').length === 2", "chips")
+        let prefixFile = transcriptOnDisk("iron-gates-to-gravel-drive-2")
+        try await waitForFileContaining(prefixFile, "end text", "the Exact block in the prefix file")
+        let branchFile = transcriptOnDisk("gravel-drive-to-boiler-shed-1")
+        try await waitForFileContaining(branchFile, "> east", "the branch file")
+        let prefixBefore = try String(contentsOf: prefixFile, encoding: .utf8)
+
+        // A fresh surface over the same sidecar: the whole fork tree
+        // restores by replay — root, then the branch, active lineage last.
+        surface = nil
+        try await boot()
+        try await waitFor("""
+        (function () {
+          var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].style.display !== 'none' &&
+                cards[i].textContent.indexOf('Boiler Shed') !== -1) return true;
+          }
+          return false;
+        })()
+        """, "the branch's card restored by replay")
+        try await waitFor("document.querySelectorAll('.ts-branch-chip').length === 2",
+                         "the chip row restored")
+        // The branch was active at close — it is active (and live) again.
+        let selected = try await surface.evaluateInSurface("""
+        !!document.querySelectorAll('.ts-branch-chip')[1].className.match('ts-chip-selected')
+        """)
+        XCTAssertEqual(selected as? Bool, true)
+
+        // THE CLOBBER FIX: the prefix file still carries the authored Exact
+        // block, byte for byte — reopening re-hydrated claims from the file
+        // instead of rewriting it with policy defaults.
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let prefixAfter = try String(contentsOf: prefixFile, encoding: .utf8)
+        XCTAssertEqual(prefixAfter, prefixBefore,
+                       "reopening must never rewrite authored claims away")
+    }
+
+    func testHandEditedFileDetachesFromAutoWritesUntilTheAuthorTakesItBack() async throws {
+        // Two transcripts: head 1–2 and tail 3–3 (split), both on disk.
+        try await playAndRangeThreeTurns()
+        try await clickAction(3, "Split here")
+        let head = transcriptOnDisk("iron-gates-to-gravel-drive-2")
+        let tail = transcriptOnDisk("gravel-drive-to-fountain-court-1")
+        try await waitForFileContaining(head, "> north", "the head file")
+        try await waitForFileContaining(tail, "> north", "the tail file")
+        try await waitForSidecarSegments()
+
+        // Hand-edit the tail BEYOND the claim grammar: an exact block whose
+        // literal text compose can never regenerate from the live source.
+        let tailText = try String(contentsOf: tail, encoding: .utf8)
+        let handEdited = tailText.replacingOccurrences(
+            of: "[SKIP]", with: "[OK]\ntext\nA hand-written line no replay produces.\nend text")
+        XCTAssertNotEqual(handEdited, tailText)
+        try Data(handEdited.utf8).write(to: tail)
+
+        // Reopen: the tail re-hydrates as DIVERGED and detaches from the
+        // auto-save writer; a gesture on the OTHER segment must not touch it.
+        surface = nil
+        try await boot()
+        try await waitFor("""
+        (function () {
+          var strip = document.querySelector('[data-ts-ordinal="3"] .ts-auto-name');
+          return !!strip && strip.textContent.indexOf('gravel-drive-to-fountain-court-1') !== -1 &&
+                 document.getElementById('command-input').disabled === false;
+        })()
+        """, "the restored session")
+        try await clickAction(2, "Exact")
+        try await waitForFileContaining(head, "end text", "the head rewritten by the gesture")
+        let tailAfterOtherGesture = try String(contentsOf: tail, encoding: .utf8)
+        XCTAssertEqual(tailAfterOtherGesture, handEdited,
+                       "a diverged file is never auto-written by gestures elsewhere")
+
+        // A gesture ON the detached segment takes it back: the writer owns
+        // the file again and the hand edit is superseded.
+        try await clickAction(3, "Exact")
+        for _ in 0..<100 {
+            if let text = try? String(contentsOf: tail, encoding: .utf8),
+               text != handEdited { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let tailTakenBack = try String(contentsOf: tail, encoding: .utf8)
+        XCTAssertNotEqual(tailTakenBack, handEdited,
+                          "a gesture on the segment re-attaches its file to the writer")
+    }
+
+    func testSaveDialogOutcomeRecordsAndAutoDrivesUnderReplay() async throws {
+        try await boot()
+        // The author saves interactively: the dialog opens, they name it.
+        try await type("save")
+        try await waitFor("document.getElementById('save-dialog').open === true", "save dialog")
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          document.getElementById('save-name-input').value = 'before-the-gates';
+          document.getElementById('save-confirm-btn').click();
+        })();
+        """)
+        try await waitFor("""
+        (function () {
+          var card = document.querySelector('[data-ts-ordinal="2"] .ts-prose');
+          return !!card && card.textContent.indexOf('Saved as before-the-gates') !== -1;
+        })()
+        """, "the interactive save turn")
+        try await tick(1)
+        try await tick(2)
+        try await waitForSidecarSegments()
+
+        // Reopen: the replayed `save` opens its dialog again — the driver
+        // applies the RECORDED outcome, and the turn completes (D7: no
+        // stall, and the save is re-made under its own name).
+        surface = nil
+        try await boot()
+        try await waitFor("""
+        (function () {
+          var cards = document.querySelectorAll('#ts-cards .ts-turn');
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].textContent.indexOf('Saved as before-the-gates') !== -1) return true;
+          }
+          return false;
+        })()
+        """, "the replayed save turn completed with the recorded name")
+        let replayedName = try await surface.evaluateInSurface("window.fixtureLastSave")
+        XCTAssertEqual(replayedName as? String, "before-the-gates",
+                       "the recorded slot name drove the replayed dialog")
+    }
+
+    /// The phase's exit state on the REAL engine: a real branch replays
+    /// deterministically and lands as ordinary feed turns; switching between
+    /// siblings shows exactly one coherent lineage. Skips (never fakes) when
+    /// fernhill's bundle isn't built.
+    func testRealFernhillBranchReplaysOnTheRealEngine() async throws {
+        let repoRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let fernhill = repoRoot.appendingPathComponent(
+            "branch-stories/fernhill/dist/web/fernhill", isDirectory: true)
+        try XCTSkipUnless(
+            FileManager.default.fileExists(
+                atPath: fernhill.appendingPathComponent("index-testing.html").path),
+            "fernhill's browser bundle (with the testing page) is not built")
+
+        surface = TestingSurfaceViewController(
+            sessionStore: TestingSessionStore(fileURL: sidecarURL))
+        _ = surface.view
+        surface.testsDirectory = tmp.appendingPathComponent("tests", isDirectory: true)
+        surface.load(bundleDirectory: fernhill)
+
+        // Real boot, then three real norths: Gates → Drive → Court → Hall.
+        for _ in 0..<300 {
+            if let n = try? await surface.evaluateInSurface(
+                "document.querySelectorAll('#ts-cards .ts-turn').length"),
+               (n as? Int ?? 0) >= 2 { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        try await type("north")
+        try await type("north")
+        try await type("north")
+        try await waitFor("""
+        (function () {
+          var card = document.querySelector('[data-ts-ordinal="4"] .ts-prose');
+          return !!card && card.textContent.indexOf('Entrance Hall') !== -1;
+        })()
+        """, "the real walk reaching the Entrance Hall")
+        try await tick(1)
+        try await tick(4)
+
+        // Branch… at turn 4 with `east`: the player stood in the Fountain
+        // Court, and fernhill's real map goes east to the Boiler Shed. The
+        // driver restarts the REAL engine (confirm stubbed), replays the two
+        // norths, and plays the alternate live.
+        try await clickAction(4, "Branch…")
+        try await commitActionPrompt(4, "east")
+        var landed = false
+        for _ in 0..<300 {
+            if let ok = try? await surface.evaluateInSurface("""
+            (function () {
+              var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+              for (var i = 0; i < cards.length; i++) {
+                if (cards[i].style.display !== 'none' &&
+                    cards[i].textContent.indexOf('Boiler Shed') !== -1) return true;
+              }
+              return false;
+            })()
+            """), ok as? Bool == true { landed = true; break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(landed, "the real branch's alternate must land as an ordinary feed turn")
+
+        // Exactly one coherent lineage: main's turn 4 is hidden, the shared
+        // prefix rides as its collapsed parent summary, and the chip row
+        // names both siblings.
+        let coherent = try await surface.evaluateInSurface("""
+        (function () {
+          var summaries = document.querySelectorAll('#ts-cards .ts-summary');
+          var prefixShown = false;
+          for (var i = 0; i < summaries.length; i++) {
+            if (summaries[i].closest('.ts-turn').style.display !== 'none') prefixShown = true;
+          }
+          return document.querySelector('[data-ts-ordinal="4"]').style.display === 'none' &&
+                 prefixShown &&
+                 document.querySelectorAll('.ts-branch-chip').length === 2;
+        })()
+        """)
+        XCTAssertEqual(coherent as? Bool, true)
+
+        // Switch back to the main line: the driver replays it live and the
+        // column shows the other coherent lineage. (The branch drive must
+        // finish first — a chip click during a replay is swallowed.)
+        try await waitFor("document.getElementById('command-input').disabled === false",
+                         "the branch replay finishing")
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-branch-chip')[0].click();")
+        var restored = false
+        for _ in 0..<300 {
+            if let ok = try? await surface.evaluateInSurface("""
+            document.querySelector('[data-ts-ordinal="4"]').style.display !== 'none'
+            """), ok as? Bool == true { restored = true; break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(restored, "switching back must restore the main lineage's cards")
     }
 
     // MARK: - Placeholder states

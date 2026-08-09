@@ -19,12 +19,21 @@
  * onto a SessionModel mutator — deletion semantics live in the model, never
  * re-derived here.
  *
+ * Re-hydration (Phase 5): `rehydrateSegmentClaims` is compose's inverse —
+ * on reopen, a restored closed segment's claims are parsed BACK out of its
+ * `tests/` file (through the same imported parser the runner uses), so the
+ * files remain the single truth for closed segments and reopening never
+ * rewrites authored claims away (ADR-306 D8: the sidecar carries no
+ * assertions; the files do).
+ *
  * Public interface: composeSegmentTranscript(options),
- *   composeSegmentLines(options), TurnSource, SourceLine, DeleteRef.
+ *   composeSegmentLines(options), rehydrateSegmentClaims(options, fileText),
+ *   TurnSource, SourceLine, DeleteRef.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
 import { synthesizePolicyAssertions } from '@sharpee/branch-tester/auto-assertion';
+import { parseTranscript } from '@sharpee/branch-tester/parser';
 import { serializeAssertionTag, serializeTranscript } from '@sharpee/branch-tester/serializer';
 import type {
   Assertion, AutoAssertionPolicy, Transcript, TranscriptCommand, TranscriptItem,
@@ -152,12 +161,12 @@ function segmentPlan(options: ComposeOptions): SegmentPlan {
   void seed;
   const title = model.titleOf(segment);
   const parent = model.parentOf(segment);
-  const end = segment.end ?? segment.start;
-  const from = parent ? (parent.end ?? parent.start) + 1 : 1;
 
+  // Path-ordered iteration (Phase 5): the walk from just after the parent
+  // segment to this segment's end, along this segment's own lineage path —
+  // never an ordinal window, which would cross lineages after a fork.
   const turns: PlanTurn[] = [];
-  for (const turn of model.turns) {
-    if (turn.ordinal < from || turn.ordinal > end || turn.ordinal === 0) continue;
+  for (const turn of model.turnsForCompose(segment)) {
     const inRange = turn.ordinal >= Math.max(segment.start, 1)
       && !model.isSkipped(turn.ordinal);
     turns.push({
@@ -225,6 +234,98 @@ export function composeSegmentTranscript(
   }
 
   return { title: plan.title, text: serializeTranscript(transcript) };
+}
+
+/**
+ * Re-hydrates a restored segment's claims from its `tests/` file (compose's
+ * inverse — Phase 5). Parses the text through the toolchain's own parser,
+ * maps commands 1:1 onto the segment's composed walk, and lifts each turn's
+ * assertions back onto the model: a turn whose assertion list matches its
+ * re-synthesized policy defaults stays untouched; anything else becomes
+ * authored claims (`noDefaults` — defaults stay withheld on recompose).
+ * `[SKIP]` turns need nothing (the sidecar's skip set already restored them).
+ *
+ * @returns 'attached' when recomposing reproduces the file byte-for-byte;
+ *   'diverged' when it does not (hand-edited file — the caller must stop
+ *   auto-writing it); 'unmapped' when the file cannot be parsed or its
+ *   commands do not align with the session (nothing was applied).
+ */
+export function rehydrateSegmentClaims(
+  options: ComposeOptions,
+  fileText: string,
+): 'attached' | 'diverged' | 'unmapped' {
+  const { model, segment, policy, source } = options;
+  const parsed = parseTranscript(fileText, 'rehydrate.transcript');
+  if ((parsed.parseErrors ?? []).length > 0) return 'unmapped';
+
+  const walk = model.turnsForCompose(segment);
+  if (parsed.commands.length !== walk.length) return 'unmapped';
+
+  const lift = (n: number, assertions: Assertion[]): void => {
+    for (const assertion of assertions) {
+      switch (assertion.type) {
+        case 'ok':
+          if (assertion.block) model.setExact(n, true);
+          break;
+        case 'ok-contains':
+          if (assertion.value !== undefined) model.addContains(n, assertion.value);
+          break;
+        case 'ok-not-contains':
+          if (assertion.value !== undefined) model.addNotContains(n, assertion.value);
+          break;
+        case 'state-assert':
+          if (assertion.stateExpression) model.addState(n, assertion.stateExpression);
+          break;
+        case 'event-assert':
+          if (assertion.eventType) model.addEvent(n, assertion.eventType);
+          break;
+        case 'channel-contains':
+          if (assertion.channelId && assertion.value !== undefined) {
+            model.addChannel(n, { id: assertion.channelId, contains: assertion.value });
+          }
+          break;
+        case 'channel-is':
+          if (assertion.channelId && assertion.channelExpected !== undefined) {
+            model.addChannel(n, {
+              id: assertion.channelId,
+              is: assertion.channelExpected as string | number | boolean,
+            });
+          }
+          break;
+        default:
+          break; // skip markers and unknown forms carry no claims
+      }
+    }
+  };
+
+  parsed.commands.forEach((command, index) => {
+    const turn = walk[index];
+    const inRange = turn.ordinal >= Math.max(segment.start, 1)
+      && !model.isSkipped(turn.ordinal);
+    if (!inRange) return; // ancestry/pruned turns: [SKIP] comes from structure
+    const onlySkip = command.assertions.every(a => a.type === 'skip');
+    if (onlySkip) return;
+
+    // Untouched turns re-synthesize identically — leave them defaults.
+    const src = source(turn.ordinal);
+    const synthesized = policy && src
+      ? synthesizePolicyAssertions(policy, src.output, src.channelValues)
+      : [];
+    if (JSON.stringify(command.assertions) === JSON.stringify(synthesized)) return;
+
+    lift(turn.ordinal, command.assertions);
+    // Suppress default re-synthesis: the file's list IS the claim set now.
+    const claims = model.claimsOf(turn.ordinal);
+    if (!claims.exact && claims.contains.length === 0) {
+      model.removeDefault(turn.ordinal, -1, claims.contains.slice());
+    }
+  });
+
+  if (segment.start === 0 && parsed.opening) {
+    lift(0, parsed.opening);
+  }
+
+  return composeSegmentTranscript(options).text === fileText ? 'attached' : 'diverged';
 }
 
 /** One entry as display lines: the tag line (deletable), plus block lines. */

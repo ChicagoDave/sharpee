@@ -108,6 +108,52 @@ final class TestingSessionStoreTests: XCTestCase {
         XCTAssertEqual(object["version"] as? Int, TestingSessionStore.version)
     }
 
+    func testForkFenceWithholdsTheLinearReplayPlan() throws {
+        // A driver fork boot (Phase 5): the log after it interleaves replayed
+        // prefix commands with branch turns — a linear replay across it would
+        // be garbage, so the plan is withheld; the page's composite drives.
+        let store = TestingSessionStore(fileURL: fileURL)
+        store.append(["command": "look", "boot": true])
+        store.append(["command": "north", "boot": false])
+        store.append(["command": "restart", "boot": false])   // the driver's ack
+        store.append(["fence": true, "fork": true])
+        store.append(["command": "look", "boot": true])
+        store.append(["command": "north", "boot": false])     // replayed prefix
+        store.append(["command": "east", "boot": false])      // the alternate
+
+        let reloaded = TestingSessionStore(fileURL: fileURL)
+        XCTAssertTrue(reloaded.load())
+        XCTAssertEqual(reloaded.replayPlan().replay, [],
+                       "a fork fence in the live tail withholds linear replay")
+    }
+
+    func testAuthorFenceAfterAForkStillTruncatesToTheNewLineage() throws {
+        // An author restart AFTER forks: everything before it is dead —
+        // including the fork fences — and the linear plan works again.
+        let store = TestingSessionStore(fileURL: fileURL)
+        store.append(["command": "look", "boot": true])
+        store.append(["fence": true, "fork": true])
+        store.append(["command": "north", "boot": false])
+        store.append(["fence": true])                          // author restart
+        store.append(["command": "look", "boot": true])
+        store.append(["command": "west", "boot": false])
+
+        let reloaded = TestingSessionStore(fileURL: fileURL)
+        XCTAssertTrue(reloaded.load())
+        XCTAssertEqual(reloaded.replayPlan().replay, ["west"])
+    }
+
+    func testVersionOneSidecarsAreDiscardedOnLoad() throws {
+        // Phase 5 bumped the shape (fork fences + composite view state):
+        // a v1 file is degraded mode by rule, never a migration.
+        let v1 = ["version": 1,
+                  "commands": [["command": "look", "boot": true]]] as [String: Any]
+        try JSONSerialization.data(withJSONObject: v1).write(to: fileURL)
+        let store = TestingSessionStore(fileURL: fileURL)
+        XCTAssertFalse(store.load())
+        XCTAssertTrue(store.replayPlan().isEmpty)
+    }
+
     func testSidecarPathIsPerStoryAndPerProject() {
         let projectA = URL(fileURLWithPath: "/Users/a/stories/manor")
         let projectB = URL(fileURLWithPath: "/Users/b/other/manor")

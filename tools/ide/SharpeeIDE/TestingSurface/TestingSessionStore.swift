@@ -32,7 +32,9 @@ final class TestingSessionStore {
 
     /// Bumped on breaking shape changes; a mismatched file is discarded on
     /// load (D8: a version-mismatched sidecar is degraded mode, not an error).
-    static let version = 1
+    /// v2 (Phase 5): fork-flagged fences, and the view state became the
+    /// page's composite (position-keyed fork tree + stems + dialogs).
+    static let version = 2
 
     let fileURL: URL
 
@@ -96,16 +98,24 @@ final class TestingSessionStore {
     /// The restore payload: commands after the last fence (dead lineage never
     /// replays), boot looks excluded (a fresh boot plays its own), plus the
     /// stored view snapshot.
+    ///
+    /// Fork-flagged fences (Phase 5) mark driver fresh boots — the log after
+    /// one interleaves replayed-prefix commands with branch turns, so a
+    /// LINEAR replay across it would be garbage. When the live tail contains
+    /// one, the linear plan is withheld entirely: the page's composite view
+    /// state carries the full fork tree and drives its own restore; without
+    /// a valid composite, files-only is the honest degraded mode (D8).
     func replayPlan() -> TestingReplayPlan {
         var tail: [[String: Any]] = []
         for entry in commands {
-            if entry["fence"] as? Bool == true {
+            if entry["fence"] as? Bool == true, entry["fork"] as? Bool != true {
                 tail = []
             } else {
                 tail.append(entry)
             }
         }
-        let replay = tail.compactMap { entry -> String? in
+        let hasFork = tail.contains { $0["fork"] as? Bool == true }
+        let replay = hasFork ? [] : tail.compactMap { entry -> String? in
             guard entry["boot"] as? Bool != true else { return nil }
             return entry["command"] as? String
         }

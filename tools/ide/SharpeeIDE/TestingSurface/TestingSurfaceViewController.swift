@@ -70,11 +70,18 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// forever. Without the constructor the client's AudioManager takes its
     /// designed instant-gain fallback: commands run, audio chrome is moot
     /// in a testing session, and replay stays deterministic.
+    ///
+    /// confirm() is stubbed true for the same class of reason (Phase 5): a
+    /// WKWebView with no UI delegate answers every confirm() false, so a
+    /// typed `restart` — the branch driver's fresh-boot door, and a
+    /// legitimate author command (ADR-305 D3) — would silently do nothing.
+    /// A testing session has no unsaved progress worth a modal guard.
     private static func bootScript(sessionJSON: String) -> String {
         """
         (function () {
           window.__SHARPEE_PLAY_SEED__ = \(PlayViewController.idePlaySeed);
           try { window.AudioContext = undefined; window.webkitAudioContext = undefined; } catch (e) {}
+          try { window.confirm = function () { return true; }; } catch (e) {}
           try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
           window.__sharpeeTestingSurface = {
             q: [],
@@ -108,6 +115,11 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// True until the next feed record, which is a lineage's automatic boot
     /// look — logged with `boot: true` so replay plans can skip it.
     private var expectBoot = true
+
+    /// Set when the page pre-announces a driver fork/switch boot (Phase 5):
+    /// the next restart fence logs as `fork: true` — a fresh lineage the
+    /// linear replay plan must never cross, not a dead one.
+    private var nextFenceIsFork = false
 
     /// The bundle directory currently loaded, or nil.
     private var loaded: URL?
@@ -209,6 +221,11 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         if !plan.replay.isEmpty { session["replay"] = plan.replay }
         if let viewState = plan.viewState { session["snapshot"] = viewState }
         if let policy { session["policy"] = policy }
+        // Every `tests/*.transcript` rides along by stem (Phase 5): closed
+        // segments re-hydrate their claims from these — the files are the
+        // truth, the sidecar carries only pointers (ADR-306 D8).
+        let files = transcriptFiles()
+        if !files.isEmpty { session["files"] = files }
         let sessionJSON = (try? JSONSerialization.data(withJSONObject: session))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
@@ -244,6 +261,21 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
         let script = "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.deliver(\(literal));"
         Task { _ = try? await evaluateInSurface(script) }
+    }
+
+    /// Every transcript in the project's `tests/` by stem — the restore
+    /// payload's re-hydration source.
+    private func transcriptFiles() -> [String: String] {
+        guard let testsDirectory,
+              let files = try? FileManager.default.contentsOfDirectory(
+                  at: testsDirectory, includingPropertiesForKeys: nil) else { return [:] }
+        var byStem: [String: String] = [:]
+        for file in files where file.pathExtension == "transcript" {
+            if let content = try? String(contentsOf: file, encoding: .utf8) {
+                byStem[file.deletingPathExtension().lastPathComponent] = content
+            }
+        }
+        return byStem
     }
 
     // MARK: - The auto-save writer (design §4)
@@ -316,7 +348,10 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
                 return
             }
             if object["restart"] as? Bool == true {
-                sessionStore.append(["fence": true])
+                sessionStore.append(nextFenceIsFork
+                    ? ["fence": true, "fork": true]
+                    : ["fence": true])
+                nextFenceIsFork = false
                 expectBoot = true
             } else if let command = object["command"] as? String {
                 sessionStore.append(["command": command, "boot": expectBoot])
@@ -329,6 +364,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
                   let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }
+            if object["forkBoot"] as? Bool == true {
+                nextFenceIsFork = true
+            }
             if let state = object["state"] as? [String: Any] {
                 sessionStore.updateViewState(state)
             }

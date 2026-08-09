@@ -44,6 +44,9 @@ const options = {
     '@sharpee/branch-tester/serializer': btSerializer,
     '@sharpee/branch-tester/parser': btParser,
     '@sharpee/branch-tester/types': btTypes,
+    // The parser imports node's fs for its file-loading helper only; the
+    // surface parses text it already holds, so the browser build shims it.
+    'fs': resolve(here, 'src/shims/fs.ts'),
   },
   bundle: true,
   format: 'iife',

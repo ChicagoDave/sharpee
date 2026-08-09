@@ -184,6 +184,27 @@ body.ts-active .sharpee-window { display: none; }
 .ts-summary-title { font-weight: 700; }
 .ts-summary-span { color: var(--ts-fg-dim); font-size: 11px; margin-top: 2px; }
 
+/* A branch point (design §6): sibling transcripts side by side under one
+   parent — main line first, then each alternate; the selected chip is the
+   lineage the column shows (and plays — view is live). */
+.ts-branch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ts-branch-chip {
+  flex: 1;
+  min-width: 150px;
+  background: var(--ts-block-bg);
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.ts-branch-chip:hover { border-color: var(--ts-fg-faint); }
+.ts-branch-chip.ts-chip-selected {
+  border-color: var(--ts-accent);
+  cursor: default;
+}
+.ts-chip-title { font-size: 12px; font-weight: 700; }
+.ts-chip-span { color: var(--ts-fg-dim); font-size: 10.5px; margin-top: 2px; }
+
 .ts-input-row { display: flex; border-top: 1px solid var(--ts-border); }
 .ts-input-row .ts-gutter-cap {
   flex: 0 0 44px;

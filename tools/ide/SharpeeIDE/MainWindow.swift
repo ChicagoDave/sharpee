@@ -1144,12 +1144,18 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// After a successful build, load the freshly-built `dist/web/<id>/` bundle
     /// (honours the toggle) and bring the Play tab forward. The id comes from
-    /// the retained IR header (D4).
+    /// the retained IR header (D4). An open testing surface reloads too
+    /// (Phase 5): a fresh page against the new build, restored by replay —
+    /// its cards then show the CURRENT story's real output (ADR-306 D8).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
         playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
         if playViewController.isLoaded {
             rightPanelViewController.showPlayTab()
+        }
+        if let surface = testingSurfaceWindowController,
+           surface.window?.isVisible == true {
+            surface.load(bundleDirectory: bundleDir)
         }
     }
 

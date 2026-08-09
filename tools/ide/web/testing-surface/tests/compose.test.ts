@@ -8,7 +8,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { parseTranscript } from '@sharpee/branch-tester/parser';
-import { composeSegmentLines, composeSegmentTranscript, type TurnSource } from '../src/compose';
+import {
+  composeSegmentLines, composeSegmentTranscript, rehydrateSegmentClaims,
+  type TurnSource,
+} from '../src/compose';
 import { SessionModel } from '../src/model';
 
 function playedSession(): SessionModel {
@@ -179,6 +182,32 @@ describe('composeSegmentTranscript', () => {
     expect(exactLines.map(l => l.text)).toContain('Gravel Drive');
   });
 
+  it('a branch transcript continues from the auto-split prefix, its own turns only', () => {
+    const m = playedSession();
+    m.tick(1);
+    m.tick(4);            // closed 1–4
+    expect(m.fork(3, 'east')).toBe(2);
+    // The replayed alternate landed as a fresh ordinal (replay consumed 5–8).
+    m.addTurn({ ordinal: 9, command: 'east', room: 'Boiler Shed', boot: false, lineage: 2 });
+    const branchSources: Record<number, TurnSource> = {
+      ...sources,
+      9: { output: 'Boiler Shed\nBrick, low, and bitter.', channelValues: { 'room-name': ['Boiler Shed'] } },
+    };
+    const { title, text } = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(9)!, policy: 'room-name-and-description',
+      seed: 42, source: n => branchSources[n],
+    });
+    expect(title).toBe('gravel-drive-to-boiler-shed-1');
+    const parsed = parse(text);
+    // Continues from the prefix parent (across lineages), never from main.
+    expect(parsed.header.continues).toBe('iron-gates-to-gravel-drive-2');
+    expect(parsed.header.seed).toBeUndefined();
+    // Only the branch's own turn — main-lineage turns 3–4 never leak in.
+    expect(parsed.commands.map(c => c.input)).toEqual(['east']);
+    expect(parsed.commands[0].assertions.some(a =>
+      a.type === 'ok-contains' && a.value === 'Boiler Shed')).toBe(true);
+  });
+
   it('a segment from the opening writes authored opening claims above the first command', () => {
     const m = playedSession();
     m.tick(0);
@@ -191,5 +220,159 @@ describe('composeSegmentTranscript', () => {
     expect(parsed.opening?.some(a => a.type === 'ok-contains' && a.value === 'auction notice'))
       .toBe(true);
     expect(parsed.commands[0].input).toBe('look');
+  });
+});
+
+describe('rehydrateSegmentClaims (Phase 5 — files are the truth on reopen)', () => {
+  /** A session with a closed 2–3 segment carrying claims in every family
+   *  plus one narrowed and one untouched turn, composed to file text. */
+  function authoredFile(): { text: string } {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(4);
+    m.addContains(2, 'drive curves');
+    m.addNotContains(2, 'troll');
+    m.addState(2, 'kettle.location = hall');
+    m.addEvent(2, 'if.event.actor_moved');
+    m.addChannel(2, { id: 'score', is: 0 });
+    m.setExact(3, true);
+    // Turn 4 stays untouched — pure policy defaults.
+    const { text } = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+    return { text };
+  }
+
+  /** The reopened session: same turns replayed, segment restored, claims empty. */
+  function reopened(): { m: SessionModel } {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(4);
+    return { m };
+  }
+
+  it('round-trips: lifted claims recompose to the same file, byte for byte', () => {
+    const { text } = authoredFile();
+    const { m } = reopened();
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    expect(result).toBe('attached');
+    // Claims landed on the model, not just the return value.
+    expect(m.claimsOf(2).contains).toEqual(['drive curves']);
+    expect(m.claimsOf(2).notContains).toEqual(['troll']);
+    expect(m.claimsOf(2).states).toEqual(['kettle.location = hall']);
+    expect(m.claimsOf(2).events).toEqual(['if.event.actor_moved']);
+    expect(m.claimsOf(2).channels).toEqual([{ id: 'score', is: 0 }]);
+    expect(m.claimsOf(3).exact).toBe(true);
+    const recomposed = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+    expect(recomposed.text).toBe(text);
+  });
+
+  it('an untouched turn stays default-synthesizing after re-hydration', () => {
+    const { text } = authoredFile();
+    const { m } = reopened();
+    rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    // Turn 4 was pure defaults: no authored claims, defaults still live.
+    expect(m.claimsOf(4).contains).toEqual([]);
+    expect(m.claimsOf(4).noDefaults).toBe(false);
+  });
+
+  it('a hand-edit within the claim grammar is adopted — files are the truth', () => {
+    const { text } = authoredFile();
+    const { m } = reopened();
+    const edited = text.replace('drive curves', 'hand-edited fragment');
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, edited);
+    expect(result).toBe('attached');
+    expect(m.claimsOf(2).contains).toEqual(['hand-edited fragment']);
+  });
+
+  it('a hand-edit compose cannot reproduce reports diverged — never clobbered', () => {
+    const { text } = authoredFile();
+    const { m } = reopened();
+    // The exact block's literal text is regenerated from the live source on
+    // recompose, so an edited block can never round-trip.
+    const edited = text.replace('A paved court.', 'A weeded court.');
+    expect(edited).not.toBe(text);
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, edited);
+    expect(result).toBe('diverged');
+  });
+
+  it('an unparseable file applies nothing — unmapped', () => {
+    const { m } = reopened();
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, 'title: x\n---\n> north\n[GARBAGE: not a real tag]\n');
+    expect(result).toBe('unmapped');
+    expect(m.claimsOf(2).contains).toEqual([]);
+  });
+
+  it('a command-count mismatch applies nothing — unmapped', () => {
+    const { text } = authoredFile();
+    const m = playedSession();
+    m.tick(2);
+    m.tick(3); // segment 2–3: walk (ancestry + 2 turns) is shorter than the file
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    expect(result).toBe('unmapped');
+    expect(m.claimsOf(2).contains).toEqual([]);
+    expect(m.claimsOf(3).exact).toBe(false);
+  });
+
+  it('a structure shift with a coincidental count lands diverged, not clobbered', () => {
+    const { text } = authoredFile();
+    const m = playedSession();
+    m.tick(3);
+    m.tick(4); // segment 3–4: walk [1,2,3,4] matches the file's four commands
+    const result = rehydrateSegmentClaims({
+      model: m, segment: m.segmentOf(3)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    // The file claims things on turn 2 that this segment writes as [SKIP] —
+    // recompose cannot reproduce it, so the caller must detach the file.
+    expect(result).toBe('diverged');
+  });
+
+  it('re-hydrates a [SKIP]-carrying file without disturbing the skip', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(4);
+    m.removeDefault(3, 0, []); // turn 3 pruned → [SKIP]
+    m.addContains(2, 'drive curves');
+    const { text } = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+
+    const back = playedSession();
+    back.tick(2);
+    back.tick(4);
+    back.restore(back.snapshot(), (l, p) => l === 1 ? p : undefined);
+    // The sidecar restored the skip (structure), the file restores claims.
+    back.removeDefault(3, 0, []);
+    const result = rehydrateSegmentClaims({
+      model: back, segment: back.segmentOf(2)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    expect(result).toBe('attached');
+    expect(back.isSkipped(3)).toBe(true);
+    expect(back.claimsOf(2).contains).toEqual(['drive curves']);
   });
 });

@@ -1,21 +1,28 @@
 /**
- * cards.ts — the testing play surface's DOM layer (ADR-306 Phase 3).
+ * cards.ts — the testing play surface's DOM layer (ADR-306 Phases 3 & 5).
  *
  * Purpose: builds the three-column layout over the testing page and renders
  *   the cards column from the SessionModel — one outlined card per turn
  *   holding the client's OWN rendered elements (moved out of the prose
  *   staging pane by their `data-turn` anchors, so engine.css fidelity is
  *   kept), a distinct checkbox rail, title strips with the auto-derived
- *   name, summary cards for collapsed segments, and split/merge/collapse
- *   controls. All state changes go through the model; this layer only
- *   renders and forwards gestures.
+ *   name, summary cards for collapsed segments, split/merge/collapse
+ *   controls, and — Phase 5 — the Branch… gesture with sibling chip rows
+ *   and lineage-cut visibility (design §6: the column always shows exactly
+ *   one coherent lineage). All state changes go through the model; this
+ *   layer only renders and forwards gestures.
  *
  * Public interface: CardsView (ensureLayout, addTurnCard, clear, render,
  *   scrollToLatest), CardsDelegate.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import type { Segment, SessionModel } from './model';
+import type { BranchPoint, Segment, SessionModel } from './model';
+
+/** Chip labels interpolate model strings into innerHTML — escape them. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+}
 
 /** Gesture sink — main.ts routes these into the model and re-renders. */
 export interface CardsDelegate {
@@ -33,6 +40,10 @@ export interface CardsDelegate {
   onStatePicker(ordinal: number, anchor: HTMLElement): void;
   onEventPicker(ordinal: number, anchor: HTMLElement): void;
   onChannelPicker(ordinal: number, anchor: HTMLElement): void;
+  /** Branching (design §6): fork at this card with the typed alternate. */
+  onBranch(ordinal: number, command: string): void;
+  /** A sibling chip was clicked — replay that lineage live and view it. */
+  onSelectLineage(lineage: number): void;
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
@@ -46,11 +57,14 @@ interface CardRow {
   mergeButton: HTMLButtonElement;
   splitButton: HTMLButtonElement | null;
   exactButton: HTMLButtonElement | null;
+  branchButton: HTMLButtonElement | null;
 }
 
 export class CardsView {
   private cards = new Map<number, CardRow>();
   private summaries = new Map<Segment, HTMLElement>();
+  /** One chip row per fork point, keyed `parentId:at`. */
+  private branchRows = new Map<string, HTMLElement>();
   private host!: HTMLElement;
   private session!: HTMLElement;
 
@@ -95,6 +109,37 @@ export class CardsView {
     this.host = document.getElementById('ts-cards')!;
     this.session = root.querySelector('.ts-session')!;
     this.installSelectionGesture();
+    this.installFocusGuard();
+  }
+
+  /**
+   * The client keeps a document-level click handler that refocuses its
+   * command input on every click — which would yank focus out of the
+   * surface's inline inputs (the Branch…/Not contains… prompts, the picker
+   * filter) the instant they spawn or are clicked. The guard runs after the
+   * whole click dispatch (capture + setTimeout) and gives focus back to the
+   * surface field the click was for; a click anywhere else retires any open
+   * inline prompt.
+   */
+  private installFocusGuard(): void {
+    document.addEventListener('click', event => {
+      const target = event.target instanceof Element ? event.target : null;
+      const container = target?.closest('.ts-actions, .ts-picker') ?? null;
+      if (container) {
+        const field = container.querySelector('input');
+        if (field) setTimeout(() => field.focus(), 0);
+      } else {
+        this.retirePrompt();
+      }
+    }, true);
+  }
+
+  /** The one open inline action-row prompt, if any. */
+  private activePrompt: HTMLInputElement | null = null;
+
+  private retirePrompt(): void {
+    this.activePrompt?.remove();
+    this.activePrompt = null;
   }
 
   /** Contains-by-selection (design §5, ADR-301's default gesture): select
@@ -154,7 +199,7 @@ export class CardsView {
    * The session's first turn also drains everything staged before it into
    * the opening card (ordinal 0 — prologue + banner, design §2).
    */
-  addTurnCard(ordinal: number, boot: boolean): void {
+  addTurnCard(ordinal: number, boot: boolean, branch = false): void {
     const staging = this.stagingPane();
     if (!staging) return;
 
@@ -164,15 +209,15 @@ export class CardsView {
         if (child.hasAttribute('data-turn')) break;
         openingElements.push(child);
       }
-      this.buildRow(0, false, openingElements);
+      this.buildRow(0, false, false, openingElements);
     }
 
     const elements = [...staging.children]
       .filter(el => el.getAttribute('data-turn') === String(ordinal));
-    this.buildRow(ordinal, boot, elements);
+    this.buildRow(ordinal, boot, branch, elements);
   }
 
-  private buildRow(ordinal: number, boot: boolean, prose: Element[]): void {
+  private buildRow(ordinal: number, boot: boolean, branch: boolean, prose: Element[]): void {
     const row = document.createElement('div');
     row.className = 'ts-turn';
     row.setAttribute('data-ts-ordinal', String(ordinal));
@@ -213,7 +258,7 @@ export class CardsView {
     meta.className = 'ts-meta';
     meta.textContent = ordinal === 0
       ? 'opening'
-      : `turn ${ordinal}${boot ? ' · boot' : ''}`;
+      : `turn ${ordinal}${boot ? ' · boot' : ''}${branch ? ' · branch' : ''}`;
     const proseHost = document.createElement('div');
     proseHost.className = 'ts-prose';
     for (const el of prose) proseHost.appendChild(el);
@@ -224,21 +269,24 @@ export class CardsView {
     const actions = document.createElement('div');
     actions.className = 'ts-actions';
 
-    /** Swaps the row for an inline input; Enter commits, Esc cancels. */
+    /** Spawns an inline input in the row; Enter commits, Esc cancels, a
+     *  click outside the row retires it (never on blur — the client's
+     *  refocus handler blurs surface fields on every click). */
     const promptText = (placeholder: string, commit: (text: string) => void): void => {
+      this.retirePrompt();
       const input = document.createElement('input');
       input.placeholder = placeholder;
       actions.appendChild(input);
+      this.activePrompt = input;
       input.focus();
       input.addEventListener('keydown', event => {
         if (event.key === 'Enter' && input.value.trim()) {
           commit(input.value.trim());
-          input.remove();
+          this.retirePrompt();
         } else if (event.key === 'Escape') {
-          input.remove();
+          this.retirePrompt();
         }
       });
-      input.addEventListener('blur', () => input.remove());
     };
 
     const notButton = document.createElement('button');
@@ -280,6 +328,7 @@ export class CardsView {
     }
 
     let splitButton: HTMLButtonElement | null = null;
+    let branchButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
       splitButton = document.createElement('button');
       splitButton.textContent = 'Split here';
@@ -288,6 +337,16 @@ export class CardsView {
       splitButton.style.display = 'none';
       splitButton.addEventListener('click', () => this.delegate.onSplitAt(ordinal));
       actions.appendChild(splitButton);
+
+      branchButton = document.createElement('button');
+      branchButton.textContent = 'Branch…';
+      branchButton.title =
+        'Try a different command at this point — the shared prefix becomes the parent of all siblings';
+      branchButton.style.display = 'none';
+      branchButton.addEventListener('click', () =>
+        promptText('alternate command, e.g. east',
+                   command => this.delegate.onBranch(ordinal, command)));
+      actions.appendChild(branchButton);
     }
     block.appendChild(actions);
 
@@ -296,28 +355,48 @@ export class CardsView {
     this.host.appendChild(row);
     this.cards.set(ordinal, {
       row, checkbox, stripNote, strip, autoName, collapseButton, mergeButton,
-      splitButton, exactButton,
+      splitButton, exactButton, branchButton,
     });
   }
 
-  /** Dead lineage (restart fence): every card and summary goes. */
+  /** Dead lineage (restart fence): every card, summary, and chip row goes. */
   clear(): void {
     for (const { row } of this.cards.values()) row.remove();
     for (const summary of this.summaries.values()) summary.remove();
+    for (const row of this.branchRows.values()) row.remove();
     this.cards.clear();
     this.summaries.clear();
+    this.branchRows.clear();
   }
 
-  /** Re-derives every card's visuals from the model (mock's applySegments). */
+  /** The fork points the active lineage's path descends through — their
+   *  chip rows stay visible even though the fork ordinal itself is cut. */
+  private pointsOnActivePath(): Set<string> {
+    const keys = new Set<string>();
+    const chain = this.model.pathOf(this.model.activeLineage);
+    for (const id of chain) {
+      const info = this.model.lineageInfo(id);
+      if (info?.parentId !== undefined && info.forkAt !== undefined) {
+        keys.add(`${info.parentId}:${info.forkAt}`);
+      }
+    }
+    return keys;
+  }
+
+  /** Re-derives every card's visuals from the model (mock's applySegments),
+   *  including the lineage cut (design §6): a turn past a fork shows only
+   *  while the branch that played it is the active lineage. */
   render(): void {
+    const activePathPoints = this.pointsOnActivePath();
     for (const [ordinal, card] of this.cards) {
       const segment = this.model.segmentOf(ordinal);
       const assigned = segment !== undefined;
       const ticked = assigned &&
         (ordinal === segment.start || ordinal === segment.end);
       const collapsed = assigned && segment.collapsed;
+      const visible = this.model.isTurnVisible(ordinal);
 
-      card.row.style.display = collapsed ? 'none' : '';
+      card.row.style.display = (collapsed || !visible) ? 'none' : '';
       card.row.classList.toggle('ts-selected', assigned && !collapsed);
       card.checkbox.checked = ticked;
       card.checkbox.classList.toggle('ts-implied', assigned && !ticked);
@@ -334,10 +413,20 @@ export class CardsView {
           ordinal > Math.max(segment.start, 1);
         card.splitButton.style.display = splittable ? '' : 'none';
       }
+      if (card.branchButton) {
+        // Any point in a closed, expanded transcript with something shared
+        // before it can fork — mid-segment, or at its start when a parent
+        // exists (design §6).
+        const forkable = assigned && segment.end !== null && !collapsed &&
+          (ordinal > Math.max(segment.start, 1) ||
+           this.model.parentOf(segment) !== undefined);
+        card.branchButton.style.display = forkable ? '' : 'none';
+      }
       card.exactButton?.classList.toggle('ts-active',
         this.model.claimsOf(ordinal).exact);
     }
     this.renderSummaries();
+    this.renderBranchRows(activePathPoints);
     this.renderRunColumn();
   }
 
@@ -392,7 +481,10 @@ export class CardsView {
         this.summaries.set(segment, row);
       }
       if (!row) continue;
-      row.style.display = segment.collapsed ? '' : 'none';
+      // A summary wholly past the lineage cut is another lineage's — hidden
+      // while an alternate is viewed (design §6).
+      row.style.display =
+        (segment.collapsed && this.model.isTurnVisible(segment.start)) ? '' : 'none';
       if (segment.collapsed) {
         const end = segment.end ?? segment.start;
         const count = Math.max(1, end - Math.max(segment.start, 1) + 1);
@@ -421,6 +513,98 @@ export class CardsView {
     const anchor = this.cards.get(segment.start)?.row ?? null;
     this.host.insertBefore(row, anchor);
     return row;
+  }
+
+  /**
+   * One chip row per fork point (design §6): main line first, then each
+   * sibling in creation order — "all continue from the parent". The row
+   * sits where the fork is; it stays visible while the path descends
+   * through it (the fork ordinal itself is cut then), and hides when the
+   * point lies wholly past an earlier cut.
+   */
+  private renderBranchRows(activePathPoints: Set<string>): void {
+    const points = this.model.branchPoints();
+    const liveKeys = new Set(points.map(p => `${p.parentId}:${p.at}`));
+    for (const [key, row] of this.branchRows) {
+      if (!liveKeys.has(key)) {
+        row.remove();
+        this.branchRows.delete(key);
+      }
+    }
+    for (const point of points) {
+      const key = `${point.parentId}:${point.at}`;
+      let row = this.branchRows.get(key);
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'ts-turn ts-branch-point';
+        row.innerHTML = '<div class="ts-pick"></div>' +
+          '<div class="ts-card-column"><div class="ts-branch-row"></div></div>';
+        const anchor = this.cards.get(point.at)?.row ?? null;
+        this.host.insertBefore(row, anchor);
+        this.branchRows.set(key, row);
+      }
+      const visible = this.model.isTurnVisible(point.at) || activePathPoints.has(key);
+      row.style.display = visible ? '' : 'none';
+      if (!visible) continue;
+      this.renderChips(row, point);
+    }
+  }
+
+  private renderChips(row: HTMLElement, point: BranchPoint): void {
+    const container = row.querySelector('.ts-branch-row')!;
+    container.innerHTML = '';
+    const chain = this.model.pathOf(this.model.activeLineage);
+    const selectedSibling = point.siblings.find(id => chain.includes(id));
+
+    const mainSegment = this.model.segmentOf(point.at);
+    const forkTurn = this.model.turns.find(t => t.ordinal === point.at);
+    const mainChip = document.createElement('div');
+    mainChip.className = 'ts-branch-chip' +
+      (selectedSibling === undefined ? ' ts-chip-selected' : '');
+    const mainTitle = mainSegment ? this.model.titleOf(mainSegment) : `turn ${point.at}`;
+    const mainSpan = mainSegment
+      ? `&gt; ${escapeHtml(forkTurn?.command ?? '')} · turns ${mainSegment.start}–${mainSegment.end ?? mainSegment.start}`
+      : `&gt; ${escapeHtml(forkTurn?.command ?? '')}`;
+    mainChip.innerHTML =
+      `<div class="ts-meta">branch</div>
+       <div class="ts-chip-title">${escapeHtml(mainTitle)}</div>
+       <div class="ts-chip-span">${mainSpan}</div>`;
+    mainChip.addEventListener('click', () =>
+      this.delegate.onSelectLineage(point.parentId));
+    container.appendChild(mainChip);
+
+    for (const sibling of point.siblings) {
+      const info = this.model.lineageInfo(sibling);
+      const firstTurn = this.model.turns.find(t => t.lineage === sibling);
+      const segment = this.model.segments.find(s => s.lineage === sibling);
+      const pending = info?.pendingCommand !== undefined;
+      const title = pending
+        ? this.model.pendingTitleOf(sibling) ?? ''
+        : segment ? this.model.titleOf(segment)
+        : firstTurn?.command ?? '';
+      const command = info?.pendingCommand ?? firstTurn?.command ?? '';
+      const count = segment
+        ? this.model.turns.filter(t => t.lineage === sibling &&
+            t.ordinal >= segment.start && t.ordinal <= (segment.end ?? segment.start)).length
+        : 0;
+      const span = pending
+        ? `&gt; ${escapeHtml(command)} · replay pending`
+        : `&gt; ${escapeHtml(command)} · ${count} ${count === 1 ? 'turn' : 'turns'}`;
+      const chip = document.createElement('div');
+      chip.className = 'ts-branch-chip' +
+        (selectedSibling === sibling ? ' ts-chip-selected' : '');
+      chip.innerHTML =
+        `<div class="ts-meta">branch</div>
+         <div class="ts-chip-title">${escapeHtml(title)}</div>
+         <div class="ts-chip-span">${span}</div>`;
+      chip.addEventListener('click', () => this.delegate.onSelectLineage(sibling));
+      container.appendChild(chip);
+    }
+
+    const prefix = mainSegment ? this.model.parentOf(mainSegment) : undefined;
+    row.title = prefix
+      ? `all continue from "${this.model.titleOf(prefix)}"`
+      : 'all continue from the shared prefix';
   }
 
   /** Run-column skeleton: a row per closed transcript, unrun ("—") until the
