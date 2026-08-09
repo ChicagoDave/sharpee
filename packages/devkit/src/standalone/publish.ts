@@ -115,6 +115,10 @@ export function checkPublishable(storyFile: string): PublishTarget {
  * Paths are stored RELATIVE to `dir` with `/` separators, so `index.html` lands
  * at the root of the archive — the structure itch.io requires and the one
  * pinned by test.
+ *
+ * `index-testing.html` (root only) is excluded: it is the IDE's testing
+ * surface (ADR-306 Phase 2), emitted by every browser build but never part
+ * of the published artifact.
  */
 export function zipDirectory(dir: string): Uint8Array {
   const entries: Record<string, Uint8Array> = {};
@@ -122,6 +126,7 @@ export function zipDirectory(dir: string): Uint8Array {
     for (const name of fs.readdirSync(current).sort()) {
       const full = path.join(current, name);
       const rel = base ? `${base}/${name}` : name;
+      if (rel === 'index-testing.html') continue;
       if (fs.statSync(full).isDirectory()) walk(full, rel);
       else entries[rel] = new Uint8Array(fs.readFileSync(full));
     }

@@ -148,6 +148,27 @@ Three facts about the code today shape the design (each verified 2026-08-08, ses
   refuses naming the turn. Stale selections cannot exist by construction: every
   rebuild reboots the page, which clears the log and the margin with it.
 
+> **D4 AMENDED 2026-08-09 (session 2b82b5) — ADR-306 Phase 2 wire additions.**
+> The turn record gains three fields for the testing play surface (ADR-306;
+> design doc §10 item 2): **`events`** — the turn's emitted semantic-event
+> types in emission order (the Event picker's source); **`world`** — the
+> world digest (the unseen slice: non-room/non-player entity locations with
+> `[STATE:]`-resolvable tokens, score from the scoring capability, machine
+> states via the plugin registry's existing `getState()` surface), built only
+> when the bridge is active so published players never pay for it; and
+> **`lineage`** — the fence-delimited lineage id (boot value from the
+> `__SHARPEE_PLAY_LINEAGE__` global — the branch-replay sibling of
+> `__SHARPEE_PLAY_SEED__` — default 1, incremented at each restart fence),
+> with `parentLineage`/`forkOrdinal` on boot-lineage records when the global
+> names them. The restart fence record gains `lineage` naming the NEW
+> lineage. The digest's token rule (alias → single-token name → id) is a
+> deliberately narrowed MIRROR of branch-tester's `worldEntityRef` — the
+> browser bundle cannot import the Node harness — pinned by tests on both
+> sides (the ADR-301 A1 pattern). Evidence: platform-browser 139 passing
+> (turn-events + world-digest suites, capture-parity green over the real
+> engine), devkit 171 passing (bundle asserts `__SHARPEE_PLAY_LINEAGE__`
+> ships; publish excludes `index-testing.html`), 2026-08-09.
+
 ## As built (2026-08-09, session 1dd6d3 — same session, implementation landed)
 
 Four deviations from the letter of the Decision, each recorded here the day it

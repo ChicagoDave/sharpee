@@ -752,6 +752,17 @@ export function buildBrowser(
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
   log(usingCustomPage ? '  ✓ Used browser/index.html (custom layout, ADR-253 D3)' : '  ✓ Copied index.html');
 
+  // The TESTING page (ADR-306 Phase 2): a second rendering of the same
+  // bundle for the IDE's testing play surface — no chrome, no theme links,
+  // ALWAYS the platform template (never the author's custom page; the card
+  // UI needs the default skeleton). `sharpee publish` excludes it by name.
+  const testingHtml = processTemplate(
+    fs.readFileSync(path.join(env.templatesDir, 'index-testing.html'), 'utf-8'),
+    meta,
+  );
+  fs.writeFileSync(path.join(outDir, 'index-testing.html'), testingHtml);
+  log('  ✓ Copied index-testing.html (IDE testing surface — excluded from publish)');
+
   // Engine CSS (base/engine/decorations) — platform-browser-owned (ADR-188).
   for (const css of ['base.css', 'engine.css', 'decorations.css']) {
     fs.copyFileSync(path.join(env.stylesDir, css), path.join(outDir, css));

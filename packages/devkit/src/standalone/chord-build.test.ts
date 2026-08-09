@@ -123,6 +123,21 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // global alone would not prove that — assert the call too.
     expect(game).toContain('__SHARPEE_PLAY_FORCES__');
     expect(game).toMatch(/loadForces\(/);
+    // ADR-306 Phase 2: the lineage boot hook (the branch-replay sibling of
+    // the seed global) and the digest's plugin-registry read ship in every
+    // built bundle.
+    expect(game).toContain('__SHARPEE_PLAY_LINEAGE__');
+    expect(game).toContain('sharpee.plugin.state-machine');
+
+    // ADR-306 Phase 2: the TESTING page — same bundle, no chrome, no theme
+    // links; always emitted, excluded from publish (pinned in publish.test).
+    const testing = readFileSync(join(outDir, 'index-testing.html'), 'utf-8');
+    expect(testing).toContain('game.js');
+    expect(testing).toContain('id="text-content"');
+    expect(testing).toContain('id="command-input"');
+    for (const chrome of ['menu-bar', 'status-line', 'THEME_LINKS', 'menu-title']) {
+      expect(testing, `testing page must not carry ${chrome}`).not.toContain(chrome);
+    }
 
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.

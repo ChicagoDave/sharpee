@@ -251,6 +251,15 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
   console.log('  ✓ Copied index.html');
 
+  // The TESTING page (ADR-306 Phase 2): same bundle, testing skeleton — no
+  // chrome, no theme links. IDE-only; `sharpee publish` excludes it by name.
+  const testingHtml = processTemplate(
+    fs.readFileSync(path.join(TEMPLATES_DIR, 'index-testing.html'), 'utf-8'),
+    info,
+  );
+  fs.writeFileSync(path.join(outDir, 'index-testing.html'), testingHtml);
+  console.log('  ✓ Copied index-testing.html (IDE testing surface — excluded from publish)');
+
   // Engine CSS (base + engine + decorations) is owned by @sharpee/platform-browser
   // (ADR-188) and copied fresh from the resolved package every build. Built-in
   // themes the story listed are copied from platform-browser's styles/themes/ below.

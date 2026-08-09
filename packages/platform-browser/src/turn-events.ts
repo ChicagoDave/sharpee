@@ -16,9 +16,18 @@
  * uniqueness (ADR-305 D4), so the counter must never reset while the page
  * lives.
  *
- * Public interface: nextPlayTurnOrdinal(), emitTurnEvent(payload),
- * emitRestartEvent(), capturesOf(payloads); types TurnCapture,
- * TurnEventPayload, RestartEventPayload.
+ * Lineage (ADR-306 Phase 2): every record names the lineage it belongs to.
+ * A lineage is the run of turns between restart fences; the id starts at 1
+ * (or at `__SHARPEE_PLAY_LINEAGE__.id` when the embedder injected one — the
+ * IDE's branch-replay boot, the sibling of `__SHARPEE_PLAY_SEED__`) and
+ * increments at each fence. Boot-lineage records carry `parentLineage` /
+ * `forkOrdinal` when the boot global names them; post-fence lineages never
+ * do — a restart is a fence, not a fork (ADR-305 D3).
+ *
+ * Public interface: nextPlayTurnOrdinal(), currentPlayLineage(),
+ * turnEventsBridgeActive(), emitTurnEvent(payload), emitRestartEvent(),
+ * capturesOf(payloads); types TurnCapture, TurnEventPayload,
+ * RestartEventPayload, TurnEventRecord.
  * Owner context: @sharpee/platform-browser (browser player client).
  */
 
@@ -33,7 +42,38 @@ export interface TurnCapture {
   values: unknown[];
 }
 
-/** One recorded turn on the wire (ADR-305 D4). */
+/** One entity as the world digest names it: display name + the single
+ *  whitespace-free token a `[STATE:]` expression resolves back to it. */
+export interface DigestEntityRef {
+  name: string;
+  token: string;
+}
+
+/** One non-room, non-player entity and where it sits (the unseen slice). */
+export interface WorldDigestEntity {
+  kind: 'npc' | 'item';
+  name: string;
+  token: string;
+  location: DigestEntityRef;
+}
+
+/** One state machine's current state (plugin-state-machine registry). */
+export interface WorldDigestMachine {
+  id: string;
+  state: string;
+}
+
+/**
+ * The world digest (ADR-306 Phase 2): the slice the prose does not show —
+ * the State picker's source (design §5). Never includes `player.location`.
+ */
+export interface WorldDigest {
+  entities: WorldDigestEntity[];
+  score?: number;
+  machines: WorldDigestMachine[];
+}
+
+/** What a caller supplies per turn; the lineage fields are stamped here. */
 export interface TurnEventPayload {
   /** Monotonic 1-based ordinal, matching the turn's `data-turn` anchors. */
   turn: number;
@@ -48,17 +88,73 @@ export interface TurnEventPayload {
   output: string;
   /** The turn's channel captures. */
   captures: TurnCapture[];
+  /** The turn's emitted semantic-event types, in emission order. */
+  events: string[];
+  /** The world digest after this turn; absent when the bridge is inactive
+   *  (published players never pay for it — see turnEventsBridgeActive). */
+  world?: WorldDigest;
+}
+
+/** The record as posted: the payload plus the lineage stamp. */
+export interface TurnEventRecord extends TurnEventPayload {
+  /** The lineage this turn belongs to (fence-delimited, page-lifetime id). */
+  lineage: number;
+  /** Boot-lineage records only: the lineage this one forked from. */
+  parentLineage?: number;
+  /** Boot-lineage records only: which sibling at the fork point this is. */
+  forkOrdinal?: number;
 }
 
 /** A restart fence on the wire (ADR-305 D3): `turn` is the first ordinal of
- *  the NEW lineage. */
+ *  the NEW lineage, `lineage` its id (ADR-306 Phase 2). */
 export interface RestartEventPayload {
   restart: true;
   turn: number;
+  lineage: number;
 }
 
 /** Page-lifetime ordinal counter — survives in-page reboots by design. */
 let playTurnCounter = 0;
+
+/** The boot lineage context, read once from the embedder's global. */
+interface PlayLineageBoot {
+  id?: number;
+  parent?: number;
+  fork?: number;
+}
+
+/** Current lineage id; `undefined` until first use (global not yet read). */
+let playLineage: number | undefined;
+/** The boot global as captured at first use; boot-lineage records carry it. */
+let bootLineage: PlayLineageBoot | undefined;
+/** The id the page booted with — records of THIS lineage carry parent/fork. */
+let bootLineageId: number | undefined;
+
+/** Resolve (and on first use, initialize) the current lineage id. */
+function ensureLineage(): number {
+  if (playLineage === undefined) {
+    bootLineage = (window as unknown as { __SHARPEE_PLAY_LINEAGE__?: PlayLineageBoot })
+      .__SHARPEE_PLAY_LINEAGE__;
+    playLineage = typeof bootLineage?.id === 'number' ? bootLineage.id : 1;
+    bootLineageId = playLineage;
+  }
+  return playLineage;
+}
+
+/** The lineage id the next record will carry. */
+export function currentPlayLineage(): number {
+  return ensureLineage();
+}
+
+/**
+ * Whether the IDE's `turnEvents` bridge is present. Callers use this to skip
+ * work that only feeds the bridge (the world digest) in published players.
+ */
+export function turnEventsBridgeActive(): boolean {
+  return !!(window as unknown as {
+    webkit?: { messageHandlers?: { turnEvents?: unknown } };
+  }).webkit?.messageHandlers?.turnEvents;
+}
 
 /**
  * Claim the next turn ordinal. Monotonic and 1-based for the page's lifetime;
@@ -90,24 +186,37 @@ export function capturesOf(
 /**
  * Posts a completed turn's record to the IDE's `turnEvents` bridge when
  * embedded in a WKWebView that registered one; silently does nothing
- * otherwise.
+ * otherwise. Stamps the lineage fields centrally so callers never manage
+ * lineage state.
  */
 export function emitTurnEvent(payload: TurnEventPayload): void {
-  post(payload);
+  const lineage = ensureLineage();
+  const record: TurnEventRecord = { ...payload, lineage };
+  if (lineage === bootLineageId) {
+    if (typeof bootLineage?.parent === 'number') record.parentLineage = bootLineage.parent;
+    if (typeof bootLineage?.fork === 'number') record.forkOrdinal = bootLineage.fork;
+  }
+  post(record);
 }
 
 /**
- * Posts a restart fence (ADR-305 D3) naming the first ordinal of the new
- * lineage. Call when an in-page reboot begins; a full page reload needs no
- * event — the embedder sees the navigation itself.
+ * Posts a restart fence (ADR-305 D3) naming the first ordinal AND the
+ * lineage id of the new lineage (ADR-306 Phase 2). Call when an in-page
+ * reboot begins; a full page reload needs no event — the embedder sees the
+ * navigation itself.
  */
 export function emitRestartEvent(): void {
-  const payload: RestartEventPayload = { restart: true, turn: playTurnCounter + 1 };
+  playLineage = ensureLineage() + 1;
+  const payload: RestartEventPayload = {
+    restart: true,
+    turn: playTurnCounter + 1,
+    lineage: playLineage,
+  };
   post(payload);
 }
 
 /** Shared best-effort post — play must never break on the bridge. */
-function post(payload: TurnEventPayload | RestartEventPayload): void {
+function post(payload: TurnEventRecord | RestartEventPayload): void {
   const handler = (window as unknown as {
     webkit?: { messageHandlers?: { turnEvents?: { postMessage(body: string): void } } };
   }).webkit?.messageHandlers?.turnEvents;

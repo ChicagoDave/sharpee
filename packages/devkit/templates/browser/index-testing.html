@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!-- The Sharpee TESTING page (ADR-306 Phase 2) — a second rendering of the
+     same client for the IDE's testing play surface. Same game.js, same
+     engine CSS, but a testing skeleton: no title bar, no menu bar, no status
+     line, no theme links (design-testing-play-surface.md §1). Platform-owned
+     even when the story ships a custom browser/index.html — the testing
+     surface's card UI needs the default skeleton, and the client stamps the
+     `data-turn` anchor contract regardless of layout. Emitted by every
+     browser build; published zips never carry it (sharpee publish excludes
+     it by name). -->
+<html lang="en" data-theme="classic">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{STORY_TITLE}} — Testing</title>
+  <!-- Engine CSS from @sharpee/platform-browser (ADR-188): prose rendering
+       must match the player page; chrome and themes deliberately do not. -->
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="engine.css">
+  <link rel="stylesheet" href="decorations.css">
+</head>
+<body>
+  <div class="sharpee-window">
+    <div id="main-window" class="sharpee-prose-pane">
+      <div id="text-content"></div>
+      <div class="sharpee-prose-overlay" aria-hidden="true"></div>
+    </div>
+
+    <div id="input-area" class="sharpee-input-bar">
+      <span class="sharpee-input-prompt">&gt;</span>
+      <input id="command-input" class="sharpee-input-field" type="text"
+             autocomplete="off" autocapitalize="none"
+             spellcheck="false" autofocus>
+    </div>
+  </div>
+
+  <!-- Save/restore/startup dialogs are FUNCTIONAL, not chrome: `save` and
+       `restore` are ordinary commands in a testing session (ADR-305 D3 /
+       ADR-306 D7), so their flows must work here exactly as in play. -->
+  <dialog id="save-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">SAVE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="save-input-row">
+        <label for="save-name-input">Save name:</label>
+        <input type="text" id="save-name-input" class="sharpee-input-field" maxlength="30"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div class="saves-list-label">Existing saves (click to overwrite):</div>
+      <div id="save-slots-list" class="saves-list"></div>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="save-confirm-btn" class="sharpee-dialog-button">Save</button>
+      <button id="save-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog id="restore-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">RESTORE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="saves-list-label">Select a saved game:</div>
+      <div id="restore-slots-list" class="saves-list"></div>
+      <div id="no-saves-message" class="no-saves-message" hidden>No saved games found.</div>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="restore-confirm-btn" class="sharpee-dialog-button" disabled>Restore</button>
+      <button id="restore-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog id="startup-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">CONTINUE GAME?</h2>
+    <div class="sharpee-dialog-body">
+      <p id="startup-save-info" class="startup-info"></p>
+      <p class="startup-question">Continue where you left off?</p>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="startup-continue-btn" class="sharpee-dialog-button">Continue</button>
+      <button id="startup-new-btn" class="sharpee-dialog-button">New Game</button>
+    </div>
+  </dialog>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -174,12 +174,16 @@ describe('zipDirectory', () => {
     fs.writeFileSync(path.join(dir, 'index.html'), '<!doctype html><title>x</title>');
     fs.writeFileSync(path.join(dir, 'game.js'), 'console.log(1)');
     fs.writeFileSync(path.join(dir, 'themes', 'dark.css'), 'body{}');
+    // ADR-306 Phase 2: every browser build emits the IDE's testing page —
+    // the published artifact never carries it.
+    fs.writeFileSync(path.join(dir, 'index-testing.html'), '<!doctype html><title>t</title>');
 
     const entries = unzipSync(zipDirectory(dir));
     const names = Object.keys(entries).sort();
 
     expect(names).toEqual(['game.js', 'index.html', 'themes/dark.css']);
     expect(names).toContain('index.html'); // at the root, not under a folder
+    expect(names).not.toContain('index-testing.html'); // IDE-only surface
     expect(strFromU8(entries['index.html'])).toContain('<!doctype html>');
     // Nested files keep forward slashes whatever the host platform uses.
     expect(names.some((n) => n.includes('\\'))).toBe(false);

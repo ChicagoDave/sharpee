@@ -243,8 +243,9 @@ claim on the platform is that its frozen harness keeps passing.
 
 ## 11. Open questions
 
-- **State picker at scale**: fernhill offers five unseen facts; Dungeo offers
-  hundreds. Grouping/search needed past toy scale.
+- **State picker at scale**: fernhill offers five unseen facts; larger Chord
+  stories will offer far more. Grouping/search needed past toy scale,
+  measured against Chord stories (§8 — Dungeo is never the yardstick).
 - **Meta commands at fork points**: save/restore inside a branch lineage —
   carried per ADR-305 D3, but branch replay across them needs a look.
 - **Persistence of the session view**: segments/forks are reconstructible
@@ -278,6 +279,34 @@ to something buildable.
   `take` (+ container `open`). Refuse concealed / NPC-held / puzzle-gated.
 - **Tier 3 — arbitrary state, score, "win": refuse upfront.** General goal
   regression is the game itself; forcing remains the tool for rare outcomes.
+
+## 13. Addition: author-annotated coverage (David, 2026-08-09 — captured, not yet ruled)
+
+The author annotates the story itself — marking a puzzle, a piece of
+important context — and the testing tool evaluates **coverage % against
+those annotations**: "3 of 5 puzzles exercised by the tree." This adds an
+*author-declared significance* tier on top of ADR-294 D13's
+platform-declared surfaces (rooms, choice points, messages): D13 answers
+"what exists untested," annotations answer "what *matters* untested" — an
+honest denominator for a coverage figure, instead of raw world-surface
+noise. Fits the standing discipline: coverage computes over declared
+surfaces, never over inference.
+
+**Shape refinement (David, same day): the annotation is a state filter, not
+a bare marker** — `when (state is XYZ) banana-puzzle is available`. The
+puzzle declaration rides Chord's existing when-filter grammar rather than
+minting annotation syntax, and that makes coverage *mechanically evaluable*:
+the tree's runs walk real world states, so "was banana-puzzle ever
+available/completed in a passing transcript?" is the when-condition
+evaluated over visited states — no satisfaction rule to invent, no free
+text, the same picker discipline extended to coverage denominators.
+
+Open before this becomes scope: the exact declaration form is still a
+**Chord language change** (platform discussion required — even reusing
+when-filter grammar, `is available` as a declarable coverage surface is
+new); where the % surfaces (Testing tab, per D4's authoring/reading
+boundary — not the run column); and whether availability and completion are
+one condition or two. Measured against Chord stories, as always.
 
 "Easily attainable" is enforced by the tool, not the user's judgment:
 goals come from **pickers only** (rooms from the IR, items from the digest —

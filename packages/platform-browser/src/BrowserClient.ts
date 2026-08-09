@@ -25,7 +25,14 @@ import { SaveManager, wipeStoryStorage } from './managers/SaveManager.js';
 import { DialogManager } from './managers/DialogManager.js';
 import { MenuManager } from './managers/MenuManager.js';
 import { InputManager } from './managers/InputManager.js';
-import { capturesOf, emitRestartEvent, emitTurnEvent, nextPlayTurnOrdinal } from './turn-events.js';
+import {
+  capturesOf,
+  emitRestartEvent,
+  emitTurnEvent,
+  nextPlayTurnOrdinal,
+  turnEventsBridgeActive,
+} from './turn-events.js';
+import { buildWorldDigest } from './world-digest.js';
 import { TextDisplay } from './display/TextDisplay.js';
 import { StatusLine } from './display/StatusLine.js';
 import { AudioManager } from './audio/AudioManager.js';
@@ -114,6 +121,13 @@ export class BrowserClient implements BrowserClientInterface {
    * feed's captures (ADR-305 D4). Reset with `turnProseText`.
    */
   private turnCapturePayloads: Array<Readonly<Record<string, unknown>>> = [];
+
+  /**
+   * This turn's emitted semantic-event types, in emission order, for the
+   * play feed's `events` field (ADR-306 Phase 2 — the Event picker's
+   * source). Reset with `turnProseText`; empty when the turn threw.
+   */
+  private turnEventTypes: string[] = [];
 
   // DOM elements reference
   private elements!: DOMElements;
@@ -616,7 +630,8 @@ export class BrowserClient implements BrowserClientInterface {
         // story speaking, not the player typing.
         console.log('Executing initial look command...');
         const stampFrom = this.beginPlayTurn();
-        await this.engine.executeTurn('look');
+        const bootResult = await this.engine.executeTurn('look');
+        this.turnEventTypes = (bootResult?.events ?? []).map((e) => e.type);
         this.finishPlayTurn('look', stampFrom);
         console.log('Initial look complete');
       }
@@ -642,6 +657,7 @@ export class BrowserClient implements BrowserClientInterface {
     // (ADR-282 D2). Reset here so each accumulator holds exactly one turn.
     this.turnProseText = [];
     this.turnCapturePayloads = [];
+    this.turnEventTypes = [];
     return this.elements?.textContent?.children.length ?? 0;
   }
 
@@ -670,7 +686,14 @@ export class BrowserClient implements BrowserClientInterface {
       turn: ordinal,
       command,
       output: this.turnProseText.join('\n'),
-      captures: capturesOf(this.turnCapturePayloads)
+      captures: capturesOf(this.turnCapturePayloads),
+      events: this.turnEventTypes,
+      // The digest is IDE-only observation (ADR-306 Phase 2): built when the
+      // bridge is live, absent in published players so they never pay the
+      // per-turn world enumeration.
+      ...(turnEventsBridgeActive()
+        ? { world: buildWorldDigest(this.world, this.engine) }
+        : {})
     });
   }
 
@@ -691,7 +714,8 @@ export class BrowserClient implements BrowserClientInterface {
 
     // Execute command
     try {
-      await this.engine.executeTurn(command);
+      const result = await this.engine.executeTurn(command);
+      this.turnEventTypes = (result?.events ?? []).map((e) => e.type);
       // Sync score from world after each turn
       this.syncScoreFromWorld();
     } catch (error) {

@@ -14,8 +14,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { CmgtPacket } from '@sharpee/if-domain';
 import { BrowserClient } from '../src/BrowserClient';
-import { emitTurnEvent, capturesOf } from '../src/turn-events';
+import {
+  emitTurnEvent,
+  capturesOf,
+  currentPlayLineage,
+  turnEventsBridgeActive,
+} from '../src/turn-events';
 import { packetProseText } from '@sharpee/channel-service';
+import { buildWorldDigest } from '../src/world-digest';
+
+// Spy wrapper (calls through): pins the digest GATE — built when the bridge
+// is live, skipped entirely when it is not (the published-player guarantee).
+vi.mock('../src/world-digest', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../src/world-digest')>();
+  return { ...mod, buildWorldDigest: vi.fn(mod.buildWorldDigest) };
+});
 
 function installBridge(): string[] {
   const posted: string[] = [];
@@ -32,21 +45,23 @@ afterEach(() => {
 });
 
 describe('emitTurnEvent', () => {
-  it('posts the {turn, command, output, captures} record when the bridge is present', () => {
+  it('posts the {turn, command, output, captures, events, lineage} record when the bridge is present', () => {
     const posted = installBridge();
-    emitTurnEvent({ turn: 3, command: 'take lamp', output: 'Taken.', captures: [] });
+    emitTurnEvent({ turn: 3, command: 'take lamp', output: 'Taken.', captures: [], events: [] });
     expect(posted).toHaveLength(1);
     expect(JSON.parse(posted[0])).toEqual({
       turn: 3,
       command: 'take lamp',
       output: 'Taken.',
       captures: [],
+      events: [],
+      lineage: currentPlayLineage(),
     });
   });
 
   it('is a no-op without window.webkit (plain browser play)', () => {
     expect(() =>
-      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [] })
+      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [], events: [] })
     ).not.toThrow();
   });
 
@@ -57,8 +72,47 @@ describe('emitTurnEvent', () => {
       },
     };
     expect(() =>
-      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [] })
+      emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [], events: [] })
     ).not.toThrow();
+  });
+});
+
+describe('turnEventsBridgeActive', () => {
+  it('is true exactly when the WKWebView handler is registered', () => {
+    expect(turnEventsBridgeActive()).toBe(false);
+    installBridge();
+    expect(turnEventsBridgeActive()).toBe(true);
+  });
+});
+
+describe('lineage boot global (ADR-306 Phase 2)', () => {
+  it('honors __SHARPEE_PLAY_LINEAGE__ on boot-lineage records only; a fence starts a plain lineage', async () => {
+    vi.resetModules();
+    (window as any).__SHARPEE_PLAY_LINEAGE__ = { id: 7, parent: 3, fork: 2 };
+    const posted = installBridge();
+    try {
+      const fresh = await import('../src/turn-events');
+      fresh.emitTurnEvent({ turn: 1, command: 'look', output: 'A room.', captures: [], events: [] });
+      const boot = JSON.parse(posted[0]);
+      expect(boot.lineage).toBe(7);
+      expect(boot.parentLineage).toBe(3);
+      expect(boot.forkOrdinal).toBe(2);
+
+      fresh.emitRestartEvent();
+      const fence = JSON.parse(posted[1]);
+      expect(fence.lineage).toBe(8);
+
+      // Post-fence records: new lineage id, NO parent/fork — a restart is a
+      // fence, not a fork (ADR-305 D3).
+      fresh.emitTurnEvent({ turn: 2, command: 'look', output: 'Again.', captures: [], events: [] });
+      const after = JSON.parse(posted[2]);
+      expect(after.lineage).toBe(8);
+      expect('parentLineage' in after).toBe(false);
+      expect('forkOrdinal' in after).toBe(false);
+    } finally {
+      delete (window as any).__SHARPEE_PLAY_LINEAGE__;
+      vi.resetModules();
+    }
   });
 });
 
@@ -81,7 +135,7 @@ describe('capturesOf', () => {
 interface FakeEngine {
   on(event: string, handler: (...args: any[]) => void): void;
   emit(event: string, ...args: any[]): void;
-  executeTurn(command: string): Promise<void>;
+  executeTurn(command: string): Promise<{ events: Array<{ type: string }> }>;
   start(options?: unknown): Promise<void>;
   setStory(story: unknown): void;
   stop(reason?: string): void;
@@ -119,6 +173,7 @@ function makeEngine(responseParagraphs: string[][]): FakeEngine {
           'preferred-layout': responseParagraphs.map(() => 'game-message'),
         },
       }, turn);
+      return { events: [{ type: 'action.success' }, { type: 'if.event.looked' }] };
     },
     async start() { /* no-op */ },
     setStory() { /* no-op */ },
@@ -215,6 +270,13 @@ describe('BrowserClient turn feed (real render path)', () => {
         },
       ])
     );
+    // ADR-306 Phase 2: the record names its lineage and carries the turn's
+    // emitted event types (the Event picker's source).
+    expect(payload.lineage).toBe(currentPlayLineage());
+    expect(payload.events).toEqual(['action.success', 'if.event.looked']);
+    // The digest rides only because the bridge is live; a mock world with no
+    // enumeration surface degrades to empty fields, never a throw.
+    expect(payload.world).toEqual({ entities: [], machines: [] });
   });
 
   it('continues a tight entry on the next line, not as a new paragraph', () => {
@@ -266,12 +328,14 @@ describe('BrowserClient turn feed (real render path)', () => {
 
     await (client as any).disposeAndReboot();
     const fence = JSON.parse(posted[1]);
-    expect(fence).toEqual({ restart: true, turn: before.turn + 1 });
+    expect(fence).toEqual({ restart: true, turn: before.turn + 1, lineage: before.lineage + 1 });
 
-    // The same page keeps counting — the anchor invariant (ADR-305 D4).
+    // The same page keeps counting — the anchor invariant (ADR-305 D4) —
+    // and post-fence turns belong to the fence's NEW lineage.
     await client.executeCommand('look');
     const after = JSON.parse(posted[2]);
     expect(after.turn).toBe(fence.turn);
+    expect(after.lineage).toBe(fence.lineage);
   });
 
   it('runs clean without a bridge — normal play unaffected, anchors still stamped', async () => {
@@ -280,5 +344,39 @@ describe('BrowserClient turn feed (real render path)', () => {
     expect(elements.textContent.textContent).toContain('A room.');
     // The anchor is a published client contract, not IDE chrome.
     expect(elements.textContent.querySelectorAll('[data-turn]').length).toBeGreaterThan(0);
+  });
+
+  it('never builds the world digest without a bridge — published players do not pay the enumeration', async () => {
+    const { client } = makeClient(makeEngine([['A room.']]));
+    vi.mocked(buildWorldDigest).mockClear();
+    await client.executeCommand('look');
+    expect(buildWorldDigest).not.toHaveBeenCalled();
+
+    // With the bridge live, the same path builds it — the gate, both sides.
+    installBridge();
+    await client.executeCommand('look');
+    expect(buildWorldDigest).toHaveBeenCalledTimes(1);
+  });
+
+  it('a turn whose engine call throws posts events: [] — never stale types from the prior turn', async () => {
+    const posted = installBridge();
+    const good = makeEngine([['Done.']]);
+    let calls = 0;
+    const engine: FakeEngine = {
+      ...good,
+      async executeTurn(command: string) {
+        calls += 1;
+        if (calls === 2) throw new Error('engine fell over');
+        return good.executeTurn(command);
+      },
+    };
+    const { client } = makeClient(engine);
+
+    await client.executeCommand('wait');
+    expect(JSON.parse(posted[0]).events).toEqual(['action.success', 'if.event.looked']);
+
+    await client.executeCommand('explode');
+    const errored = JSON.parse(posted[1]);
+    expect(errored.events).toEqual([]);
   });
 });

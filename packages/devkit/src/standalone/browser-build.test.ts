@@ -147,6 +147,15 @@ describe('browser scaffold (real path)', () => {
     const html = readFileSync(join(web, 'index.html'), 'utf-8');
     expect(html).not.toContain('{{STORY_ID}}');
     expect(html).toContain('<script src="game.js">');
+
+    // ADR-306 Phase 2: the TS path emits the testing page too — same bundle,
+    // no chrome, tokens substituted.
+    const testing = readFileSync(join(web, 'index-testing.html'), 'utf-8');
+    expect(testing).not.toContain('{{STORY_TITLE}}');
+    expect(testing).toContain('<script src="game.js">');
+    for (const chrome of ['menu-bar', 'status-line', 'THEME_LINKS', 'menu-title']) {
+      expect(testing, `testing page must not carry ${chrome}`).not.toContain(chrome);
+    }
     // P-3: the Reset menu item ships in the built page — the id MenuManager binds.
     expect(html).toContain('id="menu-reset"');
     expect(html).toContain('href="engine.css"');

@@ -1,5 +1,12 @@
 # Sharpee IDE — Go-Live Plan
 
+**Superseded by**: docs/work/testing/plan-20260809-testing-surface-revamp.md
+(2026-08-09) — the testing-surface revamp supersedes parts of Phase 6d
+(ADR-304 workspace layout) and Phase 6f (ADR-305's in-page margin chrome,
+Create button, save panel, per-turn-checkbox selection). This plan stays
+live and resumable at exactly the phase it reached (Phase 5 / 6a-6f) — no
+phase status below is changed by this stamp.
+
 Plan for the seven items in `todo-list.md`. Written 2026-08-06.
 
 The list is the source of truth for *what* and *why*; this is *in what order*
