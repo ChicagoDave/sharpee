@@ -13,8 +13,11 @@
  *
  * Public interface: SessionModel (addTurn, fence, tick, untick, segmentOf,
  *   openSegment, parentOf, setCollapsed, mergeUp, splitAt, isSkipped,
- *   titleOf, snapshot, restore, turns, segments, hasOpening), TurnMeta,
- *   Segment, SessionSnapshot, slugify.
+ *   titleOf, snapshot, restore, turns, segments, hasOpening; authoring —
+ *   claimsOf, addContains, addNotContains, setExact, addState, addEvent,
+ *   addChannel, removeDefault, removeContains, removeNotContains,
+ *   removeState, removeEvent, removeChannel), TurnMeta, Segment,
+ *   SessionSnapshot, TurnClaims, ChannelClaim, claimsAnything, slugify.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -56,6 +59,42 @@ export function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+/** One channel claim as authored by the Channel picker (design §5). */
+export interface ChannelClaim {
+  id: string;
+  /** Exactly one of the two is set — contains-form or typed `is`. */
+  contains?: string;
+  is?: string | number | boolean;
+}
+
+/**
+ * A turn's authored claims (design §5). All authoring happens through
+ * gestures; deletion happens in the source panel. `noDefaults` records that
+ * the author touched the policy defaults — deleting one KEEPS the others as
+ * authored contains (narrowing, never silent abandonment).
+ */
+export interface TurnClaims {
+  contains: string[];
+  notContains: string[];
+  exact: boolean;
+  states: string[];
+  events: string[];
+  channels: ChannelClaim[];
+  noDefaults: boolean;
+}
+
+const emptyClaims = (): TurnClaims => ({
+  contains: [], notContains: [], exact: false,
+  states: [], events: [], channels: [], noDefaults: false,
+});
+
+/** True when the turn still claims anything at all (defaults included). */
+export function claimsAnything(claims: TurnClaims): boolean {
+  return claims.exact || claims.contains.length > 0 || claims.notContains.length > 0
+    || claims.states.length > 0 || claims.events.length > 0
+    || claims.channels.length > 0 || !claims.noDefaults;
+}
+
 export class SessionModel {
   /** Played turns in feed order (opening included once present). */
   private turnList: TurnMeta[] = [];
@@ -63,8 +102,11 @@ export class SessionModel {
   /** Segments in creation order; render order derives from `start`. */
   private segmentList: Segment[] = [];
 
-  /** Ordinals demoted to `[SKIP]` (merge gap turns; pruning joins in Phase 4). */
+  /** Ordinals demoted to `[SKIP]` (merge gap turns, and pruned-to-nothing turns). */
   private skippedSet = new Set<number>();
+
+  /** Authored claims by ordinal (0 = the opening's claims). Absent = untouched. */
+  private claimsMap = new Map<number, TurnClaims>();
 
   get turns(): readonly TurnMeta[] { return this.turnList; }
   get segments(): readonly Segment[] { return this.segmentList; }
@@ -93,6 +135,7 @@ export class SessionModel {
     this.turnList = [];
     this.segmentList = [];
     this.skippedSet.clear();
+    this.claimsMap.clear();
   }
 
   private turnByOrdinal(n: number): TurnMeta | undefined {
@@ -222,11 +265,128 @@ export class SessionModel {
   }
 
   /** Turns no segment covers carry no marks (design §3: leaving a range
-   *  drops what was authored on the way through). */
+   *  drops what was authored on the way through — skips AND claims). */
   private dropOrphanedSkips(): void {
     for (const n of [...this.skippedSet]) {
       if (!this.coveredByAnySegment(n)) this.skippedSet.delete(n);
     }
+    for (const n of [...this.claimsMap.keys()]) {
+      if (!this.coveredByAnySegment(n)) this.claimsMap.delete(n);
+    }
+  }
+
+  // ── authoring (design §5) ────────────────────────────────────────────
+
+  /** The turn's claims, read-only; an untouched turn reads as all-default. */
+  claimsOf(n: number): Readonly<TurnClaims> {
+    return this.claimsMap.get(n) ?? emptyClaims();
+  }
+
+  private mutableClaims(n: number): TurnClaims {
+    let claims = this.claimsMap.get(n);
+    if (!claims) {
+      claims = emptyClaims();
+      this.claimsMap.set(n, claims);
+    }
+    return claims;
+  }
+
+  /**
+   * Authoring a claim INCLUDES the turn (design §5): it joins its segment,
+   * extends/closes the open one, or starts a fresh one — and un-demotes a
+   * `[SKIP]`. Returns false for an unknown ordinal (nothing changed).
+   */
+  private includeForAuthoring(n: number): boolean {
+    if (!this.turnByOrdinal(n)) return false;
+    this.skippedSet.delete(n);
+    if (!this.segmentOf(n)) this.tick(n);
+    return true;
+  }
+
+  addContains(n: number, text: string): boolean {
+    if (!this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).contains.push(text);
+    return true;
+  }
+
+  addNotContains(n: number, text: string): boolean {
+    if (!this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).notContains.push(text);
+    return true;
+  }
+
+  /** Toggles the Exact block ([OK] + literal whole-turn text). */
+  setExact(n: number, exact: boolean): boolean {
+    if (exact && !this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).exact = exact;
+    if (!exact) this.demoteIfEmpty(n);
+    return true;
+  }
+
+  addState(n: number, expression: string): boolean {
+    if (!this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).states.push(expression);
+    return true;
+  }
+
+  addEvent(n: number, type: string): boolean {
+    if (!this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).events.push(type);
+    return true;
+  }
+
+  addChannel(n: number, claim: ChannelClaim): boolean {
+    if (!this.includeForAuthoring(n)) return false;
+    this.mutableClaims(n).channels.push(claim);
+    return true;
+  }
+
+  /**
+   * Deletes one POLICY-DEFAULT line: the others become authored contains —
+   * the author narrows the claim, never silently abandons it (design §5).
+   * `defaults` are the rendered default fragments, `index` the deleted one.
+   */
+  removeDefault(n: number, index: number, defaults: string[]): void {
+    const claims = this.mutableClaims(n);
+    claims.contains = defaults.filter((_, i) => i !== index);
+    claims.noDefaults = true;
+    this.demoteIfEmpty(n);
+  }
+
+  removeContains(n: number, index: number): void {
+    const claims = this.mutableClaims(n);
+    claims.contains.splice(index, 1);
+    claims.noDefaults = true;
+    this.demoteIfEmpty(n);
+  }
+
+  removeNotContains(n: number, index: number): void {
+    this.mutableClaims(n).notContains.splice(index, 1);
+    this.demoteIfEmpty(n);
+  }
+
+  removeState(n: number, index: number): void {
+    this.mutableClaims(n).states.splice(index, 1);
+    this.demoteIfEmpty(n);
+  }
+
+  removeEvent(n: number, index: number): void {
+    this.mutableClaims(n).events.splice(index, 1);
+    this.demoteIfEmpty(n);
+  }
+
+  removeChannel(n: number, index: number): void {
+    this.mutableClaims(n).channels.splice(index, 1);
+    this.demoteIfEmpty(n);
+  }
+
+  /**
+   * A turn pruned to nothing demotes to `[SKIP]` in place; the opening just
+   * claims nothing — absence is its no-claim form (design §5).
+   */
+  private demoteIfEmpty(n: number): void {
+    if (n === 0) return;
+    if (!claimsAnything(this.claimsOf(n))) this.skippedSet.add(n);
   }
 
   /**

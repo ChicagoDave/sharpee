@@ -22,6 +22,8 @@
     "baseUrl": ".",
     "paths": {
       "@sharpee/branch-tester/auto-assertion": ["../../../../packages/branch-tester/src/auto-assertion.ts"],
+      "@sharpee/branch-tester/serializer": ["../../../../packages/branch-tester/src/serializer.ts"],
+      "@sharpee/branch-tester/parser": ["../../../../packages/branch-tester/src/parser.ts"],
       "@sharpee/branch-tester/types": ["../../../../packages/branch-tester/src/types.ts"]
     }
   },

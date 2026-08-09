@@ -282,13 +282,27 @@
   function slugify(text) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
+  var emptyClaims = () => ({
+    contains: [],
+    notContains: [],
+    exact: false,
+    states: [],
+    events: [],
+    channels: [],
+    noDefaults: false
+  });
+  function claimsAnything(claims) {
+    return claims.exact || claims.contains.length > 0 || claims.notContains.length > 0 || claims.states.length > 0 || claims.events.length > 0 || claims.channels.length > 0 || !claims.noDefaults;
+  }
   var SessionModel = class {
     /** Played turns in feed order (opening included once present). */
     turnList = [];
     /** Segments in creation order; render order derives from `start`. */
     segmentList = [];
-    /** Ordinals demoted to `[SKIP]` (merge gap turns; pruning joins in Phase 4). */
+    /** Ordinals demoted to `[SKIP]` (merge gap turns, and pruned-to-nothing turns). */
     skippedSet = /* @__PURE__ */ new Set();
+    /** Authored claims by ordinal (0 = the opening's claims). Absent = untouched. */
+    claimsMap = /* @__PURE__ */ new Map();
     get turns() {
       return this.turnList;
     }
@@ -319,6 +333,7 @@
       this.turnList = [];
       this.segmentList = [];
       this.skippedSet.clear();
+      this.claimsMap.clear();
     }
     turnByOrdinal(n) {
       return this.turnList.find((t) => t.ordinal === n);
@@ -435,11 +450,111 @@
       return this.segmentList.some((s) => n >= s.start && n <= (s.end ?? latest));
     }
     /** Turns no segment covers carry no marks (design §3: leaving a range
-     *  drops what was authored on the way through). */
+     *  drops what was authored on the way through — skips AND claims). */
     dropOrphanedSkips() {
       for (const n of [...this.skippedSet]) {
         if (!this.coveredByAnySegment(n)) this.skippedSet.delete(n);
       }
+      for (const n of [...this.claimsMap.keys()]) {
+        if (!this.coveredByAnySegment(n)) this.claimsMap.delete(n);
+      }
+    }
+    // ── authoring (design §5) ────────────────────────────────────────────
+    /** The turn's claims, read-only; an untouched turn reads as all-default. */
+    claimsOf(n) {
+      return this.claimsMap.get(n) ?? emptyClaims();
+    }
+    mutableClaims(n) {
+      let claims = this.claimsMap.get(n);
+      if (!claims) {
+        claims = emptyClaims();
+        this.claimsMap.set(n, claims);
+      }
+      return claims;
+    }
+    /**
+     * Authoring a claim INCLUDES the turn (design §5): it joins its segment,
+     * extends/closes the open one, or starts a fresh one — and un-demotes a
+     * `[SKIP]`. Returns false for an unknown ordinal (nothing changed).
+     */
+    includeForAuthoring(n) {
+      if (!this.turnByOrdinal(n)) return false;
+      this.skippedSet.delete(n);
+      if (!this.segmentOf(n)) this.tick(n);
+      return true;
+    }
+    addContains(n, text) {
+      if (!this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).contains.push(text);
+      return true;
+    }
+    addNotContains(n, text) {
+      if (!this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).notContains.push(text);
+      return true;
+    }
+    /** Toggles the Exact block ([OK] + literal whole-turn text). */
+    setExact(n, exact) {
+      if (exact && !this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).exact = exact;
+      if (!exact) this.demoteIfEmpty(n);
+      return true;
+    }
+    addState(n, expression) {
+      if (!this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).states.push(expression);
+      return true;
+    }
+    addEvent(n, type) {
+      if (!this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).events.push(type);
+      return true;
+    }
+    addChannel(n, claim) {
+      if (!this.includeForAuthoring(n)) return false;
+      this.mutableClaims(n).channels.push(claim);
+      return true;
+    }
+    /**
+     * Deletes one POLICY-DEFAULT line: the others become authored contains —
+     * the author narrows the claim, never silently abandons it (design §5).
+     * `defaults` are the rendered default fragments, `index` the deleted one.
+     */
+    removeDefault(n, index, defaults) {
+      const claims = this.mutableClaims(n);
+      claims.contains = defaults.filter((_, i) => i !== index);
+      claims.noDefaults = true;
+      this.demoteIfEmpty(n);
+    }
+    removeContains(n, index) {
+      const claims = this.mutableClaims(n);
+      claims.contains.splice(index, 1);
+      claims.noDefaults = true;
+      this.demoteIfEmpty(n);
+    }
+    removeNotContains(n, index) {
+      this.mutableClaims(n).notContains.splice(index, 1);
+      this.demoteIfEmpty(n);
+    }
+    removeState(n, index) {
+      this.mutableClaims(n).states.splice(index, 1);
+      this.demoteIfEmpty(n);
+    }
+    removeEvent(n, index) {
+      this.mutableClaims(n).events.splice(index, 1);
+      this.demoteIfEmpty(n);
+    }
+    removeChannel(n, index) {
+      this.mutableClaims(n).channels.splice(index, 1);
+      this.demoteIfEmpty(n);
+    }
+    /**
+     * A turn pruned to nothing demotes to `[SKIP]` in place; the opening just
+     * claims nothing — absence is its no-claim form (design §5).
+     */
+    demoteIfEmpty(n) {
+      if (n === 0) return;
+      if (!claimsAnything(this.claimsOf(n))) this.skippedSet.add(n);
     }
     /**
      * Where the player STOOD when the range began: the previous turn's room,

@@ -257,6 +257,88 @@ describe('auto-naming (design §4)', () => {
   });
 });
 
+describe('authoring claims (design §5)', () => {
+  let m: SessionModel;
+  beforeEach(() => { m = playedSession(); });
+
+  it('authoring on an unincluded turn includes it', () => {
+    expect(m.addContains(2, 'gravel')).toBe(true);
+    expect(m.openSegment()).toEqual({ start: 2, end: null, collapsed: false });
+    expect(m.claimsOf(2).contains).toEqual(['gravel']);
+  });
+
+  it('authoring joins the open segment instead of starting a second', () => {
+    m.tick(1);
+    m.addState(3, 'kettle.location = hall');
+    expect(m.segments).toHaveLength(1);
+    expect(m.segmentOf(3)).toEqual({ start: 1, end: 3, collapsed: false });
+    expect(m.claimsOf(3).states).toEqual(['kettle.location = hall']);
+  });
+
+  it('authoring un-demotes a [SKIP] turn', () => {
+    m.tick(1);
+    m.tick(2);
+    m.tick(4);
+    m.mergeUp(m.segmentOf(4)!); // gap 3 → [SKIP]
+    expect(m.isSkipped(3)).toBe(true);
+    m.addEvent(3, 'if.event.actor_moved');
+    expect(m.isSkipped(3)).toBe(false);
+    expect(m.claimsOf(3).events).toEqual(['if.event.actor_moved']);
+  });
+
+  it('adds on unknown ordinals refuse with no state change', () => {
+    expect(m.addContains(9, 'x')).toBe(false);
+    expect(m.addChannel(9, { id: 'score', is: 0 })).toBe(false);
+    expect(m.segments).toHaveLength(0);
+  });
+
+  it('deleting one policy default keeps the other as authored contains', () => {
+    m.tick(2);
+    m.removeDefault(2, 0, ['Gravel Drive', 'The drive curves…']);
+    const claims = m.claimsOf(2);
+    expect(claims.contains).toEqual(['The drive curves…']);
+    expect(claims.noDefaults).toBe(true);
+    expect(m.isSkipped(2)).toBe(false);
+  });
+
+  it('a turn pruned to nothing demotes to [SKIP] in place', () => {
+    m.tick(2);
+    m.addContains(2, 'gravel');
+    m.removeContains(2, 0);   // last authored claim, noDefaults now true
+    expect(m.isSkipped(2)).toBe(true);
+    expect(m.segmentOf(2)).toBeDefined(); // still in range — demoted, not dropped
+  });
+
+  it('the opening pruned to nothing claims nothing — never [SKIP]', () => {
+    m.tick(0);
+    m.addContains(0, 'auction notice');
+    m.removeContains(0, 0);
+    expect(m.isSkipped(0)).toBe(false);
+    expect(m.claimsOf(0).noDefaults).toBe(true);
+  });
+
+  it('clearing Exact demotes only when nothing else claims', () => {
+    m.tick(2);
+    m.setExact(2, true);
+    m.removeDefault(2, 0, []); // noDefaults, no contains left
+    m.setExact(2, false);
+    expect(m.isSkipped(2)).toBe(true);
+  });
+
+  it('leaving a segment drops authored claims', () => {
+    m.tick(2);
+    m.addContains(2, 'gravel');
+    m.untick(2); // lone start — segment gone
+    expect(m.claimsOf(2).contains).toEqual([]);
+  });
+
+  it('a fence clears claims with the lineage', () => {
+    m.addContains(2, 'gravel');
+    m.fence();
+    expect(m.claimsOf(2).contains).toEqual([]);
+  });
+});
+
 describe('snapshot and restore (ADR-306 D8)', () => {
   it('round-trips segments, the open range, and skips', () => {
     const m = playedSession();

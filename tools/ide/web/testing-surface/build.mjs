@@ -25,6 +25,8 @@ const outDir = resolve(repoRoot, 'tools/ide/SharpeeIDE/Resources/testing-surface
 // rule 8b / ADR-306 D2 exist to prevent exactly that drift. The module is
 // dependency-free beyond its own types, so bundling from source costs nothing.
 const autoAssertion = resolve(repoRoot, 'packages/branch-tester/src/auto-assertion.ts');
+const btSerializer = resolve(repoRoot, 'packages/branch-tester/src/serializer.ts');
+const btParser = resolve(repoRoot, 'packages/branch-tester/src/parser.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
@@ -39,6 +41,8 @@ const options = {
   absWorkingDir: repoRoot,
   alias: {
     '@sharpee/branch-tester/auto-assertion': autoAssertion,
+    '@sharpee/branch-tester/serializer': btSerializer,
+    '@sharpee/branch-tester/parser': btParser,
     '@sharpee/branch-tester/types': btTypes,
   },
   bundle: true,
