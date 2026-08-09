@@ -156,9 +156,28 @@ final class MainWindowController: NSWindowController {
         rootViewController?.testingTab ?? TestingTabViewController()
     }
 
-    /// Switches the right panel to the Testing tab (a test run just started).
+    /// Enters the ADR-304 testing workspace (selecting the Testing tab IS the
+    /// entrance): Play takes the left pane, Testing the right.
     func showTestingTab() {
         rootViewController?.showTestingTab()
+    }
+
+    /// The Play surface, wherever it currently sits (ADR-304 moves it to the
+    /// left pane while the testing workspace is open). Fallback serves a
+    /// window-less controller (tests), like testingTab above.
+    var playSurface: PlayViewController {
+        rootViewController?.playSurface ?? PlayViewController()
+    }
+
+    /// Whether the ADR-304 testing workspace is open (Play left, Testing right).
+    var isTestingWorkspaceActive: Bool {
+        rootViewController?.isTestingWorkspaceActive ?? false
+    }
+
+    /// Leaves the testing workspace, restoring the normal editor layout — the
+    /// workspace's one exit (ADR-304 D2), reachable for tests and menu wiring.
+    func exitTestingWorkspace() {
+        rootViewController?.exitTestingWorkspace()
     }
 
     /// The editor's focused document (Run Current Test File target), or nil.
@@ -520,6 +539,18 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showTestingTab()
     }
 
+    /// The Play surface, wherever it currently sits (right panel normally, the
+    /// left pane while the testing workspace is open — ADR-304).
+    var playSurface: PlayViewController { mainSplitViewController.playViewController }
+
+    /// Whether the ADR-304 testing workspace is open.
+    var isTestingWorkspaceActive: Bool { mainSplitViewController.isTestingWorkspaceActive }
+
+    /// Leaves the testing workspace (its one exit also lands here for menus/tests).
+    func exitTestingWorkspace() {
+        mainSplitViewController.exitTestingWorkspace()
+    }
+
     /// The editor's focused document (Run Current Test File enablement/target).
     var activeDocumentURL: URL? { mainSplitViewController.activeDocumentURL }
 
@@ -738,9 +769,13 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Last-ok-IR retention behind the project tree (ADR-258 D6).
     private var treeState = IRTreeState()
     private let editorViewController = EditorViewController()
+    /// The left split item's real occupant: hosts the editor always, and the
+    /// borrowed Play surface while the testing workspace is open (ADR-304).
+    private let leftPaneHostViewController = LeftPaneHostViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
-    private var playViewController: PlayViewController { rightPanelViewController.play }
+    /// (Fileprivate: RootViewController's playSurface facade reads it too.)
+    fileprivate var playViewController: PlayViewController { rightPanelViewController.play }
 
     /// Invoked when the rail's Build button is clicked. Owned by RootViewController.
     fileprivate var onBuildPanelToggle: (() -> Void)?
@@ -803,6 +838,15 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
+
+        // The testing workspace's one entrance and one exit (ADR-304 D2).
+        rightPanelViewController.onTestingWorkspaceRequested = { [weak self] in
+            self?.enterTestingWorkspace()
+        }
+        leftPaneHostViewController.onExitTesting = { [weak self] in
+            self?.exitTestingWorkspace()
+        }
+        leftPaneHostViewController.host(editor: editorViewController)
 
         addSplitViewItem(makeRailItem())
         addSplitViewItem(makeProjectItem())
@@ -1053,9 +1097,37 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
         playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
-        if playViewController.isLoaded {
+        // In the testing workspace the surface is already on screen (left
+        // pane) — and the workspace is modal, so no tab is brought forward.
+        if playViewController.isLoaded, !isTestingWorkspaceActive {
             rightPanelViewController.showPlayTab()
         }
+    }
+
+    // MARK: Testing workspace (ADR-304)
+
+    /// Whether the testing workspace is open: Play on the left, Testing on the
+    /// right (D1). Never persisted — a fresh launch is always the editor layout.
+    fileprivate var isTestingWorkspaceActive = false
+
+    /// Enters the testing workspace. The Play surface is REPARENTED into the
+    /// left pane — never torn down or reloaded — so a running story survives
+    /// (D3); the editor's view only hides, so its document, cursor, and scroll
+    /// are untouched for the exit to reveal (D4).
+    fileprivate func enterTestingWorkspace() {
+        guard !isTestingWorkspaceActive else { return }
+        isTestingWorkspaceActive = true
+        let play = rightPanelViewController.lendPlaySurfaceForTestingWorkspace()
+        leftPaneHostViewController.enterTestingWorkspace(play: play)
+    }
+
+    /// The workspace's one exit (D2): returns the Play surface to the right
+    /// panel and restores the normal editor layout.
+    fileprivate func exitTestingWorkspace() {
+        guard isTestingWorkspaceActive else { return }
+        isTestingWorkspaceActive = false
+        leftPaneHostViewController.exitTestingWorkspace()
+        rightPanelViewController.reclaimPlaySurfaceFromTestingWorkspace()
     }
 
     /// Build-output plumbing — the Build tab lives in the right panel next to Play.
@@ -1208,7 +1280,7 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     private func makeEditorItem() -> NSSplitViewItem {
-        let item = NSSplitViewItem(viewController: editorViewController)
+        let item = NSSplitViewItem(viewController: leftPaneHostViewController)
         item.minimumThickness = Self.editorMinWidth
         item.holdingPriority = .defaultLow
         return item
@@ -1316,6 +1388,142 @@ private final class RailViewController: NSViewController {
 
     @objc private func toggleBuild() {
         onBuildToggle?()
+    }
+}
+
+// MARK: - Left pane host (editor always; Play during the testing workspace)
+
+/// The left split item's content. The editor is its permanent occupant; while
+/// the ADR-304 testing workspace is open, the borrowed Play surface sits over
+/// it beneath an Exit Testing bar. The editor's view never leaves the
+/// hierarchy — it only hides — which is what keeps its document, cursor, and
+/// scroll position intact for the exit to reveal (D4).
+/// Public interface (fileprivate): host(editor:), enterTestingWorkspace(play:),
+/// exitTestingWorkspace(), onExitTesting.
+private final class LeftPaneHostViewController: NSViewController {
+
+    /// Invoked by the bar's Exit Testing button. Owned by MainSplitViewController.
+    var onExitTesting: (() -> Void)?
+
+    private weak var hostedEditor: NSViewController?
+    private weak var borrowedPlay: NSViewController?
+    private let exitBar = TestingWorkspaceExitBar()
+    private var workspaceConstraints: [NSLayoutConstraint] = []
+
+    override func loadView() {
+        view = ThemedPane(color: Theme.editorBackground)
+    }
+
+    /// Installs the editor as the pane's permanent occupant. Called once,
+    /// before the split items are assembled.
+    ///
+    /// - Parameter editor: the editor view controller this pane hosts.
+    func host(editor: NSViewController) {
+        hostedEditor = editor
+        addChild(editor)
+        editor.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(editor.view)
+        NSLayoutConstraint.activate([
+            editor.view.topAnchor.constraint(equalTo: view.topAnchor),
+            editor.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            editor.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            editor.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    /// Enters the testing workspace: hides the editor and shows the borrowed
+    /// Play surface beneath the Exit Testing bar (ADR-304 D1/D2).
+    ///
+    /// - Parameter play: the Play surface lent by the right panel.
+    func enterTestingWorkspace(play: NSViewController) {
+        guard borrowedPlay == nil else { return }
+        borrowedPlay = play
+        hostedEditor?.view.isHidden = true
+
+        exitBar.onExit = { [weak self] in self?.onExitTesting?() }
+        addChild(play)
+        play.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(exitBar)
+        view.addSubview(play.view)
+        workspaceConstraints = [
+            exitBar.topAnchor.constraint(equalTo: view.topAnchor),
+            exitBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            exitBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            play.view.topAnchor.constraint(equalTo: exitBar.bottomAnchor),
+            play.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            play.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            play.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(workspaceConstraints)
+    }
+
+    /// Exits the workspace: detaches the Play surface (the caller returns it to
+    /// the right panel) and reveals the editor exactly as it was left (D4).
+    func exitTestingWorkspace() {
+        guard let play = borrowedPlay else { return }
+        NSLayoutConstraint.deactivate(workspaceConstraints)
+        workspaceConstraints = []
+        play.view.removeFromSuperview()
+        play.removeFromParent()
+        exitBar.removeFromSuperview()
+        hostedEditor?.view.isHidden = false
+        borrowedPlay = nil
+    }
+}
+
+// MARK: - Exit Testing bar
+
+/// The testing workspace's one, unmissable exit (ADR-304 D2): a full-width
+/// accent-colored bar naming the mode, carrying the single Exit Testing button.
+private final class TestingWorkspaceExitBar: NSView {
+
+    /// Accessibility identifier — the exit button's stable handle for tests.
+    static let exitButtonIdentifier = "testing.workspace.exit"
+
+    private static let barHeight: CGFloat = 36
+
+    /// Invoked when Exit Testing is clicked.
+    var onExit: (() -> Void)?
+
+    init() {
+        super.init(frame: .zero)
+        wantsLayer = true
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let label = NSTextField(labelWithString: "Testing Workspace")
+        label.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = Theme.statusBarText
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let button = NSButton(title: "Exit Testing", target: self, action: #selector(exitClicked))
+        button.bezelStyle = .rounded
+        button.controlSize = .regular
+        button.setAccessibilityIdentifier(Self.exitButtonIdentifier)
+        button.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(label)
+        addSubview(button)
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: Self.barHeight),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            button.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("TestingWorkspaceExitBar is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.accent.cgColor
+    }
+
+    @objc private func exitClicked() {
+        onExit?()
     }
 }
 

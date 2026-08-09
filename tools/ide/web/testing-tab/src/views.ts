@@ -834,14 +834,12 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
   back.type = 'button';
   back.addEventListener('click', () => actions.back());
   header.append(back, el('h2', null, node.stem));
-  const path = el('button', 'path', node.file);
-  path.type = 'button';
-  path.title = 'Open this transcript in the editor';
-  path.addEventListener('click', () => actions.openLocation(node.file, 1));
-  header.append(path);
 
   // The same segmented control the mode switcher uses — two readings of one
-  // document, chosen the way the author already chooses a view mode.
+  // document, chosen the way the author already chooses a view mode. It sits
+  // WITH the title, not at the header's far end: in the testing workspace the
+  // pane is the window's whole right half, and a far-end control strands at
+  // the window edge (go-live 6d finding).
   const faces = el('div', 'seg faces');
   ([
     ['cards', 'Cards', 'The run: each command with what the story said'],
@@ -856,6 +854,12 @@ function renderDocument(model: RunModel, surface: Surface, actions: ViewActions)
     faces.append(button);
   });
   header.append(faces);
+
+  const path = el('button', 'path', node.file);
+  path.type = 'button';
+  path.title = 'Open this transcript in the editor';
+  path.addEventListener('click', () => actions.openLocation(node.file, 1));
+  header.append(path);
   view.append(header);
 
   const meta = el('div', 'docmeta');

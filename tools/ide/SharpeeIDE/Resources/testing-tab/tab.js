@@ -1976,11 +1976,6 @@
     back.type = "button";
     back.addEventListener("click", () => actions2.back());
     header.append(back, el("h2", null, node.stem));
-    const path = el("button", "path", node.file);
-    path.type = "button";
-    path.title = "Open this transcript in the editor";
-    path.addEventListener("click", () => actions2.openLocation(node.file, 1));
-    header.append(path);
     const faces = el("div", "seg faces");
     [
       ["cards", "Cards", "The run: each command with what the story said"],
@@ -1995,6 +1990,11 @@
       faces.append(button);
     });
     header.append(faces);
+    const path = el("button", "path", node.file);
+    path.type = "button";
+    path.title = "Open this transcript in the editor";
+    path.addEventListener("click", () => actions2.openLocation(node.file, 1));
+    header.append(path);
     view.append(header);
     const meta = el("div", "docmeta");
     const cell = (key, value, className) => {

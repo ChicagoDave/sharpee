@@ -436,12 +436,35 @@ test, closing the earlier 491-run's predates-that-test caveat;
 ShippedThemesRealPathTests re-run standalone the same session, 3 passing,
 0 failures. Remaining 6c acceptance: David's in-app click-through.
 
-**Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status:
-PENDING**. Built to D1–D4 exactly: Testing tab moves Play to the left pane;
-modal, one unmissable Exit Testing; the Play web view reparents without
-reload (a played session survives); editor document/cursor/scroll restore on
-exit. Evidence: real-path Swift tests for the real reparent and the state
-round-trip; David's next exercise round is the acceptance signal.
+**Phase 6d — Testing workspace** (P-5, Large, **ADR-304**) **Status: CURRENT
+(since 2026-08-08, session bd3d6b) — implementation landed same day; David
+exercised it live the same evening**. Built to D1–D4 exactly: Testing tab
+moves Play to the left pane; modal, one unmissable Exit Testing; the Play web
+view reparents without reload (a played session survives); editor
+document/cursor/scroll restore on exit. As built: any route to the Testing
+tab (click or the Test menu's run entry) enters the workspace;
+`RightPanelViewController` lends/reclaims the Play surface (content
+constraints re-anchored strip-side so the surface can leave); a new
+`LeftPaneHostViewController` hosts the editor permanently (hidden, never
+removed — D4 for free) and overlays Play under an accent
+`TestingWorkspaceExitBar`; while modal, all other tab switches and the
+build's play-tab-forward are suppressed. Evidence:
+TestingWorkspaceRealPathTests 4 passing — layout+modality+single exit;
+WKWebView JS-world marker survives the reparent round-trip alive (D3, same
+instance); editor document/cursor/scroll byte-identical across the trip (D4,
+real NSTextView); a build finishing inside the workspace loads Play on the
+left without breaking modality (fixture composes via a real in-checkout
+compose — scratch under `test-fixtures/.compose-scratch-*`, gitignored).
+Full SharpeeIDETests 496 passing, 0 failures, 119.3s, `** TEST SUCCEEDED **`
+(2026-08-08 20:05 CDT). Fallout fixed en route, same session: (1)
+pre-existing `LineNumberRulerView` infinite draw loop on files without a
+trailing newline (found by the D4 test; one loop guard); (2) Testing tab's
+Cards/Source face switcher stranded at the window edge in the full-width
+workspace pane — moved into the title cluster (David's live finding;
+web suite 87 passing, bundle re-vendored). David's live exercise also
+confirmed the play surface jump; remaining 6d acceptance: his next
+exercise round on the rebuilt app. The missing turn-selection margin he
+noted is 6f scope, not a 6d defect.
 
 **Phase 6e — Auto-assertion policy** (P-6, Medium) **Status: PENDING**.
 Design step first: settle the setting's home (per-story vs per-user) and

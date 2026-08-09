@@ -354,9 +354,10 @@ body {
 .docmeta .v.fail { color: var(--fail); }
 .docmeta .v.replay { color: var(--replay); }
 .docview .turns { flex: 1; overflow-y: auto; margin: 0; padding: 8px 0 20px; }
-/* The face switcher sits at the far end of the header so it does not compete
-   with the file path for the eye. */
-.docview .faces { margin-left: auto; flex: none; }
+/* The face switcher travels with the title cluster (Back · name · faces): at
+   full-pane widths (the testing workspace) a far-end control strands against
+   the window edge and gets lost — the dimmed path trails it instead. */
+.docview .faces { flex: none; }
 
 /* ── document: authored-but-unrun content (F2) ─────────────── */
 /* New and untested wears the warn color end to end: the [NEW] badge on a
