@@ -26,6 +26,15 @@ final class PlayURLSchemeHandler: NSObject, WKURLSchemeHandler {
     /// theme is served at exactly the version the build wired.
     var themesFallbackDirectory: URL?
 
+    /// The testing play surface's web bundle (Resources/testing-surface,
+    /// ADR-306 Phase 3), serving `ide-testing-surface/…` requests. IDE-owned
+    /// chrome injected into the testing page — never resolved from the
+    /// story's bundle, so an author file cannot shadow the surface.
+    var testingSurfaceDirectory: URL?
+
+    /// The reserved prefix the testing surface's assets load under.
+    static let testingSurfacePrefix = "ide-testing-surface/"
+
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
         guard let root = rootDirectory, let url = task.request.url else {
             task.didFailWithError(URLError(.badURL))
@@ -35,6 +44,19 @@ final class PlayURLSchemeHandler: NSObject, WKURLSchemeHandler {
         var relativePath = url.path
         if relativePath.hasPrefix("/") { relativePath.removeFirst() }
         if relativePath.isEmpty { relativePath = "index.html" }
+
+        if relativePath.hasPrefix(Self.testingSurfacePrefix) {
+            let name = String(relativePath.dropFirst(Self.testingSurfacePrefix.count))
+            if let surfaceRoot = testingSurfaceDirectory,
+               let data = read(name, under: surfaceRoot) {
+                respond(task, url: url, statusCode: 200, data: data,
+                        contentType: Self.mimeType(forExtension: (name as NSString).pathExtension))
+            } else {
+                respond(task, url: url, statusCode: 404, data: Data(),
+                        contentType: "text/plain; charset=utf-8")
+            }
+            return
+        }
 
         if let data = read(relativePath, under: root) {
             respond(task, url: url, statusCode: 200, data: data,

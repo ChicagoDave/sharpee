@@ -162,6 +162,13 @@ final class MainWindowController: NSWindowController {
         rootViewController?.showTestingTab()
     }
 
+    /// Opens the testing play surface window (ADR-306 Phase 3) — the
+    /// dedicated testing page with the card/segment UI. Lives beside the
+    /// ADR-304 workspace until the Phase 6 retirements.
+    func openTestingSurface() {
+        rootViewController?.openTestingSurface()
+    }
+
     /// The Play surface, wherever it currently sits (ADR-304 moves it to the
     /// left pane while the testing workspace is open). Fallback serves a
     /// window-less controller (tests), like testingTab above.
@@ -556,6 +563,11 @@ private final class RootViewController: NSViewController {
 
     func showTestingTab() {
         mainSplitViewController.showTestingTab()
+    }
+
+    /// The testing play surface window (ADR-306 Phase 3).
+    func openTestingSurface() {
+        mainSplitViewController.openTestingSurface()
     }
 
     /// The Play surface, wherever it currently sits (right panel normally, the
@@ -1056,6 +1068,9 @@ private final class MainSplitViewController: NSSplitViewController {
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         currentProject = project
+        // The testing surface's sidecar is per-story (ADR-306 D8): a project
+        // switch closes the window; the next open binds the new story's.
+        closeTestingSurface()
         projectPaneViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
         RecentProjectsStore.push(project.rootURL)
         persistSession()
@@ -1247,6 +1262,47 @@ private final class MainSplitViewController: NSSplitViewController {
         if playViewController.isLoaded, !isTestingWorkspaceActive {
             rightPanelViewController.showPlayTab()
         }
+    }
+
+    // MARK: Testing play surface (ADR-306 Phase 3)
+
+    /// The surface's window, created on first open and kept for the project's
+    /// lifetime — its D8 session sidecar is per-story, so a project switch
+    /// closes it (see loadProject).
+    fileprivate var testingSurfaceWindowController: TestingSurfaceWindowController?
+
+    /// Opens (or refocuses) the testing play surface. A fresh show loads the
+    /// story's testing page and runs the D8 restore; refocusing a visible
+    /// window never reboots the running session.
+    fileprivate func openTestingSurface() {
+        guard let storyURL = treeState.storyURL,
+              case .populated(let ir, _) = treeState.display,
+              let id = ir.meta.fields.id else {
+            NSSound.beep()
+            return
+        }
+        let projectRoot = storyURL.deletingLastPathComponent()
+        let controller: TestingSurfaceWindowController
+        if let existing = testingSurfaceWindowController {
+            controller = existing
+        } else {
+            let store = TestingSessionStore(
+                fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
+            controller = TestingSurfaceWindowController(storyTitle: id, sessionStore: store)
+            testingSurfaceWindowController = controller
+        }
+        let wasVisible = controller.window?.isVisible == true
+        controller.showWindow(nil)
+        if !wasVisible {
+            controller.load(bundleDirectory: bundleDirectory())
+        }
+    }
+
+    /// Closes the surface for a project switch — the next open builds a new
+    /// controller against the new story's sidecar.
+    fileprivate func closeTestingSurface() {
+        testingSurfaceWindowController?.close()
+        testingSurfaceWindowController = nil
     }
 
     // MARK: Testing workspace (ADR-304)

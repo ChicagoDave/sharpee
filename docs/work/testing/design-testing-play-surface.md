@@ -280,6 +280,15 @@ to something buildable.
 - **Tier 3 — arbitrary state, score, "win": refuse upfront.** General goal
   regression is the game itself; forcing remains the tool for rare outcomes.
 
+"Easily attainable" is enforced by the tool, not the user's judgment:
+goals come from **pickers only** (rooms from the IR, items from the digest —
+the §5 no-free-text discipline); the search runs under a **measured budget
+with named exhaustion** ("didn't reach the Vault in 400 forked turns —
+likely puzzle-gated; play it yourself"); the planner's vocabulary excludes
+meta commands and GDT. The search runs headless in the toolchain; the IDE
+plays the verified path into the live surface via "Play to…" beside the
+prompt, and the turns land as cards ready to range into a test.
+
 ## 13. Addition: author-annotated coverage (David, 2026-08-09 — captured, not yet ruled)
 
 The author annotates the story itself — marking a puzzle, a piece of
@@ -308,11 +317,36 @@ new); where the % surfaces (Testing tab, per D4's authoring/reading
 boundary — not the run column); and whether availability and completion are
 one condition or two. Measured against Chord stories, as always.
 
-"Easily attainable" is enforced by the tool, not the user's judgment:
-goals come from **pickers only** (rooms from the IR, items from the digest —
-the §5 no-free-text discipline); the search runs under a **measured budget
-with named exhaustion** ("didn't reach the Vault in 400 forked turns —
-likely puzzle-gated; play it yourself"); the planner's vocabulary excludes
-meta commands and GDT. The search runs headless in the toolchain; the IDE
-plays the verified path into the live surface via "Play to…" beside the
-prompt, and the turns land as cards ready to range into a test.
+## 14. Addition: response-coverage checks (David, 2026-08-09 — captured, not yet ruled)
+
+A second kind of test, distinct from transcript assertions: **which NPCs are
+missing TALK TO responses, and which objects or nouns in descriptions are
+missing EXAMINE responses.** This is static story-coverage analysis — a lint
+over the built story, not a replay of play:
+
+- **NPC talk coverage** is enumerable from the world model directly: every
+  NPC either has a TALK TO response (or topics) or it doesn't.
+- **Examine coverage over declared entities** is equally mechanical: every
+  declared entity in scope (NPC, item, scenery) either has an authored
+  EXAMINE response or falls to the default — no prose analysis needed.
+- **Nouns mentioned in prose but never declared** is the hard half: an
+  undeclared noun has no vocabulary to match against, so identifying it as
+  a noun at all requires POS tagging. Candidates David named (2026-08-09):
+  **spaCy** / **Stanford Stanza** (both strong, both Python — the Node
+  toolchain would need a Python environment), and — likely sufficient and
+  preferred — **Apple's NLTagger** (`NaturalLanguage`, `.lexicalClass`):
+  built into macOS, zero dependencies, and it moves the check IDE-side,
+  exactly where the report surfaces (Testing tab per D4). That framing
+  makes noun extraction a Chord Writer feature over the composed IR + prose
+  rather than a toolchain lint; quality-check against real Chord prose
+  before committing. The declared-surface checks above don't depend on
+  this half.
+
+Fits the standing discipline: the mechanical checks compute over declared
+surfaces (ADR-294 D13's model — "what exists unresponsive" beside "what
+exists untested"), and per ADR-306 D4's authoring/reading boundary the
+report belongs to the **Testing tab** (reading), not the play surface or its
+run column. Open before this becomes scope: it's toolchain work
+(`packages/` — platform discussion required), and how it composes with
+§13's annotated coverage (two reports or one). Measured against Chord
+stories, as always.

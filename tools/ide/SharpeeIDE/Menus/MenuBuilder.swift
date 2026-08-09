@@ -262,6 +262,16 @@ enum MenuBuilder {
         runTests.target = target
         menu.addItem(runTests)
 
+        // ADR-306 Phase 3: the dedicated testing page — playing IS writing
+        // the test suite. Beside the ADR-304 workspace until Phase 6 retires
+        // the workspace machinery.
+        let testingSurface = NSMenuItem(title: "Testing Play Surface",
+                                        action: #selector(AppDelegate.openTestingSurface(_:)),
+                                        keyEquivalent: "u")
+        testingSurface.keyEquivalentModifierMask = [.command, .option]
+        testingSurface.target = target
+        menu.addItem(testingSurface)
+
         // No Bless / Checkpoint items: ADR-299 D8 moved blessing into the
         // Transcript view, where the output being vouched for is readable, and
         // export lives beside it. A menu command acting on "the thread shown in

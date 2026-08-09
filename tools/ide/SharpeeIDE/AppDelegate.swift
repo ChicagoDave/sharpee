@@ -462,6 +462,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         testController?.cancel()
     }
 
+    /// Test → Testing Play Surface (⌥⌘U). Opens the dedicated testing page
+    /// (ADR-306 Phase 3) — cards, segments, and the session that restores.
+    @objc func openTestingSurface(_ sender: Any?) {
+        mainWindowController?.openTestingSurface()
+    }
+
     /// Test → Auto-Assertion → <choice>. Sets the story header's
     /// `auto-assertion:` line via the editor — undoable, tab left dirty
     /// (go-live Phase 6e). "Let Me Decide" carries no representedObject and

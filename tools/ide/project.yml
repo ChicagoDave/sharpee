@@ -38,6 +38,7 @@ targets:
           - "Resources/testing-tab/**"
           - "Resources/docs-tab/**"
           - "Resources/play-themes/**"
+          - "Resources/testing-surface/**"
       # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
       # esbuild output is copied whole into Contents/Resources/testing-tab/ and
       # adding a file to it never needs a project regenerate.
@@ -67,6 +68,12 @@ targets:
       - path: SharpeeIDE/Resources/play-themes
         type: folder
         buildPhase: resources
+      # The testing play surface's web bundle (ADR-306 Phase 3): the card /
+      # segment UI injected into the story's testing page. A committed folder
+      # reference for the same reasons as the tabs above.
+      - path: SharpeeIDE/Resources/testing-surface
+        type: folder
+        buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
     # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
@@ -88,6 +95,11 @@ targets:
       - name: Vendor play themes (go-live Phase 6b)
         basedOnDependencyAnalysis: false
         script: '"$PROJECT_DIR/vendor-play-themes.sh"'
+      # Same trade as the Testing tab: one esbuild pass, and a stale surface
+      # is a wrong surface (ADR-306 Phase 3).
+      - name: Bundle the testing play surface (ADR-306 Phase 3)
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/build-testing-surface.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds
