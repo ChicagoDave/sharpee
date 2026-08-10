@@ -6,9 +6,11 @@
 // the author saw was sixteen lines of yellow underline in the editor and no text
 // anywhere explaining it.
 //
-// The real case is `analysis.missing-ifid` on `branch-stories/fernhill`, whose
-// span covers the whole `story` block — which is also why the underline is
-// clamped to one line (SpanTextUnderlineTests).
+// The case that surfaced it was a warning against `branch-stories/fernhill`'s
+// whole `story` block — which is also why the underline is clamped to one line
+// (SpanTextUnderlineTests). The fixture below keeps that shape; the specific
+// diagnostic retired with ADR-309, but a block-spanning warning is the class
+// this behavior exists for.
 
 import XCTest
 @testable import SharpeeIDE
@@ -18,13 +20,13 @@ final class ProblemsVisibilityTests: XCTestCase {
 
     private let storyURL = URL(fileURLWithPath: "/s/fernhill.story")
 
-    /// The real shape of the diagnostic that surfaced this: a warning spanning
-    /// the entire `story` block, taken from a live compose of fernhill.
-    private var missingIfid: ComposeDiagnosticRecord {
+    /// The shape of the diagnostic that surfaced this: a warning spanning the
+    /// entire `story` block, as a live compose of fernhill once produced.
+    private var blockSpanningWarning: ComposeDiagnosticRecord {
         ComposeDiagnosticRecord(
             severity: .warning,
-            code: "analysis.missing-ifid",
-            message: "The story has no `ifid:` — mint one with `sharpee ifid` (Treaty of Babel).",
+            code: "analysis.header-warning",
+            message: "The story header has a problem that covers the whole block.",
             file: storyURL.path,
             line: 5,
             span: DiagnosticSpan(line: 5, column: 1, endLine: 20, endColumn: 9))
@@ -32,7 +34,7 @@ final class ProblemsVisibilityTests: XCTestCase {
 
     func testAWarningOnlyComposeStillCountsAsAProblem() {
         let view = ProblemsView()
-        view.setProblems([missingIfid], for: storyURL)
+        view.setProblems([blockSpanningWarning], for: storyURL)
 
         XCTAssertEqual(view.errorCount, 0, "a warning is not an error")
         XCTAssertEqual(view.problemCount, 1,
@@ -46,7 +48,7 @@ final class ProblemsVisibilityTests: XCTestCase {
             file: storyURL.path, line: 30,
             span: DiagnosticSpan(line: 30, column: 3, endLine: 30, endColumn: 24))
         let view = ProblemsView()
-        view.setProblems([missingIfid, error], for: storyURL)
+        view.setProblems([blockSpanningWarning, error], for: storyURL)
 
         XCTAssertEqual(view.errorCount, 1)
         XCTAssertEqual(view.problemCount, 2)

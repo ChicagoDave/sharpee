@@ -6,24 +6,16 @@
 // config sidecar's value, so this file answers three questions for the save
 // path: what does the header currently say (`read`), and what edit makes it
 // say what the config says (`edit`) — inserting the line when it is missing,
-// overwriting it when an author changed it. `insertion(of:into:)` is the
-// older insert-only shape behind the Problems panel's Generate IFID fix,
-// which retires with the `analysis.missing-ifid` diagnostic.
+// overwriting it when an author changed it. The older insert-only
+// `insertion(of:into:)` retired with the Problems panel's Generate IFID fix
+// and the `analysis.missing-ifid` diagnostic it hung on (ADR-309).
 // Public interface: StoryHeaderIFID.mint(), .read(from:), .hasStoryBlock(_:),
-//   .edit(setting:in:), .apply(_:to:), .insertion(of:into:).
+//   .edit(setting:in:), .apply(_:to:).
 // Owner context: tools/ide — Workspace.
 
 import Foundation
 
 enum StoryHeaderIFID {
-
-    /// Where an `ifid:` line goes and what to write there.
-    struct Insertion: Equatable {
-        /// Character offset into the source, always at a line boundary.
-        let offset: Int
-        /// The full line to splice in, including its trailing newline.
-        let text: String
-    }
 
     /// A single replacement in the story source — the same offset/length/text
     /// shape `StoryHeaderPublishSource` uses, so both header edits can travel
@@ -138,49 +130,6 @@ enum StoryHeaderIFID {
             if field.key == "ifid" { return Found(index: index, field: field) }
         }
         return nil
-    }
-
-    /// Locates the insertion point for `ifid` in a story source.
-    ///
-    /// The line goes directly after `id:` — the two are the story's identity
-    /// fields and belong together (David's ruling), and it matches the order the
-    /// `sharpee init` template writes. When the header has no `id:` the line
-    /// falls back to after the LAST simple `key: value` field.
-    ///
-    /// Scanning stops at the first line that is not such a field: `use`/`on`
-    /// open nested blocks, and an `ifid:` inside one would not be a header field
-    /// at all.
-    ///
-    /// - Parameters:
-    ///   - ifid: the identifier to write.
-    ///   - source: the whole `.story` file text.
-    /// - Returns: the offset and line text, or nil when the source has no
-    ///   top-level `story` block or already declares an `ifid:`.
-    static func insertion(of ifid: String, into source: String) -> Insertion? {
-        let lines = StoryHeaderLines.split(source)
-        guard let storyIndex = lines.firstIndex(where: { StoryHeaderLines.isStoryKeyword($0) }) else { return nil }
-
-        var idIndex: Int?
-        var idIndent: String?
-        var lastFieldIndex: Int?
-        var lastIndent = "  "
-
-        for index in (storyIndex + 1)..<lines.count {
-            guard let field = StoryHeaderLines.field(in: lines[index]) else { break }
-            if field.key == "ifid" { return nil }
-            if field.key == "id", idIndex == nil {
-                idIndex = index
-                idIndent = field.indent
-            }
-            lastFieldIndex = index
-            lastIndent = field.indent
-        }
-
-        let insertAfter = idIndex ?? lastFieldIndex ?? storyIndex
-        let indent = idIndent ?? lastIndent
-        // Offset lands after the chosen line's newline — the start of the next line.
-        let offset = lines[0...insertAfter].reduce(0) { $0 + $1.utf16.count }
-        return Insertion(offset: offset, text: "\(indent)ifid: \(ifid)\n")
     }
 
 }

@@ -295,12 +295,25 @@ export function branchLineLabelOf(
 // Internal: canonical ordering and shape validation.
 // ---------------------------------------------------------------------------
 
+/**
+ * Code-unit ordering, stated explicitly.
+ *
+ * NOT `localeCompare`: this orders the keys of a persisted wire document, so
+ * the result must be identical on every machine that writes one. Locale-aware
+ * collation is by definition locale-dependent — adopting it would make two
+ * authors' saves of the same tree differ by where they live.
+ */
+function byCodeUnit(a: string, b: string): number {
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
+}
+
 /** Rebuild a value with object keys sorted at every depth; arrays keep order. */
 function sortKeysDeep(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeysDeep);
   if (isPlainObject(value)) {
     const sorted: Record<string, unknown> = {};
-    for (const key of Object.keys(value).sort()) {
+    for (const key of Object.keys(value).sort(byCodeUnit)) {
       sorted[key] = sortKeysDeep(value[key]);
     }
     return sorted;

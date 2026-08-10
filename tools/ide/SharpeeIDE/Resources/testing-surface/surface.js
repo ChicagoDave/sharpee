@@ -113,11 +113,15 @@
   function branchLineLabelOf(roomSlug, branchId, firstCommand) {
     return `${roomSlug ?? `branch-${branchId}`} \xB7 ${firstCommand ?? "(empty)"}`;
   }
+  function byCodeUnit(a, b) {
+    if (a < b) return -1;
+    return a > b ? 1 : 0;
+  }
   function sortKeysDeep(value) {
     if (Array.isArray(value)) return value.map(sortKeysDeep);
     if (isPlainObject(value)) {
       const sorted = {};
-      for (const key of Object.keys(value).sort()) {
+      for (const key of Object.keys(value).sort(byCodeUnit)) {
         sorted[key] = sortKeysDeep(value[key]);
       }
       return sorted;
