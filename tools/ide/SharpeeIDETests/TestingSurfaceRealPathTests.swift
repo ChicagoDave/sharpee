@@ -165,11 +165,12 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func boot() async throws {
+    private func boot(policy: String? = nil) async throws {
         surface = TestingSurfaceViewController(
             sessionStore: TestingSessionStore(fileURL: sidecarURL))
         _ = surface.view
         surface.testsDirectory = tmp.appendingPathComponent("tests", isDirectory: true)
+        surface.policy = policy
         surface.load(bundleDirectory: bundleDir)
         try await waitFor("window.bootProbeReady === true", "fixture boot")
     }
@@ -331,8 +332,8 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     /// live: its cards return and typing continues it.
     func testChipDeleteRemovesTheBranchItsFileAndReplaysTheParent() async throws {
         try await playAndRangeThreeTurns()
-        try await clickAction(3, "Branch…")
-        try await commitActionPrompt(3, "east")
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
         try await waitFor("""
         (function () {
           var card = document.querySelector('[data-ts-ordinal="7"] .ts-prose');
@@ -432,9 +433,29 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertTrue(text.contains("> north"), "the range itself survives the undo")
     }
 
-    // MARK: - The auto-save writer (Phase 4, design §4)
+    // MARK: - The auto-save writer (design §4; a range is a file from its
+    // first tick — David's ruling 2026-08-09)
 
-    func testClosingARangeWritesItsTranscriptAndReopeningRemovesIt() async throws {
+    func testTickingTheOpeningCreatesItsTranscriptImmediately() async throws {
+        try await boot()
+        // The very first click: tick the opening. The transcript must land in
+        // tests/ right away — the range is a file from its first tick (the
+        // click-through found no file was created at all).
+        try await tick(0)
+        // A transcript from the opening is named for it (David 2026-08-09):
+        // opening-<first room>, stable as the recording grows.
+        let file = transcriptOnDisk("opening-iron-gates")
+        try await waitForFileContaining(file, "title: opening-iron-gates", "the opening's file")
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertTrue(text.contains("seed: 42"))
+        XCTAssertTrue(text.contains("> look"), "the boot look is the range's first command")
+
+        // Playing on grows the file under the SAME stem — no rename churn.
+        try await type("north")
+        try await waitForFileContaining(file, "> north", "the grown recording")
+    }
+
+    func testClosingARangeWritesItsTranscriptAndReopeningKeepsIt() async throws {
         try await boot()
         try await type("north")
         try await type("north")
@@ -454,15 +475,14 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // No policy in this fixture: in-range turns carry the 6e placeholder.
         XCTAssertTrue(text.contains("[SKIP]"))
 
-        // Reopening the range takes the file back — an open range is not a
-        // file yet (design §3).
+        // Reopening the range keeps the file — it is a recording again, still
+        // on disk and still growing (David 2026-08-09: every click lands).
         try await tick(3)   // untick the end
-        for _ in 0..<100 {
-            if !FileManager.default.fileExists(atPath: file.path) { break }
-            try await Task.sleep(nanoseconds: 50_000_000)
-        }
-        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path),
-                       "a reopened range's file is removed until it closes again")
+        try await waitFor("""
+        document.querySelector('[data-ts-ordinal="3"] .ts-pick input').checked === false
+        """, "the end untick landing")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path),
+                      "a reopened range's file stays on disk")
     }
 
     func testGesturesAuthorClaimsIntoTheWrittenFile() async throws {
@@ -505,6 +525,83 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // the model's remove* mutators stay vitest-covered for when one lands.
         let text = try String(contentsOf: file, encoding: .utf8)
         XCTAssertTrue(text.contains("end text"), "the Exact block is in the file")
+    }
+
+    /// The card's assertion list (round 4, David: "list the assertions in
+    /// each box"): with an `auto-assertion:` policy, every in-range turn's
+    /// card lists its synthesized default lines — the same lines its
+    /// transcript carries. (Without a policy — 6e's let-me-decide — a turn
+    /// has no defaults and the card shows its [SKIP] placeholder instead.)
+    func testAPolicyStoryListsDefaultAssertionLinesInTheCards() async throws {
+        try await boot(policy: "room-name-and-description")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 3", "cards")
+        try await tick(0)   // open range from the opening — grows over turn 2
+        try await waitFor("""
+        (function () {
+          var lines = document.querySelectorAll('[data-ts-ordinal="2"] .ts-asserts .ts-assert-line');
+          for (var i = 0; i < lines.length; i++) {
+            if (lines[i].textContent.indexOf('Gravel Drive') !== -1) return true;
+          }
+          return false;
+        })()
+        """, "the policy default listed in the turn's card")
+        // The OPENING card lists its own default — its first prose line (the
+        // story banner's title in the real client; the fixture's prologue).
+        try await waitFor("""
+        (function () {
+          var lines = document.querySelectorAll('[data-ts-ordinal="0"] .ts-asserts .ts-assert-line');
+          for (var i = 0; i < lines.length; i++) {
+            if (lines[i].textContent.indexOf('grinding away') !== -1) return true;
+          }
+          return false;
+        })()
+        """, "the opening card's default line")
+        // And the file carries exactly what the cards show.
+        let file = transcriptOnDisk("opening-iron-gates")
+        try await waitForFileContaining(file, "Gravel Drive", "the turn default in the file")
+        try await waitForFileContaining(file, "grinding away", "the opening default in the file")
+    }
+
+    /// The card's assertion list (round 4): the ✕ on a rendered line must
+    /// reach all the way to the file — gesture → DeleteRef → model mutator →
+    /// writer, the exact wiring the round added.
+    func testAssertionDeleteInTheCardRemovesItFromTheFile() async throws {
+        try await boot()
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 3", "cards")
+        try await tick(1)
+        try await tick(2)   // closed 1–2 → iron-gates-to-gravel-drive-2
+        let file = transcriptOnDisk("iron-gates-to-gravel-drive-2")
+
+        // Author Exact on turn 2 — the file gains the literal block and the
+        // card lists the [OK] tag as a deletable assertion line.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'Exact') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        try await waitForFileContaining(file, "end text", "the Exact literal block")
+        try await waitFor("""
+        document.querySelectorAll('[data-ts-ordinal="2"] .ts-asserts .ts-assert-delete').length > 0
+        """, "the card's deletable assertion line")
+
+        // Click its ✕: the assertion leaves the model AND the file — the
+        // claimless turn demotes to [SKIP] (no policy in this fixture).
+        _ = try await surface.evaluateInSurface("""
+        document.querySelector('[data-ts-ordinal="2"] .ts-asserts .ts-assert-delete').click();
+        """)
+        for _ in 0..<100 {
+            if let text = try? String(contentsOf: file, encoding: .utf8),
+               !text.contains("end text") { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertFalse(text.contains("end text"), "the deleted block must leave the file")
+        XCTAssertTrue(text.contains("[SKIP]"), "the pruned turn demotes to [SKIP] in place")
     }
 
     private func waitForFileContaining(_ file: URL, _ fragment: String,
@@ -639,6 +736,151 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           return !!strip && strip.textContent.indexOf('iron-gates-to-fountain-court-2') !== -1;
         })()
         """, "restored segment with its derived name")
+    }
+
+    /// David's acceptance (2026-08-09): untick everything (the writer removes
+    /// the files) and the Testing tab reopens fresh — the opening and the
+    /// boot look, no replayed commands. Unticked play is ephemeral.
+    func testUntickingEverythingReopensAFreshSession() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "4 cards")
+        try await tick(2)
+        try await tick(3)   // closed 2–3, written to tests/
+        try await waitForSidecarSegments()
+
+        try await tick(3)   // untick the end — the range reopens
+        try await tick(2)   // untick the start — the range (and its file) go
+        try await waitFor("""
+        document.querySelectorAll('#ts-cards .ts-turn .ts-title-strip').length ===
+          Array.from(document.querySelectorAll('#ts-cards .ts-turn .ts-title-strip'))
+            .filter(function (s) { return s.style.display === 'none'; }).length
+        """, "no named range left")
+        // The sidecar's persisted session trims to the suite: no segments,
+        // no commands to replay.
+        for _ in 0..<100 {
+            if let object = try? sidecarJSON(),
+               let state = object["viewState"] as? [String: Any],
+               let modelSnap = state["model"] as? [String: Any],
+               (modelSnap["segments"] as? [[String: Any]])?.isEmpty == true,
+               let lineages = modelSnap["lineages"] as? [[String: Any]],
+               (lineages.first?["turns"] as? [[String: Any]])?.isEmpty == true { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(
+            atPath: transcriptOnDisk("iron-gates-to-fountain-court-2").path),
+            "unticking removed the transcript from tests/")
+
+        // Reopen: nothing replays — the tab is the opening and the boot look.
+        surface = nil
+        try await boot()
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 2",
+                         "a fresh session — opening + boot look only")
+    }
+
+    /// David's report (2026-08-09, "commands are still showing"): a sidecar
+    /// written BEFORE the write-side trim — commands recorded, no segments —
+    /// must not type them back in. Ruling 11 scopes the restore side too.
+    func testAStaleSidecarWithUntickedCommandsReopensFresh() async throws {
+        let stale: [String: Any] = [
+            "version": TestingSessionStore.version,
+            "commands": [
+                ["command": "look", "boot": true],
+                ["command": "north", "boot": false],
+                ["command": "north", "boot": false],
+            ],
+            "viewState": [
+                "model": [
+                    "lineages": [[
+                        "id": 1,
+                        "turns": [
+                            ["command": "look", "boot": true],
+                            ["command": "north", "boot": false],
+                            ["command": "north", "boot": false],
+                        ],
+                    ]],
+                    "active": 1,
+                    "segments": [] as [[String: Any]],
+                    "skipped": [] as [[String: Any]],
+                ],
+                "stems": [:] as [String: String],
+                "dialogs": [] as [[Any]],
+            ],
+        ]
+        try JSONSerialization.data(withJSONObject: stale).write(to: sidecarURL)
+
+        try await boot()
+        // The restore holds the input while it replays; with nothing worth
+        // replaying it releases immediately — and no replayed cards follow.
+        try await waitFor("""
+        document.getElementById('command-input') &&
+        document.getElementById('command-input').disabled === false
+        """, "the restore settling")
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let count = try await surface.evaluateInSurface(
+            "document.querySelectorAll('#ts-cards .ts-turn').length")
+        XCTAssertEqual(count as? Int, 2,
+                       "unticked commands in a stale sidecar must not replay — opening + boot look only")
+    }
+
+    /// Branch… stays available while recording (David 2026-08-09, "why did
+    /// you remove branch?"): forking used to require a CLOSED range, and the
+    /// growing-recording flow never closes one — a covered turn inside an
+    /// open recording must offer the gesture.
+    func testBranchButtonShowsInsideAnOpenRecording() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
+        try await tick(0)   // open recording from the opening — never closed
+        try await waitFor("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'Branch…' && buttons[i].style.display !== 'none') return true;
+          }
+          return false;
+        })()
+        """, "the Branch gesture on a mid-recording turn")
+    }
+
+    /// The files are the truth (David 2026-08-09): a transcript deleted by
+    /// hand does not resurrect on reopen — its segment dissolves instead of
+    /// being re-written from defaults.
+    func testAHandDeletedTranscriptDoesNotResurrectOnReopen() async throws {
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "4 cards")
+        try await tick(2)
+        try await tick(3)
+        let file = transcriptOnDisk("iron-gates-to-fountain-court-2")
+        for _ in 0..<100 {
+            if FileManager.default.fileExists(atPath: file.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        try await waitForSidecarSegments()
+
+        // The author deletes the file in Finder, then reopens.
+        try FileManager.default.removeItem(at: file)
+        surface = nil
+        try await boot()
+
+        // The replay still plays the recorded turns, but the segment whose
+        // file vanished is gone — no named range, and the file stays deleted.
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4",
+                         "replayed cards")
+        try await waitFor("""
+        (function () {
+          var strip = document.querySelector('[data-ts-ordinal="2"] .ts-title-strip');
+          return !strip || strip.style.display === 'none';
+        })()
+        """, "the deleted transcript's range dissolved")
+        // Settle: the writer must not have re-created the file from defaults.
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path),
+                       "a hand-deleted transcript must never resurrect")
     }
 
     func testCorruptSidecarDegradesToAFreshSessionWithoutError() async throws {
@@ -776,10 +1018,12 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     func testBranchGestureForksReplaysAndLandsTheAlternate() async throws {
         try await playAndRangeThreeTurns()
 
-        // Branch… at turn 3 with `east`: the driver restarts the client,
-        // replays the prefix suppressed, and types the alternate live.
-        try await clickAction(3, "Branch…")
-        try await commitActionPrompt(3, "east")
+        // Branch… FROM turn 2 (the alternate replaces turn 3 — the gesture
+        // runs from the state the card shows, David 2026-08-09): the driver
+        // restarts the client, replays the prefix suppressed, and types the
+        // alternate live.
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
 
         // The alternate lands as an ordinary feed turn (ordinal 7: ack and
         // replay consumed 4–6) — a visible branch card with real prose.
@@ -794,18 +1038,16 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(meta as? String, "turn 7 · branch")
 
         // Lineage stickiness: the main line's turn 3 hides while the branch
-        // is viewed. The shared prefix collapsed into its parent summary at
-        // the fork (design §6), so it shows as the named summary card.
+        // is viewed. The shared prefix stays EXPANDED (David 2026-08-09:
+        // the cards before a fork remain fully visible) — its cards show,
+        // named by the strip on its first card.
         let stuck = try await surface.evaluateInSurface("""
         (function () {
-          var summaries = document.querySelectorAll('#ts-cards .ts-summary');
-          var prefixShown = false;
-          for (var i = 0; i < summaries.length; i++) {
-            if (summaries[i].textContent.indexOf('iron-gates-to-gravel-drive-2') !== -1 &&
-                summaries[i].closest('.ts-turn').style.display !== 'none') prefixShown = true;
-          }
+          var strip = document.querySelector('[data-ts-ordinal="1"] .ts-auto-name');
           return document.querySelector('[data-ts-ordinal="3"]').style.display === 'none' &&
-                 prefixShown;
+                 document.querySelector('[data-ts-ordinal="1"]').style.display !== 'none' &&
+                 document.querySelector('[data-ts-ordinal="2"]').style.display !== 'none' &&
+                 !!strip && strip.textContent.indexOf('iron-gates-to-gravel-drive-2') !== -1;
         })()
         """)
         XCTAssertEqual(stuck as? Bool, true)
@@ -836,8 +1078,8 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
     func testChipSwitchMakesTheSiblingLiveAndTypingContinuesIt() async throws {
         try await playAndRangeThreeTurns()
-        try await clickAction(3, "Branch…")
-        try await commitActionPrompt(3, "east")
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
         // Wait for the branch replay to COMPLETE — the driver re-enables the
         // input when done (a chip click during a replay is deliberately
         // swallowed).
@@ -879,8 +1121,8 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
         // An authored claim (Exact on turn 2) — it must survive the reopen.
         try await clickAction(2, "Exact")
-        try await clickAction(3, "Branch…")
-        try await commitActionPrompt(3, "east")
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
         try await waitFor("document.querySelectorAll('.ts-branch-chip').length === 2", "chips")
         let prefixFile = transcriptOnDisk("iron-gates-to-gravel-drive-2")
         try await waitForFileContaining(prefixFile, "end text", "the Exact block in the prefix file")
@@ -920,51 +1162,64 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     }
 
     func testHandEditedFileDetachesFromAutoWritesUntilTheAuthorTakesItBack() async throws {
-        // Two transcripts as two ticked ranges (Split is retired): 1–2 and
-        // 3–4 — the second continues from the first, both on disk.
-        try await boot()
-        try await type("north")
-        try await type("north")
-        try await type("north")
-        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 5", "cards")
-        try await tick(1)
-        try await tick(2)
-        try await tick(3)
-        try await tick(4)
+        // Two transcripts via the only boundary that still makes two: a fork.
+        // Range 1–3, branch from card 2 — the auto-split prefix (1–2) and the
+        // branch's own file land on disk (sequential ticks now EXTEND one
+        // transcript, David 2026-08-09, so a fork is the two-file shape).
+        try await playAndRangeThreeTurns()
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
         let head = transcriptOnDisk("iron-gates-to-gravel-drive-2")
-        let tail = transcriptOnDisk("gravel-drive-to-entrance-hall-2")
-        try await waitForFileContaining(head, "> north", "the head file")
-        try await waitForFileContaining(tail, "> north", "the tail file")
+        let tail = transcriptOnDisk("gravel-drive-to-boiler-shed-1")
+        try await waitForFileContaining(head, "> north", "the prefix file")
+        try await waitForFileContaining(tail, "> east", "the branch file")
         try await waitForSidecarSegments()
 
-        // Hand-edit the tail BEYOND the claim grammar: an exact block whose
-        // literal text compose can never regenerate from the live source.
+        // Hand-edit the branch file BEYOND the claim grammar: an exact block
+        // whose literal text compose can never regenerate from live source.
         let tailText = try String(contentsOf: tail, encoding: .utf8)
         let handEdited = tailText.replacingOccurrences(
             of: "[SKIP]", with: "[OK]\ntext\nA hand-written line no replay produces.\nend text")
         XCTAssertNotEqual(handEdited, tailText)
         try Data(handEdited.utf8).write(to: tail)
 
-        // Reopen: the tail re-hydrates as DIVERGED and detaches from the
-        // auto-save writer; a gesture on the OTHER segment must not touch it.
+        // Reopen: the fork tree replays; the branch re-hydrates as DIVERGED
+        // and detaches — a gesture on the PREFIX must not touch its file.
         surface = nil
         try await boot()
         try await waitFor("""
         (function () {
-          var strip = document.querySelector('[data-ts-ordinal="3"] .ts-auto-name');
-          return !!strip && strip.textContent.indexOf('gravel-drive-to-entrance-hall-2') !== -1 &&
-                 document.getElementById('command-input').disabled === false;
+          var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].style.display !== 'none' &&
+                cards[i].textContent.indexOf('Boiler Shed') !== -1) return true;
+          }
+          return false;
         })()
-        """, "the restored session")
+        """, "the branch's card restored by replay")
         try await clickAction(2, "Exact")
-        try await waitForFileContaining(head, "end text", "the head rewritten by the gesture")
+        try await waitForFileContaining(head, "end text", "the prefix rewritten by the gesture")
         let tailAfterOtherGesture = try String(contentsOf: tail, encoding: .utf8)
         XCTAssertEqual(tailAfterOtherGesture, handEdited,
                        "a diverged file is never auto-written by gestures elsewhere")
 
-        // A gesture ON the detached segment takes it back: the writer owns
-        // the file again and the hand edit is superseded.
-        try await clickAction(4, "Exact")
+        // A gesture ON the detached branch takes it back: the writer owns
+        // the file again and the hand edit is superseded. The branch card's
+        // ordinal is replay-fresh — read it off the visible card.
+        let branchOrdinal = try await surface.evaluateInSurface("""
+        (function () {
+          var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].style.display !== 'none' &&
+                cards[i].textContent.indexOf('Boiler Shed') !== -1) {
+              return Number(cards[i].getAttribute('data-ts-ordinal'));
+            }
+          }
+          return -1;
+        })()
+        """) as? Int ?? -1
+        XCTAssertGreaterThan(branchOrdinal, 0, "the branch card must be on the board")
+        try await clickAction(branchOrdinal, "Exact")
         for _ in 0..<100 {
             if let text = try? String(contentsOf: tail, encoding: .utf8),
                text != handEdited { break }
@@ -1057,12 +1312,13 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try await tick(1)
         try await tick(4)
 
-        // Branch… at turn 4 with `east`: the player stood in the Fountain
-        // Court, and fernhill's real map goes east to the Boiler Shed. The
+        // Branch… FROM turn 3 (the card whose state the alternate runs
+        // from): the player stood in the Fountain Court, and fernhill's real
+        // map goes east to the Boiler Shed. The
         // driver restarts the REAL engine (confirm stubbed), replays the two
         // norths, and plays the alternate live.
-        try await clickAction(4, "Branch…")
-        try await commitActionPrompt(4, "east")
+        try await clickAction(3, "Branch…")
+        try await commitActionPrompt(3, "east")
         var landed = false
         for _ in 0..<300 {
             if let ok = try? await surface.evaluateInSurface("""
@@ -1080,17 +1336,13 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertTrue(landed, "the real branch's alternate must land as an ordinary feed turn")
 
         // Exactly one coherent lineage: main's turn 4 is hidden, the shared
-        // prefix rides as its collapsed parent summary, and the chip row
-        // names both siblings.
+        // prefix's cards stay expanded and visible (David 2026-08-09), and
+        // the chip row names both siblings.
         let coherent = try await surface.evaluateInSurface("""
         (function () {
-          var summaries = document.querySelectorAll('#ts-cards .ts-summary');
-          var prefixShown = false;
-          for (var i = 0; i < summaries.length; i++) {
-            if (summaries[i].closest('.ts-turn').style.display !== 'none') prefixShown = true;
-          }
           return document.querySelector('[data-ts-ordinal="4"]').style.display === 'none' &&
-                 prefixShown &&
+                 document.querySelector('[data-ts-ordinal="2"]').style.display !== 'none' &&
+                 document.querySelector('[data-ts-ordinal="3"]').style.display !== 'none' &&
                  document.querySelectorAll('.ts-branch-chip').length === 2;
         })()
         """)

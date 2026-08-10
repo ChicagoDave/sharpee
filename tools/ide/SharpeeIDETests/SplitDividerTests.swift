@@ -141,21 +141,17 @@ final class SplitDividerTests: XCTestCase {
         }
     }
 
-    // MARK: - Opening layout (manual divider persistence)
+    // MARK: - Opening layout (session-carried divider persistence)
 
     private static let legacyFramesKey = "NSSplitView Subview Frames SharpeeIDEMainSplit"
-    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
-    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
 
-    /// Runs `body` with the split's persisted layout state cleared, restoring
-    /// whatever was there afterward so other tests are unaffected.
+    /// Runs `body` with the persisted layout state — the session entry that
+    /// now carries pane widths (David 2026-08-09) plus recents, which loading
+    /// a project pushes — cleared, restoring whatever was there afterward so
+    /// other tests (and the developer's live session) are unaffected.
     private func withCleanLayoutDefaults(_ body: () throws -> Void) rethrows {
         let defaults = UserDefaults.standard
-        // The snap setting is cleared too: with it on, a window resize puts the
-        // panes back to 50/50, so these tests would pass or fail depending on
-        // the developer's own preference rather than on the code.
-        let keys = [Self.legacyFramesKey, Self.projectWidthKey, Self.playWidthKey,
-                    "SharpeeSnapPanesEvenly"]
+        let keys = [Self.legacyFramesKey, SessionStateStore.key, RecentProjectsStore.key]
         let saved = keys.map { defaults.object(forKey: $0) }
         defer {
             for (key, value) in zip(keys, saved) {
@@ -165,6 +161,18 @@ final class SplitDividerTests: XCTestCase {
         }
         keys.forEach { defaults.removeObject(forKey: $0) }
         try body()
+    }
+
+    /// A throwaway story project on disk — geometry persists only once a
+    /// project is open (the launch invariant), so tests that assert on
+    /// persistence must open one.
+    private func makeTempProject() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SharpeeIDE-SplitDividerTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try "story \"divider\"".write(to: dir.appendingPathComponent("divider.story"),
+                                      atomically: true, encoding: .utf8)
+        return dir
     }
 
     private func launchWindow() throws -> (MainWindowController, NSWindow, NSSplitView) {
@@ -197,15 +205,45 @@ final class SplitDividerTests: XCTestCase {
         }
     }
 
-    /// At the CURRENT layout version, a dragged layout still persists across
-    /// relaunch — the reset fires once per version bump, not every launch.
+    /// The persist-on-move half is covered below; this is the restore half —
+    /// a saved window frame must be what the window actually opens at
+    /// (David 2026-08-09: window height and width are IDE state).
+    func testWindowFrameRestoresFromTheSessionAtLaunch() throws {
+        try withCleanLayoutDefaults {
+            let frame = NSRect(x: 120, y: 120, width: 1000, height: 700)
+            SessionStateStore.save(SessionState(projectURL: nil,
+                                                openDocumentURLs: [],
+                                                activeIndex: nil,
+                                                windowFrame: frame))
+
+            let controller = MainWindowController()
+            let window = try XCTUnwrap(controller.window)
+            defer { window.orderOut(nil) }
+
+            XCTAssertEqual(window.frame.origin.x, frame.origin.x, accuracy: 1)
+            XCTAssertEqual(window.frame.origin.y, frame.origin.y, accuracy: 1)
+            XCTAssertEqual(window.frame.width, frame.width, accuracy: 1)
+            XCTAssertEqual(window.frame.height, frame.height, accuracy: 1)
+        }
+    }
+
+    /// A dragged layout persists across relaunch — through the session entry
+    /// (David 2026-08-09: pane widths are IDE state), which only writes once
+    /// a project is open.
     func testUserDragPersistsAcrossRelaunchAtCurrentVersion() throws {
         try withCleanLayoutDefaults {
+            let project = try makeTempProject()
+            defer { try? FileManager.default.removeItem(at: project) }
             do {
-                let (_, window, split) = try launchWindow()
+                let (controller, window, split) = try launchWindow()
+                controller.loadProject(Project(rootURL: project))
+                pump()
                 split.setPosition(split.bounds.width - 300, ofDividerAt: 2)
                 pump()
                 XCTAssertEqual(split.arrangedSubviews[3].frame.width, 300, accuracy: 2)
+                XCTAssertEqual(try XCTUnwrap(SessionStateStore.load()?.playPaneWidth),
+                               300, accuracy: 2,
+                               "the drag must land in the session entry")
                 window.orderOut(nil)
             }
             let (_, window, split) = try launchWindow()

@@ -206,7 +206,10 @@
       const proseHost = document.createElement("div");
       proseHost.className = "ts-prose";
       for (const el of prose) proseHost.appendChild(el);
-      block.append(meta, proseHost);
+      const asserts = document.createElement("div");
+      asserts.className = "ts-asserts";
+      asserts.style.display = "none";
+      block.append(meta, proseHost, asserts);
       const actions = document.createElement("div");
       actions.className = "ts-actions";
       const promptText = (placeholder, commit) => {
@@ -260,7 +263,7 @@
       if (ordinal > 0) {
         branchButton = document.createElement("button");
         branchButton.textContent = "Branch\u2026";
-        branchButton.title = "Try a different command at this point \u2014 the shared prefix becomes the parent of all siblings";
+        branchButton.title = "Try a different command from this point \u2014 what follows becomes a sibling branch";
         branchButton.style.display = "none";
         branchButton.addEventListener("click", () => promptText(
           "alternate command, e.g. east",
@@ -279,9 +282,36 @@
         strip,
         autoName,
         collapseButton,
+        asserts,
         exactButton,
         branchButton
       });
+    }
+    /** Re-fills one card's assertion list from the delegate's composed lines.
+     *  Literal block lines (Exact's whole-turn text) render dimmed and are
+     *  never deletable line-by-line — the [OK] tag deletes the block whole. */
+    renderAssertions(card, ordinal) {
+      const lines = this.delegate.assertionLines(ordinal);
+      card.asserts.innerHTML = "";
+      card.asserts.style.display = lines.length === 0 ? "none" : "";
+      for (const line of lines) {
+        const row = document.createElement("div");
+        row.className = `ts-assert-line ts-assert-${line.kind}`;
+        const text = document.createElement("span");
+        text.className = "ts-assert-text";
+        text.textContent = line.text;
+        row.appendChild(text);
+        if (line.del) {
+          const del = line.del;
+          const remove = document.createElement("button");
+          remove.className = "ts-assert-delete";
+          remove.textContent = "\u2715";
+          remove.title = "Delete this assertion";
+          remove.addEventListener("click", () => this.delegate.onRemoveAssertion(del));
+          row.appendChild(remove);
+        }
+        card.asserts.appendChild(row);
+      }
     }
     /** Dead lineage (restart fence): every card, summary, and chip row goes. */
     clear() {
@@ -334,13 +364,14 @@
         card.stripNote.style.display = "none";
         if (isFirst && segment) this.renderStrip(card, segment);
         if (card.branchButton) {
-          const forkable = assigned && segment.end !== null && !collapsed && (ordinal > Math.max(segment.start, 1) || this.model.parentOf(segment) !== void 0);
+          const forkable = this.model.forkPointAfter(ordinal) !== void 0;
           card.branchButton.style.display = forkable ? "" : "none";
         }
         card.exactButton?.classList.toggle(
           "ts-active",
           this.model.claimsOf(ordinal).exact
         );
+        this.renderAssertions(card, ordinal);
       }
       this.renderSummaries();
       this.renderBranchRows(activePathPoints);
@@ -354,7 +385,10 @@
         return `In "${title}"`;
       }
       if (ordinal === 0) return "Start a transcript at the beginning";
-      return this.model.openSegment() ? `End the transcript at turn ${ordinal}` : `Start a new transcript at turn ${ordinal}`;
+      if (this.model.openSegment()) return `End the transcript at turn ${ordinal}`;
+      const lineage = this.model.lineageOf(ordinal);
+      const prev = this.model.segments.find((s) => s.lineage === lineage && s.end !== null && s.end < ordinal);
+      return prev ? `Extend "${this.model.titleOf(prev)}" to turn ${ordinal}` : `Start a new transcript at turn ${ordinal}`;
     }
     renderStrip(card, segment) {
       const title = this.model.titleOf(segment);
@@ -501,10 +535,10 @@
       const prefix = mainSegment ? this.model.parentOf(mainSegment) : void 0;
       row.title = prefix ? `all continue from "${this.model.titleOf(prefix)}"` : "all continue from the shared prefix";
     }
-    /** The run column (design §7): one row per transcript — branches
-     *  included — with PASS/FAIL, the first failure on one line, and a tally.
-     *  An open range isn't a file and doesn't run; a pending branch (no
-     *  landed turn yet) shows a dash. */
+    /** The run column (design §7): one row per transcript — branches and
+     *  open recordings included (a range is a file from its first tick) —
+     *  with PASS/FAIL, the first failure on one line, and a tally. A pending
+     *  branch (no landed turn yet) shows a dash. */
     renderRunColumn() {
       const results = document.getElementById("ts-run-results");
       if (!results) return;
@@ -514,12 +548,12 @@
         button.disabled = run.inFlight;
         button.textContent = run.inFlight ? "Running\u2026" : "Run";
       }
-      const closed = this.model.segments.filter((s) => s.end !== null);
+      const files = [...this.model.segments];
       const pending = this.model.lineages.filter(
         (info) => this.model.pendingTitleOf(info.id) !== void 0
       );
       results.innerHTML = "";
-      if (closed.length === 0 && pending.length === 0 && run.results.size === 0) {
+      if (files.length === 0 && pending.length === 0 && run.results.size === 0) {
         results.innerHTML = '<span class="ts-pending-note">no transcripts yet</span>';
         return;
       }
@@ -561,10 +595,11 @@
           }
         }
       }
-      for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
+      for (const segment of files.sort((a, b) => a.start - b.start)) {
         const title = this.model.titleOf(segment);
         if (run.results.has(title)) continue;
-        row("\u2014", "", title, run.inFlight ? "running\u2026" : "not run yet");
+        const why = segment.end === null ? "recording\u2026" : run.inFlight ? "running\u2026" : "not run yet";
+        row("\u2014", "", title, why);
       }
       for (const info of pending) {
         row("\u2014", "", this.model.pendingTitleOf(info.id) ?? "pending branch", "pending branch");
@@ -1599,6 +1634,12 @@
     const opening = [];
     if (segment.start === 0) {
       const claims = model2.claimsOf(0);
+      if (claims.contains.length === 0 && !claims.noDefaults && policy2 && options.openingText && !options.openingText.includes('"')) {
+        opening.push({
+          assertion: { type: "ok-contains", value: options.openingText },
+          del: { kind: "default", ordinal: 0, index: 0, defaults: [options.openingText] }
+        });
+      }
       claims.contains.forEach((value, index) => opening.push({
         assertion: { type: "ok-contains", value },
         del: { kind: "contains", ordinal: 0, index }
@@ -1694,6 +1735,32 @@
       lift(0, parsed.opening);
     }
     return composeSegmentTranscript(options).text === fileText ? "attached" : "diverged";
+  }
+  function entryLines(entry) {
+    const { assertion } = entry;
+    if (assertion.type === "skip") {
+      return [{ text: "[SKIP]", kind: "skip" }];
+    }
+    const tag = {
+      text: serializeAssertionTag(assertion),
+      kind: "assertion",
+      ...entry.del ? { del: entry.del } : {}
+    };
+    if (!assertion.block) return [tag];
+    return [
+      tag,
+      { text: "text", kind: "block" },
+      ...assertion.block.map((line) => ({ text: line, kind: "block" })),
+      { text: "end text", kind: "block" }
+    ];
+  }
+  function composeTurnAssertionLines(options, ordinal) {
+    const plan = segmentPlan(options);
+    if (ordinal === 0) {
+      return plan.opening.flatMap((entry) => entryLines(entry));
+    }
+    const turn = plan.turns.find((t) => t.ordinal === ordinal);
+    return turn ? turn.entries.flatMap((entry) => entryLines(entry)) : [];
   }
 
   // tools/ide/web/testing-surface/src/model.ts
@@ -1834,16 +1901,40 @@
       return this.pathTurns(this.active).some((t) => t.ordinal === n);
     }
     /**
+     * The fork point a card at `n` OFFERS (David 2026-08-09: Branch tries a
+     * different command FROM the state the card shows, not instead of it):
+     * the next turn after `n` on the ACTIVE path — the turn the alternate
+     * replaces. Undefined at the path's tip (typing continues the recording;
+     * there is nothing to preserve as a sibling) and at points `fork` would
+     * refuse (uncovered, collapsed, or nothing shared before them).
+     */
+    forkPointAfter(n) {
+      const path = this.pathTurns(this.active).filter((t) => t.ordinal > 0);
+      const index = n === 0 ? -1 : path.findIndex((t) => t.ordinal === n);
+      if (n !== 0 && index < 0) return void 0;
+      const next = path[index + 1]?.ordinal;
+      if (next === void 0) return void 0;
+      const segment = this.coveringSegment(next);
+      if (!segment || segment.collapsed) return void 0;
+      if (segment.start < next) {
+        return this.prevInLineage(segment.lineage, next) === void 0 ? void 0 : next;
+      }
+      return this.parentOf(segment) === void 0 ? void 0 : next;
+    }
+    /**
      * Forks at ordinal `n` with the typed alternate `command` (design §6):
-     * validates that a CLOSED segment covers the point and something shared
-     * comes before it, auto-splits so the shared prefix becomes the collapsed
-     * parent, registers the branch lineage, and makes it active. The branch
-     * is pending until its replayed turn lands (`addTurn` completes it).
-     * Returns the new lineage id, or null when the point cannot fork.
+     * validates that a segment covers the point — an OPEN recording's growing
+     * extent included (David 2026-08-09: Branch stays available while
+     * recording) — and something shared comes before it, auto-splits so the
+     * shared prefix becomes the collapsed parent (the recording, if open,
+     * continues open past the fork point), registers the branch lineage, and
+     * makes it active. The branch is pending until its replayed turn lands
+     * (`addTurn` completes it). Returns the new lineage id, or null when the
+     * point cannot fork.
      */
     fork(n, command) {
-      const segment = this.segmentOf(n);
-      if (!segment || segment.end === null) return null;
+      const segment = this.coveringSegment(n);
+      if (!segment) return null;
       let pointLineage = segment.lineage;
       let pointAt = n;
       for (; ; ) {
@@ -1865,11 +1956,9 @@
         };
         segment.end = before;
         this.segmentList.push(main);
-        segment.collapsed = true;
       } else {
         const parent = this.parentOf(segment);
         if (!parent) return null;
-        if (parent.end !== null) parent.collapsed = true;
       }
       const id = Math.max(...this.lineageList.map((l) => l.id)) + 1;
       this.lineageList.push({
@@ -2003,17 +2092,36 @@
     /**
      * The turns a segment's transcript walks, in path order: everything
      * strictly after its parent segment's end (or the path's beginning) up to
-     * the segment's end — pre-range turns write `[SKIP]`, in-range turns
+     * the segment's extent — pre-range turns write `[SKIP]`, in-range turns
      * carry their claims (compose's iteration source; never ordinal windows,
-     * which would cross lineages).
+     * which would cross lineages). An OPEN range walks to its current extent:
+     * a range is a file from its first tick and the file grows as the author
+     * plays (David's ruling 2026-08-09 — every gesture lands on disk).
      */
     turnsForCompose(s) {
       const path = this.pathTurns(s.lineage).filter((t) => t.ordinal > 0);
       const parent = this.parentOf(s);
       const afterIndex = parent === void 0 ? -1 : path.findIndex((t) => t.ordinal === this.endOf(parent));
-      const endIndex = path.findIndex((t) => t.ordinal === this.endOf(s));
+      const endIndex = path.findIndex((t) => t.ordinal === this.extentOf(s));
       if (endIndex < 0) return [];
       return path.slice(afterIndex + 1, endIndex + 1);
+    }
+    /**
+     * The last turn a range currently reaches: a closed range's end; an open
+     * range's latest same-lineage turn after its start, stopping short of the
+     * first turn another segment owns (a growing recording must never swallow
+     * a neighbouring transcript's turns). Falls back to the start itself.
+     */
+    extentOf(s) {
+      if (s.end !== null) return s.end;
+      let extent = s.start;
+      for (const turn of this.turnsOfLineage(s.lineage)) {
+        if (turn.ordinal <= s.start) continue;
+        const owner = this.segmentList.find((x) => x !== s && x.lineage === s.lineage && turn.ordinal >= x.start && turn.ordinal <= this.endOf(x));
+        if (owner) break;
+        extent = turn.ordinal;
+      }
+      return extent;
     }
     // ── segments (design §3) ─────────────────────────────────────────────
     /** End used for ordering/containment: an open segment ends at its start. */
@@ -2021,10 +2129,22 @@
       return s.end ?? s.start;
     }
     /** The segment covering ordinal `n`, if any — same-lineage containment
-     *  only (a segment never spans lineages). */
+     *  only (a segment never spans lineages). An OPEN segment covers only its
+     *  start here (so a later tick still reads as "close here"); use
+     *  {@link coveringSegment} for growing-extent coverage. */
     segmentOf(n) {
       const lineage = n === 0 ? ROOT_LINEAGE : this.lineageOf(n);
       return this.segmentList.find((s) => s.lineage === lineage && n >= s.start && n <= this.endOf(s));
+    }
+    /** The segment whose transcript walk covers `n`: an exact {@link segmentOf}
+     *  hit, or the open range whose growing extent reaches it — the coverage
+     *  authoring gestures and the cards use (a mid-recording turn IS part of
+     *  the recording). */
+    coveringSegment(n) {
+      const direct = this.segmentOf(n);
+      if (direct) return direct;
+      const lineage = n === 0 ? ROOT_LINEAGE : this.lineageOf(n);
+      return this.segmentList.find((s) => s.lineage === lineage && n >= s.start && n <= this.extentOf(s));
     }
     /** The at-most-one open segment (global — one recording at a time). */
     openSegment() {
@@ -2050,6 +2170,11 @@
      * Ticks the rail box on ordinal `n` (design §3): starts a segment, extends
      * the open one's start downward, or closes it — never overlapping another
      * segment, and never crossing lineages (a range is one coherent path).
+     * Sequential ticking EXTENDS the same transcript (David 2026-08-09: "the
+     * transcripts are renamed when sequential cards are checked") — a closed
+     * same-lineage segment before `n` grows its end to `n` and the file
+     * renames, unless a fork point stands between: fork-made boundaries are
+     * the only boundaries, and `continues:` belongs to branch starts alone.
      */
     tick(n) {
       if (n !== 0 && !this.turnByOrdinal(n)) return "noop";
@@ -2058,6 +2183,15 @@
       const lineage = n === 0 ? ROOT_LINEAGE : this.lineageOf(n) ?? ROOT_LINEAGE;
       const open = this.openSegment();
       if (!open) {
+        const prev = this.segmentList.filter((s) => s.lineage === lineage && s.end !== null && s.end < n).sort((a, b) => b.end - a.end)[0];
+        if (prev) {
+          const forkBetween = this.lineageList.some((l) => l.forkAt !== void 0 && this.lineageOf(l.forkAt) === lineage && l.forkAt > prev.end && l.forkAt <= n);
+          if (!forkBetween && !this.overlaps(lineage, prev.end + 1, n, prev)) {
+            prev.end = n;
+            prev.collapsed = false;
+            return "extended";
+          }
+        }
         this.segmentList.push({ start: n, end: null, collapsed: false, lineage });
         return "started";
       }
@@ -2212,13 +2346,15 @@
     /**
      * Authoring a claim INCLUDES the turn (design §5): it joins its segment,
      * extends/closes the open one, or starts a fresh one — and un-demotes a
-     * `[SKIP]`. Returns false for an unknown ordinal (nothing changed).
+     * `[SKIP]`. A turn already inside an open range's growing extent needs no
+     * tick (it is part of the recording; ticking would close the range the
+     * author is still playing). Returns false for an unknown ordinal.
      */
     includeForAuthoring(n) {
       if (n !== 0 && !this.turnByOrdinal(n)) return false;
       if (n === 0 && !this.hasOpening) return false;
       this.skippedSet.delete(n);
-      if (!this.segmentOf(n)) this.tick(n);
+      if (!this.coveringSegment(n)) this.tick(n);
       return true;
     }
     addContains(n, text) {
@@ -2312,16 +2448,24 @@
       return prev.room ?? "session";
     }
     endRoomOf(s) {
-      return this.turnByOrdinal(this.endOf(s))?.room ?? "session";
+      return this.turnByOrdinal(this.extentOf(s))?.room ?? "session";
     }
     /** Played-turn count of the range — the lineage's own turns inside it
-     *  (never ordinal arithmetic: lineage ordinals gap after forks). */
+     *  (never ordinal arithmetic: lineage ordinals gap after forks). An open
+     *  range counts to its extent, so a growing recording's name grows too. */
     turnCountOf(s) {
-      const count = this.turnsOfLineage(s.lineage).filter((t) => t.ordinal >= s.start && t.ordinal <= this.endOf(s)).length;
+      const count = this.turnsOfLineage(s.lineage).filter((t) => t.ordinal >= s.start && t.ordinal <= this.extentOf(s)).length;
       return Math.max(1, count);
     }
-    /** The route-derived base name, before collision suffixing. */
+    /** The route-derived base name, before collision suffixing. A transcript
+     *  that begins at the OPENING is named for where the story opens —
+     *  `opening-<first room>` (David 2026-08-09) — and the name stays stable
+     *  as the recording grows. */
     baseTitleOf(s) {
+      if (s.start === 0) {
+        const first = this.pathTurns(s.lineage).find((t) => t.ordinal > 0);
+        return `opening-${slugify(first?.room ?? "session")}`;
+      }
       const from = slugify(this.startRoomOf(s));
       const to = slugify(this.endRoomOf(s));
       const count = this.turnCountOf(s);
@@ -2348,16 +2492,59 @@
       const index = this.turnsOfLineage(lineage).findIndex((t) => t.ordinal === n);
       return index < 0 ? void 0 : { lineage, pos: index + 1 };
     }
+    /** Lineages the persisted session keeps: the root always; a branch only
+     *  while its subtree carries a segment or a pending fork. Branch play
+     *  with no transcript is ephemeral (David's ruling 2026-08-09: the
+     *  session worth restoring is the session the SUITE describes). */
+    survivingLineages() {
+      const surviving = /* @__PURE__ */ new Set([ROOT_LINEAGE]);
+      for (; ; ) {
+        const before = surviving.size;
+        for (const info of this.lineageList) {
+          if (surviving.has(info.id)) continue;
+          const hasOwn = this.segmentList.some((s) => s.lineage === info.id) || info.pendingCommand !== void 0;
+          const hasHeir = this.lineageList.some((l) => l.parentId === info.id && surviving.has(l.id));
+          if (hasOwn || hasHeir) surviving.add(info.id);
+        }
+        if (surviving.size === before) break;
+      }
+      return surviving;
+    }
+    /** The last own-turn position of lineage `id` the persisted session
+     *  needs: segment coverage (an open range to its extent), plus each
+     *  surviving child's fork point. Turns beyond it are unticked play and
+     *  do not replay on reopen (David's ruling 2026-08-09 — untick
+     *  everything and the tab reopens fresh). */
+    neededPositions(id, surviving) {
+      let needed = 0;
+      for (const s of this.segmentList) {
+        if (s.lineage !== id) continue;
+        const extent = this.extentOf(s);
+        const at = extent === 0 ? void 0 : this.positionOf(extent);
+        if (at) needed = Math.max(needed, at.pos);
+      }
+      for (const info of this.lineageList) {
+        if (info.parentId !== id || !surviving.has(info.id)) continue;
+        if (info.forkAt === void 0) continue;
+        const at = this.positionOf(info.forkAt);
+        if (at) needed = Math.max(needed, at.pos);
+      }
+      return needed;
+    }
     /**
      * The persisted view state (ADR-306 D8): the fork tree with each
      * lineage's own commands (restore-by-replay's script), segment structure,
      * and skips — all position-keyed, no assertions, no transcript content.
+     * Scoped to the suite (David's ruling 2026-08-09): each lineage's turns
+     * are trimmed to what its segments and surviving branches need, and
+     * segmentless branches are dropped whole — unticked play never replays.
      */
     snapshot() {
-      const lineages = this.lineageList.map((info) => {
+      const surviving = this.survivingLineages();
+      const lineages = this.lineageList.filter((info) => surviving.has(info.id)).map((info) => {
         const entry = {
           id: info.id,
-          turns: this.turnsOfLineage(info.id).map((t) => ({ command: t.command, boot: t.boot }))
+          turns: this.turnsOfLineage(info.id).slice(0, this.neededPositions(info.id, surviving)).map((t) => ({ command: t.command, boot: t.boot }))
         };
         if (info.parentId !== void 0) entry.parentId = info.parentId;
         if (info.forkAt !== void 0) {
@@ -2385,7 +2572,12 @@
         const at = this.positionOf(n);
         if (at) skipped.push({ lineage: at.lineage, pos: at.pos });
       }
-      return { lineages, active: this.active, segments, skipped };
+      return {
+        lineages,
+        active: surviving.has(this.active) ? this.active : ROOT_LINEAGE,
+        segments,
+        skipped
+      };
     }
     /**
      * Re-applies a persisted snapshot after restore-by-replay re-fed the
@@ -2740,6 +2932,65 @@
   var replayActive = false;
   var driverBusy = false;
   var armedOutcomeKey = null;
+  function segmentCovering(ordinal) {
+    return model.coveringSegment(ordinal);
+  }
+  function openingText() {
+    const prose = document.querySelector('[data-ts-ordinal="0"] .ts-prose');
+    for (const child of prose ? [...prose.children] : []) {
+      const text = child.textContent?.trim();
+      if (text) return text;
+    }
+    return void 0;
+  }
+  function composeOptionsFor(segment) {
+    return {
+      model,
+      segment,
+      policy,
+      seed: 42,
+      source: turnSource,
+      ...openingText() !== void 0 ? { openingText: openingText() } : {}
+    };
+  }
+  function assertionLinesFor(ordinal) {
+    const segment = segmentCovering(ordinal);
+    if (!segment) return [];
+    return composeTurnAssertionLines(composeOptionsFor(segment), ordinal);
+  }
+  function containsDefaultsOf(ordinal) {
+    const src = turnSource(ordinal);
+    if (!policy || !src) return [];
+    return synthesizePolicyAssertions(policy, src.output, src.channelValues).filter((a) => a.type === "ok-contains" && a.value !== void 0).map((a) => a.value);
+  }
+  function removeAssertion(del) {
+    switch (del.kind) {
+      case "default":
+        model.removeDefault(del.ordinal, del.index, del.defaults);
+        break;
+      case "defaultWhole":
+        model.removeDefault(del.ordinal, -1, containsDefaultsOf(del.ordinal));
+        break;
+      case "contains":
+        model.removeContains(del.ordinal, del.index);
+        break;
+      case "notContains":
+        model.removeNotContains(del.ordinal, del.index);
+        break;
+      case "state":
+        model.removeState(del.ordinal, del.index);
+        break;
+      case "event":
+        model.removeEvent(del.ordinal, del.index);
+        break;
+      case "channel":
+        model.removeChannel(del.ordinal, del.index);
+        break;
+      case "exact":
+        model.setExact(del.ordinal, false);
+        break;
+    }
+  }
   function turnSource(ordinal) {
     const record = records.get(ordinal);
     if (!record || typeof record.output !== "string") return void 0;
@@ -2883,7 +3134,14 @@
       cards.render();
       postToBridge({ run: true });
     },
-    runColumn: () => runState
+    runColumn: () => runState,
+    assertionLines: assertionLinesFor,
+    onRemoveAssertion(del) {
+      pushUndo();
+      touchSegmentAt(del.ordinal);
+      removeAssertion(del);
+      update();
+    }
   });
   var runState = createRunState();
   function deliverRunLine(text) {
@@ -2910,7 +3168,7 @@
   var written = /* @__PURE__ */ new Map();
   var detached = /* @__PURE__ */ new Set();
   function touchSegmentAt(ordinal) {
-    const segment = model.segmentOf(ordinal);
+    const segment = segmentCovering(ordinal);
     if (segment) detached.delete(segment);
   }
   function postToBridge(payload) {
@@ -2933,22 +3191,7 @@
     }
     for (const segment of model.segments) {
       if (detached.has(segment)) continue;
-      if (segment.end === null) {
-        const last2 = written.get(segment);
-        if (last2) {
-          written.delete(segment);
-          postToBridge({ remove: { name: last2.name } });
-          changed = true;
-        }
-        continue;
-      }
-      const { title, text } = composeSegmentTranscript({
-        model,
-        segment,
-        policy,
-        seed: 42,
-        source: turnSource
-      });
+      const { title, text } = composeSegmentTranscript(composeOptionsFor(segment));
       const last = written.get(segment);
       if (last && last.name === title && last.text === text) continue;
       const payload = { write: { name: title, text } };
@@ -3169,9 +3412,11 @@
   }
   async function performBranch(ordinal, command) {
     if (replayActive) return;
+    const at = model.forkPointAfter(ordinal);
+    if (at === void 0) return;
     clearUndo();
-    const ancestry = ancestryStepsBefore(ordinal);
-    const id = model.fork(ordinal, command);
+    const ancestry = ancestryStepsBefore(at);
+    const id = model.fork(at, command);
     if (id === null) return;
     update();
     await driveFreshBoot(id, ancestry, [{ command, key: "" }]);
@@ -3230,8 +3475,43 @@
   function isComposite(value) {
     return typeof value === "object" && value !== null && "model" in value && Array.isArray(value.model?.lineages);
   }
+  function scopeSnapshotToSuite(snap) {
+    const surviving = /* @__PURE__ */ new Set([1]);
+    for (; ; ) {
+      const before = surviving.size;
+      for (const lineage of snap.lineages) {
+        if (surviving.has(lineage.id)) continue;
+        const hasOwn = (snap.segments ?? []).some((s) => s.lineage === lineage.id) || lineage.pendingCommand !== void 0;
+        const hasHeir = snap.lineages.some((l) => l.parentId === lineage.id && surviving.has(l.id));
+        if (hasOwn || hasHeir) surviving.add(lineage.id);
+      }
+      if (surviving.size === before) break;
+    }
+    const neededOf = (lineage) => {
+      let needed = 0;
+      for (const s of snap.segments ?? []) {
+        if (s.lineage !== lineage.id) continue;
+        if (s.endPos === null || s.endPos === void 0) return lineage.turns.length;
+        needed = Math.max(needed, s.endPos);
+      }
+      for (const skip of snap.skipped ?? []) {
+        if (skip.lineage === lineage.id) needed = Math.max(needed, skip.pos);
+      }
+      for (const child of snap.lineages) {
+        if (child.parentId === lineage.id && surviving.has(child.id) && child.forkAtPos !== void 0) {
+          needed = Math.max(needed, child.forkAtPos);
+        }
+      }
+      return needed;
+    };
+    return {
+      ...snap,
+      lineages: snap.lineages.filter((lineage) => surviving.has(lineage.id)).map((lineage) => ({ ...lineage, turns: lineage.turns.slice(0, neededOf(lineage)) })),
+      active: surviving.has(snap.active) ? snap.active : 1
+    };
+  }
   async function restoreComposite(composite, files) {
-    const snap = composite.model;
+    const snap = scopeSnapshotToSuite(composite.model);
     dialogOutcomes = new Map(composite.dialogs ?? []);
     driverBusy = true;
     replayActive = true;
@@ -3282,16 +3562,13 @@
         const start = Number(posText) === 0 ? model.hasOpening ? 0 : void 0 : ordinalByPos.get(`${Number(lineageText)}:${Number(posText)}`);
         if (start === void 0) continue;
         const segment = model.segmentOf(start);
-        if (!segment || segment.start !== start || segment.end === null) continue;
+        if (!segment || segment.start !== start) continue;
         const fileText = files[stem];
-        if (typeof fileText !== "string") continue;
-        const result = rehydrateSegmentClaims({
-          model,
-          segment,
-          policy,
-          seed: 42,
-          source: turnSource
-        }, fileText);
+        if (typeof fileText !== "string") {
+          model.untick(segment.start);
+          continue;
+        }
+        const result = rehydrateSegmentClaims(composeOptionsFor(segment), fileText);
         if (result === "attached") {
           written.set(segment, { name: stem, text: fileText });
         } else {

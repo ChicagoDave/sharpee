@@ -9,8 +9,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseTranscript } from '@sharpee/branch-tester/parser';
 import {
-  composeSegmentLines, composeSegmentTranscript, rehydrateSegmentClaims,
-  type TurnSource,
+  composeSegmentLines, composeSegmentTranscript, composeTurnAssertionLines,
+  rehydrateSegmentClaims, type TurnSource,
 } from '../src/compose';
 import { SessionModel } from '../src/model';
 
@@ -56,29 +56,31 @@ describe('composeSegmentTranscript', () => {
     expect(parsed.commands[0].assertions.map(a => a.type)).toEqual(['skip']);
   });
 
-  it('a continuation continues from its parent and starts after its end', () => {
+  it('sequential ticks compose ONE growing file — continues: is for branch starts only', () => {
     const m = playedSession();
     m.tick(1);
-    m.tick(2);   // parent 1–2
+    m.tick(2);   // closed 1–2
     m.tick(3);
-    m.tick(4);   // child 3–4
-    const child = m.segmentOf(3)!;
-    const { text } = composeSegmentTranscript({ model: m, segment: child, seed: 42, source });
+    m.tick(4);   // extensions — the same transcript, renamed (David 2026-08-09)
+    expect(m.segments).toHaveLength(1);
+    const { text } = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(1)!, seed: 42, source,
+    });
     const parsed = parse(text);
-    expect(parsed.header.continues).toBe('iron-gates-to-gravel-drive-2');
-    expect(parsed.header.seed).toBeUndefined();
-    expect(parsed.commands.map(c => c.input)).toEqual(['north', 'north']);
+    expect(parsed.header.continues).toBeUndefined();
+    expect(parsed.header.seed).toBe('42');
+    expect(parsed.commands.map(c => c.input)).toEqual(['look', 'north', 'north', 'north']);
   });
 
   it('policy defaults synthesize through the real module when untouched', () => {
     const m = playedSession();
     m.tick(2);
-    m.tick(2 + 0);
     const { text } = composeSegmentTranscript({
       model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
     });
     const parsed = parse(text);
-    const assertions = parsed.commands.at(-1)!.assertions;
+    // The open range walks to its extent (turn 4); turn 2 is commands[1].
+    const assertions = parsed.commands[1].assertions;
     expect(assertions.some(a => a.type === 'ok-contains' && a.value === 'Gravel Drive')).toBe(true);
   });
 
@@ -95,7 +97,7 @@ describe('composeSegmentTranscript', () => {
       model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
     });
     const parsed = parse(text);
-    const assertions = parsed.commands.at(-1)!.assertions;
+    const assertions = parsed.commands[1].assertions;
     const types = assertions.map(a => a.type);
     // Authored contains present, policy default 'Gravel Drive' NOT re-added
     // (contains non-empty → defaults withheld).
@@ -120,7 +122,7 @@ describe('composeSegmentTranscript', () => {
       model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
     });
     const parsed = parse(text);
-    const assertions = parsed.commands.at(-1)!.assertions;
+    const assertions = parsed.commands[1].assertions;
     const exact = assertions.find(a => a.type === 'ok');
     expect(exact?.block).toEqual(['Gravel Drive', 'The drive curves north.']);
     expect(assertions.some(a => a.type === 'state-assert')).toBe(true);
@@ -146,7 +148,7 @@ describe('composeSegmentTranscript', () => {
     const lines = composeSegmentLines({
       model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
     });
-    expect(lines[0]).toEqual({ text: 'title: iron-gates-to-gravel-drive-1', kind: 'header' });
+    expect(lines[0]).toEqual({ text: 'title: iron-gates-to-entrance-hall-3', kind: 'header' });
     expect(lines[1]).toEqual({ text: 'seed: 42', kind: 'header' });
     // Ancestry turn 1 shows its command + [SKIP], no delete ref.
     const skip = lines.find(l => l.kind === 'skip');
@@ -166,7 +168,10 @@ describe('composeSegmentTranscript', () => {
     const defaultLines = composeSegmentLines({
       model: m, segment: m.segmentOf(2)!, policy: 'room-name-and-description', seed: 42, source,
     });
-    const defaults = defaultLines.filter(l => l.del?.kind === 'default');
+    // Scope to turn 2: the open range now walks to its extent, so later
+    // turns carry their own default lines.
+    const defaults = defaultLines.filter(l =>
+      l.del?.kind === 'default' && l.del.ordinal === 2);
     expect(defaults.length).toBeGreaterThan(0);
     const ref = defaults[0].del as { kind: 'default'; defaults: string[] };
     expect(ref.defaults.length).toBe(defaults.length);
@@ -374,5 +379,178 @@ describe('rehydrateSegmentClaims (Phase 5 — files are the truth on reopen)', (
     expect(result).toBe('attached');
     expect(back.isSkipped(3)).toBe(true);
     expect(back.claimsOf(2).contains).toEqual(['drive curves']);
+  });
+});
+
+describe('open ranges compose as growing files (David 2026-08-09)', () => {
+  it('an open range composes header + its walk so far, and parses clean', () => {
+    const m = playedSession();
+    m.tick(2);
+    const { title, text } = composeSegmentTranscript({
+      model: m, segment: m.openSegment()!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+    expect(title).toBe('iron-gates-to-entrance-hall-3');
+    const parsed = parse(text);
+    expect(parsed.header.seed).toBe('42');
+    expect(parsed.commands.map(c => c.input)).toEqual(['look', 'north', 'north', 'north']);
+    // Every in-range turn carries live policy defaults — the file is the
+    // recording as it stands, not a preview of the start alone.
+    expect(parsed.commands.at(-1)!.assertions.some(a =>
+      a.type === 'ok-contains' && a.value === 'Entrance Hall')).toBe(true);
+  });
+
+  it('an opening-only open range is a file: header, opening claims, boot look', () => {
+    const m = new SessionModel();
+    m.addTurn({ ordinal: 1, command: 'look', room: 'Iron Gates', boot: true });
+    m.tick(0);
+    m.addContains(0, 'auction notice');
+    const { title, text } = composeSegmentTranscript({
+      model: m, segment: m.openSegment()!, seed: 42, source,
+    });
+    expect(title).toBe('opening-iron-gates');
+    const parsed = parse(text);
+    expect(parsed.opening?.some(a => a.type === 'ok-contains' && a.value === 'auction notice'))
+      .toBe(true);
+    expect(parsed.commands.map(c => c.input)).toEqual(['look']);
+  });
+
+  it('an open range rehydrates from its file on reopen', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.addContains(3, 'paved court');
+    const { text } = composeSegmentTranscript({
+      model: m, segment: m.openSegment()!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+
+    const back = playedSession();
+    back.tick(2);
+    const result = rehydrateSegmentClaims({
+      model: back, segment: back.openSegment()!, policy: 'room-name-and-description',
+      seed: 42, source,
+    }, text);
+    expect(result).toBe('attached');
+    expect(back.claimsOf(3).contains).toEqual(['paved court']);
+  });
+});
+
+describe('composeTurnAssertionLines (David 2026-08-09: assertions in the card)', () => {
+  it('returns one turn\'s tag lines with their delete refs', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.addContains(2, 'drive curves');
+    m.addState(3, 'kettle.location = hall');
+    const options = {
+      model: m, segment: m.openSegment()!, policy: 'room-name-and-description' as const,
+      seed: 42, source,
+    };
+    const turn2 = composeTurnAssertionLines(options, 2);
+    expect(turn2.map(l => l.text)).toEqual(['[OK: contains "drive curves"]']);
+    expect(turn2[0].del).toEqual({ kind: 'contains', ordinal: 2, index: 0 });
+    // Turn 3 carries its authored state plus live policy defaults.
+    const turn3 = composeTurnAssertionLines(options, 3);
+    expect(turn3.some(l => l.text === '[STATE: true, kettle.location = hall]')).toBe(true);
+    expect(turn3.some(l => l.del?.kind === 'default')).toBe(true);
+  });
+
+  it('the opening (ordinal 0) returns its authored claims', () => {
+    const m = playedSession();
+    m.tick(0);
+    m.addContains(0, 'auction notice');
+    const lines = composeTurnAssertionLines({
+      model: m, segment: m.openSegment()!, seed: 42, source,
+    }, 0);
+    expect(lines.map(l => l.text)).toEqual(['[OK: contains "auction notice"]']);
+    expect(lines[0].del).toEqual({ kind: 'contains', ordinal: 0, index: 0 });
+  });
+
+  it('a turn outside the segment walk returns nothing', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(3);
+    const lines = composeTurnAssertionLines({
+      model: m, segment: m.segmentOf(2)!, seed: 42, source,
+    }, 4);
+    expect(lines).toEqual([]);
+  });
+
+  it('an ancestry turn shows its [SKIP], never a delete ref', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(3);
+    const lines = composeTurnAssertionLines({
+      model: m, segment: m.segmentOf(2)!, seed: 42, source,
+    }, 1);
+    expect(lines).toEqual([{ text: '[SKIP]', kind: 'skip' }]);
+  });
+});
+
+describe('the opening default (David 2026-08-09: the opening card lists one too)', () => {
+  const options = (m: SessionModel) => ({
+    model: m, segment: m.segmentOf(0)!, policy: 'room-name-and-description' as const,
+    seed: 42, source, openingText: 'The Folly at Fernhill',
+  });
+
+  it('a policy + opening text synthesize a contains default above the first command', () => {
+    const m = playedSession();
+    m.tick(0);
+    m.tick(2);
+    const { text } = composeSegmentTranscript(options(m));
+    const parsed = parse(text);
+    expect(parsed.opening?.some(a =>
+      a.type === 'ok-contains' && a.value === 'The Folly at Fernhill')).toBe(true);
+    // The card renders the same line with a narrowing default ref.
+    const lines = composeTurnAssertionLines(options(m), 0);
+    expect(lines[0].text).toBe('[OK: contains "The Folly at Fernhill"]');
+    expect(lines[0].del).toEqual({
+      kind: 'default', ordinal: 0, index: 0, defaults: ['The Folly at Fernhill'],
+    });
+  });
+
+  it('authored opening contains withhold the default; a deleted default stays gone', () => {
+    const m = playedSession();
+    m.tick(0);
+    m.tick(2);
+    m.addContains(0, 'auction notice');
+    const authored = composeSegmentTranscript(options(m));
+    expect(parse(authored.text).opening?.map(a => a.value))
+      .toEqual(['auction notice']);
+
+    const pruned = playedSession();
+    pruned.tick(0);
+    pruned.tick(2);
+    pruned.removeDefault(0, 0, ['The Folly at Fernhill']);
+    const { text } = composeSegmentTranscript(options(pruned));
+    expect(parse(text).opening ?? []).toEqual([]);
+  });
+
+  it('no policy or no opening text means no default — absence stays the no-claim form', () => {
+    const m = playedSession();
+    m.tick(0);
+    m.tick(2);
+    const noPolicy = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(0)!, seed: 42, source,
+      openingText: 'The Folly at Fernhill',
+    });
+    expect(parse(noPolicy.text).opening ?? []).toEqual([]);
+    const noText = composeSegmentTranscript({
+      model: m, segment: m.segmentOf(0)!, policy: 'room-name-and-description',
+      seed: 42, source,
+    });
+    expect(parse(noText.text).opening ?? []).toEqual([]);
+  });
+
+  it('round-trips: the opening default re-hydrates and recomposes byte-identical', () => {
+    const m = playedSession();
+    m.tick(0);
+    m.tick(2);
+    const { text } = composeSegmentTranscript(options(m));
+
+    const back = playedSession();
+    back.tick(0);
+    back.tick(2);
+    const result = rehydrateSegmentClaims(options(back), text);
+    expect(result).toBe('attached');
   });
 });

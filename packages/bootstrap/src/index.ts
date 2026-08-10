@@ -79,6 +79,16 @@ export interface LoadedGame {
    */
   lastChannelValues: Record<string, unknown[]>;
   /**
+   * Structured channel values captured during BOOT — everything the story
+   * said before the first command (the banner and the prologue travel on
+   * their own channels). `executeCommand` resets the per-command buffers,
+   * which silently discarded the opening's captures; this snapshot is taken
+   * once, just before the first reset, so a transcript's opening claims can
+   * read what the player actually saw (David, 2026-08-09). Additive —
+   * empty until the first command executes.
+   */
+  bootChannelValues: Record<string, unknown[]>;
+  /**
    * The story's transcript auto-assertion policy (Phase 6e, #253), read off
    * `story.config.autoAssertion` at assembly. The test runner consults it at
    * the ADR-294 D2 tier boundary: under a policy, a bare (assertion-less)
@@ -192,6 +202,8 @@ export function assembleGame(
   let eventBuffer: ISemanticEvent[] = [];
   let channelBuffers: Record<string, string[]> = {};
   let channelValueBuffers: Record<string, unknown[]> = {};
+  /** True once the boot's channel captures were snapshotted (first command). */
+  let bootCapturesSaved = false;
   let pendingReboot = false;
 
   // ADR-294 D15: the story's channels must be registered BEFORE capability
@@ -216,7 +228,16 @@ export function assembleGame(
     policy === 'room-description' || policy === 'room-name-and-description'
       ? ['room-name', 'room-description']
       : [];
-  const capturedChannels = [...new Set([...(opts?.channels ?? []), ...policyChannels])];
+  // The OPENING's channels are always captured (David, 2026-08-09): the
+  // banner and the prologue flush at boot, and a transcript's opening
+  // claims read them via the boot snapshot (`bootChannelValues`) — which
+  // stays empty unless someone subscribes. Standard-registry channels, so
+  // the lookup below always resolves; invisible to golden recordings, same
+  // as the policy channels above.
+  const openingChannels = ['banner', 'prologue'];
+  const capturedChannels = [
+    ...new Set([...(opts?.channels ?? []), ...policyChannels, ...openingChannels]),
+  ];
   const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
   for (const id of capturedChannels) {
     const channel = channelRegistry.get(id);
@@ -327,6 +348,7 @@ export function assembleGame(
     lastTurnResult: null,
     lastChannels: {},
     lastChannelValues: {},
+    bootChannelValues: {},
 
     getPluginRegistry() {
       return (engine as any).getPluginRegistry() as {
@@ -340,6 +362,14 @@ export function assembleGame(
     },
 
     async executeCommand(input: string): Promise<string> {
+      // The boot's captures (banner, prologue — flushed by engine start,
+      // before any command) are snapshotted once, just before the first
+      // per-command reset would silently discard them. Flag-guarded: an
+      // empty boot must not make a later command's buffers pass as boot's.
+      if (!bootCapturesSaved) {
+        bootCapturesSaved = true;
+        game.bootChannelValues = channelValueBuffers;
+      }
       outputBuffer = [];
       eventBuffer = [];
       channelBuffers = {};

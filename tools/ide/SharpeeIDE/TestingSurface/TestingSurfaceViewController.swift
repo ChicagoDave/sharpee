@@ -134,6 +134,13 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         testRunner.cancel()
     }
 
+    /// The surface's default synthesis policy when the story declares no
+    /// `auto-assertion:` line (David's ruling 2026-08-09, "not working" on a
+    /// policy-less story): the authoring surface shows useful assertions by
+    /// default — an explicit header line still wins. Runner semantics are
+    /// untouched: the files carry explicit tags either way.
+    static let defaultPolicy = "room-name-and-description"
+
     /// The story's `auto-assertion:` policy raw value, read from the story
     /// header at open; injected for in-page synthesis (6e).
     var policy: String?

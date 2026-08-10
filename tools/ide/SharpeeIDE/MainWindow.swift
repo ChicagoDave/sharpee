@@ -37,10 +37,20 @@ final class MainWindowController: NSWindowController {
         // assigning the controller can shrink the window to the view's fittingSize.
         window.setContentSize(NSSize(width: 1400, height: 900))
         window.center()
-        window.setFrameAutosaveName("SharpeeIDEMainWindow")
+        // Geometry restores from the session (David 2026-08-09: the IDE's
+        // state includes window height and width), applied before the window
+        // shows and before the landing page — geometry is visual state, not
+        // project content. AppKit's frame autosave is deliberately not used:
+        // one writer (persistSession), one reader, no timing races with the
+        // pre-appearance fitting-size churn.
+        if let frame = SessionStateStore.load()?.windowFrame {
+            window.setFrame(frame, display: false)
+        }
         window.isReleasedWhenClosed = false
 
         self.init(window: window)
+        // Cascading would reposition the restored frame on showWindow.
+        shouldCascadeWindows = false
 
         // The window still CARRIES the title (Window menu, Mission Control); it
         // just no longer DRAWS it — the strip at the top of the content view
@@ -826,14 +836,16 @@ private final class MainSplitViewController: NSSplitViewController {
     private static let editorMinWidth: CGFloat = 320
     private static let playMinWidth: CGFloat = 240
 
-    /// Manual divider persistence (project/play pane widths). AppKit's frame
-    /// autosave is deliberately NOT used: it restores while the window is
-    /// still at its pre-appearance fitting width, which squashes the play
+    /// Divider persistence (project/play pane widths) rides the session
+    /// (David 2026-08-09: the IDE's state includes pane widths). AppKit's
+    /// split autosave is deliberately NOT used: it restores while the window
+    /// is still at its pre-appearance fitting width, which squashes the play
     /// pane to its minimum before the window grows back — the extra width
     /// then goes to the editor (lowest holding priority) and the play pane
-    /// opened at 240 on every launch regardless of what was saved.
-    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
-    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
+    /// opened at 240 on every launch regardless of what was saved. Instead
+    /// the widths apply once in `applyInitialDividerPositions` and persist
+    /// through `persistSession`, guarded so the launch invariant holds
+    /// (close the landing page → nothing persisted).
 
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
@@ -1114,11 +1126,22 @@ private final class MainSplitViewController: NSSplitViewController {
     /// The width to reopen the project pane at: the author's last dragged width
     /// when one is saved, the default otherwise — never below the minimum.
     private func savedProjectWidth() -> CGFloat {
-        let saved = UserDefaults.standard.object(forKey: Self.projectWidthKey) as? Double
+        let saved = SessionStateStore.load()?.projectPaneWidth
         return max(Self.projectMinWidth, saved.map { CGFloat($0) } ?? Self.projectWidth)
     }
 
     fileprivate func persistSession() {
+        // Geometry falls back to what was last saved when it cannot be read
+        // live (window not on screen yet, pane hidden measuring 0) — a
+        // persist must never reset the author's dragged sizes to defaults.
+        let previous = SessionStateStore.load()
+        let livePanes = didApplyInitialLayout && splitView.arrangedSubviews.count == 4
+        let projectWidth: Double? = livePanes && isProjectPaneVisible
+            ? Double(splitView.arrangedSubviews[1].frame.width)
+            : previous?.projectPaneWidth
+        let playWidth: Double? = livePanes
+            ? Double(splitView.arrangedSubviews[3].frame.width)
+            : previous?.playPaneWidth
         let state = SessionState(
             projectURL: currentProject?.rootURL,
             openDocumentURLs: editorViewController.openDocumentURLs,
@@ -1127,7 +1150,10 @@ private final class MainSplitViewController: NSSplitViewController {
             projectPaneVisible: isProjectPaneVisible,
             buildPanelVisible: buildPanelVisibleProvider?() ?? false,
             playAfterBuild: playViewController.playAfterBuild,
-            rightPanelTab: rightPanelViewController.selectedTab
+            rightPanelTab: rightPanelViewController.selectedTab,
+            windowFrame: view.window?.frame ?? previous?.windowFrame,
+            projectPaneWidth: projectWidth,
+            playPaneWidth: playWidth
         )
         SessionStateStore.save(state)
     }
@@ -1145,6 +1171,15 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         if let surface = rightPanelViewController.testingSurface,
            surface.isLoaded {
+            // The story's on-disk `auto-assertion:` policy may have changed
+            // since the surface bound (the Test menu edits the header, and
+            // this build just saved it) — the reloaded page must carry the
+            // CURRENT policy or the cards' default assertion lines go stale.
+            if let storyURL = treeState.storyURL,
+               let source = try? String(contentsOf: storyURL, encoding: .utf8) {
+                surface.policy = StoryHeaderAutoAssertion.read(from: source)?.rawValue
+                    ?? TestingSurfaceViewController.defaultPolicy
+            }
             surface.load(bundleDirectory: bundleDir)
         }
     }
@@ -1175,7 +1210,10 @@ private final class MainSplitViewController: NSSplitViewController {
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+        // No header line → the surface's default policy (David 2026-08-09):
+        // the cards list useful assertions out of the box.
         surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
+            ?? TestingSurfaceViewController.defaultPolicy
         rightPanelViewController.installTestingSurface(surface)
         return surface
     }
@@ -1305,21 +1343,43 @@ private final class MainSplitViewController: NSSplitViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        observeWindowGeometryIfNeeded()
         guard !didApplyInitialLayout else { return }
         didApplyInitialLayout = true
         applyInitialDividerPositions()
+    }
+
+    /// Window moves and resize ends persist the session's geometry (the
+    /// split's own notification covers divider drags but never a pure move).
+    private var observingWindowGeometry = false
+
+    private func observeWindowGeometryIfNeeded() {
+        guard !observingWindowGeometry, let window = view.window else { return }
+        observingWindowGeometry = true
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowGeometryChanged(_:)),
+            name: NSWindow.didMoveNotification, object: window)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowGeometryChanged(_:)),
+            name: NSWindow.didEndLiveResizeNotification, object: window)
+    }
+
+    @objc private func windowGeometryChanged(_ note: Notification) {
+        // Only once a project is open — the launch invariant (close the
+        // landing page → nothing persisted) covers geometry too.
+        guard currentProject != nil else { return }
+        persistSession()
     }
 
     /// Opening divider positions, applied once the window is at its real size:
     /// saved pane widths when present (drags persist across launches), the
     /// defaults otherwise — editor and play split the remaining width equally.
     private func applyInitialDividerPositions() {
-        let defaults = UserDefaults.standard
         let totalWidth = splitView.bounds.width
 
         let projectWidth = isProjectPaneVisible ? savedProjectWidth() : 0
         let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
-        let savedPlay = defaults.object(forKey: Self.playWidthKey) as? Double
+        let savedPlay = SessionStateStore.load()?.playPaneWidth
         let playWidth = max(Self.playMinWidth, savedPlay.map { CGFloat($0) } ?? editorPlusPlay / 2)
 
         splitView.setPosition(Self.railWidth, ofDividerAt: 0)
@@ -1328,18 +1388,14 @@ private final class MainSplitViewController: NSSplitViewController {
         splitView.setPosition(totalWidth - playWidth, ofDividerAt: 2)
     }
 
-    /// Persists the project/play pane widths on every divider or window
-    /// resize — but only after the opening layout has been applied, so the
-    /// pre-appearance constraint churn can never overwrite the saved widths.
+    /// Persists the pane widths on every divider or window resize — but only
+    /// after the opening layout has been applied (the pre-appearance
+    /// constraint churn must never overwrite the saved widths) and only once
+    /// a project is open (the launch invariant: close the landing page →
+    /// nothing persisted).
     @objc private func persistDividerPositions(_ note: Notification) {
-        guard didApplyInitialLayout else { return }
-        let defaults = UserDefaults.standard
-        // A collapsed project pane measures 0 — writing that would reset the
-        // author's dragged width to the minimum the next time they expand it.
-        if isProjectPaneVisible {
-            defaults.set(Double(splitView.arrangedSubviews[1].frame.width), forKey: Self.projectWidthKey)
-        }
-        defaults.set(Double(splitView.arrangedSubviews[3].frame.width), forKey: Self.playWidthKey)
+        guard didApplyInitialLayout, currentProject != nil else { return }
+        persistSession()
     }
 
     private func makeRailItem() -> NSSplitViewItem {

@@ -96,21 +96,15 @@ describe('ticking ranges (design §3)', () => {
     expect(m.segments).toHaveLength(0);
   });
 
-  it('the next tick after a close starts the next segment', () => {
-    m.tick(1);
-    m.tick(2);
-    expect(m.tick(3)).toBe('started');
-    expect(m.openSegment()).toEqual({ start: 3, end: null, collapsed: false, lineage: 1 });
-  });
-
-  it('an extension that would swallow a neighbouring segment is refused', () => {
+  it('sequential ticks extend the SAME transcript (David 2026-08-09)', () => {
     m.tick(1);
     m.tick(2);   // closed 1–2
-    m.tick(4);   // open at 4
-    expect(m.tick(3)).toBe('extended'); // 3 is free — fine
-    m.untick(3); // drop that segment again
-    m.tick(4);
-    expect(m.openSegment()?.start).toBe(4);
+    // The next tick grows the same file — no continues: chain, no second
+    // segment; the transcript renames as the route extends.
+    expect(m.tick(3)).toBe('extended');
+    expect(m.segments).toEqual([{ start: 1, end: 3, collapsed: false, lineage: 1 }]);
+    expect(m.tick(5)).toBe('extended');   // gaps join the walk too
+    expect(m.segments).toEqual([{ start: 1, end: 5, collapsed: false, lineage: 1 }]);
   });
 
   it('closing over a later segment is refused', () => {
@@ -161,27 +155,16 @@ describe('collapse, merge, split (design §3)', () => {
     expect(open.collapsed).toBe(true);
   });
 
-  it('merge-up folds into the parent and marks gap turns [SKIP]', () => {
+  it('merge-up folds a fork-made boundary back together (delete fold-back)', () => {
+    // Adjacent same-lineage segments only arise at fork points now — seat
+    // the deleteLineage fold-back's exact shape and fold it.
     m.tick(1);
-    m.tick(2);   // parent 1–2
-    m.tick(4);
-    m.tick(5);   // child 4–5, gap at 3
-    const child = m.segmentOf(4)!;
-    expect(m.mergeUp(child)).toBe(true);
+    m.tick(5);
+    expect(m.fork(4, 'east')).toBe(2);       // prefix 1–3 + main 4–5
+    const tail = m.segmentOf(4)!;
+    expect(m.mergeUp(tail)).toBe(true);
     expect(m.segments).toHaveLength(1);
     expect(m.segmentOf(3)).toEqual({ start: 1, end: 5, collapsed: false, lineage: 1 });
-    expect(m.isSkipped(3)).toBe(true);
-    expect(m.isSkipped(2)).toBe(false);
-  });
-
-  it('merging an open segment leaves the merged range open', () => {
-    m.tick(1);
-    m.tick(2);   // parent 1–2
-    m.tick(4);   // open child at 4
-    const child = m.segmentOf(4)!;
-    expect(m.mergeUp(child)).toBe(true);
-    expect(m.openSegment()).toEqual({ start: 1, end: null, collapsed: false, lineage: 1 });
-    expect(m.isSkipped(3)).toBe(true);
   });
 
   it('a root with nothing earlier cannot merge', () => {
@@ -234,10 +217,10 @@ describe('auto-naming (design §4)', () => {
     expect(m.titleOf(m.segmentOf(2)!)).toBe('iron-gates-to-fountain-court-2');
   });
 
-  it('a range from the beginning starts at the boot room', () => {
+  it('a range from the beginning is named for the opening (David 2026-08-09)', () => {
     m.tick(0);
     m.tick(3);
-    expect(m.titleOf(m.segmentOf(0)!)).toBe('iron-gates-to-fountain-court-3');
+    expect(m.titleOf(m.segmentOf(0)!)).toBe('opening-iron-gates');
   });
 
   it('a same-room loop collapses to one location', () => {
@@ -257,9 +240,9 @@ describe('auto-naming (design §4)', () => {
     back.addTurn({ ordinal: 3, command: 'south', room: 'Iron Gates', boot: false });
     back.addTurn({ ordinal: 4, command: 'north', room: 'Gravel Drive', boot: false });
     back.tick(2);
-    back.tick(3);   // closed 2–3
-    back.splitAt(3); // → 2–2 (iron-gates-to-gravel-drive-1) and 3–3
-    back.tick(4);    // open at 4 — same route as 2–2: gates → drive, 1 turn
+    back.tick(4);    // closed 2–4 (sequential ticks extend — one transcript)
+    back.splitAt(3); // fold-back-shaped cuts: 2–2 + 3–4
+    back.splitAt(4); //                        3–3 + 4–4
     expect(back.titleOf(back.segmentOf(2)!)).toBe('iron-gates-to-gravel-drive-1');
     expect(back.titleOf(back.segmentOf(3)!)).toBe('gravel-drive-to-iron-gates-1');
     expect(back.titleOf(back.segmentOf(4)!)).toBe('iron-gates-to-gravel-drive-1-2');
@@ -272,14 +255,16 @@ describe('auto-naming (design §4)', () => {
 });
 
 describe('lineages and branching (design §6)', () => {
-  it('fork mid-segment auto-splits: prefix parent collapses, main continues', () => {
+  it('fork mid-segment auto-splits: prefix parent stays expanded, main continues', () => {
     const m = playedSession();
     m.tick(1);
     m.tick(5);
     expect(m.fork(3, 'east')).toBe(2);
     const parent = m.segmentOf(1)!;
     const main = m.segmentOf(3)!;
-    expect(parent).toEqual({ start: 1, end: 2, collapsed: true, lineage: 1 });
+    // The prefix stays expanded (David 2026-08-09: the cards before a fork
+    // remain fully visible; Collapse is a manual gesture only).
+    expect(parent).toEqual({ start: 1, end: 2, collapsed: false, lineage: 1 });
     expect(main).toEqual({ start: 3, end: 5, collapsed: false, lineage: 1 });
     expect(m.lineageInfo(2)).toEqual({
       id: 2, parentId: 1, forkAt: 3, pendingCommand: 'east',
@@ -424,19 +409,21 @@ describe('authoring claims (design §5)', () => {
     expect(m.claimsOf(2).contains).toEqual(['gravel']);
   });
 
-  it('authoring joins the open segment instead of starting a second', () => {
+  it('authoring inside the open extent claims without closing the range', () => {
     m.tick(1);
     m.addState(3, 'kettle.location = hall');
     expect(m.segments).toHaveLength(1);
-    expect(m.segmentOf(3)).toEqual({ start: 1, end: 3, collapsed: false, lineage: 1 });
+    // The turn is already part of the growing recording (David 2026-08-09:
+    // a range is a file from its first tick) — the range stays open.
+    expect(m.openSegment()).toEqual({ start: 1, end: null, collapsed: false, lineage: 1 });
     expect(m.claimsOf(3).states).toEqual(['kettle.location = hall']);
   });
 
   it('authoring un-demotes a [SKIP] turn', () => {
     m.tick(1);
-    m.tick(2);
     m.tick(4);
-    m.mergeUp(m.segmentOf(4)!); // gap 3 → [SKIP]
+    m.addContains(3, 'probe');
+    m.removeContains(3, 0);     // pruned to nothing → demoted to [SKIP]
     expect(m.isSkipped(3)).toBe(true);
     m.addEvent(3, 'if.event.actor_moved');
     expect(m.isSkipped(3)).toBe(false);
@@ -503,10 +490,9 @@ describe('snapshot and restore (ADR-306 D8, position-keyed)', () => {
 
   it('round-trips segments, the open range, and skips', () => {
     const m = playedSession();
-    m.tick(1);
-    m.tick(2);
-    m.tick(4);            // open child, gap at 3
-    m.mergeUp(m.segmentOf(4)!); // 1–open, 3 skipped
+    m.tick(1);            // open recording 1..5
+    m.addContains(3, 'probe');
+    m.removeContains(3, 0);     // pruned → 3 rides as [SKIP]
     const snap = m.snapshot();
 
     const back = playedSession();
@@ -546,7 +532,7 @@ describe('snapshot and restore (ADR-306 D8, position-keyed)', () => {
       },
     ]);
     expect(snap.segments).toEqual([
-      { lineage: 1, startPos: 1, endPos: 2, collapsed: true },
+      { lineage: 1, startPos: 1, endPos: 2, collapsed: false },
       { lineage: 1, startPos: 3, endPos: 5, collapsed: false },
       { lineage: 2, startPos: 1, endPos: 1, collapsed: false },
     ]);
@@ -563,7 +549,7 @@ describe('snapshot and restore (ADR-306 D8, position-keyed)', () => {
     back.restore(snap, (lineage, pos) =>
       lineage === 1 ? pos : lineage === 2 && pos === 1 ? 9 : undefined);
 
-    expect(back.segmentOf(1)).toEqual({ start: 1, end: 2, collapsed: true, lineage: 1 });
+    expect(back.segmentOf(1)).toEqual({ start: 1, end: 2, collapsed: false, lineage: 1 });
     expect(back.segmentOf(3)).toEqual({ start: 3, end: 5, collapsed: false, lineage: 1 });
     expect(back.segmentOf(9)).toEqual({ start: 9, end: 9, collapsed: false, lineage: 2 });
     expect(back.activeLineage).toBe(2);
@@ -696,5 +682,182 @@ describe('authoring mementos (David 2026-08-09: undo for testing state)', () => 
     m.restoreAuthoring(memento);
 
     expect(m.claimsOf(2).contains).toEqual(['gravel']);
+  });
+});
+
+describe('open-range extent (David 2026-08-09: a range is a file from its first tick)', () => {
+  it('an open range extends to the lineage latest turn as play continues', () => {
+    const m = playedSession();
+    m.tick(2);
+    expect(m.extentOf(m.openSegment()!)).toBe(5);
+    m.addTurn({ ordinal: 6, command: 'north', room: 'Kitchen Stair', boot: false });
+    expect(m.extentOf(m.openSegment()!)).toBe(6);
+    expect(m.turnsForCompose(m.openSegment()!).map(t => t.ordinal))
+      .toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('a closed range extent is its end — closing stops the growth', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(4);
+    const s = m.segmentOf(2)!;
+    expect(m.extentOf(s)).toBe(4);
+    m.addTurn({ ordinal: 6, command: 'north', room: 'Kitchen Stair', boot: false });
+    expect(m.extentOf(s)).toBe(4);
+    expect(m.turnsForCompose(s).map(t => t.ordinal)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('a growing range stops short of a turn another segment owns', () => {
+    const m = playedSession();
+    m.tick(4);
+    m.tick(5);              // closed 4–5
+    m.tick(1);              // open at 1, before the closed range
+    const open = m.openSegment()!;
+    expect(m.extentOf(open)).toBe(3);
+    expect(m.turnsForCompose(open).map(t => t.ordinal)).toEqual([1, 2, 3]);
+  });
+
+  it('the auto-name follows the extent: end room and count grow with play', () => {
+    const m = playedSession();
+    m.tick(2);
+    // Open range 2..5: starts standing at Iron Gates (after turn 1), currently
+    // reaching Cold Passage — four own turns inside.
+    expect(m.titleOf(m.openSegment()!)).toBe('iron-gates-to-cold-passage-4');
+    m.tick(3);              // close at 3: iron-gates → fountain-court, 2 turns
+    expect(m.titleOf(m.segmentOf(2)!)).toBe('iron-gates-to-fountain-court-2');
+  });
+
+  it('an opening tick alone is a file-worthy range reaching the boot look', () => {
+    const m = new SessionModel();
+    m.addTurn({ ordinal: 1, command: 'look', room: 'Iron Gates', boot: true });
+    m.tick(0);
+    const open = m.openSegment()!;
+    expect(m.extentOf(open)).toBe(1);
+    expect(m.turnsForCompose(open).map(t => t.ordinal)).toEqual([1]);
+    expect(m.titleOf(open)).toBe('opening-iron-gates');
+  });
+
+  it('a branch tick extends the branch transcript along its own lineage', () => {
+    const m = forkedSession();
+    m.addTurn({ ordinal: 14, command: 'south', room: 'Coal Store', boot: false, lineage: 2 });
+    // Sequential tick on the branch extends its landed {13,13} segment —
+    // one transcript per lineage (David 2026-08-09).
+    expect(m.tick(14)).toBe('extended');
+    const branch = m.segmentOf(13)!;
+    expect(branch).toEqual({ start: 13, end: 14, collapsed: false, lineage: 2 });
+    expect(m.turnsForCompose(branch).map(t => t.ordinal)).toEqual([13, 14]);
+  });
+});
+
+describe('snapshot is scoped to the suite (David 2026-08-09: unticked play never replays)', () => {
+  it('untick everything and the snapshot carries no commands', () => {
+    const m = playedSession();
+    m.tick(2);
+    m.tick(3);
+    m.untick(3);         // reopen the end
+    m.untick(2);         // drop the range whole
+    const snap = m.snapshot();
+    expect(snap.segments).toEqual([]);
+    expect(snap.lineages).toEqual([{ id: 1, turns: [] }]);
+  });
+
+  it('turns trim to the last position a segment reaches', () => {
+    const m = playedSession();       // boot look + four norths
+    m.tick(2);
+    m.tick(3);                       // closed 2–3 → position 3
+    const snap = m.snapshot();
+    expect(snap.lineages[0].turns.map(t => t.command))
+      .toEqual(['look', 'north', 'north']);
+  });
+
+  it('an open range persists to its extent — the growing file replays whole', () => {
+    const m = playedSession();
+    m.tick(2);                       // open, extent reaches turn 5
+    const snap = m.snapshot();
+    expect(snap.lineages[0].turns).toHaveLength(5);
+  });
+
+  it('a segmentless branch drops whole and the persisted active falls back to the root', () => {
+    const m = forkedSession();       // branch 2 landed with its {13,13} segment
+    m.untick(13);                    // the branch transcript goes
+    expect(m.activeLineage).toBe(2); // still viewed live in the session
+    const snap = m.snapshot();
+    expect(snap.lineages.map(l => l.id)).toEqual([1]);
+    expect(snap.active).toBe(1);
+  });
+
+  it('a surviving branch keeps exactly the parent turns its fork needs', () => {
+    const m = forkedSession();       // segments: prefix 1–2, main 3–5, branch {13,13}
+    m.untick(3);                     // drop the main continuation
+    m.untick(1);                     // drop the prefix
+    const snap = m.snapshot();
+    const root = snap.lineages.find(l => l.id === 1)!;
+    const branch = snap.lineages.find(l => l.id === 2)!;
+    expect(root.turns.map(t => t.command)).toEqual(['look', 'north', 'north']);
+    expect(branch.forkAtPos).toBe(3);
+    expect(branch.turns.map(t => t.command)).toEqual(['east']);
+  });
+});
+
+describe('forking from an open recording (David 2026-08-09: Branch stays available)', () => {
+  it('fork mid-recording auto-splits: the prefix closes, the recording stays open', () => {
+    const m = playedSession();
+    m.tick(0);                       // open recording 0..5
+    expect(m.fork(3, 'east')).toBe(2);
+    expect(m.segmentOf(0)).toEqual({ start: 0, end: 2, collapsed: false, lineage: 1 });
+    const main = m.segmentOf(3)!;
+    expect(main.end).toBeNull();
+    expect(m.extentOf(main)).toBe(5);
+    expect(m.lineageInfo(2)?.pendingCommand).toBe('east');
+    // The alternate lands as the branch's own closed single-turn segment.
+    m.addTurn({ ordinal: 9, command: 'east', room: 'Boiler Shed', boot: false, lineage: 2 });
+    expect(m.segmentOf(9)).toEqual({ start: 9, end: 9, collapsed: false, lineage: 2 });
+  });
+
+  it('coverage comes from the extent — segmentOf alone does not reach the point', () => {
+    const m = playedSession();
+    m.tick(0);
+    expect(m.segmentOf(3)).toBeUndefined();
+    expect(m.coveringSegment(3)?.start).toBe(0);
+    expect(m.fork(3, 'east')).toBe(2);
+  });
+
+  it('the boot look still refuses to fork — nothing shared before it', () => {
+    const m = playedSession();
+    m.tick(0);
+    expect(m.fork(1, 'east')).toBeNull();
+    expect(m.segments).toHaveLength(1);
+  });
+});
+
+describe('forkPointAfter (David 2026-08-09: Branch runs FROM the card, not instead of it)', () => {
+  it('a card offers the NEXT path turn as its fork point', () => {
+    const m = playedSession();
+    m.tick(0);                       // open recording 0..5
+    expect(m.forkPointAfter(2)).toBe(3);
+    expect(m.forkPointAfter(1)).toBe(2);
+  });
+
+  it('the path tip offers nothing — typing continues the recording', () => {
+    const m = playedSession();
+    m.tick(0);
+    expect(m.forkPointAfter(5)).toBeUndefined();
+  });
+
+  it('the opening offers nothing — the boot look cannot be replaced', () => {
+    const m = playedSession();
+    m.tick(0);
+    expect(m.forkPointAfter(0)).toBeUndefined();
+  });
+
+  it('follows the ACTIVE path across a fork', () => {
+    const m = forkedSession();       // branch 2 forked at 3, its turn is 13
+    // Viewing the branch: the shared prefix card 2's next is the branch's
+    // own turn — a sibling fork at the same point.
+    expect(m.activeLineage).toBe(2);
+    expect(m.forkPointAfter(2)).toBe(13);
+    // Back on the main line, card 2's next is main's turn 3.
+    m.activateLineage(1);
+    expect(m.forkPointAfter(2)).toBe(3);
   });
 });

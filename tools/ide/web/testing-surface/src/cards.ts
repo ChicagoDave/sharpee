@@ -17,6 +17,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
+import type { DeleteRef, SourceLine } from './compose';
 import type { BranchPoint, Segment, SessionModel } from './model';
 import type { RunColumnState } from './run';
 
@@ -49,6 +50,11 @@ export interface CardsDelegate {
   onRun(): void;
   /** The run column's current state — main.ts owns the fold. */
   runColumn(): RunColumnState;
+  /** The turn's assertion lines as its transcript will carry them (David's
+   *  ruling 2026-08-09: assertions render inside the card). */
+  assertionLines(ordinal: number): SourceLine[];
+  /** A line's ✕ — delete that assertion through its DeleteRef. */
+  onRemoveAssertion(del: DeleteRef): void;
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
@@ -59,6 +65,7 @@ interface CardRow {
   strip: HTMLElement;
   autoName: HTMLElement;
   collapseButton: HTMLButtonElement;
+  asserts: HTMLElement;
   exactButton: HTMLButtonElement | null;
   branchButton: HTMLButtonElement | null;
 }
@@ -272,7 +279,13 @@ export class CardsView {
     const proseHost = document.createElement('div');
     proseHost.className = 'ts-prose';
     for (const el of prose) proseHost.appendChild(el);
-    block.append(meta, proseHost);
+    // The turn's assertions, as its transcript carries them (David's ruling
+    // 2026-08-09): under the prose, above the action row, each behind its
+    // own rule line. Filled by render() — claims change on every gesture.
+    const asserts = document.createElement('div');
+    asserts.className = 'ts-asserts';
+    asserts.style.display = 'none';
+    block.append(meta, proseHost, asserts);
 
     // The action row: assertion gestures for THIS turn (design §5). The
     // buttons write into the source panel's transcript, never into the card.
@@ -342,7 +355,7 @@ export class CardsView {
       branchButton = document.createElement('button');
       branchButton.textContent = 'Branch…';
       branchButton.title =
-        'Try a different command at this point — the shared prefix becomes the parent of all siblings';
+        'Try a different command from this point — what follows becomes a sibling branch';
       branchButton.style.display = 'none';
       branchButton.addEventListener('click', () =>
         promptText('alternate command, e.g. east',
@@ -355,9 +368,36 @@ export class CardsView {
     row.append(pick, column);
     this.host.appendChild(row);
     this.cards.set(ordinal, {
-      row, checkbox, stripNote, strip, autoName, collapseButton,
+      row, checkbox, stripNote, strip, autoName, collapseButton, asserts,
       exactButton, branchButton,
     });
+  }
+
+  /** Re-fills one card's assertion list from the delegate's composed lines.
+   *  Literal block lines (Exact's whole-turn text) render dimmed and are
+   *  never deletable line-by-line — the [OK] tag deletes the block whole. */
+  private renderAssertions(card: CardRow, ordinal: number): void {
+    const lines = this.delegate.assertionLines(ordinal);
+    card.asserts.innerHTML = '';
+    card.asserts.style.display = lines.length === 0 ? 'none' : '';
+    for (const line of lines) {
+      const row = document.createElement('div');
+      row.className = `ts-assert-line ts-assert-${line.kind}`;
+      const text = document.createElement('span');
+      text.className = 'ts-assert-text';
+      text.textContent = line.text;
+      row.appendChild(text);
+      if (line.del) {
+        const del = line.del;
+        const remove = document.createElement('button');
+        remove.className = 'ts-assert-delete';
+        remove.textContent = '✕';
+        remove.title = 'Delete this assertion';
+        remove.addEventListener('click', () => this.delegate.onRemoveAssertion(del));
+        row.appendChild(remove);
+      }
+      card.asserts.appendChild(row);
+    }
   }
 
   /** Dead lineage (restart fence): every card, summary, and chip row goes. */
@@ -421,16 +461,15 @@ export class CardsView {
       if (isFirst && segment) this.renderStrip(card, segment);
 
       if (card.branchButton) {
-        // Any point in a closed, expanded transcript with something shared
-        // before it can fork — mid-segment, or at its start when a parent
-        // exists (design §6).
-        const forkable = assigned && segment.end !== null && !collapsed &&
-          (ordinal > Math.max(segment.start, 1) ||
-           this.model.parentOf(segment) !== undefined);
+        // Branch tries a different command FROM the state this card shows
+        // (David 2026-08-09) — offered wherever the NEXT turn on the active
+        // path is a legal fork point; the path's tip just types instead.
+        const forkable = this.model.forkPointAfter(ordinal) !== undefined;
         card.branchButton.style.display = forkable ? '' : 'none';
       }
       card.exactButton?.classList.toggle('ts-active',
         this.model.claimsOf(ordinal).exact);
+      this.renderAssertions(card, ordinal);
     }
     this.renderSummaries();
     this.renderBranchRows(activePathPoints);
@@ -445,8 +484,13 @@ export class CardsView {
       return `In "${title}"`;
     }
     if (ordinal === 0) return 'Start a transcript at the beginning';
-    return this.model.openSegment()
-      ? `End the transcript at turn ${ordinal}`
+    if (this.model.openSegment()) return `End the transcript at turn ${ordinal}`;
+    // Sequential ticking extends the same transcript (David 2026-08-09).
+    const lineage = this.model.lineageOf(ordinal);
+    const prev = this.model.segments.find(s =>
+      s.lineage === lineage && s.end !== null && s.end < ordinal);
+    return prev
+      ? `Extend "${this.model.titleOf(prev)}" to turn ${ordinal}`
       : `Start a new transcript at turn ${ordinal}`;
   }
 
@@ -632,10 +676,10 @@ export class CardsView {
       : 'all continue from the shared prefix';
   }
 
-  /** The run column (design §7): one row per transcript — branches
-   *  included — with PASS/FAIL, the first failure on one line, and a tally.
-   *  An open range isn't a file and doesn't run; a pending branch (no
-   *  landed turn yet) shows a dash. */
+  /** The run column (design §7): one row per transcript — branches and
+   *  open recordings included (a range is a file from its first tick) —
+   *  with PASS/FAIL, the first failure on one line, and a tally. A pending
+   *  branch (no landed turn yet) shows a dash. */
   private renderRunColumn(): void {
     const results = document.getElementById('ts-run-results');
     if (!results) return;
@@ -647,11 +691,11 @@ export class CardsView {
       button.textContent = run.inFlight ? 'Running…' : 'Run';
     }
 
-    const closed = this.model.segments.filter(s => s.end !== null);
+    const files = [...this.model.segments];
     const pending = this.model.lineages.filter(
       info => this.model.pendingTitleOf(info.id) !== undefined);
     results.innerHTML = '';
-    if (closed.length === 0 && pending.length === 0 && run.results.size === 0) {
+    if (files.length === 0 && pending.length === 0 && run.results.size === 0) {
       results.innerHTML = '<span class="ts-pending-note">no transcripts yet</span>';
       return;
     }
@@ -699,12 +743,16 @@ export class CardsView {
         }
       }
     }
-    // This session's closed transcripts the run has not reached (or before
-    // any run): a dash — never a guess.
-    for (const segment of [...closed].sort((a, b) => a.start - b.start)) {
+    // This session's transcripts the run has not reached (or before any
+    // run): a dash — never a guess. An open range's row says it is still
+    // recording.
+    for (const segment of files.sort((a, b) => a.start - b.start)) {
       const title = this.model.titleOf(segment);
       if (run.results.has(title)) continue;
-      row('—', '', title, run.inFlight ? 'running…' : 'not run yet');
+      const why = segment.end === null
+        ? 'recording…'
+        : run.inFlight ? 'running…' : 'not run yet';
+      row('—', '', title, why);
     }
     // A registered branch whose replayed turn hasn't landed is not a file
     // yet — its row is a dash by rule (design §7).

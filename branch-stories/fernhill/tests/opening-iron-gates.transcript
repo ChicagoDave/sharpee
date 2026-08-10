@@ -1,0 +1,10 @@
+title: opening-iron-gates
+seed: 42
+
+---
+
+[OK: contains "The Folly at Fernhill"]
+
+> look
+[OK: contains "Iron Gates"]
+[OK: contains "The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."]

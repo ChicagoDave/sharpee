@@ -1,0 +1,23 @@
+title: iron-gates-to-entrance-hall-4
+seed: 42
+
+---
+
+[OK: contains "Story v0.3.0"]
+[OK: contains "The Folly at Fernhill"]
+
+> look
+[OK: contains "Iron Gates"]
+[OK: contains "The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."]
+
+> north
+[OK: contains "Gravel Drive"]
+[OK: contains "The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south."]
+
+> north
+[OK: contains "Fountain Court"]
+[OK: contains "A paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhouse glimmers palely to the west; a squat brick shed hunches to the east; the front door of the house is north."]
+
+> north
+[OK: contains "Entrance Hall"]
+[OK: contains "The heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock standing silent against the stairs. Doors lead west to the study and east to the kitchen; a colder passage runs north."]

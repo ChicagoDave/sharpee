@@ -87,3 +87,55 @@ describe('opening assertions', () => {
     expect(t.opening![1].channelId).toBe('banner');
   });
 });
+
+describe('opening prose claims read what the player saw (David 2026-08-09)', () => {
+  /** Story layer whose first command carries banner + prologue channel
+   *  captures, the way the engine flushes the opening. */
+  function bannerEngine() {
+    return {
+      executeCommand: (cmd: string) => `You ${cmd}.`,
+      world: {},
+      lastChannelValues: {
+        banner: ['The Folly at Fernhill', 'Story v0.3.0', 'By The Sharpee Project'],
+        prologue: ['One cold winter night.'],
+      },
+    };
+  }
+
+  it('a plain [OK: contains] opening claim passes against banner and prologue text', async () => {
+    const { runTranscript } = await import('../src/runner.js');
+    const t = parseTranscript(
+      'title: T\n---\n[OK: contains "Story v0.3.0"]\n[OK: contains "One cold winter night."]\n\n' +
+      '> look\n[OK: contains "You look."]\n'
+    );
+
+    const result = await runTranscript(t, bannerEngine() as never, {});
+
+    expect(result.status).toBe('passed');
+    const opening = result.commands.find((c) => c.command.input === '(opening)');
+    expect(opening?.passed).toBe(true);
+  });
+
+  it('a wrong opening claim still fails with the runner message', async () => {
+    const { runTranscript } = await import('../src/runner.js');
+    const t = parseTranscript(
+      'title: T\n---\n[OK: contains "not said anywhere"]\n\n> look\n[OK: contains "You look."]\n'
+    );
+
+    const result = await runTranscript(t, bannerEngine() as never, {});
+
+    expect(result.status).toBe('failed');
+    const opening = result.commands.find((c) => c.command.input === '(opening)');
+    expect(opening?.failure).toBe('Output does not contain "not said anywhere"');
+  });
+
+  it('the first command\'s own output is part of the opening text', async () => {
+    const { runTranscript } = await import('../src/runner.js');
+    const t = parseTranscript(
+      'title: T\n---\n[OK: contains "You look."]\n\n> look\n[OK: contains "You look."]\n'
+    );
+
+    const result = await runTranscript(t, bannerEngine() as never, {});
+    expect(result.status).toBe('passed');
+  });
+});

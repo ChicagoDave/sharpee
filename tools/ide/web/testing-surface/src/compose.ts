@@ -27,8 +27,9 @@
  * assertions; the files do).
  *
  * Public interface: composeSegmentTranscript(options),
- *   composeSegmentLines(options), rehydrateSegmentClaims(options, fileText),
- *   TurnSource, SourceLine, DeleteRef.
+ *   composeSegmentLines(options), composeTurnAssertionLines(options, ordinal),
+ *   rehydrateSegmentClaims(options, fileText), TurnSource, SourceLine,
+ *   DeleteRef.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -83,6 +84,12 @@ interface ComposeOptions {
   policy?: AutoAssertionPolicy;
   seed: number;
   source: (ordinal: number) => TurnSource | undefined;
+  /** The opening's default contains-fragment (David 2026-08-09: the opening
+   *  card lists a default too) — the first line of the opening's own prose,
+   *  the story banner's title in the real client. Synthesized only under a
+   *  policy, and withheld exactly like turn defaults once the author
+   *  narrows (authored contains or a deleted default). */
+  openingText?: string;
 }
 
 /** The authored non-prose claims as entries (states/events/channels). */
@@ -179,11 +186,20 @@ function segmentPlan(options: ComposeOptions): SegmentPlan {
   }
 
   // A segment starting at the OPENING (ordinal 0) claims the boot's
-  // emissions above the first command — authored claims only (the opening
-  // has no feed record for policy synthesis; absence is its no-claim form).
+  // emissions above the first command. The opening has no feed record for
+  // channel synthesis, so its policy default is the caller-supplied
+  // `openingText` (the banner's title line) — same precedence as a turn's
+  // defaults: authored contains or a deleted default withhold it.
   const opening: PlanEntry[] = [];
   if (segment.start === 0) {
     const claims = model.claimsOf(0);
+    if (claims.contains.length === 0 && !claims.noDefaults && policy
+        && options.openingText && !options.openingText.includes('"')) {
+      opening.push({
+        assertion: { type: 'ok-contains', value: options.openingText },
+        del: { kind: 'default', ordinal: 0, index: 0, defaults: [options.openingText] },
+      });
+    }
     claims.contains.forEach((value, index) => opening.push({
       assertion: { type: 'ok-contains', value },
       del: { kind: 'contains', ordinal: 0, index },
@@ -346,6 +362,29 @@ function entryLines(entry: PlanEntry): SourceLine[] {
     ...assertion.block.map(line => ({ text: line, kind: 'block' as const })),
     { text: 'end text', kind: 'block' },
   ];
+}
+
+/**
+ * One turn's assertion lines — the same plan the file text derives from,
+ * scoped to a single ordinal (0 = the opening's claims). The cards column
+ * renders these inside each turn card (David's ruling 2026-08-09: the
+ * assertions live in the box, under the prose, above the buttons), every
+ * deletable line carrying its DeleteRef. Empty when the turn is outside
+ * the segment's walk.
+ *
+ * @param options the segment whose plan covers the turn.
+ * @param ordinal the turn to render lines for.
+ * @returns tag/skip lines for that turn (exact literal block lines included).
+ */
+export function composeTurnAssertionLines(
+  options: ComposeOptions, ordinal: number,
+): SourceLine[] {
+  const plan = segmentPlan(options);
+  if (ordinal === 0) {
+    return plan.opening.flatMap(entry => entryLines(entry));
+  }
+  const turn = plan.turns.find(t => t.ordinal === ordinal);
+  return turn ? turn.entries.flatMap(entry => entryLines(entry)) : [];
 }
 
 /**

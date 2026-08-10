@@ -170,11 +170,56 @@ body.ts-active .sharpee-window { display: none; }
   color: var(--ts-fg);
   border-color: var(--ts-fg-faint);
 }
+/* The turn's assertions (David 2026-08-09): the transcript's own lines,
+   under the prose, above the action row, behind their own rule line. */
+.ts-asserts {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ts-border);
+}
+.ts-assert-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  /* Assertions read green (David 2026-08-09, per the mock) — the same
+     token the run column's PASS badge wears. [SKIP] and literal block
+     lines stay faint below. */
+  color: var(--ts-assert);
+  padding: 1px 0;
+}
+.ts-assert-line .ts-assert-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ts-assert-skip .ts-assert-text,
+.ts-assert-block .ts-assert-text { color: var(--ts-fg-faint); }
+.ts-assert-delete {
+  visibility: hidden;
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.ts-assert-line:hover .ts-assert-delete { visibility: visible; }
+.ts-assert-delete:hover { color: var(--ts-fail); }
+
+/* The client's input bar rides in the surface's chrome — a dark story
+   theme paints its prompt (and typed text) white, which vanishes on the
+   surface's light background (David 2026-08-09). The surface owns the
+   row's legibility. */
+.ts-input-row .sharpee-input-prompt { color: var(--ts-accent); }
+.ts-input-row #command-input {
+  color: var(--ts-fg);
+  caret-color: var(--ts-fg);
+}
+
 .ts-actions {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid var(--ts-border);
   display: flex;
+  flex-wrap: wrap;   /* the inline prompt takes its own full-width row */
   gap: 6px;
 }
 .ts-actions button { background: transparent; border-radius: 4px; padding: 2px 8px; }
@@ -236,8 +281,10 @@ body.ts-active .sharpee-window { display: none; }
   border-color: var(--ts-accent);
 }
 .ts-actions input {
-  flex: 1;
-  min-width: 120px;
+  /* A full row of its own (the parent wraps) — the placeholder must never
+     clip against the sibling buttons (David 2026-08-09). */
+  flex: 1 1 100%;
+  min-width: 200px;
   font: 11px ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--ts-fg);
   background: var(--ts-play-bg);

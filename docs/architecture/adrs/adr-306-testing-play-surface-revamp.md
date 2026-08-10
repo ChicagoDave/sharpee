@@ -94,259 +94,100 @@ files unflipped before Phase 6 lands is looking at correct state, not an omissio
 > 6. **A changed suite voids run results** — any write/remove/rename to the
 >    tree on disk resets the run column to not-run.
 
-> **Phase 6 landed** (2026-08-09, session fdfe6a, David's per-file confirmation):
-> the golden pair is retired on both sides — branch-tester's `golden.ts`, golden
-> tier, `--bless`/`--bless-file` (cli + devkit), watch bless flow, rename's
-> golden/divergence carry; the tab's Record golden…/restore affordances, R6
-> review, tier facts, and Swift bless plumbing. No author-world `.golden` files
-> existed on disk, so machinery only. The wire's golden-divergence `diff?` left
-> `CommandResultEvent` and an additive `failure?` (first failed assertion's
-> message, populated by the runner) replaced it — the run column's one-line
-> failure source. `transcript-tester`'s frozen copy verified untouched. The run
-> column shipped per design §7 over the same NDJSON stream the tab decodes.
-
-### D2 — 6f's platform substrate is kept unchanged; it is the foundation
-
-Carried verbatim from design doc §9:
-
-- The turn feed (`turnEvents`: ordinal, command, engine-composed output, structured
-  captures; restart fences) and the `data-turn` anchor contract.
-- `IDE_PLAY_SEED` determinism; capture parity with the headless runner (boot-look
-  alignment included).
-- The synthesis module (`@sharpee/branch-tester` `auto-assertion.ts`) and
-  `createTranscriptFromPlay` / `sharpee transcript-from-play` — the one code path
-  everything above serializes through (rule 8b; ADR-305 D5 as built).
-- The 6e `auto-assertion:` policy as the source of default claims.
-- ADR-302's tree (`continues:`, stem renames, `sharpee test --tree`) as the at-rest
-  representation of everything this surface produces — now carrying the **whole**
-  regression burden (D3).
-
-No phase of the revamp may reimplement any of these; they are imported, not copied.
-
-### D3 — ADR-294 D1 is scoped: goldens live only in the frozen transcript-tester world
-
-The author world (branch-tester, Chord stories, the IDE) has **no golden tier**: no
-`.golden` recordings, no bless step, no privileged walkthrough spine. The regression
-baseline is **the tree passing** — root to every leaf, at the pinned seed. What the
-golden tier provided, the tree provides in place (design doc §8): byte-level pinning
-is per-turn opt-in (`all-emitted-text` policy or the Exact gesture — `[OK]` +
-literal block); re-bless after intended change is re-authoring (prune, replay,
-resynthesize); coverage is the tree's shape.
-
-ADR-294 D1 ("golden transcripts are the regression baseline") **stays true where it
-lives**: the frozen transcript-tester world — Dungeo's walkthrough goldens,
-deliberately an outlier and deliberately untouched (ADR-302 D9/D12/D15). The edit to
-ADR-294's own file recording this scoping lands with the Phase 6 retirements, per
-D1's flip timing; until then this ADR is the record.
-
-Consequence carried with it: branch-tester's copied golden machinery (`golden.ts`,
-the recording format) and the Testing tab's "Record golden…" button retire at
-Phase 6. `transcript-tester`'s frozen copy is untouched — the freeze (ADR-302 D15)
-covers it, and Dungeo's harness keeping passing is Dungeo's only claim on the
-platform.
-
-### D4 — The post-revamp Testing tab boundary
-
-*(ADR-301 left "the editing interaction" as its next decision; ADR-305 decided the
-creation half. This decides the rest of the boundary. Defaults below are
-Claude-proposed under David's fold-with-defaults pattern — flagged for veto.)*
-
-The split is **authoring vs reading**:
-
-- **The testing play surface authors.** Cards, segments, gesture-authored
-  assertions, the source panel as the editor, branching, auto-name/auto-save, and
-  the minimal run column ("do my transcripts still pass?" — Run button, PASS/FAIL
-  row per transcript, first failure on one line, tally; design doc §7). ADR-301's
-  "next decision" — the editing interaction — is hereby decided: editing lives
-  here, and the surviving ADR-299 ideas it listed (card per turn, contains by
-  selection, visible generated source) shipped in this design.
-- **The Testing tab reads.** The suite-level view of the whole tree: ADR-301
-  D2/D3/D4 (Miller columns, List, Documents, no self-switching) stand unchanged;
-  per-node results, unreached cascades, document open with `file:line`
-  click-through. The tab never edits a transcript's assertions — an author who
-  wants to change a test plays it in the testing surface.
-- **Rename** lives in the Testing tab, as the escape hatch from auto-naming
-  (design doc §4): executed through ADR-302 D14's atomic harness rename, and a
-  hand-renamed file stops auto-renaming.
-- **Runner**: both surfaces trigger runs over the same harness
-  (`sharpee test --tree`); the tab remains the full-suite reader with per-node
-  depth, the run column stays deliberately minimal and never grows toward the
-  tab's feature set ("this column is not a copy of the IDE's testing UI, by
-  ruling" — design doc §7).
-- **Diff and golden depth**: with no author-world goldens (D3) there is no golden
-  diff surface and no bless affordance anywhere in the author world. Failure
-  detail is assertion-failure lines. Re-bless (ADR-282 D2's lifecycle, dormant
-  since ADR-301 A1.2) is not rebuilt — its replacement is re-authoring in the
-  testing surface.
-
-### D5 — ADR-301 D5 is scoped to the batch explorer; play-to-goal adopts nothing
-
-ADR-301 D5 ("explorer findings are adopted as documents — Accept commits, Discard
-deletes; that is the whole interaction") **continues to govern the batch explorer**
-(ADR-294 D20) — machine-proposed transcript files, produced offline, reviewed as
-documents. It is not superseded.
-
-**Play to a goal (design doc §12) is not that feature and creates no second
-adoption path.** It is an interactive affordance: the found path is re-proven by
-one fresh-boot replay and then *played into the live surface* as ordinary feed
-turns — cards the author can range into a test like any turns they typed. There is
-no proposed file to accept or discard; nothing lands in `tests/` until the author
-ranges it, exactly as with hand-played turns. The rule that keeps the two features
-distinct: **goal search never emits proposed transcript files, and the batch
-explorer never injects turns into a live play session.**
-
-### D6 — The State picker is one searchable list with a Grouped toggle
-
-(David's ruling, 2026-08-09, session 2b82b5, from the side-by-side mock
-`docs/work/testing/mock-state-picker.html`.) The picker is a flat,
-type-to-filter list of the world digest's facts, with a **Grouped** toggle that
-folds the same list into kind sections (NPC locations / items / score / state
-machines). Both shapes over one list — not two pickers. Grouping is
-presentation only: the digest already carries each fact's kind, so the toggle
-costs no wire or digest change. Grouped sections are **collapsible** (chevron on
-the header; a live filter auto-expands every group — a hit never hides inside a
-folded section). The toggle's default state and persistence are Phase 4
-implementation detail. Scale is measured against Chord stories; Dungeo
-is never the yardstick (design doc §8, ADR-302 D9).
-
-### D7 — Meta commands under branch replay: ADR-305 D3 extends unchanged, and lineage stickiness applies to saves
-
-(David's ruling, 2026-08-09, session 2b82b5.) Branch replay carries meta
-commands exactly as the linear case does: restart is the only fence (and can
-never appear in a fork prefix by construction — the fence resets the log
-origin, so no transcript ever contains it), and `save`, `restore`, `undo`,
-`verbose`, and the rest are ordinary commands, made self-contained by the
-storage-clean fresh boot plus full-ancestry re-execution (ADR-302 D17).
-
-The premise this rides — restart never appears in any transcript because the
-fence resets the log origin before creation can see pre-restart turns — is
-pinned, not assumed: the platform-browser turn-feed suite covers the restart
-fence directly (10 turn-feed tests incl. fence behavior; 131 passing, run
-2026-08-09, corroborated in the session event log at 04:46:14Z after the last
-edit to those files — ADR-305 "As built" evidence).
-
-The rule that makes forks safe with zero new machinery: **a restore reaches
-only saves made in its own ancestry.** A save in the shared prefix is re-made
-during every sibling's replay, so restores of it work in every branch. A
-restore in branch B of a save made only in sibling A's turns fails
-deterministically and visibly ("no such save") — an ordinary test failure the
-author reads, not something the surface warns about or refuses. Rejected: a
-soft warning at Branch… (Phase 5 UI for a rare, already-visible case) and hard
-refusal of forks that separate a save from its restore (forbids legitimate
-forks).
-
-### D8 — The testing page's complete state is managed and restored on reopen
-
-(David's ruling, 2026-08-09, session 2b82b5 — rejecting files-only
-persistence.) The surface owns its **complete session state** and restores it
-on reopen: the session's command log (with restart fences), segment structure
-including an open range, fork structure and the selected lineage, and view
-ephemera (collapsed summaries, fold states). An author who closes the project
-mid-session reopens to the page as they left it.
-
-Two lines hold the shape honest:
-
-- **`tests/` remains the only durable test artifact.** The persisted session
-  state is view/session truth, never test truth — it carries no assertions and
-  no transcript content, so there is no second copy of anything a runner
-  reads and no drift class against the tree (ADR-302 D4 is unbreached: the
-  tree is still derived from files alone).
-- **The played turns restore by replay, not by cached prose.** Determinism at
-  `IDE_PLAY_SEED` (ADR-305 D1) makes reconstruction exact: fresh boot of what
-  ⌘B built, replay the logged commands, and the cards are re-fed through the
-  live turn feed — so "every load is a fresh boot" stays true, and if the
-  story was rebuilt since, the cards show the *current* story's real output,
-  never a stale snapshot. The determinism premise is pinned, not assumed: the
-  capture-parity suite byte-compares play records against the headless runner
-  with boot-turn alignment (green in the platform-browser 131-test run,
-  2026-08-09, event log 04:46:14Z — ADR-305 "As built" evidence).
-- **A sidecar never blocks reopen.** An unreadable, corrupt, or
-  version-mismatched session sidecar (e.g. after an IDE update) is discarded
-  and the page rebuilds from `tests/` alone — files-only is the *degraded
-  mode*, never an error. The durable product is always intact under this
-  rule, because the sidecar carries no test truth.
-
-Storage location and format (per-story, IDE-side) are Phase 3/5 implementation
-detail; what is decided is that complete restore is a requirement, not an
-enhancement.
-
-### D9 — Editor documents auto-reload when clean, conflict-guard when dirty
-
-(David's ruling, 2026-08-09, session 2b82b5.) One rule for every tool-written
-file — the auto-save writer, restructure renames, and 6e policy-writing runs
-alike (this closes the "editor pane doesn't auto-refresh during policy-writing
-runs" loose thread from session 20260808-2200): the editor watches its open
-documents; an external change to a buffer with **no unsaved user edits reloads
-it silently** (cursor and scroll preserved where the content allows). A
-**dirty** buffer whose file changes underneath is never resolved silently in
-either direction — the document is badged and the author chooses. This removes
-the one data-loss path the auto-save design otherwise had (saving a stale
-buffer over what the testing surface just wrote). Rejected: badge-only (the
-badge is effectively always on under continuous auto-save) and read-only
-`tests/` files during a live session (blocks legitimate hand edits).
-
-## Consequences
-
-- Phases 2–7 of the revamp plan build against this record; the design doc stays the
-  surface spec and the mock the acceptance reference.
-- ADR-304 D3/D4 (web-view reparenting, editor-state restore) become moot when the
-  workspace retires — they are invariants of a layout that will no longer exist;
-  nothing else depends on them.
-- ADR-305 loses its D4-margin/D6-save-panel UI but keeps every platform decision
-  (D1 seed, D2 selection-as-assertion semantics — now expressed by ranges +
-  pruning, D3 restart fence, the anchor contract, D5 synthesis). The `[SKIP]`
-  demote-on-prune rule is 6e's grammar doing the same job under a new gesture.
-- The Testing tab's surface area shrinks by ruling ("Record golden…" goes) and its
-  role sharpens to reading + rename + adoption. Anything deeper proposed for the
-  run column should be rejected by citing D4.
-- The author-world golden retirement means ADR-294's D13–D16 coverage/watch
-  intelligence, where it lands for the author world, computes over assertion
-  transcripts and the tree — not over recordings. (Dungeo's golden world keeps its
-  own machinery, frozen.)
-- Chord Writer sizing questions (state picker and anything author-facing) are
-  measured against Chord stories; Dungeo is never the yardstick (design doc §8,
-  ADR-302 D9).
-
-## Acceptance
-
-Phase-level test lists live in the plan; these are the ADR-level criteria the
-revamp as a whole must meet:
-
-- **AC-1 (D8, E2E)** — play a session, range a segment, fork a branch, collapse
-  a summary, close the project, reopen: the page restores completely — cards
-  re-fed by replay at `IDE_PLAY_SEED`, segments/forks/selected lineage/fold
-  states as left. SELF-VERIFYING.
-- **AC-2 (D8, degraded mode)** — with the session sidecar deliberately
-  corrupted, reopen succeeds: the tree renders from `tests/` alone, no error
-  dialog, and the sidecar is replaced on the next session write. SELF-VERIFYING.
-- **AC-3 (D9, both sides)** — a clean editor buffer reloads silently when the
-  auto-save writer rewrites its file; a dirty buffer is badged and neither side
-  is clobbered until the author chooses. Asserted on buffer and file content,
-  not on the badge alone. SELF-VERIFYING.
-- **AC-4 (D7, rejection)** — a transcript whose `restore` names a save made
-  only in a sibling lineage fails its run deterministically with the engine's
-  own "no such save" outcome, reported as an ordinary assertion failure — the
-  surface neither warns at Branch… nor refuses the fork. SELF-VERIFYING.
-- **AC-5 (D6)** — at a synthetic large-story digest, the picker filters, groups,
-  folds, and auto-expands folded groups on filter input; every written line is
-  a picker-sourced `[STATE:]` claim (free text is unreachable by construction).
-  SELF-VERIFYING.
-- **AC-6 (D1/D3, retirement safety)** — after Phase 6's retirements land,
-  `transcript-tester`'s own suite and the Dungeo golden world are byte-for-byte
-  unaffected (its suite green, no file under `packages/transcript-tester`
-  touched by the retirement commits). SELF-VERIFYING.
-
-## Session
-
-Written 2026-08-09, session 2b82b5, as Phase 1 of
-`docs/work/testing/plan-20260809-testing-surface-revamp.md`, from the settled design
-of session 1dd6d3. D4's boundary defaults and D5's scoping rule are Claude-proposed
-and David-vetoable; D1–D3 record rulings David already made in the design session
-(the §9 lists and the §8 capstone verbatim). Plan-review (2026-08-09, this session)
-contributed three advisories, all folded: D1's flip timing, the editor-refresh
-question (now D9), and D5. All four Open Questions were resolved by interview the
-same day (session 2b82b5): D6 (state picker — one list, Grouped toggle, collapsible
-sections, ruled from `mock-state-picker.html`), D7 (meta commands under branch
-replay — D3 extends unchanged, lineage-sticky saves), D8 (complete testing-page
-state restored on reopen — David rejecting files-only persistence), D9 (auto-reload
-clean buffers, conflict-guard dirty ones).
+> **Click-through round 4** (2026-08-09, session fb4281, David's issue list —
+> these supersede ruling 3 and design §3 where they conflict):
+> 7. **Assertions render inside each turn card** — the transcript's own tag
+>    lines, under the prose, above the action buttons, behind their own rule
+>    line. Each line carries a hover ✕ that deletes through the model's
+>    mutators (the DeleteRef machinery the retired source column left
+>    behind) — claim removal has its surface affordance again, superseding
+>    ruling 3's "no affordance yet".
+> 8. **A range is a file from its first tick.** "Every click has to update
+>    the transcripts." Design §3's "an open range isn't a file yet" is
+>    superseded: ticking the opening (or any turn) writes `tests/<stem>.transcript`
+>    immediately; the open range's file GROWS as turns play (extent = its
+>    lineage's latest turn, stopping short of a neighbouring segment), and
+>    its auto-name grows with it (rename-with-cascade as before). Closing
+>    just stops the growth; reopening resumes it — the file never leaves
+>    disk for being open. Claims authored mid-extent no longer close the
+>    range. Open recordings rehydrate from their files on reopen and show
+>    in the run column ("recording…").
+> 9. **Window and pane geometry is session state.** The main window's frame
+>    and the project/play pane widths live in `SessionState` (one writer,
+>    `persistSession`, guarded by the launch invariant) — AppKit frame
+>    autosave and the loose width keys are retired.
+> 10. **The landing page is skippable by preference.** Settings gains
+>    "Reopen last story at launch": launch opens the persisted session's
+>    project directly when it is still a story project on disk, falling
+>    back to the landing page otherwise.
+> 11. **The persisted session is the session the suite describes.** "If I
+>    unclick all the commands and delete the transcript files, the testing
+>    tab should start empty except for the opening." The sidecar's snapshot
+>    trims each lineage's commands to what its segments (an open range to
+>    its extent) and surviving branches' fork points need; segmentless
+>    branches drop whole (persisted active falls back to the root). Unticked
+>    play is ephemeral — untick everything and reopen is a fresh boot
+>    (opening + boot look). And on reopen, a restored segment whose
+>    `tests/` file left the disk dissolves instead of being re-written from
+>    defaults: the files are the truth, a hand-delete never resurrects.
+>    The scoping applies on READ as well as write (David's follow-up:
+>    "commands are still showing") — a sidecar written before the trim, or
+>    by anything else, is scoped to its own segments before replay, so a
+>    stale sidecar's unticked commands never type back in.
+> 12. **The surface synthesizes assertions by default.** A story with no
+>    `auto-assertion:` header line gets the surface's default policy
+>    (`room-name-and-description`) instead of 6e's synthesize-nothing —
+>    David's "not working" on fernhill was a policy-less story faithfully
+>    showing [SKIP] everywhere. An explicit header line still wins, and ⌘B
+>    re-reads it into a live surface (it used to stay bind-time stale).
+>    Runner semantics are untouched: files carry explicit tags either way;
+>    the absent-line "let me decide" meaning now applies to the runner's
+>    bare-command handling only, not to the authoring surface's synthesis.
+>    The opening card lists a default too — its first prose line (the
+>    banner's story title), same withholding rules as turn defaults.
+> 13. **Branch stays available while recording.** Forking required a CLOSED
+>    range, and ruling 8's growing-recording flow never closes one — the
+>    Branch… gesture silently regressed out ("why did you remove branch?").
+>    `fork` now accepts any covered point (`coveringSegment` — exact hit or
+>    open-extent coverage): the auto-split closes the shared prefix and the
+>    recording continues OPEN past the fork point; the branch lands as its
+>    own closed single-turn segment as before.
+> 14. **Branch runs FROM the card, not instead of it.** The gesture on card
+>    N previously forked AT N (the alternate replaced N's own command — one
+>    turn earlier than the state the author is looking at; "branch selects
+>    the wrong card"). The card's fork point is now the NEXT turn on the
+>    active path (`forkPointAfter`); the path's tip offers no Branch —
+>    typing continues the recording there. Model `fork(n)` semantics are
+>    unchanged; only the gesture mapping moved. The inline Branch prompt
+>    also takes a full-width row of its own (the placeholder clipped
+>    against the sibling buttons).
+> 15. **Forking never auto-collapses.** The auto-split used to fold the
+>    shared prefix into its summary card, so branching made the cards
+>    before the fork vanish — and a selected branch showed only its own
+>    turn ("I don't see its card in full"). The prefix now stays expanded;
+>    Collapse is a manual gesture only. The auto-split structure itself is
+>    unchanged (the prefix still becomes the parent transcript on disk).
+> 16. **Opening claims are runnable, and opening transcripts are named for
+>    the opening.** David's run failed `(opening): Output does not contain
+>    "Story v0.3.0"` while the claims were correct — three platform gaps,
+>    all fixed: (a) the runner evaluated opening assertions against the
+>    EMPTY STRING — it now reads everything the player saw through the
+>    first command (boot channel captures + the command's output, with
+>    banner-style JSON values flattened to their rendered strings);
+>    (b) `banner`/`prologue` were captured only when a transcript declared
+>    them — bootstrap now always captures the opening's channels (the same
+>    invisible-union pattern as the policy channels); (c) boot-time
+>    captures were wiped by the first command's buffer reset — bootstrap
+>    snapshots them once as `bootChannelValues`. Packages touched:
+>    bootstrap + branch-tester (flagged; David's live report was the
+>    direction). And a transcript that begins at the opening is named
+>    `opening-<first room>` — stable as the recording grows, no rename
+>    churn.
+> 17. **Sequential ticks extend ONE transcript; `continues:` is for branch
+>    starts only.** Ticking a card after a closed same-lineage range grows
+>    that range's end (the file renames — "the transcripts are renamed when
+>    sequential cards are checked") instead of starting a continuation
+>    file. Fork points make the only boundaries: the auto-split prefix and
+>    each sibling keep their `continues:` headers; a non-fork sequential
+>    pair can no longer be created (one lineage, one transcript —
+>    chaptering was already ruled out with Split/Merge ↑, ruling 4).

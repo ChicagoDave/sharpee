@@ -28,11 +28,14 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import {
+  proseTextLinesOf, synthesizePolicyAssertions,
+} from '@sharpee/branch-tester/auto-assertion';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { CardsView } from './cards';
 import {
-  composeSegmentTranscript, rehydrateSegmentClaims, type TurnSource,
+  composeSegmentTranscript, composeTurnAssertionLines, rehydrateSegmentClaims,
+  type DeleteRef, type TurnSource,
 } from './compose';
 import {
   SessionModel, type AuthoringMemento, type Segment, type SessionSnapshot,
@@ -128,6 +131,71 @@ let replayActive = false;
 let driverBusy = false;
 /** The outcome key armed for the command currently being typed. */
 let armedOutcomeKey: string | null = null;
+
+/** The segment whose transcript walk covers `ordinal` — the model's
+ *  extent-aware coverage (a mid-recording turn is part of the recording). */
+function segmentCovering(ordinal: number): Segment | undefined {
+  return model.coveringSegment(ordinal);
+}
+
+/** The opening's default contains-fragment (David 2026-08-09: the opening
+ *  card lists a default too): the first text line of the opening card's own
+ *  prose — the story banner's title in the real client. */
+function openingText(): string | undefined {
+  const prose = document.querySelector('[data-ts-ordinal="0"] .ts-prose');
+  for (const child of prose ? [...prose.children] : []) {
+    const text = child.textContent?.trim();
+    if (text) return text;
+  }
+  return undefined;
+}
+
+/** The one ComposeOptions builder — every compose, re-hydrate, and card
+ *  render must agree on the same inputs, or rehydration would mis-read its
+ *  own files as diverged. */
+function composeOptionsFor(segment: Segment) {
+  return {
+    model, segment, policy, seed: 42, source: turnSource,
+    ...(openingText() !== undefined ? { openingText: openingText() } : {}),
+  };
+}
+
+/** The card's assertion list (David's ruling 2026-08-09): the turn's lines
+ *  exactly as its transcript carries them, or none outside any range. */
+function assertionLinesFor(ordinal: number) {
+  const segment = segmentCovering(ordinal);
+  if (!segment) return [];
+  return composeTurnAssertionLines(composeOptionsFor(segment), ordinal);
+}
+
+/** The policy's contains-fragments for a turn — removeDefault's narrowing
+ *  base when a non-contains default line is deleted whole. */
+function containsDefaultsOf(ordinal: number): string[] {
+  const src = turnSource(ordinal);
+  if (!policy || !src) return [];
+  return synthesizePolicyAssertions(policy, src.output, src.channelValues)
+    .filter(a => a.type === 'ok-contains' && a.value !== undefined)
+    .map(a => a.value as string);
+}
+
+/** Maps a rendered line's DeleteRef onto the model mutator it names —
+ *  deletion semantics live in the model, never re-derived here. */
+function removeAssertion(del: DeleteRef): void {
+  switch (del.kind) {
+    case 'default':
+      model.removeDefault(del.ordinal, del.index, del.defaults);
+      break;
+    case 'defaultWhole':
+      model.removeDefault(del.ordinal, -1, containsDefaultsOf(del.ordinal));
+      break;
+    case 'contains': model.removeContains(del.ordinal, del.index); break;
+    case 'notContains': model.removeNotContains(del.ordinal, del.index); break;
+    case 'state': model.removeState(del.ordinal, del.index); break;
+    case 'event': model.removeEvent(del.ordinal, del.index); break;
+    case 'channel': model.removeChannel(del.ordinal, del.index); break;
+    case 'exact': model.setExact(del.ordinal, false); break;
+  }
+}
 
 /** Per-ordinal synthesis source for compose (ADR-306 D2). */
 function turnSource(ordinal: number): TurnSource | undefined {
@@ -293,6 +361,13 @@ const cards = new CardsView(model, {
     postToBridge({ run: true });
   },
   runColumn: () => runState,
+  assertionLines: assertionLinesFor,
+  onRemoveAssertion(del) {
+    pushUndo();
+    touchSegmentAt(del.ordinal);
+    removeAssertion(del);
+    update();
+  },
 });
 
 // ── the run column (design §7): fold the relayed NDJSON stream ────────────
@@ -345,7 +420,7 @@ const detached = new Set<Segment>();
 
 /** An authoring gesture on a segment re-attaches its file to the writer. */
 function touchSegmentAt(ordinal: number): void {
-  const segment = model.segmentOf(ordinal);
+  const segment = segmentCovering(ordinal);
   if (segment) detached.delete(segment);
 }
 
@@ -360,13 +435,15 @@ function postToBridge(payload: Record<string, unknown>): void {
 }
 
 /**
- * Mirrors the session onto disk: every CLOSED segment writes immediately and
- * rewrites on every edit; a restructure that renames posts `previousName` so
- * the Swift side deletes the old file and cascades children's `continues:`;
- * a segment the author removed (untick, merge) removes its file. An open
- * range is not a file yet (design §3) and a fence only forgets tracking —
- * files already in `tests/` are durable artifacts, never deleted by a
- * restart (ADR-305 D3 fences the SESSION, not the suite).
+ * Mirrors the session onto disk: EVERY segment — open ranges included — is a
+ * file from its first tick (David's ruling 2026-08-09: every gesture lands
+ * in `tests/` immediately; an open recording's file grows as the author
+ * plays). Every edit rewrites; a restructure that renames posts
+ * `previousName` so the Swift side deletes the old file and cascades
+ * children's `continues:`; a segment the author removed (untick, merge)
+ * removes its file. A fence only forgets tracking — files already in
+ * `tests/` are durable artifacts, never deleted by a restart (ADR-305 D3
+ * fences the SESSION, not the suite).
  */
 function syncWrites(): boolean {
   let changed = false;
@@ -382,19 +459,7 @@ function syncWrites(): boolean {
   }
   for (const segment of model.segments) {
     if (detached.has(segment)) continue;
-    if (segment.end === null) {
-      const last = written.get(segment);
-      if (last) {
-        // A reopened range is no longer a complete file — take it back.
-        written.delete(segment);
-        postToBridge({ remove: { name: last.name } });
-        changed = true;
-      }
-      continue;
-    }
-    const { title, text } = composeSegmentTranscript({
-      model, segment, policy, seed: 42, source: turnSource,
-    });
+    const { title, text } = composeSegmentTranscript(composeOptionsFor(segment));
     const last = written.get(segment);
     if (last && last.name === title && last.text === text) continue;
     const payload: Record<string, unknown> = { write: { name: title, text } };
@@ -675,12 +740,17 @@ function ancestryStepsBefore(n: number): ReplayStep[] {
     });
 }
 
-/** Branch… (design §6): fork the model, then boot the branch live. */
+/** Branch… (design §6): the card's gesture means "try a different command
+ *  FROM this state" (David 2026-08-09) — the fork point is the NEXT turn on
+ *  the active path, whose command the alternate replaces. Fork the model,
+ *  then boot the branch live. */
 async function performBranch(ordinal: number, command: string): Promise<void> {
   if (replayActive) return;
+  const at = model.forkPointAfter(ordinal);
+  if (at === undefined) return;
   clearUndo();
-  const ancestry = ancestryStepsBefore(ordinal);
-  const id = model.fork(ordinal, command);
+  const ancestry = ancestryStepsBefore(at);
+  const id = model.fork(at, command);
   if (id === null) return;
   update();                     // the pending chip shows immediately
   await driveFreshBoot(id, ancestry, [{ command, key: '' }]);
@@ -767,6 +837,55 @@ function isComposite(value: unknown): value is CompositeState {
 }
 
 /**
+ * Scopes a persisted snapshot to its own suite BEFORE replay (ADR-306
+ * ruling 11 applies on read as well as write): per lineage, only the turns
+ * its segments reach (an open range keeps its whole recording), its skips,
+ * and surviving children's fork points replay; segmentless branches drop
+ * whole. A sidecar written before the write-side trim — or by anything
+ * else — must not type unticked commands back into a reopened session.
+ */
+function scopeSnapshotToSuite(snap: SessionSnapshot): SessionSnapshot {
+  const surviving = new Set<number>([1]);
+  for (;;) {
+    const before = surviving.size;
+    for (const lineage of snap.lineages) {
+      if (surviving.has(lineage.id)) continue;
+      const hasOwn = (snap.segments ?? []).some(s => s.lineage === lineage.id)
+        || lineage.pendingCommand !== undefined;
+      const hasHeir = snap.lineages.some(l =>
+        l.parentId === lineage.id && surviving.has(l.id));
+      if (hasOwn || hasHeir) surviving.add(lineage.id);
+    }
+    if (surviving.size === before) break;
+  }
+  const neededOf = (lineage: SessionSnapshot['lineages'][number]): number => {
+    let needed = 0;
+    for (const s of snap.segments ?? []) {
+      if (s.lineage !== lineage.id) continue;
+      if (s.endPos === null || s.endPos === undefined) return lineage.turns.length;
+      needed = Math.max(needed, s.endPos);
+    }
+    for (const skip of snap.skipped ?? []) {
+      if (skip.lineage === lineage.id) needed = Math.max(needed, skip.pos);
+    }
+    for (const child of snap.lineages) {
+      if (child.parentId === lineage.id && surviving.has(child.id)
+          && child.forkAtPos !== undefined) {
+        needed = Math.max(needed, child.forkAtPos);
+      }
+    }
+    return needed;
+  };
+  return {
+    ...snap,
+    lineages: snap.lineages
+      .filter(lineage => surviving.has(lineage.id))
+      .map(lineage => ({ ...lineage, turns: lineage.turns.slice(0, neededOf(lineage)) })),
+    active: surviving.has(snap.active) ? snap.active : 1,
+  };
+}
+
+/**
  * Restores the whole session by replay (D8): root lineage first, branch
  * lineages in id order, and the snapshot's active lineage replayed last so
  * it ends up live; then structure re-applies through the position→ordinal
@@ -777,7 +896,7 @@ async function restoreComposite(
   composite: CompositeState,
   files: Record<string, string>,
 ): Promise<void> {
-  const snap = composite.model;
+  const snap = scopeSnapshotToSuite(composite.model);
   dialogOutcomes = new Map(composite.dialogs ?? []);
 
   driverBusy = true;
@@ -835,8 +954,10 @@ async function restoreComposite(
     activeSegment = model.openSegment()
       ?? model.segments[model.segments.length - 1] ?? null;
 
-    // Closed segments' claims live in their files — parse them back
-    // (Phase 5: reopening must never rewrite authored claims away).
+    // Segments' claims live in their files — parse them back (Phase 5:
+    // reopening must never rewrite authored claims away). Open ranges
+    // rehydrate too: they are files from their first tick, and the replay
+    // reproduced exactly the turns their file was last written over.
     for (const [key, stem] of Object.entries(composite.stems ?? {})) {
       const [lineageText, posText] = key.split(':');
       const start = Number(posText) === 0
@@ -844,12 +965,16 @@ async function restoreComposite(
         : ordinalByPos.get(`${Number(lineageText)}:${Number(posText)}`);
       if (start === undefined) continue;
       const segment = model.segmentOf(start);
-      if (!segment || segment.start !== start || segment.end === null) continue;
+      if (!segment || segment.start !== start) continue;
       const fileText = files[stem];
-      if (typeof fileText !== 'string') continue;
-      const result = rehydrateSegmentClaims({
-        model, segment, policy, seed: 42, source: turnSource,
-      }, fileText);
+      if (typeof fileText !== 'string') {
+        // The recorded file left the disk (David's ruling 2026-08-09: the
+        // files are the truth) — the segment goes with it, never re-written
+        // from defaults over the author's deliberate delete.
+        model.untick(segment.start);
+        continue;
+      }
+      const result = rehydrateSegmentClaims(composeOptionsFor(segment), fileText);
       if (result === 'attached') {
         written.set(segment, { name: stem, text: fileText });
       } else {

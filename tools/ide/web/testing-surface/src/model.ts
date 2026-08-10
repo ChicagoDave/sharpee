@@ -24,8 +24,9 @@
  *     restore caller supplies the mapping.
  *
  * Public interface: SessionModel (addTurn, fence, tick, untick, segmentOf,
- *   openSegment, parentOf, setCollapsed, mergeUp, splitAt, isSkipped,
- *   titleOf, snapshot, restore, turns, segments, hasOpening; lineages —
+ *   coveringSegment, openSegment, parentOf, setCollapsed, mergeUp, splitAt,
+ *   isSkipped, titleOf, extentOf, forkPointAfter, snapshot, restore, turns,
+ *   segments, hasOpening; lineages —
  *   fork, registerLineage, activateLineage, activeLineage, lineageInfo,
  *   lineages, lineageOf, pathOf, pathTurns, isTurnVisible,
  *   ancestryCommandsBefore, pathCommandsOf, branchPoints, pendingTitleOf,
@@ -296,16 +297,41 @@ export class SessionModel {
   }
 
   /**
+   * The fork point a card at `n` OFFERS (David 2026-08-09: Branch tries a
+   * different command FROM the state the card shows, not instead of it):
+   * the next turn after `n` on the ACTIVE path — the turn the alternate
+   * replaces. Undefined at the path's tip (typing continues the recording;
+   * there is nothing to preserve as a sibling) and at points `fork` would
+   * refuse (uncovered, collapsed, or nothing shared before them).
+   */
+  forkPointAfter(n: number): number | undefined {
+    const path = this.pathTurns(this.active).filter(t => t.ordinal > 0);
+    const index = n === 0 ? -1 : path.findIndex(t => t.ordinal === n);
+    if (n !== 0 && index < 0) return undefined;
+    const next = path[index + 1]?.ordinal;
+    if (next === undefined) return undefined;
+    const segment = this.coveringSegment(next);
+    if (!segment || segment.collapsed) return undefined;
+    if (segment.start < next) {
+      return this.prevInLineage(segment.lineage, next) === undefined ? undefined : next;
+    }
+    return this.parentOf(segment) === undefined ? undefined : next;
+  }
+
+  /**
    * Forks at ordinal `n` with the typed alternate `command` (design §6):
-   * validates that a CLOSED segment covers the point and something shared
-   * comes before it, auto-splits so the shared prefix becomes the collapsed
-   * parent, registers the branch lineage, and makes it active. The branch
-   * is pending until its replayed turn lands (`addTurn` completes it).
-   * Returns the new lineage id, or null when the point cannot fork.
+   * validates that a segment covers the point — an OPEN recording's growing
+   * extent included (David 2026-08-09: Branch stays available while
+   * recording) — and something shared comes before it, auto-splits so the
+   * shared prefix becomes the collapsed parent (the recording, if open,
+   * continues open past the fork point), registers the branch lineage, and
+   * makes it active. The branch is pending until its replayed turn lands
+   * (`addTurn` completes it). Returns the new lineage id, or null when the
+   * point cannot fork.
    */
   fork(n: number, command: string): number | null {
-    const segment = this.segmentOf(n);
-    if (!segment || segment.end === null) return null;
+    const segment = this.coveringSegment(n);
+    if (!segment) return null;
 
     // Point identity: forking a lineage at its own FIRST turn shares
     // exactly the prefix its own fork shared — the sibling joins THAT
@@ -324,6 +350,9 @@ export class SessionModel {
 
     if (segment.start < n) {
       // Auto-split: the shared prefix becomes the parent of all siblings.
+      // It stays EXPANDED (David 2026-08-09: the cards before a fork — and
+      // under a selected branch — remain fully visible; Collapse is a
+      // manual gesture only).
       const before = this.prevInLineage(segment.lineage, n);
       if (before === undefined) return null;
       const main: Segment = {
@@ -331,13 +360,11 @@ export class SessionModel {
       };
       segment.end = before;
       this.segmentList.push(main);
-      segment.collapsed = true;
     } else {
       // Forking at a segment's own first turn needs an existing parent —
       // a turn with nothing shared before it cannot fork (design §6).
       const parent = this.parentOf(segment);
       if (!parent) return null;
-      if (parent.end !== null) parent.collapsed = true;
     }
 
     const id = Math.max(...this.lineageList.map(l => l.id)) + 1;
@@ -490,9 +517,11 @@ export class SessionModel {
   /**
    * The turns a segment's transcript walks, in path order: everything
    * strictly after its parent segment's end (or the path's beginning) up to
-   * the segment's end — pre-range turns write `[SKIP]`, in-range turns
+   * the segment's extent — pre-range turns write `[SKIP]`, in-range turns
    * carry their claims (compose's iteration source; never ordinal windows,
-   * which would cross lineages).
+   * which would cross lineages). An OPEN range walks to its current extent:
+   * a range is a file from its first tick and the file grows as the author
+   * plays (David's ruling 2026-08-09 — every gesture lands on disk).
    */
   turnsForCompose(s: Segment): TurnMeta[] {
     const path = this.pathTurns(s.lineage).filter(t => t.ordinal > 0);
@@ -500,11 +529,29 @@ export class SessionModel {
     const afterIndex = parent === undefined
       ? -1
       : path.findIndex(t => t.ordinal === this.endOf(parent));
-    // An open range composes only to its start (it isn't a file yet —
-    // design §3; the panel previews the range as ticked, not as it grows).
-    const endIndex = path.findIndex(t => t.ordinal === this.endOf(s));
+    const endIndex = path.findIndex(t => t.ordinal === this.extentOf(s));
     if (endIndex < 0) return [];
     return path.slice(afterIndex + 1, endIndex + 1);
+  }
+
+  /**
+   * The last turn a range currently reaches: a closed range's end; an open
+   * range's latest same-lineage turn after its start, stopping short of the
+   * first turn another segment owns (a growing recording must never swallow
+   * a neighbouring transcript's turns). Falls back to the start itself.
+   */
+  extentOf(s: Segment): number {
+    if (s.end !== null) return s.end;
+    let extent = s.start;
+    for (const turn of this.turnsOfLineage(s.lineage)) {
+      if (turn.ordinal <= s.start) continue;
+      const owner = this.segmentList.find(x =>
+        x !== s && x.lineage === s.lineage &&
+        turn.ordinal >= x.start && turn.ordinal <= this.endOf(x));
+      if (owner) break;
+      extent = turn.ordinal;
+    }
+    return extent;
   }
 
   // ── segments (design §3) ─────────────────────────────────────────────
@@ -513,11 +560,25 @@ export class SessionModel {
   private endOf(s: Segment): number { return s.end ?? s.start; }
 
   /** The segment covering ordinal `n`, if any — same-lineage containment
-   *  only (a segment never spans lineages). */
+   *  only (a segment never spans lineages). An OPEN segment covers only its
+   *  start here (so a later tick still reads as "close here"); use
+   *  {@link coveringSegment} for growing-extent coverage. */
   segmentOf(n: number): Segment | undefined {
     const lineage = n === 0 ? ROOT_LINEAGE : this.lineageOf(n);
     return this.segmentList.find(s =>
       s.lineage === lineage && n >= s.start && n <= this.endOf(s));
+  }
+
+  /** The segment whose transcript walk covers `n`: an exact {@link segmentOf}
+   *  hit, or the open range whose growing extent reaches it — the coverage
+   *  authoring gestures and the cards use (a mid-recording turn IS part of
+   *  the recording). */
+  coveringSegment(n: number): Segment | undefined {
+    const direct = this.segmentOf(n);
+    if (direct) return direct;
+    const lineage = n === 0 ? ROOT_LINEAGE : this.lineageOf(n);
+    return this.segmentList.find(s =>
+      s.lineage === lineage && n >= s.start && n <= this.extentOf(s));
   }
 
   /** The at-most-one open segment (global — one recording at a time). */
@@ -553,6 +614,11 @@ export class SessionModel {
    * Ticks the rail box on ordinal `n` (design §3): starts a segment, extends
    * the open one's start downward, or closes it — never overlapping another
    * segment, and never crossing lineages (a range is one coherent path).
+   * Sequential ticking EXTENDS the same transcript (David 2026-08-09: "the
+   * transcripts are renamed when sequential cards are checked") — a closed
+   * same-lineage segment before `n` grows its end to `n` and the file
+   * renames, unless a fork point stands between: fork-made boundaries are
+   * the only boundaries, and `continues:` belongs to branch starts alone.
    */
   tick(n: number): TickResult {
     if (n !== 0 && !this.turnByOrdinal(n)) return 'noop';
@@ -561,6 +627,19 @@ export class SessionModel {
     const lineage = n === 0 ? ROOT_LINEAGE : (this.lineageOf(n) ?? ROOT_LINEAGE);
     const open = this.openSegment();
     if (!open) {
+      const prev = this.segmentList
+        .filter(s => s.lineage === lineage && s.end !== null && s.end < n)
+        .sort((a, b) => b.end! - a.end!)[0];
+      if (prev) {
+        const forkBetween = this.lineageList.some(l =>
+          l.forkAt !== undefined && this.lineageOf(l.forkAt) === lineage &&
+          l.forkAt > prev.end! && l.forkAt <= n);
+        if (!forkBetween && !this.overlaps(lineage, prev.end! + 1, n, prev)) {
+          prev.end = n;
+          prev.collapsed = false;
+          return 'extended';
+        }
+      }
       this.segmentList.push({ start: n, end: null, collapsed: false, lineage });
       return 'started';
     }
@@ -727,13 +806,15 @@ export class SessionModel {
   /**
    * Authoring a claim INCLUDES the turn (design §5): it joins its segment,
    * extends/closes the open one, or starts a fresh one — and un-demotes a
-   * `[SKIP]`. Returns false for an unknown ordinal (nothing changed).
+   * `[SKIP]`. A turn already inside an open range's growing extent needs no
+   * tick (it is part of the recording; ticking would close the range the
+   * author is still playing). Returns false for an unknown ordinal.
    */
   private includeForAuthoring(n: number): boolean {
     if (n !== 0 && !this.turnByOrdinal(n)) return false;
     if (n === 0 && !this.hasOpening) return false;
     this.skippedSet.delete(n);
-    if (!this.segmentOf(n)) this.tick(n);
+    if (!this.coveringSegment(n)) this.tick(n);
     return true;
   }
 
@@ -843,20 +924,28 @@ export class SessionModel {
   }
 
   private endRoomOf(s: Segment): string {
-    return this.turnByOrdinal(this.endOf(s))?.room ?? 'session';
+    return this.turnByOrdinal(this.extentOf(s))?.room ?? 'session';
   }
 
   /** Played-turn count of the range — the lineage's own turns inside it
-   *  (never ordinal arithmetic: lineage ordinals gap after forks). */
+   *  (never ordinal arithmetic: lineage ordinals gap after forks). An open
+   *  range counts to its extent, so a growing recording's name grows too. */
   private turnCountOf(s: Segment): number {
     const count = this.turnsOfLineage(s.lineage)
-      .filter(t => t.ordinal >= s.start && t.ordinal <= this.endOf(s))
+      .filter(t => t.ordinal >= s.start && t.ordinal <= this.extentOf(s))
       .length;
     return Math.max(1, count);
   }
 
-  /** The route-derived base name, before collision suffixing. */
+  /** The route-derived base name, before collision suffixing. A transcript
+   *  that begins at the OPENING is named for where the story opens —
+   *  `opening-<first room>` (David 2026-08-09) — and the name stays stable
+   *  as the recording grows. */
   private baseTitleOf(s: Segment): string {
+    if (s.start === 0) {
+      const first = this.pathTurns(s.lineage).find(t => t.ordinal > 0);
+      return `opening-${slugify(first?.room ?? 'session')}`;
+    }
     const from = slugify(this.startRoomOf(s));
     const to = slugify(this.endRoomOf(s));
     const count = this.turnCountOf(s);
@@ -889,26 +978,76 @@ export class SessionModel {
     return index < 0 ? undefined : { lineage, pos: index + 1 };
   }
 
+  /** Lineages the persisted session keeps: the root always; a branch only
+   *  while its subtree carries a segment or a pending fork. Branch play
+   *  with no transcript is ephemeral (David's ruling 2026-08-09: the
+   *  session worth restoring is the session the SUITE describes). */
+  private survivingLineages(): Set<number> {
+    const surviving = new Set<number>([ROOT_LINEAGE]);
+    for (;;) {
+      const before = surviving.size;
+      for (const info of this.lineageList) {
+        if (surviving.has(info.id)) continue;
+        const hasOwn = this.segmentList.some(s => s.lineage === info.id)
+          || info.pendingCommand !== undefined;
+        const hasHeir = this.lineageList.some(l =>
+          l.parentId === info.id && surviving.has(l.id));
+        if (hasOwn || hasHeir) surviving.add(info.id);
+      }
+      if (surviving.size === before) break;
+    }
+    return surviving;
+  }
+
+  /** The last own-turn position of lineage `id` the persisted session
+   *  needs: segment coverage (an open range to its extent), plus each
+   *  surviving child's fork point. Turns beyond it are unticked play and
+   *  do not replay on reopen (David's ruling 2026-08-09 — untick
+   *  everything and the tab reopens fresh). */
+  private neededPositions(id: number, surviving: Set<number>): number {
+    let needed = 0;
+    for (const s of this.segmentList) {
+      if (s.lineage !== id) continue;
+      const extent = this.extentOf(s);
+      const at = extent === 0 ? undefined : this.positionOf(extent);
+      if (at) needed = Math.max(needed, at.pos);
+    }
+    for (const info of this.lineageList) {
+      if (info.parentId !== id || !surviving.has(info.id)) continue;
+      if (info.forkAt === undefined) continue;
+      const at = this.positionOf(info.forkAt);
+      if (at) needed = Math.max(needed, at.pos);
+    }
+    return needed;
+  }
+
   /**
    * The persisted view state (ADR-306 D8): the fork tree with each
    * lineage's own commands (restore-by-replay's script), segment structure,
    * and skips — all position-keyed, no assertions, no transcript content.
+   * Scoped to the suite (David's ruling 2026-08-09): each lineage's turns
+   * are trimmed to what its segments and surviving branches need, and
+   * segmentless branches are dropped whole — unticked play never replays.
    */
   snapshot(): SessionSnapshot {
-    const lineages = this.lineageList.map(info => {
-      const entry: SessionSnapshot['lineages'][number] = {
-        id: info.id,
-        turns: this.turnsOfLineage(info.id)
-          .map(t => ({ command: t.command, boot: t.boot })),
-      };
-      if (info.parentId !== undefined) entry.parentId = info.parentId;
-      if (info.forkAt !== undefined) {
-        const at = this.positionOf(info.forkAt);
-        if (at) entry.forkAtPos = at.pos;
-      }
-      if (info.pendingCommand !== undefined) entry.pendingCommand = info.pendingCommand;
-      return entry;
-    });
+    const surviving = this.survivingLineages();
+    const lineages = this.lineageList
+      .filter(info => surviving.has(info.id))
+      .map(info => {
+        const entry: SessionSnapshot['lineages'][number] = {
+          id: info.id,
+          turns: this.turnsOfLineage(info.id)
+            .slice(0, this.neededPositions(info.id, surviving))
+            .map(t => ({ command: t.command, boot: t.boot })),
+        };
+        if (info.parentId !== undefined) entry.parentId = info.parentId;
+        if (info.forkAt !== undefined) {
+          const at = this.positionOf(info.forkAt);
+          if (at) entry.forkAtPos = at.pos;
+        }
+        if (info.pendingCommand !== undefined) entry.pendingCommand = info.pendingCommand;
+        return entry;
+      });
     const segments: SessionSnapshot['segments'] = [];
     for (const s of this.segmentList) {
       const start = this.positionOf(s.start);
@@ -927,7 +1066,14 @@ export class SessionModel {
       const at = this.positionOf(n);
       if (at) skipped.push({ lineage: at.lineage, pos: at.pos });
     }
-    return { lineages, active: this.active, segments, skipped };
+    // The active lineage falls back to the root when the active branch was
+    // dropped — a snapshot must never name a lineage it does not carry.
+    return {
+      lineages,
+      active: surviving.has(this.active) ? this.active : ROOT_LINEAGE,
+      segments,
+      skipped,
+    };
   }
 
   /**

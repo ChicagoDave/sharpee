@@ -85,8 +85,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     }
 
     /// Shows the landing page and wires what it is allowed to do (go-live item 6).
-    /// Launch does NOT reopen the last project — it is offered in the modal
-    /// instead, alongside the other recents.
+    /// Launch does NOT reopen the last project by default — it is offered in
+    /// the modal instead, alongside the other recents. The Settings toggle
+    /// (David, 2026-08-09) flips that: with "Reopen last story at launch" on,
+    /// the coordinator skips the modal and opens the last project directly.
     private func beginLaunchFlow(in controller: MainWindowController) {
         guard let window = controller.window else { return }
         let actions = LaunchCoordinator.Actions(
@@ -97,7 +99,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             })
         let coordinator = LaunchCoordinator(window: window, actions: actions)
         launchCoordinator = coordinator
-        coordinator.begin(lastProject: SessionStateStore.load()?.projectURL)
+        coordinator.begin(lastProject: SessionStateStore.load()?.projectURL,
+                          reopenDirectly: ReopenLastStoryPreference.isEnabled)
     }
 
     /// One `sharpee --version` serves two consumers: ADR-279 D1's status-bar

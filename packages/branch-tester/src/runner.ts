@@ -35,7 +35,7 @@ import {
   WorldEntityRef,
   WorldSnapshot
 } from './types.js';
-import { synthesizePolicyAssertions } from './auto-assertion.js';
+import { proseTextLinesOf, synthesizePolicyAssertions } from './auto-assertion.js';
 import { serializeTranscript } from './serializer.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
@@ -75,6 +75,10 @@ interface GameEngine {
    * be un-flattened, which is why both exist.
    */
   lastChannelValues?: Record<string, unknown[]>;
+  /** Channel values captured during BOOT (banner, prologue) — the opening's
+   *  claims read these; per-command resets never see them (bootstrap D-note,
+   *  David 2026-08-09). */
+  bootChannelValues?: Record<string, unknown[]>;
   world?: WorldModel;
   /**
    * The underlying platform engine. $save/$restore go through its real
@@ -200,10 +204,18 @@ export async function runTranscript(
  *
  * Carries a synthetic command so it prints in sequence with the real ones; the
  * opening is not something anybody typed, and the label says so.
+ *
+ * Prose forms read everything the player saw through the first command: every
+ * channel captured on it (the banner and the prologue travel on their own
+ * channels) plus its main output. They used to check against the empty
+ * string — a plain `[OK: contains]` opening claim could never pass, which
+ * broke the testing surface's opening card (David, 2026-08-09). Channel
+ * forms remain for per-channel precision.
  */
 function openingResult(
   opening: Assertion[],
-  engine: GameEngine
+  engine: GameEngine,
+  firstCommandOutput: string
 ): CommandResult {
   const command: TranscriptCommand = {
     lineNumber: 0,
@@ -212,8 +224,41 @@ function openingResult(
     assertions: opening
   };
 
+  /** Every human-readable string a channel value carries: prose trees via
+   *  the synthesis reader, plus banner-style JSON objects whose string
+   *  properties ARE the rendered lines (title, storyVersion, credits — the
+   *  client emits them verbatim, so a claim quotes them verbatim). */
+  const textOfValue = (value: unknown): string[] => {
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) return value.flatMap(textOfValue);
+    if (value !== null && typeof value === 'object') {
+      if ('content' in (value as Record<string, unknown>)) {
+        return proseTextLinesOf([value]);
+      }
+      return Object.values(value as Record<string, unknown>).flatMap(textOfValue);
+    }
+    return [];
+  };
+  const channelText = [
+    ...Object.values(engine.bootChannelValues ?? {}),
+    ...Object.values(engine.lastChannelValues ?? {}),
+  ]
+    .flatMap((values) => (values ?? []).flatMap(textOfValue))
+    .map((text) => text.trim())
+    .filter((text) => text.length > 0)
+    .join('\n');
+  const openingOutput = [channelText, firstCommandOutput]
+    .filter((text) => text.length > 0)
+    .join('\n');
+
+  // Channel-form opening claims read the boot's captures first — the banner
+  // and prologue channels flush at boot, not inside any command.
+  const openingChannels = {
+    ...(engine.lastChannelValues ?? {}),
+    ...(engine.bootChannelValues ?? {}),
+  };
   const assertionResults = opening.map((assertion) =>
-    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannelValues)
+    checkAssertion(assertion, openingOutput, '', [], engine.world, openingChannels)
   );
   const passed = assertionResults.every((r) => r.passed);
   const firstFailure = assertionResults.find((r) => !r.passed && r.message)?.message;
@@ -481,7 +526,7 @@ async function runAssertion(
     // ahead of the command that flushed them because that is where they read.
     if (!openingChecked) {
       openingChecked = true;
-      record(openingResult(transcript.opening!, engine));
+      record(openingResult(transcript.opening!, engine, result.actualOutput));
     }
 
     record(result);

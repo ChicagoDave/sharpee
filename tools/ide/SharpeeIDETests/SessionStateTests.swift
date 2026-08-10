@@ -158,6 +158,34 @@ final class SessionStateTests: XCTestCase {
         XCTAssertFalse(decoded.playAfterBuild)
     }
 
+    // MARK: - Geometry (David 2026-08-09: window frame + pane widths are IDE state)
+
+    func testGeometryRoundtrips() throws {
+        let original = SessionState(projectURL: URL(fileURLWithPath: "/repo"),
+                                    openDocumentURLs: [],
+                                    activeIndex: nil,
+                                    windowFrame: CGRect(x: 20, y: 40, width: 1500, height: 950),
+                                    projectPaneWidth: 320,
+                                    playPaneWidth: 480)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(SessionState.self, from: data)
+        XCTAssertEqual(decoded.windowFrame, CGRect(x: 20, y: 40, width: 1500, height: 950))
+        XCTAssertEqual(decoded.projectPaneWidth, 320)
+        XCTAssertEqual(decoded.playPaneWidth, 480)
+    }
+
+    func testPayloadWithoutGeometryDecodesNil() throws {
+        // Payloads predating the geometry fields must decode with them absent —
+        // launch then falls back to the default layout.
+        let json = """
+        { "projectURL": "file:///repo/", "openDocumentURLs": [] }
+        """.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(SessionState.self, from: json)
+        XCTAssertNil(decoded.windowFrame)
+        XCTAssertNil(decoded.projectPaneWidth)
+        XCTAssertNil(decoded.playPaneWidth)
+    }
+
     // MARK: - Store load/save/clear
 
     func testLoadReturnsNilWhenNoDataPersisted() {
