@@ -166,16 +166,42 @@ ProjectArtifacts + 3 Swift test files, 4 ADRs, functional-logic doc, plan,
   `presentFixFailure` + wiring, `SpanText` comment,
   `StoryHeaderIFID.insertion` + tests) — confirm-first per CLAUDE.md.
 
+## Ship (evening)
+- **Sharpee 5.0.0**: `tsf version 5.0.0` across 33 packages, plus the trap
+  the last bump hit — `ENGINE_VERSION` and dungeo's stamped constants
+  re-stamped so the publish workflow's `git diff --exit-code` guard passes
+  on its own build output. Chord language stays 3.0.0, Chord Writer 1.0.0;
+  the website reads its badge live from `packages/sharpee/package.json`.
+- **PR #257 merged** (`31ef79b2` → `fe5b4e94`): 168 files, +3,190/−12,369 —
+  the ADR-307 cutover, ADR-309 implementation, and the version bump.
+- **Publish dry run GREEN** (run 31440383661): every package built at
+  5.0.0, stamping guard passed, artifacts built, Validate passed, Publish
+  (dry run) passed, real Publish correctly skipped.
+- **PR #258 merged** (`2f4d91ab` → `87a00365`) — the two items #257 left
+  open, both closed on David's word:
+  - **Quick-fix path retired** (Phase 3's held deletion): ProblemsView's
+    `fixes` registry + button + `fixClicked` + `onFix`, MainWindow's
+    `applyProblemFix`/`presentFixFailure`/wiring,
+    `StoryHeaderIFID.insertion` + `Insertion`. Two fixtures that used the
+    retired diagnostic as sample data retargeted to a generic
+    block-spanning warning. IDE **480 passing, 0 failures** (−12).
+  - **SonarCloud gate cleared**: all three "reliability bugs" were S2871
+    (bare `.sort()`). Sonar's `localeCompare` advice would have been a REAL
+    bug — one sort orders a persisted wire document's keys, the other picks
+    which story a directory resolves to, and locale collation would make
+    both machine-dependent. Fixed with explicit code-unit comparators.
+    **SonarCloud PASS on #258** (it failed on #257).
+
 ## Session Metadata
-- **Status**: IN PROGRESS. ADR-307 plan DONE (all six phases, cutover
-  landed). ADR-309 Phases 1–3 landed the same session, with ONE item held
-  for David: the Swift dead-code deletion. Uncommitted: everything above
-  plus the prior session's carry-overs (`.gitignore`, `project.yml`, prior
-  session/plan edits). Nothing has been committed today.
-- **Open items**: (1) **Swift dead-code deletion** — ADR-309 Phase 3's held
-  item, needs David's yes/no. (2) **`sharpee ifid`** — recommend keeping as
-  a raw generate/validate utility; David's call (the website's install page
-  still lists it, pending that). (3) ADR-308 open-questions interview
+- **Status**: COMPLETE. ADR-307 plan DONE (all six phases). ADR-309 DONE
+  (all three phases + the held deletion). Sharpee 5.0.0 shipped to `main`
+  via PRs #257 and #258; publish dry run green; SonarCloud green on #258.
+  Working tree clean except `scripts/clodpod.sh`, which stays untracked by
+  design.
+- **Open items**: (1) ~~Swift dead-code deletion~~ — DONE in PR #258.
+  (2) **`sharpee ifid`** — recommend keeping as a raw generate/validate
+  utility; David's call (the website's install page still lists it,
+  pending that). (3) ADR-308 open-questions interview
   (re-offer when navigation work starts). (4) Splice gesture chrome still
   unruled (carried). (5) Module projects have no test path post-cutover
   (ADR-307 ruling C consequence). (6) branch-tester's runner still carries
