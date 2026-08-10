@@ -3,12 +3,13 @@
  *
  * Purpose: fold the `sharpee test --tree --json` NDJSON stream (relayed by
  *   the Swift side line by line) into the one question the column answers —
- *   *do my transcripts still pass?* One result per transcript file, keyed by
- *   stem; a failed file carries its FIRST failure on one line
+ *   *does my tree still pass?* One result per LINE, keyed by its derived
+ *   label — the identity on the document run's wire (ADR-307 D2/Q-8; a
+ *   fallback transcript stream's file paths reduce to their stems through
+ *   the same key). A failed line carries its FIRST failure on one line
  *   (`turn 3 — Output does not contain "…"`); a closing tally. Decoding goes
  *   through the wire's own `isRunEvent` guard (DEVARCH 8b — the shapes are
- *   imported, never mirrored), exactly as the Testing tab decodes the same
- *   stream.
+ *   imported, never mirrored).
  *
  * Public interface: RunColumnState, TranscriptRunResult, createRunState,
  *   beginRun, foldRunLine, finishRun, resetRun.
@@ -17,9 +18,9 @@
 
 import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol/run-events';
 
-/** One transcript file's outcome, as the column shows it. */
+/** One line's outcome, as the column shows it. */
 export interface TranscriptRunResult {
-  /** The wire's per-file status, verbatim. */
+  /** The wire's per-line status, verbatim. */
   status: 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
   /** Turn counts from `transcript-end`. */
   passed: number;
@@ -35,11 +36,12 @@ export interface TranscriptRunResult {
   moreFailures: number;
 }
 
-/** The whole column's state: per-stem results and the closing tally. */
+/** The whole column's state: per-label results and the closing tally. */
 export interface RunColumnState {
   /** A run is in flight — the button disables and rows fill live. */
   inFlight: boolean;
-  /** Results keyed by transcript STEM (basename minus `.transcript`). */
+  /** Results keyed by derived label (a fallback stream's paths reduce to
+   *  stems through the same key). */
   results: Map<string, TranscriptRunResult>;
   /** `run-end`'s aggregate, present once the stream closed cleanly. */
   tally?: { passed: number; failed: number; errors: number; unreached: number };
@@ -63,7 +65,8 @@ export function beginRun(state: RunColumnState): void {
   delete state.note;
 }
 
-/** `file` (absolute path) as the stem the column's rows are keyed by. */
+/** The wire's `file` field as the column's row key: a derived label passes
+ *  through verbatim; a fallback stream's path reduces to its stem. */
 function stemOf(file: string): string {
   const base = file.split('/').at(-1) ?? file;
   return base.replace(/\.transcript$/, '');
@@ -155,10 +158,10 @@ function fold(state: RunColumnState, event: RunEvent): void {
 }
 
 /**
- * The suite on disk changed under the results (a range unticked, a branch
- * deleted, a segment renamed): the results describe a tree that no longer
- * exists, so the column resets to "not run yet" rather than keep reporting
- * it (David's ruling, 2026-08-09). Never called mid-run — the caller guards
+ * The document changed under the results (a turn played, a tail cut, a
+ * branch deleted): the results describe a tree that no longer exists, so
+ * the column resets to "not run yet" rather than keep reporting it
+ * (David's ruling, 2026-08-09). Never called mid-run — the caller guards
  * on `inFlight`.
  */
 export function resetRun(state: RunColumnState): void {

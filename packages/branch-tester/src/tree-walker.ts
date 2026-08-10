@@ -52,7 +52,13 @@ import {
   RunnerOptions,
 } from './types.js';
 import { runTranscript, captureWorldSnapshot } from './runner.js';
-import { TreeCard, TreeDocument } from './tree-document.js';
+import {
+  TreeCard,
+  TreeDocument,
+  branchLineLabelOf,
+  mainLineLabelOf,
+  roomSlugOf,
+} from './tree-document.js';
 
 /**
  * The engine surface the walker drives — structural, so the walker never
@@ -493,12 +499,22 @@ function assertionsOfCard(card: TreeCard): Assertion[] {
     assertions.push({ type: 'event-assert', assertTrue: true, eventType });
   }
   for (const channel of authored.channels ?? []) {
+    // A dotted document id (`info.title`) is a path INTO a structured
+    // capture: base channel id + channelPath (ADR-300 D13), exactly as the
+    // transcript grammar's `[CHANNEL: banner.title, …]` parses.
+    const [channelId, ...channelPath] = channel.id.split('.');
+    const pathPart = channelPath.length > 0 ? { channelPath } : {};
     if (channel.contains !== undefined) {
       for (const value of channel.contains) {
-        assertions.push({ type: 'channel-contains', channelId: channel.id, value });
+        assertions.push({ type: 'channel-contains', channelId, ...pathPart, value });
       }
     } else if (channel.is !== undefined) {
-      assertions.push({ type: 'channel-is', channelId: channel.id, channelExpected: channel.is });
+      assertions.push({
+        type: 'channel-is',
+        channelId,
+        ...pathPart,
+        channelExpected: channel.is,
+      });
     }
   }
 
@@ -599,32 +615,21 @@ function execErrorCardIndexOf(
 }
 
 /**
- * The line's derived label (D2/Q-8), read off the live world at line start:
- * `opening-<room>` for the main line, `<fork room> · <first command>` for a
- * branch. Nothing is persisted; a world that reports no location degrades to
- * a structural fallback rather than failing the run over a display string.
+ * The line's derived label (D2/Q-8), read off the live world at line start —
+ * formatting shared with the Testing tab through `tree-document.ts`'s label
+ * helpers. Nothing is persisted; a world that reports no location degrades
+ * to a structural fallback rather than failing the run over a display string.
  */
 function labelOf(line: TreeLine, game: TreeWalkerGame): string {
-  const room = slugOf(captureWorldSnapshot(game as never)?.location?.name);
-  if (line.parentId === undefined) return `opening-${room ?? 'start'}`;
-  const fork = room ?? `branch-${line.branchId}`;
-  return `${fork} · ${line.firstCommand ?? '(empty)'}`;
+  const room = roomSlugOf(captureWorldSnapshot(game as never)?.location?.name);
+  if (line.parentId === undefined) return mainLineLabelOf(room);
+  return branchLineLabelOf(room, line.branchId!, line.firstCommand);
 }
 
 /** The label of a line that never ran — no world to read a room from. */
 function blockedLabelOf(line: TreeLine): string {
   if (line.parentId === undefined) return 'opening';
-  return `branch-${line.branchId} · ${line.firstCommand ?? '(empty)'}`;
-}
-
-/** Lowercased, hyphen-joined room name (`Iron Gates` → `iron-gates`). */
-function slugOf(name: string | undefined): string | undefined {
-  if (name === undefined) return undefined;
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug.length > 0 ? slug : undefined;
+  return branchLineLabelOf(undefined, line.branchId!, line.firstCommand);
 }
 
 /** The line's one-line failure citation: the first failed row's own message. */

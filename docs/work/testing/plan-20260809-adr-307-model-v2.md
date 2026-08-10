@@ -159,6 +159,7 @@ Real dependencies, not a linear pipeline:
 ### Phase 3: Testing-surface model rewrite — the tree IS the model
 - **Tier**: Large
 - **Budget**: ~400 tool calls
+- **Started**: 2026-08-10 (session 01ff09)
 - **Domain focus**: N/A — IDE web bundle (`tools/ide/web/testing-surface`).
 - **Entry state**: Phase 1's schema exists and is importable by the surface
   via the established alias pattern.
@@ -189,11 +190,47 @@ Real dependencies, not a linear pipeline:
   produces a tree matching Phase 1's schema; a vitest case each for tail-cut
   and for a splice-then-replay seam; grep confirms no range/tick/stem/rename/
   `continues:` code remains reachable in the rewritten files.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-10, session 01ff09). Delivered: `model.ts`
+  rewritten as `TreeSessionModel` (live TreeDocument + session-only
+  ordinal↔card binding; always-recording, binding replay for
+  restore/repair, branch/tail-cut/splice as structure ops, v1 narrowing
+  semantics on card assertions, card-keyed authoring undo); `compose.ts`
+  rewritten as the display-line composer (no serializer/parser imports —
+  Phase 6 unblocked; `src/shims/fs.ts` now dead, on the Phase 6 delete
+  list); `cards.ts` rewritten (rail/strips/summaries/collapse gone; card ✕
+  tail-cut armed like the chip ✕; path-ordered rendering; run column keyed
+  by derived labels); `main.ts` rewritten (single-document post, D7
+  view-state sidecar, restore/restart = whole-tree replay, refused document
+  = named notice + write-lock). **Open question D resolved by David
+  (2026-08-10): opening defaults = prologue, title, description (no id)** —
+  shared `synthesizeOpeningAssertions` in branch-tester's
+  `auto-assertion.ts`, evaluated live by the runner for claim-less
+  openings, rendered/narrowed by the tab (`removeOpeningDefault`); devkit
+  always captures `prologue`+`info`; `channelIdsReferencedBy` base-maps
+  dotted ids and the walker splits them into channelId+channelPath; label
+  formatting shared via `tree-document.ts` helpers. **Splice gesture chrome
+  NOT built** — model ops + tests only, per the phase note; David has not
+  yet ruled on the proposed chrome (hover `+` between cards / armed
+  `remove turn`) — carry to Phase 4/5. Evidence (2026-08-10 07:45–07:52):
+  branch-tester **396 passing** (+9); devkit **177 passing, 1 skipped**
+  (+2: opening defaults fire through the real CLI as a passing `(opening)`
+  row; wrong-value `info.title` opening claim exits 1 citing the channel);
+  surface **49 passing** (model 24 + compose 11 rewritten, real-path 3 new:
+  real chord compile → bootstrap → engine at seed 42 through compiled dist,
+  document round-trip + walker parity with identical labels, splice seam =
+  failed claim with branch still passing, tail-cut clean) and `tsc -p`
+  clean; grep: no range/tick/stem/rename/`continues:` code reachable
+  (doc-comments describing the deletion only); dist AND dist-esm rebuilt
+  for branch-tester + devkit; `tsf build --npm` green for both.
+  Mutation-verification: 1 warning (CLI opening-defaults coverage) closed
+  same-session with the two devkit tests above. The web bundle is NOT
+  rebuilt into `Resources/` — deliberate; the shipped v1 tab keeps working
+  until Phase 4 swaps it.
 
 ### Phase 4: IDE shell — checkboxes gone, sidecar shrinks, single-document write bridge
 - **Tier**: Large
 - **Budget**: ~400 tool calls
+- **Started**: 2026-08-10 (session 01ff09)
 - **Domain focus**: N/A — IDE UI (`tools/ide/SharpeeIDE`), judged by
   IDE-primacy per the project direction notes.
 - **Entry state**: Phase 3's rebuilt web bundle exists and is rebuilt into
@@ -217,7 +254,39 @@ Real dependencies, not a linear pipeline:
 - **Note**: if signing/Runningboard errors appear mid-phase, go straight to
   a full DerivedData clean (recurred 3+ times per prior sessions) rather
   than iterating around it.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-10, session 01ff09; no signing rot this time).
+  Delivered: web bundle rebuilt into `Resources/testing-surface/` (the v2
+  tab ships); `TestingSessionStore` v3 — view state only, command log gone
+  (D7); `TestingSurfaceViewController` — `testDocumentURL` replaces
+  `testsDirectory`, boot payload = document text + story id (the `.story`
+  STEM, discovery's key) + pinned seed + policy + view state, write bridge
+  = atomic whole-document writes, per-segment write/rename/`continues:`
+  cascade/re-hydration code deleted, turnEvents forwards without logging;
+  `MainWindow` opener wires the document beside the `.story` file;
+  `main.ts` gained the author-restart ack-turn strip (the client's restart
+  ack is mechanics, not a recorded card). Two Phase 2 stream gaps surfaced
+  by the first real consumer and fixed in `test-tree-document.ts`:
+  `transcript-end` now stamps the derived label (walker results carry no
+  filePath), and line starts no longer carry `replayed: true` (on the wire
+  it means "state rebuild, not a row" — every branch line was being
+  silently dropped from the column). Tests rebuilt around the document:
+  `TestingSessionStoreTests` (6) and `TestingSurfaceRealPathTests` (16 —
+  always-recording into the document, opening defaults + narrowing from
+  real boot captures, branch/chip-delete/tail-cut against the document,
+  author restart replay + ack strip, reopen to a byte-identical document
+  (AC-1 through the real driver), refused = notice + write-lock and
+  malformed = fresh tree (AC-4), D7 sidecar shape, run column over the
+  real CLI's document path keyed by derived labels, real-fernhill session
+  incl. document content and `fountain-court · east` chip). Evidence
+  (2026-08-10 08:10–08:11): surface real-path suite passed; full IDE suite
+  **474 passing, 0 failures** (was 488 — the retired v1 range/tick tests
+  left with their machinery); devkit **177 passing, 1 skipped** after the
+  stream fixes; devkit dist + dist-esm rebuilt. Mutation-verification
+  clean (advisory: MainWindow's stem derivation verified transitively;
+  the Phase 5 click-through exercises the real opener). Carry-over for
+  Phase 5: the tab tally counts COMMANDS ("2 passing, 1 failures") while
+  the CLI human report counts LINES ("1 passed, 1 failed") — check during
+  AC-2 parity; splice gesture chrome still awaits David's ruling.
 
 ### Phase 5: Two-consumer parity — AC sign-off and the E2E scenario
 - **Tier**: Medium

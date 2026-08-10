@@ -19,14 +19,6 @@ export default defineConfig({
         __dirname,
         '../../../../packages/branch-tester/src/auto-assertion.ts',
       ),
-      '@sharpee/branch-tester/serializer': resolve(
-        __dirname,
-        '../../../../packages/branch-tester/src/serializer.ts',
-      ),
-      '@sharpee/branch-tester/parser': resolve(
-        __dirname,
-        '../../../../packages/branch-tester/src/parser.ts',
-      ),
       '@sharpee/branch-tester/types': resolve(
         __dirname,
         '../../../../packages/branch-tester/src/types.ts',

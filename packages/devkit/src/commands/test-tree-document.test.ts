@@ -158,6 +158,92 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     }
   }, 60_000);
 
+  it('the opening defaults fire through the CLI: prologue/info are captured and the (opening) row passes', async () => {
+    // The capture-set union (prologue + info) is only observable when the
+    // document's own claims reference NEITHER — the opening card is bare and
+    // its defaults (prologue, title, description — ADR-307 open question D)
+    // synthesize live from captures the union alone provides.
+    const openingDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-opening-'));
+    try {
+      writeFileSync(
+        join(openingDir, 'mini.story'),
+        STORY.replace(
+          '  story-version: 0.0.1\n',
+          '  story-version: 0.0.1\n' +
+            '  description: A small square test story.\n' +
+            '  prologue: Night falls on the den.\n' +
+            '  auto-assertion: room-name-and-description\n',
+        ),
+      );
+      writeFileSync(
+        join(openingDir, 'mini.tests.json'),
+        `${JSON.stringify({
+          version: 1,
+          story: 'mini',
+          seed: 42,
+          cards: [
+            { type: 'opening' },
+            { type: 'boot', assertions: { contains: ['A small square den'] } },
+            { type: 'turn', command: 'north', assertions: { contains: ['Roses everywhere'] } },
+          ],
+        }, null, 2)}\n`,
+      );
+
+      const written: string[] = [];
+      const stdout = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(((chunk: unknown) => {
+          written.push(String(chunk));
+          return true;
+        }) as never);
+      try {
+        const { code } = await muted(() => runTestCommand(['--tree', openingDir, '--json']));
+        expect(code).toBe(0);
+      } finally {
+        stdout.mockRestore();
+      }
+
+      const events = written
+        .join('')
+        .split('\n')
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line) as { type?: string; input?: string; passed?: boolean });
+      const opening = events.find(
+        (event) => event.type === 'command-result' && event.input === '(opening)',
+      );
+      // The row exists AND passed: the union put prologue/info in the
+      // capture set, the defaults synthesized from them, and all three
+      // claims (prologue, title, description) held.
+      expect(opening).toBeDefined();
+      expect(opening!.passed).toBe(true);
+
+      // And the dotted-id chain bites: an AUTHORED opening claim on
+      // `info.title` with a wrong value must be captured (base channel
+      // derived from the dotted id), evaluated, and cited — exit 1, never a
+      // silent pass.
+      writeFileSync(
+        join(openingDir, 'mini.tests.json'),
+        `${JSON.stringify({
+          version: 1,
+          story: 'mini',
+          seed: 42,
+          cards: [
+            {
+              type: 'opening',
+              assertions: { channels: [{ id: 'info.title', is: 'Wrong Title' }] },
+            },
+            { type: 'boot', assertions: { contains: ['A small square den'] } },
+          ],
+        }, null, 2)}\n`,
+      );
+      const failed = await muted(() => runTestCommand(['--tree', openingDir]));
+      expect(failed.code).toBe(1);
+      expect(failed.out).toContain('info.title');
+    } finally {
+      rmSync(openingDir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
   it('a newer-version document is refused by name (exit 2, AC-4)', async () => {
     const refusedDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-refused-'));
     try {

@@ -35,7 +35,11 @@ import {
   WorldEntityRef,
   WorldSnapshot
 } from './types.js';
-import { proseTextLinesOf, synthesizePolicyAssertions } from './auto-assertion.js';
+import {
+  proseTextLinesOf,
+  synthesizeOpeningAssertions,
+  synthesizePolicyAssertions,
+} from './auto-assertion.js';
 import { serializeTranscript } from './serializer.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
@@ -468,8 +472,12 @@ async function runAssertion(
     results.push(result);
     options.observer?.onCommandResult?.(result);
   };
-  /** Opening assertions run once, after the first command flushes the opening. */
-  let openingChecked = (transcript.opening?.length ?? 0) === 0;
+  /** Opening assertions run once, after the first command flushes the opening.
+   *  Authored claims win; with none, the opening's DEFAULTS synthesize live
+   *  from the boot captures under a policy (ADR-307 open question D: prologue,
+   *  title, description) — each piece self-gated on its channel having been
+   *  captured, so sessions that never declared them are unchanged. */
+  let openingChecked = false;
   /** Any command's assertions were policy-written this run → rewrite the file. */
   let policyWroteAssertions = false;
 
@@ -526,7 +534,19 @@ async function runAssertion(
     // ahead of the command that flushed them because that is where they read.
     if (!openingChecked) {
       openingChecked = true;
-      record(openingResult(transcript.opening!, engine, result.actualOutput));
+      // Same capture surface as `openingResult`: the banner/prologue/info
+      // flush rides the FIRST command's captures on a real engine (the boot
+      // snapshot is often empty) — merge both, boot values winning.
+      const openingClaims =
+        (transcript.opening?.length ?? 0) > 0
+          ? transcript.opening!
+          : synthesizeOpeningAssertions(engine.autoAssertionPolicy, {
+              ...(engine.lastChannelValues ?? {}),
+              ...(engine.bootChannelValues ?? {}),
+            });
+      if (openingClaims.length > 0) {
+        record(openingResult(openingClaims, engine, result.actualOutput));
+      }
     }
 
     record(result);

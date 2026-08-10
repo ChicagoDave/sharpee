@@ -28,7 +28,8 @@
  * Public interface: the TreeDocument/TreeCard/TreeBranch/TreeAssertions/
  * TreeChannelAssertion types, TREE_DOCUMENT_VERSION,
  * treeDocumentFileNameFor, emptyTreeDocument, serializeTreeDocument,
- * deserializeTreeDocument, channelIdsReferencedBy.
+ * deserializeTreeDocument, channelIdsReferencedBy, roomSlugOf,
+ * mainLineLabelOf, branchLineLabelOf.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
@@ -217,8 +218,12 @@ export function deserializeTreeDocument(text: string): TreeDocumentReadResult {
  * captured for the claims to read (ADR-294 D15) — both consumers derive
  * their capture set from the document through this one function.
  *
+ * A dotted claim id (`banner.title`, `info.description`) reads one property
+ * of a STRUCTURED capture (ADR-300 D13), so what must be captured is its
+ * base channel — the id before the first dot.
+ *
  * @param document the tree document.
- * @returns the referenced channel ids, each once.
+ * @returns the referenced base channel ids, each once.
  */
 export function channelIdsReferencedBy(document: TreeDocument): string[] {
   const ids: string[] = [];
@@ -226,9 +231,10 @@ export function channelIdsReferencedBy(document: TreeDocument): string[] {
   const walkCards = (cards: TreeCard[]): void => {
     for (const card of cards) {
       for (const channel of card.assertions?.channels ?? []) {
-        if (!seen.has(channel.id)) {
-          seen.add(channel.id);
-          ids.push(channel.id);
+        const base = channel.id.split('.')[0];
+        if (base.length > 0 && !seen.has(base)) {
+          seen.add(base);
+          ids.push(base);
         }
       }
       for (const branch of card.branches ?? []) walkCards(branch.cards);
@@ -236,6 +242,55 @@ export function channelIdsReferencedBy(document: TreeDocument): string[] {
   };
   walkCards(document.cards);
   return ids;
+}
+
+// ---------------------------------------------------------------------------
+// Derived labels (ADR-307 D2/Q-8) — shared formatting, never persisted.
+// ---------------------------------------------------------------------------
+
+/**
+ * A room name as labels carry it: lowercased, non-alphanumerics collapsed to
+ * single hyphens (`Iron Gates` → `iron-gates`). Undefined in, undefined out.
+ *
+ * @param name the room's display name, if known.
+ * @returns the slug, or undefined when nothing usable remains.
+ */
+export function roomSlugOf(name: string | undefined): string | undefined {
+  if (name === undefined) return undefined;
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug.length > 0 ? slug : undefined;
+}
+
+/**
+ * The main line's derived label: `opening-<room>` from the room the game
+ * opens in, `opening-start` when no room is known.
+ *
+ * @param roomSlug the opening room's slug ({@link roomSlugOf}).
+ * @returns the label.
+ */
+export function mainLineLabelOf(roomSlug: string | undefined): string {
+  return `opening-${roomSlug ?? 'start'}`;
+}
+
+/**
+ * A branch line's derived label: `<fork room> · <first command>`, degrading
+ * to `branch-<id>` when no fork room is known and `(empty)` when the line
+ * has no typed command yet.
+ *
+ * @param roomSlug the fork card's room slug ({@link roomSlugOf}).
+ * @param branchId the branch's stable id (the room-less fallback).
+ * @param firstCommand the line's first typed command, if any.
+ * @returns the label.
+ */
+export function branchLineLabelOf(
+  roomSlug: string | undefined,
+  branchId: number,
+  firstCommand: string | undefined,
+): string {
+  return `${roomSlug ?? `branch-${branchId}`} · ${firstCommand ?? '(empty)'}`;
 }
 
 // ---------------------------------------------------------------------------

@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { EngineRandomService } from '@sharpee/engine';
+import { synthesizeOpeningAssertions } from '../src/auto-assertion.js';
 import { parseTranscript } from '../src/parser.js';
 import { runTranscript } from '../src/runner.js';
 import type { AutoAssertionPolicy } from '../src/types.js';
@@ -210,5 +211,78 @@ describe('the boundary and its exclusions hold', () => {
     expect(result.commands[0].error).toBe('blank output');
     expect(transcript.commands[0].assertions).toEqual([]);
     expect(fs.readFileSync(filePath, 'utf-8')).toBe(before);
+  });
+});
+
+/** Boot captures as bootstrap snapshots them: prologue prose + info payload. */
+const BOOT_CAPTURES: Record<string, unknown[]> = {
+  prologue: [{ content: ['A cold night settles over the estate.'] }],
+  info: [{ title: 'The Folly at Fernhill', description: 'One cold winter night.' }],
+};
+
+describe('synthesizeOpeningAssertions — the opening defaults (ADR-307 open question D)', () => {
+  it('claims prologue, title, and description from the boot captures', () => {
+    expect(synthesizeOpeningAssertions('room-name-and-description', BOOT_CAPTURES)).toEqual([
+      {
+        type: 'channel-contains',
+        channelId: 'prologue',
+        value: 'A cold night settles over the estate.',
+      },
+      {
+        type: 'channel-is',
+        channelId: 'info',
+        channelPath: ['title'],
+        channelExpected: 'The Folly at Fernhill',
+      },
+      {
+        type: 'channel-is',
+        channelId: 'info',
+        channelPath: ['description'],
+        channelExpected: 'One cold winter night.',
+      },
+    ]);
+  });
+
+  it('each piece self-gates on its capture — absent channels claim nothing', () => {
+    expect(
+      synthesizeOpeningAssertions('room-name-and-description', {
+        info: [{ title: 'Mini' }],
+      }),
+    ).toEqual([
+      { type: 'channel-is', channelId: 'info', channelPath: ['title'], channelExpected: 'Mini' },
+    ]);
+    expect(synthesizeOpeningAssertions('room-name-and-description', {})).toEqual([]);
+  });
+
+  it('no policy or no captures synthesize nothing', () => {
+    expect(synthesizeOpeningAssertions(undefined, BOOT_CAPTURES)).toEqual([]);
+    expect(synthesizeOpeningAssertions('all-emitted-text', undefined)).toEqual([]);
+  });
+
+  it('the runner evaluates them for a claim-less opening, as an (opening) row', async () => {
+    const { transcript } = fixtureOnDisk(
+      'title: T\nauto-assertion: room-name-and-description\n---\n> north\n',
+    );
+    const engine = roomEngine('room-name-and-description') as Record<string, unknown>;
+    engine.bootChannelValues = BOOT_CAPTURES;
+    const result = await runTranscript(transcript, engine as never, {});
+
+    const opening = result.commands.find((row) => row.command.input === '(opening)');
+    expect(opening).toBeDefined();
+    expect(opening!.passed).toBe(true);
+    expect(opening!.assertionResults).toHaveLength(3);
+  });
+
+  it('without boot captures the runner adds no opening row — the v1 path is unchanged', async () => {
+    const { transcript } = fixtureOnDisk(
+      'title: T\nauto-assertion: room-name-and-description\n---\n> north\n',
+    );
+    const result = await runTranscript(
+      transcript,
+      roomEngine('room-name-and-description') as never,
+      {},
+    );
+    expect(result.commands.some((row) => row.command.input === '(opening)')).toBe(false);
+    expect(result.status).toBe('passed');
   });
 });

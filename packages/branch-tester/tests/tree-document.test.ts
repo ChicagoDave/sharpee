@@ -9,9 +9,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   TREE_DOCUMENT_VERSION,
+  branchLineLabelOf,
   channelIdsReferencedBy,
   deserializeTreeDocument,
   emptyTreeDocument,
+  mainLineLabelOf,
+  roomSlugOf,
   serializeTreeDocument,
   treeDocumentFileNameFor,
   type TreeDocument,
@@ -242,5 +245,48 @@ describe('channelIdsReferencedBy — the capture set both consumers derive', () 
 
   it('an unclaimed document derives an empty capture set', () => {
     expect(channelIdsReferencedBy(emptyTreeDocument('s', 1))).toEqual([]);
+  });
+
+  it('a dotted claim id maps to its base channel — the capture is the structured value', () => {
+    const document: TreeDocument = {
+      version: 1,
+      story: 's',
+      seed: 1,
+      cards: [
+        {
+          type: 'turn',
+          command: 'look',
+          assertions: {
+            channels: [
+              { id: 'info.title', is: 'Mini' },
+              // Same base as the dotted claim — counted once.
+              { id: 'info.description', is: 'A test.' },
+              { id: 'banner.title', is: 'Mini' },
+            ],
+          },
+        },
+      ],
+    };
+    expect(channelIdsReferencedBy(document)).toEqual(['info', 'banner']);
+  });
+});
+
+describe('derived-label helpers — one formatting for both consumers (D2/Q-8)', () => {
+  it('slugs a room name the way labels carry it', () => {
+    expect(roomSlugOf('Iron Gates')).toBe('iron-gates');
+    expect(roomSlugOf("The Butler's Pantry")).toBe('the-butler-s-pantry');
+    expect(roomSlugOf('   ')).toBeUndefined();
+    expect(roomSlugOf(undefined)).toBeUndefined();
+  });
+
+  it('labels the main line from its opening room, with a roomless fallback', () => {
+    expect(mainLineLabelOf('den')).toBe('opening-den');
+    expect(mainLineLabelOf(undefined)).toBe('opening-start');
+  });
+
+  it('labels a branch from fork room and first command, degrading by piece', () => {
+    expect(branchLineLabelOf('den', 1, 'look')).toBe('den · look');
+    expect(branchLineLabelOf(undefined, 3, 'east')).toBe('branch-3 · east');
+    expect(branchLineLabelOf('den', 1, undefined)).toBe('den · (empty)');
   });
 });

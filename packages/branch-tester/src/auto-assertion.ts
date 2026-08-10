@@ -11,7 +11,8 @@
  * ADR-302 D15; that copy is frozen and cannot drift because it never moves.)
  *
  * Public interface: `synthesizePolicyAssertions(policy, actualOutput,
- * channelValues)`, `proseTextLinesOf(values)`.
+ * channelValues)`, `synthesizeOpeningAssertions(policy, bootChannelValues)`,
+ * `proseTextLinesOf(values)`.
  * Owner context: @sharpee/branch-tester (test authoring infrastructure).
  */
 import { Assertion, AutoAssertionPolicy } from './types.js';
@@ -65,6 +66,67 @@ export function synthesizePolicyAssertions(
     assertions.push(containsOf(descriptionLines));
   }
   return assertions.length > 0 ? assertions : [{ type: 'skip' }];
+}
+
+/**
+ * The opening card's default claims (ADR-307 open question D, resolved by
+ * David 2026-08-10): the story's **prologue, title, and description** — who
+ * and what this story is, checked where the story first says it. Synthesized
+ * LIVE from the boot's channel captures and never persisted (D2); both
+ * consumers (the Testing tab and `sharpee test --tree`) derive the same
+ * claims through this one function.
+ *
+ * Each piece self-gates on its capture: a story with no prologue contributes
+ * no prologue claim, and a boot that never captured `info` contributes no
+ * title/description claim — so a session that does not declare these
+ * channels (the v1 transcript path) synthesizes nothing and is unchanged.
+ *
+ * @param policy the story's declared policy — no policy, no defaults
+ * @param bootChannelValues structured channel captures from BOOT
+ *   (`prologue` prose, the `info` JSON payload)
+ * @returns the opening's default claims — possibly empty, never a skip
+ */
+export function synthesizeOpeningAssertions(
+  policy: AutoAssertionPolicy | undefined,
+  bootChannelValues: Record<string, unknown[]> | undefined,
+): Assertion[] {
+  if (policy === undefined || bootChannelValues === undefined) return [];
+  const assertions: Assertion[] = [];
+
+  const prologueLines = proseTextLinesOf(bootChannelValues['prologue']);
+  if (prologueLines.length > 0) {
+    assertions.push({
+      type: 'channel-contains',
+      channelId: 'prologue',
+      value: prologueLines[0],
+    });
+  }
+
+  // The `info` channel is a JSON payload; its `title`/`description` string
+  // properties are read as dotted-path channel claims (ADR-300 D13:
+  // `channelId` base + `channelPath` into the structured capture).
+  const info = bootChannelValues['info']?.[0];
+  if (info !== null && typeof info === 'object' && !Array.isArray(info)) {
+    const payload = info as { title?: unknown; description?: unknown };
+    if (typeof payload.title === 'string' && payload.title.length > 0) {
+      assertions.push({
+        type: 'channel-is',
+        channelId: 'info',
+        channelPath: ['title'],
+        channelExpected: payload.title,
+      });
+    }
+    if (typeof payload.description === 'string' && payload.description.length > 0) {
+      assertions.push({
+        type: 'channel-is',
+        channelId: 'info',
+        channelPath: ['description'],
+        channelExpected: payload.description,
+      });
+    }
+  }
+
+  return assertions;
 }
 
 /**

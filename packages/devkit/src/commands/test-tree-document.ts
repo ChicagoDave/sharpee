@@ -95,13 +95,15 @@ export async function runTreeDocumentCommand(
   info(`Loading story from: ${dir}`);
   info(`Tree document: ${path.basename(docPath)} (seed ${document.seed}, ${lines.length} line(s))`);
 
-  // The document's channel claims fix the capture set (ADR-294 D15) — the
-  // game is assembled with exactly the channels the claims read.
-  const channels = channelIdsReferencedBy(document);
+  // The capture set (ADR-294 D15): the base channels the document's claims
+  // read, plus the opening defaults' carriers — `prologue` and `info` are
+  // always captured so the opening card's live defaults (prologue, title,
+  // description — ADR-307 open question D) have something to read.
+  const channels = [...new Set([...channelIdsReferencedBy(document), 'prologue', 'info'])];
   const loadGame = () =>
     loadAuthorGame(dir, {
       seed: document.seed,
-      ...(channels.length > 0 ? { channels } : {}),
+      channels,
     });
 
   // Lines are announced on the stream by derived label (D2/Q-8) — the label
@@ -121,13 +123,17 @@ export async function runTreeDocumentCommand(
         onCommandResult: (command) => stream.commandResult(currentLabel, command, captureOutput),
       },
       lineObserver: stream && {
-        onLineStart: ({ line, label, replayedCommands }) => {
+        onLineStart: ({ line, label }) => {
           currentLabel = label;
           announced.add(line.id);
+          // Never `replayed: true` here: on the wire that flag means "this
+          // whole execution is a state rebuild, not a row" (the v1 tree's
+          // ancestor re-runs), and consumers drop such rows. A document
+          // line replays its PREFIX inside its own single execution — the
+          // line is a real row; its replay share shows in the human report.
           stream.transcriptStart(label, executionIndex++, {
             commandCount: line.cards.length,
             ...(line.parentId !== undefined ? { parent: line.parentId } : {}),
-            ...(replayedCommands > 0 ? { replayed: true } : {}),
           });
         },
         onLineEnd: ({ line, outcome }) => {
@@ -136,8 +142,18 @@ export async function runTreeDocumentCommand(
           if (!announced.has(line.id)) {
             stream.transcriptStart(outcome.label, executionIndex++, {});
           }
-          if (outcome.result !== undefined) stream.transcriptEnd(outcome.result);
-          else stream.transcriptError(outcome.label, outcome.error ?? outcome.status);
+          if (outcome.result !== undefined) {
+            // The label IS the identity on this wire (D2/Q-8): the walker's
+            // synthesized transcripts deliberately carry no filePath (the
+            // policy write-back guard), so stamp the label on the emitted
+            // copy — consumers key start/result/end rows by one name.
+            stream.transcriptEnd({
+              ...outcome.result,
+              transcript: { ...outcome.result.transcript, filePath: outcome.label },
+            });
+          } else {
+            stream.transcriptError(outcome.label, outcome.error ?? outcome.status);
+          }
         },
         onLineBlocked: ({ outcome }) => {
           blockedCount += 1;

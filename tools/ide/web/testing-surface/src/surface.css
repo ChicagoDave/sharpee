@@ -445,3 +445,30 @@ body.ts-active .sharpee-window { display: none; }
 }
 .ts-run-note { padding: 6px 0; font-size: 10.5px; color: var(--ts-fail); }
 .ts-pending-note { color: var(--ts-fg-faint); font-style: italic; }
+
+/* ── ADR-307: tail-cut ✕ and the refused-document notice ─────────────── */
+.ts-card-delete {
+  float: right;
+  visibility: hidden;
+  border: none;
+  background: none;
+  color: var(--ts-fg-faint);
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.ts-block:hover .ts-card-delete { visibility: visible; }
+.ts-card-delete:hover { color: var(--ts-fail); }
+.ts-card-delete.ts-armed {
+  visibility: visible;
+  color: var(--ts-fail);
+  font-weight: 700;
+}
+.ts-notice {
+  margin: 8px 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--ts-fail);
+  border: 1px solid var(--ts-fail);
+  border-radius: 4px;
+}

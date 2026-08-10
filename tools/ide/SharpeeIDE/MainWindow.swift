@@ -1202,11 +1202,12 @@ private final class MainSplitViewController: NSSplitViewController {
         let store = TestingSessionStore(
             fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
         let surface = TestingSurfaceViewController(sessionStore: store)
-        // The writer's destination and the story's on-disk `auto-assertion:`
-        // policy (6e — the ON-DISK policy governs creation exactly as it will
-        // govern the file's future runs).
-        surface.testsDirectory =
-            projectRoot.appendingPathComponent("tests", isDirectory: true)
+        // The tree document lives beside the `.story` file, named by its
+        // STEM — exactly the id `sharpee test --tree`'s discovery keys on
+        // (ADR-307 D2/Q-2) — and the story's on-disk `auto-assertion:`
+        // policy governs synthesis exactly as it governs the runs.
+        surface.testDocumentURL = projectRoot.appendingPathComponent(
+            storyURL.deletingPathExtension().lastPathComponent + ".tests.json")
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
