@@ -29,6 +29,7 @@ const runEvents = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
 const btSerializer = resolve(repoRoot, 'packages/branch-tester/src/serializer.ts');
 const btParser = resolve(repoRoot, 'packages/branch-tester/src/parser.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
+const btTreeDocument = resolve(repoRoot, 'packages/branch-tester/src/tree-document.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
@@ -45,6 +46,7 @@ const options = {
     '@sharpee/branch-tester/serializer': btSerializer,
     '@sharpee/branch-tester/parser': btParser,
     '@sharpee/branch-tester/types': btTypes,
+    '@sharpee/branch-tester/tree-document': btTreeDocument,
     '@sharpee/ide-protocol/run-events': runEvents,
     // The parser imports node's fs for its file-loading helper only; the
     // surface parses text it already holds, so the browser build shims it.

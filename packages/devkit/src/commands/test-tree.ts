@@ -14,7 +14,42 @@
  * Public interface: runTreeTestCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
+import { existsSync, readdirSync } from 'node:fs';
+import * as path from 'node:path';
 import { loadAuthorGame } from '../standalone/author-game.js';
+
+/**
+ * Find a project's ADR-307 tree document: `<story-id>.tests.json` beside the
+ * `.story` file at the project root. The story id is the `.story` file's stem
+ * (`fernhill.story` → `fernhill.tests.json`) — runner discovery keys off the
+ * id it already knows (ADR-307 D2/Q-2).
+ *
+ * Phase 1 of the ADR-307 plan: this lookup exists ALONGSIDE the `tests/`
+ * directory discovery, which stays the fallback until the cutover phase
+ * removes it. A module story (no `.story` file) has no tree document.
+ *
+ * @param projectDir resolved project directory (absolute).
+ * @returns the document's absolute path, or undefined when the project has
+ *   no `.story` file or no document beside it.
+ */
+export function findTreeDocument(projectDir: string): string | undefined {
+  // Lazy require (this file's pattern): the harness loads only when needed.
+  const { treeDocumentFileNameFor } =
+    require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  let entries: string[];
+  try {
+    entries = readdirSync(projectDir);
+  } catch {
+    return undefined;
+  }
+  const storyFiles = entries.filter((name) => name.endsWith('.story')).sort();
+  for (const storyFile of storyFiles) {
+    const storyId = storyFile.slice(0, -'.story'.length);
+    const candidate = path.join(projectDir, treeDocumentFileNameFor(storyId));
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
 
 export interface TreeTestOptions {
   /** Resolved project directory (the caller has already resolved name/dir/.story). */

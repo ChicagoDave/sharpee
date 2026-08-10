@@ -25,6 +25,22 @@ export * from './types.js';
 // Parser
 export { parseTranscript, parseTranscriptFile, validateTranscript } from './parser.js';
 
+// The Testing tree's wire format — one JSON document per story (ADR-307)
+export {
+  TREE_DOCUMENT_VERSION,
+  treeDocumentFileNameFor,
+  emptyTreeDocument,
+  serializeTreeDocument,
+  deserializeTreeDocument,
+  type TreeDocument,
+  type TreeCard,
+  type TreeCardType,
+  type TreeBranch,
+  type TreeAssertions,
+  type TreeChannelAssertion,
+  type TreeDocumentReadResult,
+} from './tree-document.js';
+
 // Tree assembly — v2's entry point is the tree, not the file (ADR-302 D11)
 export {
   assembleTree,

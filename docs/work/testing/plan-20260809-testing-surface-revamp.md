@@ -2,6 +2,7 @@
 
 **Created**: 2026-08-09
 **Plan Status**: ACTIVE
+**Superseded by**: docs/work/testing/plan-20260809-adr-307-model-v2.md (Phase 7 stays resumable as-is if play-to-goal is ever requested)
 **Overall scope**: Implement `design-testing-play-surface.md` — a dedicated
 testing page (`index-testing.html`) that turns play into test authoring:
 cards + a checkbox rail, tick-to-range segments, gesture-authored assertions
