@@ -86,6 +86,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
     parseTranscriptFile,
     reportTranscript,
     runTree,
+    streamableCommandResult,
     validateTranscript,
   } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
   // The stream builder is transcript-tester's — branch-tester's D15 full-copy
@@ -198,7 +199,7 @@ export async function runTreeTestCommand(options: TreeTestOptions): Promise<numb
       captureWorld,
       observer: stream && {
         onCommandResult: (command) =>
-          stream.commandResult(currentFile ?? '', command, captureOutput),
+          stream.commandResult(currentFile ?? '', streamableCommandResult(command), captureOutput),
       },
       treeObserver: stream && {
         onNodeStart: ({ node, replayed, commandCount, entryWorld }) => {

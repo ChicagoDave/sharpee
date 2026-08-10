@@ -91,39 +91,100 @@ describe('assertion authoring — claims live in the card', () => {
     expect(model.claimsOf(n)).toEqual({ contains: ['Taken'] });
   });
 
-  it('deleting an authored contains narrows — defaults never silently return', () => {
+  it('deleting the last contains leaves the card honestly bare (JSON = source of truth)', () => {
     const model = bootedModel();
     const n = play(model, 'take lamp');
     model.addContains(n, 'Taken');
     model.removeContains(n, 0);
-    expect(model.claimsOf(n)).toEqual({ noDefaults: true });
-    expect(model.claimsNothing(n)).toBe(true);
+    expect(model.claimsOf(n)).toBeUndefined();
+    expect(model.claimsNothing(n)).toBe(false);
   });
 
-  it('deleting one policy default keeps the survivors as authored contains', () => {
+  it('recorded assertions persist onto an APPENDED card via the delivery (David 2026-08-10)', () => {
+    const model = bootedModel();
+    model.addTurn({
+      ordinal: 77,
+      command: 'north',
+      boot: false,
+      room: 'Garden',
+      assertions: { contains: ['Garden', 'Roses everywhere.'] },
+    });
+    expect(model.claimsOf(77)).toEqual({ contains: ['Garden', 'Roses everywhere.'] });
+    // Deleting one is plain removal — no narrowing machinery, no defaults.
+    model.removeContains(77, 0);
+    expect(model.claimsOf(77)).toEqual({ contains: ['Roses everywhere.'] });
+  });
+
+  it('a recorded skip persists as the explicit [SKIP] demotion', () => {
+    const model = bootedModel();
+    model.addTurn({ ordinal: 78, command: 'wait', boot: false, skip: true });
+    expect(model.claimsNothing(78)).toBe(true);
+    expect(model.serialize()).toContain('"skip": true');
+  });
+
+  it('a claim-less OPENING fills from the boot delivery on a binding replay (pre-pivot documents heal)', () => {
     const model = bootedModel();
     const n = play(model, 'north', 'Garden');
-    model.removeDefault(n, 0, ['Garden', 'Roses everywhere.']);
-    expect(model.claimsOf(n)).toEqual({
-      contains: ['Roses everywhere.'],
-      noDefaults: true,
+    model.addContains(n, 'Roses everywhere.');
+    // The opening is bare (this harness records without persistence) — the
+    // regression: reopening such a document lost the opening claims forever.
+    expect(model.claimsOf(0)).toBeUndefined();
+
+    model.beginRebindAll();
+    model.addTurn({
+      ordinal: 80,
+      command: '',
+      boot: true,
+      openingAssertions: { channels: [{ id: 'info.title', is: 'Mini' }] },
     });
+    model.addTurn({ ordinal: 81, command: 'north', boot: false, room: 'Garden' });
+
+    expect(model.claimsOf(0)).toEqual({ channels: [{ id: 'info.title', is: 'Mini' }] });
+    // An opening that already speaks is never rewritten.
+    model.beginRebindAll();
+    model.addTurn({
+      ordinal: 85,
+      command: '',
+      boot: true,
+      openingAssertions: { channels: [{ id: 'info.title', is: 'Other' }] },
+    });
+    expect(model.claimsOf(0)).toEqual({ channels: [{ id: 'info.title', is: 'Mini' }] });
   });
 
-  it('deleting one OPENING default keeps the survivors as authored channel claims', () => {
+  it('a BINDING delivery never overwrites claims, but FILLS a claim-less card (splice repair)', () => {
     const model = bootedModel();
-    model.removeOpeningDefault(1, [
-      { id: 'prologue', contains: ['A cold night.'] },
-      { id: 'info.title', is: 'Mini' },
-      { id: 'info.description', is: 'A test story.' },
-    ]);
-    expect(model.claimsOf(0)).toEqual({
-      channels: [
-        { id: 'prologue', contains: ['A cold night.'] },
-        { id: 'info.description', is: 'A test story.' },
-      ],
-      noDefaults: true,
+    const n = play(model, 'north', 'Garden');
+    model.addContains(n, 'Roses everywhere.');
+    // A spliced-in card: never played, no truth yet.
+    const spliced = model.cardAt(n);
+    expect(spliced).toBeDefined();
+    expect(model.spliceIn(n, 'wait')).toBe(true);
+    const before = model.serialize();
+
+    model.beginRebindAll();
+    model.addTurn({ ordinal: 90, command: '', boot: true, assertions: { contains: ['boot noise'] } });
+    model.addTurn({
+      ordinal: 91,
+      command: 'north',
+      boot: false,
+      room: 'Garden',
+      assertions: { contains: ['replay noise'] },
     });
+    model.addTurn({
+      ordinal: 92,
+      command: 'wait',
+      boot: false,
+      assertions: { contains: ['Time passes.'] },
+    });
+
+    // The played cards kept their truth; only the spliced void filled. The
+    // boot card was recorded bare (this harness plays without persistence),
+    // so it fills too — a hand-edited or unrecorded void completes the same
+    // way.
+    expect(model.claimsOf(91)).toEqual({ contains: ['Roses everywhere.'] });
+    expect(model.claimsOf(92)).toEqual({ contains: ['Time passes.'] });
+    expect(model.serialize()).not.toBe(before);
+    expect(model.claimsOf(90)).toEqual({ contains: ['boot noise'] });
   });
 
   it('exact captures the literal block and clears back to bare', () => {

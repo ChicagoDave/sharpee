@@ -28,8 +28,10 @@
  *   labelOf, branchPointsOnPath, canBranch, branch, deleteBranch, tailCut,
  *   spliceIn, spliceOut, captureAuthoring, restoreAuthoring; authoring —
  *   addContains, addNotContains, setExact, addState, addEvent, addChannel,
+ *   (recording persists policy synthesis via TurnDelivery — JSON is the
+ *   source of truth, David 2026-08-10),
  *   removeContains, removeNotContains, removeState, removeEvent,
- *   removeChannel, removeDefault, removeOpeningDefault, claimsNothing),
+ *   removeChannel, claimsNothing),
  *   MAIN_LINE, TurnDelivery, BranchPoint, AuthoringMemento.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
@@ -60,6 +62,22 @@ export interface TurnDelivery {
   boot: boolean;
   /** The room the player is in AFTER this turn (room-name capture). */
   room?: string;
+  /**
+   * What recording persists onto an APPENDED card (David 2026-08-10: the
+   * JSON is the source of truth — synthesis happens when the turn lands and
+   * is written into the document). A delivery that BINDS to an existing card
+   * never overwrites its claims (a replay rebuilds state, not truth) — but
+   * it FILLS a claim-less, non-skip card: a spliced-in turn was never
+   * played, and the whole-path replay is exactly where its truth records.
+   */
+  assertions?: TreeAssertions;
+  /** Recording demotes the appended card to an explicit `[SKIP]` (the
+   *  policy had nothing to read this turn). Binds void-fill like
+   *  `assertions`, never overwrite. */
+  skip?: boolean;
+  /** Opening claims persisted when this delivery seats a FRESH opening card
+   *  (prologue/title/description from the real boot captures). */
+  openingAssertions?: TreeAssertions;
 }
 
 /** One fork point on the active path: the card and its sibling branches. */
@@ -90,7 +108,6 @@ function cloneAssertions(assertions: TreeAssertions | undefined): TreeAssertions
   if (assertions.states) copy.states = [...assertions.states];
   if (assertions.events) copy.events = [...assertions.events];
   if (assertions.channels) copy.channels = assertions.channels.map((c) => ({ ...c }));
-  if (assertions.noDefaults !== undefined) copy.noDefaults = assertions.noDefaults;
   return copy;
 }
 
@@ -285,13 +302,27 @@ export class TreeSessionModel {
     let cursor = this.bindCursor.get(this.active) ?? cards.length;
 
     // The opening seats with the main line's first record: bind the existing
-    // opening card, or create it when the tree is being recorded fresh.
+    // opening card, or create it when the tree is being recorded fresh — a
+    // fresh opening also persists its recorded claims (JSON = source of
+    // truth); a bound one keeps what the document already says.
     if (this.active === MAIN_LINE && !this.hasOpening) {
       if (cursor < cards.length && cards[cursor].type === 'opening') {
-        bind(cards[cursor], 0);
+        const openingCard = cards[cursor];
+        // Fill a void, never overwrite — same rule as every other bind: a
+        // claim-less opening (a pre-pivot document, or a hand-edited one)
+        // gains the boot's recorded claims on its first replay.
+        if (openingCard.assertions === undefined && openingCard.skip !== true) {
+          const claims = cloneAssertions(delivery.openingAssertions);
+          if (claims !== undefined) openingCard.assertions = claims;
+        }
+        bind(openingCard, 0);
         cursor += 1;
       } else if (cursor >= cards.length) {
-        const opening: TreeCard = { type: 'opening' };
+        const openingClaims = cloneAssertions(delivery.openingAssertions);
+        const opening: TreeCard = {
+          type: 'opening',
+          ...(openingClaims !== undefined ? { assertions: openingClaims } : {}),
+        };
         cards.push(opening);
         bind(opening, 0);
         cursor = cards.length;
@@ -299,14 +330,26 @@ export class TreeSessionModel {
     }
 
     if (cursor < cards.length) {
-      bind(cards[cursor], delivery.ordinal);
+      const bound = cards[cursor];
+      // Fill a void, never overwrite: a claim-less, non-skip card (a
+      // spliced-in turn awaiting its first real execution) gains the
+      // replay's recorded truth; every card that already speaks is kept.
+      if (bound.assertions === undefined && bound.skip !== true) {
+        const recorded = cloneAssertions(delivery.assertions);
+        if (recorded !== undefined) bound.assertions = recorded;
+        else if (delivery.skip === true) bound.skip = true;
+      }
+      bind(bound, delivery.ordinal);
       this.bindCursor.set(this.active, cursor + 1);
       return;
     }
 
+    const recorded = cloneAssertions(delivery.assertions);
     const card: TreeCard = delivery.boot
       ? { type: 'boot' }
       : { type: 'turn', command: delivery.command };
+    if (recorded !== undefined) card.assertions = recorded;
+    if (delivery.skip === true) card.skip = true;
     cards.push(card);
     bind(card, delivery.ordinal);
     this.bindCursor.set(this.active, cards.length);
@@ -671,23 +714,10 @@ export class TreeSessionModel {
     return this.cardByOrdinal.get(ordinal)?.assertions;
   }
 
-  /** True when the card authors nothing and withholds its defaults — the
-   *  `[SKIP]` demotion's shape (a pruned-to-nothing turn). */
+  /** True when the card explicitly runs-without-asserting — the `[SKIP]`
+   *  demotion, visible in the JSON (`skip: true`). */
   claimsNothing(ordinal: number): boolean {
-    const card = this.cardByOrdinal.get(ordinal);
-    if (card === undefined) return false;
-    if (card.skip === true) return true;
-    const a = card.assertions;
-    if (a === undefined) return false;
-    return (
-      a.noDefaults === true &&
-      (a.contains?.length ?? 0) === 0 &&
-      (a.notContains?.length ?? 0) === 0 &&
-      a.exact === undefined &&
-      (a.states?.length ?? 0) === 0 &&
-      (a.events?.length ?? 0) === 0 &&
-      (a.channels?.length ?? 0) === 0
-    );
+    return this.cardByOrdinal.get(ordinal)?.skip === true;
   }
 
   private mutable(ordinal: number): TreeAssertions | undefined {
@@ -696,8 +726,16 @@ export class TreeSessionModel {
     return (card.assertions ??= {});
   }
 
-  /** Drop empty family arrays; drop the whole object when nothing remains
-   *  and defaults are not withheld (a bare card synthesizes defaults). */
+  /** Authoring a claim onto a recorded `[SKIP]` card lifts the demotion —
+   *  the author is asserting again, and the JSON says so. */
+  private liftSkip(ordinal: number): void {
+    const card = this.cardByOrdinal.get(ordinal);
+    if (card?.skip === true) delete card.skip;
+  }
+
+  /** Drop empty family arrays; drop the whole object when nothing remains —
+   *  the card is then honestly bare in the JSON (and a run fails it by
+   *  name; deleting your last claim is a visible choice, never silent). */
   private normalize(ordinal: number): void {
     const card = this.cardByOrdinal.get(ordinal);
     const a = card?.assertions;
@@ -707,11 +745,11 @@ export class TreeSessionModel {
     if (a.states !== undefined && a.states.length === 0) delete a.states;
     if (a.events !== undefined && a.events.length === 0) delete a.events;
     if (a.channels !== undefined && a.channels.length === 0) delete a.channels;
-    if (a.noDefaults === false) delete a.noDefaults;
     if (Object.keys(a).length === 0) delete card.assertions;
   }
 
   addContains(ordinal: number, text: string): boolean {
+    this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     (a.contains ??= []).push(text);
@@ -719,6 +757,7 @@ export class TreeSessionModel {
   }
 
   addNotContains(ordinal: number, text: string): boolean {
+    this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     (a.notContains ??= []).push(text);
@@ -728,6 +767,7 @@ export class TreeSessionModel {
   /** Set (or clear) the exact literal block — the turn's whole output as
    *  lines, captured by the caller at toggle time (the document's shape). */
   setExact(ordinal: number, lines: string[] | null): boolean {
+    if (lines !== null) this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     if (lines === null) delete a.exact;
@@ -737,6 +777,7 @@ export class TreeSessionModel {
   }
 
   addState(ordinal: number, expression: string): boolean {
+    this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     (a.states ??= []).push(expression);
@@ -744,6 +785,7 @@ export class TreeSessionModel {
   }
 
   addEvent(ordinal: number, type: string): boolean {
+    this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     (a.events ??= []).push(type);
@@ -751,47 +793,17 @@ export class TreeSessionModel {
   }
 
   addChannel(ordinal: number, claim: TreeChannelAssertion): boolean {
+    this.liftSkip(ordinal);
     const a = this.mutable(ordinal);
     if (a === undefined) return false;
     (a.channels ??= []).push({ ...claim });
     return true;
   }
 
-  /**
-   * Deletes one POLICY-DEFAULT contains line of a turn: the survivors become
-   * authored contains — the author narrows the claim, never silently
-   * abandons it. `defaults` are the rendered default fragments; `index` is
-   * the deleted one (−1 keeps all, for deleting a non-contains default line
-   * whole).
-   */
-  removeDefault(ordinal: number, index: number, defaults: string[]): void {
-    const a = this.mutable(ordinal);
-    if (a === undefined) return;
-    a.contains = defaults.filter((_, i) => i !== index);
-    a.noDefaults = true;
-    this.normalize(ordinal);
-  }
-
-  /**
-   * Deletes one OPENING default (prologue / title / description, ADR-307
-   * open question D): the survivors become authored channel claims, defaults
-   * withheld — the same narrowing rule in the opening's channel shape.
-   */
-  removeOpeningDefault(index: number, defaults: TreeChannelAssertion[]): void {
-    const a = this.mutable(0);
-    if (a === undefined) return;
-    a.channels = defaults.filter((_, i) => i !== index).map((claim) => ({ ...claim }));
-    a.noDefaults = true;
-    this.normalize(0);
-  }
-
   removeContains(ordinal: number, index: number): void {
     const a = this.mutable(ordinal);
     if (a === undefined || a.contains === undefined) return;
     a.contains.splice(index, 1);
-    // Narrowing, never silent abandonment: an author who deletes their last
-    // contains is not asking for the defaults back.
-    a.noDefaults = true;
     this.normalize(ordinal);
   }
 

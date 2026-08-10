@@ -282,11 +282,13 @@ enum MenuBuilder {
         // go-live Phase 6e (P-6): the transcript auto-assertion policy — what a
         // NEW command's first run writes. Choosing writes the `.story` header's
         // `auto-assertion:` line through the editor (undoable); the author
-        // never types the field. "Let Me Decide" is the default and REMOVES
-        // the line (today's flow: the [SKIP]-placeholder gesture).
+        // never types the field. The first item REMOVES the line — and an
+        // absent header now means the PLATFORM default, room-name-and-
+        // description (David 2026-08-10), so the item says exactly that
+        // instead of the retired "Let Me Decide".
         let autoAssertion = NSMenuItem(title: "Auto-Assertion", action: nil, keyEquivalent: "")
         let autoAssertionMenu = NSMenu(title: "Auto-Assertion")
-        let letMeDecide = NSMenuItem(title: "Let Me Decide",
+        let letMeDecide = NSMenuItem(title: "Default (Room Name and Description)",
                                      action: #selector(AppDelegate.selectAutoAssertion(_:)),
                                      keyEquivalent: "")
         letMeDecide.target = target

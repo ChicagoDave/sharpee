@@ -1,24 +1,26 @@
 /**
- * compose.ts — a card's assertion display lines (ADR-307: the tab is the
- * human view of the tree; there is no transcript text to mirror).
+ * compose.ts — a card's assertion display lines, and RECORD-TIME synthesis
+ * (ADR-307; David 2026-08-10: the JSON is the source of truth for all
+ * testing elements).
  *
- * Purpose: renders one card's assertion list — authored claims straight off
- *   the card, policy defaults synthesized LIVE through branch-tester's own
- *   synthesis module (imported from source, never reimplemented), and the
- *   opening card's defaults (prologue, title, description — ADR-307 open
- *   question D, resolved 2026-08-10) from the boot captures. Every deletable
- *   line carries a DeleteRef the cards layer maps straight onto a
- *   TreeSessionModel mutator — deletion semantics live in the model, never
- *   re-derived here.
+ * Purpose: two jobs, one vocabulary. (1) Render one card's assertion list
+ *   straight off the card — every claim in the document, each deletable
+ *   through a DeleteRef the cards layer maps onto a TreeSessionModel
+ *   mutator. (2) Build the assertions RECORDING persists into a card when a
+ *   turn lands: the effective policy synthesizes from the turn's REAL
+ *   captures through branch-tester's own synthesis module (imported from
+ *   source, never reimplemented) and the result is written into the JSON.
+ *   Nothing synthesizes at render or run time — what you see is what the
+ *   document says, and what runs is exactly the same.
  *
  * v1's transcript-text composition, `continues:` headers, and file
- * re-hydration are gone with the files themselves (D1/D2): serialization is
- * the shared tree-document module's, and claims live in the document.
+ * re-hydration are gone with the files themselves (D1/D2); v2's live-default
+ * rendering (`noDefaults`, narrowing refs) went with run-time synthesis.
  *
  * Public interface: cardAssertionLines(options, ordinal),
  *   openingDefaultClaims(policy, bootCaptures),
- *   turnContainsDefaults(policy, source), CardLineOptions, TurnSource,
- *   SourceLine, DeleteRef.
+ *   recordedTurnAssertions(policy, source), RecordedAssertions,
+ *   CardLineOptions, TurnSource, SourceLine, DeleteRef.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -26,8 +28,8 @@ import {
   synthesizeOpeningAssertions,
   synthesizePolicyAssertions,
 } from '@sharpee/branch-tester/auto-assertion';
-import type { Assertion, AutoAssertionPolicy } from '@sharpee/branch-tester/types';
-import type { TreeChannelAssertion } from '@sharpee/branch-tester/tree-document';
+import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
+import type { TreeAssertions, TreeChannelAssertion } from '@sharpee/branch-tester/tree-document';
 import type { TreeSessionModel } from './model';
 
 /** What synthesis needs from a turn's feed record. */
@@ -40,15 +42,11 @@ export interface TurnSource {
 
 /**
  * What deleting a display line means — mapped onto TreeSessionModel mutators
- * by the cards layer. `default` carries the surviving contains fragments for
- * `removeDefault` (narrowing); `defaultWhole` drops a non-contains policy
- * default whole; `openingDefault` carries the opening's surviving channel
- * claims for `removeOpeningDefault`; `exact` deletes the literal block whole.
+ * by the cards layer. Every claim is an ordinary document assertion now
+ * (recording persists synthesis into the card), so deletion is plain
+ * per-family removal; `exact` deletes the literal block whole.
  */
 export type DeleteRef =
-  | { kind: 'default'; ordinal: number; index: number; defaults: string[] }
-  | { kind: 'defaultWhole'; ordinal: number }
-  | { kind: 'openingDefault'; index: number; defaults: TreeChannelAssertion[] }
   | {
       kind: 'contains' | 'notContains' | 'state' | 'event' | 'channel';
       ordinal: number;
@@ -63,16 +61,10 @@ export interface SourceLine {
   del?: DeleteRef;
 }
 
-/** Everything line composition reads — one options object so every card
- *  renders from the same inputs. */
+/** Everything line composition reads. Rendering is document-only — the
+ *  policy and captures matter at RECORD time, not here. */
 export interface CardLineOptions {
   model: TreeSessionModel;
-  /** The story's `auto-assertion:` policy — no policy, no default lines. */
-  policy?: AutoAssertionPolicy;
-  /** Per-ordinal synthesis source (the feed record's output + captures). */
-  source: (ordinal: number) => TurnSource | undefined;
-  /** The BOOT's channel captures — the opening defaults' carrier. */
-  bootCaptures?: Record<string, unknown[]>;
 }
 
 /** A quoted fragment as display lines carry it. */
@@ -86,14 +78,14 @@ function channelLineText(claim: TreeChannelAssertion): string {
 }
 
 /**
- * The opening card's default claims in the document's channel shape
- * (ADR-307 open question D: prologue, title, description) — what the model's
- * `removeOpeningDefault` narrows into authored channel claims. Derived from
- * the shared synthesis so both consumers agree on the pieces.
+ * The opening card's recorded claims in the document's channel shape
+ * (ADR-307 open question D: prologue, title, description). RECORD time only:
+ * the boot delivery persists these into the opening card (David 2026-08-10 —
+ * the JSON is the source of truth); rendering and runs read the card.
  *
- * @param policy the story's policy — no policy, no defaults.
+ * @param policy the story's effective policy — no policy, no claims.
  * @param bootCaptures the boot's structured channel captures.
- * @returns the defaults as channel claims, possibly empty.
+ * @returns the claims, possibly empty.
  */
 export function openingDefaultClaims(
   policy: AutoAssertionPolicy | undefined,
@@ -110,16 +102,46 @@ export function openingDefaultClaims(
   });
 }
 
-/** The policy's contains-fragments for a turn — `removeDefault`'s narrowing
- *  base when a non-contains default line is deleted whole. */
-export function turnContainsDefaults(
+/** What recording persists onto an appended card: assertions, or an explicit
+ *  `[SKIP]` demotion when the policy had nothing to read this turn. */
+export interface RecordedAssertions {
+  assertions?: TreeAssertions;
+  skip?: boolean;
+}
+
+/**
+ * The assertions RECORDING persists onto a just-played turn's card — the
+ * effective policy's synthesis over the turn's real captures, in the
+ * document's families (David 2026-08-10: the JSON is the source of truth).
+ *
+ * Room policies produce `contains` entries (a multi-line fragment persists
+ * one entry per line — each must appear); `all-emitted-text` persists the
+ * whole output as `exact`. A turn that emitted nothing the policy reads
+ * persists an explicit `skip` — visible in the JSON, never assumed.
+ *
+ * @param policy the story's effective policy — no policy, nothing persists.
+ * @param source the turn's output and captures.
+ * @returns what to persist; `{}` when there is no policy or no source.
+ */
+export function recordedTurnAssertions(
   policy: AutoAssertionPolicy | undefined,
   source: TurnSource | undefined,
-): string[] {
-  if (policy === undefined || source === undefined) return [];
-  return synthesizePolicyAssertions(policy, source.output, source.channelValues)
-    .filter((a) => a.type === 'ok-contains' && a.value !== undefined)
-    .map((a) => a.value as string);
+): RecordedAssertions {
+  if (policy === undefined || source === undefined) return {};
+  const synthesized = synthesizePolicyAssertions(policy, source.output, source.channelValues);
+
+  const assertions: TreeAssertions = {};
+  for (const assertion of synthesized) {
+    if (assertion.type === 'skip') return { skip: true };
+    if (assertion.type === 'ok' && assertion.block !== undefined) {
+      assertions.exact = [...assertion.block];
+    } else if (assertion.type === 'ok-contains' && assertion.value !== undefined) {
+      (assertions.contains ??= []).push(assertion.value);
+    } else if (assertion.type === 'ok-contains' && assertion.block !== undefined) {
+      (assertions.contains ??= []).push(...assertion.block);
+    }
+  }
+  return Object.keys(assertions).length > 0 ? { assertions } : {};
 }
 
 /** Authored non-prose families as lines (states, events, channels). */
@@ -152,64 +174,29 @@ function nonProseLines(
   return lines;
 }
 
-/** A synthesized turn default as display lines (value-form contains lines
- *  narrow individually; everything else deletes whole). */
-function defaultLines(ordinal: number, synthesized: Assertion[]): SourceLine[] {
-  const containsDefaults = synthesized
-    .filter((a) => a.type === 'ok-contains' && a.value !== undefined)
-    .map((a) => a.value as string);
-  const lines: SourceLine[] = [];
-  let containsIndex = 0;
-  for (const assertion of synthesized) {
-    if (assertion.type === 'skip') {
-      lines.push({ text: '[SKIP]', kind: 'skip' });
-    } else if (assertion.type === 'ok-contains' && assertion.value !== undefined) {
-      lines.push({
-        text: `contains ${quoted(assertion.value)}`,
-        kind: 'assertion',
-        del: { kind: 'default', ordinal, index: containsIndex, defaults: containsDefaults },
-      });
-      containsIndex += 1;
-    } else if (assertion.type === 'ok-contains' && assertion.block !== undefined) {
-      lines.push({
-        text: `contains (${assertion.block.length} lines)`,
-        kind: 'assertion',
-        del: { kind: 'defaultWhole', ordinal },
-      });
-      lines.push(...assertion.block.map((text) => ({ text, kind: 'block' as const })));
-    } else if (assertion.type === 'ok' && assertion.block !== undefined) {
-      lines.push({
-        text: `exact output (${assertion.block.length} lines)`,
-        kind: 'assertion',
-        del: { kind: 'defaultWhole', ordinal },
-      });
-      lines.push(...assertion.block.map((text) => ({ text, kind: 'block' as const })));
-    }
-  }
-  return lines;
-}
-
 /**
- * One card's assertion display lines: the authored claims (each deletable
- * through its DeleteRef), or the card's live defaults when it authors
- * nothing — turn defaults from the policy synthesis, opening defaults from
- * the boot captures. A pruned-to-nothing card shows `[SKIP]`.
+ * One card's assertion display lines — the document's claims, verbatim, each
+ * deletable through its DeleteRef. A `skip` card shows `[SKIP]`; a bare card
+ * (hand-edited — recording always persists something) shows `no assertions`,
+ * the state a run will fail by name.
  *
  * @param options the shared composition inputs.
  * @param ordinal the bound card to render lines for (0 = the opening).
  * @returns the lines, empty for an unbound ordinal.
  */
 export function cardAssertionLines(options: CardLineOptions, ordinal: number): SourceLine[] {
-  const { model, policy, source, bootCaptures } = options;
+  const { model } = options;
   const card = model.cardAt(ordinal);
   if (card === undefined) return [];
 
   if (model.claimsNothing(ordinal)) return [{ text: '[SKIP]', kind: 'skip' }];
 
   const claims = card.assertions;
+  if (claims === undefined) return [{ text: 'no assertions', kind: 'skip' }];
+
   const lines: SourceLine[] = [];
 
-  if (claims?.exact !== undefined) {
+  if (claims.exact !== undefined) {
     lines.push({
       text: `exact output (${claims.exact.length} lines)`,
       kind: 'assertion',
@@ -220,57 +207,22 @@ export function cardAssertionLines(options: CardLineOptions, ordinal: number): S
     return lines;
   }
 
-  const hasAuthoredProse = (claims?.contains?.length ?? 0) > 0;
-  const authorsAnything =
-    hasAuthoredProse ||
-    (claims?.notContains?.length ?? 0) > 0 ||
-    (claims?.states?.length ?? 0) > 0 ||
-    (claims?.events?.length ?? 0) > 0 ||
-    (claims?.channels?.length ?? 0) > 0;
-
-  // Defaults synthesize only while the author has not narrowed them away:
-  // no authored contains (turns) / channels (opening), and no `noDefaults`.
-  if (!hasAuthoredProse && claims?.noDefaults !== true && policy !== undefined) {
-    if (ordinal === 0) {
-      if ((claims?.channels?.length ?? 0) === 0) {
-        const defaults = openingDefaultClaims(policy, bootCaptures);
-        defaults.forEach((claim, index) =>
-          lines.push({
-            text: channelLineText(claim),
-            kind: 'assertion',
-            del: { kind: 'openingDefault', index, defaults },
-          }),
-        );
-      }
-    } else {
-      const src = source(ordinal);
-      if (src !== undefined) {
-        const synthesized = synthesizePolicyAssertions(policy, src.output, src.channelValues);
-        // The synthesis's [SKIP] placeholder only shows when the card
-        // authors nothing at all — an authored family already speaks.
-        const meaningful = synthesized.filter((a) => a.type !== 'skip');
-        if (meaningful.length > 0 || !authorsAnything) {
-          lines.push(...defaultLines(ordinal, meaningful.length > 0 ? meaningful : synthesized));
-        }
-      }
-    }
-  }
-
-  (claims?.contains ?? []).forEach((value, index) =>
+  (claims.contains ?? []).forEach((value, index) =>
     lines.push({
       text: `contains ${quoted(value)}`,
       kind: 'assertion',
       del: { kind: 'contains', ordinal, index },
     }),
   );
-  (claims?.notContains ?? []).forEach((value, index) =>
+  (claims.notContains ?? []).forEach((value, index) =>
     lines.push({
       text: `not contains ${quoted(value)}`,
       kind: 'assertion',
       del: { kind: 'notContains', ordinal, index },
     }),
   );
-  if (claims !== undefined) lines.push(...nonProseLines(ordinal, claims));
+  lines.push(...nonProseLines(ordinal, claims));
 
+  if (lines.length === 0) return [{ text: 'no assertions', kind: 'skip' }];
   return lines;
 }

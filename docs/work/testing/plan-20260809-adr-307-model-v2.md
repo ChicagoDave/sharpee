@@ -311,7 +311,31 @@ Real dependencies, not a linear pipeline:
 - **Exit state**: AC-1 through AC-4 all independently verified with cited
   evidence (test names + pass counts, dated); the E2E scenario walked as a
   real click-through in the IDE, not simulated.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-10, session 3a899e). AC-2/AC-3 proven by the
+  new `ac-signoff-cli.test.ts` real-path suite (7 tests: tab-authored
+  documents through the REAL CLI subprocess with the tab's exact arguments
+  — label/citation/detail identity, untouched bytes, byte-exact trees per
+  gesture with seams as failed claims); AC-1/AC-4 re-cited fresh same day.
+  **E2E walked by David in the real IDE** (sign-off recorded in
+  `e2e-click-through-20260810.md`) — the walk surfaced six findings, every
+  one resolved same-session under new rulings: auto-assertion defaults →
+  superseded by **"the JSON is the source of truth"** (record-time
+  synthesis persists into the document; runs assume nothing; `noDefaults`
+  left the schema; binding fills voids, never overwrites), **turn counts
+  removed** everywhere (rows/report/chips — "turns have no meaning unless
+  the author gives them meaning"), **run detail per card and assertion**
+  (`assertionResults` on the wire; tally counts cards + assertions),
+  opening-claim void-fill + Channel… gesture on the opening, gutter rail
+  removed. **Region grouping** added mid-phase (derived from the Story
+  IR's `containing`, chronological collapsible groups, D7 view-state
+  collapse — nothing persisted in the document). Suites at close (all
+  2026-08-10 afternoon): branch-tester 397, devkit 178+1 skipped,
+  transcript-tester 278, ide-protocol 46, surface 66 + tsc clean, IDE
+  **475 passing 0 failures**; `tsf build --npm` green ×4. Carried out of
+  the phase: splice gesture chrome (still unruled — model ops + tests
+  shipped in Phase 3), and the ADR amendments (ADR-294 D2 default/run-time
+  semantics, ADR-307's D3 "synthesize live" line and E2E turn-count
+  wording) queued for Phase 6's flip edit set.
 
 ### Phase 6: Cutover — retire transcript grammar, flip supersession status lines
 - **Tier**: Medium

@@ -102,8 +102,6 @@ export interface TreeAssertions {
   events?: string[];
   /** Channel claims — each reads one channel by id. */
   channels?: TreeChannelAssertion[];
-  /** Withhold policy-default synthesis for this turn. */
-  noDefaults?: boolean;
 }
 
 /** One channel claim: the channel's id and exactly one predicate. */
@@ -395,6 +393,10 @@ function validateBranch(
 
 function validateAssertions(value: unknown, path: string): string | undefined {
   if (!isPlainObject(value)) return `'${path}' must be an object`;
+  // `noDefaults` left the grammar with run-time synthesis itself (David
+  // 2026-08-10: the JSON is the source of truth — recording persists real
+  // assertions, so there is no default synthesis to withhold). Closed
+  // grammar: a document still carrying it is malformed, by design.
   const unknownKey = firstUnknownKey(value, [
     'contains',
     'notContains',
@@ -402,7 +404,6 @@ function validateAssertions(value: unknown, path: string): string | undefined {
     'states',
     'events',
     'channels',
-    'noDefaults',
   ]);
   if (unknownKey !== undefined) return `unknown assertion family '${unknownKey}' in '${path}'`;
 
@@ -412,10 +413,6 @@ function validateAssertions(value: unknown, path: string): string | undefined {
     if (!Array.isArray(entries) || entries.some((entry) => typeof entry !== 'string')) {
       return `'${path}.${family}' must be an array of strings`;
     }
-  }
-
-  if (value['noDefaults'] !== undefined && typeof value['noDefaults'] !== 'boolean') {
-    return `'${path}.noDefaults' must be a boolean`;
   }
 
   const channels = value['channels'];

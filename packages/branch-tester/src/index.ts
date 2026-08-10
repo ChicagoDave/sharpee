@@ -115,7 +115,13 @@ export {
 export { serializeTranscript, serializeAssertionTag } from './serializer.js';
 
 // Phase 6f (ADR-305): the auto-assertion synthesis engine and play promotion.
-export { synthesizePolicyAssertions, proseTextLinesOf } from './auto-assertion.js';
+export {
+  DEFAULT_AUTO_ASSERTION_POLICY,
+  describeAssertion,
+  streamableCommandResult,
+  synthesizePolicyAssertions,
+  proseTextLinesOf,
+} from './auto-assertion.js';
 export { createTranscriptFromPlay, FromPlayError } from './from-play.js';
 export type { PlayedTurnRecord, CreateFromPlayOptions } from './from-play.js';
 

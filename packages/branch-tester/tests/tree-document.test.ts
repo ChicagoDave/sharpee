@@ -30,7 +30,7 @@ const MULTI_BRANCH_TREE: TreeDocument = {
       type: 'opening',
       assertions: { contains: ['The Folly at Fernhill'] },
     },
-    { type: 'boot', assertions: { contains: ['Iron Gates'], noDefaults: true } },
+    { type: 'boot', assertions: { contains: ['Iron Gates'] } },
     {
       type: 'turn',
       command: 'north',

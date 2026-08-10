@@ -174,12 +174,14 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func boot(policy: String? = nil) async throws {
+    private func boot(policy: String? = nil,
+                      regions: [String: String] = [:]) async throws {
         surface = TestingSurfaceViewController(
             sessionStore: TestingSessionStore(fileURL: sidecarURL))
         _ = surface.view
         surface.testDocumentURL = documentURL
         surface.policy = policy
+        surface.regionByRoom = regions
         surface.load(bundleDirectory: bundleDir)
         try await waitFor("window.bootProbeReady === true", "fixture boot")
     }
@@ -313,13 +315,15 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             "no tests/ directory is created — the document is the one artifact (AC-5's shape)")
     }
 
-    // MARK: - The opening defaults (open question D) from real boot captures
+    // MARK: - The opening claims (open question D), RECORDED from real boot
+    // captures into the document (David 2026-08-10: JSON = source of truth)
 
-    func testOpeningDefaultsListAndNarrowIntoTheDocument() async throws {
+    func testOpeningClaimsRecordIntoTheDocumentAndDeletePlainly() async throws {
         try await boot(policy: "room-name-and-description")
         try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 2", "cards")
         // The opening card lists prologue, title, description — synthesized
-        // from the boot record's captures, persisted nowhere.
+        // from the boot record's captures at RECORD time and PERSISTED into
+        // the opening card (the JSON is the source of truth).
         try await waitFor("""
         (function () {
           var lines = document.querySelectorAll('[data-ts-ordinal="0"] .ts-asserts .ts-assert-line');
@@ -328,22 +332,25 @@ final class TestingSurfaceRealPathTests: XCTestCase {
                  lines[1].textContent.indexOf('info.title is "Probe"') !== -1 &&
                  lines[2].textContent.indexOf('info.description') !== -1;
         })()
-        """, "the opening card's three default lines")
-        try await waitForDocument("a bare opening (defaults are live)") { object in
-            let cards = (object["cards"] as? [[String: Any]]) ?? []
-            return cards.first?["assertions"] == nil
-        }
-
-        // Deleting one default narrows: the survivors persist as authored
-        // channel claims, defaults withheld (the same rule as turns).
-        _ = try await surface.evaluateInSurface("""
-        document.querySelector('[data-ts-ordinal="0"] .ts-asserts .ts-assert-line .ts-assert-delete').click();
-        """)
-        try await waitForDocument("the narrowed opening claims") { object in
+        """, "the opening card's three recorded claim lines")
+        try await waitForDocument("the recorded opening claims") { object in
             let cards = (object["cards"] as? [[String: Any]]) ?? []
             guard let assertions = cards.first?["assertions"] as? [String: Any],
                   let channels = assertions["channels"] as? [[String: Any]] else { return false }
-            return assertions["noDefaults"] as? Bool == true
+            return channels.map { $0["id"] as? String }
+                == ["prologue", "info.title", "info.description"]
+        }
+
+        // Deleting one is plain removal on the document — no narrowing
+        // machinery, no noDefaults flag, the survivors simply remain.
+        _ = try await surface.evaluateInSurface("""
+        document.querySelector('[data-ts-ordinal="0"] .ts-asserts .ts-assert-line .ts-assert-delete').click();
+        """)
+        try await waitForDocument("the pruned opening claims") { object in
+            let cards = (object["cards"] as? [[String: Any]]) ?? []
+            guard let assertions = cards.first?["assertions"] as? [String: Any],
+                  let channels = assertions["channels"] as? [[String: Any]] else { return false }
+            return assertions["noDefaults"] == nil
                 && channels.map { $0["id"] as? String } == ["info.title", "info.description"]
         }
     }
@@ -373,14 +380,19 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             return (assertions?["notContains"] as? [String]) == ["a grue"]
         }
 
-        // ⌘Z: the claim leaves the model AND the document.
+        // ⌘Z: the authored claim leaves the model AND the document — while
+        // the card's RECORDED claims (persisted at play, David 2026-08-10)
+        // stay exactly as recording wrote them.
         _ = try await surface.evaluateInSurface("""
         document.dispatchEvent(new KeyboardEvent('keydown',
           { key: 'z', metaKey: true, bubbles: true, cancelable: true }));
         """)
-        try await waitForDocument("the undone claim gone") { object in
+        try await waitForDocument("the undone claim gone, the recorded claims kept") { object in
             let cards = (object["cards"] as? [[String: Any]]) ?? []
-            return cards.count > 2 && cards[2]["assertions"] == nil
+            guard cards.count > 2,
+                  let assertions = cards[2]["assertions"] as? [String: Any] else { return false }
+            return assertions["notContains"] == nil
+                && (assertions["contains"] as? [String])?.isEmpty == false
         }
     }
 
@@ -484,6 +496,83 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             let cards = (object["cards"] as? [[String: Any]]) ?? []
             return cards.count == 3 && cards[2]["command"] as? String == "north"
         }
+    }
+
+    // MARK: - Region grouping (David 2026-08-10): derived groups, collapsible
+
+    func testRegionGroupsRenderCollapseAndPersistViewState() async throws {
+        // Fixture rooms mapped: Iron Gates + Gravel Drive → Grounds,
+        // Fountain Court → Court. Boot + two norths = cards 0..3, walking
+        // Grounds → Grounds → Court; the opening (no room) inherits Grounds.
+        try await boot(regions: ["Iron Gates": "Grounds",
+                                 "Gravel Drive": "Grounds",
+                                 "Fountain Court": "Court"])
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)').length === 4",
+                         "4 cards")
+
+        // Two group headers in play order, named by region alone.
+        try await waitFor("""
+        (function () {
+          var headers = document.querySelectorAll('.ts-region-header');
+          return headers.length === 2 &&
+                 headers[0].textContent.indexOf('Grounds') !== -1 &&
+                 headers[1].textContent.indexOf('Court') !== -1;
+        })()
+        """, "the two region headers")
+
+        // Collapse Grounds: its three cards hide; the header stays.
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-region-header')[0].click();")
+        try await waitFor("""
+        (function () {
+          function hidden(n) {
+            var el = document.querySelector('[data-ts-ordinal="' + n + '"]');
+            return !!el && el.style.display === 'none';
+          }
+          var last = document.querySelector('[data-ts-ordinal="3"]');
+          return hidden(0) && hidden(1) && hidden(2) &&
+                 !!last && last.style.display !== 'none';
+        })()
+        """, "the collapsed Grounds cards, Court untouched")
+
+        // Collapse state is view-state ephemera (D7): the sidecar carries
+        // the group key — never the document.
+        for _ in 0..<160 {
+            if let data = try? Data(contentsOf: sidecarURL),
+               let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+               let view = object["view"] as? [String: Any],
+               (view["collapsed"] as? [String]) == ["Grounds#0"] { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let data = try Data(contentsOf: sidecarURL)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let view = try XCTUnwrap(object["view"] as? [String: Any])
+        XCTAssertEqual(view["collapsed"] as? [String], ["Grounds#0"])
+        let documentText = try String(contentsOf: documentURL, encoding: .utf8)
+        XCTAssertFalse(documentText.contains("Grounds"),
+                       "regions and collapse never touch the document — derived + ephemera only")
+
+        // Expand again: the cards return.
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-region-header')[0].click();")
+        try await waitFor("""
+        document.querySelector('[data-ts-ordinal="1"]').style.display !== 'none'
+        """, "the expanded Grounds cards")
+
+        // The LAST group is the play point — collapsing it is refused
+        // visually: its cards stay, its header stays open (▾).
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-region-header')[1].click();")
+        try await waitFor("""
+        (function () {
+          var last = document.querySelector('[data-ts-ordinal="3"]');
+          var header = document.querySelectorAll('.ts-region-header')[1];
+          return !!last && last.style.display !== 'none' &&
+                 header.textContent.indexOf('▾') === 0;
+        })()
+        """, "the play-point group staying open")
     }
 
     // MARK: - The author restart replays the tree (D4)
@@ -743,10 +832,11 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
         let tally = try await surface.evaluateInSurface(
             "(document.querySelector('.ts-run-tally') || {}).textContent || ''") as? String
-        // Command-level totals: the boot claim and the branch's look pass,
-        // the take-lamp claim fails.
-        XCTAssertEqual(tally, "2 passing, 1 failures",
-                       "the document ran both lines: the main line failed, the branch passed")
+        // Every assertion counts (David 2026-08-10): the boot look and the
+        // branch's look each pass their one claim; take-lamp fails its one —
+        // the same counts the CLI human report shows (AC-2 parity).
+        XCTAssertEqual(tally, "2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing",
+                       "the tally aggregates cards and assertions from the detail")
 
         // The stream's rows key by derived label (Q-8) — the identities on
         // this wire. (The fixture session's own line shows as a dash row
@@ -769,8 +859,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
                       "the main line fails by its derived label; got: \(lines.first ?? "")")
         XCTAssertTrue(lines.first?.contains("does not contain \"no such text anywhere\"") == true,
                       "the first failure rides the row; got: \(lines.first ?? "")")
-        XCTAssertEqual(lines.last, "PASS|den · look|1 turn",
-                       "the branch passes by its derived label")
+        // No turn count on the row: turns have no meaning unless the author
+        // gives them meaning (David 2026-08-10).
+        XCTAssertEqual(lines.last, "PASS|den · look|",
+                       "the branch passes by its derived label, count-free")
 
         let buttonLabel = try await surface.evaluateInSurface(
             "document.getElementById('ts-run-btn').textContent") as? String
@@ -886,6 +978,18 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         let branches = try XCTUnwrap(cards[3]["branches"] as? [[String: Any]])
         let branchCards = try XCTUnwrap(branches.first?["cards"] as? [[String: Any]])
         XCTAssertEqual(branchCards.map { $0["command"] as? String }, ["east"])
+
+        // The OPENING's recorded claims persisted from the real boot flush
+        // (David 2026-08-10 — the fresh-start regression: they were only
+        // written on creation and lost on replay). fernhill's banner title
+        // must be among them.
+        let openingAssertions = try XCTUnwrap(cards[0]["assertions"] as? [String: Any],
+                                              "the opening card carries its recorded claims")
+        let openingChannels = try XCTUnwrap(openingAssertions["channels"] as? [[String: Any]])
+        XCTAssertTrue(openingChannels.contains {
+            $0["id"] as? String == "info.title"
+                && $0["is"] as? String == "The Folly at Fernhill"
+        }, "the recorded info.title claim rides the opening card; got: \(openingChannels)")
     }
 
     // MARK: - Placeholder states

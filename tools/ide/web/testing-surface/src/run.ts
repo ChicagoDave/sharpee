@@ -2,14 +2,15 @@
  * run.ts — the run column's state (design §7, ADR-306 Phase 6).
  *
  * Purpose: fold the `sharpee test --tree --json` NDJSON stream (relayed by
- *   the Swift side line by line) into the one question the column answers —
- *   *does my tree still pass?* One result per LINE, keyed by its derived
- *   label — the identity on the document run's wire (ADR-307 D2/Q-8; a
- *   fallback transcript stream's file paths reduce to their stems through
- *   the same key). A failed line carries its FIRST failure on one line
- *   (`turn 3 — Output does not contain "…"`); a closing tally. Decoding goes
- *   through the wire's own `isRunEvent` guard (DEVARCH 8b — the shapes are
- *   imported, never mirrored).
+ *   the Swift side line by line) into the column's answer: one result per
+ *   LINE, keyed by its derived label — the identity on the document run's
+ *   wire (ADR-307 D2/Q-8; a fallback transcript stream's file paths reduce
+ *   to their stems through the same key) — and, inside each line, EVERY
+ *   executed command with every assertion's verdict (David 2026-08-10: the
+ *   run shows every card and its assertions). A failed line also carries its
+ *   FIRST failure one-line for the header; a closing tally counts lines.
+ *   Decoding goes through the wire's own `isRunEvent` guard (DEVARCH 8b —
+ *   the shapes are imported, never mirrored).
  *
  * Public interface: RunColumnState, TranscriptRunResult, createRunState,
  *   beginRun, foldRunLine, finishRun, resetRun.
@@ -18,13 +19,34 @@
 
 import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol/run-events';
 
+/** One assertion's verdict, as the wire carried it (the detail view's row). */
+export interface AssertionVerdict {
+  description: string;
+  passed: boolean;
+  message?: string;
+}
+
+/** One executed command's detail — the card's run outcome (David
+ *  2026-08-10: the run shows every card and its assertions). */
+export interface CommandOutcome {
+  input: string;
+  passed: boolean;
+  skipped: boolean;
+  /** Every evaluated assertion's verdict, in authored order. */
+  assertions: AssertionVerdict[];
+  /** The command's failure (first failed assertion or runtime error). */
+  failure?: string;
+}
+
 /** One line's outcome, as the column shows it. */
 export interface TranscriptRunResult {
   /** The wire's per-line status, verbatim. */
   status: 'passed' | 'failed' | 'error' | 'unreached' | 'skipped';
-  /** Turn counts from `transcript-end`. */
+  /** Command counts from `transcript-end` (wire data, not display). */
   passed: number;
   failed: number;
+  /** Per-command detail, in execution order — the detail view's spine. */
+  commands: CommandOutcome[];
   /**
    * The file's first failure, one line: `turn N — <message>`. Filled from
    * the first failed `command-result` (its `failure` message, else its
@@ -43,8 +65,20 @@ export interface RunColumnState {
   /** Results keyed by derived label (a fallback stream's paths reduce to
    *  stems through the same key). */
   results: Map<string, TranscriptRunResult>;
-  /** `run-end`'s aggregate, present once the stream closed cleanly. */
-  tally?: { passed: number; failed: number; errors: number; unreached: number };
+  /** Commands accumulating for a line still mid-stream (before its
+   *  `transcript-end` seals them into `results`). */
+  pendingCommands: Map<string, CommandOutcome[]>;
+  /** CARD and ASSERTION counts derived from the detail when `run-end`
+   *  closes the stream cleanly (David 2026-08-10: every assertion counts) —
+   *  skipped cards join neither side; `errors`/`unreached` stay line-level. */
+  tally?: {
+    cardsPassed: number;
+    cardsFailed: number;
+    assertionsPassed: number;
+    assertionsFailed: number;
+    errors: number;
+    unreached: number;
+  };
   /** A pipeline failure (launch/load death with no stream), in Swift's words. */
   note?: string;
   /** Files whose CURRENT execution is a replay (state rebuild) — never rows. */
@@ -53,13 +87,19 @@ export interface RunColumnState {
 
 /** A column that has never run. */
 export function createRunState(): RunColumnState {
-  return { inFlight: false, results: new Map(), replaying: new Set() };
+  return {
+    inFlight: false,
+    results: new Map(),
+    pendingCommands: new Map(),
+    replaying: new Set(),
+  };
 }
 
 /** A new run starts: prior results clear — the column reports THIS run. */
 export function beginRun(state: RunColumnState): void {
   state.inFlight = true;
   state.results.clear();
+  state.pendingCommands.clear();
   state.replaying.clear();
   delete state.tally;
   delete state.note;
@@ -100,20 +140,46 @@ function fold(state: RunColumnState, event: RunEvent): void {
       return;
     }
     case 'command-result': {
-      if (event.passed || event.skipped || state.replaying.has(event.file)) return;
+      if (state.replaying.has(event.file)) return;
       const stem = stemOf(event.file);
+      // Every executed command is a detail row (David 2026-08-10: the run
+      // shows every card and its assertions), sealed at `transcript-end`.
+      const failureMessage = event.failure ?? event.error;
+      const outcome: CommandOutcome = {
+        input: event.input,
+        passed: event.passed,
+        skipped: event.skipped,
+        assertions: (event.assertionResults ?? []).map((entry) => ({
+          description: entry.description,
+          passed: entry.passed,
+          ...(entry.message !== undefined ? { message: entry.message } : {}),
+        })),
+        ...(failureMessage !== undefined && !event.passed ? { failure: failureMessage } : {}),
+      };
+      const pending = state.pendingCommands.get(stem) ?? [];
+      pending.push(outcome);
+      state.pendingCommands.set(stem, pending);
+
+      if (event.passed || event.skipped) return;
       const existing = state.results.get(stem);
       if (existing?.firstFailure !== undefined) {
         existing.moreFailures += 1;
         return;
       }
-      const message = event.failure ?? event.error ?? 'failed';
-      const where = event.turn !== undefined ? `turn ${event.turn}` : `line ${event.line}`;
+      const message = failureMessage ?? 'failed';
+      // Position prefix: turn number when the wire has one, source line for
+      // the transcript world. A document run's cards have no source lines
+      // (the wire carries `line: 0`) — the message stands alone.
+      const where =
+        event.turn !== undefined ? `turn ${event.turn}`
+        : event.line > 0 ? `line ${event.line}`
+        : undefined;
       state.results.set(stem, {
         status: 'failed',
         passed: 0,
         failed: 1,
-        firstFailure: `${where} — ${message}`,
+        commands: [],
+        firstFailure: where !== undefined ? `${where} — ${message}` : message,
         moreFailures: existing?.moreFailures ?? 0,
       });
       return;
@@ -121,6 +187,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
     case 'transcript-end': {
       if (state.replaying.has(event.file)) {
         state.replaying.delete(event.file);
+        state.pendingCommands.delete(stemOf(event.file));
         return;
       }
       const stem = stemOf(event.file);
@@ -129,8 +196,10 @@ function fold(state: RunColumnState, event: RunEvent): void {
         status: event.status,
         passed: event.passed,
         failed: event.failed,
+        commands: state.pendingCommands.get(stem) ?? [],
         moreFailures: Math.max(0, event.failed - 1),
       };
+      state.pendingCommands.delete(stem);
       if (partial?.firstFailure !== undefined) result.firstFailure = partial.firstFailure;
       else if (event.status === 'error' && event.errorMessage !== undefined) {
         result.firstFailure = event.errorMessage;
@@ -144,11 +213,37 @@ function fold(state: RunColumnState, event: RunEvent): void {
     }
     case 'run-end': {
       state.inFlight = false;
+      // Every assertion counts (David 2026-08-10): the tally aggregates the
+      // detail itself — cards (executed commands, opening row included) and
+      // assertions, each passing or failing; skipped cards join neither
+      // side. Line-level errors/unreached keep their own counts. Never the
+      // wire's totals — the detail above IS the tally's source.
+      let cardsPassed = 0;
+      let cardsFailed = 0;
+      let assertionsPassed = 0;
+      let assertionsFailed = 0;
+      let errors = 0;
+      let unreached = 0;
+      for (const result of state.results.values()) {
+        if (result.status === 'error') errors += 1;
+        else if (result.status === 'unreached') unreached += 1;
+        for (const command of result.commands) {
+          if (command.skipped) continue;
+          if (command.passed) cardsPassed += 1;
+          else cardsFailed += 1;
+          for (const assertion of command.assertions) {
+            if (assertion.passed) assertionsPassed += 1;
+            else assertionsFailed += 1;
+          }
+        }
+      }
       state.tally = {
-        passed: event.totalPassed,
-        failed: event.totalFailed,
-        errors: event.totalErrors,
-        unreached: event.totalUnreached,
+        cardsPassed,
+        cardsFailed,
+        assertionsPassed,
+        assertionsFailed,
+        errors,
+        unreached,
       };
       return;
     }
@@ -167,6 +262,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
 export function resetRun(state: RunColumnState): void {
   state.inFlight = false;
   state.results.clear();
+  state.pendingCommands.clear();
   state.replaying.clear();
   delete state.tally;
   delete state.note;

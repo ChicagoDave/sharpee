@@ -1177,8 +1177,14 @@ private final class MainSplitViewController: NSSplitViewController {
             // CURRENT policy or the cards' default assertion lines go stale.
             if let storyURL = treeState.storyURL,
                let source = try? String(contentsOf: storyURL, encoding: .utf8) {
+                // Declared policy only; absent → the page applies the
+                // platform default (David 2026-08-10).
                 surface.policy = StoryHeaderAutoAssertion.read(from: source)?.rawValue
-                    ?? TestingSurfaceViewController.defaultPolicy
+            }
+            // Regions may have changed with the build too — re-derive the
+            // grouping map from the fresh IR (David 2026-08-10).
+            if case .populated(let ir, _) = treeState.display {
+                surface.regionByRoom = Self.regionMap(from: ir)
             }
             surface.load(bundleDirectory: bundleDir)
         }
@@ -1211,12 +1217,34 @@ private final class MainSplitViewController: NSSplitViewController {
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
-        // No header line → the surface's default policy (David 2026-08-09):
-        // the cards list useful assertions out of the box.
+        // Declared policy only. No header line → the page applies the
+        // platform default (branch-tester's constant; David 2026-08-10,
+        // extending the 2026-08-09 authoring-surface ruling platform-wide).
         surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
-            ?? TestingSurfaceViewController.defaultPolicy
+        // Region grouping (David 2026-08-10): the page groups cards by the
+        // region each turn's room belongs to — derived from the Story IR,
+        // never persisted in the document.
+        surface.regionByRoom = Self.regionMap(from: ir)
         rightPanelViewController.installTestingSurface(surface)
         return surface
+    }
+
+    /// Room name → region name from the Story IR: each region's `containing`
+    /// members that are rooms map to that region's name. Nested regions fall
+    /// out naturally — only DIRECT members are listed, so the innermost
+    /// container wins. Empty when the story declares no regions.
+    static func regionMap(from ir: ComposeStoryIR) -> [String: String] {
+        let byId = Dictionary(ir.allEntities.map { ($0.id, $0) },
+                              uniquingKeysWith: { first, _ in first })
+        var map: [String: String] = [:]
+        for entity in ir.allEntities where entity.hasKind("region") {
+            for member in entity.containing ?? [] {
+                if let room = byId[member.id], room.hasKind("room") {
+                    map[room.name] = entity.name
+                }
+            }
+        }
+        return map
     }
 
     /// The Testing tab was selected (click or ⌥⌘U): bind the surface and load

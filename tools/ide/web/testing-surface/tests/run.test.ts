@@ -78,6 +78,18 @@ describe('foldRunLine', () => {
     expect(state.results.get('arrival')?.firstFailure).toBe('line 4 — engine exploded');
   });
 
+  it("a document run's failure (no turn, line 0) shows the message alone — never 'line 0 —'", () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start('opening-den'),
+      command('opening-den', { passed: false, line: 0, failure: 'Output does not contain "roses"' }),
+      end('opening-den', { status: 'failed', passed: 0, failed: 1 }),
+    ]) foldRunLine(state, raw);
+
+    expect(state.results.get('opening-den')?.firstFailure).toBe('Output does not contain "roses"');
+  });
+
   it('a replayed execution is never a row, and the authored one still is', () => {
     const state = createRunState();
     beginRun(state);
@@ -108,16 +120,53 @@ describe('foldRunLine', () => {
     expect(state.results.get('boiler-east-1')?.firstFailure).toBe('blocked by arrival');
   });
 
-  it('run-end closes the run with the tally; undecodable lines never throw', () => {
+  it('run-end closes the run with a tally counting CARDS and ASSERTIONS from the detail; undecodable lines never throw', () => {
     const state = createRunState();
     beginRun(state);
     expect(state.inFlight).toBe(true);
     foldRunLine(state, 'not json at all');
     foldRunLine(state, '{"type":"command-result"}');   // fails the guard
-    foldRunLine(state, runEnd({ totalPassed: 4, totalFailed: 1, totalUnreached: 2 }));
+    for (const raw of [
+      // One passed line: one card, three passing assertions.
+      start(A),
+      command(A, {
+        assertionResults: [
+          { description: 'contains "hall"', passed: true },
+          { description: 'contains "door"', passed: true },
+          { description: 'state lamp.location = player', passed: true },
+        ],
+      }),
+      end(A, { passed: 3 }),
+      // One failed line: a skipped card (joins neither side), then a failed
+      // card with one passing and two failing assertions.
+      start(B),
+      command(B, { skipped: true }),
+      command(B, {
+        passed: false, turn: 2, failure: 'no boiler',
+        assertionResults: [
+          { description: 'contains "shed"', passed: true },
+          { description: 'contains "boiler"', passed: false, message: 'no boiler' },
+          { description: 'contains "coal"', passed: false, message: 'no coal' },
+        ],
+      }),
+      end(B, { status: 'failed', passed: 4, failed: 2 }),
+      end('/proj/tests/broken.transcript',
+          { status: 'error', passed: 0, failed: 0, errorMessage: 'parse' }),  // one errored line
+      end('/proj/tests/late.transcript',
+          { status: 'unreached', passed: 0, failed: 0, blockedBy: B }),       // one unreached line
+      // Wire totals — the tally must never copy them; the detail is its source.
+      runEnd({ totalPassed: 7, totalFailed: 2, totalUnreached: 1 }),
+    ]) foldRunLine(state, raw);
 
     expect(state.inFlight).toBe(false);
-    expect(state.tally).toEqual({ passed: 4, failed: 1, errors: 0, unreached: 2 });
+    expect(state.tally).toEqual({
+      cardsPassed: 1,
+      cardsFailed: 1,
+      assertionsPassed: 4,
+      assertionsFailed: 2,
+      errors: 1,
+      unreached: 1,
+    });
   });
 
   it('a stream-less death leaves a note; a clean close never does', () => {

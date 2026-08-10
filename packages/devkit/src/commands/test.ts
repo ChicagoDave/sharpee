@@ -349,7 +349,13 @@ export async function runTestCommand(rest: string[]): Promise<number> {
           if (!json) reportTranscriptStart({ filePath: started.file, title: transcript.header.title });
         },
         onCommandResult: (command) => {
-          stream?.commandResult(transcriptPath, command, captureOutput);
+          // The raw runner result carries `assertionResults` in the
+          // harness's internal shape; the wire's field of that name wants
+          // rendered verdicts. This path (transcript-tester's world, frozen
+          // per ADR-302 D15) keeps the compact form — detail rows are the
+          // document world's (David 2026-08-10).
+          const { assertionResults: _internal, ...streamable } = command;
+          stream?.commandResult(transcriptPath, streamable, captureOutput);
           if (!json) reportCommandResult(command, { verbose });
         },
       },

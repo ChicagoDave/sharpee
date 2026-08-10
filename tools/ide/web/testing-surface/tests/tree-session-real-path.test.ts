@@ -23,7 +23,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
-import { openingDefaultClaims } from '../src/compose';
+import { openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
 import { MAIN_LINE, TreeSessionModel } from '../src/model';
 
 const requireCompiled = createRequire(import.meta.url);
@@ -47,7 +47,14 @@ const { runTreeDocument } = requireCompiled(
       id: string;
       label: string;
       status: string;
-      result?: { commands: { command: { input: string }; passed: boolean; failure?: string }[] };
+      result?: {
+        commands: {
+          command: { input: string };
+          passed: boolean;
+          failure?: string;
+          assertionResults?: { passed: boolean; message?: string }[];
+        }[];
+      };
     }[];
     defects: unknown[];
   }>;
@@ -91,7 +98,11 @@ create the player
   You.
 `;
 
-const CHANNELS = ['room-name', 'info', 'prologue'];
+const CHANNELS = ['room-name', 'room-description', 'info', 'prologue'];
+
+/** The story's declared policy — what RECORDING persists (David 2026-08-10:
+ *  the JSON is the source of truth; runs read only the document). */
+const POLICY = 'room-name-and-description' as const;
 let projectDir: string;
 
 const loadGame = (): Promise<RealGame> =>
@@ -105,7 +116,8 @@ beforeAll(() => {
 afterAll(() => rmSync(projectDir, { recursive: true, force: true }));
 
 /** Executes a command on the real game and folds it into the model the way
- *  the tab's feed does: output + room from the real captures. */
+ *  the tab's feed does: output + room from the real captures, and RECORDED
+ *  assertions persisted into the card (the JSON is the source of truth). */
 let ordinal = 0;
 async function playReal(
   model: TreeSessionModel,
@@ -113,14 +125,27 @@ async function playReal(
   command: string,
   boot = false,
 ): Promise<number> {
-  await game.executeCommand(command);
+  const output = String(await game.executeCommand(command));
   ordinal += 1;
   const room = proseTextLinesOf(game.lastChannelValues?.['room-name']).at(-1);
+  const recorded = recordedTurnAssertions(POLICY, {
+    output,
+    ...(game.lastChannelValues !== undefined ? { channelValues: game.lastChannelValues } : {}),
+  });
+  const openingClaims = boot
+    ? openingDefaultClaims(POLICY, {
+        ...(game.lastChannelValues ?? {}),
+        ...(game.bootChannelValues ?? {}),
+      })
+    : [];
   model.addTurn({
     ordinal,
     command: boot ? '' : command,
     boot,
     ...(room !== undefined ? { room } : {}),
+    ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
+    ...(recorded.skip === true ? { skip: true } : {}),
+    ...(openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}),
   });
   return ordinal;
 }
@@ -181,7 +206,7 @@ describe('a real play session produces the document, and the real walker consume
     ]);
   }, 120_000);
 
-  it('a splice repair replays whole: the seam is a failed claim, the branch still passes (D4)', async () => {
+  it('a splice repair replays whole: the replay fills the spliced card, the seam is a failed claim, the branch still passes (D4)', async () => {
     const model = new TreeSessionModel('mini', 42);
     const game = await loadGame();
     await playReal(model, game, 'look', true);
@@ -195,24 +220,14 @@ describe('a real play session produces the document, and the real walker consume
     const alt = await playReal(model, branchGame, 'look');
     model.addContains(alt, 'A small square den');
     model.activateLine(MAIN_LINE);
+    const beforeSplice = model.serialize();
 
-    // The repair: splice an extra `north` in after the examine. The
-    // downstream card's claim now runs from the wrong room — the next
-    // whole-path replay must surface exactly that claim as the seam.
+    // The repair: splice an extra `north` in after the examine. The spliced
+    // card was never played — it has NO truth yet (the JSON says so) — and
+    // the whole-path replay is where its truth records (void-fill).
     expect(model.spliceIn(examined, 'north')).toBe(true);
+    expect(model.serialize()).toContain('"command": "north"');
 
-    const spliced = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
-    expect(spliced.defects).toEqual([]);
-    const main = spliced.lines.find((line) => line.id === 'main')!;
-    expect(main.status).toBe('failed');
-    const failedRow = main.result!.commands.find((row) => !row.passed)!;
-    expect(failedRow.failure).toContain('Roses everywhere');
-    // Seams never block: the branch forks BEFORE the seam and still passes.
-    expect(spliced.lines.find((line) => line.id !== 'main')!.status).toBe('passed');
-
-    // The whole-path replay binds the repaired stream back onto the board
-    // (real commands, real engine), and splice-out by the bound ordinal
-    // restores the tree — the walker runs it green again.
     model.beginRebindAll();
     ordinal += 10;
     const rebindGame = await loadGame();
@@ -221,8 +236,30 @@ describe('a real play session produces the document, and the real walker consume
     const splicedOrdinal = await playReal(model, rebindGame, 'north');
     await playReal(model, rebindGame, 'north');
     expect(model.cardAt(splicedOrdinal)?.command).toBe('north');
+    // The replay filled the spliced card with its recorded claims.
+    expect(model.cardAt(splicedOrdinal)?.assertions).toBeDefined();
 
+    // The walker now surfaces the SEAM: the downstream card's recorded and
+    // authored claims run from the wrong room and fail — never a crash —
+    // while the branch (forked before the seam) still passes.
+    const spliced = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
+    expect(spliced.defects).toEqual([]);
+    const main = spliced.lines.find((line) => line.id === 'main')!;
+    expect(main.status).toBe('failed');
+    const failedRows = main.result!.commands.filter((row) => !row.passed);
+    expect(failedRows.length).toBeGreaterThan(0);
+    const failedMessages = failedRows.flatMap((row) =>
+      (row.assertionResults ?? [])
+        .filter((entry) => !entry.passed)
+        .map((entry) => entry.message ?? ''),
+    );
+    expect(failedMessages.some((message) => message.includes('Roses everywhere'))).toBe(true);
+    expect(spliced.lines.find((line) => line.id !== 'main')!.status).toBe('passed');
+
+    // Splice-out by the bound ordinal restores the tree byte-identically —
+    // and the walker runs it green again.
     expect(model.spliceOut(splicedOrdinal)).toBe(true);
+    expect(model.serialize()).toBe(beforeSplice);
     const repaired = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
     expect(repaired.lines.map((line) => line.status)).toEqual(['passed', 'passed']);
     expect(model.lineIds().includes(branchId)).toBe(true);

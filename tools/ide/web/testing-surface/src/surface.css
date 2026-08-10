@@ -62,52 +62,23 @@ body.ts-active .sharpee-window { display: none; }
   display: flex;
   flex-direction: column;
 }
+/* No gutter rail, no margin line (David 2026-08-10) — the cards column
+   starts at the pane edge; the region headers' dashed rule is the only
+   horizontal structure. */
 .ts-session {
   flex: 1;
   overflow-y: auto;
-  background: linear-gradient(to right, var(--ts-rail-bg) 0, var(--ts-rail-bg) 44px,
-                              var(--ts-border) 44px, var(--ts-border) 45px,
-                              var(--ts-play-bg) 45px);
+  background: var(--ts-play-bg);
 }
 #ts-cards {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 14px 18px 14px 0;
+  padding: 14px 18px;
   max-width: 76ch;
 }
 
 .ts-turn { display: flex; align-items: flex-start; }
-.ts-pick {
-  flex: 0 0 45px;
-  text-align: center;
-  padding-top: 12px;
-}
-.ts-pick input {
-  appearance: none;
-  width: 14px; height: 14px;
-  border: 1px solid var(--ts-fg-faint);
-  border-radius: 3px;
-  background: var(--ts-block-bg);
-  cursor: pointer;
-  position: relative;
-  vertical-align: middle;
-}
-.ts-pick input:checked { background: var(--ts-accent); border-color: var(--ts-accent); }
-/* An implied range member: between the ticked ends — included, not ticked. */
-.ts-pick input.ts-implied {
-  background: color-mix(in srgb, var(--ts-accent) 35%, var(--ts-block-bg));
-  border-color: var(--ts-accent);
-}
-.ts-pick input:checked::after {
-  content: "";
-  position: absolute;
-  left: 4px; top: 1px;
-  width: 4px; height: 8px;
-  border: solid var(--ts-play-bg);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
 
 .ts-card-column { flex: 1; min-width: 0; margin-left: 13px; }
 .ts-block {
@@ -251,11 +222,6 @@ body.ts-active .sharpee-window { display: none; }
 .ts-chip-span { color: var(--ts-fg-dim); font-size: 10.5px; margin-top: 2px; }
 
 .ts-input-row { display: flex; border-top: 1px solid var(--ts-border); }
-.ts-input-row .ts-gutter-cap {
-  flex: 0 0 44px;
-  background: var(--ts-rail-bg);
-  border-right: 1px solid var(--ts-border);
-}
 /* The client's own input bar rides here; neutralize its window styling. */
 .ts-input-row .sharpee-input-bar {
   flex: 1;
@@ -439,12 +405,39 @@ body.ts-active .sharpee-window { display: none; }
 .ts-run-row .ts-badge.ts-pass { color: var(--ts-assert); font-weight: 700; }
 .ts-run-row .ts-badge.ts-fail { color: var(--ts-fail); font-weight: 700; }
 .ts-run-row .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
+/* Run detail (David 2026-08-10: every card and its assertions): one command
+   row per executed card, each assertion's verdict indented beneath it. */
+.ts-run-cmd {
+  padding: 3px 0 1px; font-size: 10.5px; font-weight: 700;
+  color: var(--ts-fg); white-space: pre-wrap;
+}
+.ts-run-assert {
+  padding: 1px 0 1px 12px; font-size: 10.5px; color: var(--ts-fg-dim);
+  white-space: pre-wrap;
+}
+.ts-run-assert.ts-pass { color: var(--ts-assert); }
+.ts-run-assert.ts-fail { color: var(--ts-fail); }
+.ts-run-assert-why {
+  padding: 0 0 2px 24px; font-size: 10px; color: var(--ts-fail);
+  white-space: pre-wrap;
+}
 .ts-run-tally {
   padding: 8px 0 2px; font-size: 10.5px; font-weight: 700;
   color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;
 }
 .ts-run-note { padding: 6px 0; font-size: 10.5px; color: var(--ts-fail); }
 .ts-pending-note { color: var(--ts-fg-faint); font-style: italic; }
+
+/* Region group headers (David 2026-08-10): derived grouping, collapsible. */
+.ts-region-header {
+  padding: 8px 0 4px; margin-top: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ts-fg-dim);
+  border-bottom: 1px solid var(--ts-border);
+  cursor: pointer; user-select: none;
+}
+.ts-region-header:hover { color: var(--ts-fg); }
+.ts-region-header.ts-region-collapsed { border-bottom-style: dashed; }
 
 /* ── ADR-307: tail-cut ✕ and the refused-document notice ─────────────── */
 .ts-card-delete {

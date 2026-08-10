@@ -138,15 +138,18 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         testRunner.cancel()
     }
 
-    /// The surface's default synthesis policy when the story declares no
-    /// `auto-assertion:` line (David's ruling 2026-08-09): the authoring
-    /// surface shows useful assertions by default — an explicit header line
-    /// still wins.
-    static let defaultPolicy = "room-name-and-description"
-
-    /// The story's `auto-assertion:` policy raw value, read from the story
-    /// header at open; injected for in-page synthesis.
+    /// The story's DECLARED `auto-assertion:` policy raw value, read from the
+    /// story header at open; injected for in-page synthesis. nil when the
+    /// story declares none — the page then applies the platform default
+    /// (branch-tester's `DEFAULT_AUTO_ASSERTION_POLICY`, David 2026-08-10),
+    /// the same constant the CLI walker applies, so the shell never carries
+    /// its own copy of the default.
     var policy: String?
+
+    /// Room name → region name, derived from the Story IR (David 2026-08-10:
+    /// the page groups cards by region — derived data, never persisted in
+    /// the document). Empty = no regions, the board renders flat.
+    var regionByRoom: [String: String] = [:]
 
     /// The bundle directory currently loaded, or nil.
     private var loaded: URL?
@@ -264,6 +267,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         }
         if let viewState = sessionStore.viewState { session["view"] = viewState }
         if let policy { session["policy"] = policy }
+        if !regionByRoom.isEmpty { session["regions"] = regionByRoom }
         let sessionJSON = (try? JSONSerialization.data(withJSONObject: session))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 

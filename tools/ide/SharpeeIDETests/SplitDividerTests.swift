@@ -41,6 +41,7 @@ final class SplitDividerTests: XCTestCase {
         func entity(_ n: Int, kinds: [String]) -> ComposeStoryIR.Entity {
             ComposeStoryIR.Entity(id: "e\(n)", name: "Entity Number \(n)", isPlayer: false,
                                   kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
+                                  containing: nil,
                                   span: DiagnosticSpan(line: n, column: 1, endLine: n, endColumn: 5))
         }
         return ComposeStoryIR(

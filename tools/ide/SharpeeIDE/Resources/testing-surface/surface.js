@@ -1,6 +1,7 @@
 "use strict";
 (() => {
   // packages/branch-tester/src/auto-assertion.ts
+  var DEFAULT_AUTO_ASSERTION_POLICY = "room-name-and-description";
   function synthesizePolicyAssertions(policy2, actualOutput, channelValues) {
     if (policy2 === "all-emitted-text") {
       return [{ type: "ok", block: actualOutput.replace(/\s+$/, "").split("\n") }];
@@ -198,8 +199,7 @@
       "exact",
       "states",
       "events",
-      "channels",
-      "noDefaults"
+      "channels"
     ]);
     if (unknownKey !== void 0) return `unknown assertion family '${unknownKey}' in '${path}'`;
     for (const family of ["contains", "notContains", "exact", "states", "events"]) {
@@ -208,9 +208,6 @@
       if (!Array.isArray(entries) || entries.some((entry) => typeof entry !== "string")) {
         return `'${path}.${family}' must be an array of strings`;
       }
-    }
-    if (value["noDefaults"] !== void 0 && typeof value["noDefaults"] !== "boolean") {
-      return `'${path}.noDefaults' must be a boolean`;
     }
     const channels = value["channels"];
     if (channels !== void 0) {
@@ -253,6 +250,34 @@
   function escapeHtml(text) {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   }
+  function groupByRegion(ordinals, roomOf2, regionOf) {
+    const HOLE = /* @__PURE__ */ Symbol("no room");
+    const raw = ordinals.map((ordinal) => {
+      const room = roomOf2(ordinal);
+      return room === void 0 ? HOLE : regionOf(room);
+    });
+    let carry = raw.find(
+      (entry) => entry !== HOLE
+    );
+    const assigned = raw.map((entry) => {
+      if (entry !== HOLE) carry = entry;
+      return carry;
+    });
+    const groups = [];
+    for (let index = 0; index < ordinals.length; index += 1) {
+      const region = assigned[index];
+      const last = groups.at(-1);
+      if (last !== void 0 && last.region === region) {
+        last.ordinals.push(ordinals[index]);
+      } else {
+        groups.push({
+          ...region !== void 0 ? { region, key: `${region}#${groups.length}` } : {},
+          ordinals: [ordinals[index]]
+        });
+      }
+    }
+    return groups;
+  }
   var CardsView = class {
     constructor(model2, delegate) {
       this.model = model2;
@@ -261,6 +286,8 @@
     cards = /* @__PURE__ */ new Map();
     /** One chip row per fork-point card, keyed by the card's bound ordinal. */
     branchRows = /* @__PURE__ */ new Map();
+    /** One header row per region group on the path, keyed by group key. */
+    regionRows = /* @__PURE__ */ new Map();
     host;
     session;
     notice = null;
@@ -278,7 +305,7 @@
       root.innerHTML = `
       <div class="ts-left">
         <div class="ts-session"><div id="ts-cards"></div></div>
-        <div class="ts-input-row"><div class="ts-gutter-cap"></div></div>
+        <div class="ts-input-row"></div>
       </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
@@ -412,8 +439,6 @@
       const row = document.createElement("div");
       row.className = "ts-turn";
       row.setAttribute("data-ts-ordinal", String(ordinal));
-      const gutter = document.createElement("div");
-      gutter.className = "ts-pick";
       const column = document.createElement("div");
       column.className = "ts-card-column";
       const block = document.createElement("div");
@@ -491,12 +516,12 @@
         eventButton.title = "Assert an event this turn emitted";
         eventButton.addEventListener("click", () => this.delegate.onEventPicker(ordinal, eventButton));
         actions.appendChild(eventButton);
-        const channelButton = document.createElement("button");
-        channelButton.textContent = "Channel\u2026";
-        channelButton.title = "Assert on a channel this turn captured";
-        channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
-        actions.appendChild(channelButton);
       }
+      const channelButton = document.createElement("button");
+      channelButton.textContent = "Channel\u2026";
+      channelButton.title = ordinal === 0 ? "Assert on a channel the boot captured (prologue, banner, \u2026)" : "Assert on a channel this turn captured";
+      channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
+      actions.appendChild(channelButton);
       let branchButton = null;
       if (ordinal > 0) {
         branchButton = document.createElement("button");
@@ -511,7 +536,7 @@
       }
       block.appendChild(actions);
       column.append(block);
-      row.append(gutter, column);
+      row.append(column);
       this.host.appendChild(row);
       this.cards.set(ordinal, { row, asserts, exactButton, branchButton });
     }
@@ -541,12 +566,28 @@
         card.asserts.appendChild(row);
       }
     }
-    /** Dead session (restart replay): every card and chip row goes. */
+    /** Dead session (restart replay): every card, chip, and header row goes. */
     clear() {
       for (const { row } of this.cards.values()) row.remove();
       for (const row of this.branchRows.values()) row.remove();
+      for (const row of this.regionRows.values()) row.remove();
       this.cards.clear();
       this.branchRows.clear();
+      this.regionRows.clear();
+    }
+    /** The header row for one region group: collapse triangle + region name
+     *  (just the name — David 2026-08-10). Click toggles collapse. */
+    regionHeader(key, region, collapsed) {
+      let header = this.regionRows.get(key);
+      if (!header) {
+        header = document.createElement("div");
+        header.className = "ts-region-header";
+        header.addEventListener("click", () => this.delegate.onToggleRegion(key));
+        this.regionRows.set(key, header);
+      }
+      header.classList.toggle("ts-region-collapsed", collapsed);
+      header.textContent = `${collapsed ? "\u25B8" : "\u25BE"} ${region}`;
+      return header;
     }
     /**
      * Re-derives every card's visuals from the model: rows for ordinals that
@@ -563,18 +604,39 @@
       }
       const pathOrdinals = this.model.visibleOrdinals();
       const points = this.model.branchPointsOnPath();
-      for (const ordinal of pathOrdinals) {
-        const card = this.cards.get(ordinal);
-        if (!card) continue;
-        this.host.appendChild(card.row);
-        const chipRow = this.branchRows.get(ordinal);
-        if (chipRow && points.some((p) => p.ordinal === ordinal)) {
-          this.host.appendChild(chipRow);
+      const groups = groupByRegion(
+        pathOrdinals,
+        (ordinal) => this.model.roomOf(ordinal),
+        (room) => this.delegate.regionOf(room)
+      );
+      const liveKeys = new Set(groups.map((group) => group.key).filter(Boolean));
+      for (const [key, header] of this.regionRows) {
+        if (!liveKeys.has(key)) {
+          header.remove();
+          this.regionRows.delete(key);
+        }
+      }
+      const collapsedOrdinals = /* @__PURE__ */ new Set();
+      for (let index = 0; index < groups.length; index += 1) {
+        const group = groups[index];
+        const collapsed = group.key !== void 0 && index < groups.length - 1 && this.delegate.isRegionCollapsed(group.key);
+        if (group.key !== void 0 && group.region !== void 0) {
+          this.host.appendChild(this.regionHeader(group.key, group.region, collapsed));
+        }
+        for (const ordinal of group.ordinals) {
+          if (collapsed) collapsedOrdinals.add(ordinal);
+          const card = this.cards.get(ordinal);
+          if (!card) continue;
+          this.host.appendChild(card.row);
+          const chipRow = this.branchRows.get(ordinal);
+          if (chipRow && points.some((p) => p.ordinal === ordinal)) {
+            this.host.appendChild(chipRow);
+          }
         }
       }
       const visible = new Set(pathOrdinals);
       for (const [ordinal, card] of this.cards) {
-        card.row.style.display = visible.has(ordinal) ? "" : "none";
+        card.row.style.display = visible.has(ordinal) && !collapsedOrdinals.has(ordinal) ? "" : "none";
         if (card.branchButton) {
           card.branchButton.style.display = this.model.canBranch(ordinal) ? "" : "none";
         }
@@ -605,7 +667,7 @@
         if (!row) {
           row = document.createElement("div");
           row.className = "ts-turn ts-branch-point";
-          row.innerHTML = '<div class="ts-pick"></div><div class="ts-card-column"><div class="ts-branch-row"></div></div>';
+          row.innerHTML = '<div class="ts-card-column"><div class="ts-branch-row"></div></div>';
           const anchor = this.cards.get(point.ordinal)?.row.nextSibling ?? null;
           this.host.insertBefore(row, anchor);
           this.branchRows.set(point.ordinal, row);
@@ -629,19 +691,17 @@
       const chain = this.activeChain();
       const selectedSibling = point.siblings.find((id) => chain.includes(id));
       const forkCommand = this.model.cardAt(point.ordinal)?.command ?? "";
-      const mainCount = this.model.ownCommandsOf(point.lineId).length;
       const mainChip = document.createElement("div");
       mainChip.className = "ts-branch-chip" + (selectedSibling === void 0 ? " ts-chip-selected" : "");
       mainChip.innerHTML = `<div class="ts-meta">branch</div>
        <div class="ts-chip-title">${escapeHtml(this.model.labelOf(point.lineId))}</div>
-       <div class="ts-chip-span">&gt; ${escapeHtml(forkCommand)} \xB7 ${mainCount} ${mainCount === 1 ? "turn" : "turns"}</div>`;
+       <div class="ts-chip-span">&gt; ${escapeHtml(forkCommand)}</div>`;
       mainChip.addEventListener("click", () => this.delegate.onSelectLine(point.lineId));
       container.appendChild(mainChip);
       for (const sibling of point.siblings) {
         const pending = this.model.isPending(sibling);
-        const count = this.model.ownCommandsOf(sibling).length;
         const firstCommand = this.model.ownCommandsOf(sibling)[0] ?? this.model.labelOf(sibling).split(" \xB7 ").at(-1) ?? "";
-        const span = pending ? `&gt; ${escapeHtml(firstCommand)} \xB7 replay pending` : `&gt; ${escapeHtml(firstCommand)} \xB7 ${count} ${count === 1 ? "turn" : "turns"}`;
+        const span = pending ? `&gt; ${escapeHtml(firstCommand)} \xB7 replay pending` : `&gt; ${escapeHtml(firstCommand)}`;
         const chip = document.createElement("div");
         chip.className = "ts-branch-chip" + (selectedSibling === sibling ? " ts-chip-selected" : "");
         chip.innerHTML = `<div class="ts-meta">branch</div>
@@ -670,9 +730,10 @@
       }
       row.title = "all continue from this card";
     }
-    /** The run column: one row per line of the tree — derived labels are the
-     *  identities on the wire (D2/Q-8) — with PASS/FAIL, the first failure on
-     *  one line, and a tally. A pending branch shows a dash. */
+    /** The run column: one header per line of the tree — derived labels are
+     *  the identities on the wire (D2/Q-8) — then EVERY executed command with
+     *  every assertion's verdict (David 2026-08-10: the run shows every card
+     *  and its assertions), and a line tally. A pending branch shows a dash. */
     renderRunColumn() {
       const results = document.getElementById("ts-run-results");
       if (!results) return;
@@ -709,10 +770,44 @@
         line.append(badge, name, why_);
         results.appendChild(line);
       };
+      const detail = (result) => {
+        for (const command of result.commands) {
+          const commandRow = document.createElement("div");
+          commandRow.className = "ts-run-cmd";
+          commandRow.textContent = command.input === "(opening)" ? "(opening)" : `> ${command.input}`;
+          results.appendChild(commandRow);
+          if (command.skipped) {
+            const skipRow = document.createElement("div");
+            skipRow.className = "ts-run-assert";
+            skipRow.textContent = "\u2014 skipped";
+            results.appendChild(skipRow);
+            continue;
+          }
+          for (const assertion of command.assertions) {
+            const assertRow = document.createElement("div");
+            assertRow.className = `ts-run-assert ${assertion.passed ? "ts-pass" : "ts-fail"}`;
+            assertRow.textContent = `${assertion.passed ? "\u2713" : "\u2717"} ${assertion.description}`;
+            results.appendChild(assertRow);
+            if (!assertion.passed && assertion.message !== void 0) {
+              const why = document.createElement("div");
+              why.className = "ts-run-assert-why";
+              why.textContent = assertion.message;
+              results.appendChild(why);
+            }
+          }
+          if (!command.passed && command.assertions.length === 0 && command.failure !== void 0) {
+            const why = document.createElement("div");
+            why.className = "ts-run-assert ts-fail";
+            why.textContent = `\u2717 ${command.failure}`;
+            results.appendChild(why);
+          }
+        }
+      };
       for (const [label, result] of run.results) {
         switch (result.status) {
           case "passed":
-            row("PASS", "ts-pass", label, `${result.passed} turn${result.passed === 1 ? "" : "s"}`);
+            row("PASS", "ts-pass", label, "");
+            detail(result);
             break;
           case "skipped":
             row("\u2014", "", label, "no commands \u2014 ran as a skip");
@@ -723,6 +818,7 @@
           default: {
             const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
             row("FAIL", "ts-fail", label, `${result.firstFailure ?? "failed"}${more}`);
+            detail(result);
           }
         }
       }
@@ -735,9 +831,16 @@
       if (run.tally) {
         const tally = document.createElement("div");
         tally.className = "ts-run-tally";
-        const parts = [`${run.tally.passed} passing`, `${run.tally.failed} failures`];
-        if (run.tally.errors > 0) parts.push(`${run.tally.errors} errors`);
-        if (run.tally.unreached > 0) parts.push(`${run.tally.unreached} unreached`);
+        const t = run.tally;
+        const unit = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+        const parts = [
+          `${unit(t.cardsPassed, "card")} passing`,
+          `${unit(t.assertionsPassed, "assertion")} passing`
+        ];
+        if (t.cardsFailed > 0) parts.push(`${unit(t.cardsFailed, "card")} failing`);
+        if (t.assertionsFailed > 0) parts.push(`${unit(t.assertionsFailed, "assertion")} failing`);
+        if (t.errors > 0) parts.push(`${unit(t.errors, "error")}`);
+        if (t.unreached > 0) parts.push(`${t.unreached} unreached`);
         tally.textContent = parts.join(", ");
         results.appendChild(tally);
       }
@@ -760,9 +863,21 @@
       return assertion.type === "channel-contains" ? { id, contains: [assertion.value] } : { id, is: String(assertion.channelExpected) };
     });
   }
-  function turnContainsDefaults(policy2, source) {
-    if (policy2 === void 0 || source === void 0) return [];
-    return synthesizePolicyAssertions(policy2, source.output, source.channelValues).filter((a) => a.type === "ok-contains" && a.value !== void 0).map((a) => a.value);
+  function recordedTurnAssertions(policy2, source) {
+    if (policy2 === void 0 || source === void 0) return {};
+    const synthesized = synthesizePolicyAssertions(policy2, source.output, source.channelValues);
+    const assertions = {};
+    for (const assertion of synthesized) {
+      if (assertion.type === "skip") return { skip: true };
+      if (assertion.type === "ok" && assertion.block !== void 0) {
+        assertions.exact = [...assertion.block];
+      } else if (assertion.type === "ok-contains" && assertion.value !== void 0) {
+        (assertions.contains ??= []).push(assertion.value);
+      } else if (assertion.type === "ok-contains" && assertion.block !== void 0) {
+        (assertions.contains ??= []).push(...assertion.block);
+      }
+    }
+    return Object.keys(assertions).length > 0 ? { assertions } : {};
   }
   function nonProseLines(ordinal, claims) {
     const lines = [];
@@ -789,46 +904,15 @@
     );
     return lines;
   }
-  function defaultLines(ordinal, synthesized) {
-    const containsDefaults = synthesized.filter((a) => a.type === "ok-contains" && a.value !== void 0).map((a) => a.value);
-    const lines = [];
-    let containsIndex = 0;
-    for (const assertion of synthesized) {
-      if (assertion.type === "skip") {
-        lines.push({ text: "[SKIP]", kind: "skip" });
-      } else if (assertion.type === "ok-contains" && assertion.value !== void 0) {
-        lines.push({
-          text: `contains ${quoted(assertion.value)}`,
-          kind: "assertion",
-          del: { kind: "default", ordinal, index: containsIndex, defaults: containsDefaults }
-        });
-        containsIndex += 1;
-      } else if (assertion.type === "ok-contains" && assertion.block !== void 0) {
-        lines.push({
-          text: `contains (${assertion.block.length} lines)`,
-          kind: "assertion",
-          del: { kind: "defaultWhole", ordinal }
-        });
-        lines.push(...assertion.block.map((text) => ({ text, kind: "block" })));
-      } else if (assertion.type === "ok" && assertion.block !== void 0) {
-        lines.push({
-          text: `exact output (${assertion.block.length} lines)`,
-          kind: "assertion",
-          del: { kind: "defaultWhole", ordinal }
-        });
-        lines.push(...assertion.block.map((text) => ({ text, kind: "block" })));
-      }
-    }
-    return lines;
-  }
   function cardAssertionLines(options, ordinal) {
-    const { model: model2, policy: policy2, source, bootCaptures: bootCaptures2 } = options;
+    const { model: model2 } = options;
     const card = model2.cardAt(ordinal);
     if (card === void 0) return [];
     if (model2.claimsNothing(ordinal)) return [{ text: "[SKIP]", kind: "skip" }];
     const claims = card.assertions;
+    if (claims === void 0) return [{ text: "no assertions", kind: "skip" }];
     const lines = [];
-    if (claims?.exact !== void 0) {
+    if (claims.exact !== void 0) {
       lines.push({
         text: `exact output (${claims.exact.length} lines)`,
         kind: "assertion",
@@ -838,46 +922,22 @@
       lines.push(...nonProseLines(ordinal, claims));
       return lines;
     }
-    const hasAuthoredProse = (claims?.contains?.length ?? 0) > 0;
-    const authorsAnything = hasAuthoredProse || (claims?.notContains?.length ?? 0) > 0 || (claims?.states?.length ?? 0) > 0 || (claims?.events?.length ?? 0) > 0 || (claims?.channels?.length ?? 0) > 0;
-    if (!hasAuthoredProse && claims?.noDefaults !== true && policy2 !== void 0) {
-      if (ordinal === 0) {
-        if ((claims?.channels?.length ?? 0) === 0) {
-          const defaults = openingDefaultClaims(policy2, bootCaptures2);
-          defaults.forEach(
-            (claim, index) => lines.push({
-              text: channelLineText(claim),
-              kind: "assertion",
-              del: { kind: "openingDefault", index, defaults }
-            })
-          );
-        }
-      } else {
-        const src = source(ordinal);
-        if (src !== void 0) {
-          const synthesized = synthesizePolicyAssertions(policy2, src.output, src.channelValues);
-          const meaningful = synthesized.filter((a) => a.type !== "skip");
-          if (meaningful.length > 0 || !authorsAnything) {
-            lines.push(...defaultLines(ordinal, meaningful.length > 0 ? meaningful : synthesized));
-          }
-        }
-      }
-    }
-    (claims?.contains ?? []).forEach(
+    (claims.contains ?? []).forEach(
       (value, index) => lines.push({
         text: `contains ${quoted(value)}`,
         kind: "assertion",
         del: { kind: "contains", ordinal, index }
       })
     );
-    (claims?.notContains ?? []).forEach(
+    (claims.notContains ?? []).forEach(
       (value, index) => lines.push({
         text: `not contains ${quoted(value)}`,
         kind: "assertion",
         del: { kind: "notContains", ordinal, index }
       })
     );
-    if (claims !== void 0) lines.push(...nonProseLines(ordinal, claims));
+    lines.push(...nonProseLines(ordinal, claims));
+    if (lines.length === 0) return [{ text: "no assertions", kind: "skip" }];
     return lines;
   }
 
@@ -892,7 +952,6 @@
     if (assertions.states) copy.states = [...assertions.states];
     if (assertions.events) copy.events = [...assertions.events];
     if (assertions.channels) copy.channels = assertions.channels.map((c) => ({ ...c }));
-    if (assertions.noDefaults !== void 0) copy.noDefaults = assertions.noDefaults;
     return copy;
   }
   var TreeSessionModel = class {
@@ -1063,21 +1122,39 @@
       let cursor = this.bindCursor.get(this.active) ?? cards2.length;
       if (this.active === MAIN_LINE && !this.hasOpening) {
         if (cursor < cards2.length && cards2[cursor].type === "opening") {
-          bind(cards2[cursor], 0);
+          const openingCard = cards2[cursor];
+          if (openingCard.assertions === void 0 && openingCard.skip !== true) {
+            const claims = cloneAssertions(delivery.openingAssertions);
+            if (claims !== void 0) openingCard.assertions = claims;
+          }
+          bind(openingCard, 0);
           cursor += 1;
         } else if (cursor >= cards2.length) {
-          const opening = { type: "opening" };
+          const openingClaims = cloneAssertions(delivery.openingAssertions);
+          const opening = {
+            type: "opening",
+            ...openingClaims !== void 0 ? { assertions: openingClaims } : {}
+          };
           cards2.push(opening);
           bind(opening, 0);
           cursor = cards2.length;
         }
       }
       if (cursor < cards2.length) {
-        bind(cards2[cursor], delivery.ordinal);
+        const bound = cards2[cursor];
+        if (bound.assertions === void 0 && bound.skip !== true) {
+          const recorded2 = cloneAssertions(delivery.assertions);
+          if (recorded2 !== void 0) bound.assertions = recorded2;
+          else if (delivery.skip === true) bound.skip = true;
+        }
+        bind(bound, delivery.ordinal);
         this.bindCursor.set(this.active, cursor + 1);
         return;
       }
+      const recorded = cloneAssertions(delivery.assertions);
       const card = delivery.boot ? { type: "boot" } : { type: "turn", command: delivery.command };
+      if (recorded !== void 0) card.assertions = recorded;
+      if (delivery.skip === true) card.skip = true;
       cards2.push(card);
       bind(card, delivery.ordinal);
       this.bindCursor.set(this.active, cards2.length);
@@ -1402,23 +1479,25 @@
     claimsOf(ordinal) {
       return this.cardByOrdinal.get(ordinal)?.assertions;
     }
-    /** True when the card authors nothing and withholds its defaults — the
-     *  `[SKIP]` demotion's shape (a pruned-to-nothing turn). */
+    /** True when the card explicitly runs-without-asserting — the `[SKIP]`
+     *  demotion, visible in the JSON (`skip: true`). */
     claimsNothing(ordinal) {
-      const card = this.cardByOrdinal.get(ordinal);
-      if (card === void 0) return false;
-      if (card.skip === true) return true;
-      const a = card.assertions;
-      if (a === void 0) return false;
-      return a.noDefaults === true && (a.contains?.length ?? 0) === 0 && (a.notContains?.length ?? 0) === 0 && a.exact === void 0 && (a.states?.length ?? 0) === 0 && (a.events?.length ?? 0) === 0 && (a.channels?.length ?? 0) === 0;
+      return this.cardByOrdinal.get(ordinal)?.skip === true;
     }
     mutable(ordinal) {
       const card = this.cardByOrdinal.get(ordinal);
       if (card === void 0) return void 0;
       return card.assertions ??= {};
     }
-    /** Drop empty family arrays; drop the whole object when nothing remains
-     *  and defaults are not withheld (a bare card synthesizes defaults). */
+    /** Authoring a claim onto a recorded `[SKIP]` card lifts the demotion —
+     *  the author is asserting again, and the JSON says so. */
+    liftSkip(ordinal) {
+      const card = this.cardByOrdinal.get(ordinal);
+      if (card?.skip === true) delete card.skip;
+    }
+    /** Drop empty family arrays; drop the whole object when nothing remains —
+     *  the card is then honestly bare in the JSON (and a run fails it by
+     *  name; deleting your last claim is a visible choice, never silent). */
     normalize(ordinal) {
       const card = this.cardByOrdinal.get(ordinal);
       const a = card?.assertions;
@@ -1428,16 +1507,17 @@
       if (a.states !== void 0 && a.states.length === 0) delete a.states;
       if (a.events !== void 0 && a.events.length === 0) delete a.events;
       if (a.channels !== void 0 && a.channels.length === 0) delete a.channels;
-      if (a.noDefaults === false) delete a.noDefaults;
       if (Object.keys(a).length === 0) delete card.assertions;
     }
     addContains(ordinal, text) {
+      this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       (a.contains ??= []).push(text);
       return true;
     }
     addNotContains(ordinal, text) {
+      this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       (a.notContains ??= []).push(text);
@@ -1446,6 +1526,7 @@
     /** Set (or clear) the exact literal block — the turn's whole output as
      *  lines, captured by the caller at toggle time (the document's shape). */
     setExact(ordinal, lines) {
+      if (lines !== null) this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       if (lines === null) delete a.exact;
@@ -1454,54 +1535,30 @@
       return true;
     }
     addState(ordinal, expression) {
+      this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       (a.states ??= []).push(expression);
       return true;
     }
     addEvent(ordinal, type) {
+      this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       (a.events ??= []).push(type);
       return true;
     }
     addChannel(ordinal, claim) {
+      this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
       (a.channels ??= []).push({ ...claim });
       return true;
     }
-    /**
-     * Deletes one POLICY-DEFAULT contains line of a turn: the survivors become
-     * authored contains — the author narrows the claim, never silently
-     * abandons it. `defaults` are the rendered default fragments; `index` is
-     * the deleted one (−1 keeps all, for deleting a non-contains default line
-     * whole).
-     */
-    removeDefault(ordinal, index, defaults) {
-      const a = this.mutable(ordinal);
-      if (a === void 0) return;
-      a.contains = defaults.filter((_, i) => i !== index);
-      a.noDefaults = true;
-      this.normalize(ordinal);
-    }
-    /**
-     * Deletes one OPENING default (prologue / title / description, ADR-307
-     * open question D): the survivors become authored channel claims, defaults
-     * withheld — the same narrowing rule in the opening's channel shape.
-     */
-    removeOpeningDefault(index, defaults) {
-      const a = this.mutable(0);
-      if (a === void 0) return;
-      a.channels = defaults.filter((_, i) => i !== index).map((claim) => ({ ...claim }));
-      a.noDefaults = true;
-      this.normalize(0);
-    }
     removeContains(ordinal, index) {
       const a = this.mutable(ordinal);
       if (a === void 0 || a.contains === void 0) return;
       a.contains.splice(index, 1);
-      a.noDefaults = true;
       this.normalize(ordinal);
     }
     removeNotContains(ordinal, index) {
@@ -1701,7 +1758,12 @@
   }
   function isCommandResultEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world));
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults));
+  }
+  function isAssertionOutcomeArray(value) {
+    return Array.isArray(value) && value.every(
+      (entry) => isObject(entry) && typeof entry.description === "string" && typeof entry.passed === "boolean" && (entry.message === void 0 || typeof entry.message === "string")
+    );
   }
   function isWorldEntityRef(value) {
     if (!isObject(value)) return false;
@@ -1741,11 +1803,17 @@
 
   // tools/ide/web/testing-surface/src/run.ts
   function createRunState() {
-    return { inFlight: false, results: /* @__PURE__ */ new Map(), replaying: /* @__PURE__ */ new Set() };
+    return {
+      inFlight: false,
+      results: /* @__PURE__ */ new Map(),
+      pendingCommands: /* @__PURE__ */ new Map(),
+      replaying: /* @__PURE__ */ new Set()
+    };
   }
   function beginRun(state) {
     state.inFlight = true;
     state.results.clear();
+    state.pendingCommands.clear();
     state.replaying.clear();
     delete state.tally;
     delete state.note;
@@ -1774,20 +1842,37 @@
         return;
       }
       case "command-result": {
-        if (event.passed || event.skipped || state.replaying.has(event.file)) return;
+        if (state.replaying.has(event.file)) return;
         const stem = stemOf(event.file);
+        const failureMessage = event.failure ?? event.error;
+        const outcome = {
+          input: event.input,
+          passed: event.passed,
+          skipped: event.skipped,
+          assertions: (event.assertionResults ?? []).map((entry) => ({
+            description: entry.description,
+            passed: entry.passed,
+            ...entry.message !== void 0 ? { message: entry.message } : {}
+          })),
+          ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {}
+        };
+        const pending = state.pendingCommands.get(stem) ?? [];
+        pending.push(outcome);
+        state.pendingCommands.set(stem, pending);
+        if (event.passed || event.skipped) return;
         const existing = state.results.get(stem);
         if (existing?.firstFailure !== void 0) {
           existing.moreFailures += 1;
           return;
         }
-        const message = event.failure ?? event.error ?? "failed";
-        const where = event.turn !== void 0 ? `turn ${event.turn}` : `line ${event.line}`;
+        const message = failureMessage ?? "failed";
+        const where = event.turn !== void 0 ? `turn ${event.turn}` : event.line > 0 ? `line ${event.line}` : void 0;
         state.results.set(stem, {
           status: "failed",
           passed: 0,
           failed: 1,
-          firstFailure: `${where} \u2014 ${message}`,
+          commands: [],
+          firstFailure: where !== void 0 ? `${where} \u2014 ${message}` : message,
           moreFailures: existing?.moreFailures ?? 0
         });
         return;
@@ -1795,6 +1880,7 @@
       case "transcript-end": {
         if (state.replaying.has(event.file)) {
           state.replaying.delete(event.file);
+          state.pendingCommands.delete(stemOf(event.file));
           return;
         }
         const stem = stemOf(event.file);
@@ -1803,8 +1889,10 @@
           status: event.status,
           passed: event.passed,
           failed: event.failed,
+          commands: state.pendingCommands.get(stem) ?? [],
           moreFailures: Math.max(0, event.failed - 1)
         };
+        state.pendingCommands.delete(stem);
         if (partial?.firstFailure !== void 0) result.firstFailure = partial.firstFailure;
         else if (event.status === "error" && event.errorMessage !== void 0) {
           result.firstFailure = event.errorMessage;
@@ -1816,11 +1904,32 @@
       }
       case "run-end": {
         state.inFlight = false;
+        let cardsPassed = 0;
+        let cardsFailed = 0;
+        let assertionsPassed = 0;
+        let assertionsFailed = 0;
+        let errors = 0;
+        let unreached = 0;
+        for (const result of state.results.values()) {
+          if (result.status === "error") errors += 1;
+          else if (result.status === "unreached") unreached += 1;
+          for (const command of result.commands) {
+            if (command.skipped) continue;
+            if (command.passed) cardsPassed += 1;
+            else cardsFailed += 1;
+            for (const assertion of command.assertions) {
+              if (assertion.passed) assertionsPassed += 1;
+              else assertionsFailed += 1;
+            }
+          }
+        }
         state.tally = {
-          passed: event.totalPassed,
-          failed: event.totalFailed,
-          errors: event.totalErrors,
-          unreached: event.totalUnreached
+          cardsPassed,
+          cardsFailed,
+          assertionsPassed,
+          assertionsFailed,
+          errors,
+          unreached
         };
         return;
       }
@@ -1831,6 +1940,7 @@
   function resetRun(state) {
     state.inFlight = false;
     state.results.clear();
+    state.pendingCommands.clear();
     state.replaying.clear();
     delete state.tally;
     delete state.note;
@@ -1847,10 +1957,13 @@
   var bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
   var storyId = bootSession?.story ?? "story";
   var seed = bootSession?.seed ?? 42;
-  var policy = bootSession?.policy;
+  var policy = bootSession?.policy ?? DEFAULT_AUTO_ASSERTION_POLICY;
   var model = new TreeSessionModel(storyId, seed);
   var records = /* @__PURE__ */ new Map();
   var bootCaptures;
+  var bootRecordOrdinal;
+  var regionByRoom = bootSession?.regions ?? {};
+  var collapsedRegions = new Set(bootSession?.view?.collapsed ?? []);
   var currentLine = MAIN_LINE;
   var dialogOutcomes = /* @__PURE__ */ new Map();
   var dropBeforeFence = false;
@@ -1870,28 +1983,11 @@
     }
     return { output: record.output, channelValues };
   }
-  function composeOptions() {
-    return {
-      model,
-      policy,
-      source: turnSource,
-      ...bootCaptures !== void 0 ? { bootCaptures } : {}
-    };
-  }
   function assertionLinesFor(ordinal) {
-    return cardAssertionLines(composeOptions(), ordinal);
+    return cardAssertionLines({ model }, ordinal);
   }
   function removeAssertion(del) {
     switch (del.kind) {
-      case "default":
-        model.removeDefault(del.ordinal, del.index, del.defaults);
-        break;
-      case "defaultWhole":
-        model.removeDefault(del.ordinal, -1, turnContainsDefaults(policy, turnSource(del.ordinal)));
-        break;
-      case "openingDefault":
-        model.removeOpeningDefault(del.index, del.defaults);
-        break;
       case "contains":
         model.removeContains(del.ordinal, del.index);
         break;
@@ -1974,7 +2070,8 @@
       });
     },
     onChannelPicker(ordinal, anchor) {
-      const captures = records.get(ordinal)?.captures ?? [];
+      const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
+      const captures = source?.captures ?? [];
       const labels = captures.map((capture) => {
         const flat = proseTextLinesOf(capture.values).join(" ");
         const scalar = capture.values.length === 1 && typeof capture.values[0] !== "object" ? String(capture.values[0]) : null;
@@ -2008,6 +2105,16 @@
       pushUndo();
       removeAssertion(del);
       update();
+    },
+    // Region grouping (David 2026-08-10): derived from the Story IR's map,
+    // collapse state is D7 view ephemera — nothing touches the document.
+    regionOf: (room) => room !== void 0 ? regionByRoom[room] : void 0,
+    isRegionCollapsed: (key) => collapsedRegions.has(key),
+    onToggleRegion(key) {
+      if (collapsedRegions.has(key)) collapsedRegions.delete(key);
+      else collapsedRegions.add(key);
+      postState();
+      cards.render();
     }
   });
   var runState = createRunState();
@@ -2043,7 +2150,8 @@
     postToBridge({
       state: {
         active: model.activeLine,
-        dialogs: [...dialogOutcomes]
+        dialogs: [...dialogOutcomes],
+        collapsed: [...collapsedRegions]
       }
     });
   }
@@ -2137,6 +2245,7 @@
       expectBoot = true;
       pendingDialogOutcome = null;
       bootCaptures = void 0;
+      bootRecordOrdinal = void 0;
       update();
       void replayTree(activeBefore);
       return;
@@ -2155,14 +2264,20 @@
     lastDeliveredOrdinal = record.turn;
     if (boot && currentLine === MAIN_LINE) {
       bootCaptures = capturesOf(record);
+      bootRecordOrdinal = record.turn;
     }
     const room = roomOf(record);
     model.activateLine(currentLine);
+    const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
+    const openingClaims = boot && currentLine === MAIN_LINE ? openingDefaultClaims(policy, bootCaptures) : [];
     model.addTurn({
       ordinal: record.turn,
       command: record.command ?? "",
       boot,
-      ...room !== void 0 ? { room } : {}
+      ...room !== void 0 ? { room } : {},
+      ...recorded.assertions !== void 0 ? { assertions: recorded.assertions } : {},
+      ...recorded.skip === true ? { skip: true } : {},
+      ...openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}
     });
     if (pendingDialogOutcome) {
       const at = model.turnIndexOf(record.turn);

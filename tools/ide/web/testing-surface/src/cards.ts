@@ -20,7 +20,7 @@
 
 import type { DeleteRef, SourceLine } from './compose';
 import type { TreeSessionModel } from './model';
-import type { RunColumnState } from './run';
+import type { RunColumnState, TranscriptRunResult } from './run';
 
 /** Chip labels interpolate model strings into innerHTML — escape them. */
 function escapeHtml(text: string): string {
@@ -53,6 +53,13 @@ export interface CardsDelegate {
   assertionLines(ordinal: number): SourceLine[];
   /** A line's ✕ — delete that assertion through its DeleteRef. */
   onRemoveAssertion(del: DeleteRef): void;
+  /** The region a room belongs to (Story IR), or undefined — grouping
+   *  (David 2026-08-10: derived, never persisted). */
+  regionOf(room: string | undefined): string | undefined;
+  /** Collapsed state for a region-group key (view-state ephemera, D7). */
+  isRegionCollapsed(key: string): boolean;
+  /** A region header was clicked — toggle its collapse. */
+  onToggleRegion(key: string): void;
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
@@ -63,10 +70,70 @@ interface CardRow {
   branchButton: HTMLButtonElement | null;
 }
 
+/** One contiguous run of same-region cards on the active path. `region`
+ *  undefined = an ungrouped run (region-less rooms) — no header. */
+export interface RegionGroup {
+  /** Collapse-state key (`Grounds#0`) — absent for ungrouped runs. */
+  key?: string;
+  region?: string;
+  ordinals: number[];
+}
+
+/**
+ * Cut the path's ordinals into contiguous region runs (David 2026-08-10:
+ * grouping is DERIVED from each turn's room via the Story IR's regions,
+ * chronological — re-entering a region starts a NEW group; nothing
+ * persists in the document). A card without a room (the opening) inherits
+ * its neighbors' region: the previous card's, or for leading cards the
+ * first known one. A room in no region breaks the run (ungrouped).
+ *
+ * @param ordinals the active path's ordinals, in play order.
+ * @param roomOf the session's room for an ordinal (derived-label data).
+ * @param regionOf the Story IR's region for a room.
+ * @returns the runs in order; empty input → empty.
+ */
+export function groupByRegion(
+  ordinals: number[],
+  roomOf: (ordinal: number) => string | undefined,
+  regionOf: (room: string | undefined) => string | undefined,
+): RegionGroup[] {
+  const HOLE = Symbol('no room');
+  const raw: (string | undefined | typeof HOLE)[] = ordinals.map((ordinal) => {
+    const room = roomOf(ordinal);
+    return room === undefined ? HOLE : regionOf(room);
+  });
+  // Fill holes from the previous card's region; leading holes take the
+  // first known value (an all-hole path carries undefined — one flat run).
+  let carry: string | undefined = raw.find(
+    (entry): entry is string | undefined => entry !== HOLE,
+  );
+  const assigned: (string | undefined)[] = raw.map((entry) => {
+    if (entry !== HOLE) carry = entry;
+    return carry;
+  });
+
+  const groups: RegionGroup[] = [];
+  for (let index = 0; index < ordinals.length; index += 1) {
+    const region = assigned[index];
+    const last = groups.at(-1);
+    if (last !== undefined && last.region === region) {
+      last.ordinals.push(ordinals[index]);
+    } else {
+      groups.push({
+        ...(region !== undefined ? { region, key: `${region}#${groups.length}` } : {}),
+        ordinals: [ordinals[index]],
+      });
+    }
+  }
+  return groups;
+}
+
 export class CardsView {
   private cards = new Map<number, CardRow>();
   /** One chip row per fork-point card, keyed by the card's bound ordinal. */
   private branchRows = new Map<number, HTMLElement>();
+  /** One header row per region group on the path, keyed by group key. */
+  private regionRows = new Map<string, HTMLElement>();
   private host!: HTMLElement;
   private session!: HTMLElement;
   private notice: HTMLElement | null = null;
@@ -91,7 +158,7 @@ export class CardsView {
     root.innerHTML = `
       <div class="ts-left">
         <div class="ts-session"><div id="ts-cards"></div></div>
-        <div class="ts-input-row"><div class="ts-gutter-cap"></div></div>
+        <div class="ts-input-row"></div>
       </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
@@ -252,10 +319,6 @@ export class CardsView {
     row.className = 'ts-turn';
     row.setAttribute('data-ts-ordinal', String(ordinal));
 
-    // The gutter keeps the column geometry the rail used to give it.
-    const gutter = document.createElement('div');
-    gutter.className = 'ts-pick';
-
     const column = document.createElement('div');
     column.className = 'ts-card-column';
 
@@ -355,14 +418,19 @@ export class CardsView {
       eventButton.addEventListener('click', () =>
         this.delegate.onEventPicker(ordinal, eventButton));
       actions.appendChild(eventButton);
-
-      const channelButton = document.createElement('button');
-      channelButton.textContent = 'Channel…';
-      channelButton.title = 'Assert on a channel this turn captured';
-      channelButton.addEventListener('click', () =>
-        this.delegate.onChannelPicker(ordinal, channelButton));
-      actions.appendChild(channelButton);
     }
+
+    // The Channel picker serves the OPENING too (David 2026-08-10): its
+    // claims ARE channel claims (prologue, title, description, …), read
+    // from the boot captures.
+    const channelButton = document.createElement('button');
+    channelButton.textContent = 'Channel…';
+    channelButton.title = ordinal === 0
+      ? 'Assert on a channel the boot captured (prologue, banner, …)'
+      : 'Assert on a channel this turn captured';
+    channelButton.addEventListener('click', () =>
+      this.delegate.onChannelPicker(ordinal, channelButton));
+    actions.appendChild(channelButton);
 
     let branchButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
@@ -379,7 +447,7 @@ export class CardsView {
     block.appendChild(actions);
 
     column.append(block);
-    row.append(gutter, column);
+    row.append(column);
     this.host.appendChild(row);
     this.cards.set(ordinal, { row, asserts, exactButton, branchButton });
   }
@@ -411,12 +479,29 @@ export class CardsView {
     }
   }
 
-  /** Dead session (restart replay): every card and chip row goes. */
+  /** Dead session (restart replay): every card, chip, and header row goes. */
   clear(): void {
     for (const { row } of this.cards.values()) row.remove();
     for (const row of this.branchRows.values()) row.remove();
+    for (const row of this.regionRows.values()) row.remove();
     this.cards.clear();
     this.branchRows.clear();
+    this.regionRows.clear();
+  }
+
+  /** The header row for one region group: collapse triangle + region name
+   *  (just the name — David 2026-08-10). Click toggles collapse. */
+  private regionHeader(key: string, region: string, collapsed: boolean): HTMLElement {
+    let header = this.regionRows.get(key);
+    if (!header) {
+      header = document.createElement('div');
+      header.className = 'ts-region-header';
+      header.addEventListener('click', () => this.delegate.onToggleRegion(key));
+      this.regionRows.set(key, header);
+    }
+    header.classList.toggle('ts-region-collapsed', collapsed);
+    header.textContent = `${collapsed ? '▸' : '▾'} ${region}`;
+    return header;
   }
 
   /**
@@ -435,22 +520,50 @@ export class CardsView {
 
     // Path order IS the display order: reanchor rows (and each fork card's
     // chip row after it) so rebuilt or spliced cards land where the path
-    // says, not where delivery happened to append them.
+    // says, not where delivery happened to append them. Cards group into
+    // region runs (David 2026-08-10) — a collapsed group hides its cards
+    // but keeps its header and its fork points' chip rows visible; the LAST
+    // group (the play point) never collapses.
     const pathOrdinals = this.model.visibleOrdinals();
     const points = this.model.branchPointsOnPath();
-    for (const ordinal of pathOrdinals) {
-      const card = this.cards.get(ordinal);
-      if (!card) continue;
-      this.host.appendChild(card.row);
-      const chipRow = this.branchRows.get(ordinal);
-      if (chipRow && points.some(p => p.ordinal === ordinal)) {
-        this.host.appendChild(chipRow);
+    const groups = groupByRegion(
+      pathOrdinals,
+      (ordinal) => this.model.roomOf(ordinal),
+      (room) => this.delegate.regionOf(room),
+    );
+    const liveKeys = new Set(groups.map((group) => group.key).filter(Boolean) as string[]);
+    for (const [key, header] of this.regionRows) {
+      if (!liveKeys.has(key)) {
+        header.remove();
+        this.regionRows.delete(key);
+      }
+    }
+    const collapsedOrdinals = new Set<number>();
+    for (let index = 0; index < groups.length; index += 1) {
+      const group = groups[index];
+      const collapsed =
+        group.key !== undefined &&
+        index < groups.length - 1 &&
+        this.delegate.isRegionCollapsed(group.key);
+      if (group.key !== undefined && group.region !== undefined) {
+        this.host.appendChild(this.regionHeader(group.key, group.region, collapsed));
+      }
+      for (const ordinal of group.ordinals) {
+        if (collapsed) collapsedOrdinals.add(ordinal);
+        const card = this.cards.get(ordinal);
+        if (!card) continue;
+        this.host.appendChild(card.row);
+        const chipRow = this.branchRows.get(ordinal);
+        if (chipRow && points.some(p => p.ordinal === ordinal)) {
+          this.host.appendChild(chipRow);
+        }
       }
     }
 
     const visible = new Set(pathOrdinals);
     for (const [ordinal, card] of this.cards) {
-      card.row.style.display = visible.has(ordinal) ? '' : 'none';
+      card.row.style.display =
+        visible.has(ordinal) && !collapsedOrdinals.has(ordinal) ? '' : 'none';
       if (card.branchButton) {
         card.branchButton.style.display = this.model.canBranch(ordinal) ? '' : 'none';
       }
@@ -483,7 +596,7 @@ export class CardsView {
       if (!row) {
         row = document.createElement('div');
         row.className = 'ts-turn ts-branch-point';
-        row.innerHTML = '<div class="ts-pick"></div>' +
+        row.innerHTML =
           '<div class="ts-card-column"><div class="ts-branch-row"></div></div>';
         const anchor = this.cards.get(point.ordinal)?.row.nextSibling ?? null;
         this.host.insertBefore(row, anchor);
@@ -513,27 +626,28 @@ export class CardsView {
     const chain = this.activeChain();
     const selectedSibling = point.siblings.find(id => chain.includes(id));
 
+    // No turn counts on chips: turns have no meaning unless the author
+    // gives them meaning (David 2026-08-10) — the fork command is the
+    // navigation cue, the count was noise.
     const forkCommand = this.model.cardAt(point.ordinal)?.command ?? '';
-    const mainCount = this.model.ownCommandsOf(point.lineId).length;
     const mainChip = document.createElement('div');
     mainChip.className = 'ts-branch-chip' +
       (selectedSibling === undefined ? ' ts-chip-selected' : '');
     mainChip.innerHTML =
       `<div class="ts-meta">branch</div>
        <div class="ts-chip-title">${escapeHtml(this.model.labelOf(point.lineId))}</div>
-       <div class="ts-chip-span">&gt; ${escapeHtml(forkCommand)} · ${mainCount} ${mainCount === 1 ? 'turn' : 'turns'}</div>`;
+       <div class="ts-chip-span">&gt; ${escapeHtml(forkCommand)}</div>`;
     mainChip.addEventListener('click', () =>
       this.delegate.onSelectLine(point.lineId));
     container.appendChild(mainChip);
 
     for (const sibling of point.siblings) {
       const pending = this.model.isPending(sibling);
-      const count = this.model.ownCommandsOf(sibling).length;
       const firstCommand = this.model.ownCommandsOf(sibling)[0]
         ?? this.model.labelOf(sibling).split(' · ').at(-1) ?? '';
       const span = pending
         ? `&gt; ${escapeHtml(firstCommand)} · replay pending`
-        : `&gt; ${escapeHtml(firstCommand)} · ${count} ${count === 1 ? 'turn' : 'turns'}`;
+        : `&gt; ${escapeHtml(firstCommand)}`;
       const chip = document.createElement('div');
       chip.className = 'ts-branch-chip' +
         (selectedSibling === sibling ? ' ts-chip-selected' : '');
@@ -567,9 +681,10 @@ export class CardsView {
     row.title = 'all continue from this card';
   }
 
-  /** The run column: one row per line of the tree — derived labels are the
-   *  identities on the wire (D2/Q-8) — with PASS/FAIL, the first failure on
-   *  one line, and a tally. A pending branch shows a dash. */
+  /** The run column: one header per line of the tree — derived labels are
+   *  the identities on the wire (D2/Q-8) — then EVERY executed command with
+   *  every assertion's verdict (David 2026-08-10: the run shows every card
+   *  and its assertions), and a line tally. A pending branch shows a dash. */
   private renderRunColumn(): void {
     const results = document.getElementById('ts-run-results');
     if (!results) return;
@@ -612,11 +727,52 @@ export class CardsView {
       results.appendChild(line);
     };
 
-    // Every line the run touched, in run order — labels are the identities.
+    /** One command's detail block: the command, then each assertion's verdict. */
+    const detail = (result: TranscriptRunResult): void => {
+      for (const command of result.commands) {
+        const commandRow = document.createElement('div');
+        commandRow.className = 'ts-run-cmd';
+        commandRow.textContent = command.input === '(opening)' ? '(opening)' : `> ${command.input}`;
+        results.appendChild(commandRow);
+        if (command.skipped) {
+          const skipRow = document.createElement('div');
+          skipRow.className = 'ts-run-assert';
+          skipRow.textContent = '— skipped';
+          results.appendChild(skipRow);
+          continue;
+        }
+        for (const assertion of command.assertions) {
+          const assertRow = document.createElement('div');
+          assertRow.className = `ts-run-assert ${assertion.passed ? 'ts-pass' : 'ts-fail'}`;
+          assertRow.textContent = `${assertion.passed ? '✓' : '✗'} ${assertion.description}`;
+          results.appendChild(assertRow);
+          if (!assertion.passed && assertion.message !== undefined) {
+            const why = document.createElement('div');
+            why.className = 'ts-run-assert-why';
+            why.textContent = assertion.message;
+            results.appendChild(why);
+          }
+        }
+        // A command that failed without assertion detail (a runtime throw,
+        // or a producer predating the field) still says why.
+        if (!command.passed && command.assertions.length === 0 && command.failure !== undefined) {
+          const why = document.createElement('div');
+          why.className = 'ts-run-assert ts-fail';
+          why.textContent = `✗ ${command.failure}`;
+          results.appendChild(why);
+        }
+      }
+    };
+
+    // Every line the run touched, in run order — labels are the identities;
+    // under each header, the line's cards and their assertions (the detail).
     for (const [label, result] of run.results) {
       switch (result.status) {
         case 'passed':
-          row('PASS', 'ts-pass', label, `${result.passed} turn${result.passed === 1 ? '' : 's'}`);
+          // No turn count: turns have no meaning unless the author gives
+          // them meaning (David 2026-08-10). PASS is the information.
+          row('PASS', 'ts-pass', label, '');
+          detail(result);
           break;
         case 'skipped':
           row('—', '', label, 'no commands — ran as a skip');
@@ -627,6 +783,7 @@ export class CardsView {
         default: {
           const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
           row('FAIL', 'ts-fail', label, `${result.firstFailure ?? 'failed'}${more}`);
+          detail(result);
         }
       }
     }
@@ -644,9 +801,18 @@ export class CardsView {
     if (run.tally) {
       const tally = document.createElement('div');
       tally.className = 'ts-run-tally';
-      const parts = [`${run.tally.passed} passing`, `${run.tally.failed} failures`];
-      if (run.tally.errors > 0) parts.push(`${run.tally.errors} errors`);
-      if (run.tally.unreached > 0) parts.push(`${run.tally.unreached} unreached`);
+      // Every assertion counts (David 2026-08-10): cards and assertions,
+      // passing always shown, failing only when it exists.
+      const t = run.tally;
+      const unit = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+      const parts = [
+        `${unit(t.cardsPassed, 'card')} passing`,
+        `${unit(t.assertionsPassed, 'assertion')} passing`,
+      ];
+      if (t.cardsFailed > 0) parts.push(`${unit(t.cardsFailed, 'card')} failing`);
+      if (t.assertionsFailed > 0) parts.push(`${unit(t.assertionsFailed, 'assertion')} failing`);
+      if (t.errors > 0) parts.push(`${unit(t.errors, 'error')}`);
+      if (t.unreached > 0) parts.push(`${t.unreached} unreached`);
       tally.textContent = parts.join(', ');
       results.appendChild(tally);
     }

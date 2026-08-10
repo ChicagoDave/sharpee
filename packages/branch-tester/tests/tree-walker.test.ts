@@ -43,9 +43,9 @@ const turn = (command: string, extra?: Partial<TreeCard>): TreeCard => ({
 /** A turn whose claim always holds against the stub's `did <command>` output. */
 const okTurn = (command: string, extra?: Partial<TreeCard>): TreeCard =>
   turn(command, { assertions: { contains: [`did ${command}`] }, ...extra });
-/** A boot card whose claim holds — a BARE boot card without a policy hits the
- *  assertion boundary like any other bare command (the runner's rule,
- *  unmodified), so non-policy tests assert their boot look. */
+/** A boot card whose claim holds. The JSON is the source of truth (David
+ *  2026-08-10): a bare card fails the assertion boundary, so every card
+ *  these tests expect to pass carries its claim in the document. */
 const okBoot = (): TreeCard => boot({ contains: ['did look'] });
 
 const doc = (cards: TreeCard[]): TreeDocument => ({
@@ -300,30 +300,21 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     expect(commandsOf(harness)).not.toContain('east');
   });
 
-  it('skip and noDefaults cards execute without asserting, even under a policy', async () => {
-    const harness = stubHarness({ policy: 'all-emitted-text' });
+  it('skip cards execute without asserting; the JSON is the whole truth', async () => {
+    const harness = stubHarness();
     const run = await runTreeDocument(
-      doc([
-        boot(),
-        turn('north', { skip: true }),
-        turn('wait', { assertions: { noDefaults: true } }),
-        turn('east'),
-      ]),
+      doc([okBoot(), turn('north', { skip: true }), okTurn('east')]),
       harness.load,
     );
 
     const rows = run.lines[0].result!.commands;
-    expect(commandsOf(harness)).toEqual(['look', 'north', 'wait', 'east']);
+    expect(commandsOf(harness)).toEqual(['look', 'north', 'east']);
     expect(rows.find((r) => r.command.input === 'north')!.skipped).toBe(true);
-    expect(rows.find((r) => r.command.input === 'wait')!.skipped).toBe(true);
-    // The bare card DID synthesize under the policy — live, never persisted.
-    const east = rows.find((r) => r.command.input === 'east')!;
-    expect(east.passed).toBe(true);
-    expect(east.command.assertions.length).toBeGreaterThan(0);
+    expect(rows.find((r) => r.command.input === 'east')!.passed).toBe(true);
     expect(run.lines[0].status).toBe('passed');
   });
 
-  it('a bare card without a policy fails at the assertion boundary and blocks later forks', async () => {
+  it('a bare card is the assertion-boundary failure and blocks later forks (JSON = source of truth, David 2026-08-10)', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
       doc([
@@ -339,6 +330,18 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     // fork on `south` sits on state the run never validly reached.
     expect(run.lines[1].status).toBe('blocked');
     expect(commandsOf(harness)).toEqual(['look']);
+  });
+
+  it('a DECLARED policy synthesizes nothing at run time — recording persisted, running reads (David 2026-08-10)', async () => {
+    // The engine declares `all-emitted-text`, and the walker still clears it:
+    // the bare card fails the boundary rather than inventing an assertion.
+    const harness = stubHarness({ policy: 'all-emitted-text' });
+    const run = await runTreeDocument(doc([okBoot(), turn('north')]), harness.load);
+
+    expect(run.lines[0].status).toBe('failed');
+    const north = run.lines[0].result!.commands.find((r) => r.command.input === 'north')!;
+    expect(north.passed).toBe(false);
+    expect(north.error).toContain('has no assertion');
   });
 
   it('card-position defects run nothing', async () => {
@@ -412,9 +415,13 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
     );
 
     const rows = formatTreeDocumentRun(run);
-    expect(rows[0]).toBe('✓ opening-iron-gates (1 turn)');
-    expect(rows[1]).toContain('✗ gravel-drive · east (1 turn) — east:');
-    expect(rows[2]).toBe('1 passed, 1 failed');
+    // Count-free rows: turns have no meaning unless the author gives them
+    // meaning (David 2026-08-10).
+    expect(rows[0]).toBe('✓ opening-iron-gates');
+    expect(rows[1]).toContain('✗ gravel-drive · east — east:');
+    // Every assertion counts (David 2026-08-10): main's look + north pass
+    // one claim each; the branch's east fails its one claim.
+    expect(rows[2]).toBe('2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing');
     // 4 executed (look, north, look, north... plus east = 5) — replay share shown.
     expect(rows[3]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed)`);
   });

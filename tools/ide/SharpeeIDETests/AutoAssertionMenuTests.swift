@@ -102,8 +102,9 @@ final class AutoAssertionMenuTests: XCTestCase {
             XCTAssertFalse(onDisk.contains("auto-assertion:"),
                            "nothing lands on disk until the author saves")
 
-            // Switching policies edits the same line in place; Let Me Decide
-            // removes it entirely.
+            // Switching policies edits the same line in place; the Default
+            // item removes it entirely (absent header = the platform default,
+            // David 2026-08-10).
             controller.selectAutoAssertion(.roomDescription)
             pump()
             XCTAssertEqual(controller.autoAssertionPolicy(), .roomDescription,
@@ -112,10 +113,10 @@ final class AutoAssertionMenuTests: XCTestCase {
             controller.selectAutoAssertion(nil)
             pump()
             XCTAssertNil(controller.autoAssertionPolicy(),
-                         "Let Me Decide removes the line")
+                         "the Default item removes the line")
             let cleared = try XCTUnwrap(controller.currentText(at: storyFile))
             XCTAssertFalse(cleared.contains("auto-assertion:"),
-                           "a header on let-me-decide says nothing")
+                           "an absent header rides the platform default — no line to keep")
         }
     }
 
@@ -130,15 +131,15 @@ final class AutoAssertionMenuTests: XCTestCase {
             "Test carries the Auto-Assertion submenu")
 
         let titles = policyMenu.items.filter { !$0.isSeparatorItem }.map(\.title)
-        XCTAssertEqual(titles, ["Let Me Decide",
+        XCTAssertEqual(titles, ["Default (Room Name and Description)",
                                 "All Emitted Text",
                                 "Room Description",
                                 "Room Name and Description"],
-                       "the closed set, default first — F8's menu, verbatim")
+                       "the closed set, default first — an absent header is the platform default (David 2026-08-10)")
 
         let raws = policyMenu.items.compactMap { $0.representedObject as? String }
         XCTAssertEqual(raws, ["all-emitted-text", "room-description", "room-name-and-description"],
-                       "each policy item carries the header spelling; Let Me Decide carries none (it removes the line)")
+                       "each policy item carries the header spelling; the Default item carries none (it removes the line)")
         XCTAssertTrue(policyMenu.items.filter { !$0.isSeparatorItem }.allSatisfy {
             $0.action == #selector(AppDelegate.selectAutoAssertion(_:))
         }, "every choice routes through the one selection action")

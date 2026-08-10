@@ -45,6 +45,7 @@
 
 import {
   Assertion,
+  AutoAssertionPolicy,
   Transcript,
   TranscriptCommand,
   TranscriptItem,
@@ -74,6 +75,16 @@ export interface TreeWalkerGame {
    * engine, and the branch's own cards still have to run.
    */
   reviveEngine?(): void;
+  /**
+   * The story's declared `auto-assertion:` policy, set by bootstrap. The
+   * walker CLEARS it before running a line (David 2026-08-10: the JSON is
+   * the source of truth for all testing elements) — synthesis happens at
+   * RECORD time in the tab and persists into the document; a document run
+   * evaluates exactly what the document says and assumes nothing. A bare
+   * card is therefore the ADR-294 D2 failure — reachable only by hand-editing,
+   * since the tab persists assertions on every recorded card.
+   */
+  autoAssertionPolicy?: AutoAssertionPolicy;
   world?: unknown;
 }
 
@@ -303,6 +314,10 @@ export async function runTreeDocument(
 
     // ── Boot (one fresh game per line, at the document's pinned seed) ────
     const game = await loadGame();
+    // Run time assumes NOTHING (David 2026-08-10: the JSON is the source of
+    // truth) — the policy governs what RECORDING persists, never what a run
+    // invents. Cleared even when declared, through the one code path (D6).
+    game.autoAssertionPolicy = undefined;
 
     // ── Replay the prefix, verbatim, claims not re-evaluated ─────────────
     // Only what the runner itself treats as an execution error counts as
@@ -396,21 +411,23 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
     return rows;
   }
 
-  let passed = 0;
-  let failed = 0;
   let blocked = 0;
   let errored = 0;
+  let cardsPassed = 0;
+  let cardsFailed = 0;
+  let assertionsPassed = 0;
+  let assertionsFailed = 0;
   for (const line of run.lines) {
-    const turns = `${line.turnCount} turn${line.turnCount === 1 ? '' : 's'}`;
+    // No turn counts on the rows: turns have no meaning unless the author
+    // gives them meaning (David 2026-08-10) — PASS is the information, and a
+    // failure cites its position, not a metric.
     switch (line.status) {
       case 'passed':
-        passed += 1;
-        rows.push(`✓ ${line.label} (${turns})`);
+        rows.push(`✓ ${line.label}`);
         break;
       case 'failed': {
-        failed += 1;
         const cite = firstFailureOf(line.result);
-        rows.push(`✗ ${line.label} (${turns})${cite !== undefined ? ` — ${cite}` : ''}`);
+        rows.push(`✗ ${line.label}${cite !== undefined ? ` — ${cite}` : ''}`);
         break;
       }
       case 'blocked': {
@@ -424,11 +441,28 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
         rows.push(`✗ ${line.label}${line.error !== undefined ? ` — ${line.error}` : ''}`);
         break;
     }
+    // Every assertion counts (David 2026-08-10): the tally aggregates cards
+    // (executed commands, the opening row included) and assertions; skipped
+    // cards join neither side.
+    for (const row of line.result?.commands ?? []) {
+      if (row.skipped) continue;
+      if (row.passed) cardsPassed += 1;
+      else cardsFailed += 1;
+      for (const entry of row.assertionResults) {
+        if (entry.passed) assertionsPassed += 1;
+        else assertionsFailed += 1;
+      }
+    }
   }
 
-  const parts = [`${passed} passed`];
-  if (failed > 0) parts.push(`${failed} failed`);
-  if (errored > 0) parts.push(`${errored} errored`);
+  const unit = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const parts = [
+    `${unit(cardsPassed, 'card')} passing`,
+    `${unit(assertionsPassed, 'assertion')} passing`,
+  ];
+  if (cardsFailed > 0) parts.push(`${unit(cardsFailed, 'card')} failing`);
+  if (assertionsFailed > 0) parts.push(`${unit(assertionsFailed, 'assertion')} failing`);
+  if (errored > 0) parts.push(`${unit(errored, 'error')}`);
   if (blocked > 0) parts.push(`${blocked} blocked`);
   rows.push(parts.join(', '));
 
@@ -469,12 +503,10 @@ function countTurns(cards: TreeCard[]): number {
  *
  * `exact` supersedes the contains family (the schema says so; the surface's
  * composer already drops contains under exact). `skip: true` wins whole: the
- * card executes and asserts nothing. `noDefaults` with no authored claims is
- * a deliberate "assert nothing" — mapped to a skip so the runner neither
- * synthesizes defaults nor trips the assertion boundary. A bare card (no
- * assertions object at all) stays bare: policy defaults synthesize live in
- * the runner, and without a policy the assertion boundary fails it by name —
- * the runner's existing rule, unmodified.
+ * card executes and asserts nothing. A bare card (no assertions object at
+ * all) fails the assertion boundary by name — the JSON is the source of
+ * truth (David 2026-08-10): recording persists assertions, running invents
+ * none, and a bare card only exists in a hand-edited document.
  */
 function assertionsOfCard(card: TreeCard): Assertion[] {
   if (card.skip === true) return [{ type: 'skip' }];
@@ -518,9 +550,6 @@ function assertionsOfCard(card: TreeCard): Assertion[] {
     }
   }
 
-  if (assertions.length === 0 && authored.noDefaults === true) {
-    return [{ type: 'skip', reason: 'defaults withheld (noDefaults)' }];
-  }
   return assertions;
 }
 

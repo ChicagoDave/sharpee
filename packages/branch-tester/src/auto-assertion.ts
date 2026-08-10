@@ -18,6 +18,95 @@
 import { Assertion, AutoAssertionPolicy } from './types.js';
 
 /**
+ * The platform's effective policy when a story declares no `auto-assertion:`
+ * header (David's ruling, 2026-08-10: "auto assertion is the default" —
+ * extending the 2026-08-09 authoring-surface ruling to the whole document
+ * world). A declared header wins; the default applies to TREE-DOCUMENT runs
+ * only — the transcript world keeps ADR-294 D2's "absent = let me decide"
+ * boundary until the cutover retires it. The IDE surface reads this same
+ * constant for in-page synthesis; there is deliberately no second spelling.
+ */
+export const DEFAULT_AUTO_ASSERTION_POLICY: AutoAssertionPolicy =
+  'room-name-and-description';
+
+/**
+ * A human, one-line rendering of an assertion — the vocabulary the Testing
+ * tab's claim lines use (`contains "…"`, `channel info.title is "…"`), so the
+ * run detail view and the cards read as one language. Consumed by the wire's
+ * `assertionResults` (run detail, David 2026-08-10).
+ *
+ * @param assertion the runner-shape assertion.
+ * @returns the display line, never empty.
+ */
+export function describeAssertion(assertion: Assertion): string {
+  const quoted = (text: unknown): string => `"${text}"`;
+  const channel = (): string =>
+    (assertion.channelPath?.length ?? 0) > 0
+      ? `${assertion.channelId}.${assertion.channelPath!.join('.')}`
+      : `${assertion.channelId}`;
+  switch (assertion.type) {
+    case 'ok':
+      return assertion.block !== undefined
+        ? `exact output (${assertion.block.length} lines)`
+        : '[OK]';
+    case 'ok-contains':
+      return assertion.value !== undefined
+        ? `contains ${quoted(assertion.value)}`
+        : `contains (${assertion.block?.length ?? 0} lines)`;
+    case 'ok-not-contains':
+      return assertion.value !== undefined
+        ? `not contains ${quoted(assertion.value)}`
+        : `not contains (${assertion.block?.length ?? 0} lines)`;
+    case 'state-assert':
+      return `state ${assertion.stateExpression ?? ''}`.trimEnd();
+    case 'event-assert':
+      return `event ${assertion.eventType ?? ''}`.trimEnd();
+    case 'channel-contains':
+      return `channel ${channel()} contains ${quoted(assertion.value)}`;
+    case 'channel-not-contains':
+      return `channel ${channel()} not contains ${quoted(assertion.value)}`;
+    case 'channel-is':
+      return `channel ${channel()} is ${quoted(assertion.channelExpected)}`;
+    case 'channel-is-not':
+      return `channel ${channel()} is not ${quoted(assertion.channelExpected)}`;
+    case 'channel-absent':
+      return `channel ${channel()} absent`;
+    case 'channel-present':
+      return `channel ${channel()} present`;
+    case 'skip':
+      return '[SKIP]';
+    case 'fail':
+      return '[FAIL]';
+    case 'todo':
+      return '[TODO]';
+  }
+}
+
+/**
+ * A command result in the run-event stream's shape: the raw result with its
+ * `assertionResults` rendered into wire verdicts (`description`/`passed`/
+ * `message`) via {@link describeAssertion}. The one spelling every stream
+ * emitter uses — the run detail view (David 2026-08-10) reads these rows.
+ *
+ * @param command any runner command result.
+ * @returns the same result, wire-shaped assertion verdicts substituted.
+ */
+export function streamableCommandResult<
+  T extends { assertionResults: { assertion: Assertion; passed: boolean; message?: string }[] },
+>(command: T): Omit<T, 'assertionResults'> & {
+  assertionResults: { description: string; passed: boolean; message?: string }[];
+} {
+  return {
+    ...command,
+    assertionResults: command.assertionResults.map((entry) => ({
+      description: describeAssertion(entry.assertion),
+      passed: entry.passed,
+      ...(entry.message !== undefined ? { message: entry.message } : {}),
+    })),
+  };
+}
+
+/**
  * Build the assertions an `auto-assertion:` policy writes for a bare command's
  * first run, from the turn's real output.
  *

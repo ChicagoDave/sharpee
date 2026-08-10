@@ -119,9 +119,12 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     expect(out).toContain('Tree document: mini.tests.json (seed 42, 2 line(s))');
     // Derived labels (D2/Q-8): the main line from its opening room, the
     // branch from its fork room and first command.
-    expect(out).toContain('✓ opening-den (2 turns)');
-    expect(out).toContain('✓ den · look (1 turn)');
-    expect(out).toContain('2 passed');
+    expect(out).toContain('✓ opening-den');
+    expect(out).toContain('✓ den · look');
+    // Every assertion counts (David 2026-08-10): boot + examine + north on
+    // the main line and the branch's look = 4 cards; their claims (incl. the
+    // north card's contains + channel pair) = 5 assertions.
+    expect(out).toContain('4 cards passing, 5 assertions passing');
     // The branch's replay share is real and visible: the fresh boot replayed
     // the boot look + examine before the branch's own look.
     expect(out).toMatch(/\d+ commands \(\d+ authored \+ \d+ replayed\)/);
@@ -137,8 +140,8 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       expect(out).toContain('gleams dully');
       // The branch forks BEFORE the seam card's claims broke anything
       // structural — it still runs and still passes (seams never block).
-      expect(out).toContain('✓ den · look (1 turn)');
-      expect(out).toContain('1 passed, 1 failed');
+      expect(out).toContain('✓ den · look');
+      expect(out).toContain('3 cards passing, 4 assertions passing, 1 card failing, 1 assertion failing');
     } finally {
       writeFileSync(join(projectDir, 'mini.story'), STORY);
     }
@@ -158,11 +161,11 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     }
   }, 60_000);
 
-  it('the opening defaults fire through the CLI: prologue/info are captured and the (opening) row passes', async () => {
-    // The capture-set union (prologue + info) is only observable when the
-    // document's own claims reference NEITHER — the opening card is bare and
-    // its defaults (prologue, title, description — ADR-307 open question D)
-    // synthesize live from captures the union alone provides.
+  it('PERSISTED opening claims evaluate through the CLI; a claim-less opening asserts nothing (David 2026-08-10)', async () => {
+    // The JSON is the source of truth: the tab persists the opening's
+    // recorded claims (prologue/title/description) into the document, the
+    // CLI captures exactly the channels those claims reference
+    // (channelIdsReferencedBy), and the walker invents nothing.
     const openingDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-opening-'));
     try {
       writeFileSync(
@@ -171,8 +174,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
           '  story-version: 0.0.1\n',
           '  story-version: 0.0.1\n' +
             '  description: A small square test story.\n' +
-            '  prologue: Night falls on the den.\n' +
-            '  auto-assertion: room-name-and-description\n',
+            '  prologue: Night falls on the den.\n',
         ),
       );
       writeFileSync(
@@ -182,7 +184,16 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
           story: 'mini',
           seed: 42,
           cards: [
-            { type: 'opening' },
+            {
+              type: 'opening',
+              assertions: {
+                channels: [
+                  { id: 'prologue', contains: ['Night falls on the den.'] },
+                  { id: 'info.title', is: 'Mini' },
+                  { id: 'info.description', is: 'A small square test story.' },
+                ],
+              },
+            },
             { type: 'boot', assertions: { contains: ['A small square den'] } },
             { type: 'turn', command: 'north', assertions: { contains: ['Roses everywhere'] } },
           ],
@@ -207,20 +218,29 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
         .join('')
         .split('\n')
         .filter((line) => line.trim().length > 0)
-        .map((line) => JSON.parse(line) as { type?: string; input?: string; passed?: boolean });
+        .map((line) => JSON.parse(line) as {
+          type?: string;
+          input?: string;
+          passed?: boolean;
+          assertionResults?: { description: string; passed: boolean }[];
+        });
       const opening = events.find(
         (event) => event.type === 'command-result' && event.input === '(opening)',
       );
-      // The row exists AND passed: the union put prologue/info in the
-      // capture set, the defaults synthesized from them, and all three
-      // claims (prologue, title, description) held.
+      // The row exists AND passed: the persisted claims referenced
+      // prologue/info, so the capture set carried them and all three held —
+      // and the wire's detail rows describe each verdict (the run detail
+      // view's data, David 2026-08-10).
       expect(opening).toBeDefined();
       expect(opening!.passed).toBe(true);
+      expect(opening!.assertionResults?.map((a) => [a.description, a.passed])).toEqual([
+        ['channel prologue contains "Night falls on the den."', true],
+        ['channel info.title is "Mini"', true],
+        ['channel info.description is "A small square test story."', true],
+      ]);
 
-      // And the dotted-id chain bites: an AUTHORED opening claim on
-      // `info.title` with a wrong value must be captured (base channel
-      // derived from the dotted id), evaluated, and cited — exit 1, never a
-      // silent pass.
+      // The dotted-id chain bites: a persisted opening claim on `info.title`
+      // with a wrong value must be captured, evaluated, and cited — exit 1.
       writeFileSync(
         join(openingDir, 'mini.tests.json'),
         `${JSON.stringify({
@@ -239,8 +259,66 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       const failed = await muted(() => runTestCommand(['--tree', openingDir]));
       expect(failed.code).toBe(1);
       expect(failed.out).toContain('info.title');
+
+      // A CLAIM-LESS opening produces no opening row at all — nothing is
+      // assumed at run time.
+      writeFileSync(
+        join(openingDir, 'mini.tests.json'),
+        `${JSON.stringify({
+          version: 1,
+          story: 'mini',
+          seed: 42,
+          cards: [
+            { type: 'opening' },
+            { type: 'boot', assertions: { contains: ['A small square den'] } },
+          ],
+        }, null, 2)}\n`,
+      );
+      const bareOpening: string[] = [];
+      const stdout2 = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(((chunk: unknown) => {
+          bareOpening.push(String(chunk));
+          return true;
+        }) as never);
+      try {
+        const { code } = await muted(() => runTestCommand(['--tree', openingDir, '--json']));
+        expect(code).toBe(0);
+      } finally {
+        stdout2.mockRestore();
+      }
+      expect(bareOpening.join('')).not.toContain('(opening)');
     } finally {
       rmSync(openingDir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it('a bare card fails by name at run time — recording persists, running invents nothing (David 2026-08-10)', async () => {
+    // The JSON is the source of truth: the tab persists synthesized
+    // assertions on every recorded card, so a bare card only exists in a
+    // hand-edited document — and the run refuses to assume anything for it.
+    const bareDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-bare-'));
+    try {
+      writeFileSync(join(bareDir, 'mini.story'), STORY);
+      writeFileSync(
+        join(bareDir, 'mini.tests.json'),
+        `${JSON.stringify({
+          version: 1,
+          story: 'mini',
+          seed: 42,
+          cards: [
+            { type: 'opening' },
+            { type: 'boot' },
+            { type: 'turn', command: 'north' },
+          ],
+        }, null, 2)}\n`,
+      );
+      const { code, out } = await muted(() => runTestCommand(['--tree', bareDir]));
+      expect(code).toBe(1);
+      expect(out).toContain('✗ opening-den');
+      expect(out).toContain('has no assertion');
+    } finally {
+      rmSync(bareDir, { recursive: true, force: true });
     }
   }, 60_000);
 

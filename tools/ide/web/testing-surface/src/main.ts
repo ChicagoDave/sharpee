@@ -31,12 +31,13 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
 import {
-  cardAssertionLines, turnContainsDefaults, type DeleteRef, type TurnSource,
+  cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
+  type DeleteRef, type TurnSource,
 } from './compose';
 import { MAIN_LINE, TreeSessionModel, type AuthoringMemento } from './model';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
@@ -74,12 +75,20 @@ interface BootSession {
   /** The `<story-id>.tests.json` bytes, when one exists. */
   document?: string;
   policy?: AutoAssertionPolicy;
-  /** View-state ephemera (D7): active line id + dialog outcomes. */
-  view?: { active?: number; dialogs?: [string, DialogOutcome][] };
+  /** View-state ephemera (D7): active line id, dialog outcomes, and
+   *  collapsed region-group keys. */
+  view?: {
+    active?: number;
+    dialogs?: [string, DialogOutcome][];
+    collapsed?: string[];
+  };
   /** The story id (the document's `story` field for a fresh tree). */
   story?: string;
   /** The pinned master seed (D5). */
   seed?: number;
+  /** Room name → region name, derived from the Story IR (regions group the
+   *  cards — David 2026-08-10; derived, never persisted in the document). */
+  regions?: Record<string, string>;
 }
 
 interface DeliverShim {
@@ -102,8 +111,10 @@ const surfaceWindow = window as unknown as {
 const bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
 const storyId = bootSession?.story ?? 'story';
 const seed = bootSession?.seed ?? 42;
-/** The story's `auto-assertion:` policy, injected by the IDE at boot. */
-const policy: AutoAssertionPolicy | undefined = bootSession?.policy;
+/** The story's declared `auto-assertion:` policy, injected by the IDE at
+ *  boot; absent = the PLATFORM default (David 2026-08-10) — the same
+ *  constant the CLI walker applies, so both consumers synthesize alike. */
+const policy: AutoAssertionPolicy = bootSession?.policy ?? DEFAULT_AUTO_ASSERTION_POLICY;
 
 const model = new TreeSessionModel(storyId, seed);
 
@@ -111,6 +122,13 @@ const model = new TreeSessionModel(storyId, seed);
 const records = new Map<number, FeedRecord>();
 /** The BOOT's channel captures — the opening defaults' carrier (question D). */
 let bootCaptures: Record<string, unknown[]> | undefined;
+/** The boot record's delivery ordinal — the opening's channel picker reads
+ *  its captures (the opening itself has no record). */
+let bootRecordOrdinal: number | undefined;
+/** Room name → region name (Story IR, injected at boot) — card grouping. */
+const regionByRoom: Record<string, string> = bootSession?.regions ?? {};
+/** Collapsed region-group keys (view-state ephemera, D7). */
+const collapsedRegions = new Set<string>(bootSession?.view?.collapsed ?? []);
 
 /** The line newly delivered visible turns fold into. */
 let currentLine = MAIN_LINE;
@@ -150,32 +168,16 @@ function turnSource(ordinal: number): TurnSource | undefined {
   return { output: record.output, channelValues };
 }
 
-/** The one options object every card renders from. */
-function composeOptions() {
-  return {
-    model, policy, source: turnSource,
-    ...(bootCaptures !== undefined ? { bootCaptures } : {}),
-  };
-}
-
-/** The card's assertion lines — authored claims or live defaults. */
+/** The card's assertion lines — the document's claims, verbatim. */
 function assertionLinesFor(ordinal: number) {
-  return cardAssertionLines(composeOptions(), ordinal);
+  return cardAssertionLines({ model }, ordinal);
 }
 
 /** Maps a rendered line's DeleteRef onto the model mutator it names —
- *  deletion semantics live in the model, never re-derived here. */
+ *  deletion semantics live in the model, never re-derived here. Every claim
+ *  is an ordinary document assertion (JSON = source of truth). */
 function removeAssertion(del: DeleteRef): void {
   switch (del.kind) {
-    case 'default':
-      model.removeDefault(del.ordinal, del.index, del.defaults);
-      break;
-    case 'defaultWhole':
-      model.removeDefault(del.ordinal, -1, turnContainsDefaults(policy, turnSource(del.ordinal)));
-      break;
-    case 'openingDefault':
-      model.removeOpeningDefault(del.index, del.defaults);
-      break;
     case 'contains': model.removeContains(del.ordinal, del.index); break;
     case 'notContains': model.removeNotContains(del.ordinal, del.index); break;
     case 'state': model.removeState(del.ordinal, del.index); break;
@@ -259,7 +261,12 @@ const cards = new CardsView(model, {
     });
   },
   onChannelPicker(ordinal, anchor) {
-    const captures = records.get(ordinal)?.captures ?? [];
+    // The OPENING (ordinal 0) has no record of its own — its channels are
+    // the boot flush, riding the boot record's captures.
+    const source = ordinal === 0 && bootRecordOrdinal !== undefined
+      ? records.get(bootRecordOrdinal)
+      : records.get(ordinal);
+    const captures = source?.captures ?? [];
     const labels = captures.map(capture => {
       const flat = proseTextLinesOf(capture.values).join(' ');
       const scalar = capture.values.length === 1 && typeof capture.values[0] !== 'object'
@@ -303,6 +310,16 @@ const cards = new CardsView(model, {
     pushUndo();
     removeAssertion(del);
     update();
+  },
+  // Region grouping (David 2026-08-10): derived from the Story IR's map,
+  // collapse state is D7 view ephemera — nothing touches the document.
+  regionOf: (room) => (room !== undefined ? regionByRoom[room] : undefined),
+  isRegionCollapsed: (key) => collapsedRegions.has(key),
+  onToggleRegion(key) {
+    if (collapsedRegions.has(key)) collapsedRegions.delete(key);
+    else collapsedRegions.add(key);
+    postState();
+    cards.render();
   },
 });
 
@@ -352,13 +369,15 @@ function update(): void {
   }
 }
 
-/** Posts the view-state sidecar (D7): active line and dialog outcomes —
- *  session ephemera only; everything else lives in the document. */
+/** Posts the view-state sidecar (D7): active line, dialog outcomes, and
+ *  collapsed region groups — session ephemera only; everything else lives
+ *  in the document. */
 function postState(): void {
   postToBridge({
     state: {
       active: model.activeLine,
       dialogs: [...dialogOutcomes],
+      collapsed: [...collapsedRegions],
     },
   });
 }
@@ -488,6 +507,7 @@ function deliver(raw: unknown): void {
     expectBoot = true;
     pendingDialogOutcome = null;
     bootCaptures = undefined;
+    bootRecordOrdinal = undefined;
     update();
     void replayTree(activeBefore);
     return;
@@ -510,14 +530,27 @@ function deliver(raw: unknown): void {
   lastDeliveredOrdinal = record.turn;
   if (boot && currentLine === MAIN_LINE) {
     bootCaptures = capturesOf(record);
+    bootRecordOrdinal = record.turn;
   }
   const room = roomOf(record);
   model.activateLine(currentLine);
+  // Record-time synthesis (David 2026-08-10: the JSON is the source of
+  // truth): the effective policy reads THIS turn's real captures and what it
+  // says persists into the card. The model applies these only when the
+  // delivery APPENDS — a binding replay rebuilds state, never claims.
+  const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
+  const openingClaims =
+    boot && currentLine === MAIN_LINE ? openingDefaultClaims(policy, bootCaptures) : [];
   model.addTurn({
     ordinal: record.turn,
     command: record.command ?? '',
     boot,
     ...(room !== undefined ? { room } : {}),
+    ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
+    ...(recorded.skip === true ? { skip: true } : {}),
+    ...(openingClaims.length > 0
+      ? { openingAssertions: { channels: openingClaims } }
+      : {}),
   });
   if (pendingDialogOutcome) {
     const at = model.turnIndexOf(record.turn);

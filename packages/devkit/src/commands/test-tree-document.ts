@@ -57,6 +57,7 @@ export async function runTreeDocumentCommand(
     flattenTreeLines,
     formatTreeDocumentRun,
     runTreeDocument,
+    streamableCommandResult,
   } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
   // The stream builder is transcript-tester's — the wire has one owner.
   const { RunEventStream, ndjsonEventLine } =
@@ -95,11 +96,11 @@ export async function runTreeDocumentCommand(
   info(`Loading story from: ${dir}`);
   info(`Tree document: ${path.basename(docPath)} (seed ${document.seed}, ${lines.length} line(s))`);
 
-  // The capture set (ADR-294 D15): the base channels the document's claims
-  // read, plus the opening defaults' carriers — `prologue` and `info` are
-  // always captured so the opening card's live defaults (prologue, title,
-  // description — ADR-307 open question D) have something to read.
-  const channels = [...new Set([...channelIdsReferencedBy(document), 'prologue', 'info'])];
+  // The capture set (ADR-294 D15): exactly the base channels the document's
+  // claims reference — the JSON is the source of truth (David 2026-08-10),
+  // so every claim a run evaluates is IN the document, including the opening
+  // and policy claims recording persisted. Nothing is captured on spec.
+  const channels = [...new Set(channelIdsReferencedBy(document))];
   const loadGame = () =>
     loadAuthorGame(dir, {
       seed: document.seed,
@@ -120,7 +121,10 @@ export async function runTreeDocumentCommand(
       stopOnFailure,
       captureWorld,
       observer: stream && {
-        onCommandResult: (command) => stream.commandResult(currentLabel, command, captureOutput),
+        // The run detail view's rows (David 2026-08-10): every assertion's
+        // verdict rides the wire, described in the tab's claim idiom.
+        onCommandResult: (command) =>
+          stream.commandResult(currentLabel, streamableCommandResult(command), captureOutput),
       },
       lineObserver: stream && {
         onLineStart: ({ line, label }) => {

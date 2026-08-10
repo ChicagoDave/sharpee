@@ -66,6 +66,13 @@ export interface StreamableCommandResult {
    * Carried verbatim; structurally the wire's `WorldSnapshot`.
    */
   world?: { location?: { name: string; token: string }; inventory: Array<{ name: string; token: string }> };
+  /**
+   * Every evaluated assertion's verdict, in authored order — the wire's
+   * `AssertionOutcome[]` (run detail view, ADR-307 / David 2026-08-10).
+   * The CALLER renders descriptions (assertion shapes are the harness's
+   * domain); the wire only moves them.
+   */
+  assertionResults?: Array<{ description: string; passed: boolean; message?: string }>;
 }
 
 /** What the stream needs from a whole run's aggregate. Same reasoning. */
@@ -222,6 +229,9 @@ export class RunEventStream {
       ...(result.ending !== undefined ? { ending: result.ending } : {}),
       ...(result.failure !== undefined ? { failure: result.failure } : {}),
       ...(result.world !== undefined ? { world: result.world } : {}),
+      ...(result.assertionResults !== undefined
+        ? { assertionResults: result.assertionResults }
+        : {}),
     });
   }
 

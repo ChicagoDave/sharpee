@@ -469,8 +469,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     /// Test → Auto-Assertion → <choice>. Sets the story header's
     /// `auto-assertion:` line via the editor — undoable, tab left dirty
-    /// (go-live Phase 6e). "Let Me Decide" carries no representedObject and
-    /// REMOVES the line, matching the runner's default.
+    /// (go-live Phase 6e). The Default item carries no representedObject and
+    /// REMOVES the line — an absent header is the platform default,
+    /// room-name-and-description (David 2026-08-10).
     @objc func selectAutoAssertion(_ sender: NSMenuItem) {
         let policy = (sender.representedObject as? String)
             .flatMap(StoryHeaderAutoAssertion.Policy.init(rawValue:))
