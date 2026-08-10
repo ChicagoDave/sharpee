@@ -1,8 +1,9 @@
 # Session Plan: ADR-309 Tool-Owned IFID
 
 **Created**: 2026-08-10
-**Plan Status**: ACTIVE — Phases 1 and 2 DONE; Phase 3 DONE except one
-held item (the Swift dead-code removal awaits David's delete confirmation).
+**Plan Status**: DONE (2026-08-10, session ed3730 — all three phases,
+including the held Swift dead-code removal, which David closed the same
+evening and which landed in PR #258 alongside the SonarCloud sort fix).
 **Overall scope**: Implement ADR-309 end to end — the `{story-name}.config.json`
 sidecar becomes the canonical home of a story's IFID; `sharpee init` and Chord
 Writer's Create Story mint it and write the config before the author types a
@@ -332,7 +333,12 @@ publish-time refusal, now unreachable-by-construction for tool-built stories).
     build was running in parallel); classified by isolation (4/4 green,
     0.9s) and confirmed by a clean full run (492/0). Not in this change
     set — that suite tests file-watcher reload, untouched here.
-- **Held for David**: the Swift dead-code removal —
+- **Held item — CLOSED** (PR #258, `2f4d91ab`): the Swift dead-code removal
+  landed with the whole quick-fix path (registry, button, `fixClicked`,
+  `onFix`, `applyProblemFix`, `presentFixFailure`, wiring,
+  `StoryHeaderIFID.insertion` + `Insertion`), two fixtures retargeted off
+  the retired diagnostic, and IDE **480 passing, 0 failures**. Originally
+  scoped as —
   `ProblemsView.fixes["analysis.missing-ifid"]` (~line 33),
   `MainWindow.applyProblemFix` (~753) + `presentFixFailure` (~770) + the
   wiring (~359), `SpanText.swift`'s example comment (~27), and
