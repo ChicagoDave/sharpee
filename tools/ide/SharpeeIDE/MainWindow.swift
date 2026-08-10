@@ -355,10 +355,6 @@ private final class RootViewController: NSViewController {
             }
         }
 
-        bottomPanelViewController.problems.onFix = { [weak self] item in
-            self?.applyProblemFix(item)
-        }
-
         bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
             self?.mainSplitViewController.revealDiagnosis(error)
         }
@@ -734,43 +730,6 @@ private final class RootViewController: NSViewController {
         let alert = NSAlert()
         alert.messageText = "Couldn’t update the auto-assertion policy"
         alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or the file could not be edited."
-        alert.alertStyle = .warning
-        if let window = view.window {
-            alert.beginSheetModal(for: window)
-        } else {
-            alert.runModal()
-        }
-    }
-
-    /// Runs a Problems row's inline fix.
-    ///
-    /// Today there is exactly one: a missing `ifid:`. The IFID is minted here and
-    /// written into the story header — the author never leaves the IDE to run
-    /// `sharpee ifid`. The edit goes through the editor, so it is undoable and
-    /// the next compose clears the warning on its own.
-    ///
-    /// - Parameter item: the Problems row whose button was clicked.
-    private func applyProblemFix(_ item: ProblemItem) {
-        guard item.record.code == "analysis.missing-ifid" else { return }
-        let url = item.fileURL
-        let source = mainSplitViewController.currentText(at: url)
-            ?? (try? String(contentsOf: url, encoding: .utf8))
-
-        guard let source,
-              let insertion = StoryHeaderIFID.insertion(of: StoryHeaderIFID.mint(), into: source),
-              mainSplitViewController.insertText(insertion.text, at: insertion.offset, in: url)
-        else {
-            presentFixFailure(for: url)
-            return
-        }
-    }
-
-    /// Reports a fix that could not be applied, rather than doing nothing and
-    /// leaving the author to wonder whether the button worked.
-    private func presentFixFailure(for url: URL) {
-        let alert = NSAlert()
-        alert.messageText = "Couldn’t add an IFID"
-        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or it already declares an `ifid:`. Rebuild to refresh Problems."
         alert.alertStyle = .warning
         if let window = view.window {
             alert.beginSheetModal(for: window)

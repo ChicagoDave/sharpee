@@ -1,9 +1,11 @@
 // SpanTextUnderlineTests.swift
 // An underline is a point-at gesture, so a block-scoped diagnostic must not
-// paint its whole block. The case that surfaced this is real:
-// `analysis.missing-ifid` on `branch-stories/fernhill` spans line 5 column 1 to
-// line 20 column 9 — the entire `story` block — which rendered as sixteen lines
-// of thick yellow to say one field was absent.
+// paint its whole block. The case that surfaced this was real: a warning
+// reported against `branch-stories/fernhill`'s whole `story` block, line 5
+// column 1 to line 20 column 9, rendered as sixteen lines of thick yellow to
+// say one field was absent. (That particular diagnostic — the missing-IFID
+// warning — retired with ADR-309; the clamping rule it taught us did not, and
+// the spans below stand in for any block-scoped diagnostic.)
 //
 // Clamping is the EDITOR's call, not the analyzer's: the full span still drives
 // the gutter flag and Problems click-through, so the diagnostic's real scope is

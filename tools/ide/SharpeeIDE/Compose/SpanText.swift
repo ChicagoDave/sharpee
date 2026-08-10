@@ -24,9 +24,9 @@ enum SpanText {
     /// line, otherwise only its FIRST line.
     ///
     /// An underline is a point-at gesture, and a block-scoped diagnostic has a
-    /// block-sized span — `analysis.missing-ifid` spans the entire `story`
-    /// block, so an unclamped underline paints sixteen lines of thick yellow to
-    /// say one field is absent. Clamping is the editor's call, not the
+    /// block-sized span — a diagnostic reported against a whole `story` block,
+    /// say, would paint sixteen lines of thick yellow unclamped. Clamping is
+    /// the editor's call, not the
     /// analyzer's: the full span is still what the gutter flags and what
     /// click-through navigates to, so nothing about the diagnostic's scope is
     /// lost — only the squiggle stops shouting.

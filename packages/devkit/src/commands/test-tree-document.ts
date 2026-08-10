@@ -42,7 +42,12 @@ export function findTreeDocument(projectDir: string): string | undefined {
   } catch {
     return undefined;
   }
-  const storyFiles = entries.filter((name) => name.endsWith('.story')).sort();
+  // Code-unit ordering, stated explicitly — NOT `localeCompare`: which story a
+  // multi-`.story` directory resolves to must not depend on the machine's
+  // locale, or the same project would test a different story elsewhere.
+  const storyFiles = entries
+    .filter((name) => name.endsWith('.story'))
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   for (const storyFile of storyFiles) {
     const storyId = storyFile.slice(0, -'.story'.length);
     const candidate = path.join(projectDir, treeDocumentFileNameFor(storyId));
