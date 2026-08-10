@@ -113,9 +113,12 @@ publish-time refusal, now unreachable-by-construction for tool-built stories).
   story-config, AC-1 scaffold, publish adopt/broken/no-identity, compose
   broken read-only, 3 build entry-point tests closing
   mutation-verification's warning); tsc clean; dist rebuilt;
-  `tsf build --npm` green. `sharpee ifid`: RECOMMEND KEEP as raw
-  generate/validate utility (no story-file coupling; the new module uses
-  the same core primitives) — David's call, flagged in the phase report.
+  `tsf build --npm` green. `sharpee ifid`: **KEPT — David's ruling
+  2026-08-10, "stays if anyone wants to use it."** A raw utility over the
+  identifier format, no story-file coupling — which is what separates it
+  from the Problems quick-fix that did retire. Its text needed no change
+  (it never told authors to hand-edit a header); a header note now records
+  the ruling and states it is not the remedy for a missing IFID.
 - **Deletions**: none performed.
 
 ### Phase 2: Chord Writer (IDE) — Create Story, reconcile-on-save, broken-config surfacing

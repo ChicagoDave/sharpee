@@ -1,5 +1,15 @@
-// packages/sharpee/src/cli/ifid.ts
-// IFID CLI commands
+// ifid.ts — `sharpee ifid`: generate and validate Treaty of Babel identifiers.
+//
+// KEPT through ADR-309's cleanup by David's ruling (2026-08-10): "sharpee ifid
+// stays if anyone wants to use it." It is a raw utility over the identifier
+// FORMAT — no story-file coupling, which is what separates it from the
+// Problems-panel quick-fix that did retire.
+//
+// It is deliberately NOT the remedy for a story without an IFID: the toolchain
+// owns that now (minted at creation into `<story-name>.config.json`, rendered
+// into the header on save and build), so nothing here writes to a story.
+// Public interface: runIfidCommand(args).
+// Owner context: @sharpee/devkit (author tool).
 
 import { generateIfid, validateIfid, normalizeIfid } from '@sharpee/core';
 
