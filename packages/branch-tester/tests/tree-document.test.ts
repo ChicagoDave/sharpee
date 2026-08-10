@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   TREE_DOCUMENT_VERSION,
+  channelIdsReferencedBy,
   deserializeTreeDocument,
   emptyTreeDocument,
   serializeTreeDocument,
@@ -187,5 +188,59 @@ describe('malformed degrade (AC-4)', () => {
 describe('the document name', () => {
   it('is <story-id>.tests.json', () => {
     expect(treeDocumentFileNameFor('fernhill')).toBe('fernhill.tests.json');
+  });
+});
+
+describe('channelIdsReferencedBy — the capture set both consumers derive', () => {
+  it('collects each claimed channel once, in first-use order, branches included', () => {
+    const document: TreeDocument = {
+      version: 1,
+      story: 's',
+      seed: 1,
+      cards: [
+        { type: 'boot', assertions: { channels: [{ id: 'status', contains: ['x'] }] } },
+        {
+          type: 'turn',
+          command: 'north',
+          // No channel claims — contributes nothing.
+          assertions: { contains: ['y'] },
+          branches: [
+            {
+              branch: 1,
+              cards: [
+                {
+                  type: 'turn',
+                  command: 'east',
+                  assertions: {
+                    channels: [
+                      { id: 'score', is: '5' },
+                      // A duplicate of the boot's claim — counted once.
+                      { id: 'status', contains: ['z'] },
+                    ],
+                  },
+                  branches: [
+                    {
+                      branch: 2,
+                      cards: [
+                        {
+                          type: 'turn',
+                          command: 'up',
+                          assertions: { channels: [{ id: 'banner', contains: ['t'] }] },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(channelIdsReferencedBy(document)).toEqual(['status', 'score', 'banner']);
+  });
+
+  it('an unclaimed document derives an empty capture set', () => {
+    expect(channelIdsReferencedBy(emptyTreeDocument('s', 1))).toEqual([]);
   });
 });

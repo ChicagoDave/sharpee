@@ -135,13 +135,16 @@ export type LoadPhaseReporter = (
  * @param target a project directory, or a path ending in `.story`
  * @param opts.entry optional story sub-entry (module projects only; ignored
  *   for `.story` sources, matching the platform bundle's contract)
+ * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
+ *   the assembler — the tree-document runner derives these from the
+ *   document's channel claims (ADR-307 Phase 2)
  * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
  */
 export async function loadAuthorGame(
   target: string,
-  opts?: { entry?: string; seed?: number; onPhase?: LoadPhaseReporter },
+  opts?: { entry?: string; seed?: number; channels?: string[]; onPhase?: LoadPhaseReporter },
 ): Promise<LoadedGame> {
   const bootstrap = require('@sharpee/bootstrap') as typeof import('@sharpee/bootstrap');
   const chordGame = (storyFile: string): LoadedGame => {
@@ -159,6 +162,7 @@ export async function loadAuthorGame(
     const game = bootstrap.assembleGame(compiled, {
       freshStory: () => loadChordStory(storyFile, masterSeed),
       seed: masterSeed,
+      ...(opts?.channels !== undefined ? { channels: opts.channels } : {}),
     });
     opts?.onPhase?.('load', 'finished', name);
     return game;
@@ -168,7 +172,11 @@ export async function loadAuthorGame(
   if (storyFile) return chordGame(storyFile);
   // A module project has no compile step — its build already happened.
   opts?.onPhase?.('load', 'started', path.basename(target));
-  const loaded = await bootstrap.loadStory(target, { entry: opts?.entry, seed: opts?.seed });
+  const loaded = await bootstrap.loadStory(target, {
+    entry: opts?.entry,
+    seed: opts?.seed,
+    ...(opts?.channels !== undefined ? { channels: opts.channels } : {}),
+  });
   opts?.onPhase?.('load', 'finished', path.basename(target));
   return loaded;
 }

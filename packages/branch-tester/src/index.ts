@@ -32,6 +32,7 @@ export {
   emptyTreeDocument,
   serializeTreeDocument,
   deserializeTreeDocument,
+  channelIdsReferencedBy,
   type TreeDocument,
   type TreeCard,
   type TreeCardType,
@@ -40,6 +41,22 @@ export {
   type TreeChannelAssertion,
   type TreeDocumentReadResult,
 } from './tree-document.js';
+
+// The tree-document walker — the greenfield ADR-307 runtime (D4/D5/D6):
+// lines not files, derived labels, seams never block, execution errors do
+export {
+  runTreeDocument,
+  flattenTreeLines,
+  formatTreeDocumentRun,
+  type TreeLine,
+  type TreeLineDefect,
+  type TreeLineOutcome,
+  type TreeLineObserver,
+  type TreeDocumentRunResult,
+  type TreeDocumentRunOptions,
+  type TreeWalkerGame,
+  type TreeGameLoader,
+} from './tree-walker.js';
 
 // Tree assembly — v2's entry point is the tree, not the file (ADR-302 D11)
 export {

@@ -27,7 +27,8 @@ import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
 // Cheap to import: test-tree.ts pulls @sharpee/branch-tester lazily, so the
 // harness still loads only when --tree is actually used.
-import { runTreeTestCommand } from './test-tree.js';
+import { findTreeDocument, runTreeTestCommand } from './test-tree.js';
+import { runTreeDocumentCommand } from './test-tree-document.js';
 
 const USAGE =
   'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output] [--capture-world]';
@@ -133,6 +134,27 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     return 2;
   }
   const dir = path.resolve(projectDir ?? process.cwd());
+
+  // ADR-307 Phase 2: `--tree` selects its input by discovery — it prefers the
+  // story's tree document (`<story-id>.tests.json`) when one exists and no
+  // explicit `.transcript` files were passed. The `tests/` transcript walk
+  // below stays the fallback until the cutover phase removes it; explicit
+  // transcript files always take it.
+  if (tree && transcriptPaths.length === 0) {
+    const docPath = findTreeDocument(dir);
+    if (docPath !== undefined) {
+      return runTreeDocumentCommand({
+        dir,
+        docPath,
+        verbose,
+        stopOnFailure,
+        json,
+        captureOutput,
+        captureWorld,
+      });
+    }
+  }
+
   let transcripts = transcriptPaths.map((p) => path.resolve(p));
   if (transcripts.length === 0) {
     if (chain) {

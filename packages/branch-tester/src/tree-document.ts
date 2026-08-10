@@ -28,7 +28,7 @@
  * Public interface: the TreeDocument/TreeCard/TreeBranch/TreeAssertions/
  * TreeChannelAssertion types, TREE_DOCUMENT_VERSION,
  * treeDocumentFileNameFor, emptyTreeDocument, serializeTreeDocument,
- * deserializeTreeDocument.
+ * deserializeTreeDocument, channelIdsReferencedBy.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
@@ -209,6 +209,33 @@ export function deserializeTreeDocument(text: string): TreeDocumentReadResult {
   if (problem !== undefined) return { status: 'malformed', message: problem };
 
   return { status: 'ok', document: parsed as unknown as TreeDocument };
+}
+
+/**
+ * Every channel id the document's claims read, deduplicated, in first-use
+ * order. A game must be assembled with these declared or there is nothing
+ * captured for the claims to read (ADR-294 D15) — both consumers derive
+ * their capture set from the document through this one function.
+ *
+ * @param document the tree document.
+ * @returns the referenced channel ids, each once.
+ */
+export function channelIdsReferencedBy(document: TreeDocument): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const walkCards = (cards: TreeCard[]): void => {
+    for (const card of cards) {
+      for (const channel of card.assertions?.channels ?? []) {
+        if (!seen.has(channel.id)) {
+          seen.add(channel.id);
+          ids.push(channel.id);
+        }
+      }
+      for (const branch of card.branches ?? []) walkCards(branch.cards);
+    }
+  };
+  walkCards(document.cards);
+  return ids;
 }
 
 // ---------------------------------------------------------------------------

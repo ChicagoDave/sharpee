@@ -125,12 +125,36 @@ Real dependencies, not a linear pipeline:
   CLAUDE.md MAJOR DIRECTIONS, discuss scope with David before implementation.
   This is the largest single platform-risk phase in the plan; consider
   walking the design with David before writing code, not just flagging after.
+  Design walked 2026-08-10 (session 478de5); David's ruling: **the v1 tree
+  runner is deprecated — the walker is greenfield.** It carries none of v1's
+  semantics (no stem identities, no header inheritance, no replay
+  re-assertion, no unreached-on-assertion-failure); the transcript `tests/`
+  path stays as an untouched fallback only until Phase 6 deletes it.
 - **Exit state**: A real `.tests.json` tree with at least one branch runs
   through the real `sharpee test --tree` CLI against the real engine at the
   pinned seed (real-path, rule 13a — no stubbed engine) and produces
   PASS/FAIL rows with derived labels; a seeded content edit in the story
   surfaces as a failed assertion at the seam, not a crash or silent pass.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-10, session 478de5). Delivered greenfield (not an
+  adapter over the deprecated v1 runner, per David's ruling):
+  `packages/branch-tester/src/tree-walker.ts` — `runTreeDocument` walks
+  lines (main line continuous, each branch fresh-boot + verbatim prefix
+  replay), reuses `runTranscript` wholesale for assertions/opening/policy
+  synthesis, derived labels off the live world, seams never block /
+  execution errors do, replays never re-evaluate claims;
+  `channelIdsReferencedBy` in the shared wire module;
+  `packages/devkit/src/commands/test-tree-document.ts` (document path of
+  `--tree`, refused/malformed = exit 2 named, never a silent pass),
+  discovery-preferred routing in `test.ts` (explicit transcripts bypass),
+  `loadAuthorGame` channels pass-through. Evidence (2026-08-10 00:37):
+  branch-tester **387 passing** (+17); devkit **176 passing, 1 skipped**
+  (+5, incl. the real-path suite: real chord compile → bootstrap → engine
+  at seed 42, branched document, `opening-den` / `den · look` labels, seam
+  = exit 1 with the branch still passing, channel claim through the full
+  ADR-294 D15 chain); surface vitest **120 passing** and `tsc -p` clean;
+  dist AND dist-esm rebuilt for branch-tester and devkit.
+  Mutation-verification's 4 warnings (channel-chain coverage) closed
+  same-session with targeted tests.
 
 ### Phase 3: Testing-surface model rewrite — the tree IS the model
 - **Tier**: Large
