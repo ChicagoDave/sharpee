@@ -1,13 +1,12 @@
 /**
- * test-tree-document.ts — `sharpee test --tree` over the ADR-307 tree
- * document (`<story-id>.tests.json`).
+ * test-tree-document.ts — `sharpee test` over the ADR-307 tree document
+ * (`<story-id>.tests.json`).
  *
- * The document path of `--tree`: when discovery finds a tree document beside
- * the `.story` file (and no explicit `.transcript` files were passed), this
- * runs it through branch-tester's greenfield walker — one JSON document, the
- * same one the Testing tab writes (D6's one-code-path contract). The
- * transcript path (`test-tree.ts`) stays the fallback until the cutover
- * phase deletes it.
+ * The only test model for Chord projects since ADR-307's cutover: discovery
+ * finds the tree document beside the `.story` file and runs it through
+ * branch-tester's greenfield walker — one JSON document, the same one the
+ * Testing tab writes (D6's one-code-path contract). The transcript-grammar
+ * fallback (`test-tree.ts`) is retired.
  *
  * AC-4 at the CLI: a newer-version document is REFUSED with its named
  * message, and a malformed one is reported as an error — both exit 2,
@@ -15,12 +14,42 @@
  * authoring surface starts over); a test runner silently passing zero tests
  * over a corrupted document would be the silent pass the plan forbids.
  *
- * Public interface: runTreeDocumentCommand(options) → process exit code.
+ * Public interface: findTreeDocument(projectDir), runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 import { loadAuthorGame } from '../standalone/author-game.js';
+
+/**
+ * Find a project's ADR-307 tree document: `<story-id>.tests.json` beside the
+ * `.story` file at the project root. The story id is the `.story` file's stem
+ * (`fernhill.story` → `fernhill.tests.json`) — runner discovery keys off the
+ * id it already knows (ADR-307 D2/Q-2). A module story (no `.story` file)
+ * has no tree document.
+ *
+ * @param projectDir resolved project directory (absolute).
+ * @returns the document's absolute path, or undefined when the project has
+ *   no `.story` file or no document beside it.
+ */
+export function findTreeDocument(projectDir: string): string | undefined {
+  // Lazy require (this file's pattern): the harness loads only when needed.
+  const { treeDocumentFileNameFor } =
+    require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  let entries: string[];
+  try {
+    entries = readdirSync(projectDir);
+  } catch {
+    return undefined;
+  }
+  const storyFiles = entries.filter((name) => name.endsWith('.story')).sort();
+  for (const storyFile of storyFiles) {
+    const storyId = storyFile.slice(0, -'.story'.length);
+    const candidate = path.join(projectDir, treeDocumentFileNameFor(storyId));
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
 
 export interface TreeDocumentTestOptions {
   /** Resolved project directory (absolute). */

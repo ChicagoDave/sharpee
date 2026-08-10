@@ -29,7 +29,6 @@ import { runIfidCommand } from './standalone/ifid.js';
 import { runRegister, runList } from './commands/register.js';
 import { runTestCommand } from './commands/test.js';
 import { runPlayCommand } from './commands/play.js';
-import { runFromPlayCommand } from './commands/from-play.js';
 import { lookupStory } from './registry.js';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
@@ -53,7 +52,6 @@ Usage:
                                          continues:; runs every root-to-leaf
                                          path (ADR-302)
   sharpee play [name|path]               Play the project interactively (REPL)
-  sharpee transcript-from-play           Played-session JSON (stdin) → transcript text (stdout) — ADR-305
 
 build (Chord .story): compiles the story, derives all metadata from the Story IR
   (ADR-252 — no package.json), and emits a self-contained browser app to
@@ -182,8 +180,6 @@ async function main(argv: string[]): Promise<number> {
       return runTestCommand(rest);
     case 'play':
       return runPlayCommand(rest);
-    case 'transcript-from-play':
-      return runFromPlayCommand();
     default:
       console.error(`unknown command: ${command}\n`);
       console.log(USAGE);

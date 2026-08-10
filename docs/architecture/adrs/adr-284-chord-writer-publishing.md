@@ -134,4 +134,18 @@ mean a second IFID check in Swift, which is the drift D1 exists to prevent. The
 author meets the fix earlier — the Problems panel offers Generate IFID at
 compile time (ADR-298's warning), and the CLI's refusal names both remedies.
 
+> **AMENDED by [ADR-309](adr-309-tool-owned-ifid.md)** (2026-08-10, session
+> ed3730). The rule above stands — Publish is still thin, with no IFID check
+> in Swift — but its *rationale* has moved: there is no earlier fix to meet,
+> because there is nothing to fix. The toolchain owns the IFID (minted at
+> creation into `<story-name>.config.json`, rendered into the header on save
+> and build), and the Problems panel's Generate IFID quick-fix retired with
+> the `analysis.missing-ifid` warning it hung on. `publish.missing-ifid`
+> survives as the **backstop**, now unreachable-by-construction for any story
+> a host has touched: it fires only for a story with no identity anywhere —
+> in practice, a clone whose committed config file went missing. Publish
+> reconciles through the same shared function the builds use, but never
+> mints: inventing an identifier at publication would silently make the work
+> a different one to every archive that already knows it.
+
 **Q-1 (targets beyond the zip) remains open and blocks nothing.**

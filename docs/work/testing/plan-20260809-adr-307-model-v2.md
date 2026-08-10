@@ -1,7 +1,9 @@
 # Session Plan: ADR-307 Testing Tree Model v2 — the tree is the model, files are a projection
 
 **Created**: 2026-08-09
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-08-10, session ed3730 — Phase 6 cutover landed;
+all six phases DONE. Acceptance gate: David's E2E click-through sign-off,
+Phase 5, 2026-08-10 ~15:00.)
 **Overall scope**: Implement ADR-307 end to end: replace the Testing tab's
 range/tick/stem model with a single card-recursive JSON tree
 (`<story-id>.tests.json`) that both the Testing tab and `sharpee test --tree`
@@ -359,7 +361,15 @@ Real dependencies, not a linear pipeline:
   Chord/IDE testing world (its text-format use elsewhere, if any, is
   untouched per ADR-307's own scoping); `functional-logic-testing-surface-
   20260809.md`'s v1 sections (§1–§8) gain superseded markers pointing at
-  ADR-307's §9 successor note.
+  ADR-307's §9 successor note. Fold in the Phase 5 ruling amendments
+  (ADR-294 D2's default/run-time policy semantics, ADR-307 D3's
+  "synthesize live, never persist" line, the E2E scenario's turn-count
+  wording). **Website docs (added 2026-08-10)**: update sharpee.net's
+  testing documentation — the canonical author docs — to the
+  tree-document world: `<story-id>.tests.json` as the one artifact and
+  source of truth, recorded assertions at play time, the Testing tab's
+  cards/branches/regions/run-detail, `sharpee test --tree`, and the
+  retirement of the transcript-file workflow for Chord authors.
 - **Note**: the deletions touch `packages/branch-tester` and
   `packages/devkit` — per CLAUDE.md MAJOR DIRECTIONS, confirm the delete
   list with David before removing files (rule: never delete files without
@@ -372,4 +382,25 @@ Real dependencies, not a linear pipeline:
   `transcript-tester`'s suite still green;
   ADR-306/ADR-302 status lines flipped; David has signed off on the E2E
   click-through as the acceptance gate for closing this plan.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-10, session ed3730). Delivered with David's four
+  rulings (A: from-play deleted + ADR-305 SUPERSEDED; B: transcript-world
+  satellites deleted — watch/coverage/search/aggregate/reporter/story-loader/
+  game-factory/trait-formatter, plus cli.ts and the v1 tree runner trio; C:
+  `sharpee test` document-only with named exit-2 refusals for `.transcript`
+  args/`--chain`/`--coverage`, `--tree` accepted as the IDE's spelling; D:
+  TranscriptHighlighter + the sidebar's tests/ special case removed;
+  `sharpee init` no longer scaffolds tests/transcripts). branch-tester kept:
+  tree-document, tree-walker, runner (write-back removed; gained
+  aggregateTestRun — transcript-tester's is type-narrower), auto-assertion,
+  channel-assert, types, index. AC-5 grep clean (standalone/build.ts is
+  transcript-tester's world, untouched per the ADR header). Evidence
+  (2026-08-10 ~16:00): branch-tester **86 passing**, devkit **148 passing,
+  1 skipped**, surface **66 passing** + tsc clean, transcript-tester **278
+  passing**, ide-protocol **46 passing**, IDE suite **469 passing, 0
+  failures, TEST SUCCEEDED**; root tsc clean; dist+dist-esm clean-rebuilt;
+  `tsf build --npm` green both packages; bundle rebuilt; website `next
+  build` green. Flips: ADR-306/302 SUPERSEDED in part, ADR-305 SUPERSEDED,
+  functional-logic doc §1–§8 marked; ADR-307 amendments folded inline
+  (D2/D3/E2E). sharpee.net testing docs rewritten to the tree-document
+  world (7 pages). Mutation-verification: clean after adding the scaffold
+  absence assertion.

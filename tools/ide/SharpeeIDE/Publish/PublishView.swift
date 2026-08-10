@@ -3,11 +3,13 @@
 // button that asks where the zip goes, the toolchain's own output streamed
 // underneath, and — on success — the artifact's path with Reveal in Finder.
 //
-// Deliberately thin. The preconditions (compiles, has an IFID) are checked by
+// Deliberately thin. The preconditions (compiles, has an identity) are checked by
 // `sharpee publish` itself and reported in the output, NOT re-implemented here:
 // a second IFID check in Swift is exactly the drift ADR-284 D1 exists to
-// prevent. An author meets the missing-IFID fix earlier anyway — the Problems
-// panel offers Generate IFID at compile time.
+// prevent. Since ADR-309 there is also nothing to fix — the story is given its
+// IFID when it is created and the header is rendered from the config on every
+// save — so the CLI's refusal is a backstop for a story whose config went
+// missing, not a step an author is expected to meet.
 // Public interface: setStory(_:), onPublish, onCancel, onReveal, append(_:),
 // finish(succeeded:zipURL:).
 // Owner context: tools/ide — Publish.

@@ -13,6 +13,7 @@ import { zipSync, strToU8 } from 'fflate';
 import { runBuildBrowserCommand } from './build-browser.js';
 import { stampVersion } from './version-stamp.js';
 import { findStoryFile, loadAuthorGame, makeFsImportResolver } from './author-game.js';
+import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
 import { lintHatchSources } from '../hatch-lint.js';
 
 interface SharpeeConfig {
@@ -262,6 +263,24 @@ async function runChordBuild(
 ): Promise<void> {
   console.log(`\nBuilding: ${title} (Chord)\n`);
   console.log('--- Validating story (load-time gates) ---\n');
+
+  // ADR-309 D3: build is a CLI write moment — reconcile the header to the
+  // config sidecar (adopting or minting a config for a legacy story) before
+  // the compile reads the file. A broken config is a named refusal (D5).
+  try {
+    const reconciled = reconcileHeader(storyFile);
+    if (reconciled.configCreated === 'adopted') {
+      console.log(`  ✓ Adopted the story's ifid into ${path.basename(configPathFor(storyFile))}`);
+    } else if (reconciled.configCreated === 'minted') {
+      console.log(`  ✓ Minted the story's ifid into ${path.basename(configPathFor(storyFile))}`);
+    }
+  } catch (error) {
+    if (error instanceof StoryConfigError) {
+      console.error(`  error [${error.code}] ${error.message}`);
+      process.exit(1);
+    }
+    throw error;
+  }
 
   // Lazy require (compose.ts pattern): pull the compiler only when building.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');

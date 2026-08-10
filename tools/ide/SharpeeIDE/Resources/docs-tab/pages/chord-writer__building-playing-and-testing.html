@@ -1,7 +1,7 @@
 <p>On the command line these are four commands. In Chord Writer they are two menus and four tabs, running the same toolchain underneath.</p>
 <h2 id="compose-happens-on-its-own">Compose happens on its own</h2>
 <p>Composing is not something you invoke. Chord Writer composes the story you are editing a moment after you stop typing, and keeps <strong>Problems</strong> current.</p>
-<p>Problems lists structured compile diagnostics, not raw compiler text. Each one points at a place in your story, and clicking it takes you there. Some carry a fix you can apply directly, which is where a missing IFID gets generated for you.</p>
+<p>Problems lists structured compile diagnostics, not raw compiler text. Each one points at a place in your story, and clicking it takes you there. Some carry a fix you can apply directly.</p>
 <p>When an error needs more than a line to explain, the <strong>Diagnosis</strong> tab in the right panel carries the longer version.</p>
 <h2 id="build">Build</h2>
 <p><strong>Build → Build</strong> (<code>Cmd-B</code>) builds the story, and <strong>Build → Cancel Build</strong> (<code>Cmd-.</code>) stops one in progress.</p>
@@ -12,10 +12,12 @@
 <h2 id="index">Index</h2>
 <p>The <strong>Index</strong> tab lists what your story defines, read out of the composed story rather than parsed from the source. It is one rendering of one composed result, which is why there is no separate structure view in the project pane.</p>
 <h2 id="testing">Testing</h2>
-<p>The <strong>Testing</strong> tab holds your transcript tests. <strong>Test → Run Tests</strong> runs them; <strong>Test → Cancel Test Run</strong> stops a run.</p>
-<p>Transcript tests form a tree rather than a flat list, because a transcript can continue another one. A test that begins where a previous transcript left off only means anything if that ancestry runs first. Chord Writer therefore runs a test <strong>with its ancestors</strong>, and it is the reason there is a single run command rather than several.</p>
-<blockquote><p><strong>Why this matters more than it sounds</strong></p>
-<p>Running a <code>continues:</code> tree flat rather than as a tree does not fail loudly. It fails as a large number of ordinary-looking test failures, because every transcript downstream of the first one starts from the wrong world state.</p></blockquote>
-<p>Results land back on the tree as it runs. A failure can be opened at the exact transcript line that produced it.</p>
+<p>The <strong>Testing</strong> tab is where your tests live — and where they are made. Playing in the Testing tab <strong>is</strong> recording: every turn you type becomes a card, and Chord Writer writes down what the story actually said as that card's claims. Under the default policy that is the room's name and description; declare <code>auto-assertion:</code> in your story header to choose differently, and add or remove claims on any card by hand.</p>
+<p>The whole tree saves beside your story as <strong><code>&lt;story-id&gt;.tests.json</code></strong> — one document, the single source of truth for your tests. There are no test files to name, arrange, or keep in sync; the tree is the suite.</p>
+<p>Branch from any card to test an alternative path — the branch replays your story to that point and diverges from there. Cards group by the region their room belongs to, and groups collapse as the suite grows.</p>
+<p><strong>Test → Run Tests</strong> replays the whole tree fresh from boot at the story's pinned seed and evaluates exactly what the document says; <strong>Test → Cancel Test Run</strong> stops a run. Every card and every claim gets its own verdict in the run column, and the tally counts both: cards and assertions, passing and failing.</p>
+<blockquote><p><strong>Story edits show up as seams</strong></p>
+<p>Your tests record what the story said when you played it. Change a room's description and the next run fails exactly one claim — the one recorded against the old text, at the card where it was recorded. That is the suite doing its job: re-record that turn, or edit the claim, and the seam closes.</p></blockquote>
+<p>The same run works from the command line: <code>sharpee test</code> in the project directory finds the document and replays it against your compiled story.</p>
 <h2 id="next">Next</h2>
 <p><a href="/chord-writer/publishing">Publishing</a> covers packaging a story for release.</p>

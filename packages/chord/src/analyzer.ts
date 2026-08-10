@@ -831,34 +831,20 @@ class Analyzer {
    * ADR-298 header gates. A `prologue:`/`description:` phrase reference must
    * resolve to a declared phrase (D4 — a lone kebab atom is always a
    * reference, so an unresolved one is an error, never silent literal text).
-   * A story with no `ifid:` compiles with a warning (D5 — hard enforcement
-   * moves to publish time, ADR-284). Grammar files carry no story header and
-   * are exempt from both.
+   * Grammar files carry no story header and are exempt.
+   *
+   * The missing-`ifid:` warning that lived here retired with ADR-309: the
+   * toolchain now OWNS the identifier (minted at creation into
+   * `<story-name>.config.json`, rendered into the header on every save and
+   * build), so an absent line is a state the tool repairs rather than one an
+   * author is told about. `sharpee publish` keeps its refusal (ADR-284) as
+   * the backstop for a story that never passed through a host.
    */
   private checkHeaderFields(): void {
     const header = this.ast.header;
     if (!header) return;
     for (const prose of [header.fields.prologue, header.fields.description]) {
       if (prose?.kind === 'phrase-ref') this.requirePhrase(prose.value, prose.span, null);
-    }
-    if (header.fields.ifid === undefined || header.fields.ifid.length === 0) {
-      this.diagnostics.warning(
-        'analysis.missing-ifid',
-        // States the FACT and leaves the remedy to the surface reporting it
-        // (go-live item 5, ruled 2026-08-06). Naming one CLI command was wrong
-        // the moment a second remedy existed: Chord Writer's Problems panel
-        // mints an IFID on this row, and `sharpee publish` names both in its
-        // own refusal. A diagnostic that hard-codes one surface's fix is stale
-        // for every other surface.
-        'The story has no `ifid:` — a Treaty of Babel identifier (ADR-074). Publishing requires one (ADR-284).',
-        // The `story` keyword, NOT `header.span`. The header's span covers the
-        // whole block, so an editor underlining it paints every header line
-        // yellow to report one absent field — which is what the IDE did until
-        // 2026-08-06. A missing field has no span of its own, so the honest
-        // target is the block's opening token: it names the block that lacks
-        // the field without claiming every line in it is wrong.
-        spanOf(header.span.line, header.span.column, STORY_KEYWORD.length),
-      );
     }
   }
 

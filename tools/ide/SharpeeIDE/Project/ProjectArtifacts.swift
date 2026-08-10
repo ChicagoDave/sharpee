@@ -1,17 +1,19 @@
 // ProjectArtifacts.swift
 // Classifies an open project's contents into the typed artifact groups the
-// sidebar presents (ADR-280 D1): Story, Walkthroughs, Transcript Tests, Assets,
-// Web Template, Other. Groups are typed LENSES over the real folder, not folder
-// mirrors — Web Template draws from two different on-disk locations (the
+// sidebar presents (ADR-280 D1): Story, Walkthroughs, Assets, Web Template,
+// Other. Groups are typed LENSES over the real folder, not folder mirrors —
+// Web Template draws from two different on-disk locations (the
 // `<storyId>.templates` file beside the story, and the `browser/` escape
-// hatches) and Transcript Tests reaches through `tests/` to
-// `tests/transcripts/`. The view is open, not strict: anything matching no type
-// lands in Other, never hidden and never dropped.
+// hatches). The view is open, not strict: anything matching no type lands in
+// Other, never hidden and never dropped.
 //
 // ADR-299 D7's "Play Testing" group was removed with the `.skein` artifact it
-// existed to hold (ADR-300). A `play-testing/` directory an author still has on
-// disk now lands in Other, which is the open-view rule doing its job rather
-// than a special case needing to survive.
+// existed to hold (ADR-300). The `tests/` special case (hide Chord Writer's
+// `.transcript` artifacts) retired with the transcript grammar (ADR-307
+// cutover — tests live in `<storyId>.tests.json`, presented only in the
+// Testing tab); a `tests/` directory an author still has on disk now lands in
+// Other, the open-view rule doing its job rather than a special case needing
+// to survive.
 // Public interface: ProjectArtifacts.groups(for:), ArtifactGroup, ArtifactGroup.Kind.
 // Owner context: tools/ide — Project model. UI-free; safe to unit-test.
 
@@ -79,8 +81,6 @@ final class ArtifactGroup {
 enum ProjectArtifacts {
 
     private static let walkthroughsDirectory = "walkthroughs"
-    private static let testsDirectory = "tests"
-    private static let transcriptsDirectory = "transcripts"
     private static let assetsDirectory = "assets"
     /// Player-facing extras shipped beside the game (ADR-284) — a map, a
     /// letter, a newspaper clipping. Distinct from `assets/`, which is media
@@ -130,22 +130,6 @@ enum ProjectArtifacts {
                 feeliesURL = node.url
             case .webTemplate:
                 webTemplate.append(node)
-            case .tests:
-                // Transcripts are Chord Writer's artifacts, not the author's
-                // files (David's ruling 2026-08-09): auto-named, auto-saved,
-                // and presented ONLY serialized in the Testing tab. They live
-                // on disk for the harness and for Finder, but the pane does
-                // not list them. Anything else an author parked under
-                // `tests/` is unclassified rather than hidden.
-                for child in node.children {
-                    if child.isDirectory && child.name == transcriptsDirectory {
-                        other.append(contentsOf: child.children.filter {
-                            $0.url.pathExtension != "transcript"
-                        })
-                    } else if child.url.pathExtension != "transcript" {
-                        other.append(child)
-                    }
-                }
             case .browser:
                 // The styling and raw-page escapes are Web Template; anything
                 // else an author has parked in browser/ is unclassified.
@@ -182,7 +166,6 @@ enum ProjectArtifacts {
         case assets
         case feelies
         case webTemplate
-        case tests
         case browser
         case unclassified
     }
@@ -193,7 +176,6 @@ enum ProjectArtifacts {
             case walkthroughsDirectory: return .walkthroughs
             case assetsDirectory: return .assets
             case feeliesDirectory: return .feelies
-            case testsDirectory: return .tests
             case browserDirectory: return .browser
             default: return .unclassified
             }

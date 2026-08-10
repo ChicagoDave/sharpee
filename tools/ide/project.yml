@@ -158,7 +158,14 @@ targets:
         PRODUCT_NAME: SharpeeIDETests
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Chord Writer.app/Contents/MacOS/Chord Writer"
-        CODE_SIGN_STYLE: Automatic
+        # MANUAL signing with the same team identity (signing-rot systemic
+        # fix, 2026-08-10 — 5 sessions/8 incidents of the nested xctest
+        # losing its signature to the Automatic provisioning race). Manual
+        # bypasses Xcode's background provisioning updater — the race's
+        # home — while keeping the TEAM ID the hardened-runtime host's
+        # library validation requires (ad-hoc "-" was tried and refused to
+        # load: "different Team IDs").
+        CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: 54CCCRZJ3X
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES

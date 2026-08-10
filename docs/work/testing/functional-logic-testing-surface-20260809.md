@@ -1,11 +1,16 @@
 # Testing Play Surface — Functional Logic Walkthrough
 
 **Date**: 2026-08-09 (session fb4281, after click-through rounds 4a–4i)
-**Purpose**: the complete behavioral ruleset of the Testing tab as currently
+**SUPERSEDED (2026-08-10, session ed3730)**: §1–§8 describe **model v1**,
+retired by ADR-307's cutover — see §9 for the successor. The tree document
+(`<story-id>.tests.json`) is now the model; the transcript grammar, ticking,
+ranges, stems, and `continues:` composition are deleted from the codebase.
+This document remains the historical record of v1 as built.
+**Purpose**: the complete behavioral ruleset of the Testing tab as then
 built, written down for a walkthrough BEFORE any further changes. This is not
 an ADR — it is the working logic, including the places still in question.
-Items marked **[OPEN]** are unresolved and awaiting David's ruling; everything
-else is implemented and test-pinned as described.
+Items marked **[OPEN]** were unresolved at writing; resolution happened
+through ADR-307 and its cutover.
 
 ---
 
@@ -215,5 +220,6 @@ IS writing the suite); no stems, no `continues:`, no detach class. Open
 questions A, B, and C above are deleted by it rather than answered.
 
 Written up as **ADR-307** (`docs/architecture/adrs/adr-307-testing-tree-model-v2.md`),
-status PROPOSED/DRAFT with its own open questions E–L. This document remains
-the record of model v1 as built.
+since ACCEPTED and fully implemented — the cutover landed 2026-08-10
+(session ed3730), deleting the v1 transcript world §1–§8 describe. This
+document remains the record of model v1 as built.

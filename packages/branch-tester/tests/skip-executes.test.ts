@@ -1,37 +1,34 @@
 /**
- * skip-executes.test.ts — `[SKIP]`/`[TODO]` execute their command.
+ * skip-executes.test.ts — skip/todo claims execute their command.
  *
- * ADR-294 D2: "`[SKIP]` survives for commands whose output is deliberately
- * not asserted" — output not asserted, command still run. Pinned here after
- * the pre-fix runner returned before execution (a `[SKIP]`ed `> north`
- * before `$save` produced a turn-0 save — ok-any-default plan, Finding 13).
+ * ADR-294 D2: a skip survives for commands whose output is deliberately not
+ * asserted — output not asserted, command still run. Pinned here after the
+ * pre-fix runner returned before execution (a skipped `> north` before
+ * `$save` produced a turn-0 save — ok-any-default plan, Finding 13).
  *
  * Derived from the Behavior Statement: a skipped turn advances world state
  * and captures output/events without evaluating assertions; an engine error
- * during the skipped turn still fails the transcript.
+ * during the skipped turn still fails the transcript. Transcripts are built
+ * in memory, the same shape the tree-walker synthesizes from document lines
+ * (a document card's `skip: true` becomes a `skip` assertion).
  *
  * Owner context: branch-tester test suite (tooling).
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { describe, expect, it } from 'vitest';
 import { EngineRandomService } from '@sharpee/engine';
-import { parseTranscript } from '../src/parser.js';
 import { runTranscript } from '../src/runner.js';
+import type { Assertion, Transcript, TranscriptCommand, TranscriptItem } from '../src/types.js';
 
-let dir: string;
-
-beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tt-skip-'));
-});
-
-afterEach(() => {
-  fs.rmSync(dir, { recursive: true, force: true });
-});
-
-function fixture(source: string, name = 'fixture.transcript') {
-  return parseTranscript(source, path.join(dir, name));
+/** Build an in-memory transcript the way the tree-walker does from a line. */
+function transcriptOf(...commands: Array<{ input: string; assertions?: Assertion[] }>): Transcript {
+  const built: TranscriptCommand[] = commands.map((c) => ({
+    lineNumber: 0,
+    input: c.input,
+    expectedOutput: [],
+    assertions: c.assertions ?? [],
+  }));
+  const items: TranscriptItem[] = built.map((command) => ({ type: 'command', command }));
+  return { filePath: '', header: {}, commands: built, items, comments: [] };
 }
 
 /**
@@ -71,10 +68,11 @@ function statefulEngine() {
   };
 }
 
-describe('[SKIP]/[TODO] execute their command (ADR-294 D2)', () => {
-  it('a [SKIP]ed command runs and advances state visible to the next turn', async () => {
-    const transcript = fixture(
-      'title: T\n---\n> north\n[SKIP]\n\n> where\n[OK: contains "Position 1"]\n'
+describe('skip/todo claims execute their command (ADR-294 D2)', () => {
+  it('a skipped command runs and advances state visible to the next turn', async () => {
+    const transcript = transcriptOf(
+      { input: 'north', assertions: [{ type: 'skip' }] },
+      { input: 'where', assertions: [{ type: 'ok-contains', value: 'Position 1' }] },
     );
     const engine = statefulEngine();
 
@@ -88,7 +86,7 @@ describe('[SKIP]/[TODO] execute their command (ADR-294 D2)', () => {
   });
 
   it('captures the skipped turn output without asserting on it', async () => {
-    const transcript = fixture('title: T\n---\n> north\n[SKIP]\n');
+    const transcript = transcriptOf({ input: 'north', assertions: [{ type: 'skip' }] });
     const engine = statefulEngine();
 
     const result = await runTranscript(transcript, engine as never, {});
@@ -99,9 +97,10 @@ describe('[SKIP]/[TODO] execute their command (ADR-294 D2)', () => {
     expect(result.commands[0].assertionResults[0].assertion.type).toBe('skip');
   });
 
-  it('a [TODO] command runs and advances state exactly like [SKIP]', async () => {
-    const transcript = fixture(
-      'title: T\n---\n> north\n[TODO: tighten later]\n\n> where\n[OK: contains "Position 1"]\n'
+  it('a todo command runs and advances state exactly like skip', async () => {
+    const transcript = transcriptOf(
+      { input: 'north', assertions: [{ type: 'todo', reason: 'tighten later' }] },
+      { input: 'where', assertions: [{ type: 'ok-contains', value: 'Position 1' }] },
     );
     const engine = statefulEngine();
 
@@ -112,8 +111,8 @@ describe('[SKIP]/[TODO] execute their command (ADR-294 D2)', () => {
     expect(result.commands[0].skipped).toBe(true);
   });
 
-  it('an engine error during a [SKIP]ed turn still fails the transcript', async () => {
-    const transcript = fixture('title: T\n---\n> crash\n[SKIP]\n');
+  it('an engine error during a skipped turn still fails the transcript', async () => {
+    const transcript = transcriptOf({ input: 'crash', assertions: [{ type: 'skip' }] });
     const engine = statefulEngine();
 
     const result = await runTranscript(transcript, engine as never, {});

@@ -97,18 +97,15 @@ final class ProjectArtifactsTests: XCTestCase {
                        ["index.html", "the-lost-key.css", "the-lost-key.templates"])
     }
 
-    func testTranscriptsAreChordWritersArtifactsAndNeverAppearInThePane() throws {
+    func testTestsDirectoryIsAnOrdinaryFolderSinceTheCutover() throws {
         try buildFullFixture()
 
-        // David's ruling (2026-08-09): transcripts are auto-named, auto-saved
-        // IDE artifacts — the pane never lists them; the Testing tab is their
-        // only IDE presentation. A stray NON-transcript file an author parked
-        // under tests/ still shows (open, not strict).
-        try file("tests/notes-on-testing.txt")
-        let everyMember = groups().flatMap { $0.members.map(\.name) }
-        XCTAssertFalse(everyMember.contains("lantern.transcript"),
-                       "a transcript under tests/transcripts/ must not appear in any group")
-        XCTAssertTrue(memberNames(.other).contains("notes-on-testing.txt"))
+        // ADR-307 cutover: tests live in `<storyId>.tests.json` (the Testing
+        // tab's document), so `tests/` has no special meaning — a legacy
+        // directory lands whole in Other like any unclassified folder, its
+        // contents reachable and nothing hidden.
+        XCTAssertTrue(memberNames(.other).contains("tests"),
+                      "a legacy tests/ directory must surface in Other, not vanish")
     }
 
     // MARK: - Open, not strict
@@ -118,33 +115,31 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("notes.txt")
         try file("research/sources.md")
 
-        XCTAssertEqual(memberNames(.other), ["notes.txt", "research"])
+        XCTAssertEqual(memberNames(.other), ["notes.txt", "research", "tests"])
     }
 
     func testUnknownContentInsideAKnownFolderIsSurfacedNotSwallowed() throws {
         try buildFullFixture()
-        try file("tests/scratch.md")
         try file("browser/notes.md")
 
-        // Neither file matches its folder's artifact type — they must still be
-        // reachable, never silently dropped.
-        XCTAssertEqual(memberNames(.other), ["notes.md", "scratch.md"])
+        // The file matches nothing browser/ folds into Web Template — it must
+        // still be reachable, never silently dropped. (tests/ is no longer a
+        // known folder: since the ADR-307 cutover it surfaces whole in Other.)
+        XCTAssertEqual(memberNames(.other), ["notes.md", "tests"])
     }
 
     func testNothingOnDiskIsEverDropped() throws {
         try buildFullFixture()
         try file("notes.txt")
-        try file("tests/scratch.md")
 
         let grouped = Set(groups().flatMap { $0.members }.map(\.name))
-        // Transcripts under tests/ are the ONE deliberate exception (David's
-        // ruling 2026-08-09): Chord Writer's artifacts, shown only serialized
-        // in the Testing tab — everything else must land in exactly one group.
+        // No exceptions since the ADR-307 cutover: every top-level artifact
+        // lands in exactly one group (the legacy tests/ directory as itself).
         let onDisk: Set<String> = ["the-lost-key.story", "wt-01-opening.transcript",
                                    "wt-02-cellar.transcript",
                                    "lantern.png", "the-letter.pdf", "the-lost-key.templates",
                                    "the-lost-key.css", "index.html",
-                                   "notes.txt", "scratch.md"]
+                                   "notes.txt", "tests"]
         XCTAssertEqual(grouped, onDisk,
                        "every real file must land in exactly one group — missing: \(onDisk.subtracting(grouped))")
     }

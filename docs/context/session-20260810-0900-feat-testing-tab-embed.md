@@ -245,6 +245,19 @@ splice gesture chrome awaits David's ruling.
 
 ---
 
+## Post-finalize (after c0fc900e)
+- **Signing-rot systemic fix applied** (David's go, ~15:45; recurrence
+  report: 5 sessions/8 incidents since 2026-05-11): `SharpeeIDETests` →
+  **Manual** signing, same team identity (`project.yml`; ad-hoc `-` was
+  tried first and REFUSED to load — hardened-runtime library validation,
+  "different Team IDs"); CLI DerivedData pinned in-repo via
+  `-derivedDataPath ./DerivedData` (gitignored; a shared
+  WorkspaceSettings redirect was tried and mis-resolved — removed).
+  Verified: **3 consecutive** clean runs, each 475 passing 0 failures
+  (~16:00). Practice saved to session memory. Phase 6 addition: sharpee.net
+  testing docs update (David, ~15:30). Uncommitted: `.gitignore`,
+  `project.yml`, plan.
+
 ## Session Metadata
 - **Status**: IN PROGRESS (Phase 5 DONE — David walked the E2E in the real
   IDE ~15:00 and confirmed all steps; sign-off + findings recorded in

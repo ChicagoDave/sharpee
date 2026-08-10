@@ -28,7 +28,7 @@ behavior body can move it forward with `change the story to dusk`.
 | `authors:` | Who wrote it. One name inline, or one per indented line. |
 | `testers:` | Who tested it. Same shape as `authors:`. |
 | `id:` | The kebab-case identifier the build uses for its output folder. |
-| `ifid:` | The story's Treaty of Babel identifier. |
+| `ifid:` | The story's Treaty of Babel identifier. Written and maintained by the tool — see [The IFID](#the-ifid). |
 | `story-version:` | The story's own version — nothing to do with Sharpee's or Chord's. |
 | `prologue:` | Text shown before play begins. Literal prose, or a bare phrase name. |
 | `description:` | A short account of the story. Literal prose, or a bare phrase name. |
@@ -115,9 +115,20 @@ story
 ### The IFID
 
 `ifid:` is the story's permanent identifier under the Treaty of Babel — the
-number archives and IF databases use to tell one work from another. A story
-without one compiles with a warning, and cannot be published. Mint one per
-story; never copy another story's.
+number archives and IF databases use to tell one work from another.
+
+**The tool owns this one.** Your story gets its IFID when it is created, and
+the canonical copy lives in `<story-name>.config.json` beside the `.story`
+file. The `ifid:` line in the header is that value written out for you: delete
+it and the tool puts it back on the next save or build; change it and the tool
+changes it back. There is nothing here to maintain, and nothing to fix.
+
+Two things worth knowing. **Commit `<story-name>.config.json`** — it carries
+your story's identity, and a clone without it is a story that has lost its
+name. And if that file is ever damaged, the tool says so and stops rather than
+minting a replacement: a new IFID would silently make your story a different
+work to every archive that already knows it. Restore the file from version
+control instead.
 
 ### Spellings that were removed
 

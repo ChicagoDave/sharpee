@@ -29,6 +29,7 @@ import {
   CommandResult,
   AssertionResult,
   TranscriptResult,
+  TestRunResult,
   RunnerOptions,
   TestEventInfo,
   EntityTraitSnapshot,
@@ -40,7 +41,6 @@ import {
   synthesizeOpeningAssertions,
   synthesizePolicyAssertions,
 } from './auto-assertion.js';
-import { serializeTranscript } from './serializer.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
 /**
@@ -157,6 +157,28 @@ function allAssertionsOf(transcript: Transcript): Assertion[] {
     assertions.push(...command.assertions);
   }
   return assertions;
+}
+
+/**
+ * Aggregate per-transcript results into a run result — the one shared
+ * reduce (ADR-277 D1 Consequences). Lives here since the cutover retired
+ * the NDJSON record builders it once shared a module with: transcript-tester
+ * owns the wire, but its result types are narrower than this package's claim
+ * vocabulary, so the aggregation over THESE results stays in this package.
+ *
+ * @param transcripts Results in run order, including error-status entries.
+ * @returns Totals over every entry; `totalErrors` counts `status: 'error'`.
+ */
+export function aggregateTestRun(transcripts: TranscriptResult[]): TestRunResult {
+  return {
+    transcripts,
+    totalPassed: transcripts.reduce((sum, r) => sum + r.passed, 0),
+    totalFailed: transcripts.reduce((sum, r) => sum + r.failed, 0),
+    totalExpectedFailures: transcripts.reduce((sum, r) => sum + r.expectedFailures, 0),
+    totalSkipped: transcripts.reduce((sum, r) => sum + r.skipped, 0),
+    totalErrors: transcripts.filter((r) => r.status === 'error').length,
+    totalDuration: transcripts.reduce((sum, r) => sum + r.duration, 0),
+  };
 }
 
 /**
@@ -527,7 +549,6 @@ async function runAssertion(
 
     const result = await runCommand(command, engine, options, synthesize);
     if (result.autoAsserted) policyWroteAssertions = true;
-    options.coverage?.collectFrom(engine.lastEvents);
 
     // The banner and the prologue are said on the way to the first command, so
     // that is the turn whose capture carries them. Checked once, and reported
@@ -568,14 +589,6 @@ async function runAssertion(
     if (unfired) {
       record(forcesFailResult(transcript, unfired));
     }
-  }
-
-  // Phase 6e (#253): the policy's writes land in the FILE — the runner
-  // mutated the parsed transcript in memory (assertions pushed onto bare
-  // commands); one serialize makes disk agree. The serializer round-trips
-  // comments and formatting, so untouched content survives byte-for-byte.
-  if (policyWroteAssertions && transcript.filePath) {
-    fs.writeFileSync(transcript.filePath, serializeTranscript(transcript));
   }
 
   const passed = results.filter(r => r.passed && !r.skipped).length;

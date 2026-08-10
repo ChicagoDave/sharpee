@@ -79,6 +79,26 @@ final class StoryScaffoldTests: XCTestCase {
         XCTAssertTrue(fm.fileExists(atPath: dir.appendingPathComponent(".gitignore").path))
     }
 
+    /// ADR-309 AC-1: Create Story is a birth-with-identity moment — the config
+    /// sidecar exists before the author types, and the header renders it.
+    func testCreateWritesTheConfigSidecarAndRendersItInTheHeader() throws {
+        let dir = tmp.appendingPathComponent("the-lost-key")
+        try StoryScaffold.create(in: dir, info: info("The Lost Key"), templateDirectory: templateDir)
+
+        let configURL = dir.appendingPathComponent("the-lost-key.config.json")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: configURL.path), "config sidecar missing")
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: try Data(contentsOf: configURL)) as? [String: Any]
+        )
+        XCTAssertEqual(object["version"] as? Int, 1)
+        let ifid = try XCTUnwrap(object["ifid"] as? String)
+
+        // The header line is the config's rendering — the identical value, not
+        // a second mint (two mints would be two identities for one story).
+        let story = try String(contentsOf: dir.appendingPathComponent("the-lost-key.story"), encoding: .utf8)
+        XCTAssertEqual(StoryHeaderIFID.read(from: story), ifid)
+    }
+
     /// The REAL bundled template: a scaffolded story composes clean through the
     /// real CLI (rule 13a) — proving template, scaffold, and compiler agree.
     func testRealTemplateScaffoldComposesClean() throws {

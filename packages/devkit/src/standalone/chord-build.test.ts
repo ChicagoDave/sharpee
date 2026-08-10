@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import { runInitCommand } from './init.js';
 import { runBuildBrowserCommand } from './build-browser.js';
 import { runBuildCommand } from './build.js';
+import { runBuildCommand } from './build.js';
 import { loadAuthorGame } from './author-game.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
@@ -180,9 +181,92 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
   });
 });
 
+describe('build entry points reconcile identity (ADR-309 D3, real write moments)', () => {
+  it('a bare .story build ADOPTS the header ifid into a new config — real file, adopted value', async () => {
+    // Bypasses init deliberately: a legacy story with a header ifid and NO
+    // config, built directly. The build entry itself must write the config.
+    const legacyDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-adopt-'));
+    const storyFile = join(legacyDir, 'legacy.story');
+    try {
+      writeFileSync(
+        storyFile,
+        'story\n  title: Legacy\n  authors: T\n  id: legacy\n  story-version: 0.0.1\n  ifid: LEGACY-ADOPT-42\n\n' +
+          'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n',
+      );
+      trapExit();
+      await runBuildBrowserCommand([], storyFile);
+
+      const config = JSON.parse(readFileSync(join(legacyDir, 'legacy.config.json'), 'utf-8'));
+      expect(config).toEqual({ version: 1, ifid: 'LEGACY-ADOPT-42' });
+    } finally {
+      rmSync(legacyDir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it('the project-directory build entry (runBuildCommand) refuses a BROKEN config the same way', async () => {
+    const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-cmd-broken-'));
+    const storySource =
+      'story\n  title: C\n  authors: T\n  id: c\n  story-version: 0.0.1\n  ifid: CCCC-1\n\n' +
+      'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
+    try {
+      writeFileSync(join(brokenDir, 'package.json'), '{ "name": "c", "version": "0.0.1" }\n');
+      writeFileSync(join(brokenDir, 'c.story'), storySource);
+      writeFileSync(join(brokenDir, 'c.config.json'), '{ not json');
+      trapExit();
+      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(runBuildCommand([], brokenDir)).rejects.toThrow('process.exit(1)');
+      const err = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(err).toContain('story-config.broken');
+      expect(readFileSync(join(brokenDir, 'c.story'), 'utf-8')).toBe(storySource);
+    } finally {
+      rmSync(brokenDir, { recursive: true, force: true });
+    }
+  });
+
+  it('a BROKEN config refuses the build by name, rewriting neither file', async () => {
+    const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-broken-'));
+    const storySource =
+      'story\n  title: B\n  authors: T\n  id: b\n  story-version: 0.0.1\n  ifid: BBBB-1\n\n' +
+      'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
+    const storyFile = join(brokenDir, 'b.story');
+    try {
+      writeFileSync(storyFile, storySource);
+      writeFileSync(join(brokenDir, 'b.config.json'), '{ not json');
+      trapExit();
+      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(runBuildBrowserCommand([], storyFile)).rejects.toThrow('process.exit(1)');
+      const err = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(err).toContain('story-config.broken');
+      // Broken stops the line: neither file was rewritten, nothing re-minted.
+      expect(readFileSync(storyFile, 'utf-8')).toBe(storySource);
+      expect(readFileSync(join(brokenDir, 'b.config.json'), 'utf-8')).toBe('{ not json');
+    } finally {
+      rmSync(brokenDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('the scaffold shows what the tool supports', () => {
+  it('is born with identity: the config sidecar exists and the header renders it (ADR-309 AC-1)', () => {
+    const configPath = join(projectDir, 'first-light.config.json');
+    expect(existsSync(configPath), 'config sidecar missing').toBe(true);
+    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+    expect(config.version).toBe(1);
+    expect(typeof config.ifid).toBe('string');
+    expect(config.ifid.length).toBeGreaterThan(0);
+    // The header line is the config's rendering — identical value.
+    const story = readFileSync(join(projectDir, 'first-light.story'), 'utf-8');
+    expect(story).toContain(`ifid: ${config.ifid}`);
+  });
+
   it('creates the project folders, each kept by a dotfile', () => {
-    for (const folder of ['assets', 'feelies', 'walkthroughs', join('tests', 'transcripts')]) {
+    // No tests/ folder since the ADR-307 cutover — tests live in the story's
+    // tree document (<story-id>.tests.json), recorded by the Testing tab.
+    // Asserted as absence, not omission: a regression re-creating it fails.
+    expect(existsSync(join(projectDir, 'tests')), 'tests/ must NOT be scaffolded').toBe(false);
+    for (const folder of ['assets', 'feelies', 'walkthroughs']) {
       expect(existsSync(join(projectDir, folder)), `${folder}/ missing`).toBe(true);
       // A `.gitkeep` rather than a README: the build copies assets/ and
       // feelies/ into the artifact wholesale, and dotfiles are the only thing
@@ -193,7 +277,7 @@ describe('the scaffold shows what the tool supports', () => {
 
   it('writes a root README naming every folder and the publishing rules', () => {
     const readme = readFileSync(join(projectDir, 'README.md'), 'utf-8');
-    for (const folder of ['assets/', 'feelies/', 'walkthroughs/', 'tests/transcripts/', 'browser/']) {
+    for (const folder of ['assets/', 'feelies/', 'walkthroughs/', 'browser/']) {
       expect(readme, `README does not mention ${folder}`).toContain(folder);
     }
     // The distinction that is easy to get wrong, and the default that matters.

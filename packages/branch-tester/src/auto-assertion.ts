@@ -1,14 +1,13 @@
 /**
- * auto-assertion.ts — the `auto-assertion:` policy's synthesis engine (Phase
- * 6e, #253), extracted so the runner and play-promotion (ADR-305 D5) share one
- * implementation.
+ * auto-assertion.ts — the auto-assertion policy's synthesis engine, shared by
+ * the runner and the Testing tab's record-time synthesis (ADR-307).
  *
- * The runner calls this at the ADR-294 D2 tier boundary (a bare command's
- * first run under a policy); `createTranscriptFromPlay` calls it at creation
- * time from a played session's captures. Anything either writer would put in a
- * file comes from HERE — a second spelling of the synthesis is the drift
- * ADR-305 D5 forbids. (`@sharpee/transcript-tester` keeps its full copy per
- * ADR-302 D15; that copy is frozen and cannot drift because it never moves.)
+ * The runner calls this at the ADR-294 D2 tier boundary (a bare command run
+ * under a policy); the tab calls it when a turn lands, persisting the result
+ * into the tree document. Anything either writer records comes from HERE — a
+ * second spelling of the synthesis is drift. (`@sharpee/transcript-tester`
+ * keeps its full copy per ADR-302 D15; that copy is frozen and cannot drift
+ * because it never moves.)
  *
  * Public interface: `synthesizePolicyAssertions(policy, actualOutput,
  * channelValues)`, `synthesizeOpeningAssertions(policy, bootChannelValues)`,

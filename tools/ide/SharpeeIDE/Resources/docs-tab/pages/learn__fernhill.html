@@ -24,7 +24,7 @@ cd fernhill
 npm install</code></pre>
 <p><code>sharpee init</code> scaffolds a Chord project by default: your whole story lives in <code>fernhill.story</code>. A pure Chord story needs no TypeScript at all; the only optional wiring you'll meet in the last chapter is a custom <code>browser/index.html</code> that names where a channel's output lands. The working loop is three commands:</p>
 <pre><code class="language-shell">sharpee build            # compile gate — every load error, before anything runs
-sharpee test             # run your transcript tests
+sharpee test             # replay your test tree
 sharpee play             # play in the terminal</code></pre>
 <p>and one more when you're ready to ship:</p>
 <pre><code class="language-shell">sharpee build            # a self-contained playable page in dist/web/&lt;id&gt;/</code></pre>

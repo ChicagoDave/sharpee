@@ -59,6 +59,6 @@ end channel</code></pre>
 <pre><code class="language-shell">npx serve dist/web/&lt;id&gt;</code></pre>
 <p>The build also writes <code>dist/&lt;story&gt;.ir.json</code>, the compiled story IR, for IDE and tooling use.</p>
 <h2 id="testing-both-worlds">Testing both worlds</h2>
-<p>Fernhill's transcript suite runs the whole game text-only, including a <code>media-degrade</code> transcript asserting every media beat's prose shows and no asset name or event key ever leaks into text. The browser side is proven by driving the built page in a real browser and observing the cues: the photograph mounting, the wind bed and the thump actually fetching, the clock panel updating. Test the degradation in transcripts; trust the browser only after you've seen it.</p>
+<p>Fernhill's test tree runs the whole game text-only, including a media-degrade branch asserting every media beat's prose shows and no asset name or event key ever leaks into text. The browser side is proven by driving the built page in a real browser and observing the cues: the photograph mounting, the wind bed and the thump actually fetching, the clock panel updating. Test the degradation in the text run; trust the browser only after you've seen it.</p>
 <hr>
 <p>That's the estate, top to bottom: a world model, a tool chain, three people, a machine, a night that runs out, and a deed in a steel box. All of it is fact. Back to the <a href="/learn/fernhill">overview</a>.</p>

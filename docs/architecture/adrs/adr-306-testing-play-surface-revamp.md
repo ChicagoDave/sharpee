@@ -1,6 +1,12 @@
 # ADR-306: The Testing Play Surface Revamp — No Golden Path, Just a Tree of Transcripts
 
-**Status**: ACCEPTED (2026-08-09, session 2b82b5) — all four Open Questions
+**Status**: ACCEPTED, SUPERSEDED IN PART by
+[ADR-307](adr-307-testing-tree-model-v2.md) (cutover landed 2026-08-10,
+session ed3730) — superseded: the range/tick model (design §3) and
+click-through rulings 8, 13, and 17 where they concern ticking (ADR-307's
+always-recording tree replaces ranges, ticks, and extension rules; every
+played turn is a card). The rest of the revamp stands as built.
+*Original acceptance*: 2026-08-09, session 2b82b5 — all four Open Questions
 resolved by interview the same day (D6 state picker, D7 meta commands under
 branch replay, D8 complete-state restore, D9 editor auto-reload); reviewed twice
 via `/devarch:adr-review` (11/18 NEEDS WORK → all four findings folded → 16/16

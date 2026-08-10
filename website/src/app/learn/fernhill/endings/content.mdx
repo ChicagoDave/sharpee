@@ -37,8 +37,8 @@ create the Iron Gates
 is lit`.
 
 `win` / `lose` / `kill the player` each name their ending phrase. Write
-all your endings for real and test all of them; Fernhill's transcript
-suite drives each branch, including the death.
+all your endings for real and test all of them; Fernhill's test tree
+drives each ending as its own branch, including the death.
 
 ## Phrase strategies
 
@@ -69,7 +69,7 @@ end phrase
 
 `randomly` shuffles, `cycling` rotates in order, `first-time` speaks its
 first variant once and settles on the rest (there are also `stopping` and
-`sticky`). When you transcript-test strategy lines, assert structurally
+`sticky`). When your tests claim strategy lines, assert structurally
 ("one of these appeared"), never on an exact variant.
 
 ## Detail that unlocks: markers and gates

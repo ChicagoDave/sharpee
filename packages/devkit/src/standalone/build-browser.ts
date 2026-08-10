@@ -17,6 +17,7 @@ import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
 import { platformRanges } from './init.js';
 import { findStoryFile } from './author-game.js';
+import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
 import {
   type WiredTheme,
   type BrowserBuildEnv,
@@ -165,6 +166,21 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
 
   // --- Chord path (ADR-252): the shared build core, IR-derived metadata. ---
   if (storyFile) {
+    // ADR-309 D3: a build is a CLI write moment — reconcile the header to
+    // the config sidecar before the core compiles. Broken config = named
+    // refusal (D5), never a silent re-mint.
+    try {
+      const reconciled = reconcileHeader(storyFile);
+      if (reconciled.configCreated !== undefined) {
+        console.log(`  ✓ ${reconciled.configCreated === 'adopted' ? 'Adopted' : 'Minted'} the story's ifid into ${path.basename(configPathFor(storyFile))}`);
+      }
+    } catch (error) {
+      if (error instanceof StoryConfigError) {
+        console.error(`\nError [${error.code}] ${error.message}`);
+        process.exit(1);
+      }
+      throw error;
+    }
     const authorEnv: BrowserBuildEnv = {
       stylesDir: resolveEngineStylesDir(projectDir),
       templatesDir: TEMPLATES_DIR,

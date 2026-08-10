@@ -901,6 +901,12 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.onStoryEdited = { [weak self] url, content in
             self?.composeScheduler.noteEdit(storyURL: url, content: content)
         }
+        editorViewController.onStoryReconciled = { [weak self] url, content in
+            // Compose the REAL file (not a buffer snapshot): identity
+            // reconciliation rewrote it, or its config sidecar is broken and
+            // the row only exists on an on-disk run (ADR-309 D5).
+            self?.composeScheduler.composeNow(storyURL: url, content: content)
+        }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
             // ruling): any edited document inside the open story's folder means

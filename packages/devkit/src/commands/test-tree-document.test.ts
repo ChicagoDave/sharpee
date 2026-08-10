@@ -147,20 +147,6 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     }
   }, 60_000);
 
-  it('explicit transcript files bypass document discovery — the fallback path runs', async () => {
-    const transcript = join(projectDir, 'explicit.transcript');
-    writeFileSync(transcript, 'title: Explicit\n---\n\n> look\n[OK: contains "A small square den"]\n');
-    try {
-      const { code, out } = await muted(() => runTestCommand(['--tree', projectDir, transcript]));
-      expect(code).toBe(0);
-      // The transcript path announced itself; the document path never did.
-      expect(out).not.toContain('Tree document:');
-      expect(out).toContain('1 passed');
-    } finally {
-      rmSync(transcript);
-    }
-  }, 60_000);
-
   it('PERSISTED opening claims evaluate through the CLI; a claim-less opening asserts nothing (David 2026-08-10)', async () => {
     // The JSON is the source of truth: the tab persists the opening's
     // recorded claims (prologue/title/description) into the document, the

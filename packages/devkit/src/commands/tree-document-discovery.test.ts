@@ -1,14 +1,13 @@
 /**
- * test-tree.test.ts — tree-document discovery (ADR-307 Phase 1): the
- * `<story-id>.tests.json` lookup beside the `.story` file. The lookup lives
- * ALONGSIDE `tests/` directory discovery until the cutover phase — nothing
- * here routes a run yet.
+ * tree-document-discovery.test.ts — tree-document discovery (ADR-307): the
+ * `<story-id>.tests.json` lookup beside the `.story` file. Since the cutover
+ * this is the ONLY lookup `sharpee test` performs.
  */
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findTreeDocument } from './test-tree.js';
+import { findTreeDocument } from './test-tree-document.js';
 
 /** A throwaway project dir; the callback's return survives cleanup. */
 function withProjectDir<T>(build: (dir: string) => T): T {

@@ -64,9 +64,10 @@ describe('checkPublishable', () => {
     expect(target.projectDir).toBe(tmp);
   });
 
-  // REJECTS WHEN: no IFID (ADR-298 D5 — the whole reason publish is stricter
-  // than compile).
-  it('REFUSES a story with no ifid, and builds nothing', () => {
+  // REJECTS WHEN: no identity anywhere (ADR-309 D6's backstop — publish
+  // reconciles but never MINTS; inventing identity at publish would silently
+  // fork a story whose committed config went missing).
+  it('REFUSES a story with no identity anywhere, minting nothing', () => {
     const file = writeStory('orchard', 'story\n  title: Orchard\n  id: orchard');
 
     expect(() => checkPublishable(file)).toThrow(PublishError);
@@ -74,13 +75,43 @@ describe('checkPublishable', () => {
       checkPublishable(file);
     } catch (error) {
       expect((error as PublishError).code).toBe('publish.missing-ifid');
-      // The message must name both fixes, because both exist.
-      expect((error as PublishError).message).toContain('sharpee ifid');
-      expect((error as PublishError).message).toContain('Generate IFID');
+      // The remedy points at the config and the minting hosts — not at the
+      // retired hand-fix instructions (ADR-309 D4).
+      expect((error as PublishError).message).toContain('config.json');
     }
 
     expect(fs.existsSync(path.join(tmp, 'dist'))).toBe(false);
+    // Minting nothing: no config sidecar appeared (the refusal is the point).
     expect(fs.readdirSync(tmp)).toEqual(['orchard.story']);
+  });
+
+  it('ADOPTS a header-only legacy story into a new config, then publishes (ADR-309 D2)', () => {
+    const file = writeStory(
+      'orchard',
+      `story\n  title: Orchard\n  id: orchard\n  ifid: ${IFID}`,
+    );
+
+    const target = checkPublishable(file);
+
+    expect(target.ifid).toBe(IFID);
+    const config = JSON.parse(fs.readFileSync(path.join(tmp, 'orchard.config.json'), 'utf-8'));
+    expect(config).toEqual({ version: 1, ifid: IFID });
+  });
+
+  it('REFUSES a broken config by name — never re-mints over it (ADR-309 D5)', () => {
+    const file = writeStory(
+      'orchard',
+      `story\n  title: Orchard\n  id: orchard\n  ifid: ${IFID}`,
+    );
+    fs.writeFileSync(path.join(tmp, 'orchard.config.json'), '{ not json');
+
+    try {
+      checkPublishable(file);
+      expect.unreachable('a broken config must refuse');
+    } catch (error) {
+      expect((error as PublishError).code).toBe('publish.story-config-broken');
+    }
+    expect(fs.existsSync(path.join(tmp, 'dist'))).toBe(false);
   });
 
   it('REFUSES an empty ifid the same as a missing one', () => {

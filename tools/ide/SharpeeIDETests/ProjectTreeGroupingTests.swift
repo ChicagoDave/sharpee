@@ -75,9 +75,9 @@ final class ProjectTreeGroupingTests: XCTestCase {
         let controller = laidOutController()
         let labels = try rowLabels(in: controller)
 
-        // David's ruling: only Story opens by default. Transcripts never
-        // appear at all (2026-08-09) — they are Chord Writer's artifacts,
-        // shown only serialized in the Testing tab.
+        // David's ruling: only Story opens by default. The legacy tests/
+        // directory sits inside the collapsed Other group (ADR-307 cutover:
+        // tests live in the story's tests.json, shown only in the Testing tab).
         XCTAssertEqual(labels, [
             "Story", "the-lost-key.story",
             "Walkthroughs",
@@ -106,8 +106,10 @@ final class ProjectTreeGroupingTests: XCTestCase {
         let labels = try rowLabels(in: controller)
 
         // Groups are lenses, not folder mirrors: the folders whose contents were
-        // lifted into a group must not also appear as their own rows.
-        for folder in ["walkthroughs", "tests", "transcripts", "assets"] {
+        // lifted into a group must not also appear as their own rows. (tests/
+        // is no longer lensed — since the ADR-307 cutover it is an ordinary
+        // Other member, hidden here only because Other starts collapsed.)
+        for folder in ["walkthroughs", "assets"] {
             XCTAssertFalse(labels.contains(folder),
                            "\(folder) was mirrored as a row instead of being lensed into a group")
         }

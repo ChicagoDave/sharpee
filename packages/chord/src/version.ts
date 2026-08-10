@@ -126,8 +126,11 @@
  *     `version:`/`blurb:`/`by:` are removed spellings with fix-its;
  *   - `prologue:`/`description:` take literal prose or a bare phrase
  *     reference (a lone kebab atom is always a reference);
- *   - missing `ifid:` warns at compile (`analysis.missing-ifid`), hard-errors
- *     at publish (ADR-284).
+ *   - `ifid:` is tool-owned since ADR-309: minted at creation into
+ *     `<story-name>.config.json` and rendered into the header on save and
+ *     build, so the compiler says nothing about an absent one (the
+ *     `analysis.missing-ifid` warning retired); `sharpee publish` keeps the
+ *     hard error for a story that never passed through a host (ADR-284).
  * ADR-278's 3.0.0 reservation was released by owner ruling (2026-08-03) —
  * see the note in that ADR; Relations anchors the next major if pursued.
  *

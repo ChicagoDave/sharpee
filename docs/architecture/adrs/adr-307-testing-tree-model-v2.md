@@ -13,6 +13,13 @@ click-through rulings 8, 13, 17 where they concern ticking; ADR-302's
 status lines (SUPERSEDED in part, pointing here) and marks the walkthrough
 doc's v1 sections superseded — in the same edit set as the cutover, never at
 this ADR's acceptance (the superseded model still ships until then).
+**Flips landed**: 2026-08-10, session ed3730, with the cutover — ADR-306 and
+ADR-302 flipped as specified; ADR-305 flipped to SUPERSEDED outright (play IS
+recording — nothing to promote); the transcript grammar, its parser/
+serializer/rename cascade, the v1 tree runner, and `tests/` discovery are
+deleted from `@sharpee/branch-tester` and `@sharpee/devkit`. The Phase 5
+rulings (record-time synthesis, default policy, count-free rows) are amended
+inline in D2, D3, and the End-to-End Scenario.
 **Untouched**: `@sharpee/transcript-tester` and the platform's hand-authored
 text transcript world — walkthroughs, unit transcripts, `--chain`, Dungeo.
 That is Sharpee's own author-facing test language and it stays text.
@@ -90,11 +97,17 @@ lives ON the card branched from**: `branches: [{ branch: <stable id>,
 cards: [...] }]`, recursively — no positional indices; the hierarchy is the
 position, and the main line's continuation is the parent's remaining cards.
 Sibling order is array order; the `branch` id exists so the sidecar can
-reference active/collapsed lineages stably. Assertions are the authored
-families only (`contains`, `notContains`, `exact`, `states`, `events`,
-`channels` as `{id, contains|is}`, plus `noDefaults`); policy defaults
-synthesize live from the `.story` header through the same code path as the
-surface. Serialization is deterministic (sorted keys, stable order).
+reference active/collapsed lineages stably. Assertions are the recorded
+families (`contains`, `notContains`, `exact`, `states`, `events`,
+`channels` as `{id, contains|is}`, plus explicit `skip`). **Amended
+2026-08-10 (David's rulings, cutover session): the JSON is the source of
+truth for all testing elements.** Policy defaults do NOT synthesize live at
+run time — the tab synthesizes under the effective policy when a turn LANDS
+and persists the result into the card (record-time synthesis; a claim-less
+non-skip card is filled, never overwritten). A document run evaluates
+exactly what the JSON says; a bare card is the tier-boundary failure.
+`noDefaults` left the schema (closed grammar — narrowing is plain removal).
+Serialization is deterministic (sorted keys, stable order).
 
 ### D3 — The Testing tab is always recording; the checkboxes go
 
@@ -102,7 +115,14 @@ Playing in the Testing tab **is** writing the suite: every typed command
 updates the tree, which serializes. There are no ticks, no ranges, no
 open/closed recordings, no rail. The Play tab remains the place to play
 without recording. Cards keep their real jobs: the turn's prose, its
-assertion list (green, deletable), and the Branch gesture.
+assertion list (green, deletable), and the Branch gesture. **Amended
+2026-08-10: recording includes the claims** — the landing turn's synthesized
+assertions (and the opening's channel claims from the boot captures) persist
+into the document at record time; "synthesize live, never persist" is
+reversed by the same source-of-truth ruling amended into D2. The effective
+policy when a story declares none is the platform default
+(`room-name-and-description`, one constant in branch-tester); the Test menu
+names it "Default (Room Name and Description)".
 
 ### D4 — The tree is a script; edits are repairs validated by replay
 
@@ -212,9 +232,12 @@ resolved schema. Branch from turn 2 with `east` — the document gains a
 main line's turn 3 — the card and its descendants leave the document. Close
 and reopen the project: the tree deserializes and replays to the identical
 board (AC-1 through the real driver). Run: the column shows
-`opening-iron-gates` and `gravel-drive · east` rows with PASS and turn
-counts; edit a room description in the story, rebuild, Run again — the seam
-shows as that turn's failed contains, nothing else changes.
+`opening-iron-gates` and `gravel-drive · east` rows with PASS — count-free
+(amended 2026-08-10, David: "turns have no meaning unless the author gives
+them meaning"; the tally counts cards and assertions instead, and every
+assertion's verdict shows in the run detail); edit a room description in the
+story, rebuild, Run again — the seam shows as that turn's failed contains,
+nothing else changes.
 
 ## Consequences
 

@@ -250,55 +250,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
   });
 });
 
-describe('analysis.missing-ifid span (ADR-298 D5)', () => {
-  // A missing field has no span of its own, so the diagnostic has to point at
-  // something that exists. It used to point at `header.span` — the WHOLE story
-  // block — which an editor renders as an underline over every header line to
-  // report one absent field. The IDE shipped exactly that: composing
-  // branch-stories/fernhill underlined lines 5–20 solid yellow (2026-08-06).
-  // The block's opening keyword names the block without claiming its contents
-  // are wrong.
-  const source = [
-    '## a file-header comment',
-    '',
-    'story',
-    '  title: Probe',
-    '  authors: Tests',
-    '  id: probe',
-    '  story-version: 1.0.0',
-    '',
-    'create the Lab',
-    '  a room',
-    '',
-    '  A small lab.',
-    '',
-    'create the player',
-    '  starts in the Lab',
-    '',
-    '  You.',
-    '',
-  ].join('\n');
-
-  const warning = compile(source).diagnostics.find((d) => d.code === 'analysis.missing-ifid');
-
-  it('warns when the header carries no ifid', () => {
-    expect(warning).toBeDefined();
-  });
-
-  it('spans the `story` keyword alone, not the header block', () => {
-    expect(warning?.span).toEqual({ line: 3, column: 1, endLine: 3, endColumn: 6 });
-  });
-
-  it('is a single-line span whose width is the keyword', () => {
-    expect(warning?.span?.endLine).toBe(warning?.span?.line);
-    expect((warning?.span?.endColumn ?? 0) - (warning?.span?.column ?? 0)).toBe('story'.length);
-  });
-
-  it('does not fire when an ifid is present', () => {
-    const withIfid = source.replace(
-      '  story-version: 1.0.0',
-      '  story-version: 1.0.0\n  ifid: 5A2E4B77-1C3D-4E5F-8A9B-0C1D2E3F4A5B',
-    );
-    expect(compile(withIfid).diagnostics.map((d) => d.code)).not.toContain('analysis.missing-ifid');
-  });
-});
+// The `analysis.missing-ifid` span tests lived here. The diagnostic retired
+// with ADR-309 (the toolchain owns the IFID and renders it into the header),
+// so there is no warning left to place — `sharpee publish` keeps the only
+// remaining refusal, covered in devkit's publish tests.

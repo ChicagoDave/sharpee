@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { generateIfid } from '@sharpee/core';
+import { STORY_CONFIG_VERSION, writeStoryConfig } from './story-config.js';
 import { runInitBrowserCommand } from './init-browser.js';
 
 // Template directories relative to this file.
@@ -110,7 +111,6 @@ const PROJECT_FOLDERS: { path: string; purpose: string }[] = [
   { path: 'assets', purpose: 'Media your STORY uses — audio it plays, images it renders in prose.' },
   { path: 'feelies', purpose: 'Extras the PLAYER opens — a map, a letter, a clipping. Shipped as a folder.' },
   { path: 'walkthroughs', purpose: 'Transcripts that play the story through, run in order as one chain.' },
-  { path: 'tests/transcripts', purpose: 'Focused transcript tests, each run on its own.' },
 ];
 
 /** Creates the project folders and the root README that explains them. */
@@ -265,6 +265,19 @@ export async function runInitCommand(args: string[]): Promise<void> {
         { dir: CHORD_TEMPLATES_DIR, src: 'package.json.template', dest: 'package.json' },
       ];
   if (useTs) fs.mkdirSync(path.join(absoluteTarget, 'src'), { recursive: true });
+
+  // ADR-309 D2: the config sidecar is written BEFORE the header is even
+  // rendered — the story is born with identity, and the config (not the
+  // header line the template renders from the same value) is its canonical
+  // home. Chord `.story` projects only; the TS story form has no `.story`
+  // file for the sidecar to sit beside.
+  if (!useTs) {
+    writeStoryConfig(path.join(absoluteTarget, `${storyId}.config.json`), {
+      version: STORY_CONFIG_VERSION,
+      ifid: options.ifid,
+    });
+    console.log(`  ✓ Created ${storyId}.config.json (the story's identity — committed, never edited by hand)`);
+  }
 
   for (const template of templates) {
     const srcPath = path.join(template.dir, template.src);

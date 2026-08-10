@@ -1,10 +1,11 @@
 // TestRunnerTests.swift
 // Real-path tests for TestRunner (rule 13a): drives the actual devkit CLI
 // (`node packages/devkit/dist/cli.js test <story> --tree --json`) against real
-// `.story` + `.transcript` fixtures through the production spawn/line-buffer
-// path — no stubbed toolchain. Fixture shell scripts appear only for the
-// shapes the real CLI cannot produce on demand (split-chunk delivery, a
-// future schema version, cancellation).
+// `.story` + `<story-id>.tests.json` fixtures through the production
+// spawn/line-buffer path — no stubbed toolchain (ADR-307: the tree document
+// is the only run model). Fixture shell scripts appear only for the shapes
+// the real CLI cannot produce on demand (split-chunk delivery, a future
+// schema version, cancellation).
 //
 // The runner is TRANSPORT: it delivers complete NDJSON lines and decodes
 // nothing, so these assert on LINES. Parsing them here is the test reading the
@@ -21,8 +22,7 @@ final class TestRunnerTests: XCTestCase {
     private var runner: TestRunner!
     private var delegate: RecordingTestDelegate!
 
-    /// A story with a takeable object so the chain fixture can persist state
-    /// across files (take in wt-01, inventory in wt-02).
+    /// A minimal story whose boot look prints text the document's claims read.
     private static let story = """
     story
       title: Mini
@@ -116,15 +116,25 @@ final class TestRunnerTests: XCTestCase {
 
     // MARK: - Real CLI, real stories (Acceptance 6)
 
+    /// The tree document the Testing tab would have written: opening + an
+    /// asserted boot look, claiming text the story really prints.
+    private func writeDocument(claim: String) throws {
+        try writeFixture("mini.tests.json", """
+        {
+          "version": 1,
+          "story": "mini",
+          "seed": 42,
+          "cards": [
+            { "type": "opening" },
+            { "type": "boot", "assertions": { "contains": ["\(claim)"] } }
+          ]
+        }
+        """)
+    }
+
     func testRealRunStreamsGuardShapedRecordsWithSourceLines() throws {
         try writeFixture("mini.story", Self.story)
-        try writeFixture("tests/smoke.transcript", """
-        title: Smoke
-        ---
-
-        > look
-        [OK: contains "A small square den"]
-        """)
+        try writeDocument(claim: "A small square den")
         runReal(arguments: [tempDir.path])
 
         XCTAssertEqual(delegate.result?.state, .passed)
@@ -139,63 +149,36 @@ final class TestRunnerTests: XCTestCase {
         XCTAssertEqual(all.last?["exitCode"] as? Int, 0)
 
         let commands = all.filter { $0["type"] as? String == "command-result" }
-        XCTAssertEqual(commands.compactMap { $0["input"] as? String }, ["look"])
-        XCTAssertEqual(commands.first?["line"] as? Int, 4,
-                       "the `> look` source line — the click-through target")
+        XCTAssertEqual(commands.compactMap { $0["input"] as? String }, ["look"],
+                       "the boot card executes as the boot look")
         XCTAssertEqual(transcriptEndStatuses(), ["passed"])
     }
 
-    /// A broken transcript is an error ROW, not a vanished file, and fails the
-    /// run. "Broken" means a real parse error — a removed form (ADR-294 D2). An
-    /// assertion-less command is NOT broken post-rebuild: it fails at runtime
-    /// with a named boundary error (transcript status `failed`, not `error`).
-    ///
-    /// Exit 2, not 1: a tree ASSEMBLES before it executes (ADR-302 D11), so a
-    /// transcript that cannot be parsed is a defect in the tree rather than a
-    /// test that ran and failed. Flat mode exited 1 here — the difference is the
-    /// run model, and it is worth pinning because it is the exit code the IDE
-    /// reports when an author's transcript will not parse.
-    func testValidationBrokenTranscriptArrivesAsErrorRecord() throws {
+    /// A document the deserializer refuses (malformed JSON) exits 2 with
+    /// nothing run — refusal happens BEFORE the stream exists (AC-4), so the
+    /// IDE sees a failed run with no events, never a silent pass over a
+    /// corrupted document.
+    func testMalformedDocumentIsRefusedBeforeAnythingRuns() throws {
         try writeFixture("mini.story", Self.story)
-        try writeFixture("tests/broken.transcript", """
-        title: Broken
-        ---
-
-        > look
-        [OK: any]
-        """)
+        try writeFixture("mini.tests.json", "{ this is not json")
         runReal(arguments: [tempDir.path])
 
         XCTAssertEqual(delegate.result?.state, .failed)
-        XCTAssertEqual(delegate.result?.exitCode, 2, "a tree defect, not a failed test")
-        XCTAssertEqual(transcriptEndStatuses(), ["error"], "an error ROW, not a vanished file")
-        let end = events().first { $0["type"] as? String == "transcript-end" }
-        XCTAssertNotNil(end?["errorMessage"], "and it says why")
+        XCTAssertEqual(delegate.result?.exitCode, 2, "a refused document, not a failed test")
+        XCTAssertTrue(events().isEmpty, "refusal precedes the stream — no NDJSON was emitted")
     }
 
-    /// Edit-then-run (Phase 3's re-run guarantee): the CLI re-reads the
-    /// `.transcript` from disk each run — an edited assertion changes the very
-    /// next result, no cached/stale parse.
-    func testEditedTranscriptReRunsFresh() throws {
+    /// Edit-then-run (Phase 3's re-run guarantee): the CLI re-reads the tree
+    /// document from disk each run — an edited claim changes the very next
+    /// result, no cached/stale parse.
+    func testEditedDocumentReRunsFresh() throws {
         try writeFixture("mini.story", Self.story)
-        try writeFixture("tests/edit.transcript", """
-        title: Editable
-        ---
-
-        > look
-        [OK: contains "A small square den"]
-        """)
+        try writeDocument(claim: "A small square den")
         runReal(arguments: [tempDir.path])
         XCTAssertEqual(delegate.result?.state, .passed)
 
-        // Author edits the assertion to something the story never prints.
-        try writeFixture("tests/edit.transcript", """
-        title: Editable
-        ---
-
-        > look
-        [OK: contains "text the story never prints"]
-        """)
+        // Author edits the claim to something the story never prints.
+        try writeDocument(claim: "text the story never prints")
         delegate = RecordingTestDelegate()
         runner.delegate = delegate
         runReal(arguments: [tempDir.path])
