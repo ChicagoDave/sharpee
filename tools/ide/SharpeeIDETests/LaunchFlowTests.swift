@@ -28,8 +28,6 @@ final class LaunchFlowTests: XCTestCase {
     private static let touchedDefaultsKeys = [
         RecentProjectsStore.key,
         SessionStateStore.key,
-        "SharpeeIDEMainSplitProjectWidth",
-        "SharpeeIDEMainSplitPlayWidth",
         "NSSplitView Subview Frames SharpeeIDEMainSplit",
     ]
     private var savedDefaults: [Any?] = []
@@ -89,7 +87,8 @@ final class LaunchFlowTests: XCTestCase {
     }
 
     private func launch(lastProject: URL? = nil,
-                        createResult: URL? = nil) throws -> (LaunchCoordinator, Recorder) {
+                        createResult: URL? = nil,
+                        reopenDirectly: Bool = false) throws -> (LaunchCoordinator, Recorder) {
         let recorder = Recorder()
         controller = MainWindowController()
         window = try XCTUnwrap(controller.window)
@@ -107,7 +106,7 @@ final class LaunchFlowTests: XCTestCase {
             quit: { recorder.quitCount += 1 })
 
         let coordinator = LaunchCoordinator(window: window, actions: actions, storyRoot: tmp)
-        coordinator.begin(lastProject: lastProject)
+        coordinator.begin(lastProject: lastProject, reopenDirectly: reopenDirectly)
         pump()
         return (coordinator, recorder)
     }
@@ -151,6 +150,42 @@ final class LaunchFlowTests: XCTestCase {
         let page = try XCTUnwrap(coordinator.landingPage)
         XCTAssertNotNil(button(LandingPageViewController.recentIdentifier(0), in: page.view),
                         "an empty Open Recent must not lose the last project")
+    }
+
+    // MARK: - Reopen last story (David 2026-08-09: the Settings toggle)
+
+    func testReopenDirectlyOpensTheLastProjectWithoutTheModal() throws {
+        let last = try makeStoryProject("the-folly")
+
+        let (coordinator, recorder) = try launch(lastProject: last, reopenDirectly: true)
+
+        XCTAssertEqual(recorder.opened, [last],
+                       "the toggle must open the last story straight away")
+        XCTAssertTrue(coordinator.isFinished)
+        XCTAssertNil(coordinator.landingPage, "the landing page must never appear")
+        XCTAssertNil(window.attachedSheet)
+    }
+
+    func testReopenDirectlyFallsBackToTheLandingPageWhenTheLastProjectIsGone() throws {
+        let gone = tmp.appendingPathComponent("vanished", isDirectory: true)
+
+        let (coordinator, recorder) = try launch(lastProject: gone, reopenDirectly: true)
+
+        XCTAssertEqual(recorder.opened, [], "a missing folder must not be opened")
+        XCTAssertNotNil(coordinator.landingPage,
+                        "the author must land on the modal, not an empty window")
+        XCTAssertFalse(coordinator.isFinished)
+    }
+
+    func testReopenDirectlyFallsBackWhenTheFolderIsNotAStoryProject() throws {
+        let bare = tmp.appendingPathComponent("not-a-story", isDirectory: true)
+        try FileManager.default.createDirectory(at: bare, withIntermediateDirectories: true)
+
+        let (coordinator, recorder) = try launch(lastProject: bare, reopenDirectly: true)
+
+        XCTAssertEqual(recorder.opened, [], "a folder with no .story must not be opened")
+        XCTAssertNotNil(coordinator.landingPage)
+        XCTAssertFalse(coordinator.isFinished)
     }
 
     // MARK: - Picking a project

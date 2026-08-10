@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "story": "fernhill",
+  "seed": 42,
+  "root": {
+    "cards":
+        [
+            {
+                "type": "opening",
+                "command": "north",
+                "assertions": [
+                    { "contains": ["The drive curves", "This is true", "The sword is here."] },
+                    { "states": [ "kettle.location = hall", "kettle.location = hall"] },
+                    { "channels": [ ] }
+                ]
+            },
+            {
+                "type": "turn",
+                "command": "north",
+                "assertions": [
+                    { "contains": ["The drive curves", "This is true", "The sword is here."] },
+                    { "states": [ "kettle.location = hall", "kettle.location = hall"] },
+                    { "channels": [ ] }
+                ]
+            },
+            {
+                "type": "turn",
+                "command": "north",
+                "assertions": [
+                    { "contains": ["The drive curves", "This is true", "The sword is here."] },
+                    { "states": [ "kettle.location = hall", "kettle.location = hall"] },
+                    { "channels": [ ] }
+                ],
+                "branches": [
+                    { "branch": 1,
+                        "cards": []
+                    },
+                    { "branch": 2,
+                        "cards": []
+                    }
+                ]
+            }
+        ]
+
+  }
+}

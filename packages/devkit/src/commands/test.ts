@@ -1,100 +1,80 @@
 /**
- * test.ts — `sharpee test`: run an author project's transcript tests.
+ * test.ts — `sharpee test`: run an author project's test tree.
  *
  * Author-side counterpart of the platform bundle's `--test` (ADR-187 R1:
  * both tools carry a test command, each its own implementation). Resolves
  * the project (cwd, a registered name, a directory, or a `.story` file —
- * ADR-277 D1: the file's containing folder is the project), finds its
- * transcripts (`tests/` subtree; under `--chain` with no explicit files,
- * the `walkthroughs/` chain in filename order — ADR-277 D3), loads the
- * story through the shared author-game loader (Chord `.story` or module
- * story), and drives @sharpee/transcript-tester's real runner/reporter.
- * With `--json`, emits the ADR-277 D1 NDJSON record stream on stdout
- * instead of the human reporter; a validation- or load-failed transcript
- * is a `status: 'error'` record in both modes, never a silent skip.
+ * ADR-277 D1: the file's containing folder is the project), discovers its
+ * ADR-307 tree document (`<story-id>.tests.json` beside the `.story` file),
+ * and runs it through branch-tester's walker. The document is the ONLY test
+ * model for Chord projects: the transcript-file workflow (`tests/`
+ * discovery, `--chain`, explicit `.transcript` args) was retired by
+ * ADR-307's cutover — each retired form fails by name, never silently.
+ * (Sharpee's own hand-authored transcript world lives in
+ * `@sharpee/transcript-tester` and is untouched.)
  *
  * Public interface: runTestCommand(rest) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
 import * as path from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import type {
-  TestableGame,
-  Transcript,
-  TranscriptResult,
-} from '@sharpee/transcript-tester';
-import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
-// Cheap to import: test-tree.ts pulls @sharpee/branch-tester lazily, so the
-// harness still loads only when --tree is actually used.
-import { runTreeTestCommand } from './test-tree.js';
+import { findTreeDocument, runTreeDocumentCommand } from './test-tree-document.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output] [--capture-world]';
+  'usage: sharpee test [name|dir|file.story] [--tree] [--stop-on-failure|-s] [--verbose|-v] [--json] [--capture-output] [--capture-world]';
 
 /**
  * Run `sharpee test`.
  *
  * @param rest CLI args after the subcommand: optional project (registered
- *   name, directory, or `.story` file), optional explicit `.transcript`
- *   files, and flags `--chain` (one game instance across all transcripts;
- *   with no explicit files it runs the `walkthroughs/` chain),
- *   `--stop-on-failure`, `--verbose`, `--json` (NDJSON record stream on
- *   stdout — ADR-277 D1), and `--capture-output` (ADR-299 replay capture:
- *   with `--json`, every executed command-result carries `actualOutput`,
- *   not only failures; without `--json` it is inert).
- * @returns process exit code — 0 all passed, 1 failures or transcript
- *   errors, 2 usage error, 3 story load error (transcript-tester's
- *   convention). Never calls `process.exit()` — a piped `--json` stream
- *   must flush completely (the 64KB-pipe gotcha, see cli.ts).
+ *   name, directory, or `.story` file) and flags `--tree` (accepted for
+ *   compatibility with the documented spelling — the tree document is the
+ *   only model, so it changes nothing), `--stop-on-failure`, `--verbose`,
+ *   `--json` (NDJSON record stream on stdout — ADR-277 D1),
+ *   `--capture-output` (every executed command-result carries
+ *   `actualOutput`, not only failures), and `--capture-world` (world
+ *   snapshots on command results).
+ * @returns process exit code — 0 all lines passed, 1 failures or errored
+ *   lines, 2 usage error or refused/malformed document, 3 story load error.
+ *   Never calls `process.exit()` — a piped `--json` stream must flush
+ *   completely (the 64KB-pipe gotcha, see cli.ts).
  */
 export async function runTestCommand(rest: string[]): Promise<number> {
-  // Lazy require (compose.ts pattern): pull the harness only when testing.
-  const {
-    aggregateTestRun,
-    CoverageTracker,
-    findTranscripts,
-    formatCoverageBreakdown,
-    formatCoverageSummary,
-    getExitCode,
-    ndjsonEventLine,
-    parseTranscriptFile,
-    reportCommandResult,
-    reportTestRun,
-    reportTranscript,
-    reportTranscriptEnd,
-    reportTranscriptStart,
-    RunEventStream,
-    runTranscript,
-    validateTranscript,
-  } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
-
-  let chain = false;
-  let tree = false;
   let stopOnFailure = false;
   let verbose = false;
   let json = false;
-  let coverage = false;
   let captureOutput = false;
   let captureWorld = false;
   let projectDir: string | undefined;
-  const transcriptPaths: string[] = [];
 
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
-    if (arg === '--tree') tree = true;
-    else if (arg === '--chain' || arg === '-c') chain = true;
-    else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
+    if (arg === '--tree') {
+      // The document is the only run model; the flag names what already
+      // happens. Accepted so `sharpee test story.story --tree` (the IDE's
+      // spawn and the documented spelling) keeps working.
+    } else if (arg === '--chain' || arg === '-c') {
+      console.error(
+        `test: --chain is retired — the tree document has no chain (a shared prefix already runs once; ADR-302 D10, ADR-307 cutover)\n${USAGE}`,
+      );
+      return 2;
+    } else if (arg === '--coverage') {
+      console.error(`test: --coverage is retired with the transcript grammar (ADR-307 cutover)\n${USAGE}`);
+      return 2;
+    } else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
     else if (arg === '--verbose' || arg === '-v') verbose = true;
     else if (arg === '--json') json = true;
-    else if (arg === '--coverage') coverage = true;
     else if (arg === '--capture-output') captureOutput = true;
     else if (arg === '--capture-world') captureWorld = true;
     else if (arg.startsWith('-')) {
       console.error(`test: unknown flag '${arg}'\n${USAGE}`);
       return 2;
     } else if (arg.endsWith('.transcript')) {
-      transcriptPaths.push(arg);
+      console.error(
+        `test: '.transcript' files are retired for Chord projects — tests live in the story's tree document (<story-id>.tests.json), recorded by the Testing tab (ADR-307)\n${USAGE}`,
+      );
+      return 2;
     } else if (arg.endsWith('.story')) {
       // ADR-277 D1: one mental model across build/compose/test — the
       // `.story` file's containing folder is the project.
@@ -125,240 +105,26 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     }
   }
 
-  // ADR-302 D10 retires `--chain`: in a tree, a shared prefix already runs once
-  // and each tail resumes from it, so "chain" names nothing a tree run can mean.
-  // Silently ignoring one of the two would hide which model actually ran.
-  if (tree && chain) {
-    console.error(`test: --tree and --chain are mutually exclusive (ADR-302 D10 retires --chain for trees)\n${USAGE}`);
+  const dir = path.resolve(projectDir ?? process.cwd());
+
+  // ADR-307 D2/Q-2: `<story-id>.tests.json` beside the `.story` file is the
+  // one artifact. No document is a named condition, not an empty pass — a
+  // module project (no `.story` file) has no tree document either.
+  const docPath = findTreeDocument(dir);
+  if (docPath === undefined) {
+    console.error(
+      `test: no tree document found in ${dir} — expected <story-id>.tests.json beside the .story file (record tests in the IDE's Testing tab, ADR-307)`,
+    );
     return 2;
   }
-  const dir = path.resolve(projectDir ?? process.cwd());
-  let transcripts = transcriptPaths.map((p) => path.resolve(p));
-  if (transcripts.length === 0) {
-    if (chain) {
-      // ADR-277 D3: `--chain` with no explicit files runs the walkthroughs/
-      // chain in filename order. The bare run below never scans it.
-      const walkthroughsDir = path.join(dir, 'walkthroughs');
-      if (existsSync(walkthroughsDir)) transcripts = findTranscripts(walkthroughsDir).sort();
-      if (transcripts.length === 0) {
-        console.error(
-          `test: no walkthrough transcripts found (--chain with no files scans ${walkthroughsDir})`,
-        );
-        return 2;
-      }
-    } else {
-      const testsDir = path.join(dir, 'tests');
-      if (existsSync(testsDir)) transcripts = findTranscripts(testsDir);
-      if (transcripts.length === 0) {
-        console.error(`test: no transcript files found (looked in ${testsDir})`);
-        return 2;
-      }
-    }
-  }
-  transcripts = [...new Set(transcripts)];
 
-  // A tree is a different run model, not a flag on this one: it assembles all
-  // transcripts before executing any, and its reporting distinguishes unreached
-  // from failed (D13). Hand off whole rather than branching through the loop.
-  if (tree) {
-    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure, json, captureOutput, captureWorld });
-  }
-
-  // In --json mode, stdout is exclusively the NDJSON stream: informational
-  // lines are dropped (diagnostics stay on stderr) and the chalk reporter
-  // never runs. `process.stdout.write`, never `process.exit()` (header doc).
-  const info = (msg: string): void => {
-    if (!json) console.log(msg);
-  };
-  /**
-   * The run-event stream, when `--json` asked for one. Constructed immediately
-   * before `run-start` so every event's `elapsedMs` is measured from the run,
-   * not from argument parsing.
-   */
-  const stream = json
-    ? new RunEventStream((event) => {
-        process.stdout.write(ndjsonEventLine(event));
-      })
-    : undefined;
-
-  /**
-   * A transcript that never reached the runner — a parse error, a validation
-   * failure, or a story that would not load. The runner announces the ones it
-   * runs; these it never sees, so they are announced here. Start-then-end with
-   * no commands between, never a silent gap (ADR-277 D1).
-   */
-  /**
-   * Compile and load are the run's silent stretches — for a Chord project the
-   * compile is seconds of nothing before the first command. Reported on the
-   * stream only: the human reporter already prints its own "Loading story from"
-   * line, and changing that would move a regression baseline for no gain.
-   */
-  const onPhase = (
-    name: 'compile' | 'load',
-    status: 'started' | 'finished',
-    detail?: string,
-  ): void => {
-    stream?.phase(name, status, detail);
-  };
-
-  const emitUnrunTranscript = (result: TranscriptResult, index: number): void => {
-    stream?.transcriptStart(result.transcript.filePath, index);
-    stream?.transcriptEnd(result);
-  };
-
-  /** An error-status result for a transcript that never ran (ADR-277 D1). */
-  const errorResult = (transcriptPath: string, errorMessage: string, transcript?: Transcript): TranscriptResult => ({
-    transcript: transcript ?? { filePath: transcriptPath, header: {}, commands: [], comments: [] },
-    commands: [],
-    status: 'error',
-    passed: 0,
-    failed: 0,
-    expectedFailures: 0,
-    skipped: 0,
-    duration: 0,
-    errorMessage,
+  return runTreeDocumentCommand({
+    dir,
+    docPath,
+    verbose,
+    stopOnFailure,
+    json,
+    captureOutput,
+    captureWorld,
   });
-
-  stream?.runStart(chain ? 'chain' : 'tests', transcripts.length);
-
-  info(`Loading story from: ${dir}`);
-  // Chain mode shares one game across transcripts; per-transcript mode loads
-  // fresh below (honoring each transcript's optional `entry:` header).
-  let game: TestableGame | undefined;
-  if (chain) {
-    // ADR-293 D14: a chain is one session governed by the FIRST member's
-    // pinned seed. Pre-read it here — the game must be seeded at assembly
-    // (the runner verifies the session seed, it never sets it). A parse
-    // error is swallowed: the main loop below reports it properly.
-    let chainSeed: number | undefined;
-    try {
-      chainSeed = parseTranscriptFile(transcripts[0]).config?.seeds?.[0];
-    } catch {
-      chainSeed = undefined;
-    }
-    try {
-      game = await loadAuthorGame(dir, { seed: chainSeed, onPhase });
-    } catch (error) {
-      const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
-      console.error(message);
-      // Nothing can run — every transcript is an error record, never absent.
-      const results = transcripts.map((t, i) => {
-        const r = errorResult(t, message);
-        emitUnrunTranscript(r, i);
-        return r;
-      });
-      stream?.runEnd(aggregateTestRun(results), 3);
-      return 3;
-    }
-  }
-
-  info(`Found ${transcripts.length} transcript(s) to run`);
-  if (chain) info('Chain mode: Game state will persist between transcripts');
-
-  const results: TranscriptResult[] = [];
-  // ADR-293 D15: one tracker per run — a chain is one session, one report.
-  const coverageTracker = new CoverageTracker();
-  let loadError = false;
-  for (let index = 0; index < transcripts.length; index++) {
-    const transcriptPath = transcripts[index];
-
-    let transcript: Transcript;
-    try {
-      transcript = parseTranscriptFile(transcriptPath);
-    } catch (error) {
-      const message = `Error parsing transcript: ${error instanceof Error ? error.message : error}`;
-      console.error(`\n${transcriptPath}: ${message}`);
-      const result = errorResult(transcriptPath, message);
-      results.push(result);
-      emitUnrunTranscript(result, index);
-      if (!json) reportTranscript(result, { verbose });
-      continue;
-    }
-
-    const errors = validateTranscript(transcript);
-    if (errors.length > 0) {
-      console.error(`\nErrors in ${transcriptPath}:`);
-      for (const err of errors) console.error(`  - ${err}`);
-      const result = errorResult(transcriptPath, `Transcript validation failed: ${errors.join('; ')}`, transcript);
-      results.push(result);
-      emitUnrunTranscript(result, index);
-      if (!json) reportTranscript(result, { verbose });
-      continue;
-    }
-
-    if (!chain) {
-      try {
-        // ADR-294 D3: a pinned transcript runs at its declared seed — the
-        // runner verifies the session seed against the pin, so the game
-        // must be seeded here at assembly.
-        game = await loadAuthorGame(dir, {
-          entry: transcript.header.entry,
-          seed: transcript.config?.seeds?.[0],
-          onPhase,
-        });
-      } catch (error) {
-        const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
-        console.error(message);
-        // The story is broken for this and every remaining transcript: each
-        // gets an error record (never a silent gap), and the run exits 3.
-        for (let j = index; j < transcripts.length; j++) {
-          const r = errorResult(transcripts[j], message);
-          results.push(r);
-          emitUnrunTranscript(r, j);
-        }
-        loadError = true;
-        break;
-      }
-    }
-
-    const result = await runTranscript(transcript, game!, {
-      verbose,
-      stopOnFailure,
-      coverage: coverageTracker,
-      // `chain` matters to the runner's seed rules (ADR-294 D3/D7): a chain
-      // member after the first legally pins no seed.
-      chain,
-      // Live emission: the runner announces the transcript before its first
-      // command and each command as it completes, so the stream is a log of
-      // the run rather than a summary of it.
-      observer: {
-        onTranscriptStart: (started) => {
-          stream?.transcriptStart(started.file, index, { commandCount: started.commandCount });
-          if (!json) reportTranscriptStart({ filePath: started.file, title: transcript.header.title });
-        },
-        onCommandResult: (command) => {
-          stream?.commandResult(transcriptPath, command, captureOutput);
-          if (!json) reportCommandResult(command, { verbose });
-        },
-      },
-    });
-    results.push(result);
-    stream?.transcriptEnd(result);
-    // The header and per-command rows already printed as the transcript ran;
-    // only the closing lines are left.
-    if (!json) reportTranscriptEnd(result);
-    if (stopOnFailure && result.failed > 0) break;
-  }
-
-  const runResult = aggregateTestRun(results);
-  if (!json && results.length > 1) reportTestRun(runResult, { verbose });
-
-  // ADR-293 D15: the one-line summary always prints (human mode); --coverage
-  // adds the full breakdown, or — in --json mode — the coverage record on
-  // the wire, before run-end.
-  const report = coverageTracker.buildReport();
-  if (json) {
-    if (coverage) stream?.coverage(report);
-  } else {
-    info('');
-    info(formatCoverageSummary(report));
-    if (coverage) {
-      info('');
-      info(formatCoverageBreakdown(report));
-    }
-  }
-
-  const code = loadError ? 3 : getExitCode(runResult);
-  stream?.runEnd(runResult, code);
-  return code;
 }

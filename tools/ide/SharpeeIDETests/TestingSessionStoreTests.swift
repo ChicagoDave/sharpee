@@ -1,7 +1,8 @@
 // TestingSessionStoreTests.swift
-// The D8 session sidecar (ADR-306): persistence round-trips, the replay
-// plan's fence/boot rules, and degraded-mode loads. Every test asserts on
-// the FILE's state or the derived plan, not on in-memory echoes alone.
+// The D7 view-state sidecar (ADR-307): persistence round-trips and
+// degraded-mode loads. The tree document owns commands/structure/claims —
+// the sidecar carries ONLY the page's view state, opaque. Every test
+// asserts on the FILE's state, not on in-memory echoes alone.
 // Owner context: tools/ide — Tests.
 
 import XCTest
@@ -28,140 +29,83 @@ final class TestingSessionStoreTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    private func fileJSON() throws -> [String: Any] {
+    func testViewStateRoundTripsThroughTheFile() throws {
+        let store = TestingSessionStore(fileURL: fileURL)
+        store.updateViewState([
+            "active": 2,
+            "dialogs": [["0:1", ["type": "save", "slot": "before-the-gates"]]],
+        ])
+
+        // The FILE carries version + view, nothing else — no command log.
         let data = try Data(contentsOf: fileURL)
-        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-    }
-
-    func testAppendPersistsTheCommandLogToDisk() throws {
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "north", "boot": false])
-
-        let object = try fileJSON()
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(object["version"] as? Int, TestingSessionStore.version)
-        let commands = try XCTUnwrap(object["commands"] as? [[String: Any]])
-        XCTAssertEqual(commands.map { $0["command"] as? String }, ["look", "north"])
-    }
+        XCTAssertNil(object["commands"], "the sidecar carries no command log (D7)")
+        let view = try XCTUnwrap(object["view"] as? [String: Any])
+        XCTAssertEqual(view["active"] as? Int, 2)
 
-    func testViewStatePersistsOpaquely() throws {
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.updateViewState(["segments": [["start": 2, "end": 3, "collapsed": false]],
-                               "skipped": [Int]()])
-
-        let object = try fileJSON()
-        let state = try XCTUnwrap(object["viewState"] as? [String: Any])
-        let segments = try XCTUnwrap(state["segments"] as? [[String: Any]])
-        XCTAssertEqual(segments.first?["start"] as? Int, 2)
-    }
-
-    func testReplayPlanExcludesBootLooksAndDeadLineage() throws {
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "north", "boot": false])
-        store.append(["fence": true])
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "east", "boot": false])
-        store.append(["command": "take lamp", "boot": false])
-
-        // A reloaded store derives the same plan — the file is the truth.
+        // A fresh store loads it back verbatim.
         let reloaded = TestingSessionStore(fileURL: fileURL)
         XCTAssertTrue(reloaded.load())
-        let plan = reloaded.replayPlan()
-        XCTAssertEqual(plan.replay, ["east", "take lamp"],
-                       "dead lineage never replays; boot looks play themselves")
+        XCTAssertEqual(reloaded.viewState?["active"] as? Int, 2)
     }
 
-    func testLoadRoundTripsViewState() throws {
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.updateViewState(["segments": [["start": 1, "collapsed": true]]])
-
-        let reloaded = TestingSessionStore(fileURL: fileURL)
-        XCTAssertTrue(reloaded.load())
-        let state = try XCTUnwrap(reloaded.replayPlan().viewState)
-        XCTAssertEqual((state["segments"] as? [[String: Any]])?.first?["collapsed"] as? Bool,
-                       true)
-    }
-
-    func testMissingCorruptAndMismatchedFilesDegradeToEmpty() throws {
-        // Missing.
-        XCTAssertFalse(TestingSessionStore(fileURL: fileURL).load())
-
-        // Corrupt.
-        try Data("not json{{{".utf8).write(to: fileURL)
-        let corrupt = TestingSessionStore(fileURL: fileURL)
-        XCTAssertFalse(corrupt.load())
-        XCTAssertTrue(corrupt.replayPlan().isEmpty)
-
-        // Version mismatch.
-        let future = ["version": TestingSessionStore.version + 1,
-                      "commands": [["command": "look"]]] as [String: Any]
-        try JSONSerialization.data(withJSONObject: future).write(to: fileURL)
-        XCTAssertFalse(TestingSessionStore(fileURL: fileURL).load())
-
-        // The degraded store's next write replaces the bad file (AC-2's
-        // "replaced on the next session write").
-        corrupt.append(["command": "look", "boot": true])
-        let object = try fileJSON()
-        XCTAssertEqual(object["version"] as? Int, TestingSessionStore.version)
-    }
-
-    func testForkFenceWithholdsTheLinearReplayPlan() throws {
-        // A driver fork boot (Phase 5): the log after it interleaves replayed
-        // prefix commands with branch turns — a linear replay across it would
-        // be garbage, so the plan is withheld; the page's composite drives.
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "north", "boot": false])
-        store.append(["command": "restart", "boot": false])   // the driver's ack
-        store.append(["fence": true, "fork": true])
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "north", "boot": false])     // replayed prefix
-        store.append(["command": "east", "boot": false])      // the alternate
-
-        let reloaded = TestingSessionStore(fileURL: fileURL)
-        XCTAssertTrue(reloaded.load())
-        XCTAssertEqual(reloaded.replayPlan().replay, [],
-                       "a fork fence in the live tail withholds linear replay")
-    }
-
-    func testAuthorFenceAfterAForkStillTruncatesToTheNewLineage() throws {
-        // An author restart AFTER forks: everything before it is dead —
-        // including the fork fences — and the linear plan works again.
-        let store = TestingSessionStore(fileURL: fileURL)
-        store.append(["command": "look", "boot": true])
-        store.append(["fence": true, "fork": true])
-        store.append(["command": "north", "boot": false])
-        store.append(["fence": true])                          // author restart
-        store.append(["command": "look", "boot": true])
-        store.append(["command": "west", "boot": false])
-
-        let reloaded = TestingSessionStore(fileURL: fileURL)
-        XCTAssertTrue(reloaded.load())
-        XCTAssertEqual(reloaded.replayPlan().replay, ["west"])
-    }
-
-    func testVersionOneSidecarsAreDiscardedOnLoad() throws {
-        // Phase 5 bumped the shape (fork fences + composite view state):
-        // a v1 file is degraded mode by rule, never a migration.
-        let v1 = ["version": 1,
-                  "commands": [["command": "look", "boot": true]]] as [String: Any]
-        try JSONSerialization.data(withJSONObject: v1).write(to: fileURL)
+    func testMissingFileLoadsEmptyWithoutError() {
         let store = TestingSessionStore(fileURL: fileURL)
         XCTAssertFalse(store.load())
-        XCTAssertTrue(store.replayPlan().isEmpty)
+        XCTAssertNil(store.viewState)
     }
 
-    func testSidecarPathIsPerStoryAndPerProject() {
-        let projectA = URL(fileURLWithPath: "/Users/a/stories/manor")
-        let projectB = URL(fileURLWithPath: "/Users/b/other/manor")
-        let base = URL(fileURLWithPath: "/tmp/support")
-        let a = TestingSessionStore.url(storyId: "manor", projectRoot: projectA, base: base)
-        let b = TestingSessionStore.url(storyId: "manor", projectRoot: projectB, base: base)
-        XCTAssertNotEqual(a, b, "same story id in two projects must not share a session")
-        XCTAssertTrue(a.lastPathComponent.hasPrefix("manor-"))
-        XCTAssertTrue(a.path.contains("testing-sessions"))
+    func testCorruptFileDegradesAndIsReplacedOnNextWrite() throws {
+        try Data("not json at all {{{".utf8).write(to: fileURL)
+        let store = TestingSessionStore(fileURL: fileURL)
+        XCTAssertFalse(store.load())
+        XCTAssertNil(store.viewState)
+
+        store.updateViewState(["active": 0])
+        let reloaded = TestingSessionStore(fileURL: fileURL)
+        XCTAssertTrue(reloaded.load())
+        XCTAssertEqual(reloaded.viewState?["active"] as? Int, 0)
+    }
+
+    func testVersionMismatchedFileIsDiscardedOnLoad() throws {
+        // A v2 sidecar (the retired command-log shape) must read as absent —
+        // the tree document owns what it used to carry.
+        let stale: [String: Any] = [
+            "version": 2,
+            "commands": [["command": "look", "boot": true]],
+            "viewState": ["model": ["lineages": []]],
+        ]
+        try JSONSerialization.data(withJSONObject: stale).write(to: fileURL)
+        let store = TestingSessionStore(fileURL: fileURL)
+        XCTAssertFalse(store.load())
+        XCTAssertNil(store.viewState)
+    }
+
+    func testUnserializableViewStateLeavesThePreviousFileIntact() throws {
+        let store = TestingSessionStore(fileURL: fileURL)
+        store.updateViewState(["active": 1])
+        let before = try Data(contentsOf: fileURL)
+
+        // A payload JSONSerialization cannot encode is swallowed (observation
+        // never breaks play) — the previous bytes stay.
+        store.updateViewState(["bad": Date()])
+        let after = try Data(contentsOf: fileURL)
+        XCTAssertEqual(after, before)
+    }
+
+    func testSidecarURLIsKeyedByStoryAndProjectRoot() {
+        let base = tmp.appendingPathComponent("support", isDirectory: true)
+        let one = TestingSessionStore.url(
+            storyId: "fernhill",
+            projectRoot: URL(fileURLWithPath: "/projects/alpha"), base: base)
+        let two = TestingSessionStore.url(
+            storyId: "fernhill",
+            projectRoot: URL(fileURLWithPath: "/projects/beta"), base: base)
+        XCTAssertNotEqual(one, two,
+                          "same-named stories in different projects never share a session")
+        XCTAssertTrue(one.lastPathComponent.hasPrefix("fernhill-"))
+        XCTAssertTrue(one.path.contains("testing-sessions"))
     }
 }

@@ -30,6 +30,7 @@ import { lintHatchSources, type HatchLintFinding } from '../hatch-lint.js';
 // implementation — also used by the author-game loader behind
 // `sharpee test`/`play`).
 import { requireHatchModule, makeFsImportResolver } from '../standalone/author-game.js';
+import { configPathFor, readStoryConfig } from '../standalone/story-config.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [--json] [-o <ir.json>]';
 
@@ -68,6 +69,26 @@ export function runComposeGates(file: string): ComposeGatesResult {
   // Lazy require (introspect.ts pattern): pull the compiler only when composing.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
   const storyDir = path.dirname(path.resolve(file));
+
+  // ADR-309 D5: a broken config sidecar is a named gate error. Compose is a
+  // READ-ONLY surface — the IDE feeds it unsaved-buffer snapshots, so it
+  // never reconciles, mints, or writes (those are init/build/publish's and
+  // the IDE save path's moments); it only reports. A snapshot's stem finds
+  // no config and reads as ABSENT, which is not an error here — the broken
+  // case surfaces on every on-disk compose of the real story file.
+  const configPath = configPathFor(file);
+  const configRead = readStoryConfig(configPath);
+  const configDiagnostics: ComposeDiagnostic[] =
+    configRead.status === 'broken'
+      ? [{
+          severity: 'error' as const,
+          code: 'story-config.broken',
+          message: `${path.basename(configPath)} is broken — ${configRead.message}. The story config is the canonical home of the story's IFID (ADR-309); fix or restore it, never re-mint.`,
+          file: configPath,
+          line: 1,
+        }]
+      : [];
+
   const compile = chord.compile(readFileSync(file, 'utf-8'), {
     importResolver: makeFsImportResolver(storyDir),
   });
@@ -81,6 +102,7 @@ export function runComposeGates(file: string): ComposeGatesResult {
   );
 
   const diagnostics: ComposeDiagnostic[] = [
+    ...configDiagnostics,
     ...compile.diagnostics.map((d) => ({
       severity: d.severity,
       code: d.code,
@@ -98,7 +120,12 @@ export function runComposeGates(file: string): ComposeGatesResult {
     })),
   ];
 
-  return { compile, hatchFindings, diagnostics, ok: compile.ok && hatchFindings.length === 0 };
+  return {
+    compile,
+    hatchFindings,
+    diagnostics,
+    ok: compile.ok && hatchFindings.length === 0 && configDiagnostics.length === 0,
+  };
 }
 
 /**
@@ -180,6 +207,12 @@ export async function runCompose(rest: string[]): Promise<number> {
   }
   if (gates.hatchFindings.length > 0) {
     console.error(`compose: ${file} hatch source references chord.* (${gates.hatchFindings.length} hit(s))`);
+    return 1;
+  }
+  if (!gates.ok) {
+    // Compile ok, no hatch findings — the remaining gate is the story config
+    // (ADR-309 D5): broken is a named failure, already printed above.
+    console.error(`compose: ${file} has a broken story config (story-config.broken)`);
     return 1;
   }
 

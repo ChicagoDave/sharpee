@@ -13,8 +13,6 @@ import AppKit
 @MainActor
 final class ProjectPaneCollapseTests: XCTestCase {
 
-    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
-    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
     private static let legacyFramesKey = "NSSplitView Subview Frames SharpeeIDEMainSplit"
 
     private func pump(_ seconds: TimeInterval = 0.1) {
@@ -42,15 +40,13 @@ final class ProjectPaneCollapseTests: XCTestCase {
         return nil
     }
 
-    /// Runs `body` with the split's persisted widths AND the persisted session
-    /// cleared, restoring both afterward — these tests toggle the pane, which
-    /// writes a real SessionState entry.
+    /// Runs `body` with the persisted session (which now carries the pane
+    /// widths — David 2026-08-09) and recents cleared, restoring both
+    /// afterward — these tests toggle the pane and load throwaway projects,
+    /// which write real entries.
     private func withCleanDefaults(_ body: () throws -> Void) rethrows {
         let defaults = UserDefaults.standard
-        // Snap is cleared too — toggling the pane re-splits the editor and Play
-        // panes when it is on, and these tests must not depend on that setting.
-        let keys = [Self.legacyFramesKey, Self.projectWidthKey, Self.playWidthKey,
-                    "SharpeeSnapPanesEvenly", SessionStateStore.key]
+        let keys = [Self.legacyFramesKey, SessionStateStore.key, RecentProjectsStore.key]
         let saved = keys.map { defaults.object(forKey: $0) }
         defer {
             for (key, value) in zip(keys, saved) {
@@ -60,6 +56,18 @@ final class ProjectPaneCollapseTests: XCTestCase {
         }
         keys.forEach { defaults.removeObject(forKey: $0) }
         try body()
+    }
+
+    /// A throwaway story project on disk — pane widths persist only once a
+    /// project is open (the launch invariant).
+    private func makeTempProject() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SharpeeIDE-ProjectPaneCollapseTests-\(UUID().uuidString)",
+                                    isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try "story \"pane\"".write(to: dir.appendingPathComponent("pane.story"),
+                                   atomically: true, encoding: .utf8)
+        return dir
     }
 
     private func launchWindow() throws -> (MainWindowController, NSWindow, NSSplitView) {
@@ -127,21 +135,25 @@ final class ProjectPaneCollapseTests: XCTestCase {
 
     func testCollapseDoesNotOverwriteTheSavedPaneWidth() throws {
         try withCleanDefaults {
+            let project = try makeTempProject()
+            defer { try? FileManager.default.removeItem(at: project) }
             let (controller, window, split) = try launchWindow()
             defer { window.orderOut(nil) }
+            controller.loadProject(Project(rootURL: project))
+            pump()
 
-            // Drag the pane wider, which persists the new width.
+            // Drag the pane wider, which persists the new width in the session.
             let railWidth = split.arrangedSubviews[0].frame.width
             split.setPosition(railWidth + 320, ofDividerAt: 1)
             pump()
-            let saved = UserDefaults.standard.object(forKey: Self.projectWidthKey) as? Double
+            let saved = SessionStateStore.load()?.projectPaneWidth
             XCTAssertEqual(try XCTUnwrap(saved), 320, accuracy: 2,
                            "a drag must persist the pane width")
 
             controller.toggleProjectPane()
             pump(0.2)   // let the hide's resize notifications fire
 
-            let afterCollapse = UserDefaults.standard.object(forKey: Self.projectWidthKey) as? Double
+            let afterCollapse = SessionStateStore.load()?.projectPaneWidth
             XCTAssertEqual(try XCTUnwrap(afterCollapse), 320, accuracy: 2,
                            "collapsing must NOT write the collapsed 0 width over the saved one")
 

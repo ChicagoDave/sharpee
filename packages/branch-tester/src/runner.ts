@@ -29,14 +29,18 @@ import {
   CommandResult,
   AssertionResult,
   TranscriptResult,
+  TestRunResult,
   RunnerOptions,
   TestEventInfo,
   EntityTraitSnapshot,
   WorldEntityRef,
   WorldSnapshot
 } from './types.js';
-import { synthesizePolicyAssertions } from './auto-assertion.js';
-import { serializeTranscript } from './serializer.js';
+import {
+  proseTextLinesOf,
+  synthesizeOpeningAssertions,
+  synthesizePolicyAssertions,
+} from './auto-assertion.js';
 import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
 /**
@@ -75,6 +79,10 @@ interface GameEngine {
    * be un-flattened, which is why both exist.
    */
   lastChannelValues?: Record<string, unknown[]>;
+  /** Channel values captured during BOOT (banner, prologue) — the opening's
+   *  claims read these; per-command resets never see them (bootstrap D-note,
+   *  David 2026-08-09). */
+  bootChannelValues?: Record<string, unknown[]>;
   world?: WorldModel;
   /**
    * The underlying platform engine. $save/$restore go through its real
@@ -152,6 +160,28 @@ function allAssertionsOf(transcript: Transcript): Assertion[] {
 }
 
 /**
+ * Aggregate per-transcript results into a run result — the one shared
+ * reduce (ADR-277 D1 Consequences). Lives here since the cutover retired
+ * the NDJSON record builders it once shared a module with: transcript-tester
+ * owns the wire, but its result types are narrower than this package's claim
+ * vocabulary, so the aggregation over THESE results stays in this package.
+ *
+ * @param transcripts Results in run order, including error-status entries.
+ * @returns Totals over every entry; `totalErrors` counts `status: 'error'`.
+ */
+export function aggregateTestRun(transcripts: TranscriptResult[]): TestRunResult {
+  return {
+    transcripts,
+    totalPassed: transcripts.reduce((sum, r) => sum + r.passed, 0),
+    totalFailed: transcripts.reduce((sum, r) => sum + r.failed, 0),
+    totalExpectedFailures: transcripts.reduce((sum, r) => sum + r.expectedFailures, 0),
+    totalSkipped: transcripts.reduce((sum, r) => sum + r.skipped, 0),
+    totalErrors: transcripts.filter((r) => r.status === 'error').length,
+    totalDuration: transcripts.reduce((sum, r) => sum + r.duration, 0),
+  };
+}
+
+/**
  * Run a single transcript against an engine.
  *
  * Parse errors never execute (AC-4); everything else runs the assertion
@@ -200,10 +230,18 @@ export async function runTranscript(
  *
  * Carries a synthetic command so it prints in sequence with the real ones; the
  * opening is not something anybody typed, and the label says so.
+ *
+ * Prose forms read everything the player saw through the first command: every
+ * channel captured on it (the banner and the prologue travel on their own
+ * channels) plus its main output. They used to check against the empty
+ * string — a plain `[OK: contains]` opening claim could never pass, which
+ * broke the testing surface's opening card (David, 2026-08-09). Channel
+ * forms remain for per-channel precision.
  */
 function openingResult(
   opening: Assertion[],
-  engine: GameEngine
+  engine: GameEngine,
+  firstCommandOutput: string
 ): CommandResult {
   const command: TranscriptCommand = {
     lineNumber: 0,
@@ -212,8 +250,41 @@ function openingResult(
     assertions: opening
   };
 
+  /** Every human-readable string a channel value carries: prose trees via
+   *  the synthesis reader, plus banner-style JSON objects whose string
+   *  properties ARE the rendered lines (title, storyVersion, credits — the
+   *  client emits them verbatim, so a claim quotes them verbatim). */
+  const textOfValue = (value: unknown): string[] => {
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) return value.flatMap(textOfValue);
+    if (value !== null && typeof value === 'object') {
+      if ('content' in (value as Record<string, unknown>)) {
+        return proseTextLinesOf([value]);
+      }
+      return Object.values(value as Record<string, unknown>).flatMap(textOfValue);
+    }
+    return [];
+  };
+  const channelText = [
+    ...Object.values(engine.bootChannelValues ?? {}),
+    ...Object.values(engine.lastChannelValues ?? {}),
+  ]
+    .flatMap((values) => (values ?? []).flatMap(textOfValue))
+    .map((text) => text.trim())
+    .filter((text) => text.length > 0)
+    .join('\n');
+  const openingOutput = [channelText, firstCommandOutput]
+    .filter((text) => text.length > 0)
+    .join('\n');
+
+  // Channel-form opening claims read the boot's captures first — the banner
+  // and prologue channels flush at boot, not inside any command.
+  const openingChannels = {
+    ...(engine.lastChannelValues ?? {}),
+    ...(engine.bootChannelValues ?? {}),
+  };
   const assertionResults = opening.map((assertion) =>
-    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannelValues)
+    checkAssertion(assertion, openingOutput, '', [], engine.world, openingChannels)
   );
   const passed = assertionResults.every((r) => r.passed);
   const firstFailure = assertionResults.find((r) => !r.passed && r.message)?.message;
@@ -423,8 +494,12 @@ async function runAssertion(
     results.push(result);
     options.observer?.onCommandResult?.(result);
   };
-  /** Opening assertions run once, after the first command flushes the opening. */
-  let openingChecked = (transcript.opening?.length ?? 0) === 0;
+  /** Opening assertions run once, after the first command flushes the opening.
+   *  Authored claims win; with none, the opening's DEFAULTS synthesize live
+   *  from the boot captures under a policy (ADR-307 open question D: prologue,
+   *  title, description) — each piece self-gated on its channel having been
+   *  captured, so sessions that never declared them are unchanged. */
+  let openingChecked = false;
   /** Any command's assertions were policy-written this run → rewrite the file. */
   let policyWroteAssertions = false;
 
@@ -474,14 +549,25 @@ async function runAssertion(
 
     const result = await runCommand(command, engine, options, synthesize);
     if (result.autoAsserted) policyWroteAssertions = true;
-    options.coverage?.collectFrom(engine.lastEvents);
 
     // The banner and the prologue are said on the way to the first command, so
     // that is the turn whose capture carries them. Checked once, and reported
     // ahead of the command that flushed them because that is where they read.
     if (!openingChecked) {
       openingChecked = true;
-      record(openingResult(transcript.opening!, engine));
+      // Same capture surface as `openingResult`: the banner/prologue/info
+      // flush rides the FIRST command's captures on a real engine (the boot
+      // snapshot is often empty) — merge both, boot values winning.
+      const openingClaims =
+        (transcript.opening?.length ?? 0) > 0
+          ? transcript.opening!
+          : synthesizeOpeningAssertions(engine.autoAssertionPolicy, {
+              ...(engine.lastChannelValues ?? {}),
+              ...(engine.bootChannelValues ?? {}),
+            });
+      if (openingClaims.length > 0) {
+        record(openingResult(openingClaims, engine, result.actualOutput));
+      }
     }
 
     record(result);
@@ -503,14 +589,6 @@ async function runAssertion(
     if (unfired) {
       record(forcesFailResult(transcript, unfired));
     }
-  }
-
-  // Phase 6e (#253): the policy's writes land in the FILE — the runner
-  // mutated the parsed transcript in memory (assertions pushed onto bare
-  // commands); one serialize makes disk agree. The serializer round-trips
-  // comments and formatting, so untouched content survives byte-for-byte.
-  if (policyWroteAssertions && transcript.filePath) {
-    fs.writeFileSync(transcript.filePath, serializeTranscript(transcript));
   }
 
   const passed = results.filter(r => r.passed && !r.skipped).length;

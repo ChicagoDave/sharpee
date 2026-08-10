@@ -375,6 +375,9 @@ export type LoadPhaseReporter = (name: 'compile' | 'load', status: 'started' | '
  * @param target a project directory, or a path ending in `.story`
  * @param opts.entry optional story sub-entry (module projects only; ignored
  *   for `.story` sources, matching the platform bundle's contract)
+ * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
+ *   the assembler — the tree-document runner derives these from the
+ *   document's channel claims (ADR-307 Phase 2)
  * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
@@ -382,6 +385,7 @@ export type LoadPhaseReporter = (name: 'compile' | 'load', status: 'started' | '
 export declare function loadAuthorGame(target: string, opts?: {
     entry?: string;
     seed?: number;
+    channels?: string[];
     onPhase?: LoadPhaseReporter;
 }): Promise<LoadedGame>;
 ```
@@ -1328,15 +1332,12 @@ export interface StreamableCommandResult {
      */
     ending?: 'victory' | 'defeat' | 'quit';
     /**
-     * Golden divergence (replay failure) or re-record review (passing turn that
-     * changed from the previous recording, R6). Carried verbatim — the runner
-     * computed it, the wire only moves it.
+     * The first failed assertion's message (`Output does not contain "…"`).
+     * Carried verbatim — the runner computed it, the wire only moves it.
+     * Optional because only harnesses that compute it (branch-tester's) say;
+     * a result without it emits an event without one.
      */
-    diff?: {
-        recorded: string[];
-        actual: string[];
-        channel?: string;
-    };
+    failure?: string;
     /**
      * The world after this command (R3), captured under `--capture-world`.
      * Carried verbatim; structurally the wire's `WorldSnapshot`.
@@ -1351,6 +1352,17 @@ export interface StreamableCommandResult {
             token: string;
         }>;
     };
+    /**
+     * Every evaluated assertion's verdict, in authored order — the wire's
+     * `AssertionOutcome[]` (run detail view, ADR-307 / David 2026-08-10).
+     * The CALLER renders descriptions (assertion shapes are the harness's
+     * domain); the wire only moves them.
+     */
+    assertionResults?: Array<{
+        description: string;
+        passed: boolean;
+        message?: string;
+    }>;
 }
 /** What the stream needs from a whole run's aggregate. Same reasoning. */
 export interface StreamableRunResult {

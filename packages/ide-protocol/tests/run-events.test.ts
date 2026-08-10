@@ -160,6 +160,43 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, failure: ['two', 'messages'] })).toBe(false);
   });
 
+  it('accepts a command-result with and without assertion detail, rejecting malformed verdicts', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: '/t/a.transcript',
+      line: 7,
+      input: 'north',
+      passed: false,
+      expectedFailure: false,
+      skipped: false,
+    };
+    const detail = [
+      { description: 'contains "gravel crunching"', passed: true },
+      { description: 'contains "roses"', passed: false, message: 'Output does not contain "roses"' },
+    ];
+    expect(isCommandResultEvent({ ...base, assertionResults: detail })).toBe(true);
+    expect(isCommandResultEvent({ ...base, assertionResults: [] })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, assertionResults: 'contains "roses"' })).toBe(false);
+    expect(isCommandResultEvent({ ...base, assertionResults: [{ passed: true }] })).toBe(false);
+    expect(
+      isCommandResultEvent({ ...base, assertionResults: [{ description: 7, passed: true }] }),
+    ).toBe(false);
+    expect(
+      isCommandResultEvent({
+        ...base,
+        assertionResults: [{ description: 'contains "x"', passed: 'yes' }],
+      }),
+    ).toBe(false);
+    expect(
+      isCommandResultEvent({
+        ...base,
+        assertionResults: [{ description: 'contains "x"', passed: false, message: 7 }],
+      }),
+    ).toBe(false);
+  });
+
   it('accepts world snapshots on transcript-start and command-result, rejecting malformed ones', () => {
     const world = {
       location: { name: 'Entrance Hall', token: 'hall' },

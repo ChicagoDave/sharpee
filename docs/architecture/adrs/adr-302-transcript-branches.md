@@ -1,6 +1,7 @@
 # ADR-302: Transcript Branches — Testing Authored Variation
 
-**Status**: **ACCEPTED** (2026-08-05, session 5113ca) — all ten questions resolved by interview and review, `adr-review` clean on re-check. Design only; nothing here is implemented.
+**Status**: **ACCEPTED**, SUPERSEDED IN PART by [ADR-307](adr-307-testing-tree-model-v2.md) (cutover landed 2026-08-10, session ed3730) — superseded: D1's `continues:`-file at-rest representation *for the Chord/IDE testing world*, whose tree now serializes as one JSON document (`<story-id>.tests.json`); the transcript grammar, parser/serializer, and stem-rename cascade are deleted from `@sharpee/branch-tester`. The tree SEMANTICS this ADR decided (one parent, shared prefixes run once, unreached vs failed) live on in the document walker. `@sharpee/transcript-tester`'s hand-authored text world is untouched.
+*Original acceptance*: 2026-08-05, session 5113ca — all ten questions resolved by interview and review, `adr-review` clean on re-check.
 **Date**: 2026-08-05 (session 5113ca)
 **Supersedes in part**: ADR-300 D17 (chain membership as convention, not grammar)
 **Relates to**: ADR-293 (forcing, coverage, outcome search), ADR-294 D4 (`[IF:]` removed), ADR-299 (the skein's branching, superseded)

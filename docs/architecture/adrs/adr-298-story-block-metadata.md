@@ -159,6 +159,17 @@ matching `ifidChannel`'s existing sparse-suppression on empty — and
 compliance is enforced exactly where it matters (publication); test fixtures
 and casual/learning stories stay IFID-free with no escape hatch needed.
 
+> **SUPERSEDED IN PART by [ADR-309](adr-309-tool-owned-ifid.md)** (2026-08-10,
+> session ed3730). Two halves of D5 no longer hold: the **provenance**
+> (`sharpee init` mints, "stories that predate init use `sharpee ifid`") — the
+> canonical home is now `<story-name>.config.json`, written by BOTH hosts at
+> creation, and a legacy story's value is adopted into one automatically; and
+> the **missing-IFID warning**, which is deleted — the toolchain renders the
+> header line from the config on every save and build, so an absent line is a
+> state the tool repairs rather than one an author is told about. What stands:
+> `ifid:` as a story-block field carried AST → IR → `StoryConfig.ifid` →
+> `ifidChannel`, and ADR-284's publish-time hard error as the backstop.
+
 ### D4-A1 — Amendment: ADR-252 D3's client-config keys join the closed set (GH #221, 2026-08-03)
 
 Implementation surfaced a collision this ADR had not reconciled: ADR-252 D3

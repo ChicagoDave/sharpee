@@ -1,15 +1,17 @@
 // TestingSurfaceViewController.swift
-// The testing play surface (ADR-306 Phase 3): a WKWebView hosting the story
-// bundle's TESTING page (index-testing.html — same client, no chrome) with
-// the IDE's card/segment UI injected over it. Turn-feed records the client
-// posts are logged to the D8 session sidecar and forwarded back into the
-// page, where the surface renders cards; the page posts its view-state
-// snapshots back for the sidecar. Reopening restores by replay: the sidecar's
-// live-lineage commands are typed into the client's real input at the pinned
-// seed (ADR-305 D1), so cards always show the current build's real output.
+// The testing play surface (ADR-307): a WKWebView hosting the story bundle's
+// TESTING page (index-testing.html — same client, no chrome) with the IDE's
+// tree-of-cards UI injected over it. Turn-feed records the client posts are
+// forwarded into the page, where the surface folds them into the tree
+// document; the page posts back the WHOLE serialized document (written to
+// `<story-id>.tests.json` beside the `.story` file — the one durable test
+// artifact) and its view-state sidecar (`{active, dialogs}` — D7 ephemera).
+// Reopening injects the document and the view state; the page replays the
+// tree through the client's real input at the pinned seed, so cards always
+// show the current build's real output.
 // The web view uses a non-persistent store — a testing session never touches
 // the Play pane's origin storage, and every load is a guaranteed fresh boot.
-// Public interface: load(bundleDirectory:), isLoaded, testsDirectory,
+// Public interface: load(bundleDirectory:), isLoaded, testDocumentURL,
 // storyFile, saveDocuments, policy, evaluateInSurface(_:),
 // showPlaceholder(_:), sessionStore.
 // Owner context: tools/ide — TestingSurface.
@@ -60,23 +62,23 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// The document-start boot script: the pinned play seed (ADR-305 D1),
     /// a cleared origin (belt and braces on top of the non-persistent
     /// store), no AudioContext (below), the deliver shim that queues
-    /// forwarded records until surface.js loads, and the restore payload
-    /// (ADR-306 D8).
+    /// forwarded records until surface.js loads, and the session payload —
+    /// the tree document's text plus the D7 view state (ADR-307).
     ///
     /// AudioContext is removed BEFORE the client runs because the client
     /// awaits `AudioContext.resume()` on every command, and WebKit resolves
     /// that promise only after a REAL user gesture — the surface's replay
-    /// driver types through synthetic events (D8 restore), which are not
-    /// gestures, so a real context would hang every replayed command
-    /// forever. Without the constructor the client's AudioManager takes its
-    /// designed instant-gain fallback: commands run, audio chrome is moot
-    /// in a testing session, and replay stays deterministic.
+    /// driver types through synthetic events, which are not gestures, so a
+    /// real context would hang every replayed command forever. Without the
+    /// constructor the client's AudioManager takes its designed
+    /// instant-gain fallback: commands run, audio chrome is moot in a
+    /// testing session, and replay stays deterministic.
     ///
-    /// confirm() is stubbed true for the same class of reason (Phase 5): a
-    /// WKWebView with no UI delegate answers every confirm() false, so a
-    /// typed `restart` — the branch driver's fresh-boot door, and a
-    /// legitimate author command (ADR-305 D3) — would silently do nothing.
-    /// A testing session has no unsaved progress worth a modal guard.
+    /// confirm() is stubbed true for the same class of reason: a WKWebView
+    /// with no UI delegate answers every confirm() false, so a typed
+    /// `restart` — the replay driver's fresh-boot door, and a legitimate
+    /// author command (ADR-305 D3) — would silently do nothing. A testing
+    /// session has no unsaved progress worth a modal guard.
     private static func bootScript(sessionJSON: String) -> String {
         """
         (function () {
@@ -102,42 +104,52 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// its own bundle.
     private let resourcesURL: URL?
 
-    /// The D8 session sidecar for the loaded story.
+    /// The D7 view-state sidecar for the loaded story.
     let sessionStore: TestingSessionStore
 
-    /// The project's `tests/` directory — where the auto-save writer lands
-    /// (design §4). Set by the opener before load; nil disables writes.
-    var testsDirectory: URL?
+    /// The story's tree document — `<story-id>.tests.json` beside the
+    /// `.story` file (ADR-307 D2/Q-2), the one durable test artifact and
+    /// `sharpee test --tree`'s discovery target. Set by the opener before
+    /// load; nil disables document reads and writes.
+    var testDocumentURL: URL?
 
-    /// The story file the run column's runs execute against (design §7).
-    /// Set by the opener before load; nil disables the Run button's work.
+    /// The story file the run column's runs execute against. Set by the
+    /// opener before load; nil disables the Run button's work.
     var storyFile: URL?
 
     /// Saves the IDE's open documents before a run — the run reads DISK.
     /// Returns false to abort the run. Set by the opener; nil = nothing to save.
     var saveDocuments: (() -> Bool)?
 
-    /// The run column's child `sharpee test --tree --json` process (§7).
+    /// The run column's child `sharpee test --tree --json` process.
     private let testRunner = TestRunner()
 
     /// Overrides run-executable resolution — the real-path suite injects the
     /// repo's devkit CLI, because a temp-dir story resolves neither a
     /// workspace shim nor a PATH install. Production leaves it nil and
-    /// resolves exactly as the Testing tab does.
+    /// resolves via the workspace shim / PATH / bundled toolchain tiers.
     var sharpeeExecutableOverride: URL?
 
-    /// The story's `auto-assertion:` policy raw value, read from the story
-    /// header at open; injected for in-page synthesis (6e).
+    /// True while a run column run is in flight — drives the Test menu.
+    var isRunningTests: Bool { testRunner.isRunning }
+
+    /// Test → Cancel Test Run: SIGTERM then SIGKILL; rows already filled stay.
+    func cancelTestRun() {
+        testRunner.cancel()
+    }
+
+    /// The story's DECLARED `auto-assertion:` policy raw value, read from the
+    /// story header at open; injected for in-page synthesis. nil when the
+    /// story declares none — the page then applies the platform default
+    /// (branch-tester's `DEFAULT_AUTO_ASSERTION_POLICY`, David 2026-08-10),
+    /// the same constant the CLI walker applies, so the shell never carries
+    /// its own copy of the default.
     var policy: String?
 
-    /// True until the next feed record, which is a lineage's automatic boot
-    /// look — logged with `boot: true` so replay plans can skip it.
-    private var expectBoot = true
-
-    /// Set when the page pre-announces a driver fork/switch boot (Phase 5):
-    /// the next restart fence logs as `fork: true` — a fresh lineage the
-    /// linear replay plan must never cross, not a dead one.
-    private var nextFenceIsFork = false
+    /// Room name → region name, derived from the Story IR (David 2026-08-10:
+    /// the page groups cards by region — derived data, never persisted in
+    /// the document). Empty = no regions, the board renders flat.
+    var regionByRoom: [String: String] = [:]
 
     /// The bundle directory currently loaded, or nil.
     private var loaded: URL?
@@ -160,8 +172,8 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
 
         let configuration = WKWebViewConfiguration()
         // Isolated and ephemeral: a testing session must never wipe or read
-        // the Play pane's origin storage, and D8 restores by replay — never
-        // from cached page state.
+        // the Play pane's origin storage, and restore replays the tree —
+        // never cached page state.
         configuration.websiteDataStore = .nonPersistent()
         schemeHandler.testingSurfaceDirectory =
             resourcesURL?.appendingPathComponent(TestingSurfaceWebRoot.folderName,
@@ -196,8 +208,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
 
     /// Loads a story bundle's testing page. The page must exist (a bundle
     /// built before ADR-306 Phase 2 has none) and the surface's own web
-    /// bundle must have shipped; each absence names its fix. Reads the
-    /// sidecar and injects the restore payload (D8) before the page boots.
+    /// bundle must have shipped; each absence names its fix. Reads the tree
+    /// document and the view-state sidecar and injects both (ADR-307)
+    /// before the page boots.
     func load(bundleDirectory: URL?) {
         guard let bundleDirectory else {
             loaded = nil
@@ -219,8 +232,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         }
 
         sessionStore.load()
-        expectBoot = true
-        installUserScripts(plan: sessionStore.replayPlan())
+        installUserScripts()
 
         loaded = bundleDirectory
         schemeHandler.rootDirectory = bundleDirectory
@@ -231,20 +243,31 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         webView.load(URLRequest(url: url))
     }
 
-    /// (Re)installs the document scripts, baking in the restore payload.
-    private func installUserScripts(plan: TestingReplayPlan) {
+    /// The story id the document is named for: the `.story` file's stem —
+    /// exactly the id `sharpee test --tree`'s discovery keys on.
+    private var documentStoryId: String? {
+        guard let testDocumentURL else { return nil }
+        let name = testDocumentURL.lastPathComponent
+        guard name.hasSuffix(".tests.json") else { return nil }
+        return String(name.dropLast(".tests.json".count))
+    }
+
+    /// (Re)installs the document scripts, baking in the session payload:
+    /// the tree document's bytes (when one exists), the story id and pinned
+    /// seed (a fresh tree's identity), the policy, and the D7 view state.
+    private func installUserScripts() {
         let contentController = webView.configuration.userContentController
         contentController.removeAllUserScripts()
 
-        var session: [String: Any] = [:]
-        if !plan.replay.isEmpty { session["replay"] = plan.replay }
-        if let viewState = plan.viewState { session["snapshot"] = viewState }
+        var session: [String: Any] = ["seed": PlayViewController.idePlaySeed]
+        if let storyId = documentStoryId { session["story"] = storyId }
+        if let testDocumentURL,
+           let text = try? String(contentsOf: testDocumentURL, encoding: .utf8) {
+            session["document"] = text
+        }
+        if let viewState = sessionStore.viewState { session["view"] = viewState }
         if let policy { session["policy"] = policy }
-        // Every `tests/*.transcript` rides along by stem (Phase 5): closed
-        // segments re-hydrate their claims from these — the files are the
-        // truth, the sidecar carries only pointers (ADR-306 D8).
-        let files = transcriptFiles()
-        if !files.isEmpty { session["files"] = files }
+        if !regionByRoom.isEmpty { session["regions"] = regionByRoom }
         let sessionJSON = (try? JSONSerialization.data(withJSONObject: session))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
@@ -282,86 +305,26 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         Task { _ = try? await evaluateInSurface(script) }
     }
 
-    /// Every transcript in the project's `tests/` by stem — the restore
-    /// payload's re-hydration source.
-    private func transcriptFiles() -> [String: String] {
-        guard let testsDirectory,
-              let files = try? FileManager.default.contentsOfDirectory(
-                  at: testsDirectory, includingPropertiesForKeys: nil) else { return [:] }
-        var byStem: [String: String] = [:]
-        for file in files where file.pathExtension == "transcript" {
-            if let content = try? String(contentsOf: file, encoding: .utf8) {
-                byStem[file.deletingPathExtension().lastPathComponent] = content
-            }
-        }
-        return byStem
-    }
+    // MARK: - The document writer (ADR-307 D1: one artifact, whole writes)
 
-    // MARK: - The auto-save writer (design §4)
-
-    /// A transcript stem the page derived — path-safe by construction
-    /// (slugified), but verified anyway: a name with a separator writes
-    /// nowhere.
-    private func transcriptURL(stem: String) -> URL? {
-        guard let testsDirectory,
-              !stem.isEmpty,
-              !stem.contains("/"), !stem.contains("\\"), !stem.contains("..") else { return nil }
-        return testsDirectory.appendingPathComponent(stem + ".transcript")
-    }
-
-    /// Writes one composed transcript; a rename deletes the old file and
-    /// cascades `continues:` in every child (the stem is the reference —
-    /// ADR-302 D14's mechanical rename, IDE-side over `tests/`).
-    private func performWrite(name: String, text: String, previousName: String?) {
-        guard let url = transcriptURL(stem: name) else { return }
+    /// Writes the tree document's bytes atomically — the page serializes,
+    /// Swift lands the file. A write failure is swallowed: observation must
+    /// never break play, and the page will post again on the next change.
+    private func performDocumentWrite(text: String) {
+        guard let testDocumentURL else { return }
         try? FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? text.data(using: .utf8)?.write(to: url, options: .atomic)
-        if let previousName, previousName != name,
-           let previousURL = transcriptURL(stem: previousName) {
-            try? FileManager.default.removeItem(at: previousURL)
-            cascadeContinues(from: previousName, to: name)
-        }
+            at: testDocumentURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true)
+        try? text.data(using: .utf8)?.write(to: testDocumentURL, options: .atomic)
     }
 
-    /// The auto-save mirror of a segment the author removed (untick, merge,
-    /// reopened range): its file goes; children keep their `continues:` and
-    /// surface the dangling parent in the tab's run, visibly.
-    private func performRemove(name: String) {
-        guard let url = transcriptURL(stem: name) else { return }
-        try? FileManager.default.removeItem(at: url)
-    }
+    // MARK: - The run column
 
-    /// Rewrites `continues: old` header lines to the new stem in every
-    /// transcript under `tests/` — header lines only (before `---`).
-    private func cascadeContinues(from oldStem: String, to newStem: String) {
-        guard let testsDirectory,
-              let files = try? FileManager.default.contentsOfDirectory(
-                  at: testsDirectory, includingPropertiesForKeys: nil) else { return }
-        for file in files where file.pathExtension == "transcript" {
-            guard let content = try? String(contentsOf: file, encoding: .utf8) else { continue }
-            var lines = content.components(separatedBy: "\n")
-            var changed = false
-            for index in lines.indices {
-                if lines[index].trimmingCharacters(in: .whitespaces) == "---" { break }
-                if lines[index].trimmingCharacters(in: .whitespaces) == "continues: \(oldStem)" {
-                    lines[index] = "continues: \(newStem)"
-                    changed = true
-                }
-            }
-            if changed {
-                try? lines.joined(separator: "\n").data(using: .utf8)?
-                    .write(to: file, options: .atomic)
-            }
-        }
-    }
-
-    // MARK: - The run column (design §7)
-
-    /// Runs the project's whole tree — the same `sharpee test --tree --json`
-    /// the Testing tab runs — and relays the stream into the page, which owns
-    /// decoding (DEVARCH 8b). One run at a time; the page's button already
-    /// guards, and this guard makes the property true rather than assumed.
+    /// Runs the story's tree — the same `sharpee test --tree --json` the CLI
+    /// user runs; discovery prefers the tree document (ADR-307 D6) — and
+    /// relays the stream into the page, which owns decoding (DEVARCH 8b).
+    /// One run at a time; the page's button already guards, and this guard
+    /// makes the property true rather than assumed.
     private func startTestRun() {
         guard !testRunner.isRunning else { return }
         guard let storyFile else {
@@ -369,7 +332,8 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             return
         }
         // The run reads disk; unsaved story edits would silently test stale
-        // source (the Testing tab's rule, same reason).
+        // source (the document itself is already on disk — the page writes
+        // it on every change).
         guard saveDocuments?() != false else {
             relayRunExit(ok: false, note: "A document could not be saved, so the run did not start.")
             return
@@ -434,21 +398,11 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
         case Self.turnEventsHandlerName:
+            // Records forward into the page verbatim — the page's model owns
+            // the session (ADR-307 D1); Swift keeps no command log (D7).
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
-                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-                return
-            }
-            if object["restart"] as? Bool == true {
-                sessionStore.append(nextFenceIsFork
-                    ? ["fence": true, "fork": true]
-                    : ["fence": true])
-                nextFenceIsFork = false
-                expectBoot = true
-            } else if let command = object["command"] as? String {
-                sessionStore.append(["command": command, "boot": expectBoot])
-                expectBoot = false
-            } else {
+                  (try? JSONSerialization.jsonObject(with: data)) is [String: Any] else {
                 return
             }
             forwardToSurface(recordJSON: body)
@@ -456,25 +410,18 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
                   let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }
-            if object["forkBoot"] as? Bool == true {
-                nextFenceIsFork = true
-            }
             if let state = object["state"] as? [String: Any] {
                 sessionStore.updateViewState(state)
             }
-            if let write = object["write"] as? [String: Any],
-               let name = write["name"] as? String,
-               let text = write["text"] as? String {
-                performWrite(name: name, text: text,
-                             previousName: write["previousName"] as? String)
-            }
-            if let remove = object["remove"] as? [String: Any],
-               let name = remove["name"] as? String {
-                performRemove(name: name)
+            if let document = object["document"] as? [String: Any],
+               let text = document["text"] as? String {
+                performDocumentWrite(text: text)
             }
             if object["run"] as? Bool == true {
                 startTestRun()
             }
+            // `forkBoot` pre-announcements ride this handler too; with no
+            // command log left there is nothing to mark — ignored by design.
         case Self.consoleHandlerName:
             if let text = message.body as? String {
                 NSLog("[testing-surface] %@", text)

@@ -17,8 +17,12 @@ Two things, both checked by the toolchain rather than by the app:
 - **The story compiles.** Problems tells you this continuously, so you will
   know long before you publish.
 - **The story has an IFID**, the identifier that distinguishes your work from
-  every other piece of interactive fiction. If yours does not have one,
-  Problems offers to generate it at compile time.
+  every other piece of interactive fiction. Yours does: Chord Writer gives a
+  story its IFID when it creates it, and keeps it in
+  `<story-name>.config.json`. The only way to reach this refusal is to publish
+  a story whose config file went missing — restore it from version control,
+  because publishing under a freshly minted identifier would make your story a
+  different work to every archive that already knows it.
 
 ## The artifact opens from a file
 

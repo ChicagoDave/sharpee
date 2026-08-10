@@ -26,9 +26,8 @@ const outDir = resolve(repoRoot, 'tools/ide/SharpeeIDE/Resources/testing-surface
 // dependency-free beyond its own types, so bundling from source costs nothing.
 const autoAssertion = resolve(repoRoot, 'packages/branch-tester/src/auto-assertion.ts');
 const runEvents = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
-const btSerializer = resolve(repoRoot, 'packages/branch-tester/src/serializer.ts');
-const btParser = resolve(repoRoot, 'packages/branch-tester/src/parser.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
+const btTreeDocument = resolve(repoRoot, 'packages/branch-tester/src/tree-document.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
@@ -42,13 +41,9 @@ const options = {
   absWorkingDir: repoRoot,
   alias: {
     '@sharpee/branch-tester/auto-assertion': autoAssertion,
-    '@sharpee/branch-tester/serializer': btSerializer,
-    '@sharpee/branch-tester/parser': btParser,
     '@sharpee/branch-tester/types': btTypes,
+    '@sharpee/branch-tester/tree-document': btTreeDocument,
     '@sharpee/ide-protocol/run-events': runEvents,
-    // The parser imports node's fs for its file-loading helper only; the
-    // surface parses text it already holds, so the browser build shims it.
-    'fs': resolve(here, 'src/shims/fs.ts'),
   },
   bundle: true,
   format: 'iife',

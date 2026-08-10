@@ -75,12 +75,12 @@ final class ProjectTreeGroupingTests: XCTestCase {
         let controller = laidOutController()
         let labels = try rowLabels(in: controller)
 
-        // David's ruling: a mature story has dozens of transcript tests, and
-        // opening every group pushes the later ones below the fold.
+        // David's ruling: only Story opens by default. The legacy tests/
+        // directory sits inside the collapsed Other group (ADR-307 cutover:
+        // tests live in the story's tests.json, shown only in the Testing tab).
         XCTAssertEqual(labels, [
             "Story", "the-lost-key.story",
             "Walkthroughs",
-            "Transcript Tests",
             "Assets",
             "Web Template",
             "Other",
@@ -90,14 +90,14 @@ final class ProjectTreeGroupingTests: XCTestCase {
     func testACollapsedGroupStillHoldsItsMembers() throws {
         let controller = laidOutController()
         let outline = try XCTUnwrap(findOutline(in: controller.view))
-        let row = try XCTUnwrap(try rowLabels(in: controller).firstIndex(of: "Transcript Tests"))
+        let row = try XCTUnwrap(try rowLabels(in: controller).firstIndex(of: "Walkthroughs"))
         let group = try XCTUnwrap(outline.item(atRow: row))
 
         // Collapsed is a starting state, not a filter — expanding must reveal
         // the real members, so nothing is hidden by the default.
         outline.expandItem(group)
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
-        XCTAssertTrue(try rowLabels(in: controller).contains("lantern.transcript"),
+        XCTAssertTrue(try rowLabels(in: controller).contains("wt-01-opening.transcript"),
                       "expanding a collapsed group must reveal its members")
     }
 
@@ -106,8 +106,10 @@ final class ProjectTreeGroupingTests: XCTestCase {
         let labels = try rowLabels(in: controller)
 
         // Groups are lenses, not folder mirrors: the folders whose contents were
-        // lifted into a group must not also appear as their own rows.
-        for folder in ["walkthroughs", "tests", "transcripts", "assets"] {
+        // lifted into a group must not also appear as their own rows. (tests/
+        // is no longer lensed — since the ADR-307 cutover it is an ordinary
+        // Other member, hidden here only because Other starts collapsed.)
+        for folder in ["walkthroughs", "assets"] {
             XCTAssertFalse(labels.contains(folder),
                            "\(folder) was mirrored as a row instead of being lensed into a group")
         }
@@ -120,15 +122,15 @@ final class ProjectTreeGroupingTests: XCTestCase {
 
         XCTAssertEqual(controller.revealTarget(forRow: row)?.standardizedFileURL,
                        root.appendingPathComponent("the-lost-key.story").standardizedFileURL)
-        XCTAssertEqual(outline.numberOfRows, 7, "fixture sanity: 6 groups + Story's one open member")
+        XCTAssertEqual(outline.numberOfRows, 6, "fixture sanity: 5 groups + Story's one open member")
     }
 
     func testRevealTargetIsTheBackingFolderForADirectoryBackedGroup() throws {
         let controller = laidOutController()
-        let row = try XCTUnwrap(try rowLabels(in: controller).firstIndex(of: "Transcript Tests"))
+        let row = try XCTUnwrap(try rowLabels(in: controller).firstIndex(of: "Walkthroughs"))
 
         XCTAssertEqual(controller.revealTarget(forRow: row)?.standardizedFileURL,
-                       root.appendingPathComponent("tests/transcripts").standardizedFileURL)
+                       root.appendingPathComponent("walkthroughs").standardizedFileURL)
     }
 
     func testRevealTargetFallsBackToTheProjectRootForAScatteredGroup() throws {

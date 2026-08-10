@@ -26,6 +26,7 @@ import { compile } from '@sharpee/chord';
 import { buildBrowser, type BrowserBuildEnv } from './browser-core.js';
 import { resolveEngineStylesDir } from './build-browser.js';
 import { findStoryFile, makeFsImportResolver } from './author-game.js';
+import { StoryConfigError, reconcileHeader } from './story-config.js';
 import { platformRanges } from './init.js';
 
 /** A refusal raised before anything is written. */
@@ -66,8 +67,11 @@ export interface PublishResult extends PublishTarget {
  * @returns the story's id and IFID
  * @throws PublishError `publish.story-missing` when the file is not there,
  *   `publish.compile-failed` when the story does not compile (publishing a
- *   story that cannot load is never what the author meant), or
- *   `publish.missing-ifid` when the header carries no `ifid:` (ADR-298 D5).
+ *   story that cannot load is never what the author meant),
+ *   `publish.story-config-broken` when the config sidecar exists but cannot
+ *   serve as identity (ADR-309 D5 — fix or restore it, never re-mint), or
+ *   `publish.missing-ifid` when the story has no identity anywhere —
+ *   ADR-309 D6's backstop; publish reconciles but never mints.
  */
 export function checkPublishable(storyFile: string): PublishTarget {
   const resolved = path.resolve(storyFile);
@@ -75,6 +79,19 @@ export function checkPublishable(storyFile: string): PublishTarget {
     throw new PublishError('publish.story-missing', `no such story file: ${storyFile}`);
   }
   const projectDir = path.dirname(resolved);
+
+  // ADR-309 D6: publish reconciles through the same shared function the
+  // builds use — but with minting DISABLED. Publication must never invent
+  // identity: a clone whose config went missing deserves the refusal below,
+  // not a silently forked IFID. Adoption (header → new config) still runs.
+  try {
+    reconcileHeader(resolved, { mint: false });
+  } catch (error) {
+    if (error instanceof StoryConfigError) {
+      throw new PublishError('publish.story-config-broken', error.message);
+    }
+    throw error;
+  }
 
   const result = compile(fs.readFileSync(resolved, 'utf-8'), {
     importResolver: makeFsImportResolver(projectDir),
@@ -95,14 +112,17 @@ export function checkPublishable(storyFile: string): PublishTarget {
   const ifid = fields.ifid;
 
   if (!ifid || ifid.trim() === '') {
-    // Publication is the point Treaty of Babel compliance becomes mandatory.
-    // Both fixes are named because both exist: the CLI mints one, and so does
-    // the Problems panel in Chord Writer.
+    // ADR-309 D6's backstop: reconciliation above adopts or renders identity
+    // whenever any exists, so reaching here means the story has NO identity
+    // anywhere — no config, no header line. Publication never invents one
+    // (a clone missing its committed config must refuse, not silently fork),
+    // so the remedy is a host that mints at a creation moment.
     throw new PublishError(
       'publish.missing-ifid',
-      `${path.basename(resolved)} has no \`ifid:\` — a published story needs a Treaty of ` +
-        `Babel identifier (ADR-074). Mint one with \`sharpee ifid\`, or use Generate IFID ` +
-        `on the Problems row in Chord Writer, then add it to the story header.`,
+      `${path.basename(resolved)} has no identity — no story config and no \`ifid:\` ` +
+        `header (ADR-074, ADR-309). If this story ever had one, restore its ` +
+        `\`<story-name>.config.json\` from version control; otherwise run ` +
+        `\`sharpee build\` once (or open the story in Chord Writer) to mint it.`,
     );
   }
 

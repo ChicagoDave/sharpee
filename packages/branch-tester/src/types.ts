@@ -5,7 +5,6 @@
  */
 
 import type { RandomForceSpec } from '@sharpee/core';
-import type { CoverageTracker } from './coverage.js';
 
 // ============================================================================
 // Directive Types
@@ -548,12 +547,6 @@ export interface RunnerOptions {
    * exactly as small as it was.
    */
   captureWorld?: boolean;
-  /**
-   * Run-scoped coverage accumulator (ADR-293 D15). One tracker per run —
-   * the CLI owns it so a chain's members fold into one report; the runner
-   * feeds it each command's `system.draw` trace events.
-   */
-  coverage?: CoverageTracker;
   /**
    * Watches execution as it happens (live terminal output, the `--json` event
    * stream). Absent → the runner behaves exactly as it did before observers

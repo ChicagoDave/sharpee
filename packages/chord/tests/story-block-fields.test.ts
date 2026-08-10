@@ -282,16 +282,22 @@ describe('bare phrase references (AC-4, compile-time half)', () => {
   });
 });
 
-describe('missing IFID (AC-5, compile-time half)', () => {
-  it('warns — and only warns — when ifid: is absent', () => {
+describe('an absent ifid: is not the compiler’s business (ADR-309)', () => {
+  // Was: a `analysis.missing-ifid` warning. The toolchain now owns the
+  // identifier — minted at creation, rendered into the header on save and
+  // build — so a story without the line is a state the tool repairs, not one
+  // the compiler reports. What must hold is that it compiles CLEANLY.
+  it('compiles with no diagnostic at all when ifid: is absent', () => {
     const { diagnostics } = compile('story\n  title: T\n');
-    const ifid = diagnostics.find((d) => d.code === 'analysis.missing-ifid');
-    expect(ifid?.severity).toBe('warning');
+    expect(diagnostics.map((d) => d.code)).not.toContain('analysis.missing-ifid');
     expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
 
-  it('does not warn when ifid: is present', () => {
-    const { diagnostics } = compile('story\n  title: T\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n');
-    expect(diagnostics.find((d) => d.code === 'analysis.missing-ifid')).toBeUndefined();
+  it('still carries the value through to the IR when it is present', () => {
+    const { ir, diagnostics } = compile(
+      'story\n  title: T\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n',
+    );
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(ir.meta.fields.ifid).toBe('12345678-ABCD-ABCD-ABCD-123456789ABC');
   });
 });

@@ -81,10 +81,28 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
     expect(game.lastChannels.chime).toEqual(['{"cue":"chime","gain":1}']);
   });
 
-  it('captures nothing when no channels are declared', async () => {
+  it('captures only the opening channels when none are declared (David 2026-08-09)', async () => {
     const game = assembleGame(makeStory(), { seed: 42 });
     await game.executeCommand('look');
-    expect(game.lastChannels).toEqual({});
+    // The banner and the prologue are ALWAYS captured — a transcript's
+    // opening claims read them via the boot snapshot. Nothing else joins
+    // the capture set without a channels: declaration.
+    expect(Object.keys(game.lastChannels)
+      .every((id) => id === 'banner' || id === 'prologue')).toBe(true);
+    expect(game.lastChannels.chime).toBeUndefined();
+  });
+
+  it('the banner reaches the opening\'s readers and the boot snapshot never re-takes', async () => {
+    const game = assembleGame(makeStory(), { seed: 42 });
+    await game.executeCommand('look');
+    // Via the boot snapshot when the engine flushes before any command, or
+    // the first command's own capture when it rides the first packet — the
+    // opening's readers merge both.
+    const opening = game.bootChannelValues.banner ?? game.lastChannelValues.banner;
+    expect(opening?.[0]).toMatchObject({ title: 'Channels Test' });
+    const snapshot = game.bootChannelValues;
+    await game.executeCommand('look');
+    expect(game.bootChannelValues).toBe(snapshot);   // never re-snapshotted
   });
 
   it('rejects an unknown declared channel by name', () => {

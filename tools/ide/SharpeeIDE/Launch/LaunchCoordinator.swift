@@ -58,12 +58,28 @@ final class LaunchCoordinator {
         self.storyRoot = storyRoot
     }
 
-    /// Shows the landing page.
+    /// Shows the landing page — or skips it entirely (David, 2026-08-09: the
+    /// reopen-last-story preference) when `reopenDirectly` is set and the
+    /// last project is still a story project on disk. An invalid or missing
+    /// last project falls back to the landing page rather than opening
+    /// nothing.
     ///
-    /// - Parameter lastProject: the project the previous session had open, so it
-    ///   is offered even if Open Recent was cleared.
-    func begin(lastProject: URL?) {
+    /// - Parameters:
+    ///   - lastProject: the project the previous session had open, so it is
+    ///     offered even if Open Recent was cleared.
+    ///   - reopenDirectly: when true, open `lastProject` without presenting
+    ///     the landing page.
+    func begin(lastProject: URL?, reopenDirectly: Bool = false) {
         self.lastProject = lastProject
+        if reopenDirectly, let lastProject {
+            var isDirectory: ObjCBool = false
+            let exists = FileManager.default.fileExists(atPath: lastProject.path,
+                                                        isDirectory: &isDirectory)
+            if exists, isDirectory.boolValue, StoryTarget.isStoryProject(lastProject) {
+                finish(with: lastProject)
+                return
+            }
+        }
         presentLandingPage()
     }
 

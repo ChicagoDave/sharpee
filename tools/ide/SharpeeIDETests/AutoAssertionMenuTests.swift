@@ -102,8 +102,9 @@ final class AutoAssertionMenuTests: XCTestCase {
             XCTAssertFalse(onDisk.contains("auto-assertion:"),
                            "nothing lands on disk until the author saves")
 
-            // Switching policies edits the same line in place; Let Me Decide
-            // removes it entirely.
+            // Switching policies edits the same line in place; the Default
+            // item removes it entirely (absent header = the platform default,
+            // David 2026-08-10).
             controller.selectAutoAssertion(.roomDescription)
             pump()
             XCTAssertEqual(controller.autoAssertionPolicy(), .roomDescription,
@@ -112,50 +113,11 @@ final class AutoAssertionMenuTests: XCTestCase {
             controller.selectAutoAssertion(nil)
             pump()
             XCTAssertNil(controller.autoAssertionPolicy(),
-                         "Let Me Decide removes the line")
+                         "the Default item removes the line")
             let cleared = try XCTUnwrap(controller.currentText(at: storyFile))
             XCTAssertFalse(cleared.contains("auto-assertion:"),
-                           "a header on let-me-decide says nothing")
+                           "an absent header rides the platform default — no line to keep")
         }
-    }
-
-    // MARK: - The policy reaches the Testing tab's live page (the 6e hop)
-
-    /// The one new cross-boundary hop this phase adds: TestController reads
-    /// the header on DISK and reports it into the real webview, whose handler
-    /// stores it (reflected onto `document.body` exactly so this test can see
-    /// the stored state). Everything upstream (the seam) and downstream (the
-    /// bare add) is covered in isolation; this pins the wire between them.
-    func testAttachReportsTheOnDiskPolicyIntoTheLivePage() async throws {
-        // The fixture starts with no policy; write one to DISK through the
-        // seam — attach reads disk, not the editor buffer.
-        let source = try String(contentsOf: storyFile, encoding: .utf8)
-        let edit = try XCTUnwrap(StoryHeaderAutoAssertion.edit(setting: .roomDescription, in: source))
-        try StoryHeaderAutoAssertion.apply(edit, to: source)
-            .write(to: storyFile, atomically: true, encoding: .utf8)
-
-        let controller = MainWindowController()
-        let window = try XCTUnwrap(controller.window)
-        window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
-        window.orderFront(nil)
-        defer { window.orderOut(nil) }
-
-        let testController = TestController(window: controller)
-        testController.attach(storyFile: storyFile)
-
-        let tab = controller.testingTab
-        var waited: TimeInterval = 0
-        while !tab.isPageReady && waited < 5 {
-            try await Task.sleep(nanoseconds: 25_000_000)
-            waited += 0.025
-        }
-        XCTAssertTrue(tab.isPageReady, "the Testing tab's page did not report ready")
-        // Deferred calls flush on ready; let the flush and the handler land.
-        try await Task.sleep(nanoseconds: 160_000_000)
-
-        let stored = try await tab.evaluateInTab("document.body.dataset.autoAssertionPolicy") as? String
-        XCTAssertEqual(stored, "room-description",
-                       "the on-disk policy must reach the page's stored state at attach")
     }
 
     // MARK: - The menu bar carries the closed choice set
@@ -169,15 +131,15 @@ final class AutoAssertionMenuTests: XCTestCase {
             "Test carries the Auto-Assertion submenu")
 
         let titles = policyMenu.items.filter { !$0.isSeparatorItem }.map(\.title)
-        XCTAssertEqual(titles, ["Let Me Decide",
+        XCTAssertEqual(titles, ["Default (Room Name and Description)",
                                 "All Emitted Text",
                                 "Room Description",
                                 "Room Name and Description"],
-                       "the closed set, default first — F8's menu, verbatim")
+                       "the closed set, default first — an absent header is the platform default (David 2026-08-10)")
 
         let raws = policyMenu.items.compactMap { $0.representedObject as? String }
         XCTAssertEqual(raws, ["all-emitted-text", "room-description", "room-name-and-description"],
-                       "each policy item carries the header spelling; Let Me Decide carries none (it removes the line)")
+                       "each policy item carries the header spelling; the Default item carries none (it removes the line)")
         XCTAssertTrue(policyMenu.items.filter { !$0.isSeparatorItem }.allSatisfy {
             $0.action == #selector(AppDelegate.selectAutoAssertion(_:))
         }, "every choice routes through the one selection action")

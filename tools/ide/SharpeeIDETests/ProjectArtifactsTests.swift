@@ -76,7 +76,6 @@ final class ProjectArtifactsTests: XCTestCase {
         XCTAssertEqual(memberNames(.story), ["the-lost-key.story"])
         XCTAssertEqual(memberNames(.walkthroughs),
                        ["wt-01-opening.transcript", "wt-02-cellar.transcript"])
-        XCTAssertEqual(memberNames(.transcriptTests), ["lantern.transcript"])
         XCTAssertEqual(memberNames(.assets), ["lantern.png"])
         XCTAssertEqual(memberNames(.feelies), ["the-letter.pdf"])
     }
@@ -86,7 +85,7 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("notes.txt")
 
         XCTAssertEqual(groups().map(\.kind),
-                       [.story, .walkthroughs, .transcriptTests, .assets, .feelies, .webTemplate, .other])
+                       [.story, .walkthroughs, .assets, .feelies, .webTemplate, .other])
     }
 
     func testWebTemplateGathersFilesFromTwoDifferentOnDiskLocations() throws {
@@ -98,14 +97,15 @@ final class ProjectArtifactsTests: XCTestCase {
                        ["index.html", "the-lost-key.css", "the-lost-key.templates"])
     }
 
-    func testTranscriptTestsReachesThroughTestsIntoTranscripts() throws {
+    func testTestsDirectoryIsAnOrdinaryFolderSinceTheCutover() throws {
         try buildFullFixture()
 
-        // The group is tests/transcripts/, not tests/ — ADR-277 fixes both names,
-        // and the Test panel discovers exactly this path.
-        XCTAssertEqual(memberNames(.transcriptTests), ["lantern.transcript"])
-        XCTAssertFalse(memberNames(.transcriptTests).contains("transcripts"),
-                       "the intermediate directory must not appear as a member")
+        // ADR-307 cutover: tests live in `<storyId>.tests.json` (the Testing
+        // tab's document), so `tests/` has no special meaning — a legacy
+        // directory lands whole in Other like any unclassified folder, its
+        // contents reachable and nothing hidden.
+        XCTAssertTrue(memberNames(.other).contains("tests"),
+                      "a legacy tests/ directory must surface in Other, not vanish")
     }
 
     // MARK: - Open, not strict
@@ -115,30 +115,31 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("notes.txt")
         try file("research/sources.md")
 
-        XCTAssertEqual(memberNames(.other), ["notes.txt", "research"])
+        XCTAssertEqual(memberNames(.other), ["notes.txt", "research", "tests"])
     }
 
     func testUnknownContentInsideAKnownFolderIsSurfacedNotSwallowed() throws {
         try buildFullFixture()
-        try file("tests/scratch.md")
         try file("browser/notes.md")
 
-        // Neither file matches its folder's artifact type — they must still be
-        // reachable, never silently dropped.
-        XCTAssertEqual(memberNames(.other), ["notes.md", "scratch.md"])
+        // The file matches nothing browser/ folds into Web Template — it must
+        // still be reachable, never silently dropped. (tests/ is no longer a
+        // known folder: since the ADR-307 cutover it surfaces whole in Other.)
+        XCTAssertEqual(memberNames(.other), ["notes.md", "tests"])
     }
 
     func testNothingOnDiskIsEverDropped() throws {
         try buildFullFixture()
         try file("notes.txt")
-        try file("tests/scratch.md")
 
         let grouped = Set(groups().flatMap { $0.members }.map(\.name))
+        // No exceptions since the ADR-307 cutover: every top-level artifact
+        // lands in exactly one group (the legacy tests/ directory as itself).
         let onDisk: Set<String> = ["the-lost-key.story", "wt-01-opening.transcript",
-                                   "wt-02-cellar.transcript", "lantern.transcript",
+                                   "wt-02-cellar.transcript",
                                    "lantern.png", "the-letter.pdf", "the-lost-key.templates",
                                    "the-lost-key.css", "index.html",
-                                   "notes.txt", "scratch.md"]
+                                   "notes.txt", "tests"]
         XCTAssertEqual(grouped, onDisk,
                        "every real file must land in exactly one group — missing: \(onDisk.subtracting(grouped))")
     }
@@ -216,7 +217,6 @@ final class ProjectArtifactsTests: XCTestCase {
         try buildFullFixture()
 
         XCTAssertEqual(group(.walkthroughs)?.directoryURL?.lastPathComponent, "walkthroughs")
-        XCTAssertEqual(group(.transcriptTests)?.directoryURL?.lastPathComponent, "transcripts")
         XCTAssertEqual(group(.assets)?.directoryURL?.lastPathComponent, "assets")
         XCTAssertEqual(group(.feelies)?.directoryURL?.lastPathComponent, "feelies")
         // Assembled from scattered files — no single folder to reveal.

@@ -181,3 +181,6 @@ docs/dungeon-ref/
 .tsf-cache/
 # Golden-replay divergence saves (ADR-294 D18) — working artifacts, never committed
 *.divergence.json
+
+# Pinned Xcode DerivedData (signing-rot fix 2026-08-10) — build output, never committed
+tools/ide/DerivedData/

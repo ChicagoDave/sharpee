@@ -1,74 +1,57 @@
 /**
- * @sharpee/branch-tester — tree-native transcript testing (ADR-302).
+ * @sharpee/branch-tester — the tree-document testing runtime (ADR-307).
  *
- * A transcript names its parent with `continues:`, so a story's tests form a
- * TREE rather than a directory of independent files plus a filename-ordered
- * chain. Running the harness runs every root-to-leaf path; a shared prefix
- * executes once and each divergent tail resumes from the state it produced.
- * There is no `--chain` flag, because there is nothing else a run could mean.
+ * The Testing tab holds one test tree per story; this package owns that tree's
+ * wire format (`<story-id>.tests.json`), the walker that replays it against a
+ * real engine, and the shared assertion machinery (channel claims, policy
+ * synthesis) the walker and the IDE surface both consume.
  *
- * Why this is a full COPY of the v1 harness rather than a fork or a shared
- * substrate (ADR-302 D15): the two diverge on grammar and runtime semantics,
- * and v1 is frozen so Dungeo's 117 unit transcripts and the Family Zoo
- * tutorial keep working unchanged (D9/D12). Shared code would make that freeze
- * a fiction — every change here would be a change there. The split is
- * permanent and by story, not a migration with an end date.
+ * The v2 transcript grammar this package originally carried (ADR-300/302 —
+ * `continues:` trees of `.transcript` files, parser/serializer/rename, the
+ * v1 tree runner) was retired by ADR-307's cutover: the tree IS the model and
+ * JSON is its only serialization. Sharpee's own hand-authored text transcript
+ * world (`@sharpee/transcript-tester` — walkthroughs, unit transcripts,
+ * Dungeo) is a separate package and stays text.
  *
- * Usage: as a LIBRARY. The `branch-test` bin is retired — an author runs
- * `sharpee test --tree` (devkit), and the in-repo path is the bundle's `--test`
- * over transcripts under branch-stories/.
+ * Usage: as a LIBRARY. An author runs `sharpee test` (devkit), which
+ * discovers the tree document and drives `runTreeDocument`.
  */
 
 // Types
 export * from './types.js';
 
-// Parser
-export { parseTranscript, parseTranscriptFile, validateTranscript } from './parser.js';
-
-// Tree assembly — v2's entry point is the tree, not the file (ADR-302 D11)
+// The Testing tree's wire format — one JSON document per story (ADR-307)
 export {
-  assembleTree,
-  rootToLeafPaths,
-  effectiveHeader,
-  effectiveConfig,
-  stemOf,
-  type TranscriptTree,
-  type TreeNode,
-  type TreeDefect,
-} from './tree.js';
+  TREE_DOCUMENT_VERSION,
+  treeDocumentFileNameFor,
+  emptyTreeDocument,
+  serializeTreeDocument,
+  deserializeTreeDocument,
+  channelIdsReferencedBy,
+  type TreeDocument,
+  type TreeCard,
+  type TreeCardType,
+  type TreeBranch,
+  type TreeAssertions,
+  type TreeChannelAssertion,
+  type TreeDocumentReadResult,
+} from './tree-document.js';
 
-// Tree running — every path, shared prefixes once (ADR-302 D10)
+// The tree-document walker — the greenfield ADR-307 runtime (D4/D5/D6):
+// lines not files, derived labels, seams never block, execution errors do
 export {
-  runTree,
-  reseedFor,
-  type TreeRunResult,
-  type NodeRunOutcome,
-} from './tree-runner.js';
-
-// The one `GameFactory` builder — a root's resolved seed is re-pinned at every
-// fork below it (ADR-302 D17). One implementation for cli.ts, devkit, the bundle.
-export {
-  createRootGameFactory,
-  type RootBootSpec,
-  type RootGameFactoryOptions,
-} from './game-factory.js';
-
-// Tree reporting — unreached is not failed (ADR-302 D13)
-export {
-  summarizeTreeRun,
-  formatTreeRun,
-  type TreeRunSummary,
-  type BlockedGroup,
-} from './tree-report.js';
-
-// Rename as a harness operation — validate then write (ADR-302 D14)
-export {
-  planRename,
-  applyRename,
-  renameTranscript,
-  type RenamePlan,
-  type RenameEdit,
-} from './rename.js';
+  runTreeDocument,
+  flattenTreeLines,
+  formatTreeDocumentRun,
+  type TreeLine,
+  type TreeLineDefect,
+  type TreeLineOutcome,
+  type TreeLineObserver,
+  type TreeDocumentRunResult,
+  type TreeDocumentRunOptions,
+  type TreeWalkerGame,
+  type TreeGameLoader,
+} from './tree-walker.js';
 
 // Channel assertions over structured values (ADR-300 D13, D14)
 export {
@@ -78,49 +61,14 @@ export {
   type PathResolution,
 } from './channel-assert.js';
 
-// Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
-export { serializeTranscript, serializeAssertionTag } from './serializer.js';
-
-// Phase 6f (ADR-305): the auto-assertion synthesis engine and play promotion.
-export { synthesizePolicyAssertions, proseTextLinesOf } from './auto-assertion.js';
-export { createTranscriptFromPlay, FromPlayError } from './from-play.js';
-export type { PlayedTurnRecord, CreateFromPlayOptions } from './from-play.js';
-
-// Runner
-export { runTranscript } from './runner.js';
-
-// Watch mode (ADR-294 D14)
-export { classifyChange, runCycle, startWatch } from './watch.js';
-export type { ChangeTarget, WatchRunIO, WatchConfig } from './watch.js';
-
-// Reporter
-export { reportTranscript, reportTestRun, getExitCode } from './reporter.js';
-
-// Aggregation + `test --json` NDJSON record builders (ADR-277 D1)
+// The auto-assertion synthesis engine (ADR-294 D2, ADR-307 record-time synthesis)
 export {
-  aggregateTestRun,
-  runStartRecord,
-  transcriptRecords,
-  coverageRecord,
-  runEndRecord,
-  ndjsonLine,
-} from './aggregate.js';
+  DEFAULT_AUTO_ASSERTION_POLICY,
+  describeAssertion,
+  streamableCommandResult,
+  synthesizePolicyAssertions,
+  proseTextLinesOf,
+} from './auto-assertion.js';
 
-// Outcome-class coverage (ADR-293 D15)
-export {
-  CoverageTracker,
-  formatCoverageSummary,
-  formatCoverageBreakdown,
-} from './coverage.js';
-export type { CoverageReport } from './coverage.js';
-
-// First-firing outcome search (ADR-293 D12)
-export { searchOutcome } from './search.js';
-export type { SearchTarget, SearchResult } from './search.js';
-
-// Trait Formatter
-export { formatEntityTraitLines, formatTraitProse } from './trait-formatter.js';
-
-// Story Loader
-export { loadStory, createTestableGame, findTranscripts } from './story-loader.js';
-export type { TestableGame } from './story-loader.js';
+// Runner — the shared per-transcript execution engine the walker drives
+export { aggregateTestRun, runTranscript } from './runner.js';

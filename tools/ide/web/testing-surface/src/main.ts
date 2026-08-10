@@ -1,45 +1,49 @@
 /**
- * main.ts — the testing play surface's entry point (ADR-306 Phases 3–5).
+ * main.ts — the testing play surface's entry point (ADR-307: the tree is the
+ * model, the document is its projection).
  *
  * Purpose: wires the pieces together inside the testing page. The IDE's
  *   document-start shim queues turn-feed records the Swift side forwards
  *   (`window.__sharpeeTestingSurface.deliver`); this module drains that
- *   queue, folds records into the SessionModel, builds cards, renders, and
- *   posts every view-state change back over the `testingSurface` bridge for
- *   the D8 sidecar.
+ *   queue, folds records into the TreeSessionModel (always recording, D3),
+ *   builds cards, renders, and posts every change over the `testingSurface`
+ *   bridge: the WHOLE serialized document on every mutation (D1 — files are
+ *   a projection), and a view-state-only sidecar (D7 — active line and
+ *   dialog outcomes; nothing the tree can re-derive).
  *
- * Phase 5 — it is also the REPLAY DRIVER (design §6, ADR-306 D7/D8):
- *   - A branch is a fresh boot at the pinned seed: storage cleared, a real
- *     `restart` typed through the client (the boot script stubs confirm),
- *     the shared prefix's commands replayed SUPPRESSED (their cards exist),
- *     then the alternate typed live — arriving over the same feed as any
- *     turn. Chip selection replays the sibling the same way: the viewed
- *     lineage is always the live lineage.
- *   - Reopen restores the whole fork tree by replay: root first, branches
- *     in id order, the active lineage last; structure re-applies through
- *     position→ordinal mapping, and closed segments' claims re-hydrate
- *     from their `tests/` files (the files are the truth — never clobbered).
- *   - Save/restore dialogs never stall a replay (D7 fold-in): outcomes are
- *     recorded as the author plays and re-applied when a replayed command
- *     opens its dialog; an outcome-less dialog is cancelled. Either way the
- *     turn completes.
+ * It is also the REPLAY DRIVER (D4/D5): the session IS a replay of the tree.
+ *   - Reopen deserializes `<story-id>.tests.json` and replays it to the
+ *     board: the main line types live (delivered turns BIND to the
+ *     document's cards), each branch fresh-boots with its prefix suppressed,
+ *     the persisted active line replays last. A refused (newer-version)
+ *     document shows its named message and write-locks the session; a
+ *     malformed one degrades to a fresh empty tree (AC-4).
+ *   - An author restart replays the tree the same way — restart has no
+ *     meaning of its own in the Testing tab (D4).
+ *   - Branch, chip selection, branch-delete, and tail-cut all ride the same
+ *     fresh-boot primitive at the pinned seed; tail-cut realigns the engine
+ *     by replaying the cut line (suppressed — its cards are retained).
+ *   - Save/restore dialogs never stall a replay: outcomes are recorded as
+ *     the author plays and re-applied when a replayed command opens its
+ *     dialog; an outcome-less dialog is cancelled.
  *
  * Public interface: none — the bundle is self-executing inside the page.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
+import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
 import {
-  composeSegmentTranscript, rehydrateSegmentClaims, type DeleteRef, type TurnSource,
+  cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
+  type DeleteRef, type TurnSource,
 } from './compose';
-import { SessionModel, type Segment, type SessionSnapshot } from './model';
+import { MAIN_LINE, TreeSessionModel, type AuthoringMemento } from './model';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
-import { beginRun, createRunState, finishRun, foldRunLine } from './run';
-import { renderSource } from './source';
+import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './run';
 
-/** One world-digest entity as the feed carries it (ADR-306 Phase 2). */
+/** One world-digest entity as the feed carries it. */
 interface DigestEntity {
   kind: 'npc' | 'item';
   name: string;
@@ -58,36 +62,39 @@ interface FeedRecord {
   world?: { entities?: DigestEntity[] };
 }
 
-/** A recorded dialog interaction, keyed to its turn (D7 fold-in). */
+/** A recorded dialog interaction, keyed to its turn (D7). */
 interface DialogOutcome {
   type: 'save' | 'restore';
   /** The confirmed slot name; null = the author cancelled. */
   slot: string | null;
 }
 
-/** The composite view-state the sidecar holds (opaque to Swift — D8). */
-interface CompositeState {
-  model: SessionSnapshot;
-  /** Written stems keyed `lineage:startPos` — pointers, never content. */
-  stems: Record<string, string>;
-  /** Dialog outcomes keyed `lineage:pos`. */
-  dialogs: [string, DialogOutcome][];
-}
-
-/** The boot global the IDE injects (ADR-306 D8), plus the story's
- *  `auto-assertion:` policy and the `tests/` files for re-hydration. */
+/** The boot globals the IDE injects: the tree document's text, the story's
+ *  `auto-assertion:` policy, and the D7 view-state sidecar. */
 interface BootSession {
-  replay?: string[];
-  snapshot?: CompositeState | SessionSnapshot;
+  /** The `<story-id>.tests.json` bytes, when one exists. */
+  document?: string;
   policy?: AutoAssertionPolicy;
-  /** Every `tests/*.transcript` by stem — Swift ships them at open. */
-  files?: Record<string, string>;
+  /** View-state ephemera (D7): active line id, dialog outcomes, and
+   *  collapsed region-group keys. */
+  view?: {
+    active?: number;
+    dialogs?: [string, DialogOutcome][];
+    collapsed?: string[];
+  };
+  /** The story id (the document's `story` field for a fresh tree). */
+  story?: string;
+  /** The pinned master seed (D5). */
+  seed?: number;
+  /** Room name → region name, derived from the Story IR (regions group the
+   *  cards — David 2026-08-10; derived, never persisted in the document). */
+  regions?: Record<string, string>;
 }
 
 interface DeliverShim {
   q?: unknown[];
   deliver(record: unknown): void;
-  /** One raw NDJSON line of a `sharpee test --tree --json` run (design §7). */
+  /** One raw NDJSON line of a `sharpee test --tree --json` run. */
   runLine?(text: string): void;
   /** The run process exited; `ok` false with no run-end is a pipeline death. */
   runExit?(ok: boolean, note?: string): void;
@@ -96,19 +103,36 @@ interface DeliverShim {
 /** A command to type during replay, keyed for dialog outcome lookup. */
 interface ReplayStep { command: string; key: string }
 
-const model = new SessionModel();
-let activeSegment: Segment | null = null;
+const surfaceWindow = window as unknown as {
+  __sharpeeTestingSurface?: DeliverShim;
+  __SHARPEE_TESTING_SESSION__?: BootSession;
+};
 
-/** Every visible delivered record by ordinal — synthesis reads these. */
+const bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
+const storyId = bootSession?.story ?? 'story';
+const seed = bootSession?.seed ?? 42;
+/** The story's declared `auto-assertion:` policy, injected by the IDE at
+ *  boot; absent = the PLATFORM default (David 2026-08-10) — the same
+ *  constant the CLI walker applies, so both consumers synthesize alike. */
+const policy: AutoAssertionPolicy = bootSession?.policy ?? DEFAULT_AUTO_ASSERTION_POLICY;
+
+const model = new TreeSessionModel(storyId, seed);
+
+/** Every delivered record by ordinal — synthesis and pickers read these. */
 const records = new Map<number, FeedRecord>();
-/** The story's `auto-assertion:` policy, injected by the IDE at boot. */
-let policy: AutoAssertionPolicy | undefined;
+/** The BOOT's channel captures — the opening defaults' carrier (question D). */
+let bootCaptures: Record<string, unknown[]> | undefined;
+/** The boot record's delivery ordinal — the opening's channel picker reads
+ *  its captures (the opening itself has no record). */
+let bootRecordOrdinal: number | undefined;
+/** Room name → region name (Story IR, injected at boot) — card grouping. */
+const regionByRoom: Record<string, string> = bootSession?.regions ?? {};
+/** Collapsed region-group keys (view-state ephemera, D7). */
+const collapsedRegions = new Set<string>(bootSession?.view?.collapsed ?? []);
 
-/** The logical lineage newly delivered visible turns belong to. */
-let currentLogical = 1;
-/** Fresh ordinal by `lineage:pos` — restore's position mapping. */
-const ordinalByPos = new Map<string, number>();
-/** Recorded dialog outcomes by `lineage:pos` (D7 fold-in). */
+/** The line newly delivered visible turns fold into. */
+let currentLine = MAIN_LINE;
+/** Recorded dialog outcomes by `line:turnIndex` (D7). */
 let dialogOutcomes = new Map<string, DialogOutcome>();
 
 // ── driver flags (the deliver pipeline reads these) ───────────────────────
@@ -119,16 +143,20 @@ let dropBeforeFence = false;
 let expectDriverFence = false;
 /** Swallow records entirely (replayed prefix turns — cards already exist). */
 let suppressDelivery = false;
-/** A driver replay is in flight (fork, switch, or restore). */
+/** A driver replay is in flight (fork, switch, restore, or realign). */
 let replayActive = false;
-/** The whole driver operation spans this — while set, the sidecar is not
- *  posted and no writes land (a partial mid-replay state must never
- *  overwrite the persisted session), and the input stays held. */
+/** The whole driver operation spans this — while set, nothing posts (a
+ *  partial mid-replay state must never overwrite the persisted document),
+ *  and the input stays held. */
 let driverBusy = false;
 /** The outcome key armed for the command currently being typed. */
 let armedOutcomeKey: string | null = null;
+/** The document on disk is NEWER than this build reads — never write (AC-4). */
+let documentWriteLocked = false;
+/** The last document text this session posted (or adopted at load). */
+let lastDocumentText = '';
 
-/** Per-ordinal synthesis source for compose (ADR-306 D2). */
+/** Per-ordinal synthesis source for compose. */
 function turnSource(ordinal: number): TurnSource | undefined {
   const record = records.get(ordinal);
   if (!record || typeof record.output !== 'string') return undefined;
@@ -140,88 +168,80 @@ function turnSource(ordinal: number): TurnSource | undefined {
   return { output: record.output, channelValues };
 }
 
-/** Routes a source-panel ✕ onto the model (design §5's delete semantics). */
-function applyDelete(ref: DeleteRef): void {
-  touchSegmentAt(ref.ordinal);
-  switch (ref.kind) {
-    case 'default': model.removeDefault(ref.ordinal, ref.index, ref.defaults); break;
-    case 'defaultWhole': model.removeDefault(ref.ordinal, -1, []); break;
-    case 'contains': model.removeContains(ref.ordinal, ref.index); break;
-    case 'notContains': model.removeNotContains(ref.ordinal, ref.index); break;
-    case 'state': model.removeState(ref.ordinal, ref.index); break;
-    case 'event': model.removeEvent(ref.ordinal, ref.index); break;
-    case 'channel': model.removeChannel(ref.ordinal, ref.index); break;
-    case 'exact': model.setExact(ref.ordinal, false); break;
+/** The card's assertion lines — the document's claims, verbatim. */
+function assertionLinesFor(ordinal: number) {
+  return cardAssertionLines({ model }, ordinal);
+}
+
+/** Maps a rendered line's DeleteRef onto the model mutator it names —
+ *  deletion semantics live in the model, never re-derived here. Every claim
+ *  is an ordinary document assertion (JSON = source of truth). */
+function removeAssertion(del: DeleteRef): void {
+  switch (del.kind) {
+    case 'contains': model.removeContains(del.ordinal, del.index); break;
+    case 'notContains': model.removeNotContains(del.ordinal, del.index); break;
+    case 'state': model.removeState(del.ordinal, del.index); break;
+    case 'event': model.removeEvent(del.ordinal, del.index); break;
+    case 'channel': model.removeChannel(del.ordinal, del.index); break;
+    case 'exact': model.setExact(del.ordinal, null); break;
   }
+}
+
+// ── undo: authoring gestures are undoable ─────────────────────────────────
+//
+// The stack holds authoring mementos — card assertions only, never played
+// turns. Gestures that change what was PLAYED (branch, tail-cut,
+// branch-delete, line switch, restart) clear it instead of joining it: a
+// memento must never refer to cards whose turns are gone (D4/Q-4).
+const undoStack: AuthoringMemento[] = [];
+const UNDO_DEPTH = 100;
+
+function pushUndo(): void {
+  undoStack.push(model.captureAuthoring());
+  if (undoStack.length > UNDO_DEPTH) undoStack.shift();
+}
+
+function clearUndo(): void {
+  undoStack.length = 0;
+}
+
+function performUndo(): void {
+  if (driverBusy || replayActive) return;
+  const memento = undoStack.pop();
+  if (!memento) return;
+  model.restoreAuthoring(memento);
   update();
 }
 
-const sourceContext = () => ({
-  policy,
-  seed: 42,
-  source: turnSource,
-  onDelete: applyDelete,
-});
-
 const cards = new CardsView(model, {
-  onTick(ordinal, checked) {
-    if (checked) {
-      const result = model.tick(ordinal);
-      if (result !== 'noop') activeSegment = model.segmentOf(ordinal) ?? null;
-    } else {
-      model.untick(ordinal);
-      if (activeSegment && !model.segments.includes(activeSegment)) {
-        activeSegment = model.segmentOf(ordinal) ?? null;
-      }
-    }
-    update();
+  onTailCut(ordinal) {
+    void performTailCut(ordinal);
   },
-  onCollapse(segment) { model.setCollapsed(segment, true); update(); },
-  onExpand(segment) {
-    model.setCollapsed(segment, false);
-    activeSegment = segment;
-    update();
-  },
-  onMergeUp(segment) {
-    const parent = model.parentOf(segment);
-    if (model.mergeUp(segment)) activeSegment = parent ?? null;
-    update();
-  },
-  onSplitAt(ordinal) {
-    touchSegmentAt(ordinal);
-    if (model.splitAt(ordinal)) activeSegment = model.segmentOf(ordinal) ?? null;
-    update();
-  },
-  onActivate(segment) {
-    activeSegment = segment;
-    renderSource(model, activeSegment, sourceContext());
+  onDeleteBranch(lineId) {
+    void performDeleteBranch(lineId);
   },
   onAddContains(ordinal, text) {
-    touchSegmentAt(ordinal);
-    if (model.addContains(ordinal, text)) {
-      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-      update();
-    }
+    pushUndo();
+    if (model.addContains(ordinal, text)) update();
   },
   onNotContains(ordinal, text) {
-    touchSegmentAt(ordinal);
-    if (model.addNotContains(ordinal, text)) {
-      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-      update();
-    }
+    pushUndo();
+    if (model.addNotContains(ordinal, text)) update();
   },
   onToggleExact(ordinal) {
-    touchSegmentAt(ordinal);
-    if (model.setExact(ordinal, !model.claimsOf(ordinal).exact)) {
-      activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-      update();
+    pushUndo();
+    const exact = model.claimsOf(ordinal)?.exact;
+    if (exact !== undefined) {
+      model.setExact(ordinal, null);
+    } else {
+      const output = records.get(ordinal)?.output ?? '';
+      model.setExact(ordinal, output.replace(/\s+$/, '').split('\n'));
     }
+    update();
   },
   onStatePicker(ordinal, anchor) {
-    // The unseen slice (design §5): entity locations from the digest —
-    // never player.location, and only expressions the runner's evaluator
-    // accepts (entity.property = value). Score and machine facts join when
-    // the evaluator grows their forms.
+    // The unseen slice: entity locations from the digest — never
+    // player.location, and only expressions the runner's evaluator accepts.
     const entities = records.get(ordinal)?.world?.entities ?? [];
     const facts: StateFact[] = entities.map(entity => ({
       label: `${entity.name} — ${entity.location.name}`,
@@ -229,25 +249,24 @@ const cards = new CardsView(model, {
       kind: entity.kind === 'npc' ? 'NPC locations' : 'item locations',
     }));
     showStatePicker(anchor, facts, fact => {
-      touchSegmentAt(ordinal);
-      if (model.addState(ordinal, fact.expression)) {
-        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-        update();
-      }
+      pushUndo();
+      if (model.addState(ordinal, fact.expression)) update();
     });
   },
   onEventPicker(ordinal, anchor) {
     const events = records.get(ordinal)?.events ?? [];
     showListPicker(anchor, 'events this turn emitted', events, event => {
-      touchSegmentAt(ordinal);
-      if (model.addEvent(ordinal, event)) {
-        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-        update();
-      }
+      pushUndo();
+      if (model.addEvent(ordinal, event)) update();
     });
   },
   onChannelPicker(ordinal, anchor) {
-    const captures = records.get(ordinal)?.captures ?? [];
+    // The OPENING (ordinal 0) has no record of its own — its channels are
+    // the boot flush, riding the boot record's captures.
+    const source = ordinal === 0 && bootRecordOrdinal !== undefined
+      ? records.get(bootRecordOrdinal)
+      : records.get(ordinal);
+    const captures = source?.captures ?? [];
     const labels = captures.map(capture => {
       const flat = proseTextLinesOf(capture.values).join(' ');
       const scalar = capture.values.length === 1 && typeof capture.values[0] !== 'object'
@@ -257,38 +276,54 @@ const cards = new CardsView(model, {
     showListPicker(anchor, 'channels this turn captured', labels, (_label, index) => {
       const capture = captures[index];
       if (!capture) return;
-      const scalarValue = capture.values.length === 1
-        && (typeof capture.values[0] === 'number' || typeof capture.values[0] === 'boolean')
-        ? capture.values[0] as number | boolean : null;
       const flat = proseTextLinesOf(capture.values).join(' ');
-      const claim = scalarValue !== null
-        ? { id: capture.channel, is: scalarValue }
-        : { id: capture.channel, contains: flat.slice(0, 60) };
-      touchSegmentAt(ordinal);
-      if (model.addChannel(ordinal, claim)) {
-        activeSegment = model.segmentOf(ordinal) ?? activeSegment;
-        update();
-      }
+      // The document's channel claims are strings (`is` a string value) —
+      // scalars flatten to their rendering.
+      const scalar = capture.values.length === 1
+        && (typeof capture.values[0] === 'number' || typeof capture.values[0] === 'boolean')
+        ? String(capture.values[0]) : null;
+      const claim = scalar !== null
+        ? { id: capture.channel, is: scalar }
+        : { id: capture.channel, contains: [flat.slice(0, 60)] };
+      pushUndo();
+      if (model.addChannel(ordinal, claim)) update();
     });
   },
   onBranch(ordinal, command) {
     void performBranch(ordinal, command);
   },
-  onSelectLineage(lineage) {
-    void selectLineage(lineage);
+  onSelectLine(lineId) {
+    void selectLine(lineId);
   },
   onRun() {
     // One run at a time, and never during a driver replay — the run reads
-    // the files on disk, which a mid-replay session hasn't finished writing.
+    // the document on disk, which a mid-replay session hasn't finished
+    // writing.
     if (runState.inFlight || driverBusy || replayActive) return;
     beginRun(runState);
     cards.render();
     postToBridge({ run: true });
   },
   runColumn: () => runState,
+  assertionLines: assertionLinesFor,
+  onRemoveAssertion(del) {
+    pushUndo();
+    removeAssertion(del);
+    update();
+  },
+  // Region grouping (David 2026-08-10): derived from the Story IR's map,
+  // collapse state is D7 view ephemera — nothing touches the document.
+  regionOf: (room) => (room !== undefined ? regionByRoom[room] : undefined),
+  isRegionCollapsed: (key) => collapsedRegions.has(key),
+  onToggleRegion(key) {
+    if (collapsedRegions.has(key)) collapsedRegions.delete(key);
+    else collapsedRegions.add(key);
+    postState();
+    cards.render();
+  },
 });
 
-// ── the run column (design §7): fold the relayed NDJSON stream ────────────
+// ── the run column: fold the relayed NDJSON stream ────────────────────────
 
 const runState = createRunState();
 
@@ -302,41 +337,6 @@ function deliverRunExit(ok: boolean, note?: string): void {
   cards.render();
 }
 
-/** Re-render and persist: every model change lands in the sidecar (D8)
- *  and every closed segment lands on disk (design §4's auto-save). */
-function update(): void {
-  if (activeSegment && !model.segments.includes(activeSegment)) {
-    activeSegment = null;
-  }
-  cards.render();
-  renderSource(model, activeSegment, sourceContext());
-  if (!driverBusy) {
-    // Writes BEFORE state: postState's stems must describe the files this
-    // very update just landed — the other order persists stems one update
-    // stale, and a session ending on a rename would reopen pointing at
-    // files that no longer exist (leaving their successors unhydrated and
-    // clobberable).
-    syncWrites();
-    postState();
-  }
-}
-
-// ── the auto-save writer (design §4): a closed segment IS a file ──────────
-
-/** What each tracked segment last wrote: its stem and its exact text. */
-const written = new Map<Segment, { name: string; text: string }>();
-
-/** Segments whose `tests/` file diverged from what compose reproduces
- *  (hand-edited beyond the claim grammar): never auto-written until the
- *  author's next gesture on the segment takes it back. */
-const detached = new Set<Segment>();
-
-/** An authoring gesture on a segment re-attaches its file to the writer. */
-function touchSegmentAt(ordinal: number): void {
-  const segment = model.segmentOf(ordinal);
-  if (segment) detached.delete(segment);
-}
-
 function postToBridge(payload: Record<string, unknown>): void {
   try {
     (window as unknown as {
@@ -348,67 +348,41 @@ function postToBridge(payload: Record<string, unknown>): void {
 }
 
 /**
- * Mirrors the session onto disk: every CLOSED segment writes immediately and
- * rewrites on every edit; a restructure that renames posts `previousName` so
- * the Swift side deletes the old file and cascades children's `continues:`;
- * a segment the author removed (untick, merge) removes its file. An open
- * range is not a file yet (design §3) and a fence only forgets tracking —
- * files already in `tests/` are durable artifacts, never deleted by a
- * restart (ADR-305 D3 fences the SESSION, not the suite).
+ * Re-render and persist: every model change posts the WHOLE document (D1 —
+ * one write target, no per-file tracking) and the view-state sidecar (D7).
+ * A change to the suite resets the run column — its results describe a tree
+ * that no longer exists. A refused document write-locks the session (AC-4:
+ * an older writer must never clobber a newer document).
  */
-function syncWrites(): void {
-  for (const [segment, last] of [...written]) {
-    if (!model.segments.includes(segment)) {
-      written.delete(segment);
-      postToBridge({ remove: { name: last.name } });
+function update(): void {
+  if (!driverBusy) {
+    const text = model.serialize();
+    if (text !== lastDocumentText) {
+      lastDocumentText = text;
+      if (!documentWriteLocked) postToBridge({ document: { text } });
+      if (!runState.inFlight) resetRun(runState);
     }
-  }
-  for (const segment of [...detached]) {
-    if (!model.segments.includes(segment)) detached.delete(segment);
-  }
-  for (const segment of model.segments) {
-    if (detached.has(segment)) continue;
-    if (segment.end === null) {
-      const last = written.get(segment);
-      if (last) {
-        // A reopened range is no longer a complete file — take it back.
-        written.delete(segment);
-        postToBridge({ remove: { name: last.name } });
-      }
-      continue;
-    }
-    const { title, text } = composeSegmentTranscript({
-      model, segment, policy, seed: 42, source: turnSource,
-    });
-    const last = written.get(segment);
-    if (last && last.name === title && last.text === text) continue;
-    const payload: Record<string, unknown> = { write: { name: title, text } };
-    if (last && last.name !== title) {
-      (payload.write as Record<string, unknown>).previousName = last.name;
-    }
-    written.set(segment, { name: title, text });
-    postToBridge(payload);
+    cards.render();
+    postState();
+  } else {
+    cards.render();
   }
 }
 
-/** Posts the composite view snapshot over the bridge (D8 sidecar): the
- *  model's position-keyed snapshot, written stems as pointers, and dialog
- *  outcomes — session truth only, no assertions, no transcript content. */
+/** Posts the view-state sidecar (D7): active line, dialog outcomes, and
+ *  collapsed region groups — session ephemera only; everything else lives
+ *  in the document. */
 function postState(): void {
-  const stems: Record<string, string> = {};
-  for (const [segment, last] of written) {
-    const at = model.positionOf(segment.start);
-    if (at) stems[`${segment.lineage}:${segment.start === 0 ? 0 : at.pos}`] = last.name;
-  }
-  const composite: CompositeState = {
-    model: model.snapshot(),
-    stems,
-    dialogs: [...dialogOutcomes],
-  };
-  postToBridge({ state: composite });
+  postToBridge({
+    state: {
+      active: model.activeLine,
+      dialogs: [...dialogOutcomes],
+      collapsed: [...collapsedRegions],
+    },
+  });
 }
 
-// ── dialogs (D7 fold-in): record as the author plays, drive under replay ──
+// ── dialogs (D7): record as the author plays, drive under replay ──────────
 
 /** The last dialog interaction, waiting for its turn record to land. */
 let pendingDialogOutcome: DialogOutcome | null = null;
@@ -435,7 +409,7 @@ function installDialogHooks(): void {
   });
 
   // Under replay, a dialog must resolve without a human: apply the recorded
-  // outcome, or cancel — either way the turn completes (D7: no stall).
+  // outcome, or cancel — either way the turn completes (no stall).
   const observe = (dialog: HTMLDialogElement | null, drive: () => void): void => {
     if (!dialog) return;
     new MutationObserver(() => {
@@ -473,21 +447,30 @@ function installDialogHooks(): void {
 
 // ── feed delivery ─────────────────────────────────────────────────────────
 
-/** True until the next record, which is a lineage's automatic boot look. */
+/** True until the next record, which is a boot's automatic first look. */
 let expectBoot = true;
+/** The last folded record's ordinal — the restart-ack strip reads it. */
+let lastDeliveredOrdinal: number | undefined;
 /** Resolvers waiting on the next delivered turn (the replay driver). */
 let nextTurnWaiters: (() => void)[] = [];
 /** Resolvers waiting on the next restart fence (the replay driver). */
 let fenceWaiters: (() => void)[] = [];
 
-/** The room after this turn, from the `room-name` capture. Real channel
- *  values are structured prose trees, so extraction goes through the
- *  synthesis module's own reader (ADR-306 D2: imported, not reimplemented). */
+/** The room after this turn, from the `room-name` capture. */
 function roomOf(record: FeedRecord): string | undefined {
   const capture = (record.captures ?? [])
     .filter(c => c.channel === 'room-name')
     .at(-1);
   return proseTextLinesOf(capture?.values).at(-1);
+}
+
+/** Structured captures of a record, keyed by channel id. */
+function capturesOf(record: FeedRecord): Record<string, unknown[]> {
+  const values: Record<string, unknown[]> = {};
+  for (const capture of record.captures ?? []) {
+    values[capture.channel] = [...(values[capture.channel] ?? []), ...capture.values];
+  }
+  return values;
 }
 
 function deliver(raw: unknown): void {
@@ -497,7 +480,7 @@ function deliver(raw: unknown): void {
   if (record.restart === true) {
     dropBeforeFence = false;
     if (expectDriverFence) {
-      // A driver fork/switch boot — a fresh lineage, never a dead one.
+      // A driver fork/switch boot — a fresh line, never a dead session.
       expectDriverFence = false;
       expectBoot = true;
       const waiters = fenceWaiters;
@@ -505,18 +488,28 @@ function deliver(raw: unknown): void {
       for (const resolve of waiters) resolve();
       return;
     }
+    // An AUTHOR restart: the session IS a replay of the tree (D4 — restart
+    // has no meaning of its own). The board clears, the document does not;
+    // the tree replays onto the rebooted engine. The client's ack turn
+    // ("the story restarts") landed as a card just before this fence — it
+    // is the restart mechanics, not a recorded turn: strip it.
+    if (lastDeliveredOrdinal !== undefined
+        && records.get(lastDeliveredOrdinal)?.command === 'restart') {
+      model.spliceOut(lastDeliveredOrdinal);
+    }
+    const activeBefore = model.activeLine;
     cards.clear();
-    model.fence();
+    clearUndo();
     records.clear();
-    written.clear();  // files stay — only the session's tracking resets
-    detached.clear();
-    dialogOutcomes.clear();
-    ordinalByPos.clear();
-    currentLogical = 1;
-    activeSegment = null;
+    model.beginRebindAll();
+    model.activateLine(MAIN_LINE);
+    currentLine = MAIN_LINE;
     expectBoot = true;
     pendingDialogOutcome = null;
+    bootCaptures = undefined;
+    bootRecordOrdinal = undefined;
     update();
+    void replayTree(activeBefore);
     return;
   }
 
@@ -534,21 +527,37 @@ function deliver(raw: unknown): void {
 
   cards.ensureLayout();
   records.set(record.turn, record);
+  lastDeliveredOrdinal = record.turn;
+  if (boot && currentLine === MAIN_LINE) {
+    bootCaptures = capturesOf(record);
+    bootRecordOrdinal = record.turn;
+  }
   const room = roomOf(record);
+  model.activateLine(currentLine);
+  // Record-time synthesis (David 2026-08-10: the JSON is the source of
+  // truth): the effective policy reads THIS turn's real captures and what it
+  // says persists into the card. The model applies these only when the
+  // delivery APPENDS — a binding replay rebuilds state, never claims.
+  const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
+  const openingClaims =
+    boot && currentLine === MAIN_LINE ? openingDefaultClaims(policy, bootCaptures) : [];
   model.addTurn({
     ordinal: record.turn,
     command: record.command ?? '',
-    ...(room !== undefined ? { room } : {}),
     boot,
-    lineage: currentLogical,
+    ...(room !== undefined ? { room } : {}),
+    ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
+    ...(recorded.skip === true ? { skip: true } : {}),
+    ...(openingClaims.length > 0
+      ? { openingAssertions: { channels: openingClaims } }
+      : {}),
   });
-  const at = model.positionOf(record.turn);
-  if (at) ordinalByPos.set(`${at.lineage}:${at.pos}`, record.turn);
-  if (pendingDialogOutcome && at) {
-    dialogOutcomes.set(`${at.lineage}:${at.pos}`, pendingDialogOutcome);
+  if (pendingDialogOutcome) {
+    const at = model.turnIndexOf(record.turn);
+    if (at) dialogOutcomes.set(`${at.lineId}:${at.index}`, pendingDialogOutcome);
     pendingDialogOutcome = null;
   }
-  cards.addTurnCard(record.turn, boot, currentLogical !== 1);
+  cards.addTurnCard(record.turn, boot, currentLine !== MAIN_LINE);
   update();
   cards.scrollToLatest();
 
@@ -569,7 +578,7 @@ const awaitFence = (timeoutMs: number): Promise<boolean> =>
     fenceWaiters.push(() => { clearTimeout(timer); resolve(true); });
   });
 
-// ── the replay driver (design §6, ADR-306 D7/D8) ─────────────────────────
+// ── the replay driver (D4/D5) ─────────────────────────────────────────────
 
 /** Types one command into the client's real input — the same door the
  *  author uses, so replayed turns arrive over the same feed as any turn. */
@@ -588,16 +597,31 @@ function setInputHeld(held: boolean, placeholder = ''): void {
   if (!held) input.focus();
 }
 
+/** A line's full path as replay steps, keyed `line:turnIndex` so recorded
+ *  dialog outcomes re-apply wherever their command replays. */
+function pathSteps(lineId: number): ReplayStep[] {
+  return model.pathStepsOf(lineId).map(step => ({
+    command: step.command,
+    key: `${step.lineId}:${step.index}`,
+  }));
+}
+
+/** The path steps BEFORE the line's own cards — a branch replay's prefix. */
+function prefixSteps(lineId: number): ReplayStep[] {
+  const prefixLength = model.prefixCommandsOf(lineId).length;
+  return pathSteps(lineId).slice(0, prefixLength);
+}
+
 /**
- * The fresh-boot primitive every fork, switch, and restore branch rides:
- * storage-clean in-page restart (the fence arrives flagged as the driver's,
- * so nothing clears), the boot look and `replay` steps suppressed (their
- * cards exist), then `live` steps typed visibly into `logical`. Dialog
- * outcomes ride each step's key. Returns false when a turn never arrived —
- * the caller's state stays honest (degraded, never an error — D8).
+ * The fresh-boot primitive every fork, switch, restore branch, and realign
+ * rides: storage-clean in-page restart (the fence arrives flagged as the
+ * driver's, so nothing clears), the boot look and `replay` steps suppressed
+ * (their cards exist), then `live` steps typed visibly into `line`. Returns
+ * false when a turn never arrived — the caller's state stays honest
+ * (degraded, never an error).
  */
 async function driveFreshBoot(
-  logical: number,
+  line: number,
   replay: ReplayStep[],
   live: ReplayStep[],
 ): Promise<boolean> {
@@ -606,11 +630,11 @@ async function driveFreshBoot(
   replayActive = true;
   setInputHeld(true, 'replaying…');
   try {
-    localStorage.clear();       // ADR-302 D17: fresh boots are storage-clean
+    localStorage.clear();       // fresh boots are storage-clean
     dropBeforeFence = true;
     expectDriverFence = true;
-    // Pre-announce: the Swift side marks the coming fence as a driver boot
-    // (`fork: true`), so its linear replay plan never crosses one.
+    // Pre-announce: the Swift side marks the coming fence as a driver boot,
+    // so its own bookkeeping never mistakes it for an author restart.
     postToBridge({ forkBoot: true });
     typeCommand('restart');
     if (!(await awaitFence(15_000))) return false;
@@ -624,7 +648,8 @@ async function driveFreshBoot(
       if (!landed) return false;
     }
     suppressDelivery = false;
-    currentLogical = logical;
+    currentLine = line;
+    model.activateLine(line);
     for (const step of live) {
       armedOutcomeKey = step.key;
       typeCommand(step.command);
@@ -645,109 +670,83 @@ async function driveFreshBoot(
   }
 }
 
-/** The replay steps that reproduce the shared prefix of a fork at `n`. */
-function ancestryStepsBefore(n: number): ReplayStep[] {
-  const lineage = model.lineageOf(n);
-  if (lineage === undefined) return [];
-  return model.pathTurns(lineage)
-    .filter(t => t.ordinal > 0 && t.ordinal < n && !t.boot)
-    .map(t => {
-      const at = model.positionOf(t.ordinal);
-      return { command: t.command, key: at ? `${at.lineage}:${at.pos}` : '' };
-    });
-}
-
-/** Branch… (design §6): fork the model, then boot the branch live. */
+/** Branch… (D2/D5): the card's gesture means "try a different command FROM
+ *  this state" — the fork lives ON the card. Fork the model, then boot the
+ *  branch live. */
 async function performBranch(ordinal: number, command: string): Promise<void> {
-  if (replayActive) return;
-  const ancestry = ancestryStepsBefore(ordinal);
-  const id = model.fork(ordinal, command);
+  if (replayActive || driverBusy) return;
+  clearUndo();
+  const id = model.branch(ordinal, command);
   if (id === null) return;
+  currentLine = id;
   update();                     // the pending chip shows immediately
-  await driveFreshBoot(id, ancestry, [{ command, key: '' }]);
+  await driveFreshBoot(id, prefixSteps(id), [{ command, key: `${id}:0` }]);
 }
 
-/** Chip selection: the viewed lineage is always the live lineage — replay
- *  the sibling live (all suppressed — its cards are retained), then show. */
-async function selectLineage(lineage: number): Promise<void> {
-  if (replayActive || lineage === model.activeLineage) return;
-  if (!model.activateLineage(lineage)) return;
-  const path = model.pathTurns(lineage)
-    .filter(t => t.ordinal > 0 && !t.boot)
-    .map(t => {
-      const at = model.positionOf(t.ordinal);
-      return { command: t.command, key: at ? `${at.lineage}:${at.pos}` : '' };
-    });
+/** Chip selection: the viewed line is always the live line — replay the
+ *  sibling live (all suppressed — its cards are retained), then show. */
+async function selectLine(lineId: number): Promise<void> {
+  if (replayActive || driverBusy || lineId === model.activeLine) return;
+  if (!model.activateLine(lineId)) return;
+  clearUndo();
+  currentLine = lineId;
   update();                     // the view switches on retained cards
-  await driveFreshBoot(lineage, path, []);
+  await driveFreshBoot(lineId, pathSteps(lineId), []);
 }
 
-// ── restore on boot (ADR-306 D8) ─────────────────────────────────────────
-
-/** The steps for a snapshot lineage's shared prefix, walked snapshot-side
- *  (the model has no turns yet during restore). */
-function snapshotAncestrySteps(
-  snap: SessionSnapshot,
-  lineageId: number,
-  uptoPos: number | undefined,
-): ReplayStep[] {
-  const byId = new Map(snap.lineages.map(l => [l.id, l]));
-  const chain: { id: number; cutPos: number | undefined }[] = [];
-  let cursor = byId.get(lineageId);
-  let cut = uptoPos;
-  while (cursor) {
-    chain.unshift({ id: cursor.id, cutPos: cut });
-    cut = cursor.forkAtPos;
-    cursor = cursor.parentId === undefined ? undefined : byId.get(cursor.parentId);
+/** Chip ✕: the branch, its descendants, and their cards go. Deleting the
+ *  VIEWED branch replays its parent live — the view is always the live
+ *  line. Not on the ⌘Z stack: it changes what was played. */
+async function performDeleteBranch(lineId: number): Promise<void> {
+  if (replayActive || driverBusy) return;
+  const result = model.deleteBranch(lineId);
+  if (result === null) return;
+  clearUndo();
+  currentLine = model.activeLine;
+  update();                     // chips/cards/document reconcile immediately
+  if (result.wasActive) {
+    // The dead branch was live on the engine — replay the surviving parent.
+    await driveFreshBoot(result.parentLine, pathSteps(result.parentLine), []);
   }
-  const steps: ReplayStep[] = [];
-  for (const { id, cutPos } of chain) {
-    const lineage = byId.get(id);
-    if (!lineage) continue;
-    lineage.turns.forEach((turn, index) => {
-      const pos = index + 1;
-      if (cutPos !== undefined && pos >= cutPos) return;
-      if (turn.boot) return;
-      steps.push({ command: turn.command, key: `${id}:${pos}` });
-    });
-  }
-  return steps;
 }
 
-/** Whether a parsed value looks like the Phase 5 composite state. */
-function isComposite(value: unknown): value is CompositeState {
-  return typeof value === 'object' && value !== null
-    && 'model' in value
-    && Array.isArray((value as { model?: { lineages?: unknown } }).model?.lineages);
+/** Card ✕ (D4/Q-4): tail-cut — the turn and everything after it, branches
+ *  included. The engine holds post-cut state, so the surviving line replays
+ *  (suppressed — its cards are retained) to realign. Clears ⌘Z. */
+async function performTailCut(ordinal: number): Promise<void> {
+  if (replayActive || driverBusy) return;
+  const result = model.tailCut(ordinal);
+  if (result === null) return;
+  clearUndo();
+  currentLine = model.activeLine;
+  update();                     // the cut cards leave the board immediately
+  await driveFreshBoot(model.activeLine, pathSteps(model.activeLine), []);
 }
+
+// ── restore on boot / after an author restart ─────────────────────────────
 
 /**
- * Restores the whole session by replay (D8): root lineage first, branch
- * lineages in id order, and the snapshot's active lineage replayed last so
- * it ends up live; then structure re-applies through the position→ordinal
- * map, and each written segment's claims re-hydrate from its `tests/` file.
- * Any step that fails leaves what landed — degraded, never an error.
+ * Replays the whole tree onto a booting engine: the main line types live
+ * (delivered turns bind to the document's cards), each branch line
+ * fresh-boots with its prefix suppressed and its own cards typed live, and
+ * the target active line replays last so it ends up live. Any step that
+ * fails leaves what landed — degraded, never an error.
  */
-async function restoreComposite(
-  composite: CompositeState,
-  files: Record<string, string>,
-): Promise<void> {
-  const snap = composite.model;
-  dialogOutcomes = new Map(composite.dialogs ?? []);
-
+async function replayTree(activeTarget: number): Promise<void> {
   driverBusy = true;
   replayActive = true;
   setInputHeld(true, 'restoring session…');
   try {
+    currentLine = MAIN_LINE;
+    model.activateLine(MAIN_LINE);
     // The root's boot look plays itself — wait for it unless it already
-    // arrived in the drained queue.
-    if (model.turns.length === 0) await awaitNextTurn(15_000);
-    const root = snap.lineages.find(l => l.id === 1);
+    // arrived (drained queue, or the fence's reboot landing first).
+    if (!model.hasOpening) await awaitNextTurn(15_000);
     let intact = true;
-    for (const [index, turn] of (root?.turns ?? []).entries()) {
-      if (turn.boot) continue;
-      armedOutcomeKey = `1:${index + 1}`;
-      typeCommand(turn.command);
+    const mainCommands = model.ownCommandsOf(MAIN_LINE);
+    for (const [index, command] of mainCommands.entries()) {
+      armedOutcomeKey = `${MAIN_LINE}:${index}`;
+      typeCommand(command);
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
       if (!landed) { intact = false; break; }
@@ -755,60 +754,21 @@ async function restoreComposite(
     replayActive = false;
 
     if (intact) {
-      const branches = snap.lineages
-        .filter(l => l.id !== 1 && l.parentId !== undefined)
-        .sort((a, b) => a.id - b.id);
-      for (const lineage of branches) {
-        const forkOrdinal = lineage.forkAtPos !== undefined && lineage.parentId !== undefined
-          ? ordinalByPos.get(`${lineage.parentId}:${lineage.forkAtPos}`)
-          : undefined;
-        model.registerLineage({
-          id: lineage.id,
-          ...(lineage.parentId !== undefined ? { parentId: lineage.parentId } : {}),
-          ...(forkOrdinal !== undefined ? { forkAt: forkOrdinal } : {}),
-          ...(lineage.pendingCommand !== undefined
-            ? { pendingCommand: lineage.pendingCommand } : {}),
-        });
-        if (lineage.turns.length === 0) continue;
-        const ancestry = snapshotAncestrySteps(snap, lineage.parentId!, lineage.forkAtPos);
-        const live = lineage.turns.map((turn, index) => ({
-          command: turn.command, key: `${lineage.id}:${index + 1}`,
+      for (const lineId of model.lineIds()) {
+        if (lineId === MAIN_LINE) continue;
+        const own = model.ownCommandsOf(lineId);
+        if (own.length === 0) continue;
+        const ownSteps = own.map((command, index) => ({
+          command,
+          key: `${lineId}:${index}`,
         }));
-        if (!(await driveFreshBoot(lineage.id, ancestry, live))) break;
+        if (!(await driveFreshBoot(lineId, prefixSteps(lineId), ownSteps))) break;
       }
 
-      // The active lineage replays last — view is live (Phase 5's rule).
-      if (typeof snap.active === 'number'
-          && snap.active !== currentLogical
-          && model.activateLineage(snap.active)) {
-        const path = snapshotAncestrySteps(snap, snap.active, undefined);
-        await driveFreshBoot(snap.active, path, []);
-      }
-    }
-
-    model.restore(snap, (lineage, pos) => ordinalByPos.get(`${lineage}:${pos}`));
-    activeSegment = model.openSegment()
-      ?? model.segments[model.segments.length - 1] ?? null;
-
-    // Closed segments' claims live in their files — parse them back
-    // (Phase 5: reopening must never rewrite authored claims away).
-    for (const [key, stem] of Object.entries(composite.stems ?? {})) {
-      const [lineageText, posText] = key.split(':');
-      const start = Number(posText) === 0
-        ? (model.hasOpening ? 0 : undefined)
-        : ordinalByPos.get(`${Number(lineageText)}:${Number(posText)}`);
-      if (start === undefined) continue;
-      const segment = model.segmentOf(start);
-      if (!segment || segment.start !== start || segment.end === null) continue;
-      const fileText = files[stem];
-      if (typeof fileText !== 'string') continue;
-      const result = rehydrateSegmentClaims({
-        model, segment, policy, seed: 42, source: turnSource,
-      }, fileText);
-      if (result === 'attached') {
-        written.set(segment, { name: stem, text: fileText });
-      } else {
-        detached.add(segment);
+      // The active line replays last — view is live.
+      if (model.lineIds().includes(activeTarget) && activeTarget !== currentLine) {
+        model.activateLine(activeTarget);
+        await driveFreshBoot(activeTarget, pathSteps(activeTarget), []);
       }
     }
   } finally {
@@ -820,30 +780,7 @@ async function restoreComposite(
   }
 }
 
-/** The commands-only linear restore (no composite in the sidecar): type
- *  the tail Swift computed; structure and claims have nothing to restore. */
-async function restoreLinear(session: BootSession): Promise<void> {
-  const commands = session.replay ?? [];
-  if (commands.length > 0) {
-    replayActive = true;
-    setInputHeld(true, 'restoring session…');
-    if (model.turns.length === 0) await awaitNextTurn(15_000);
-    for (const command of commands) {
-      typeCommand(command);
-      if (!(await awaitNextTurn(15_000))) break;
-    }
-    replayActive = false;
-    setInputHeld(false);
-  }
-  update();
-}
-
 // ── boot ──────────────────────────────────────────────────────────────────
-
-const surfaceWindow = window as unknown as {
-  __sharpeeTestingSurface?: DeliverShim;
-  __SHARPEE_TESTING_SESSION__?: BootSession;
-};
 
 const queued = surfaceWindow.__sharpeeTestingSurface?.q ?? [];
 surfaceWindow.__sharpeeTestingSurface = {
@@ -854,14 +791,37 @@ surfaceWindow.__sharpeeTestingSurface = {
 
 cards.ensureLayout();
 installDialogHooks();
+// ⌘Z — undo the last authoring gesture (never inside a text field, where
+// the field's own undo belongs to the field).
+document.addEventListener('keydown', event => {
+  if (!(event.metaKey || event.ctrlKey) || event.key !== 'z' || event.shiftKey) return;
+  const target = event.target as HTMLElement | null;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+  event.preventDefault();
+  performUndo();
+});
+
+// Adopt the persisted document BEFORE draining the queue, so the boot look
+// binds to the document's cards rather than appending fresh ones.
+let loadedDocument = false;
+if (bootSession?.document !== undefined) {
+  const read = deserializeTreeDocument(bootSession.document);
+  if (read.status === 'ok') {
+    model.load(read.document);
+    lastDocumentText = model.serialize();
+    dialogOutcomes = new Map(bootSession.view?.dialogs ?? []);
+    loadedDocument = true;
+  } else if (read.status === 'refused') {
+    // AC-4: a newer document is refused BY NAME and never written — the
+    // session works as a scratch board over a fresh tree.
+    documentWriteLocked = true;
+    cards.setNotice(read.message);
+  }
+  // Malformed: the model already holds a fresh empty tree — degrade quietly.
+}
+
 for (const record of queued) deliver(record);
 
-const bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
-policy = bootSession?.policy;
-if (bootSession) {
-  if (isComposite(bootSession.snapshot)) {
-    void restoreComposite(bootSession.snapshot, bootSession.files ?? {});
-  } else if ((bootSession.replay?.length ?? 0) > 0) {
-    void restoreLinear(bootSession);
-  }
+if (loadedDocument && model.document.cards.length > 0) {
+  void replayTree(bootSession?.view?.active ?? MAIN_LINE);
 }

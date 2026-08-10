@@ -1,9 +1,10 @@
 // SessionState.swift
-// Persists the IDE's window-scoped session — last project, open document URLs, active tab —
-// across launches via UserDefaults.
+// Persists the IDE's window-scoped session — last project, open document URLs, active tab,
+// window and pane geometry — across launches via UserDefaults.
 // Public interface: SessionState (the value), SessionStateStore (load/save/clear).
 // Owner context: tools/ide — Persistence.
 
+import CoreGraphics
 import Foundation
 
 struct SessionState: Codable {
@@ -16,6 +17,18 @@ struct SessionState: Codable {
     var projectPaneVisible: Bool
     var buildPanelVisible: Bool
     var playAfterBuild: Bool
+    /// The right panel's selected tab index. Part of "the IDE stores all of
+    /// its visual state" (David, 2026-08-09); nil in older persisted entries.
+    var rightPanelTab: Int?
+    /// The main window's frame — size AND position (David, 2026-08-09: the
+    /// IDE's state includes window height and width). Applied at launch,
+    /// before the landing page, because geometry is visual state, not
+    /// project content — `restorable` never filters it.
+    var windowFrame: CGRect?
+    /// The project pane's dragged width; nil before the author ever drags.
+    var projectPaneWidth: Double?
+    /// The right (Play) panel's dragged width; nil before the author drags.
+    var playPaneWidth: Double?
 
     init(projectURL: URL?,
          openDocumentURLs: [URL],
@@ -23,7 +36,11 @@ struct SessionState: Codable {
          expandedFolderURLs: [URL] = [],
          projectPaneVisible: Bool = true,
          buildPanelVisible: Bool = false,
-         playAfterBuild: Bool = true) {
+         playAfterBuild: Bool = true,
+         rightPanelTab: Int? = nil,
+         windowFrame: CGRect? = nil,
+         projectPaneWidth: Double? = nil,
+         playPaneWidth: Double? = nil) {
         self.projectURL = projectURL
         self.openDocumentURLs = openDocumentURLs
         self.activeIndex = activeIndex
@@ -31,6 +48,10 @@ struct SessionState: Codable {
         self.projectPaneVisible = projectPaneVisible
         self.buildPanelVisible = buildPanelVisible
         self.playAfterBuild = playAfterBuild
+        self.rightPanelTab = rightPanelTab
+        self.windowFrame = windowFrame
+        self.projectPaneWidth = projectPaneWidth
+        self.playPaneWidth = playPaneWidth
     }
 
     // Custom decode so older persisted entries (without the newer additive fields) still load.
@@ -43,6 +64,10 @@ struct SessionState: Codable {
         projectPaneVisible = try container.decodeIfPresent(Bool.self, forKey: .projectPaneVisible) ?? true
         buildPanelVisible = try container.decodeIfPresent(Bool.self, forKey: .buildPanelVisible) ?? false
         playAfterBuild = try container.decodeIfPresent(Bool.self, forKey: .playAfterBuild) ?? true
+        rightPanelTab = try container.decodeIfPresent(Int.self, forKey: .rightPanelTab)
+        windowFrame = try container.decodeIfPresent(CGRect.self, forKey: .windowFrame)
+        projectPaneWidth = try container.decodeIfPresent(Double.self, forKey: .projectPaneWidth)
+        playPaneWidth = try container.decodeIfPresent(Double.self, forKey: .playPaneWidth)
     }
 }
 

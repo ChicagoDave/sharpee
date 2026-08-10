@@ -8,8 +8,7 @@ editing a moment after you stop typing, and keeps **Problems** current.
 
 Problems lists structured compile diagnostics, not raw compiler text. Each one
 points at a place in your story, and clicking it takes you there. Some carry a
-fix you can apply directly, which is where a missing IFID gets generated for
-you.
+fix you can apply directly.
 
 When an error needs more than a line to explain, the **Diagnosis** tab in the
 right panel carries the longer version.
@@ -40,23 +39,36 @@ which is why there is no separate structure view in the project pane.
 
 ## Testing
 
-The **Testing** tab holds your transcript tests. **Test → Run Tests** runs
-them; **Test → Cancel Test Run** stops a run.
+The **Testing** tab is where your tests live — and where they are made.
+Playing in the Testing tab **is** recording: every turn you type becomes a
+card, and Chord Writer writes down what the story actually said as that
+card's claims. Under the default policy that is the room's name and
+description; declare `auto-assertion:` in your story header to choose
+differently, and add or remove claims on any card by hand.
 
-Transcript tests form a tree rather than a flat list, because a transcript can
-continue another one. A test that begins where a previous transcript left off
-only means anything if that ancestry runs first. Chord Writer therefore runs a
-test **with its ancestors**, and it is the reason there is a single run command
-rather than several.
+The whole tree saves beside your story as **`<story-id>.tests.json`** — one
+document, the single source of truth for your tests. There are no test files
+to name, arrange, or keep in sync; the tree is the suite.
 
-<Callout title="Why this matters more than it sounds">
-  Running a `continues:` tree flat rather than as a tree does not fail loudly.
-  It fails as a large number of ordinary-looking test failures, because every
-  transcript downstream of the first one starts from the wrong world state.
+Branch from any card to test an alternative path — the branch replays your
+story to that point and diverges from there. Cards group by the region their
+room belongs to, and groups collapse as the suite grows.
+
+**Test → Run Tests** replays the whole tree fresh from boot at the story's
+pinned seed and evaluates exactly what the document says; **Test → Cancel
+Test Run** stops a run. Every card and every claim gets its own verdict in
+the run column, and the tally counts both: cards and assertions, passing and
+failing.
+
+<Callout title="Story edits show up as seams">
+  Your tests record what the story said when you played it. Change a room's
+  description and the next run fails exactly one claim — the one recorded
+  against the old text, at the card where it was recorded. That is the suite
+  doing its job: re-record that turn, or edit the claim, and the seam closes.
 </Callout>
 
-Results land back on the tree as it runs. A failure can be opened at the exact
-transcript line that produced it.
+The same run works from the command line: `sharpee test` in the project
+directory finds the document and replays it against your compiled story.
 
 ## Next
 

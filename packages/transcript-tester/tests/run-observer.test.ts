@@ -296,6 +296,27 @@ describe('RunEventStream sequences what the observer reports', () => {
     expect('failure' in (events[1] as object)).toBe(false);
   });
 
+  it('carries the assertion detail when the result reports it, and omits it when not', async () => {
+    const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
+    const { events, stream } = collect();
+    const result = await runTranscript(transcript, echoEngine() as never, {});
+    // The wire's shape is the CALLER's job (harnesses render descriptions);
+    // strip the runner's internal field to build the without-detail case.
+    const { assertionResults: _internal, ...bare } = result.commands[0];
+    const detail = [
+      { description: 'contains "north"', passed: true },
+      { description: 'contains "wall"', passed: false, message: 'Output does not contain "wall"' },
+    ];
+
+    stream.commandResult('/t/a.transcript', { ...bare, assertionResults: detail });
+    stream.commandResult('/t/a.transcript', bare);
+
+    expect(events[0].type === 'command-result' ? events[0].assertionResults : undefined)
+      .toEqual(detail);
+    // Key-absence for the same reason as `turn` above.
+    expect('assertionResults' in (events[1] as object)).toBe(false);
+  });
+
   it('carries the world snapshot on command results and transcript starts, and omits it when not reported', async () => {
     const transcript = fixture('title: T\n---\n> north\n[OK: contains "north"]\n');
     const { events, stream } = collect();

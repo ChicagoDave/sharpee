@@ -37,10 +37,20 @@ final class MainWindowController: NSWindowController {
         // assigning the controller can shrink the window to the view's fittingSize.
         window.setContentSize(NSSize(width: 1400, height: 900))
         window.center()
-        window.setFrameAutosaveName("SharpeeIDEMainWindow")
+        // Geometry restores from the session (David 2026-08-09: the IDE's
+        // state includes window height and width), applied before the window
+        // shows and before the landing page — geometry is visual state, not
+        // project content. AppKit's frame autosave is deliberately not used:
+        // one writer (persistSession), one reader, no timing races with the
+        // pre-appearance fitting-size churn.
+        if let frame = SessionStateStore.load()?.windowFrame {
+            window.setFrame(frame, display: false)
+        }
         window.isReleasedWhenClosed = false
 
         self.init(window: window)
+        // Cascading would reposition the restored frame on showWindow.
+        shouldCascadeWindows = false
 
         // The window still CARRIES the title (Window menu, Mission Control); it
         // just no longer DRAWS it — the strip at the top of the content view
@@ -149,23 +159,27 @@ final class MainWindowController: NSWindowController {
         rootViewController?.showPublishTab()
     }
 
-    /// The right panel's Testing tab (ADR-301) — the web surface a run streams
-    /// into. Force-unwrap-free: it exists for the window's lifetime; the
-    /// fallback instance only serves a window-less controller (tests).
-    var testingTab: TestingTabViewController {
-        rootViewController?.testingTab ?? TestingTabViewController()
+    /// The Testing tab's play surface, once a project bound one (nil before).
+    var testingSurface: TestingSurfaceViewController? {
+        rootViewController?.testingSurface
     }
 
-    /// Brings the Testing tab forward — the reading surface (ADR-306 D4).
+    /// Brings the Testing tab forward — the testing play surface (David's
+    /// ruling 2026-08-09: the new UX lives IN the tab; the ADR-301 tree tab
+    /// and the separate surface window are retired).
     func showTestingTab() {
         rootViewController?.showTestingTab()
     }
 
-    /// Opens the testing play surface window (ADR-306) — the dedicated
-    /// testing page with the card/segment UI, the one test-authoring surface
-    /// (the ADR-304 workspace is retired; David's shred ruling 2026-08-09).
+    /// Ensures the surface is bound and brings the Testing tab forward.
     func openTestingSurface() {
         rootViewController?.openTestingSurface()
+    }
+
+    /// Runs the suite through the surface's run column (the Test menu's Run
+    /// Tests). Ensures the surface, shows the tab, and clicks its Run.
+    func runTestsInSurface() {
+        rootViewController?.runTestsInSurface()
     }
 
     /// The Play surface (right panel). Fallback serves a window-less
@@ -264,6 +278,11 @@ final class MainWindowController: NSWindowController {
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
         rootViewController?.applyPlayAfterBuild(on)
+    }
+
+    /// Applies a persisted right-panel tab choice (session restore).
+    func setRightPanelTab(_ index: Int) {
+        rootViewController?.applyRightPanelTab(index)
     }
 
     /// Updates the status-bar build pill.
@@ -541,10 +560,9 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showBuildTab()
     }
 
-    /// The right panel's Testing tab (ADR-301) — wired by TestController.
-    var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
-
     var publishView: PublishView? { mainSplitViewController.publishView }
+
+    var testingSurface: TestingSurfaceViewController? { mainSplitViewController.testingSurface }
 
     func showPublishTab() { mainSplitViewController.showPublishTab() }
 
@@ -552,9 +570,13 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showTestingTab()
     }
 
-    /// The testing play surface window (ADR-306 Phase 3).
+    /// The Testing tab's play surface (ADR-306, embedded).
     func openTestingSurface() {
         mainSplitViewController.openTestingSurface()
+    }
+
+    func runTestsInSurface() {
+        mainSplitViewController.runTestsInSurface()
     }
 
     /// The Play surface (right panel).
@@ -798,6 +820,10 @@ private final class RootViewController: NSViewController {
     func applyPlayAfterBuild(_ on: Bool) {
         mainSplitViewController.setPlayAfterBuild(on)
     }
+
+    func applyRightPanelTab(_ index: Int) {
+        mainSplitViewController.setRightPanelTab(index)
+    }
 }
 
 // MARK: - Main horizontal split (4 panes)
@@ -810,14 +836,16 @@ private final class MainSplitViewController: NSSplitViewController {
     private static let editorMinWidth: CGFloat = 320
     private static let playMinWidth: CGFloat = 240
 
-    /// Manual divider persistence (project/play pane widths). AppKit's frame
-    /// autosave is deliberately NOT used: it restores while the window is
-    /// still at its pre-appearance fitting width, which squashes the play
+    /// Divider persistence (project/play pane widths) rides the session
+    /// (David 2026-08-09: the IDE's state includes pane widths). AppKit's
+    /// split autosave is deliberately NOT used: it restores while the window
+    /// is still at its pre-appearance fitting width, which squashes the play
     /// pane to its minimum before the window grows back — the extra width
     /// then goes to the editor (lowest holding priority) and the play pane
-    /// opened at 240 on every launch regardless of what was saved.
-    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
-    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
+    /// opened at 240 on every launch regardless of what was saved. Instead
+    /// the widths apply once in `applyInitialDividerPositions` and persist
+    /// through `persistSession`, guarded so the launch invariant holds
+    /// (close the landing page → nothing persisted).
 
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
@@ -852,12 +880,18 @@ private final class MainSplitViewController: NSSplitViewController {
         NotificationCenter.default.addObserver(
             self, selector: #selector(persistDividerPositions(_:)),
             name: NSSplitView.didResizeSubviewsNotification, object: splitView)
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(settingsDidChange(_:)),
-            name: SettingsPreference.didChange, object: nil)
 
         railViewController.onProjectToggle = { [weak self] in self?.toggleProjectPane() }
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
+        rightPanelViewController.onTestingTabSelected = { [weak self] in self?.testingTabSelected() }
+        rightPanelViewController.onTabChanged = { [weak self] in
+            // Only once a project is open: the panel's own opening layout
+            // selects Play during window construction, and a session written
+            // then would break the launch invariant (close the landing page →
+            // nothing persisted).
+            guard let self, self.currentProject != nil else { return }
+            self.persistSession()
+        }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.activateFile(at: url) }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
@@ -866,6 +900,12 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         editorViewController.onStoryEdited = { [weak self] url, content in
             self?.composeScheduler.noteEdit(storyURL: url, content: content)
+        }
+        editorViewController.onStoryReconciled = { [weak self] url, content in
+            // Compose the REAL file (not a buffer snapshot): identity
+            // reconciliation rewrote it, or its config sidecar is broken and
+            // the row only exists on an on-disk run (ADR-309 D5).
+            self?.composeScheduler.composeNow(storyURL: url, content: content)
         }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
@@ -1081,7 +1121,6 @@ private final class MainSplitViewController: NSSplitViewController {
         splitView.setPosition(Self.railWidth + (visible ? savedProjectWidth() : 0), ofDividerAt: 1)
         railViewController.setProjectActive(visible)
         // Showing or hiding the pane changes what "half" means (Settings).
-        snapEditorAndPlayEvenlyIfEnabled()
     }
 
     /// Flips the project pane's visibility and persists the new state.
@@ -1090,46 +1129,25 @@ private final class MainSplitViewController: NSSplitViewController {
         persistSession()
     }
 
-    // MARK: Even pane split (Settings → Snap panes to 50% each)
-
-    /// Puts the editor and Play panes on an even split, when the setting is on.
-    ///
-    /// The project pane keeps its own width — it is a sidebar, not one of the
-    /// two halves — so "half" is half of what remains after the rail and the
-    /// pane. A no-op before the opening layout has run, so launch still restores
-    /// the saved widths rather than snapping over them.
-    fileprivate func snapEditorAndPlayEvenlyIfEnabled() {
-        guard SettingsPreference.snapPanesEvenly,
-              didApplyInitialLayout,
-              splitView.arrangedSubviews.count == 4 else { return }
-
-        let totalWidth = splitView.bounds.width
-        let projectWidth = isProjectPaneVisible ? splitView.arrangedSubviews[1].frame.width : 0
-        let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
-        guard editorPlusPlay > 0 else { return }
-        splitView.setPosition(totalWidth - editorPlusPlay / 2, ofDividerAt: 2)
-    }
-
-    /// Re-snaps after a WINDOW resize. Deliberately not hooked to the split's own
-    /// resize notification: that fires for divider drags too, which would make
-    /// the divider immovable rather than merely re-snapping.
-    @objc private func windowDidResize(_ note: Notification) {
-        snapEditorAndPlayEvenlyIfEnabled()
-    }
-
-    /// Applies a settings change to the open window at once.
-    @objc private func settingsDidChange(_ note: Notification) {
-        snapEditorAndPlayEvenlyIfEnabled()
-    }
-
     /// The width to reopen the project pane at: the author's last dragged width
     /// when one is saved, the default otherwise — never below the minimum.
     private func savedProjectWidth() -> CGFloat {
-        let saved = UserDefaults.standard.object(forKey: Self.projectWidthKey) as? Double
+        let saved = SessionStateStore.load()?.projectPaneWidth
         return max(Self.projectMinWidth, saved.map { CGFloat($0) } ?? Self.projectWidth)
     }
 
     fileprivate func persistSession() {
+        // Geometry falls back to what was last saved when it cannot be read
+        // live (window not on screen yet, pane hidden measuring 0) — a
+        // persist must never reset the author's dragged sizes to defaults.
+        let previous = SessionStateStore.load()
+        let livePanes = didApplyInitialLayout && splitView.arrangedSubviews.count == 4
+        let projectWidth: Double? = livePanes && isProjectPaneVisible
+            ? Double(splitView.arrangedSubviews[1].frame.width)
+            : previous?.projectPaneWidth
+        let playWidth: Double? = livePanes
+            ? Double(splitView.arrangedSubviews[3].frame.width)
+            : previous?.playPaneWidth
         let state = SessionState(
             projectURL: currentProject?.rootURL,
             openDocumentURLs: editorViewController.openDocumentURLs,
@@ -1137,7 +1155,11 @@ private final class MainSplitViewController: NSSplitViewController {
             expandedFolderURLs: projectPaneViewController.expandedFolderURLs,
             projectPaneVisible: isProjectPaneVisible,
             buildPanelVisible: buildPanelVisibleProvider?() ?? false,
-            playAfterBuild: playViewController.playAfterBuild
+            playAfterBuild: playViewController.playAfterBuild,
+            rightPanelTab: rightPanelViewController.selectedTab,
+            windowFrame: view.window?.frame ?? previous?.windowFrame,
+            projectPaneWidth: projectWidth,
+            playPaneWidth: playWidth
         )
         SessionStateStore.save(state)
     }
@@ -1153,61 +1175,119 @@ private final class MainSplitViewController: NSSplitViewController {
         if playViewController.isLoaded {
             rightPanelViewController.showPlayTab()
         }
-        if let surface = testingSurfaceWindowController,
-           surface.window?.isVisible == true {
+        if let surface = rightPanelViewController.testingSurface,
+           surface.isLoaded {
+            // The story's on-disk `auto-assertion:` policy may have changed
+            // since the surface bound (the Test menu edits the header, and
+            // this build just saved it) — the reloaded page must carry the
+            // CURRENT policy or the cards' default assertion lines go stale.
+            if let storyURL = treeState.storyURL,
+               let source = try? String(contentsOf: storyURL, encoding: .utf8) {
+                // Declared policy only; absent → the page applies the
+                // platform default (David 2026-08-10).
+                surface.policy = StoryHeaderAutoAssertion.read(from: source)?.rawValue
+            }
+            // Regions may have changed with the build too — re-derive the
+            // grouping map from the fresh IR (David 2026-08-10).
+            if case .populated(let ir, _) = treeState.display {
+                surface.regionByRoom = Self.regionMap(from: ir)
+            }
             surface.load(bundleDirectory: bundleDir)
         }
     }
 
-    // MARK: Testing play surface (ADR-306 Phase 3)
+    // MARK: Testing play surface (ADR-306; embedded in the Testing tab —
+    // David's ruling 2026-08-09: "remove the old UX and embed the new UX in
+    // the Testing tab")
 
-    /// The surface's window, created on first open and kept for the project's
-    /// lifetime — its D8 session sidecar is per-story, so a project switch
-    /// closes it (see loadProject).
-    fileprivate var testingSurfaceWindowController: TestingSurfaceWindowController?
-
-    /// Opens (or refocuses) the testing play surface. A fresh show loads the
-    /// story's testing page and runs the D8 restore; refocusing a visible
-    /// window never reboots the running session.
-    fileprivate func openTestingSurface() {
+    /// Ensures the Testing tab hosts the current story's surface, creating it
+    /// against the story's D8 sidecar on first need. Returns nil before the
+    /// first successful compose (no story id → no sidecar identity); the tab
+    /// shows its placeholder until then.
+    @discardableResult
+    fileprivate func ensureTestingSurface() -> TestingSurfaceViewController? {
+        if let existing = rightPanelViewController.testingSurface { return existing }
         guard let storyURL = treeState.storyURL,
               case .populated(let ir, _) = treeState.display,
-              let id = ir.meta.fields.id else {
-            NSSound.beep()
-            return
-        }
+              let id = ir.meta.fields.id else { return nil }
         let projectRoot = storyURL.deletingLastPathComponent()
-        let controller: TestingSurfaceWindowController
-        if let existing = testingSurfaceWindowController {
-            controller = existing
-        } else {
-            let store = TestingSessionStore(
-                fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
-            controller = TestingSurfaceWindowController(storyTitle: id, sessionStore: store)
-            testingSurfaceWindowController = controller
-        }
-        // Fresh context every show: the writer's destination and the story's
-        // on-disk `auto-assertion:` policy (6e — the ON-DISK policy governs
-        // creation exactly as it will govern the file's future runs).
-        controller.surface.testsDirectory =
-            projectRoot.appendingPathComponent("tests", isDirectory: true)
-        controller.surface.storyFile = storyURL
-        controller.surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
+        let store = TestingSessionStore(
+            fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
+        let surface = TestingSurfaceViewController(sessionStore: store)
+        // The tree document lives beside the `.story` file, named by its
+        // STEM — exactly the id `sharpee test --tree`'s discovery keys on
+        // (ADR-307 D2/Q-2) — and the story's on-disk `auto-assertion:`
+        // policy governs synthesis exactly as it governs the runs.
+        surface.testDocumentURL = projectRoot.appendingPathComponent(
+            storyURL.deletingPathExtension().lastPathComponent + ".tests.json")
+        surface.storyFile = storyURL
+        surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
-        controller.surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
+        // Declared policy only. No header line → the page applies the
+        // platform default (branch-tester's constant; David 2026-08-10,
+        // extending the 2026-08-09 authoring-surface ruling platform-wide).
+        surface.policy = StoryHeaderAutoAssertion.read(from: storySource)?.rawValue
+        // Region grouping (David 2026-08-10): the page groups cards by the
+        // region each turn's room belongs to — derived from the Story IR,
+        // never persisted in the document.
+        surface.regionByRoom = Self.regionMap(from: ir)
+        rightPanelViewController.installTestingSurface(surface)
+        return surface
+    }
 
-        let wasVisible = controller.window?.isVisible == true
-        controller.showWindow(nil)
-        if !wasVisible {
-            controller.load(bundleDirectory: bundleDirectory())
+    /// Room name → region name from the Story IR: each region's `containing`
+    /// members that are rooms map to that region's name. Nested regions fall
+    /// out naturally — only DIRECT members are listed, so the innermost
+    /// container wins. Empty when the story declares no regions.
+    static func regionMap(from ir: ComposeStoryIR) -> [String: String] {
+        let byId = Dictionary(ir.allEntities.map { ($0.id, $0) },
+                              uniquingKeysWith: { first, _ in first })
+        var map: [String: String] = [:]
+        for entity in ir.allEntities where entity.hasKind("region") {
+            for member in entity.containing ?? [] {
+                if let room = byId[member.id], room.hasKind("room") {
+                    map[room.name] = entity.name
+                }
+            }
+        }
+        return map
+    }
+
+    /// The Testing tab was selected (click or ⌥⌘U): bind the surface and load
+    /// the story's testing page on first show. Re-selecting a live session
+    /// never reboots it.
+    fileprivate func testingTabSelected() {
+        guard let surface = ensureTestingSurface() else { return }
+        if !surface.isLoaded {
+            surface.load(bundleDirectory: bundleDirectory())
         }
     }
 
-    /// Closes the surface for a project switch — the next open builds a new
-    /// controller against the new story's sidecar.
+    /// Brings the Testing tab forward with the surface bound (the ⌥⌘U menu).
+    fileprivate func openTestingSurface() {
+        showTestingTab()   // tab selection runs testingTabSelected()
+    }
+
+    /// The Test menu's Run Tests: the surface's run column, through the same
+    /// button the author clicks — its in-page guards (one run at a time,
+    /// never mid-replay) stay authoritative.
+    fileprivate func runTestsInSurface() {
+        showTestingTab()
+        guard let surface = rightPanelViewController.testingSurface,
+              surface.isLoaded else {
+            NSSound.beep()   // no build yet — the tab's placeholder says so
+            return
+        }
+        Task {
+            _ = try? await surface.evaluateInSurface(
+                "document.getElementById('ts-run-btn') && document.getElementById('ts-run-btn').click();")
+        }
+    }
+
+    /// Unbinds the surface for a project switch — the next Testing-tab visit
+    /// builds a new controller against the new story's sidecar.
     fileprivate func closeTestingSurface() {
-        testingSurfaceWindowController?.close()
-        testingSurfaceWindowController = nil
+        rightPanelViewController.clearTestingSurface()
     }
 
     /// Build-output plumbing — the Build tab lives in the right panel next to Play.
@@ -1231,8 +1311,9 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.showBuildTab()
     }
 
-    /// The Testing tab (ADR-301) — likewise in the right panel.
-    fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
+    fileprivate var testingSurface: TestingSurfaceViewController? {
+        rightPanelViewController.testingSurface
+    }
 
     fileprivate var docsTab: DocsTabViewController { rightPanelViewController.docsTab }
 
@@ -1255,6 +1336,11 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Applies a persisted "Play after build" value (session restore).
     fileprivate func setPlayAfterBuild(_ on: Bool) {
         playViewController.setPlayAfterBuild(on)
+    }
+
+    /// Applies a persisted right-panel tab choice (session restore).
+    fileprivate func setRightPanelTab(_ index: Int) {
+        rightPanelViewController.selectTab(index)
     }
 
     /// Updates the right-panel Diagnosis tab for a newly-arrived error (badge, no switch).
@@ -1292,27 +1378,43 @@ private final class MainSplitViewController: NSSplitViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        observeWindowGeometryIfNeeded()
         guard !didApplyInitialLayout else { return }
         didApplyInitialLayout = true
         applyInitialDividerPositions()
-        if let window = view.window {
-            NotificationCenter.default.addObserver(
-                self, selector: #selector(windowDidResize(_:)),
-                name: NSWindow.didResizeNotification, object: window)
-        }
-        snapEditorAndPlayEvenlyIfEnabled()
+    }
+
+    /// Window moves and resize ends persist the session's geometry (the
+    /// split's own notification covers divider drags but never a pure move).
+    private var observingWindowGeometry = false
+
+    private func observeWindowGeometryIfNeeded() {
+        guard !observingWindowGeometry, let window = view.window else { return }
+        observingWindowGeometry = true
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowGeometryChanged(_:)),
+            name: NSWindow.didMoveNotification, object: window)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowGeometryChanged(_:)),
+            name: NSWindow.didEndLiveResizeNotification, object: window)
+    }
+
+    @objc private func windowGeometryChanged(_ note: Notification) {
+        // Only once a project is open — the launch invariant (close the
+        // landing page → nothing persisted) covers geometry too.
+        guard currentProject != nil else { return }
+        persistSession()
     }
 
     /// Opening divider positions, applied once the window is at its real size:
     /// saved pane widths when present (drags persist across launches), the
     /// defaults otherwise — editor and play split the remaining width equally.
     private func applyInitialDividerPositions() {
-        let defaults = UserDefaults.standard
         let totalWidth = splitView.bounds.width
 
         let projectWidth = isProjectPaneVisible ? savedProjectWidth() : 0
         let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
-        let savedPlay = defaults.object(forKey: Self.playWidthKey) as? Double
+        let savedPlay = SessionStateStore.load()?.playPaneWidth
         let playWidth = max(Self.playMinWidth, savedPlay.map { CGFloat($0) } ?? editorPlusPlay / 2)
 
         splitView.setPosition(Self.railWidth, ofDividerAt: 0)
@@ -1321,18 +1423,14 @@ private final class MainSplitViewController: NSSplitViewController {
         splitView.setPosition(totalWidth - playWidth, ofDividerAt: 2)
     }
 
-    /// Persists the project/play pane widths on every divider or window
-    /// resize — but only after the opening layout has been applied, so the
-    /// pre-appearance constraint churn can never overwrite the saved widths.
+    /// Persists the pane widths on every divider or window resize — but only
+    /// after the opening layout has been applied (the pre-appearance
+    /// constraint churn must never overwrite the saved widths) and only once
+    /// a project is open (the launch invariant: close the landing page →
+    /// nothing persisted).
     @objc private func persistDividerPositions(_ note: Notification) {
-        guard didApplyInitialLayout else { return }
-        let defaults = UserDefaults.standard
-        // A collapsed project pane measures 0 — writing that would reset the
-        // author's dragged width to the minimum the next time they expand it.
-        if isProjectPaneVisible {
-            defaults.set(Double(splitView.arrangedSubviews[1].frame.width), forKey: Self.projectWidthKey)
-        }
-        defaults.set(Double(splitView.arrangedSubviews[3].frame.width), forKey: Self.playWidthKey)
+        guard didApplyInitialLayout, currentProject != nil else { return }
+        persistSession()
     }
 
     private func makeRailItem() -> NSSplitViewItem {

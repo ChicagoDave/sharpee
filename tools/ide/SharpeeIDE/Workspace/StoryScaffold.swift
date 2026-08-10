@@ -67,20 +67,26 @@ enum StoryScaffold {
         guard let raw = try? String(contentsOf: src, encoding: .utf8) else {
             throw ScaffoldError.templateMissing(storyTemplate)
         }
-        let rendered = substitute(raw, info: info, id: id)
-        try rendered.write(to: dir.appendingPathComponent("\(id).story"),
-                           atomically: true, encoding: .utf8)
+        // ADR-309 D2: the story is BORN with identity. The config sidecar is
+        // written first and the header rendered from the same value — the
+        // config is canon, the line is its rendering, and they agree from the
+        // first byte on disk. (`sharpee init` does exactly this, in the same
+        // order: two hosts, one behavior.)
+        let storyURL = dir.appendingPathComponent("\(id).story")
+        let ifid = StoryHeaderIFID.mint()
+        try StoryConfigStore.mint(for: storyURL, ifid: ifid)
+
+        let rendered = substitute(raw, info: info, id: id, ifid: ifid)
+        try rendered.write(to: storyURL, atomically: true, encoding: .utf8)
         try gitignore.write(to: dir.appendingPathComponent(".gitignore"), atomically: true, encoding: .utf8)
     }
 
-    private static func substitute(_ content: String, info: Info, id: String) -> String {
+    private static func substitute(_ content: String, info: Info, id: String, ifid: String) -> String {
         content
             .replacingOccurrences(of: "{{STORY_ID}}", with: id)
             .replacingOccurrences(of: "{{STORY_TITLE}}", with: info.title)
             .replacingOccurrences(of: "{{AUTHOR}}", with: info.author)
-            // ADR-298 D5: the IFID is minted once, at scaffold time (mirrors
-            // devkit init). Uppercase UUID is the IFID format (@sharpee/core).
-            .replacingOccurrences(of: "{{IFID}}", with: UUID().uuidString)
+            .replacingOccurrences(of: "{{IFID}}", with: ifid)
             .replacingOccurrences(of: "{{DESCRIPTION}}", with: info.description)
     }
 }

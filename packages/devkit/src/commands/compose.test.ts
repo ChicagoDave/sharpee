@@ -3,7 +3,7 @@
  * (the `-o` write is asserted by re-reading the file), gate failures exit 1
  * with `.story` line numbers on stderr.
  */
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -25,6 +25,32 @@ describe('sharpee compose', () => {
     expect(ir.format).toBe('story language 2');
     expect(Array.isArray(ir.entities)).toBe(true);
     expect(ir.entities.length).toBeGreaterThan(0);
+  });
+
+  it('reports a broken config sidecar as a named gate error, writing NOTHING (ADR-309 D5)', async () => {
+    // Compose is a read-only surface: the broken config is a diagnostic and a
+    // gate failure — never a re-mint, never a reconcile.
+    const dir = mkdtempSync(join(tmpdir(), 'compose-broken-config-'));
+    const story =
+      'story\n  title: T\n  authors: A\n  id: t\n  story-version: 0.0.1\n\n' +
+      'create the Den\n  a room\n\n  A small den.\n\n' +
+      'create the player\n  starts in the Den\n\n  You.\n';
+    const storyFile = join(dir, 't.story');
+    writeFileSync(storyFile, story);
+    writeFileSync(join(dir, 't.config.json'), '{ not json');
+    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const code = await runCompose([storyFile, '--check']);
+      expect(code).toBe(1);
+      const output = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(output).toContain('story-config.broken');
+      // Read-only: nothing reconciled, nothing minted.
+      expect(readFileSync(storyFile, 'utf8')).toBe(story);
+      expect(readFileSync(join(dir, 't.config.json'), 'utf8')).toBe('{ not json');
+    } finally {
+      stderr.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('exits 1 on a gate failure and reports the .story line', async () => {

@@ -99,6 +99,10 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         let name: String
         let isPlayer: Bool
         let kinds: [Kind]
+        /// Region membership (`containing …`, ADR-236) — resolved member
+        /// entity ids, non-empty only on region-kind entities. Decoded so
+        /// the Testing tab can group cards by region (David 2026-08-10).
+        let containing: [ContainedMember]?
         let span: DiagnosticSpan
 
         /// True when the entity declares membership in `kind` (`room`/`region`/`person`).
@@ -108,6 +112,12 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     /// A kind membership (`a room`, `a person`, ...). Extra wire fields ignored.
     struct Kind: Codable, Equatable, Sendable {
         let name: String
+    }
+
+    /// One resolved `containing` member (a room or nested region) — only the
+    /// id matters here; spans stay on the wire, ignored.
+    struct ContainedMember: Codable, Equatable, Sendable {
+        let id: String
     }
 
     /// A `define action` block with its exact span.

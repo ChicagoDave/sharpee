@@ -27,7 +27,6 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private var lineNumberRuler: LineNumberRulerView?
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
     private let highlighter = SyntaxHighlighter()
-    private let transcriptHighlighter = TranscriptHighlighter()
     /// The two single-character ranges currently carrying the bracket-match background, so they
     /// can be cleared before the next match is applied.
     private var bracketRanges: [NSRange] = []
@@ -73,6 +72,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Fired on every edit to ANY document (story, hatch module, browser page) —
     /// a source change invalidates the play surface (David's ruling).
     var onDocumentEdited: ((URL) -> Void)?
+
+    /// Fired after saving a `.story` whose identity reconciliation changed the
+    /// file, or whose config sidecar is broken (ADR-309) — the compose pipeline
+    /// re-runs against the REAL file.
+    ///
+    /// Both cases leave compose's last result stale in a way an edit-triggered
+    /// run cannot fix: while editing, the pipeline composes a hidden snapshot,
+    /// which has no config of its own, so a `story-config.broken` row raised on
+    /// open would vanish at the first keystroke and never return. Recomposing
+    /// on save is what puts the row back — the CHECK still lives in exactly one
+    /// place (devkit's compose gates); this only re-triggers it.
+    var onStoryReconciled: ((URL, String) -> Void)?
 
     /// The ranges currently carrying a diagnostic underline, so they can be cleared
     /// before the next compose result (or on edit, when they go stale).
@@ -479,7 +490,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         case .alertFirstButtonReturn: // Save
             let doc = documents[index]
             do {
-                try doc.save()
+                let outcome = try doc.save()
+                // The tab is closing, but the FILE is not: a reconciled header
+                // (or a broken config) leaves compose's rows stale for a story
+                // the project still has (ADR-309). No buffer reload — the view
+                // this document owned is going away.
+                noteStoryReconciled(doc, outcome)
                 performClose(at: index)
             } catch {
                 let alert = NSAlert(error: error)
@@ -553,13 +569,27 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     func saveActiveDocument() {
         guard let doc = activeDocument else { return }
         do {
-            try doc.save()
+            // A `.story` save reconciles its identity line (ADR-309 D3), which
+            // can rewrite the document under the buffer the author is looking
+            // at — reload it so the view shows what is actually on disk.
+            let outcome = try doc.save()
+            if outcome.contentChanged { loadActiveDocumentIntoTextView() }
+            noteStoryReconciled(doc, outcome)
             refreshUI()
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
             alert.runModal()
         }
+    }
+
+    /// Reports a save that left compose's last result stale (ADR-309): the file
+    /// was reconciled, or its config is broken and only an on-disk compose can
+    /// raise the row.
+    private func noteStoryReconciled(_ doc: Document, _ outcome: Document.SaveOutcome) {
+        guard doc.url.pathExtension == "story",
+              outcome.contentChanged || outcome.brokenConfig != nil else { return }
+        onStoryReconciled?(doc.url, doc.content)
     }
 
     /// Saves every dirty document (build-precondition: the build reads DISK,
@@ -569,9 +599,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     func saveAllDocuments() -> Bool {
         persistTextViewToActiveDocument()
         var allSaved = true
+        var activeRewritten = false
         for doc in documents where doc.isDirty {
             do {
-                try doc.save()
+                let outcome = try doc.save()
+                // Identity reconciliation (ADR-309 D3) may have rewritten the
+                // active document's text; the buffer must follow it.
+                if outcome.contentChanged, doc === activeDocument { activeRewritten = true }
+                noteStoryReconciled(doc, outcome)
             } catch {
                 allSaved = false
                 let alert = NSAlert(error: error)
@@ -579,6 +614,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
                 alert.runModal()
             }
         }
+        if activeRewritten { loadActiveDocumentIntoTextView() }
         refreshUI()
         return allSaved
     }
@@ -661,12 +697,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// does not recurse or churn the line-number ruler.
     private func applyHighlighting() {
         guard let url = activeDocument?.url, let storage = textView.textStorage else { return }
-        // Per-extension dispatch: `.story` → ChordLexer (ADR-258 D7);
-        // `.transcript` → the line classifier (ADR-277 D4). Never both.
+        // `.story` → ChordLexer (ADR-258 D7). The `.transcript` classifier
+        // retired with the transcript grammar (ADR-307 cutover).
         if highlighter.canHighlight(url) {
             highlighter.highlight(storage)
-        } else if transcriptHighlighter.canHighlight(url) {
-            transcriptHighlighter.highlight(storage)
         }
     }
 

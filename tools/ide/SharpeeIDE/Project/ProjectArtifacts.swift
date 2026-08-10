@@ -1,17 +1,19 @@
 // ProjectArtifacts.swift
 // Classifies an open project's contents into the typed artifact groups the
-// sidebar presents (ADR-280 D1): Story, Walkthroughs, Transcript Tests, Assets,
-// Web Template, Other. Groups are typed LENSES over the real folder, not folder
-// mirrors — Web Template draws from two different on-disk locations (the
+// sidebar presents (ADR-280 D1): Story, Walkthroughs, Assets, Web Template,
+// Other. Groups are typed LENSES over the real folder, not folder mirrors —
+// Web Template draws from two different on-disk locations (the
 // `<storyId>.templates` file beside the story, and the `browser/` escape
-// hatches) and Transcript Tests reaches through `tests/` to
-// `tests/transcripts/`. The view is open, not strict: anything matching no type
-// lands in Other, never hidden and never dropped.
+// hatches). The view is open, not strict: anything matching no type lands in
+// Other, never hidden and never dropped.
 //
 // ADR-299 D7's "Play Testing" group was removed with the `.skein` artifact it
-// existed to hold (ADR-300). A `play-testing/` directory an author still has on
-// disk now lands in Other, which is the open-view rule doing its job rather
-// than a special case needing to survive.
+// existed to hold (ADR-300). The `tests/` special case (hide Chord Writer's
+// `.transcript` artifacts) retired with the transcript grammar (ADR-307
+// cutover — tests live in `<storyId>.tests.json`, presented only in the
+// Testing tab); a `tests/` directory an author still has on disk now lands in
+// Other, the open-view rule doing its job rather than a special case needing
+// to survive.
 // Public interface: ProjectArtifacts.groups(for:), ArtifactGroup, ArtifactGroup.Kind.
 // Owner context: tools/ide — Project model. UI-free; safe to unit-test.
 
@@ -27,7 +29,6 @@ final class ArtifactGroup {
     enum Kind: CaseIterable {
         case story
         case walkthroughs
-        case transcriptTests
         case assets
         case feelies
         case webTemplate
@@ -37,7 +38,6 @@ final class ArtifactGroup {
             switch self {
             case .story: return "Story"
             case .walkthroughs: return "Walkthroughs"
-            case .transcriptTests: return "Transcript Tests"
             case .assets: return "Assets"
             case .feelies: return "Feelies"
             case .webTemplate: return "Web Template"
@@ -50,7 +50,6 @@ final class ArtifactGroup {
             switch self {
             case .story: return "book.closed"
             case .walkthroughs: return "figure.walk"
-            case .transcriptTests: return "checkmark.circle"
             case .assets: return "photo"
             case .feelies: return "envelope"
             case .webTemplate: return "rectangle.3.group"
@@ -82,8 +81,6 @@ final class ArtifactGroup {
 enum ProjectArtifacts {
 
     private static let walkthroughsDirectory = "walkthroughs"
-    private static let testsDirectory = "tests"
-    private static let transcriptsDirectory = "transcripts"
     private static let assetsDirectory = "assets"
     /// Player-facing extras shipped beside the game (ADR-284) — a map, a
     /// letter, a newspaper clipping. Distinct from `assets/`, which is media
@@ -109,14 +106,12 @@ enum ProjectArtifacts {
 
         var story: [FileNode] = []
         var walkthroughs: [FileNode] = []
-        var transcriptTests: [FileNode] = []
         var assets: [FileNode] = []
         var feelies: [FileNode] = []
         var webTemplate: [FileNode] = []
         var other: [FileNode] = []
 
         var walkthroughsURL: URL?
-        var transcriptTestsURL: URL?
         var assetsURL: URL?
         var feeliesURL: URL?
 
@@ -135,18 +130,6 @@ enum ProjectArtifacts {
                 feeliesURL = node.url
             case .webTemplate:
                 webTemplate.append(node)
-            case .tests:
-                // Reach through `tests/` for `tests/transcripts/` (ADR-277 D1/D3
-                // fixes both names). Anything else under `tests/` is unclassified
-                // rather than hidden.
-                for child in node.children {
-                    if child.isDirectory && child.name == transcriptsDirectory {
-                        transcriptTests.append(contentsOf: child.children)
-                        transcriptTestsURL = child.url
-                    } else {
-                        other.append(child)
-                    }
-                }
             case .browser:
                 // The styling and raw-page escapes are Web Template; anything
                 // else an author has parked in browser/ is unclassified.
@@ -165,7 +148,6 @@ enum ProjectArtifacts {
         let built: [(ArtifactGroup.Kind, [FileNode], URL?)] = [
             (.story, story, nil),
             (.walkthroughs, walkthroughs, walkthroughsURL),
-            (.transcriptTests, transcriptTests, transcriptTestsURL),
             (.assets, assets, assetsURL),
             (.feelies, feelies, feeliesURL),
             (.webTemplate, webTemplate, nil),
@@ -184,7 +166,6 @@ enum ProjectArtifacts {
         case assets
         case feelies
         case webTemplate
-        case tests
         case browser
         case unclassified
     }
@@ -195,7 +176,6 @@ enum ProjectArtifacts {
             case walkthroughsDirectory: return .walkthroughs
             case assetsDirectory: return .assets
             case feeliesDirectory: return .feelies
-            case testsDirectory: return .tests
             case browserDirectory: return .browser
             default: return .unclassified
             }

@@ -1,24 +1,23 @@
 // RightPanelViewController.swift
 // The right panel: a tab strip over the Chord build output (Build), the running
-// game (Play), the Testing surface (ADR-301 D1), the error explainer
+// game (Play), the testing play surface (Testing), the error explainer
 // (Diagnosis), and the bundled author documentation (Documentation, go-live
 // Phase 3) —
 // David's ruling: the build process lives NEXT TO Play, not in the bottom dock
 // (which stays for Problems and Game Errors). A build starting switches to
 // Build; a successful play-after-build switches to Play.
 //
-// The Skein tab and its actions (replay / tag / force / bless) were removed with
-// ADR-299's retirement: ADR-300 retires the `.skein` artifact and the second
-// verification engine, and the transcript tree the Testing tab renders is what
-// replaces the skein's tree.
-// The ADR-304 testing workspace is RETIRED (ADR-306 D1, David's shred ruling
-// 2026-08-09): the Testing tab shows inline like every other tab, and test
-// AUTHORING lives in the dedicated testing play surface window. The tab is
-// the reading surface only (ADR-306 D4).
-// Public interface: buildPanel, play, testingTab, docsTab, index, diagnosis,
-// showBuildTab(), showPlayTab(), showTestingTab(), showDocsTab(page:),
-// showPublishTab(), showDiagnosis(_:count:), revealDiagnosis(_:),
-// clearDiagnosis(), onOpenLocation.
+// The Testing tab IS the testing play surface (David's ruling, 2026-08-09:
+// "remove the old UX and embed the new UX in the Testing tab") — the ADR-301
+// tree/documents tab and the separate surface window are both retired. The
+// surface controller is installed per project by the window (its D8 session
+// sidecar is per-story), so this panel hosts a container and a placeholder
+// until one arrives.
+// Public interface: buildPanel, play, testingSurface, installTestingSurface(_:),
+// clearTestingSurface(), docsTab, index, diagnosis, showBuildTab(),
+// showPlayTab(), showTestingTab(), showDocsTab(page:), showPublishTab(),
+// showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(),
+// onOpenLocation, onTestingTabSelected.
 // Owner context: tools/ide — Play (right panel).
 
 import AppKit
@@ -29,10 +28,27 @@ final class RightPanelViewController: NSViewController {
     let play = PlayViewController()
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
-    /// The ADR-301 D1 Testing surface: a web bundle in a WKWebView, and the only
-    /// place a run is watched. The outline panel that used to sit beside it is
-    /// retired — one run, one surface.
-    let testingTab = TestingTabViewController()
+    /// The testing play surface (ADR-306), installed per project — nil until
+    /// the window binds one (the D8 session sidecar is per-story).
+    private(set) var testingSurface: TestingSurfaceViewController?
+    /// Hosts the surface's view; shows the placeholder until one is installed.
+    private let testingContainer = ThemedPane(color: Theme.playBackground)
+    private let testingPlaceholder = NSTextField(labelWithString: "Build (\u{2318}B) to open the testing surface")
+    /// Fired when the author selects the Testing tab — the window uses it to
+    /// install and lazily load the surface.
+    var onTestingTabSelected: (() -> Void)?
+    /// Fired on every tab change — the window persists the choice (visual
+    /// state survives relaunch).
+    var onTabChanged: (() -> Void)?
+
+    /// The selected tab index, for persistence; pair with `selectTab(_:)`.
+    var selectedTab: Int { tabStrip.selectedIndex }
+
+    /// Restores a persisted tab choice. Out-of-range values are ignored.
+    func selectTab(_ index: Int) {
+        guard (0...Self.publishTab).contains(index) else { return }
+        tabStrip.select(index)
+    }
     /// The author documentation bundled with the app (go-live Phase 3): the same
     /// scheme-handler machinery as the Testing tab, pointed at a different root.
     let docsTab = DocsTabViewController()
@@ -59,7 +75,6 @@ final class RightPanelViewController: NSViewController {
         let container = ThemedPane(color: Theme.playBackground)
 
         addChild(play)
-        addChild(testingTab)
         addChild(docsTab)
         tabStrip.addTab(title: "Build")
         tabStrip.addTab(title: "Play")
@@ -75,7 +90,11 @@ final class RightPanelViewController: NSViewController {
         play.view.translatesAutoresizingMaskIntoConstraints = false
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
-        testingTab.view.translatesAutoresizingMaskIntoConstraints = false
+        testingContainer.translatesAutoresizingMaskIntoConstraints = false
+        testingPlaceholder.font = NSFont.systemFont(ofSize: 11)
+        testingPlaceholder.textColor = Theme.foregroundFaint
+        testingPlaceholder.translatesAutoresizingMaskIntoConstraints = false
+        testingContainer.addSubview(testingPlaceholder)
         docsTab.view.translatesAutoresizingMaskIntoConstraints = false
         publish.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
@@ -83,7 +102,7 @@ final class RightPanelViewController: NSViewController {
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
-        container.addSubview(testingTab.view)
+        container.addSubview(testingContainer)
         container.addSubview(docsTab.view)
         container.addSubview(publish)
 
@@ -112,10 +131,12 @@ final class RightPanelViewController: NSViewController {
             diagnosis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             diagnosis.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            testingTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
-            testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            testingTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            testingTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            testingContainer.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
+            testingContainer.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            testingContainer.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            testingContainer.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            testingPlaceholder.centerXAnchor.constraint(equalTo: testingContainer.centerXAnchor),
+            testingPlaceholder.centerYAnchor.constraint(equalTo: testingContainer.centerYAnchor),
 
             docsTab.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
             docsTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -160,9 +181,36 @@ final class RightPanelViewController: NSViewController {
     }
 
 
-    /// Switches to the Testing tab (ADR-301) — where a run is watched live.
+    /// Switches to the Testing tab — the testing play surface (ADR-306).
     func showTestingTab() {
         tabStrip.select(Self.testingTabIndex)
+    }
+
+    /// Installs the project's testing surface into the Testing tab, replacing
+    /// any prior project's. The panel owns layout only — lifecycle stays with
+    /// the window, which created the controller against the story's sidecar.
+    func installTestingSurface(_ surface: TestingSurfaceViewController) {
+        guard surface !== testingSurface else { return }
+        clearTestingSurface()
+        testingSurface = surface
+        addChild(surface)
+        surface.view.translatesAutoresizingMaskIntoConstraints = false
+        testingContainer.addSubview(surface.view)
+        NSLayoutConstraint.activate([
+            surface.view.topAnchor.constraint(equalTo: testingContainer.topAnchor),
+            surface.view.leadingAnchor.constraint(equalTo: testingContainer.leadingAnchor),
+            surface.view.trailingAnchor.constraint(equalTo: testingContainer.trailingAnchor),
+            surface.view.bottomAnchor.constraint(equalTo: testingContainer.bottomAnchor),
+        ])
+        testingPlaceholder.isHidden = true
+    }
+
+    /// Removes the installed surface (project switch) — the placeholder returns.
+    func clearTestingSurface() {
+        testingSurface?.view.removeFromSuperview()
+        testingSurface?.removeFromParent()
+        testingSurface = nil
+        testingPlaceholder.isHidden = false
     }
 
     /// Switches to the Publish tab (ADR-284) — the finish line for a story.
@@ -183,9 +231,11 @@ final class RightPanelViewController: NSViewController {
         play.view.isHidden = selected != Self.playTab
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
-        testingTab.view.isHidden = selected != Self.testingTabIndex
+        testingContainer.isHidden = selected != Self.testingTabIndex
         docsTab.view.isHidden = selected != Self.docsTabIndex
         publish.isHidden = selected != Self.publishTab
+        if selected == Self.testingTabIndex { onTestingTabSelected?() }
+        onTabChanged?()
     }
 
 }

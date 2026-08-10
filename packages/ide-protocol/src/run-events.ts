@@ -162,6 +162,20 @@ export interface WorldSnapshot {
   inventory: WorldEntityRef[];
 }
 
+/**
+ * One assertion's verdict on a command — the run detail view's unit (ADR-307,
+ * David 2026-08-10: the run shows every card and its assertions). The
+ * `description` is the producer's human rendering of the assertion
+ * (`contains "gravel crunching"`, `channel info.title is "Mini"`), matching
+ * the Testing tab's claim-line idiom so the two read as one vocabulary.
+ */
+export interface AssertionOutcome {
+  description: string;
+  passed: boolean;
+  /** The failure message when `passed` is false, verbatim from the runner. */
+  message?: string;
+}
+
 /** One command's outcome, emitted as the command completes. */
 export interface CommandResultEvent extends RunEventEnvelope {
   type: 'command-result';
@@ -227,6 +241,14 @@ export interface CommandResultEvent extends RunEventEnvelope {
    * Present when the producer captured world state (`--capture-world`).
    */
   world?: WorldSnapshot;
+  /**
+   * Every assertion this command evaluated, in authored order, each with its
+   * own verdict — what the run detail view renders per card (ADR-307, David
+   * 2026-08-10). `failure` stays the FIRST failed message for compact
+   * consumers; this is the full list. Absent when the producer predates the
+   * field or evaluated nothing.
+   */
+  assertionResults?: AssertionOutcome[];
 }
 
 /**
@@ -439,7 +461,22 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
       value.ending === 'defeat' ||
       value.ending === 'quit') &&
     (value.failure === undefined || typeof value.failure === 'string') &&
-    (value.world === undefined || isWorldSnapshot(value.world))
+    (value.world === undefined || isWorldSnapshot(value.world)) &&
+    (value.assertionResults === undefined || isAssertionOutcomeArray(value.assertionResults))
+  );
+}
+
+/** Narrow a value to a valid {@link AssertionOutcome} array. */
+function isAssertionOutcomeArray(value: unknown): value is AssertionOutcome[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (entry) =>
+        isObject(entry) &&
+        typeof entry.description === 'string' &&
+        typeof entry.passed === 'boolean' &&
+        (entry.message === undefined || typeof entry.message === 'string'),
+    )
   );
 }
 
