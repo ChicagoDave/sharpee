@@ -10,7 +10,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { describe, expect, it } from 'vitest';
-import { beginRun, createRunState, finishRun, foldRunLine } from '../src/run';
+import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from '../src/run';
 
 let seq = 0;
 const line = (event: Record<string, unknown>): string =>
@@ -144,5 +144,22 @@ describe('foldRunLine', () => {
     expect(state.inFlight).toBe(true);
     expect(state.results.size).toBe(0);
     expect(state.tally).toBeUndefined();
+  });
+});
+
+describe('resetRun (David 2026-08-09: a changed suite voids the results)', () => {
+  it('drops results, tally, and note back to not-run', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [start(A), command(A), end(A), runEnd()]) foldRunLine(state, raw);
+    finishRun(state, false, 'stale note');
+    expect(state.results.size).toBe(1);
+
+    resetRun(state);
+
+    expect(state.inFlight).toBe(false);
+    expect(state.results.size).toBe(0);
+    expect(state.tally).toBeUndefined();
+    expect(state.note).toBeUndefined();
   });
 });

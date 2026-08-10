@@ -27,7 +27,6 @@ final class ArtifactGroup {
     enum Kind: CaseIterable {
         case story
         case walkthroughs
-        case transcriptTests
         case assets
         case feelies
         case webTemplate
@@ -37,7 +36,6 @@ final class ArtifactGroup {
             switch self {
             case .story: return "Story"
             case .walkthroughs: return "Walkthroughs"
-            case .transcriptTests: return "Transcript Tests"
             case .assets: return "Assets"
             case .feelies: return "Feelies"
             case .webTemplate: return "Web Template"
@@ -50,7 +48,6 @@ final class ArtifactGroup {
             switch self {
             case .story: return "book.closed"
             case .walkthroughs: return "figure.walk"
-            case .transcriptTests: return "checkmark.circle"
             case .assets: return "photo"
             case .feelies: return "envelope"
             case .webTemplate: return "rectangle.3.group"
@@ -109,14 +106,12 @@ enum ProjectArtifacts {
 
         var story: [FileNode] = []
         var walkthroughs: [FileNode] = []
-        var transcriptTests: [FileNode] = []
         var assets: [FileNode] = []
         var feelies: [FileNode] = []
         var webTemplate: [FileNode] = []
         var other: [FileNode] = []
 
         var walkthroughsURL: URL?
-        var transcriptTestsURL: URL?
         var assetsURL: URL?
         var feeliesURL: URL?
 
@@ -136,14 +131,18 @@ enum ProjectArtifacts {
             case .webTemplate:
                 webTemplate.append(node)
             case .tests:
-                // Reach through `tests/` for `tests/transcripts/` (ADR-277 D1/D3
-                // fixes both names). Anything else under `tests/` is unclassified
-                // rather than hidden.
+                // Transcripts are Chord Writer's artifacts, not the author's
+                // files (David's ruling 2026-08-09): auto-named, auto-saved,
+                // and presented ONLY serialized in the Testing tab. They live
+                // on disk for the harness and for Finder, but the pane does
+                // not list them. Anything else an author parked under
+                // `tests/` is unclassified rather than hidden.
                 for child in node.children {
                     if child.isDirectory && child.name == transcriptsDirectory {
-                        transcriptTests.append(contentsOf: child.children)
-                        transcriptTestsURL = child.url
-                    } else {
+                        other.append(contentsOf: child.children.filter {
+                            $0.url.pathExtension != "transcript"
+                        })
+                    } else if child.url.pathExtension != "transcript" {
                         other.append(child)
                     }
                 }
@@ -165,7 +164,6 @@ enum ProjectArtifacts {
         let built: [(ArtifactGroup.Kind, [FileNode], URL?)] = [
             (.story, story, nil),
             (.walkthroughs, walkthroughs, walkthroughsURL),
-            (.transcriptTests, transcriptTests, transcriptTestsURL),
             (.assets, assets, assetsURL),
             (.feelies, feelies, feeliesURL),
             (.webTemplate, webTemplate, nil),

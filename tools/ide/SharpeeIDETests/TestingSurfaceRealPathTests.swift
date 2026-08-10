@@ -323,62 +323,113 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         """, "summary card standing in for the collapsed range")
     }
 
-    func testSplitHereAndMergeUpRoundTripThroughTheirButtons() async throws {
-        try await boot()
-        try await type("north")
-        try await type("north")
-        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
-        try await tick(1)
-        try await tick(3)   // closed 1–3
-
-        // Split here on turn 3: the tail becomes its own transcript,
-        // continuing from the head — its strip appears on card 3.
-        _ = try await surface.evaluateInSurface("""
-        (function () {
-          var buttons = document.querySelectorAll('[data-ts-ordinal="3"] .ts-actions button');
-          for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent === 'Split here') { buttons[i].click(); return; }
-          }
-        })();
-        """)
+    /// Branch delete (David's ruling, 2026-08-09), end to end: the chip's ✕
+    /// (armed, then confirmed) removes the branch — its FILE leaves the disk,
+    /// the chip row goes (last sibling → the fork point dissolves and the
+    /// auto-split prefix folds back into one transcript), and because the
+    /// deleted branch was the VIEWED lineage, the surviving main line replays
+    /// live: its cards return and typing continues it.
+    func testChipDeleteRemovesTheBranchItsFileAndReplaysTheParent() async throws {
+        try await playAndRangeThreeTurns()
+        try await clickAction(3, "Branch…")
+        try await commitActionPrompt(3, "east")
         try await waitFor("""
         (function () {
-          var note = document.querySelector('[data-ts-ordinal="3"] .ts-strip-note');
-          return !!note && note.style.display !== 'none' &&
-                 note.textContent.indexOf('continues from') !== -1;
+          var card = document.querySelector('[data-ts-ordinal="7"] .ts-prose');
+          return !!card && card.textContent.indexOf('Boiler Shed') !== -1;
         })()
-        """, "the tail's continues-from note after Split here")
-
-        // Merge ↑ on the tail folds it back: one segment 1–3, strip on card
-        // 1 only, and the sidecar's view state converges to the merged shape.
-        _ = try await surface.evaluateInSurface("""
-        (function () {
-          var buttons = document.querySelectorAll('[data-ts-ordinal="3"] .ts-title-strip button');
-          for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent === 'Merge ↑') { buttons[i].click(); return; }
-          }
-        })();
-        """)
-        try await waitFor("""
-        (function () {
-          var head = document.querySelector('[data-ts-ordinal="1"] .ts-title-strip');
-          var tail = document.querySelector('[data-ts-ordinal="3"] .ts-title-strip');
-          return !!head && head.style.display !== 'none' &&
-                 !!tail && tail.style.display === 'none';
-        })()
-        """, "one strip on the merged range's first card")
+        """, "the alternate's card from the live replay")
+        let branchFile = transcriptOnDisk("gravel-drive-to-boiler-shed-1")
         for _ in 0..<100 {
-            if let object = try? sidecarJSON(),
-               let segments = try? sidecarSegments(object),
-               segments.count == 1,
-               segments.first?["startPos"] as? Int == 1,
-               segments.first?["endPos"] as? Int == 3 { break }
+            if FileManager.default.fileExists(atPath: branchFile.path) { break }
             try await Task.sleep(nanoseconds: 50_000_000)
         }
-        let segments = try sidecarSegments(try sidecarJSON())
-        XCTAssertEqual(segments.count, 1)
-        XCTAssertEqual(segments.first?["startPos"] as? Int, 1)
-        XCTAssertEqual(segments.first?["endPos"] as? Int, 3)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: branchFile.path),
+                      "fixture sanity: the branch's transcript landed on disk")
+
+        // Two acts: arm, then confirm on the same control.
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-branch-chip .ts-chip-delete').click();")
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-branch-chip .ts-chip-delete').click();")
+
+        // The main line replays live (the deleted branch was viewed): turn 3
+        // returns visibly, the chips are gone, the branch card is gone.
+        try await waitFor("""
+        (function () {
+          var main = document.querySelector('[data-ts-ordinal="3"]');
+          return !!main && main.style.display !== 'none' &&
+                 document.querySelectorAll('.ts-branch-chip').length === 0 &&
+                 !document.querySelector('[data-ts-ordinal="7"]');
+        })()
+        """, "the surviving main line after the delete")
+
+        // The branch's file leaves the disk; the fold-back means ONE main
+        // transcript file spans 1–3 again (the auto-split parent's file and
+        // the tail's file reconcile into the merged range's single name).
+        for _ in 0..<100 {
+            if !FileManager.default.fileExists(atPath: branchFile.path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: branchFile.path),
+                       "the deleted branch's transcript must leave the disk")
+        try await waitForFileContaining(transcriptOnDisk("iron-gates-to-fountain-court-3"),
+                                        "> north", "the folded-back main transcript")
+        // The fold-back IS the restructure-rename path now (Split is gone):
+        // the auto-split head and tail stems rename away into the merged name.
+        for _ in 0..<100 {
+            if !FileManager.default.fileExists(
+                   atPath: transcriptOnDisk("iron-gates-to-gravel-drive-2").path),
+               !FileManager.default.fileExists(
+                   atPath: transcriptOnDisk("gravel-drive-to-fountain-court-1").path) { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(
+                           atPath: transcriptOnDisk("iron-gates-to-gravel-drive-2").path),
+                       "the auto-split head's stem renames away on fold-back")
+        XCTAssertFalse(FileManager.default.fileExists(
+                           atPath: transcriptOnDisk("gravel-drive-to-fountain-court-1").path),
+                       "the auto-split tail's stem renames away on fold-back")
+    }
+
+    /// ⌘Z (David's ruling, 2026-08-09): authoring gestures undo, and the
+    /// auto-save writer follows — a claim added then undone leaves the FILE
+    /// on disk without it, because undo is a model change like any other.
+    func testCommandZUndoesAClaimAndTheFileFollows() async throws {
+        try await playAndRangeThreeTurns()
+        let file = transcriptOnDisk("iron-gates-to-fountain-court-3")
+        try await waitForFileContaining(file, "> north", "the ranged transcript")
+
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var buttons = document.querySelectorAll('[data-ts-ordinal="2"] .ts-actions button');
+          for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent === 'Not contains…') { buttons[i].click(); return; }
+          }
+        })();
+        """)
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var field = document.querySelector('[data-ts-ordinal="2"] .ts-actions input');
+          field.value = 'a grue';
+          field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        })();
+        """)
+        try await waitForFileContaining(file, "a grue", "the authored claim in the file")
+
+        _ = try await surface.evaluateInSurface("""
+        document.dispatchEvent(new KeyboardEvent('keydown',
+          { key: 'z', metaKey: true, bubbles: true, cancelable: true }));
+        """)
+        for _ in 0..<100 {
+            if let text = try? String(contentsOf: file, encoding: .utf8),
+               !text.contains("a grue") { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        let text = try String(contentsOf: file, encoding: .utf8)
+        XCTAssertFalse(text.contains("a grue"),
+                       "the undone claim must leave the file on disk")
+        XCTAssertTrue(text.contains("> north"), "the range itself survives the undo")
     }
 
     // MARK: - The auto-save writer (Phase 4, design §4)
@@ -412,45 +463,6 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         }
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path),
                        "a reopened range's file is removed until it closes again")
-    }
-
-    func testExtendingAClosedRangeRenamesItsFileOnDisk() async throws {
-        try await boot()
-        try await type("north")
-        try await type("north")
-        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 4", "cards")
-        try await tick(2)
-        try await tick(3)   // closed 2–3
-        let before = transcriptOnDisk("iron-gates-to-fountain-court-2")
-        for _ in 0..<100 {
-            if FileManager.default.fileExists(atPath: before.path) { break }
-            try await Task.sleep(nanoseconds: 50_000_000)
-        }
-        XCTAssertTrue(FileManager.default.fileExists(atPath: before.path))
-
-        // Split at 3: head 2–2 renames, tail 3–3 continues from it — the old
-        // stem's file goes, both new files land, the child names its parent.
-        _ = try await surface.evaluateInSurface("""
-        (function () {
-          var buttons = document.querySelectorAll('[data-ts-ordinal="3"] .ts-actions button');
-          for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent === 'Split here') { buttons[i].click(); return; }
-          }
-        })();
-        """)
-        let head = transcriptOnDisk("iron-gates-to-gravel-drive-1")
-        let tail = transcriptOnDisk("gravel-drive-to-fountain-court-1")
-        for _ in 0..<100 {
-            if FileManager.default.fileExists(atPath: head.path),
-               FileManager.default.fileExists(atPath: tail.path),
-               !FileManager.default.fileExists(atPath: before.path) { break }
-            try await Task.sleep(nanoseconds: 50_000_000)
-        }
-        XCTAssertFalse(FileManager.default.fileExists(atPath: before.path),
-                       "the pre-split stem is renamed away")
-        let tailText = try String(contentsOf: tail, encoding: .utf8)
-        XCTAssertTrue(tailText.contains("continues: iron-gates-to-gravel-drive-1"),
-                      "the tail continues from the head's NEW stem")
     }
 
     func testGesturesAuthorClaimsIntoTheWrittenFile() async throws {
@@ -488,28 +500,11 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             "document.querySelector('.ts-picker .ts-item').click();")
         try await waitForFileContaining(file, "tobias.location = gravel-drive",
                                         "the picked [STATE:] claim")
-
-        // Source-panel ✕: deleting the state claim removes it from the file.
-        _ = try await surface.evaluateInSurface("""
-        (function () {
-          var lines = document.querySelectorAll('#ts-source .ts-line');
-          for (var i = 0; i < lines.length; i++) {
-            if (lines[i].textContent.indexOf('STATE') !== -1) {
-              lines[i].querySelector('.ts-del').click();
-              return;
-            }
-          }
-        })();
-        """)
-        for _ in 0..<100 {
-            if let text = try? String(contentsOf: file, encoding: .utf8),
-               !text.contains("tobias.location") { break }
-            try await Task.sleep(nanoseconds: 50_000_000)
-        }
+        // The source panel is retired (David, 2026-08-09: unnecessary once
+        // seen in action) — claim REMOVAL has no surface affordance today;
+        // the model's remove* mutators stay vitest-covered for when one lands.
         let text = try String(contentsOf: file, encoding: .utf8)
-        XCTAssertFalse(text.contains("tobias.location"),
-                       "the x'd claim is gone from the file on disk")
-        XCTAssertTrue(text.contains("end text"), "the Exact block survives the delete")
+        XCTAssertTrue(text.contains("end text"), "the Exact block is in the file")
     }
 
     private func waitForFileContaining(_ file: URL, _ fragment: String,
@@ -704,6 +699,21 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             "document.querySelectorAll('#ts-cards .ts-turn').length")
         XCTAssertGreaterThanOrEqual(cards as? Int ?? 0, 2,
                                     "the real engine's boot look must land as cards")
+
+        // The opening card (ordinal 0) carries the banner + prologue. On the
+        // REAL client that prose flushes inside the boot look's bracket
+        // (stamped with the boot ordinal) — the fixture's unstamped head
+        // cannot regress this, so it is pinned here against the real page.
+        let openingText = try await surface.evaluateInSurface(
+            "(document.querySelector('[data-ts-ordinal=\"0\"]') || {textContent:''}).textContent"
+        ) as? String
+        XCTAssertTrue(openingText?.contains("The Folly at Fernhill") == true,
+                      "the opening card must carry the banner title; got: \(openingText ?? "nil")")
+        let bootText = try await surface.evaluateInSurface(
+            "(document.querySelector('[data-ts-ordinal=\"1\"]') || {textContent:''}).textContent"
+        ) as? String
+        XCTAssertFalse(bootText?.contains("The Folly at Fernhill") == true,
+                       "the banner must not also sit in the boot turn's card")
 
         // A REAL played turn: north from the Iron Gates is the Gravel Drive.
         try await type("north")
@@ -910,11 +920,19 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     }
 
     func testHandEditedFileDetachesFromAutoWritesUntilTheAuthorTakesItBack() async throws {
-        // Two transcripts: head 1–2 and tail 3–3 (split), both on disk.
-        try await playAndRangeThreeTurns()
-        try await clickAction(3, "Split here")
+        // Two transcripts as two ticked ranges (Split is retired): 1–2 and
+        // 3–4 — the second continues from the first, both on disk.
+        try await boot()
+        try await type("north")
+        try await type("north")
+        try await type("north")
+        try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 5", "cards")
+        try await tick(1)
+        try await tick(2)
+        try await tick(3)
+        try await tick(4)
         let head = transcriptOnDisk("iron-gates-to-gravel-drive-2")
-        let tail = transcriptOnDisk("gravel-drive-to-fountain-court-1")
+        let tail = transcriptOnDisk("gravel-drive-to-entrance-hall-2")
         try await waitForFileContaining(head, "> north", "the head file")
         try await waitForFileContaining(tail, "> north", "the tail file")
         try await waitForSidecarSegments()
@@ -934,7 +952,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try await waitFor("""
         (function () {
           var strip = document.querySelector('[data-ts-ordinal="3"] .ts-auto-name');
-          return !!strip && strip.textContent.indexOf('gravel-drive-to-fountain-court-1') !== -1 &&
+          return !!strip && strip.textContent.indexOf('gravel-drive-to-entrance-hall-2') !== -1 &&
                  document.getElementById('command-input').disabled === false;
         })()
         """, "the restored session")
@@ -946,7 +964,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
         // A gesture ON the detached segment takes it back: the writer owns
         // the file again and the hand edit is superseded.
-        try await clickAction(3, "Exact")
+        try await clickAction(4, "Exact")
         for _ in 0..<100 {
             if let text = try? String(contentsOf: tail, encoding: .utf8),
                text != handEdited { break }

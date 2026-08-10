@@ -32,12 +32,13 @@ import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { CardsView } from './cards';
 import {
-  composeSegmentTranscript, rehydrateSegmentClaims, type DeleteRef, type TurnSource,
+  composeSegmentTranscript, rehydrateSegmentClaims, type TurnSource,
 } from './compose';
-import { SessionModel, type Segment, type SessionSnapshot } from './model';
+import {
+  SessionModel, type AuthoringMemento, type Segment, type SessionSnapshot,
+} from './model';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
-import { beginRun, createRunState, finishRun, foldRunLine } from './run';
-import { renderSource } from './source';
+import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './run';
 
 /** One world-digest entity as the feed carries it (ADR-306 Phase 2). */
 interface DigestEntity {
@@ -140,31 +141,38 @@ function turnSource(ordinal: number): TurnSource | undefined {
   return { output: record.output, channelValues };
 }
 
-/** Routes a source-panel ✕ onto the model (design §5's delete semantics). */
-function applyDelete(ref: DeleteRef): void {
-  touchSegmentAt(ref.ordinal);
-  switch (ref.kind) {
-    case 'default': model.removeDefault(ref.ordinal, ref.index, ref.defaults); break;
-    case 'defaultWhole': model.removeDefault(ref.ordinal, -1, []); break;
-    case 'contains': model.removeContains(ref.ordinal, ref.index); break;
-    case 'notContains': model.removeNotContains(ref.ordinal, ref.index); break;
-    case 'state': model.removeState(ref.ordinal, ref.index); break;
-    case 'event': model.removeEvent(ref.ordinal, ref.index); break;
-    case 'channel': model.removeChannel(ref.ordinal, ref.index); break;
-    case 'exact': model.setExact(ref.ordinal, false); break;
+// ── undo (David's ruling 2026-08-09): authoring gestures are undoable ────
+//
+// The stack holds authoring mementos — segments, skips, claims, lineage
+// table — never played turns. Gestures that change what was PLAYED (fork,
+// branch delete, lineage switch, fence, restore) clear it instead of
+// joining it: a memento must never resurrect a lineage whose turns are gone.
+const undoStack: AuthoringMemento[] = [];
+const UNDO_DEPTH = 100;
+
+function pushUndo(): void {
+  undoStack.push(model.captureAuthoring());
+  if (undoStack.length > UNDO_DEPTH) undoStack.shift();
+}
+
+function clearUndo(): void {
+  undoStack.length = 0;
+}
+
+function performUndo(): void {
+  if (driverBusy || replayActive) return;
+  const memento = undoStack.pop();
+  if (!memento) return;
+  model.restoreAuthoring(memento);
+  if (activeSegment && !model.segments.includes(activeSegment)) {
+    activeSegment = model.openSegment() ?? null;
   }
   update();
 }
 
-const sourceContext = () => ({
-  policy,
-  seed: 42,
-  source: turnSource,
-  onDelete: applyDelete,
-});
-
 const cards = new CardsView(model, {
   onTick(ordinal, checked) {
+    pushUndo();
     if (checked) {
       const result = model.tick(ordinal);
       if (result !== 'noop') activeSegment = model.segmentOf(ordinal) ?? null;
@@ -176,27 +184,21 @@ const cards = new CardsView(model, {
     }
     update();
   },
-  onCollapse(segment) { model.setCollapsed(segment, true); update(); },
+  onCollapse(segment) { pushUndo(); model.setCollapsed(segment, true); update(); },
   onExpand(segment) {
+    pushUndo();
     model.setCollapsed(segment, false);
     activeSegment = segment;
     update();
   },
-  onMergeUp(segment) {
-    const parent = model.parentOf(segment);
-    if (model.mergeUp(segment)) activeSegment = parent ?? null;
-    update();
-  },
-  onSplitAt(ordinal) {
-    touchSegmentAt(ordinal);
-    if (model.splitAt(ordinal)) activeSegment = model.segmentOf(ordinal) ?? null;
-    update();
+  onDeleteLineage(lineage) {
+    void performDeleteLineage(lineage);
   },
   onActivate(segment) {
     activeSegment = segment;
-    renderSource(model, activeSegment, sourceContext());
   },
   onAddContains(ordinal, text) {
+    pushUndo();
     touchSegmentAt(ordinal);
     if (model.addContains(ordinal, text)) {
       activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -204,6 +206,7 @@ const cards = new CardsView(model, {
     }
   },
   onNotContains(ordinal, text) {
+    pushUndo();
     touchSegmentAt(ordinal);
     if (model.addNotContains(ordinal, text)) {
       activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -211,6 +214,7 @@ const cards = new CardsView(model, {
     }
   },
   onToggleExact(ordinal) {
+    pushUndo();
     touchSegmentAt(ordinal);
     if (model.setExact(ordinal, !model.claimsOf(ordinal).exact)) {
       activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -229,6 +233,7 @@ const cards = new CardsView(model, {
       kind: entity.kind === 'npc' ? 'NPC locations' : 'item locations',
     }));
     showStatePicker(anchor, facts, fact => {
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.addState(ordinal, fact.expression)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -239,6 +244,7 @@ const cards = new CardsView(model, {
   onEventPicker(ordinal, anchor) {
     const events = records.get(ordinal)?.events ?? [];
     showListPicker(anchor, 'events this turn emitted', events, event => {
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.addEvent(ordinal, event)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -264,6 +270,7 @@ const cards = new CardsView(model, {
       const claim = scalarValue !== null
         ? { id: capture.channel, is: scalarValue }
         : { id: capture.channel, contains: flat.slice(0, 60) };
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.addChannel(ordinal, claim)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -308,16 +315,21 @@ function update(): void {
   if (activeSegment && !model.segments.includes(activeSegment)) {
     activeSegment = null;
   }
-  cards.render();
-  renderSource(model, activeSegment, sourceContext());
   if (!driverBusy) {
     // Writes BEFORE state: postState's stems must describe the files this
     // very update just landed — the other order persists stems one update
     // stale, and a session ending on a rename would reopen pointing at
     // files that no longer exist (leaving their successors unhydrated and
-    // clobberable).
-    syncWrites();
+    // clobberable). Writes also come before the render: a change to the
+    // suite on disk resets the run column (its results describe a tree
+    // that no longer exists — David's ruling 2026-08-09), and the render
+    // must show that reset.
+    const suiteChanged = syncWrites();
+    if (suiteChanged && !runState.inFlight) resetRun(runState);
+    cards.render();
     postState();
+  } else {
+    cards.render();
   }
 }
 
@@ -356,11 +368,13 @@ function postToBridge(payload: Record<string, unknown>): void {
  * files already in `tests/` are durable artifacts, never deleted by a
  * restart (ADR-305 D3 fences the SESSION, not the suite).
  */
-function syncWrites(): void {
+function syncWrites(): boolean {
+  let changed = false;
   for (const [segment, last] of [...written]) {
     if (!model.segments.includes(segment)) {
       written.delete(segment);
       postToBridge({ remove: { name: last.name } });
+      changed = true;
     }
   }
   for (const segment of [...detached]) {
@@ -374,6 +388,7 @@ function syncWrites(): void {
         // A reopened range is no longer a complete file — take it back.
         written.delete(segment);
         postToBridge({ remove: { name: last.name } });
+        changed = true;
       }
       continue;
     }
@@ -388,7 +403,9 @@ function syncWrites(): void {
     }
     written.set(segment, { name: title, text });
     postToBridge(payload);
+    changed = true;
   }
+  return changed;
 }
 
 /** Posts the composite view snapshot over the bridge (D8 sidecar): the
@@ -506,6 +523,7 @@ function deliver(raw: unknown): void {
       return;
     }
     cards.clear();
+    clearUndo();
     model.fence();
     records.clear();
     written.clear();  // files stay — only the session's tracking resets
@@ -660,6 +678,7 @@ function ancestryStepsBefore(n: number): ReplayStep[] {
 /** Branch… (design §6): fork the model, then boot the branch live. */
 async function performBranch(ordinal: number, command: string): Promise<void> {
   if (replayActive) return;
+  clearUndo();
   const ancestry = ancestryStepsBefore(ordinal);
   const id = model.fork(ordinal, command);
   if (id === null) return;
@@ -671,6 +690,7 @@ async function performBranch(ordinal: number, command: string): Promise<void> {
  *  the sibling live (all suppressed — its cards are retained), then show. */
 async function selectLineage(lineage: number): Promise<void> {
   if (replayActive || lineage === model.activeLineage) return;
+  clearUndo();
   if (!model.activateLineage(lineage)) return;
   const path = model.pathTurns(lineage)
     .filter(t => t.ordinal > 0 && !t.boot)
@@ -680,6 +700,31 @@ async function selectLineage(lineage: number): Promise<void> {
     });
   update();                     // the view switches on retained cards
   await driveFreshBoot(lineage, path, []);
+}
+
+/** Chip ✕ (David's ruling 2026-08-09): the branch, its descendants, and
+ *  their files go. Deleting the VIEWED branch replays its parent live —
+ *  the view is always the live lineage (Phase 5's rule). Not on the ⌘Z
+ *  stack: it changes what was played, so the stack clears instead. */
+async function performDeleteLineage(lineage: number): Promise<void> {
+  if (replayActive || driverBusy) return;
+  const result = model.deleteLineage(lineage);
+  if (result === null) return;
+  clearUndo();
+  if (activeSegment && !model.segments.includes(activeSegment)) {
+    activeSegment = model.openSegment() ?? null;
+  }
+  update();                     // chips/cards/files reconcile immediately
+  if (result.wasActive) {
+    // The dead branch was live on the engine — replay the surviving parent.
+    const path = model.pathTurns(result.parentId)
+      .filter(t => t.ordinal > 0 && !t.boot)
+      .map(t => {
+        const at = model.positionOf(t.ordinal);
+        return { command: t.command, key: at ? `${at.lineage}:${at.pos}` : '' };
+      });
+    await driveFreshBoot(result.parentId, path, []);
+  }
 }
 
 // ── restore on boot (ADR-306 D8) ─────────────────────────────────────────
@@ -854,6 +899,15 @@ surfaceWindow.__sharpeeTestingSurface = {
 
 cards.ensureLayout();
 installDialogHooks();
+// ⌘Z — undo the last authoring gesture (never inside a text field, where
+// the field's own undo belongs to the field).
+document.addEventListener('keydown', event => {
+  if (!(event.metaKey || event.ctrlKey) || event.key !== 'z' || event.shiftKey) return;
+  const target = event.target as HTMLElement | null;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+  event.preventDefault();
+  performUndo();
+});
 for (const record of queued) deliver(record);
 
 const bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;

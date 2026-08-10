@@ -123,8 +123,16 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// Overrides run-executable resolution — the real-path suite injects the
     /// repo's devkit CLI, because a temp-dir story resolves neither a
     /// workspace shim nor a PATH install. Production leaves it nil and
-    /// resolves exactly as the Testing tab does.
+    /// resolves via the workspace shim / PATH / bundled toolchain tiers.
     var sharpeeExecutableOverride: URL?
+
+    /// True while a run column run is in flight — drives the Test menu.
+    var isRunningTests: Bool { testRunner.isRunning }
+
+    /// Test → Cancel Test Run: SIGTERM then SIGKILL; rows already filled stay.
+    func cancelTestRun() {
+        testRunner.cancel()
+    }
 
     /// The story's `auto-assertion:` policy raw value, read from the story
     /// header at open; injected for in-page synthesis (6e).

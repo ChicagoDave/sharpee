@@ -157,6 +157,15 @@ export function claimsAnything(claims: TurnClaims): boolean {
     || claims.channels.length > 0 || !claims.noDefaults;
 }
 
+/** The undo stack's unit — see {@link SessionModel.captureAuthoring}. */
+export interface AuthoringMemento {
+  segments: Segment[];
+  skipped: Set<number>;
+  claims: Map<number, TurnClaims>;
+  lineages: LineageInfo[];
+  active: number;
+}
+
 const ROOT_LINEAGE = 1;
 
 export class SessionModel {
@@ -356,6 +365,59 @@ export class SessionModel {
     if (!this.lineageInfo(id)) return false;
     this.active = id;
     return true;
+  }
+
+  /**
+   * Deletes a branch (David's ruling, 2026-08-09): the lineage, its turns,
+   * segments, claims, skips — and every descendant branch, which cannot
+   * outlive the line it forked from. The root lineage never deletes. When
+   * the deletion empties its fork point, the auto-split boundary merges
+   * back — with Split retired as a gesture, every boundary is fork-made,
+   * so the merge can never destroy deliberate structure.
+   *
+   * Returns what the caller must reconcile — the surviving parent, and
+   * whether the VIEWED lineage died (the caller replays the parent live,
+   * Phase 5's view-is-live rule) — or null when `id` cannot delete.
+   */
+  deleteLineage(id: number): { parentId: number; wasActive: boolean } | null {
+    const info = this.lineageInfo(id);
+    if (!info || info.parentId === undefined || info.forkAt === undefined) return null;
+
+    const doomed = new Set<number>([id]);
+    for (;;) {
+      const before = doomed.size;
+      for (const lineage of this.lineageList) {
+        if (lineage.parentId !== undefined && doomed.has(lineage.parentId)) {
+          doomed.add(lineage.id);
+        }
+      }
+      if (doomed.size === before) break;
+    }
+
+    const wasActive = doomed.has(this.active);
+    const doomedOrdinals = new Set(
+      this.turnList.filter(t => doomed.has(t.lineage ?? ROOT_LINEAGE)).map(t => t.ordinal));
+    this.turnList = this.turnList.filter(t => !doomed.has(t.lineage ?? ROOT_LINEAGE));
+    this.segmentList = this.segmentList.filter(s => !doomed.has(s.lineage));
+    for (const ordinal of doomedOrdinals) {
+      this.skippedSet.delete(ordinal);
+      this.claimsMap.delete(ordinal);
+    }
+    this.lineageList = this.lineageList.filter(l => !doomed.has(l.id));
+    if (wasActive) this.active = info.parentId;
+
+    // The fork point emptied: no surviving sibling forks at (parent, at) —
+    // fold the auto-split boundary back together.
+    const pointStillForks = this.lineageList.some(l =>
+      l.parentId === info.parentId && l.forkAt === info.forkAt);
+    if (!pointStillForks) {
+      const tail = this.segmentList.find(s =>
+        s.lineage === info.parentId && s.start === info.forkAt);
+      if (tail && this.parentOf(tail)?.lineage === info.parentId) {
+        this.mergeUp(tail);
+      }
+    }
+    return { parentId: info.parentId, wasActive };
   }
 
   /** Every fork point, grouped by (parent lineage, ordinal), in first-use
@@ -577,6 +639,47 @@ export class SessionModel {
 
   /** Whether ordinal `n` rides as `[SKIP]` (merge gaps; pruned turns). */
   isSkipped(n: number): boolean { return this.skippedSet.has(n); }
+
+  /**
+   * Captures the authoring state — segments, skips, claims, lineage table,
+   * the active lineage — WITHOUT the played-turn list. The undo stack's
+   * unit (David's ruling, 2026-08-09): gestures over what was played are
+   * undoable; the played turns themselves are not, so a memento never
+   * resurrects a lineage whose turns are gone (which is why fork and
+   * branch-delete clear the stack instead of joining it).
+   */
+  captureAuthoring(): AuthoringMemento {
+    return {
+      segments: this.segmentList.map(s => ({ ...s })),
+      skipped: new Set(this.skippedSet),
+      claims: new Map([...this.claimsMap].map(([n, c]) => [n, {
+        ...c,
+        contains: [...c.contains],
+        notContains: [...c.notContains],
+        states: [...c.states],
+        events: [...c.events],
+        channels: c.channels.map(ch => ({ ...ch })),
+      }])),
+      lineages: this.lineageList.map(l => ({ ...l })),
+      active: this.active,
+    };
+  }
+
+  /** Puts a captured authoring state back — the undo gesture's whole act. */
+  restoreAuthoring(memento: AuthoringMemento): void {
+    this.segmentList = memento.segments.map(s => ({ ...s }));
+    this.skippedSet = new Set(memento.skipped);
+    this.claimsMap = new Map([...memento.claims].map(([n, c]) => [n, {
+      ...c,
+      contains: [...c.contains],
+      notContains: [...c.notContains],
+      states: [...c.states],
+      events: [...c.events],
+      channels: c.channels.map(ch => ({ ...ch })),
+    }]));
+    this.lineageList = memento.lineages.map(l => ({ ...l }));
+    this.active = memento.active;
+  }
 
   /**
    * Containment for marks: unlike `segmentOf` (where an open range covers

@@ -60,10 +60,6 @@
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"><div class="ts-gutter-cap"></div></div>
       </div>
-      <div class="ts-source-col">
-        <div class="ts-col-head"><span id="ts-source-title">created transcript</span></div>
-        <div id="ts-source"></div>
-      </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
           <button class="ts-run-btn" id="ts-run-btn"
@@ -161,16 +157,21 @@
     addTurnCard(ordinal, boot, branch = false) {
       const staging = this.stagingPane();
       if (!staging) return;
+      const isBanner = (el) => [...el.classList].some((name) => name.startsWith("sharpee-banner-"));
+      let stamped = [...staging.children].filter((el) => el.getAttribute("data-turn") === String(ordinal));
       if (!this.cards.has(0) && this.model.hasOpening) {
         const openingElements = [];
         for (const child of [...staging.children]) {
           if (child.hasAttribute("data-turn")) break;
           openingElements.push(child);
         }
+        if (boot) {
+          openingElements.push(...stamped.filter(isBanner));
+          stamped = stamped.filter((el) => !isBanner(el));
+        }
         this.buildRow(0, false, false, openingElements);
       }
-      const elements = [...staging.children].filter((el) => el.getAttribute("data-turn") === String(ordinal));
-      this.buildRow(ordinal, boot, branch, elements);
+      this.buildRow(ordinal, boot, branch, stamped);
     }
     buildRow(ordinal, boot, branch, prose) {
       const row = document.createElement("div");
@@ -193,13 +194,10 @@
       const autoName = document.createElement("div");
       autoName.className = "ts-auto-name";
       autoName.title = "Auto-named: start location + end location + turns";
-      const mergeButton = document.createElement("button");
-      mergeButton.textContent = "Merge \u2191";
-      mergeButton.title = "Merge this transcript into the previous one \u2014 former gap turns ride as [SKIP]";
       const collapseButton = document.createElement("button");
       collapseButton.textContent = "Collapse";
       collapseButton.title = "Collapse this transcript into its summary card";
-      strip.append(autoName, mergeButton, collapseButton);
+      strip.append(autoName, collapseButton);
       const block = document.createElement("div");
       block.className = "ts-block";
       const meta = document.createElement("div");
@@ -258,15 +256,8 @@
         channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
         actions.appendChild(channelButton);
       }
-      let splitButton = null;
       let branchButton = null;
       if (ordinal > 0) {
-        splitButton = document.createElement("button");
-        splitButton.textContent = "Split here";
-        splitButton.title = "Start a new transcript at this turn \u2014 it continues from the one it left";
-        splitButton.style.display = "none";
-        splitButton.addEventListener("click", () => this.delegate.onSplitAt(ordinal));
-        actions.appendChild(splitButton);
         branchButton = document.createElement("button");
         branchButton.textContent = "Branch\u2026";
         branchButton.title = "Try a different command at this point \u2014 the shared prefix becomes the parent of all siblings";
@@ -288,8 +279,6 @@
         strip,
         autoName,
         collapseButton,
-        mergeButton,
-        splitButton,
         exactButton,
         branchButton
       });
@@ -320,6 +309,13 @@
      *  including the lineage cut (design §6): a turn past a fork shows only
      *  while the branch that played it is the active lineage. */
     render() {
+      for (const [ordinal, card] of [...this.cards]) {
+        const exists = ordinal === 0 ? this.model.hasOpening : this.model.turns.some((t) => t.ordinal === ordinal);
+        if (!exists) {
+          card.row.remove();
+          this.cards.delete(ordinal);
+        }
+      }
       const activePathPoints = this.pointsOnActivePath();
       for (const [ordinal, card] of this.cards) {
         const segment = this.model.segmentOf(ordinal);
@@ -337,10 +333,6 @@
         card.strip.style.display = isFirst ? "" : "none";
         card.stripNote.style.display = "none";
         if (isFirst && segment) this.renderStrip(card, segment);
-        if (card.splitButton) {
-          const splittable = assigned && segment.end !== null && !collapsed && ordinal > Math.max(segment.start, 1);
-          card.splitButton.style.display = splittable ? "" : "none";
-        }
         if (card.branchButton) {
           const forkable = assigned && segment.end !== null && !collapsed && (ordinal > Math.max(segment.start, 1) || this.model.parentOf(segment) !== void 0);
           card.branchButton.style.display = forkable ? "" : "none";
@@ -376,8 +368,6 @@
       card.collapseButton.style.display = segment.end !== null ? "" : "none";
       card.collapseButton.onclick = () => this.delegate.onCollapse(segment);
       const parent = this.model.parentOf(segment);
-      card.mergeButton.style.display = parent ? "" : "none";
-      card.mergeButton.onclick = () => this.delegate.onMergeUp(segment);
       if (parent) {
         card.stripNote.textContent = `\u21B3 continues from \u201C${this.model.titleOf(parent)}\u201D`;
         card.stripNote.style.display = "";
@@ -488,6 +478,24 @@
          <div class="ts-chip-title">${escapeHtml(title)}</div>
          <div class="ts-chip-span">${span}</div>`;
         chip.addEventListener("click", () => this.delegate.onSelectLineage(sibling));
+        const remove = document.createElement("button");
+        remove.className = "ts-chip-delete";
+        remove.textContent = "\u2715";
+        remove.title = "Delete this branch \u2014 its transcript (and any branches forked from it) go too";
+        remove.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (remove.classList.contains("ts-armed")) {
+            this.delegate.onDeleteLineage(sibling);
+          } else {
+            remove.classList.add("ts-armed");
+            remove.textContent = "delete?";
+            setTimeout(() => {
+              remove.classList.remove("ts-armed");
+              remove.textContent = "\u2715";
+            }, 2500);
+          }
+        });
+        chip.appendChild(remove);
         container.appendChild(chip);
       }
       const prefix = mainSegment ? this.model.parentOf(mainSegment) : void 0;
@@ -1687,43 +1695,6 @@
     }
     return composeSegmentTranscript(options).text === fileText ? "attached" : "diverged";
   }
-  function entryLines(entry) {
-    const { assertion } = entry;
-    if (assertion.type === "skip") {
-      return [{ text: "[SKIP]", kind: "skip" }];
-    }
-    const tag = {
-      text: serializeAssertionTag(assertion),
-      kind: "assertion",
-      ...entry.del ? { del: entry.del } : {}
-    };
-    if (!assertion.block) return [tag];
-    return [
-      tag,
-      { text: "text", kind: "block" },
-      ...assertion.block.map((line) => ({ text: line, kind: "block" })),
-      { text: "end text", kind: "block" }
-    ];
-  }
-  function composeSegmentLines(options) {
-    const plan = segmentPlan(options);
-    const lines = [];
-    lines.push({ text: `title: ${plan.title}`, kind: "header" });
-    lines.push(plan.parentTitle !== void 0 ? { text: `continues: ${plan.parentTitle}`, kind: "header" } : { text: `seed: ${options.seed}`, kind: "header" });
-    lines.push({ text: "", kind: "blank" });
-    lines.push({ text: "---", kind: "separator" });
-    lines.push({ text: "", kind: "blank" });
-    if (plan.opening.length > 0) {
-      for (const entry of plan.opening) lines.push(...entryLines(entry));
-      lines.push({ text: "", kind: "blank" });
-    }
-    plan.turns.forEach((turn, index) => {
-      lines.push({ text: `> ${turn.command}`, kind: "command" });
-      for (const entry of turn.entries) lines.push(...entryLines(entry));
-      if (index < plan.turns.length - 1) lines.push({ text: "", kind: "blank" });
-    });
-    return lines;
-  }
 
   // tools/ide/web/testing-surface/src/model.ts
   function slugify(text) {
@@ -1927,6 +1898,52 @@
       this.active = id;
       return true;
     }
+    /**
+     * Deletes a branch (David's ruling, 2026-08-09): the lineage, its turns,
+     * segments, claims, skips — and every descendant branch, which cannot
+     * outlive the line it forked from. The root lineage never deletes. When
+     * the deletion empties its fork point, the auto-split boundary merges
+     * back — with Split retired as a gesture, every boundary is fork-made,
+     * so the merge can never destroy deliberate structure.
+     *
+     * Returns what the caller must reconcile — the surviving parent, and
+     * whether the VIEWED lineage died (the caller replays the parent live,
+     * Phase 5's view-is-live rule) — or null when `id` cannot delete.
+     */
+    deleteLineage(id) {
+      const info = this.lineageInfo(id);
+      if (!info || info.parentId === void 0 || info.forkAt === void 0) return null;
+      const doomed = /* @__PURE__ */ new Set([id]);
+      for (; ; ) {
+        const before = doomed.size;
+        for (const lineage of this.lineageList) {
+          if (lineage.parentId !== void 0 && doomed.has(lineage.parentId)) {
+            doomed.add(lineage.id);
+          }
+        }
+        if (doomed.size === before) break;
+      }
+      const wasActive = doomed.has(this.active);
+      const doomedOrdinals = new Set(
+        this.turnList.filter((t) => doomed.has(t.lineage ?? ROOT_LINEAGE)).map((t) => t.ordinal)
+      );
+      this.turnList = this.turnList.filter((t) => !doomed.has(t.lineage ?? ROOT_LINEAGE));
+      this.segmentList = this.segmentList.filter((s) => !doomed.has(s.lineage));
+      for (const ordinal of doomedOrdinals) {
+        this.skippedSet.delete(ordinal);
+        this.claimsMap.delete(ordinal);
+      }
+      this.lineageList = this.lineageList.filter((l) => !doomed.has(l.id));
+      if (wasActive) this.active = info.parentId;
+      const pointStillForks = this.lineageList.some((l) => l.parentId === info.parentId && l.forkAt === info.forkAt);
+      if (!pointStillForks) {
+        const tail = this.segmentList.find((s) => s.lineage === info.parentId && s.start === info.forkAt);
+        if (tail && this.parentOf(tail)?.lineage === info.parentId) {
+          this.mergeUp(tail);
+        }
+      }
+      return { parentId: info.parentId, wasActive };
+    }
     /** Every fork point, grouped by (parent lineage, ordinal), in first-use
      *  order — the cards layer renders one chip row per point. */
     branchPoints() {
@@ -2115,6 +2132,45 @@
     /** Whether ordinal `n` rides as `[SKIP]` (merge gaps; pruned turns). */
     isSkipped(n) {
       return this.skippedSet.has(n);
+    }
+    /**
+     * Captures the authoring state — segments, skips, claims, lineage table,
+     * the active lineage — WITHOUT the played-turn list. The undo stack's
+     * unit (David's ruling, 2026-08-09): gestures over what was played are
+     * undoable; the played turns themselves are not, so a memento never
+     * resurrects a lineage whose turns are gone (which is why fork and
+     * branch-delete clear the stack instead of joining it).
+     */
+    captureAuthoring() {
+      return {
+        segments: this.segmentList.map((s) => ({ ...s })),
+        skipped: new Set(this.skippedSet),
+        claims: new Map([...this.claimsMap].map(([n, c]) => [n, {
+          ...c,
+          contains: [...c.contains],
+          notContains: [...c.notContains],
+          states: [...c.states],
+          events: [...c.events],
+          channels: c.channels.map((ch) => ({ ...ch }))
+        }])),
+        lineages: this.lineageList.map((l) => ({ ...l })),
+        active: this.active
+      };
+    }
+    /** Puts a captured authoring state back — the undo gesture's whole act. */
+    restoreAuthoring(memento) {
+      this.segmentList = memento.segments.map((s) => ({ ...s }));
+      this.skippedSet = new Set(memento.skipped);
+      this.claimsMap = new Map([...memento.claims].map(([n, c]) => [n, {
+        ...c,
+        contains: [...c.contains],
+        notContains: [...c.notContains],
+        states: [...c.states],
+        events: [...c.events],
+        channels: c.channels.map((ch) => ({ ...ch }))
+      }]));
+      this.lineageList = memento.lineages.map((l) => ({ ...l }));
+      this.active = memento.active;
     }
     /**
      * Containment for marks: unlike `segmentOf` (where an open range covers
@@ -2656,61 +2712,18 @@
         return;
     }
   }
+  function resetRun(state) {
+    state.inFlight = false;
+    state.results.clear();
+    state.replaying.clear();
+    delete state.tally;
+    delete state.note;
+  }
   function finishRun(state, ok, note) {
     state.inFlight = false;
     if (!ok && state.tally === void 0) {
       state.note = note ?? "The run ended without completing its stream.";
     }
-  }
-
-  // tools/ide/web/testing-surface/src/source.ts
-  var kindClass = {
-    header: "ts-hdr",
-    separator: "ts-hdr",
-    command: "ts-cmd",
-    assertion: "ts-ok",
-    skip: "ts-skip",
-    block: "ts-lit",
-    blank: ""
-  };
-  function renderSource(model2, active, context) {
-    const sourceHost = document.getElementById("ts-source");
-    const title = document.getElementById("ts-source-title");
-    if (!sourceHost || !title) return;
-    if (!active || !model2.segments.includes(active)) {
-      title.textContent = "created transcript";
-      sourceHost.textContent = "";
-      const hint = document.createElement("span");
-      hint.className = "ts-skip";
-      hint.textContent = "# tick the opening or a turn to start a transcript";
-      sourceHost.appendChild(hint);
-      return;
-    }
-    const lines = composeSegmentLines({
-      model: model2,
-      segment: active,
-      policy: context.policy,
-      seed: context.seed,
-      source: context.source
-    });
-    title.textContent = `created transcript \xB7 ${model2.titleOf(active)}`;
-    sourceHost.textContent = "";
-    lines.forEach((line, index) => {
-      const row = document.createElement("span");
-      row.className = `ts-line ${kindClass[line.kind] ?? ""}`.trim();
-      row.appendChild(document.createTextNode(line.text));
-      if (line.del) {
-        const del = document.createElement("span");
-        del.className = "ts-del";
-        del.textContent = "\u2715";
-        del.title = "Delete this assertion";
-        const ref = line.del;
-        del.addEventListener("click", () => context.onDelete(ref));
-        row.appendChild(del);
-      }
-      sourceHost.appendChild(row);
-      if (index < lines.length - 1) sourceHost.appendChild(document.createTextNode("\n"));
-    });
   }
 
   // tools/ide/web/testing-surface/src/main.ts
@@ -2736,44 +2749,28 @@
     }
     return { output: record.output, channelValues };
   }
-  function applyDelete(ref) {
-    touchSegmentAt(ref.ordinal);
-    switch (ref.kind) {
-      case "default":
-        model.removeDefault(ref.ordinal, ref.index, ref.defaults);
-        break;
-      case "defaultWhole":
-        model.removeDefault(ref.ordinal, -1, []);
-        break;
-      case "contains":
-        model.removeContains(ref.ordinal, ref.index);
-        break;
-      case "notContains":
-        model.removeNotContains(ref.ordinal, ref.index);
-        break;
-      case "state":
-        model.removeState(ref.ordinal, ref.index);
-        break;
-      case "event":
-        model.removeEvent(ref.ordinal, ref.index);
-        break;
-      case "channel":
-        model.removeChannel(ref.ordinal, ref.index);
-        break;
-      case "exact":
-        model.setExact(ref.ordinal, false);
-        break;
+  var undoStack = [];
+  var UNDO_DEPTH = 100;
+  function pushUndo() {
+    undoStack.push(model.captureAuthoring());
+    if (undoStack.length > UNDO_DEPTH) undoStack.shift();
+  }
+  function clearUndo() {
+    undoStack.length = 0;
+  }
+  function performUndo() {
+    if (driverBusy || replayActive) return;
+    const memento = undoStack.pop();
+    if (!memento) return;
+    model.restoreAuthoring(memento);
+    if (activeSegment && !model.segments.includes(activeSegment)) {
+      activeSegment = model.openSegment() ?? null;
     }
     update();
   }
-  var sourceContext = () => ({
-    policy,
-    seed: 42,
-    source: turnSource,
-    onDelete: applyDelete
-  });
   var cards = new CardsView(model, {
     onTick(ordinal, checked) {
+      pushUndo();
       if (checked) {
         const result = model.tick(ordinal);
         if (result !== "noop") activeSegment = model.segmentOf(ordinal) ?? null;
@@ -2786,29 +2783,24 @@
       update();
     },
     onCollapse(segment) {
+      pushUndo();
       model.setCollapsed(segment, true);
       update();
     },
     onExpand(segment) {
+      pushUndo();
       model.setCollapsed(segment, false);
       activeSegment = segment;
       update();
     },
-    onMergeUp(segment) {
-      const parent = model.parentOf(segment);
-      if (model.mergeUp(segment)) activeSegment = parent ?? null;
-      update();
-    },
-    onSplitAt(ordinal) {
-      touchSegmentAt(ordinal);
-      if (model.splitAt(ordinal)) activeSegment = model.segmentOf(ordinal) ?? null;
-      update();
+    onDeleteLineage(lineage) {
+      void performDeleteLineage(lineage);
     },
     onActivate(segment) {
       activeSegment = segment;
-      renderSource(model, activeSegment, sourceContext());
     },
     onAddContains(ordinal, text) {
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.addContains(ordinal, text)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2816,6 +2808,7 @@
       }
     },
     onNotContains(ordinal, text) {
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.addNotContains(ordinal, text)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2823,6 +2816,7 @@
       }
     },
     onToggleExact(ordinal) {
+      pushUndo();
       touchSegmentAt(ordinal);
       if (model.setExact(ordinal, !model.claimsOf(ordinal).exact)) {
         activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2837,6 +2831,7 @@
         kind: entity.kind === "npc" ? "NPC locations" : "item locations"
       }));
       showStatePicker(anchor, facts, (fact) => {
+        pushUndo();
         touchSegmentAt(ordinal);
         if (model.addState(ordinal, fact.expression)) {
           activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2847,6 +2842,7 @@
     onEventPicker(ordinal, anchor) {
       const events = records.get(ordinal)?.events ?? [];
       showListPicker(anchor, "events this turn emitted", events, (event) => {
+        pushUndo();
         touchSegmentAt(ordinal);
         if (model.addEvent(ordinal, event)) {
           activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2867,6 +2863,7 @@
         const scalarValue = capture.values.length === 1 && (typeof capture.values[0] === "number" || typeof capture.values[0] === "boolean") ? capture.values[0] : null;
         const flat = proseTextLinesOf(capture.values).join(" ");
         const claim = scalarValue !== null ? { id: capture.channel, is: scalarValue } : { id: capture.channel, contains: flat.slice(0, 60) };
+        pushUndo();
         touchSegmentAt(ordinal);
         if (model.addChannel(ordinal, claim)) {
           activeSegment = model.segmentOf(ordinal) ?? activeSegment;
@@ -2901,11 +2898,13 @@
     if (activeSegment && !model.segments.includes(activeSegment)) {
       activeSegment = null;
     }
-    cards.render();
-    renderSource(model, activeSegment, sourceContext());
     if (!driverBusy) {
-      syncWrites();
+      const suiteChanged = syncWrites();
+      if (suiteChanged && !runState.inFlight) resetRun(runState);
+      cards.render();
       postState();
+    } else {
+      cards.render();
     }
   }
   var written = /* @__PURE__ */ new Map();
@@ -2921,10 +2920,12 @@
     }
   }
   function syncWrites() {
+    let changed = false;
     for (const [segment, last] of [...written]) {
       if (!model.segments.includes(segment)) {
         written.delete(segment);
         postToBridge({ remove: { name: last.name } });
+        changed = true;
       }
     }
     for (const segment of [...detached]) {
@@ -2937,6 +2938,7 @@
         if (last2) {
           written.delete(segment);
           postToBridge({ remove: { name: last2.name } });
+          changed = true;
         }
         continue;
       }
@@ -2955,7 +2957,9 @@
       }
       written.set(segment, { name: title, text });
       postToBridge(payload);
+      changed = true;
     }
+    return changed;
   }
   function postState() {
     const stems = {};
@@ -3040,6 +3044,7 @@
         return;
       }
       cards.clear();
+      clearUndo();
       model.fence();
       records.clear();
       written.clear();
@@ -3164,6 +3169,7 @@
   }
   async function performBranch(ordinal, command) {
     if (replayActive) return;
+    clearUndo();
     const ancestry = ancestryStepsBefore(ordinal);
     const id = model.fork(ordinal, command);
     if (id === null) return;
@@ -3172,6 +3178,7 @@
   }
   async function selectLineage(lineage) {
     if (replayActive || lineage === model.activeLineage) return;
+    clearUndo();
     if (!model.activateLineage(lineage)) return;
     const path = model.pathTurns(lineage).filter((t) => t.ordinal > 0 && !t.boot).map((t) => {
       const at = model.positionOf(t.ordinal);
@@ -3179,6 +3186,23 @@
     });
     update();
     await driveFreshBoot(lineage, path, []);
+  }
+  async function performDeleteLineage(lineage) {
+    if (replayActive || driverBusy) return;
+    const result = model.deleteLineage(lineage);
+    if (result === null) return;
+    clearUndo();
+    if (activeSegment && !model.segments.includes(activeSegment)) {
+      activeSegment = model.openSegment() ?? null;
+    }
+    update();
+    if (result.wasActive) {
+      const path = model.pathTurns(result.parentId).filter((t) => t.ordinal > 0 && !t.boot).map((t) => {
+        const at = model.positionOf(t.ordinal);
+        return { command: t.command, key: at ? `${at.lineage}:${at.pos}` : "" };
+      });
+      await driveFreshBoot(result.parentId, path, []);
+    }
   }
   function snapshotAncestrySteps(snap, lineageId, uptoPos) {
     const byId = new Map(snap.lineages.map((l) => [l.id, l]));
@@ -3306,6 +3330,13 @@
   };
   cards.ensureLayout();
   installDialogHooks();
+  document.addEventListener("keydown", (event) => {
+    if (!(event.metaKey || event.ctrlKey) || event.key !== "z" || event.shiftKey) return;
+    const target = event.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+    event.preventDefault();
+    performUndo();
+  });
   for (const record of queued) deliver(record);
   var bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
   policy = bootSession?.policy;

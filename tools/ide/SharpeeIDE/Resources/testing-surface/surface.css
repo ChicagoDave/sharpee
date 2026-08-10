@@ -337,16 +337,6 @@ body.ts-active .sharpee-window { display: none; }
   padding: 4px 8px;
 }
 
-/* ── middle: the source panel — the active segment's generated transcript ── */
-
-.ts-source-col {
-  flex: 0 0 340px;
-  border-left: 1px solid var(--ts-border);
-  background: var(--ts-block-bg);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
 .ts-col-head {
   padding: 8px 12px;
   border-bottom: 1px solid var(--ts-border);
@@ -358,33 +348,24 @@ body.ts-active .sharpee-window { display: none; }
   justify-content: space-between;
   align-items: center;
 }
-#ts-source {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-}
-#ts-source .ts-hdr { color: var(--ts-fg-dim); }
-#ts-source .ts-cmd { color: var(--ts-accent); }
-#ts-source .ts-ok  { color: var(--ts-assert); }
-#ts-source .ts-skip { color: var(--ts-fg-faint); }
-#ts-source .ts-lit { color: var(--ts-fg); }
 
-/* Assertions are deleted HERE — hover a line, hit its ✕. Inline, because
-   the source pane is pre-wrap: a block-level line would double-space. */
-#ts-source .ts-line .ts-del {
+/* Chip delete (two acts: arm, confirm). Quiet until hovered. */
+.ts-branch-chip { position: relative; }
+.ts-branch-chip .ts-chip-delete {
   visibility: hidden;
-  color: var(--ts-fg-faint);
-  cursor: pointer;
-  margin-left: 6px;
+  position: absolute; top: 4px; right: 6px;
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint); background: transparent;
+  border: 0; padding: 1px 4px; cursor: pointer;
 }
-#ts-source .ts-line:hover .ts-del { visibility: visible; }
-#ts-source .ts-line .ts-del:hover { color: var(--ts-fg); }
+.ts-branch-chip:hover .ts-chip-delete { visibility: visible; }
+.ts-branch-chip .ts-chip-delete:hover { color: var(--ts-fail); }
+.ts-branch-chip .ts-chip-delete.ts-armed {
+  visibility: visible; color: var(--ts-play-bg);
+  background: var(--ts-fail); border-radius: 3px; font-weight: 700;
+}
 
-/* ── right: the run column skeleton — rows land in the run-column phase ── */
+/* ── right: the run column (design §7) ── */
 
 .ts-run-col {
   flex: 0 0 280px;

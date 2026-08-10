@@ -71,6 +71,29 @@ files unflipped before Phase 6 lands is looking at correct state, not an omissio
 > (tab affordance + `packages/branch-tester` — awaiting its platform discussion,
 > since live `.golden` files need both sides cut together).
 
+> **Post-go-live rulings** (2026-08-09, session fdfe6a, David on first real
+> click-through — these supersede this ADR where they conflict):
+> 1. **The Testing tab IS the surface.** "Remove the old UX and embed the new
+>    UX in the Testing tab." D4's authoring-vs-reading split is superseded:
+>    the ADR-301 tree/documents tab, its web bundle, TestController, and the
+>    separate surface window are all removed; the tab hosts the play surface
+>    (binds per project, loads after ⌘B). There is no separate reading surface.
+> 2. **Transcripts are Chord Writer's artifacts.** Auto-named and auto-saved,
+>    they live on disk but the project pane never lists them — the Testing
+>    tab's serialized view is their only IDE presentation.
+> 3. **The source column is retired** (unnecessary in practice); assertions
+>    are authored by gesture and read in the files. Claim removal has no
+>    surface affordance yet — the model mutators remain for a future gesture.
+> 4. **Split and Merge ↑ are retired as gestures.** Fork's auto-split is the
+>    only split (internal); deleting the last branch at a point folds the
+>    prefix back — safe precisely because every boundary is fork-made.
+> 5. **Branches are deletable** (chip ✕, armed then confirmed — descendants
+>    and files go; deleting the viewed branch replays its parent live) and
+>    **authoring gestures are undoable** (⌘Z over authoring state; played
+>    turns are not undone — fork/switch/delete/fence clear the stack).
+> 6. **A changed suite voids run results** — any write/remove/rename to the
+>    tree on disk resets the run column to not-run.
+
 > **Phase 6 landed** (2026-08-09, session fdfe6a, David's per-file confirmation):
 > the golden pair is retired on both sides — branch-tester's `golden.ts`, golden
 > tier, `--bless`/`--bless-file` (cli + devkit), watch bless flow, rename's

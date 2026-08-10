@@ -119,45 +119,6 @@ final class AutoAssertionMenuTests: XCTestCase {
         }
     }
 
-    // MARK: - The policy reaches the Testing tab's live page (the 6e hop)
-
-    /// The one new cross-boundary hop this phase adds: TestController reads
-    /// the header on DISK and reports it into the real webview, whose handler
-    /// stores it (reflected onto `document.body` exactly so this test can see
-    /// the stored state). Everything upstream (the seam) and downstream (the
-    /// bare add) is covered in isolation; this pins the wire between them.
-    func testAttachReportsTheOnDiskPolicyIntoTheLivePage() async throws {
-        // The fixture starts with no policy; write one to DISK through the
-        // seam — attach reads disk, not the editor buffer.
-        let source = try String(contentsOf: storyFile, encoding: .utf8)
-        let edit = try XCTUnwrap(StoryHeaderAutoAssertion.edit(setting: .roomDescription, in: source))
-        try StoryHeaderAutoAssertion.apply(edit, to: source)
-            .write(to: storyFile, atomically: true, encoding: .utf8)
-
-        let controller = MainWindowController()
-        let window = try XCTUnwrap(controller.window)
-        window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
-        window.orderFront(nil)
-        defer { window.orderOut(nil) }
-
-        let testController = TestController(window: controller)
-        testController.attach(storyFile: storyFile)
-
-        let tab = controller.testingTab
-        var waited: TimeInterval = 0
-        while !tab.isPageReady && waited < 5 {
-            try await Task.sleep(nanoseconds: 25_000_000)
-            waited += 0.025
-        }
-        XCTAssertTrue(tab.isPageReady, "the Testing tab's page did not report ready")
-        // Deferred calls flush on ready; let the flush and the handler land.
-        try await Task.sleep(nanoseconds: 160_000_000)
-
-        let stored = try await tab.evaluateInTab("document.body.dataset.autoAssertionPolicy") as? String
-        XCTAssertEqual(stored, "room-description",
-                       "the on-disk policy must reach the page's stored state at attach")
-    }
-
     // MARK: - The menu bar carries the closed choice set
 
     func testTheTestMenuCarriesTheFourChoices() throws {

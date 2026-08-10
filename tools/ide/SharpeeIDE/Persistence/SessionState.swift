@@ -16,6 +16,9 @@ struct SessionState: Codable {
     var projectPaneVisible: Bool
     var buildPanelVisible: Bool
     var playAfterBuild: Bool
+    /// The right panel's selected tab index. Part of "the IDE stores all of
+    /// its visual state" (David, 2026-08-09); nil in older persisted entries.
+    var rightPanelTab: Int?
 
     init(projectURL: URL?,
          openDocumentURLs: [URL],
@@ -23,7 +26,8 @@ struct SessionState: Codable {
          expandedFolderURLs: [URL] = [],
          projectPaneVisible: Bool = true,
          buildPanelVisible: Bool = false,
-         playAfterBuild: Bool = true) {
+         playAfterBuild: Bool = true,
+         rightPanelTab: Int? = nil) {
         self.projectURL = projectURL
         self.openDocumentURLs = openDocumentURLs
         self.activeIndex = activeIndex
@@ -31,6 +35,7 @@ struct SessionState: Codable {
         self.projectPaneVisible = projectPaneVisible
         self.buildPanelVisible = buildPanelVisible
         self.playAfterBuild = playAfterBuild
+        self.rightPanelTab = rightPanelTab
     }
 
     // Custom decode so older persisted entries (without the newer additive fields) still load.
@@ -43,6 +48,7 @@ struct SessionState: Codable {
         projectPaneVisible = try container.decodeIfPresent(Bool.self, forKey: .projectPaneVisible) ?? true
         buildPanelVisible = try container.decodeIfPresent(Bool.self, forKey: .buildPanelVisible) ?? false
         playAfterBuild = try container.decodeIfPresent(Bool.self, forKey: .playAfterBuild) ?? true
+        rightPanelTab = try container.decodeIfPresent(Int.self, forKey: .rightPanelTab)
     }
 }
 

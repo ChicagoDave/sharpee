@@ -76,7 +76,6 @@ final class ProjectArtifactsTests: XCTestCase {
         XCTAssertEqual(memberNames(.story), ["the-lost-key.story"])
         XCTAssertEqual(memberNames(.walkthroughs),
                        ["wt-01-opening.transcript", "wt-02-cellar.transcript"])
-        XCTAssertEqual(memberNames(.transcriptTests), ["lantern.transcript"])
         XCTAssertEqual(memberNames(.assets), ["lantern.png"])
         XCTAssertEqual(memberNames(.feelies), ["the-letter.pdf"])
     }
@@ -86,7 +85,7 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("notes.txt")
 
         XCTAssertEqual(groups().map(\.kind),
-                       [.story, .walkthroughs, .transcriptTests, .assets, .feelies, .webTemplate, .other])
+                       [.story, .walkthroughs, .assets, .feelies, .webTemplate, .other])
     }
 
     func testWebTemplateGathersFilesFromTwoDifferentOnDiskLocations() throws {
@@ -98,14 +97,18 @@ final class ProjectArtifactsTests: XCTestCase {
                        ["index.html", "the-lost-key.css", "the-lost-key.templates"])
     }
 
-    func testTranscriptTestsReachesThroughTestsIntoTranscripts() throws {
+    func testTranscriptsAreChordWritersArtifactsAndNeverAppearInThePane() throws {
         try buildFullFixture()
 
-        // The group is tests/transcripts/, not tests/ — ADR-277 fixes both names,
-        // and the Test panel discovers exactly this path.
-        XCTAssertEqual(memberNames(.transcriptTests), ["lantern.transcript"])
-        XCTAssertFalse(memberNames(.transcriptTests).contains("transcripts"),
-                       "the intermediate directory must not appear as a member")
+        // David's ruling (2026-08-09): transcripts are auto-named, auto-saved
+        // IDE artifacts — the pane never lists them; the Testing tab is their
+        // only IDE presentation. A stray NON-transcript file an author parked
+        // under tests/ still shows (open, not strict).
+        try file("tests/notes-on-testing.txt")
+        let everyMember = groups().flatMap { $0.members.map(\.name) }
+        XCTAssertFalse(everyMember.contains("lantern.transcript"),
+                       "a transcript under tests/transcripts/ must not appear in any group")
+        XCTAssertTrue(memberNames(.other).contains("notes-on-testing.txt"))
     }
 
     // MARK: - Open, not strict
@@ -134,8 +137,11 @@ final class ProjectArtifactsTests: XCTestCase {
         try file("tests/scratch.md")
 
         let grouped = Set(groups().flatMap { $0.members }.map(\.name))
+        // Transcripts under tests/ are the ONE deliberate exception (David's
+        // ruling 2026-08-09): Chord Writer's artifacts, shown only serialized
+        // in the Testing tab — everything else must land in exactly one group.
         let onDisk: Set<String> = ["the-lost-key.story", "wt-01-opening.transcript",
-                                   "wt-02-cellar.transcript", "lantern.transcript",
+                                   "wt-02-cellar.transcript",
                                    "lantern.png", "the-letter.pdf", "the-lost-key.templates",
                                    "the-lost-key.css", "index.html",
                                    "notes.txt", "scratch.md"]
@@ -216,7 +222,6 @@ final class ProjectArtifactsTests: XCTestCase {
         try buildFullFixture()
 
         XCTAssertEqual(group(.walkthroughs)?.directoryURL?.lastPathComponent, "walkthroughs")
-        XCTAssertEqual(group(.transcriptTests)?.directoryURL?.lastPathComponent, "transcripts")
         XCTAssertEqual(group(.assets)?.directoryURL?.lastPathComponent, "assets")
         XCTAssertEqual(group(.feelies)?.directoryURL?.lastPathComponent, "feelies")
         // Assembled from scattered files — no single folder to reveal.

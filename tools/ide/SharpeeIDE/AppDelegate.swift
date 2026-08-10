@@ -12,7 +12,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private var mainWindowController: MainWindowController?
     private var buildController: BuildController?
-    private var testController: TestController?
     /// Runs `sharpee publish` for the Publish tab (ADR-284). Created eagerly:
     /// it owns the streamed output wiring, not a per-run object.
     private let publishController = PublishController()
@@ -60,7 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let controller = MainWindowController()
         mainWindowController = controller
         buildController = BuildController(window: controller)
-        testController = TestController(window: controller)
         controller.onBuildPillCancel = { [weak self] in self?.buildController?.cancel() }
         wirePublish(to: controller)
         controller.showWindow(nil)
@@ -185,6 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         controller.setProjectPaneVisible(state.projectPaneVisible)
         controller.setBuildPanelVisible(state.buildPanelVisible)
         controller.setPlayAfterBuild(state.playAfterBuild)
+        if let tab = state.rightPanelTab { controller.setRightPanelTab(tab) }
 
         let fm = FileManager.default
         var survivingURLs: [URL] = []
@@ -345,13 +344,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // never prompts for or runs npm/node_modules/init-browser.
         currentStoryURL = StoryTarget.storyFile(in: url)
 
-        // The Tests panel tracks the same target (ADR-277 D2): discover its
-        // tests/ + walkthroughs/ tree now; runs are user-initiated.
-        if let storyURL = currentStoryURL {
-            testController?.attach(storyFile: storyURL)
-        } else {
-            testController?.detach()
-        }
+        // The Testing tab binds the surface lazily on first visit (the D8
+        // sidecar needs the composed story id); loadProject already cleared
+        // the previous project's surface.
 
         // The Publish tab acts on the same target Build does.
         mainWindowController?.setPublishStory(currentStoryURL)
@@ -451,19 +446,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Test menu actions (ADR-277 D2/D3)
 
-    /// Test → Run Tests (⌘U). Runs the story's suite as a tree, streaming into
-    /// the Testing tab. The only run the IDE offers — see `TestRunner.runTests`.
+    /// Test → Run Tests (⌘U). Runs the story's suite as a tree through the
+    /// Testing tab's run column — the surface's own Run button, so its
+    /// in-page guards stay authoritative. The only run the IDE offers.
     @objc func runTests(_ sender: Any?) {
-        testController?.runTests()
+        mainWindowController?.runTestsInSurface()
     }
 
-    /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
+    /// Test → Cancel Test Run. SIGTERM, then SIGKILL; rows already filled stay.
     @objc func cancelTestRun(_ sender: Any?) {
-        testController?.cancel()
+        mainWindowController?.testingSurface?.cancelTestRun()
     }
 
-    /// Test → Testing Play Surface (⌥⌘U). Opens the dedicated testing page
-    /// (ADR-306 Phase 3) — cards, segments, and the session that restores.
+    /// Test → Testing Play Surface (⌥⌘U). Brings the Testing tab forward —
+    /// the tab IS the surface (David's ruling 2026-08-09).
     @objc func openTestingSurface(_ sender: Any?) {
         mainWindowController?.openTestingSurface()
     }
@@ -535,9 +531,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         case #selector(runTests(_:)):
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true
-                && !(testController?.isTesting ?? false)
+                && !(mainWindowController?.testingSurface?.isRunningTests ?? false)
         case #selector(cancelTestRun(_:)):
-            return testController?.isTesting ?? false
+            return mainWindowController?.testingSurface?.isRunningTests ?? false
         case #selector(toggleShippedTheme(_:)):
             guard let shipped = mainWindowController?.shippedThemeIds() else { return false }
             let themeId = menuItem.representedObject as? String

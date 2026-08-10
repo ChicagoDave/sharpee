@@ -337,7 +337,6 @@ final class DocsTabRealPathTests: XCTestCase {
 
         panel.showDocsTab()
         XCTAssertFalse(panel.docsTab.view.isHidden, "Docs must show when selected")
-        XCTAssertTrue(panel.testingTab.view.isHidden)
         XCTAssertTrue(panel.play.view.isHidden)
 
         panel.showTestingTab()

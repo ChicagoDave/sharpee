@@ -6,8 +6,8 @@
  *   holding the client's OWN rendered elements (moved out of the prose
  *   staging pane by their `data-turn` anchors, so engine.css fidelity is
  *   kept), a distinct checkbox rail, title strips with the auto-derived
- *   name, summary cards for collapsed segments, split/merge/collapse
- *   controls, and — Phase 5 — the Branch… gesture with sibling chip rows
+ *   name, summary cards for collapsed segments, collapse controls, and
+ *   — Phase 5 — the Branch… gesture with sibling chip rows
  *   and lineage-cut visibility (design §6: the column always shows exactly
  *   one coherent lineage). All state changes go through the model; this
  *   layer only renders and forwards gestures.
@@ -30,8 +30,8 @@ export interface CardsDelegate {
   onTick(ordinal: number, checked: boolean): void;
   onCollapse(segment: Segment): void;
   onExpand(segment: Segment): void;
-  onMergeUp(segment: Segment): void;
-  onSplitAt(ordinal: number): void;
+  /** A chip's ✕ — delete that branch (its file and descendants go too). */
+  onDeleteLineage(lineage: number): void;
   onActivate(segment: Segment): void;
   /** Authoring gestures (design §5) — all routed to model mutators. */
   onAddContains(ordinal: number, text: string): void;
@@ -59,8 +59,6 @@ interface CardRow {
   strip: HTMLElement;
   autoName: HTMLElement;
   collapseButton: HTMLButtonElement;
-  mergeButton: HTMLButtonElement;
-  splitButton: HTMLButtonElement | null;
   exactButton: HTMLButtonElement | null;
   branchButton: HTMLButtonElement | null;
 }
@@ -94,10 +92,6 @@ export class CardsView {
       <div class="ts-left">
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"><div class="ts-gutter-cap"></div></div>
-      </div>
-      <div class="ts-source-col">
-        <div class="ts-col-head"><span id="ts-source-title">created transcript</span></div>
-        <div id="ts-source"></div>
       </div>
       <div class="ts-run-col">
         <div class="ts-col-head"><span>test run</span>
@@ -210,18 +204,31 @@ export class CardsView {
     const staging = this.stagingPane();
     if (!staging) return;
 
+    /** The engine's own banner decoration (ADR-174's published classes). */
+    const isBanner = (el: Element): boolean =>
+      [...el.classList].some(name => name.startsWith('sharpee-banner-'));
+
+    let stamped = [...staging.children]
+      .filter(el => el.getAttribute('data-turn') === String(ordinal));
+
     if (!this.cards.has(0) && this.model.hasOpening) {
       const openingElements: Element[] = [];
       for (const child of [...staging.children]) {
         if (child.hasAttribute('data-turn')) break;
         openingElements.push(child);
       }
+      // The real client's `game.started` prose — banner + prologue — flushes
+      // INSIDE the boot look's turn bracket, so it arrives stamped with the
+      // boot ordinal rather than as an unstamped head. It is still the
+      // opening (ordinal 0, design §2): claim it by its banner classes.
+      if (boot) {
+        openingElements.push(...stamped.filter(isBanner));
+        stamped = stamped.filter(el => !isBanner(el));
+      }
       this.buildRow(0, false, false, openingElements);
     }
 
-    const elements = [...staging.children]
-      .filter(el => el.getAttribute('data-turn') === String(ordinal));
-    this.buildRow(ordinal, boot, branch, elements);
+    this.buildRow(ordinal, boot, branch, stamped);
   }
 
   private buildRow(ordinal: number, boot: boolean, branch: boolean, prose: Element[]): void {
@@ -250,14 +257,10 @@ export class CardsView {
     const autoName = document.createElement('div');
     autoName.className = 'ts-auto-name';
     autoName.title = 'Auto-named: start location + end location + turns';
-    const mergeButton = document.createElement('button');
-    mergeButton.textContent = 'Merge ↑';
-    mergeButton.title =
-      'Merge this transcript into the previous one — former gap turns ride as [SKIP]';
     const collapseButton = document.createElement('button');
     collapseButton.textContent = 'Collapse';
     collapseButton.title = 'Collapse this transcript into its summary card';
-    strip.append(autoName, mergeButton, collapseButton);
+    strip.append(autoName, collapseButton);
 
     const block = document.createElement('div');
     block.className = 'ts-block';
@@ -334,17 +337,8 @@ export class CardsView {
       actions.appendChild(channelButton);
     }
 
-    let splitButton: HTMLButtonElement | null = null;
     let branchButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
-      splitButton = document.createElement('button');
-      splitButton.textContent = 'Split here';
-      splitButton.title =
-        'Start a new transcript at this turn — it continues from the one it left';
-      splitButton.style.display = 'none';
-      splitButton.addEventListener('click', () => this.delegate.onSplitAt(ordinal));
-      actions.appendChild(splitButton);
-
       branchButton = document.createElement('button');
       branchButton.textContent = 'Branch…';
       branchButton.title =
@@ -361,8 +355,8 @@ export class CardsView {
     row.append(pick, column);
     this.host.appendChild(row);
     this.cards.set(ordinal, {
-      row, checkbox, stripNote, strip, autoName, collapseButton, mergeButton,
-      splitButton, exactButton, branchButton,
+      row, checkbox, stripNote, strip, autoName, collapseButton,
+      exactButton, branchButton,
     });
   }
 
@@ -394,6 +388,17 @@ export class CardsView {
    *  including the lineage cut (design §6): a turn past a fork shows only
    *  while the branch that played it is the active lineage. */
   render(): void {
+    // A deleted branch's turns leave the model (David's ruling 2026-08-09) —
+    // their cards go with them, not merely hide.
+    for (const [ordinal, card] of [...this.cards]) {
+      const exists = ordinal === 0
+        ? this.model.hasOpening
+        : this.model.turns.some(t => t.ordinal === ordinal);
+      if (!exists) {
+        card.row.remove();
+        this.cards.delete(ordinal);
+      }
+    }
     const activePathPoints = this.pointsOnActivePath();
     for (const [ordinal, card] of this.cards) {
       const segment = this.model.segmentOf(ordinal);
@@ -415,11 +420,6 @@ export class CardsView {
       card.stripNote.style.display = 'none';
       if (isFirst && segment) this.renderStrip(card, segment);
 
-      if (card.splitButton) {
-        const splittable = assigned && segment.end !== null && !collapsed &&
-          ordinal > Math.max(segment.start, 1);
-        card.splitButton.style.display = splittable ? '' : 'none';
-      }
       if (card.branchButton) {
         // Any point in a closed, expanded transcript with something shared
         // before it can fork — mid-segment, or at its start when a parent
@@ -464,8 +464,6 @@ export class CardsView {
     card.collapseButton.onclick = () => this.delegate.onCollapse(segment);
 
     const parent = this.model.parentOf(segment);
-    card.mergeButton.style.display = parent ? '' : 'none';
-    card.mergeButton.onclick = () => this.delegate.onMergeUp(segment);
     if (parent) {
       card.stripNote.textContent =
         `↳ continues from “${this.model.titleOf(parent)}”`;
@@ -605,6 +603,26 @@ export class CardsView {
          <div class="ts-chip-title">${escapeHtml(title)}</div>
          <div class="ts-chip-span">${span}</div>`;
       chip.addEventListener('click', () => this.delegate.onSelectLineage(sibling));
+      // Delete the branch (David's ruling, 2026-08-09). Two deliberate acts,
+      // like Trash was: arm, then confirm on the same control.
+      const remove = document.createElement('button');
+      remove.className = 'ts-chip-delete';
+      remove.textContent = '✕';
+      remove.title = 'Delete this branch — its transcript (and any branches forked from it) go too';
+      remove.addEventListener('click', event => {
+        event.stopPropagation();
+        if (remove.classList.contains('ts-armed')) {
+          this.delegate.onDeleteLineage(sibling);
+        } else {
+          remove.classList.add('ts-armed');
+          remove.textContent = 'delete?';
+          setTimeout(() => {
+            remove.classList.remove('ts-armed');
+            remove.textContent = '✕';
+          }, 2500);
+        }
+      });
+      chip.appendChild(remove);
       container.appendChild(chip);
     }
 

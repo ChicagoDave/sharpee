@@ -35,22 +35,9 @@ targets:
         # this exclude XcodeGen would also add each file individually and the
         # copy phase would carry them twice.
         excludes:
-          - "Resources/testing-tab/**"
           - "Resources/docs-tab/**"
           - "Resources/play-themes/**"
           - "Resources/testing-surface/**"
-      # The Testing tab's web bundle (ADR-301 D1). A folder reference, so the
-      # esbuild output is copied whole into Contents/Resources/testing-tab/ and
-      # adding a file to it never needs a project regenerate.
-      #
-      # The output is COMMITTED, unusually for build output, because XcodeGen
-      # resolves this path at generate time: a gitignored folder would make
-      # `xcodegen generate` on a fresh clone silently produce an app with no
-      # Testing tab. The pre-build script below regenerates it on every build,
-      # so the committed copy is a seed, never the thing that ships stale.
-      - path: SharpeeIDE/Resources/testing-tab
-        type: folder
-        buildPhase: resources
       # The Documentation tab's bundle (go-live Phase 3): sharpee.net's author
       # documentation, reduced from MDX and rendered to HTML fragments. A folder
       # reference for the same reasons as the Testing tab above — copied whole,
@@ -76,15 +63,11 @@ targets:
         buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
-    # ADR-301 D1 — the Testing tab is a web bundle, so the app has a TS→JS build
-    # step it did not have before. Cheap (one esbuild pass, tens of
-    # milliseconds), so unlike the toolchain vendoring below it is NOT opt-in:
-    # a stale tab is a wrong tab. Degrades to a warning when node is absent.
+    # The tab bundles are esbuild output the app copies in — cheap (one
+    # esbuild pass each), so unlike the toolchain vendoring below they are NOT
+    # opt-in: a stale bundle is a wrong bundle. Degrade to warnings without node.
     preBuildScripts:
-      - name: Bundle the Testing tab (ADR-301 D1)
-        basedOnDependencyAnalysis: false
-        script: '"$PROJECT_DIR/build-testing-tab.sh"'
-      # Same trade as above: the docs bundler is one corpus walk plus one
+      # The docs bundler is one corpus walk plus one
       # esbuild pass (~150ms for 143 pages), so stale documentation is not worth
       # saving it. Deliberately NOT the website's Next build — see the script.
       - name: Bundle the Documentation tab (go-live Phase 3)

@@ -43,9 +43,37 @@
 - branch-tester **348**, ide-protocol **45**, devkit **167**, surface vitest **83**, tab vitest **88**, `tsf build --npm` clean.
 - Debug trail on the real-path test: (1) temp-dir stories resolve no CLI → `sharpeeExecutableOverride` seam; (2) the spawned CLI ran the stale dist (`failure` missing from the wire) → `tsf build`; (3) a fresh `dist/cli.js` has no exec bit → spawn via `env node` (the tab suite's pattern).
 
+## Publish (David: "bump and publish… use the CI workflow after the version bump")
+- `tsf version 4.6.0` (all packages), committed with Phase 6 as `7f582734`; test gate 60/60 green.
+- CI publish workflow (`publish-npm.yml`, dispatched on the branch): first dry-run failed its stamping guard — the bump missed the repokit-stamped `ENGINE_VERSION` constant (the exact stdlib@3.6.0 failure mode the guard exists for). Fixed in `283d86a3`; second dry-run green; real run **success**.
+- Registry verified: `latest` → **4.6.0** for @sharpee/sharpee, branch-tester, ide-protocol, devkit, transcript-tester (et al.).
+
+## Post-merge: David's click-through rulings (uncommitted work, this session's second arc)
+1. **"Remove the old UX and embed the new UX in the Testing tab"** — the surface window was Phase 3's implementation choice that drifted from the directive. DONE: the Testing tab now hosts the play surface (binds per project on first visit, loads after ⌘B, reloads on rebuild, placeholder before a build; ⌥⌘U selects the tab). Deleted: `TestingTabViewController`, `TestController`, `TestingTabSchemeHandler`, `TestingTabWebRoot`, `ToolchainFenceNote`, `TranscriptDiscovery`, `TranscriptSourceProvider`, `TestingSurfaceWindowController`, `web/testing-tab/` + committed `Resources/testing-tab/` + `build-testing-tab.sh` + its pre-build phase, suites `TestingTabRealPathTests`/`ToolchainFenceNoteTests`/`TranscriptSourceProviderTests`/`ProjectTreeRefreshTests` + the tab-hop test in `AutoAssertionMenuTests`. Test menu: ⌘U → the surface's Run button (in-page guards authoritative), Cancel wired to the same run.
+2. **"Transcripts are Chord Writer's artifacts"** — the project pane never lists `.transcript` files under `tests/` (either layout); non-transcript strays still show in Other. `Transcript Tests` group retired from `ProjectArtifacts`.
+3. **Middle column removed; 50% snap removed; visual state persists** — the source column was unnecessary once seen in action (its non-updating bug died with it; claim REMOVAL currently has no surface affordance — model mutators stay vitest-covered); the "Snap panes to 50% each" setting is retired (`SettingsPreference` deleted, Settings window empty with a note) — divider positions already persist and now nothing overrides them; the right panel's selected tab joins `SessionState` (persisted on change once a project is open — guarded so the launch invariant "close the landing page → nothing persisted" holds, which `LaunchFlowTests` caught).
+- **Evidence**: IDE suite **475 passing, 0 failures** (count reflects the deleted tab suites); surface vitest **83 passing**; surface bundle rebuilt.
+- **Pending David's click-through before commit.** ADR-306 needs an amendment recording rulings 1–3 (D4's authoring-vs-reading split is superseded: the tab IS the surface; there is no separate reading surface).
+
+## Click-through round 2 (David's three changes + the opening bug)
+- **Opening card empty on the real page** — the engine's `game.started` prose (banner + prologue) flushes INSIDE the boot look's bracket, stamped `data-turn=1`; the fixture's unstamped head never matched reality (broken in the window era too, first seen now). Fix: the opening card claims the boot delivery's `sharpee-banner-*` elements (ADR-174's published decoration classes). Pinned against the real fernhill bundle.
+- **Undo (⌘Z)** — authoring gestures (ticks, ranges, collapse, claims, pickers) push authoring mementos (segments/skips/claims/lineage table — never played turns); fork, chip-switch, branch delete, and fence CLEAR the stack (a memento must not resurrect a lineage whose turns are gone). Never fires inside text fields. The auto-save writer follows an undo like any model change (real-path: claim added → ⌘Z → gone from the file on disk).
+- **Branch delete** — each sibling chip gets a hover ✕ (two acts: arm, confirm). Deletes the lineage + descendants; files leave the disk via the writer's reconcile; deleting the VIEWED branch replays the surviving parent live (view-is-live). Last sibling at a point → the fork point dissolves and the auto-split prefix folds back (mergeUp), renaming stems — the restructure-rename path's surviving home, real-path-pinned.
+- **Split and Merge ↑ retired** — with transcripts as IDE artifacts, chaptering has no author value; the only load-bearing split is fork's auto-split (internal), and fold-back replaces Merge. Every split boundary is fork-made, which is what makes the fold-back merge always safe. Claim-REMOVAL still has no surface affordance (source panel gone, Split gone) — model mutators stay covered awaiting a future gesture ruling.
+- Detach/re-attach real-path test reworked onto two ticked ranges (its old setup used Split); the rename-on-restructure assertions moved into the chip-delete fold-back test.
+- **Environment note**: a run of "Runningboard error 5 / launchd spawn failed" test-runner failures traced to an UNSIGNED app product from a silently-failed incremental build (grep filter swallowed the error) — clean rebuild of Products/Debug fixed it; worth remembering the symptom.
+- **Evidence**: IDE suite **475 passing, 0 failures**; surface vitest **90 passing** (deleteLineage semantics incl. descendants/claims/fold-back/refusals, memento round-trip + deep-copy); surface real-path 21 passing incl. `testChipDeleteRemovesTheBranchItsFileAndReplaysTheParent` and `testCommandZUndoesAClaimAndTheFileFollows`. Bundle rebuilt.
+
+## Click-through round 3
+- **Suite change resets the run column** (David: "if I delete things or uncheck things, the transcript state has to be rewritten and the right test runner pane reset") — the file rewrites already flowed through the writer; the gap was the run column reporting a tree that no longer existed. Now ANY change to the suite on disk (untick/reopen, branch delete, claim edits, closing a new range — content changes stale results equally) resets the column to "not run yet"; guarded when a run is in flight. `resetRun` in `run.ts` (+ vitest, 91 passing), wired in `update()` with writes ordered before the render.
+- **Xcode signing rot, twice more**: incremental AND clean builds intermittently sign the app while the nested `SharpeeIDETests.xctest` is still unsigned ("code object is not signed at all — In subcomponent: …xctest", also the cause of the earlier "Runningboard error 5" launch failures). Clean rebuild fixed it once; the deterministic recurrence needed hand-signing the nested xctest (`codesign --force --sign <identity> …xctest`) then re-running build-for-testing. If it keeps recurring, the project's target ordering (xcodegen) deserves a look.
+- **Evidence**: IDE suite **475 passing, 0 failures** on the fully-signed build; surface vitest **91 passing**.
+
+## Merge
+- PR #256 (`feat/ide-go-live-phases-1-3` → `main`, the whole 38-commit go-live arc) created and merged on David's "pr then merge" — merge commit `f41a4188`, 2026-08-09.
+
 ## Open Items
-- Publish 4.5.0 → 4.6.0: warranted (ide-protocol, branch-tester, transcript-tester, devkit all changed; npm build verified) — awaiting David's go.
-- `turbo test:ci` runs at commit time (the gate).
+- None for Phase 6. Phase 7 (play to a goal) stays parked until David asks.
 
 ## Files Modified
 - `packages/ide-protocol/src/run-events.ts`, `tests/run-events.test.ts`

@@ -603,3 +603,98 @@ describe('snapshot and restore (ADR-306 D8, position-keyed)', () => {
     expect(back.segments).toHaveLength(0);
   });
 });
+
+describe('deleteLineage (David 2026-08-09: branches are deletable)', () => {
+  it('removes the branch, its turns, and its segment; the fork point empties and the auto-split merges back', () => {
+    const m = forkedSession();
+    // Fork auto-split 1–5 into 1–2 (collapsed parent) + 3–5.
+    expect(m.segments.map(s => [s.start, s.end])).toEqual([[1, 2], [3, 5], [13, 13]]);
+
+    const result = m.deleteLineage(2);
+
+    expect(result).toEqual({ parentId: 1, wasActive: true });
+    expect(m.turns.some(t => t.ordinal === 13)).toBe(false);
+    expect(m.lineages.map(l => l.id)).toEqual([1]);
+    expect(m.activeLineage).toBe(1);
+    // Last sibling gone → the fork-made boundary folds back to one segment.
+    expect(m.segments.map(s => [s.start, s.end])).toEqual([[1, 5]]);
+    expect(m.branchPoints()).toEqual([]);
+  });
+
+  it('keeps the split while a sibling still forks at the point', () => {
+    const m = forkedSession();
+    m.activateLineage(1);
+    expect(m.fork(3, 'west')).toBe(3);
+    m.addTurn({ ordinal: 21, command: 'west', room: 'Ha-Ha', boot: false, lineage: 3 });
+
+    expect(m.deleteLineage(3)).toEqual({ parentId: 1, wasActive: true });
+
+    // Lineage 2 still forks at 3 — the auto-split boundary must survive.
+    expect(m.segments.map(s => [s.start, s.end])).toEqual([[1, 2], [3, 5], [13, 13]]);
+    expect(m.branchPoints().map(p => p.siblings)).toEqual([[2]]);
+  });
+
+  it('deletes descendants with the branch, and their claims', () => {
+    const m = forkedSession();
+    m.addContains(13, 'boiler');
+    // A branch off the branch: lineage 3 forks lineage 2 at its own turn —
+    // same-point normalization joins the ORIGINAL point as a sibling, so
+    // fork DEEPER instead: extend 2 first.
+    m.addTurn({ ordinal: 14, command: 'north', room: 'Coal Store', boot: false, lineage: 2 });
+    m.untick(13); m.tick(13); m.tick(14);   // re-range the branch as [13,14]
+    expect(m.fork(14, 'down')).toBe(3);
+    m.addTurn({ ordinal: 30, command: 'down', room: 'Cellar', boot: false, lineage: 3 });
+
+    expect(m.deleteLineage(2)).toEqual({ parentId: 1, wasActive: true });
+
+    expect(m.lineages.map(l => l.id)).toEqual([1]);
+    expect(m.turns.every(t => t.ordinal < 13)).toBe(true);
+    expect(m.claimsOf(13).contains).toEqual([]);
+  });
+
+  it('refuses the root lineage and unknown ids, mutating nothing', () => {
+    const m = forkedSession();
+    const segments = m.segments.map(s => ({ ...s }));
+    expect(m.deleteLineage(1)).toBeNull();
+    expect(m.deleteLineage(99)).toBeNull();
+    expect(m.segments.map(s => [s.start, s.end]))
+      .toEqual(segments.map(s => [s.start, s.end]));
+  });
+
+  it('deleting a non-active branch never touches the active lineage', () => {
+    const m = forkedSession();
+    m.activateLineage(1);
+    expect(m.deleteLineage(2)).toEqual({ parentId: 1, wasActive: false });
+    expect(m.activeLineage).toBe(1);
+  });
+});
+
+describe('authoring mementos (David 2026-08-09: undo for testing state)', () => {
+  it('round-trips segments, skips, claims, and the lineage table', () => {
+    const m = playedSession();
+    m.tick(1); m.tick(5);
+    m.addContains(2, 'gravel');
+    const before = m.captureAuthoring();
+
+    m.setExact(3, true);
+    m.untick(1);
+    expect(m.segments).toHaveLength(0);
+
+    m.restoreAuthoring(before);
+    expect(m.segments.map(s => [s.start, s.end])).toEqual([[1, 5]]);
+    expect(m.claimsOf(2).contains).toEqual(['gravel']);
+    expect(m.claimsOf(3).exact).toBe(false);
+  });
+
+  it('a memento is a deep copy — later mutations never leak into it', () => {
+    const m = playedSession();
+    m.tick(1); m.tick(5);
+    m.addContains(2, 'gravel');
+    const memento = m.captureAuthoring();
+
+    m.addContains(2, 'drive');
+    m.restoreAuthoring(memento);
+
+    expect(m.claimsOf(2).contains).toEqual(['gravel']);
+  });
+});

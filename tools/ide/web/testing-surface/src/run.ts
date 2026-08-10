@@ -11,7 +11,7 @@
  *   stream.
  *
  * Public interface: RunColumnState, TranscriptRunResult, createRunState,
- *   beginRun, foldRunLine, finishRun.
+ *   beginRun, foldRunLine, finishRun, resetRun.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -152,6 +152,21 @@ function fold(state: RunColumnState, event: RunEvent): void {
     default:
       return;
   }
+}
+
+/**
+ * The suite on disk changed under the results (a range unticked, a branch
+ * deleted, a segment renamed): the results describe a tree that no longer
+ * exists, so the column resets to "not run yet" rather than keep reporting
+ * it (David's ruling, 2026-08-09). Never called mid-run — the caller guards
+ * on `inFlight`.
+ */
+export function resetRun(state: RunColumnState): void {
+  state.inFlight = false;
+  state.results.clear();
+  state.replaying.clear();
+  delete state.tally;
+  delete state.note;
 }
 
 /**
