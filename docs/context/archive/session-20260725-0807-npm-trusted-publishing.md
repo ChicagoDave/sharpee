@@ -1,9 +1,0 @@
-# Session Summary: 2026-07-25 - main
-
-**Goal**: Investigate npm's install-time-security/GAT-bypass-2FA deprecation changelog and produce a step-by-step migration plan to npm Trusted Publishing (OIDC) via CI, while keeping version control fully local/manual.
-**Status**: COMPLETE
-**Outcome**: Wrote `docs/publish/npm-ci.md`, a proposal doc covering the npm changelog risk assessment (a non-issue for Sharpee today), the real 2027-01 GAT deadline, why the existing `beta-release.yml` publish job has never actually run, and a Trusted Publishing design that keeps `tsf version` + a `chore(release):` commit as the only way a version changes — CI stays a manual `workflow_dispatch` that only authenticates. No code, workflow, or package files were touched, per the project's "platform changes require discussion first" rule; implementation was offered and explicitly not started, awaiting go-ahead.
-
-**Files modified**: `docs/publish/npm-ci.md` (new)
-
-**Notes**: Verified facts not obvious from the diff alone — (1) all 32 publishable `@sharpee/*` packages are live on npm at 3.6.0, including `ext-hunger`, so the "pending ext-hunger publish" carried over from session-20260725-0743 is now closed; `@sharpee/extension-conversation` is the sole un-published exception (stale at 0.9.112), open decision recorded in doc §10. (2) tsf (`@davidcornelson/tsf@1.0.0`, published, already in Sharpee's lockfile) is otherwise OIDC-ready but its `tsf publish` gates on `npm whoami` (publish.ts:129-138), which OIDC tokens don't satisfy — tsf needs a 1.0.1 release (one more manual publish) before this plan is executable. (3) `beta-release.yml`'s publish job triggers on tag patterns that no recent release has matched (last tag v2.2.0 vs. platform 3.6.0) and hardcodes 16 packages against `publish-npm.sh`'s dynamic ~33-package glob — this divergence is why every release to date has been manual, not a fluke.

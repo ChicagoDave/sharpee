@@ -112,4 +112,44 @@ N/A — website content/markup and static asset changes only, no state-changing 
 
 ---
 
-**Progressive update**: Session completed 2026-08-10 22:57 CDT
+## Addendum — session corpus consolidated (2026-08-10 23:40 CDT)
+
+After the screenshot work was committed, David asked to **move** the repo's session
+archive into the historical corpus "so it's all together" — the first step of a fresh
+retrospective he wants Opus 5 or Fable 5 to do over the whole project history.
+
+- **Blocked, then rerouted**: the intended destination,
+  `/Volumes/Backup/surface-archive/sharpee-archive/context-history/`, is **NTFS mounted
+  read-only** — macOS cannot write it without third-party drivers. rsync failed on the
+  first file and the destination was confirmed untouched. David chose
+  `/Volumes/Workspace` (APFS, 878 GB free) instead.
+- **Consolidated** at `/Volumes/Workspace/sharpee-corpus/`: `context-history/` (1,533
+  files, 2025-12 → 2026-08) and `work-history/` (12 files, 2025-01 → 2025-07), 15 MB.
+  Union of three sources — the backup drive's two directories plus the repo's
+  `docs/context/archive/`. Ten filenames collided (`session-20260218-*-main.md`), all ten
+  byte-identical: 1,080 + 463 − 10 = 1,533, reconciled exactly.
+- **Verified before deleting anything**: every file from all three sources compared with
+  `cmp` against its copy — 1,098 + 20 + 440 checked, zero missing, zero mismatched.
+- **Repo side**: `docs/context/archive/` removed (441 tracked deletions — 440 summaries
+  plus one `.devarch-events-8c2c77.jsonl` predating the ignore rule; 22 further hidden
+  event logs were already ignored). `docs/context/` keeps only the five live August
+  summaries, so DevArch's recap and pre-session audit still have their handoff.
+- **Provenance written** to the corpus root README: source layout, the count
+  reconciliation, why Workspace rather than Backup, the three filename conventions across
+  the span, and the ~366 files that are plans/checklists rather than session summaries and
+  must be filtered out of any per-session analysis.
+- **Corrected an earlier claim of mine**: the corpus does not begin at the 2025-12-27
+  kickoff — `work-history/` carries summaries from 2025-01-03 and a June–July 2025 run, so
+  the span is ~19 months, not one year.
+- **Memory updated**: the note saying to keep `docs/context/archive` in place was rewritten
+  to point at the corpus. David's ruling when that prior instruction was raised against the
+  move: *"this **is** the analysis."*
+
+Retrospective approach agreed but not started: index mechanically first, read by month
+into a fixed schema, then read the monthly digests for throughlines, verifying against git
+and ADRs rather than the self-reported summaries. `chat-history/` (36 MB of raw exports) is
+deliberately out of scope.
+
+---
+
+**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT
