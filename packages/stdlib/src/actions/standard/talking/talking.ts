@@ -23,6 +23,11 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
+  consultDialogue,
+  dialogueMessageId,
+  dialogueParams
+} from '../../dialogue.js';
+import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
   getLifecycleState,
@@ -269,9 +274,24 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // Emit talked event with messageId for text rendering
     // params carry EntityInfo for the formatter chain (ADR-158)
     const target = context.command.directObject?.entity;
+
+    // ADR-102: TALK TO opens the conversation lifecycle, so the extension
+    // is consulted only when there is a target to open it with. Interceptor
+    // precedence as in asking (ADR-310 D19a).
+    const dialogue = target
+      ? consultDialogue(context, (ext) => ext.handleTalkTo(target.id))
+      : undefined;
+
+    const defaultParams = {
+      target: target ? nounPhraseFor(target) : { name: sharedData.targetName }
+    };
+
     events.push(context.event('if.event.talked', {
-      messageId: `${context.action.id}.${sharedData.messageId || 'talked'}`,
-      params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
+      messageId: dialogueMessageId(
+        dialogue,
+        `${context.action.id}.${sharedData.messageId || 'talked'}`
+      ),
+      params: dialogueParams(defaultParams, dialogue),
       ...sharedData.eventData
     }));
 

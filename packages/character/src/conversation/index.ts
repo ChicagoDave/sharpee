@@ -55,6 +55,8 @@ export {
 export {
   type DialogueExtension,
   type DialogueResult,
+  type CharacterDialogueExtension,
+  type CharacterDialogueResult,
 } from './dialogue-types.js';
 
 export {

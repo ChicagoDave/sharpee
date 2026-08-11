@@ -17,6 +17,10 @@ export * from './constants.js';
 // Interceptor lifecycle engine (ADR-228) — descriptors + shared hook runner
 export * from './lifecycle/index.js';
 
+// Dialogue-extension consultation (ADR-102) — the conversation actions'
+// single delegation point
+export * from './dialogue.js';
+
 // Wired-action registry (ADR-228 D5) — the descriptor table + derived id set.
 // Exported here, NOT from the lifecycle barrel: actions import that barrel,
 // and this module imports the actions (cycle otherwise).

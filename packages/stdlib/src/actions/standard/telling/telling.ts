@@ -20,6 +20,11 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
+  consultDialogue,
+  dialogueMessageId,
+  dialogueParams
+} from '../../dialogue.js';
+import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
   getLifecycleState,
@@ -124,10 +129,16 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
     // entity-first resolution; interceptors key on topicEntityId).
     const topic = context.command.topic?.text;
 
+    // ADR-102: the confrontation path — the player presents information.
+    // Interceptor precedence as in asking (ADR-310 D19a).
+    const dialogue = consultDialogue(context, (ext) =>
+      ext.handleTell(target.id, topic ?? '')
+    );
+
     const events: ISemanticEvent[] = [
       context.event('if.event.told', {
-        messageId: `${context.action.id}.not_interested`,
-        params: { target: nounPhraseFor(target), topic },
+        messageId: dialogueMessageId(dialogue, `${context.action.id}.not_interested`),
+        params: dialogueParams({ target: nounPhraseFor(target), topic }, dialogue),
         targetId: target.id,
         targetName: target.name,
         topic,

@@ -44,3 +44,6 @@ export * from './snippets.js';
 
 // Story ending contract (ADR-210 Prerequisite 3)
 export * from './endings.js';
+
+// Dialogue extension contract (ADR-102, ADR-310 D19a)
+export * from './dialogue.js';

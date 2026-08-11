@@ -56,7 +56,8 @@ import {
   type IEventProcessorWiring,
   type GamePrompt,
   DefaultPrompt,
-  PROMPT_STATE_KEY
+  PROMPT_STATE_KEY,
+  type DialogueExtension
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';
@@ -583,6 +584,9 @@ export class WorldModel implements IWorldModel {
   // from both maps above despite the shared "wiring" flavor.
   private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
 
+  /** This world's single dialogue extension (ADR-102), if registered. */
+  private dialogueExtension: DialogueExtension | undefined = undefined;
+
   /**
    * ADR-295: per-world exit-resolver bindings, keyed by trait type. Same
    * ownership model as the maps above — created with the world, never
@@ -873,6 +877,28 @@ export class WorldModel implements IWorldModel {
 
   getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
     return this.interceptorBindings;
+  }
+
+  // Dialogue-Extension Management (ADR-102, ADR-310 D19a)
+  //
+  // One per world, not one per trait: ADR-102's "One Extension Per Story".
+  // Same ownership model as the binding maps above — per-world, idempotent
+  // last-wins, never serialized.
+  //
+  // Deliberately NOT on `IWorldModel` (David's ruling 2026-08-11): both
+  // consumers already hold the concrete class — `ActionContext.world` is
+  // `WorldModel`, and story-loader's registrars take `WorldModel` — so
+  // widening the interface buys nothing and forces every implementor
+  // (`AuthorModel`) to grow a delegate. Same reasoning that moved
+  // `EntityQuery` off the interface. Modifying `IWorldModel` needs a very
+  // good reason; "the neighbouring method is declared there" is not one.
+
+  registerDialogueExtension(extension: DialogueExtension): void {
+    this.dialogueExtension = extension;
+  }
+
+  getDialogueExtension(): DialogueExtension | undefined {
+    return this.dialogueExtension;
   }
 
   // Exit-Resolver Binding Management (ADR-295 computed exits)

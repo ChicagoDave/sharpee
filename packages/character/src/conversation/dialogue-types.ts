@@ -1,87 +1,31 @@
 /**
- * Dialogue extension types (ADR-102 / ADR-142)
+ * Dialogue extension types — character-model bindings (ADR-102 / ADR-142)
  *
- * Defines the DialogueExtension interface and DialogueResult type
- * from ADR-102. The character model conversation system (ADR-142)
- * implements this interface via CharacterModelDialogue.
+ * The `DialogueExtension` and `DialogueResult` contracts moved to
+ * `@sharpee/if-domain` (ADR-310 D19a) so that stdlib — the consumer —
+ * need not depend on this package to know the shape of its own
+ * extension point. This module binds the generic contract to the
+ * character model's `ResponseIntent` and re-exports it, so nothing
+ * inside this package spells the type parameter.
  *
- * Public interface: DialogueExtension, DialogueResult.
+ * Public interface: CharacterDialogueExtension, CharacterDialogueResult;
+ *   DialogueExtension and DialogueResult re-exported from if-domain.
  * Owner context: @sharpee/character / conversation
  */
 
+import type { DialogueExtension, DialogueResult } from '@sharpee/if-domain';
 import { ResponseIntent } from './response-types.js';
 
-// ---------------------------------------------------------------------------
-// Dialogue result
-// ---------------------------------------------------------------------------
+export type { DialogueExtension, DialogueResult };
 
 /**
- * The result of a dialogue extension handling a conversation action.
- * Contains everything the action needs to produce output.
+ * A dialogue result carrying the character model's structured response
+ * intent — mood, coherence, topic and the chosen response action.
  */
-export interface DialogueResult {
-  /** Whether the extension handled the input. */
-  handled: boolean;
-
-  /** Message ID for the action to emit via the reporting phase. */
-  messageId?: string;
-
-  /** Parameters for the language layer message. */
-  params?: Record<string, unknown>;
-
-  /** The structured response intent (for systems that need it). */
-  responseIntent?: ResponseIntent;
-}
-
-// ---------------------------------------------------------------------------
-// Dialogue extension interface
-// ---------------------------------------------------------------------------
+export type CharacterDialogueResult = DialogueResult<ResponseIntent>;
 
 /**
- * Interface for dialogue extensions (ADR-102).
- *
- * Stdlib conversation actions (ASK, TELL, SAY, TALK TO) delegate
- * to a registered DialogueExtension to produce conversation results.
- * The extension resolves free text to topics, evaluates constraints,
- * and returns structured results.
+ * The dialogue extension contract as this package implements it.
+ * `CharacterModelDialogue` satisfies this type.
  */
-export interface DialogueExtension {
-  /**
-   * Handle ASK [npc] ABOUT [text].
-   * Extension resolves text to topic and selects a response.
-   *
-   * @param npcId - The NPC entity ID
-   * @param aboutText - The raw text after "about"
-   * @returns Dialogue result
-   */
-  handleAsk(npcId: string, aboutText: string): DialogueResult;
-
-  /**
-   * Handle TELL [npc] ABOUT [text].
-   * Confrontation path — the player presents information.
-   *
-   * @param npcId - The NPC entity ID
-   * @param aboutText - The raw text after "about"
-   * @returns Dialogue result
-   */
-  handleTell(npcId: string, aboutText: string): DialogueResult;
-
-  /**
-   * Handle SAY [text] or SAY [text] TO [npc].
-   * Free speech routed through topic resolution.
-   *
-   * @param npcId - The NPC entity ID, or undefined for untargeted speech
-   * @param spokenText - The raw text
-   * @returns Dialogue result
-   */
-  handleSay(npcId: string | undefined, spokenText: string): DialogueResult;
-
-  /**
-   * Handle TALK TO [npc].
-   * Initiates conversation lifecycle and fires initiative triggers.
-   *
-   * @param npcId - The NPC entity ID
-   * @returns Dialogue result
-   */
-  handleTalkTo(npcId: string): DialogueResult;
-}
+export type CharacterDialogueExtension = DialogueExtension<ResponseIntent>;

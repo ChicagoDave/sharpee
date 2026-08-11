@@ -73,6 +73,8 @@ export {
   // Dialogue extension (ADR-102/ADR-142)
   type DialogueExtension,
   type DialogueResult,
+  type CharacterDialogueExtension,
+  type CharacterDialogueResult,
   // Conversation builder
   type ConversationData,
   type AuthoredResponse,

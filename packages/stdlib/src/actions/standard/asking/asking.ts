@@ -20,6 +20,11 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
+  consultDialogue,
+  dialogueMessageId,
+  dialogueParams
+} from '../../dialogue.js';
+import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
   getLifecycleState,
@@ -124,10 +129,17 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
     // entity-first resolution; interceptors key on topicEntityId).
     const topic = context.command.topic?.text;
 
+    // ADR-102: delegate to the registered dialogue extension, if any. A
+    // per-entity interceptor still wins — runPostReport below may override
+    // this message (ADR-310 D19a).
+    const dialogue = consultDialogue(context, (ext) =>
+      ext.handleAsk(target.id, topic ?? '')
+    );
+
     const events: ISemanticEvent[] = [
       context.event('if.event.asked', {
-        messageId: `${context.action.id}.unknown_topic`,
-        params: { target: nounPhraseFor(target), topic },
+        messageId: dialogueMessageId(dialogue, `${context.action.id}.unknown_topic`),
+        params: dialogueParams({ target: nounPhraseFor(target), topic }, dialogue),
         targetId: target.id,
         targetName: target.name,
         topic,

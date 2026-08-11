@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
-    "@sharpee/stdlib": "workspace:*"
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

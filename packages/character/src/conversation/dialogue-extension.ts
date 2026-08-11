@@ -11,7 +11,10 @@
  */
 
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { DialogueExtension, DialogueResult } from './dialogue-types.js';
+import type {
+  CharacterDialogueExtension,
+  CharacterDialogueResult,
+} from './dialogue-types.js';
 import { TopicRegistry } from './topic-registry.js';
 import { ResponseCandidate } from './response-types.js';
 import { evaluateConstraints, ConstraintEvaluator } from './constraint-evaluator.js';
@@ -52,7 +55,7 @@ interface NpcConversationState {
  * Manages per-NPC topic registries, constraint evaluation, conversation
  * lifecycle, and evidence tracking. One instance per game session.
  */
-export class CharacterModelDialogue implements DialogueExtension {
+export class CharacterModelDialogue implements CharacterDialogueExtension {
   /** Per-NPC conversation state. */
   private readonly npcs: Map<string, NpcConversationState> = new Map();
 
@@ -117,7 +120,7 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Handle ASK [npc] ABOUT [text].
    * Resolves topic, evaluates constraints, records response, builds intent.
    */
-  handleAsk(npcId: string, aboutText: string): DialogueResult {
+  handleAsk(npcId: string, aboutText: string): CharacterDialogueResult {
     const npc = this.npcs.get(npcId);
     if (!npc) return { handled: false };
 
@@ -199,7 +202,7 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Handle TELL [npc] ABOUT [text].
    * Confrontation path — the player presents information.
    */
-  handleTell(npcId: string, aboutText: string): DialogueResult {
+  handleTell(npcId: string, aboutText: string): CharacterDialogueResult {
     const npc = this.npcs.get(npcId);
     if (!npc) return { handled: false };
 
@@ -263,7 +266,7 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Handle SAY [text] or SAY [text] TO [npc].
    * Routes free speech through topic resolution.
    */
-  handleSay(npcId: string | undefined, spokenText: string): DialogueResult {
+  handleSay(npcId: string | undefined, spokenText: string): CharacterDialogueResult {
     if (!npcId) return { handled: false };
 
     // Route through handleAsk — SAY is semantically similar
@@ -274,7 +277,7 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Handle TALK TO [npc].
    * Initiates conversation lifecycle.
    */
-  handleTalkTo(npcId: string): DialogueResult {
+  handleTalkTo(npcId: string): CharacterDialogueResult {
     const npc = this.npcs.get(npcId);
     if (!npc) return { handled: false };
 
