@@ -150,6 +150,58 @@ Read-only recon produced four findings; David ruled on the first.
   landing the false version with source `inferred` — so the listener holds it as
   their own conclusion and confronting them with the deception does not dislodge it.
 
+### Phase 2 implemented (items 1 and 2) — commit `ed9cefa2`
+Two more rulings from David ("go with your recommendations on both"): keep the
+shipped `DialogueExtension` signature and amend ADR-102 to match, and let a
+per-entity interceptor beat the story-wide extension.
+
+- **Interface moved** to `packages/if-domain/src/dialogue.ts`, generic in `TIntent`.
+  `@sharpee/character`'s `dialogue-types.ts` became a binding module exporting
+  `CharacterDialogueExtension`/`CharacterDialogueResult`, so nothing inside the
+  package spells the type parameter. Added the `if-domain` dep + tsconfig reference.
+- **Registration** `registerDialogueExtension`/`getDialogueExtension` on the concrete
+  `WorldModel`.
+- **Consultation** through a new shared `stdlib/src/actions/dialogue.ts`
+  (`consultDialogue` + message/param merge helpers), wired into ASK, TELL and
+  TALK TO. Each falls back to its existing default when no extension is registered.
+- **Interceptor precedence needed no new machinery**: the extension sets the primary
+  message, and ADR-228's `runPostReport` runs afterwards, where exactly one
+  interceptor may `override` it. The ruling implements itself with the natural
+  ordering.
+
+**A mistake worth keeping, because the pattern is the lesson.** I first added the two
+methods to the **`IWorldModel` interface** as well, which broke `AuthorModel`
+(TS2420) — and I was about to "fix" it by writing a delegate. David: *"you need a
+very good reason to modify `IWorldModel`."* There wasn't one. Both consumers already
+hold the concrete class (`ActionContext.world` is `WorldModel`; story-loader's
+registrars take `WorldModel`), so the widening bought nothing — the same reasoning
+that moved `EntityQuery` off the interface. Reverted; `IWorldModel` is untouched, and
+the reason is recorded at the registration site so it is not re-litigated. Removing
+the widening also removed a `?.` optional-call hedge in stdlib that only existed to
+paper over it.
+
+**The shape of the session's errors, named by David**: overconfidence was consistently
+strongest where the reasoning came from an *adjacent fact* rather than the thing
+itself — `registerActionInterceptor` is on the interface so the new one goes there;
+the version-reader ruling exists so it applies here; the interface exists so the seam
+exists. Each read as settled when it was inference; none survived opening the file.
+Each was caught by review rather than by the original pass.
+
+**Verification** (17:47 CDT): `npx tsf build` clean; `@sharpee/stdlib` 1604 passed /
+27 skipped; `@sharpee/world-model` 1453 passed / 10 skipped; `@sharpee/character`
+301 passed.
+
+### SAY: investigated, recommended for removal (undecided)
+`handleSay` is on the interface and has no caller. There is **no `saying` action in
+stdlib and no `say` pattern in the standard grammar**. Dungeo built its own SAY as a
+*story* action, for word puzzles — say "Odysseus" to the cyclops, say "echo" in the
+Loud Room — which is `SAY XYZZY`, puzzle input addressed to the world, not speech
+addressed to a person. And the character model's `handleSay` forwards to `handleAsk`
+while declining the untargeted case, which is the only thing SAY expresses that ASK
+cannot. Recommendation: drop `handleSay` from the interface and treat SAY, if it ever
+becomes a platform action, as ADR-090 capability dispatch (its meaning is per-entity,
+like WAVE). **Not actioned** — David tabled the session before ruling.
+
 ## Key Decisions
 - ADR-310 ACCEPTED with 21 decisions; see the ADR for the full map.
 - Interface home ruling above (ADR-310 D19a, plan Phase 2 step 1).
@@ -164,23 +216,34 @@ Read-only recon produced four findings; David ruled on the first.
 - **Title** for the story; `[TBD]` in the file. Directory/id `visitors` is provisional.
 
 ### Blocking Phase 2 (two rulings outstanding; two made — see above)
-- **Interface shape**: the shipped `DialogueExtension` already diverges from ADR-102's
-  spec (no `ActionContext` parameter; returns `messageId`/`params` rather than
-  `Effect[]`). Keep the shipped shape and amend ADR-102, or build ADR-102 as written?
-- **Dialogue extension vs ADR-228 interceptors**: `asking.ts` already routes through
-  `askingLifecycle` with per-entity interceptors. Ride that seam or sit beside it with
-  documented precedence?
+- **ADR-102 is still `Proposed` and unamended.** It needs the signature amendment
+  (shipped shape wins) and a ruling on SAY before the flip Phase 2 owns.
+- **Registration location unresolved**: world-level (where it is now, matching
+  ADR-102) vs stdlib's `ActionRegistry` alongside `setLanguageProvider`. The
+  `LanguageProvider` precedent that decided the interface *home* points at the
+  registry, and the argument that originally settled this ("D19a implements ADR-102,
+  it does not amend it") no longer holds now that ADR-102 is being amended anyway.
+  Today's code is compatible with either; moving it later is small.
 
 ### Carried from prior sessions (untouched)
 - Chord Writer DMG blocked on notarization `8fe1892f-…`; `041e7810-…` orphaned.
 - ADR-308 testing-navigation interview not started.
 
 ## Files Modified
+
+**Commit `454f7beb`** (docs):
 - `docs/architecture/adrs/adr-310-character-model-in-chord.md` — 8 questions resolved,
   D14–D21 added, D19 corrected, status → ACCEPTED
 - `docs/work/character-in-chord/plan.md` — new, 9 phases, plan-review fixes applied
 - `docs/context/.current-plan` — repointed
 - `branch-stories/visitors/visitors.story` — new, partial skeleton
+
+**Commit `ed9cefa2`** (Phase 2, `packages/`):
+- `packages/if-domain/src/dialogue.ts` — new, the moved contract
+- `packages/stdlib/src/actions/dialogue.ts` — new, `consultDialogue` + helpers
+- `packages/world-model/src/world/WorldModel.ts` — concrete-class registration
+- `packages/character/` — binding module, deps, tsconfig reference, barrels
+- `packages/stdlib/src/actions/standard/{asking,telling,talking}/` — delegation
 
 ## Notes
 
@@ -196,6 +259,10 @@ memory without opening the file; caught on the second review pass.
 ---
 
 ## Session Metadata
-- **Status**: IN PROGRESS
-- **Blocker**: Phase 1 blocked on David's story content; Phase 2 blocked on three rulings.
-- **Rollback Safety**: safe — no `packages/` code changed yet, docs and one new story file only.
+- **Status**: IN PROGRESS — session ended by David to hand the work to Fable 5.
+- **Blocker**: Phase 1 blocked on David's story content (setting + fact graph).
+  Phase 2 items 1-2 landed; the ADR-102 amendment/flip and the registration-location
+  question remain.
+- **Rollback Safety**: contained — all work is on `feat/adr-310-character-in-chord`,
+  never on `main`. `packages/` changes are commit `ed9cefa2` alone and are additive:
+  no existing behavior changes when no dialogue extension is registered.
