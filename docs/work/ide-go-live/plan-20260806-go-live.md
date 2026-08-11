@@ -671,25 +671,39 @@ making Phase 7 wait on an unscoped DSL.
 
 ## Phase 8 — DMG (item 4)
 
-**Goal.** A distributable Chord Writer that arrives with documentation and a
-working sample story.
+**Goal.** A distributable Chord Writer that arrives with documentation, and a
+sample story an author can get in one click.
 
 **Scope.**
 
 - Package the app with `tools/ide/package.sh`, notarised via
   `scripts/mac-release.sh`.
 - Bundle the documentation from Phase 3.
-- Install Fernhill and its transcript tests to
-  `~/Documents/The Folly at Fernhill/` — the same shape Create Story uses, so
-  the sample is not a special case.
-- The landing page must surface it on a fresh install, where there is no last
-  project and no recents. This is the job Inform's "Open a Sample Project"
-  section does, and it is the one piece of Phase 1 deliberately deferred to
-  here.
+- ~~Install Fernhill and its transcript tests to
+  `~/Documents/The Folly at Fernhill/`~~ — **dropped, David 2026-08-10**
+  (see the amendment below).
+- ~~The landing page must surface it on a fresh install~~ — **dropped**, same
+  amendment.
 
-**Acceptance.** On a machine that has never run Chord Writer: install, launch,
-see the modal offering Fernhill, open it, read the docs in the right panel,
-run its transcript tests, and play it.
+**Amendment (2026-08-10, session ed3730): the sample ships from the website,
+not inside the app.** When this phase was written there was no other way to
+put Fernhill in an author's hands. There is now: `/chord-writer/download`
+serves it as a 58 KB zip — source, recorded tests, identity config, assets,
+and a README — beside the DMG, and the app's own Documentation tab links
+there. Bundling a second copy would mean three channels for one sample and
+three places for it to drift, with the bundled copy frozen at whatever
+shipped.
+
+The landing page's empty state was inspected before dropping this, not
+assumed: it reads "No Projects Yet" over "Create a story to begin, or open one
+you already have", with Open… / Create Story / Close. That is a finished
+screen with an obvious next action, so what was missing was the sample OFFER,
+not a coherent first launch.
+
+**Acceptance.** On a machine that has never run Chord Writer: install it from
+the DMG, launch it, read the docs in the right panel, and create a story. The
+sample is one click away on sharpee.net rather than in the app — download the
+zip, Open… the folder, ⌘B, and it builds and plays.
 
 **Dependencies.** Phases 3 and 6.
 
