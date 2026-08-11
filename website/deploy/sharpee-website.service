@@ -21,6 +21,13 @@ Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
 Environment=PORT=3017
+# Where /api/p appends its JSONL and keeps its IP-hash salt. Stated explicitly
+# rather than left to the collector's default so the location is discoverable
+# from the unit; deploy.sh creates it and checks it is writable. The salt is
+# NOT set here on purpose — the collector persists its own in this directory,
+# which is what keeps a returning visitor from being counted twice every time
+# a deploy restarts the service.
+Environment=SHARPEE_ANALYTICS_DIR=/var/lib/sharpee-analytics
 
 [Install]
 WantedBy=multi-user.target

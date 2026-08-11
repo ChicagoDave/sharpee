@@ -26,7 +26,7 @@
  * Owner context: website — analytics collection.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { appendFile, mkdir } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export const runtime = 'nodejs';
@@ -36,12 +36,48 @@ export const dynamic = 'force-dynamic';
 const DATA_DIR = process.env.SHARPEE_ANALYTICS_DIR ?? '/var/lib/sharpee-analytics';
 
 /**
- * Per-process salt for IP hashing, combined with the date so the hash rotates
- * daily. Random per boot as well, which means a restart also breaks the chain —
- * acceptable, because the hash exists to group a single day's visits, not to
- * follow anyone across time.
+ * Salt for IP hashing, combined with the date so the hash rotates daily.
+ *
+ * PERSISTED beside the data, not held in the process and not configured in the
+ * unit file. A per-boot random salt would silently double-count every returning
+ * visitor across a deploy — and every deploy restarts the service — so the
+ * numbers would quietly inflate on exactly the days traffic is most interesting.
+ * Putting it in an env var instead would mean a secret in a committed file, or
+ * one more step for a future deploy to forget.
+ *
+ * `SHARPEE_ANALYTICS_SALT` still wins when set, for anyone who would rather
+ * manage it themselves.
  */
-const SALT = process.env.SHARPEE_ANALYTICS_SALT ?? randomBytes(16).toString('hex');
+let saltPromise: Promise<string> | null = null;
+
+function getSalt(): Promise<string> {
+  if (process.env.SHARPEE_ANALYTICS_SALT) {
+    return Promise.resolve(process.env.SHARPEE_ANALYTICS_SALT);
+  }
+  saltPromise ??= (async () => {
+    const file = join(DATA_DIR, '.salt');
+    try {
+      const existing = (await readFile(file, 'utf-8')).trim();
+      if (existing !== '') return existing;
+    } catch {
+      // Not there yet — fall through and mint one.
+    }
+    const minted = randomBytes(24).toString('hex');
+    try {
+      await mkdir(DATA_DIR, { recursive: true });
+      // wx: whoever wins a race writes it; everyone else re-reads below.
+      await writeFile(file, `${minted}\n`, { encoding: 'utf-8', mode: 0o600, flag: 'wx' });
+      return minted;
+    } catch {
+      try {
+        return (await readFile(file, 'utf-8')).trim() || minted;
+      } catch {
+        return minted; // unwritable disk: hashing still works, it just won't survive a restart
+      }
+    }
+  })();
+  return saltPromise;
+}
 
 const BOT_PATTERNS = [
   /bot/i, /crawler/i, /spider/i, /scraper/i,
@@ -89,9 +125,10 @@ function clientIp(req: Request): string {
   return req.headers.get('x-real-ip') ?? '';
 }
 
-function hashIp(ip: string, day: string): string | null {
+async function hashIp(ip: string, day: string): Promise<string | null> {
   if (ip === '') return null;
-  return createHash('sha256').update(`${SALT}|${day}|${ip}`).digest('hex').slice(0, 16);
+  const salt = await getSalt();
+  return createHash('sha256').update(`${salt}|${day}|${ip}`).digest('hex').slice(0, 16);
 }
 
 /** Cap a client-supplied string: nothing from a POST body sets its own length. */
@@ -144,7 +181,7 @@ export async function POST(req: Request) {
       vw: num(body.vw), vh: num(body.vh),
 
       browser, os, device,
-      iph: hashIp(clientIp(req), day),
+      iph: await hashIp(clientIp(req), day),
     };
 
     await mkdir(DATA_DIR, { recursive: true });
