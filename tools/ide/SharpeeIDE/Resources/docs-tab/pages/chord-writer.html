@@ -5,8 +5,8 @@
 <pre><code class="language-text">Chord Writer 1.0.0 · Sharpee 5.0.0 / Chord 3.0.0</code></pre>
 <p>Those versions move independently. Chord Writer is versioned as an app; Sharpee and Chord are versioned as a platform and a language.</p>
 <h2 id="what-you-need">What you need</h2>
-<p>macOS 26 or newer, on Apple silicon. That is the whole list.</p>
-<p>The Apple-silicon part is worth stating plainly, because macOS 26 is the last release that runs on Intel Macs — so meeting the version is not enough on its own. On an Intel Mac, use the <a href="/chord/getting-started/install">command-line tools</a> instead; they run anywhere Node does.</p>
+<p>An Apple silicon Mac. That is the whole list.</p>
+<p>Any macOS those machines run will do — the build targets macOS 11, which is what the first M1 Macs shipped with. Intel Macs are the one exception, because the Node runtime the app carries is built for Apple silicon; on those, use the <a href="/chord/getting-started/install">command-line tools</a> instead, which run anywhere Node does.</p>
 <h2 id="the-window">The window</h2>
 <p>Four regions, each with a fixed job.</p>
 <p><strong>The project pane</strong>, on the left, shows your story as typed groups: Story, Walkthroughs, Transcript Tests, Assets, Web Template, and Other. These are lenses over the folder rather than a mirror of it, so a file's position in the tree does not tell you which directory it sits in on disk. Anything that matches no group lands in Other, so nothing is ever hidden from you.</p>

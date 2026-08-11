@@ -192,21 +192,109 @@ ProjectArtifacts + 3 Swift test files, 4 ADRs, functional-logic doc, plan,
     both machine-dependent. Fixed with explicit code-unit comparators.
     **SonarCloud PASS on #258** (it failed on #257).
 
+## npm publish, and the deploy that reported success and changed nothing
+- **Sharpee 5.0.0 is LIVE on npm** (run 31444888366): all 33 packages, no
+  new packages and none removed (`--diff-filter=A`/`D` both empty —
+  checked because `tsf publish --changed` would have shipped an unintended
+  new package silently). David's fair hit afterwards: *"I suppose a dry run
+  would have caught that."* Correct — I reasoned about half-published state
+  (gates run before publish, so that risk was real but covered) and skipped
+  the question a dry run actually answers, which is *what is in the set*.
+  Three merges had landed since the dry run I did.
+- **sharpee.net was serving a build from before ADR-298** (2026-08-02) — the
+  deploy reported success and changed nothing. Root cause: the systemd unit's
+  `WorkingDirectory` pointed at `/home/dave/repos/sharpee_v2/website`, a
+  different clone, while `deploy.sh` derives its paths from its own location.
+  It built in `~/repos/sharpee` and restarted a service reading elsewhere.
+  Diagnosed from the outside: the live homepage's nav had NO `/chord-writer`
+  links at all, which page caching cannot explain. Fixed the checked-in unit
+  AND added a guard to `deploy.sh` that compares the service's
+  `WorkingDirectory` to the tree it is about to build and refuses with the
+  exact repoint command — the bug was the silence, not the path.
+
+## Chord Writer icon (three renders)
+- Wordmark versions failed the same way twice: text dissolves below 128px.
+  The **chord diagram** won — pure geometry, nothing depending on legibility.
+  Parchment at 128pt+, a geometrically-drawn eighth note at 16/32pt (Apple's
+  own convention), note paper sampled from the diagram so they read as one app.
+- Extraction notes worth keeping: Gemini paints a **fake transparency
+  checkerboard** instead of writing alpha, so render #1 needed silhouette
+  reconstruction; asking for **flat magenta** instead let renders #2–3 be
+  keyed properly. Keying must be magenta-DOMINANCE, not "not green" — the
+  black ink is green-dark too and a green key eats the notes.
+- **The pipeline was the real bug.** My first two icon commits bypassed
+  `tools/ide/art/make-app-icon.sh` entirely (ad-hoc PNGs copied in), leaving
+  it pointed at `chord-book.png` — anyone running the documented tool would
+  have silently restored the retired book icon. Same failure shape as the
+  website deploy, hours later. Script rewired, masters committed to
+  `tools/ide/art/`, and the shipped set regenerated THROUGH it.
+
+## Website: download page + self-hosted analytics
+- **`/chord-writer/download`** with both artifacts and install instructions.
+  Fernhill ships as a committed 58 KB zip (source, tests, identity config,
+  assets, README) — deliberately NOT the 4 MB `dist/`. Fernhill also gained
+  `fernhill.config.json`, adopted from its existing header IFID through the
+  real `reconcileHeader` (value preserved, header untouched) — ADR-309 says
+  that file is committed, and a sample shipping without it teaches the
+  opposite.
+- **Analytics ported from Ledga** (`ChicagoDave/budgetman`). Client beacon
+  nearly unchanged; server rewritten as one Next route appending JSONL (no
+  AWS — sharpee.net *is* a server) with **IPs hashed under a daily-rotating
+  salt, never stored** (Ledga keeps raw IPs under a published privacy policy;
+  sharpee.net has none). Downloads tracked by a delegated click listener, so
+  MDX needs no special component. Tested end to end against a real
+  `next start`: pageview stored, download stored with asset, Googlebot
+  rejected, no raw IP, `analytics.mjs` reading it back.
+- **The salt was a latent bug, not a deploy step**: random-per-process meant
+  every restart re-hashed the same visitor, and every deploy restarts — so
+  returning visitors would silently double-count. Now persisted at 0600 in
+  the data dir; verified stable across a restart. `deploy.sh` provisions
+  `/var/lib/sharpee-analytics`, refuses if unwritable (the collector swallows
+  errors by design, so an unwritable dir = a site that records nothing and
+  says nothing), and probes `/api/p` after restart with a bot UA so the check
+  writes no fake visit.
+
+## Apple silicon floor + the DMG
+- **Deployment target 26.0 → 11.0** (David: *"any M chip OS — we can't
+  require 26"*). Cost four changes: three `isInspectable` calls
+  availability-guarded, one `loadViewIfNeeded()` replaced with the portable
+  `_ = view`. Verified the vendored node is `minos 11.0` too — otherwise the
+  app would launch on an old Mac with nothing behind its Build button. Both
+  website pages had claimed macOS 26 (and, before that, my own wrong "macOS
+  14 / Intel" line) — corrected, along with the ADR-279 comment.
+- **Three notarization submissions**, only the last worth stapling:
+  `e264bb44` (old icon, minos 26), `fb7db755` (new icon, minos 26),
+  **`90a8dfb6` (new icon, minos 11.0 — the shippable one)**. `notarytool`
+  crashed with `Bus error` on all three, always in `submit --wait`,
+  reproducible; `--keep-work` preserved the signed app on the last two.
+  David's context: a first-time bundle can sit in Apple's queue up to 12
+  hours, so this is waiting, not stuck.
+- **Signed app staged durably** at `tools/ide/release/Chord Writer.app`
+  (gitignored), copied out of `/var/folders` which macOS purges — signature
+  re-verified after the copy. When Apple returns Accepted: staple THAT copy,
+  run `dmg/assemble-dmg.sh`, drop the DMG in `website/public/downloads/`.
+- **Phase 8 amended**: the bundled sample and landing-page offer are dropped
+  — the website serves Fernhill now, and a bundled copy would be a third
+  channel that drifts. The landing empty state was inspected before agreeing
+  it was fine ("No Projects Yet" over "Create a story to begin…", with
+  Open… / Create Story / Close), so what was missing was the offer, not a
+  coherent first launch.
+
 ## Session Metadata
-- **Status**: COMPLETE. ADR-307 plan DONE (all six phases). ADR-309 DONE
-  (all three phases + the held deletion). Sharpee 5.0.0 shipped to `main`
-  via PRs #257 and #258; publish dry run green; SonarCloud green on #258.
-  Working tree clean except `scripts/clodpod.sh`, which stays untracked by
-  design.
-- **Open items**: (1) ~~Swift dead-code deletion~~ — DONE in PR #258.
-  (2) **`sharpee ifid`** — recommend keeping as a raw generate/validate
-  utility; David's call (the website's install page still lists it,
-  pending that). (3) ADR-308 open-questions interview
-  (re-offer when navigation work starts). (4) Splice gesture chrome still
-  unruled (carried). (5) Module projects have no test path post-cutover
-  (ADR-307 ruling C consequence). (6) branch-tester's runner still carries
-  transcript-directive support (forces/save-restore/etc.) that nothing
-  reaches post-cutover — candidate for a later prune, not grammar code.
-- **Go-live remaining**: package version bump (Sharpee 5.0.0 / Chord 3.0.0
-  — the website already shows them) → Phase 8 DMG. Plus the go-live plan's
-  own bookkeeping (Phases 5/6/6a–6f need supersession stamps).
+- **Status**: COMPLETE. ADR-307 plan DONE (six phases). ADR-309 DONE (three
+  phases + the held deletion). **Sharpee 5.0.0 published to npm.** Website
+  deploy fixed and serving current content. Go-live is one artifact away:
+  the DMG, waiting on Apple.
+- **Waiting on Apple**: `xcrun notarytool info 90a8dfb6-5989-4c36-898f-5cf74b0191ee --keychain-profile dc-notary`
+- **Open items**: (1) `sharpee ifid` — KEPT (David 2026-08-10, "stays if
+  anyone wants to use it"); recorded in its header. (2) ADR-308 navigation
+  interview — five open questions, re-offer when that work starts.
+  (3) Splice gesture chrome still unruled (carried). (4) Module projects have
+  no test path post-cutover (ADR-307 ruling C). (5) branch-tester's runner
+  still carries unreachable transcript-directive support — a later prune.
+  (6) `package.sh` should submit without `--wait` and poll instead; the crash
+  is 3/3 in that call and a 12-hour blocking wait was never the right shape.
+  (7) go-live plan bookkeeping: Phases 5/6/6a–6f still need supersession
+  stamps from the ADR-306→307 chain.
+- **Homepage CTA** still points at the CLI install page rather than the new
+  download page — probably backwards now that there is an app to download.
