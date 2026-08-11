@@ -271,4 +271,87 @@ resumes when Apple answers.
 
 ---
 
-**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT; retrospective addendum 2026-08-11; notarization/docs-tab addendum 2026-08-11 11:05 CDT
+## Addendum — ADR-310 and ADR-311, written while waiting on Apple (2026-08-11 midday)
+
+### The audit that started it
+
+David asked how much of Sharpee's NPC psychology is mapped to Chord. Answer:
+**none of it.** `@sharpee/character` (ADRs 141–146, April 2026) holds personality,
+mood, disposition, five-dimension cognitive profiles, goals, influence/resistance
+and information propagation. Chord's `npc` manifest holds `guard`, `follower`,
+`wanderer`, `patrol`, `route`, `move-chance` — that is `@sharpee/plugin-npc`,
+movement only. Conversation is the near-miss: Chord wired ADR-239 topic tables,
+not `character/src/conversation/dialogue-extension.ts`.
+
+Two checks David asked for, both run:
+- **Has it rotted?** No. 19 test files, **301 tests passing**, `tsc` clean,
+  stamped 5.0.0 and published to npm 2026-08-10. A fully working package with
+  **zero consumers** — the only reference outside its own source is one line in
+  the `@sharpee/sharpee` umbrella's dependencies.
+- **Does it fit Chord?** Yes, almost without invention, because ADR-141's
+  vocabulary was designed in natural language (`very honest`, `wary of`,
+  `nervous`) with word→number tables — which is exactly ADR-222's compile-down.
+
+### ADR-310 — the character model in Chord (DRAFT, D1–D13, 7 open questions)
+
+Written, then expanded three times on David's rulings:
+- **Initial draft deferred goals/influence/propagation** as "strategies, not
+  attributes." David: those are the ground-breaking capabilities. **D1 records
+  the deferral as wrong** — `patrol with route [...] and wait-turns 5` is already
+  a declared strategy in shipping Chord. All six subsystems now map (D7 goals as
+  named ordered blocks, D8 influence block + one-line `resists`, D9 propagation
+  as a manifest where the `selective` keyword disappears entirely).
+- **D12**: *"the player must never see or sense the mechanics, only the
+  behaviors."* No mood words in prose, no meters, no state readouts. ADR-146's
+  `witnessed`/`resisted` messages are already the right shape. Author-side
+  introspection rides its own channel (ADR-163) and cannot reach a published
+  story.
+- **D13**: phrases gate on psychological state. Chord already does this twice —
+  `phrase kettle-softened when it is softened` (Fernhill:667) and `define
+  phrasebook midnight-voice while midnight` (Fernhill:1133). A phrasebook is a
+  voice, so a state selects a voice rather than a hundred conditionals. New work
+  is `while`/`when` accepting entity-scoped predicates.
+- **D4**: authors compose, name and ship their own cognitive profiles (five
+  dimensions × three words), correcting an earlier draft that put custom profiles
+  out of scope — contradicting `cognitive-presets.ts`'s own header.
+- **D5**: presets renamed to behavior, not diagnosis — `clear-headed`, `fixated`,
+  `elsewhere`, `loosened`, `fogged`, `braced`, `unmoored`, `unquiet`. Also
+  removes the `stable` preset/`lucidity: stable` name collision.
+- **D11a**: David ruled the subsystem greenfield — *"we're safe to normalize it
+  and align it to Chord properly."* So the work is not wrapping the builder but
+  reshaping both surfaces to one design while zero consumers make it free.
+
+### ADR-311 — the visual novel client (DRAFT, consumes ADR-310)
+
+An author wants to build a visual novel. Thesis: **a portrait is a phrasebook in
+another medium** — the same interior state, rendered as image instead of prose.
+So it is a renderer (ADR-165), not a fork: one `.story`, one engine, one channel
+stream, and the same story must run in both clients.
+
+Most of it already exists — Chord declares `define image`/`define music`/`define
+sound` (all three in Fernhill), channels are declarable, and ADR-137's own table
+already names a Conversation Mode whose commands are "dialogue choices." D3 keeps
+the wire carrying state (`{entity, speaking, state}`) not filenames; D7 notes
+ADR-310 D12 is easier to violate here (no affection meters); D8 makes
+accessibility a decision that constrains syntax rather than a later pass.
+
+Open question 1 is the deep one: **what does a VN do with the world model**, given
+VNs are not spatial and Sharpee's engine is built around a world.
+
+### Notarization
+
+Submission `8fe1892f-d770-41e4-9b93-db7744e50e4a` still In Progress at 12:29
+(~2h). Orphan `041e7810` also still queued — ignore whatever it returns.
+
+### Also this session
+- **Tagged `v5.0.0` at `87a00365`** (annotated, carries publish run 31444888366),
+  not at HEAD: main has moved 18 commits since the npm publish, though
+  `packages/` is functionally identical (the one diff is a comment-only header).
+  Last tag before this was `v2.2.0` — 3.0.0 and the 4.x series shipped untagged.
+  David declined backfilling previous releases.
+- Support branch deliberately **not** created: the tag is the durable anchor,
+  `git switch -c support/5.0.x v5.0.0` is the response to an actual bug.
+
+---
+
+**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT; retrospective addendum 2026-08-11; notarization/docs-tab addendum 2026-08-11 11:05 CDT; ADR-310/311 addendum 2026-08-11 12:45 CDT
