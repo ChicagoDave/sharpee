@@ -1,15 +1,21 @@
 # ADR-310: The Character Model in Chord — Words the Author Writes, Numbers the Runtime Owns
 
-**Status**: DRAFT (2026-08-11, session c86356 — seven open questions below; two
-others were resolved in session — one by D12, one by D5.
+**Status**: ACCEPTED (2026-08-11, session c28ea0 — all eight open questions
+resolved, five of them in that session's interview; `/devarch:adr-review` run
+twice, second pass READY WITH CLARIFICATIONS at 12/16 with all three blockers
+closed. See Session for the map and for the four SMALL findings deliberately
+carried into planning rather than answered here.
 Written at David's request after an audit found `@sharpee/character` shipping
 with zero consumers, then expanded on his ruling that goals, influence and
-propagation are the point rather than the deferrable part. No implementation is
-authorized by this document.)
+propagation are the point rather than the deferrable part.)
 **Date**: 2026-08-11 (session c86356)
 **Builds on**: ADR-141 (character model), ADR-142 (conversation), ADR-144
 (information propagation), ADR-145 (goal pursuit), ADR-146 (influence),
-ADR-210 (Chord), ADR-222 (Chord as elegance oracle), ADR-239 (topic tables)
+ADR-210 (Chord), ADR-222 (Chord as elegance oracle), ADR-239 (topic tables),
+ADR-250 (phrasebooks)
+**Requires first**: ADR-102 (dialogue extension) — still `Proposed`, never
+implemented in stdlib; D19a makes building its registration point a prerequisite
+of the conversation mapping rather than a parallel task.
 
 ---
 
@@ -506,6 +512,474 @@ that also carries `when` — three gates on one line. ADR-250's existing
 phrasebook resolution seam is where that belongs, and this ADR does not settle
 it. Added to Open Questions.
 
+### D14. A skeleton demonstration story is written first, and it is the acceptance fixture.
+
+David's ruling, 2026-08-11 (session c28ea0), resolving Open Question 1.
+
+The first artifact of this work is a **new Chord story that does not compile yet** —
+source written as the specification for the grammar D2–D13 describes, rather than
+against whatever the compiler happens to accept. "The mapping works" then means
+*this file compiles and plays*, not *the round-trip unit tests are green*.
+
+**Skeleton, not a finished story.** Enough people to make the hard three
+observable — several characters who know things about each other and disagree
+about them, which Fernhill's four people and no secrets cannot supply — with:
+
+- every construct in D2–D13 appearing at least once, so the file is a complete
+  grammar exercise;
+- goals, influence/resistance, and propagation wired across the cast rather than
+  demonstrated on one NPC;
+- **one phrasebook per psychological state for at least one character** (D13),
+  which is the minimum that tests D12's cost — whether "write the voice once per
+  state" is actually the burden D13 claims, or whether it is worse.
+
+What it deliberately is *not*: a thousand lines of finished prose. The skeleton
+pins the constructs and shows whether the behavior reads; a full second Chord
+story is not a prerequisite to the compiler.
+
+**Why Fernhill was rejected, on the record**: four people, no secrets, and
+bolting a household's worth of belief traffic onto a finished story distorts it.
+**Why compiler-first was rejected**: this ADR's own Consequences say the hard
+three are emergent and "the author's only window on them is play," so a green
+round-trip suite proves the parse and not the design.
+
+**Content is the author's, not the platform's.** The setting, the cast, what each
+character knows and hides — David supplies these. This ADR fixes the story's
+*structural* requirements only, and the work cannot start on the story's prose
+until that content exists.
+
+### D15. Disposition is entity-to-entity, and always was.
+
+Resolving the first half of Open Question 2. The question assumed NPC-to-NPC
+disposition needed somewhere to live; it already lives where disposition lives.
+`character-builder.ts:245` is `dispositionToward(entityId, word)`, backed by a
+plain `Map<string, number>` keyed by entity id. The player is not a special case
+in it — the player was simply the only entity anyone had pointed it at.
+
+So D3's `feels wary of the player` generalizes to `the Maid trusts the Cook`
+as a **Chord grammar widening with no runtime work behind it**. The disposition
+word list (ADR-141's `wary of`, `devoted to`, `trusts`, `dislikes`, …) is
+unchanged and applies to any target.
+
+The one thing this does add is scale: dispositions among *n* characters are
+*n²*-ish rather than *n*, and an author writing a household will not declare
+them all. Unstated disposition means neutral, as it does today — the author
+declares the relationships that matter and the rest are indifferent.
+
+### D16. A fact is declared once, at story level, and referenced by name.
+
+Resolving the second half of Open Question 2, which is the real gap.
+
+**What the runtime does today.** Facts are addressed by bare strings —
+`knows('the murder')`, `PropagationProfile.spreads?: string[]`,
+`overrides?: Record<string, FactOverride>`, `PropagationTransfer.topic: string`.
+Nothing declares that a fact exists. Two characters know the same thing only
+because two `knows` lines happen to carry the same string.
+
+**Why that cannot survive contact with Chord.** In a compiled language with an
+Index, a typo in one NPC's `knows` line would silently mint a second, private
+fact — one nobody else can ever learn, propagate, or contradict, and no
+diagnostic would fire. Chord catches unknown names everywhere else; an
+information graph addressed by unchecked strings is the one place it would not,
+and it is the place where the failure is invisible in play rather than loud.
+
+**The decision**: facts are first-class declarations, in the shape D4 gives
+profiles and Chord already gives phrasebooks and channels — `define fact … end
+fact`, at story level. A name that no declaration introduces is a compile error.
+That gives three things beyond typo-safety: a place to hang what a fact's false
+version *is* (D17 needs one), a place for its internal structure (D17's
+`omission` needs one), and a subject for the Index tab's answer to *who knows
+what*, which is the tooling gap this ADR's Consequences already name.
+
+Illustrative only — the exact syntax is left to implementation, as D5 leaves
+custom moods:
+
+```chord
+define fact the murder
+  ...
+end fact
+
+create the Cook
+  a person, honest, anxious
+  knows the murder, witnessed
+```
+
+**This is kept in ADR-310, not split into its own ADR.** The open question
+guessed it wanted one. It does not: it is one construct in the same mapping, and
+the fact registry it needs on the TypeScript side is precisely the D11a
+normalization pass — separating them means doing that pass twice, and the second
+time is after the window has closed.
+
+### D17. One conversation vocabulary. What varies is where the belief lands.
+
+David's ruling, 2026-08-11 (session c28ea0), in two parts — and the second part
+retracts most of the first.
+
+**Part one: the binary is not enough.** The runtime ships `SpreadsVersion =
+'truth' | 'lie'`, which cannot express a character who tells you true things in
+order to make you believe a false one — the commonest move in the genre this
+model is for.
+
+**Part two: but the answer is not a second vocabulary.** An earlier form of this
+decision proposed a five-stage scale (`the truth` / `omission` / `obfuscation` /
+`misdirection` / `the lie`). Review found that `@sharpee/character` already ships
+an eight-value conversational vocabulary:
+
+```typescript
+ResponseAction = 'tell' | 'omit' | 'lie' | 'deflect'
+               | 'refuse' | 'ask back' | 'confess' | 'confabulate'
+```
+
+Three of the proposed five were near-duplicates of `tell` / `omit` / `lie`,
+`obfuscation` was `deflect` renamed, and `confabulate` — documented in its own
+source as *"fills gaps with invented details (NPC believes them)"* — already
+covered sincere invention. **David's ruling: one vocabulary. `ResponseAction` is
+it, and the five stages become a view over the eight rather than a rival to
+them.**
+
+**What the five-stage proposal actually found**, and it survives: *nothing today
+varies where a transferred belief lands.* `propagation/fact-transfer.ts` calls
+`listenerTrait.addFact(transfer.topic, 'told', 'believes', …)` — source and
+confidence are **hardcoded**, identically, for every transfer regardless of
+version. The `version` field is carried and then ignored at the landing site.
+
+So the decision is the **belief-outcome table**: each conversational action
+determines the `(version, source, confidence)` triple the listener records.
+`FactSource` is already `'witnessed' | 'told' | 'inferred' | 'assumed' |
+'hallucinated'`, so this needs no new runtime state.
+
+| `ResponseAction` | version transferred | listener's `FactSource` | confidence |
+| --- | --- | --- | --- |
+| `tell` | true | `told` | speaker's |
+| `confess` | true | `told` | speaker's — plus the state change of having withheld it |
+| `omit` | true, minus the load-bearing part | `told` | speaker's |
+| `lie` | false | `told` | speaker's |
+| `confabulate` | the speaker's own invented version | `told` | speaker's — the speaker sincerely holds it |
+| `deflect` | none | — | unchanged |
+| `refuse` | none | — | unchanged |
+| `ask back` | none | — | unchanged |
+
+**One genuine gap remains, and it is the only word worth adding.** None of the
+eight expresses *deliberately implying a falsehood using true statements*.
+`lie` asserts a falsehood; `confabulate` is sincere; `deflect` changes the
+subject. The missing action lands the false version in the listener with source
+**`inferred`** — the listener holds it as their own conclusion, so confronting
+them with the speaker's deception does not dislodge it, because the speaker never
+said it. That is a ninth `ResponseAction` — `misdirect` — not a parallel scale,
+and D11a's normalization window is when to add it.
+
+**`omit` still needs facts to have parts.** Withholding the load-bearing piece of
+a fact requires a fact to *have* pieces, so this row of the table depends on the
+structure D16's declaration gives a fact. D16 and D17 still need each other.
+
+**`vague` still leaves `PropagationColoring`.** Coloring is documented as tone —
+"a hint to the language layer for variant selection" — and its other values
+(`dramatic`, `fearful`, `conspiratorial`, `neutral`) are affect. `vague` is
+content: it is `deflect` on the wrong axis. This is D11a item 3 — vocabulary the
+mapping proves redundant — found by writing the mapping, as predicted.
+
+**What the Chord surface says** is left to implementation alongside D16's syntax,
+with one constraint fixed here: it spells the eight (nine) `ResponseAction`
+words, not a second set. An author learns one vocabulary for what a character
+does with what they know, whether they are answering the player or telling
+another character.
+
+**`vague` leaves `PropagationColoring`.** Coloring is documented as tone, "a hint
+to the language layer for variant selection," and its other values —
+`dramatic`, `fearful`, `conspiratorial`, `neutral` — are affect. `vague` is
+content: it is `obfuscation` under another name, on the wrong axis. Coloring
+stays purely about how the telling sounds. This is D11a item 3 — vocabulary the
+mapping proves redundant — found by writing the mapping, as predicted.
+
+### D18. Mood and states stay two mechanisms with one spelling.
+
+Resolving Open Question 3, which asked whether mood should simply *be* a Chord
+state, since both are named interior conditions with transitions.
+
+**They do not merge, and the reason is coordinates.** Every mood word carries
+valence and arousal (`MOOD_AXES`, `character-vocabulary.ts:126`), so the platform
+can compute with `panicked` — that is how influence effects, propagation coloring
+and dialogue selection act on it without the author wiring anything. The platform
+can never compute with `softened`, because `softened` means whatever Fernhill
+says it means. Merging strands one half: either author states acquire decay that
+nothing can reason about, or every author state has to supply coordinates —
+numbers, in a language whose premise is words.
+
+**The line is not "platform vocabulary versus yours."**
+`vocabulary-extension.ts` already exposes `defineCustomMood(valence, arousal)`,
+and D5 says Chord should surface it. So the rule is exact: **coordinates make it
+a mood; no coordinates make it a state.** An author who wants a new mood supplies
+what makes it a mood.
+
+**One spelling, two subsystems.** D3 already wrote `change mood to panicked`
+beside `change it to softened` as a deliberate echo; this promotes that from a
+syntax preference to the answer. The author learns one idea — *this character is
+now different* — and the compiler routes it. The seam sits where the semantics
+differ rather than where the history does.
+
+**The cost, stated plainly.** An author using both will ask why `mood nervous`
+is not in the `states:` line, and the honest answer — because the platform can
+reason about that one — is a platform fact surfacing in an authoring decision.
+That is the price of not merging, and it is smaller than the price of merging.
+
+### D19. One conversation syntax, routed by whether the NPC has an interior.
+
+Resolving Open Question 4, which asked whether the character model's conversation
+system should replace ADR-239's topic tables or coexist with them.
+
+**Neither — because this was never two authoring systems competing.**
+`CharacterModelDialogue implements DialogueExtension` (ADR-102) and is the only
+implementation in the repository; Chord's `define topics for` compiles straight
+to the stdlib topic table. One interface, a second implementation nobody routed
+to.
+
+**Correction (review, session c28ea0)**: an earlier wording of this decision said
+"the seam already exists and Chord is not using it." That is not accurate and the
+difference matters. The *interface* exists and the *implementation* exists — but
+the **stdlib registration point does not**. ADR-102 is still `Proposed`, and
+`stdlib/src/actions/standard/asking/asking.ts:8` refers to "a future conversation
+extension." There is nothing to route *to* yet. D19a covers what that costs.
+
+**And the syntax is already close.** Fernhill line 698 writes an authored
+response with a state mutation:
+
+```chord
+about "the folly", "the fire":
+  change it to shaken
+  award truth, once
+  phrase tobias-folly-reply
+```
+
+which is structurally `AuthoredResponse` plus `ResponseStateMutation` from
+`conversation/builder.ts`. The author-facing surface barely moves.
+
+**The decision**: one syntax, `define topics for`, routed by the compiler.
+An NPC with no character model compiles to the stdlib topic table exactly as
+today. An NPC with one compiles to `CharacterModelDialogue`. Adding a personality
+line is what upgrades the engine — the author never chooses between two systems
+and never learns there were two. Psychological gating (`about the murder when it
+trusts the player`) is available on characters that have interiors and is a
+compile error on those that do not, in the same diagnostic shape as every other
+unknown name. This is D7's opt-in principle applied to conversation.
+
+**The hazard, named, with its acceptance test.** One syntax over two engines
+means an author could change conversation behavior by adding a personality line,
+silently. That is only tolerable if the character path is a **strict superset**
+for everything Chord compiles today: any `define topics` block using no
+psychological predicate must produce identical play on both engines. That is a
+testable property, and Fernhill's two blocks (lines 693 and 705) are the fixture.
+**If the property cannot be made to hold, this decision collapses back to
+coexistence** and the author does have to choose — so it is the first thing the
+implementation should establish, not the last.
+
+### D19a. Routing is a load-time decision, and ADR-102's socket has to be built first.
+
+Closing the first blocker the review raised against D19: *where does the routing
+live, and does `@sharpee/chord` stay browser-safe?*
+
+**What is actually missing.** Three things were assumed present; only two are:
+
+| Piece | State |
+| --- | --- |
+| `DialogueExtension` interface (ADR-102) | exists — but **inside `@sharpee/character`** (`conversation/dialogue-types.ts`) |
+| An implementation | exists — `CharacterModelDialogue`, the only one |
+| A stdlib registration point | **does not exist** — ADR-102 is `Proposed`; `asking.ts:8` says "a future conversation extension" |
+
+**Three decisions follow, in order.**
+
+1. **`DialogueExtension` moves to `@sharpee/if-domain`, with `DialogueResult`
+   made generic.** It cannot stay in `@sharpee/character`: stdlib would have to
+   depend on the character model to know the shape of its own extension point,
+   which is the dependency direction CLAUDE.md rule 8 forbids.
+
+   **Why `if-domain` and not `world-model`** (David's ruling, 2026-08-11, after a
+   full options comparison). The platform has already answered this question once
+   in exactly this shape: `LanguageProvider` is declared in
+   `if-domain/src/language-provider.ts`, implemented by `@sharpee/lang-en-us`
+   (`EnglishLanguageProvider implements ParserLanguageProvider`), and consumed by
+   stdlib (`actions/registry.ts` holds a `LanguageProvider | null` behind a
+   `setLanguageProvider()` setter). `DialogueExtension : character` is the same
+   relation as `LanguageProvider : lang-en-us`, and putting it anywhere else
+   means the platform has two conventions for pluggable providers.
+
+   **The obstacle, and its resolution.** `DialogueResult.responseIntent` is typed
+   `ResponseIntent`, which needs `Mood` and `Coherence` from `@sharpee/world-model`
+   — and since `world-model` already depends on `if-domain`, moving the type
+   naively would close a dependency cycle. The field survives as a **type
+   parameter**: `DialogueResult<TIntent = unknown>` in `if-domain`, with
+   `@sharpee/character` using `DialogueResult<ResponseIntent>`. Full type safety
+   on both sides, no cycle, no casting.
+
+   This is affordable because `responseIntent` has **no production consumers** —
+   a repository-wide search finds the declaration and eleven assertions in the
+   character package's own test file, nothing else (checked 2026-08-11).
+2. **Stdlib grows the registration point ADR-102 specified** — literally the one
+   it specifies: `world.registerDialogueExtension(ext)` /
+   `world.getDialogueExtension()`, with ASK/TELL/SAY/TALK TO delegating to it and
+   the existing behavior as the fallback. Not the `@sharpee/plugins` seam, which
+   D21 names for a different job. This is ADR-102 being implemented, not
+   extended — and it means **ADR-102 flips from `Proposed` to `Accepted` as part
+   of this work**. The flip is owned by whoever lands the registration point, in
+   the same commit, and is not deferred to a later sweep.
+3. **One extension is registered at load time, and it routes internally.** The
+   Chord frontend emits IR that records which NPCs carry a character model;
+   `story-loader` registers a single dialogue extension when it wires the story,
+   and that extension reads the per-NPC fact and dispatches — character-model
+   NPCs to `CharacterModelDialogue`'s path, the rest to the stdlib topic table.
+   Not at compile time (the compiler would have to know about runtime
+   conversation objects) and not per turn (the answer cannot change mid-story).
+
+   **Corrected by plan review, 2026-08-11**: an earlier wording said the loader
+   "selects the implementation ... per NPC," which would have registered two
+   extensions. ADR-102's *One Extension Per Story* already rules this — "a story
+   registers exactly one dialogue extension; if different NPCs need different
+   conversation styles, the extension handles that internally" — and since this
+   decision implements ADR-102 rather than amending it, ADR-102's answer governs.
+   It is also the smaller design.
+
+**This preserves the browser-safe invariant, and the invariant is stronger than
+the header claims.** `@sharpee/chord` is documented as the browser-safe language
+frontend (`phrasebooks.ts` header) — and `packages/chord/package.json` carries
+**no `@sharpee/*` dependency at all** (checked 2026-08-11). Routing at compile
+time would therefore not merely add a dependency; it would give the frontend its
+first one, and that one would drag the character runtime into the browser bundle.
+Under this split chord never imports `@sharpee/character` — it emits a fact about
+the story and the loader acts on it.
+
+Step 1 is likewise cheap where it lands: `packages/stdlib/package.json:26`
+already depends on `@sharpee/if-domain`, so stdlib gains no new dependency;
+`@sharpee/character` gains one, pointing inward at a contracts package, which is
+the direction rule 8 wants.
+
+**Sequencing consequence, stated plainly**: D19 cannot be implemented before
+ADR-102 is. That is new work this ADR did not previously acknowledge, and it
+lands ahead of the conversation mapping rather than beside it.
+
+### D20. Phrasebook resolution stays flat and source-ordered; a failed entry gate falls through.
+
+Resolving Open Question 7, which asked what happens when three gates stack — a
+character-voice phrasebook inside a story-state phrasebook, emitting a phrase
+that itself carries `when`.
+
+**The premise was wrong: nothing nests.** `story-loader/src/runtime.ts:359`
+states the shipping rule — *"the first book in declaration order whose predicate
+holds"* — and both `define phrasebook … while` and `use phrasebook … while`
+(ADR-250 D2) feed that one flat list. So a character-state book is simply a book,
+`while the Colonel is panicked` is simply a longer predicate, and **no specificity
+ladder is introduced.** Adding one would make resolution depend on how clever the
+compiler judged a condition to be, which is a worse rule than source order and
+harder to explain.
+
+**What actually needed deciding**: a book wins arbitration, but the entry it
+holds for that key carries a `when` that fails. **It falls through** — the book
+does not cover that key for this emission and arbitration continues to the next
+book.
+
+**This is load-bearing for D13, not a detail.** D13's economy is *write the voice
+once per state*: a `mustard-cornered` book supplies the four lines that change
+when he is panicked, and his other forty fall through to his default book. Under
+the alternative — a failed gate stops resolution — every psychological book would
+have to restate the whole key set to avoid holes, which is exactly the per-line
+bookkeeping D13 exists to abolish.
+
+**The footgun, and its guard.** Declaration order being priority means an
+unconditional book declared early silently shadows every conditional book after
+it — the failure this question was right to fear, prose arriving from the wrong
+voice with nothing to notice it. It is statically detectable: **the analyzer
+warns when a book with no `while` is declared ahead of a conditional book
+covering any of the same keys.** Compile-time diagnostic, no runtime cost, caught
+in the editor rather than in play.
+
+### D20a. A gated-out entry emits nothing and counts as nothing.
+
+Closing the second blocker: D20's fall-through against ADR-250 D5's per-entry
+counters.
+
+`story-loader/src/runtime.ts:363` keeps `cycling` / `first-time` / `sticky`
+counters **per (book, key)**. D20 says a book whose entry gate fails falls
+through to the next book. The unstated case is whether that entry's counter
+advanced on the way past.
+
+**It does not. Counters advance only when an entry actually emits.**
+
+**Why this is the only workable answer.** A counter records *how many times this
+book has said this line*. An entry that was gated out said nothing, so there is
+nothing to count. The alternative fails concretely: a `first-time` line in
+`mustard-cornered` would burn on every turn the Colonel is calm, and by the time
+he panics — the one moment it exists for — its first time is long spent. The line
+would be unreachable in exactly the situation it was written for, and nothing in
+play would indicate why.
+
+This is D20's own failure mode one level down: not the wrong voice, but the right
+voice with its best line already used up. It is invisible in testing for the same
+reason.
+
+**Corollary**: `sticky` binds to the emission, not to the arbitration. A sticky
+entry in a state book stays stuck for as long as that book keeps winning *and*
+its gate keeps holding; when the state lapses, the next book supplies the key and
+the sticky selection is not carried across the boundary.
+
+### D21. Versioning is a non-issue. Half the character state is never saved at all.
+
+Closing the third blocker — and the blocker as the review first stated it was the
+wrong problem. David's ruling, 2026-08-11: no versioning work is needed, because
+no game holds character state to be compatible with. That is correct, and checking
+why it is correct surfaced the real defect.
+
+**Why versioning does not apply.** The change is purely additive: no field that
+has ever been written to a save file changes shape. D17's belief-outcome table
+retires `SpreadsVersion`, and D5 renames the presets — but both live only in
+`@sharpee/character`, which no story has ever used, so neither has been
+persisted by anything. A v3 save loads unchanged, with the character sections
+simply absent, and absent already means "no character model attached" under D7's
+opt-in semantics. There is no migration, no version-reader branch, and nothing to
+be backward-compatible with. (For the record, since an earlier draft of this
+decision got it backwards: `save-restore-service.ts:77` is `SAVE_FORMAT_VERSION
+= '3.0.0'`; the hard break was v1→v2 and the version reader already shipped at
+v2→v3 under ADR-293 D7. Neither mechanism is needed here.)
+
+**The real defect: the character subsystem's runtime state has a working
+serializer that nothing calls.**
+
+Character state lives in two places, and only one of them is saved:
+
+| State | Home | Saved today? |
+| --- | --- | --- |
+| personality, mood, dispositions, knowledge, beliefs | `CharacterModelTrait` on the entity | **yes** — rides `world.toJSON()` (`save-restore-service.ts:175`) |
+| goal progress, influence effects, already-told records | `CharacterPhaseRegistry` | **no** |
+
+`CharacterPhaseRegistry` implements `toJSON`/`fromJSON` and has five passing
+round-trip tests written against it (`tests/tick-phases/save-restore.test.ts`,
+whose own header says it "verifies that all mutable state — goal progress,
+influence effects, already-told records — survives serialization"). Nothing
+invokes it. `@sharpee/engine`'s dependencies do not include `@sharpee/character`
+(`packages/engine/package.json`), and a repository-wide search for
+`CharacterPhaseRegistry` outside the package returns only generated API docs
+(checked 2026-08-11).
+
+**What that means in play.** Save and restore mid-story, and every NPC forgets
+which goal step they had reached, which influences were active on them, and who
+they had already told. Their traits survive, so they still *look* right —
+personality, mood and beliefs are all intact — while the three subsystems D1
+calls "the reason to do this at all" silently reset. This is the worst shape a
+save bug can take: the visible state is correct and the emergent state is gone.
+
+**The same seam as D19a, one layer over.** The engine cannot reach a registry
+owned by a package it does not depend on, and it should not gain that dependency.
+The registration goes through the extension seam the engine already has
+(`@sharpee/plugins`): the character subsystem registers its phases and its
+save/restore participation, and the engine's save path serializes registered
+participants without knowing what they are. The tick phases have the identical
+problem — `createGoalPhase`, `createInfluencePhase` and `createPropagationPhase`
+are equally unwired — so one registration fixes both.
+
+**This is a prerequisite, not a polish item.** It lands before D14's story runs,
+because a demonstration story built to show goals, influence and propagation is
+precisely the story where this defect is unmissable.
+
+**What this does not decide**: the on-disk shape of a fact's identity (D16) or of
+the belief-outcome triple (D17) — both wait on syntax left to implementation.
+
 ## Consequences
 
 - **`@sharpee/character` acquires its first consumer.** Fourteen months of
@@ -517,7 +991,9 @@ it. Added to Open Questions.
 - **The vocabulary becomes a compatibility surface.** Once `very honest` is a
   Chord adjective, ADR-141's trait list is a language feature, and removing a
   word is a breaking change to stories. The list should be reviewed before it is
-  frozen, not after.
+  frozen, not after. D17 adds at most one word to that surface (`misdirect`),
+  having been reduced from five by David's one-vocabulary ruling, and D16 makes
+  every author-declared fact name one.
 - **Test surface**: the mapping needs round-trip coverage per construct — Chord
   source in, `CharacterModelTrait` out, matching the builder's own output. The
   package's 301 tests cover the model; none cover a compiler that does not exist.
@@ -547,63 +1023,39 @@ it. Added to Open Questions.
   player's laptop. Nobody has measured this — the package has never run inside a
   story.
 
-## Open Questions
-
-1. **What is the smallest story that proves this?** The three hard subsystems
-   only show themselves with several NPCs who know things about each other, so
-   the usual "add it to Fernhill" answer does not work — Fernhill has four people
-   and no secrets. A purpose-built demonstration story is probably a prerequisite
-   for the implementation rather than a follow-up to it, and it is the only way
-   to learn whether the emergent behaviour is legible to a player at all.
-
-2. **Where does disposition toward *other NPCs* live, and how is knowledge
-   addressed?** D3 shows `feels wary of the player` and `knows the murder`.
-   Propagation needs both to generalise: NPC-to-NPC disposition (`the Maid trusts
-   the Cook`), and a way to name a fact that several characters can hold with
-   different confidence. Chord has no vocabulary for either. This is the largest
-   single gap in D8–D10 and probably wants its own ADR.
-
-3. **Does `mood` want to be a state?** Chord already has `states: guarded,
-   softened` with scoring and transitions. Mood is a state with a fixed
-   vocabulary and automatic decay. Two mechanisms that behave alike but are
-   spelled differently is exactly the seam ADR-222 hunts.
-
-4. **Should the conversation system replace or coexist with topic tables?**
-   ADR-239's `define topics for …` shipped and works. `dialogue-extension.ts`
-   drives dialogue from belief and disposition. An author facing both will ask
-   which one to use, and this ADR does not answer.
-
-5. **Is any of this wanted?** The audit that produced this ADR found a subsystem
-   nobody had missed in fourteen months. That is evidence about demand, and it
-   should be weighed before implementation rather than after. The counter-argument
-   is that nobody missed it because nobody could reach it — an authoring language
-   is how a capability becomes wantable, and no author has ever been offered this
-   one.
-
-6. ~~**Does the player ever see the model, or only its shadow?**~~ **Resolved
-   2026-08-11 by D12**: only the shadow. The player never sees or senses the
-   mechanics, only the behavior. What the question was really asking survives as
-   a design burden rather than an open decision — a model that reaches the player
-   only through visible action has to be *legible as action*, and that is the
-   author's prose problem before it is the platform's. Carried into Open Question
-   1: the demonstration story is the test of whether it can be done.
-
-7. **What is the resolution order when three gates stack?** D13 allows a
-   character-voice phrasebook (`while the Colonel is panicked`) nested inside a
-   story-state phrasebook (`while midnight`), emitting a phrase that itself
-   carries `when`. ADR-250's phrasebook resolution seam is where this is decided;
-   the wrong answer here produces prose that silently comes from the wrong voice,
-   which is the failure mode hardest to notice in testing.
-
-8. ~~**Should the platform ship clinically-named presets at all?**~~ **Resolved
-   2026-08-11 by D5**: renamed to describe behavior, not diagnosis. The dimension
-   values are unchanged; only the eight names move. The *when* question closed
-   with it — D11a rules the subsystem greenfield, so the rename lands inside the
-   normalization pass.
-
 ## Session
 
 Session c86356 (2026-08-11). Written after an audit, requested during the wait
 on Apple's notarization of Chord Writer 1.0.0, established that
 `@sharpee/character` is fully working, fully tested, published, and entirely
 unreferenced — and that ADR-141's vocabulary was already shaped like Chord.
+
+Session c28ea0 (2026-08-11) resolved the remaining open questions through
+`/devarch:adr-interview`, on the branch `feat/adr-310-character-in-chord`. All
+eight questions the ADR carried are now answered and the Open Questions section
+is removed (ADR-0009): Q6 by D12 and Q8 by D5 in the original session; Q5, Q1
+(D14), Q2 (D15–D17), Q3 (D18), Q4 (D19) and Q7 (D20) in the interview.
+
+Three of the interview's answers came from reading the code rather than from
+design argument, and each shrank the work: disposition was already
+entity-to-entity (D15), `FactSource` already carried `inferred` so misdirection
+needed no new runtime state (D17), and phrasebooks were already a flat
+source-ordered list rather than the nesting Q7 assumed (D20).
+
+`/devarch:adr-review` then ran against the completed ADR and returned NEEDS WORK
+(8/16). Its three blockers are closed by **D19a** (routing has no socket — ADR-102
+was never implemented in stdlib, and the interface sits in the wrong package),
+**D20a** (a gated-out entry must not advance its per-book counters), and **D21**
+(versioning is a non-issue, but `CharacterPhaseRegistry`'s save/restore is
+implemented, tested, and wired to nothing). The review also corrected a
+load-bearing overclaim in D19, noted inline there. D21 was itself rewritten after
+David rejected its first framing — he was right that no versioning work applies,
+and the check that confirmed it is what found the unwired serializer. Re-verified rather than inherited: `pnpm --filter
+'@sharpee/character' test` → 19 files, 301 tests, 301 passing (2026-08-11 15:53
+CDT).
+
+Review findings still open, all graded SMALL: no acceptance-criteria section, no
+Implementation section naming affected modules, unowned amendments to ADR-141 and
+ADR-144, and the Context's "one line in the umbrella's dependency list" — which
+understates `packages/sharpee/src/index.ts:74–82`, a public re-export of six
+symbols including both names D5 renames.
