@@ -43,6 +43,7 @@ export const NAV: NavSection[] = [
         open: true,
         items: [
           { title: 'Overview', href: '/chord-writer' },
+          { title: 'Download', href: '/chord-writer/download' },
           { title: 'Your first story', href: '/chord-writer/your-first-story' },
           { title: 'Building, playing, and testing', href: '/chord-writer/building-playing-and-testing' },
           { title: 'Publishing', href: '/chord-writer/publishing' },

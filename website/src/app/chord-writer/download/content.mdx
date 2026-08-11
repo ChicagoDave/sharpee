@@ -1,0 +1,84 @@
+Two downloads: the app you write in, and a finished story to open in it.
+
+## Chord Writer
+
+<Callout title="macOS 14 or newer, Apple silicon or Intel">
+  Chord Writer carries its own toolchain — a bundled Node runtime and the
+  Sharpee CLI. There is no `npm install`, no global CLI, and nothing on your
+  machine to keep current. Building works on a Mac that has never seen a
+  terminal.
+</Callout>
+
+**[Download Chord Writer 1.0.0 (.dmg)](/downloads/ChordWriter-1.0.0.dmg)**
+
+Installing it:
+
+1. Open the downloaded `.dmg`.
+2. Drag **Chord Writer** onto the **Applications** folder shown beside it.
+3. Eject the disk image, and launch Chord Writer from Applications.
+
+### If macOS refuses to open it
+
+macOS checks downloaded apps with Apple before running them the first time. If
+you see *"Apple could not verify Chord Writer is free of malware"*, the check
+has not completed for this build — the app is signed, but not yet stapled.
+Open it once by hand:
+
+1. Go to **System Settings → Privacy & Security**.
+2. Scroll to the bottom. There is a line about Chord Writer being blocked, and
+   an **Open Anyway** button beside it.
+3. Click it, then confirm.
+
+You only do this once. Every later launch is normal.
+
+## The Folly at Fernhill
+
+The sample story: complete, playable, and small enough to read in a sitting.
+It is the same story the [Fernhill tutorial](/learn/fernhill) builds chapter by
+chapter, so you can read the finished source alongside the explanation.
+
+**[Download The Folly at Fernhill (.zip, 58 KB)](/downloads/the-folly-at-fernhill.zip)**
+
+Opening it:
+
+1. Unzip it. You get a folder called **The Folly at Fernhill**.
+2. Move that folder wherever you keep your work — your Documents folder is a
+   fine choice.
+3. In Chord Writer, choose **Open…** and select the folder.
+4. Press **⌘B**. The story builds and starts in the Play tab.
+
+Inside the folder:
+
+| File | What it is |
+| --- | --- |
+| `fernhill.story` | The whole story. The only file you write. |
+| `fernhill.tests.json` | Its tests, recorded by playing in the Testing tab. |
+| `fernhill.config.json` | The story's identity. The tool maintains it; keep it in version control and never edit it by hand. |
+| `assets/` | Audio and images the story plays. |
+| `browser/index.html` | A custom page for the browser build. |
+
+### From the terminal instead
+
+Fernhill is an ordinary Sharpee project, so the CLI works on it just as well.
+Install it once:
+
+```shell
+npm install -g @sharpee/devkit
+```
+
+then, from inside the story folder:
+
+```shell
+sharpee build          # compile, and build the browser app
+sharpee play           # play it in the terminal
+sharpee test           # replay the recorded tests
+```
+
+That path needs [Node.js](https://nodejs.org) 18 or newer. The app does not —
+it brings its own.
+
+## Next
+
+[Your first story](/chord-writer/your-first-story) walks through making one of
+your own, and [Building, playing, and testing](/chord-writer/building-playing-and-testing)
+covers the loop you will spend your time in.
