@@ -184,7 +184,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         contentController.add(WeakSurfaceMessageHandler(self), name: Self.stateHandlerName)
         contentController.add(WeakSurfaceMessageHandler(self), name: Self.consoleHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.isInspectable = true
+        // Guarded, not gated: the app targets every Apple silicon Mac
+        // (macOS 11+), and Web Inspector is a developer affordance.
+        if #available(macOS 13.3, *) { webView.isInspectable = true }
         webView.translatesAutoresizingMaskIntoConstraints = false
 
         placeholder.font = NSFont.systemFont(ofSize: 11)

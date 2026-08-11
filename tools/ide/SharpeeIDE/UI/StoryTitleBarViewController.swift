@@ -71,7 +71,7 @@ final class StoryTitleBarViewController: NSViewController {
     /// - Parameter height: the window's titlebar height — 0 in full screen,
     ///   where the band does not exist and the strip must disappear with it.
     func setBandHeight(_ height: CGFloat) {
-        loadViewIfNeeded()
+        forceViewLoaded()
         guard height >= 0, heightConstraint?.constant != height else { return }
         heightConstraint?.constant = height
         view.isHidden = height == 0
@@ -82,7 +82,14 @@ final class StoryTitleBarViewController: NSViewController {
     /// - Parameter title: the composed story's title, or the product name when
     ///   no story has been composed (see `WindowTitle.title(for:)`).
     func setTitle(_ title: String) {
-        loadViewIfNeeded()
+        forceViewLoaded()
         label.stringValue = title
+    }
+
+    /// `loadViewIfNeeded()` is macOS 14+, and this app runs on every Apple
+    /// silicon Mac. Touching `view` is the portable equivalent — the getter
+    /// loads it on first access, which is exactly what the newer call names.
+    private func forceViewLoaded() {
+        _ = view
     }
 }

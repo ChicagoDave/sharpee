@@ -1,0 +1,30 @@
+<p>Two downloads: the app you write in, and a finished story to open in it.</p>
+<h2 id="chord-writer">Chord Writer</h2>
+<blockquote><p><strong>macOS 26 or newer, Apple silicon only</strong></p>
+<p>Chord Writer is an Apple-silicon build (M1 and later). It will not run on an Intel Mac — the Node runtime it carries is vendored for arm64, so a universal build would ship an Intel half with no toolchain behind its Build button.</p>
+<p>In exchange, it needs nothing else from you: no <code>npm install</code>, no global CLI, nothing on your machine to keep current. Building works on a Mac that has never seen a terminal.</p></blockquote>
+<p>On an Intel Mac, or an older macOS, use the command-line tools instead — they run anywhere Node does. <a href="/chord/getting-started/install">Install the CLI</a>, then work from the terminal; the <a href="#the-folly-at-fernhill">Fernhill sample</a> below opens the same way.</p>
+<p><strong><a href="/downloads/ChordWriter-1.0.0.dmg">Download Chord Writer 1.0.0 (.dmg)</a></strong></p>
+<p>Installing it:</p>
+<p>1. Open the downloaded <code>.dmg</code>. 2. Drag <strong>Chord Writer</strong> onto the <strong>Applications</strong> folder shown beside it. 3. Eject the disk image, and launch Chord Writer from Applications.</p>
+<h3 id="if-macos-refuses-to-open-it">If macOS refuses to open it</h3>
+<p>macOS checks downloaded apps with Apple before running them the first time. If you see <em>&quot;Apple could not verify Chord Writer is free of malware&quot;</em>, the check has not completed for this build — the app is signed, but not yet stapled. Open it once by hand:</p>
+<p>1. Go to <strong>System Settings → Privacy &amp; Security</strong>. 2. Scroll to the bottom. There is a line about Chord Writer being blocked, and an <strong>Open Anyway</strong> button beside it. 3. Click it, then confirm.</p>
+<p>You only do this once. Every later launch is normal.</p>
+<h2 id="the-folly-at-fernhill">The Folly at Fernhill</h2>
+<p>The sample story: complete, playable, and small enough to read in a sitting. It is the same story the <a href="/learn/fernhill">Fernhill tutorial</a> builds chapter by chapter, so you can read the finished source alongside the explanation.</p>
+<p><strong><a href="/downloads/the-folly-at-fernhill.zip">Download The Folly at Fernhill (.zip, 58 KB)</a></strong></p>
+<p>Opening it:</p>
+<p>1. Unzip it. You get a folder called <strong>The Folly at Fernhill</strong>. 2. Move that folder wherever you keep your work — your Documents folder is a fine choice. 3. In Chord Writer, choose <strong>Open…</strong> and select the folder. 4. Press <strong>⌘B</strong>. The story builds and starts in the Play tab.</p>
+<p>Inside the folder:</p>
+<table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>fernhill.story</code></td><td>The whole story. The only file you write.</td></tr><tr><td><code>fernhill.tests.json</code></td><td>Its tests, recorded by playing in the Testing tab.</td></tr><tr><td><code>fernhill.config.json</code></td><td>The story's identity. The tool maintains it; keep it in version control and never edit it by hand.</td></tr><tr><td><code>assets/</code></td><td>Audio and images the story plays.</td></tr><tr><td><code>browser/index.html</code></td><td>A custom page for the browser build.</td></tr></tbody></table>
+<h3 id="from-the-terminal-instead">From the terminal instead</h3>
+<p>Fernhill is an ordinary Sharpee project, so the CLI works on it just as well. Install it once:</p>
+<pre><code class="language-shell">npm install -g @sharpee/devkit</code></pre>
+<p>then, from inside the story folder:</p>
+<pre><code class="language-shell">sharpee build          # compile, and build the browser app
+sharpee play           # play it in the terminal
+sharpee test           # replay the recorded tests</code></pre>
+<p>That path needs <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js</a> 18 or newer. The app does not — it brings its own.</p>
+<h2 id="next">Next</h2>
+<p><a href="/chord-writer/your-first-story">Your first story</a> walks through making one of your own, and <a href="/chord-writer/building-playing-and-testing">Building, playing, and testing</a> covers the loop you will spend your time in.</p>

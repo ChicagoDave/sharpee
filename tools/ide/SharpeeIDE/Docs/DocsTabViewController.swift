@@ -44,7 +44,11 @@ final class DocsTabViewController: NSViewController, WKScriptMessageHandler, WKN
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: DocsTabSchemeHandler.scheme)
         configuration.userContentController.add(WeakDocsScriptMessageHandler(self), name: Self.handlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.isInspectable = true // right-click → Inspect Element while designing the tab
+        // right-click → Inspect Element while designing the tab. Guarded rather
+        // than raising the deployment target: the app targets every Apple
+        // silicon Mac (macOS 11+), and a developer affordance is not worth
+        // excluding a machine over.
+        if #available(macOS 13.3, *) { webView.isInspectable = true }
         webView.navigationDelegate = self
         webView.setValue(false, forKey: "drawsBackground") // the page owns its own background
         webView.translatesAutoresizingMaskIntoConstraints = false

@@ -181,7 +181,9 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         let contentController = configuration.userContentController
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.isInspectable = true // right-click → Inspect Element to debug the running story
+        // right-click → Inspect Element to debug the running story. Guarded
+        // rather than gating the app: it runs on every Apple silicon Mac.
+        if #available(macOS 13.3, *) { webView.isInspectable = true }
         webView.translatesAutoresizingMaskIntoConstraints = false
         installUserScripts()
 
