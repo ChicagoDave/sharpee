@@ -10,6 +10,7 @@
 
 import type { MDXComponents } from "mdx/types";
 import { GrammarBlock } from "@/components/grammar-block";
+import { Screenshot } from "@/components/screenshot";
 import {
   Callout,
   CodeBlock,
@@ -30,6 +31,7 @@ const components: MDXComponents = {
   Callout,
   CodeBlock,
   GrammarBlock,
+  Screenshot,
   h2: ProseH2,
   h3: ProseH3,
   a: ProseLink,
