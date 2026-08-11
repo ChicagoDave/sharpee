@@ -15,7 +15,7 @@ After=network.target
 [Service]
 Type=simple
 User=dave
-WorkingDirectory=/home/dave/repos/sharpee_v2/website
+WorkingDirectory=/home/dave/repos/sharpee/website
 ExecStart=/usr/bin/npm start
 Restart=on-failure
 RestartSec=5

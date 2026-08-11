@@ -45,6 +45,27 @@ fi
 # ── Normal deploy: pull, build, restart ──
 cd "$REPO_ROOT"
 
+# ── Guard: the service must serve the tree this script is about to build ──
+# This script derives its paths from its own location, while the unit's
+# WorkingDirectory is absolute. Run it from a SECOND checkout and it builds
+# here, then restarts a service reading from there — and the failure is
+# SILENT: systemctl reports active, the deploy prints success, and the site
+# keeps serving the other checkout's old build. That is exactly what happened
+# on 2026-08-10, when sharpee.net sat months stale (a `sharpee_v2` path in the
+# unit) through a deploy that reported no error at all.
+# Checked before the build so a misconfigured host fails in a second, not
+# after `npm ci`.
+SERVICE_DIR="$(systemctl show "$SERVICE" -p WorkingDirectory --value 2>/dev/null || true)"
+if [ -n "$SERVICE_DIR" ] && [ "$SERVICE_DIR" != "$WEBSITE_DIR" ]; then
+  err "$SERVICE serves:  $SERVICE_DIR"
+  err "this script builds: $WEBSITE_DIR"
+  err "Deploying would report success and change nothing. Either run deploy.sh from"
+  err "the checkout the service reads, or repoint the unit at this one:"
+  err "  sudo sed -i 's|^WorkingDirectory=.*|WorkingDirectory=$WEBSITE_DIR|' /etc/systemd/system/$SERVICE.service"
+  err "  sudo systemctl daemon-reload"
+  exit 1
+fi
+
 if [ "$1" != "--no-pull" ]; then
   log "Pulling latest from main ..."
   git pull --ff-only
