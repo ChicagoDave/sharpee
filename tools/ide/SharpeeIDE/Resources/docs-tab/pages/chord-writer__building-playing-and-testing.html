@@ -9,6 +9,9 @@
 <h2 id="play">Play</h2>
 <p>The <strong>Play</strong> tab is the game, running, in the panel. Type as a player types.</p>
 <p>Errors raised by the running game go to the <strong>Game Errors</strong> tab in the bottom dock instead of into the game text. This keeps the transcript readable as a transcript: what a player would have seen, uninterrupted, with the machinery kept somewhere else.</p>
+<p>The picker beside <strong>Restart</strong> previews your story under any built-in theme without touching what you wrote. It is app chrome, not a story edit: leaving it on <strong>Story Default</strong> plays the theme your story header asks for, and picking one overrides only this pane, only for you.</p>
+<p>![](images/chord-writer/play-themes.png)</p>
+<p><em>The same story, one pick later: Paper instead of the story's own Retro Terminal.</em></p>
 <h2 id="index">Index</h2>
 <p>The <strong>Index</strong> tab lists what your story defines, read out of the composed story rather than parsed from the source. It is one rendering of one composed result, which is why there is no separate structure view in the project pane.</p>
 <h2 id="testing">Testing</h2>
@@ -16,6 +19,8 @@
 <p>The whole tree saves beside your story as <strong><code>&lt;story-id&gt;.tests.json</code></strong> — one document, the single source of truth for your tests. There are no test files to name, arrange, or keep in sync; the tree is the suite.</p>
 <p>Branch from any card to test an alternative path — the branch replays your story to that point and diverges from there. Cards group by the region their room belongs to, and groups collapse as the suite grows.</p>
 <p><strong>Test → Run Tests</strong> replays the whole tree fresh from boot at the story's pinned seed and evaluates exactly what the document says; <strong>Test → Cancel Test Run</strong> stops a run. Every card and every claim gets its own verdict in the run column, and the tally counts both: cards and assertions, passing and failing.</p>
+<p>![](images/chord-writer/testing.png)</p>
+<p><em>Cards on the left carry the turn and its claims; the run column on the right carries the verdicts, card by card, down to the tally.</em></p>
 <blockquote><p><strong>Story edits show up as seams</strong></p>
 <p>Your tests record what the story said when you played it. Change a room's description and the next run fails exactly one claim — the one recorded against the old text, at the card where it was recorded. That is the suite doing its job: re-record that turn, or edit the claim, and the seam closes.</p></blockquote>
 <p>The same run works from the command line: <code>sharpee test</code> in the project directory finds the document and replays it against your compiled story.</p>

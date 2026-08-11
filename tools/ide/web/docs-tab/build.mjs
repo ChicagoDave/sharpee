@@ -24,7 +24,9 @@
  * Owner context: tools/ide — the Documentation tab's web bundle.
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import {
+  readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync, rmSync, cpSync, renameSync,
+} from 'node:fs';
 import { join, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -36,7 +38,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../../..');
 const appDir = resolve(repoRoot, 'website/src/app');
 const outDir = resolve(repoRoot, 'tools/ide/SharpeeIDE/Resources/docs-tab');
-const pagesDir = join(outDir, 'pages');
+// Everything is written HERE and moved into place only once the whole build has
+// succeeded. Writing directly into outDir cost a shipped release: on 2026-08-11
+// an unhandled-component throw fired after the output had already been wiped,
+// leaving pages/ with no index.html, docs.js or docs.css — and because
+// build-docs-tab.sh downgrades failures to warnings, Xcode packaged and Apple
+// was asked to notarize an app whose Documentation tab could not render.
+// A failed build must leave the last good bundle untouched.
+const stageDir = `${outDir}.staging`;
+const pagesDir = join(stageDir, 'pages');
 
 /** URL prefixes under `website/src/app` that hold documentation Chord Writer ships. */
 const SECTIONS = ['chord-writer', 'chord', 'learn'];
@@ -193,7 +203,7 @@ if (unexplained.length > 0) {
   );
 }
 
-rmSync(outDir, { recursive: true, force: true });
+rmSync(stageDir, { recursive: true, force: true });
 mkdirSync(pagesDir, { recursive: true });
 
 const pages = [];
@@ -236,13 +246,13 @@ if (unsupportedFound.size > 0) {
 }
 
 writeFileSync(
-  join(outDir, 'docs-index.json'),
+  join(stageDir, 'docs-index.json'),
   JSON.stringify({ chordLanguageVersion: chordLanguageVersion(), nav: navTree, pages }),
 );
 
 await esbuild.build({
   entryPoints: [resolve(here, 'src/main.ts')],
-  outfile: join(outDir, 'docs.js'),
+  outfile: join(stageDir, 'docs.js'),
   // Pinned, and load-bearing: esbuild renders its per-module comment banners
   // RELATIVE to absWorkingDir, which defaults to process.cwd(). Xcode's pre-build
   // phase runs this from tools/ide while a hand run starts at the repo root, so
@@ -260,11 +270,33 @@ await esbuild.build({
 });
 
 for (const asset of ['index.html', 'docs.css']) {
-  writeFileSync(join(outDir, asset), readFileSync(resolve(here, 'src', asset)));
+  writeFileSync(join(stageDir, asset), readFileSync(resolve(here, 'src', asset)));
 }
+
+// Images referenced by <Screenshot>. Copied whole rather than per-reference: the
+// website owns which shots exist, and a per-reference copy would silently ship a
+// page whose image 404s the moment a name is mistyped.
+const imagesSrc = resolve(repoRoot, 'website/src/images');
+let imageCount = 0;
+if (existsSync(imagesSrc)) {
+  cpSync(imagesSrc, join(stageDir, 'images'), { recursive: true });
+  const countPngs = (dir) =>
+    readdirSync(dir).reduce(
+      (n, name) =>
+        n + (statSync(join(dir, name)).isDirectory() ? countPngs(join(dir, name)) : name.endsWith('.png') ? 1 : 0),
+      0,
+    );
+  imageCount = countPngs(imagesSrc);
+}
+
+// The swap. Nothing above this line has touched the shipped bundle, so any throw
+// leaves the previous one intact and the app still builds against known-good docs.
+rmSync(outDir, { recursive: true, force: true });
+renameSync(stageDir, outDir);
 
 console.log(
   `docs tab: ${pages.length} pages in nav order` +
     (excludedHrefs.size > 0 ? `, ${excludedHrefs.size} excluded by EXCLUDED_GROUPS` : '') +
+    `, ${imageCount} images` +
     ` (Chord ${chordLanguageVersion()}) -> ${relative(repoRoot, outDir)}`,
 );

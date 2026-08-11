@@ -195,4 +195,80 @@ now points at `docs/work/history-retrospective/plan.md`.
 
 ---
 
-**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT; retrospective addendum 2026-08-11
+## Addendum — notarization, and a defect this session shipped (2026-08-11 morning)
+
+### The screenshots broke the IDE's Documentation tab, and it reached Apple
+
+The `<Screenshot>` component added last night is read by **two** consumers: the
+website, and `tools/ide/web/docs-tab/build.mjs`, which bundles the same
+`content.mdx` files into Chord Writer's Documentation tab. The bundler did not
+know the component and refused — correctly, by design ("the IDE would silently
+drop them"). Three things then went wrong in sequence:
+
+1. `build.mjs` called `rmSync(outDir)` **before** that validation, so the throw
+   left the output half-deleted: `pages/` written, but `index.html`, `docs.js`,
+   `docs.css` and `docs-index.json` gone.
+2. `build-docs-tab.sh` downgraded the failure to a **warning**, so Xcode continued.
+3. The archive was built, signed, and **submitted to Apple** with a Documentation
+   tab that had pages and no shell to render them. Verified in the artifact:
+   `Chord Writer.app/Contents/Resources/docs-tab/` contained exactly `pages`.
+
+Submission `041e7810-8bba-47e2-b99d-91682d607b72` is therefore **defective and
+orphaned** — do not ship it even if Apple accepts it.
+
+**Fixes, one per link:**
+- `src/mdx.mjs` renders `<Screenshot name caption />` as a markdown image plus an
+  emphasised caption; `build.mjs` copies `website/src/images/` into the bundle
+  (5 images) so the IDE's docs match the site.
+- `build.mjs` now writes everything to `docs-tab.staging/` and swaps it into place
+  only on full success. **Real-path test**: injected a deliberate throw — build
+  exits 1 and all six entries of the previous bundle survive untouched.
+- `build-docs-tab.sh` treats a build script that ran and failed as an **error**
+  (absent node stays a warning, which is what that rationale was written for),
+  with `DOCS_TAB_OPTIONAL=1` as a deliberate opt-out.
+
+### package.sh: the Ledga m1/m2/m3 resume pattern, ported
+
+`notarytool submit --wait` crashed with `Bus error` 4 of 4 attempts, always inside
+the wait, never the submit. David: *"the entire m1-2-3 thing I did for ledga was
+because of that --wait error."* Ported that pattern:
+
+- Never waits. Submits, records the id in `release/.notarize-state`, exits 0 with
+  "still in the queue". Re-running resumes and staples the moment Apple accepts.
+- **Resume is the default**; `--rebuild` is how you ask for a fresh build. A
+  rebuild would produce different bytes and orphan a queued ticket.
+- The signed app is staged to `release/` immediately after signing and everything
+  downstream reads that copy — fixing the 2026-08-10 loss where the app died in
+  `/var/folders` while its ticket sat in the queue.
+- Both steps idempotent via `stapler validate`; ledger cleared on success.
+- **Bugs found by running it, not reading it**: the resume hint printed a flag the
+  user never passed (`${VAR:+…}` treats `0` as set), and `--rebuild` did not clear
+  the ledger — so it checked the OLD submission and would have tried to staple a
+  ticket issued for different bytes. Both fixed.
+
+### Notarization account mystery (resolved enough to proceed)
+
+`info` returned `In Progress` at 09:35 and `Submission does not exist or does not
+belong to your team` at 09:40, with `history` empty throughout. Ruled out the
+keychain by querying with inline credentials (same Team Key, no stored profile):
+identical result, so the stored profile was faithful. After David sorted out
+which App Store Connect account he was in and removed a stale Wizely identity
+(`security find-identity` went 3 → 2; the Developer ID for `54CCCRZJ3X` untouched),
+a fresh submit worked and `history` now lists exactly one submission — today's.
+Reading: last night's tickets belonged to a different team. Inference, not fact.
+
+**Current state**: corrected app submitted as
+`8fe1892f-d770-41e4-9b93-db7744e50e4a`, ledger seeded, app staged at
+`tools/ide/release/Chord Writer.app` with a full docs-tab. `./tools/ide/package.sh`
+resumes when Apple answers.
+
+### Open items added
+- Chord Writer DMG blocked on notarization of `8fe1892f-…`; `041e7810-…` orphaned.
+- The accepted → staple → DMG → submit → staple path in `package.sh` is **untested**
+  (Apple has not answered). Read, not run.
+- `19519494427` — an Apple reference David supplied; role unidentified, recorded here
+  so it is not lost.
+
+---
+
+**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT; retrospective addendum 2026-08-11; notarization/docs-tab addendum 2026-08-11 11:05 CDT

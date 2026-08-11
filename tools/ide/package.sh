@@ -8,9 +8,26 @@
 # repokit stays Node-only and IDE-ignorant).
 #
 # Public interface:
-#   package.sh [--skip-platform-build] [--keep-work] [--no-notarize]
+#   package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
+#
+# THE SCRIPT NEVER WAITS ON APPLE. It submits, records the submission id in
+# release/.notarize-state, and exits 0 with "still in the queue". Run it again to
+# resume: it re-reads the id, and staples and continues the moment Apple accepts.
+# A run therefore takes three passes at most — build+submit app, staple+submit
+# DMG, staple DMG and finish — and each one is cheap after the first.
+#
+# Two reasons, and the first is not a preference. `notarytool submit --wait`
+# crashes with `Bus error` on this machine, 4 of 4 attempts (2026-08-10/11),
+# always inside the wait and never the submit — so the blocking form loses the
+# terminal but keeps the ticket. And a first-time bundle can sit in Apple's queue
+# for hours; holding a shell open for that was never the right shape. The design
+# is lifted from Ledga's mac-release-1/2/3 split, which exists for the same bug.
+#
 #     --skip-platform-build  reuse the existing packages/*/dist (iteration only —
 #                            NOT safe for a release; see step 2)
+#     --rebuild              ignore a resumable state and build from scratch.
+#                            Orphans any submission already in the queue, which
+#                            is correct when the binary needs to change.
 #     --keep-work            leave the work directory for inspection
 #     --no-notarize          stop after local signature verification. Everything
 #                            through step 6 runs for real — including signing
@@ -59,14 +76,100 @@ ok()   { echo "  ✓ $*"; }
 SKIP_PLATFORM_BUILD=0
 KEEP_WORK=0
 NO_NOTARIZE=0
+REBUILD=0
 for arg in "$@"; do
   case "$arg" in
     --skip-platform-build) SKIP_PLATFORM_BUILD=1 ;;
     --keep-work) KEEP_WORK=1 ;;
     --no-notarize) NO_NOTARIZE=1 ;;
-    *) die "unknown flag '$arg' (usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize])" ;;
+    --rebuild) REBUILD=1 ;;
+    *) die "unknown flag '$arg' (usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild])" ;;
   esac
 done
+
+# ---------------------------------------------------------------------
+# Notarization state — the resume ledger
+# ---------------------------------------------------------------------
+# Apple's queue is measured in hours and `notarytool submit --wait` crashes with
+# `Bus error` on this machine (4 of 4 attempts, 2026-08-10/11), always inside the
+# wait and never the submit. So this script never waits: it submits, records the
+# submission id here, and exits. Re-running resumes from whatever is recorded.
+#
+# The pattern is lifted from Ledga's mac-release-2.sh / mac-release-3.sh, which
+# were split into numbered scripts for exactly this reason. Here it is one script
+# that is idempotent instead of three that run in order.
+readonly STATE_FILE="$RELEASE_DIR/.notarize-state"
+readonly STAGED_APP="$RELEASE_DIR/Chord Writer.app"
+
+state_get() { [ -f "$STATE_FILE" ] && sed -n "s/^$1=//p" "$STATE_FILE" | head -1 || true; }
+
+state_set() {  # state_set <key> <value>
+  mkdir -p "$RELEASE_DIR"
+  [ -f "$STATE_FILE" ] && sed -i '' "/^$1=/d" "$STATE_FILE" 2>/dev/null || true
+  echo "$1=$2" >> "$STATE_FILE"
+}
+
+state_clear() { rm -f "$STATE_FILE"; }
+
+# Submit an artifact and record its id, or check the id already recorded.
+# Echoes nothing; sets NOTARY_RESULT to accepted|pending and returns 0, or dies.
+notarize_artifact() {  # notarize_artifact <path> <state-key> <label>
+  local artifact="$1" key="$2" label="$3" id status
+  id="$(state_get "$key")"
+
+  if [ -z "$id" ]; then
+    note "submitting $(du -h "$artifact" | cut -f1) $label to Apple (not waiting)"
+    local out
+    out="$(xcrun notarytool submit "$artifact" --keychain-profile "$NOTARY_PROFILE" 2>&1 | tee "$WORK/notary-$key.log")"
+    id="$(printf '%s\n' "$out" | sed -n 's/^ *id: *//p' | head -1)"
+    [ -n "$id" ] || die "submit returned no submission id for the $label.
+  Full output: $WORK/notary-$key.log"
+    state_set "$key" "$id"
+    ok "$label submitted — id $id (recorded in $STATE_FILE)"
+    NOTARY_RESULT=pending
+    return 0
+  fi
+
+  note "checking recorded $label submission $id"
+  status="$(xcrun notarytool info "$id" --keychain-profile "$NOTARY_PROFILE" 2>&1 | sed -n 's/^ *status: *//p' | head -1)"
+  case "$status" in
+    Accepted)
+      ok "$label notarization accepted"
+      NOTARY_RESULT=accepted
+      ;;
+    "In Progress"|"")
+      NOTARY_RESULT=pending
+      ;;
+    *)
+      echo "" >&2
+      xcrun notarytool log "$id" --keychain-profile "$NOTARY_PROFILE" 2>&1 | sed 's/^/  /' >&2 || true
+      state_set "${key}_FAILED" "$id"
+      die "$label notarization returned '$status' (submission $id).
+  The notary log is above. Fix the cause, then run with --rebuild — the recorded
+  id has been kept as ${key}_FAILED for reference but will not be reused."
+      ;;
+  esac
+  return 0
+}
+
+# Print how to come back, then leave. Exit 0: pending is not a failure.
+pending_exit() {  # pending_exit <label> <state-key>
+  local id
+  id="$(state_get "$2")"
+  echo ""
+  echo "═══════════════════════════════════════════════════"
+  echo " $1 is in Apple's queue — nothing more to do now"
+  echo "═══════════════════════════════════════════════════"
+  echo "  submission: $id"
+  echo ""
+  echo "  Check it:   xcrun notarytool info $id --keychain-profile \"$NOTARY_PROFILE\""
+  echo "  Resume:     $0"
+  echo ""
+  echo "  Re-running picks up from here — it will not rebuild or resubmit."
+  echo "  A first-time bundle can sit in the queue for hours."
+  echo ""
+  exit 0
+}
 
 # =====================================================================
 # 1. Preflight — tools, then credentials
@@ -133,6 +236,35 @@ else
   trap 'rm -rf "$WORK"' EXIT
 fi
 
+# --- Resume, or build from scratch? ---------------------------------
+# A staged app plus a state file means a previous run submitted and left. Rebuilding
+# then would be worse than useless: it would produce a different binary and orphan
+# the submission that is already in the queue. So the default is to resume, and a
+# fresh build is the thing you ask for.
+RESUME=0
+if [ "$REBUILD" -eq 1 ]; then
+  # The ledger describes submissions of a binary that is about to stop existing.
+  # Keeping it would make the next step check the OLD id and, on an Accepted,
+  # try to staple a ticket issued for different bytes. --rebuild means start over.
+  if [ -f "$STATE_FILE" ]; then
+    note "--rebuild: discarding the submission ledger (those ids belong to the previous binary)"
+    sed 's/^/    orphaned: /' "$STATE_FILE"
+    state_clear
+  fi
+elif [ -d "$STAGED_APP" ] && [ -f "$STATE_FILE" ]; then
+  RESUME=1
+fi
+
+if [ "$RESUME" -eq 1 ]; then
+  step "Resuming"
+  echo "  Found a staged app and a submission ledger, so steps 2-6 are skipped."
+  echo "  The binary in the queue and the binary on disk must stay identical —"
+  echo "  pass --rebuild to start over instead."
+  sed 's/^/    /' "$STATE_FILE"
+  ok "resuming from $STAGED_APP"
+fi
+
+if [ "$RESUME" -eq 0 ]; then
 # =====================================================================
 # 2. Platform build — before vendoring, always
 # =====================================================================
@@ -346,6 +478,26 @@ case "$node_entitlements" in
 esac
 ok "vendored node entitlements correct (allow-jit present, get-task-allow absent)"
 
+# --- Stage the signed app somewhere durable --------------------------
+# The archive lives under /var/folders, which macOS purges without warning. A
+# signed app was lost that way on 2026-08-10 while its notarization sat in the
+# queue, leaving a ticket with nothing to staple. Everything downstream — the
+# notarization, the staple, the DMG — reads the staged copy, so the artifact in
+# the queue and the artifact on disk are the same bytes.
+step "Staging the signed app"
+mkdir -p "$RELEASE_DIR"
+rm -rf "$STAGED_APP"
+ditto "$APP" "$STAGED_APP" || die "failed to stage the signed app into $RELEASE_DIR."
+codesign --verify --deep --strict "$STAGED_APP" \
+  || die "the staged copy does not verify — the copy damaged the signature."
+ok "staged at $STAGED_APP (signature re-verified after the copy)"
+
+fi  # end: build-and-sign (skipped when resuming)
+
+# From here on, one path: the staged app is what ships.
+readonly SHIP_APP="$STAGED_APP"
+[ -d "$SHIP_APP" ] || die "no staged app at $SHIP_APP — run with --rebuild."
+
 if [ "$NO_NOTARIZE" -eq 1 ]; then
   echo ""
   echo "═══════════════════════════════════════════════════"
@@ -372,19 +524,17 @@ fi
 # drags to /Applications carries its own ticket. Notarizing only the DMG leaves
 # the installed app dependent on a network check.
 step "Notarizing the app"
-readonly APP_ZIP="$WORK/ChordWriter-app.zip"
-ditto -c -k --keepParent "$APP" "$APP_ZIP" || die "failed to zip the app for notarization."
-note "submitting $(du -h "$APP_ZIP" | cut -f1) to Apple (this waits for the verdict)"
-xcrun notarytool submit "$APP_ZIP" \
-  --keychain-profile "$NOTARY_PROFILE" --wait 2>&1 | tee "$WORK/notary-app.log" | sed 's/^/  /'
-grep -q 'status: Accepted' "$WORK/notary-app.log" || die "app notarization did not return Accepted.
-  Fetch the detail with:
-    xcrun notarytool log <submission-id> --keychain-profile \"$NOTARY_PROFILE\"
-  Full output: $WORK/notary-app.log"
-ok "app notarized"
+if xcrun stapler validate "$SHIP_APP" >/dev/null 2>&1; then
+  ok "app is already notarized and stapled — nothing to do"
+else
+  readonly APP_ZIP="$WORK/ChordWriter-app.zip"
+  ditto -c -k --keepParent "$SHIP_APP" "$APP_ZIP" || die "failed to zip the app for notarization."
+  notarize_artifact "$APP_ZIP" APP_SUBMISSION "app"
+  [ "$NOTARY_RESULT" = accepted ] || pending_exit "The app" APP_SUBMISSION
 
-xcrun stapler staple "$APP" >/dev/null || die "failed to staple the notarization ticket to the app."
-ok "ticket stapled to the app"
+  xcrun stapler staple "$SHIP_APP" >/dev/null || die "failed to staple the notarization ticket to the app."
+  ok "ticket stapled to the app"
+fi
 
 # =====================================================================
 # 8. Assemble the DMG
@@ -397,24 +547,33 @@ ok "ticket stapled to the app"
 step "DMG"
 mkdir -p "$RELEASE_DIR"
 readonly DMG_PATH="$RELEASE_DIR/$DMG_NAME"
-"$IDE_DIR/dmg/assemble-dmg.sh" "$APP" "Chord Writer $VERSION" "$DMG_PATH" \
-  || die "failed to assemble the DMG."
-ok "created $DMG_NAME ($(du -h "$DMG_PATH" | cut -f1))"
+# On a resume the DMG is already built and already submitted; rebuilding it would
+# change its bytes and orphan that submission, exactly as a rebuilt app would.
+if [ -f "$DMG_PATH" ] && [ -n "$(state_get DMG_SUBMISSION)" ]; then
+  ok "reusing the DMG already in the queue ($DMG_NAME)"
+else
+  "$IDE_DIR/dmg/assemble-dmg.sh" "$SHIP_APP" "Chord Writer $VERSION" "$DMG_PATH" \
+    || die "failed to assemble the DMG."
+  ok "created $DMG_NAME ($(du -h "$DMG_PATH" | cut -f1))"
 
-# The DMG is itself a distributed artifact and is signed too — but NOT via
-# sign_macho: the hardened runtime is a Mach-O load-command concept and means
-# nothing on a disk image. A timestamped signature is the whole requirement.
-codesign --force --sign "$SIGN_IDENTITY" --timestamp "$DMG_PATH" \
-  || die "codesign failed for $DMG_NAME"
-ok "DMG signed"
+  # The DMG is itself a distributed artifact and is signed too — but NOT via
+  # sign_macho: the hardened runtime is a Mach-O load-command concept and means
+  # nothing on a disk image. A timestamped signature is the whole requirement.
+  codesign --force --sign "$SIGN_IDENTITY" --timestamp "$DMG_PATH" \
+    || die "codesign failed for $DMG_NAME"
+  ok "DMG signed"
+fi
 
 step "Notarizing the DMG"
-xcrun notarytool submit "$DMG_PATH" \
-  --keychain-profile "$NOTARY_PROFILE" --wait 2>&1 | tee "$WORK/notary-dmg.log" | sed 's/^/  /'
-grep -q 'status: Accepted' "$WORK/notary-dmg.log" || die "DMG notarization did not return Accepted.
-  Full output: $WORK/notary-dmg.log"
-xcrun stapler staple "$DMG_PATH" >/dev/null || die "failed to staple the ticket to the DMG."
-ok "DMG notarized and stapled"
+if xcrun stapler validate "$DMG_PATH" >/dev/null 2>&1; then
+  ok "DMG is already notarized and stapled"
+else
+  notarize_artifact "$DMG_PATH" DMG_SUBMISSION "DMG"
+  [ "$NOTARY_RESULT" = accepted ] || pending_exit "The DMG" DMG_SUBMISSION
+
+  xcrun stapler staple "$DMG_PATH" >/dev/null || die "failed to staple the ticket to the DMG."
+  ok "DMG notarized and stapled"
+fi
 
 # =====================================================================
 # 9. Final gate — assess as Gatekeeper will, then checksum
@@ -429,6 +588,12 @@ ok "Gatekeeper accepts the DMG"
 
 ( cd "$RELEASE_DIR" && shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256" ) \
   || die "failed to write the checksum."
+
+# Both artifacts are stapled and the ledger has nothing left to resume. Clearing
+# it is what makes the NEXT run a fresh build rather than a resume of a release
+# that already shipped.
+state_clear
+ok "notarization ledger cleared — the next run builds fresh"
 
 echo ""
 echo "═══════════════════════════════════════════════════"

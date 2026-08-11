@@ -40,6 +40,9 @@ reports/
 .env.test.local
 .env.production.local
 
+# api-keys
+.api-keys
+
 # Logs
 logs/
 *.log

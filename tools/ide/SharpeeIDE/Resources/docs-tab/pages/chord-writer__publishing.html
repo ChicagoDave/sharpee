@@ -2,6 +2,8 @@
 <h2 id="publish">Publish</h2>
 <p><strong>Build → Publish…</strong> asks where the zip should go, then runs. The <strong>Publish</strong> tab streams the toolchain's own output while it works, and on success shows you the artifact's path with a <strong>Reveal in Finder</strong> button.</p>
 <p>Publish has no keyboard shortcut, and that is deliberate. Build is a loop step you hit all day. Publishing is something you decide to do.</p>
+<p>![](images/chord-writer/publish.png)</p>
+<p><em>A finished publish: what went into the bundle, the story's IFID, and where the zip landed.</em></p>
 <h2 id="what-has-to-be-true-first">What has to be true first</h2>
 <p>Two things, both checked by the toolchain rather than by the app:</p>
 <ul><li><strong>The story compiles.</strong> Problems tells you this continuously, so you will know long before you publish.</li><li><strong>The story has an IFID</strong>, the identifier that distinguishes your work from every other piece of interactive fiction. Yours does: Chord Writer gives a story its IFID when it creates it, and keeps it in <code>&lt;story-name&gt;.config.json</code>. The only way to reach this refusal is to publish a story whose config file went missing — restore it from version control, because publishing under a freshly minted identifier would make your story a different work to every archive that already knows it.</li></ul>

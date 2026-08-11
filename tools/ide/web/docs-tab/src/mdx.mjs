@@ -79,6 +79,22 @@ export function reduceMdx(source, { grammarBlocks }) {
     return title ? `> **${title}**\n>\n${quoted}` : quoted;
   });
 
+  // <Screenshot name="dir/file" caption="…" /> — an app screenshot. The website
+  // resolves `name` through a registry of static imports; here the name IS the
+  // path, because build.mjs copies website/src/images/ into the bundle whole.
+  // Attributes are written across several lines in the source, hence [\s\S].
+  text = text.replace(/<Screenshot\b([\s\S]*?)\/>/g, (all, attrs) => {
+    const name = attrs.match(/\bname="([^"]*)"/)?.[1];
+    if (!name) {
+      throw new Error('<Screenshot> without a name attribute');
+    }
+    const caption = attrs.match(/\bcaption="([^"]*)"/)?.[1];
+    // Markdown image + emphasised caption: the renderer already handles both,
+    // and no new HTML path is introduced for one component.
+    const img = `![](images/${name}.png)`;
+    return caption ? `${img}\n\n*${caption}*` : img;
+  });
+
   // Whatever is left that opens like a component.
   const unsupported = [...new Set((text.match(/<[A-Z][A-Za-z]*/g) ?? []).map((m) => m.slice(1)))];
 

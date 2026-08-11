@@ -49,6 +49,16 @@ if [ -z "$NODE" ]; then
 fi
 
 if ! "$NODE" "$BUILD_SCRIPT"; then
-  echo "warning: Documentation tab bundle failed to build — using the committed copy"
-  exit 0
+  # A missing node is a warning (above): the committed bundle is still valid and
+  # failing a Swift build over an absent JavaScript toolchain is a poor trade. A
+  # build script that RAN and FAILED is a different thing — it means the docs and
+  # the website have diverged, and the error above says how. Downgrading it to a
+  # warning shipped a release on 2026-08-11 whose Documentation tab could not
+  # render, because nobody reads a warning in a 10-minute Xcode log.
+  echo "error: Documentation tab bundle failed to build (see the error above)."
+  echo "       The previously committed bundle is intact and was NOT overwritten."
+  echo "       Fix the cause, or pass DOCS_TAB_OPTIONAL=1 to build against the"
+  echo "       committed copy deliberately rather than by accident."
+  [ "${DOCS_TAB_OPTIONAL:-0}" = "1" ] || exit 1
+  echo "warning: DOCS_TAB_OPTIONAL=1 — continuing with the committed copy"
 fi
