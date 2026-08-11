@@ -1,0 +1,3182 @@
+[
+ {
+  "number": null,
+  "name": "2025-01-19-traits-with-builtin-container.md",
+  "title": "ADR: Traits with Built-in Container Functionality",
+  "status": "Accepted",
+  "statedDate": "2025-01-19",
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 2979
+ },
+ {
+  "number": null,
+  "name": "README.md",
+  "title": "Architecture Decision Records (ADRs)",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-08",
+  "bytes": 16173
+ },
+ {
+  "number": "001",
+  "name": "adr-001-parser-debug-events.md",
+  "title": "ADR-001: Parser Debug Events Architecture",
+  "status": "Accepted",
+  "statedDate": "2025-06-11",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2061
+ },
+ {
+  "number": "002",
+  "name": "adr-002-debug-mode-meta-commands.md",
+  "title": "ADR-002: Debug Mode Meta Commands",
+  "status": "Proposed",
+  "statedDate": "2025-06-11",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2531
+ },
+ {
+  "number": "003",
+  "name": "adr-003-internal-parser-types.md",
+  "title": "ADR-003: Internal Parser Types",
+  "status": "Accepted",
+  "statedDate": "2025-06-11",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2241
+ },
+ {
+  "number": "004",
+  "name": "adr-004-parser-validation-separation.md",
+  "title": "ADR-004: Parser-Validation-Execution Separation",
+  "status": "Accepted",
+  "statedDate": "2025-06-28",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2203
+ },
+ {
+  "number": "005",
+  "name": "adr-005-action-interface-location.md",
+  "title": "ADR-005: Action Interface Location and ValidatedCommand Design",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2206
+ },
+ {
+  "number": "006",
+  "name": "adr-006-const-objects-not-enums.md",
+  "title": "ADR-006: Use Const Objects Instead of Enums",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2132
+ },
+ {
+  "number": "007",
+  "name": "adr-007-actions-in-stdlib.md",
+  "title": "ADR-007: Actions in Standard Library",
+  "status": "Accepted",
+  "statedDate": "2025-06-29",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 1788
+ },
+ {
+  "number": "008",
+  "name": "adr-008-core-as-generic-engine.md",
+  "title": "ADR-008: Core Package as Generic Event System (Proposed)",
+  "status": "Proposed",
+  "statedDate": "2025-06-29",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2572
+ },
+ {
+  "number": "009",
+  "name": "adr-009-entity-cloning-strategy.md",
+  "title": "ADR-009: Deep Cloning Strategy for Entity Copies",
+  "status": "Accepted",
+  "statedDate": "2025-07-04",
+  "session": null,
+  "firstCommit": "2025-07-04",
+  "bytes": 3635
+ },
+ {
+  "number": "00",
+  "name": "adr-00X-action-event-emission-pattern.md",
+  "title": "ADR-00X: Action Event Emission Pattern",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 7332
+ },
+ {
+  "number": "010",
+  "name": "adr-010-no-i-prefix-interfaces.md",
+  "title": "ADR-005: No I-Prefix for Interfaces",
+  "status": "Accepted",
+  "statedDate": "2025-06-29",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 1494
+ },
+ {
+  "number": "011",
+  "name": "adr-011-entity-id-system.md",
+  "title": "ADR-005: Entity ID System Design",
+  "status": null,
+  "statedDate": "2024-01-06",
+  "session": null,
+  "firstCommit": "2025-07-06",
+  "bytes": 6352
+ },
+ {
+  "number": "012",
+  "name": "adr-012-debug-as-system-events.md",
+  "title": "ADR-006: Debug Events as System Events",
+  "status": "Accepted",
+  "statedDate": "2025-06-29",
+  "session": null,
+  "firstCommit": "2025-07-02",
+  "bytes": 2040
+ },
+ {
+  "number": "013",
+  "name": "adr-013-lighting-extensions.md",
+  "title": "ADR-008: Lighting as Extension System",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-06",
+  "bytes": 6624
+ },
+ {
+  "number": "013",
+  "name": "adr-013b-assessment.md",
+  "title": "ADR-014 Assessment: Unrestricted World Model Access",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 8923
+ },
+ {
+  "number": "013",
+  "name": "adr-013c-intfiction-post.md",
+  "title": null,
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 2185
+ },
+ {
+  "number": "014",
+  "name": "adr-014-unrestricted-world-model-access.md",
+  "title": "ADR-014: Unrestricted World Model Access",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 5699
+ },
+ {
+  "number": "015",
+  "name": "adr-015-spatial-index-references.md",
+  "title": "ADR-015: SpatialIndex Pattern References",
+  "status": "Informational",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 8381
+ },
+ {
+  "number": "016",
+  "name": "adr-016-author-recorded-event-metadata.md",
+  "title": "ADR-016: Author Recorded Event Metadata",
+  "status": "Future Enhancement (Not Implemented)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 5279
+ },
+ {
+  "number": "017",
+  "name": "adr-017-disambiguation.md",
+  "title": "ADR-017: Disambiguation Strategy for Entity References",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 8232
+ },
+ {
+  "number": "018",
+  "name": "adr-018-conversational-state-management.md",
+  "title": "ADR-018: Conversational State Management",
+  "status": "Partially Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 11848
+ },
+ {
+  "number": "019",
+  "name": "adr-019-platform-implementation-patterns.md",
+  "title": "ADR-019: Platform Implementation Patterns for Conversational UI",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 17141
+ },
+ {
+  "number": "020",
+  "name": "adr-020-clothing-pockets-design.md",
+  "title": "ADR-20: Clothing and Pockets Design",
+  "status": "Proposed",
+  "statedDate": "2025-07-08",
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 3578
+ },
+ {
+  "number": "021",
+  "name": "adr-021-parser-edge-cases.md",
+  "title": "ADR-021: Parser Edge Cases and Complex Command Support",
+  "status": null,
+  "statedDate": "2024-07-09",
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 4605
+ },
+ {
+  "number": "022",
+  "name": "adr-022-extension-architecture.md",
+  "title": "ADR-022: Extension Architecture",
+  "status": "Accepted",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 4191
+ },
+ {
+  "number": "023",
+  "name": "adr-023-message-system-integration.md",
+  "title": "ADR-023: Message System Integration",
+  "status": "Proposed",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 2561
+ },
+ {
+  "number": "024",
+  "name": "adr-024-score-data-storage.md",
+  "title": "ADR-024: Score Data Storage",
+  "status": "Accepted",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-12",
+  "bytes": 5286
+ },
+ {
+  "number": "025",
+  "name": "adr-025-parser-information-preservation.md",
+  "title": "ADR-025: Parser Information Preservation",
+  "status": "Accepted",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 4553
+ },
+ {
+  "number": "026",
+  "name": "adr-026-language-specific-parsers.md",
+  "title": "ADR-026: Language-Specific Parser Architecture",
+  "status": "Accepted - Implemented 2025-07-12",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 5686
+ },
+ {
+  "number": "027",
+  "name": "adr-027-parser-package-architecture.md",
+  "title": "ADR-027: Parser Package Architecture",
+  "status": "Accepted - Updated 2025-07-13 (see ADR-028 for simplified usage)",
+  "statedDate": "2025-07-12",
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 4440
+ },
+ {
+  "number": "028",
+  "name": "adr-028-simplified-language-management.md",
+  "title": "ADR-028: Simplified Story Language Management",
+  "status": "Accepted",
+  "statedDate": "2025-07-13",
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 5944
+ },
+ {
+  "number": "029",
+  "name": "adr-029-text-service-architecture.md",
+  "title": "ADR-029: Simple Query-Based Text Service Architecture",
+  "status": "Superseded by ADR-174 — the text service has been removed; turn-end rendering is now",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 4631
+ },
+ {
+  "number": "030",
+  "name": "adr-030-if-services-package.md",
+  "title": "ADR-030: Introduction of if-services Package",
+  "status": "Accepted",
+  "statedDate": "2025-01-15",
+  "session": null,
+  "firstCommit": "2025-07-14",
+  "bytes": 3889
+ },
+ {
+  "number": "031",
+  "name": "adr-031-self-inflating-help-system.md",
+  "title": "ADR-031: Self-Inflating Help System",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-16",
+  "bytes": 5299
+ },
+ {
+  "number": "032",
+  "name": "adr-032-capability-refactoring-command-history.md",
+  "title": "ADR-032: Capability Refactoring and Command History Implementation",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-16",
+  "bytes": 8596
+ },
+ {
+  "number": "033",
+  "name": "adr-033-save-restore-architecture.md",
+  "title": "ADR-033: Save/Restore Architecture",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 6625
+ },
+ {
+  "number": "034",
+  "name": "adr-034-event-sourcing-save-restore.md",
+  "title": "ADR-034: Event Sourcing for Save/Restore (Future Enhancement)",
+  "status": "Proposed (Future)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 7266
+ },
+ {
+  "number": "035",
+  "name": "adr-035-platform-event-architecture.md",
+  "title": "ADR-035: Platform Event Architecture",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 6393
+ },
+ {
+  "number": "036",
+  "name": "adr-036-parser-contracts-if-domain.md",
+  "title": "ADR 036: Parser Contracts in if-domain",
+  "status": "Accepted",
+  "statedDate": "2025-01-20",
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 3294
+ },
+ {
+  "number": "037",
+  "name": "adr-037-parser-language-provider.md",
+  "title": "Parser Language Provider Interface Addition",
+  "status": null,
+  "statedDate": "2025-01-21",
+  "session": null,
+  "firstCommit": "2025-07-22",
+  "bytes": 2815
+ },
+ {
+  "number": "038",
+  "name": "adr-038-language-agnostic-actions.md",
+  "title": "ADR-038: Language-Agnostic Action Implementation",
+  "status": null,
+  "statedDate": "2025-07-22",
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 4988
+ },
+ {
+  "number": "039",
+  "name": "adr-039-action-event-emission-pattern.md",
+  "title": "ADR-039: Action Event Emission Pattern",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 5177
+ },
+ {
+  "number": "040",
+  "name": "adr-040-turn-based-time-progression.md",
+  "title": "ADR-040: Turn-Based Time Progression",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 5162
+ },
+ {
+  "number": "041",
+  "name": "adr-041-simplified-action-context.md",
+  "title": "ADR-041: Simplified Action Context Interface",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 8159
+ },
+ {
+  "number": "042",
+  "name": "adr-042-stdlib-action-event-types.md",
+  "title": "ADR-042: Stdlib Action Event Type Migration",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 7161
+ },
+ {
+  "number": "043",
+  "name": "adr-043-scope-and-implied-indirect-objects.md",
+  "title": "ADR-043: Scope Resolution and Implied Indirect Objects",
+  "status": "Proposed",
+  "statedDate": "2025-08-02",
+  "session": null,
+  "firstCommit": "2025-07-28",
+  "bytes": 4179
+ },
+ {
+  "number": "044",
+  "name": "adr-044-parser-vocabulary-gaps.md",
+  "title": "ADR-044: Parser and Vocabulary System Gaps",
+  "status": null,
+  "statedDate": "2025-08-02",
+  "session": null,
+  "firstCommit": "2025-08-04",
+  "bytes": 8696
+ },
+ {
+  "number": "045",
+  "name": "adr-045-scope-management-system.md",
+  "title": "ADR-045: Scope Management System",
+  "status": null,
+  "statedDate": "2024-08-02",
+  "session": null,
+  "firstCommit": "2025-08-04",
+  "bytes": 6256
+ },
+ {
+  "number": "046",
+  "name": "adr-046-scope-perception-architecture.md",
+  "title": "ADR-046: Scope and Perception Architecture",
+  "status": null,
+  "statedDate": "2025-08-04",
+  "session": null,
+  "firstCommit": "2025-08-04",
+  "bytes": 6178
+ },
+ {
+  "number": "047",
+  "name": "adr-047-entity-type-safety.md",
+  "title": "ADR-047: Entity Type Safety and Validation",
+  "status": "Date: 2025-08-04",
+  "statedDate": "2025-08-04",
+  "session": null,
+  "firstCommit": "2025-08-06",
+  "bytes": 4507
+ },
+ {
+  "number": "048",
+  "name": "adr-048-static-language-architecture.md",
+  "title": "ADR-048: Static Language, Parser, and Text Service Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-06",
+  "bytes": 6195
+ },
+ {
+  "number": "049",
+  "name": "adr-049-auto-save-architecture.md",
+  "title": "ADR-049: Auto-Save Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-08",
+  "bytes": 8230
+ },
+ {
+  "number": "050",
+  "name": "adr-050-meta-commands.md",
+  "title": "ADR-050: Meta-Commands Implementation",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-10",
+  "bytes": 5526
+ },
+ {
+  "number": "051",
+  "name": "adr-051-action-behaviors.md",
+  "title": "ADR-051: Action Behaviors for Complex Action Handling",
+  "status": "Superseded by ADR-052 (Event Handlers for Custom Game Logic)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-13",
+  "bytes": 7796
+ },
+ {
+  "number": "052",
+  "name": "adr-052-event-handlers-custom-logic.md",
+  "title": "ADR-052: Event Handlers and Custom Logic",
+  "status": "**Implemented** (Phase 1: Entity Handlers) - Supersedes ADR-051 (ActionBehaviors)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-13",
+  "bytes": 11014
+ },
+ {
+  "number": "053",
+  "name": "adr-053-interface-naming-convention.md",
+  "title": "ADR-053: Adopt I-Prefix Convention for All TypeScript Interfaces",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-16",
+  "bytes": 4761
+ },
+ {
+  "number": "054",
+  "name": "adr-054-semantic-grammar.md",
+  "title": "ADR-054: Semantic Grammar for Command Processing",
+  "status": "Accepted (Implemented)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-17",
+  "bytes": 6846
+ },
+ {
+  "number": "055",
+  "name": "adr-055-npm-publishing.md",
+  "title": "ADR-055: NPM Publishing Strategy",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-19",
+  "bytes": 4531
+ },
+ {
+  "number": "056",
+  "name": "adr-056-story-testing-framework.md",
+  "title": "ADR-056: Story Testing Framework",
+  "status": "Replaced by ADR-073",
+  "statedDate": "2025-08-19",
+  "session": null,
+  "firstCommit": "2025-08-19",
+  "bytes": 10287
+ },
+ {
+  "number": "057",
+  "name": "adr-057-before-after-rules.md",
+  "title": "ADR-057: Rulebook System for Story Logic",
+  "status": "On Hold",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-22",
+  "bytes": 9332
+ },
+ {
+  "number": "058",
+  "name": "adr-058-action-report-function.md",
+  "title": "ADR-058: Action Report Function for Atomic Event Generation",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-22",
+  "bytes": 7520
+ },
+ {
+  "number": "058",
+  "name": "adr-058x-atomic-events.md",
+  "title": "ADR-058: Atomic Events Implementation",
+  "status": "IMPLEMENTED - August 24, 2025",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-24",
+  "bytes": 6102
+ },
+ {
+  "number": "059",
+  "name": "adr-059-action-customization-boundaries.md",
+  "title": "ADR-059: Action Customization Boundaries",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-22",
+  "bytes": 10145
+ },
+ {
+  "number": "060",
+  "name": "adr-060-command-executor-refactor.md",
+  "title": "ADR-060: Refactor CommandExecutor to Thin Orchestrator",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-23",
+  "bytes": 4598
+ },
+ {
+  "number": "061",
+  "name": "adr-061-snapshot-code-smell.md",
+  "title": "ADR-061: Entity Snapshot Code Smell",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-24",
+  "bytes": 5639
+ },
+ {
+  "number": "062",
+  "name": "adr-062-direction-language-coupling.md",
+  "title": "ADR-062: Direction Language Coupling in Going Action",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-23",
+  "bytes": 5744
+ },
+ {
+  "number": "063",
+  "name": "adr-063-sub-actions-pattern.md",
+  "title": "ADR-063: Sub-Actions Pattern for Related Action Families",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-26",
+  "bytes": 5659
+ },
+ {
+  "number": "064",
+  "name": "adr-064-world-events-and-action-events.md",
+  "title": "ADR-064: World Events and Action Events",
+  "status": "Accepted (December 2025)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-30",
+  "bytes": 7357
+ },
+ {
+  "number": "065",
+  "name": "adr-065-grammatical-semantic-translation.md",
+  "title": "ADR-065: Grammatical to Semantic Translation Framework",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-31",
+  "bytes": 3466
+ },
+ {
+  "number": "066",
+  "name": "adr-066-text-snippets.md",
+  "title": "ADR-066: Text Snippets Library",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-31",
+  "bytes": 6314
+ },
+ {
+  "number": "067",
+  "name": "adr-067-linguistics.md",
+  "title": "ADR-067: Language-Specific Linguistics Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-08-31",
+  "bytes": 8000
+ },
+ {
+  "number": "068",
+  "name": "adr-068-unified-darkness-checking.md",
+  "title": "ADR-068: Unified Darkness Checking",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 8171
+ },
+ {
+  "number": "069",
+  "name": "adr-069-perception-event-filtering.md",
+  "title": "ADR-069: Perception-Based Event Filtering",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 19075
+ },
+ {
+  "number": "070",
+  "name": "adr-070-npc-system.md",
+  "title": "ADR-070: NPC System Architecture",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 17881
+ },
+ {
+  "number": "071",
+  "name": "adr-071-daemons-and-fuses.md",
+  "title": "ADR-071: Daemons and Fuses (Timed Events)",
+  "status": "Implemented",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 19277
+ },
+ {
+  "number": "072",
+  "name": "adr-072-combat-system.md",
+  "title": "ADR-072: Combat System",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 17128
+ },
+ {
+  "number": "073",
+  "name": "adr-073-transcript-story-testing.md",
+  "title": "ADR-073: Transcript-Based Story Testing",
+  "status": "Accepted",
+  "statedDate": "2025-12-27",
+  "session": null,
+  "firstCommit": "2025-12-27",
+  "bytes": 7704
+ },
+ {
+  "number": "074",
+  "name": "adr-074-ifid-requirements.md",
+  "title": "ADR-074: IFID Requirements",
+  "status": "Accepted",
+  "statedDate": "2025-12-27",
+  "session": null,
+  "firstCommit": "2025-12-28",
+  "bytes": 7700
+ },
+ {
+  "number": "075",
+  "name": "adr-075-event-handler-consolidation.md",
+  "title": "ADR-075: Event Handler Consolidation",
+  "status": "IMPLEMENTED (2025-12-30)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-28",
+  "bytes": 15750
+ },
+ {
+  "number": "076",
+  "name": "adr-076-scoring-system.md",
+  "title": "ADR-076: Scoring System Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-28",
+  "bytes": 7501
+ },
+ {
+  "number": "077",
+  "name": "adr-077-release-build-system.md",
+  "title": "ADR-077: Release Build System",
+  "status": "Research",
+  "statedDate": "2025-12-30",
+  "session": null,
+  "firstCommit": "2025-12-30",
+  "bytes": 4710
+ },
+ {
+  "number": "078",
+  "name": "adr-078-magic-paper-puzzle.md",
+  "title": "ADR-078: Magic Paper Puzzle (Thief's Painting)",
+  "status": "Draft",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-31",
+  "bytes": 14811
+ },
+ {
+  "number": "079",
+  "name": "adr-079-dungeon-text-alignment.md",
+  "title": "ADR-079: Dungeon Text Alignment",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2025-12-31",
+  "bytes": 2572
+ },
+ {
+  "number": "080",
+  "name": "adr-080-raw-text-grammar-slots.md",
+  "title": "ADR-080: Grammar Enhancements for Classic IF Patterns",
+  "status": "Complete",
+  "statedDate": "2025-12-31",
+  "session": null,
+  "firstCommit": "2025-12-31",
+  "bytes": 12860
+ },
+ {
+  "number": "081",
+  "name": "adr-081-npm-release-strategy.md",
+  "title": "ADR-081: npm Release Strategy",
+  "status": "Proposed",
+  "statedDate": "2025-12-31",
+  "session": null,
+  "firstCommit": "2025-12-31",
+  "bytes": 5176
+ },
+ {
+  "number": "082",
+  "name": "adr-082-typed-event-system.md",
+  "title": "ADR-082: Typed Event System",
+  "status": "Accepted",
+  "statedDate": "2026-01-01",
+  "session": null,
+  "firstCommit": "2026-01-01",
+  "bytes": 12555
+ },
+ {
+  "number": "082",
+  "name": "adr-082-vocabulary-constrained-slots.md",
+  "title": "ADR-082: Context-Aware Vocabulary and Extended Grammar Slots",
+  "status": "Revised (incorporating context-aware design)",
+  "statedDate": "2026-01-01",
+  "session": null,
+  "firstCommit": "2026-01-01",
+  "bytes": 12872
+ },
+ {
+  "number": "083",
+  "name": "adr-083-spirit-pc-paradigm.md",
+  "title": "ADR-083: Spirit PC Paradigm - Non-Physical Player Character",
+  "status": "Proposed",
+  "statedDate": "2026-01-01",
+  "session": null,
+  "firstCommit": "2026-01-01",
+  "bytes": 7089
+ },
+ {
+  "number": "084",
+  "name": "adr-084-remove-story-grammar-wrapper.md",
+  "title": "ADR-084: Remove StoryGrammarImpl Wrapper",
+  "status": "Accepted (2026-01-02)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-02",
+  "bytes": 5152
+ },
+ {
+  "number": "085",
+  "name": "adr-085-scoring-system.md",
+  "title": "ADR-085: Event-Based Scoring System",
+  "status": "Accepted (Implemented 2026-01-04)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-04",
+  "bytes": 12755
+ },
+ {
+  "number": "086",
+  "name": "adr-086-event-handler-unification.md",
+  "title": "ADR-086: Event Handler Unification",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-04",
+  "bytes": 6491
+ },
+ {
+  "number": "087",
+  "name": "adr-087-action-centric-grammar.md",
+  "title": "ADR-087: Action-Centric Grammar with Verb Aliases",
+  "status": "ACCEPTED (Implemented)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-04",
+  "bytes": 9331
+ },
+ {
+  "number": "088",
+  "name": "adr-088-grammar-engine-refactor.md",
+  "title": "ADR-088: Grammar Engine Refactoring",
+  "status": "ACCEPTED (Partially Implemented)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-04",
+  "bytes": 10346
+ },
+ {
+  "number": "089",
+  "name": "adr-089-pronoun-identity-system.md",
+  "title": "ADR-089: Pronoun and Identity System",
+  "status": "ACCEPTED (Phases A-D implemented 2026-01-05, Part 4 corrected 2026-01-16)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-05",
+  "bytes": 28524
+ },
+ {
+  "number": "090",
+  "name": "adr-090-entity-centric-action-dispatch.md",
+  "title": "ADR-090: Entity-Centric Action Dispatch via Trait Capabilities",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-05",
+  "bytes": 38108
+ },
+ {
+  "number": "091",
+  "name": "adr-091-text-decorations.md",
+  "title": "ADR-091: Text Decorations in Message Templates",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-06",
+  "bytes": 6188
+ },
+ {
+  "number": "092",
+  "name": "adr-092-smart-transcript-directives.md",
+  "title": "ADR-092: Smart Transcript Directives",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-08",
+  "bytes": 5763
+ },
+ {
+  "number": "093",
+  "name": "adr-093-i18n-entity-vocabulary.md",
+  "title": "ADR-093: Entity Vocabulary and Adjective Disambiguation",
+  "status": "IMPLEMENTED (Phase 1) / DEFERRED (Phase 2)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-12",
+  "bytes": 8500
+ },
+ {
+  "number": "094",
+  "name": "adr-094-event-chaining.md",
+  "title": "ADR-094: Event Chaining",
+  "status": "Accepted — **Amended A1** (2026-08-02, session f081ec): implementation reality recorded fourteen months on — the chaining mechanism and its positional ordering rule are load-bearing and unchanged; the metadata-based *re-ordering* layer (§Event Metadata's `transactionId` grouping and the prose-side `chainDepth` sort) was never completed and never carried the ordering, and its retirement is proposed by ADR-296 (DRAFT). See Amendment A1 at the end of this document.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-12",
+  "bytes": 20274
+ },
+ {
+  "number": "095",
+  "name": "adr-095-message-templates.md",
+  "title": "ADR-095: Message Templates with Formatters",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-13",
+  "bytes": 8609
+ },
+ {
+  "number": "096",
+  "name": "adr-096-text-service.md",
+  "title": "ADR-096: Text Service Architecture",
+  "status": "SUPERSEDED by ADR-174",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-13",
+  "bytes": 15027
+ },
+ {
+  "number": "097",
+  "name": "adr-097-react-client.md",
+  "title": "ADR-097: React Client Architecture",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-13",
+  "bytes": 10927
+ },
+ {
+  "number": "098",
+  "name": "adr-098-terminal-client.md",
+  "title": "ADR-098: Terminal Client Architecture",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-14",
+  "bytes": 14537
+ },
+ {
+  "number": "099",
+  "name": "adr-099-glk-client.md",
+  "title": "ADR-099: GLK Client",
+  "status": "IDENTIFIED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-13",
+  "bytes": 1769
+ },
+ {
+  "number": "100",
+  "name": "adr-100-screen-reader-client.md",
+  "title": "ADR-100: Screen Reader Accessibility",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-13",
+  "bytes": 7140
+ },
+ {
+  "number": "101",
+  "name": "adr-101-graphical-client-architecture.md",
+  "title": "ADR-101: Graphical Client Architecture",
+  "status": "SUPERSEDED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-14",
+  "bytes": 13155
+ },
+ {
+  "number": "102",
+  "name": "adr-102-dialogue-extension-architecture.md",
+  "title": "ADR-102: Dialogue Extension Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-14",
+  "bytes": 6460
+ },
+ {
+  "number": "103",
+  "name": "adr-103-choice-based-story-architecture.md",
+  "title": "ADR-103: Choice-Based Story Architecture",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-14",
+  "bytes": 11790
+ },
+ {
+  "number": "104",
+  "name": "adr-104-implicit-inference.md",
+  "title": "ADR-104: Implicit Inference and Implicit Actions",
+  "status": "ACCEPTED (All phases implemented)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-16",
+  "bytes": 13667
+ },
+ {
+  "number": "105",
+  "name": "adr-105-javascript-browser-client.md",
+  "title": "ADR-105: JavaScript Browser Client",
+  "status": "SUPERSEDED by [ADR-114](adr-114-browser-platform-package.md)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-16",
+  "bytes": 6734
+ },
+ {
+  "number": "106",
+  "name": "adr-106-domain-events-and-event-sourcing.md",
+  "title": "ADR-106: Domain Events and Event Sourcing",
+  "status": "Accepted (January 2026)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-19",
+  "bytes": 8693
+ },
+ {
+  "number": "107",
+  "name": "adr-107-dual-mode-authored-content.md",
+  "title": "ADR-107: Dual-Mode Authored Content",
+  "status": "ACCEPTED — IMPLEMENTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-19",
+  "bytes": 12877
+ },
+ {
+  "number": "108",
+  "name": "adr-108-player-character-system.md",
+  "title": "ADR-108: Player Character System",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-21",
+  "bytes": 14782
+ },
+ {
+  "number": "109",
+  "name": "adr-109-playtester-annotation-system.md",
+  "title": "ADR-109: Play-Tester Annotation System",
+  "status": "Accepted (Implemented)",
+  "statedDate": "2026-01-22",
+  "session": null,
+  "firstCommit": "2026-01-23",
+  "bytes": 7400
+ },
+ {
+  "number": "110",
+  "name": "adr-110-debug-tools-extension.md",
+  "title": "ADR-110: Debug & Testing Tools Extension",
+  "status": "Accepted (Implemented)",
+  "statedDate": "2026-01-22",
+  "session": null,
+  "firstCommit": "2026-01-23",
+  "bytes": 23681
+ },
+ {
+  "number": "111",
+  "name": "adr-111-extension-ecosystem.md",
+  "title": "ADR-111: Extension Ecosystem",
+  "status": "Draft",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-23",
+  "bytes": 4623
+ },
+ {
+  "number": "112",
+  "name": "adr-112-client-security-model.md",
+  "title": "ADR-112: Client Security Model",
+  "status": "Draft (Research Needed)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-23",
+  "bytes": 6607
+ },
+ {
+  "number": "113",
+  "name": "adr-113-map-position-hints.md",
+  "title": "ADR-113: Map Position Hints",
+  "status": "Superseded by ADR-115",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-24",
+  "bytes": 11521
+ },
+ {
+  "number": "114",
+  "name": "adr-114-browser-platform-package.md",
+  "title": "ADR-114: Browser Platform Package",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-24",
+  "bytes": 7995
+ },
+ {
+  "number": "115",
+  "name": "adr-115-map-export-cli.md",
+  "title": "ADR-115: Map Export CLI",
+  "status": "CLOSED (2026-07-14) — map tooling moves into SharpeeIDE (ADR-154); exit-condition metadata subsumed by ADR-220",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-24",
+  "bytes": 13105
+ },
+ {
+  "number": "116",
+  "name": "adr-116-prompt-to-playable.md",
+  "title": "ADR-116: Prompt-to-Playable (Conversational Story Development)",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-24",
+  "bytes": 22164
+ },
+ {
+  "number": "117",
+  "name": "adr-117-event-handlers-vs-capability-behaviors.md",
+  "title": "ADR-117: Eliminate Broad Use of Event Handlers",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-26",
+  "bytes": 15123
+ },
+ {
+  "number": "118",
+  "name": "adr-118-stdlib-action-interceptors.md",
+  "title": "ADR-118: Stdlib Action Interceptors",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-26",
+  "bytes": 13124
+ },
+ {
+  "number": "119",
+  "name": "adr-119-state-machines.md",
+  "title": "ADR-119: State Machines for Puzzles and Narratives",
+  "status": "IMPLEMENTED (core) — 2026-07-14 (corrected from stale `PROPOSED`)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-27",
+  "bytes": 21700
+ },
+ {
+  "number": "120",
+  "name": "adr-120-engine-plugin-architecture.md",
+  "title": "ADR-120: Engine Plugin Architecture",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-27",
+  "bytes": 10884
+ },
+ {
+  "number": "121",
+  "name": "adr-121-story-runner-architecture.md",
+  "title": "ADR-121: Story Runner Architecture",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-28",
+  "bytes": 8115
+ },
+ {
+  "number": "122",
+  "name": "adr-122-rich-media-and-story-styling.md",
+  "title": "ADR-122: Rich Media and Story Styling",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-28",
+  "bytes": 7589
+ },
+ {
+  "number": "123",
+  "name": "adr-123-typed-daemon-hierarchy.md",
+  "title": "ADR-123: Typed Daemon Hierarchy",
+  "status": "PARTIALLY ACCEPTED (Serialization adopted, class hierarchy rejected)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-29",
+  "bytes": 15449
+ },
+ {
+  "number": "124",
+  "name": "adr-124-entity-annotations.md",
+  "title": "ADR-124: Entity Annotations",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-30",
+  "bytes": 11152
+ },
+ {
+  "number": "125",
+  "name": "adr-125-zifmia-panels.md",
+  "title": "ADR-125: Zifmia Panel and Windowing System",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-01-30",
+  "bytes": 9969
+ },
+ {
+  "number": "126",
+  "name": "adr-126-destination-interceptors-and-room-conditions.md",
+  "title": "ADR-126: Destination Interceptors for Room Entry Conditions",
+  "status": "IMPLEMENTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-09",
+  "bytes": 17273
+ },
+ {
+  "number": "127",
+  "name": "adr-127-location-scoped-interceptors.md",
+  "title": "ADR-127: Location-Scoped Interceptors",
+  "status": "PROPOSED (not yet needed)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-09",
+  "bytes": 3431
+ },
+ {
+  "number": "128",
+  "name": "adr-128-walkthrough-panel.md",
+  "title": "ADR-128: Walkthrough Panel for Zifmia",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-11",
+  "bytes": 8852
+ },
+ {
+  "number": "129",
+  "name": "adr-129-treasure-scoring-to-story-layer.md",
+  "title": "ADR-129: Transactional Score Ledger and Treasure Scoring Split",
+  "status": "ACCEPTED (implemented; status corrected 2026-07-14)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-12",
+  "bytes": 13668
+ },
+ {
+  "number": "130",
+  "name": "adr-130-zifmia-packaging.md",
+  "title": "ADR-130: Zifmia vs Story Installers — Two Separate Products",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-17",
+  "bytes": 8292
+ },
+ {
+  "number": "131",
+  "name": "adr-131-automated-world-explorer.md",
+  "title": "ADR-131: Automated World Explorer (Regression Test Generator)",
+  "status": "Proposed — and **unbuilt** as of 2026-08-05: nothing in `packages/`",
+  "statedDate": "2026-02-18",
+  "session": null,
+  "firstCommit": "2026-02-18",
+  "bytes": 11208
+ },
+ {
+  "number": "132",
+  "name": "adr-132-pc-switching.md",
+  "title": "ADR-132: Player Character Switching",
+  "status": "Accepted",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-18",
+  "bytes": 5867
+ },
+ {
+  "number": "133",
+  "name": "adr-133-structured-text-output.md",
+  "title": "ADR-133: Structured Text Output",
+  "status": "Proposed",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-02-18",
+  "bytes": 7268
+ },
+ {
+  "number": "134",
+  "name": "adr-134-generic-if-transcript-tester.md",
+  "title": "ADR-134: Generic IF Transcript Tester",
+  "status": "Exploratory",
+  "statedDate": "2026-03-05",
+  "session": null,
+  "firstCommit": "2026-03-05",
+  "bytes": 8438
+ },
+ {
+  "number": "135",
+  "name": "adr-135-native-engine-bridge-protocol.md",
+  "title": "ADR-135: Native Engine Bridge Protocol",
+  "status": "Accepted (implemented in `packages/bridge/`)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-03-20",
+  "bytes": 12346
+ },
+ {
+  "number": "136",
+  "name": "adr-136-context-driven-action-menus.md",
+  "title": "ADR-136: Context-Driven Action Menus",
+  "status": "Deferred",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-03-28",
+  "bytes": 15173
+ },
+ {
+  "number": "137",
+  "name": "adr-137-input-modes.md",
+  "title": "ADR-137: Input Modes",
+  "status": "Accepted (partial implementation — GamePrompt and platform consumption complete; full InputMode interface deferred)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-01",
+  "bytes": 9895
+ },
+ {
+  "number": "138",
+  "name": "adr-138-audio-system.md",
+  "title": "ADR-138: Audio System",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-01",
+  "bytes": 44237
+ },
+ {
+  "number": "139",
+  "name": "adr-139-speech-accessibility.md",
+  "title": "ADR-139: Speech Accessibility (Text-to-Speech and Voice Input)",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-01",
+  "bytes": 12967
+ },
+ {
+  "number": "140",
+  "name": "adr-140-entity-helpers.md",
+  "title": "ADR-140: Entity Helper Builders",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-03",
+  "bytes": 13658
+ },
+ {
+  "number": "141",
+  "name": "adr-141-character-model.md",
+  "title": "ADR-141: Character Model",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-03",
+  "bytes": 24295
+ },
+ {
+  "number": "142",
+  "name": "adr-142-conversation-system.md",
+  "title": "ADR-142: Conversation System",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-03",
+  "bytes": 27994
+ },
+ {
+  "number": "143",
+  "name": "adr-143-naval-compass-directions.md",
+  "title": "ADR-143: Location-Relative Direction Vocabularies",
+  "status": "WITHDRAWN",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-03",
+  "bytes": 17404
+ },
+ {
+  "number": "144",
+  "name": "adr-144-information-propagation.md",
+  "title": "ADR-144: Information Propagation",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-05",
+  "bytes": 17153
+ },
+ {
+  "number": "145",
+  "name": "adr-145-npc-goal-pursuit.md",
+  "title": "ADR-145: NPC Goal Pursuit",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-05",
+  "bytes": 14584
+ },
+ {
+  "number": "146",
+  "name": "adr-146-npc-influence.md",
+  "title": "ADR-146: NPC Influence",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-05",
+  "bytes": 10281
+ },
+ {
+  "number": "147",
+  "name": "adr-147-equivalent-objects-and-groups.md",
+  "title": "ADR-147: Equivalent Objects and Groups",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-09",
+  "bytes": 21345
+ },
+ {
+  "number": "148",
+  "name": "adr-148-concealment-action.md",
+  "title": "ADR-148: Concealment Action (HIDE/DUCK BEHIND/UNDER/ON)",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-09",
+  "bytes": 26333
+ },
+ {
+  "number": "149",
+  "name": "adr-149-regions-and-scenes.md",
+  "title": "ADR-149: Regions and Scenes",
+  "status": "ACCEPTED (corrected 2026-07-18, David — both halves shipped since 2026-04: RegionTrait/`createRegion`/`assignRoom`/`isInRegion`/crossing events, SceneTrait/`createScene` + ADR-186 reactions; made load-bearing by ADR-236 Chord regions. The DRAFT marking was stale, not a reflection of open questions.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-13",
+  "bytes": 22037
+ },
+ {
+  "number": "150",
+  "name": "adr-150-entity-query-api.md",
+  "title": "ADR-150: Entity Query API (LINQ-Style)",
+  "status": "DRAFT",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-13",
+  "bytes": 21895
+ },
+ {
+  "number": "151",
+  "name": "adr-151-unity-integration.md",
+  "title": "ADR-151: Unity Integration",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-14",
+  "bytes": 10098
+ },
+ {
+  "number": "152",
+  "name": "adr-152-multiuser-player.md",
+  "title": "ADR-152: Zifmia Server Runtime Host Interface and Pluggable Isolation Backends",
+  "status": "**Abandoned** (2026-04-19) — superseded by decisions recorded in `docs/brainstorm/multiuser/overview.md`.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-18",
+  "bytes": 16077
+ },
+ {
+  "number": "153",
+  "name": "adr-153-multiuser-sharpee-server.md",
+  "title": "ADR-153: Multiuser Sharpee Server",
+  "status": "REPLACED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-19",
+  "bytes": 47746
+ },
+ {
+  "number": "153",
+  "name": "adr-153a-multiuser-server-amendments.md",
+  "title": "ADR-153a: Multiuser Server — Phase-4 Amendments",
+  "status": "REPLACED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-24",
+  "bytes": 17730
+ },
+ {
+  "number": "154",
+  "name": "adr-154-sharpee-ide.md",
+  "title": "ADR-154: Sharpee IDE — Purpose-Built Authoring Environment",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-21",
+  "bytes": 17596
+ },
+ {
+  "number": "155",
+  "name": "adr-155-install-time-story-compilation.md",
+  "title": "ADR-155: Install-Time Story Compilation Pipeline",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-24",
+  "bytes": 12219
+ },
+ {
+  "number": "156",
+  "name": "adr-156-multiuser-browser-client.md",
+  "title": "ADR-156: Multiuser Browser Client",
+  "status": "REPLACED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-24",
+  "bytes": 19192
+ },
+ {
+  "number": "157",
+  "name": "adr-157-action-interceptor-report-result.md",
+  "title": "ADR-157: ActionInterceptor.postReport Returns InterceptorReportResult",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-24",
+  "bytes": 8829
+ },
+ {
+  "number": "158",
+  "name": "adr-158-entity-info-in-message-params.md",
+  "title": "ADR-158: Entity-Valued Message Params Carry `EntityInfo`, Not Bare Names",
+  "status": "ACCEPTED — SUPERSEDED on v2 by ADR-192/199/200",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-24",
+  "bytes": 15928
+ },
+ {
+  "number": "159",
+  "name": "adr-159-persistent-user-identity.md",
+  "title": "ADR-159: Persistent User Identity for Multi-User Rooms",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-25",
+  "bytes": 14219
+ },
+ {
+  "number": "160",
+  "name": "adr-160-engine-state-continuity.md",
+  "title": "ADR-160: Engine-State Continuity for Multi-User Rooms",
+  "status": "PROPOSAL",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-25",
+  "bytes": 21461
+ },
+ {
+  "number": "161",
+  "name": "adr-161-identity-id-handle-passcode.md",
+  "title": "ADR-161: Identity Model — `(Id, Handle, passcode)` with Download/Upload Portability",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-26",
+  "bytes": 15797
+ },
+ {
+  "number": "162",
+  "name": "adr-162-world-model-replication.md",
+  "title": "ADR-162: World-Model Replication for Multiuser Renderers",
+  "status": "REPLACED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-04-27",
+  "bytes": 19026
+ },
+ {
+  "number": "163",
+  "name": "adr-163-channel-service-platform.md",
+  "title": "ADR-163: Channel-Service Platform — Universal Wire and Author-Controlled Media",
+  "status": "ACCEPTED (rewritten 2026-05-02)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-01",
+  "bytes": 41643
+ },
+ {
+  "number": "164",
+  "name": "adr-164-stateless-multiuser-server.md",
+  "title": "ADR-164: Stateless Multi-User Server — Channel I/O on a Per-Turn Worker",
+  "status": "ACCEPTED (revised 2026-04-29)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-01",
+  "bytes": 25251
+ },
+ {
+  "number": "165",
+  "name": "adr-165-renderer-architecture.md",
+  "title": "ADR-165: Renderer Architecture — Consumer-Side Channel I/O",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-01",
+  "bytes": 34960
+ },
+ {
+  "number": "166",
+  "name": "adr-166-lifecycle-channel-stdlib-placement.md",
+  "title": "ADR-166: Lifecycle Channel Lives in Stdlib",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-05",
+  "bytes": 8191
+ },
+ {
+  "number": "167",
+  "name": "adr-167-audio-event-translation-boundary.md",
+  "title": "ADR-167: Audio Event Translation Boundary — Story-Side, Long-Term Stdlib",
+  "status": "ACCEPTED (Phase 3 ships story-side; long-term move to stdlib is a future session)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-05",
+  "bytes": 12001
+ },
+ {
+  "number": "168",
+  "name": "adr-168-story-channels-replace-handlestoryevent.md",
+  "title": "ADR-168: Story-Defined Channels Replace `handleStoryEvent`",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-05",
+  "bytes": 10879
+ },
+ {
+  "number": "169",
+  "name": "adr-169-web-audio-api-fades.md",
+  "title": "ADR-169: Web Audio API for AudioManager — Fade-In/Out and Cross-Fade",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-06",
+  "bytes": 14739
+ },
+ {
+  "number": "170",
+  "name": "adr-170-component-based-theming.md",
+  "title": "ADR-170: Component-Based Theming for the Browser Client",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-07",
+  "bytes": 18167
+ },
+ {
+  "number": "171",
+  "name": "adr-171-dynamic-theme-loading.md",
+  "title": "ADR-171: Dynamic Per-Theme CSS Loading and Story-Shippable Themes",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-08",
+  "bytes": 17825
+ },
+ {
+  "number": "172",
+  "name": "adr-172-spatial-sound-propagation.md",
+  "title": "ADR-172: Spatial Sound Propagation Model",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-08",
+  "bytes": 44588
+ },
+ {
+  "number": "173",
+  "name": "adr-173-wall-adjacency-primitive.md",
+  "title": "ADR-173: Wall Adjacency Primitive",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-08",
+  "bytes": 36393
+ },
+ {
+  "number": "174",
+  "name": "adr-174-decoration-and-prose-pipeline.md",
+  "title": "ADR-174: Decoration Architecture and Engine-Internal Prose Pipeline",
+  "status": "ACCEPTED — IMPLEMENTED (Phases 1–3 complete; `@sharpee/text-service` deleted)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-09",
+  "bytes": 46737
+ },
+ {
+  "number": "175",
+  "name": "adr-175-zifmia-multiuser-product.md",
+  "title": "ADR-175: Zifmia — Multi-User Product Surface and Rebuild",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-10",
+  "bytes": 47136
+ },
+ {
+  "number": "176",
+  "name": "adr-176-multi-user-component-vocabulary.md",
+  "title": "ADR-176: Multi-User Component Vocabulary (Addendum to ADR-170)",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-11",
+  "bytes": 31055
+ },
+ {
+  "number": "177",
+  "name": "adr-177-multiuser-corrected.md",
+  "title": "ADR-177: Multi-User Web Product — Corrected Architecture",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-12",
+  "bytes": 36104
+ },
+ {
+  "number": "178",
+  "name": "adr-178-story-runtime-baseline.md",
+  "title": "ADR-178: Story Runtime Baseline — Platform-Declared Peer Set",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-13",
+  "bytes": 19761
+ },
+ {
+  "number": "179",
+  "name": "adr-179-zifmia-published-image.md",
+  "title": "ADR-179: Zifmia — Published Container Image",
+  "status": "PROPOSED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-05-13",
+  "bytes": 20568
+ },
+ {
+  "number": "180",
+  "name": "adr-180-build-test-devkit.md",
+  "title": "ADR-180: Build/Test devkit and `@sharpee/bootstrap`",
+  "status": "ACCEPTED (amended — see Amendment 1)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-18",
+  "bytes": 17649
+ },
+ {
+  "number": "181",
+  "name": "adr-181-sharpee-error-translation.md",
+  "title": "ADR-181: Sharpee Error Translation (author-facing runtime errors)",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-18",
+  "bytes": 3762
+ },
+ {
+  "number": "182",
+  "name": "adr-182-ide-syntax-highlighting-tree-sitter.md",
+  "title": "ADR-182: IDE syntax highlighting via tree-sitter",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-19",
+  "bytes": 6587
+ },
+ {
+  "number": "183",
+  "name": "adr-183-author-layout-macros.md",
+  "title": "ADR-183: Author layout macros (parameterized decorations)",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-19",
+  "bytes": 14781
+ },
+ {
+  "number": "184",
+  "name": "adr-184-ide-project-introspection.md",
+  "title": "ADR-184: IDE project introspection via runtime world model",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-19",
+  "bytes": 17791
+ },
+ {
+  "number": "185",
+  "name": "adr-185-ide-standalone-authoring-tool.md",
+  "title": "ADR-185: The IDE is a standalone authoring tool (npm platform, no platform build)",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-19",
+  "bytes": 16099
+ },
+ {
+  "number": "186",
+  "name": "adr-186-lifecycle-transitions-first-class-callbacks.md",
+  "title": "ADR-186: Turn-cycle lifecycle transitions are first-class typed callbacks",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-22",
+  "bytes": 13703
+ },
+ {
+  "number": "187",
+  "name": "adr-187-devkit-author-only-split-inrepo-build.md",
+  "title": "ADR-187: devkit is author-only; the in-repo platform build is a separate process",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-22",
+  "bytes": 13313
+ },
+ {
+  "number": "188",
+  "name": "adr-188-themes-as-plugins.md",
+  "title": "ADR-188: Themes are plugins; platform-browser owns the theme engine",
+  "status": "ACCEPTED (delivery model revised 2026-06-23 — see Revision below)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-22",
+  "bytes": 15443
+ },
+ {
+  "number": "189",
+  "name": "adr-189-entity-type-default-traits-registry.md",
+  "title": "ADR-189: Entity types declare their default traits via a registry",
+  "status": "ACCEPTED (2026-06-24)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-24",
+  "bytes": 8737
+ },
+ {
+  "number": "190",
+  "name": "adr-190-natural-language-list-rendering.md",
+  "title": "ADR-190: Natural-language list rendering in the language layer",
+  "status": "ACCEPTED (2026-06-24)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-24",
+  "bytes": 9504
+ },
+ {
+  "number": "191",
+  "name": "adr-191-play-it-now-browser-playground.md",
+  "title": "ADR-191: \"Play It Now\" — an in-browser Sharpee playground on the website",
+  "status": "ACCEPTED (2026-07-19, David, session b381db — all four open questions ruled via interview: Q-1 browser-clean compile path closed on shipped G2 evidence; Q-2 lazy-load on intent; Q-3 CodeMirror 6 first, Monaco at Mode B; Q-4 repokit `--playground` emit → `website/public/playground/v<X.Y.Z>/`. Site-reality amendment recorded same session: playground lands on the Next.js site as website-content plan Phase 5.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-25",
+  "bytes": 15784
+ },
+ {
+  "number": "192",
+  "name": "adr-192-phrase-algebra-phrase-model-assembler-core.md",
+  "title": "ADR-192: Phrase Algebra — Phrase Model & Assembler Core",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-26",
+  "bytes": 18848
+ },
+ {
+  "number": "193",
+  "name": "adr-193-phrase-algebra-state-derived-adjectives.md",
+  "title": "ADR-193: Phrase Algebra — State-Derived Adjectives",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 5682
+ },
+ {
+  "number": "194",
+  "name": "adr-194-phrase-algebra-contents-atom.md",
+  "title": "ADR-194: Phrase Algebra — Contents Atom & the Entity→NounPhrase Bridge",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 5696
+ },
+ {
+  "number": "195",
+  "name": "adr-195-phrase-algebra-slot-atom.md",
+  "title": "ADR-195: Phrase Algebra — Slot Atom & the Contribution Channel",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-28",
+  "bytes": 14977
+ },
+ {
+  "number": "196",
+  "name": "adr-196-phrase-algebra-optional-choice-text-state.md",
+  "title": "ADR-196: Phrase Algebra — Optional / Choice Atoms & the Text-State Store",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-29",
+  "bytes": 20187
+ },
+ {
+  "number": "197",
+  "name": "adr-197-phrase-algebra-pronoun-atom.md",
+  "title": "ADR-197: Phrase Algebra — Pronoun Atom & Last-Mentioned Reference",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 6632
+ },
+ {
+  "number": "198",
+  "name": "adr-198-phrase-algebra-numeral-atom.md",
+  "title": "ADR-198: Phrase Algebra — Numeral Atom",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 5488
+ },
+ {
+  "number": "199",
+  "name": "adr-199-phrase-algebra-verb-atom-subject-agreement.md",
+  "title": "ADR-199: Phrase Algebra — Verb Atom & Subject Agreement",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 13229
+ },
+ {
+  "number": "200",
+  "name": "adr-200-phrase-algebra-verbatim-atom.md",
+  "title": "ADR-200: Phrase Algebra — Verbatim Atom",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-27",
+  "bytes": 5992
+ },
+ {
+  "number": "201",
+  "name": "adr-201-dialogue-speech-emission.md",
+  "title": "ADR-201: Dialogue & Speech Emission, and the Structural Realization Mandate",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 20653
+ },
+ {
+  "number": "202",
+  "name": "adr-202-structural-realization-mandate.md",
+  "title": "ADR-202: The Structural Realization Mandate",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 9451
+ },
+ {
+  "number": "203",
+  "name": "adr-203-npc-attribution-speaker-agreement.md",
+  "title": "ADR-203: NPC Attribution Speaker Agreement — Promoting the NPC Speaker Param",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 10293
+ },
+ {
+  "number": "204",
+  "name": "adr-204-verb-pluralization-se-stem-heuristic.md",
+  "title": "ADR-204: Verb Pluralization — `-se`/`-ze` Stem Heuristic Fix",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 8402
+ },
+ {
+  "number": "205",
+  "name": "adr-205-catalog-wide-subject-verb-agreement.md",
+  "title": "ADR-205: Catalog-Wide Subject-Verb Agreement",
+  "status": "REJECTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 5386
+ },
+ {
+  "number": "206",
+  "name": "adr-206-game-message-param-contract.md",
+  "title": "ADR-206: `game.message` Render-Param Contract (`params` nesting)",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-06-30",
+  "bytes": 7441
+ },
+ {
+  "number": "207",
+  "name": "adr-207-capability-registry-engine-owned.md",
+  "title": "ADR-207: Capability Registry is Engine-Owned, not Process-Global",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-02",
+  "bytes": 18485
+ },
+ {
+  "number": "208",
+  "name": "adr-208-interceptor-registry-engine-owned.md",
+  "title": "ADR-208: Action-Interceptor Registry is World-Owned, not Process-Global",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-02",
+  "bytes": 12614
+ },
+ {
+  "number": "209",
+  "name": "adr-209-room-description-snippets.md",
+  "title": "ADR-209: Room-Description Snippets — Author-Written Text Spliced at Explicit Markers",
+  "status": "ACCEPTED — IMPLEMENTED (commits `354547a7`, `b56a1827`, 2026-07-07/08). Superseded in part by ADR-211 (authoring surface: verbatim splice, author-facing `mentions`, the selector dialect); machinery decisions remain in force.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-03",
+  "bytes": 19020
+ },
+ {
+  "number": "210",
+  "name": "adr-210-story-language.md",
+  "title": "ADR-210: Chord — The Sharpee Story Language, External Author Syntax Compiled to Platform Registries",
+  "status": "ACCEPTED",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-10",
+  "bytes": 22251
+ },
+ {
+  "number": "211",
+  "name": "adr-211-description-variety-phrase-system.md",
+  "title": "ADR-211: Description Variety Rides the Phrase System — Bare Fragments, Platform-Owned Joining, Condition-Gated Snippets",
+  "status": "ACCEPTED (2026-07-12 — Q1–Q7 resolved by David; each resolution recorded inline in §Open questions)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-12",
+  "bytes": 27254
+ },
+ {
+  "number": "212",
+  "name": "adr-212-slot-contributions-as-data.md",
+  "title": "ADR-212: Slot Contributions as Data — a Declarative Entry Registry Behind `{slot:here}`",
+  "status": "ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 seam now, Q2 engine, Q3 zoo migrates in-package, Q4 any slot key)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-13",
+  "bytes": 13264
+ },
+ {
+  "number": "213",
+  "name": "adr-213-removed-from-play-signal.md",
+  "title": "ADR-213: Removed-from-Play — a Witnessed Removal Signal at the `removeEntity` Choke Point",
+  "status": "ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 pre-deletion live entity, Q2 seam only, Q3 mint `remove` now, Q4 orphaning unsignaled)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-13",
+  "bytes": 13201
+ },
+ {
+  "number": "214",
+  "name": "adr-214-chord-platform-parity.md",
+  "title": "ADR-214: Chord Authoring Parity with the Sharpee Platform (100% Sharpee == 100% Chord)",
+  "status": "ACCEPTED (2026-07-14 — all six open questions resolved via interview; accepted by David) · AMENDED 2026-07-15 (§1a: bidirectional two-Ways parity + CAN/CHORD-GAP/SHARPEE-GAP/HATCH taxonomy; capability matrix supersedes ADR-222's DZ backlog)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 22095
+ },
+ {
+  "number": "215",
+  "name": "adr-215-chord-extensions-and-combat.md",
+  "title": "ADR-215: Chord Extension-Use Surface & Combat",
+  "status": "ACCEPTED (2026-07-14 — direction fixed by ADR-214 §5/OQ2/OQ6; designed via interview the same session; all six open questions resolved; third-party extensions deferred to a later ADR)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 11711
+ },
+ {
+  "number": "216",
+  "name": "adr-216-chord-emit-payload-and-media.md",
+  "title": "ADR-216: Chord Emit Payload & Media Channels",
+  "status": "ACCEPTED (2026-07-14 — direction fixed by ADR-214 §6/OQ3; designed via interview the same session; all six open questions resolved)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 10028
+ },
+ {
+  "number": "217",
+  "name": "adr-217-chord-timer-controls.md",
+  "title": "ADR-217: Chord Timer & Scheduler Controls",
+  "status": "ACCEPTED (2026-07-14 — direction fixed by ADR-214 §4/OQ4; designed via interview the same session; all five open questions resolved)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 8717
+ },
+ {
+  "number": "218",
+  "name": "adr-218-chord-foundations.md",
+  "title": "ADR-218: Chord Foundations — Catalog Adjectives, Door Loading, and Capability-Dispatch Fallback",
+  "status": "ACCEPTED (2026-07-14 — foundations design for ADR-214 roadmap steps 1–3; all open questions resolved via interview, three spawned dedicated ADRs 219/220/221)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 18854
+ },
+ {
+  "number": "219",
+  "name": "adr-219-liquids-and-pouring.md",
+  "title": "ADR-219: Liquids & Pouring",
+  "status": "ACCEPTED (2026-07-14 — spun out of ADR-218 §1b, then designed via interview the same session; all four open questions resolved)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 7263
+ },
+ {
+  "number": "220",
+  "name": "adr-220-doors-and-portals.md",
+  "title": "ADR-220: Doors & Portals",
+  "status": "ACCEPTED (2026-07-14 — designed via interview the same session; principle, mechanism, and `between`-retention all resolved)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 6706
+ },
+ {
+  "number": "221",
+  "name": "adr-221-capability-dispatch-fallback-wiring.md",
+  "title": "ADR-221: Capability-Dispatch Fallback Wiring (implementation)",
+  "status": "ACCEPTED — implementation-level (2026-07-14; deferred from ADR-218 §3, then designed via interview the same session; all three open questions resolved)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-14",
+  "bytes": 6100
+ },
+ {
+  "number": "222",
+  "name": "adr-222-elegance-parity-seam-catalog.md",
+  "title": "ADR-222: Elegance Parity — Chord as the Elegance Oracle for the Sharpee API",
+  "status": "ACCEPTED (2026-07-15 — principle + seam taxonomy + friendly-zoo catalog; all open questions resolved via interview, accepted by David) · AMENDED 2026-07-15 (DZ-1…11 Dungeo backlog table superseded by the capability matrix; §Decision 1–4 unchanged and authoritative)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-15",
+  "bytes": 19792
+ },
+ {
+  "number": "223",
+  "name": "adr-223-npc-four-layer-separation.md",
+  "title": "ADR-223: The Four-Layer NPC Separation — Agent / Daemon / Health / Personhood",
+  "status": "ACCEPTED (2026-07-15 — umbrella model + approach + child roadmap; all five open questions resolved via interview, accepted by David; adr-review clean). Each child (A–D) graduates to its own ADR + plan under the platform-change gate.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-15",
+  "bytes": 16341
+ },
+ {
+  "number": "224",
+  "name": "adr-224-conditional-hazard-death.md",
+  "title": "ADR-224: Conditional / Hazard Death — a First-Class Player-Death Model",
+  "status": "ACCEPTED (2026-07-15 — all five open questions resolved via interview, accepted by David; adr-review clean)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-15",
+  "bytes": 9946
+ },
+ {
+  "number": "225",
+  "name": "adr-225-parser-meta-verb-layer.md",
+  "title": "ADR-225: The Standard IF Parser / Meta-Verb Layer",
+  "status": "ACCEPTED (2026-07-15 — all three open questions resolved via interview, accepted by David; adr-review clean)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-15",
+  "bytes": 5970
+ },
+ {
+  "number": "226",
+  "name": "adr-226-health-trait.md",
+  "title": "ADR-226: `HealthTrait` — The Unified Creature Life-State Model (ADR-223 Child A)",
+  "status": "ACCEPTED (2026-07-15 — all three open questions resolved via interview; adr-review 15/15 clean after F1–F4 fixes). Graduates ADR-223 child **A**. Authorizes **no code** — implementation waits on a separate platform go-ahead under CLAUDE.md's discussion gate.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-15",
+  "bytes": 14709
+ },
+ {
+  "number": "227",
+  "name": "adr-227-death-trigger-patterns.md",
+  "title": "ADR-227: Death Triggers Use the Prescribed Logic Surfaces — no new mechanism",
+  "status": "ACCEPTED (2026-07-16 — all three open questions resolved via interview, accepted by David) — child of ADR-224",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-16",
+  "bytes": 15180
+ },
+ {
+  "number": "228",
+  "name": "adr-228-interceptor-lifecycle-engine.md",
+  "title": "ADR-228: Interceptor Lifecycle Engine — the ADR-118 contract becomes a mechanism",
+  "status": "ACCEPTED (2026-07-16 — all forks ruled by David, session 3ed9fb) — refines ADR-118",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-16",
+  "bytes": 10489
+ },
+ {
+  "number": "229",
+  "name": "adr-229-interceptor-surface-completion.md",
+  "title": "ADR-229: Interceptor Surface Completion — post-228 rulings",
+  "status": "ACCEPTED (2026-07-16 — all five rulings by David, session 2c43df)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-16",
+  "bytes": 8813
+ },
+ {
+  "number": "230",
+  "name": "adr-230-grammar-reachability-completion.md",
+  "title": "ADR-230: Grammar Reachability Completion — closing the parser gap ADR-229 assumed closed",
+  "status": "ACCEPTED (2026-07-16 — all five open questions ruled by David via interview, session 907f28)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 11534
+ },
+ {
+  "number": "231",
+  "name": "adr-231-player-surface-contract-rulings.md",
+  "title": "ADR-231: Player-Surface Contract Rulings — the phrasebook verification gaps",
+  "status": "ACCEPTED (2026-07-17 — all six open questions ruled by David via interview, session 1befbd)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 19052
+ },
+ {
+  "number": "232",
+  "name": "adr-232-chord-first-web-presence.md",
+  "title": "ADR-232: Chord-First Web Presence — one site, author-facing front door",
+  "status": "DRAFT (2 open questions — Q-2 resolved 2026-07-19; Q-1 partially ruled)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 9463
+ },
+ {
+  "number": "233",
+  "name": "adr-233-chord-go-live-gate.md",
+  "title": "ADR-233: Chord Go-Live Gate — what \"ready for outside authors\" means",
+  "status": "ACCEPTED (2026-07-17 — all four open questions ruled by David, session f5c22c; adr-review passed post-fix)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 13317
+ },
+ {
+  "number": "234",
+  "name": "adr-234-chord-door-loading.md",
+  "title": "ADR-234: Chord Door Loading — `through` exit sugar",
+  "status": "ACCEPTED (2026-07-17 — all four open questions ruled by David, session 615882; adr-review 15/16, fixes applied pre-flip)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 11030
+ },
+ {
+  "number": "235",
+  "name": "adr-235-extension-surface-golive-disposition.md",
+  "title": "ADR-235: Extension Surface — Go-Live Disposition (adopts ADR-215/216) & Behavior-Hatch Resolution",
+  "status": "ACCEPTED (2026-07-17 — all three open questions ruled by David, session 615882; adr-review 14/14 pre-flip)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 9144
+ },
+ {
+  "number": "236",
+  "name": "adr-236-chord-regions.md",
+  "title": "ADR-236: Chord Regions — named room groups with attached daemons",
+  "status": "ACCEPTED (2026-07-17 — all 4 open questions ruled by David, session d2863f; adr-review 14/14, 3 small fixes applied pre-flip)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-17",
+  "bytes": 14870
+ },
+ {
+  "number": "237",
+  "name": "adr-237-loader-helpers-boundary.md",
+  "title": "ADR-237: Loader–helpers boundary — `@sharpee/helpers` is author-facing only",
+  "status": "ACCEPTED (2026-07-18 — all four open questions ruled by David, session d02586; adr-review 12/15, D4 door-side contract fix applied pre-flip)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-18",
+  "bytes": 7537
+ },
+ {
+  "number": "238",
+  "name": "adr-238-two-sided-door-presence.md",
+  "title": "ADR-238: Two-sided door presence — a door is located in BOTH of its rooms",
+  "status": "ACCEPTED (2026-07-18 — David's ruling, session d02586; implemented with ADR-234 Phase 3)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-18",
+  "bytes": 4237
+ },
+ {
+  "number": "239",
+  "name": "adr-239-chord-topic-conversation.md",
+  "title": "ADR-239: Chord topic conversation — exposing ask/tell topics to on-clauses",
+  "status": "ACCEPTED (2026-07-18 — all three open questions ruled by David, session d02586; adr-review 13/14 post-flip, AC enumeration + stale-ref fixes applied; D3 AMENDED same day by David — `define topics for <entity>` table block supersedes the clause-header spelling)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-18",
+  "bytes": 8842
+ },
+ {
+  "number": "240",
+  "name": "adr-240-live-derived-state.md",
+  "title": "ADR-240: Live derived state — point-of-use evaluation replaces recompute-and-stamp",
+  "status": "ACCEPTED (2026-07-18 — all three open questions ruled by David, session 80ff54: one generic per-world evaluator registry in world-model; ALL blocks through the seam; D4 deletion list audit-confirmed complete. adr-review 15/15 post-interview.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-18",
+  "bytes": 9375
+ },
+ {
+  "number": "241",
+  "name": "adr-241-chord-dynamic-channels.md",
+  "title": "ADR-241: Chord dynamic channels — story-registered channels of any content, from pure IR",
+  "status": "ACCEPTED (2026-07-18 — all five open questions ruled by David via interview, session 1e7652: `main` default bed; bare `stop ambient` = default bed only; channel words declared beyond the implied defaults; `define ambient`/`define layer` one-liners; platform generic panel for unrendered channels. adr-review 14/14 post-interview; custom-UI scope note recorded.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-18",
+  "bytes": 11871
+ },
+ {
+  "number": "242",
+  "name": "adr-242-chord-proper-persons.md",
+  "title": "ADR-242: Chord person identity — proper names, articles, and pronouns",
+  "status": "ACCEPTED (2026-07-19, David, session b381db — both open questions ruled via interview: Q-1 block-with-named-rows definition spelling; Q-2 no injected default — by-number fallback stands, pronouns are declared. adr-review 13/13 post-interview; extendLanguage seam + second-table fixes folded.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-19",
+  "bytes": 13855
+ },
+ {
+  "number": "243",
+  "name": "adr-243-chord-story-person.md",
+  "title": "ADR-243: Chord Story Person — first/second/third narration",
+  "status": "DRAFT (all questions resolved 2026-07-19 — pending ACCEPTED flip)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-19",
+  "bytes": 6402
+ },
+ {
+  "number": "244",
+  "name": "adr-244-website-minimal-scroll-ia.md",
+  "title": "ADR-244: Website docs IA — minimal-scroll pages, sticky rail, accordion navigation",
+  "status": "ACCEPTED (2026-07-19 — all decisions ruled by David directly in session 7692ef during the stdlib Phase 13 review; no open questions.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-19",
+  "bytes": 5136
+ },
+ {
+  "number": "245",
+  "name": "adr-245-chord-phrase-books.md",
+  "title": "ADR-245: Chord phrasebooks — named, predicated phrase collections",
+  "status": "ACCEPTED (2026-07-19 — all six open questions ruled by David via interview, session 7692ef: fallback below story overrides; any-key partial coverage; predicate-driven activation, first-match in declaration order, derived not stored; in-story block + `use` distribution; person-orthogonal via `{You}` realization; named \"phrasebook\" with the docs cookbook renaming. adr-review 9/15 same-session: coherent as a decision record; all FAILs are the deliberate stop-at-intent — implementation gated on a design-level companion, see Decision closing. Amended 2026-07-20, session 171837: proposed language example added at David's ask — entries are ordinary story phrase definitions in a `define phrasebook … end phrasebook` block; `import phrasebook <file>` for author file organization; `use phrasebook <name> [while …]` distribution spelling; single kebab book names; variant state per (book, key); generalized `import` parked for its own ADR. Illustrative for grammar detail — the design companion owns final grammar/IR.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-19",
+  "bytes": 15387
+ },
+ {
+  "number": "246",
+  "name": "adr-246-chord-perception-predicates.md",
+  "title": "ADR-246: Chord perception predicates — `can see` / `can reach` on the real services",
+  "status": "ACCEPTED (2026-07-19 — all three open questions ruled by David via interview, session 7692ef: both surfaces ship (`cannot see` + `hidden` state adjective); full perception (darkness counts, no carve-outs) with the per-observer override hook required both directions — night-vision goggles named as an acceptance scenario; `can reach` upgrades in the same pass. adr-review 11/13 same-session: ready as a decision record; both FAILs are companion-scope — implementation gated on the design-level companion (grammar productions, delegation shapes, goggles surface, parse-negative fates incl. two-word `can not`) plus David's explicit go-ahead.)",
+  "statedDate": null,
+  "session": "findings, all runtime-grounded:",
+  "firstCommit": "2026-07-19",
+  "bytes": 8335
+ },
+ {
+  "number": "247",
+  "name": "adr-247-getcontents-worn-default.md",
+  "title": "ADR-247: `getContents()` includes worn items by default (opt-out, not opt-in)",
+  "status": "ACCEPTED + IMPLEMENTED (2026-07-20 accepted, session 17e36e — all three Open Questions resolved via interview. Amended 2026-07-21, session 99aee6: Q2's full-census audit clause SUPERSEDED by David's ruling — targeted actor-scoped audit instead; see Decision. IMPLEMENTED 2026-07-21, session 99aee6, on David's go-ahead: filter deleted, getCarriedAndWorn added, includeWorn + ClothingTrait removed, 60-site audit at docs/work/adr-247-getcontents-worn-default/audit.md; all package suites + dungeo chain + fernhill green, --browser build clean.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-20",
+  "bytes": 7583
+ },
+ {
+  "number": "248",
+  "name": "adr-248-restart-via-platform-events.md",
+  "title": "ADR-248: RESTART delegates through platform events — client reboot, not in-place rebuild",
+  "status": "ACCEPTED (2026-07-20 — all four Open Questions resolved via interview, session 171837; adr-review gaps folded in with David's OK)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-20",
+  "bytes": 9219
+ },
+ {
+  "number": "249",
+  "name": "adr-249-chord-comments.md",
+  "title": "ADR-249: Chord comments — top-level `##` lines only",
+  "status": "ACCEPTED (2026-07-20 — all six syntax rulings made by David in-session 99aee6; adr-review 13/13 same session; ACCEPTED flip + platform go-ahead given by David same session, Phase 0a gate of docs/work/adr-245-phrasebooks/plan.md)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-21",
+  "bytes": 10296
+ },
+ {
+  "number": "250",
+  "name": "adr-250-chord-phrasebook-design.md",
+  "title": "ADR-250: Chord phrasebook design — grammar, IR, resolution seam, variant state",
+  "status": "ACCEPTED (2026-07-21 — David, \"proceed\", closing the Phase 3 gate of docs/work/adr-245-phrasebooks/plan.md: ACCEPTED flip + platform-change go-ahead in one. Zero Open Questions: the ADR-245 Q-2 dotted-key question was re-confirmed NOT legal (\"we're not surfacing Sharpee constructs in Chord\"); intent clarified (easier phrase blocks + predicated authorial voice; `use phrasebook` retained; default-phrasebook case named); adr-review clean after the used-book manifest-keys gap fix.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-21",
+  "bytes": 28195
+ },
+ {
+  "number": "251",
+  "name": "adr-251-chord-generalized-import.md",
+  "title": "ADR-251: Chord generalized `import` — multi-file story sources",
+  "status": "ACCEPTED + IMPLEMENTED (2026-07-21 — all five decisions ruled by David directly, session eb743f: story block main-file-only; imports carry complete declarations only, no partials; `.chord` extension assumed; no nested imports; single bare `import \"<file>\"` folding `import phrasebook`; compiler appends `.chord`, resolver stays dumb. No Open Questions. adr-review 13/15 same-session → both FAILs closed by the `## Acceptance` worked-example section added before the flip. Supersedes ADR-250 D2 in part; ADR-250 carries a supersession pointer here. IMPLEMENTED same session via `docs/work/adr-251-generalized-import/plan.md` Phases 1–4, David-gated per phase: chord parser/AST/splice/diagnostics + devkit fs resolver + browser inline-bundle resolver; regression green — chord 452, devkit 45, dungeo `--browser` clean, fernhill 496/496. One correction folded back mid-implementation: the \"both hosts already wire `importResolver`\" claim in Consequences was false — neither did; both were wired in Phases 2–3.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-21",
+  "bytes": 12896
+ },
+ {
+  "number": "252",
+  "name": "adr-252-story-first-class-browser-build.md",
+  "title": "ADR-252: `.story` as a first-class browser build input",
+  "status": "ACCEPTED (2026-07-22 — all decisions ruled by David directly, session 74219a. Shape: a bare `.story` builds to a browser app with no flag and no `package.json`; all metadata from the compiled Story IR; client config as `story`-header `key:` lines; one build core across devkit + repokit; generated browser entry with a hand-written escape hatch retired by ADR-253. Open-questions interview complete (same session): no build flag / browser default / `client:` field for non-default clients; TS and `.story` are distinct mutually-exclusive project kinds; omitted `default-theme` → `classic` always. No Open Questions remain. adr-review same session: 12/15 clean → four minor edits folded before the flip (D3 grammar hedge resolved to confirmed no-change + unknown-key warning; rejection-cases list added; byte-equivalent AC softened to identical-modulo-build-stamp; `--browser` migration surface enumerated). **Amended 2026-07-22 (same session):** D3 gains `theme:` and `template:` header fields — Chord-native declaration of the theme and template/layout *packages*, reconciling pre-Chord ADR-188 (which declared them via `package.json`) into the package.json-free `.story` world; the build validates a declared `template:` against the story's channels (error on a channel the template requires but the story lacks; warn on a story channel the template does not place); `default-theme:` now defaults to a declared `theme:` before `classic`. Not implemented.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-22",
+  "bytes": 17773
+ },
+ {
+  "number": "253",
+  "name": "adr-253-channel-return-and-dom-render.md",
+  "title": "ADR-253: Channel `return` and render-by-DOM-name convention",
+  "status": "ACCEPTED (2026-07-22, session 74219a — design ruled by David directly. Pivot from the original \"declarative renderers in Chord\" stub: there is NO render construct. A channel `return`s any construct (a field, a text template, or a phrase); its value renders into a DOM element named for the channel, and an author customizes placement via a theme/layout package (ADR-188, extended from CSS-only to DOM-contributing) — no Chord render syntax, no TypeScript. `take` + `from event` collapse into one `return <construct> from <event>` line; `take` is removed. All prior open questions dissolved by the pivot. adr-review same session: found a seam (D3 leaned on an unspecified ADR-252 template capability); resolved by David to the theme/plugin placement path, and the D2 non-string rendering contract clarified — both folded before this flip. No Open Questions remain. Not implemented.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-22",
+  "bytes": 11410
+ },
+ {
+  "number": "254",
+  "name": "adr-254-chord-single-token-labels.md",
+  "title": "ADR-254: Chord labels are single kebab-case tokens — no dotted keys",
+  "status": "ACCEPTED (2026-07-22 — all decisions ruled by David directly, session 74219a: `.` is illegal in every Chord label/key (all label kinds, one uniform rule); dotted keys \"do not fit in Chord\"; its own cross-cutting ADR, sequenced before ADR-253 because it feeds the renderer naming. Open-questions interview complete (same session): no platform-event carve-out — Chord never references platform events with dotted keys (verified zero `.story` usage; `if.event.*` is internal binding, not an author label); grammar change and fernhill + friendly-zoo migration land atomically. No Open Questions remain. Multi-ADR review (252/253/254) same session: 14/14 per-ADR, 0 hard contradictions; the only cross-ADR drift lived in the 253 stub (dotted example + missing pointer), fixed before this flip. Not implemented.)",
+  "statedDate": null,
+  "session": "818d28. The `chord-language.md` §5.2/§5.3 and website guide edits — which",
+  "firstCommit": "2026-07-22",
+  "bytes": 13088
+ },
+ {
+  "number": "255",
+  "name": "adr-255-alias-catalog.md",
+  "title": "ADR-255 Appendix — Standard-action message override alias catalog",
+  "status": null,
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-22",
+  "bytes": 53867
+ },
+ {
+  "number": "255",
+  "name": "adr-255-message-override-acl.md",
+  "title": "ADR-255: Standard-action message override via a curated kebab ACL",
+  "status": "ACCEPTED (2026-07-22, session 818d28) — seven decisions ruled by David directly via the open-questions interview: dedicated `override message` / `override messages <locale>` constructs (D1, D2) with full `define phrase` body parity (D1); hand-maintained catalog on the `<action>-<message-key>` convention (D2 + Q-4a); all standard messages overridable (D3); Interface-Contract-3 split (D4) with loader-side completeness pinning (D5); story-wide-default precedence (D6); full 734-alias catalog authored in the companion appendix (D7). All Open Questions resolved (section removed); `adr-review` clean after three fixes (stale status line, missing Acceptance section, decision ordering). Not implemented.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-22",
+  "bytes": 13168
+ },
+ {
+  "number": "256",
+  "name": "adr-256-event-type-acl.md",
+  "title": "ADR-256: story-loader translates Chord event ids to platform event ids",
+  "status": "ACCEPTED (2026-07-22, session 818d28) — adds the Chord-event-id → platform-event-id translation that lets Chord be dotless (ADR-254) while the Sharpee/TS platform keeps its dotted event ids. Greenfield: verified no such translation exists today (emit/channel/machine events pass through verbatim). Lives in `@sharpee/story-loader` to keep the Chord compiler platform-free. `adr-review` clean (254+256) after three fixes: ADR-254 §D2 event-type amendment, this ADR's Acceptance section, emit-seam marked TBD. **IMPLEMENTED** (2026-07-23, session 341218 confirmation): the translation ships as `packages/story-loader/src/event-id-map.ts`, wired into `loader.ts`.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-22",
+  "bytes": 7747
+ },
+ {
+  "number": "257",
+  "name": "adr-257-chord-language-version.md",
+  "title": "ADR-257: Chord language version",
+  "status": "ACCEPTED (2026-07-23, session 9a9ec9 — all Open Questions resolved via the adr-interview, then adr-review (15/17 → fixes folded: `## Acceptance` section added, IR-stamping site + CLI files named, `StoryIR.languageVersion` placement pinned). Direction from David: \"Chord as a language is 1.0.0 (unclear how we set/track that).\" This ADR gives the language its own semantic version, independent of the `@sharpee/*` lockstep. Resolutions: Q1 (CLI surface) → a one-line `Sharpee X · Chord Y` (D4); Q2 (IR-field contract) → informational, via D3's A/B breaking-change split; Q3 (governance) → an enforced `chord.ebnf` surface pin (D5). **Implemented session 9a9ec9 (2026-07-23):** `CHORD_LANGUAGE_VERSION = '1.0.0'` in `packages/chord/src/version.ts` (barrel-exported); additive `StoryIR.languageVersion` stamped by the analyzer; `sharpee --version` → `Sharpee 3.3.0 · Chord 1.0.0`, `compose` echoes it; the `chord.ebnf` pin (`chord/tests/language-version.test.ts`) + the loader-ignores test (`story-loader/tests/language-version.test.ts`) are live; doc headers state Chord 1.0.0. chord 476 / story-loader / devkit 67 green.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-23",
+  "bytes": 14328
+ },
+ {
+  "number": "258",
+  "name": "adr-258-ide-chord-authoring-environment.md",
+  "title": "ADR-258: The IDE is a Chord authoring environment (TypeScript author path dropped)",
+  "status": "ACCEPTED (2026-07-23, session 341218) — the IDE becomes a Chord authoring environment and the TypeScript author path is dropped (D1). Highlighting is an in-process Swift lexer port pinned by a TS-side golden fixture (D7); the project tree is Story-IR-sourced, not world-introspected (D6); Problems is fed by structured Chord diagnostics over `compose --json` (D5). Open Questions resolved by `adr-interview`; `adr-review` 9/15 → **15/15** after three blocker fixes (atomic-load vs. the live tree, the undercounted `compose` mode, the conformance pin with no CI to fail). Depends on ADR-259 (ACCEPTED). **IMPLEMENTED 2026-07-27** — platform half session 834109, Swift/Mac half session 59006f (see the Implementation addendum below).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-23",
+  "bytes": 34044
+ },
+ {
+  "number": "259",
+  "name": "adr-259-chord-browser-build-hatch-modules.md",
+  "title": "ADR-259: The Chord browser build supports hatch modules (full compile route)",
+  "status": "ACCEPTED (2026-07-23, session 341218) — the Chord browser build gains a hatch route: `hasHatches` selects it rather than failing (D1), modules reach the browser through story-loader's existing injection seam by static import (D2), and a build-time bind check replaces typechecking (D5). Open Questions resolved by `adr-interview`; `adr-review` 11/14 → **14/14** after three fixes (D2's import-specifier/map-key split, D5's Node-loadable bind copies, D3's false story-agnostic premise). **Amended 2026-07-23 (session 7f133e)**: D6 gains the CLI esbuild transpile, retiring the two-host divergence — implementation planning found D6 and D8 contradicting each other, since D8 moves away the `tsc` D6 depended on. **IMPLEMENTED 2026-07-24** (branch `hatch-scoring`, phases A-F). One deviation recorded: the hatch map ships as a generated sibling module (`hatch-modules.ts`, stamped beside the entry as `version.ts` is) rather than as text substituted into the entry — a placeholder was left literal in the `init-browser` scaffolding path, and the sibling-module shape also lets D4's hand-written-entry escape hatch keep hatch support. One acceptance item is UNCOVERED: Phase F's assertion of the bound producer's output in a *running browser*, for want of a headless browser in the build container; parity is instead pinned at the module and bundle level.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-23",
+  "bytes": 26075
+ },
+ {
+  "number": "260",
+  "name": "adr-260-scoring-extension-platform-repair.md",
+  "title": "ADR-260: Scoring is a trusted extension; the platform keeps only the ledger and a thin SCORE",
+  "status": "ACCEPTED (2026-07-23, session 7f133e) — the scoring capability is deleted rather than repaired (D1), scoring state consolidates on the ADR-129 ScoreLedger with absolute-points ranks that no ceiling change can move (D2), `if.action.scoring` is gutted to a ledger reader with no rank logic and no English literals (D3–D4), and scoring becomes a new `@sharpee/ext-scoring` trusted extension that enables via `registerWorld` and announces promotions via `registerPlugin`'s first live use (D5–D6). Open Questions resolved by `adr-interview`; `adr-review` 7/16 → **16/16** after four blocker fixes (the `registerWorld` signature could not carry the ladder, D7 contradicted D3's `no_scoring` path, \"ranks persist for free\" was false against `ScoreLedger.toJSON`, and the schema was live in test infrastructure). **Amended twice on 2026-07-23 (same session)**: (1) from `adr-review` of ADR-261 — D6 fixes promotion *rendering* as a loader-registered story reaction rather than a platform renderer, so `RankDefinition` stays free of phrase keys; (2) from the three-ADR review of 259/260/261 — D6's `registerPlugin` call site moves from the `registerWorld` loop to `onEngineReady`, since no plugin registry exists at world-build time. **IMPLEMENTED 2026-07-24** (branch `hatch-scoring`, plan phases 1-5 + 11). One migration site D7 did not enumerate: the `score` channel (`stdlib/src/channels/standard.ts`) carried a legacy `ScoringData` fallback, already unreachable because the ledger branch above it tests `getScore()`, which every world has; it is deleted rather than ported.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-23",
+  "bytes": 28954
+ },
+ {
+  "number": "261",
+  "name": "adr-261-chord-use-scoring-ranks.md",
+  "title": "ADR-261: Chord gains `use scoring` and a `ranks` ladder",
+  "status": "ACCEPTED (2026-07-23, session 7f133e) — `scoring` joins the trusted extension registry (D1), a `ranks` block under `use scoring` declares the ladder in absolute points (D2), absent `use scoring` means the game has no score (D3), the gate covers `score`/`award`/`ranks` together (D4), the loader lowers the ladder generically onto ADR-260's `setRanks` seam (D5), and a promotion speaks a per-rung authored phrase with no platform prose anywhere (D7). Promotions render through a loader-registered story reaction, never a platform sentence (D7), and the grammar change carries the version bump and its enforced EBNF pin (D8). Open Questions resolved by `adr-interview`; `adr-review` 9/16 → **16/16** after three blocker fixes (`says` had no channel to any renderer, the Chord version machinery was unnamed though test-enforced, and nothing asserted the fifteen-file migration). A second pass (three-ADR review of 259/260/261) corrected D1's plugin call site to `onEngineReady`, matching ADR-260 D6's amendment. **Amended 2026-07-24: D7's silence-by-default is reversed by ADR-262 D3 — ranks now share the banded-crossing engine, so silence is the explicit `announce silent` mode and a phraseless rung renders an overridable platform fallback; `if.event.rank_risen` → `if.event.band_crossed`.** Ships as **Chord 1.1** — a recorded one-time override of ADR-257 D2, see Consequences. **IMPLEMENTED 2026-07-24** (branch `hatch-scoring`, plan phases 6-11). Two deviations recorded: (1) acceptance #5's third case — a bare `rank` rung producing `analysis.scoring-needs-use` — is unreachable from source, because the ladder is structurally inside the `use scoring` body, so a stray rung is `parse.rank-outside-scoring` at parse time, earlier and more precise; the rogue-IR form is covered by the loader's LoadError. (2) D7's promotion reaction is a loader-registered TurnPlugin that DERIVES the crossing from the ledger rather than observing `if.event.rank_risen`, because the engine hands each plugin only the action's events — no plugin can see another's output. Both plugins read the same derived ledger and cannot disagree.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-23",
+  "bytes": 23022
+ },
+ {
+  "number": "262",
+  "name": "adr-262-define-meter-banded-derived-state.md",
+  "title": "ADR-262: The banded-scalar crossing engine — scoring, generalized",
+  "status": "ACCEPTED (2026-07-24, session 7f133e) — an internal platform engine for *banded derived state over a continuous scalar*: derive a band from a value by ascending thresholds, detect crossings, and announce them under four verbosity modes. It is **not** an authoring construct — each metering *concept* keeps its own bespoke Chord surface (scoring's `use scoring`/`rank` is the first) and lowers to this engine. Scoring's hand-rolled rank-watcher is refactored onto it, fixing a shipped multi-band bug. Open Questions resolved via `adr-interview`; `adr-review` 10/16 → **16/16** after five fixes (the engine's home module named — `bandOf` in world-model, watcher factory shared; a generic `if.event.band_crossed` event replacing the scoring-specific `rank_risen`; combat health dropped from acceptance #1 as it contradicted D8's own scoping; duplicate-threshold rejection restored; backward-compat named). Awaiting the ACCEPTED flip. Not implemented.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-24",
+  "bytes": 13522
+ },
+ {
+  "number": "263",
+  "name": "adr-263-standard-meters-hunger-sanity.md",
+  "title": "ADR-263: Standard meters — hunger and sanity (and the state pattern for personality & reputation)",
+  "status": "ACCEPTED (2026-07-24, session 7f133e) — two first-party *continuous-meter* systems, **hunger** and **sanity**, each a trusted extension with domain-native Chord syntax lowering to the ADR-262 crossing engine; and a documented recommendation that the *discrete* stats — **personality**, **named reputation** — use existing `states:` / `define machine`, needing no new construct. Hunger is ADR-262's real-path forcing function. Q-1 resolved (hunger ships first as 262's real-path gate; sanity is a fast-follow, not blocking). Q-2 resolved (hunger's surface is thin — `use hunger` + plain `<band> at <n> says <key>` rungs; flavor lives in the author's band names and phrases). Q-3 resolved (eating reuses stdlib's `if.event.eaten` + `nutrition` via an event handler; missing nutrition = zero). Q-4 resolved (sanity's madness is a numeric counter — a new Chord primitive spun off to **ADR-264** — with `use sanity` the concept surface over it; A + B compose). All Open Questions resolved via `adr-interview`; `adr-review` 11/15 → **15/15** after six fixes (extension homes + registry/manifest/gate named in a new D4; hunger's decay and `fatal` re-pointed to the existing `on every turn` daemon and `kill the player` statement rather than invented; the decay-daemon vs 262-watcher conflation split; severity save/restore added; sanity acceptance #4 marked ADR-264-gated; `fatal` clarified as a raw trigger, not a band). Awaiting the ACCEPTED flip. Not implemented.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-24",
+  "bytes": 12955
+ },
+ {
+  "number": "264",
+  "name": "adr-264-chord-numeric-counters.md",
+  "title": "ADR-264: Chord numeric counters — a raisable named number",
+  "status": "ACCEPTED (2026-07-24) — a generic numeric-counter primitive for Chord: a named number an author can `raise`/`lower` and test in conditions, at **story or entity scope**, persisted as story state. Explicit `define counter` (`starts`/`between` optional), bounded mutations clamp silently, add/subtract-only, `counter` keyword; `use sanity` auto-declares its own counter (ADR-263). Spun off from ADR-263 Q-4. All Open Questions resolved via `/devarch:adr-interview` (2026-07-24). Not implemented.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-24",
+  "bytes": 11849
+ },
+ {
+  "number": "265",
+  "name": "adr-265-standard-library-readable-chord-form.md",
+  "title": "ADR-265: The standard library in readable Chord form",
+  "status": "SUPERSEDED by ADR-266 (2026-07-25) — **this ADR answered the wrong question.** The author's ask (\"nor do we have the library in readable Chord form\") was for the **grammar** — how the standard verbs, patterns, and slots would be defined in Chord — not for a rendering of stdlib action metadata. What this ADR specified and shipped (`docs/reference/stdlib-chord/`, 56 generated `.story` files) puts the grammar in a `## Verbs :` comment line and fills the body with message tables plus a `create the Void` / `create the player` stub added only so the file parses. ADR-266 supersedes it, re-sources the generator from the grammar rule table (both builder shapes, ADR-087 action-centric included), renders in Chord's real `define action` / `grammar` block syntax, and replaces the generated set in full. ADR-266 was then widened past a documentation ADR into **grammar definition parity** — the rendering became the diagnostic that exposed two Chord-side gaps (a compiler that discards scope constraints the language already expresses, and a language surface narrower than Sharpee's builder). Retained below as the record of the misread.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-24",
+  "bytes": 11300
+ },
+ {
+  "number": "266",
+  "name": "adr-266-grammar-definition-parity.md",
+  "title": "ADR-266: Grammar definition parity — Sharpee and Chord",
+  "status": "ACCEPTED (2026-07-25) — **supersedes ADR-265**, and is **widened twice** past it. The ask was to see how the grammar would be defined in Chord; auditing that exposed a Chord grammar surface materially narrower than Sharpee's, a compiler that discards what Chord already says, a taught construct enforced nowhere, a documented surface whose own published example fails to load, and no way for an author to modify standard grammar at all. Measured against the Inform 7 bar the feedback invoked — extend, alter, order — Chord has none of the three. **Owner direction 2026-07-25: option (iv) — the readable Chord grammar becomes the editable source, not a reference.** The standard grammar's Chord form is loadable and author-modifiable, as I7's Standard Rules are; actions stay TypeScript. This reverses ADR-265's reference-only stance entirely and converts Gap 2's missing constructs from a backlog into a prerequisite. ADR-265's generated set is replaced in full. **Umbrella ADR** (owner ruling, same session): the direction and constraints live here; the work lands in six named children, ADR-267 through ADR-272 (D14). Per project convention an umbrella is never implemented directly — **accepting this ADR authorizes no code**; it fixes the direction, the boundary (D8), the required-construct set (D12′), the slot spelling (D15), and the allocation of acceptance to children. Each child must be written and accepted before its phase begins. Acceptance carries no Open Questions (all devolved, D14). Reviewed at acceptance: 15/15, READY as an umbrella.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 59381
+ },
+ {
+  "number": "267",
+  "name": "adr-267-chord-grammar-pattern-constructs.md",
+  "title": "ADR-267: Chord grammar pattern constructs",
+  "status": "ACCEPTED (2026-07-25) — first language child of the ADR-266 umbrella. All six open questions (inherited Q-8 + five spelling rulings) resolved via interview same day; spellings D8–D12 ruled by owner; adr-review 14/14 after SMALL fix (acceptance 2 widened to the reserved-surface audit). **IMPLEMENTED same day (session 2d5bc7)**: four landing groups landed whole (Chord 2.0.0 → 2.3.0); acceptances 1–8 all green — audit PASS recorded, gap report EMPTY except ordering (generator built; `?` help alias ruled a platform-side exception), shadow warning live, ship-directions fixture 7/7 via ADR-275's runtime slice (entity-less dispatch + semantic word binding, its own interview + review). ADR-268 (ordering) is the next child.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 17066
+ },
+ {
+  "number": "268",
+  "name": "adr-268-chord-grammar-rule-ordering.md",
+  "title": "ADR-268: Chord grammar rule ordering — implicit specificity, no numeric priority",
+  "status": "IMPLEMENTED (2026-07-26, session b88ed7) — D5 landed: engine swap to confidence → tier → specificity → definition order; `.withPriority` removed from builder API and every call site; `GrammarRule.tier: 'standard' | 'story'` contract; if-domain `sortRules` removed (unsorted insertion = definition order). Acceptance: full corpus green with the priority term gone (dungeo 1789 units + 904 wt chain, fernhill 496+76, friendly-zoo 76+56, cloak 81, nautical 7); gap report EMPTY full stop (`scripts/chord-gap-report.cjs`, carve-out retired); `go out` → exiting pinned in `stories/dungeo/tests/transcripts/go-out-exiting.transcript`. Previously ACCEPTED same day — specificity experiment (A7) decisive (zero divergences, static + full transcript corpus; `docs/work/chord-grammar-ordering/specificity-experiment.md`); interview resolved Q-1 no override construct, Q-2 tier-first, Q-3 engine swap now; adr-review 14/14. ADR-266 Q-7 answered: no ordering notation.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-26",
+  "bytes": 11210
+ },
+ {
+  "number": "269",
+  "name": "adr-269-standard-grammar-as-chord-source.md",
+  "title": "ADR-269: The standard grammar as Chord source",
+  "status": "IMPLEMENTED (2026-07-26, session f9e069) — all five phases landed same session; all nine acceptance items green (see the Session implementation addendum): the standard grammar lives as `packages/parser-en-us/grammar/standard-en-us.story` (410 rules / 55 blocks; 12 ruled platform-side exception rules in `platform-grammar.ts`), the `repokit grammar` build step emits the generated `src/grammar.ts` (freshness-gated), the equivalence harness shows zero divergences pre- and post-swap, the full corpus is green, startup is measured at zero regression, and the ADR-265 apparatus is deleted (owner-confirmed). Previously ACCEPTED same day. — Third language child of the ADR-266 umbrella, the migration itself. The language prerequisite is met (ADR-267 constructs + ADR-268 ordering; gap report EMPTY against all 422 rules), and the loader's action-centric emission seam exists (ADR-271 D3). All four open questions (Q-1–Q-4, restating inherited Q-12, Q-13, Q-16 per D14, plus the target-naming form) resolved via the open-questions interview 2026-07-26: Q-1 build-time generation (D7), Q-2 distinct `grammar` header (D8), Q-3 locale-generic mechanism (D9), Q-4 name derivation (D10). adr-review 16/16 after five SMALL folds (Modules list, export contract, id-set ownership, freshness gate, acceptance 9).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-26",
+  "bytes": 30282
+ },
+ {
+  "number": "270",
+  "name": "adr-270-author-alteration-model.md",
+  "title": "ADR-270: The author alteration model",
+  "status": "IMPLEMENTED (2026-07-26, session 0ea0e5) — all five phases landed same session; all nine acceptance items green (see the Session implementation addendum): Chord 2.5.0 adds `extend action` / `remove from action`, the engine gains the shape-removal primitive, the loader wires both with LoadError diagnostics, `define verb` is deleted (Chord 3.0.0, MAJOR) with cloak migrated — its `hook` verb now drives real stdlib putting, which the dead-path stub never did — and the acceptance-15 transcript story passes. Previously ACCEPTED same day. — Child of the ADR-266 umbrella (D14), the alteration model. Carries inherited Q-14 and Gap 3(c); owes umbrella acceptance 15 (the Inform 7 bar made assertable: a story removes a standard verb, adds a synonym to a standard action, and reorders two competing rules, each observably changing what parses). All five open questions resolved via the open-questions interview 2026-07-26 (each the presented recommendation, ruled by the owner): Q-1 incremental override (D1, inherited Q-14 answered), Q-2 `extend action` + `remove from action` blocks (D6), Q-3 load error both directions (D1), Q-4 `define verb` deleted (D7), Q-5 story constructs + spliced fragments (D8). adr-review 13/16, three SMALL findings folded (Modules list, removal-primitive surface contract, full-id-set validation precision) → re-scored 16/16, READY. Not yet implemented.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-26",
+  "bytes": 26787
+ },
+ {
+  "number": "271",
+  "name": "adr-271-chord-grammar-compiler-pass-through.md",
+  "title": "ADR-271: Chord grammar compiler pass-through and defects",
+  "status": "ACCEPTED (2026-07-25) — first child of ADR-266 (D14). Ships **first and independently**: none of its work depends on direction (iv), and its three defects harm Chord authors today. Carries the umbrella's D10 (compiler pass-through), D11 (dropped scope constraint + analyzer validation), and D13 (`define verb`). Inherited Q-10 was resolved by owner ruling (2026-07-25, interview): narrow the docs (D4). No open questions remain.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 16222
+ },
+ {
+  "number": "272",
+  "name": "adr-272-grammar-documentation-surfaces.md",
+  "title": "ADR-272: Grammar documentation surfaces",
+  "status": "IMPLEMENTED (2026-07-26, same session — see the implementation addendum) — last child of the ADR-266 umbrella; with it, all six umbrella children are landed. Sequenced last by design (umbrella D14): its content is written against what ADR-267/268 landed and derived from what ADR-269 shipped, and ADR-270 has now handed it the final capability its pages must describe. Owes umbrella acceptance items 16 and 17. All three open questions (inherited Q-5 restated as Q-1, plus Q-2/Q-3) resolved via the open-questions interview same day, each the presented recommendation: Q-1 → generated data module + `<GrammarBlock>` component (D4), Q-2 → two per-construct pages (D3), Q-3 → cookbook tables stay hand-written (Not addressed). adr-review same day: 13/14, four SMALL findings folded (Modules list; D6 harness correction — `seedStandard` required, verified against `grammar-harness.ts`; D2 fence discipline; slot-name count re-verified at implementation) — re-scored 14/14.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-26",
+  "bytes": 24913
+ },
+ {
+  "number": "273",
+  "name": "adr-273-grammar-scope-resolver-world-api.md",
+  "title": "ADR-273: GrammarScopeResolver calls a WorldModel API that does not exist",
+  "status": "ACCEPTED (2026-07-25) — defect ADR, split out of ADR-271's implementation by owner ruling. ADR-271's acceptance items 1 and 6 (parse-time gating demonstrated by transcript; fernhill/friendly-zoo suites green) are **blocked on this ADR**. Q-1 ruled (build real reachability — D4); Q-2 ruled (define action page via ADR-272 — D5). Reviewed at acceptance: 14/14 READY; the review's one SMALL finding (one-definition discipline for `ScopeEvaluator`'s touchable stub) folded into D4 before the flip.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 12303
+ },
+ {
+  "number": "274",
+  "name": "adr-274-bundled-cli-cold-hatch-transpile.md",
+  "title": "ADR-274: The bundled CLI cannot cold-transpile a hatched story",
+  "status": "ACCEPTED (2026-07-25) — defect ADR, found during ADR-273's Phase 4 verification. Q-1 (fix route) resolved same day via interview: esbuild external (route (a)); adr-review 13/13 after SMALL fix (D2 error named).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 6314
+ },
+ {
+  "number": "275",
+  "name": "adr-275-chord-dispatch-semantic-commands.md",
+  "title": "ADR-275: Chord dispatch runtime — entity-less commands and semantic value binding",
+  "status": "ACCEPTED (2026-07-25) — all four open questions resolved via interview same day (Q-1 word-values route (a), Q-2 word equality, Q-3 warn+error shadow rules, Q-4 musts fail closed / refuse-when arms fail open); adr-review 14/14 after two SMALL fixes (module list on D2; unbound refuse-when semantics on D6). **IMPLEMENTED same day (session 2d5bc7)**: dispatch entity-less shape + semantic word bindings (runtime.ts), word-set-validated `is` comparisons (analyzer semanticValues — directions canonicals / means values, richer than the blanket `the match` exemption), Literal-atom verbatim rendering for word params, D5/D6 gates. Tests: entityless-dispatch.test.ts 7/7; D3 fixture `stories/nautical` ship-directions transcript 7/7 through the production CLI; full regression green (chord 581, loader 399, dungeo units 1777 + chain 873).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-25",
+  "bytes": 7721
+ },
+ {
+  "number": "276",
+  "name": "adr-276-chord-source-authoritative-errors.md",
+  "title": "ADR-276: Chord compile is authoritative for every source-derivable error (the stdlib manifest)",
+  "status": "ACCEPTED (2026-07-27, session 332f30) — all three open questions resolved via the open-questions interview same day: Q-1 **full census, one arc** (one end-of-arc audit; ADR-258 implementation waits on the whole census), Q-2 **locale-keyed manifest from day one** (`en-US` sole entry), Q-3 **declarative setting-schema table owned by story-loader** (loader and generator consume one source). adr-review **15/15** after two SMALL fixes (corpus-green no-false-positives gate; D4 defines the record shape, ADR-258's `--json` is its transport). **IMPLEMENTED** (2026-07-27, sessions 332f30 + 834109, branch `adr-276-p1`, Phases 1–8) — census re-audited: all 50 `loader.ts` `LoadError` sites are backstops (41) or D5 residue (9), no third category; see the Implementation addendum. Next: ADR-258's D5 amendment (Acceptance item 9).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 23711
+ },
+ {
+  "number": "277",
+  "name": "adr-277-ide-integrated-testing.md",
+  "title": "ADR-277: IDE integrated testing (transcript runner, walkthrough chains, transcript authoring)",
+  "status": "ACCEPTED (2026-07-27, session 8a8c83) — test results become an NDJSON wire contract in `ide-protocol` emitted by `sharpee test --json` (D1); the IDE gains a right-panel Test tab, ⌘U (D2); walkthrough chains live in top-level `walkthroughs/`, filename order, bare runs stay `tests/`-only (D3); `.transcript` is an editable document type with line-classifier highlighting (D4); recording is a follow-on phase over a new turn-events bridge, `[OK]`+comment capture (D5). Open Questions resolved by `adr-interview`; `adr-review` 14/15 → **15/15** after two folds (bare-run semantics; type-only ide-protocol import).",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 20027
+ },
+ {
+  "number": "278",
+  "name": "adr-278-relations.md",
+  "title": "ADR-278: Relations (exploratory umbrella — Sharpee 5.0.0 / Chord 3.0.0 candidate)",
+  "status": "EXPLORATORY (2026-07-27, session 7ca178) — no commitment. Maps the design space for an author-facing relations feature (declared, constrained, queryable entity-to-entity relationships in the Inform 7 sense). Candidate anchor feature for the next major pair (Sharpee 5.0.0 / Chord 3.0.0, lockstep via `tsf version`). If pursued, this becomes an UMBRELLA ADR: child ADRs carry the decisions and implementation; this document is never implemented directly.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 9675
+ },
+ {
+  "number": "279",
+  "name": "adr-279-chord-writer-packaging.md",
+  "title": "ADR-279: The IDE ships as \"Chord Writer\" — a signed, notarized, downloadable DMG",
+  "status": "ACCEPTED (2026-07-27, session fda0f0) — drafted session 8a8c83; all open questions resolved and review findings addressed in session fda0f0",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 14728
+ },
+ {
+  "number": "280",
+  "name": "adr-280-chord-writer-project-model.md",
+  "title": "ADR-280: Chord Writer project model — typed artifacts, a default home, devkit-owned scaffolding",
+  "status": "ACCEPTED — **Amended A1** (2026-08-06, session daeb64): D2's app-owned `~/Documents/Chord/` home is **superseded**. New stories default to `~/Documents/<Story Title>/` and the location is an editable field, not a convention. D2's *reasoning* (the app owns a default so a writer never confronts a path picker) survives; the folder it named does not. Acceptance 6 stands unchanged. See **Amendment A1** at the foot of this document. (Original accept: 2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 9343
+ },
+ {
+  "number": "281",
+  "name": "adr-281-chord-writer-embedded-help.md",
+  "title": "ADR-281: Chord Writer embeds searchable help — the book and the Chord reference, in-bundle",
+  "status": "ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 6345
+ },
+ {
+  "number": "282",
+  "name": "adr-282-play-to-test-tagging.md",
+  "title": "ADR-282: Play-to-test — blessing good turns while playing becomes transcript tests",
+  "status": "SUPERSEDED — interaction model only (2026-08-03, session 83abc1) by [ADR-299](adr-299-play-skein-bless.md) (play–skein–bless: the skein replaces per-turn record/bless). The serialization and grammar work (literal text blocks, transcript emission, `[OK:]` defaulting) is retained and carried forward by [ADR-300](adr-300-addressable-channels-and-canonical-transcript.md) — D1 (the `.transcript` file is the artifact) and D3/D4 (a canonical serializer owns transcript emission). The editing gestures that were to consume it — `contains` by selection as the default `[OK:]`, and this ADR's D2 refusal-to-widen rule — are now held by [ADR-301](adr-301-sharpee-transcript-editor.md), which is TBD, so those two have a recorded home but no decided mechanism. This pointer previously read \"carried forward by ADR-299 D7\"; ADR-299 D7 is the `.skein`-as-committed-artifact decision that ADR-300 D1 retires, and ADR-299 itself is SUPERSEDED, so that link was dead (corrected 2026-08-04, session 088e3e; re-pointed to the consolidated ADR-300 in session 5113ca). Historical: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the ADR-287 grammar (backtick fences then, literal text blocks now) and review-fix folds",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 19491
+ },
+ {
+  "number": "283",
+  "name": "adr-283-transcript-wrong-assertion.md",
+  "title": "ADR-283: Transcript format — the `[WRONG]` assertion (expect-not)",
+  "status": "REJECTED (2026-07-27, session fda0f0) — David's ruling during the open-questions interview: play-to-test tags **only good responses** (\"story testing is by nature asserting what should exist\"). There is no incorrect verdict, so no negative assertion is needed; a wrong response is a bug the author fixes in the story, not a test artifact. ADR-282 was amended accordingly (its D1/D2 no longer reference this ADR). Review context that informed the rejection: `[OK: not contains]` already covers permanent exclusions, so this directive's only novelty was verdict intent — which the ruling removed. Kept for the record; do not implement. The body below is the",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 4524
+ },
+ {
+  "number": "284",
+  "name": "adr-284-chord-writer-publishing.md",
+  "title": "ADR-284: Chord Writer publishing — a first-class Publish action for finished stories",
+  "status": "ACCEPTED — **IMPLEMENTED**, and **Amended A1** (2026-08-06, session daeb64): D1 and D2 shipped as `sharpee publish` plus a Publish tab. Acceptance 1's \"customized Web Template\" is read against the `browser/<storyId>.css` override that exists, NOT ADR-286's `.templates` DSL, which is unimplemented; Q-2 is answered (a right-panel tab). See **Amendment A1** at the foot of this document. (Original accept: 2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking.)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 8314
+ },
+ {
+  "number": "285",
+  "name": "adr-285-chord-writer-asset-management.md",
+  "title": "ADR-285: Chord Writer asset management — images and audio as first-class citizens",
+  "status": "ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 4837
+ },
+ {
+  "number": "286",
+  "name": "adr-286-web-template-visual-editing.md",
+  "title": "ADR-286: The Web Template — a simple layout syntax, transformed into the page",
+  "status": "ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; Q-5 label delivery deferred as non-blocking, ruled at implementation)",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-27",
+  "bytes": 14165
+ },
+ {
+  "number": "287",
+  "name": "adr-287-transcript-fenced-payloads.md",
+  "title": "ADR-287: Transcript grammar — literal text blocks",
+  "status": "ACCEPTED (2026-07-28, session 2f31b0) — reopened and re-decided under the 2026-07-27 acceptance note's delimiter revisit, then interviewed (1 question resolved) and reviewed clean. Previously ACCEPTED 2026-07-27 with backtick fences; that form is superseded below and does not ship.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-28",
+  "bytes": 12912
+ },
+ {
+  "number": "288",
+  "name": "adr-288-compass-rose.md",
+  "title": "ADR-288: The compass rose — an exits channel, a default renderer, and the first input-originating surface",
+  "status": "SUPERSEDED IN PLACE (2026-07-28, session aaa5bb) — do not implement.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-28",
+  "bytes": 15102
+ },
+ {
+  "number": "289",
+  "name": "adr-289-chord-routing-decided-once.md",
+  "title": "ADR-289: Chord routing is decided once — closing the compiler review's correctness findings",
+  "status": "ACCEPTED (2026-07-29, session eb49e6) — drafted from the Chord review, interviewed (3 questions resolved: D10 open-condition vocabulary, D4 placement unification, D2 counter reset), then adr-reviewed twice: 11/14 with two BLOCKER and one SMALL finding folded plus two cross-ADR seams (ADR-276 census, ADR-275 D6), then 13/14 with the versioning BLOCKER folded on David's ruling (Chord 2.2.0, the fourth recorded departure from D2's letter — breaking gates ship without a major). Accepted at 14/14. **Implementation in progress** (branch `adr-289-p1`); the platform change to `packages/chord` and `packages/story-loader` is approved in principle by this acceptance, and D9's harness is written failing before any fix. **D1 amended 2026-07-29 during implementation** — the pre-mutation snapshot regressed `stories/fernhill` (495/495 → 116 failures); \"once\" is at the statement's position during the mutations pass, not before the body. See the D1 amendment; Acceptance 7 is unchanged and is satisfied by the amended rule.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-29",
+  "bytes": 50131
+ },
+ {
+  "number": "290",
+  "name": "adr-290-test-creation-as-an-atomic-mode.md",
+  "title": "ADR-290: Test creation is an atomic mode, not a toggle over free play",
+  "status": "SUPERSEDED-IN-PART (2026-08-04, session c42886) by the promote-from-session-log mechanism, now held by **[ADR-301](adr-301-sharpee-transcript-editor.md)** and TBD — **D1–D4 are superseded**; **D5–D8 stand and still apply**",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-29",
+  "bytes": 19028
+ },
+ {
+  "number": "291",
+  "name": "adr-291-seed-authority-deterministic-execution.md",
+  "title": "ADR-291: One seed authority, many named streams — deterministic execution as a testable property",
+  "status": "SUPERSEDED IN PLACE by [ADR-293](adr-293-choice-points-per-point-streams.md) (2026-08-01, session 9f136f) — **do not implement.** Nothing here was built. ADR-293 carries forward, in substance: one master seed governing a run (D1), the frozen versioned derivation (D2), stream state riding the save behind a version reader (D4), `--seed` / `[SEED: N]` / always-report-the-seed and the author-visible/player-silent rule (D8–D10), and randomness outside the sanctioned path as a build-visible defect (D6). What it replaces: per-domain named streams, which become per-point streams, and the `SeedAuthority` interface shape. The four amendments below are retained as the record of how this document failed to converge — four review passes oscillating between 12/16 and 14/16 — which is the history ADR-293 was written to end.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-07-31",
+  "bytes": 71483
+ },
+ {
+  "number": "292",
+  "name": "adr-292-testability-contract-bounded-outcome-search.md",
+  "title": "ADR-292: The testability contract and bounded outcome search",
+  "status": "SUPERSEDED IN PLACE by [ADR-293](adr-293-choice-points-per-point-streams.md) (2026-08-01, session 9f136f) — **do not implement.** Never accepted; nothing here was built. ADR-293 carries forward, in substance: complete testability as a checkable contract rather than an unfalsifiable goal, draws exposing a finite enumerable outcome space, outcome randomness separated from presentation randomness, and forking that executes the real engine rather than modelling it. What it replaces: the draw ledger as an interface on the seed authority, bounded outcome search as the *primary* author instrument (ADR-293 makes forcing primary and search a first-firing fallback, on this ADR's own measurement of ≈623 nodes/second), and the `@sharpee/skein` package that existed to hold the searcher. The Chord surface here (D11–D13) is deliberately **not** carried forward — see ADR-293's \"Deferred, not decided\": specifying an authoring surface ahead of the substrate is what these decisions did wrong.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-01",
+  "bytes": 53000
+ },
+ {
+  "number": "293",
+  "name": "adr-293-choice-points-per-point-streams.md",
+  "title": "ADR-293: Choice points and per-point streams — deterministic execution and author-reachable outcomes",
+  "status": "ACCEPTED (2026-08-01, session 9f136f) — written from a fresh-eyes design exchange (`docs/work/rng/`), not from its predecessors. All five Open Questions resolved by interview the same day (Q-1 naming convention, Q-2 blow-point split and class sets, Q-3 occurrence indexing, Q-4 `--vary` kept and `--sweep` dropped, Q-5 trace on `ISystemEvent`), then `adr-review`ed at 14/16 with two BLOCKER and three SMALL findings, all folded. Accepted by David on the folded result. **Supersedes ADR-291 and ADR-292**, both marked SUPERSEDED IN PLACE by this acceptance — see Supersession. **Amended A1** (2026-08-01, session 5a55e3): six pre-implementation rulings from the Phase A platform discussion, folded inline and recorded in Amendment A1.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-01",
+  "bytes": 62379
+ },
+ {
+  "number": "294",
+  "name": "adr-294-golden-transcripts-tester-rebuild.md",
+  "title": "ADR-294: Golden transcripts — the transcript tester rebuilt on determinism",
+  "status": "ACCEPTED (2026-08-01, session 06425d) and IMPLEMENTED (2026-08-01, commit `118cd95a` — the D12 arc completed as sequenced: handler-access discussion → ADR-293 Phase B → this rebuild). Drafted, feature-swept, interviewed (six questions resolved), and `adr-review`ed the same day (10/15 → 15/15 after three folds: Acceptance section, `.golden` format block, status wording); accepted by David on the folded result. Status-line updated 2026-08-02 (session 1d3b6f, ADR-293 Phase D plan-review fixup) — the previous wording still described implementation as not yet started.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-01",
+  "bytes": 28792
+ },
+ {
+  "number": "295",
+  "name": "adr-295-computed-exits.md",
+  "title": "ADR-295: Computed exits — world-model-owned traversal resolution",
+  "status": "ACCEPTED (2026-08-01, session f081ec) — written from the #207 design exchange; seam, Option A keying, and topology posture approved in conversation by David. `adr-review`ed the same day at 11/15 with two BLOCKER findings (interceptor destination-slot consultation undefined for computed directions; source-room reverse-derivation in `going-data.ts` breaks under redirects) and five SMALL, all folded (D7, D3/D4/D5 amendments, Acceptance 5–8, Implementation 2–3). Accepted by David on the folded result; implementation discussion held the same session.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-02",
+  "bytes": 15693
+ },
+ {
+  "number": "296",
+  "name": "adr-296-prose-order-emission-owned.md",
+  "title": "ADR-296: Turn narrative slots — transactions order sources, slots place phrases",
+  "status": "ACCEPTED (2026-08-02, session f081ec, ~02:30 CDT) — accepted by David on the v3.1 fold, after four adversarial review rounds each caught and reshaped a real defect (see history below). Implementation is follow-up work against the D0 contract and the design doc's scenario table; the acceptance-basis predictions (D8) were fixed before acceptance and bind the implementer.",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-02",
+  "bytes": 19930
+ },
+ {
+  "number": "297",
+  "name": "adr-297-ide-appearance.md",
+  "title": "ADR-297: IDE Appearance — Dual-Palette Dynamic Tokens + User Override",
+  "status": "ACCEPTED (2026-08-02, session 7dd736) — records a decision already",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-02",
+  "bytes": 3261
+ },
+ {
+  "number": "298",
+  "name": "adr-298-story-block-metadata.md",
+  "title": "ADR-298: Story Block Metadata — Fielded Title/Authors, IFID Restored, Prologue",
+  "status": "ACCEPTED (2026-08-02, session 201a5d) — consolidates GH #187's",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-02",
+  "bytes": 15415
+ },
+ {
+  "number": "299",
+  "name": "adr-299-play-skein-bless.md",
+  "title": "ADR-299: Play–Skein–Bless — the IDE's Testing Paradigm Adopts the Inform 7 Skein",
+  "status": "**SUPERSEDED** (2026-08-04, session c42886) by **ADR-300**, which",
+  "statedDate": null,
+  "session": null,
+  "firstCommit": "2026-08-03",
+  "bytes": 15475
+ },
+ {
+  "number": "300",
+  "name": "adr-300-addressable-channels-and-canonical-transcript.md",
+  "title": "ADR-300: Addressable Channels and the Canonical Transcript",
+  "status": "ACCEPTED — partly implemented (see Decision Status)",
+  "statedDate": "2026-08-04",
+  "session": null,
+  "firstCommit": "2026-08-05",
+  "bytes": 22556
+ },
+ {
+  "number": "301",
+  "name": "adr-301-sharpee-transcript-editor.md",
+  "title": "ADR-301: The IDE Testing Surface",
+  "status": "ACCEPTED (2026-08-06, session 7f4a36) — the Testing tab is a web bundle in",
+  "statedDate": "2026-08-04",
+  "session": null,
+  "firstCommit": "2026-08-05",
+  "bytes": 21830
+ },
+ {
+  "number": "302",
+  "name": "adr-302-transcript-branches.md",
+  "title": "ADR-302: Transcript Branches — Testing Authored Variation",
+  "status": "**ACCEPTED**, SUPERSEDED IN PART by [ADR-307](adr-307-testing-tree-model-v2.md) (cutover landed 2026-08-10, session ed3730) — superseded: D1's `continues:`-file at-rest representation *for the Chord/IDE testing world*, whose tree now serializes as one JSON document (`<story-id>.tests.json`); the transcript grammar, parser/serializer, and stem-rename cascade are deleted from `@sharpee/branch-tester`. The tree SEMANTICS this ADR decided (one parent, shared prefixes run once, unreached vs failed) live on in the document walker. `@sharpee/transcript-tester`'s hand-authored text world is untouched.",
+  "statedDate": "2026-08-05",
+  "session": null,
+  "firstCommit": "2026-08-05",
+  "bytes": 49814
+ },
+ {
+  "number": "303",
+  "name": "adr-303-convergent-paths-and-unwinnable-states.md",
+  "title": "ADR-303: Convergent Paths and Unwinnable States",
+  "status": "**DRAFT** (2026-08-05, session f2a7e6) — all three open questions",
+  "statedDate": "2026-08-05",
+  "session": null,
+  "firstCommit": "2026-08-05",
+  "bytes": 17584
+ },
+ {
+  "number": "304",
+  "name": "adr-304-testing-workspace-layout.md",
+  "title": "ADR-304: The Testing Workspace — a Modal Play-Left Layout",
+  "status": "SUPERSEDED by ADR-306 (retirement landed 2026-08-09, session d54d7e —",
+  "statedDate": "2026-08-08",
+  "session": null,
+  "firstCommit": "2026-08-08",
+  "bytes": 4519
+ },
+ {
+  "number": "305",
+  "name": "adr-305-create-transcript-from-play.md",
+  "title": "ADR-305: Create Transcript from Play — Promotion in the Play Surface",
+  "status": "SUPERSEDED by [ADR-307](adr-307-testing-tree-model-v2.md)",
+  "statedDate": "2026-08-08",
+  "session": "d54d7e — the margin UI, Create Transcript button, save-panel flow,",
+  "firstCommit": "2026-08-09",
+  "bytes": 18972
+ },
+ {
+  "number": "306",
+  "name": "adr-306-testing-play-surface-revamp.md",
+  "title": "ADR-306: The Testing Play Surface Revamp — No Golden Path, Just a Tree of Transcripts",
+  "status": "ACCEPTED, SUPERSEDED IN PART by",
+  "statedDate": "2026-08-09",
+  "session": "ed3730) — superseded: the range/tick model (design §3) and",
+  "firstCommit": "2026-08-09",
+  "bytes": 13142
+ },
+ {
+  "number": "307",
+  "name": "adr-307-testing-tree-model-v2.md",
+  "title": "ADR-307: The Testing Tree, Model v2 — The Tree Is the Model, Files Are a Projection",
+  "status": "ACCEPTED (2026-08-09, session fb4281 — all eight open questions",
+  "statedDate": "2026-08-09",
+  "session": null,
+  "firstCommit": "2026-08-09",
+  "bytes": 15154
+ },
+ {
+  "number": "308",
+  "name": "adr-308-testing-navigation.md",
+  "title": "ADR-308: Testing Navigation — Finding Your Way in a Fully-Tested Story",
+  "status": "DRAFT (cursory — captures direction and candidates ahead of",
+  "statedDate": "2026-08-10",
+  "session": null,
+  "firstCommit": "2026-08-10",
+  "bytes": 5666
+ },
+ {
+  "number": "309",
+  "name": "adr-309-tool-owned-ifid.md",
+  "title": "ADR-309: The Tool Owns the IFID — Identity Lives in the Story Config",
+  "status": "ACCEPTED (2026-08-10, session ed3730 — all four open questions",
+  "statedDate": "2026-08-10",
+  "session": null,
+  "firstCommit": "2026-08-10",
+  "bytes": 8146
+ }
+]

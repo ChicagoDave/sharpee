@@ -1,0 +1,903 @@
+[
+ {
+  "key": "world-model-spine",
+  "title": "The spine that never moved — and the two vertebrae that were replaced",
+  "thesis": "What survived from StoryRunner (April 2023) to Sharpee 5.0.0 (August 2026) is the decomposition and the vocabulary, not the data structure. The eleven-project split — WorldModel / DataStore / GameEngine / GrammarLibrary / ParserLibrary / StandardLibrary / TextService — maps onto today's packages almost name for name, and that is genuine, load-bearing continuity. The two specific implementation invariants the origin narrative singles out did not survive. The reciprocal typed-edge graph (IsWithin/Contains, IsCarriedBy/Holds) was replaced in July 2025 by SpatialIndex, a single-parent-pointer tree with a derived child index; none of the five C# edge-type names appear anywhere in packages/world-model/src today, and the one API that still resembles typed edges — addRelationship/getRelated — is explicitly forward-only, has zero production callers, and its own unit test asserts the reverse lookup returns false. Publish-on-every-mutation is likewise gone: updateEntity carries a commented-out \"Future: Could emit change events here\", and the only surviving emitter is a debug sink that no shipping code ever constructs. Event sourcing was formally dropped in December 2025 as an \"unnecessary technical rathole\"; save/restore is a gzipped world.toJSON() snapshot, not a replay. The trait system (June 2025) is a real replacement of the C# Thing → Person → Player chain, not a rename — and the one later attempt to reintroduce a class hierarchy (ADR-123, January 2026) was built and reverted. The honest finding: the spine held at the level of how the system is cut into parts, and was rebuilt from scratch at the level of how state is stored and how change is announced. Both replaced invariants are now, in ADR-278 (July 2026), proposed for reintroduction as a new feature — prompted by an outside user request, not by memory of the prototype.",
+  "timeline": [
+   {
+    "date": "2023-04-01 → 2023-04-03",
+    "event": "StoryRunner's DataStore/World.cs establishes both invariants in working code: ConnectNodes adds a forward edge, then a reverse edge, and throws \"All connected nodes must be bidirectional.\" if no reverse type is supplied; AddNode/RemoveNode/ConnectNodes/SetNodeProperty each call a Publish* method that fans out to registered IGraphEventHandlers. StandardLibrary/Core.cs registers the five reciprocal pairs up front (IsWithin/Contains, IsCarriedBy/Holds, IsIn/Hosts, IsSupporting/IsOn, LeadsTo/LeadsTo).",
+    "source": "/Volumes/Backup/archives/repos-old/StoryRunner/DataStore/World.cs (161 lines); StandardLibrary/Core.cs (136 lines)"
+   },
+   {
+    "date": "2023-04-03",
+    "event": "The prototype violates its own invariant in the same file that declares it. Core.CreateLocation calls ConnectNodes(Player.Id, id, IsIn, null) — reverseEdgeType null, which World.cs throws on — then adds the reverse with a second one-way call. Take(), Examine(), Go(), Score(), Restore(), Restart() are all empty bodies. The Behavior/Scenery/Container classes (a proto-trait sketch) have zero references outside their own file. The graph layer alone has tests: 13 across two files.",
+    "source": "StandardLibrary/Core.cs:53-66, 106-134; StandardLibrary/Behaviors.cs; StoryRunner.DataStore.Tests/ (277 lines, 13 [Fact])"
+   },
+   {
+    "date": "2023-04 (undated, self-ordered)",
+    "event": "Story.cs implements scenery as the *presence* of a node property named \"scenery\" (IsObjectScenery returns Properties.Find(p => p.Name == \"scenery\") != null). This — presence-is-the-state on a dynamic property bag — is the trait idea, three years before TraitType exists, and it is the only proto-trait mechanism that actually ran.",
+    "source": "StoryRunner/StandardLibrary/Story.cs:278-282"
+   },
+   {
+    "date": "2024-08",
+    "event": "The C# platform takes the inheritance path deliberately: Claude conversation titles \"Deriving Animal Class from Thing\" and \"Extending Animal to create Person class\" sit in the busiest C# month (74 conversations). On disk the chain is Thing → Person → Player and Thing → Location.",
+    "source": "origin-narrative.md; StoryRunner/StandardLibrary/{Thing,Person,Player,Location}.cs"
+   },
+   {
+    "date": "2025-06-23",
+    "event": "Commit a52d135e (\"wholesale refactoring - not even going to list the changes\", 529 files, +52,832/−31,495) lands 16 trait directories under packages/world-model/src/traits/: actor, container, door, edible, entry, exit, identity, light-source, lockable, openable, readable, room, scenery, supporter, switchable, wearable. The Thing/Person/Player inheritance chain does not cross into TypeScript in any form. Today there are 41.",
+    "source": "git show --stat a52d135e; git ls-tree -d a52d135e packages/world-model/src/traits/"
+   },
+   {
+    "date": "2025-07-02",
+    "event": "Commit 331b0674 introduces packages/world-model/src/world/SpatialIndex.ts — parentToChildren: Map<string, Set<string>> plus childToParent: Map<string, string>. Containment becomes a single-parent tree with a derived reverse index. No edge types, no edge properties, no general graph.",
+    "source": "git log --diff-filter=A -- packages/world-model/src/world/SpatialIndex.ts (331b0674)"
+   },
+   {
+    "date": "2025-07 (ADR written)",
+    "event": "ADR-015 names the replacement without euphemism: \"Bidirectional Tree Index or Parent-Pointer Tree with Child Index — a Repository pattern using a Bidirectional Map data structure to maintain spatial relationships as a DAG.\" Its cited prior art is Unity Transform, Unreal attachment, Guava BiMap — game scene graphs, not the property-graph literature the C# design came from.",
+    "source": "docs/architecture/adrs/adr-015-spatial-index-references.md"
+   },
+   {
+    "date": "2025-12",
+    "event": "ADR-064 \"World Events and Action Events\" (Status: Accepted, December 2025) re-derives PublishPropertyChanged from first principles: world.emit('world.entity.changed', {entityId, trait, property, oldValue, newValue}). Only the half that made it unnecessary shipped — ActionContext.sharedData (907 references in stdlib/src today). Phase 2, \"Add event emission to world mutations\", never landed: grep for world.entity.moved / world.entity.changed across packages and stories returns nothing.",
+    "source": "docs/architecture/adrs/adr-064-world-events-and-action-events.md; grep over packages/ and stories/"
+   },
+   {
+    "date": "2025-12-27",
+    "event": "Event sourcing formally dropped: \"unnecessary technical rathole\" (platform assessment). Save/restore today is a snapshot — world.toJSON(), gzipped, base64'd; restore is world.loadJSON(). No replay path exists.",
+    "source": "2025-12-27-platform-assessment.md (via monthly-digests.json 2025-12); packages/engine/src/save-restore-service.ts:20-21, 175, 210"
+   },
+   {
+    "date": "2026-01-29",
+    "event": "ADR-123 Typed Daemon Hierarchy is implemented, assessed, and reverted the same session: \"only 1-2 daemons use each pattern. Base classes save almost no code.\" Status becomes PARTIALLY ACCEPTED — serialization hooks kept, class hierarchy rejected. The session summary generalises it: \"The revert validates Sharpee's preference for composition over inheritance.\" This is the anti-inheritance commitment being tested in a subsystem unrelated to the world model, and holding.",
+    "source": "docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md; corpus session-20260129-0446-main.md:196-206"
+   },
+   {
+    "date": "2026-02-18",
+    "event": "ADR status drift, verifiable in both directions on the same decision: docs/architecture/adrs/README.md line 56 records ADR-034 (Event Sourcing) as \"Abandoned\", while adr-034-event-sourcing-save-restore.md itself still reads \"Status: Proposed (Future)\" and has not been touched since 2025-08-08. The digest attributes the audit to commit d1873482 — that commit is a three-file doc-count fix and contains no ADR status changes.",
+    "source": "docs/architecture/adrs/README.md:56; git log -- adr-034 (last touch 092d51d9, 2025-08-08); git show --stat d1873482"
+   },
+   {
+    "date": "2026-04-03",
+    "event": "Commit 9b30d893 decomposes WorldModel: ScoreLedger (148), WorldEventSystem (401), WorldSerializer (169) extracted, WorldModel.ts cut ~450 lines with the IWorldModel interface unchanged and 181 engine tests unmodified. WorldModel.ts is 2,181 lines again today — the decomposition did not stop regrowth.",
+    "source": "git show --stat 9b30d893; wc -l packages/world-model/src/world/WorldModel.ts"
+   },
+   {
+    "date": "2026-05",
+    "event": "ADR-173 Wall Adjacency ships walls as entities that \"update both rooms' reciprocal walls collections\" — reciprocal maintenance hand-rolled, per feature, in wall-creation.ts, because no general reciprocal-edge primitive exists to build on.",
+    "source": "packages/world-model/src/world/wall-creation.ts:1-18; entities/wall-entity.ts:14"
+   },
+   {
+    "date": "2026-06-24",
+    "event": "ADR-189 gives entity types default traits via a registry (SCENERY → SceneryTrait). The taxonomic convenience of a class hierarchy returns — a type name implying behaviour — without the mechanism. The ADR's own context is that the type had been a lie: \"createEntity(name, EntityType.SCENERY) adds no SceneryTrait… a SCENERY-typed entity with no SceneryTrait is still takeable.\"",
+    "source": "docs/architecture/adrs/adr-189-entity-type-default-traits-registry.md"
+   },
+   {
+    "date": "2026-07-26",
+    "event": "ADR-269 demotes the fluent grammar builder from authoring surface to compiler target. packages/parser-en-us/src/grammar.ts now opens \"GENERATED by repokit grammar from grammar/standard-en-us.story — DO NOT EDIT\"; the editable source is 410 rules / 55 blocks of Chord. The C# fluent chain (_grammar.Verb(\"take\", Take).Noun.End) survives as an emission format, not as the thing an author writes.",
+    "source": "packages/parser-en-us/src/grammar.ts:1-14; docs/architecture/adrs/adr-269-standard-grammar-as-chord-source.md"
+   },
+   {
+    "date": "2026-07-27",
+    "event": "ADR-278 (EXPLORATORY) audits the relationship store and reaches, independently, the conclusion this analysis reaches from source: \"forward-only and unconstrained… No cardinality, no declared types, no symmetry, no events on change… Zero callers in stdlib, engine, or any story (grep, 2026-07-27).\" Its E1 proposal — \"symmetric relations maintain both directions atomically\" plus \"if.relation.added / if.relation.removed\" events — is, line for line, World.cs's 2023 contract, proposed as a new feature after a community request from an author named Nathaniel.",
+    "source": "docs/architecture/adrs/adr-278-relations.md"
+   }
+  ],
+  "analysis": "**What actually persisted.** The strongest continuity claim is also the least glamorous: the decomposition. StoryRunner's project list and today's package list line up without strain, and this is not coincidence-by-naming — the *dependency direction* matches too. `DataStore` knows nothing about IF; `@sharpee/core` is likewise \"a generic event/entity engine\" after the July 2025 core/world-model split. `TextService` sat downstream of the world in 2023; the prose pipeline does the same today (even though `@sharpee/text-service` was itself deleted under ADR-174 — the *slot* survived its occupant). `GrammarLibrary` separate from `ParserLibrary` prefigures `parser-en-us` holding grammar patterns while the validator resolves entities. That layered cut has been re-derived under pressure repeatedly (ADR-062 pulling English out of world-model; ADR-210's rule that no platform package may depend on `@sharpee/chord`) and has never inverted. If the throughline has a spine, this is it.\n\nThe second real survivor is an idea rather than a structure: **presence is the state**. `Story.cs:278` decides scenery by asking whether a property named `\"scenery\"` exists on the node. ADR-148 (April 2026) decides concealment the same way — \"ConcealedStateTrait's presence IS the state.\" Between them lie 41 trait directories built on `Map<TraitType, ITrait>` and `entity.has(type)`. This is continuity of a *design instinct* through a total change of mechanism, and it is worth separating from the mechanism claims because it is the one place where the 2023 code and the 2026 code would give the same answer for the same reason.\n\n**What changed name only.** Very little, and I want to be careful here because this is where the throughline is most tempting and most wrong. `WorldModel` → `WorldModel` is a name match over different contents. The C# `World` was a `Dictionary<string, Node>` plus a registry of `EdgeType(name, reverseName)` pairs; today's `WorldModel` is an entity map plus a `SpatialIndex` plus twelve unrelated concerns (capabilities, scope rules, score ledger, scenes, regions, prompt, walls). `Behavior` is the one genuine name-only survival: C#'s `Behavior`/`Scenery`/`Container` classes are dead code with zero references, and today's behaviors are the mutation-owning half of the trait/behavior split — same word, no lineage.\n\n**What was replaced.** Two things, and both replacements are documented decisions rather than drift.\n\n*The graph.* `SpatialIndex` is not a lossy implementation of the property graph; it is a different data structure chosen on purpose and named accurately in ADR-015 as a \"Parent-Pointer Tree with Child Index… as a DAG.\" The reciprocal invariant survives only in the weak sense that `addChild` writes both maps atomically, so you cannot observe a child whose parent does not list it. What does *not* survive is everything that made the C# version a graph: typed edges, edges with properties, multiple simultaneous relations between the same pair, and the refusal to store a one-way link. The proof is not inference — `grep` for `IsWithin`, `IsCarriedBy`, or a `'contains'` relation key across `packages/world-model/src` returns nothing, and `world-model.test.ts:487-488` asserts `areRelated(e1,e2,'likes') === true` alongside `areRelated(e2,e1,'likes') === false`. A test that *pins* asymmetry is the clearest possible statement that the 2023 invariant was not carried forward. `IFEntity.relationships: Record<string, EntityId[]>` is a second, separate fossil of the same idea, referenced only by tests and `toJSON`.\n\n*The event on every mutation.* This one is more interesting than a simple loss, because the project rediscovered it. ADR-064 (December 2025) proposes `world.emit('world.entity.changed', {entityId, trait, property, oldValue, newValue})` — which is `PublishPropertyChanged(nodeId, property)` with different capitalisation — records status Accepted, and then ships only Phases 1, 3 and 4. Those phases are `ActionContext.sharedData`: actions capture state *before* the mutation and read it in `report()`. That is the deliberate opposite of announce-on-mutation, and it won because it solved the actual problem (context pollution, `(context as any)._previousLocation`) at lower cost. The residue is visible in source as a two-line comment in `updateEntity` and as `emitPlatformEvent`, which fires only when a `platformEvents` sink is passed to the constructor — and every one of the sixteen production `new WorldModel(...)` sites in this repo passes nothing.\n\nThe consequence is that \"event-sourced turn cycle\" overstates today's system. It is event-*driven*: actions emit `ISemanticEvent`s, `EventProcessor` applies them to the world, handlers return `Effect[]` intents (ADR-075). The direction of causation is inverted from 2023 — there, mutation produced the event; here, the event produces the mutation. And true event sourcing was explicitly refused: \"unnecessary technical rathole\" (Dec 2025), with save/restore left as a gzipped `toJSON()` snapshot.\n\n**Where the trait system departed from Thing/Animal/Person.** Three specific departures, not one. (1) *No taxonomy.* There is no `Animal`, no `Person`; `ActorTrait`, `NpcTrait`, `CharacterModelTrait` and `HealthTrait` are independently attachable, and ADR-226 (July 2026) collapsed three creature life-state models into one trait precisely because the taxonomic version had drifted. (2) *Data and mutation split.* C# `Person` carried `Alive` as a field on the class; Sharpee puts state in the trait and mutation in a behavior, and enforces it — the September 2025 rule \"traits carry mechanical state only; story content moves to event handlers\" cut `BreakableTrait` from eight properties to one boolean. (3) *Dispatch instead of override.* C# `OverrideActionDelegate(\"go\", goInNoun, CustomGo)` let a story replace a standard action for one sentence shape; ADR-090 has traits *declare capabilities* that standard actions look up. Same goal — story-specific behaviour without forking the standard library — reached by dispatch rather than by patching the grammar table.\n\n**The uncomfortable ending.** In July 2026 an author asked for Inform 7-style relations. ADR-278's E1 sketch is: declared relation types, cardinality, \"symmetric relations maintain both directions atomically\", \"relation changes emit events\". That is `World.cs` from April 2023, specified as new work, arrived at from prior art (Inform 7, TADS 3.1) and a user request, with no reference anywhere in the ADR to the C# prototype. If this is a throughline, it is a circle — and the project does not appear to know it is one.",
+  "counterEvidence": [
+   "The C# invariant was never honored by the C# code. Core.CreateLocation calls ConnectNodes(Player.Id, id, IsIn, null), and World.cs throws on a null reverse type — so the standard library crashes on the first location it creates, then adds the reverse edge with a second one-way call. Story.cs matches on EdgeType == \"IN\" while Core.cs registers \"IsIn\". Every action body is empty. Only the DataStore has tests (13 across 277 lines). Calling the reciprocal-edge rule a surviving invariant overstates what it ever was: it was an aspiration in a program that could not run.",
+   "The reciprocal property does survive in effect for containment, which is the only relation any story actually uses. SpatialIndex.addChild writes childToParent and parentToChildren in one call and removeChild cleans the *actual* parent rather than the passed one, so there is no observable state where a child's parent does not list it. Someone could fairly argue the invariant was preserved and only the generality was dropped.",
+   "Three later features rebuild reciprocity by hand rather than abandoning it: ADR-173 walls maintain \"both rooms' reciprocal walls collections\", doors carry room1/room2 with DoorBehavior.isBidirectional, and ExitBehavior.createBidirectional creates paired exit entities. The idea kept resurfacing at feature level even after the primitive was removed — ADR-278 itself lists wall `between`, conversation participants, and door connections as \"hand-rolled two-entity relationships today\".",
+   "The event-per-mutation machinery exists in source and is one constructor argument from working. WorldModel accepts an optional ISemanticEventSource and emitPlatformEvent fires on entity_moved and move_entity_failed. This is dormant, not deleted — a weaker claim than \"replaced\".",
+   "The grammar builder is real continuity in form. ADR-087's grammar.forAction(...).verbs([...]).pattern(':target').build() is recognizably the same fluent-chain idiom as _grammar.Verb(\"take\", Take).Noun.End, and it survived 3.5 years and a language change. What inverted is the axis (verb-centric → action-centric) and the status (authoring surface → generated artifact under ADR-269), not the idiom.",
+   "My reading of the pre-repo era is second-hand on dates. The C# files carry no version control; mtimes place StoryRunner at 2023-04-01 → 04-03 with nine files touched again in 2024-03/05, and the ChatGPT dumps have no absolute timestamps at all. The claim that these invariants date to April 2023 rests on mtime, which records last edit rather than authorship.",
+   "docs/architecture/adrs/2025-01-19-traits-with-builtin-container.md is dated January 2025 — before the repository existed and inside a window with no conversation record — yet its decision (RoomTrait and ActorTrait bundling container functionality) is implemented in the June 2025 code and still holds today (roomTrait.ts:96-98, 144-145). Either the trait system was designed months earlier than the corpus shows, or the file's date is wrong. Unlike the January 2025 work-summary anomaly, this one cannot be resolved by shifting it a year forward, because the decision was already shipped by mid-2025. I could not settle it.",
+   "The decomposition claim has a wobble. WorldModel.ts was deliberately cut from ~1,520 to ~1,194 lines in April 2026 (9b30d893) and is 2,181 lines today, holding capabilities, scope rules, scenes, regions, walls, prompt and score alongside entities and space. The boundaries between packages held; the boundary inside the central class did not."
+  ],
+  "confidence": "Verified directly, by reading source or running git in this session: the full text of StoryRunner's DataStore/World.cs, StandardLibrary/Core.cs, Thing/Person/Player/Location.cs, Behaviors.cs, Story.cs (scenery/immovable/open checks), Grammar.cs, and the test file line/[Fact] counts — the backup volume was mounted, so the origin claims are first-hand, not taken from origin-narrative.md. On the current side: SpatialIndex.ts in full; WorldModel.ts constructor, emitPlatformEvent, updateEntity, moveEntity, and the relationship block at 1210-1261; if-entity.ts head; wall-creation.ts header; save-restore-service.ts save/restore path; the generated header of parser-en-us/src/grammar.ts. Greps I ran and am relying on: zero hits for IsWithin/IsCarriedBy/'contains' in packages/world-model/src; zero hits for world.entity.moved / world.entity.changed anywhere in packages/ or stories/; all sixteen production `new WorldModel(` sites take no second argument; addRelationship/getRelated used only in tests, AuthorModel pass-throughs, and one engine round-trip test. ADRs read in full or in relevant part: 015, 034, 064, 087, 123, 189, 269, 278. Git verified: a52d135e stat and its trait tree (16 dirs), 331b0674 as SpatialIndex's introduction, 9b30d893 stat, d1873482 stat (which does *not* contain the ADR status changes the digest attributes to it). Taken from the digests without independent check: the December 2025 \"unnecessary technical rathole\" quote (I confirmed its consequence in code — snapshot save — but not the platform-assessment file itself); the September 2025 trait-purge and BreakableTrait property counts; the January 2026 ADR-090 phase list and PR numbers; the April 2026 save-restore breakage narrative; the July 2026 ADR-266 family rule counts beyond what ADR-269's own text states. Not checked at all: the 2024 Claude conversation bodies (I used the titles as origin-narrative.md reports them), the `sharpee_v1`/`sharpee_v2` clones' 21 extra branches, and whether any of the removed reciprocal-edge machinery survives on a branch not in this clone. One thing I could not settle: the true date of docs/architecture/adrs/2025-01-19-traits-with-builtin-container.md, which the ordinary year-off correction does not fix."
+ },
+ {
+  "key": "output-path",
+  "title": "Sixteen years to channel I/O: the output path, 2023–2026",
+  "thesis": "Sharpee's output path was rebuilt six times in three years, and every rebuild until the last was a variation on the same wrong shape: a *service* sitting between the engine and the client, producing a stream of text that something downstream had to interpret. The idea that finally replaced it — channels as addressable, independently-produced signals — was not discovered; it was recognized. David invented it as FyreVM channel I/O around 2009–2010, and on 2026-01-13 he watched Claude re-derive it from first principles and said so out loud. But recognition was not sufficient: the January design named channels and still shipped a text service, and the April 2026 attempt to build channels properly failed because it modelled channels as *destinations* to route existing text-blocks into. What made it land was a specific failure on 2026-05-02 — `status.score` and `status.turns` had no production emitters, so a routing layer had nothing to route — which forced the inversion to closure-per-channel: a channel owns its own producer. Once each channel produced its own value, the text service had no job left, and ADR-174 deleted it eight days later (c01208ca, −4,208 lines). Even that was not the end: ADR-300 in August 2026 dissolved the residual `main` channel, explicitly naming the catch-all as \"the mistake fyrevm made.\"",
+  "timeline": [
+   {
+    "date": "2023-04-01/03",
+    "event": "StoryRunner, the third C# prototype, ships an 11-project solution that already includes a `TextService` project alongside `WorldModel`, `GameEngine`, `ParserLibrary`, `StandardLibrary`. Text generation is a named architectural layer two years before any TypeScript exists.",
+    "source": "origin-narrative.md (mtime-dated, never under version control — not independently verified)"
+   },
+   {
+    "date": "2024-07/08",
+    "event": "Claude conversation titles in the C# era include \"Implementing Event Source in Text Service\" and \"Event-Sourced Standard IF Text Generation\" — the event-sourced-output idea predates the repo.",
+    "source": "origin-narrative.md, conversation-title index"
+   },
+   {
+    "date": "2025-06-23",
+    "event": "First text service in git: `packages/stdlib/src/text/text-service.ts` and `enhanced-text-service.ts`.",
+    "source": "commit a52d135e"
+   },
+   {
+    "date": "2025-07-02",
+    "event": "`packages/engine/src/text-service/` appears, with `decisions/text-service-separation.md` beside it — the extraction is already being argued for as it lands.",
+    "source": "commit 331b0674"
+   },
+   {
+    "date": "2025-07-14",
+    "event": "Text service extracted from the engine: `engine/src/text-service/text-service.ts` (−515), `README.md` (−88), `index.ts` (−7) deleted; ADR-029 (Simple Query-Based Text Service Architecture) and ADR-030 (@sharpee/if-services) written in the same commit; six planning docs moved to `decisions/outdated/`.",
+    "source": "commit 1e0350f2; docs/architecture/adrs/adr-029-text-service-architecture.md"
+   },
+   {
+    "date": "2025-07-28 → 2025-08-23",
+    "event": "Pluralism: `packages/text-service-template` (07-28), `packages/text-services` (08-04), `packages/text-service-browser` (08-23). Five separate full implementations across them — `cli-events-text-service.ts` (277), `standard-text-service.ts` (365), `template-text-service.ts` (308), browser `narrative-text-service.ts` (446), browser `standard-text-service.ts` (295).",
+    "source": "commits 8a7a4672, e5121096, f281e944; sizes from `git show --stat 9356bfff`"
+   },
+   {
+    "date": "2025-08-06",
+    "event": "ADR-048 removes dynamic loading: `setTextService()` goes away, text service is wired statically at build time per platform/language target.",
+    "source": "docs/architecture/adrs/adr-048-static-architecture.md"
+   },
+   {
+    "date": "2026-01-01",
+    "event": "`@sharpee/text-services` is in the 11-package npm publish set at 0.9.1-beta.13 (`pnpm publish` finally working after 13 bumps in one day). The other two text-service packages are NOT in the bumped set — they carry 1.0.0-alpha.1 and 1.0.0 and appear never to have been published.",
+    "source": "commit 1416d985; package.json contents at 9356bfff^"
+   },
+   {
+    "date": "2026-01-06",
+    "event": "ADR-091 Text Decorations: `[type:content]` bracket syntax, open string type, decorations annotate and formatters transform. Cites \"FyreVM Channel I/O (2009)\" as inspiration for the semantic output model.",
+    "source": "commit 4e742c6f; adr-091-text-decorations.md:203"
+   },
+   {
+    "date": "2026-01-13",
+    "event": "The recognition. A whole-day design session designs the output path from first principles; David: \"you just reinvented fyrevm channel IO Mr. Claude (though I actually invented it in 2009 with help from Tara McGrew and inspired by Jeff Panici).\" Result: `@sharpee/text-blocks` (ITextBlock/IDecoration) plus ONE stateless `@sharpee/text-service` and per-client renderers. ADR-096 §Context cites FyreVM by name; §Keys states \"Keys act as channels (FyreVM pattern).\"",
+    "source": "session-20260113-design-text-architecture.md; commits 2a509894 (+6690/−456), ac970ce0 (+2906/−296); adr-096-text-service.md"
+   },
+   {
+    "date": "2026-01-14",
+    "event": "All three 2025-era text-service packages deleted, thirteen days after one of them was published to npm. Commit is +181/−3,340 overall; the three packages account for ~2,400 lines across 23 files. `if-services/src/text-service.ts` goes too — stateful `initialize()`/`reset()`/`setLanguageProvider()` replaced by `processTurn(events) => ITextBlock[]`.",
+    "source": "commit 9356bfff"
+   },
+   {
+    "date": "2026-02-18",
+    "event": "ADR-133 Structured Text Output: the engine stops calling `renderToString()` before handing off; `text:output` carries `ITextBlock[]` and flattening moves to the client. Small commit (+133/−45) for a decision that had blocked Reflections' multi-character narration.",
+    "source": "commits a9103b72, 8d61bc97; adr-133-structured-text-output.md"
+   },
+   {
+    "date": "2026-03-30",
+    "event": "`packages/text-service/src/handlers/action.ts` deleted outright during the action.success → domain-events migration: domain events carry `messageId` directly, so the action handler is a redundant hop.",
+    "source": "commit 0e65785f"
+   },
+   {
+    "date": "2026-04-28/29",
+    "event": "The reframing. ADR-163 and ADR-164 written (708 + 616 lines); ADR-101 marked SUPERSEDED after an audit confirms none of its media events were ever implemented. A memory is written the same day: \"text-service was a Claude-proposed shortcut to ship Dungeo; channel I/O has been the design intent since 2010-era fyrevm-server.\" ADR-163 §Context Thread 2 says the same in the ADR itself.",
+    "source": "commit 91922d17; session-20260428-2141-main.md; adr-163-channel-service-platform.md §Context"
+   },
+   {
+    "date": "2026-05-01",
+    "event": "ADR-163 split and rewritten as the Channel-Service Platform (1,315 lines) with ADR-164 as the downstream multi-user consumer and ADR-165 for renderers. Phases 1–3 ship the package on a rule-based router — `ChannelRule` with `when` predicates and `extract` strategies routing text-blocks into channels.",
+    "source": "commit 26f74c81 (+5951/−1331); commits 105820a9, 7baaab23, 98b541b7"
+   },
+   {
+    "date": "2026-05-02",
+    "event": "The hinge. Phase 4B halts mid-edit: `status.score` and `status.turns` have no production emitters at all, so rule-based routing cannot populate them. Edits git-checkout reverted, net code delta zero. The ADR is rewritten whole-cloth (1,315 → 945 lines) around closure-per-channel: each channel carries its own produce closure. Rule-based routing is deleted entirely — 9 source files and 11 AC tests.",
+    "source": "session-20260502-1914-main.md; adr-163 §Replaces"
+   },
+   {
+    "date": "2026-05-03",
+    "event": "R1–R8 land in a single ~18-hour session: channel types in if-domain, ChannelService in its own package, 21 standard IOChannels in stdlib, engine has-a composition, platform-browser and CLI cutover, `packages/platforms/` deleted, workspace 34→32.",
+    "source": "commits 6bcf8d32 (+7962/−4437), fa0dbc13, 57648e0f (+526/−1648)"
+   },
+   {
+    "date": "2026-05-09/10",
+    "event": "ADR-174 written and implemented in three phases in ~24 hours. `IDecoration.type` becomes `className` (already-resolved CSS class, `sharpee-` prefixed); prose production moves into `packages/engine/src/prose-pipeline/`; `renderToString` ports to channel-service; then `@sharpee/text-service` is deleted — 62 files, +808/−4,208, workspace 32→30, 147 tests gone with it and no coverage audit. ADR-174 explicitly reverses the 2026-05-03 R8 disposition that had recorded \"keep block-production indefinitely.\"",
+    "source": "commits 472b5084, 59b9d745, 8cccc344, c01208ca; adr-174-decoration-and-prose-pipeline.md"
+   },
+   {
+    "date": "2026-06",
+    "event": "`ITextService` renamed `IProsePipeline` (21432101), closing transitional debt ADR-174 anticipated; docs sweep purges stale \"text service\" language repo-wide (733ad575, efc6998f). Independently, ADR-192's phrase algebra replaces the formatter chain with `messageId → phrase tree → EnglishAssembler → ITextBlock[]`.",
+    "source": "commits 21432101, 733ad575, efc6998f, 06856360"
+   },
+   {
+    "date": "2026-08-04/05",
+    "event": "ADR-300: `main` is dissolved into seven prose channels (`room-name`, `room-description`, `room-contents`, `action-result`, `action-blocked`, `error`, `game-message`) plus a `banner` channel and a `preferred-layout` ordering channel. The ADR names the target directly: \"This is the fyrevm model done right: there, a catch-all main channel meant the engine kept making layout decisions that belonged to the client.\"",
+    "source": "adr-300-addressable-channels-and-canonical-transcript.md D6–D9; commit 4f8a8e7e (+1975/−794)"
+   },
+   {
+    "date": "2026-08-05",
+    "event": "`stories/cloak-of-darkness/src/test-runner.ts` finally stops importing `@sharpee/text-service` — an import it had carried since 2025-08-10 and that had been dead for nearly three months. The commit message notes cloak's `play` script \"has been broken the whole time.\"",
+    "source": "commit b3341015; broken-gate finding in session-20260805-1946"
+   }
+  ],
+  "analysis": "**The shape that kept coming back.** From July 2025 to May 2026 there was always an object called a text service sitting between the engine and the client, and its job was always the same: take a turn's events and produce output. What changed each time was how it was decomposed, never that it existed. ADR-029 (2025-07-14) pulled it out of the engine and gave it a query-based context. ADR-048 (2025-08-06) made it statically wired instead of dynamically loaded. Jul–Aug 2025 spawned three sibling packages, each reimplementing the whole pipeline — five distinct service classes totalling ~1,700 lines of duplicated orchestration. ADR-096 (2026-01-13) collapsed the three into one and separated the contract (`@sharpee/text-blocks`) from the implementation. ADR-133 (2026-02-18) stopped the engine flattening blocks to a string. Every one of those is a real improvement, and none of them changed the shape.\n\n**The January recognition was real but insufficient — and that is the interesting part.** ADR-096 does not gesture at FyreVM; it cites it four times, credits \"David Cornelson/Tara McGrew/Jeff Panici, 2009,\" and states outright that \"Keys act as channels (FyreVM pattern).\" The design session's own transcript records the moment: *\"you just reinvented fyrevm channel IO Mr. Claude.\"* And yet what shipped on 2026-01-13 was a package called `@sharpee/text-service` whose output was a flat array of blocks with string keys. The channel was a *label on an item in a stream*. A client still had to walk the stream and decide what each key meant, and the engine still decided what order the stream came in. Naming the idea did not restructure the code around it. This is the sharpest finding in the arc: the gap between recognizing an architecture and inhabiting it was fifteen months and two more rewrites.\n\n**April 2026 got the framing right and the mechanism wrong.** By 2026-04-28 the project had explicitly reclassified text-service as a shortcut rather than a destination — ADR-163's Context says \"text-service was proposed in 2025 to ship Dungeo... accepted as deferral-to-ship, not as the architectural destination. Channel I/O has been the design intent since the 2010-era fyrevm-server\" — and a durable memory was written the same day to stop the same mistake recurring. But the first ADR-163 modelled channels as *destinations*: a `ChannelRule` table with `when` predicates and `extract` strategies routing existing text-blocks into named buckets. That is the January design with a routing layer bolted on. It shipped through Phases 1–3 and 111 tests before it broke.\n\n**What actually made it land was a null result on 2026-05-02.** Phase 4B stopped mid-edit because `status.score` and `status.turns` had no production emitters anywhere in the codebase. A router cannot route a signal nothing produces. The recorded response is the pivot: *\"Rather than paper over the gap with interim emitters, the session pivoted to rethink the channel definition model from first principles.\"* The answer was closure-per-channel — each `IOChannel` carries a TypeScript closure that produces its own value each turn, with no shared router. That single inversion is the whole difference. Once a channel is a *producer* rather than a destination, \"the prose\" is just one producer among twenty-one, and there is no longer any object whose job is to make the output. The text service was not deleted because someone decided to delete it; it was deleted because after 2026-05-03 it had nothing to do. ADR-174 followed eight days later and removed 4,208 lines.\n\n**What survived tells you which parts were right.** `@sharpee/text-blocks` — the January contract package — still exists and is still the type source: `packages/if-domain/src/channels/types.ts` imports `ITextBlock` and `TextContent` from it, and the current `ProseEntry` wire type is built on `TextContent`. The bracket decoration syntax from ADR-091 (January 6) is unchanged in substance; ADR-174 only moved the `type` field to a pre-resolved `className`. So January was not a wrong turn. January got the *data model* right and the *locus of production* wrong, and the two subsequent rewrites changed only the second.\n\n**And it did not stop in May.** ADR-300 (2026-08-04) found the last residue of the stream model: `main`, a catch-all into which the banner, room name, description, contents, action results and errors all still flowed. The ADR's language is unusually direct about what that meant — *\"`main` meant the engine was still making layout decisions that belong to the client, which is the mistake fyrevm made and the reason not to repeat it\"* — and D8 dissolves it into seven addressable prose channels with ordering moved onto its own `preferred-layout` channel. So the arc's endpoint is not \"returned to a 2009 design.\" It is \"reached the 2009 design in May 2026, then found and fixed a flaw in it three months later.\" The title's sixteen years measure the distance to arrival, not to correctness.\n\n**One thing the evidence does not support.** The C#-era `TextService` project (2023) is evidence for the *text-service* lineage, not the *channel* lineage. It is a service named for text generation in a solution that also has `GameEngine` and `ParserLibrary`; nothing in the available record shows it did anything channel-like, and the source is not in the corpus. Reading it as the first station on the road to channel I/O over-reads it. The two lineages ran in parallel in David's head from 2009 onward, and they only merged in the repo on 2026-01-13.",
+  "confidence": "Verified directly against `/Users/david/repos/sharpee` git: every commit hash and line count cited (c01208ca +808/−4208 across 62 files; 9356bfff +181/−3340; 1e0350f2's −515/−88/−7 under `packages/engine/src/text-service/`; 6bcf8d32 +7962/−4437; 4f8a8e7e +1975/−794; 2a509894 +6690/−456; 8d61bc97 +133/−45; 91922d17 +2971/−2; 26f74c81 +5951/−1331), the add/delete dates of every `packages/text-service*` package, and the membership of `packages/text-services/package.json` in the 2026-01-01 eleven-package version bump. Read on disk: ADR-029, 048, 091, 096, 101, 133, 163, 174, 300, plus `packages/if-domain/src/channels/types.ts`, `packages/text-blocks/src/types.ts`, and the current `packages/stdlib/src/channels/` channel id list. Read from the corpus: `session-20260113-design-text-architecture.md` (the FyreVM quote is verbatim from line 180 and repeated at line 398) and `session-20260428-2141-main.md` (the \"pragmatic interim\" memory text).\n\nNot verified: (1) the 2023 C# `TextService` project — no source exists in `/Volumes/Workspace/sharpee-corpus`, so that row rests entirely on `origin-narrative.md`, which itself read mtime-dated project manifests outside version control; (2) whether `@sharpee/text-services` was actually live on the npm registry — I confirmed only that its `package.json` was in the bumped publish set, not that the publish succeeded (network not used); (3) whether `npm deprecate @sharpee/text-service` was ever run — it appears as a carried open item on 2026-05-18 and again on 2026-06-17/20 and I found no later record of it firing; (4) all test counts (147 text-service tests, 111/94/398, walkthrough 872/930/961) are as self-reported in session summaries and digests, not re-run; (5) the ~1,700-line duplication figure for the 2025 sibling services is summed from `git show --stat 9356bfff` deletion counts, which include comments and imports.\n\nOne correction to the digests: `monthly-digests.json` 2026-01a `.abandoned[0]` states all three text-service packages were \"published to npm on Jan 1.\" Only `@sharpee/text-services` was in the 0.9.1-beta version line; `text-service-template` (1.0.0-alpha.1) and `text-service-browser` (1.0.0) were outside it and were not bumped by 1416d985.",
+  "counterEvidence": [
+   "The January 2026 design was NOT superseded — a large part of it is still running. `@sharpee/text-blocks`, created on 2026-01-13, still exists and is still the type source: `packages/if-domain/src/channels/types.ts` imports `ITextBlock` and `TextContent` from it, and today's `ProseEntry` wire type is built on `TextContent`. A framing of 'circled for years, then landed in May 2026' understates how much of the answer was already correct sixteen months earlier.",
+   "Channels did not arrive with ADR-163. ADR-096 (2026-01-13) already names FyreVM four times, credits it by name and year, and states 'Keys act as channels (FyreVM pattern).' ADR-091 (2026-01-06) cites 'FyreVM Channel I/O (2009)' too. The April 2026 ADRs re-derive the channel framing rather than introducing it — which weakens any story in which April is the moment of insight.",
+   "The May 2026 landing was not clean. `stories/cloak-of-darkness/src/test-runner.ts` kept importing `@sharpee/text-service` from 2025-08-10 until 2026-08-05 — three months after the package was deleted — and cloak's `play` script was broken that whole time (commit b3341015). The August 2026 finding calls the resulting red `test:npm` 'the concrete form of a gate that has been red and ignored.' Also, ADR-174 Phase 3's pre-flight grep missed five config files and the first `pnpm install` after deletion errored (recorded as OQ-5).",
+   "The arc did not end in May 2026, so 'sixteen years to channel I/O' has a soft endpoint. ADR-300 (2026-08-04) found the engine still owning layout via the catch-all `main` channel and dissolved it into seven addressable prose channels plus `preferred-layout`. If the criterion is 'the client owns layout entirely,' the landing date is August 2026, not May.",
+   "The May 2026 deletion was partly a correction of an agent-asserted position, not a planned arc step. The 2026-05-03 R8 disposition document recorded '18 KEEP exports (block-production pipeline)' as permanent; the 2026-05-09 session records that this 'was not endorsed' by the user, and ADR-174 §Decision explicitly reverses it six days later. The summary had asserted a durable architectural position David had not agreed to.",
+   "147 text-service tests were deleted with the package and no coverage audit was performed (`monthly-digests.json` 2026-05 `.abandoned[2]`). The claim that the prose pipeline is a strict improvement is not backed by a coverage comparison.",
+   "The output path's *content* side was rebuilt on a separate track that channels did not subsume: ADR-192's phrase algebra (June 2026) deleted the formatter chain and `EntityInfo` and replaced template strings with `messageId → phrase tree → EnglishAssembler → ITextBlock[]`, across 133 placeholder forms in 59 lang files and 215 call sites in 40 stdlib files. A single-throughline reading of 'the output path' silently annexes work that had its own cause.",
+   "The 2023 C# `TextService` project is thin evidence for the channel lineage. It is a named project in a solution whose method bodies were empty (`Take()`, `Examine()`, `Go()` all unimplemented per origin-narrative.md), its source is not in the corpus, and nothing shows it did anything channel-shaped. It supports the text-service lineage, not the FyreVM one.",
+   "The 2026-05-02 pivot has a less flattering reading: the halt happened *after* Phases 1–3 and 111 tests had already shipped on the rule-based model, i.e. the design flaw was found by implementation, not by the three rounds of ADR review that preceded it. The ADR-review gate that the May digest describes as being quoted as a gate on nearly every ADR did not catch that channels had no producers."
+  ]
+ },
+ {
+  "key": "dogfooding",
+  "title": "The Forcing Functions: How Sharpee's Consumers Built Its Platform",
+  "thesis": "Sharpee's platform was not designed and then populated with stories; it was excavated by them. From the first C# prototype in March 2023 through Fernhill in July 2026, nearly every substantial platform capability landed within days of something built on top of the platform failing to compile, run, or read correctly — and the defects that mattered most were structurally invisible to the review practices that ran alongside. An action that validated but never mutated survived three complete refactors of all 43 stdlib actions in 24 hours and died the first time a story tried to put a cloak on a hook. A save/restore service that dropped the score ledger, all capabilities, all state values and all relationships survived from inception through a 3,164-test audit and a static grader reporting 177 GREEN / 0 YELLOW / 0 RED, because the three tests covering it asserted on fields the broken code never touched. A story compiler shipped a full language surface before anyone discovered it could not declare a door. The claim holds: dog-fooding found defects design review did not. But the record also shows the inverse is false as a general law — a pure documentation exercise (the CS-foundations doc) triggered the single largest cleanup in the repo's history with no story involved — and it shows two distinctive failure modes of the practice itself: forcing functions that never existed still shipped API into the platform (Reflections → `switchPlayer`, zero callers to this day), and the harness that made dog-fooding legible was itself silently skipping commands for months.",
+  "timeline": [
+   {
+    "date": "2023-03-19",
+    "event": "The first C# prototype, IFPlatform, already contains CloakOfDarkness/Story.cs — the standard first IF test story is present before there is a platform to test.",
+    "source": "origin-narrative.md (file mtimes on IFPlatform, 3 projects / 18 files / 675 lines)"
+   },
+   {
+    "date": "2025-07-02",
+    "event": "The entire build system is thrashed in one day — CommonJS, `file:` refs, a shell script monkey-patching Node's module resolver — for the single purpose of making Cloak of Darkness load. Commit 331b0674 is 1,025 files, +300,159 lines.",
+    "source": "commit 331b0674, \"Completed most refactoring and build is working\""
+   },
+   {
+    "date": "2025-08-09",
+    "event": "Three hours after Phases 1–7 were declared complete with \"All builds: Passing with new structure,\" running Cloak of Darkness produces four defects at once: scenery unreachable as an indirect object, custom HANG action never invoked, raw message IDs (`too_dark`) rendered instead of text, READ unimplemented.",
+    "source": "context-history/end-session-2025-08-09-0033.md"
+   },
+   {
+    "date": "2025-12-26",
+    "event": "All 43 stdlib actions are refactored three separate times in one day — to three-phase, to report-helpers, then to four-phase with blocked(). Design review kills the middle abstraction 12 hours after 43 actions adopted it.",
+    "source": "commits 1954abcb → 232b3656/7b44a728 → bebeb3d9 → 49fd27a0/a239a40e"
+   },
+   {
+    "date": "2025-12-27 05:12",
+    "event": "Debugging Cloak of Darkness finds that the putting action never moved anything: it called ContainerBehavior.addItem for validation and returned. The fix is a one-line `context.world.moveEntity(item.id, target.id)`. This survived the previous day's three full refactors of every action.",
+    "source": "commit 29970c8f, packages/stdlib/src/actions/standard/putting/putting.ts"
+   },
+   {
+    "date": "2025-12-27 06:21",
+    "event": "The looking action is found to have been checking `roomTrait.requiresLight`, a property that does not exist on RoomTrait, since inception. It is one of eight issues catalogued in darkness-system-issues.md, all found by running one story.",
+    "source": "commit 9ee1ccca; docs/work/phases/darkness-system-issues.md (Issues 1–8)"
+   },
+   {
+    "date": "2025-12-27 16:44",
+    "event": "Project Dungeo launches with the word in its README: \"Dungeo is the dog-fooding project for Sharpee.\" Its second deliverable is stdlib-gap-analysis.md, which enumerates 20 missing actions, 11 missing traits, 6 missing behaviors and 6 missing systems before a single room exists.",
+    "source": "commit b730bc87, docs/work/dungeo/README.md + stdlib-gap-analysis.md"
+   },
+   {
+    "date": "2025-12-27 20:47",
+    "event": "ADR-070 (NPC system), ADR-071 (daemons and fuses) and ADR-072 (combat) are written and implemented the same day Dungeo starts. Fourteen ADRs (068–081) are added in the five days from Dec 27 to Dec 31.",
+    "source": "commit 18115c57; git log --diff-filter=A on docs/architecture/adrs 2025-12-27..2026-01-01"
+   },
+   {
+    "date": "2026-01-05",
+    "event": "ADR-090 Entity-Centric Action Dispatch — the capability-dispatch system still central to the platform — opens with a single sentence of motivation: 'When a player types \"lower basket\"… the system routes to the wrong action (Inside Mirror pole logic instead of basket elevator logic).' One unexpressible Zork puzzle produces the architecture.",
+    "source": "docs/architecture/adrs/adr-090-entity-centric-action-dispatch.md, §Context"
+   },
+   {
+    "date": "2026-02-15",
+    "event": "The dog-fooding harness is found to have been lying: transcript-tester silently skipped every command that carried no assertion. Adding real assertions to wt-01 through wt-11 takes 611 insertions and forces the removal of $teleport/$take shortcuts.",
+    "source": "commit b68bb92e; quoted in session-20260215-1615-main.md"
+   },
+   {
+    "date": "2026-02-16",
+    "event": "stories/reflections is deleted in full — 58 files — two days after a full mirror-portal rewrite was designed for it. ADR-132 and ADR-133 continue to cite Reflections as their motivating context.",
+    "source": "commit a9f20e90 (483 files, −275,597 lines)"
+   },
+   {
+    "date": "2026-03-23",
+    "event": "Family Zoo tutorial development logs ISSUE-054 (multi-word aliases don't resolve — 'examine bush babies' fails) and ISSUE-055 (entity creation needs 3–4 calls, repeated 30+ times in one file), both stamped 'Discovered during Family Zoo tutorial development.'",
+    "source": "docs/work/issues/issues-list-04.md at commit 69c77c90"
+   },
+   {
+    "date": "2026-03-26",
+    "event": "ISSUE-054 is root-caused and fixed platform-side: command-validator switches to maximal munch (full ref.text before ref.head), with a 154-line entity-alias-resolution test. The same commit adds OpenInventoryTrait after an NPC inventory scope leak.",
+    "source": "commit 2dfe4dd4"
+   },
+   {
+    "date": "2026-03-26",
+    "event": "COUNTER-EVIDENCE: writing a CS-foundations architecture document — no story, no runtime — surfaces ISSUE-063 through ISSUE-070 in one sitting. Execution deletes the entity `on` handler system (−1,566 lines) and the legacy event-sequencing layer (−1,208 lines) and drives 1,035 `as any` casts to zero over nine phases.",
+    "source": "commit 369acf9f; then 1b0b4d03, 5258266f, 1078586a"
+   },
+   {
+    "date": "2026-04-23",
+    "event": "ADR-153 Phase 4, named 'Deno Sandbox — Engine Subprocess and Turn Execution,' had been declared COMPLETE with an 85-line echo stub standing in for the engine. It is discovered only when a live player on play.sharpee.net sees 'Waiting for the story to begin…'. The remediation produces the No-Stub-Under-Test rule now in DEVARCH.md rule 13a.",
+    "source": "session-20260423-2008-main.md (digest); commit 2364db85 makes deno-entry.ts production code 2026-04-24"
+   },
+   {
+    "date": "2026-04-28",
+    "event": "save-restore-service.ts is found partially implemented since inception, silently dropping ScoreLedger, capabilities, state values, relationships and ID counters on every host. The original code carries the comment 'Full deserialization would need to clear and recreate the world / For now, this restores entity traits and locations.'",
+    "source": "commit bf9b9564; comment at bf9b9564^:packages/engine/src/save-restore-service.ts:~362"
+   },
+   {
+    "date": "2026-06-22",
+    "event": "A Docker 'naive reader' QA pass over the 31-chapter manual finds @sharpee/devkit@1.0.7 crashing on every command — the book is un-followable from §1.4. Root cause is tsf rewriting imports to relative paths on publish; fixed by flipping ts-forge.config.json to `preserve` and bumping 28 packages to 1.0.8.",
+    "source": "GH issue #148 (created 2026-06-22); commit 36e8951d"
+   },
+   {
+    "date": "2026-06-23",
+    "event": "Book QA files five platform defects in one day, each fixed with a regression test the same day: #154 player unexaminable, #155 handlers double-firing, #158 missing Oxford 'and', #159 silent NPC movement, #164 literal {description} in examine-self.",
+    "source": "GH #154/#155/#158/#159/#164; commits 488d7c12, d2112c3d, a751c407, 8a7609cd, 203aa638"
+   },
+   {
+    "date": "2026-06-24",
+    "event": "ADR-189 is written because a book claim was checked and found aspirational: EntityType.SCENERY added no SceneryTrait, so scenery was takeable. The ADR quotes the book's own warning paragraph as the evidence and introduces a default-trait registry so the type keeps its documented promise by construction.",
+    "source": "docs/architecture/adrs/adr-189-entity-type-default-traits-registry.md, §Context"
+   },
+   {
+    "date": "2026-07-15",
+    "event": "ADR-222 generalizes dog-fooding into methodology: Chord becomes an 'elegance oracle' — because Chord compiles down to the platform, any Chord form cleaner than hand-written TypeScript proves the TypeScript has a seam. David's framing: 'making Chord cruder is not an option; that means something is inelegant in Sharpee.'",
+    "source": "docs/architecture/adrs/adr-222-elegance-parity-seam-catalog.md"
+   },
+   {
+    "date": "2026-07-17",
+    "event": "ADR-233's go-live gate records a live verification: 'create the oak door / a door still throws a LoadError — the most basic IF furniture fails to load.' The Chord language had shipped regions, topics, pronouns and phrasebooks first.",
+    "source": "docs/architecture/adrs/adr-233-chord-go-live-gate.md, §Context ¶1"
+   },
+   {
+    "date": "2026-07-18",
+    "event": "Fernhill ships as the G3 tutorial gate, and its commits carry the platform fixes it forced in the same diff: 'Fernhill G3 phases 1-5 (254/254) + ADR-240 live derived state SHIPPED (evaluator registry; recompute deleted)' and 'ADR-241 dynamic channels SHIPPED + Fernhill Phase 8 browser media'. ADR-240's context reads 'Found live during Fernhill Phase 4.'",
+    "source": "commits aa984688, c81c9e79, 41cc4d87; adr-240-live-derived-state.md"
+   },
+   {
+    "date": "2026-08-02",
+    "event": "Running Fernhill under a pinned seed reveals that no host ever passed StoryLoaderOptions.seed to createStory — every Chord story's random draw was clock-seeded, and IDE Play had never run at its own pinned seed. Four hosts required fixing.",
+    "source": "commits 6cf5dbc2, 6c0b27c6"
+   }
+  ],
+  "analysis": "**The pattern predates the platform.** `CloakOfDarkness/Story.cs` sits in the first C# prototype from March 2023, in a project whose action bodies — `Take()`, `Examine()`, `Go()` — are all empty. The test story arrives before the thing it tests. That ordering is the whole argument in miniature, and it recurs at every scale afterward.\n\n**Cloak of Darkness: the highest defect-per-line yield in the corpus.** Cloak is a few hundred lines of story. In July 2025 it is the sole reason the build system is torn apart and rebuilt (331b0674, 1,025 files); it does not merely test the build, it *defines* what \"working\" means. On 2025-08-09 it produces four defects in a platform declared complete three hours earlier. Its best find comes on 2025-12-27: `putting` had been calling `ContainerBehavior.addItem` for validation and returning without ever moving the item (29970c8f). The previous 24 hours had migrated all 43 stdlib actions three separate times — to three-phase, to `report-helpers`, then to four-phase with `blocked()` — plus produced a hand-written IF-logic assessment of every one of them (e666b71b). Four passes of pure design review over the exact file. None saw that the action did nothing. One story did, immediately. The same morning, `looking` was found reading `roomTrait.requiresLight`, a property that does not exist (9ee1ccca), one of eight issues in `darkness-system-issues.md`.\n\n**Dungeo is the only forcing function launched as one, and it is the only one whose gaps were enumerated in advance.** `docs/work/dungeo/README.md` states the intent outright, and `stdlib-gap-analysis.md` — written the same hour — lists 20 missing actions, 11 traits, 6 behaviors, 6 systems. That document is the thesis in artifact form: the gaps are legible only against a specific, complete, externally-fixed target. Fourteen ADRs (068–081) land in the five days that follow, and ADR-070/071/072 are written *and implemented* on day one (18115c57). The mechanism stayed constant into January: ADR-090, the capability-dispatch system that still underpins the platform, opens by describing \"lower basket\" routing to the mirror-pole action. One unexpressible puzzle, one architecture.\n\n**Family Zoo yields less, and yields differently — which is informative.** Its two findings, ISSUE-054 and ISSUE-055, are both stamped \"Discovered during Family Zoo tutorial development\" in `issues-list-04.md`. Neither is a correctness bug in the Dungeo sense; one is a parser resolution failure on multi-word aliases (\"examine bush babies\"), one is pure DX (four calls per entity, thirty times per file). A tutorial exercises breadth of the *authoring surface* rather than depth of world logic, so it surfaces ergonomics and resolution edges. ISSUE-054's fix (2dfe4dd4) changed the command-validator to maximal munch and added a 154-line test; ISSUE-055 was never fixed as specified — the verbose pattern shipped as-is, judged to \"teach well.\"\n\n**The book is the highest-leverage forcing function the project found, because a reader cannot be stubbed.** The Docker \"naive reader\" pass caught `@sharpee/devkit@1.0.7` crashing on every command (#148) — a defect not in Sharpee source at all but in the sibling `tsf` publish pipeline, reachable only by installing the published thing and following the instructions. Five more platform defects filed on 2026-06-23 (#154, #155, #158, #159, #164), all fixed the same day with regression tests. And ADR-189 is the purest instance in the record: the book had to warn readers that `EntityType.SCENERY` produces takeable scenery, and the ADR cites that paragraph as its reason to change the platform. Documenting a promise the code did not keep is what made the gap actionable.\n\n**By 2026-07 the practice becomes doctrine.** ADR-222 names Chord an \"elegance oracle\": because Chord compiles down to the platform, any Chord construct cleaner than hand-written TypeScript is *proof* the TypeScript has a seam. That converts dog-fooding from bug-finding into a quality metric with an argument behind it. ADR-233 then turns \"ready\" into four assertable gates, and its Context records the finding that justifies the whole exercise — after a language surface with regions, doors-in-name, topics, pronouns, comments, imports, counters and phrasebooks, `a door` still threw a LoadError. Fernhill, the G3 tutorial, produced commits that contain the story and the platform fix in one diff: `aa984688` is \"Fernhill G3 phases 1-5 + ADR-240 live derived state SHIPPED\"; ADR-240's Context says \"Found live during Fernhill Phase 4,\" and what it found was a cache invalidated off an enumerated list of eleven event types — an enumeration that, as the ADR says, \"can never be complete.\" No review finds that. Running a story that mutates state outside the list finds it on the first turn.\n\n**Where the thesis needs qualifying.** Design review did produce the single largest structural cleanup in the repo: writing `docs/.../cs-foundations` (369acf9f) surfaced ISSUE-063 through ISSUE-070 in one sitting and led to deleting the entity `on` handler system (−1,566 lines) and the event-sequencing layer (−1,208 lines). So the honest claim is narrower than \"dog-fooding beats review.\" Review reliably finds *structural* problems — duplication, dead layers, weak typing. It reliably misses *behavioral* ones — code that runs and does the wrong thing. Every defect in the timeline above is behavioral. And the April 2026 Deno episode shows the real variable is not \"a story\" but \"the production path executed\": Phase 4 had a story, a test suite, and a stub, and stayed broken until a live player saw the failure. Dog-fooding works because it is hard to fake, not because stories are magic.",
+  "counterEvidence": [
+   "Design review found more, structurally, than any story did. Writing the CS-foundations document (369acf9f, 2026-03-26) — no runtime, no story, ~550 lines of prose — surfaced ISSUE-063 through ISSUE-070 in one sitting, and their execution deleted the entity `on` handler system (1b0b4d03, −1,566 lines), the legacy event-sequencing layer (5258266f, −1,208 lines), and drove 1,035 `as any` casts to zero across nine phases. Nothing was being dog-fooded. The same shape appears on 2025-12-26 when a self-authored architectural assessment (bebeb3d9) killed the report-helpers abstraction twelve hours after all 43 actions had adopted it.",
+   "Reflections is a forcing function that never ran, and it shipped API anyway. Four ADRs cite it (108, 125, 132, 133); ADR-133 states 'This became a concrete blocker during Reflections development.' The August 2025 digest records 'Reflections story (the reason blood-magic exists) not started,' and commit a9f20e90 (2026-02-16) deletes all 58 files of stories/reflections two days after a full mirror-portal rewrite was designed for it. ADR-132's PC switching nevertheless shipped: `GameEngine.switchPlayer` exists at packages/engine/src/game-engine.ts:1674 and a repo-wide grep excluding node_modules and dist returns exactly one occurrence — its own definition. Zero callers, thirty months in.",
+   "The dog-fooding harness was itself silently broken for months. transcript-tester skipped every command that carried no assertion — 'they appeared in the transcript but were silently skipped during execution' (session-20260215-1615). Commit b68bb92e had to add real assertions across wt-01 through wt-11 (611 insertions) and rip out the $teleport/$take shortcuts. Removing those shortcuts a month later (1df56b05) exposed two genuine Dungeo map bugs the shortcuts had been hiding. So an unknown fraction of Dungeo's 'passing walkthroughs' during 2026-01/02 proved nothing.",
+   "The dog-fooded regression numbers do not reconcile. Per the July 2026 digest, Dungeo walkthrough-chain totals are reported as 885/885 (07-01), 916/916 (07-08), 870/870 and 874 (07-12), 888/888 (07-21), 921/921 (07-21), and 866 (07-28, excused as 'within documented RNG combat variance') — in a chain the project documents as deterministic at a pinned seed. Determinism only became real on 2026-08-02 when the four module-scope SeededRandom singletons were deleted (1df93787).",
+   "The forcing function generated its own load. ADR-078 is a 34-point puzzle — the Thief's hidden painting and a lethal temple ritual — invented from scratch, with a self-assigned 'Zarf rating: Nasty,' inside a project whose premise was faithful reimplementation of Mainframe Zork. Its stated Context is 'Dungeo needs additional puzzles to reach the ~616 point target.' The dog-food was being manufactured to keep the exercise going.",
+   "Dungeo's yield is now explicitly quarantined. Project memory records Dungeo as 'an MDL-mirror nostalgia project… NEVER a consideration for Chord/Chord Writer — not as corpus stats, scale yardstick, or example.' Fourteen ADRs and roughly 40% of all ADR files mention it, but the current products treat its requirements as non-representative — meaning some share of what it forced into the platform was Zork-shaped rather than IF-shaped.",
+   "Absence of a forcing function was sometimes correctly detected without one. ADR-136 (context-driven action menus) was implemented in full — seven phases, ~+4,601 lines, working — and then Deferred with the reason written into its Status line: 'the feature needs a concrete game and UX vision to drive it.' It sits unmerged on remotes/origin/adr-136-context-actions. The project could recognize a missing forcing function by reasoning, but only after building the feature.",
+   "Some of the worst defects were found by neither stories nor review. ADR-205 was authored, reviewed, and REJECTED on an incidence count showing the bug it fixed occurs zero times across dungeo, friendly-zoo, familyzoo and platform defaults. The 1,191 type-only symbols in value-import position across 456 files (dacee31c, 17ba30df) came from a purpose-built repo-wide detector. Neither is a dog-fooding find.",
+   "Having a story is not sufficient — executing the real path is the actual variable. ADR-153 Phase 4, 'Engine Subprocess and Turn Execution,' was declared COMPLETE while `deno-entry.ts` was an 85-line echo stub and every Phase 4 test asserted against tests/fixtures/stub-sandbox.mjs. Dungeo was the story being served. The failure surfaced only when a live player on play.sharpee.net saw 'Waiting for the story to begin…'. This is why the remediation produced a methodology rule (No-Stub-Under-Test, now DEVARCH.md rule 13a) rather than a story.",
+   "Dog-fooding did not prevent long-lived silent breakage even where stories exercised it daily. save-restore-service.ts dropped ScoreLedger, capabilities, state values, relationships and ID counters on every host from inception until 2026-04-28 (bf9b9564), behind a comment reading 'For now, this restores entity traits and locations.' Cloak, Dungeo and the multi-user server all saved and restored throughout that period without surfacing it."
+  ],
+  "confidence": "Verified directly against the repository (read the file or ran the git command): commit 29970c8f and the exact putting.ts diff; 9ee1ccca and darkness-system-issues.md's eight issues; b730bc87 with the README's \"dog-fooding project\" sentence and stdlib-gap-analysis.md's four gap tables (I counted 20/11/6/6 from the file); 18115c57; the fourteen ADRs added 2025-12-27..2026-01-01 via --diff-filter=A; ADR-090's \"lower basket\" Context; ADR-078's Context sentence; a9f20e90's stat and its reflections file count; the switchPlayer grep (one hit, its own definition, excluding node_modules and dist); 69c77c90 and issues-list-04.md's \"Discovered during Family Zoo tutorial development\" text for ISSUE-054/055; 2dfe4dd4's message and stat; 369acf9f, 1b0b4d03 (−1,566), 5258266f (−1,208); bf9b9564 and the pre-fix \"For now\" comment in save-restore-service.ts; GH issues #148/#154/#155/#158/#159/#164 with creation dates and the five fix commits; ADR-189's Context; ADR-233's G1 LoadError sentence and G3 amendment; ADR-222's oracle definition; ADR-240's \"Found live during Fernhill Phase 4\" and its Parent line; ADR-241; commit titles aa984688/c81c9e79/41cc4d87; 6cf5dbc2/6c0b27c6/f878a80c; ADR-136's Deferred status text and the surviving remote branch; b68bb92e's message and stat; ADR counts (86 added in July 2026, 27 in June 2026, 318 .md files present, 326 ever added); the 129-of-318 Dungeo mention count.\n\nTaken from the digests and NOT independently verified: the 2023 C# prototype file mtimes and project inventories (origin-narrative.md only — the prototypes are not in this repo); the claim that `\"type\": \"module\"` was added and removed from every package on 2025-07-02 hours apart; the 3,164-test SQLite inventory and the \"177 GREEN / 0 YELLOW / 0 RED\" static grader result; the live player seeing \"Waiting for the story to begin…\" (digest citing session-20260423-2008-main.md, which I did not open); the July 2026 walkthrough-chain totals drift (885/916/870/888/921/866) — digest only, I did not re-derive them from session files; the 1,035 as-any count (I verified the phase commits and two large deletions but not the total); Fernhill's \"33 patterns / 16 atomic transcripts / three endings\" (from ADR-233's own amendment text, so repo-sourced but self-reported); the Chord availability-audit progression 42✅/7⚠️/5❌ → 54✅/0/0.\n\nOne digest citation is wrong and worth flagging: the 2025-06+07 digest attributes the working Cloak of Darkness build to \"commit dbfb58e6,\" but dbfb58e6 is dated 2025-07-04 with the message \"Core is unit tested.\" The commit matching the described work is 331b0674 (2025-07-02, \"Completed most refactoring and build is working\"), which I cite instead.\n\nTwo gaps I could not close. First, I did not attempt to quantify how many of the 129 Dungeo-mentioning ADRs were *driven by* Dungeo versus merely using it as an example; \"mentions\" is a weak proxy and I have deliberately not built a percentage claim on it. Second, I could not establish a clean counterfactual for the central claim — there is no record of a design review that examined `putting.ts` or `save-restore-service.ts` and passed them, only the strong circumstantial fact that four refactor/assessment passes over all 43 actions occurred in the 24 hours before the putting bug was found by running a story. That is suggestive, not dispositive, and the analysis says so."
+ },
+ {
+  "key": "build-then-delete",
+  "title": "Build, Ship, Delete: Sharpee's Disposable-Architecture Method",
+  "thesis": "Roughly a third of everything ever written in this repository has been deleted — 1,724 of 4,817 source files (35.8%) are absent from HEAD, and 259,070 of 779,786 source lines ever written (33.2%, likely ~30% after correcting for relocations) went into files that no longer exist. Thirty-six of 318 ADRs carry a terminal status; six ADR files were deleted outright. But the pattern is not uniform waste. The deletions cluster tightly in two zones — the product edge (clients, servers, IDE test surfaces, tutorials) and the *architecture-of-the-week* layer (action phases, event dispatch, daemon hierarchies) — while the domain core is nearly untouched: 79% of live stdlib source files and 66% of live world-model files predate 2026, and `containerTrait.ts` has been edited five times in fourteen months. The method is real and it works: build the thing to completion because completion is the only reliable way to learn whether it was the right thing, then delete it without ceremony. The waste is real too, and it is specific: the pattern's cost is not the deletions but the *undeleted* residue — 4,601 lines stranded on an unmerged branch, a 146-file \"parts bin\" still sitting at HEAD, a repudiated helper module still shipping with only its own test importing it, and ADR status lines that describe systems deleted months ago.\n\n",
+  "thesis_unused": "x",
+  "timeline": [
+   {
+    "date": "2025-08-12",
+    "event": "ADR-051 ActionBehaviors (~2,000 lines, packages/stdlib/src/action-behaviors/ plus its test tree) deleted and ADR-052 Event Handlers designed and implemented in the same session. Verified in the corpus, not git — the built system never reached a commit.",
+    "source": "context-history/end-session-2025-08-12-0100.md (\"Deleted /packages/stdlib/src/action-behaviors/ directory (~2000 lines)\")"
+   },
+   {
+    "date": "2025-12-26",
+    "event": "Three action architectures in 13h07m. 04:04 — all 43 stdlib actions reach 100% on the three-phase pattern. 05:06 and 05:12 — all 43 migrated to report-helpers. 05:15 — a 255-line assessment repudiating report-helpers (\"conflates concepts that should remain separate\", \"a leaky abstraction\") is committed three minutes after the migration finished. 07:19 and 17:12 — the four-phase blocked() pattern replaces both.",
+    "source": "1954abcb, 232b3656, 7b44a728, bebeb3d9, 49fd27a0, a239a40e (all 2025-12-26; times from git author timestamps)"
+   },
+   {
+    "date": "2026-01-01 → 2026-01-14",
+    "event": "@sharpee/text-services, text-service-browser and text-service-template published to npm as 0.9.0-beta.5 on Jan 1, deleted on Jan 14 — thirteen days of public life. The deleting commit is titled \"feat(stdlib): Add adjective fallback for entity resolution\"; the deletion rides along inside it.",
+    "source": "319ec31c (publish prep, 2026-01-01); 9356bfff (2026-01-14, 39 files, +181/−3,340; 2,866 source lines)"
+   },
+   {
+    "date": "2026-01-29",
+    "event": "ADR-123's typed daemon class hierarchy — five base classes and six daemon migrations — built and reverted the same day. Only getRunnerState/restoreRunnerState survived. The ADR's status today reads \"Partially Accepted (serialization adopted, class hierarchy rejected)\", one of the few status lines in the repo that tells the truth.",
+    "source": "603c9824 (build, +255) → 55d726a2 (\"revert: Remove ADR-123 daemon class hierarchy, keep serialization\")"
+   },
+   {
+    "date": "2026-03-27",
+    "event": "The entity `on` handler system — the thing ADR-051 was killed for in August 2025 — is itself removed across ISSUE-068 phases 3–9. ADR-052's status line still reads \"**Implemented** (Phase 1: Entity Handlers)\" today, and CLAUDE.md still names it as the pattern for custom logic.",
+    "source": "1b0b4d03 (32 files, +595/−1,566); docs/architecture/adrs/adr-052-event-handlers-custom-logic.md"
+   },
+   {
+    "date": "2026-03-29",
+    "event": "ADR-136 Context-Driven Action Menus implemented in a single commit: 38 files, +4,601 lines, all seven phases. Never merged. Status flipped to Deferred with the note \"the technology works but there is no active use case.\" The branch origin/adr-136-context-actions is still unmerged today, one of six.",
+    "source": "a7b968ff on origin/adr-136-context-actions; docs/architecture/adrs/adr-136-context-driven-action-menus.md"
+   },
+   {
+    "date": "2026-04-19 → 2026-04-28",
+    "event": "tools/server: scaffolded Apr 19, Docker-deployed and closing acceptance criteria Apr 24 (108 files, +22,868), Playwright e2e tests added at 21:19 on Apr 28 — and the entire directory deleted at 21:21, two minutes later. 268 files, −51,555 lines total, −39,845 source. Nine days, 35 commits, from scaffold to deletion.",
+    "source": "ac523102 → c3a07d10 → 0ea2ba9f (21:19:56) → ead5749a (21:21:24)"
+   },
+   {
+    "date": "2026-04-28",
+    "event": "ADR-153, ADR-153a, ADR-156 and ADR-162 all marked REPLACED in one commit, minutes after the code they described was removed. The long-running-Deno-subprocess multi-user architecture is abandoned for stateless per-turn workers.",
+    "source": "899653cf (7 files, +313/−8)"
+   },
+   {
+    "date": "2026-05-10 → 2026-05-12",
+    "event": "Zifmia v1: ADR-175 accepted 23:41 on May 10; Phases 1–6 (storage adapter, identity routes, room routes, WebSocket server, worker pool, save lifecycle, admin HTTP surface, full web client, two-user E2E) complete by 02:46 on May 12 — about 27 hours. At 04:12 the same morning, ADR-177 renames tools/zifmia → tools/shite as a deliberate \"parts bin\" and the rebuild starts. tools/shite still holds 146 files at HEAD.",
+    "source": "a62589b7 → 5f652fc8 → 3da541ba → c395e08d → e2e6042d"
+   },
+   {
+    "date": "2026-08-03 → 2026-08-06",
+    "event": "The sharpest instance in the record. ADR-299 (Play/Skein/Bless) accepted 17:37 Aug 3; nine-phase plan written 18:29; Phases 1–4 landed 20:42; 5–6 at 23:41; 7–9 at 01:12 Aug 4 — a complete nine-phase system in 7h35m. Superseded in part 13 hours later (14:23 Aug 4) after David asked \"do we keep the Skein or do we make a transcript editing tool? It's probably one or the other.\" Deleted 03:08 Aug 6: 12 Swift source files totalling exactly 2,768 lines, plus 11 Skein test files (2,687 lines).",
+    "source": "298400d8 → 0e12c2f7 → 23c81be6 → f0ed311c → df9f4872 → 3c211b4e → afd9acc6 (42 files, +434/−7,497)"
+   },
+   {
+    "date": "2026-08-09",
+    "event": "\"you have my authority to shred the old UX completely for testing… This is the direction and nothing from the old testing UX survives.\" The golden tier is retired: branch-tester/src/golden.ts deleted, --bless removed from devkit, six golden test files deleted.",
+    "source": "session-20260809-0410-feat-ide-go-live-phases-1-3.md; commit 7f582734 (105 files, +1,346/−4,012)"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "ADR-307 cutover deletes the .transcript text grammar from the Chord/IDE world: parser (1,201 lines), serializer, rename cascade, the v1 tree runner, and nine orphaned satellites. branch-tester drops from 397 passing tests to 86; seven source files survive. Shipped as Sharpee 5.0.0 the same day.",
+    "source": "31ef79b2 (168 files, +3,190/−12,369); docs/context/session-20260810-1535-feat-testing-tab-embed.md (\"branch-tester 86 passing (was 397 — grammar suites deleted with the grammar)\")"
+   }
+  ],
+  "analysis": "**The number.** Counting only source (.ts/.tsx/.swift, excluding dist/, .d.ts, node_modules), the repository's 2,042 non-merge commits added 806,603 lines and deleted 311,215. That ratio overstates deletion, because numstat counts an edited line as one add and one delete. The honest measure is survival: of 4,817 source files that have ever existed, 1,724 (35.8%) are gone from HEAD, and 259,070 of the 779,786 lines ever written into source files went into files that no longer exist — 33.2%. That figure is an upper bound. Rename detection missed at least one relocation (the familyzoo v01–v18 tutorial files show as deleted but survive at `docs/archive/tutorial/`), and `stories/reflections` and `secretletter2025` moved to a sibling repo rather than dying. Subtracting the known relocations puts the defensible range at roughly **27–33%**. Call it a third.\n\nThe deleted lines are not evenly spread. `tools/server` accounts for 42,287; `packages/stdlib` 30,724; `tools/ide` 24,134; `tools/zifmia` 23,966; `tutorials/familyzoo` 22,328; `stories/dungeo` 17,642; `packages/branch-tester` 12,388; `packages/core` 11,875. Two zones dominate: the product edge (servers, clients, IDE surfaces, tutorials) and the layer where the platform kept re-deciding how actions and events dispatch.\n\n**The ADRs.** 318 ADR files exist. Thirty-one carry a status that begins with a terminal word — superseded, replaced, abandoned, withdrawn, rejected, deferred, closed, foolish. Six more are superseded in part. Five additional ADRs (013, 034, 048, 059, 112) were marked Abandoned in the ADR index README on 2026-02-18 but their own files still read \"Proposed\" or \"Draft\" today. That gives **36 fully dead and 42 including partials, or 13.2% of all ADRs**. Six ADR files were deleted from the tree entirely (300, 301, 176, 163, 164, plus `lighting-interim-plan.md`).\n\nI have to correct two digest claims here. The digest attributes the February abandonment audit to `d1873482`; that commit changes an ADR count in three READMEs and touches no ADR. The real commit is `8eed8f62`, and its list is seven ADRs — 013, 016, 034, 048, 059, 112, 113 — not including ADR-004, which the digest names and which still reads \"Accepted.\"\n\n**Waste or method?** The evidence for *method* is strong and mostly structural. The deletions are scoped rather than total: ADR-307 deletes the transcript grammar from the Chord/IDE world while its own header carries an explicit \"Untouched\" clause preserving `@sharpee/transcript-tester`, the walkthroughs, `--chain`, and Dungeo — \"that is Sharpee's own author-facing test language and it stays text.\" That is a surgeon's cut, not a bulldozer. And the core survives: 811 of 3,093 live source files predate 2026 (26%), but within the domain layers the concentration is much higher — 228 of 290 live `stdlib/src` files and 125 of 190 `world-model/src` files were written before January 2026 and are still here. `containerTrait.ts` was created on 2025-06-23 and has been touched five times in fourteen months. The layer that gets deleted is precisely the layer where you cannot know the answer without building it: what the multi-user server should be, what a testing surface should feel like, whether a Skein or a transcript editor is the right authoring model. The 2026-08-04 quote is the method stated plainly — \"I thought the whole point of the Skein was to make authoring transcripts easier… So do we keep the Skein or do we make a transcript editing tool? It's probably one or the other.\" That question could not be answered by design review. It was answered by having both, then deleting one.\n\nThe evidence for *waste* is narrower but sharper, and it is not where you would expect. It is not the deletions. It is the **residue that was built and then neither used nor removed**:\n\n- `report-helpers.ts` was repudiated in writing at 05:15 on 2025-12-26. It is still at HEAD eight months later, with tests, and the only file importing it in `packages/stdlib/src` is nothing — its sole importer is its own test file.\n- ADR-136's 4,601 lines, all seven phases working, sit on `origin/adr-136-context-actions`, unmerged since 2026-03-29.\n- `tools/shite`, explicitly named a parts bin in May, still ships 146 tracked files at HEAD three months later.\n- Documentation decays behind the deletions. `CLAUDE.md` line 53 still points at `packages/parser-en-us/src/core-grammar.ts`, which does not exist. Line 228 still says actions follow \"validate/execute/report (ADR-051)\" — the three-phase name, superseded on 2025-12-26, citing an ADR whose own status is \"Superseded by ADR-052,\" whose entity-handler system was itself deleted on 2026-03-27 while its status line still reads \"**Implemented**.\"\n\nThat last chain is the real cost. This project's memory already records that \"Proposed often means shipped.\" The inverse is now also true and less visible: **Implemented can mean deleted**. When a third of the code is disposable, status lines stop being load-bearing, and the record of *why* something was built stops being retrievable from the artifact that recorded the decision.\n\nThe strongest single waste case is `tools/server`: nine days, 35 commits, Docker-deployed, an acceptance-criteria closure commit adding 22,868 lines, roughly 500 server and 360 client tests, and a final commit at 21:19 on 2026-04-28 adding Playwright coverage — deleted at 21:21, two minutes later. It was removed in favor of stateless per-turn workers. Zifmia, that successor line, is now recorded in project memory as \"not in active development.\" Forty thousand source lines were spent to reach a conclusion about architecture, and the architecture that replaced it also stalled. That is not learning-by-building; that is two dead branches.\n\nThe honest verdict is that the pattern is method in the domain core and at the design edge, and waste at exactly one seam: the moment between deciding something is dead and finishing the deletion. Sharpee is extremely good at building to completion and extremely good at cutting. It is bad at the third step — reconciling the record afterward. Every case I would call waste is a case where the delete was left half-done.",
+  "confidence": "Directly verified in git at /Users/david/repos/sharpee: every commit hash in the timeline (stat and author timestamp); the 2025-12-26 sequence including the 05:15 assessment text quoted from bebeb3d9's diff; the ADR-299 Skein file list summing to exactly 2,768 Swift lines; ead5749a's 268 files/−51,555; the 0ea2ba9f→ead5749a two-minute gap from author timestamps; a7b968ff's +4,601 on an unmerged remote branch; 1b0b4d03's −1,566; 31ef79b2's −12,369. Aggregate line and file counts are my own computation over `git log --numstat` for all 2,042 non-merge commits, with partial rename handling — I verified the classifier by spot-check (core-grammar.ts, packages/forge, tools/server all genuinely absent) and found one confirmed miss (familyzoo relocated to docs/archive/tutorial), which is why I give a range rather than a point estimate. ADR statuses were parsed from the first 40 lines of all 318 files with a strict prefix classifier and the dead list read individually; I removed false positives by hand. The 397→86 branch-tester count comes from the repo's own live session summary dated 2026-08-10, not from the digest. Not verified directly: the ~2,000-line ADR-051 ActionBehaviors deletion (it never reached a commit — I have only the corpus session summary, which states the figure); the ~500 server / ~360 client test counts for tools/server (digest only); the ~478-test figure for Zifmia v1 (digest only); whether play.sharpee.net was actually serving traffic as opposed to merely deployed. I did not run any build or test suite, and I did not read the 1,247 underlying session summaries — only the four the digests cited by name plus targeted greps. The digest's Feb-2026 abandonment claim I checked and found misattributed; I did not audit the digests' other commit attributions systematically, so other misattributions likely remain.",
+  "counterEvidence": [
+   "The domain core was never disposable. 228 of 290 live packages/stdlib/src files and 125 of 190 live packages/world-model/src files were created before 2026 and are still at HEAD. packages/world-model/src/traits/container/containerTrait.ts dates to 2025-06-23 and has five commits total in fourteen months. If 'build, ship, delete' were the project's method rather than a zone of it, this layer would not exist in its original form.",
+   "The deletions are explicitly bounded, which is the opposite of recklessness. ADR-307's own header carries an 'Untouched' clause: '@sharpee/transcript-tester and the platform's hand-authored text transcript world — walkthroughs, unit transcripts, --chain, Dungeo… That is Sharpee's own author-facing test language and it stays text.' The same cutover that removed 12,369 lines drew a line it would not cross.",
+   "Deletion is not the default and David actively policed it. After Claude deleted three test files unasked in September 2025, a permanent rule went into CLAUDE.md: 'Never delete files without confirmation. Not even to get a build working.' The corresponding session summary calls it a 'Major mistake… Completely inappropriate and destructive.' The large deletions in this record are authorized case by case ('you have my authority to shred the old UX completely'), not a standing disposition.",
+   "The headline deletion number is inflated by non-code. Commit a9f20e90 (2026-02-16) shows −275,597 lines and is the largest in the repo, but 228,780 of those are JSON and only 7,782 are TypeScript. Any 'lines deleted' figure that does not filter by extension overstates the pattern by an order of magnitude on that commit alone.",
+   "The pattern's most expensive cases are ones where the deletion did NOT complete. report-helpers.ts was repudiated in writing on 2025-12-26 and is still at HEAD with only its own test importing it. tools/shite, named a parts bin in May 2026, still holds 146 tracked files. ADR-136's 4,601 working lines sit unmerged on origin/adr-136-context-actions. These argue the problem is unfinished disposal, not disposal.",
+   "Things did ship and persist. @sharpee/sharpee is at 5.0.0 on npm; the book (Volumes I–VIII) is complete and QA'd; sharpee.net is live; Dungeo's 172 rooms and its walkthrough chain are the standing regression baseline. A project that only built and deleted would have no such artifacts.",
+   "ADR status lines cannot be used as the metric they appear to be. ADR-052 reads '**Implemented** (Phase 1: Entity Handlers)' though that system was removed on 2026-03-27; ADR-034, 048, 059 and 112 read 'Proposed'/'Draft' in their own files while the index README has marked them Abandoned since 2026-02-18. My 36-dead count is therefore a floor drawn from self-reported status, and the true figure is higher and unknowable from the ADRs alone.",
+   "At least one large deletion was made for a successor that also stalled. tools/server was removed on 2026-04-28 in favor of stateless per-turn workers; project memory records Zifmia as 'not in active development' and possibly never happening. That case does not fit 'delete to make room for the better thing' — nothing took the room."
+  ]
+ },
+ {
+  "key": "chord",
+  "title": "The rathole that became a product: Chord, 2026-07-10 to 2026-08-10",
+  "thesis": "Chord did not solve the verbosity problem the ADR that created it cites as evidence — a fluent TypeScript layer written the same morning had already solved that (~90 lines vs Chord's 101 for Cloak of Darkness). What Chord solved was the *artifact* problem: a `.story` file is inert, self-describing data that a tool can parse, diagnose, index, sandbox, and render without executing it or standing up a Node toolchain, whereas TypeScript — fluent or not — is a program whose meaning is only knowable by running it. Every product surface the project shipped after 2026-07-10 (the Chord Writer macOS app with its sealed 162 MB toolchain, the browser playground, `/play`, the IR-sourced project tree, the generated stdlib reference, the Problems panel fed by `compose --json`) is downstream of that single property, and none of it was reachable from the fluent layer. The second-order effect was larger than the first: ADR-222's \"elegance oracle\" turned Chord into a measurement instrument aimed back at the platform — because Chord compiles *down*, a Chord form cleaner than hand-written TS is proof the platform can be elegant and the TS is a seam — and that instrument found real defects (19 stdlib actions whose interceptor surfaces were silently dead, three duplicated creature life-state models with a live sync bug, `.withPriority` as an incoherent ordering scheme). The cost was paid in abandoned parallel surfaces rather than in stalled platform work: the 31-chapter book was gated clean the same day Chord was accepted and contains zero mentions of it; the friendly-zoo TypeScript canon was deleted nine days after ADR-222 promised no surface would be left cruder; ADR-223's four-layer NPC refactor was accepted and only its first child ever landed; and Dungeo's 42,987 lines were never ported at all.",
+  "timeline": [
+   {
+    "date": "2026-07-10 10:00",
+    "event": "Design session opens, framed in its own goal line as a \"small rathole\": \"think through a writer-friendly authoring layer on top of the current Sharpee API… No implementation planned this session.\" Runs authoring-survey → dream-cloak → sketch (rejected by David: \"not how we need to start\") → seven givens → design.md.",
+    "source": "context-history/session-20260710-1000-main.md"
+   },
+   {
+    "date": "2026-07-10 (same session)",
+    "event": "docs/work/fluent/dream-cloak.md: the fluent-TypeScript acid test reaches ~90 lines for Cloak against the 785-line platform-API baseline (~8.7x), with a no-magic audit showing every construct compiles to the then-current platform. This is the artifact that makes the verbosity case, and it does so without a new language.",
+    "source": "docs/work/fluent/dream-cloak.md (208 lines; \"785 lines → ~90 lines (~8.7x)\")"
+   },
+   {
+    "date": "2026-07-10 11:46",
+    "event": "ADR-210 ACCEPTED and committed — name Chord, CLI verb `sharpee compose`, IR-as-product, interpreter-primary, pure-IR profile, fluent TS layer explicitly \"demoted to infrastructure.\" adr-review 7/13 → 13/13 same day; all five platform prerequisites approved.",
+    "source": "799128e3 (docs/architecture/adrs/adr-210-story-language.md)"
+   },
+   {
+    "date": "2026-07-10 17:30",
+    "event": "Compiler lands five and three-quarter hours after the ADR: `@sharpee/chord` lexer, indentation-aware parser, AST, two-pass analyzer, six load-time gates, versioned Story IR; 44 tests; frozen Cloak golden transcript suite. 57 files, 7,579 insertions.",
+    "source": "0cf7f0d2"
+   },
+   {
+    "date": "2026-07-10 22:01",
+    "event": "Phase A gate complete the same night — `sharpee compose` ships in devkit, cloak-of-darkness is authored as `cloak.story` (101 lines), bundle-entry gains native `.story` support. Four commits between 17:30 and 22:01 (0cf7f0d2, 7d7598a6, 12d0acb4, 97db6af2).",
+    "source": "97db6af2"
+   },
+   {
+    "date": "2026-07-11 11:58",
+    "event": "Phase B gate-complete — the friendly-zoo tutorial runs from `zoo.story` (traits, custom actions, scheduler, hatches). 59 files, 11,508 insertions.",
+    "source": "ca29b9ec"
+   },
+   {
+    "date": "2026-07-12 06:35",
+    "event": "First seam found by a Chord form: auditing all 13 interceptor-consulting standard actions because Chord's `on closing it` produced nothing, `closing.ts` is found to be missing `postReport` entirely — report-phase overrides had been silently dropped. `taking.ts` gains `onBlocked`.",
+    "source": "d415b742 (packages/stdlib/src/actions/standard/closing/closing.ts)"
+   },
+   {
+    "date": "2026-07-14",
+    "event": "Sharpee 3.0.0 published to npm with `@sharpee/chord` and `@sharpee/story-loader` in the publish set — four days from the rathole to a shipped language.",
+    "source": "6e77e3b4"
+   },
+   {
+    "date": "2026-07-15",
+    "event": "ADR-222 ACCEPTED: the elegance-oracle reframing. David's words in the ADR: \"making Chord cruder is not an option; that means something is inelegant in Sharpee, exposing a seam in the Sharpee API.\" Decision 3 adds \"No deferral — solve for both surfaces.\" ADR-223 drafted the same commit: `person` fuses AGENT / AUTOMATION / CREATURE-STATE / PERSONHOOD, blast radius measured at ~13 modules, 85+ files.",
+    "source": "b5ab30d6 (adr-222-elegance-parity-seam-catalog.md, adr-223-npc-four-layer-separation.md)"
+   },
+   {
+    "date": "2026-07-15",
+    "event": "ADR-226 HealthTrait lands — ADR-223 child A, and the only child that ever does. Three creature life-state models collapse to one; the NpcTrait/CombatantTrait `isAlive` sync bug is fixed by construction. The code still carries `hostile?: boolean; /* moves to disposition, ADR-223 child C */`.",
+    "source": "1a574550 (packages/world-model/src/traits/health/healthTrait.ts, combatantTrait.ts:42)"
+   },
+   {
+    "date": "2026-07-16",
+    "event": "ADR-228 interceptor lifecycle engine: the full ADR-118 audit finds \"14 hand-rolled copies drifted into two guard semantics, two onBlocked semantics, three multi-object behaviors\" and \"19 actions never picked the convention up at all, silently killing Chord `on <gerund> it` clauses.\" Two live Dungeo bugs (trophy-case multi-put scoring, dead troll-talking interceptor) fall out as direct consequences. 33/33 actions moved onto a declarative descriptor table.",
+    "source": "3cd6fc65 (adr-228-interceptor-lifecycle-engine.md)"
+   },
+   {
+    "date": "2026-07-24",
+    "event": "The friendly-zoo TypeScript canon is deleted — index.ts (472), events.ts (274), characters.ts (191), zoo-items.ts (186), zoo-map.ts (185), dynamic-text.ts (143), language.ts (143), scoring.ts (82) and build config: 1,787 deletions. Nine days after ADR-222 ruled that neither surface may be \"left as a known-cruder rendering.\"",
+    "source": "97e26e41 (git diff --shortstat 97e26e41^ 97e26e41 -- stories/friendly-zoo/)"
+   },
+   {
+    "date": "2026-07-24",
+    "event": "Community complaint on intfiction, Nathaniel Lindell: \"it's not readily apparent how to change existing logic or sequence of play that the library defines, nor do we have the library in readable Chord form.\" Three clauses, one poster, one paragraph — the only external voice anywhere in the corpus.",
+    "source": "docs/feedback/intfiction-20260724.txt"
+   },
+   {
+    "date": "2026-07-25",
+    "event": "ADR-265 ships the literal reading — 56 generated `.story` files in which the grammar appears as comments — and is superseded the same day by ADR-266, whose session opens \"Started as 'ADR-265 is completely wrong'.\" ADR-266 states the bar itself: \"Measured against the Inform 7 bar the feedback invoked — extend, alter, order — Chord has none of the three.\" Owner direction (iv): the readable Chord grammar becomes the editable source.",
+    "source": "52065ad4 then b4f04461 (adr-266-grammar-definition-parity.md)"
+   },
+   {
+    "date": "2026-07-26",
+    "event": "ADR-268: numeric priority deleted from the grammar builder — ordering becomes confidence → tier → specificity → definition order. `.withPriority` removed from 106 call sites; grep for it in packages/ today returns 0.",
+    "source": "9fc5b914 (41 files, 482 insertions, 608 deletions)"
+   },
+   {
+    "date": "2026-07-26",
+    "event": "ADR-269: the platform's own English grammar inverts. `packages/parser-en-us/grammar/standard-en-us.story` (488 lines of Chord) becomes the editable source; `src/grammar.ts` (433 lines) is now generated with a header reading \"DO NOT EDIT — edit the Chord source and regenerate; the freshness gate (`repokit grammar --check`) fails the build on drift.\" 422 rules verified equivalent. ADR-265's apparatus deleted in the same commit.",
+    "source": "6d8ec8fe (100 files, 6,395 insertions, 4,538 deletions)"
+   },
+   {
+    "date": "2026-07-26",
+    "event": "ADR-270: `extend action` / `remove from action` land, an engine `removeRules` primitive is added, and `define verb` is deleted from the language. Sharpee 4.0.0 ships the same day; Chord's interim landing versions 2.0.0–2.5.0 are consolidated into one public 2.0.0 — the second recorded exception to ADR-257's own versioning rule.",
+    "source": "8b2a83e9, ecdfa038"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "Sharpee 5.0.0 published; `CHORD_LANGUAGE_VERSION = '3.0.0'`, frozen by owner ruling 2026-08-03. Chord Writer's DMG is signed and sitting in Apple's notarization queue. The website carries 151 MDX pages of Chord documentation; the 7,897-line book still has none.",
+    "source": "31ef79b2; packages/chord/src/version.ts:181; docs/context/session-20260810-2232-chord-writer-screenshots.md"
+   }
+  ],
+  "analysis": "**The evidence ADR-210 cites is not the evidence that justifies it.**\n\nADR-210's Context section makes a verbosity argument: 785 lines of TypeScript for Cloak of Darkness, 1,671 for the tutorial zoo, a 60-line petting action wrapping three sentences of intent. But `docs/work/fluent/dream-cloak.md` — written earlier in the very same session — got Cloak to ~90 lines in TypeScript, with a construct-by-construct audit showing every line compiled to the then-current platform. Chord's `stories/cloak-of-darkness/cloak.story` is 101 lines. On the metric the ADR leads with, the fluent layer *won*, and the ADR knows it: it demotes the fluent layer to \"infrastructure\" on three grounds that have nothing to do with line count — it \"still requires the node/npm/tsc toolchain, cannot be sandboxed for hosted multi-user, and is a weak target for validated LLM generation.\"\n\nThat is the real thesis, and Decision 2 states it plainly: \"The Story IR is the product; syntaxes are frontends.\" What Chord bought was an authoring artifact that is *data*. A `.story` file can be parsed by a browser-safe package with no platform runtime dependency (the ADR's Direction rule: \"nothing platform depends on the language packages\"), analyzed for diagnostics before anything executes, re-served as an IR project tree to an IDE, and run under a pure-IR profile that refuses hatches so untrusted stories execute as data. A fluent TypeScript story cannot do any of that, because to know what a TypeScript program means you have to run it.\n\nEverything the project subsequently shipped *as product* is downstream of that. `packages/ide-protocol` re-exports the IR schema (Interface Contract 1, in the very first Chord commit). The IDE's Problems panel is fed by `compose --json`; its project tree is IR-sourced. ADR-252 makes `.story` a first-class browser build \"with no flag and no package.json.\" The website carries a `/playground` with a CodeMirror Chord editor and 151 MDX pages including a generated stdlib reference. Chord Writer ships a sealed 162 MB Node-22-plus-devkit closure inside `Contents/Resources` precisely so the author never sees the toolchain the fluent layer would have required. The rathole became a product because the artifact it produced was the thing a product could be built around.\n\n**The elegance oracle, in practice.**\n\nADR-222's framing — David's words, quoted in the ADR: \"making Chord cruder is not an option; that means something is inelegant in Sharpee\" — rests on a structural argument, not an aesthetic one. Chord compiles *down*; the loader makes ordinary platform calls. So a Chord form that is clean is a proof that the platform can do the thing cleanly, which makes crude hand-written TS a seam rather than a capability limit. Four cases where this actually moved platform code:\n\n1. **ADR-228 (2026-07-16).** Chord's `on <gerund> it` clause needed a uniform interceptor lifecycle. The audit found \"19 actions never picked the convention up at all, silently killing Chord `on <gerund> it` clauses\" and 14 drifted copies with divergent guard, `onBlocked`, and multi-object semantics. Two live *Dungeo* bugs — trophy-case multi-put scoring and a dead troll-talking interceptor — fell out as consequences. 33/33 actions moved onto a declarative descriptor table. This is the cleanest instance: a Chord form did not just expose a seam, it exposed a class of silently-dead platform surface that no story had noticed for months.\n\n2. **ADR-268/269 (2026-07-26).** Making the grammar expressible *in Chord* forced the question of what grammar priority even meant. The answer was that it didn't: `.withPriority` was deleted from the builder and all 106 call sites (`grep -rn withPriority packages/` returns 0 today), replaced by confidence → tier → specificity → definition order. Then the inversion — `packages/parser-en-us/src/grammar.ts` now carries the header \"GENERATED by `repokit grammar` from grammar/standard-en-us.story… DO NOT EDIT,\" with a freshness gate failing the build on drift. The platform's own English grammar is now written in the author language, 422 rules verified equivalent.\n\n3. **ADR-226 (2026-07-15).** The friendly-zoo divergence audit found `person` fusing four orthogonal concerns, with alive/conscious duplicated across `NpcTrait` and `CombatantTrait` and a live sync bug between them. `HealthTrait` collapsed them into one model with the derivation moved to a behavior — explicitly because \"a getter on the trait does not survive `loadJSON()` deserialization.\"\n\n4. **ADR-211/212/213 (2026-07-14).** A comma-placement concern in the zoo's Chord prose rethought ADR-209 entirely, producing the `Spliced` phrase atom and a site-determined join rule (31 files, one flag-day commit), a declarative `(slotKey, owner)` slot-entry registry in the engine prose pipeline, and a pre-removal observer seam at `WorldModel.removeEntity` — all three verifiable in `packages/engine/src/prose-pipeline/pipeline.ts` and `packages/world-model/src/world/WorldModel.ts:963` today.\n\n**ADR-266 and the community complaint.** Nathaniel Lindell's post is three sentences, and the operative one is ambiguous: \"it's not readily apparent how to change existing logic or sequence of play that the library defines, nor do we have the library in readable Chord form.\" ADR-265 read \"the library\" as the stdlib actions and generated 56 `.story` files in which — in the ADR's own devastating summary — \"the one thing asked for is the one thing rendered as prose.\" It was superseded within hours by ADR-266, whose session opens \"Started as 'ADR-265 is completely wrong'.\" ADR-266 supplies the Inform 7 bar itself (\"extend, alter, order — Chord has none of the three\") and lands all six children in about 48 hours. It is worth being precise: the complaint did not ask for I7 parity. The project *read* it as asking for that, and then met a bar of its own construction.\n\n**What it cost.** Not stalled platform work — July shipped ADR-207/208, 224/226/227/228, 230/231, 247, 260 — but abandoned parallel surfaces and verification debt. The 31-chapter, 7,897-line book was gated clean on 2026-07-10, the same day Chord was accepted, and contains zero mentions of it; the 151 MDX website pages are its de facto replacement. The friendly-zoo TypeScript canon was deleted whole (1,787 lines) on 07-24, nine days after ADR-222 forbade leaving either surface cruder — the seam was closed by removing the surface. ADR-223's four-layer refactor was accepted and never executed past child A. Dungeo's 42,987 TypeScript lines were never ported, so Chord's capability parity remains unproven at scale, and its walkthrough chain totals drifted across July (866, 870, 874, 885, 888, 916, 921) with no reconciliation on a suite the repo elsewhere calls deterministic at a pinned seed. And the pace produced a recurring failure shape: 17 phases recorded COMPLETE on a branch that \"never built clean,\" `stdlib@3.6.0` published with a stale `ENGINE_VERSION`, `platform-browser` bundles silently shipping Jul-10 code, 2,510 invalid ESM specifiers across 607 files. Verification narrower than the claim it supported, over and over.",
+  "confidence": "Verified directly in the repository, by reading the file or running the command: ADR-210's full text including the fluent-layer rejection and the Packages/Direction rules; the \"small rathole\" framing verbatim from `context-history/session-20260710-1000-main.md` line 5; `dream-cloak.md`'s ~90-line claim and 8.7x figure; `cloak.story` = 101 lines, `zoo.story` = 792 lines, `stories/cloak-of-darkness/src/index.ts` at 799128e3 = 785 lines; the full commit timestamps for 799128e3 (11:46), 0cf7f0d2 (17:30), 97db6af2 (22:01) on 2026-07-10; `git show --shortstat` for 0cf7f0d2 (57 files / 7,579+), 7d7598a6, 12d0acb4, 97db6af2, 833d2e6b, 1ba048d4, d415b742, 9fc5b914, 6d8ec8fe, 8b2a83e9, 4db20c31; `git diff --shortstat 97e26e41^ 97e26e41 -- stories/friendly-zoo/` = 16 files / 14+ / 1,787− with the per-file numstat; `grep -rn withPriority packages/` = 0; the generated header of `packages/parser-en-us/src/grammar.ts` and the first 60 lines of `standard-en-us.story` (488 lines); ADR-222, ADR-223, ADR-226, ADR-228, ADR-266 read in full or at length; `combatantTrait.ts:42`'s live \"moves to disposition, ADR-223 child C\" comment; ADR-212/213 seams present in `engine/src/prose-pipeline/pipeline.ts` and `world-model/src/world/WorldModel.ts:963`; `CHORD_LANGUAGE_VERSION = '3.0.0'` and package versions at 5.0.0; the intfiction feedback file verbatim; 86 ADR files added in July 2026 by `git log --diff-filter=A`; zero \"chord\" matches under `docs/book/v2.0.0/parts/` (7,897 lines); 151 MDX files under `website/`; no `.story` file anywhere under `stories/dungeo`, whose `src/` totals 42,987 lines.\n\nTaken from the digests without independent verification: the \"19 closed issues / 55 triaged\" tracker figures; the 42✅/7⚠️/5❌ → 54✅/0/0 Chord availability audit progression; the exact Dungeo walkthrough-chain totals per session (I verified they conflict across the digest's own citations, not that any single number is right); the ADR-265 \"56 generated .story files\" count (I read ADR-266's description of them, not the deleted files); the 2,510-specifier ESM sweep; the `stdlib@3.6.0` stale-ENGINE_VERSION incident; the hatch-scoring \"never built clean\" contradiction; the notarization SIGBUS.\n\nNot checked at all: the 1,247 session summaries themselves beyond `session-20260710-1000-main.md` and the final 2026-08-10 summary — I relied on the digests' broke/abandoned/contradictions arrays for the cost section's incident list. Nothing on the Swift/IDE side was compiled or run. I did not attempt to confirm whether any author outside this repository has written a Chord story; the corpus contains exactly one external voice (the intfiction post), and I found no other.\n\nOne factual correction to the brief's framing: the compiler did not land in four days. It landed in five hours and forty-four minutes on 2026-07-10; *npm publication* (Sharpee 3.0.0, with both Chord packages in the publish set) was four days later, on 07-14.",
+  "counterEvidence": [
+   "The verbosity argument ADR-210 leads with is refuted by an artifact in the same session. `dream-cloak.md` reached ~90 lines of fluent TypeScript against the 785-line baseline; Chord's `cloak.story` is 101 lines. If line count were the problem, the cheaper answer was already on the table and audited construct-by-construct as compiling to the existing platform. Chord had to be justified on toolchain/sandboxing/LLM-target grounds instead — and the ADR does so, but its Context section still argues the case it does not actually win.",
+   "The velocity is confounded with a model change. Claude Fable 5's first commit in this repo is 4b75e230 on 2026-07-02 — eight days before the rathole. July's 391 commits against June's 255 cannot be attributed to Chord without accounting for that, and the corpus's own `gaps-and-anomalies.md` argues that this project's surges track model releases as its \"most interesting question.\" The four-days-to-npm figure may measure the assistant as much as the language.",
+   "Chord's feasibility rested on platform work already in flight for unrelated reasons. ADR-207/208 moved the ADR-090 capability registry and the ADR-118 interceptor registry off `globalThis` singletons to per-WorldModel binding maps, landing 2026-07-02 (ff53ebac, 4b75e230, 08dcb067) — eight days before the design session. The loader's whole compile-to strategy assumes per-world registries. The causality runs both ways: Chord exposed seams, but Chord was also only possible because a de-globalization refactor had just finished.",
+   "\"Displaced platform work\" is largely false. July's platform ADRs — 224 (killPlayer + game-over routing), 226 (HealthTrait), 227 (death triggers), 228 (interceptor lifecycle, 33/33 actions), 230 (grammar reachability, 10 phases), 231 (player-surface rulings, 11 phases), 247 (ClothingTrait deleted), 260 (scoring capability deleted) — are real platform improvements Chord *caused*. It generated more platform work than it consumed. The honest cost claim is about parallel author-facing surfaces (the book, the TS canon story) and about verification debt, not about the platform going untended.",
+   "The ADR-266 \"community complaint\" reading is the project's own construction. Nathaniel Lindell wrote one paragraph containing three loosely-joined asks (an index, changing library logic, the library in readable Chord form). ADR-266 states that the I7 bar was \"the Inform 7 bar the feedback invoked\" — but the post never mentions extend, alter, or order, and mentions Inform 7 only in connection with an *index* feature, which is the one thing that was deferred. David clarified the ask to \"how the grammar would be defined in Chord.\" A six-child, two-day, 106-call-site programme was built on one forum post's ambiguous middle clause.",
+   "ADR-222's central commitment was not honored where it was hardest. Decision 3 says \"No deferral — solve for both surfaces… Neither surface is left as a known-cruder rendering,\" and Decision 2 says the canon TS is rewritten onto the elegant primitive. Nine days later the friendly-zoo TypeScript canon was deleted (1,787 lines, 97e26e41). Two of the three confirmed Chord-cleaner seams (FZ-D1 goat hunger, FZ-D2 witnessed-once keeper) were catalogued as needing first-class TS primitives; I found no such primitives and no rewritten canon — the surface that would have demonstrated the seam was closed was removed instead.",
+   "The oracle produced more findings than the project could close. ADR-223 was ACCEPTED with a measured blast radius of ~13 modules and 85+ files. Only child A (ADR-226) landed. `combatantTrait.ts:42` still reads `hostile?: boolean; /* moves to disposition, ADR-223 child C */`. The AGENT/AUTOMATION/PERSONHOOD separation, the automation layer that would have subsumed FZ-G1's patrol gap, and the `animal` kind (FZ-X1) are unbuilt a month later. An oracle that outruns the capacity to act on it is a backlog generator.",
+   "Chord's capability parity is unproven at the only scale that would test it. Dungeo — 42,987 lines of TypeScript, the project's largest story — has no `.story` file. The \"Chord Mainframe Zork\" named as the long-term target in ADR-222 exists only as a primitive backlog (DZ-1…DZ-11) that ADR-222 itself marked SUPERSEDED for over-counting. Everything Chord has demonstrated is on two small reference stories and one 8-chapter tutorial (Fernhill) written specifically as the gate.",
+   "The language's own stability record undercuts \"product.\" ADR-257 defined Chord's versioning rule and the project overrode it three times in five weeks: 1.1.0 shipped as a minor despite breaking existing stories, the interim 2.0.0–2.5.0 and an interim 3.0.0 were consolidated into one public 2.0.0, and 3.1.0 was folded back into 3.0.0 hours after being published. `version.ts` now carries a hand-written mapping table because, in its own words, the history \"is honest but reads as a contradiction.\"",
+   "No external adoption is visible anywhere in the record. One forum post from one person is the entire external-demand evidence base for a language that consumed a month of the project's life and reset its documentation, its IDE, its website, and its release train."
+  ]
+ },
+ {
+  "key": "ide",
+  "title": "From an empty directory to a signed app: the macOS IDE as the platform's only forcing function",
+  "thesis": "The macOS IDE is the one Sharpee subsystem that never consumed the platform passively. Every phase of it — introspection, Chord authoring, the sealed toolchain, publishing, testing — ended by changing `packages/` rather than adapting to it, and in three cases (ADR-184's `@sharpee/ide-protocol`, ADR-276's compile-authoritative diagnostics, ADR-307's retirement of the `.transcript` grammar) the IDE's requirements rewrote a platform contract outright. It is also the arc where the project's ADR-first discipline most visibly inverted: ADR-154, the document that authorized an IDE, still reads `## Status: PROPOSAL` and specified almost nothing that shipped — Electron-or-Tauri, a TypeScript-folder project model, VS Code feature parity, Windows signing — while the app that exists is native AppKit, Chord-only, arm64-only macOS, and was built plan-first from `docs/work/sharpee-ide/plan-20260509-phases.md`. The arc's engineering endpoint is real and specific (a 25 MB vendored arm64 Node 22.23.1 sealed inside `Contents/Resources`, a 52-line curated entitlement set replacing Apple's own, a deployment target dropped from 26.0 to 11.0 four days before launch, a 442-line `package.sh`), but the arc does not close: at corpus end the signed app sits in `tools/ide/release/Chord Writer.app` and the DMG is unshipped, blocked on Apple's notary service crashing with SIGBUS on three consecutive submissions.",
+  "timeline": [
+   {
+    "date": "2026-04-20",
+    "event": "ADR-154 \"Sharpee IDE — Purpose-Built Authoring Environment\" written as PROPOSAL. It defers implementation technology (\"Electron or Tauri\"), promises the project stays \"a folder of TypeScript files on disk\" with \"no proprietary project format,\" and anticipates \"signing and notarization on macOS and Windows.\" Every one of those was later contradicted; the status line was never corrected.",
+    "source": "docs/architecture/adrs/adr-154-sharpee-ide.md (added in commit 0b32532d)"
+   },
+   {
+    "date": "2026-05-09",
+    "event": "tools/ide created from nothing: 12 files, +866 lines, native AppKit (no Electron/Tauri decision was ever recorded), bundle id net.sharpee.ide, MACOSX_DEPLOYMENT_TARGET 26.0. The commit ships the 9-phase plan whose P8 is \"a downloadable, signed, notarized DMG.\" Trailer: Claude Sonnet 4.6.",
+    "source": "commit 2f6df711; docs/work/sharpee-ide/plan-20260509-phases.md:227"
+   },
+   {
+    "date": "2026-05-09 → 05-11",
+    "event": "P1 complete in a parallel session — folder picker, NSOutlineView tree, tab bar with path disambiguation, save/dirty/session restore, Recent Projects, 33 XCTests. Then it stops: 6 commits total in May, none for the following five weeks.",
+    "source": "commits f070e88f, 20bbedd3, 78c5c9fa, bec1f0db"
+   },
+   {
+    "date": "2026-06-19",
+    "event": "First forced platform change: @sharpee/ide-protocol created as a types-only package so Swift and TypeScript cannot drift on the introspection wire (DEVARCH rule 8b). ADR-184 rules that project introspection must be runtime, not static — \"entities are imperative local consts and trait identity is a constructor name, so no parser recovers them\" — which put --introspect and buildManifest into the platform bootstrap.",
+    "source": "commit a6ac1de2; docs/architecture/adrs/adr-184-ide-project-introspection.md"
+   },
+   {
+    "date": "2026-06-20 → 2026-07-27",
+    "event": "Dormant 37 days (26559677 → b7f770f2) while the entire Chord language arc landed — ADR-210 through ADR-276, Sharpee 2.x→4.x. Nothing in the platform's test surface noticed the IDE breaking.",
+    "source": "git log tools/ide (gap between 26559677 and b7f770f2)"
+   },
+   {
+    "date": "2026-07-23",
+    "event": "\"IDE investigation — found broken, not stale.\" Four breaks traced against a Chord .story: introspect.ts:32 hard-gates on dist/index.js (a .story never emits one); WebBundle.swift:15 resolves the pre-ADR-252 bundle path; BuildRunner.swift:57/67/76 shells npm/init-browser paths ADR-252 D4 retired; the whole highlighting stack binds TreeSitterTypeScript. David rules Chord-first, TypeScript author path dropped. ADR-258 written; adr-review 9/15 → 15/15.",
+    "source": "session-20260723-1546-main.md; docs/architecture/adrs/adr-258-ide-chord-authoring-environment.md"
+   },
+   {
+    "date": "2026-07-27",
+    "event": "ADR-258 implemented in five Swift swap-rows (ChordLexer.swift port pinned to a TS golden fixture; IR-sourced tree with last-ok retention; Problems from `compose --json`), 213 tests green. Its prerequisite was itself a platform arc: ADR-276 \"Chord compile is authoritative for every source-derivable error\" was written and implemented the same day because ADR-270 had moved author-reachable grammar errors to load time, invalidating ADR-258 D5's premise. The IDE's Problems panel forced a 50-site LoadError census across the compiler.",
+    "source": "commits b7f770f2, 9ceac2b2, 2c341089, 904d4231, 3e25a7a7; adr-276-chord-compile-authoritative.md"
+   },
+   {
+    "date": "2026-07-28",
+    "event": "Rebrand to Chord Writer: net.sharpee.chord-writer, own 1.0.0 version line, DefaultsMigration.swift so the bundle-id change migrates persisted state rather than orphaning it (ADR-258 D8).",
+    "source": "commit fe5bd34f"
+   },
+   {
+    "date": "2026-07-28",
+    "event": "Sealed toolchain: Node 22.23.1 darwin-arm64 vendored as the official .tar.xz (checksum-verified, only bin/node extracted, npm/npx deliberately excluded), pnpm-deployed devkit closure, platform-browser grafted in, ARCHS pinned to arm64. Authored on the Linux host — one of only two tools/ide commits with a +0000 author timestamp — with the Swift half written but unrun. Same commit fixes a platform bug the embedding exposed: devkit was shelling to `npx` for esbuild, downloading an unpinned copy from the registry and failing outright where no npm exists.",
+    "source": "commit 09243cb5 (author date 2026-07-28 08:23:01 +0000)"
+   },
+   {
+    "date": "2026-07-28",
+    "event": "Phase 2 closed on David's Mac (macOS 26.5.2, arm64): xcodebuild test 273 tests / 0 failures — the first execution of 22 Swift tests written across two prior Linux sessions — toolchain assembled at 162 MB, and toolchain-realpath-test.sh PASSES under a scrubbed `env -i` with no node/npm/npx/pnpm/sharpee on PATH: `sharpee init` scaffolds, `sharpee build` emits a 1,287,704-byte game.js.",
+    "source": "session-20260728-0325-main.md; docs/work/adr-279-chord-writer-packaging/plan.md Phase 2"
+   },
+   {
+    "date": "2026-07-29",
+    "event": "package.sh (442 lines) plus bundled-node.entitlements (52 lines). The entitlements file exists because nodejs.org ships node Developer-ID-signed but carrying com.apple.security.get-task-allow, which Apple's notary rejects — re-signing replaces the set wholesale, so five V8-required keys are enumerated with a rationale each. The same commit finds a real seal violation: five symlinks escaped the \"sealed\" toolchain into packages/*, and the prior AC6 pass \"only held because ../ padding overshot at that directory depth — the seal was accidental.\"",
+    "source": "commit 0064eb3e; tools/ide/bundled-node.entitlements"
+   },
+   {
+    "date": "2026-07-29",
+    "event": "First real notarization reaches step 7 of 9. Archive, seal re-verification, inside-out signing of esbuild and node, `codesign --verify --deep --strict` clean, hardened runtime confirmed, get-task-allow absent — then `xcrun notarytool submit --wait` dies with Bus error, exit 138. No --keep-work, so the cleanup trap destroyed the signed archive. Submission d1494f8d left in flight, verdict unread.",
+    "source": "session-20260729-0530-main.md; tools/ide/package.sh:371"
+   },
+   {
+    "date": "2026-07-29",
+    "event": "Phase 3 PAUSED — not on the crash but on product judgment. David: \"we can stop notarization too — we're not ready for that.\" ADR-290 had reopened test creation, the app's flagship flow, and \"shipping a signed DMG whose headline feature is mid-redesign would put an unrecallable artifact in authors' hands.\"",
+    "source": "docs/work/adr-279-chord-writer-packaging/plan.md:67-73"
+   },
+   {
+    "date": "2026-08-06",
+    "event": "Testing tab ships as a framework-free TypeScript web bundle inside the existing WKWebView importing @sharpee/ide-protocol directly (ADR-301), and `sharpee publish` is built in devkit — \"the command ADR-284 specified and nobody had built\" — with an IFID hard-refusal before anything is built. The first real publish of Fernhill immediately exposed that buildBrowser never cleared dist/web/<id>, so published artifacts shipped five-hour-old map files to strangers.",
+    "source": "commits de85dc13, 962f6b38"
+   },
+   {
+    "date": "2026-08-09 → 08-10",
+    "event": "ADR-307 cutover: the .transcript text grammar is retired from the Chord/IDE world in favor of <story-id>.tests.json — 168 files, +3,190/−12,369. The IDE's testing surface did not adopt the platform's test format; it deleted it, taking branch-tester's parser, serializer and runners and devkit's transcript-from-play with it.",
+    "source": "commit 31ef79b2 (PR #257)"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "Deployment target 26.0 → 11.0 (David: \"any M chip OS, we can't require 26\"). The macOS 26 floor had been an unexamined artifact of the May 9 bootstrap machine for 93 days; it surfaced only because a download page had to state a requirement. Cost: three isInspectable calls availability-guarded and one loadViewIfNeeded() replaced with `_ = view`. Verified the vendored node is minos 11.0 too, \"otherwise the app would launch on an old Mac with nothing behind its Build button.\" IDE suite 480 passing at the new target.",
+    "source": "commit 667170a4; tools/ide/project.yml:17"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "Signing rot fixed systemically after 8 incidents across 5 sessions since 2026-05-11: the nested SharpeeIDETests.xctest kept losing its signature to Xcode's Automatic provisioning race. Fix is CODE_SIGN_STYLE: Manual with the same DEVELOPMENT_TEAM (ad-hoc \"-\" was tried and refused to load — \"different Team IDs\") plus a pinned -derivedDataPath ./DerivedData.",
+    "source": "tools/ide/project.yml:170-180"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "End state: three notarization submissions (e264bb44 old icon/minos 26, fb7db755 new icon/minos 26, 90a8dfb6 new icon/minos 11.0 — the shippable one), all three crashing notarytool with Bus error in submit --wait. Signed app staged durably at tools/ide/release/Chord Writer.app, copied out of /var/folders and signature re-verified. Sharpee 5.0.0 on npm. \"Go-live is one artifact away: the DMG, waiting on Apple.\"",
+    "source": "docs/context/session-20260810-1535-feat-testing-tab-embed.md:257-288"
+   }
+  ],
+  "analysis": "**The shape of the arc, measured.** `tools/ide` has 124 commits across four months, distributed 6 / 25 / 38 / 55 (May / June / July / August) — an arc that accelerated rather than tapered. On disk today it is 158 Swift files, 24,659 lines, 67 test files, 405 tracked files, plus a gitignored 25 MB `vendor/node`. It began at 12 files and +866 lines on 2026-05-09 with a plan whose last phase (P8, \"Distribution — codesign, notarize, DMG\") reads like an aspiration and turned out to be an accurate specification of the finish line three months early.\n\n**The forcing-function claim, itemized.** Five instances survive verification, and they are qualitatively different from each other, which is what makes the pattern credible rather than a framing device.\n\n1. *A new package.* ADR-184 ruled that IDE introspection must be runtime, not static, because \"entities are imperative local consts and trait identity is a constructor name, so no parser recovers them.\" The consequence was `@sharpee/ide-protocol` (2026-06-19, a6ac1de2) — a types-only package created so a Swift client and a TypeScript producer share one wire definition under DEVARCH rule 8b — plus `buildManifest` and an `--introspect` flag in the platform bootstrap.\n2. *A compiler doctrine reversed.* ADR-258 D5 required \"compile is authoritative for diagnostics\" so the Problems panel could exist. ADR-270 had just broken that by moving author-reachable grammar-alteration errors to load time. Rather than have the IDE scrape two error sources, ADR-276 was written and implemented the same day (2026-07-27), re-auditing all 50 `loader.ts` LoadError sites into backstops (41) or acknowledged residue (9) and revising the standing \"chord stays stdlib-ignorant\" rule. A Swift panel rewrote a compiler contract.\n3. *A CLI capability.* `sharpee publish` (962f6b38, 2026-08-06) is described in its own commit as \"the command ADR-284 specified and nobody had built.\" The mechanics were deliberately put in devkit, not the app, \"so a terminal author and an IDE author get the identical artifact\" — and building it immediately exposed that `buildBrowser` never cleared its output directory.\n4. *A runtime embedding that broke a platform assumption.* Sealing devkit inside `Contents/Resources` (09243cb5) revealed that devkit resolved esbuild by shelling to `npx`, downloading an unpinned copy at runtime. Fine where every author has npm; fatal in a bundle where npm is deliberately excluded. The fix landed in `packages/devkit` and serves both targets.\n5. *A format deleted.* ADR-307 (31ef79b2) is the strongest case: the IDE's testing surface did not adopt the `.transcript` grammar, it retired it repo-wide — 168 files, +3,190/−12,369, taking branch-tester's parser and serializer and devkit's `transcript-from-play` with it.\n\n**The self-contained app, mechanically.** Four decisions make it work, and each was a discovery rather than a plan. *Vendoring*: Node 22.23.1 darwin-arm64 from the official tarball, checksum-verified on every run, `bin/node` only, npm and npx deliberately excluded, devkit deployed via `pnpm deploy --prod --legacy`, `@sharpee/platform-browser` grafted in because the browser build needs its styles even though it is not a devkit dependency — assembled atomically (stage + swap) behind an opt-in `SHARPEE_VENDOR_TOOLCHAIN=1` so the ~2-minute step never runs in the dev loop. *Architecture*: `ARCHS: arm64`, reasoned from \"the app should not ship a slice with no toolchain behind it,\" with Apple's last Intel Mac (August 2020) and macOS 26 as the final Intel-supporting OS as the supporting facts. *Entitlements*: nodejs.org's node looks shippable — Developer-ID-signed, hardened — but carries `get-task-allow`, which the notary rejects outright; re-signing replaces the set wholesale, so `bundled-node.entitlements` enumerates five keys with a per-key rationale and the standing instruction \"keep this list MINIMAL. Each key weakens the hardened runtime, and anything added here ships to every author.\" One key is annotated honestly as carried over from upstream rather than reasoned from first principles. *Sealing*: the invariant is that no symlink escapes the bundle, and it was violated — five links reached back into `packages/*`, and the earlier passing check \"only held because `../` padding overshot at that directory depth — the seal was accidental.\"\n\n**The two-host dynamic.** The evidence is thinner than the digests imply but real and consequential. Of 124 `tools/ide` commits, exactly two carry `+0000` author timestamps — 09243cb5 and afe90075 — and both are precisely the commits where the Swift half went unrun. Repo-wide, 169 of 995 commits since May are `+0000`. The ADR-279 plan flags the risk in writing before Phase 1 begins: \"David has historically run IDE work in a separate parallel Claude Code session… confirm before starting Phase 1 whether this session or the parallel IDE session executes it, to avoid two sessions editing `tools/ide/` concurrently.\" The collisions it produced are of three kinds. *Verification lag*: three consecutive sessions (0643, 0749, 0325) ended with Swift code written on Linux and unexecutable there — \"nothing run on this Linux box substitutes for it.\" *Number collision*: in June two sessions independently claimed ADR-201 and the auto-capitalize ADR was abandoned with its branch; git only ever holds `adr-201-dialogue-speech-emission.md`. *Deploy path*: the `/home/dave` half of the arrangement produced August's most expensive bug — sharpee.net's systemd `WorkingDirectory` pointed at `/home/dave/repos/sharpee_v2/website` while `deploy.sh` built elsewhere, so the deploy reported success and changed nothing for eight days, caught only by noticing the live homepage had no `/chord-writer` links at all.\n\n**What the arc actually is.** Not a straight line from empty directory to signed app, but a subsystem repeatedly abandoned and repeatedly found to be the thing that made the platform's abstractions testable. Twice it was left to rot (five weeks after P1; 37 days in summer) and twice it came back having discovered something the platform could not discover about itself: that a `.story` breaks four IDE assumptions nobody had encoded as a contract; that a compiler emitting errors at two different times cannot feed one Problems panel; that `npx` in a build path means a bundled app cannot build.",
+  "counterEvidence": [
+   "The authorizing ADR was never implemented and never retired. ADR-154 still reads `## Status: PROPOSAL` today, and the app contradicts it on every specific: it names Electron or Tauri as the technology choice (the app is native AppKit, chosen with no ADR at all), promises \"a folder of TypeScript files on disk\" with \"no proprietary project format\" (ADR-258 dropped the TypeScript author path entirely; the scaffold writes `<id>.story` ONLY, no package.json), promises VS Code feature parity, and anticipates \"signing and notarization on macOS and Windows\" (arm64 macOS only). If the arc were really ADR-driven, this document would have been superseded; instead it is stale bookkeeping the project's own memory flags as endemic.",
+   "The 'IDE forces platform change' reading has to sit beside 'the platform broke the IDE without noticing.' The 37-day dormancy (2026-06-20 → 07-27) ended with four traced breaks against a Chord .story — not one of them caught by any platform test. The IDE was as much a downstream casualty as an upstream forcing function, and no CI gate existed on either side (07-23 recorded that the IDE's 27 test files 'have never run in CI').",
+   "An enormous share of the work was built and then deleted. ADR-299's Skein shipped nine phases across 2026-08-03/04 and its 2,768 lines plus 15 test files were deleted on 08-06. ADR-304's testing workspace and ADR-305's play-margin UI were built 08-08 and shredded 08-09 on David's \"nothing from the old testing UX survives.\" ADR-307's cutover deleted 12,369 lines. A throughline reading this as steady accumulation toward a shipped app would be describing a different repository.",
+   "It never shipped inside the window. At the last commit the DMG does not exist as a distributed artifact: three notarization submissions, three `Bus error` crashes, the signed app parked at `tools/ide/release/Chord Writer.app`. Crucially, AC3 — Gatekeeper assessment via `spctl` on a machine that never built the checkout — is the plan's own definition of done for distribution and there is no evidence it was ever run. 'Taken to a notarized DMG' overstates what the record supports.",
+   "The seal, the headline engineering achievement, was accidental before it was real. `vendor-toolchain.sh` asserted an invariant it did not enforce; five symlinks escaped into `packages/*` and the earlier AC6 pass held only because `../` padding overshot at that directory depth. The self-contained property was believed for a full day before it was true.",
+   "The macOS 26 deployment target was never an engineering decision. It was an artifact of whatever machine ran the 2026-05-09 bootstrap, survived 93 days unexamined through an ADR-279 comment that asserted it as intentional, and was only questioned because a download page had to state a system requirement. The correction cost four trivial code changes — evidence the constraint had never been load-bearing at all.",
+   "The Chord Writer 1.0 ADR family is mostly unbuilt. ADR-281 (embedded help), ADR-285 (asset management) and ADR-286 (web-template visual editing) were accepted and not implemented; ADR-283 was rejected outright (a5135a1f). The app that reached the notary is a subset of the app that was designed.",
+   "The two-host claim is asserted far more often than it is documented. Only 2 of 124 `tools/ide` commits carry a UTC author timestamp, and the `/home/dave` path in the repo's own August record refers to the plover.net deploy target, not a development checkout. The parallel-session dynamic is real in the session summaries and in `plan.md`'s coordination-risk note, but the git-side evidence for it is much narrower than the narrative.",
+   "The IDE's test-count record contradicts itself and nobody resolved it. ADR-301 Amendment A1 records the SharpeeIDE suite at 521 tests; full `xcodebuild test` runs on 2026-08-07 report 423 with nothing added or removed between them. Two sessions flagged the gap and neither explained it, which weakens any claim resting on the suite's growth as a measure of the arc's maturity."
+  ],
+  "confidence": "**Verified directly in /Users/david/repos/sharpee.** First-commit stat and full message (2f6df711: 12 files, +866, macOS 26 target, `net.sharpee.ide`, Sonnet 4.6 trailer). Commit counts by month (6/25/38/55 = 124). The 37-day dormancy gap (26559677 → b7f770f2). ADR-154's live `## Status: PROPOSAL`, its 2026-04-20 date, and its verbatim Electron/Tauri, folder-of-TypeScript, VS-Code-parity and Windows-signing lines. ADR-258's status block and full Implementation addendum (all five swap rows, 213 tests). ADR-276's status line and 50-site census claim. ADR-279's Context section and `plan.md` Phases 1–4 statuses, including the verbatim pause quote and the provisioned-credentials block. The complete text of `bundled-node.entitlements` (52 lines, five keys, per-key rationale, the \"keep this list MINIMAL\" instruction). `project.yml` as it stands: `MACOSX_DEPLOYMENT_TARGET: 11.0`, `ARCHS: arm64`, `net.sharpee.chord-writer`, `CFBundleShortVersionString 1.0.0`, and the Manual-signing comment naming \"5 sessions/8 incidents.\" Full messages and diffstats for 09243cb5, fe5bd34f, 0064eb3e (442-line package.sh + 52-line entitlements), 667170a4 (the 26.0→11.0 change and its four code costs), 1c5e37b0, 962f6b38, 31ef79b2 (168 files, +3,190/−12,369), a6ac1de2. Author-timezone census: 2 of 124 `tools/ide` commits at +0000; 169 of 995 repo-wide since May. Current on-disk size (158 Swift files, 24,659 lines, 67 test files, 405 tracked files, 25 MB vendor). `tools/ide/release/Chord Writer.app` present and gitignored; `dmg/assemble-dmg.sh` and `art/make-app-icon.sh` present. `docs/architecture/adrs/` holds only `adr-201-dialogue-speech-emission.md`.\n\n**Read in corpus session summaries but not independently re-executed.** The four traced 07-23 breaks with their file:line citations (session-20260723-1546-main.md). The 273-test Phase-2 close, the 162 MB toolchain, and the 1,287,704-byte game.js (session-20260728-0325-main.md). The SIGBUS trace, exit 138, and submission ids d1494f8d / e264bb44 / fb7db755 / 90a8dfb6 (sessions 20260729-0530 and 20260810-1535). The seed-threading platform bugs (session-20260803-2110-main.md). The IDE 480-passing count at the new deployment target. I did not run `xcodebuild test` myself at any point.\n\n**Taken from the digests without further checking.** The May \"parallel session builds it from an empty directory\" framing — corroborated only indirectly, by `plan.md`'s coordination-risk note and the commit-timestamp split, not by any May session summary I read. The 8-incidents-across-5-sessions signing-rot count beyond what `project.yml`'s own comment asserts. The June ADR-201 collision narrative beyond confirming git holds only the dialogue ADR. The 2026-08-08/09 build-then-shred sequence for ADR-304/305.\n\n**Not checked at all.** Whether submission 90a8dfb6 was ever accepted — that falls outside the corpus window and I made no network calls. The unresolved 521-vs-423 IDE test-count discrepancy; I did not attempt to reconcile it. Whether the IDE suite has ever run in CI (recorded as a gap on 07-23; I found no macOS workflow but did not audit `.github/` exhaustively). AC3 — Gatekeeper assessment on a machine that never built the app — which the plan requires and for which I found no evidence of execution. Whether ADR-281/284/285/286 remain unimplemented as of the last commit; I read only their digest entries and ADR-284's partial implementation via 962f6b38."
+ },
+ {
+  "key": "verification-debt",
+  "title": "The gap between done and true",
+  "thesis": "Across 3.5 years, Sharpee's 113 recorded contradictions between session summaries and git contain no dishonesty and very little deliberate over-claiming. They are overwhelmingly two other things: bookkeeping drift (status lines, denominators, phase ledgers) and — the dangerous minority — structural blindness, where the instrument that certified \"done\" was constitutionally incapable of seeing the thing it certified. The project's response was unusually good: it named the failure class (No-Stub-Under-Test, 2026-04-23), shipped a general methodology rule the same day (DevArch v2.2.0 rule 12a, now 13a), and built real-path tests as a habit that spread measurably through commit vocabulary. But the honest answer to \"did the rate fall\" is that the corpus cannot support a rate claim in either direction — contradictions-per-month sits at 7–11 across months spanning 7 to 258 session summaries, which is a reading-budget artifact, not a measurement. What demonstrably changed is not the rate of false claims but the latency and mechanism of their detection: from 18 days and nine months in 2025, to 87 minutes and next-session-audit in 2026. The project did not cure over-claiming. It industrialised catching it.",
+  "timeline": [
+   {
+    "date": "2025-07-22",
+    "event": "deserializeSpatialIndex lands in game-engine.ts carrying its own confession in a comment: \"// Note: Full deserialization would need to clear and recreate the world / // For now, this restores entity traits and locations\". Every save on every host silently drops ScoreLedger, capabilities, world values, relationships and ID counters from this day forward.",
+    "source": "63bd3b3e (packages/engine/src/game-engine.ts:1210)"
+   },
+   {
+    "date": "2025-08-10 → 2025-08-28",
+    "event": "\"Phase 1: COMPLETE (53 actions) — Pattern Consistency: 100%\" is disproved 18 days later at 27.5%. Git at 7e3b2c88: 13 files contain report(context across 43 action directories. There were never 53 actions.",
+    "source": "7e3b2c88; end-session-20250828-2345.md"
+   },
+   {
+    "date": "2025-09-01 22:46 → 2025-09-02 00:43",
+    "event": "\"~98% complete, 110+ tests, All tests passing - No skipped tests\" contradicted ~2 hours later by 3 failing attacking-golden tests, a skipped opening-golden test, and a broken AGAIN command. The optimistic summary was written first and never corrected.",
+    "source": "end-session-20250901-2246.md / end-session-20250902-0043.md"
+   },
+   {
+    "date": "2026-01-03 → 2026-01-12",
+    "event": "\"650/650 Points Complete (100%)\" (with a version bump to celebrate) disproved by decoding the 1981 FORTRAN DINDX.DAT: MXSCOR = 616, three treasures that do not exist in MDL, OTVAL/OFVAL systematically swapped. 19 files, 850 insertions.",
+    "source": "ca192b8b"
+   },
+   {
+    "date": "2026-01-14",
+    "event": "DevArch's first commit. Everything before this date — all of 2025's contradictions — happened with no session-audit, no Behavior Statements, no test grading and no lifecycle methodology of any kind.",
+    "source": "devarch 907f0d3"
+   },
+   {
+    "date": "2026-02-15",
+    "event": "The transcript tester's parser was silently appending {type:'skip'} to any command written without an assertion, and the runner returned before executing skipped commands. Five lines deleted from finalizeCommand; a hard validation error added. 26 cascading wt-07 failures traced to disembark/board/launch/down never having executed.",
+    "source": "b68bb92e (packages/transcript-tester/src/parser.ts:500)"
+   },
+   {
+    "date": "2026-04-06",
+    "event": "grade-tests.sh reports \"177 GREEN, 0 YELLOW, 0 RED — Phases 1-5 cleaned all issues.\" The script scans every *.test.ts under packages/ and stories/, but its RED checks are two greps (expect(true).toBe(true); console.log) and its YELLOW check applies only to packages/stdlib/tests/unit/actions/*-golden.test.ts. Every other file reaches the line \"# --- GREEN (default) ---\".",
+    "source": "00bc714e (scripts/grade-tests.sh:113, :92, :110)"
+   },
+   {
+    "date": "2026-04-19 → 2026-04-23",
+    "event": "ADR-153 Phase 4 (\"Deno Sandbox Integration — Engine Subprocess and Turn Execution\") declared COMPLETE \"with one explicit carve-out.\" deno-entry.ts was an 84-line echo stub whose own header says \"Phase 0 stub: echoes INIT → READY\"; every Phase 4 test drove a 92-line Node fixture, stub-sandbox.mjs. Found when a live player on play.sharpee.net saw \"Waiting for the story to begin…\".",
+    "source": "ac523102; session-20260423-2008-main.md"
+   },
+   {
+    "date": "2026-04-23",
+    "event": "The failure class is named. docs/work/stub-antipattern.md is written the same day, along with a 201-line acceptance test running 5/5 RED against real Deno: \"The system under test cannot be the thing you wrote to stand in for the system under test.\"",
+    "source": "5395eecd (docs/work/stub-antipattern.md; tools/server/tests/sandbox/deno-engine-integration.test.ts)"
+   },
+   {
+    "date": "2026-04-23",
+    "event": "DevArch v2.2.0 ships \"Integration Reality (rule 12a)\" the same calendar day as the incident that produced it. That exact sentence is in ~/.devarch/DEVARCH.md line 192 today, as rule 13a.",
+    "source": "devarch e8d177e"
+   },
+   {
+    "date": "2026-04-24 → 2026-04-25",
+    "event": "deno-entry rewritten for real, gate 5/5 GREEN; the stub apparatus stripped entirely. \"real-path\" enters the project's commit vocabulary and never leaves: 0 occurrences before this date, then 6 (May), 17 (June), 36 (July), 26 (Aug 1–10).",
+    "source": "2364db85, da8cf6df"
+   },
+   {
+    "date": "2026-04-28",
+    "event": "Save/restore fixed nine months and six days after the defect was introduced. 262 lines of serializer replaced; save-restore-roundtrip.test.ts (314 lines) added. The three tests that had been green the whole time asserted onSaveRequested was called and that platform.save_completed was emitted — never on what was saved.",
+    "source": "bf9b9564; pre-fix packages/engine/tests/platform-operations.test.ts:401,422"
+   },
+   {
+    "date": "2026-07-24 02:00 → 03:27",
+    "event": "Both the ADR-260/261 and ADR-259 plans recorded COMPLETE, \"Phases executed: all 17,\" \"each green before the next.\" 87 minutes later: \"The one real defect: the branch never built.\" ext-scoring and ext-hunger were absent from repokit's PLATFORM_PACKAGES/BUNDLE_ALIASES, so all that green was vitest-only and every ADR real-path gate was unrunnable.",
+    "source": "93da76aa; session-20260724-0327-hatch-scoring.md"
+   },
+   {
+    "date": "2026-08-01",
+    "event": "\"Confidence laundering\" is named: a claim originated unchecked in one model's response, was inherited by ADR-293, briefly re-hedged, then reverted to the confident form — each hop dropping the hedge and keeping the prose. The claim turned out to be true; the defect was stating as established what had only been repeated. Rule saved: evidence inline, command and result, dated, never a citation to a prior document's assertion.",
+    "source": "session-20260801-0100-main.md; ADR-293"
+   },
+   {
+    "date": "2026-08-02",
+    "event": "[SKIP] found to skip execution rather than assertion — the third distinct failure of the same instrument in six months (implicit skip Feb, [SKIP] skips whole command Mar, execute semantics Aug), and it contradicted ADR-294 D2's own text. 4 new tests in skip-executes.test.ts.",
+    "source": "8bcc3207"
+   },
+   {
+    "date": "2026-08-10",
+    "event": "sharpee.net had been serving a pre-ADR-298 build; the deploy reported success and changed nothing, because the systemd unit's WorkingDirectory pointed at a different clone (sharpee_v2/website) than deploy.sh built in. Fixed, and a guard added that compares the service's WorkingDirectory to the tree about to be built and refuses — \"the bug was the silence, not the path.\"",
+    "source": "session-20260810-1535-feat-testing-tab-embed.md; 9cca4695"
+   }
+  ],
+  "analysis": "**Classification first, because the framing matters.** Of the 113 contradictions, none are dishonesty. Every single one was discovered, written down, and preserved by the project itself — usually by the next session, in a file committed to the repository. A corpus that contained a cover-up would not contain the cover-up's exposure. What it contains instead sorts into five classes, and they are wildly unequal in importance.\n\nRoughly 25 are **status-line and numbering lag** — ADR-148 reading DRAFT while shipping across six packages, two different ADR-058s with opposite status lines, ADR-064 dated four months in its own future. Roughly 40 are **denominator drift**: 43 vs 47 actions, 1,035 vs 200+527 `as any` casts, 521 vs 423 IDE tests, walkthrough chain totals of 885/916/870/888/921/866 reported as though comparable. These are bookkeeping. They are noisy, they make every metric in the corpus untrustworthy, and they are not verification debt in the interesting sense.\n\nAbout 22 are **the model over-claiming** — writing reported as working. \"All 7 Steps Complete — Ready for Build + Test\" (2026-02-10 14:00) against a session three hours later finding the extension didn't compile and 349 stdlib tests failing. \"Status: COMPLETE\" for Docker packaging while the same file states the build was never executed. Five separate August 2026 summaries asserting \"no commits were made this session\" while git holds the commits — that last one is a harness artifact, not a claim about work, since a commit-agent subprocess is invisible to the summarizing session.\n\nThe dangerous class is small: about **15 cases of structural blindness**, where the test could not see what it asserted, plus **2 stub-under-test**. These are not exaggeration. They are instruments that return GREEN by construction.\n\n**The centerpiece is `grade-tests.sh`.** On 2026-04-06 the project built a static test grader implementing its own rule-12 RED/YELLOW/GREEN taxonomy and reported \"177 GREEN, 0 YELLOW, 0 RED — Phases 1-5 cleaned all issues.\" Reading the script (00bc714e): it walks every `*.test.ts` under `packages/` and `stories/`. Its RED detection is two greps — `expect(true).toBe(true)` and a stray `console.log`. Its YELLOW detection is gated behind `if echo \"$rel\" | grep -q 'packages/stdlib/tests/unit/actions/.*-golden\\.test\\.ts'`. Everything else falls through to a line that literally reads `# --- GREEN (default) ---`. So \"0 YELLOW across 177 files\" means *no file outside stdlib's action goldens was ever eligible to be yellow*. Three weeks later the save/restore investigation found `packages/engine/tests/platform-operations.test.ts` asserting `expect(mockHooks.onSaveRequested).toHaveBeenCalled()` and `expect(...some(e => e.type === 'platform.save_completed')).toBe(true)` — textbook YELLOW by the project's own rule 13 (\"asserts on event emission but not on the state change the event represents\"). The grader had graded it GREEN. An instrument built to measure verification quality was itself unverified, and reported the absence of two typos as the presence of quality.\n\nThat is the whole throughline in one artifact, and the save/restore bug is its twin. The truth had been sitting in the source in plain English since 2025-07-22 — `// For now, this restores entity traits and locations` — for nine months, while three green tests looked past it at metadata fields the broken code never touched. Nobody lied. Nothing lied. The instruments simply pointed elsewhere.\n\n**What the project did about it is genuinely good, and it happened fast.** On 2026-04-23, the day the Deno stub was found, three things landed: a 201-line acceptance test running 5/5 RED against real Deno; `docs/work/stub-antipattern.md`, which diagnoses *why DevArch permitted this* rule by rule (\"rule 11 catches tautological assertions and mock-only verification. It does not catch tests that assert on real state mutation inside a stubbed subsystem\"); and DevArch v2.2.0 shipping rule 12a Integration Reality. The sentence \"The system under test cannot be the thing you wrote to stand in for the system under test\" travelled from a Sharpee incident report into a general methodology product in under 24 hours, and is verbatim in `~/.devarch/DEVARCH.md` line 192 today as rule 13a. The habit spread measurably: the string \"real-path\" appears in zero commit messages before 2026-04-24, then 6, 17, 36, 26 across May through August.\n\n**Did the rate fall? The evidence does not support a clean claim, and the reason is methodological.** The digest yields 8, 11, 8, 10, 8, 8, 8, 9, 10, 7, 10, 8, 8 contradictions per month — across months holding 7 session summaries (2025-09) and 258 (2026-01b). Density therefore ranges from 1.14 down to 0.031 and is almost perfectly anti-correlated with corpus size, which is the signature of a fixed per-month output budget, not a measured rate. Anyone reading \"113 contradictions\" as a quantity has read a reading protocol, not a project.\n\nTwo independent measures do move, in opposite directions. Correction-vocabulary in commit *subjects* (\"never built\", \"was wrong\", \"contrary to\", \"reported success\") rises: 2 in Feb 2026 to 10 in July. That is more catching, not more erring. And detection latency collapses: 18 days (Aug 2025) and 9 months (save/restore) in the pre-methodology era; 87 minutes (hatch-scoring, July 2026) and next-session-entry-audit (August 2026) after it. The August case is the clearest — a summary claimed no commits, and the *following* session's mechanical HEAD check caught it, which is instrumentation doing exactly what the 2025 sessions had no way to do.\n\n**But the last month is not clean, and that is the finding.** August 2026 — the most heavily instrumented month in the project's history, with pre-session-audit, plan-review, ADR interviews, mutation-verification and real-path gates all firing — still produced eight contradictions, still shipped a deploy that reported success and changed nothing, and still found `[SKIP]` skipping execution for the third time in six months after two prior discoveries of the same behavior. The defect *in the instrument that measures done* survived being named twice. That is the honest shape of this arc: the class was correctly diagnosed, the remedy was real and travelled beyond this repo, and the failures kept coming anyway — smaller, faster-caught, and better-documented, but not fewer.",
+  "confidence": "Verified directly in git at /Users/david/repos/sharpee and /Users/david/repos/devarch: the 13-of-43 three-phase count at 7e3b2c88 (git grep -l \"report(context\"); deno-entry.ts at 84 lines and stub-sandbox.mjs at 92 lines at ac523102, both stripped at da8cf6df; the full text of docs/work/stub-antipattern.md at 5395eecd and its verbatim sentence at ~/.devarch/DEVARCH.md:192; devarch commit e8d177e dated 2026-04-23 titled \"v2.2.0 — Integration Reality (rule 12a)\"; the pre-fix save-restore-service.ts comment and its origin in game-engine.ts at 63bd3b3e (2025-07-22); the pre-fix assertions in platform-operations.test.ts (lines 401, 422); bf9b9564's 262-line serializer rewrite plus a 314-line roundtrip test; the complete source of scripts/grade-tests.sh at 00bc714e including the find at line 113, the stdlib-only YELLOW gate at line 92, and \"GREEN (default)\" at line 110; b68bb92e's five-line deletion of the {type:'skip'} default in parser.ts; commit messages for 8bcc3207, 93da76aa, 9449a38b, ca192b8b, de6ae636 (5 files / 677 insertions, confirming the feat-titled documentation commit); 13f3bcb0's timestamp (2026-08-06 14:56:15) against the session that said no commits were made; 318 ADR files and their current status distribution; the \"real-path\" commit-message counts (0 before 2026-04-24, then 6/17/36/26); DevArch's first commit at 2026-01-14. I also read the primary text of session-20260810-1535 (deploy) and session-20260801-0100 (confidence laundering) rather than relying on the digest's paraphrase, and located the \"177 GREEN\" line in session-20260406-1500-testing-mitigation.md — the digest mis-cites it to the -1104 file. What I did NOT verify: the underlying read of 1,247 session summaries (I trust the digests for it); the 2025 and Dec-2025 timestamp pairs used for latency figures, which come from digest-quoted summary headers I did not open; the FORTRAN DINDX.DAT decode itself; the \"148/148 obtained by weakening tests\" claim beyond the February commit that undid it; the 26-cascading-wt-07-failure count. My classification counts (~25 status-lag, ~40 denominator drift, ~22 over-claim, ~15 structural, 2 stub) are my own reading of the 113 digest entries, not an independent re-derivation from the corpus, and the boundaries between classes are judgment calls. I ran no test suite and no build.",
+  "counterEvidence": [
+   "The 113 figure cannot bear the weight the throughline wants to put on it. Contradictions per month are 7-11 across months containing 7 to 258 session summaries; density is anti-correlated with corpus size (1.14 in 2025-09, 0.031 in 2026-01b). That is a fixed per-month reading budget, not a measured rate. No trend claim in either direction survives this.",
+   "Not one of the 113 is dishonesty, and the framing 'the gap between done and true' risks implying otherwise. Every contradiction was found and recorded by the project, usually within days, in files it chose to commit. The corpus is a confession, and confessions are evidence of honesty, not its absence.",
+   "Most of the 113 are not verification debt at all. Roughly 65 of 113 are status-line lag and denominator drift — ADR-148 reading DRAFT while shipped, 43-vs-47 action counts, 521-vs-423 test counts. These make metrics untrustworthy but no false 'done' rests on them.",
+   "Several entries counted as contradictions are the remedy visibly working. session-20260622-2030 corrects itself inside the same file; a 2026-08 summary keeps both a false claim and its retraction, which the reader flags as 'the honest form'; and session-20260807-2255's own finding was disproved by git log -S and retracted in three places including a GitHub comment. Self-correction being logged as contradiction inflates the count against the project.",
+   "The five August 2026 'no commits were made this session' claims are a harness limitation, not over-claiming: a commit-agent subprocess makes commits the summarizing session cannot observe. Counting them as verification debt conflates a tooling blind spot with a false completion claim.",
+   "ADR-291's current status line is a model of the discipline the throughline says was missing: 'SUPERSEDED IN PLACE ... do not implement. Nothing here was built.' By August 2026 the project writes negative results into status lines explicitly, which is the opposite of the 'Proposed means shipped' pattern the retrospective warns about.",
+   "A rising correction-commit count (2 in Feb 2026, 10 in July) is ambiguous. It is consistent with better detection, but it is equally consistent with a project shipping more surface area per month. Commit volume roughly tripled over the same window, so the rate per commit may be flat.",
+   "2025 had no methodology at all — DevArch's first commit is 2026-01-14. Comparing 2025's 18-day detection latency against 2026's 87 minutes credits DevArch for a difference that also spans four model generations, a monorepo that grew tenfold, and a solo developer's own accumulated experience. The causal attribution to instrumentation is plausible, not demonstrated."
+  ]
+ },
+ {
+  "key": "capability-and-devarch",
+  "title": "Waiting for the Model: Three Walls, and the Process That Walked Out the Door",
+  "thesis": "Sharpee's architecture was finished in April 2023 and then waited three and a half years for something that could build it. Three times David put the project down — eleven months (2023-04-03 → 2024-03), twelve weeks (2025-03-29 → 2025-06-23), sixteen weeks (2025-09-02 → 2025-12-25) — and each return coincides with a capability step, the third landing on the same commit as the first `Claude Opus 4.5` trailer (987ba181, 2025-12-25 20:05). But the more interesting half is what the returns produced. Twenty-six minutes after that return commit, 1723c4e8 added a \"Context Management\" section to a 35-line CLAUDE.md — the first rule in the project was about running out of context, not about interactive fiction. From there the process grew faster than the code: 14 lines of CLAUDE.md in August 2025, 516 by January 2026, 730 by May 2026 — and on 2026-01-14 the 774-line workflow guide written inside Sharpee was pushed byte-identical into a brand-new repository, `ChicagoDave/devarch`, which is now v5.4.0 with 322 commits, 23 ADRs of its own, and a rule-firing harness that grades nine model lines. DevArch was generalized *out* of Sharpee and then reinstalled into it (v1.3.2, 2026-03-24), and by August 2026 Sharpee had become DevArch's production validation bed. The dependence never went away; it changed shape from \"wait for a model that can hold the problem\" into \"build the scaffolding that lets any model hold it, and measure which ones do.\"",
+  "timeline": [
+   {
+    "date": "2023-04-03",
+    "event": "StoryRunner, the third C# prototype, last touched — 11 projects, 29 files, 1,909 lines, with WorldModel/DataStore/GameEngine/GrammarLibrary/ParserLibrary/StandardLibrary/TextService already decomposed exactly as the TypeScript monorepo would be two years later. Every action body (Take, Examine, Go) is empty. Wall 1 begins: 'the salad days of hallucinations and imaginary code.'",
+    "source": "origin-narrative.md; StoryRunner file mtimes"
+   },
+   {
+    "date": "2024-06-26",
+    "event": "Claude conversation archive opens with 'Building a Modular Interactive Fiction Data Store' — 2 conversations in June, 13 in July, 74 in August. The C# platform actually gets built. Six days after Claude 3.5 Sonnet's release.",
+    "source": "index-chats.md:11-14"
+   },
+   {
+    "date": "2024-12-14",
+    "event": "Two same-day conversations evaluate C#→TypeScript ('Translating Graph-Based C# to TypeScript'; 'Evaluating C# 8 to TypeScript Migration'). David's second turn is 'Any cons?'",
+    "source": "origin-narrative.md; index-chats.md"
+   },
+   {
+    "date": "2025-03-29",
+    "event": "Repository first commit — twice, d9003cf7 and 330931b5, minutes apart. Importing existing work, not starting fresh. Wall 2 begins: zero commits for twelve weeks while 39 conversations run.",
+    "source": "git d9003cf7, 330931b5"
+   },
+   {
+    "date": "2025-06-23",
+    "event": "a52d135e 'wholesale refactoring - not even going to list the changes' — 529 files, +52,832/−31,495. Twelve weeks landed in one commit. The conversation archive stops 2025-06-20; the summary corpus starts 2025-06-28. The instrument changes from chat to Claude Code.",
+    "source": "git a52d135e; origin-narrative.md"
+   },
+   {
+    "date": "2025-08-10",
+    "event": "919a3805 carries the project's first Co-Authored-By trailer. Everything before it — three prototypes, 230 conversations, four months of TypeScript — is unattributed.",
+    "source": "git 919a3805"
+   },
+   {
+    "date": "2025-08-13",
+    "event": "53c5c550 creates CLAUDE.md: 14 lines, one of which is 'DO NOT use 2>&1 with pnpm commands.' The entire process apparatus starts here, three days after attribution starts.",
+    "source": "git 53c5c550"
+   },
+   {
+    "date": "2025-08-17",
+    "event": "First recorded context exhaustion: 'Continued from previous session that ran out of context.' The session resets to commit a135c0c and restarts Phase 3 of the I-prefix refactor.",
+    "source": "context-history/end-session-2025-08-17-1915.md:4"
+   },
+   {
+    "date": "2025-09-02",
+    "event": "9c91a424 'fix: Resolve test failures after trait removal refactoring' — last commit before Wall 3. October and November 2025 are silent in every source at once: no commits, no summaries, no conversations.",
+    "source": "git 9c91a424; gaps-and-anomalies.md §1"
+   },
+   {
+    "date": "2025-12-25",
+    "event": "987ba181, 20:05 — Wall 3 ends and the first `Co-Authored-By: Claude Opus 4.5` trailer appears in the same commit. 151 commits and 82 summaries follow in seven days.",
+    "source": "git 987ba181"
+   },
+   {
+    "date": "2025-12-25",
+    "event": "1723c4e8, 20:31 — 26 minutes later, CLAUDE.md gains 'Autonomous Work Flow': write a summary at ~10% context, commit, /compact, read it back; ask questions via GitHub issues and ntfy.sh. The first process rule the project ever wrote is a context-budget rule.",
+    "source": "git 1723c4e8"
+   },
+   {
+    "date": "2025-12-30",
+    "event": "627084ef / a725d71b — esbuild bundle, 'Sharpee bundle with 578x faster load times' (81,000ms → 142ms). A confounder for the January surge that has nothing to do with the model.",
+    "source": "git 627084ef, a725d71b"
+   },
+   {
+    "date": "2026-01-05",
+    "event": "d59d9d28 commits docs/agents/work-summary-writer.md — 132 lines that instruct the agent to 'align with the Budget Manager project's TDD methodology.' The first agent definition in Sharpee was imported from a different project of David's.",
+    "source": "git d59d9d28:docs/agents/work-summary-writer.md"
+   },
+   {
+    "date": "2026-01-08",
+    "event": "85c3d8ec adds .claude/settings.json, PreCompact/Stop hooks, check-session-summary.sh, and a 30-line docs/context/.session-template.md. Hand-rolled, project-local, no framework.",
+    "source": "git 85c3d8ec"
+   },
+   {
+    "date": "2026-01-12",
+    "event": "fb72695f adds a PostToolUse incremental work logger. Stated motivation: 'ESC interrupts are currently broken, causing Claude to... trigger auto-compact before session summaries can be written.' Process built against a harness defect, not a model deficit.",
+    "source": "git fb72695f; context-history/session-20260112-1349-dungeo.md:10-22"
+   },
+   {
+    "date": "2026-01-14",
+    "event": "66b85444 adds docs/claude-code-workflow-guide.md (774 lines) to Sharpee. The same day, ChicagoDave/devarch is created (907f0d3f) and d0cbd344 imports that exact file — diff between the two blobs is empty. DevArch is born as Sharpee's process, extracted verbatim.",
+    "source": "git 66b85444; devarch 907f0d3f, d0cbd344"
+   },
+   {
+    "date": "2026-01-17",
+    "event": "An outside contributor ports the workflow to GitHub Copilot and PowerShell (devarch adc7836f, PR #1). Three days old and already generalized past its origin repo.",
+    "source": "devarch adc7836f, ca0f1dd5"
+   },
+   {
+    "date": "2026-02-16",
+    "event": "a9f20e90 'cleanup old projects, session summaries, and pending code changes' — 483 files, +2,465/−275,597. Two thirds of February's 403,126 deleted lines are one housekeeping commit.",
+    "source": "git a9f20e90"
+   },
+   {
+    "date": "2026-03-24",
+    "event": "69c77c90 installs DevArch v1.3.2 into Sharpee's CLAUDE.md as a 122-line generated block between <!-- devarch:start --> and <!-- devarch:end -->. The tool built here comes home as a dependency.",
+    "source": "git 69c77c90:CLAUDE.md"
+   },
+   {
+    "date": "2026-04-23",
+    "event": "8189a320 adds .claude/hooks/boundary-check.sh after David said 'something is smelly all of a sudden' about lifting per-browser UI state into a shared projection. The rule becomes DEVARCH.md 8a (Boundary Statements).",
+    "source": "git 8189a320; context-history/session-20260423-0120-main.md"
+   },
+   {
+    "date": "2026-04-24",
+    "event": "docs/work/multiuser/devarch-wire-type-sharing-prompt.md drafts a rule from a Docker build failure (a shared wire-type file dragged Node's Buffer into the client compile). It is now DEVARCH.md 8b, Co-Located Wire-Type Sharing. DevArch goes v2.2.0 → v2.3.0 the same day.",
+    "source": "docs/work/multiuser/devarch-wire-type-sharing-prompt.md; git 73d5b70a, c3a07d10"
+   },
+   {
+    "date": "2026-06-18",
+    "event": "e28ddd9e replaces the 201-line inline block with a single line: @~/.devarch/DEVARCH.md. CLAUDE.md drops from 730 lines to 240. The process now lives outside the repository it was written in.",
+    "source": "git e28ddd9e:CLAUDE.md"
+   },
+   {
+    "date": "2026-07-15",
+    "event": "Model capacity as a literal wall: '4 killed by Fable token limit (dung-slice1, dung-slice2, act1, NPC) — relaunched on Opus 4.8.' The same day, a separate 8-agent fan-out is deleted wholesale: 'Scale is not a substitute for grounding.' Net change from that audit: zero.",
+    "source": "context-history/session-20260715-1330-chord-foundations.md:20; session-20260715-0915-chord-foundations.md:22"
+   },
+   {
+    "date": "2026-08-08",
+    "event": "DEVARCH.md ships a validated coverage matrix — nine model lines against a 37-fixture rule-firing harness, with per-model baselines in docs/workflow/validation/. DevArch's own triage doc cites Sharpee's event logs (13 mutation-verification invocations) as production evidence.",
+    "source": "~/.devarch/DEVARCH.md; devarch docs/workflow/validation/triage-live-session-gateless-rules.md:5-15"
+   }
+  ],
+  "analysis": "**The architecture was never the bottleneck.** StoryRunner (2023-04-03) already had `WorldModel`, `DataStore`, `GameEngine`, `GrammarLibrary`, `ParserLibrary`, `StandardLibrary`, `TextService` — the same decomposition the TypeScript monorepo has today. It had reciprocal typed edges (`ConnectNodes` throws on a one-way link), event publication on every mutation, a fluent grammar builder with per-sentence action override. What it did not have was behavior: `Take()`, `Examine()`, `Go()` are empty bodies. That is the shape of a design conversation, and it is the exact shape of the wall. The project did not stall on ideas. It stalled on execution capacity, three times.\n\n**The correlation, stated honestly.** Wall 3 is the clean case. Zero commits, zero summaries, zero conversations across October and November 2025 — the only period silent in every source at once. It ends at 987ba181, 2025-12-25 20:05, which is simultaneously the return commit and the first `Claude Opus 4.5` trailer in the repository. Seven days later the project had 151 commits and 82 summaries; January 2026 has 429 commits, 368 of them Opus 4.5. Wall 1 is the weakest case: the 2024-03-02 StoryRunner mtime is a file-copy artifact, and the real resumption is 2024-06-26, when the conversation archive opens — six days after Claude 3.5 Sonnet. Wall 2 is not a wall at all in the sense the other two are, and I will not pretend otherwise: April and May 2025 have zero commits but 39 recorded conversations, and April's titles are a build firefight (\"Fixing TypeScript Errors in Sharpee\", ×4). The work continued; only the commits stopped, and they stopped because nothing compiled well enough to commit. Wall 2 is a *commit* gap that David's testimony recalls as a wall — which is itself a finding about how walls feel from inside.\n\n**Name the confounders, because they are large.** Opus 4.5 shipped in late November 2025; the return is 2025-12-25 — Christmas Day, a month later. Holiday time is an equally good fit for the timing, and the model release does not explain the *date*. Worse for the clean story: Opus 4.1 (August 2025) and Sonnet 4.5 (September 2025) both landed inside Wall 3 and produced nothing. If model release were sufficient, the wall would have ended twice before it did. Wall 2's end coincides with Claude 4 *and* with a tooling switch — the conversation archive stops 2025-06-20 and the summary corpus starts 2025-06-28, i.e. development moved from chat to Claude Code, an agentic harness rather than a better model. And January 2026's surge has a mundane co-cause: on 2025-12-30, commits 627084ef and a725d71b bundled the platform with esbuild and took load time from 81,000ms to 142ms. A 578× faster inner loop explains a lot of commits without invoking anything about the model. Add Dungeo — launched 2025-12-27 explicitly as a dog-fooding target — and January has three sufficient explanations, of which the model is one.\n\n**Churn is not capability.** February 2026 shows −403,126 lines, the largest deletion month, and 275,597 of them are a single commit, a9f20e90, titled \"cleanup old projects, session summaries, and pending code changes.\" Per-commit churn by model is likewise uninformative: `Opus 4.6 (1M context)` has the *smallest* files-per-commit of any signer (8.3), well under plain `Opus 4.6` (17.4). Where the 1M variants do separate is session density — 7.2 commits per active day for 4.6-1M against 3.9 for 4.6, 13.3 for 4.8-1M, 5.6 for 4.7-1M. The larger window did not produce bigger commits; it produced longer coherent sittings. That is the only capability claim the commit graph actually supports.\n\n**The process arc inverts the naive reading.** If process compensated for weak models, it would appear early. It does the opposite. There is no attribution at all until 2025-08-10 (919a3805), no CLAUDE.md until 2025-08-13 (14 lines), and nothing resembling a lifecycle until the day Wall 3 ended. Then it explodes: 35 lines → 516 (January 2026) → 694 (March) → 730 (May). The trigger visible in the record is throughput, not weakness. The PostToolUse logger (fb72695f, 2026-01-12) exists because \"ESC interrupts are currently broken, causing Claude to... trigger auto-compact before session summaries can be written\" — a harness bug producing runaway work, i.e. too much output, not too little. Process was built to survive a model that could now do more per session than a human could supervise.\n\n**And then it left.** On 2026-01-14 the 774-line `docs/claude-code-workflow-guide.md` was committed to Sharpee (66b85444) and pushed the same day into a new repository (devarch d0cbd344) — the two blobs diff empty. Within three days an outside contributor had ported it to Copilot and PowerShell. DevArch came back as a dependency on 2026-03-24 (v1.3.2, a 122-line generated block), versioned upward through v3.2.0, then on 2026-06-18 (e28ddd9e) the block was replaced by one line — `@~/.devarch/DEVARCH.md` — and CLAUDE.md fell from 730 lines to 240. Rules kept flowing outward: Boundary Statements from a \"something is smelly\" moment on 2026-04-23, Co-Located Wire-Type Sharing from a Docker `Buffer` failure written up as an explicit petition to DevArch, Integration Reality from a stub discovery whose write-up argues why the existing mutation-verification agent *could not* have caught it. Those are DEVARCH.md rules 8a, 8b, and 13a today.\n\n**The loop closes in August 2026.** DEVARCH.md now opens with a measured coverage matrix — nine model lines against a 37-fixture rule-firing harness, per-model baselines committed — and DevArch's own triage document cites Sharpee's event logs as production evidence that rule 15 fires. The project that waited for models to get good enough now instruments models for a living. That is the throughline: dependence did not end, it was industrialized.",
+  "confidence": "Directly verified in git at /Users/david/repos/sharpee: every commit hash and date in the timeline (987ba181, 1723c4e8, 919a3805, 53c5c550, 9c91a424, a52d135e, d9003cf7, 330931b5, 85c3d8ec, fb72695f, d59d9d28, 66b85444, 69c77c90, 8189a320, 73d5b70a, c3a07d10, 16c966ad, e28ddd9e, a9f20e90, 627084ef, a725d71b); the 774-line workflow guide's byte-identity with devarch d0cbd344 (`diff` returned empty); CLAUDE.md line counts at nine dates via `git rev-list -1 --before`; the DevArch block's version string and line count at each of ten bumps; per-model churn and commits-per-active-day computed from all 2,055 non-merge commits' trailers; the a9f20e90 shortstat (483 files, −275,597); the a52d135e shortstat (529 files, +52,832/−31,495); devarch's repo state (322 commits, v5.4.0, 23 ADRs). Read in full: /Users/david/.devarch/DEVARCH.md, devarch's triage-live-session-gateless-rules.md, docs/work/multiuser/devarch-wire-type-sharing-prompt.md, gaps-and-anomalies.md, origin-narrative.md, index-genai.md, the December-2025/March/April-2026 digest tooling blocks, and the two 2026-07-15 session summaries quoted verbatim. NOT verified: model release dates. Claude 3 (2024-03-04), 3.5 Sonnet (2024-06-20), Claude 4 (2025-05-22), Opus 4.1 (2025-08-05), Sonnet 4.5 (2025-09-29), Opus 4.5 (2025-11-24) are from my own knowledge, not from any artifact here; for 4.6 through Fable 5 and Opus 5 I have no reliable release dates at all and used first-trailer-appearance as the proxy, which systematically lags release. Every \"coincides with a model release\" claim therefore rests on dates the corpus cannot check. Also taken second-hand from digests without independent verification: the 52 stub summaries in February 2026, the ADR-201 parallel-session collision, the ISSUE-054 renumbering, the tool-call budget overruns, and the \"13 mutation-verification invocations\" figure (which DevArch's own doc flags as reported-not-checkable). I did not read the 2023 ChatGPT transcripts or the 2024 conversation bodies; the origin claims rest on origin-narrative.md's reading of them.",
+  "counterEvidence": [
+   "Wall 2 is not a walk-away. April 2025 has 14 conversations, May 25, June 39 (index-chats.md) against zero commits. The record shows continuous work that never reached git — David fighting a TypeScript build, not away from the project. Applying the same 'model capability wall' label to all three gaps flattens a real difference between 'stopped' and 'stopped committing.'",
+   "Model releases landed inside Wall 3 and did nothing. Opus 4.1 (August 2025) and Sonnet 4.5 (September 2025) both shipped during the sixteen-week silence with no effect on the record. If capability steps ended walls, the wall should have ended twice before it did.",
+   "The Wall 3 return date fits a holiday better than a release. Opus 4.5 shipped in late November 2025; the return is 2025-12-25. A month's lag, landing exactly on Christmas Day, is at least as consistent with 'David had time off' as with 'a model became capable.'",
+   "January 2026's surge is over-determined. The esbuild bundle (627084ef, 2025-12-30) cut load time 81,000ms → 142ms, and Dungeo gave the project a concrete 191-room target from 2025-12-27. Either alone could account for 429 commits; the model is one of three sufficient causes and the data cannot separate them.",
+   "The 1M-context variants do not produce larger commits. Opus 4.6 (1M) averages 8.3 files/commit, the lowest of any signer, versus 17.4 for plain Opus 4.6. The 'used for long refactors' claim survives only as session density (7.2 vs 3.9 commits/active-day), not as work-per-commit — and density is also what a determined weekend looks like.",
+   "Process flowed INTO Sharpee before it flowed out. The first agent definition committed here (d59d9d28, docs/agents/work-summary-writer.md) tells the agent to follow 'the Budget Manager project's TDD methodology.' It was copied from another of David's projects. 'DevArch was generalized out of Sharpee' is true of the January 2026 workflow guide; it is not true of the practice, which was already portable and already borrowed.",
+   "The process was built against a harness bug, not a model limitation. fb72695f's own summary names the cause: 'ESC interrupts are currently broken.' The most-cited piece of early process infrastructure exists because Claude Code would not stop, which is a tooling defect and arguably evidence of too much capability rather than too little.",
+   "More capacity actively hurt at least once. On 2026-07-15 an 8-agent fan-out produced a full MDL audit that was deleted the same day — 'net code/doc change from the audit: zero' — with the recorded lesson 'Scale is not a substitute for grounding.' The token-limit kills that day were a hard capacity constraint; the fan-out failure was the opposite problem.",
+   "Attribution is a convention, not instrumentation. 194 commits carry a bare 'Claude' trailer and 114 carry none, and the convention only started 2025-08-10. Every per-model count in this analysis, including the Opus 4.5 December figure, measures what a commit script wrote, not which model did the work — subagent work is invisible.",
+   "The heaviest process month is not the heaviest work month. January 2026 has 446 session summaries for 429 commits; March 2026 has 40 summaries for 86 commits, with the same or higher architectural output. If process were the mechanism that made capability usable, its volume should track work. It tracks the opposite — the ratio falls sharply once DevArch formalizes it, which reads more like noise reduction than leverage."
+  ]
+ }
+]

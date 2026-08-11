@@ -1,0 +1,323 @@
+# Verification record
+
+Phase 5 of the history retrospective. Every load-bearing claim was handed to a
+verifier instructed to **break it** — default to REFUTED when the evidence is not
+clean, UNVERIFIABLE when no primary source settles it, and reproduce every number
+rather than accept it.
+
+| Verdict | Claims |
+| --- | --- |
+| CONFIRMED | 20 |
+| PARTLY-WRONG | 19 |
+| REFUTED | 2 |
+| **total** | **41** |
+
+Anything below marked other than CONFIRMED carries the corrected wording, and that
+corrected wording — not the original claim — is what the retrospective may say.
+
+---
+
+## origin-throughline-claims-1-7
+
+### CONFIRMED — The reciprocal typed-edge invariant from the 2023 C# prototype does NOT
+
+**Evidence.** C# side: /Volumes/Backup/archives/repos-old/StoryRunner/DataStore/World.cs `ConnectNodes` throws `new Exception("All connected nodes must be bidirectional.")` when reverseEdgeType is null, and `AddEdgeType(string name, string reverseName)` registers the reciprocal pair. TS side: `git log --diff-filter=A -- packages/world-model/src/world/SpatialIndex.ts` returns only 331b0674 (Wed Jul 2 18:28:16 2025 -0500). SpatialIndex.ts holds `childToParent: Map<string,string>` (one parent) + `parentToChildren: Map<string,Set<string>>`. `git grep -l EdgeType 331b0674` hits only chat-history transcripts — no TS source ever implemented typed edges.
+
+### CONFIRMED — None of the five C# edge-type names (IsWithin/Contains, IsCarriedBy/Holds,
+
+**Evidence.** Per-name grep over packages/world-model/src: IsWithin 0, IsCarriedBy 0, Holds 0, IsIn 0, Hosts 0, IsSupporting 0, IsOn 0, LeadsTo 0. `Contains` returns 1 file — containerBehavior.ts:18,245 `alreadyContains` — a substring of an unrelated identifier, not the edge-type name. The ten names are confirmed present in the C# source at StandardLibrary/Constants.cs:12-20.
+
+### CONFIRMED — addRelationship/getRelated exists but is forward-only, has zero production
+
+**Evidence.** WorldModel.ts:1225-1243 — comment `// Add forward relationship`, writes only `this.relationships.get(entity1Id)`. Caller census (`grep -rn 'addRelationship|getRelated|areRelated|removeRelationship' --include=*.ts . | grep -v node_modules|dist|.d.ts`, counted by file): world-model.test.ts 19, WorldModel.ts 9 (definition), AuthorModel.ts 8 (pure delegation), engine/tests/save-restore-roundtrip.test.ts 3. Zero in stdlib, engine src, chord, or stories. Reverse-lookup test: packages/world-model/tests/unit/world/world-model.test.ts:490 `expect(world.areRelated(entity2.id, entity1.id, 'likes')).toBe(false);`
+
+### PARTLY-WRONG — Publish-on-every-mutation does NOT survive: updateEntity carries a commented-out
+
+**Evidence.** First half confirmed: WorldModel.ts:1024 `// Future: Could emit change events here for reactive systems` / `// this.emitChange({ type: 'entity-updated', entityId });`. Second half is wrong as stated: WorldModel.ts:1086 `this.emitPlatformEvent('entity_moved', {...})` fires on every successful moveEntity, producing type `platform.world.entity_moved` (emitPlatformEvent, line 647). The literal strings `world.entity.moved` / `world.entity.changed` appear ONLY in docs/architecture/adrs/adr-064-world-events-and-action-events.md:37,48,186,192 — an ADR marked "Accepted (December 2025)" whose emission was never built.
+
+**Corrected.** Publish-on-every-mutation does not survive in any usable form. updateEntity carries a commented-out "Future: Could emit change events here"; moveEntity does still call emitPlatformEvent('entity_moved'), but that fires only when a platformEvents sink is passed to the WorldModel constructor, and no production caller passes one — every non-test `new WorldModel(...)` in packages/ and stories/ is zero-argument, so the emitter is dead in shipping code. The `world.entity.moved` / `world.entity.changed` events that ADR-064 (Accepted, December 2025) decided on were never implemented.
+
+### PARTLY-WRONG — Event sourcing was formally dropped in December 2025; save/restore today is
+
+**Evidence.** Save half confirmed: save-restore-service.ts:260 `worldSnapshot: compressWorldSnapshot(world.toJSON())` (gzipSync+base64, line 117), restore at :328 `world.loadJSON(decompressWorldSnapshot(...))` — no replay. "Formally dropped in December 2025" is not supported: the only December-2025 artifact is a session summary bullet, /Volumes/Workspace/sharpee-corpus/context-history/2025-12-27-platform-assessment.md:25 — "**Event sourcing removed**: Decided against as 'unnecessary technical rathole'" — listed under "Assessment Corrections." No ADR records it. adr-034-event-sourcing-save-restore.md still reads `## Status\nProposed (Future)` and its only commit is 092d51d9 (2025-08-08). The "Abandoned" marking exists only at docs/architecture/adrs/README.md:56, introduced by 8eed8f62 (2026-02-18). adr-106-domain-events-and-event-sourcing.md still reads "Accepted (January 2026)" and teaches event sourcing as the pattern.
+
+**Corrected.** Event sourcing was rejected in a December 2025 platform assessment as an "unnecessary technical rathole" (2025-12-27-platform-assessment.md) — a session-summary note, not a formal decision record; the ADR proposing it (ADR-034) still reads "Proposed (Future)" today and was only marked Abandoned in the ADR index on 2026-02-18. Save/restore today is a gzipped, base64'd world.toJSON() snapshot restored via world.loadJSON(), with no replay path — though the save file does still persist the event stream and turn history, they are never replayed.
+
+### PARTLY-WRONG — ADR-278 (July 2026) proposes reintroducing typed relationships as a NEW
+
+**Evidence.** docs/architecture/adrs/adr-278-relations.md line 3: `## Status: EXPLORATORY (2026-07-27, session 7ca178) — no commitment.` Line 5: `## Date: 2026-07-27`. Line 7: `## Origin: community request (Nathaniel, 2026-07-27)`. Its Decision section reads in full: `**None.** This ADR records an exploration, not a commitment.` Its own Context cites the dormant store and "parity starts from zero on both sides" — it frames relations as new, with no reference to the C# prototype.
+
+**Corrected.** ADR-278 (2026-07-27) explores reintroducing typed relationships and is explicitly EXPLORATORY with "Decision: None" — it maps the design space rather than proposing the feature. It was prompted by an outside user request (community request from Nathaniel, same date) and makes no reference to the 2023 prototype; it frames relations as a new feature.
+
+### PARTLY-WRONG — What DID survive is the decomposition and vocabulary: StoryRunner's eleven
+
+**Evidence.** `grep -c '^Project(' StoryRunner.sln` returns 11: StoryRunner, DataStore, StandardLibrary, MyStory, GameEngine, Common, GrammarLibrary, ParserLibrary, WorldModel, StoryRunner.DataStore.Tests, TextService. Against `ls packages/` (34 packages): only WorldModel→world-model is name-for-name; GameEngine→engine, ParserLibrary→parser-en-us, StandardLibrary→stdlib, Common→core are renames. Four have no package counterpart — DataStore (absorbed), GrammarLibrary (grammar lives inside parser-en-us), MyStory (stories/, not a package), StoryRunner.DataStore.Tests (test dir). TextService actively did NOT survive: `git log --diff-filter=D -- packages/text-service/package.json` → c01208ca (2026-05-10) "feat(adr-174): Phase 3 ACCEPTED — delete @sharpee/text-service (AC-9)".
+
+**Corrected.** What survived is the decomposition and vocabulary at the level of the split, not the names. Of StoryRunner's eleven C# projects, five have package descendants — WorldModel→world-model (the only exact name match), GameEngine→engine, ParserLibrary→parser-en-us, StandardLibrary→stdlib, Common→core. DataStore, GrammarLibrary, MyStory, and the test project have no package counterpart, and TextService was deliberately deleted on 2026-05-10 under ADR-174.
+
+### Verifier notes
+
+Provenance of the batch: all seven claims trace verbatim to /Volumes/Workspace/sharpee-corpus/retrospective/throughlines.md:16 (the summary paragraph) and its table rows. Note that throughlines.md is MORE careful than the batch handed to me in two places — it says the projects map "almost name for name" (claim 7 drops "almost") and it says of publish-on-every-mutation that "the only surviving emitter is a debug sink that no shipping code ever constructs" (claim 4 drops that entirely and asserts no emission exists). Whoever compressed throughlines.md into these claims introduced both errors; the source text is closer to correct.
+
+Dating correction for the "2023 C# prototype" framing used in claim 1: StoryRunner's .csproj files span 2023-04-01 (DataStore, GameEngine, GrammarLibrary, ParserLibrary) to 2024-05-21, and the reciprocal-edge code itself — DataStore/World.cs — was last modified 2024-05-18, with StandardLibrary/Constants.cs (the five edge-type pairs) at 2024-05-16. "The 2023 C# prototype" is right about when it started and wrong about when the cited code was written. If the retrospective dates the invariant, "the C# prototype (2023–2024)" is the defensible form.
+
+Nuance on claim 1's "derived child index": SpatialIndex maintains parentToChildren and childToParent in lockstep inside addChild/removeChild — neither is derived from the other. The project's own ADR-015 (decisions/adr-015-spatial-index-references.md, added 2025-07-12) calls it a "Bidirectional Tree Index" / "Parent-Pointer Tree with Child Index." "Parent-pointer tree with a child index" is the phrasing the repo itself uses and is safer than "derived."
+
+Nuance on claim 1's "replaced": nothing in the TypeScript repo preceded SpatialIndex. packages/world-model/src/world/WorldModel.ts was added in the same commit (331b0674); at its parent a52d135e (2025-06-23) the world-model package existed but had no src/world/ directory and no typed-edge or relationship-graph containment. The replacement happened across the C#→TS rewrite boundary, not as a swap inside the TS repo on 2025-07-02.
+
+One additional discrepancy already recorded in throughlines.md:32 and independently confirmed here: monthly-digests.md:807 attributes the ADR-034 "Abandoned" marking to commit d1873482, but the README.md:56 line was actually introduced by 8eed8f62 (2026-02-18, "docs: update README with all 20 npm packages, 48 actions, roadmap, and full ADR index"). If the retrospective cites a commit for that flip, cite 8eed8f62.
+
+ADR-064 ("World Events and Action Events", Accepted December 2025) is the strongest single piece of evidence for the publish-on-every-mutation throughline and is not cited in the batch: it decided that "the world model will emit events for all state mutations" including `world.entity.moved` and `world.entity.changed`, and the grep shows those strings exist nowhere but in that ADR. An accepted decision to restore the C# invariant that was never built is a sharper finding than the commented-out line in updateEntity.
+
+---
+
+## retrospective-claims-batch-1-10
+
+### CONFIRMED — Wall 1: last StoryRunner file mtime 2023-04-03, next 2024-03-02
+
+**Evidence.** `find /Volumes/Backup/archives/repos-old/StoryRunner -type f -not -path '*/obj/*' -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M:%S' {} \; | sort` → last before the gap: `2023-04-03 20:47:12 ParserLibrary/Parser.cs` and `StoryRunner/Program.cs`; next: `2024-03-02 00:26:32 DataStore/bin/Debug/net7.0/WorldModel.dll`, then `2024-03-02 01:07:21 summary.txt`. Span = 333.15 days = 10.9 months. The obj/ exclusion is the corpus's own documented convention (index-origin.md: "Counts exclude obj/ build output"). CAVEAT: with obj/ included, six files in DataStore/obj/ carry 2024-02-29 00:10:23-00:10:27, so the raw next-mtime is 2024-02-29 (gap 332 days, still ~11 months).
+
+### CONFIRMED — Wall 2: last commit 2025-03-29 (Initial commit), next 2025-06-23
+
+**Evidence.** `git log --reverse --format='%h|%ad|%s' --date=iso | head -3` → `d9003cf7|2025-03-29 04:11:22 -0500|Initial commit`, `330931b5|2025-03-29 04:14:40 -0500|Initial commit.`, `a52d135e|2025-06-23 02:01:28 -0500|wholesale refactoring - not even going to list the changes`. Gap 330931b5→a52d135e = 85.91 days = 12.27 weeks. Minor: there are two commits on 2025-03-29; the later one is titled "Initial commit." with a period.
+
+### CONFIRMED — Wall 3: last commit 2025-09-02, next 2025-12-25
+
+**Evidence.** `git log --all --format='%h|%ad|%s' --date=iso` around the boundary → `9c91a424|2025-09-02 00:46:34 -0500|fix: Resolve test failures after trait removal refactoring` then `987ba181|2025-12-25 20:05:16 -0600|docs: Reorganize three-phase work docs and update project status`. Gap = 114.75 days = 16.39 weeks. Nothing on any ref in between.
+
+### CONFIRMED — The commit that ends wall 3 (987ba181, 2025-12-25) is the FIRST
+
+**Evidence.** `git log --all --format='%H|%ad|%s' --date=iso --grep='Claude Opus 4.5' | tail -1` → `987ba1819572ed1aaadd19e138e0bf1c1fb6a1c6|2025-12-25 20:05:16 -0600`. `git show -s 987ba181` body ends `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`. 542 commits carry that trailer; 987ba181 is the oldest. It is the first *Opus 4.5* trailer, not the first Claude attribution overall — `919a3805` (2025-08-10 14:47:28) already carried the unversioned `Co-Authored-By: Claude`.
+
+### PARTLY-WRONG — Twenty-six minutes after that commit, 1723c4e8 added a "Context Management"
+
+**Evidence.** `git show 1723c4e8 --format='%ad'` = 2025-12-25 20:31:04 -0600 vs 987ba181 at 20:05:16 → 1548 s = 25m48s. `git show 1723c4e8^:CLAUDE.md | wc -l` = 71 (not 35); `git show 1723c4e8:CLAUDE.md | wc -l` = 86; diff stat `CLAUDE.md | 25 ++++-- (20 insertions, 5 deletions)`. The 35-line version is `git show 9c91a424:CLAUDE.md | wc -l` = 35, i.e. the pre-987ba181 state. Non-blank lines at 1723c4e8^ = 50, so 35 is not a blank-stripped count either.
+
+**Corrected.** Twenty-six minutes later (25 min 48 s), 1723c4e8 added an "Autonomous Work Flow" section — whose first subsection is "Context Management" — to a 71-line CLAUDE.md. The 35-line figure describes CLAUDE.md *before* 987ba181, the commit 26 minutes earlier, which had just grown it 35 → 71.
+
+### PARTLY-WRONG — CLAUDE.md grew from 14 lines in August 2025 to 516 by January 2026 to 730
+
+**Evidence.** Walked every commit touching CLAUDE.md: `git log --all --format='%H %ad' --date=short -- CLAUDE.md | tac | while read h d; do echo "$d $(git show $h:CLAUDE.md | wc -l)"; done`. Key rows: 2025-08-13 = 14 (first add, 53c5c550); 2026-01-14 = 516 (00cc4d7c); 2026-01-31 = 558; 2026-04-24 = 781 (peak, 746ed987); 2026-04-29 = 730 (fe5b4eaa); 2026-05-09 = 737; 2026-05-10 = 441 (8b28d44a); 2026-05-31 = 444; 2026-06-30 = 249; today = 293. 730 is an end-of-April value that survived only to 9 May, and it was never the high-water mark.
+
+**Corrected.** CLAUDE.md was created at 14 lines on 2025-08-13, reached 516 on 2026-01-14 (558 by the end of January), peaked at 781 on 2026-04-24, and stood at 730 entering May 2026 — then was cut roughly in half on 2026-05-10, ending May at 444 and June at 249. It is 293 lines today (plus the ~200-line DEVARCH.md it @imports).
+
+### CONFIRMED — On 2026-01-14 a 774-line workflow guide written inside Sharpee was pushed
+
+**Evidence.** devarch: `git show d0cbd34 --stat` → `docs/claude-code-workflow-guide.md | 774 +++++`, committed 2026-01-14 10:25:07 -0600, in a repo whose root commit 907f0d3 is 2026-01-14 10:19:28 (six minutes earlier). Blob sha `git rev-parse d0cbd34:docs/claude-code-workflow-guide.md` = b7942dcf3018238974eb6056c6fc152227b90d43. In sharpee: `git rev-parse 66b85444:docs/claude-code-workflow-guide.md` = the same b7942dcf — byte-identical. Written inside Sharpee is corroborated by sharpee's own work summary `docs/work/dungeo/context/2026-01-14-1007-claude-code-workflow-guide.md`: "Created /mnt/c/repotemp/sharpee/docs/claude-code-workflow-guide.md (775 lines)". Note the guide reached devarch (10:25) about eight hours before it was committed to sharpee (66b85444, 18:09:24).
+
+### PARTLY-WRONG — DevArch is now v5.4.0 with 322 commits and 23 ADRs of its own, and was
+
+**Evidence.** `head -3 /Users/david/repos/devarch/RELEASE-NOTES.md` → `## v6.2.0 (2026-08-08) — Plans get a terminal state...`; `grep -n 'v5.4.0' RELEASE-NOTES.md` → line 71, `## v5.4.0 (2026-07-28) — Objectives...`. Checkout is current (HEAD a1f255a, 2026-08-09). `git rev-list --count HEAD` = 322 ✓. `ls docs/adrs/*.md` = 0001–0023, 23 files ✓. Sharpee side: `git show 69c77c90:CLAUDE.md | grep -n devarch` → line 573 `<!-- devarch:start -->`, line 575 `DevArch Agent Lifecycle Rules — Base (v1.3.2)`, line 576 `Generated by: devarch init`, in commit 69c77c90 dated 2026-03-24 00:09:47 -0500 ✓. Wording caveat: `git log --all -S'DEVARCH' -i | tail -1` makes 69c77c90 the *first* devarch appearance in sharpee's history, so this was an initial `devarch init`, not literally a re-install.
+
+**Corrected.** DevArch is now v6.2.0 (released 2026-08-08) with 322 commits and 23 ADRs of its own, and was installed into Sharpee at v1.3.2 on 2026-03-24. v5.4.0 was two weeks and eight releases ago (2026-07-28).
+
+### PARTLY-WRONG — Ten distinct Claude models signed commits across 2,055 non-merge commits
+
+**Evidence.** `git log --all --no-merges --format='%(trailers:key=Co-Authored-By,valueonly)' | grep -i claude | sort -u` → exactly 10 strings: Claude; Claude Fable 5; Claude Opus 4.5; Claude Opus 4.6; Claude Opus 4.6 (1M context); Claude Opus 4.7 (1M context); Claude Opus 4.8 (1M context); Claude Opus 5 (1M context); Claude Sonnet 4.6; Claude Sonnet 5. `git rev-list --count --no-merges --all` = 2055 ✓ (HEAD-only is 2042 — state the basis). Per-month attribution (commit body matching `Generated with [Claude Code]` OR `Co-Authored-By: Claude`): 2025-08 63/85 = 74.1%; 2025-09 2/3 = 66.7%; 2025-12 144/151 = 95.4%; 2026-01 368/429 = 85.8%; 2026-02 126/126 = 100%; 2026-03 85/85 = 100%; 2026-04 226/231 = 97.8%; 2026-05 103/104 = 99.0%; 2026-06 254/255 = 99.6%; 2026-07 391/391 = 100%; 2026-08 179/179 = 100%.
+
+**Corrected.** Ten distinct Co-Authored-By signatures — eight distinct named models (Opus 4.5, 4.6, 4.7, 4.8, 5; Sonnet 4.6; Sonnet 5; Fable 5), plus an unversioned "Claude" and a duplicate of Opus 4.6 with the "(1M context)" suffix — appear across 2,055 non-merge commits. Attribution goes from 74% in 2025-08 to 100% in 2026-02, but not 100% from then on: 2026-04 is 97.8%, 2026-05 is 99.0%, 2026-06 is 99.6%. Only 2026-02, 2026-03, 2026-07 and 2026-08 are at 100%.
+
+### CONFIRMED — The name "sharpee" first appears in the record on 2024-07-28, as a Windows
+
+**Evidence.** Scanned every export in /Volumes/Backup/surface-archive/sharpee-archive/chat-history sorted by date-stamped filename, subtracting the extraction-time `claude_project_sharpee` metadata hit from each file's count. Earliest file with a real message-text hit: `reviewed/2024-07-28-18-44-16.json` (`"created_at": "2024-07-28T23:44:16.212317Z"`), 6 real hits. The first is verbatim: `Unable to find project 'C:\Users\david\OneDrive - Mach9Poker, Inc\repos\sharpee\WorldModel\DataStore.csproj'. Check that the project refe...` — an MSBuild error pasted into the conversation. The two conversations that predate it (2024-06-26, 2024-06-27) have zero real hits, and `grep -c -i sharpee chatgpt/*.txt` = 0 across all five ChatGPT dumps, so the name is absent from the 2023 C#-design era.
+
+### Verifier notes
+
+Two measurement conventions must be stated explicitly in the published text or the numbers won't reproduce:
+
+1. **Non-merge commit count depends on the ref scope.** `git rev-list --count --no-merges HEAD` = 2,042; `--all` = 2,055. The retrospective's 2,055 is the `--all` figure (includes commits on refs not reachable from main). Same trap for any other commit count in the batch.
+
+2. **StoryRunner mtimes depend on whether `obj/` is excluded.** The corpus's own index-origin.md states "Counts exclude obj/ build output," which is what makes the next-mtime 2024-03-02. Raw, six DataStore/obj files sit at 2024-02-29. The eleven-month figure survives either way, but the date 2024-03-02 does not.
+
+Things found that nobody asked about:
+
+- **The workflow guide reached DevArch before it reached Sharpee.** d0cbd34 in ChicagoDave/devarch is 2026-01-14 10:25:07; the same blob is committed to sharpee at 66b85444 on 2026-01-14 18:09:24 — nearly eight hours later. The extraction was published first and back-filled into the repo it was written in. If the retrospective narrates this as "extracted from Sharpee," that ordering is a better detail than the one it replaces.
+
+- **DevArch's own work summary says 775 lines; `wc -l` says 774.** `docs/work/dungeo/context/2026-01-14-1007-claude-code-workflow-guide.md` claims 775. The file is 774 newline-terminated lines. If any published sentence cites the session summary rather than the file, it will be off by one.
+
+- **CLAUDE.md's arc is not monotonic and the retrospective's framing may depend on that.** It peaked at 781 on 2026-04-24, then dropped to 441 on 2026-05-10 (8b28d44a) and to 249 by 2026-06-22 — a deliberate two-thirds cut, presumably when content moved to per-package CLAUDE.md files and the DEVARCH.md @import. Today's 293-line file also pulls in ~200 more lines by reference, so a raw `wc -l` today understates the instruction surface relative to the April figure, which was self-contained. Any "instructions kept growing" throughline is contradicted by the data after April.
+
+- **Attribution never hit and held 100%.** The 2026-04/05/06 dips (5, 1 and 1 unattributed commits respectively) are small but real. Some are plausibly hand commits by David; I did not classify them. If the retrospective wants a clean "100% from here on" line, the honest version is "100% in 2026-07 and 2026-08."
+
+- **Claim 4's precision is load-bearing and worth preserving.** 987ba181 is the first *Opus 4.5* trailer, but Claude attribution in this repo starts 2025-08-10 (919a3805, unversioned `Co-Authored-By: Claude`) — four and a half months earlier, before the sixteen-week wall. If the narrative reads 987ba181 as "the day Claude arrived," that's wrong; it's the day the model *name* started being recorded.
+
+---
+
+## adversarial-verification-batch-claims-1-8
+
+### PARTLY-WRONG — The Deno sandbox phase (April 2026) was declared COMPLETE with an 85-line
+
+**Evidence.** `git show ac523102:tools/server/src/sandbox/deno-entry.ts | wc -l` → 84 (diffstat also shows 84 added lines; file ends with a trailing newline, `main();\n`). Same at 73d5b70a → 84. The corpus contradicts itself here: monthly-digests.md:974 says "85-line" but throughlines.md:513 records "deno-entry.ts at 84 lines". On "every Phase 4 test": `git show ac523102:tools/server/tests/sandbox/message-framing.test.ts | grep -c stub` → 0; that file is a pure unit test of createLineFramer/frameMessage with no process spawn, and it satisfies the plan's own Phase 4 requirement ("Partial line buffering: two partial chunks assemble into one complete JSON object"). On "declared COMPLETE": commit ac523102 (2026-04-19) says "through Phase 4" and disclosed the carve-out in its own message; session-20260419-0111-main.md line 162 reads "**Status**: INCOMPLETE" and line 60 flags the carve-out explicitly. The DONE status was in the plan tracker (session-20260419-1252 dashboard: "all 10 phases DONE"), and session-20260423-2008-main.md:254 says "Phase 4 DONE status is rescinded."
+
+**Corrected.** On 2026-04-19 (ac523102) ADR-153 Phase 4 — named "Deno Sandbox Integration — Engine Subprocess and Turn Execution" — was recorded DONE in the plan tracker while its namesake deliverable, src/sandbox/deno-entry.ts, remained an 84-line echo stub. The carve-out was disclosed, not hidden: the commit message names it and the session summary's own Status field reads INCOMPLETE. Every Phase 4 test that exercised the sandbox ran against tests/fixtures/stub-sandbox.mjs (a 92-line Node echo script), though the message-framing unit tests touched no stub. On 2026-04-23 the DONE status was formally rescinded.
+
+### CONFIRMED — save-restore-service.ts was partially implemented since inception, silently
+
+**Evidence.** `git show 2d0468c1:packages/engine/src/save-restore-service.ts` — serializeSpatialIndex() declares `const relationships: Record<...> = {}` at line 322 and returns it at line 357 never having written to it; it captures only entity traits and room contents. deserializeSpatialIndex() carries the comment "// Note: Full deserialization would need to clear and recreate the world / For now, this restores entity traits and locations". No ScoreLedger, capabilities, state values, or ID counters anywhere in the file. `git log -S serializeSpatialIndex -- packages/engine/src` → oldest hit 63bd3b3e (2025-07-22), so the half-impl predates the Jan-2026 service extraction. Fixed at bf9b9564 (2026-04-28), whose message states verbatim: "ScoreLedger, capabilities, world state values, relationships, ID counters, and sub-container containment now round-trip correctly."
+
+### CONFIRMED — That broken save/restore survived a 3,164-test audit and a static grader
+
+**Evidence.** 3,164: `grep -ho 'WHERE id=[0-9]*' docs/work/test-review/classify-batch*.sql | sed 's/.*=//' | sort -n | tail -1` → 3164 (max test id in the SQLite classification; 2,887 distinct ids updated in these batches). 177 GREEN/0 YELLOW/0 RED: /Volumes/Workspace/sharpee-corpus/context-history/session-20260406-1500-testing-mitigation.md:28 — "**Current result: 177 GREEN, 0 YELLOW, 0 RED** — Phases 1-5 cleaned all issues"; reproduced the denominator with `git ls-tree -r --name-only 00bc714e packages stories | grep '\.test\.ts$' | wc -l` → 177 exactly. The blindness mechanism: grade-tests.sh at 00bc714e gates YELLOW behind `grep -q 'packages/stdlib/tests/unit/actions/.*-golden\.test\.ts'` and defaults everything else to `# --- GREEN (default) ---`. The fields point: `git show 00bc714e:packages/engine/tests/platform-operations.test.ts` asserts `expect(mockHooks.onSaveRequested).toHaveBeenCalled()` and `expect(eventsForTurn?.some(e => e.type === 'platform.save_completed')).toBe(true)` — never on save-blob contents. The April audit itself saw the file and graded it "**Excellent**… one of the best test files in the suite" while listing the exact gap under Gaps: "No test for save operation providing actual save data back (only tests that the hook is called)" (docs/work/test-review/engine.md:244-260).
+
+### CONFIRMED — The transcript tester silently added a {type:"skip"} assertion to any command
+
+**Evidence.** `git show b68bb92e -- packages/transcript-tester/src/parser.ts` removes exactly this from finalizeCommand(): "// If no assertion at all, default to [SKIP]" / `command.assertions.push({ type: 'skip' })`, and adds a validateTranscript error in its place. Never-executed confirmed at b68bb92e~1:packages/transcript-tester/src/runner.ts:925 — runCommand() opens with `const skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo'); if (skipAssertion) { return { ... actualOutput: '', skipped: true, passed: true } }` — an early return before the engine call. The 26: /Volumes/Workspace/sharpee-corpus/context-history/session-20260215-1615-main.md line 7 "Identify root cause of 26 cascading test failures", line 20 "`disembark`, `board boat`, `launch`, and `down` commands had no assertions", line 22 "Player never exited the boat, never re-launched", line 27 "26 failures all in wt-07". Minor: four commands were implicated, not two.
+
+### PARTLY-WRONG — August 2025 claimed "Phase 1: COMPLETE (53 actions), Pattern Consistency 100%"
+
+**Evidence.** Both quotes are exact. end-session-2025-08-10-2305.md:98 "### ✅ Phase 1: COMPLETE (53 actions)", :148 "**Pattern Consistency**: 100% (all actions follow validate/execute)". end-session-20250828-2345.md:11 "**Reality**: Only 27.5% (11 actions) actually use three-phase pattern". But they measure different things: the Aug 10 line explicitly says validate/execute (two-phase); the three-phase validate/execute/report pattern did not exist yet — ADR-058 and ADR-060 were first committed 2025-08-22 (00b77fdc) and 2025-08-26 (5540d8db). Also: `git ls-tree 7e3b2c88 packages/stdlib/src/actions/standard/ | awk '$2=="tree"' | wc -l` → 43 action directories (never 53), and `git grep -l 'report(context' 7e3b2c88 -- .../standard/ | wc -l` → 13, i.e. 30% not 27.5% (the summary's 27.5% is 11/40, a third denominator).
+
+**Corrected.** On 2025-08-10 a session summary claimed "Phase 1: COMPLETE (53 actions)" with "Pattern Consistency: 100%" for the validate/execute split; on 2025-08-28 a summary reported that only 27.5% (11 actions) used the later three-phase validate/execute/report pattern and that ADR-060's Phase 4 mass migration "was never executed." These are not the same measurement — three-phase did not exist on Aug 10 — so the pair is denominator drift and phase-ledger lag, not a single claim refuted. Git at the last August commit (7e3b2c88) shows 43 action directories, 13 of them containing report(context; the 53 figure never corresponded to any action count.
+
+### CONFIRMED — The No-Stub-Under-Test rule was created 2026-04-23 and promoted into DevArch
+
+**Evidence.** `git log --diff-filter=A --format='%h %ai %s' -- docs/work/stub-antipattern.md` → 5395eecd 2026-04-23 21:35:09 +0000 (sole commit touching it); the file at line 36 reads "Call it the **No-Stub-Under-Test rule**." In /Users/david/repos/devarch: `git log --all` → e8d177e 2026-04-23 21:06:56 +0000 "feat: v2.2.0 — Integration Reality (rule 12a) + template sync", whose body says "Add CLAUDE.md rule 12a 'Integration Reality' — the No-Stub-Under-Test rule." Current numbering: /Users/david/.devarch/DEVARCH.md:180 is rule 13a Integration Reality, and its line 192 carries the verbatim sentence "The system under test cannot be the thing you wrote to stand in for the system under test." One ordering nuance: the DevArch rule landed ~29 minutes *before* the Sharpee incident report was committed, so "promoted the same day" is right but "promoted after" is not.
+
+### PARTLY-WRONG — Detection latency for false completion claims fell from 18 days and nine
+
+**Evidence.** 18 days: end-session-2025-08-10-2305.md → end-session-20250828-2345.md = 18 days, both 2025. Nine months: the defect entered at 63bd3b3e (2025-07-22) and was fixed at bf9b9564 (2026-04-28) — ~9.2 months, but the *detection* was in 2026, not 2025. 87 minutes: /Volumes/Workspace/sharpee-corpus/context-history/ holds session-20260724-0200-hatch-scoring.md and session-20260724-0327-hatch-scoring.md; 02:00→03:27 = 87 min, derived from filename start-times, not from the timestamp of the claim or of its detection. The -0327 file line 21 reads "**The one real defect: the branch never built.**" Next-session audit: session-20260806-1650-main.md:22 "HEAD = `13f3bcb0` — last session's IDE work **was** committed, contrary to its own summary's 'no commits made this session'", and `git log -1 13f3bcb0` → 2026-08-06 14:56:15 -0500. The corpus's own confidence note (throughlines.json:750) says the 2025 timestamp pairs were taken from digest-quoted headers it did not open, and its caveat list (throughlines.json:759) says the causal attribution to instrumentation is "plausible, not demonstrated."
+
+**Corrected.** Four anecdotes, not a latency distribution: an 18-day gap wholly inside 2025 (Aug 10 → Aug 28), a save/restore defect introduced 2025-07-22 and not caught until 2026-04-28 (~9 months, detected in 2026), an 87-minute gap between two 2026-07-24 session-file start times, and a next-session HEAD check on 2026-08-06. Say "the four longest-to-shortest detection cases run 9 months, 18 days, 87 minutes, one session" — do not say the latency "fell," and do not place the nine-month case in 2025, since only its introduction was.
+
+### CONFIRMED — The contradictions-per-month figure (7-11) is a reading-budget artifact and
+
+**Evidence.** Reproduced from /Volumes/Workspace/sharpee-corpus/retrospective/monthly-digests.json by counting the `contradictions` array per month: 8, 11, 8, 10, 8, 8, 8, 9, 10, 7, 10, 8, 8 — range 7–11, sum 113, across 13 month-digests. `wc -l retrospective/manifests/*.txt` shows the input volume those digests read ranges from 7 files (2025-09) to 258 (2026-01b) — a 37× spread producing 8 contradictions in both cases. Two further tells of a fixed output shape: every single month has exactly 4 `quotes`, and `shipped` sits in a 10–28 band regardless of month size. The readingStrategy fields all assert full coverage with no sampling, so the flatness is in the write-out, not the read.
+
+### Verifier notes
+
+The corpus is internally inconsistent about deno-entry.ts: monthly-digests.md:974 (and the .json narrative) say "85-line echo stub," while throughlines.md:513 — the later, explicitly-verified pass — records "deno-entry.ts at 84 lines and stub-sandbox.mjs at 92 lines at ac523102." Publishing 85 would ship the digest's number over the verified one. wc -l says 84.
+
+There are two distinct stubs in the April 2026 Deno story and they get conflated: src/sandbox/deno-entry.ts (84 lines, the *production* echo stub that shipped) and tests/fixtures/stub-sandbox.mjs (92 lines, the *test* fake that Phase 4's sandbox tests actually drove). "The stub standing in for the engine, and every Phase 4 test asserted against that stub" merges them — deno-entry.ts was not what the tests asserted against. Both were stripped at da8cf6df (2026-04-24).
+
+The retrospective's own digest mis-cites the 177 GREEN line to session-20260406-1104-testing-mitigation.md; it is actually in session-20260406-1500-testing-mitigation.md line 28. throughlines.md:513 already flags this — worth making sure the published version uses the -1500 file.
+
+Claim 3 is stronger than stated, and the strongest available evidence is not in the retrospective: docs/work/test-review/engine.md:244-260 shows the April 6 audit read platform-operations.test.ts, graded it "Excellent … one of the best test files in the suite," and wrote the defect down under Gaps as "No test for save operation providing actual save data back (only tests that the hook is called)." The audit did not merely miss it — it named the gap and recommended "Keep." That sentence is a better centerpiece than the grader's default-GREEN branch.
+
+The monthly digest set skips 2025-10 and 2025-11 entirely (no manifest, no digest). Any per-month series presented as continuous 2025-06 → 2026-08 has two months missing and one month (2026-01) split into a/b halves that are also present as a single 446-file 2026-01.txt manifest — so "13 months" is 13 digests, not 13 calendar months. Do not compute a monthly rate off it.
+
+I did not check /Volumes/Backup/archives/repos-old/ — none of these eight claims touched the C# prototypes.
+
+---
+
+## batch-verification-sharpee-retrospective
+
+### PARTLY-WRONG — A fluent TypeScript layer written the same morning as the Chord design
+
+**Evidence.** `sed -n '1,25p' /Users/david/repos/sharpee/docs/work/fluent/dream-cloak.md` → line 3 reads "**Status:** Design exercise (2026-07-10). No implementation." and line 22 reads "Hypothetical package name `@sharpee/author` used throughout". `awk '/^```typescript/{f=1;next}/^```$/{f=0}f' dream-cloak.md | wc -l` → 93 (doc says "~90 lines including prose"). `grep -rl '@sharpee/author' --exclude-dir=node_modules --exclude-dir=.git` → only dream-cloak.md and docs/work/sharpee-ide/mock-v1.html; no such package was ever created. `wc -l stories/cloak-of-darkness/cloak.story` → 101; `git show 97db6af2:stories/cloak-of-darkness/cloak.story | wc -l` → 97 (the version that first landed, same day). Both files are in commit 799128e3, 2026-07-10 11:46:53 -0500; corpus session-20260710-1000-main.md records the arc "authoring-surface survey → dream-cloak fluent exercise → givens-driven Chord language design", so the ordering holds.
+
+**Corrected.** On the morning of 2026-07-10, before the Chord design work in the same session, a paper design exercise — not an implemented layer — sketched Cloak of Darkness against a hypothetical `@sharpee/author` fluent TypeScript API at ~90 lines (93-line code fence), versus 785 lines of real platform TypeScript and, that same evening, 97 lines of Chord (101 today). The fluent layer was never built; §4 of the doc also records two deliberate behavior divergences from the shipped Cloak, so the ~90 lines is not a like-for-like implementation.
+
+### PARTLY-WRONG — Chord went from a design session on 2026-07-10 to a working compiler
+
+**Evidence.** `git log --date=iso` — ADR-210 ACCEPTED in commit 799128e3 at 2026-07-10 11:46:53 -0500; commit 97db6af2 at 2026-07-10 22:01:50 -0500 (same day, ~10h15m later) whose message reads "devkit ships `sharpee compose`; cloak-of-darkness is authored as cloak.story with a chord-only build, joining the workspace" and "cloak golden gate 81/81". `git log --diff-filter=A -- packages/chord packages/story-loader` → both packages first appear 2026-07-10 (0cf7f0d2 17:30:51, 7d7598a6 18:04:20, 12d0acb4 18:37:38).
+
+**Corrected.** Chord went from an accepted design (ADR-210, 2026-07-10 11:46) to a working compiler (@sharpee/chord + @sharpee/story-loader) running Cloak of Darkness from a .story file with an 81/81 transcript gate the same day — about ten hours later, not four. (Four days is the interval to the 3.0.0 npm release on 2026-07-14 that first shipped both packages.)
+
+### PARTLY-WRONG — July 2026 contains 85 new ADRs (207 through 291), 391 commits
+
+**Evidence.** Commits: `git log --since=2026-06-30T23:59:59 --until=2026-07-31T23:59:59 --oneline --no-merges | wc -l` → 391 (405 including merges). ADRs: same window, `git log --diff-filter=A --name-only -- docs/architecture/adrs/ | grep -oE 'adr-[0-9]+' | sort -u | wc -l` → 85, first adr-207, last adr-291 — but `ls docs/architecture/adrs | grep '^adr-255'` → adr-255-alias-catalog.md AND adr-255-message-override-acl.md, so 86 documents occupy 85 numbers. Releases: `npm view @sharpee/core time --json` and `npm view @sharpee/sharpee time --json` both show sixteen July publishes — 1.5.0 (2026-07-01T06:12Z), 2.0.0 (07-01T21:07Z), 2.1.0, 2.1.1, 2.2.0, 3.0.0, 3.1.0, 3.3.0, 3.5.0, 3.6.0, 4.0.0, 4.1.0, 4.1.1, 4.1.2, 4.2.0, 4.3.0 (07-31T02:35Z = 07-30 21:35 CDT). The subset 2.1.0…4.3.0 is exactly fourteen.
+
+**Corrected.** July 2026 contains 391 non-merge commits (405 with merges), 86 new ADR documents across 85 numbers (207 through 291 — adr-255 is used twice), and sixteen npm releases, from 1.5.0 to 4.3.0; fourteen of them if you start counting at 2.1.0. (3.2.0 was version-stamped in git on 07-19 but never published.)
+
+### PARTLY-WRONG — ADR-266 originated in a community complaint that ADR-265 answered
+
+**Evidence.** Origin: docs/feedback/intfiction-20260724.txt is Nathaniel Lindell's forum post ("nor do we have the library in readable Chord form"); ADR-265 §Status: "SUPERSEDED by ADR-266 (2026-07-25) — **this ADR answered the wrong question.**" Children: `git log | grep -E 'ADR-(267|268|269|270|271|272) '` → first landing f2aed6be 2026-07-25 18:45:17 -0500 (ADR-271), last 4db20c31 2026-07-26 15:51:58 -0500 (ADR-272, "ADR-266 umbrella complete"); ADR-266 records CLOSED 2026-07-27. The 106: `grep -n '106' adr-266-grammar-definition-parity.md` → line 103 "priority affects **106 deviating rules, not 150** (316 of 422 sit at the default)" and line 157 "| explicit priority | `.withPriority(95)` | **106** deviating (316 at default)". Actual deletion, commit 9fc5b914 (2026-07-26 02:05, ADR-268): `git grep -o '\.withPriority(' 9fc5b914^ -- packages stories | wc -l` → 382; same on 9fc5b914 → 0; `git show 9fc5b914^:packages/parser-en-us/src/grammar.ts | grep -c withPriority` → 150.
+
+**Corrected.** ADR-266 originated in the owner's 2026-07-25 clarification that ADR-265 had misread a community complaint (Nathaniel Lindell, intfiction, 2026-07-24) — the complaint itself predates and does not mention ADR-265. Its six children landed inside about 21 hours (2026-07-25 18:45 to 2026-07-26 15:51), with the umbrella closed 2026-07-27. The deletion removed `.withPriority` from 382 call sites across packages/ and stories/ (150 of them in parser-en-us/src/grammar.ts), leaving zero. 106 is a different number: the count of grammar rules whose priority deviated from the default, 106 of 422.
+
+### PARTLY-WRONG — ADR-154 — the ADR that authorized an IDE — still reads Status: PROPOSAL
+
+**Evidence.** docs/architecture/adrs/adr-154-sharpee-ide.md line 3: "## Status: PROPOSAL", line 5 "## Date: 2026-04-20" — confirmed. Line 150, under "## Scope Boundary" ("This ADR ... does not commit to:"): "**A specific implementation technology** (Electron vs Tauri vs native). Implementation choice is deferred to the implementation plan." Only line 178, Phase 0 of the Implementation Plan, says "Pick implementation technology (Electron or Tauri)." TypeScript-folder model: lines 147-149 ("authoring tool for authors willing to write TypeScript"; "The authoring API stays TypeScript") and §Decision 1 ("All three are pure TypeScript packages"). Windows signing: line 168 "Signing and notarization on macOS and Windows become ongoing operational work." Shipped app: `grep -rl 'import AppKit' --include='*.swift' tools/ide/SharpeeIDE` → 35 files, `import SwiftUI` → 0; tools/ide/project.yml line 144 `ARCHS: arm64`; ADR-258 title "The IDE is a Chord authoring environment (TypeScript author path dropped)", and SharpeeIDE/AppDelegate.swift:169 rejects non-.story files with "the TypeScript author path was retired".
+
+**Corrected.** ADR-154 still reads Status: PROPOSAL and specified a TypeScript-folder project model and Windows signing; on implementation technology it explicitly declined to choose ("Electron vs Tauri vs native ... deferred"), while its Phase 0 roadmap step narrows to "Electron or Tauri". The app that shipped is native AppKit, Chord-only, arm64 macOS — contradicting the roadmap step, the TypeScript-only authoring API the Scope Boundary committed to, and the ~80–90 MB bundled-runtime estimate (the shipped toolchain is 165 MB).
+
+### PARTLY-WRONG — Chord Writer vendors an arm64 Node 22.23.1 (~25 MB) inside Contents/Resources
+
+**Evidence.** Version/arch: tools/ide/vendor-toolchain.sh lines 49-50 `NODE_VERSION="22.23.1"`, `NODE_ARCH="darwin-arm64"` — confirmed. Size: `ls -la tools/ide/vendor/node/` → node-v22.23.1-darwin-arm64.tar.xz is 25,962,500 bytes (the committed tarball); `ls -la 'tools/ide/release/Chord Writer.app/Contents/Resources/toolchain/node/bin/node'` → 112,274,208 bytes, and `du -sh .../Contents/Resources/toolchain` → 165M. vendor/node/README.md states it outright: "`bin/node` is **112.9 MB** uncompressed ... The official `.tar.xz` is 25.9 MB." Entitlements: `wc -l tools/ide/bundled-node.entitlements` → 52 (`grep -c '<key>'` → 5 actual entitlement keys; the rest is a header comment). Deployment target: `git log -p -- tools/ide/project.yml` → the only 26.0→11.0 change is commit 667170a4, 2026-08-10 21:19:40 -0500 ("DEPLOYMENT TARGET 26.0 -> 11.0 (David: 'any M chip OS, we can't require 26')"); @sharpee/core 5.0.0 published 2026-08-11T00:11:24Z, and commit 2d8a6b10 (2026-08-10 21:39) reads "5.0.0 published, DMG awaiting Apple".
+
+**Corrected.** Chord Writer vendors an arm64 Node 22.23.1 — a 25 MB .tar.xz committed at tools/ide/vendor/node, which expands at build time to a 112 MB binary at Contents/Resources/toolchain/node/bin/node (165 MB toolchain total) — signed with a 52-line entitlements file carrying five curated keys, and had its deployment target dropped from 26.0 to 11.0 on the evening of 2026-08-10, roughly three hours before the 5.0.0 npm publish and while the DMG was still awaiting Apple notarization — hours before launch, not four days.
+
+### REFUTED — The friendly-zoo TypeScript canon was deleted nine days after ADR-222
+
+**Evidence.** `git show 97e26e41 -M --name-status` → every friendly-zoo TypeScript file is an R100 (100%-similarity rename), not a deletion: stories/friendly-zoo/src/{index,characters,dynamic-text,events,language,scoring,version,zoo-items,zoo-map}.ts → stories/family-zoo-tutorial/src/. The commit message says so explicitly: "Nothing is deleted; every move is a tracked rename." `git ls-files stories/family-zoo-tutorial/src` at HEAD → all nine files still tracked; `git log --all --diff-filter=D -- stories/family-zoo-tutorial/src` → empty (never deleted since). Dates: ADR-222 "## Date: 2026-07-15"; the split commit is 2026-07-24 01:43:48 +0000 (authored in a +0000 container; the surrounding commits are -0500, making it 2026-07-23 evening Chicago time).
+
+**Corrected.** Eight or nine days after ADR-222 (2026-07-15), the friendly-zoo TypeScript canon was moved, not deleted — commit 97e26e41 (2026-07-24 01:43 UTC / 2026-07-23 evening CDT) relocated all nine source files to stories/family-zoo-tutorial as 100%-similarity tracked renames, where they remain at HEAD. What friendly-zoo lost was its status as the canon-bearing TypeScript story, becoming a pure Chord story (zoo.story + chord-extras.ts).
+
+### Verifier notes
+
+Cross-cutting observations the batch didn't ask about but a publisher should know.
+
+1. Two claims (1 and 7) share a failure mode: an artifact that was *demoted or hypothetical* is described as if it were *built* or *destroyed*. dream-cloak.md was never code; the friendly-zoo TS was never deleted. Both read as more dramatic than the record supports, and both are one command away from being caught by a skeptical reader. If there are sibling claims in other batches phrased around "written", "shipped", "deleted", or "removed", they deserve the same rename-vs-delete and doc-vs-code check.
+
+2. Claim 6's 25 MB figure is a repo-size number wearing a bundle-size label. The same conflation risk applies anywhere the retrospective quotes an artifact size: tools/ide/vendor/node/README.md documents the 25.9 MB / 112.9 MB pair precisely because the distinction matters to the packaging decision.
+
+3. The ADR-154 story is stronger than the claim makes it. Beyond Electron/Tauri, the Scope Boundary explicitly refused "A DSL on top of the TypeScript API. The authoring API stays TypeScript" — and the shipped IDE is Chord-only, i.e. exactly the DSL the ADR ruled out (ADR-258 D1 dropped the TypeScript author path). It also estimated "~80–90 MB per platform" for the bundled runtime against an actual 165 MB toolchain. Both are cleaner evidence of drift than the implementation-technology line, which the ADR at least hedged.
+
+4. tools/ide/project.yml currently carries a contradiction that the 26.0→11.0 change left behind: `options.deploymentTarget.macOS: "26.0"` (line 10) still says 26.0 while `settings.base.MACOSX_DEPLOYMENT_TARGET: "11.0"` (line 18) says 11.0. Not a retrospective issue, but if anything downstream reads the XcodeGen option rather than the build setting, the "runs on any Apple silicon Mac" promise is only half-wired. Worth a glance before the DMG clears notarization.
+
+5. Timezone hazard across the whole retrospective: several commits in this period were authored in a +0000 container while the rest of the repo is -0500, so day boundaries shift by one for anything committed after 19:00 Chicago time. Claim 7's "nine days" is exactly on that seam (8 days local, 9 days UTC). Any other day-count claim near a month or week boundary should be recomputed with an explicit timezone, and the npm timestamps (all UTC) crossed against it — 4.3.0 at 2026-07-31T02:35Z is a July 30 release in Chicago.
+
+6. Method note on the ADR count: `git log --until=2026-08-01` silently includes commits dated 2026-08-01 and yields 87 ADRs / 404 commits, which is probably how a 207-293 range could be produced. The strict window `--since=2026-06-30T23:59:59 --until=2026-07-31T23:59:59` gives the 85/391 the claim uses. If other claims in the retrospective quote monthly counts, confirm which window generated them.
+
+---
+
+## retro-claims-batch-verification
+
+### PARTLY-WRONG — 1,724 of 4,817 source files ever written (35.8%) are absent
+
+**Evidence.** `git log --no-merges --pretty=format: --name-only | grep -E '\.(ts|tsx|swift)$' | grep -v -E '(^|/)(dist|dist-esm|node_modules)/' | grep -v '\.d\.ts$' | sort -u | wc -l` → **4,826** (all refs: 4,887). `git ls-files` with the same filter → **3,093** (this half reproduces exactly). Set difference (LC_ALL=C comm) → **1,733 gone**, 35.9%. The claimed 4,817/1,724 does not reproduce under any filter variant I tried (--diff-filter=A/AM/ACMR, --no-renames, rev-list --objects); the gap is a consistent 9 files. Live=3,093 matching exactly means the 9-file gap is entirely in the 'ever' set.
+
+**Corrected.** 1,733 of 4,826 source files ever written (35.9%) are absent from HEAD — counting .ts/.tsx/.swift on HEAD's history, excluding dist/, dist-esm/, node_modules/, and .d.ts. Across all refs it is 1,794 of 4,887 (36.7%).
+
+### PARTLY-WRONG — 259,070 of 779,786 source lines ever written (33.2%) went into
+
+**Evidence.** Reproduced with a numstat aggregation (script at /private/tmp/claude-501/-Users-david-repos-sharpee/a749fcc9-51b3-4ad6-8b7a-93c54e218e3e/scratchpad/lines.py) over `git log --no-merges --numstat`, rename-notation normalized, same source filter: **totalAdded 780,240, deadAdded 259,524, 33.26%** (all refs: 268,355 / 789,607 = 33.99%). Both claimed figures are low by exactly 454 lines — the same ~9-file discrepancy as claim 1, so the two claims share one method gap. The percentage survives.
+
+**Corrected.** 259,524 of 780,240 source lines ever written (33.3%) went into files that no longer exist. Also: the source (throughlines.md) hedges this as 'likely ~30% after correcting for relocations' and gives a defensible range of 27–33%; the claim as handed to me drops that hedge. The hedge is real — `docs/archive/tutorial/` holds 31 tracked files that are the surviving copies of `tutorials/familyzoo/vNN.ts`, which the count scores as deleted, and stories/reflections + secretletter2025 moved to a sibling repo (deletion commit a9f20e90).
+
+### REFUTED — 36 of 318 ADRs carry a terminal status; six ADR files were deleted
+
+**Evidence.** `ls docs/architecture/adrs/*.md | wc -l` → **318** (correct, though it includes non-ADR companions: adr-013b-assessment.md, adr-013c-intfiction-post.md, adr-255-alias-catalog.md). Parsing every file's Status line (script adrstat.py): **28** lead with any terminal word, and only **24** lead with one of the five words the claim names (superseded/replaced/abandoned/rejected/withdrawn); the other four are Foolish (065), CLOSED (115), Deferred (136), SUPERSEDED-IN-PART (290). The 36 figure is only reachable by adding six ADRs whose own files do NOT carry a terminal status — 013, 016, 034, 048, 059, 112 all read 'Proposed'/'Draft' and are marked Abandoned only in adrs/README.md lines 35-136. On deletions: `git log --all --diff-filter=D --name-only -- 'docs/architecture/adrs/*.md'` returns exactly 6 paths, but five are renames git failed to detect — every one of those numbers is alive at HEAD under a new filename (adr-163-channel-service-platform.md, adr-164-stateless-multiuser-server.md, adr-176-multi-user-component-vocabulary.md — a hyphenation change — adr-300-addressable-channels-and-canonical-transcript.md, adr-301-sharpee-transcript-editor.md). Only lighting-interim-plan.md, which is not an ADR, was deleted outright.
+
+**Corrected.** 24 of 318 ADR files carry an unqualified terminal status (superseded/replaced/abandoned/rejected/withdrawn); 28 if you widen to closed/deferred/foolish. Six further ADRs (013, 016, 034, 048, 059, 112) are listed Abandoned in the ADR README while their own files still read Proposed or Draft — that gap is itself the more interesting finding. Six ADR file paths were deleted from the tree, but five were renames whose ADR numbers survive at HEAD; exactly one file (lighting-interim-plan.md) died outright.
+
+### CONFIRMED — 79% of live stdlib source files and 66% of live world-model
+
+**Evidence.** Per-file first-add date via `git log --follow --diff-filter=A --format=%ad` over `git ls-files packages/stdlib/src` and `packages/world-model/src` (.ts/.tsx/.swift, no .d.ts): stdlib **228 of 290 pre-2026 = 78.6%**; world-model **125 of 190 = 65.8%**. Both round to the claimed 79% / 66%. Scope caveat: it is the `src/` subtree only — whole-package figures are 70.7% (413 files) and 66.2% (287 files), so the 79% depends on 'source' meaning src/ and excluding tests.
+
+### CONFIRMED — containerTrait.ts has been edited five times in fourteen months
+
+**Evidence.** `git log --follow --format='%h %ad %s' --date=short -- packages/world-model/src/traits/container/containerTrait.ts` → exactly 5 commits (identical count with --all): a52d135e 2025-06-23 (creation), 94dc2ef7 2025-07-06, a135c0c8 2025-08-16, b3b81f53 2026-03-27, 38f12f62 2026-07-19. 2025-06-23 → today is 13.6 months. Precision note: the first of the five is the creation commit, so it is four edits after creation across five total touches — the corpus's original wording ('touched five times') is the exact one.
+
+### CONFIRMED — ADR-174 deleted @sharpee/text-service; commit c01208ca is 62 files
+
+**Evidence.** `git show --format='%H %ad %s' --shortstat c01208ca` → `c01208ca56ea… 2026-05-10 feat(adr-174): Phase 3 ACCEPTED — delete @sharpee/text-service (AC-9)` / `62 files changed, 808 insertions(+), 4208 deletions(-)`. Both numbers land exactly. `git ls-files | grep text-service` at HEAD returns 18 paths, all documentation/ADR — no package directory survives.
+
+### CONFIRMED — ADR-136 implemented across 7 phases (+4,601 lines) then deferred, unmerged
+
+**Evidence.** `git show --shortstat a7b968ff` → `2026-03-29 feat: implement ADR-136 Context-Driven Action Menus (all 7 phases)` / `38 files changed, 4601 insertions(+), 32 deletions(-)`. `git log main..origin/adr-136-context-actions` returns 2 commits and `git branch -a --contains a7b968ff` lists only that remote branch, so it is genuinely unmerged. adr-136-context-actions-menus.md Status reads `Deferred` with 'all 7 phases complete and working'. The quoted phrase traces to the session summary, not the ADR: /Volumes/Workspace/sharpee-corpus/context-history/session-20260329-1033-adr-136-context-actions.md:28 — 'David decided based on real-world experience (Textfyre) that context-driven action menus are a solution looking for a game and UX vision.'
+
+### CONFIRMED — ADR-299 Skein shipped nine phases then was deleted: 2,768 lines plus 15
+
+**Evidence.** Nine phases landed in three commits: 23c81be6 (Phases 1-4), f0ed311c (Phases 5-6), df9f4872 (Phases 7-9), against the plan commit 0e12c2f7 'docs(adr-299): 9-phase play-skein-bless implementation plan'. Removal commit afd9acc6 (2026-08-06, 'execute the .skein retirement'): `git show --numstat afd9acc6 | awk` over `tools/ide/SharpeeIDE/Skein/` → **12 files, 2,768 lines deleted**, exact. `git show --diff-filter=D --name-only afd9acc6` lists **exactly 15** deleted files under SharpeeIDETests/, plus fernhill.skein. Independently corroborated by ADR-300 line 254 ('12 files, 2,768 lines, 15 test files'). A follow-up commit 71fccafd cut 401 more lines of leftover hooks.
+
+### CONFIRMED — branch-tester went from 397 passing tests to 86 when ADR-307 retired
+
+**Evidence.** Reproduced both endpoints by running the suite. Current HEAD: `pnpm --filter '@sharpee/branch-tester' test` → `Test Files 6 passed (6) / Tests 86 passed (86)`. Pre-cutover: created a detached worktree at 31ef79b2^ (c0fc900e, the parent of 'feat(platform,ide): ADR-307 cutover … Sharpee 5.0.0') with node_modules symlinked, ran vitest → `Test Files 32 passed (32) / Tests 397 passed (397)`. Worktree removed afterward. The cutover commit 31ef79b2 deletes 27 branch-tester test files including the grammar suites (continues-and-tree, fenced-payloads, serializer-roundtrip, header-config, rename, tree-runner).
+
+### Verifier notes
+
+Method note on claims 1-2: the two are one claim measured twice. Both are low by the same delta (9 files / 454 lines), which means the corpus analysis applied one extra exclusion I could not identify — I tried --diff-filter=A/AM/ACMR, --no-renames, rev-list --objects, and extra build-artifact path filters, and none produced 4,817. Since `git ls-files` reproduces the 3,093 live figure exactly, the discrepancy is entirely in the "ever existed" set, not the survivor set. Publishing the percentages (≈36% of files, ≈33% of lines) is safe; publishing the exact integers is not, because a reader who reruns the obvious command gets different ones.
+
+Bigger risk than any arithmetic: claim 3's "six ADR files were deleted outright" is the one I would pull before publication. It reads as evidence of destroyed decision records, and it is the opposite — five of the six are renames git's similarity detection missed, and every one of those ADR numbers is alive at HEAD. ADR-176's "deletion" is literally `multiuser` → `multi-user` in the filename, which is the project's own naming convention being applied (per the multi-user-not-multiplayer standard). Only `lighting-interim-plan.md` — not an ADR — actually died.
+
+Claim 3's "36 ADRs carry a terminal status" also silently merges two different populations: ADRs whose own Status line is terminal (24, or 28 on a wider word set) and ADRs marked Abandoned only in `docs/architecture/adrs/README.md` while their files still read "Proposed"/"Draft" (013, 016, 034, 048, 059, 112). The README itself says "Abandoned | 7" at line 166. That divergence between the index and the files is a stronger, cleaner version of the same point the retrospective is making about status lines being unreliable — worth stating directly rather than folding into a count.
+
+Two scope caveats that should travel with claim 4: 79%/66% are `src/`-only figures. Whole-package, stdlib drops to 70.7%. And "predate 2026" is measured by first-add commit date with --follow, so a file relocated in 2026 still counts as old — which is the right call for the argument being made, but should be said.
+
+Claim 5's "edited five times" counts the creation commit as one of the five. The corpus's own phrasing ("touched five times") is accurate; "edited five times" implies four edits plus a creation, which is a distinction a hostile reader will find.
+
+Unrelated: the scratchpad at /private/tmp/claude-501/-Users-david-repos-sharpee/a749fcc9-51b3-4ad6-8b7a-93c54e218e3e/scratchpad/ contains artifacts from a concurrently-running session (phase5-verify.mjs written at the same minute as my files, plus numstat.txt, contradictions.txt, adr-status dumps). If another verification agent is running against this same repo, be aware we share that directory. I added ever_all.txt, ever_head.txt, live.txt, ns_head.txt, ns_all.txt, lines.py, adrstat.py, age.py and removed the git worktree I created.
+
+---
+

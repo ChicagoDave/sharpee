@@ -1,0 +1,6 @@
+context-history/work-summary-2025-07-01.md
+context-history/work-summary-2025-07-02-17-20.md
+context-history/work-summary-2025-0702-1850.md
+context-history/work-summary-2025-0702-2115.md
+context-history/work-summary-eprf-20250704-0215.md
+context-history/TESTING_SUMMARY.md

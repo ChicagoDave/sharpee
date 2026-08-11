@@ -1,0 +1,3 @@
+context-history/work-summary-2025-06-28-parser-debug.md
+context-history/work-summary-2025-06-29-validator-complete.md
+context-history/work-summary-phase-3-7-session-1.md

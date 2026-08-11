@@ -533,7 +533,16 @@ moving 466 files.
 
 - **Deleting anything.** Every item above moves; none deletes. Any deletion is a
   separate decision.
-- **`docs/context/archive/`** — stays where it is, by standing direction (P-3).
+- **`docs/context/archive/`** — ~~stays where it is, by standing direction
+  (P-3).~~ **SUPERSEDED 2026-08-10**: the directory was consolidated into
+  `/Volumes/Workspace/sharpee-corpus/context-history/` and removed from the repo
+  (commit `a72bcef5`), so the whole session-summary history sits in one readable
+  place. David's resolution when this item was raised against that move: the two
+  rulings answer different questions — the standing direction governs
+  **DevArch's** operation, where the tooling keeps its session records, while the
+  consolidation serves **analysis**, and the analysis need is what overruled it.
+  Precedence, not contradiction: analysis wins when the two collide over the same
+  files. See `docs/work/history-retrospective/plan.md`.
 - **Fixing the content of `guides/` and `reference/`.** Their staleness is
   tracked in #213 and is low priority by standing direction. This proposal moves
   them; it does not repair them — and since P-1 landed on an unpublished

@@ -152,4 +152,47 @@ deliberately out of scope.
 
 ---
 
-**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT
+## Addendum — retrospective plan run to completion (2026-08-11)
+
+The five-phase retrospective agreed above was planned and executed in full this session
+(`docs/work/history-retrospective/plan.md`, **Plan Status: DONE**), covering Sharpee's
+development history from the March 2023 C# prototypes through the 2026-08-10 5.0.0 npm
+publish.
+
+- **Phase 1 — mechanical indexing**: every source indexed without interpretation — 1,542
+  corpus files, 318 ADRs, 235 conversations, 2,055 commits, and the three C# prototypes.
+  Six indices (`.md` + `.json` pairs) plus per-month manifests, all machine-generated and
+  re-runnable via the ten build/extract scripts now committed under `output/`.
+- **Phase 2 — origin narrative**: wrote and dated the pre-repo era (`origin-narrative.md`),
+  reversing the prior addendum's scoping of `chat-history/` — the plan brought it back into
+  scope (sampled, not read whole) because it is the only record of the 2024 design period,
+  nine months before the repo exists.
+- **Phase 3 — monthly digests**: 13 parallel readers covered 1,247 session summaries into a
+  fixed schema (shipped / broke / decided / carried forward), surfacing 113 contradictions
+  between the summaries' self-reported claims and git's actual record
+  (`monthly-digests.md`, `gaps-and-anomalies.md`).
+- **Phase 4 — throughlines**: eight cross-cutting arcs traced across the whole span (text-service
+  born and deleted, the transcript grammar built and cut, Tauri/zifmia set down, Chord's
+  invention, and others), each verified against git rather than trusted from the digests
+  (`throughlines.md`).
+- **Phase 5 — adversarial verification**: 41 load-bearing claims handed to independent
+  verifiers — 20 confirmed, 19 corrected, 2 refuted — and only surviving wording made it into
+  the deliverables (`verification.md`, `testimony.md`).
+
+**Precedence ruling folded into `docs/proposals/docs-consolidation.md`**: P-3's "out of
+scope" bullet for `docs/context/archive/` is stamped SUPERSEDED. David's resolution when the
+2026-08-08 standing direction was raised against the 2026-08-10 consolidation: the two
+rulings answer different questions — the standing direction governs DevArch's own operation
+(where the tooling keeps its session records), the consolidation serves analysis, and
+analysis wins when the two collide over the same files.
+
+**Where things live**: the corpus itself (15 MB, 1,545 files) deliberately stays on
+`/Volumes/Workspace/sharpee-corpus/` and is not committed — this session commits only the
+~2.3 MB of outputs (`docs/work/history-retrospective/output/`: `retrospective.md`,
+`timeline.md`, `timeline-graphic.html`, the evidence files, the six indices, the manifests,
+and the ten re-runnable scripts), so the work is not held on one external drive. `.current-plan`
+now points at `docs/work/history-retrospective/plan.md`.
+
+---
+
+**Progressive update**: Session completed 2026-08-10 22:57 CDT; addendum 23:40 CDT; retrospective addendum 2026-08-11

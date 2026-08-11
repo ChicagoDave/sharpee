@@ -1,0 +1,178 @@
+<title>Sharpee — three and a half years</title>
+<style>
+  :root {
+    --ground: #ffffff; --ink: #1b2c41; --muted: #585a6a; --rule: #d1d1d1;
+    --panel: #f4f5f7; --void: #eceef1;
+    --navy: #294466; --navy-mid: #4775ae; --navy-light: #9cb5d3;
+    --slate: #6f7186; --taupe: #926f62; --accent: #a64f5a;
+    --m0:#b2b3be; --m1:#294466; --m2:#385c8a; --m3:#4775ae; --m4:#926f62; --m5:#6e94c4; --m6:#9cb5d3;
+    --col: 46px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#121d2c; --ink:#f6f4f4; --muted:#b8b8b8; --rule:#41424e;
+      --panel:#1b2c41; --void:#182739;
+      --navy:#9cb5d3; --navy-mid:#6e94c4; --navy-light:#4775ae;
+      --slate:#9091a2; --taupe:#ad8f85; --accent:#bd757e;
+      --m0:#585a6a; --m1:#9cb5d3; --m2:#6e94c4; --m3:#4775ae; --m4:#ad8f85; --m5:#385c8a; --m6:#c4b1ab;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#121d2c; --ink:#f6f4f4; --muted:#b8b8b8; --rule:#41424e;
+    --panel:#1b2c41; --void:#182739;
+    --navy:#9cb5d3; --navy-mid:#6e94c4; --navy-light:#4775ae;
+    --slate:#9091a2; --taupe:#ad8f85; --accent:#bd757e;
+    --m0:#585a6a; --m1:#9cb5d3; --m2:#6e94c4; --m3:#4775ae; --m4:#ad8f85; --m5:#385c8a; --m6:#c4b1ab;
+  }
+  :root[data-theme="light"] {
+    --ground:#ffffff; --ink:#1b2c41; --muted:#585a6a; --rule:#d1d1d1;
+    --panel:#f4f5f7; --void:#eceef1;
+    --navy:#294466; --navy-mid:#4775ae; --navy-light:#9cb5d3;
+    --slate:#6f7186; --taupe:#926f62; --accent:#a64f5a;
+    --m0:#b2b3be; --m1:#294466; --m2:#385c8a; --m3:#4775ae; --m4:#926f62; --m5:#6e94c4; --m6:#9cb5d3;
+  }
+
+  body { background: var(--ground); color: var(--ink); font-family: var(--mono); margin: 0; padding: 40px 0 64px; }
+  header, footer, .legend { max-width: 74ch; padding: 0 28px; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 4vw, 44px); line-height: 1.1; margin: 0 0 12px; text-wrap: balance; letter-spacing: -0.01em; }
+  .stand { font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--muted); margin: 0 0 6px; max-width: 62ch; }
+  .meta { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 18px 0 26px; }
+
+  .scroller { overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .grid {
+    display: grid;
+    grid-template-columns: 168px repeat(42, var(--col));
+    grid-template-rows: 34px 26px repeat(4, 62px) 26px 178px;
+    min-width: max-content;
+  }
+
+  /* Bottom-aligned so a track's name sits on the baseline its bars grow from. */
+  .gut { grid-column: 1; position: sticky; left: 0; z-index: 5; background: var(--ground);
+         border-right: 1px solid var(--rule); display: flex; flex-direction: column; justify-content: flex-end;
+         padding: 0 12px 6px 28px; gap: 1px; }
+  .gut-mid { justify-content: center; padding-bottom: 0; }
+  .gut-top { justify-content: flex-start; padding: 14px 12px 0 28px; }
+  .gl { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .gu { font-size: 10.5px; color: var(--muted); }
+
+  .ax { grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+        font-size: 10px; color: var(--muted); padding-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .ax-y { color: var(--ink); font-weight: 600; }
+  .mo { font-size: 9px; opacity: .62; }
+
+  .era { grid-row: 2; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+         border-top: 1px solid var(--rule); display: flex; align-items: center; padding-left: 8px; overflow: hidden; white-space: nowrap; }
+
+  .cell { display: flex; align-items: flex-end; justify-content: center; border-left: 1px solid color-mix(in srgb, var(--rule) 45%, transparent); padding: 6px 0 0; }
+  .bar { width: 15px; border-radius: 1px 1px 0 0; }
+  .bar.taupe { background: var(--taupe); }
+  .bar.slate { background: var(--slate); }
+  .bar.navy { background: var(--navy); }
+  .bar.navy-light { background: var(--navy-mid); }
+
+  .mb { align-items: center; }
+  .chip { width: 100%; height: 9px; }
+  .m0{background:var(--m0)} .m1{background:var(--m1)} .m2{background:var(--m2)} .m3{background:var(--m3)}
+  .m4{background:var(--m4)} .m5{background:var(--m5)} .m6{background:var(--m6)}
+
+  .wall { z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    background:
+      repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--muted) 22%, transparent) 7px 8px),
+      var(--void);
+    border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+  .wall-partial { background:
+      repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--muted) 16%, transparent) 7px 8px); }
+  .wl { font-family: var(--serif); font-size: 19px; }
+  .ws { font-size: 10px; color: var(--muted); text-align: center; padding: 0 6px; line-height: 1.35; }
+
+  /* Returns run vertically inside the track block so they never reach the axis
+     or the era ribbon. writing-mode keeps the glyphs upright-legible without a
+     transform that would escape the grid cell. */
+  .ret { z-index: 4; position: relative; pointer-events: none; overflow: hidden; }
+  .ret::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent); transform: translateX(-50%); }
+  .ret span { position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    writing-mode: vertical-rl; white-space: nowrap; font-size: 9.5px; letter-spacing: .02em;
+    color: var(--accent); background: var(--ground); padding: 5px 1px; }
+
+  .ms { position: relative; }
+  .ms::before { content: ""; position: absolute; left: 50%; top: 0; width: 1px; height: calc(14px + var(--n, 0) * 30px); background: var(--rule); }
+  .msl { position: absolute; left: 50%; top: calc(16px + var(--n, 0) * 30px); width: 205px;
+    font-size: 11px; line-height: 1.3; color: var(--ink); border-left: 2px solid var(--navy-mid); padding-left: 7px; }
+  .msl code { font-size: 10.5px; color: var(--muted); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 24px; font-size: 11px; color: var(--muted); }
+  .key { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 22px; height: 9px; }
+  .sw.hatch { background: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--muted) 30%, transparent) 5px 6px), var(--void); }
+  .sw.acc { background: var(--accent); width: 2px; height: 14px; }
+  footer { margin-top: 34px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+  footer b { color: var(--ink); font-weight: 600; }
+  .hint { font-size: 11px; color: var(--muted); padding: 0 28px 10px; }
+</style>
+
+<header>
+  <h1>Three and a half years, and what the record can’t see</h1>
+  <p class="stand">Sharpee, from a C# sketch in March 2023 to 33 packages on npm in August 2026. Four tracks, because the instrument kept changing: files, then conversations, then commits, then session summaries. Each hands off to the next.</p>
+  <p class="stand">The hatched voids are the three times the work stopped. Two were silent in every source. The middle one only silenced the commits — thirty-nine conversations ran through it, which is what fighting a build that won’t compile looks like from the outside.</p>
+  <p class="meta">Scroll sideways · every count from the corpus indices</p>
+</header>
+
+<p class="hint">↔ 42 months</p>
+<div class="scroller">
+  <div class="grid">
+    <div class="ax ax-y" style="grid-column:2;grid-row:1">2023<span class="mo">03</span></div><div class="ax" style="grid-column:3;grid-row:1"><span class="mo">04</span></div><div class="ax" style="grid-column:4;grid-row:1"><span class="mo">05</span></div><div class="ax" style="grid-column:5;grid-row:1"><span class="mo">06</span></div><div class="ax" style="grid-column:6;grid-row:1"><span class="mo">07</span></div><div class="ax" style="grid-column:7;grid-row:1"><span class="mo">08</span></div><div class="ax" style="grid-column:8;grid-row:1"><span class="mo">09</span></div><div class="ax" style="grid-column:9;grid-row:1"><span class="mo">10</span></div><div class="ax" style="grid-column:10;grid-row:1"><span class="mo">11</span></div><div class="ax" style="grid-column:11;grid-row:1"><span class="mo">12</span></div><div class="ax ax-y" style="grid-column:12;grid-row:1">2024<span class="mo">01</span></div><div class="ax" style="grid-column:13;grid-row:1"><span class="mo">02</span></div><div class="ax" style="grid-column:14;grid-row:1"><span class="mo">03</span></div><div class="ax" style="grid-column:15;grid-row:1"><span class="mo">04</span></div><div class="ax" style="grid-column:16;grid-row:1"><span class="mo">05</span></div><div class="ax" style="grid-column:17;grid-row:1"><span class="mo">06</span></div><div class="ax" style="grid-column:18;grid-row:1"><span class="mo">07</span></div><div class="ax" style="grid-column:19;grid-row:1"><span class="mo">08</span></div><div class="ax" style="grid-column:20;grid-row:1"><span class="mo">09</span></div><div class="ax" style="grid-column:21;grid-row:1"><span class="mo">10</span></div><div class="ax" style="grid-column:22;grid-row:1"><span class="mo">11</span></div><div class="ax" style="grid-column:23;grid-row:1"><span class="mo">12</span></div><div class="ax ax-y" style="grid-column:24;grid-row:1">2025<span class="mo">01</span></div><div class="ax" style="grid-column:25;grid-row:1"><span class="mo">02</span></div><div class="ax" style="grid-column:26;grid-row:1"><span class="mo">03</span></div><div class="ax" style="grid-column:27;grid-row:1"><span class="mo">04</span></div><div class="ax" style="grid-column:28;grid-row:1"><span class="mo">05</span></div><div class="ax" style="grid-column:29;grid-row:1"><span class="mo">06</span></div><div class="ax" style="grid-column:30;grid-row:1"><span class="mo">07</span></div><div class="ax" style="grid-column:31;grid-row:1"><span class="mo">08</span></div><div class="ax" style="grid-column:32;grid-row:1"><span class="mo">09</span></div><div class="ax" style="grid-column:33;grid-row:1"><span class="mo">10</span></div><div class="ax" style="grid-column:34;grid-row:1"><span class="mo">11</span></div><div class="ax" style="grid-column:35;grid-row:1"><span class="mo">12</span></div><div class="ax ax-y" style="grid-column:36;grid-row:1">2026<span class="mo">01</span></div><div class="ax" style="grid-column:37;grid-row:1"><span class="mo">02</span></div><div class="ax" style="grid-column:38;grid-row:1"><span class="mo">03</span></div><div class="ax" style="grid-column:39;grid-row:1"><span class="mo">04</span></div><div class="ax" style="grid-column:40;grid-row:1"><span class="mo">05</span></div><div class="ax" style="grid-column:41;grid-row:1"><span class="mo">06</span></div><div class="ax" style="grid-column:42;grid-row:1"><span class="mo">07</span></div><div class="ax" style="grid-column:43;grid-row:1"><span class="mo">08</span></div><div class="era" style="grid-column:2/17;grid-row:2">C#</div><div class="era" style="grid-column:17/24;grid-row:2">C#, with a collaborator</div><div class="era" style="grid-column:26/33;grid-row:2">TypeScript</div><div class="era" style="grid-column:35/42;grid-row:2">The platform</div><div class="era" style="grid-column:42/44;grid-row:2">Chord</div><div class="gut" style="grid-row:3"><span class="gl">C# files touched</span><span class="gu">peak 29</span></div><div class="cell" style="grid-column:2;grid-row:3"><div class="bar taupe" style="height:79%" title="2023-03: 23"></div></div><div class="cell" style="grid-column:3;grid-row:3"><div class="bar taupe" style="height:100%" title="2023-04: 29"></div></div><div class="cell" style="grid-column:4;grid-row:3"></div><div class="cell" style="grid-column:5;grid-row:3"></div><div class="cell" style="grid-column:6;grid-row:3"></div><div class="cell" style="grid-column:7;grid-row:3"></div><div class="cell" style="grid-column:8;grid-row:3"></div><div class="cell" style="grid-column:9;grid-row:3"></div><div class="cell" style="grid-column:10;grid-row:3"></div><div class="cell" style="grid-column:11;grid-row:3"></div><div class="cell" style="grid-column:12;grid-row:3"></div><div class="cell" style="grid-column:13;grid-row:3"><div class="bar taupe" style="height:3%" title="2024-02: 1"></div></div><div class="cell" style="grid-column:14;grid-row:3"><div class="bar taupe" style="height:10%" title="2024-03: 3"></div></div><div class="cell" style="grid-column:15;grid-row:3"></div><div class="cell" style="grid-column:16;grid-row:3"><div class="bar taupe" style="height:10%" title="2024-05: 3"></div></div><div class="cell" style="grid-column:17;grid-row:3"></div><div class="cell" style="grid-column:18;grid-row:3"></div><div class="cell" style="grid-column:19;grid-row:3"></div><div class="cell" style="grid-column:20;grid-row:3"></div><div class="cell" style="grid-column:21;grid-row:3"></div><div class="cell" style="grid-column:22;grid-row:3"></div><div class="cell" style="grid-column:23;grid-row:3"></div><div class="cell" style="grid-column:24;grid-row:3"></div><div class="cell" style="grid-column:25;grid-row:3"></div><div class="cell" style="grid-column:26;grid-row:3"></div><div class="cell" style="grid-column:27;grid-row:3"></div><div class="cell" style="grid-column:28;grid-row:3"></div><div class="cell" style="grid-column:29;grid-row:3"></div><div class="cell" style="grid-column:30;grid-row:3"></div><div class="cell" style="grid-column:31;grid-row:3"></div><div class="cell" style="grid-column:32;grid-row:3"></div><div class="cell" style="grid-column:33;grid-row:3"></div><div class="cell" style="grid-column:34;grid-row:3"></div><div class="cell" style="grid-column:35;grid-row:3"></div><div class="cell" style="grid-column:36;grid-row:3"></div><div class="cell" style="grid-column:37;grid-row:3"></div><div class="cell" style="grid-column:38;grid-row:3"></div><div class="cell" style="grid-column:39;grid-row:3"></div><div class="cell" style="grid-column:40;grid-row:3"></div><div class="cell" style="grid-column:41;grid-row:3"></div><div class="cell" style="grid-column:42;grid-row:3"></div><div class="cell" style="grid-column:43;grid-row:3"></div><div class="gut" style="grid-row:4"><span class="gl">Conversations</span><span class="gu">peak 74</span></div><div class="cell" style="grid-column:2;grid-row:4"></div><div class="cell" style="grid-column:3;grid-row:4"></div><div class="cell" style="grid-column:4;grid-row:4"></div><div class="cell" style="grid-column:5;grid-row:4"></div><div class="cell" style="grid-column:6;grid-row:4"></div><div class="cell" style="grid-column:7;grid-row:4"></div><div class="cell" style="grid-column:8;grid-row:4"></div><div class="cell" style="grid-column:9;grid-row:4"></div><div class="cell" style="grid-column:10;grid-row:4"></div><div class="cell" style="grid-column:11;grid-row:4"></div><div class="cell" style="grid-column:12;grid-row:4"></div><div class="cell" style="grid-column:13;grid-row:4"></div><div class="cell" style="grid-column:14;grid-row:4"></div><div class="cell" style="grid-column:15;grid-row:4"></div><div class="cell" style="grid-column:16;grid-row:4"></div><div class="cell" style="grid-column:17;grid-row:4"><div class="bar slate" style="height:3%" title="2024-06: 2"></div></div><div class="cell" style="grid-column:18;grid-row:4"><div class="bar slate" style="height:18%" title="2024-07: 13"></div></div><div class="cell" style="grid-column:19;grid-row:4"><div class="bar slate" style="height:100%" title="2024-08: 74"></div></div><div class="cell" style="grid-column:20;grid-row:4"><div class="bar slate" style="height:38%" title="2024-09: 28"></div></div><div class="cell" style="grid-column:21;grid-row:4"><div class="bar slate" style="height:12%" title="2024-10: 9"></div></div><div class="cell" style="grid-column:22;grid-row:4"></div><div class="cell" style="grid-column:23;grid-row:4"><div class="bar slate" style="height:4%" title="2024-12: 3"></div></div><div class="cell" style="grid-column:24;grid-row:4"></div><div class="cell" style="grid-column:25;grid-row:4"></div><div class="cell" style="grid-column:26;grid-row:4"><div class="bar slate" style="height:31%" title="2025-03: 23"></div></div><div class="cell" style="grid-column:27;grid-row:4"><div class="bar slate" style="height:19%" title="2025-04: 14"></div></div><div class="cell" style="grid-column:28;grid-row:4"><div class="bar slate" style="height:34%" title="2025-05: 25"></div></div><div class="cell" style="grid-column:29;grid-row:4"><div class="bar slate" style="height:53%" title="2025-06: 39"></div></div><div class="cell" style="grid-column:30;grid-row:4"></div><div class="cell" style="grid-column:31;grid-row:4"></div><div class="cell" style="grid-column:32;grid-row:4"></div><div class="cell" style="grid-column:33;grid-row:4"></div><div class="cell" style="grid-column:34;grid-row:4"></div><div class="cell" style="grid-column:35;grid-row:4"></div><div class="cell" style="grid-column:36;grid-row:4"></div><div class="cell" style="grid-column:37;grid-row:4"></div><div class="cell" style="grid-column:38;grid-row:4"></div><div class="cell" style="grid-column:39;grid-row:4"></div><div class="cell" style="grid-column:40;grid-row:4"></div><div class="cell" style="grid-column:41;grid-row:4"></div><div class="cell" style="grid-column:42;grid-row:4"></div><div class="cell" style="grid-column:43;grid-row:4"></div><div class="gut" style="grid-row:5"><span class="gl">Commits</span><span class="gu">peak 429</span></div><div class="cell" style="grid-column:2;grid-row:5"></div><div class="cell" style="grid-column:3;grid-row:5"></div><div class="cell" style="grid-column:4;grid-row:5"></div><div class="cell" style="grid-column:5;grid-row:5"></div><div class="cell" style="grid-column:6;grid-row:5"></div><div class="cell" style="grid-column:7;grid-row:5"></div><div class="cell" style="grid-column:8;grid-row:5"></div><div class="cell" style="grid-column:9;grid-row:5"></div><div class="cell" style="grid-column:10;grid-row:5"></div><div class="cell" style="grid-column:11;grid-row:5"></div><div class="cell" style="grid-column:12;grid-row:5"></div><div class="cell" style="grid-column:13;grid-row:5"></div><div class="cell" style="grid-column:14;grid-row:5"></div><div class="cell" style="grid-column:15;grid-row:5"></div><div class="cell" style="grid-column:16;grid-row:5"></div><div class="cell" style="grid-column:17;grid-row:5"></div><div class="cell" style="grid-column:18;grid-row:5"></div><div class="cell" style="grid-column:19;grid-row:5"></div><div class="cell" style="grid-column:20;grid-row:5"></div><div class="cell" style="grid-column:21;grid-row:5"></div><div class="cell" style="grid-column:22;grid-row:5"></div><div class="cell" style="grid-column:23;grid-row:5"></div><div class="cell" style="grid-column:24;grid-row:5"></div><div class="cell" style="grid-column:25;grid-row:5"></div><div class="cell" style="grid-column:26;grid-row:5"><div class="bar navy" style="height:3%" title="2025-03: 2"></div></div><div class="cell" style="grid-column:27;grid-row:5"></div><div class="cell" style="grid-column:28;grid-row:5"></div><div class="cell" style="grid-column:29;grid-row:5"><div class="bar navy" style="height:3%" title="2025-06: 1"></div></div><div class="cell" style="grid-column:30;grid-row:5"><div class="bar navy" style="height:3%" title="2025-07: 13"></div></div><div class="cell" style="grid-column:31;grid-row:5"><div class="bar navy" style="height:20%" title="2025-08: 85"></div></div><div class="cell" style="grid-column:32;grid-row:5"><div class="bar navy" style="height:3%" title="2025-09: 3"></div></div><div class="cell" style="grid-column:33;grid-row:5"></div><div class="cell" style="grid-column:34;grid-row:5"></div><div class="cell" style="grid-column:35;grid-row:5"><div class="bar navy" style="height:35%" title="2025-12: 151"></div></div><div class="cell" style="grid-column:36;grid-row:5"><div class="bar navy" style="height:100%" title="2026-01: 429"></div></div><div class="cell" style="grid-column:37;grid-row:5"><div class="bar navy" style="height:29%" title="2026-02: 126"></div></div><div class="cell" style="grid-column:38;grid-row:5"><div class="bar navy" style="height:20%" title="2026-03: 85"></div></div><div class="cell" style="grid-column:39;grid-row:5"><div class="bar navy" style="height:54%" title="2026-04: 231"></div></div><div class="cell" style="grid-column:40;grid-row:5"><div class="bar navy" style="height:24%" title="2026-05: 104"></div></div><div class="cell" style="grid-column:41;grid-row:5"><div class="bar navy" style="height:59%" title="2026-06: 255"></div></div><div class="cell" style="grid-column:42;grid-row:5"><div class="bar navy" style="height:91%" title="2026-07: 391"></div></div><div class="cell" style="grid-column:43;grid-row:5"><div class="bar navy" style="height:42%" title="2026-08: 179"></div></div><div class="gut" style="grid-row:6"><span class="gl">Session summaries</span><span class="gu">peak 446</span></div><div class="cell" style="grid-column:2;grid-row:6"></div><div class="cell" style="grid-column:3;grid-row:6"></div><div class="cell" style="grid-column:4;grid-row:6"></div><div class="cell" style="grid-column:5;grid-row:6"></div><div class="cell" style="grid-column:6;grid-row:6"></div><div class="cell" style="grid-column:7;grid-row:6"></div><div class="cell" style="grid-column:8;grid-row:6"></div><div class="cell" style="grid-column:9;grid-row:6"></div><div class="cell" style="grid-column:10;grid-row:6"></div><div class="cell" style="grid-column:11;grid-row:6"></div><div class="cell" style="grid-column:12;grid-row:6"></div><div class="cell" style="grid-column:13;grid-row:6"></div><div class="cell" style="grid-column:14;grid-row:6"></div><div class="cell" style="grid-column:15;grid-row:6"></div><div class="cell" style="grid-column:16;grid-row:6"></div><div class="cell" style="grid-column:17;grid-row:6"></div><div class="cell" style="grid-column:18;grid-row:6"></div><div class="cell" style="grid-column:19;grid-row:6"></div><div class="cell" style="grid-column:20;grid-row:6"></div><div class="cell" style="grid-column:21;grid-row:6"></div><div class="cell" style="grid-column:22;grid-row:6"></div><div class="cell" style="grid-column:23;grid-row:6"></div><div class="cell" style="grid-column:24;grid-row:6"></div><div class="cell" style="grid-column:25;grid-row:6"></div><div class="cell" style="grid-column:26;grid-row:6"></div><div class="cell" style="grid-column:27;grid-row:6"></div><div class="cell" style="grid-column:28;grid-row:6"></div><div class="cell" style="grid-column:29;grid-row:6"><div class="bar navy-light" style="height:3%" title="2025-06: 3"></div></div><div class="cell" style="grid-column:30;grid-row:6"><div class="bar navy-light" style="height:3%" title="2025-07: 6"></div></div><div class="cell" style="grid-column:31;grid-row:6"><div class="bar navy-light" style="height:22%" title="2025-08: 100"></div></div><div class="cell" style="grid-column:32;grid-row:6"><div class="bar navy-light" style="height:3%" title="2025-09: 7"></div></div><div class="cell" style="grid-column:33;grid-row:6"></div><div class="cell" style="grid-column:34;grid-row:6"></div><div class="cell" style="grid-column:35;grid-row:6"><div class="bar navy-light" style="height:18%" title="2025-12: 82"></div></div><div class="cell" style="grid-column:36;grid-row:6"><div class="bar navy-light" style="height:100%" title="2026-01: 446"></div></div><div class="cell" style="grid-column:37;grid-row:6"><div class="bar navy-light" style="height:42%" title="2026-02: 186"></div></div><div class="cell" style="grid-column:38;grid-row:6"><div class="bar navy-light" style="height:9%" title="2026-03: 40"></div></div><div class="cell" style="grid-column:39;grid-row:6"><div class="bar navy-light" style="height:19%" title="2026-04: 86"></div></div><div class="cell" style="grid-column:40;grid-row:6"><div class="bar navy-light" style="height:10%" title="2026-05: 45"></div></div><div class="cell" style="grid-column:41;grid-row:6"><div class="bar navy-light" style="height:14%" title="2026-06: 62"></div></div><div class="cell" style="grid-column:42;grid-row:6"><div class="bar navy-light" style="height:29%" title="2026-07: 130"></div></div><div class="cell" style="grid-column:43;grid-row:6"><div class="bar navy-light" style="height:12%" title="2026-08: 54"></div></div><div class="gut gut-mid" style="grid-row:7"><span class="gl">Signed by</span></div><div class="cell mb" style="grid-column:2;grid-row:7"></div><div class="cell mb" style="grid-column:3;grid-row:7"></div><div class="cell mb" style="grid-column:4;grid-row:7"></div><div class="cell mb" style="grid-column:5;grid-row:7"></div><div class="cell mb" style="grid-column:6;grid-row:7"></div><div class="cell mb" style="grid-column:7;grid-row:7"></div><div class="cell mb" style="grid-column:8;grid-row:7"></div><div class="cell mb" style="grid-column:9;grid-row:7"></div><div class="cell mb" style="grid-column:10;grid-row:7"></div><div class="cell mb" style="grid-column:11;grid-row:7"></div><div class="cell mb" style="grid-column:12;grid-row:7"></div><div class="cell mb" style="grid-column:13;grid-row:7"></div><div class="cell mb" style="grid-column:14;grid-row:7"></div><div class="cell mb" style="grid-column:15;grid-row:7"></div><div class="cell mb" style="grid-column:16;grid-row:7"></div><div class="cell mb" style="grid-column:17;grid-row:7"></div><div class="cell mb" style="grid-column:18;grid-row:7"></div><div class="cell mb" style="grid-column:19;grid-row:7"></div><div class="cell mb" style="grid-column:20;grid-row:7"></div><div class="cell mb" style="grid-column:21;grid-row:7"></div><div class="cell mb" style="grid-column:22;grid-row:7"></div><div class="cell mb" style="grid-column:23;grid-row:7"></div><div class="cell mb" style="grid-column:24;grid-row:7"></div><div class="cell mb" style="grid-column:25;grid-row:7"></div><div class="cell mb" style="grid-column:26;grid-row:7"></div><div class="cell mb" style="grid-column:27;grid-row:7"></div><div class="cell mb" style="grid-column:28;grid-row:7"></div><div class="cell mb" style="grid-column:29;grid-row:7"></div><div class="cell mb" style="grid-column:30;grid-row:7"></div><div class="cell mb" style="grid-column:31;grid-row:7"><div class="chip m0" title="Claude"></div></div><div class="cell mb" style="grid-column:32;grid-row:7"><div class="chip m0" title="Claude"></div></div><div class="cell mb" style="grid-column:33;grid-row:7"></div><div class="cell mb" style="grid-column:34;grid-row:7"></div><div class="cell mb" style="grid-column:35;grid-row:7"><div class="chip m1" title="Opus 4.5"></div></div><div class="cell mb" style="grid-column:36;grid-row:7"><div class="chip m1" title="Opus 4.5"></div></div><div class="cell mb" style="grid-column:37;grid-row:7"><div class="chip m2" title="Opus 4.6"></div></div><div class="cell mb" style="grid-column:38;grid-row:7"><div class="chip m3" title="Opus 4.6 · 1M"></div></div><div class="cell mb" style="grid-column:39;grid-row:7"><div class="chip m3" title="Opus 4.6 · 1M"></div></div><div class="cell mb" style="grid-column:40;grid-row:7"><div class="chip m4" title="Sonnet 4.6"></div></div><div class="cell mb" style="grid-column:41;grid-row:7"><div class="chip m5" title="Opus 4.8 · 1M"></div></div><div class="cell mb" style="grid-column:42;grid-row:7"><div class="chip m6" title="Fable 5"></div></div><div class="cell mb" style="grid-column:43;grid-row:7"><div class="chip m6" title="Fable 5"></div></div><div class="wall" style="grid-column:4/13;grid-row:3/7">
+    <div class="wl">11 months</div><div class="ws">first ChatGPT — hallucinated code</div>
+  </div><div class="wall wall-partial" style="grid-column:27/29;grid-row:5/6">
+    <div class="wl">12 weeks</div><div class="ws"></div>
+  </div><div class="wall" style="grid-column:33/35;grid-row:3/7">
+    <div class="wl">16 weeks</div><div class="ws">silent in every source</div>
+  </div><div class="ret" style="grid-column:14;grid-row:3/7"><span>picked back up</span></div><div class="ret" style="grid-column:29;grid-row:3/7"><span>one commit, twelve weeks</span></div><div class="ret" style="grid-column:35;grid-row:3/7"><span>Opus 4.5 · 200k · Pro Max</span></div><div class="gut gut-top" style="grid-row:8"><span class="gl">Turning points</span></div><div class="ms" style="grid-column:2;grid-row:8">
+    <div class="msl" style="--n:0">First C# prototype</div>
+  </div><div class="ms" style="grid-column:3;grid-row:8">
+    <div class="msl" style="--n:1">StoryRunner: the decomposition that held</div>
+  </div><div class="ms" style="grid-column:17;grid-row:8">
+    <div class="msl" style="--n:0">First Claude conversation</div>
+  </div><div class="ms" style="grid-column:18;grid-row:8">
+    <div class="msl" style="--n:1">The name: <code>repos\sharpee</code></div>
+  </div><div class="ms" style="grid-column:23;grid-row:8">
+    <div class="msl" style="--n:0">TypeScript evaluated — not decided</div>
+  </div><div class="ms" style="grid-column:26;grid-row:8">
+    <div class="msl" style="--n:1">Repo created — twice, same day</div>
+  </div><div class="ms" style="grid-column:27;grid-row:8">
+    <div class="msl" style="--n:2">The build stops compiling. Work continues in conversation</div>
+  </div><div class="ms" style="grid-column:30;grid-row:8">
+    <div class="msl" style="--n:0">SpatialIndex replaces the graph</div>
+  </div><div class="ms" style="grid-column:35;grid-row:8">
+    <div class="msl" style="--n:0">Dungeo launched as dog-food</div>
+  </div><div class="ms" style="grid-column:36;grid-row:8">
+    <div class="msl" style="--n:1">npm beta · text-services deleted at 13 days old</div>
+  </div><div class="ms" style="grid-column:39;grid-row:8">
+    <div class="msl" style="--n:2">Server deleted · No-Stub-Under-Test</div>
+  </div><div class="ms" style="grid-column:40;grid-row:8">
+    <div class="msl" style="--n:0">ADR-174 deletes the text service</div>
+  </div><div class="ms" style="grid-column:41;grid-row:8">
+    <div class="msl" style="--n:1">Sharpee 1.0.0 · the book in five days</div>
+  </div><div class="ms" style="grid-column:42;grid-row:8">
+    <div class="msl" style="--n:3">Chord: design to compiler in ten hours</div>
+  </div><div class="ms" style="grid-column:43;grid-row:8">
+    <div class="msl" style="--n:4">5.0.0 on npm · DMG in Apple’s queue</div>
+  </div>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="key"><span class="sw hatch"></span> a wall</span>
+  <span class="key"><span class="sw acc"></span> the return</span>
+  <span class="key"><span class="sw" style="background:var(--taupe)"></span> C# files</span>
+  <span class="key"><span class="sw" style="background:var(--slate)"></span> conversations</span>
+  <span class="key"><span class="sw" style="background:var(--navy)"></span> commits</span>
+  <span class="key"><span class="sw" style="background:var(--navy-mid)"></span> summaries</span>
+  <span class="key">bars scale within their own track, never across</span>
+</div>
+
+<footer>
+  <p><b>What the graphic cannot show.</b> The conversation that actually moved the project off C# — a question about which languages the model was strongest at — happened in the web app, where saving context was hard. It is in no archive. Neither is the reason the text service sat untouched through December 2025 while forty-nine commits went into the core: it was known-bad and deliberately deferred while Project Dungeo closed seams in the middle of the platform.</p>
+  <p>Every wall here is a person putting the project down. Absence carries no cause; those came from asking.</p>
+</footer>

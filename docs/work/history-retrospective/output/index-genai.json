@@ -1,0 +1,235 @@
+{
+ "byMonth": {
+  "2026-08": {
+   "total": 179,
+   "attributed": 179,
+   "models": {
+    "Claude": 31,
+    "Claude Opus 5 (1M context)": 69,
+    "Claude Fable 5": 79
+   }
+  },
+  "2026-07": {
+   "total": 391,
+   "attributed": 391,
+   "models": {
+    "Claude": 44,
+    "Claude Opus 5 (1M context)": 45,
+    "Claude Fable 5": 236,
+    "Claude Opus 4.8 (1M context)": 65,
+    "Claude Sonnet 5": 1
+   }
+  },
+  "2026-06": {
+   "total": 255,
+   "attributed": 254,
+   "models": {
+    "Claude Opus 4.8 (1M context)": 200,
+    "Claude": 54
+   }
+  },
+  "2026-05": {
+   "total": 104,
+   "attributed": 103,
+   "models": {
+    "Claude Sonnet 4.6": 51,
+    "Claude Opus 4.7 (1M context)": 46,
+    "Claude Opus 4.6": 6
+   }
+  },
+  "2026-04": {
+   "total": 231,
+   "attributed": 226,
+   "models": {
+    "Claude Sonnet 4.6": 76,
+    "Claude Opus 4.7 (1M context)": 50,
+    "Claude Opus 4.6": 16,
+    "Claude Opus 4.6 (1M context)": 84
+   }
+  },
+  "2026-03": {
+   "total": 85,
+   "attributed": 85,
+   "models": {
+    "Claude Sonnet 4.6": 28,
+    "Claude Opus 4.6 (1M context)": 46,
+    "Claude Opus 4.6": 11
+   }
+  },
+  "2026-02": {
+   "total": 126,
+   "attributed": 126,
+   "models": {
+    "Claude Opus 4.6": 96,
+    "Claude Opus 4.5": 30
+   }
+  },
+  "2026-01": {
+   "total": 429,
+   "attributed": 368,
+   "models": {
+    "Claude Opus 4.5": 368
+   }
+  },
+  "2025-12": {
+   "total": 151,
+   "attributed": 144,
+   "models": {
+    "Claude Opus 4.5": 144
+   }
+  },
+  "2025-09": {
+   "total": 3,
+   "attributed": 2,
+   "models": {
+    "Claude": 2
+   }
+  },
+  "2025-08": {
+   "total": 85,
+   "attributed": 63,
+   "models": {
+    "Claude": 63
+   }
+  },
+  "2025-07": {
+   "total": 13,
+   "attributed": 0,
+   "models": {}
+  },
+  "2025-06": {
+   "total": 1,
+   "attributed": 0,
+   "models": {}
+  },
+  "2025-03": {
+   "total": 2,
+   "attributed": 0,
+   "models": {}
+  }
+ },
+ "byModel": {
+  "Claude": {
+   "commits": 194,
+   "first": "2025-08",
+   "last": "2026-08"
+  },
+  "Claude Opus 5 (1M context)": {
+   "commits": 114,
+   "first": "2026-07",
+   "last": "2026-08"
+  },
+  "Claude Fable 5": {
+   "commits": 315,
+   "first": "2026-07",
+   "last": "2026-08"
+  },
+  "Claude Opus 4.8 (1M context)": {
+   "commits": 265,
+   "first": "2026-06",
+   "last": "2026-07"
+  },
+  "Claude Sonnet 5": {
+   "commits": 1,
+   "first": "2026-07",
+   "last": "2026-07"
+  },
+  "Claude Sonnet 4.6": {
+   "commits": 155,
+   "first": "2026-03",
+   "last": "2026-05"
+  },
+  "Claude Opus 4.7 (1M context)": {
+   "commits": 96,
+   "first": "2026-04",
+   "last": "2026-05"
+  },
+  "Claude Opus 4.6": {
+   "commits": 129,
+   "first": "2026-02",
+   "last": "2026-05"
+  },
+  "Claude Opus 4.6 (1M context)": {
+   "commits": 130,
+   "first": "2026-03",
+   "last": "2026-04"
+  },
+  "Claude Opus 4.5": {
+   "commits": 542,
+   "first": "2025-12",
+   "last": "2026-02"
+  }
+ },
+ "churn": {
+  "2026-08": {
+   "files": 4270,
+   "ins": 164595,
+   "del": 137539
+  },
+  "2026-07": {
+   "files": 7568,
+   "ins": 358948,
+   "del": 55652
+  },
+  "2026-06": {
+   "files": 2450,
+   "ins": 172921,
+   "del": 31098
+  },
+  "2026-05": {
+   "files": 1592,
+   "ins": 118510,
+   "del": 28893
+  },
+  "2026-04": {
+   "files": 2871,
+   "ins": 238615,
+   "del": 100748
+  },
+  "2026-03": {
+   "files": 1185,
+   "ins": 213316,
+   "del": 22540
+  },
+  "2026-02": {
+   "files": 2540,
+   "ins": 155165,
+   "del": 403126
+  },
+  "2026-01": {
+   "files": 5178,
+   "ins": 346873,
+   "del": 196970
+  },
+  "2025-12": {
+   "files": 1316,
+   "ins": 88285,
+   "del": 10030
+  },
+  "2025-09": {
+   "files": 76,
+   "ins": 6583,
+   "del": 648
+  },
+  "2025-08": {
+   "files": 3342,
+   "ins": 165160,
+   "del": 39558
+  },
+  "2025-07": {
+   "files": 2634,
+   "ins": 429147,
+   "del": 62165
+  },
+  "2025-06": {
+   "files": 529,
+   "ins": 52832,
+   "del": 31495
+  },
+  "2025-03": {
+   "files": 106,
+   "ins": 47496,
+   "del": 0
+  }
+ }
+}
