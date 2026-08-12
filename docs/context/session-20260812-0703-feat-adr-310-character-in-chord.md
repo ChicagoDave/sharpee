@@ -143,4 +143,98 @@ Claude's untested theory (alias breaks drag-install) was wrong; David's direct t
 
 ---
 
-**Progressive update**: Session completed 2026-08-12 03:50 CDT
+## Addendum — post-finalize work (2026-08-12 04:00-05:00 CDT)
+
+The session above was a mid-session finalize (commit-remote pushed `dc435214` at 08:59 UTC / 03:59 CDT). The session continued after that push; this addendum covers everything that followed. The session event log (`docs/context/.devarch-events-1744e6.jsonl`) ends at the finalize commit, so evidence for this addendum is either verified directly in this closing pass (noted inline) or carries the `[reported by session, unverified]` marker per ADR-0019.
+
+### Analytics dashboard — started, then stopped
+
+David asked for a page to view site analytics. Established the existing collector shape by reading code: `website/src/app/api/p/route.ts` (POST-only collector), append-only JSONL at `SHARPEE_ANALYTICS_DIR` (`/var/lib/sharpee-analytics`), record shape `{ts, day, type, asset, vid, sid, path, ref, lang, tz, sw, sh, vw, vh, browser, os, device, iph}`, files named `events-YYYY-MM.jsonl`, IPs hashed with a daily-rotating salt. No dashboard route and no query tool exist. Loaded the `dataviz` skill and read the site's color tokens in preparation. David interrupted to say pull the main branch first — **the dashboard was never built.**
+
+Noted in passing: the inline beacon fires a `download` event on any `/downloads/` click, so clicks on the then-broken DMG link (see below) were logged as downloads that actually 404'd — a latent data-quality wrinkle in any future dashboard's download-count metric.
+
+### Merged origin/main — duplicate fix, better anchor solution
+
+Merged `origin/main` (commit `5b8cb511`). A parallel session had independently pushed `56275bbe` "fix(website): Chord Writer pages promised a toolchain the DMG doesn't carry" — fixing the same two Chord Writer copy bugs this session had already fixed pre-finalize. Conflicts landed in both `chord-writer/content.mdx` files and `search-index.json`.
+
+Their `prose.tsx` anchor fix was better than this session's `rehype-slug` approach: they derive heading ids directly in `ProseH2`/`ProseH3` and fixed `ProseLink`, which had been routing `#anchor` hrefs through `next/link` (treating the fragment as a route) — a bug this session's `rehype-slug` addition would not have caught, since it only supplied missing ids and never touched link routing.
+
+Resolution: took main's framing (tightened `Callout`, "What you need" list, terminal-section wording), layered David's requested Temporary/Future-State split and the Gatekeeper-section rewrite on top, and dropped main's duplicate pre-download install block. **Removed this session's `rehype-slug` addition entirely** — `next.config.ts` reverted with a comment pointing at `prose.tsx` as the actual fix (verified present at line 48 in this closing pass), and the `rehype-slug` dependency uninstalled (verified absent from `website/package.json`). Also dropped the Intel-support paragraph, following main's deletion.
+
+### Verified the deploy
+
+`ChordWriter-1.0.0.dmg` now serves 206 `application/octet-stream` on `www.sharpee.net` — the 404 noted as this session's blocker before the finalize is resolved. The live copy carries `npm install -g @sharpee/devkit` and no longer claims the app "brings its own" toolchain or "asks nothing else."
+
+### Fixed stale Chord testing docs
+
+David: "the transcript docs weren't updated in the Chord portion of the website." `website/src/app/chord/getting-started/compose-and-run/content.mdx` taught the retired workflow end-to-end — a `tests/` directory of `.transcript` files, `[OK: contains "…"]` grammar, `--chain`, invented runner output. Every element in it fails by name against `packages/devkit/src/commands/test.ts:59-75`. Rewrote as the tree-document model, using real runner strings pulled from `test-tree-document.test.ts` (`Tree document: … (seed 42, 2 line(s))`, `✓ opening-den`, `4 cards passing, 5 assertions passing`), plus a `Callout` for readers arriving with `.transcript` expectations. States plainly that tests cannot be hand-written — they are recorded in the Testing tab. Also corrected the stale `sharpee test` usage line in `website/src/app/chord/getting-started/install/content.mdx`.
+
+Audited roughly 35 other "transcript" hits across `/chord/`: they use the word for sample play output displayed on the page, a different sense, and are correct as-is. The one `.transcript` filename referenced (stdlib/death/traits) is a Dungeo fixture and is correct.
+
+**Found but not fixed** (platform code, needs David's go-ahead): `packages/devkit/src/cli.ts:49-50` still advertises `[transcripts…]` and `--chain` and calls them "transcript tests" — the CLI's own `--help` output instructs users toward forms the CLI itself rejects.
+
+### New Core Concepts directive
+
+At David's instruction, added a new subsection "Never rely on ADRs for architecture — read the code" to `docs/core-concepts/README.md` under "Where the work is" (verified present at line 16 in this closing pass). It names four ways ADRs go stale and carries both of this session's own errors as worked examples: (a) quoting ADR-294 D9 to wrongly conclude the IDE still used fence-grammar transcripts, when `packages/branch-tester/src/index.ts:9-14` shows ADR-307 retired that grammar; (b) describing a side-by-side "blessing" gesture in the tree model that does not exist. Both were caught by David, not by Claude. Root cause named in the directive: reasoning about the current system in a retired paradigm's vocabulary.
+
+### ADR-312 written and accepted
+
+Wrote and got accepted `docs/architecture/adrs/adr-312-recording-tests-from-the-command-line.md` (new file, verified present), "Recording Tests from the Command Line — a Second Writer, One Model." Status line reads `ACCEPTED (2026-08-12, session 1744e6)` (verified directly).
+
+Origin: fixing the stale Chord docs above exposed that the CLI has no way to author a test — `sharpee test` only replays a document the IDE wrote, and `play.ts` has no record/bless/capture path. Since Chord Writer is arm64-macOS-only and cannot be built universal (this session's own pre-finalize notarization finding), test authoring is gated on owning Apple silicon.
+
+Nine decisions, key ones: **D1** the tab becomes *a* recorder, not *the* recorder (amends ADR-307). **D2** per-element assertions only, never a whole-output blob — this reverses a Claude proposal to default to `exact`; David corrected it. **D3** one spelling of synthesis: calls `synthesizePolicyAssertions`, never re-implements it. **D5** the command list is a committed artifact — newline-delimited text, `<name>.list.txt` in the project root. **D6** there is no "blessing" step in the tree model. **D7** IDE and CLI agree *contractually* (David's word). **D8** reconcile divergence by whole-line replace with author-chosen direction — David reversed an earlier merge-based instinct here ("merge might be more than we can take on"). **D9** `sharpee record` ships as a peer command so `sharpee test` stays read-only.
+
+Interview: all four Open Questions resolved via `/devarch:adr-interview`; Q-2 was dissolved by D8 rather than directly answered.
+
+`adr-review` pass: 11/18 NEEDS WORK → four gaps closed (an Implementation section, D8's six enumerated steps, a worked example, list-naming clarification) → 18/18 READY FOR IMPLEMENTATION → accepted by David. The Status line records the provenance caveat that this review was self-administered (same session, no independent pass).
+
+Enumerating D8's six steps surfaced a hole the review itself missed: a tab-recorded line had no way to acquire a `.list.txt`, contradicting D5. Fixed by adding a four-way branch to step 2.
+
+ADR-307's recorder language was deliberately **not** flipped this session — ADR-307's own precedent is that supersession language changes land at the cutover, not at the amending ADR's acceptance.
+
+### Code facts established by reading (per the new directive)
+
+- `packages/branch-tester/src/tree-walker.ts:79-85` — the walker clears the auto-assertion policy; a document run "evaluates exactly what the document says and assumes nothing" — a bare card is a failure. A recorder must therefore persist claims; there is no live-synthesis fallback on the tree path.
+- `packages/branch-tester/src/tree-document.ts:72` is stale — its comment describes `TreeCard.assertions` as "policy defaults synthesize live, never persist," which is retired v2 behavior. The live-synthesis call actually lives at `runner.ts:858`, inside `runTranscript` (the ADR-294 assertion-tier path) — a different runner entirely. **Not fixed** — this is `packages/`, needs David's go-ahead.
+- `TreeAssertions` has six positive families and no way to represent a deliberately deleted claim; the grammar is closed and `TREE_DOCUMENT_VERSION = 1`.
+- `packages/branch-tester/src/auto-assertion.ts` is the shared synthesis engine; `DEFAULT_AUTO_ASSERTION_POLICY = 'room-name-and-description'`.
+
+### Addendum — Files touched
+
+**Website** (merge resolution + doc fixes, beyond the pre-finalize list): `website/src/app/chord-writer/content.mdx`, `website/src/app/chord-writer/download/content.mdx` (merge-resolved with main), `website/next.config.ts` (rehype-slug reverted), `website/src/app/chord/getting-started/compose-and-run/content.mdx` (rewritten for the tree-document model), `website/src/app/chord/getting-started/install/content.mdx` (stale `sharpee test` line fixed), `website/public/search-index.json` (generated, merge side-effect).
+
+**Docs**: `docs/core-concepts/README.md` (new "read the code, not ADRs" subsection).
+
+**New ADR**: `docs/architecture/adrs/adr-312-recording-tests-from-the-command-line.md`.
+
+### Addendum — Open Items (supersedes the Open Items section above)
+
+The pre-finalize Open Items are resolved as follows: the DMG-404 item is **resolved** (verified serving 206 in this closing pass). `notarization-bisection.md` still lacks today's DMG sequence — carried forward unchanged. AC3/AC6 verification — status unchanged, still outstanding.
+
+New items from the addendum:
+
+- Analytics dashboard page — not built; David asked to pull main first, then the session moved to the merge/doc-fix/ADR-312 work instead.
+- `packages/devkit/src/cli.ts:49-50` stale `--help` text (`[transcripts…]`, `--chain`, "transcript tests") — needs David's go-ahead; now scoped into ADR-312's implementation.
+- `packages/branch-tester/src/tree-document.ts:72` stale comment describing retired live-synthesis behavior — needs David's go-ahead.
+- ADR-312 implementation awaits its own plan; ADR-307's recorder-language flip is owed by whoever lands that implementation.
+- Submission `5133a8de` (universal build) was still `In Progress` at pre-finalize checkpoint and never returned a verdict — still the only live probe of the x86_64 notarization trigger; unresolved.
+- `notarization-bisection.md` still lacks today's DMG sequence (the SIGBUS orphan + hand-recovery, and the `8287cbd9` vs `1513b801` pair that weakens the content-determinism assumption).
+- Branch name no longer describes contents: `feat/adr-310-character-in-chord` carries zero ADR-310 work this session or last; ADR-310 Phase 1 remains blocked on David's story content.
+- Carried: ADR-308 testing-navigation interview still not started.
+
+## Session Metadata (whole session, supersedes the metadata block above)
+
+- **Status**: INCOMPLETE
+- **Blocker**: None single-item — multiple independent threads left open (analytics dashboard unbuilt; two stale-doc items in `packages/` awaiting go-ahead; ADR-312 has no implementation plan yet; x86_64 notarization trigger unresolved). None of these block the branch from being safely left as-is.
+- **Blocker Category**: Other: multi-thread carryover (see Open Items)
+- **Estimated Remaining**: ~1-2 sessions — ADR-312 implementation is its own multi-session effort once planned; the doc/CLI fixes are each small once David authorizes touching `packages/`.
+- **Rollback Safety**: safe to revert — no `packages/` source touched this session (ADR-312 is a proposal document, not code); all addendum changes are in `website/`, `docs/`, and the merge from main.
+
+## Recurrence Check (addendum note)
+
+The "reasoning from a retired paradigm's vocabulary instead of reading the code" error (see Core Concepts directive above) occurred **twice** in this single session: once pre-finalize (the ADR-294 D9 / fence-grammar misreading, already logged in the base summary's Key Decisions #1) and once in the post-finalize compose-and-run doc rewrite (describing a non-existent "blessing" gesture). Two occurrences in one session, on top of the notarization-blocker recurrence already noted in the base summary's Recurrence Check, is what prompted writing the new directive rather than treating it as a one-off correction.
+
+---
+
+**Progressive update**: Session completed 2026-08-12 05:00 CDT (addendum to the 03:50 CDT mid-session finalize)

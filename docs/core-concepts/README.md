@@ -13,6 +13,31 @@ Secondary does not mean subordinate. **Sharpee and Chord need to align as elegan
 
 So the test for a `packages/` change is not "did Chord ask for this." It is whether the change makes the platform and the language fit together more elegantly than they did before. A change that does neither — that serves the platform's own internal tidiness while the seam stays where it was — is a change to question rather than a detail to sort out later.
 
+### Never rely on ADRs for architecture — read the code
+
+**An ADR records a decision. It does not describe the system.** Before you state how something works, open the implementation and read it. This applies to answering a question, planning a change, writing a new ADR, and amending an old one — every time, not just when something feels uncertain.
+
+ADRs go stale in ways that are invisible from inside the document:
+
+- **A later ADR supersedes an earlier one in part**, and the earlier file says nothing. The status line is written by whoever remembers to flip it, and the flip is often deferred to "whoever lands the cutover."
+- **A decision is implemented differently than written**, for good reasons discovered during the work, and the ADR is never amended to match.
+- **Two ADRs are both accurate but describe different worlds.** This is the sharpest trap: the answer you find is *true*, and it is about the wrong subsystem.
+- **Status lines lie in both directions.** "Proposed" often means shipped; "Accepted" can mean the code went another way.
+
+Worked examples, both from session 1744e6 on 2026-08-12, both caught by David rather than by the assistant:
+
+1. Asked whether the IDE still coupled to ADR-287's fenced transcript grammar, the assistant quoted ADR-294 D9 — *"ADR-287's text-block grammar is kept in the assertion tier"* — and concluded yes. The quote is accurate. It governs `@sharpee/transcript-tester`, a different package. `packages/branch-tester/src/index.ts:9-14` says the grammar was **retired** for the Chord/IDE world by ADR-307's cutover. One `grep` in the package under discussion would have settled it; reading the ADR produced a confident wrong answer.
+2. In the same session, while writing an ADR, the assistant described the IDE's re-blessing gesture as showing old and new side by side. There is no blessing in the tree model at all — `compose.ts` synthesizes claims once at record time, and claims are individually deletable. The description came from ADR-299's superseded model.
+
+Both errors have the same shape: **reasoning about the current system in the retired paradigm's vocabulary.** Prose is fluent about worlds that no longer exist, and a stale ADR reads exactly like a current one.
+
+What this means in practice:
+
+- **Cite code, not ADRs, for claims about behavior.** `file.ts:line` beats "per ADR-NNN." When an ADR is the right citation — for *why* a choice was made — say so explicitly and keep it separate from what the code does.
+- **When an ADR and the code disagree, the code wins, and the disagreement is a finding.** Report it. Amend the ADR or note the drift; do not silently follow either one.
+- **Grep the package under discussion before answering.** Especially when two subsystems share vocabulary — "transcript," "channel," "test," "bless" — because that is where the wrong-world answer lives.
+- **Writing an ADR does not exempt you.** An ADR's Context section is the *most* important place to have read the code, because everything downstream inherits its errors.
+
 ## The Packages
 
 Thirty-two packages under `packages/`. Grouped by what they are for, not by dependency order.

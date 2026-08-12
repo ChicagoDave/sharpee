@@ -56,44 +56,44 @@ a brass lantern
 
 Type commands at the prompt exactly as a player would; `/quit` exits.
 
-## Test with transcripts
+## Test the recorded tree
 
-Transcripts are your story's test suite: player commands paired with
-assertions about the response. They live in the project's `tests/`
-directory as `.transcript` files:
+A story's tests live in one JSON document beside the `.story` file —
+`orchard.story` pairs with `orchard.tests.json`. It holds a tree of played
+turns, each carrying the assertions you made about its output.
 
-```text
-title: The lantern is in hand at the start
-story: orchard
-description: The player starts in the Landing carrying the brass lantern.
----
-
-> look
-[OK: contains "Landing"]
-
-> inventory
-[OK: contains "brass lantern"]
-```
+You do not write that file by hand. You record it by playing: in Chord
+Writer's Testing tab, play the story, and turn the turns you like into
+tests. Branching where the story branches is the point — one document
+covers every path you have played.
 
 ```shell
 sharpee test
 ```
 
 ```text
-Found 1 transcript(s) to run
+Tree document: orchard.tests.json (seed 42, 2 line(s))
+  ✓ opening-landing
+  ✓ landing · inventory
 
-Running: tests/lantern.transcript
-  "The lantern is in hand at the start"
-
-  > look                                             PASS
-  > inventory                                        PASS
-
-  2 passed (7ms)
+  4 cards passing, 5 assertions passing
 ```
 
-`sharpee test` exits non-zero on failure, so it drops straight into CI.
-`--chain` runs several transcripts against one continuing game state,
-and `--stop-on-failure` halts at the first miss.
+A failure names the card and shows what it wanted against what it got, and
+`sharpee test` exits non-zero, so it drops straight into CI.
+`--stop-on-failure` halts at the first miss; `--json` emits an NDJSON record
+stream instead of this report.
+
+<Callout title="Coming from .transcript files?">
+  They are retired. Text transcripts, the `tests/` directory, `--chain`, and
+  `--coverage` were replaced by the tree document — a Chord project has one
+  test model, not two. Each retired form fails by name rather than silently
+  doing nothing, so an older project tells you exactly what to move.
+
+  Sharpee's own hand-authored transcript suites are a separate thing that
+  still exists; they belong to the platform's test corpus, not to a story you
+  write.
+</Callout>
 
 ## Compose: the compiler on its own
 
