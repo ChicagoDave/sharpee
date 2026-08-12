@@ -39,7 +39,10 @@
 #   Environment:
 #     NOTARY_PROFILE   notarytool keychain profile name  (default: dc-notary)
 #     SIGN_IDENTITY    codesign identity                 (default: the sole
-#                      "Developer ID Application" in the keychain)
+#                      "Developer ID Application" in the keychain, and its
+#                      team must match EXPECTED_TEAM either way)
+#     EXPECTED_TEAM    Apple Developer team the signature must carry
+#                      (default: RSNGKW5LNH — see the constant below)
 #
 # Produces, under tools/ide/release/:
 #   ChordWriter-<version>.dmg          signed, notarized, stapled
@@ -67,6 +70,19 @@ readonly DMG_BACKGROUND="$IDE_DIR/dmg/background.tiff"
 
 NOTARY_PROFILE="${NOTARY_PROFILE:-dc-notary}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
+
+# The Apple Developer team Chord Writer ships under. DECLARED, not inferred —
+# this is the identity Gatekeeper shows users, so it is a property of the
+# product, not of whatever happens to be in the build machine's keychain.
+#
+# Why this exists (2026-08-11): the identity resolution below used to treat
+# "there is exactly one Developer ID cert" as "it is the right one." The only
+# cert on this machine belonged to an unrelated business team, so every build
+# was signed by one team and submitted with another team's notary credentials.
+# Apple accepted the uploads and never processed them — two submissions sat In
+# Progress for ten hours with no error, because nothing in the pipeline ever
+# compared the two halves. This check is that comparison.
+readonly EXPECTED_TEAM="${EXPECTED_TEAM:-RSNGKW5LNH}"
 
 die()  { echo "" >&2; echo "package: $*" >&2; exit 1; }
 step() { echo ""; echo "── $* ─────────────────────────────────"; }
@@ -209,7 +225,33 @@ $identity_lines"
   fi
   SIGN_IDENTITY="$(printf '%s' "$identity_lines" | sed -E 's/.*"(.*)".*/\1/')"
 fi
+
+# The identity above was RESOLVED (from the keychain or the environment); it has
+# not yet been CHECKED. A Developer ID certificate carries its team in the
+# subject's OU, so read it from the certificate rather than parsing the display
+# name — the name is a label, the OU is the fact.
+signing_team="$(security find-certificate -c "$SIGN_IDENTITY" -p 2>/dev/null \
+  | openssl x509 -noout -subject 2>/dev/null \
+  | sed -E 's/.*OU *= *([A-Z0-9]+).*/\1/')"
+[ -n "$signing_team" ] || die "CREDENTIAL MISMATCH: could not read the team (OU) from
+  the certificate for '$SIGN_IDENTITY'. Refusing to sign with an identity whose
+  team cannot be established."
+[ "$signing_team" = "$EXPECTED_TEAM" ] || die "CREDENTIAL MISMATCH: signing identity
+  belongs to team '$signing_team', but this product ships under '$EXPECTED_TEAM'.
+
+  '$SIGN_IDENTITY'
+
+  Apple will ACCEPT a submission signed by one team and uploaded with another
+  team's notary credentials, then never process it — no error, no log, just
+  In Progress forever. That is what this check exists to prevent.
+
+  Fix by one of:
+    - install the Developer ID Application certificate for $EXPECTED_TEAM, or
+    - set SIGN_IDENTITY to an identity from $EXPECTED_TEAM, or
+    - if the product is deliberately changing teams, update EXPECTED_TEAM
+      (and expect a different Team ID in every user's Gatekeeper prompt)."
 ok "signing identity: $SIGN_IDENTITY"
+ok "signing team matches EXPECTED_TEAM ($EXPECTED_TEAM)"
 
 # --- Credential 2: the notarytool keychain profile ------------------
 # `history` is the cheapest call that actually authenticates against Apple. A

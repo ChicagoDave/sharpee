@@ -148,7 +148,7 @@ targets:
         # Desktop access on each ⌘R. Release packaging (package.sh) still
         # re-signs with Developer ID.
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        DEVELOPMENT_TEAM: RSNGKW5LNH
         CODE_SIGN_IDENTITY: "Apple Development"
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
@@ -175,7 +175,7 @@ targets:
         # library validation requires (ad-hoc "-" was tried and refused to
         # load: "different Team IDs").
         CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        DEVELOPMENT_TEAM: RSNGKW5LNH
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
 

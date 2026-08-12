@@ -202,6 +202,69 @@ cannot. Recommendation: drop `handleSay` from the interface and treat SAY, if it
 becomes a platform action, as ADR-090 capability dispatch (its meaning is per-entity,
 like WAVE). **Not actioned** — David tabled the session before ruling.
 
+### Chord Writer notarization — root-caused after a full day stuck
+
+Unrelated to ADR-310; picked up when David asked to check the notarization that had
+been blocking the DMG since 2026-08-10.
+
+**The symptom**: submission `8fe1892f-…` sat `In Progress` for **10 hours**. Apple's
+own documentation says the scan "usually takes less than an hour," and Apple's
+developer system-status feed showed **no notary incident** — so this was anomalous,
+not slow. `notarytool log` returned nothing (no log is produced while In Progress).
+
+**The root cause**: the app was signed by one Apple team and submitted with another
+team's credentials. Apple accepts such an upload — the credential is valid — and then
+never processes it. No error, no log, no timeout.
+
+| | Team | |
+| --- | --- | --- |
+| Developer ID cert signing the app | `54CCCRZJ3X` | the old **Mach9 Poker business** account |
+| `dc-notary` API key (`MASFPJ29HJ`) | `RSNGKW5LNH` | the **new individual account** David created *for this* |
+
+Evidence chain, in the order it came out: Xcode reported "no team 54CCCRZJ3X" (its
+account record is `B29100E5-… → teamID RSNGKW5LNH, teamType Individual`); the signing
+cert's subject reads `OU=54CCCRZJ3X`; an old provisioning profile on disk ties
+`com.mach9poker.Mach9` to `54CCCRZJ3X`; and Xcode's **Manage** link opens App Store
+Connect for the account holding `MASFPJ29HJ`. **David supplied the decisive fact** —
+he had just created the individual account *for* Chord Writer, which flipped the fix
+from "make a key under the business team" to "make a cert under the new one."
+
+**Why it went unnoticed for a day**: `package.sh` resolved the signing identity by
+taking the sole `Developer ID Application` cert in the keychain — treating *"there is
+exactly one"* as *"it is the right one."* It guarded the ambiguous case (two certs)
+and not the wrong case (one wrong cert), then printed `✓ signing identity: …` as
+though something had been verified. David's diagnosis: *"you used automation to find
+the mach9 cert and assumed it was the correct one."* Correct.
+
+**Fixes applied**:
+1. **New Developer ID Application certificate** created under `RSNGKW5LNH` (verified
+   `OU=RSNGKW5LNH`, Apple's Developer ID CA, valid to 2027-02-01).
+2. **Rebuilt and resubmitted** — `TeamIdentifier=RSNGKW5LNH`, hardened runtime,
+   entitlements correct, signature verifies deep/strict. New submission
+   `e4244248-6e89-4d56-b829-0ee8bb04817a` at 02:10 UTC, In Progress at session end.
+   **This is the test**: under an hour means the mismatch was the cause.
+3. **`package.sh` team check** — `EXPECTED_TEAM` is now declared at the top of the
+   script (default `RSNGKW5LNH`), and the preflight reads the team from the
+   certificate's subject `OU` and refuses to build on a mismatch. Real-path tested
+   both ways: the old cert dies at preflight with `CREDENTIAL MISMATCH` before any
+   build work; the new one passes and proceeds. The incident is recorded in a comment
+   beside the constant so the reason survives.
+4. **`tools/ide/project.yml`** — both targets moved to `RSNGKW5LNH` and the
+   `.xcodeproj` regenerated; **zero** `54CCCRZJ3X` references remain (was 6).
+
+**A mistake I made and repaired**: I ran `package.sh` through a piped, 10-minute-capped
+shell call, which killed it after Apple returned the submission ID but before it wrote
+`.notarize-state`. That is precisely the orphaning the ledger exists to prevent. I
+restored the file by hand, and the later rehearsal run proved the restore works — the
+script found it and resumed instead of resubmitting. Lesson: run it detached.
+
+**Two things NOT done**: the two dead submissions (`041e7810`, `8fe1892f`) were left
+alone — they cannot be cancelled and no longer matter. And no Apple Development
+certificate exists for `RSNGKW5LNH` yet (the only one is `OU=54CCCRZJ3X`); the app
+target is `CODE_SIGN_STYLE: Automatic` so Xcode should provision it on the next build,
+but the **tests target is Manual** (per the 2026-08-10 signing-rot fix, where ad-hoc
+did not work) and will not self-provision.
+
 ## Key Decisions
 - ADR-310 ACCEPTED with 21 decisions; see the ADR for the full map.
 - Interface home ruling above (ADR-310 D19a, plan Phase 2 step 1).
@@ -225,8 +288,22 @@ like WAVE). **Not actioned** — David tabled the session before ruling.
   it does not amend it") no longer holds now that ADR-102 is being amended anyway.
   Today's code is compatible with either; moving it later is small.
 
+### Chord Writer / notarization
+- **`e4244248-…` was In Progress at session end.** Check with
+  `xcrun notarytool info e4244248-6e89-4d56-b829-0ee8bb04817a --keychain-profile dc-notary`
+  (do NOT use `notarytool wait` — it crashed with `Bus error` 4/4 times on 2026-08-11).
+  Once Accepted, `./tools/ide/package.sh` (NO `--rebuild`) resumes from the ledger,
+  staples, builds and notarizes the DMG, and staples that.
+- **No Apple Development cert for `RSNGKW5LNH`.** Automatic signing should provision
+  one for the app target; the Manual tests target will not.
+- **David prefers notarizing through Xcode** (Distribute App → Direct Distribution)
+  rather than the `package.sh` CLI path, and wants DMG packaging folded into that
+  flow. Constraint: Xcode has no post-distribution hook and cannot notarize a DMG, so
+  the agreed shape is `package.sh --dmg-from <exported .app>` doing DMG + notarize +
+  staple + checksum only. **Not implemented.**
+- **`EXPECTED_TEAM` does not guard the Xcode path** — only `project.yml` does.
+
 ### Carried from prior sessions (untouched)
-- Chord Writer DMG blocked on notarization `8fe1892f-…`; `041e7810-…` orphaned.
 - ADR-308 testing-navigation interview not started.
 
 ## Files Modified
@@ -263,6 +340,8 @@ memory without opening the file; caught on the second review pass.
 - **Blocker**: Phase 1 blocked on David's story content (setting + fact graph).
   Phase 2 items 1-2 landed; the ADR-102 amendment/flip and the registration-location
   question remain.
+- **Also this session**: Chord Writer notarization root-caused and fixed (team
+  mismatch), `package.sh` gained a team-match preflight, `project.yml` realigned.
 - **Rollback Safety**: contained — all work is on `feat/adr-310-character-in-chord`,
   never on `main`. `packages/` changes are commit `ed9cefa2` alone and are additive:
   no existing behavior changes when no dialogue extension is registered.

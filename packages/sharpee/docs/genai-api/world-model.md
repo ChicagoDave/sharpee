@@ -6864,7 +6864,7 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt } from '@sharpee/if-domain';
+import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt, type DialogueExtension } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
 import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
@@ -7267,6 +7267,8 @@ export declare class WorldModel implements IWorldModel {
     private capabilities;
     private capabilityBindings;
     private interceptorBindings;
+    /** This world's single dialogue extension (ADR-102), if registered. */
+    private dialogueExtension;
     /**
      * ADR-295: per-world exit-resolver bindings, keyed by trait type. Same
      * ownership model as the maps above — created with the world, never
@@ -7306,6 +7308,8 @@ export declare class WorldModel implements IWorldModel {
     }, actionId: string): InterceptorLookupResult | undefined;
     getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
+    registerDialogueExtension(extension: DialogueExtension): void;
+    getDialogueExtension(): DialogueExtension | undefined;
     registerExitResolver(traitType: string, resolver: ExitResolver): void;
     getExitResolver(traitType: string): ExitResolver | undefined;
     getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
