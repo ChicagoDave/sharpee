@@ -2,12 +2,29 @@ Chord Writer is a macOS app for writing parser-based interactive fiction in
 Chord. You write the story, and the app composes it as you type, builds it,
 plays it, runs its test tree, and packages it for release.
 
-## Nothing to install
+## One thing to install (temporary)
 
-Chord Writer ships the whole toolchain inside its own application bundle: a
-Node runtime and the Sharpee command-line tool, vendored at build time. There
-is no `npm install`, no global CLI, and no Node on your machine to keep current.
-Building works on a Mac that has never seen a terminal.
+Chord Writer is the editor. The building, playing and testing is done by the
+Sharpee command-line tool, which today you install once yourself:
+
+```shell
+npm install -g @sharpee/devkit
+```
+
+That needs [Node.js](https://nodejs.org) 18 or newer. The app finds the tool on
+your PATH and uses it; without it, editing works but **⌘B** reports *"sharpee
+not found"*. Full steps are on the [download page](/chord-writer/download).
+
+## Future state: nothing to install
+
+Chord Writer is designed to carry the whole toolchain inside its own application
+bundle — a Node runtime and the command-line tool, vendored at build time. In
+that build there is no `npm install`, no global CLI, and no Node on your machine
+to keep current; building works on a Mac that has never seen a terminal.
+
+That build is held up in notarization, and shipping the editor now was judged
+better than holding it back until it clears. Until then, the install step above
+is required.
 
 The status bar names what you are actually running, the app's own version first
 and the toolchain it resolved second:

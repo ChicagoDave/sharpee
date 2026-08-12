@@ -2,11 +2,22 @@
 <h2 id="chord-writer">Chord Writer</h2>
 <blockquote><p><strong>Any Apple silicon Mac</strong></p>
 <p>M1 or later, on any macOS those machines run — the build targets macOS 11, which is what the first Apple silicon Macs shipped with.</p>
-<p>It will not run on an Intel Mac. The Node runtime Chord Writer carries is built for Apple silicon, so a universal build would ship an Intel half with no toolchain behind its Build button. In exchange it asks nothing else of you: no <code>npm install</code>, no global CLI, nothing on your machine to keep current. Building works on a Mac that has never seen a terminal.</p></blockquote>
-<p>On an Intel Mac, use the command-line tools instead — they run anywhere Node does. <a href="/chord/getting-started/install">Install the CLI</a>, then work from the terminal; the <a href="#the-folly-at-fernhill">Fernhill sample</a> below opens the same way.</p>
+<p>It will not run on an Intel Mac; the app is built for Apple silicon only. On an Intel Mac, use the command-line tools instead — they run anywhere Node does. <a href="/chord/getting-started/install">Install the CLI</a>, then work from the terminal; the <a href="#the-folly-at-fernhill">Fernhill sample</a> below opens the same way.</p></blockquote>
 <p><strong><a href="/downloads/ChordWriter-1.0.0.dmg">Download Chord Writer 1.0.0 (.dmg)</a></strong></p>
-<p>Installing it:</p>
+<h3 id="temporary-installation-instructions">Temporary installation instructions</h3>
+<blockquote><p><strong>These are the steps that work today</strong></p>
+<p>This build of Chord Writer does not carry its own toolchain, so there is one extra step: you install the Sharpee command-line tool yourself. The <em>Future state</em> section further down describes what replaces these steps once the self-contained build ships — it is <strong>not</strong> in effect yet, so follow this section, not that one.</p></blockquote>
+<p>1. Open the downloaded <code>.dmg</code>. 2. Drag <strong>Chord Writer</strong> onto the <strong>Applications</strong> folder shown beside it. 3. Eject the disk image, and launch Chord Writer from Applications. 4. Install <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js</a> 18 or newer, if you do not already have it. This is what provides <code>npm</code>. 5. Install the toolchain:</p>
+<p>``<code>shell npm install -g @sharpee/devkit </code>``</p>
+<p>Step 5 is not optional. Chord Writer is the editor; <code>@sharpee/devkit</code> is what actually builds, plays, and tests a story, and the app calls it. Without it, the app opens and edits files but <strong>⌘B</strong> reports <em>&quot;sharpee not found&quot;</em>.</p>
+<p>To confirm the two found each other, look at the status bar: it names the app's version first and the toolchain it resolved second. A version there means installation worked.</p>
+<pre><code class="language-text">Chord Writer 1.0.0 · Sharpee 5.0.0 / Chord 3.0.0</code></pre>
+<h3 id="future-state-how-this-will-work">Future state: how this will work</h3>
+<p>Chord Writer is designed to carry the whole toolchain inside its own application bundle — a Node runtime and the Sharpee command-line tool, vendored at build time. When that build ships, installation loses its last two steps and becomes:</p>
 <p>1. Open the downloaded <code>.dmg</code>. 2. Drag <strong>Chord Writer</strong> onto the <strong>Applications</strong> folder shown beside it. 3. Eject the disk image, and launch Chord Writer from Applications.</p>
+<p>No <code>npm install</code>, no global CLI, and no Node on your machine to keep current — building works on a Mac that has never seen a terminal.</p>
+<blockquote><p><strong>Not yet available</strong></p>
+<p>The self-contained build is held up in notarization. Shipping the editor now was judged better than holding it back until that clears. Until it does, use the <em>Temporary installation instructions</em> above.</p></blockquote>
 <h3 id="if-macos-refuses-to-open-it">If macOS refuses to open it</h3>
 <p>macOS checks downloaded apps with Apple before running them the first time. If you see <em>&quot;Apple could not verify Chord Writer is free of malware&quot;</em>, the check has not completed for this build — the app is signed, but not yet stapled. Open it once by hand:</p>
 <p>1. Go to <strong>System Settings → Privacy &amp; Security</strong>. 2. Scroll to the bottom. There is a line about Chord Writer being blocked, and an <strong>Open Anyway</strong> button beside it. 3. Click it, then confirm.</p>
@@ -19,12 +30,9 @@
 <p>Inside the folder:</p>
 <table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>fernhill.story</code></td><td>The whole story. The only file you write.</td></tr><tr><td><code>fernhill.tests.json</code></td><td>Its tests, recorded by playing in the Testing tab.</td></tr><tr><td><code>fernhill.config.json</code></td><td>The story's identity. The tool maintains it; keep it in version control and never edit it by hand.</td></tr><tr><td><code>assets/</code></td><td>Audio and images the story plays.</td></tr><tr><td><code>browser/index.html</code></td><td>A custom page for the browser build.</td></tr></tbody></table>
 <h3 id="from-the-terminal-instead">From the terminal instead</h3>
-<p>Fernhill is an ordinary Sharpee project, so the CLI works on it just as well. Install it once:</p>
-<pre><code class="language-shell">npm install -g @sharpee/devkit</code></pre>
-<p>then, from inside the story folder:</p>
+<p>Fernhill is an ordinary Sharpee project, so the CLI works on it just as well — and it is the same <code>@sharpee/devkit</code> you installed for Chord Writer, so there is nothing further to set up. From inside the story folder:</p>
 <pre><code class="language-shell">sharpee build          # compile, and build the browser app
 sharpee play           # play it in the terminal
 sharpee test           # replay the recorded tests</code></pre>
-<p>That path needs <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js</a> 18 or newer. The app does not — it brings its own.</p>
 <h2 id="next">Next</h2>
 <p><a href="/chord-writer/your-first-story">Your first story</a> walks through making one of your own, and <a href="/chord-writer/building-playing-and-testing">Building, playing, and testing</a> covers the loop you will spend your time in.</p>

@@ -83,6 +83,13 @@ cp "$BACKGROUND" "$STAGE/.background/background.tiff" || die "failed to stage th
 # returns EPERM even with XATTR_NOFOLLOW, and setting the icon without NOFOLLOW
 # writes through to the real /Applications. Both were measured; see the header
 # of make-applications-shortcut.swift.
+#
+# DRAG-INSTALL ONTO THE ALIAS IS VERIFIED WORKING — David installed from
+# ChordWriter-1.0.0.dmg by dragging onto it, 2026-08-12 (session 1744e6). Do not
+# "fix" this into `ln -s /Applications` on the theory that Finder only accepts a
+# symlink as a drop target. That swap was made in this session on exactly that
+# theory and reverted the same hour: it builds a working DMG, but it trades away
+# the folder art for nothing, because the alias already works.
 "$DMG_DIR/make-applications-shortcut.swift" \
   "$DMG_DIR/../art/applications-folder.png" \
   "$STAGE/Applications" \
@@ -223,6 +230,13 @@ sync
 [ -f "$MOUNT_POINT/.DS_Store" ] || die "Finder wrote no .DS_Store, so the layout would
   not have persisted. Refusing to produce an unstyled DMG."
 note "layout applied (${W}x${H}, ${ICON_SIZE}pt icons, background set)"
+
+# macOS spools filesystem events into .fseventsd while the read-write image is
+# mounted, and it would otherwise ride into the shipped read-only image. It is
+# invisible at default Finder settings but serves no purpose in a distributed
+# DMG. Removed last, after the layout is settled and .DS_Store is confirmed —
+# .DS_Store and .background are load-bearing and must survive.
+rm -rf "$MOUNT_POINT/.fseventsd"
 
 hdiutil detach "$MOUNT_POINT" >/dev/null || die "failed to detach the read-write image."
 MOUNT_POINT=""

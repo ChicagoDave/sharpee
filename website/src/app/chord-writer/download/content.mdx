@@ -6,39 +6,82 @@ Two downloads: the app you write in, and a finished story to open in it.
   M1 or later, on any macOS those machines run — the build targets macOS 11,
   which is what the first Apple silicon Macs shipped with.
 
-  It will not run on an Intel Mac. The Node runtime Chord Writer carries is
-  built for Apple silicon, so a universal build would ship an Intel half with
-  no toolchain behind its Build button. In exchange it asks nothing else of
-  you: no `npm install`, no global CLI, nothing on your machine to keep
-  current. Building works on a Mac that has never seen a terminal.
+  It will not run on an Intel Mac; the app is built for Apple silicon only. On
+  an Intel Mac, use the command-line tools instead — they run anywhere Node
+  does. [Install the CLI](/chord/getting-started/install), then work from the
+  terminal; the [Fernhill sample](#the-folly-at-fernhill) below opens the same
+  way.
 </Callout>
-
-On an Intel Mac, use the command-line tools instead — they run anywhere Node
-does. [Install the CLI](/chord/getting-started/install), then work from the
-terminal; the [Fernhill sample](#the-folly-at-fernhill) below opens the same
-way.
 
 **[Download Chord Writer 1.0.0 (.dmg)](/downloads/ChordWriter-1.0.0.dmg)**
 
-Installing it:
+### Temporary installation instructions
+
+<Callout title="These are the steps that work today">
+  This build of Chord Writer does not carry its own toolchain, so there is one
+  extra step: you install the Sharpee command-line tool yourself.
+  [Future state](#future-state-how-this-will-work) below describes what replaces
+  these steps once the self-contained build ships — it is **not** in effect yet,
+  so follow this section, not that one.
+</Callout>
+
+1. Open the downloaded `.dmg`.
+2. Drag **Chord Writer** onto the **Applications** folder shown beside it.
+3. Eject the disk image, and launch Chord Writer from Applications.
+4. Install [Node.js](https://nodejs.org) 18 or newer, if you do not already have
+   it. This is what provides `npm`.
+5. Install the toolchain:
+
+   ```shell
+   npm install -g @sharpee/devkit
+   ```
+
+Step 5 is not optional. Chord Writer is the editor; `@sharpee/devkit` is what
+actually builds, plays, and tests a story, and the app calls it. Without it, the
+app opens and edits files but **⌘B** reports *"sharpee not found"*.
+
+To confirm the two found each other, look at the status bar: it names the app's
+version first and the toolchain it resolved second. A version there means
+installation worked.
+
+```text
+Chord Writer 1.0.0 · Sharpee 5.0.0 / Chord 3.0.0
+```
+
+### Future state: how this will work
+
+Chord Writer is designed to carry the whole toolchain inside its own application
+bundle — a Node runtime and the Sharpee command-line tool, vendored at build
+time. When that build ships, installation loses its last two steps and becomes:
 
 1. Open the downloaded `.dmg`.
 2. Drag **Chord Writer** onto the **Applications** folder shown beside it.
 3. Eject the disk image, and launch Chord Writer from Applications.
 
+No `npm install`, no global CLI, and no Node on your machine to keep current —
+building works on a Mac that has never seen a terminal.
+
+<Callout title="Not yet available">
+  The self-contained build is held up in notarization. Shipping the editor now
+  was judged better than holding it back until that clears. Until it does, use
+  the [temporary instructions](#temporary-installation-instructions) above.
+</Callout>
+
 ### If macOS refuses to open it
 
-macOS checks downloaded apps with Apple before running them the first time. If
-you see *"Apple could not verify Chord Writer is free of malware"*, the check
-has not completed for this build — the app is signed, but not yet stapled.
-Open it once by hand:
+It should not. Chord Writer is signed with a Developer ID, notarized by Apple,
+and the notarization ticket is stapled to the disk image — so macOS can verify
+it without even going online, and the app opens on a double-click like any
+other.
 
-1. Go to **System Settings → Privacy & Security**.
-2. Scroll to the bottom. There is a line about Chord Writer being blocked, and
-   an **Open Anyway** button beside it.
-3. Click it, then confirm.
+If you *do* see *"Apple could not verify Chord Writer is free of malware"*,
+something is wrong with the copy you have rather than with the app: an
+interrupted download is the usual cause. Download it again first.
 
-You only do this once. Every later launch is normal.
+If it still refuses, you can open it by hand once — **System Settings → Privacy
+& Security**, scroll to the bottom, and use the **Open Anyway** button beside
+the line about Chord Writer. Please tell us if you get that far, though; on a
+stapled build it means something we would want to know about.
 
 ## The Folly at Fernhill
 
@@ -68,23 +111,15 @@ Inside the folder:
 
 ### From the terminal instead
 
-Fernhill is an ordinary Sharpee project, so the CLI works on it just as well.
-Install it once:
-
-```shell
-npm install -g @sharpee/devkit
-```
-
-then, from inside the story folder:
+Fernhill is an ordinary Sharpee project, so the CLI works on it just as well —
+and it is the same `@sharpee/devkit` you installed for Chord Writer, so there is
+nothing further to set up. From inside the story folder:
 
 ```shell
 sharpee build          # compile, and build the browser app
 sharpee play           # play it in the terminal
 sharpee test           # replay the recorded tests
 ```
-
-That path needs [Node.js](https://nodejs.org) 18 or newer. The app does not —
-it brings its own.
 
 ## Next
 

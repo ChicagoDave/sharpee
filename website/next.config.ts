@@ -43,7 +43,11 @@ const withMDX = createMDX({
   options: {
     // String form — Turbopack requires serializable plugin names.
     remarkPlugins: ["remark-gfm"],
-    rehypePlugins: [],
+    // rehype-slug gives every heading a GitHub-style id, which is what makes
+    // in-page anchors work. Without it `[…](#the-folly-at-fernhill)` renders as
+    // a link to nothing — the headings carry no id at all, so EVERY anchor on
+    // the site was dead (observed live 2026-08-12, session 1744e6).
+    rehypePlugins: ["rehype-slug"],
   },
 });
 

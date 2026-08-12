@@ -9,7 +9,7 @@
 #
 # Public interface:
 #   package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
-#   package.sh --dmg-from <app>   [--keep-work]
+#   package.sh --dmg-from <app>   [--keep-work] [--no-toolchain]
 #
 # THE SCRIPT NEVER WAITS ON APPLE. It submits, records the submission id in
 # release/.notarize-state, and exits 0 with "still in the queue". Run it again to
@@ -43,6 +43,15 @@
 #                            re-asserts every gate they enforce against the
 #                            supplied bundle and refuses it on any failure.
 #                            Mutually exclusive with the three flags above.
+#     --no-toolchain         (--dmg-from only) package an app that deliberately
+#                            ships WITHOUT Contents/Resources/toolchain. Authors
+#                            supply the CLI themselves with
+#                            `npm install -g @sharpee/devkit`; resolution tier 2
+#                            (login-shell PATH) sits above the bundled tier, so
+#                            the app finds it. See INTERIM below. Refuses a
+#                            bundle that does carry a toolchain — the flag skips
+#                            the seal scan and the node entitlement checks, and
+#                            must never become a way around them.
 #
 # WHY --dmg-from EXISTS. Xcode can archive, sign and notarize an app; it cannot
 # build a DMG, and it cannot notarize one. So the last mile has no home in the
@@ -67,6 +76,22 @@
 # Neither gap fails a `codesign --verify` of the outer bundle, which is exactly
 # why this mode re-runs the seal scan, the entitlement assertions and the team
 # check rather than accepting a stapled ticket as proof of anything.
+#
+# INTERIM: --no-toolchain and why it exists. Toolchain-bearing bundles do not
+# clear notarization. As of 2026-08-12, seven submissions containing the real
+# vendored devkit closure have returned no verdict at all — no Accepted, no
+# Invalid, no log — while the same app with the toolchain removed clears in 31
+# seconds, and nine control fixtures cleared in under two minutes. The evidence,
+# the fixture ids and what has been falsified are written up in
+# docs/work/adr-279-chord-writer-packaging/notarization-bisection.md.
+#
+# So --no-toolchain ships the app under the ORIGINAL ADR-279 D4 contract ("no
+# silent bundling; first run says install the CLI"), which the 2026-07-27
+# amendment superseded for good first-run reasons that still stand. This is a
+# release-unblocking interim, not a reversal: the bundled toolchain remains the
+# target, and the flag should stop being used the day a toolchain-bearing bundle
+# gets a verdict. It is deliberately narrow — it skips exactly three toolchain
+# gates and nothing else, and refuses any bundle that actually has a toolchain.
 #
 #   Environment:
 #     NOTARY_PROFILE   notarytool keychain profile name  (default: dc-notary)
@@ -120,21 +145,27 @@ die()  { echo "" >&2; echo "package: $*" >&2; exit 1; }
 step() { echo ""; echo "── $* ─────────────────────────────────"; }
 note() { echo "  → $*"; }
 ok()   { echo "  ✓ $*"; }
+# warn: the run continues, but the artifact it produces is not the standard one.
+# Loud on purpose — a degraded release that scrolls past unnoticed is the failure
+# mode this script is built to avoid.
+warn() { echo "  ⚠ $*"; }
 
 readonly USAGE="usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
-       package.sh --dmg-from <app> [--keep-work]"
+       package.sh --dmg-from <app> [--keep-work] [--no-toolchain]"
 
 SKIP_PLATFORM_BUILD=0
 KEEP_WORK=0
 NO_NOTARIZE=0
 REBUILD=0
 DMG_FROM=""
+NO_TOOLCHAIN=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-platform-build) SKIP_PLATFORM_BUILD=1 ;;
     --keep-work) KEEP_WORK=1 ;;
     --no-notarize) NO_NOTARIZE=1 ;;
     --rebuild) REBUILD=1 ;;
+    --no-toolchain) NO_TOOLCHAIN=1 ;;
     --dmg-from)
       [ $# -ge 2 ] || die "--dmg-from needs the path to an already-notarized .app.
 $USAGE"
@@ -158,6 +189,16 @@ if [ -n "$DMG_FROM" ]; then
   contradict: --dmg-from runs no platform build to skip."
   [ "$NO_NOTARIZE" -eq 0 ] || die "--dmg-from and --no-notarize contradict: the DMG
   is the only artifact this mode produces, and an un-notarized DMG is not one."
+fi
+
+# --no-toolchain only means something for an app this script did not build. The
+# build path hardcodes SHARPEE_VENDOR_TOOLCHAIN=1 (step 4), so honouring the flag
+# there would mean either lying about what was built or quietly changing what the
+# release IS — both worse than refusing.
+if [ "$NO_TOOLCHAIN" -eq 1 ] && [ -z "$DMG_FROM" ]; then
+  die "--no-toolchain applies to --dmg-from only. This script's own build always
+  vendors the toolchain (SHARPEE_VENDOR_TOOLCHAIN=1 is set at the xcodebuild call),
+  so there is nothing for the flag to switch off on the build path."
 fi
 
 # ---------------------------------------------------------------------
@@ -519,8 +560,28 @@ if [ -n "$DMG_FROM" ]; then
   assert_bundle_version "$adopted"
   ok "bundle version agrees with project.yml ($VERSION)"
 
-  assert_sealed_toolchain "$adopted/Contents/Resources/toolchain"
-  ok "toolchain present and sealed"
+  # --no-toolchain ships the app WITHOUT its third resolution tier, on the
+  # understanding that the author installs `@sharpee/devkit` globally instead —
+  # the original ADR-279 D4 contract, which works because PATH resolution sits
+  # ABOVE the bundled tier (ComposeRunner.resolveSharpee, tiers 2 and 3). It is
+  # an interim: bundled remains the target the moment a toolchain-bearing bundle
+  # can clear notarization.
+  #
+  # The flag skips gates, so it must not be usable as a way AROUND them. A bundle
+  # that actually carries a toolchain is refused rather than waved through: doing
+  # otherwise would drop the seal scan and the node entitlement checks on a real
+  # toolchain, which is precisely the "looks like a release, fails on the author's
+  # machine" outcome this script refuses everywhere else.
+  if [ "$NO_TOOLCHAIN" -eq 1 ]; then
+    [ ! -e "$adopted/Contents/Resources/toolchain" ] || die "--no-toolchain was passed
+  but '$adopted' HAS a toolchain at Contents/Resources/toolchain. The flag skips the
+  seal scan and the node entitlement checks; running it against a real toolchain would
+  ship one that nothing verified. Drop the flag to package this bundle properly."
+    warn "shipping WITHOUT the bundled toolchain — authors must \`npm install -g @sharpee/devkit\`"
+  else
+    assert_sealed_toolchain "$adopted/Contents/Resources/toolchain"
+    ok "toolchain present and sealed"
+  fi
 
   codesign --verify --deep --strict --verbose=2 "$adopted" 2>&1 | sed 's/^/  /' \
     || die "codesign verification failed for '$adopted'."
@@ -528,9 +589,13 @@ if [ -n "$DMG_FROM" ]; then
   ok "signature verifies (deep, strict), team $EXPECTED_TEAM"
 
   assert_hardened "$adopted" "the supplied app"
-  assert_hardened "$adopted/Contents/Resources/toolchain/node/bin/node" "the vendored node"
-  assert_node_entitlements "$adopted/Contents/Resources/toolchain/node/bin/node"
-  ok "hardened runtime and node entitlements correct"
+  if [ "$NO_TOOLCHAIN" -eq 0 ]; then
+    assert_hardened "$adopted/Contents/Resources/toolchain/node/bin/node" "the vendored node"
+    assert_node_entitlements "$adopted/Contents/Resources/toolchain/node/bin/node"
+    ok "hardened runtime and node entitlements correct"
+  else
+    ok "hardened runtime correct (no vendored node to check)"
+  fi
 
   # The premise of the mode. Without a stapled ticket there is nothing to adopt —
   # and adopting an un-notarized app would produce a DMG whose notarization says

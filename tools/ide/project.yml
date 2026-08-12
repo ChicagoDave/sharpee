@@ -127,10 +127,32 @@ targets:
         # SharpeeIDE` keeps working across SharpeeIDETests.
         PRODUCT_NAME: Chord Writer
         PRODUCT_MODULE_NAME: SharpeeIDE
-        # ADR-279 D4: the bundled Node runtime is vendored for arm64 ONLY
-        # (tools/ide/vendor/node). ARCHS is pinned to match — a universal
-        # build would ship an x86_64 slice whose Build button has no
-        # toolchain behind it.
+        # arm64 ONLY. Two independent reasons, and the second is the hard one.
+        #
+        # 1. The bundled Node runtime is vendored for arm64 only
+        #    (tools/ide/vendor/node), so a universal build would ship an
+        #    x86_64 slice whose Build button had no toolchain behind it. This
+        #    reason lapses under the toolchain-less interim (ADR-279 D4's
+        #    INTERIM note, `package.sh --no-toolchain`), where authors install
+        #    `@sharpee/devkit` themselves and npm resolves the right esbuild
+        #    for their machine.
+        #
+        # 2. A UNIVERSAL BUILD CANNOT BE NOTARIZED. Tried on 2026-08-12
+        #    (session 1744e6) and measured as a matched pair from ONE export:
+        #    submission 5133a8de as built (x86_64 + arm64) hung with no verdict
+        #    past 16 minutes, while ee8cf37e — the same bundle after
+        #    `lipo -thin arm64` and a re-sign — was Accepted in about 30
+        #    seconds and staples clean. Same archive, same identity, same
+        #    codesign flags, same zip method, 14 minutes apart; the x86_64
+        #    slice is the only difference. This is a SEPARATE trigger from the
+        #    vendored-toolchain hang (arm64 Mach-Os were already exonerated:
+        #    the 108MB node cleared in 44s, esbuild in 19s). See
+        #    docs/work/adr-279-chord-writer-packaging/notarization-bisection.md.
+        #
+        # So Intel support is gated on an Apple-side notarization problem, not
+        # on this setting. Flipping this to $(ARCHS_STANDARD) builds fine and
+        # tests green — it produces an app that cannot ship. Do not flip it
+        # back without a notarization result that says otherwise.
         #
         # Apple silicon is therefore the requirement, but the OS is NOT: the
         # deployment target is 11.0, the release M1 Macs shipped with, so

@@ -1,6 +1,6 @@
 # ADR-300: Addressable Channels and the Canonical Transcript
 
-**Status**: ACCEPTED — partly implemented (see Decision Status)
+**Status**: ACCEPTED — partly implemented (see Decision Status), **SUPERSEDED IN PART by [ADR-307](adr-307-testing-tree-model-v2.md)** (cutover landed 2026-08-10, session ed3730; scoped here 2026-08-12, session 1744e6) — superseded: **D1's "there is no second format"** and **D3's canonical serializer** *for the Chord/IDE testing world only*, which now serializes as one JSON tree document (`<story-id>.tests.json`, `packages/branch-tester/src/tree-document.ts`). Sharpee's own hand-authored text transcript world — walkthroughs, unit transcripts, Dungeo, `@sharpee/transcript-tester` — is untouched: D1 and D3 stand there unchanged, and D2 stands in both worlds.
 **Date**: 2026-08-04, consolidated 2026-08-04 (session 5113ca)
 **Supersedes**: ADR-299 (artifact and verification model)
 **Supersedes in part**: ADR-294 D15 (assertions read `main` only)
@@ -58,6 +58,17 @@ as its regression baseline is the only artifact. `.skein` is retired: no new
 writer, no reader, and `play-testing/` stops being a committed artifact
 directory.
 
+> **Amended 2026-08-12 (session 1744e6) — scope.** "No second format" held when
+> written and still holds for the text transcript world this ADR was measured
+> against (the 185 `.transcript` files under `stories/`, the walkthrough chain,
+> `@sharpee/transcript-tester`). It does **not** describe the Chord/IDE testing
+> world, which [ADR-307](adr-307-testing-tree-model-v2.md) cut over to a single
+> JSON tree document per story (`<story-id>.tests.json`) — there, the tree is the
+> model and JSON is its only serialization, and the `.transcript` grammar
+> `@sharpee/branch-tester` once carried was retired outright. Two worlds, two
+> at-rest formats; read every unqualified "the artifact" in this ADR as the text
+> world's artifact.
+
 **D2 — Verification is running the transcript. There is no second engine.**
 Anything that verifies a transcript calls `runTranscript` against the real
 engine. No parallel expectation format, no second results model, no exporter
@@ -71,6 +82,16 @@ single reviewable commit, and thereafter serialization is deterministic over an
 already-canonical corpus, so an ordinary edit produces a minimal diff. Backward
 compatibility is not a constraint; the standing project rule is what makes this
 available.
+
+> **Amended 2026-08-12 (session 1744e6) — scope.** The canonical serializer
+> described here is the *text* transcript serializer
+> (`packages/transcript-tester/src/serializer.ts`). The Chord/IDE world's
+> equivalent is `serializeTreeDocument` in
+> `packages/branch-tester/src/tree-document.ts` (ADR-307), which makes the same
+> machine-owned-formatting promise by different means: sorted keys, preserved
+> array order, two-space indent, one trailing newline, and
+> `serialize → deserialize → serialize` identity on the emitted bytes. The
+> principle carries; the implementation named here does not.
 
 **D4 — The canonical form ratifies the corpus's dominant style.** Majority
 rules: every rule is the convention the corpus already followed most often, so

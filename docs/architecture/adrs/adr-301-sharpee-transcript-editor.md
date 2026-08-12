@@ -11,6 +11,19 @@ here — see "The next decision".
 **Depends on**: ADR-300 (the model, serializer, grammar, and channel addressing), ADR-302
 (the tree this surface renders), ADR-277 D1 as amended (the run-event stream it consumes)
 
+> **Amended 2026-08-12 (session 1744e6) — at-rest format.** The two dependencies
+> above are both scoped by [ADR-307](adr-307-testing-tree-model-v2.md), whose
+> cutover landed 2026-08-10: this surface's tree no longer serializes as
+> `.transcript` files at all. One JSON document per story
+> (`<story-id>.tests.json`, `packages/branch-tester/src/tree-document.ts`) is the
+> at-rest form, the tree is the model, and the `.transcript` grammar
+> `@sharpee/branch-tester` once carried was retired outright. D1–D6 are unaffected
+> — they decide the tab, its layout and its modes, none of which turns on the
+> serialization. What is affected is every reference below to ADR-300's serializer
+> and to `.transcript` as this surface's artifact; read those as the tree
+> document. `@sharpee/transcript-tester`'s text world is a separate package and is
+> not what this surface reads or writes.
+
 > **Scope widened 2026-08-06.** This file was created as a placeholder titled "The
 > Sharpee Transcript Editor" and decided nothing; its one job was to name the question
 > that had to be answered before anything was built — *what hosts it?* That question is
@@ -327,8 +340,10 @@ the next decision, and these ideas from ADR-299 survive as design for it:
   form the grammar no longer accepts.
 - **Drift is re-bless**: locate the block a command owns, replace only its content, and
   refuse to widen a `contains` claim.
-- **The generated source is visible** — a read-only pane showing exactly what ADR-300's
-  serializer will write, beside the cards.
+- **The generated source is visible** — a read-only pane showing exactly what the
+  serializer will write, beside the cards. *(Amended 2026-08-12: that is
+  `serializeTreeDocument`'s JSON per ADR-307, not ADR-300's text serializer. The
+  idea — show the author the exact bytes, read-only — is what survives.)*
 
 ---
 

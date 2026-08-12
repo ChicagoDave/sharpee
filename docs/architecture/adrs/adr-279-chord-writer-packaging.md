@@ -117,8 +117,52 @@ minimum-toolchain note in the test panel's error surface is the cheap
 mitigation. The bundled devkit carries whatever the devkit carries —
 e.g. the ADR-286 template transform — with no packaging change.
 
+> **Amended 2026-08-12 (session 1744e6) — the coupling note above is stale in
+> both halves.** The IDE does not write fence-grammar transcripts: ADR-307's
+> cutover (landed 2026-08-10) made one JSON tree document per story
+> (`<story-id>.tests.json`) the Chord/IDE world's only serialization, and
+> retired the `.transcript` grammar `@sharpee/branch-tester` carried. ADR-287's
+> grammar survives only in `@sharpee/transcript-tester` — Dungeo's text world,
+> which the IDE neither reads nor writes.
+>
+> The version-drift risk therefore moved rather than vanished, and it moved
+> somewhere better. `tree-document.ts` refuses a document whose `version` is
+> newer than the reader with a named message, and reports anything else it
+> cannot understand as MALFORMED so the caller degrades to a fresh empty tree —
+> it never throws, and the grammar is closed, so additive fields must arrive
+> with a version bump. That is a stronger guard than the "minimum-toolchain
+> note" proposed above, it is already implemented and tested (AC-4), and it
+> holds for a PATH-resolved toolchain exactly as it does for a bundled one. The
+> mitigation this note asked for is not needed and should not be built.
+
 *(Original D4 — "no silent bundling; first-run says `npm install -g
 @sharpee/devkit`" — is superseded by this ruling.)*
+
+> **INTERIM 2026-08-12 (session 1744e6) — the original D4 is temporarily back in
+> service, by necessity.** Toolchain-bearing bundles do not clear notarization:
+> seven submissions containing the real vendored devkit closure have returned no
+> verdict at all — no Accepted, no Invalid, no log — while the same app with the
+> toolchain removed clears in 31 seconds and nine control fixtures cleared in
+> under two minutes. The full bisection, fixture ids and falsified hypotheses are
+> in [`docs/work/adr-279-chord-writer-packaging/notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md).
+>
+> So `package.sh --dmg-from <app> --no-toolchain` packages a deliberately
+> toolchain-less Chord Writer, and the download page tells authors to
+> `npm install -g @sharpee/devkit`. This works because the resolution order this
+> decision established puts the login-shell PATH (tier 2) **above** the bundled
+> toolchain (tier 3), so a global install is found whether or not tier 3 exists,
+> and a missing tier 3 is non-fatal by construction
+> (`BundledToolchain.executable` returns nil, never throws).
+>
+> **This does not reverse the ruling.** Everything D4 says about first-run cost
+> still stands — requiring a JavaScript package manager before Build works is
+> exactly the wall David hit and ruled against, and shipping toolchain-less
+> re-imposes it. What changed is the alternative: in July the choice was
+> bundled-versus-not, and today it is toolchain-less-and-shipping versus
+> bundled-and-blocked-indefinitely. Bundling remains the target and the flag
+> should stop being used the day a toolchain-bearing bundle gets a verdict.
+> The flag is deliberately narrow: it skips exactly three toolchain gates and
+> refuses any bundle that actually carries a toolchain.
 
 ### D5 — Chord Writer stays in the sharpee monorepo (ruled 2026-07-27, session fda0f0)
 
