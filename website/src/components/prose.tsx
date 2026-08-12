@@ -11,6 +11,7 @@
  */
 
 import Link from "next/link";
+import { isValidElement } from "react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 /**
@@ -62,20 +63,68 @@ export function Callout({
 
 /* ---- markdown element styles (consumed by src/mdx-components.tsx) ---- */
 
-export function ProseH2(props: ComponentPropsWithoutRef<"h2">) {
-  return <h2 className="mt-8 text-[21px] font-bold" {...props} />;
+/**
+ * Flattens a heading's children to their text, so a heading carrying inline
+ * markup (`<code>`, emphasis) still yields a slug. Returns "" for anything
+ * with no text of its own.
+ */
+function headingText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(headingText).join("");
+  if (isValidElement(node)) return headingText((node.props as { children?: ReactNode }).children);
+  return "";
 }
 
-export function ProseH3(props: ComponentPropsWithoutRef<"h3">) {
-  return <h3 className="mt-6 text-[17px] font-semibold" {...props} />;
+/**
+ * GitHub-style anchor slug — lowercased, punctuation dropped, whitespace to
+ * dashes. "The Folly at Fernhill" -> "the-folly-at-fernhill", which is the
+ * form `.mdx` authors already write by hand in in-page links.
+ */
+function headingSlug(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
+/**
+ * Section heading. Carries an auto-derived `id` so in-page links (`[…](#the-ifid)`)
+ * have somewhere to land; an explicit `id` from the caller always wins.
+ */
+export function ProseH2({ children, id, ...rest }: ComponentPropsWithoutRef<"h2">) {
+  return (
+    <h2 id={id ?? headingSlug(headingText(children))} className="mt-8 text-[21px] font-bold" {...rest}>
+      {children}
+    </h2>
+  );
+}
+
+/** Subsection heading. Auto-derived `id`, on the same terms as {@link ProseH2}. */
+export function ProseH3({ children, id, ...rest }: ComponentPropsWithoutRef<"h3">) {
+  return (
+    <h3 id={id ?? headingSlug(headingText(children))} className="mt-6 text-[17px] font-semibold" {...rest}>
+      {children}
+    </h3>
+  );
 }
 
 /**
  * Internal hrefs go through next/link; external ones open in a new tab.
  * Internal FILE hrefs (an extension on the last segment, e.g. /chord.ebnf)
  * are static assets, not routes — plain anchor, same tab.
+ * In-page hrefs (#the-ifid) are neither — plain anchor, same tab, no
+ * next/link (which would treat the fragment as a route and navigate).
+ * The ids they land on are derived by ProseH2/ProseH3.
  */
 export function ProseLink({ href = "", children, ...rest }: ComponentPropsWithoutRef<"a">) {
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className="text-link underline underline-offset-2" {...rest}>
+        {children}
+      </a>
+    );
+  }
   if (href.startsWith("/") && /\.\w+$/.test(href)) {
     return (
       <a href={href} className="text-link underline underline-offset-2" {...rest}>
