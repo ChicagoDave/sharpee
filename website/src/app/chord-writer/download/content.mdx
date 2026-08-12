@@ -2,21 +2,18 @@ Two downloads: the app you write in, and a finished story to open in it.
 
 ## Chord Writer
 
-<Callout title="Any Apple silicon Mac">
+<Callout title="Apple silicon Mac, macOS 11 or later">
   M1 or later, on any macOS those machines run — the build targets macOS 11,
   which is what the first Apple silicon Macs shipped with.
-
-  It will not run on an Intel Mac. The Node runtime Chord Writer carries is
-  built for Apple silicon, so a universal build would ship an Intel half with
-  no toolchain behind its Build button. In exchange it asks nothing else of
-  you: no `npm install`, no global CLI, nothing on your machine to keep
-  current. Building works on a Mac that has never seen a terminal.
 </Callout>
 
-On an Intel Mac, use the command-line tools instead — they run anywhere Node
-does. [Install the CLI](/chord/getting-started/install), then work from the
-terminal; the [Fernhill sample](#the-folly-at-fernhill) below opens the same
-way.
+Chord Writer drives the Sharpee command-line toolchain rather than carrying its
+own, so install that before the first build — [Node.js](https://nodejs.org) 18
+or newer, then:
+
+```shell
+npm install -g @sharpee/devkit
+```
 
 **[Download Chord Writer 1.0.0 (.dmg)](/downloads/ChordWriter-1.0.0.dmg)**
 
@@ -68,14 +65,8 @@ Inside the folder:
 
 ### From the terminal instead
 
-Fernhill is an ordinary Sharpee project, so the CLI works on it just as well.
-Install it once:
-
-```shell
-npm install -g @sharpee/devkit
-```
-
-then, from inside the story folder:
+Fernhill is an ordinary Sharpee project, so the CLI you already installed above
+works on it directly. From inside the story folder:
 
 ```shell
 sharpee build          # compile, and build the browser app
@@ -83,8 +74,8 @@ sharpee play           # play it in the terminal
 sharpee test           # replay the recorded tests
 ```
 
-That path needs [Node.js](https://nodejs.org) 18 or newer. The app does not —
-it brings its own.
+Same toolchain either way — the app drives these commands for you, and reports
+the version it resolved in its status bar.
 
 ## Next
 
