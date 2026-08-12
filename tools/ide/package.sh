@@ -9,6 +9,7 @@
 #
 # Public interface:
 #   package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
+#   package.sh --dmg-from <app>   [--keep-work]
 #
 # THE SCRIPT NEVER WAITS ON APPLE. It submits, records the submission id in
 # release/.notarize-state, and exits 0 with "still in the queue". Run it again to
@@ -35,6 +36,37 @@
 #                            Apple and no DMG is produced. Use it to rehearse a
 #                            release, or to exercise the credential preflight,
 #                            without spending a notarization round-trip.
+#     --dmg-from <app>       skip the build entirely and package an app that is
+#                            ALREADY signed, notarized and stapled by another
+#                            route — Xcode's Distribute App, or an earlier run of
+#                            this script. Steps 2-7 are replaced by step 2', which
+#                            re-asserts every gate they enforce against the
+#                            supplied bundle and refuses it on any failure.
+#                            Mutually exclusive with the three flags above.
+#
+# WHY --dmg-from EXISTS. Xcode can archive, sign and notarize an app; it cannot
+# build a DMG, and it cannot notarize one. So the last mile has no home in the
+# Xcode flow, and reaching it through this script's front door means paying for
+# a platform build, an archive and a second notarization that are already done.
+#
+# WHY IT VERIFIES INSTEAD OF TRUSTING. An Xcode-produced Chord Writer is not
+# interchangeable with one from step 5, and the difference is invisible from the
+# outside — the bundle is signed, notarized and stapled either way. Two gaps,
+# both real and both observed (2026-08-11):
+#
+#   1. NO TOOLCHAIN. Vendoring is gated on SHARPEE_VENDOR_TOOLCHAIN=1 in the
+#      post-build script (project.yml). Xcode's UI does not set it, so an
+#      archive made from the Organizer silently ships without
+#      Contents/Resources/toolchain — an app that launches, passes Gatekeeper,
+#      and cannot build a story on any machine lacking a global `sharpee`.
+#   2. NO INSIDE-OUT SIGNING. Even with the vendoring on, nothing in the Xcode
+#      target signs the Mach-O binaries the post-build script drops into
+#      Resources, and the vendored node needs its own entitlement set. See
+#      step 5.
+#
+# Neither gap fails a `codesign --verify` of the outer bundle, which is exactly
+# why this mode re-runs the seal scan, the entitlement assertions and the team
+# check rather than accepting a stapled ticket as proof of anything.
 #
 #   Environment:
 #     NOTARY_PROFILE   notarytool keychain profile name  (default: dc-notary)
@@ -89,19 +121,44 @@ step() { echo ""; echo "── $* ───────────────�
 note() { echo "  → $*"; }
 ok()   { echo "  ✓ $*"; }
 
+readonly USAGE="usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
+       package.sh --dmg-from <app> [--keep-work]"
+
 SKIP_PLATFORM_BUILD=0
 KEEP_WORK=0
 NO_NOTARIZE=0
 REBUILD=0
-for arg in "$@"; do
-  case "$arg" in
+DMG_FROM=""
+while [ $# -gt 0 ]; do
+  case "$1" in
     --skip-platform-build) SKIP_PLATFORM_BUILD=1 ;;
     --keep-work) KEEP_WORK=1 ;;
     --no-notarize) NO_NOTARIZE=1 ;;
     --rebuild) REBUILD=1 ;;
-    *) die "unknown flag '$arg' (usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild])" ;;
+    --dmg-from)
+      [ $# -ge 2 ] || die "--dmg-from needs the path to an already-notarized .app.
+$USAGE"
+      DMG_FROM="$2"
+      shift ;;
+    --dmg-from=*) DMG_FROM="${1#--dmg-from=}" ;;
+    *) die "unknown flag '$1'
+$USAGE" ;;
   esac
+  shift
 done
+
+# --dmg-from replaces the build; the three flags below only modify a build. Each
+# combination is a contradiction rather than a no-op, so say so instead of
+# silently ignoring one — a user who passed --no-notarize expecting a rehearsal
+# would otherwise get a real submission.
+if [ -n "$DMG_FROM" ]; then
+  [ "$REBUILD" -eq 0 ] || die "--dmg-from and --rebuild contradict: one packages an
+  existing app, the other exists to discard one and build again."
+  [ "$SKIP_PLATFORM_BUILD" -eq 0 ] || die "--dmg-from and --skip-platform-build
+  contradict: --dmg-from runs no platform build to skip."
+  [ "$NO_NOTARIZE" -eq 0 ] || die "--dmg-from and --no-notarize contradict: the DMG
+  is the only artifact this mode produces, and an un-notarized DMG is not one."
+fi
 
 # ---------------------------------------------------------------------
 # Notarization state — the resume ledger
@@ -187,6 +244,121 @@ pending_exit() {  # pending_exit <label> <state-key>
   exit 0
 }
 
+# ---------------------------------------------------------------------
+# Bundle assertions — shared by the build path and --dmg-from
+# ---------------------------------------------------------------------
+# These are the properties that make a Chord Writer bundle shippable. The build
+# path asserts them on what it just produced; --dmg-from asserts the same set on
+# a bundle someone else produced. Defined once so the two paths cannot drift —
+# a gate that exists on only one of them is a gate that does not exist.
+
+# assert_sealed_toolchain <toolchain-dir> — the bundled toolchain is present and
+# reaches nothing outside itself. Escape is a function of depth, so this is
+# checked at the depth the bundle will actually occupy, not at assembly time.
+assert_sealed_toolchain() {
+  local tc="$1" residue
+  [ -d "$tc" ] || die "the bundle has no toolchain at Contents/Resources/toolchain.
+  Vendoring is gated on SHARPEE_VENDOR_TOOLCHAIN=1 in project.yml's post-build
+  script, which Xcode's UI does not set — an app archived from the Organizer
+  ships without its third tier and cannot build a story on a machine that has no
+  global \`sharpee\`. Build with this script, or set the variable and re-archive."
+  [ -x "$tc/bin/sharpee" ] || die "the bundled toolchain has no executable shim at
+  bin/sharpee — the toolchain is present but half-assembled."
+
+  residue="$(SEAL_ROOT="$tc" node <<'JS'
+const fs = require('fs'), path = require('path');
+const root = path.resolve(process.env.SEAL_ROOT);
+const bad = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isSymbolicLink()) {
+      const target = path.resolve(path.dirname(p), fs.readlinkSync(p));
+      if (target !== root && !target.startsWith(root + path.sep)) {
+        bad.push('escapes:  ' + p + ' -> ' + target);
+      } else if (!fs.existsSync(p)) {
+        bad.push('dangling: ' + p + ' -> ' + target);
+      }
+    } else if (e.isDirectory()) {
+      walk(p);
+    }
+  }
+})(root);
+process.stdout.write(bad.join('\n'));
+JS
+)" || die "seal scan failed to run."
+  [ -z "$residue" ] || die "the bundled toolchain is not sealed — refusing to ship a
+  bundle that reaches outside itself:
+$residue"
+}
+
+# assert_hardened <path> <label> — fail unless <path>'s code directory carries
+# the hardened-runtime flag. codesign accepts a missing runtime flag happily;
+# only the notary service rejects it, so catching it locally saves a round trip.
+#
+# NOTE ON `grep -q` — do not reintroduce it in a pipeline here. Under
+# `set -o pipefail`, `grep -q` exits at the first match, SIGPIPEs the codesign
+# feeding it, and the pipeline reports FAILURE precisely when the match
+# SUCCEEDS. That inverts every assertion in this section: the hardened-runtime
+# check fired on a correctly-signed app, and the get-task-allow check would have
+# stayed silent in exactly the case it exists to catch. Capture first, then
+# match against the captured string.
+assert_hardened() {
+  local target="$1" label="$2" cd_line
+  cd_line="$(codesign -dvv "$target" 2>&1 | grep '^CodeDirectory' || true)"
+  case "$cd_line" in
+    *runtime*) ;;
+    *) die "$label is signed WITHOUT the hardened runtime — notarization would
+  reject it. Code directory reported: ${cd_line:-<none>}" ;;
+  esac
+}
+
+# assert_node_entitlements <node-path> — the vendored runtime carries exactly the
+# entitlements it needs and none that disqualify it. Asserted rather than
+# assumed: a future entitlements edit could quietly reintroduce the debug one and
+# the failure would surface only at Apple, hours later.
+assert_node_entitlements() {
+  local ents
+  ents="$(codesign -d --entitlements - --xml "$1" 2>/dev/null || true)"
+  case "$ents" in
+    *get-task-allow*)
+      die "the vendored node still carries com.apple.security.get-task-allow.
+  Notarization rejects it. Check $NODE_ENTITLEMENTS." ;;
+  esac
+  # An empty entitlement set means the signature did not take the file at all.
+  case "$ents" in
+    *allow-jit*) ;;
+    *) die "the vendored node has no com.apple.security.cs.allow-jit entitlement.
+  V8 cannot compile without it and every author's first build would crash.
+  Check that $NODE_ENTITLEMENTS was applied." ;;
+  esac
+}
+
+# assert_bundle_version <app> — the bundle's own version agrees with project.yml.
+# project.yml is the source of truth for the DMG name, but the bundle carries its
+# own copy. If they disagree the DMG is mislabeled, and a mislabeled release is
+# unrecallable once downloaded.
+assert_bundle_version() {
+  local bundled
+  bundled="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$1/Contents/Info.plist" 2>/dev/null || true)"
+  [ "$bundled" = "$VERSION" ] \
+    || die "version mismatch: project.yml says '$VERSION', the bundle says '$bundled'."
+}
+
+# assert_signing_team <path> <label> — the signature carries EXPECTED_TEAM. The
+# preflight checks the CERTIFICATE's team; this checks the ARTIFACT's, which is
+# the one Gatekeeper shows the user and the only one that means anything for a
+# bundle this script did not sign itself.
+assert_signing_team() {
+  local target="$1" label="$2" team
+  team="$(codesign -dv "$target" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -1)"
+  [ -n "$team" ] && [ "$team" != "not set" ] || die "$label carries no TeamIdentifier —
+  it is ad-hoc or unsigned, not Developer-ID-signed."
+  [ "$team" = "$EXPECTED_TEAM" ] || die "$label is signed by team '$team', but this
+  product ships under '$EXPECTED_TEAM'. See EXPECTED_TEAM above for why that
+  matters more than it looks."
+}
+
 # =====================================================================
 # 1. Preflight — tools, then credentials
 # =====================================================================
@@ -199,40 +371,88 @@ step "Preflight"
 
 [ "$(uname -s)" = "Darwin" ] || die "packaging is macOS-only (uname: $(uname -s))."
 
-for tool in xcodebuild xcodegen pnpm node hdiutil codesign xcrun shasum osascript; do
+# `node` is in the always-required set because the toolchain seal scan runs in
+# both modes; xcodebuild/xcodegen/pnpm are demanded only by the path that builds.
+for tool in node hdiutil codesign xcrun shasum osascript; do
   command -v "$tool" >/dev/null || die "'$tool' is not on PATH but is required."
 done
+if [ -z "$DMG_FROM" ]; then
+  for tool in xcodebuild xcodegen pnpm; do
+    command -v "$tool" >/dev/null || die "'$tool' is not on PATH but is required to build."
+  done
+fi
 ok "toolchain present"
 
-[ -f "$NODE_ENTITLEMENTS" ] || die "missing $NODE_ENTITLEMENTS — the vendored Node
+# Only the signing path consumes the entitlements file; --dmg-from asserts the
+# entitlements are already correct in the supplied bundle instead.
+if [ -z "$DMG_FROM" ]; then
+  [ -f "$NODE_ENTITLEMENTS" ] || die "missing $NODE_ENTITLEMENTS — the vendored Node
   runtime cannot be signed without it (see the file's own header for why)."
+fi
 
 # Checked here rather than at step 8, which sits 10+ minutes into a cold run.
 [ -f "$DMG_BACKGROUND" ] || die "missing $DMG_BACKGROUND — the DMG window background.
   Regenerate it with tools/ide/dmg/make-background.swift and commit the result."
 
 # --- Credential 1: the Developer ID Application certificate ---------
+# cert_team <identity-name> — the team on that certificate, read from the
+# subject's OU. The display name also carries a team in parentheses, but that is
+# a label; the OU is the fact, and only one of the two is signed by Apple.
+cert_team() {
+  security find-certificate -c "$1" -p 2>/dev/null \
+    | openssl x509 -noout -subject 2>/dev/null \
+    | sed -E 's/.*OU *= *([A-Z0-9]+).*/\1/'
+}
+
 if [ -z "$SIGN_IDENTITY" ]; then
   identity_lines="$(security find-identity -v -p codesigning | grep 'Developer ID Application' || true)"
   [ -n "$identity_lines" ] || die "MISSING CREDENTIAL: no 'Developer ID Application' certificate
   in the keychain. Install your Developer ID Application certificate from
   developer.apple.com, or set SIGN_IDENTITY to an identity that is present.
   Ad-hoc signing is NOT an acceptable substitute — notarization rejects it."
-  if [ "$(printf '%s\n' "$identity_lines" | wc -l | tr -d ' ')" -gt 1 ]; then
-    die "MISSING CREDENTIAL: more than one 'Developer ID Application' identity is
-  installed, so the correct one cannot be inferred. Set SIGN_IDENTITY explicitly:
-$identity_lines"
-  fi
-  SIGN_IDENTITY="$(printf '%s' "$identity_lines" | sed -E 's/.*"(.*)".*/\1/')"
+
+  # Narrow to EXPECTED_TEAM BEFORE deciding anything is ambiguous. Two Developer
+  # ID certificates from different teams is not an ambiguous situation: the
+  # product declares the team it ships under at the top of this file, and exactly
+  # one certificate can satisfy it. Refusing to choose would demand SIGN_IDENTITY
+  # on every run to re-answer a question already answered.
+  #
+  # This is the shape the 2026-08-11 incident actually leaves behind. The old
+  # business-team certificate does not disappear when a new one is issued — both
+  # sit in the keychain until the old one expires (2027-02-01 here) — so
+  # "exactly one Developer ID cert" is the transient state, not the steady one.
+  candidates=""
+  candidate_count=0
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    name="$(printf '%s' "$line" | sed -E 's/.*"(.*)".*/\1/')"
+    if [ "$(cert_team "$name")" = "$EXPECTED_TEAM" ]; then
+      candidates="${candidates}  ${name}
+"
+      candidate_count=$((candidate_count + 1))
+      SIGN_IDENTITY="$name"
+    fi
+  done <<EOF
+$identity_lines
+EOF
+
+  [ "$candidate_count" -gt 0 ] || die "MISSING CREDENTIAL: no 'Developer ID Application'
+  certificate for team '$EXPECTED_TEAM' is installed. What IS installed:
+$identity_lines
+  Install the Developer ID Application certificate for $EXPECTED_TEAM from
+  developer.apple.com, or set SIGN_IDENTITY explicitly."
+
+  [ "$candidate_count" -eq 1 ] || die "MISSING CREDENTIAL: $candidate_count 'Developer ID
+  Application' certificates are installed for team '$EXPECTED_TEAM', so the correct
+  one cannot be inferred. Set SIGN_IDENTITY explicitly:
+$candidates"
 fi
 
 # The identity above was RESOLVED (from the keychain or the environment); it has
-# not yet been CHECKED. A Developer ID certificate carries its team in the
-# subject's OU, so read it from the certificate rather than parsing the display
-# name — the name is a label, the OU is the fact.
-signing_team="$(security find-certificate -c "$SIGN_IDENTITY" -p 2>/dev/null \
-  | openssl x509 -noout -subject 2>/dev/null \
-  | sed -E 's/.*OU *= *([A-Z0-9]+).*/\1/')"
+# not yet been CHECKED. The keychain path narrowed by team already, but
+# SIGN_IDENTITY may equally have come from the environment, where nothing has
+# looked at it at all — so the check runs on both paths, not just that one.
+signing_team="$(cert_team "$SIGN_IDENTITY")"
 [ -n "$signing_team" ] || die "CREDENTIAL MISMATCH: could not read the team (OU) from
   the certificate for '$SIGN_IDENTITY'. Refusing to sign with an identity whose
   team cannot be established."
@@ -278,13 +498,88 @@ else
   trap 'rm -rf "$WORK"' EXIT
 fi
 
+# =====================================================================
+# 2'. --dmg-from — adopt an app built and notarized elsewhere
+# =====================================================================
+# Replaces steps 2-7. Everything here is an assertion: the mode's whole value is
+# that it does NOT trust the bundle it is handed. See the header for the two ways
+# an Xcode-produced Chord Writer differs from one this script built, neither of
+# which is visible in a signature or a stapled ticket.
+if [ -n "$DMG_FROM" ]; then
+  step "Adopting a pre-built app"
+
+  [ -d "$DMG_FROM" ] || die "--dmg-from: no bundle at '$DMG_FROM'."
+  case "$DMG_FROM" in
+    *.app) ;;
+    *) die "--dmg-from expects a .app bundle, got '$DMG_FROM'." ;;
+  esac
+  adopted="$(cd -- "$DMG_FROM" && pwd)"
+  note "source: $adopted"
+
+  assert_bundle_version "$adopted"
+  ok "bundle version agrees with project.yml ($VERSION)"
+
+  assert_sealed_toolchain "$adopted/Contents/Resources/toolchain"
+  ok "toolchain present and sealed"
+
+  codesign --verify --deep --strict --verbose=2 "$adopted" 2>&1 | sed 's/^/  /' \
+    || die "codesign verification failed for '$adopted'."
+  assert_signing_team "$adopted" "the supplied app"
+  ok "signature verifies (deep, strict), team $EXPECTED_TEAM"
+
+  assert_hardened "$adopted" "the supplied app"
+  assert_hardened "$adopted/Contents/Resources/toolchain/node/bin/node" "the vendored node"
+  assert_node_entitlements "$adopted/Contents/Resources/toolchain/node/bin/node"
+  ok "hardened runtime and node entitlements correct"
+
+  # The premise of the mode. Without a stapled ticket there is nothing to adopt —
+  # and adopting an un-notarized app would produce a DMG whose notarization says
+  # nothing about the app a user drags out of it.
+  xcrun stapler validate "$adopted" >/dev/null 2>&1 \
+    || die "'$adopted' has no notarization ticket stapled to it. --dmg-from packages an
+  app that is ALREADY through the notary; it does not submit one. Either notarize
+  and staple it first (Xcode: Distribute App → Direct Distribution → Export), or
+  run this script without --dmg-from and let it build and submit."
+  ok "notarization ticket stapled"
+
+  # --- Stage it, unless it is already the staged copy -----------------
+  # ditto onto itself would destroy the source: STAGED_APP is removed first.
+  # Compare resolved paths, not the strings the user typed.
+  staged_resolved=""
+  [ -d "$STAGED_APP" ] && staged_resolved="$(cd -- "$STAGED_APP" && pwd)"
+  if [ "$adopted" = "$staged_resolved" ]; then
+    ok "already staged at $STAGED_APP"
+  else
+    mkdir -p "$RELEASE_DIR"
+    rm -rf "$STAGED_APP"
+    ditto "$adopted" "$STAGED_APP" || die "failed to stage the supplied app into $RELEASE_DIR."
+    codesign --verify --deep --strict "$STAGED_APP" \
+      || die "the staged copy does not verify — the copy damaged the signature."
+    xcrun stapler validate "$STAGED_APP" >/dev/null 2>&1 \
+      || die "the staged copy has no stapled ticket — the copy dropped it."
+    ok "staged at $STAGED_APP (signature and ticket re-verified after the copy)"
+  fi
+
+  # The app half of the ledger describes a submission this mode did not make and
+  # will never staple. Leaving it would make step 7 poll a submission belonging to
+  # different bytes — which is how a run ends up waiting forever on an id that can
+  # never apply to the app on disk. The DMG half, if present, is still ours.
+  if [ -n "$(state_get APP_SUBMISSION)" ]; then
+    note "dropping APP_SUBMISSION from the ledger — the supplied app is already notarized"
+    note "  (was: $(state_get APP_SUBMISSION))"
+    sed -i '' '/^APP_SUBMISSION=/d' "$STATE_FILE" 2>/dev/null || true
+  fi
+fi
+
 # --- Resume, or build from scratch? ---------------------------------
 # A staged app plus a state file means a previous run submitted and left. Rebuilding
 # then would be worse than useless: it would produce a different binary and orphan
 # the submission that is already in the queue. So the default is to resume, and a
 # fresh build is the thing you ask for.
 RESUME=0
-if [ "$REBUILD" -eq 1 ]; then
+if [ -n "$DMG_FROM" ]; then
+  : # step 2' already staged the app; there is no build to resume or repeat
+elif [ "$REBUILD" -eq 1 ]; then
   # The ledger describes submissions of a binary that is about to stop existing.
   # Keeping it would make the next step check the OLD id and, on an Accepted,
   # try to staple a ticket issued for different bytes. --rebuild means start over.
@@ -306,7 +601,7 @@ if [ "$RESUME" -eq 1 ]; then
   ok "resuming from $STAGED_APP"
 fi
 
-if [ "$RESUME" -eq 0 ]; then
+if [ "$RESUME" -eq 0 ] && [ -z "$DMG_FROM" ]; then
 # =====================================================================
 # 2. Platform build — before vendoring, always
 # =====================================================================
@@ -351,12 +646,7 @@ readonly APP="$ARCHIVE/Products/Applications/Chord Writer.app"
 [ -d "$APP" ] || die "archive produced no 'Chord Writer.app'. Log: $WORK/xcodebuild.log"
 ok "archived $(basename "$APP")"
 
-# Version agreement: project.yml is the source of truth for the DMG name, but
-# the bundle carries its own copy. If they disagree the DMG is mislabeled, and
-# a mislabeled release is unrecallable once downloaded.
-bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" 2>/dev/null || true)"
-[ "$bundle_version" = "$VERSION" ] \
-  || die "version mismatch: project.yml says '$VERSION', the built bundle says '$bundle_version'."
+assert_bundle_version "$APP"
 ok "bundle version agrees with project.yml"
 
 # =====================================================================
@@ -368,36 +658,8 @@ ok "bundle version agrees with project.yml"
 # assembly can still escape from here.
 step "Toolchain seal"
 readonly BUNDLED_TC="$APP/Contents/Resources/toolchain"
-[ -x "$BUNDLED_TC/bin/sharpee" ] || die "the archive has no bundled toolchain at
-  Contents/Resources/toolchain. The post-build script did not run — confirm
-  SHARPEE_VENDOR_TOOLCHAIN reached xcodebuild."
-
-seal_residue="$(SEAL_ROOT="$BUNDLED_TC" node <<'JS'
-const fs = require('fs'), path = require('path');
-const root = path.resolve(process.env.SEAL_ROOT);
-const bad = [];
-(function walk(dir) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name);
-    if (e.isSymbolicLink()) {
-      const target = path.resolve(path.dirname(p), fs.readlinkSync(p));
-      if (target !== root && !target.startsWith(root + path.sep)) {
-        bad.push('escapes:  ' + p + ' -> ' + target);
-      } else if (!fs.existsSync(p)) {
-        bad.push('dangling: ' + p + ' -> ' + target);
-      }
-    } else if (e.isDirectory()) {
-      walk(p);
-    }
-  }
-})(root);
-process.stdout.write(bad.join('\n'));
-JS
-)" || die "seal scan failed to run."
-[ -z "$seal_residue" ] || die "the bundled toolchain is not sealed — refusing to ship a
-  bundle that reaches outside itself:
-$seal_residue"
-ok "every symlink under the bundled toolchain resolves inside it"
+assert_sealed_toolchain "$BUNDLED_TC"
+ok "toolchain present; every symlink under it resolves inside it"
 
 # =====================================================================
 # 5. Sign, inside out
@@ -478,46 +740,11 @@ codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | sed 's/^/  /' \
   || die "codesign verification failed for the app bundle."
 ok "signature verifies (deep, strict)"
 
-# NOTE ON `grep -q` — do not reintroduce it in a pipeline here. Under
-# `set -o pipefail`, `grep -q` exits at the first match, SIGPIPEs the codesign
-# feeding it, and the pipeline reports FAILURE precisely when the match
-# SUCCEEDS. That inverts every assertion below: the hardened-runtime check
-# fired on a correctly-signed app, and the get-task-allow check would have
-# stayed silent in exactly the case it exists to catch. Capture first, then
-# match against the captured string.
-
-# assert_hardened <path> <label> — fail unless <path>'s code directory carries
-# the hardened-runtime flag. codesign accepts a missing runtime flag happily;
-# only the notary service rejects it, so catching it locally saves a round trip.
-assert_hardened() {
-  local target="$1" label="$2" cd_line
-  cd_line="$(codesign -dvv "$target" 2>&1 | grep '^CodeDirectory' || true)"
-  case "$cd_line" in
-    *runtime*) ;;
-    *) die "$label is signed WITHOUT the hardened runtime — notarization would
-  reject it. Code directory reported: ${cd_line:-<none>}" ;;
-  esac
-}
 assert_hardened "$APP" "the app"
 assert_hardened "$BUNDLED_TC/node/bin/node" "the vendored node"
 ok "hardened runtime present on app and vendored node"
 
-# The debug entitlement that made re-signing necessary in the first place.
-# Asserted rather than assumed, because a future entitlements edit could
-# quietly reintroduce it and the failure would surface only at Apple.
-node_entitlements="$(codesign -d --entitlements - --xml "$BUNDLED_TC/node/bin/node" 2>/dev/null || true)"
-case "$node_entitlements" in
-  *get-task-allow*)
-    die "the vendored node still carries com.apple.security.get-task-allow.
-  Notarization rejects it. Check $NODE_ENTITLEMENTS." ;;
-esac
-# An empty entitlement set means the signature did not take the file at all.
-case "$node_entitlements" in
-  *allow-jit*) ;;
-  *) die "the vendored node has no com.apple.security.cs.allow-jit entitlement.
-  V8 cannot compile without it and every author's first build would crash.
-  Check that $NODE_ENTITLEMENTS was applied." ;;
-esac
+assert_node_entitlements "$BUNDLED_TC/node/bin/node"
 ok "vendored node entitlements correct (allow-jit present, get-task-allow absent)"
 
 # --- Stage the signed app somewhere durable --------------------------
