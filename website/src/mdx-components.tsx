@@ -9,6 +9,7 @@
  */
 
 import type { MDXComponents } from "mdx/types";
+import { DownloadRow } from "@/components/download-card";
 import { GrammarBlock } from "@/components/grammar-block";
 import { Screenshot } from "@/components/screenshot";
 import {
@@ -30,6 +31,7 @@ const components: MDXComponents = {
   // Shared primitives, available in every .mdx without imports.
   Callout,
   CodeBlock,
+  DownloadRow,
   GrammarBlock,
   Screenshot,
   h2: ProseH2,
