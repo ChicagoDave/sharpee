@@ -129,6 +129,19 @@ No files under `packages/` were touched this session.
 - Similar to past issue? YES — the tree-corruption investigation reproduces the pattern noted in `project_context_archive_is_dataset` / prior sessions around silent-loss risk in single-writer assumptions; also structurally similar to the two-writer window called out mid-session (David's live IDE rewriting `fernhill.tests.json` during the CLI experiments) — both are instances of the same "two writers, one file, no lock" class ADR-313 is scoped to close.
 - If YES: ADR-313 itself is the systemic fix in progress; no separate audit needed beyond finishing that ADR.
 
+### `pattern-recurrence-detector` findings (run after commit `331530a9`, rule 19)
+
+Ran because this summary's Status is INCOMPLETE. Analyzed 6 summaries, 2026-08-10 → 2026-08-12; ~11 issues across 5 categories. Three patterns at the 3-session action threshold:
+
+1. **Reasoning from inference / a retired paradigm instead of reading current code — 3 sessions, ≥6 instances.** `session-20260811-1540-adr-310-character-in-chord.md`, `session-20260812-0703-feat-adr-310-character-in-chord.md`, and this session. This session's two: the ADR-312 plan assumed the `Assertion[] → TreeAssertions` synthesis lived in `packages/` when it lives only in `tools/ide/web/testing-surface/src/compose.ts` (caught by `plan-review`, before any code was touched); and ADR-314's first draft conflated David's abstract "card" with the tree document's `TreeCard` and had to be backed out (caught by David).
+   **Top priority, and the reason is specific**: this is the only pattern that recurred *after* its own fix was written. `0703` produced the standing directive "Never rely on ADRs for architecture — read the code" in `docs/core-concepts/README.md`; this session happened after that directive existed and produced two more instances anyway. The detector's conclusion: a passive doc note is not closing the gap. **Recommended fix — escalate it into the `adr-interview` and `adr-review` agent definitions as a mechanical grep-before-claim step**: before a decision cites another ADR's clause, or uses a domain term matching an existing type name as a statement of current behaviour, require a grep/read citation.
+
+2. **ADR written or accepted on a premise the code does not support — 3 sessions.** Same three sessions. `1540`: ADR-310's D19a reworded in-session after `plan-review` found Phase 7 contradicted ADR-102's live "One Extension Per Story." `0703`: ADRs 279/300/301 amended same-session for a stale coupling claim the ADR-307 cutover had already invalidated in code. This session: ADR-312 deleted outright because D3 was unsatisfiable without editing code its own Implementation section forbade touching. **Recommended fix**: a mandatory `adr-review` step that greps the file path every Implementation-bearing decision names, before the ADR can leave DRAFT. Applies immediately to ADR-313 and ADR-314, both DRAFT.
+
+3. **Notarization pipeline root-cause churn — 4 sessions** (`2232`, `1540`, `0152`, `0703`). Already self-flagged inside the corpus; the detector relayed `0703`'s own recommendation rather than deriving a new one. Not touched this session.
+
+Watch threshold (2 occurrences, below action): **plover deploy-host directory ownership** — `session-20260810-2232-chord-writer-screenshots.md` and `session-20260812-0903-main.md`.
+
 ## Test Coverage Delta
 
 - Tests added: 0 (no project test suite changes this session)
