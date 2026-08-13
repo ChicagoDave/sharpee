@@ -1,3 +1,20 @@
+> # 🪦 ORPHANED — 2026-08-13
+>
+> Thread 1 was posted: https://developer.apple.com/forums/thread/841846. It is
+> public, drew no replies, and **cannot be followed up** — the Forums account
+> can post but not reply, and the submission it cites
+> (`359b004e-ccd2-4ab0-a02e-0516b5598b75`) was deleted by Apple roughly 11
+> hours after creation. Its matched pair `f0c04838-dda4-4172-8d79-cc1cfaaef601`
+> — byte-identical archive, Accepted in 72s — still resolves and is the
+> evidence that survives.
+>
+> Thread 2 (the encrypted-archive question) was never posted and is now moot:
+> the technique does not apply, and the packaging question it existed to ask
+> was answered by shipping.
+>
+> Kept as the record of what was reported and when. Do not post from it without
+> re-checking that every submission id still resolves.
+
 # Apple Developer Forums post — draft
 
 **Status**: draft, not posted. Prepared 2026-08-13.

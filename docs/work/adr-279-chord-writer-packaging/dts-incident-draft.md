@@ -1,3 +1,20 @@
+> # ⛔ WITHDRAWN — 2026-08-13. Not filed, and no longer needed.
+>
+> This drafted a DTS incident asking how to package a vendored toolchain for
+> Developer ID. The question answered itself the same day: a toolchain-bearing
+> `ChordWriter-1.0.0.dmg` shipped — signed, notarized, stapled, Gatekeeper
+> `source=Notarized Developer ID`. Nothing in this repo's packaging was ever
+> defective.
+>
+> The only real finding left is Apple-side: the notary intermittently accepts a
+> submission and never processes it, then deletes it. That is not a code-level
+> support question and does not belong in a DTS incident.
+>
+> Kept for its evidence — the bisection table, the Invalid-in-113s matched pair,
+> and the deletion behaviour — not as a plan. Resolution:
+> [`../../architecture/adrs/adr-279-chord-writer-packaging.md`](../../architecture/adrs/adr-279-chord-writer-packaging.md)
+> and [`fixtures/RESULTS.md`](fixtures/RESULTS.md).
+
 # DTS code-level support incident — draft
 
 **Status**: draft, not filed. Prepared 2026-08-13.

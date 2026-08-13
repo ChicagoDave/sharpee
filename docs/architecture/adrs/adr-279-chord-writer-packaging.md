@@ -164,8 +164,8 @@ e.g. the ADR-286 template transform — with no packaging change.
 > The flag is deliberately narrow: it skips exactly three toolchain gates and
 > refuses any bundle that actually carries a toolchain.
 
-> **INTERIM'S PREMISE FALSIFIED 2026-08-13 (session 73a646) — but nothing in
-> this repo was the cause, and no code change was needed.**
+> **INTERIM LIFTED 2026-08-13 (session 73a646) — a toolchain-bearing DMG
+> shipped, and nothing in this repo was ever the cause.**
 >
 > **The whole of it: Apple's notary intermittently stalls.** Not on a property
 > of the bundle — on nothing detectable at all. The same archive, same SHA-256
@@ -217,11 +217,16 @@ e.g. the ADR-286 template transform — with no packaging change.
 > --strict` passes, exactly as this script's own header warns ("Neither gap
 > fails a `codesign --verify` of the outer bundle").
 >
-> **This INTERIM is therefore not yet lifted.** It lifts the moment a stapled
-> toolchain-bearing DMG exists. The path there is either the recorded workflow
-> (Xcode Distribute App, then `package.sh --dmg-from`) or extending
-> `package.sh`'s signing loop to embedded frameworks — a decision, not a
-> detail, since the two routes then sign the same bundle two ways.
+> **The INTERIM is lifted — a stapled toolchain-bearing DMG shipped
+> 2026-08-13.** Route taken: `xcodebuild archive` with
+> `SHARPEE_VENDOR_TOOLCHAIN=1`, Xcode Distribute App → Direct Distribution,
+> then `package.sh --dmg-from`. `ChordWriter-1.0.0.dmg`, 56MB, Accepted and
+> stapled, Gatekeeper `source=Notarized Developer ID`.
+>
+> `package.sh`'s own build path remains broken for the framework reason above
+> and was not fixed. Extending its signing loop to `Contents/Frameworks/` would
+> repair it, but then two routes sign the same bundle two ways — a decision,
+> not a detail, and deferred rather than taken.
 >
 > **Consequences.**
 >
@@ -230,10 +235,12 @@ e.g. the ADR-286 template transform — with no packaging change.
 > - **`--no-toolchain` stays, with a changed rationale** — a release escape
 >   hatch for the intermittency, not evidence that bundling is blocked. First
 >   response to a stall past ~15 minutes is to **resubmit**.
-> - **The download page and `/chord-writer` are rewritten** to the
->   self-contained flow — but **not deployed**, and must not be until a
->   toolchain-bearing DMG is live at
->   `/home/dave/repos/sharpee/website/public/downloads/ChordWriter-1.0.0.dmg`.
+> - **The download page and `/chord-writer` are rewritten and SHIPPED** —
+>   merged to `main` (PR #261), the DMG uploaded to plover, site deployed
+>   2026-08-13. D4's first-run cost argument is satisfied rather than deferred,
+>   and verified on the installed app: `which sharpee` → not found,
+>   `npm ls -g @sharpee/devkit` → empty, ⌘B builds from the bundled toolchain
+>   (`Sharpee 5.0.0 · Chord 3.0.0`). **This INTERIM is lifted.**
 > - **[`notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md)
 >   is superseded in its conclusions**, not its data. Its "content-borne and
 >   layout-independent" finding, its eight exonerated properties, and its
