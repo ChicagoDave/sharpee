@@ -49,7 +49,7 @@ describe('sweepBuildInfo', () => {
     const root = repo();
     const story = touch(root, 'stories/dungeo/tsconfig.tsbuildinfo');
     const tutorial = touch(root, 'tutorials/familyzoo/tsconfig.esm.tsbuildinfo');
-    const tool = touch(root, 'tools/shite/tsconfig.tsbuildinfo');
+    const tool = touch(root, 'tools/ide/tsconfig.tsbuildinfo');
 
     expect(sweepBuildInfo(root)).toBe(3);
     expect(existsSync(story)).toBe(false);

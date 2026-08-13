@@ -139,7 +139,7 @@ for `@sharpee/engine`.
 ./repokit verify                     # tsf build --npm + publish dry-run
 ```
 
-**Multi-user (zifmia) — RETIRED 2026-08-13.** The name was misused and the tool was never in active development; `repokit`'s `--zifmia` flag and its `zifmia` command are removed, and the source is archived at `tools/_archive/zifmia`, outside the pnpm workspace. Its two real-path test suites were pinned to the `.sharpee` bundle format, which is itself deprecated. The abandoned `shite` parts bin and the legacy Tauri `--runner` were dropped earlier (ADR-180); their source likewise remains for reference only.
+**Multi-user (zifmia) — RETIRED 2026-08-13.** The name was misused and the tool was never in active development; `repokit`'s `--zifmia` flag and its `zifmia` command are removed, and the source is archived at `tools/_archive/zifmia`, outside the pnpm workspace. Its two real-path test suites were pinned to the `.sharpee` bundle format, which is itself deprecated. `tools/shite` — the same server under a second name, which is the misuse being retired — is archived alongside it at `tools/_archive/shite`. The legacy Tauri `--runner` was dropped earlier (ADR-180).
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)

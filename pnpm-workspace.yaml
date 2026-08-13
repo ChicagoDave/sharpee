@@ -18,7 +18,9 @@ packages:
   - stories/cloak-of-darkness
   # tutorials/familyzoo is a standalone book-aligned project that consumes the
   # published @sharpee/* npm packages — it is no longer a workspace member.
-  - tools/shite
+  # tools/shite retired 2026-08-13 (David) — it was the same multi-user
+  # server as zifmia under a second name, which is the misuse being retired.
+  # Source archived at tools/_archive/shite.
   # tools/zifmia retired 2026-08-13 (David) — the name was misused and the
   # tool was never in active development. Source archived at
   # tools/_archive/zifmia, out of the workspace so its deps and build

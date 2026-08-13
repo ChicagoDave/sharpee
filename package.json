@@ -26,8 +26,7 @@
     "packages/web-client",
     "packages/dev-tools",
     "packages/platforms/*",
-    "stories/*",
-    "tools/shite"
+    "stories/*"
   ],
   "scripts": {
     "clean": "turbo run clean",
