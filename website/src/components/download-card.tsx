@@ -18,6 +18,9 @@
 
 import Image from "next/image";
 
+// The app's own icon, rendered from Contents/Resources/AppIcon.icns at 512px.
+// Deliberately the shipped icon rather than separate download art: the tile is
+// showing the reader the thing they are about to install (David, 2026-08-13).
 import appIcon from "@/images/chord-writer/app-icon.png";
 
 type Download = {
