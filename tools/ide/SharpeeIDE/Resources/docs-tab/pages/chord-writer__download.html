@@ -1,16 +1,20 @@
 <p>Two downloads: the app you write in, and a finished story to open in it.</p>
 <h2 id="chord-writer">Chord Writer</h2>
-<blockquote><p><strong>Any Apple silicon Mac</strong></p>
-<p>M1 or later, on any macOS those machines run — the build targets macOS 11, which is what the first Apple silicon Macs shipped with.</p>
-<p>It will not run on an Intel Mac. The Node runtime Chord Writer carries is built for Apple silicon, so a universal build would ship an Intel half with no toolchain behind its Build button. In exchange it asks nothing else of you: no <code>npm install</code>, no global CLI, nothing on your machine to keep current. Building works on a Mac that has never seen a terminal.</p></blockquote>
-<p>On an Intel Mac, use the command-line tools instead — they run anywhere Node does. <a href="/chord/getting-started/install">Install the CLI</a>, then work from the terminal; the <a href="#the-folly-at-fernhill">Fernhill sample</a> below opens the same way.</p>
+<blockquote><p><strong>Apple silicon Mac, macOS 11 or later</strong></p>
+<p>M1 or later, on any macOS those machines run — the build targets macOS 11, which is what the first Apple silicon Macs shipped with.</p></blockquote>
+<p>Chord Writer carries the whole Sharpee toolchain inside its own application bundle — a Node runtime and the command-line tool, vendored at build time — so installing it is the only step.</p>
 <p><strong><a href="/downloads/ChordWriter-1.0.0.dmg">Download Chord Writer 1.0.0 (.dmg)</a></strong></p>
-<p>Installing it:</p>
+<h3 id="installing">Installing</h3>
 <p>1. Open the downloaded <code>.dmg</code>. 2. Drag <strong>Chord Writer</strong> onto the <strong>Applications</strong> folder shown beside it. 3. Eject the disk image, and launch Chord Writer from Applications.</p>
+<p>That is all of it. No <code>npm install</code>, no global CLI, and no Node on your machine to keep current — building works on a Mac that has never seen a terminal.</p>
+<p>To confirm, open a story and look at the status bar: it names the app's version first and the toolchain it resolved second.</p>
+<pre><code class="language-text">Chord Writer 1.0.0 · Sharpee 5.0.0 / Chord 3.0.0</code></pre>
+<blockquote><p><strong>Already have the CLI installed?</strong></p>
+<p>A deliberate <code>npm install -g @sharpee/devkit</code> still takes precedence over the bundled copy. That is intentional — it keeps the in-repo development loop tracking your own build — and nothing breaks either way. If you have no idea what that means, you do not have one, and the bundled toolchain is what runs.</p></blockquote>
 <h3 id="if-macos-refuses-to-open-it">If macOS refuses to open it</h3>
-<p>macOS checks downloaded apps with Apple before running them the first time. If you see <em>&quot;Apple could not verify Chord Writer is free of malware&quot;</em>, the check has not completed for this build — the app is signed, but not yet stapled. Open it once by hand:</p>
-<p>1. Go to <strong>System Settings → Privacy &amp; Security</strong>. 2. Scroll to the bottom. There is a line about Chord Writer being blocked, and an <strong>Open Anyway</strong> button beside it. 3. Click it, then confirm.</p>
-<p>You only do this once. Every later launch is normal.</p>
+<p>It should not. Chord Writer is signed with a Developer ID, notarized by Apple, and the notarization ticket is stapled to the disk image — so macOS can verify it without even going online, and the app opens on a double-click like any other.</p>
+<p>If you <em>do</em> see <em>&quot;Apple could not verify Chord Writer is free of malware&quot;</em>, something is wrong with the copy you have rather than with the app: an interrupted download is the usual cause. Download it again first.</p>
+<p>If it still refuses, you can open it by hand once — <strong>System Settings → Privacy &amp; Security</strong>, scroll to the bottom, and use the <strong>Open Anyway</strong> button beside the line about Chord Writer. Please tell us if you get that far, though; on a stapled build it means something we would want to know about.</p>
 <h2 id="the-folly-at-fernhill">The Folly at Fernhill</h2>
 <p>The sample story: complete, playable, and small enough to read in a sitting. It is the same story the <a href="/learn/fernhill">Fernhill tutorial</a> builds chapter by chapter, so you can read the finished source alongside the explanation.</p>
 <p><strong><a href="/downloads/the-folly-at-fernhill.zip">Download The Folly at Fernhill (.zip, 58 KB)</a></strong></p>
@@ -19,12 +23,10 @@
 <p>Inside the folder:</p>
 <table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><code>fernhill.story</code></td><td>The whole story. The only file you write.</td></tr><tr><td><code>fernhill.tests.json</code></td><td>Its tests, recorded by playing in the Testing tab.</td></tr><tr><td><code>fernhill.config.json</code></td><td>The story's identity. The tool maintains it; keep it in version control and never edit it by hand.</td></tr><tr><td><code>assets/</code></td><td>Audio and images the story plays.</td></tr><tr><td><code>browser/index.html</code></td><td>A custom page for the browser build.</td></tr></tbody></table>
 <h3 id="from-the-terminal-instead">From the terminal instead</h3>
-<p>Fernhill is an ordinary Sharpee project, so the CLI works on it just as well. Install it once:</p>
-<pre><code class="language-shell">npm install -g @sharpee/devkit</code></pre>
-<p>then, from inside the story folder:</p>
+<p>Fernhill is an ordinary Sharpee project, so the CLI works on it directly. The copy inside Chord Writer is not on your <code>PATH</code>, so for terminal use install it the usual way — <code>npm install -g @sharpee/devkit</code>, which needs <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js</a> 18 or newer. Then, from inside the story folder:</p>
 <pre><code class="language-shell">sharpee build          # compile, and build the browser app
 sharpee play           # play it in the terminal
 sharpee test           # replay the recorded tests</code></pre>
-<p>That path needs <a href="https://nodejs.org" target="_blank" rel="noreferrer">Node.js</a> 18 or newer. The app does not — it brings its own.</p>
+<p>Same toolchain either way — the app drives these commands for you, and reports the version it resolved in its status bar.</p>
 <h2 id="next">Next</h2>
 <p><a href="/chord-writer/your-first-story">Your first story</a> walks through making one of your own, and <a href="/chord-writer/building-playing-and-testing">Building, playing, and testing</a> covers the loop you will spend your time in.</p>

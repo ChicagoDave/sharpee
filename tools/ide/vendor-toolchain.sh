@@ -51,6 +51,12 @@ readonly NODE_ARCH="darwin-arm64"
 readonly NODE_DIST="node-v${NODE_VERSION}-${NODE_ARCH}"
 readonly NODE_TARBALL="${VENDOR_DIR}/${NODE_DIST}.tar.xz"
 
+# Signing inputs for step 4.6. Same defaults and same overrides as package.sh —
+# the two sign one bundle and must not be able to disagree about identity, team,
+# or node's entitlement set.
+readonly NODE_ENTITLEMENTS="$IDE_DIR/bundled-node.entitlements"
+EXPECTED_TEAM="${EXPECTED_TEAM:-RSNGKW5LNH}"
+
 die() { echo "vendor-toolchain: $*" >&2; exit 1; }
 step() { echo "  → $*"; }
 
@@ -286,6 +292,73 @@ JS
 [ -z "$residue" ] || die "the toolchain is not sealed:
 $residue"
 echo "    seal verified — every symlink resolves inside the toolchain"
+
+# --- 4.6 Sign the vendored Mach-O binaries --------------------------
+# WHY HERE AND NOT ONLY IN package.sh. package.sh has its own nested-signing
+# loop, but it runs only in package.sh's OWN build path. The recorded release
+# workflow is Xcode → Distribute App → Direct Distribution, then
+# `package.sh --dmg-from` — and Xcode does not sign payloads under
+# Contents/Resources. So on that route nothing else ever signs these, and
+# Distribute refuses the archive outright:
+#
+#   "esbuild" must be rebuilt with support for the Hardened Runtime.
+#
+# (Observed 2026-08-13. npm ships esbuild's darwin-arm64 binary ad-hoc
+# `linker-signed`; nodejs.org ships node Developer-ID signed but carrying
+# com.apple.security.get-task-allow, which the notary rejects.)
+#
+# Signing here also puts it in the right place structurally: this runs as an
+# Xcode post-build phase (project.yml), so nested code is signed BEFORE the
+# outer bundle, which is the only order that leaves the app's seal intact.
+# package.sh re-signing later is idempotent and harmless.
+step "Signing vendored binaries"
+
+if [ -z "${SIGN_IDENTITY:-}" ]; then
+  SIGN_IDENTITY="$(security find-identity -v -p codesigning \
+    | grep "Developer ID Application" | grep "$EXPECTED_TEAM" | head -1 \
+    | sed -E 's/^ *[0-9]+\) [0-9A-F]+ "(.*)"$/\1/')"
+fi
+[ -n "$SIGN_IDENTITY" ] || die "no 'Developer ID Application' certificate for team
+  $EXPECTED_TEAM in the keychain, and SIGN_IDENTITY is unset. The vendored
+  binaries cannot be left unsigned — Xcode's Distribute App refuses the archive."
+[ -f "$NODE_ENTITLEMENTS" ] || die "missing $NODE_ENTITLEMENTS — node must be
+  re-signed WITH it (re-signing replaces an entitlement set wholesale, and V8
+  dies without allow-jit)."
+
+signed=0
+while IFS= read -r macho; do
+  [ -n "$macho" ] || continue
+  rel="${macho#"$TOOLCHAIN.incoming"/}"
+  case "$rel" in
+    node/bin/node)
+      codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp \
+        --entitlements "$NODE_ENTITLEMENTS" "$macho" 2>/dev/null \
+        || die "failed to sign $rel with $NODE_ENTITLEMENTS" ;;
+    *)
+      codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp \
+        "$macho" 2>/dev/null || die "failed to sign $rel" ;;
+  esac
+  signed=$(( signed + 1 ))
+done <<EOF
+$(find "$TOOLCHAIN.incoming" -type f -perm -u+x -exec sh -c \
+   'for f; do case "$(file -b "$f")" in *Mach-O*) echo "$f";; esac; done' _ {} +)
+EOF
+
+[ "$signed" -gt 0 ] || die "found no Mach-O under the assembled toolchain — the
+  vendored node should be there at minimum. Refusing to continue."
+
+# No-silent-✓ gate: prove it rather than trusting the loop.
+unhardened="$(find "$TOOLCHAIN.incoming" -type f -perm -u+x -exec sh -c '
+  case "$(file -b "$1")" in *Mach-O*) ;; *) exit 0;; esac
+  d="$(codesign -dvv "$1" 2>&1 || true)"
+  printf "%s" "$d" | grep -q "Authority=Developer ID Application" \
+    && printf "%s" "$d" | grep -q "^Timestamp=" \
+    && printf "%s" "$d" | grep -q "flags=.*runtime" || echo "$1"
+' _ {} \;)"
+[ -z "$unhardened" ] || die "these vendored binaries are not notarization-ready:
+$unhardened"
+
+echo "    $signed signed (Developer ID, hardened runtime, timestamped)"
 
 [ -d "$TOOLCHAIN" ] && mv "$TOOLCHAIN" "$TOOLCHAIN.outgoing"
 mv "$TOOLCHAIN.incoming" "$TOOLCHAIN"
