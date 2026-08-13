@@ -13,7 +13,7 @@ npm install @sharpee/story-runtime-baseline
 This package is the single source of truth for the Story Runtime Baseline (ADR-178):
 
 - **Declares the contract** — `STORY_RUNTIME_BASELINE` lists every package a `.sharpee` story bundle is allowed to import
-- **Installs transitively** — Zifmia depends on this package so every baseline entry is installed for stories at runtime
+- **Installs transitively** — a host depends on this package so every baseline entry is installed for stories at runtime
 - **Validates bundles** — the story build pipeline imports the list to check that a bundle only references packages in the baseline
 - **Versioned** — `BASELINE_VERSION` tracks the baseline; bumping it is an amendment to ADR-178, updating both the constant and this package's `dependencies` in the same commit
 

@@ -5,7 +5,11 @@ packages:
   - packages/extensions/scoring
   - packages/extensions/hunger
   - '!packages/map-editor'
-  - '!packages/interpreter'
+  # packages/interpreter retired 2026-08-13 (David) — the legacy Tauri
+  # runner, unbuilt and importerless. Archived at
+  # packages/_archive/interpreter; its ZifmiaRunner exports and
+  # `zifmia-` localStorage save keys go with it.
+  - '!packages/_archive/**'
   - stories/dungeo
   - stories/channel-service-test
   # ADR-259 D8: `stories/friendly-zoo` is now a pure Chord story — a
