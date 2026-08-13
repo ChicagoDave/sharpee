@@ -1,7 +1,10 @@
 # Session Plan: Intel (x86_64) support for Chord Writer, as separate per-arch installers
 
 **Created**: 2026-08-13
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-08-13) — all three phases shipped. Both installers
+are signed, notarized, stapled and live on sharpee.net:
+`ChordWriter-1.0.0-arm64.dmg` (56M) and `ChordWriter-1.0.0-x86_64.dmg` (59M),
+both verified serving 200.
 **Overall scope**: Give Chord Writer a shippable x86_64 build alongside the
 existing arm64 one, each carrying only its own arch's bundled toolchain
 (~56MB per DMG, not a universal binary). Extend `vendor-toolchain.sh` to
@@ -51,7 +54,12 @@ packaging and is not a dependency of any phase here.
 
 ## Phases
 
-### Phase 1: Vendor the x86_64 toolchain
+### Phase 1: Vendor the x86_64 toolchain — **DONE** (2026-08-13, commit 56a7280a)
+- **Outcome**: `--arch arm64|x86_64` defaulting to the build host; darwin-x64
+  Node vendored with checksums refreshed from nodejs.org; esbuild grafted per
+  target arch, fetched and verified against `pnpm-lock.yaml`'s integrity hash.
+  Blocking gate cleared — both runtimes are `minos 11.0`. The `.stamp` concern
+  was already handled by existing code, as the plan suspected.
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: N/A (tooling) — `tools/ide/vendor-toolchain.sh`, `tools/ide/vendor/node/`
@@ -91,7 +99,16 @@ packaging and is not a dependency of any phase here.
   `FINGERPRINT="node=${NODE_VERSION}-${NODE_ARCH} devkit=${DEVKIT_VERSION}"`, so
   arch is in the fingerprint today. Confirm side-by-side assembly, do not build it.
 
-### Phase 2: Per-arch build, sign, notarize, and package
+### Phase 2: Per-arch build, sign, notarize, and package — **DONE** (2026-08-13, commits 06b8dde1, 0fa9e09c)
+- **Outcome**: `package.sh --arch`, per-arch DMG naming, `ARCHS` and
+  `SHARPEE_TOOLCHAIN_ARCH` passed together. `assert_arch_agreement` added after
+  an x86_64 archive carrying an arm64 toolchain passed every other gate.
+  Uncovered two fixes stranded on `feat/adr-312-cli-test-recording` and missing
+  from `main` — `--dmg-from` and the `RSNGKW5LNH` team pin — both now on `main`.
+- **Testing question, answered**: Rosetta-verified accepted for v1 (David).
+  Evidence: correct slices and teams throughout, and a full `sharpee build` of
+  fernhill through the bundled x64 toolchain. Genuine Intel hardware remains
+  unavailable and untested.
 - **Tier**: Large
 - **Budget**: 400
 - **Domain focus**: N/A (tooling) — `tools/ide/project.yml`, `tools/ide/package.sh`, the Xcode-archive release route
@@ -105,7 +122,14 @@ packaging and is not a dependency of any phase here.
   existing unsuffixed file in place on plover until Phase 3 lands, or ship
   Phases 2 and 3 together.
 
-### Phase 3: Distribution and documentation cleanup
+### Phase 3: Distribution and documentation cleanup — **DONE** (2026-08-13, commits 810f383d, e11875ba)
+- **Outcome**: two-arch download tiles shipped and deployed; both DMGs live on
+  plover. ADR-279's §5a bullet rewritten from "unsafe and untested" to
+  falsified-and-shipped when the notarization record landed on `main`.
+- **Carried forward, not blocking**: ADR-313's Context still argues test
+  authoring is Apple-silicon-only. That ADR is DRAFT on the tabled
+  `feat/adr-312-cli-test-recording` branch, so the note belongs with whatever
+  revives it rather than here.
 - **Tier**: Small
 - **Budget**: 100
 - **Domain focus**: N/A (tooling/docs) — `website/src/app/chord-writer/download/content.mdx`, ADR-279, ADR-313
