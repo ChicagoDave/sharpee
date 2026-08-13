@@ -96,11 +96,11 @@ In sequence: (1) "content-borne" trigger; (2) "name-borne," based on believing Z
 
 ## Session Metadata
 
-- **Status**: COMPLETE (unverified: genuine-Intel-silicon behavior — Rosetta-verified only, David accepted this for v1; the `website/public/` restart trap is diagnosed but not yet encoded into `deploy.sh`)
-- **Blocker** (if any): N/A — the shipped Intel/arm64 release is complete and live; what remains open (Phase 3 doc cleanup, ADR-313/314 interviews, the unmerged `feat/adr-312-cli-test-recording` branch) is follow-up work, not a blocker on what this record covers.
+- **Status**: COMPLETE (unverified: genuine-Intel-silicon behavior — Rosetta-verified only, David accepted this for v1; the `website/public/` restart trap is diagnosed but not yet encoded into `deploy.sh`; the Half 4 "72 files / 480 tests passing" figure and the `tsf`-vs-`repokit` rebuild sequence — no command output captured, only the surrounding build-failed/build-passed event shape)
+- **Blocker** (if any): N/A — the shipped Intel/arm64 release is complete and live, the website is retitled, and zifmia/shite/packages/interpreter are fully retired and archived on `main`; what remains open (Phase 3 doc cleanup, ADR-313/314 interviews, the unmerged `feat/adr-312-cli-test-recording` branch) is follow-up work, not a blocker on what this record covers.
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
-- **Rollback Safety**: safe to revert on `main` — the Intel work (vendor-toolchain, package.sh, project.yml, website) is committed and merged via PR #262; `feat/adr-312-cli-test-recording` (ADR-313/314 review, notarization docs, drafts) remains an unmerged branch, untouched by anything reverted on `main`.
+- **Rollback Safety**: safe to revert on `main` — the Intel work (vendor-toolchain, package.sh, project.yml, website) is committed and merged via PR #262; the Half 4 work (website retitle, zifmia/shite/packages/interpreter retirement, eight commits `24cf5ef3`..`14d398b5`) is committed directly to `main` and pushed (`HEAD` and `origin/main` both `14d398b5`, verified this pass), each step moved with `git mv` so history follows and nothing was deleted; `feat/adr-312-cli-test-recording` (ADR-313/314 review, notarization docs, drafts) remains a separate unmerged branch, untouched by anything on `main`.
 
 ## Dependency/Prerequisite Check
 
@@ -341,3 +341,159 @@ redeploy.
   the artifact; a genuinely independent Mac remains outstanding.
 - The `website/public/` restart trap above is not yet captured in
   `deploy.sh` or its README.
+
+---
+
+## Half 4 — Website retitle, a build-tooling mistake, and zifmia's retirement — 2026-08-13, later same day (appended)
+
+Continuation of the same session (state id `756ff6`, branch `feat/chord-writer-intel`,
+working directly against `main`). Everything below is now on `main` and pushed —
+`git rev-parse HEAD origin/main` both resolve to `14d398b5`, working tree clean.
+
+**Website retitled** (commit `da94d25a`, `website/src/app/layout.tsx`). Root
+metadata title changed from `"Sharpee — Parser IF, composed"` to `"Sharpee and
+Chord - An IF Modeling Language"` — David's hyphen kept rather than converted to
+an em dash. The description beneath it already framed Sharpee as platform and
+Chord as language, so the title now leads with the same pairing. This same commit
+also landed the "Half 3" section above onto `main` (it had only existed in the
+working tree until this point).
+
+**A stale-build failure, then a build-tooling mistake, blocked commits for
+several hours.** Event log for `756ff6` shows `@sharpee/story-loader` build
+failures at `19:57:48Z` and again at `22:25:30Z`, then passing builds resuming
+at `22:37:47Z`. Reported cause: `context.world.getDialogueExtension is not a
+function` — 13 story-loader tests failing against `packages/stdlib/src/actions/
+dialogue.ts`, a file confirmed absent from `main` (this pass: no such file in
+the working tree). Diagnosed as orphaned build artifacts rather than a
+regression: `dist/actions/dialogue.js` and `dist-esm/actions/dialogue.js` existed
+from an earlier build taken on `feat/adr-312-cli-test-recording`, and
+story-loader's vitest resolves the built `stdlib`, not its source. `./repokit
+clean` cleared the stale artifacts, but the reported next step — rebuilding with
+`npx tsf build` instead of `./repokit build dungeo` — is a narrower rebuild
+(CLAUDE.md documents `tsf build` as covering fewer packages than `repokit`) and
+reportedly broke every story-loader suite a second way, with `Failed to resolve
+entry for package @sharpee/ext-hunger`. Running `./repokit clean && ./repokit
+build dungeo` (CLAUDE.md's documented full-tree rebuild, verified 2026-07-28) is
+reported to have fixed it. The event log corroborates the failure/recovery
+shape (two failures, then a run of passes) but does not capture command text or
+output counts, so the specific "72 files / 480 tests passing" figure and the
+`tsf`-vs-`repokit` sequence are `[reported by session, unverified]` — no event
+row or command output in this pass names either.
+
+**zifmia retired entirely (David's call — the name was misused).** Eight
+commits, `24cf5ef3`..`14d398b5`, all on `main`, all verified by `git show`
+this pass:
+
+1. `24cf5ef3` — guarded `tools/zifmia/tests/{engine-integration,story-health}
+   .test.ts` with `existsSync` so both bundle-dependent suites skip (not
+   silently pass) when `dist/stories/dungeo.sharpee` is absent — an artifact
+   `repokit clean` removes and no documented build regenerates. Commit message:
+   "Suite goes from 58/60 packages to 60/60."
+2. `d6da424c` — corrected the skip guard's own advice: it had told the reader
+   to rebuild the dungeo bundle to re-enable the suites, but `.sharpee` is a
+   deprecated TypeScript-story format (David, this session) — Chord is the
+   platform's story path now. Reclassified both suites as retirement
+   candidates, not repair candidates.
+3. `6606f6f7` — **retire zifmia.** `git mv tools/zifmia tools/_archive/zifmia`
+   (history follows; artifacts cleared first, 2.8M→1.6M). Dropped from
+   `pnpm-workspace.yaml`. `repokit` lost its `zifmia` command, its test, the
+   `--zifmia` flag, and seven references in `build.ts`. CLAUDE.md's three
+   references to `./repokit build --zifmia` as a live command corrected.
+   `clean.test.ts`'s fixture path repointed at `tools/shite` (this repointing
+   is error #2 below — it broke within the hour). Commit message: "repokit
+   builds and its 8 suites pass with the command removed; the full workspace
+   is 58/58 tasks (was 60 with zifmia's two)."
+4. `5b59f717` — stripped zifmia from docs and build scripts: README's Multi-
+   User Server section removed, Downloads link repointed at Chord Writer,
+   CONTRIBUTING's tree entry dropped, `build-ubuntu.sh` 240→68 lines and
+   `build-macos.sh` 203→66 — removing `--zifmia`/`--zifmia-deps` orphaned
+   three Tauri installer functions and a pass-through arg loop. Commit
+   message: "Suite: 58/58."
+5. `9c62c0f6` — **archive `tools/shite`.** Same server as zifmia under a
+   second name: its `src/index.ts` opens `@sharpee/zifmia`, and its own header
+   read "Owner context: deployable application (tools/zifmia)" — the
+   duplication is the misuse being retired. Archived to `tools/_archive/shite`
+   (artifacts cleared, 3.7M→3.1M); dropped from *both* `pnpm-workspace.yaml`
+   and `package.json`'s `workspaces` array, which had named it separately.
+   `clean.test.ts`'s fixture (repointed at `tools/shite` an hour earlier in
+   commit 3) moved again, to `tools/ide`. Commit message: "Suite: 57/57 (was
+   58, was 60 before zifmia)."
+6. `4929fe52` — comment-only sweep across `packages/` rewording rather than
+   deleting zifmia references, since most carried rationale that outlives the
+   name (`packages/core/src/random/choice-point.ts`'s "in a multi-story
+   process" explains why it's stream-safe). `devkit`'s build-help string
+   corrected. Explicitly left `ZifmiaRunner`/`ZifmiaRunnerProps` exports and
+   the `'zifmia-'` localStorage-key prefix in `packages/interpreter`
+   undisturbed at this point, with an in-place note not to rename them —
+   renaming would orphan players' existing saves. (Superseded by commit 8,
+   below.) Commit message: "suite 57/57."
+7. `a01ca370` — archived `packages/interpreter` (the legacy Tauri runner,
+   unbuilt, already excluded from the workspace, no importers) to
+   `packages/_archive/interpreter`, taking the `ZifmiaRunner` exports and the
+   `'zifmia-'` save-key prefix with it — moot now that the code itself is
+   archived rather than live-but-unrenamed. Needed an explicit
+   `!packages/_archive/**` exclusion since `packages/*` is a glob.
+   `scripts/mac-release.sh` (superseded by `tools/ide/package.sh`) and
+   `packages/devkit/scripts/parity-zifmia.sh` archived to
+   `tools/_archive/zifmia/_release-tooling/`. Commit message: "pnpm resolves
+   41 workspace projects; suite 57/57."
+8. `14d398b5` — annotated, not amended, the twelve primary zifmia ADRs with a
+   dated retirement note under each Status line — `125, 128, 130, 152, 153,
+   153a, 156, 162, 164, 175, 177, 179` — per David: "the ADRs stay as
+   written... the retirement is a new fact rather than a retroactive one."
+   `docs/zifmia/` (1,254 lines: install, deployment, backup-restore, upgrade,
+   config reference) archived to `docs/_archive/zifmia/` with a banner on each
+   file. Corrected three live docs that still presented zifmia as current:
+   `docs/core-concepts/README.md` (read by every session at startup per
+   CLAUDE.md), `docs/README.md`'s work-directory index, and
+   `packages/devkit/README.md`'s command list. Left alone deliberately: every
+   other `docs/` mention — work plans, brainstorms, session summaries, book QA
+   logs — as the record of what was thought at the time.
+
+Confirmed live on `main` this pass: `pnpm-workspace.yaml` carries three
+comment blocks recording both retirements inline (`tools/_archive/zifmia`,
+`tools/_archive/shite`, and the `'zifmia-'` save-key note).
+
+**My errors this half, recorded rather than smoothed over (per the session's
+own report — items 1 and 3 are corroborated by commit content; item 1's
+tsf/repokit sequence has no independent command-output evidence in this
+pass):**
+
+1. Rebuilt with `npx tsf build` after `./repokit clean`, reported to have
+   broken more than it fixed (`@sharpee/ext-hunger` entry-resolution failure
+   across all story-loader suites). CLAUDE.md's documented full-tree rebuild
+   is `./repokit clean && ./repokit build dungeo`, which is reported to have
+   resolved it. `[reported by session, unverified — no command output
+   captured this pass]`.
+2. Repointed `repokit`'s `clean.test.ts` fixture at `tools/shite` while
+   removing zifmia (commit `6606f6f7`) — which broke within the hour when
+   `shite` was itself archived (commit `9c62c0f6`). Fixed by repointing to
+   `tools/ide`. Confirmed by `9c62c0f6`'s own commit message: "I had
+   repointed it at tools/shite an hour ago while removing zifmia, which would
+   have left it asserting against a directory that no longer exists."
+3. Recommended teaching `repokit` to regenerate `dist/stories/dungeo.sharpee`
+   before knowing the `.sharpee` path itself was deprecated — would have
+   restored a dead format rather than retiring the suites pinned to it.
+   Corrected in commit `d6da424c` after David clarified the format's status.
+
+**Suite count across the retirement, each figure taken from its own commit
+message (verified via `git show` this pass):** 60 tasks (baseline) → 60/60
+after the `existsSync` skip guard (commit 1) → 58/58 once zifmia itself was
+archived (commit 3) → 57/57 once `shite` followed (commit 5) → confirmed still
+57/57 through commits 6–8, plus "41 workspace projects" resolving cleanly
+(commit 7). All passing throughout; no suite count regressed.
+
+**Left deliberately, not swept:** `packages/story-runtime-baseline` and
+`packages/channel-service` remain live — both had comment-only edits in commit
+6 — but were shaped partly for zifmia and, per the session's assessment,
+now have no primary consumer; this pass did not independently verify the
+"no primary consumer" characterization beyond confirming both packages still
+build and their comments were reworded rather than removed.
+
+**Still open**, unchanged in substance from the end of Half 3, now with the
+zifmia work added to what sits ahead of it: Phase 3 doc cleanup on the tabled
+`feat/adr-312-cli-test-recording` branch (still unmerged); ADR-313/314's
+open-questions interviews (7 and 9 questions, rule 11a) — the session's
+original stated goal — still untouched; AC3 Gatekeeper still only verified on
+the machine that built the artifact; the `website/public/` restart trap still
+not written into `deploy.sh`.
