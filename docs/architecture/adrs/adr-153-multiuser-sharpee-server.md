@@ -2,6 +2,18 @@
 
 ## Status: REPLACED
 
+> **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —
+> David's call, on the grounds that the name was misused: the same multi-user
+> server shipped twice, as `tools/zifmia` and as `tools/shite`. Nothing here is
+> live. Source archived at `tools/_archive/zifmia` and `tools/_archive/shite`;
+> the legacy Tauri runner at `packages/_archive/interpreter`; operator guides at
+> `docs/_archive/zifmia/`. `repokit`'s `zifmia` command and `--zifmia` flag are
+> removed.
+>
+> **This ADR stands as written.** It records a decision made when the product
+> was live and is not amended by the retirement — only annotated by it.
+
+
 > **REPLACED on 2026-04-28.** This ADR specified the multi-user server as a long-running per-room Deno subprocess holding a `GameEngine` in memory, streaming `welcome` / `OUTPUT` / `RESTORED` snapshots over a stateful WebSocket. The 2026-04-28 pivot adopts a **fyrevm-style stateless server**: no per-room engine in memory; each turn loads the saved blob → executes one command → snapshots back. The wire becomes a small channel-I/O data packet rather than a stateful session. Q1 of the brainstorm settled that admin-installed stories are trusted, so the Deno subprocess sandbox is no longer load-bearing — the engine runs in-process Node. Most of this ADR's decisions become obsolete: Deno isolation, `Sandbox` lifecycle, turn protocol over stdin/stdout, save-shape tied to subprocess lifetimes, browser session phase model. Decisions that carry forward: identity contract (now governed by ADR-161), HTTP route surface, the "code is the credential" framing, the public listing rules. Brainstorm: `docs/brainstorm/stateless-multiuser/overview.md`. Replacement ADR pending.
 
 ## Date: 2026-04-19 (replaced 2026-04-28)

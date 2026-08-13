@@ -67,7 +67,7 @@ Current development is tracked in `work/`:
 
 - **[dungeo/](./work/dungeo/)** — Mainframe Zork implementation
 - **[platform/](./work/platform/)** — Engine and stdlib improvements
-- **[zifmia/](./work/zifmia/)** — Desktop runner development
+- **[zifmia/](./work/zifmia/)** — Desktop runner development *(retired 2026-08-13; kept as history)*
 
 ## Links
 

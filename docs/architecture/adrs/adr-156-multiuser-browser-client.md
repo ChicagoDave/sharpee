@@ -2,6 +2,18 @@
 
 ## Status: REPLACED
 
+> **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —
+> David's call, on the grounds that the name was misused: the same multi-user
+> server shipped twice, as `tools/zifmia` and as `tools/shite`. Nothing here is
+> live. Source archived at `tools/_archive/zifmia` and `tools/_archive/shite`;
+> the legacy Tauri runner at `packages/_archive/interpreter`; operator guides at
+> `docs/_archive/zifmia/`. `repokit`'s `zifmia` command and `--zifmia` flag are
+> removed.
+>
+> **This ADR stands as written.** It records a decision made when the product
+> was live and is not amended by the retirement — only annotated by it.
+
+
 > **REPLACED on 2026-04-28.** This ADR closed the framework / hydration / listing / title decisions for a browser client that consumed a per-room *long-running engine subprocess* via streaming `welcome` / `OUTPUT` / `RESTORED` snapshots (per ADR-153 / ADR-162). On 2026-04-28, the multi-user direction pivoted to a **fyrevm-style stateless server**: no per-room engine in memory, each turn loads the saved blob → executes one command → snapshots back. The wire becomes a small data packet rather than a stateful session, and the client becomes a data-baked UI. Decisions 1 (client location), 3 (public listing), and 4 (title required) may carry forward; Decision 2 (four-phase state machine on `welcome`/`closed`/`hydrated`/`error`) is tied to the long-running-engine model and is dropped wholesale. Replacement ADR to be written after the brainstorm at `docs/brainstorm/stateless-multiuser/` resolves.
 
 ## Date: 2026-04-24 (replaced 2026-04-28)

@@ -2,6 +2,18 @@
 
 ## Status: REPLACED
 
+> **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —
+> David's call, on the grounds that the name was misused: the same multi-user
+> server shipped twice, as `tools/zifmia` and as `tools/shite`. Nothing here is
+> live. Source archived at `tools/_archive/zifmia` and `tools/_archive/shite`;
+> the legacy Tauri runner at `packages/_archive/interpreter`; operator guides at
+> `docs/_archive/zifmia/`. `repokit`'s `zifmia` command and `--zifmia` flag are
+> removed.
+>
+> **This ADR stands as written.** It records a decision made when the product
+> was live and is not amended by the retirement — only annotated by it.
+
+
 > **REPLACED on 2026-04-28.** This addendum amended ADR-153 with implementation-time clarifications around Deno spawn, turn timeout, log-before-broadcast, synthetic opening scene, and save-shape constraints. ADR-153 was replaced on the same day by the stateless-server pivot (`docs/brainstorm/stateless-multiuser/overview.md`); this addendum is replaced as a transitive consequence. The operational invariants it named no longer apply because the subprocess lifecycle they describe no longer exists. Replacement ADR pending.
 
 ## Date: 2026-04-24 (replaced 2026-04-28)

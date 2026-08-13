@@ -2,6 +2,18 @@
 
 ## Status: PROPOSED
 
+> **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —
+> David's call, on the grounds that the name was misused: the same multi-user
+> server shipped twice, as `tools/zifmia` and as `tools/shite`. Nothing here is
+> live. Source archived at `tools/_archive/zifmia` and `tools/_archive/shite`;
+> the legacy Tauri runner at `packages/_archive/interpreter`; operator guides at
+> `docs/_archive/zifmia/`. `repokit`'s `zifmia` command and `--zifmia` flag are
+> removed.
+>
+> **This ADR stands as written.** It records a decision made when the product
+> was live and is not amended by the retirement — only annotated by it.
+
+
 ## Date: 2026-05-13 (PROPOSED), revised 2026-05-13 (4 blockers + 3 small findings from /adr-review)
 
 ## Context

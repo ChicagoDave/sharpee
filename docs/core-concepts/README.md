@@ -31,7 +31,7 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/ide-protocol`** — Wire types for the IDE's project-introspection manifest (ADR-184), the single source of truth shared by the `--introspect` CLI emitter and the Play-panel bridge. Types only, so the Node emitter and the browser bridge both import it cleanly.
 
-**`@sharpee/story-runtime-baseline`** — The manifest (ADR-178) declaring the canonical set of packages a `.sharpee` story bundle may import. Zifmia installs the baseline transitively from it and the story build validates bundles against it; bumping it is an amendment to ADR-178.
+**`@sharpee/story-runtime-baseline`** — The manifest (ADR-178) declaring the canonical set of packages a `.sharpee` story bundle may import. A host installs the baseline transitively from it and the story build validates bundles against it; bumping it is an amendment to ADR-178.
 
 ### World and engine
 
@@ -81,7 +81,7 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/bridge`** — The same engine surface exposed as a Node subprocess speaking newline-delimited JSON over stdin/stdout (ADR-135), for native hosts. Only the transport differs from `runtime`.
 
-**`@sharpee/interpreter`** — The legacy Tauri story runner: React context and providers wrapped around a running game. Kept for reference only — ADR-180 dropped it from the build, and the `zifmia` name is reserved for the multi-user web product.
+**`@sharpee/interpreter`** — RETIRED 2026-08-13, archived at `packages/_archive/interpreter`. The legacy Tauri story runner; ADR-180 had already dropped it from the build. The `zifmia` name it carried is retired with it — the multi-user product is archived at `tools/_archive/zifmia`. The ADRs that decided all of this stay as written; only the live docs moved on.
 
 ### Build, test, and tooling
 

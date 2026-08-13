@@ -89,7 +89,7 @@ test:npm, clean — use `./repokit` in the monorepo instead (ADR-187).
 | `list` | List registered stories |
 | `--version` | Print the platform + Chord language version |
 
-Platform/in-repo commands (`verify`, `test:npm`, `clean`, `bundle`, `--zifmia`,
+Platform/in-repo commands (`verify`, `test:npm`, `clean`, `bundle`,
 `--skip`) live in `repokit`, not devkit (ADR-187).
 
 ## Related Packages

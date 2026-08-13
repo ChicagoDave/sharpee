@@ -189,10 +189,10 @@ These ADRs represent planned or proposed future work.
 - **ADR-115**: Map Export CLI — Export story maps from code
 - **ADR-116**: Prompt-to-Playable — Conversational (AI-assisted) story development
 - **ADR-122**: Rich Media and Story Styling — Embedded media in story output
-- **ADR-125**: Zifmia Panel and Windowing System — Multi-panel desktop client
+- **ADR-125**: Zifmia Panel and Windowing System — Multi-panel desktop client — *retired 2026-08-13*
 - **ADR-127**: Location-Scoped Interceptors — Action interceptors tied to rooms
-- **ADR-128**: Walkthrough Panel for Zifmia — In-client walkthrough display
-- **ADR-130**: Zifmia vs Story Installers — Split runner from author packaging tool
+- **ADR-128**: Walkthrough Panel for Zifmia — In-client walkthrough display — *retired 2026-08-13*
+- **ADR-130**: Zifmia vs Story Installers — Split runner from author packaging tool — *retired 2026-08-13*
 - **ADR-131**: Automated World Explorer — Regression test generator
 
 ### Future Extensions

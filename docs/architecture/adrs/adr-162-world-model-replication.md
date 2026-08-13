@@ -2,6 +2,18 @@
 
 ## Status: REPLACED
 
+> **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —
+> David's call, on the grounds that the name was misused: the same multi-user
+> server shipped twice, as `tools/zifmia` and as `tools/shite`. Nothing here is
+> live. Source archived at `tools/_archive/zifmia` and `tools/_archive/shite`;
+> the legacy Tauri runner at `packages/_archive/interpreter`; operator guides at
+> `docs/_archive/zifmia/`. `repokit`'s `zifmia` command and `--zifmia` flag are
+> removed.
+>
+> **This ADR stands as written.** It records a decision made when the product
+> was live and is not amended by the retirement — only annotated by it.
+
+
 > **REPLACED on 2026-04-28.** This ADR specified pushing the entire world snapshot (`world.toJSON()`) over the wire on every turn so the client could maintain a read-only mirror and render any view it wanted. The 2026-04-28 stateless-server pivot inverts the authorship: the engine emits **fyrevm-style channel I/O** — a small set of named channels (text/number/json) carrying just the data the UI surfaces need. The wire shrinks from "full world every turn" to "sparse channel deltas." The renderer no longer reads `world.getScore()` / `getCapability()` / `getContainingRoom()` — it consumes typed channel values that the server (via `@sharpee/channel-service`) produces from the engine's TextBlocks, events, and world. The world-mirror's `Pick<>` projection, the `hydrateWorld` patch logic, and the "every receive replaces the world identity" rule all go away. Brainstorm: `docs/brainstorm/stateless-multiuser/overview.md`. Replacement ADR pending.
 
 ## Date: 2026-04-27 (replaced 2026-04-28)

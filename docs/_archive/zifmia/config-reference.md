@@ -1,3 +1,10 @@
+> **RETIRED 2026-08-13.** This documents the zifmia multi-user server, which is
+> archived at `tools/_archive/zifmia`. The name was misused — the same server
+> also shipped as `tools/shite` — and the tool was never in active development.
+> Kept because ADR-153 AC-9 requires operator documentation to exist, and
+> because the ADRs that decided this stay as written. Nothing here describes a
+> running system.
+
 # Sharpee Multiuser Server — Configuration Reference
 
 Every configurable field in `sharpee-platform.yaml` and the corresponding environment variable. The server loads config at startup and freezes it — changes require a restart.

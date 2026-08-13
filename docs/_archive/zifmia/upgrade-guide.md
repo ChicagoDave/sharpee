@@ -1,3 +1,10 @@
+> **RETIRED 2026-08-13.** This documents the zifmia multi-user server, which is
+> archived at `tools/_archive/zifmia`. The name was misused — the same server
+> also shipped as `tools/shite` — and the tool was never in active development.
+> Kept because ADR-153 AC-9 requires operator documentation to exist, and
+> because the ADRs that decided this stay as written. Nothing here describes a
+> running system.
+
 # Sharpee Multiuser Server — Upgrade Guide
 
 Upgrade a running Sharpee multiuser server to a newer version. Sharpee uses forward-only schema migrations, applied automatically on startup.
