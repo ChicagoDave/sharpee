@@ -1,6 +1,50 @@
 # Chord Writer notarization: the hang, and what 21 submissions proved
 
-**Status**: unresolved, and there are **two independent triggers**.
+> # ⚠ SUPERSEDED IN ITS CONCLUSIONS — 2026-08-13 (session 73a646)
+>
+> **The data below is sound. The reasoning built on it is not.**
+>
+> Everything here assumes that when a submission clears, it clears *because of
+> its contents*, and when it hangs, it hangs *because of its contents*. That
+> assumption is false. The notary intermittently stalls, and the same archive
+> gets opposite outcomes depending only on when it is sent:
+>
+> | Submission | Archive SHA-256 | Submitted | Outcome |
+> | --- | --- | --- | --- |
+> | `359b004e-ccd2-4ab0-a02e-0516b5598b75` | `43a3bddb…76d` | 2026-08-13T05:40:32Z | In Progress at 10h+ |
+> | `f0c04838-dda4-4172-8d79-cc1cfaaef601` | `43a3bddb…76d` | 2026-08-13T15:55:14Z | **Accepted in 72s** |
+>
+> Identical bytes, one account, one command. Every cohort comparison in this
+> document is therefore confounded by submission time, and no property it
+> exonerates or implicates can be trusted.
+>
+> **The actual cause of the toolchain failure was one ad-hoc-signed binary** —
+> npm's esbuild `darwin-arm64`, which `vendor-toolchain.sh` copied in untouched.
+> When the service did process the bundle it said so precisely, in 115 seconds,
+> naming that path three times (`c27bc940-9890-4e85-a71d-218e7d684716`).
+> Re-signing it and resubmitting the identical toolchain was Accepted in 92
+> seconds (`6486cc83-b831-45df-910d-6a092b0b829a`). Fixed in
+> `vendor-toolchain.sh` step 4.6.
+>
+> **§5a (the x86_64 slice) is unsafe for the same reason and has NOT been
+> re-tested.** Its conclusion rests on a single matched pair 14 minutes apart —
+> `5133a8de` (universal) hung, `ee8cf37e` (thinned) Accepted in ~30s — which is
+> exactly the shape now known to occur by chance. **Intel support may not be
+> blocked at all.** Re-testing is one `lipo`-free export and one submission, and
+> it is the cheapest open question in this file. `ARCHS: arm64` in
+> `tools/ide/project.yml` should not be treated as settled until it is run.
+>
+> **What still stands**: the submission ledger (§2), the Invalid-in-113s log
+> behaviour, the fact that the notary descends into nested archives, and the
+> deletion of hung submissions 21–26 hours after creation.
+>
+> Resolution and full fixture matrix:
+> [`../../architecture/adrs/adr-279-chord-writer-packaging.md`](../../architecture/adrs/adr-279-chord-writer-packaging.md)
+> (D4, RESOLVED 2026-08-13) and
+> [`fixtures/RESULTS.md`](fixtures/RESULTS.md).
+
+**Status** *(as written 2026-08-12; see the superseded notice above)*:
+unresolved, and there are **two independent triggers**.
 
 1. **Vendored toolchain** (§1–§5). Toolchain-bearing bundles submitted through
    `package.sh`'s CLI path never return a verdict — no Accepted, no Invalid, no
@@ -11,7 +55,8 @@
    neither bundle carried one — and it is what currently blocks Intel support.
 
 Together they mean the only shippable Chord Writer today is **arm64 and
-toolchain-less**.
+toolchain-less**. *(Superseded: toolchain-bearing bundles ship as of
+2026-08-13, and the arm64 restriction is unverified — see the notice above.)*
 
 **Provenance**: consolidated 2026-08-12 from four session summaries
 (`docs/context/session-20260810-1535-*`, `session-20260810-2232-*`,

@@ -7,62 +7,33 @@ Two downloads: the app you write in, and a finished story to open in it.
   which is what the first Apple silicon Macs shipped with.
 </Callout>
 
-Chord Writer drives the Sharpee command-line toolchain rather than carrying its
-own, so there is one more thing to install alongside it. The full steps are
-below — do them in order and the first build works.
+Chord Writer carries the whole Sharpee toolchain inside its own application
+bundle — a Node runtime and the command-line tool, vendored at build time — so
+installing it is the only step.
 
 **[Download Chord Writer 1.0.0 (.dmg)](/downloads/ChordWriter-1.0.0.dmg)**
 
-### Temporary installation instructions
-
-<Callout title="These are the steps that work today">
-  This build of Chord Writer does not carry its own toolchain, so there is one
-  extra step: you install the Sharpee command-line tool yourself.
-  [Future state](#future-state-how-this-will-work) below describes what replaces
-  these steps once the self-contained build ships — it is **not** in effect yet,
-  so follow this section, not that one.
-</Callout>
+### Installing
 
 1. Open the downloaded `.dmg`.
 2. Drag **Chord Writer** onto the **Applications** folder shown beside it.
 3. Eject the disk image, and launch Chord Writer from Applications.
-4. Install [Node.js](https://nodejs.org) 18 or newer, if you do not already have
-   it. This is what provides `npm`.
-5. Install the toolchain:
 
-   ```shell
-   npm install -g @sharpee/devkit
-   ```
+That is all of it. No `npm install`, no global CLI, and no Node on your machine
+to keep current — building works on a Mac that has never seen a terminal.
 
-Step 5 is not optional. Chord Writer is the editor; `@sharpee/devkit` is what
-actually builds, plays, and tests a story, and the app calls it. Without it, the
-app opens and edits files but **⌘B** reports *"sharpee not found"*.
-
-To confirm the two found each other, look at the status bar: it names the app's
-version first and the toolchain it resolved second. A version there means
-installation worked.
+To confirm, open a story and look at the status bar: it names the app's version
+first and the toolchain it resolved second.
 
 ```text
 Chord Writer 1.0.0 · Sharpee 5.0.0 / Chord 3.0.0
 ```
 
-### Future state: how this will work
-
-Chord Writer is designed to carry the whole toolchain inside its own application
-bundle — a Node runtime and the Sharpee command-line tool, vendored at build
-time. When that build ships, installation loses its last two steps and becomes:
-
-1. Open the downloaded `.dmg`.
-2. Drag **Chord Writer** onto the **Applications** folder shown beside it.
-3. Eject the disk image, and launch Chord Writer from Applications.
-
-No `npm install`, no global CLI, and no Node on your machine to keep current —
-building works on a Mac that has never seen a terminal.
-
-<Callout title="Not yet available">
-  The self-contained build is held up in notarization. Shipping the editor now
-  was judged better than holding it back until that clears. Until it does, use
-  the [temporary instructions](#temporary-installation-instructions) above.
+<Callout title="Already have the CLI installed?">
+  A deliberate `npm install -g @sharpee/devkit` still takes precedence over the
+  bundled copy. That is intentional — it keeps the in-repo development loop
+  tracking your own build — and nothing breaks either way. If you have no idea
+  what that means, you do not have one, and the bundled toolchain is what runs.
 </Callout>
 
 ### If macOS refuses to open it
@@ -109,8 +80,10 @@ Inside the folder:
 
 ### From the terminal instead
 
-Fernhill is an ordinary Sharpee project, so the CLI you already installed above
-works on it directly. From inside the story folder:
+Fernhill is an ordinary Sharpee project, so the CLI works on it directly. The
+copy inside Chord Writer is not on your `PATH`, so for terminal use install it
+the usual way — `npm install -g @sharpee/devkit`, which needs
+[Node.js](https://nodejs.org) 18 or newer. Then, from inside the story folder:
 
 ```shell
 sharpee build          # compile, and build the browser app

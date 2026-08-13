@@ -7,25 +7,17 @@ plays it, runs its test tree, and packages it for release.
 An Apple silicon Mac running macOS 11 or later — the build targets macOS 11,
 which is what the first M1 Macs shipped with.
 
-Chord Writer drives the Sharpee command-line toolchain rather than carrying its
-own, so install that too. Once, and it stays current independently of the app:
+That is the whole list. Chord Writer carries the entire Sharpee toolchain inside
+its own application bundle — a Node runtime and the command-line tool, vendored
+at build time — so there is no `npm install`, no global CLI, and no Node on your
+machine to keep current. Building works on a Mac that has never seen a terminal.
 
-1. [Node.js](https://nodejs.org) 18 or newer.
-2. The Sharpee CLI — `npm install -g @sharpee/devkit`.
+Drag it to Applications and press **⌘B**. Full steps are on the
+[download page](/chord-writer/download).
 
-Without step 2 the app still opens and edits, but **⌘B** reports *"sharpee not
-found"*. Full steps are on the [download page](/chord-writer/download).
-
-## Future state: nothing to install
-
-Chord Writer is designed to carry the whole toolchain inside its own application
-bundle — a Node runtime and the command-line tool, vendored at build time. In
-that build there is no `npm install`, no global CLI, and no Node on your machine
-to keep current; building works on a Mac that has never seen a terminal.
-
-That build is held up in notarization, and shipping the editor now was judged
-better than holding it back until it clears. Until then, the two steps above are
-required.
+If you already have `@sharpee/devkit` installed globally, that copy wins — a
+deliberate install of your own still takes precedence over the bundled one, so
+the in-repo development loop keeps tracking your local build.
 
 The status bar names what you are actually running, the app's own version first
 and the toolchain it resolved second:

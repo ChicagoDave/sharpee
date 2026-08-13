@@ -164,6 +164,98 @@ e.g. the ADR-286 template transform — with no packaging change.
 > The flag is deliberately narrow: it skips exactly three toolchain gates and
 > refuses any bundle that actually carries a toolchain.
 
+> **INTERIM'S PREMISE FALSIFIED 2026-08-13 (session 73a646) — but nothing in
+> this repo was the cause, and no code change was needed.**
+>
+> **The whole of it: Apple's notary intermittently stalls.** Not on a property
+> of the bundle — on nothing detectable at all. The same archive, same SHA-256
+> `43a3bddb…76d`, one account, one command:
+>
+> | Submission | Submitted | Outcome |
+> | --- | --- | --- |
+> | `359b004e-ccd2-4ab0-a02e-0516b5598b75` | 2026-08-13T05:40:32Z | In Progress at 10h+ |
+> | `f0c04838-dda4-4172-8d79-cc1cfaaef601` | 2026-08-13T15:55:14Z | **Accepted in 72s** |
+>
+> Identical bytes, opposite outcomes. Fifteen submissions on 2026-08-13 spanning
+> every shape — with and without the dependency tree, with and without a signed
+> binary, plain and encrypted archives, 11MB to 60MB, high-entropy and trivially
+> compressible — produced eight hangs and no content-shaped pattern.
+>
+> **A false lead, recorded because it is the more instructive half.** During the
+> investigation the raw `vendor-toolchain.sh` output was archived directly and
+> submitted; it came back Invalid in 115 seconds naming npm's ad-hoc-signed
+> esbuild (`c27bc940`), and re-signing that binary made the same tree Accepted
+> in 92 seconds (`6486cc83`). That looked like the root cause and was briefly
+> written up as one. **It was an artifact of the fixture.** `package.sh` has
+> always signed every Mach-O under the bundled toolchain — generically, by
+> `find`, splitting node (with `bundled-node.entitlements`) from everything else
+> — under a comment that already named the problem: *"esbuild and friends arrive
+> ad-hoc/linker-signed, which never notarizes."* Zipping the toolchain tree
+> bypassed that step; a real bundle never does. A `vendor-toolchain.sh` step 4.6
+> was added to re-sign the closure and then **reverted** as redundant with the
+> script that owns signing.
+>
+> **What was actually run, and what it proved.** `package.sh` end to end,
+> 2026-08-13T17:30Z. Platform build, archive, toolchain seal, nested signing
+> (2 binaries), deep-strict verification, hardened runtime on app and node,
+> node entitlements asserted correct — every gate green, app submitted as
+> `da156648-79c6-4295-bedd-4d01f1b2b19b`.
+>
+> **That app came back Invalid in ~8 minutes, and the finding matters: the
+> toolchain passed.** The notary's only objection was
+> `Contents/Frameworks/libswift_Concurrency.dylib` — no Developer ID
+> certificate, no secure timestamp, both slices. Nothing about the toolchain,
+> node, esbuild, or the 7,900 files. A toolchain-bearing app was fully
+> inspected and the vendored toolchain cleared.
+>
+> **A real gap in `package.sh`'s build path, and the reason the Xcode route is
+> the standing preference.** Its nested-signing loop covers `$BUNDLED_TC` only
+> and never re-signs `Contents/Frameworks/`. Xcode's Distribute App → Direct
+> Distribution does, which is why `--dmg-from` exists and why notarizing
+> through Xcode is the recorded workflow. Local verification cannot catch it:
+> the dylib carries a valid Apple signature, so `codesign --verify --deep
+> --strict` passes, exactly as this script's own header warns ("Neither gap
+> fails a `codesign --verify` of the outer bundle").
+>
+> **This INTERIM is therefore not yet lifted.** It lifts the moment a stapled
+> toolchain-bearing DMG exists. The path there is either the recorded workflow
+> (Xcode Distribute App, then `package.sh --dmg-from`) or extending
+> `package.sh`'s signing loop to embedded frameworks — a decision, not a
+> detail, since the two routes then sign the same bundle two ways.
+>
+> **Consequences.**
+>
+> - **No code change was required.** The packaging path was correct as written
+>   in July. Three sessions of bisection found a defect that was not there.
+> - **`--no-toolchain` stays, with a changed rationale** — a release escape
+>   hatch for the intermittency, not evidence that bundling is blocked. First
+>   response to a stall past ~15 minutes is to **resubmit**.
+> - **The download page and `/chord-writer` are rewritten** to the
+>   self-contained flow — but **not deployed**, and must not be until a
+>   toolchain-bearing DMG is live at
+>   `/home/dave/repos/sharpee/website/public/downloads/ChordWriter-1.0.0.dmg`.
+> - **[`notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md)
+>   is superseded in its conclusions**, not its data. Its "content-borne and
+>   layout-independent" finding, its eight exonerated properties, and its
+>   `.pnpm`-naming lead are all artifacts of intermittency. Its ledger, the
+>   Invalid-in-113s log behaviour, and the deletion of hung submissions 21–26
+>   hours after creation all stand.
+> - **§5a's Intel conclusion is also unsafe and untested.** It rests on a single
+>   matched pair 14 minutes apart — exactly the shape now known to occur by
+>   chance. Intel support may not be blocked at all; re-testing is one
+>   `lipo`-free export and one submission.
+> - **The intermittency is Apple's bug**, reported in forum thread 841846. Not a
+>   Sharpee problem, and not a shipping gate.
+>
+> **The lesson worth carrying.** Every hypothesis here failed the same way:
+> a cohort was compared against another cohort submitted at a different time,
+> and the difference was attributed to the artifacts. Against intermittent
+> infrastructure, only a *matched pair of identical bytes* proves anything —
+> which is what finally did.
+>
+> Full fixture matrix, all fifteen submissions and the falsified hypotheses:
+> [`docs/work/adr-279-chord-writer-packaging/fixtures/RESULTS.md`](../../work/adr-279-chord-writer-packaging/fixtures/RESULTS.md).
+
 ### D5 — Chord Writer stays in the sharpee monorepo (ruled 2026-07-27, session fda0f0)
 
 The app remains at `tools/ide/` in this repo; no separate repository.

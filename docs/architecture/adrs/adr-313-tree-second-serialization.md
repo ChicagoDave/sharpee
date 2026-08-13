@@ -10,6 +10,10 @@ them), ADR-187 (the two-CLI split; `sharpee` is the author tool this lands in).
 **Amends**: three things in ADR-307 — its identification of the IDE's Testing tab
 as *the* recorder (D1 below), its Q-5 ruling that there is no text export (D2),
 and its AC-4 rule that a malformed document degrades to a fresh tree (D12).
+**Sibling**: ADR-314, which reports on *what the story has* rather than what it
+does. The two are complementary and share no machinery; the seams they do share
+— the CLI's verb set (Q-6) and a shared no-write assertion (AC-8) — are named
+where they arise.
 
 ## Context — verified, not assumed
 
@@ -35,8 +39,11 @@ produced by playing in Chord Writer's Testing tab.
 
 Chord Writer is `ARCHS: arm64`, deployment target macOS 11 — and as of
 2026-08-12 it **cannot** be built universal, because a universal bundle does not
-clear notarization (ADR-279 D4's amendment; matched pair `5133a8de` hung 16min+
-vs `ee8cf37e` Accepted ~30s after `lipo -thin arm64`). So the only way to author
+clear notarization (`tools/ide/project.yml:140-156`, which carries the matched
+pair: `5133a8de` hung 16min+ vs `ee8cf37e` Accepted ~30s after `lipo -thin
+arm64`, and records that this is *"a SEPARATE trigger from the vendored-toolchain
+hang"* ADR-279 D4's amendment covers — the two are different findings and only
+the toolchain one lives in that ADR). So the only way to author
 a test is to own an Apple silicon Mac. Linux and Windows authors, and Intel Mac
 authors, can replay tests forever and never write one.
 
@@ -329,13 +336,20 @@ to make this work would contradict D11 and should stop the work.
    document, and nothing else. (D5)
 5. A document written from the terminal opens in the Testing tab and renders as
    an ordinary tree; a tab-recorded document re-runs from the terminal and
-   projects into an editable file. (D11)
+   projects into an editable file. (D11) — **macOS-gated verification of a
+   capability this ADR exists to un-gate.** Running it needs a Chord Writer
+   build, which needs Apple silicon; the thing being verified needs neither.
+   That asymmetry is a property of the contract, not a defect in it, and is
+   stated here so it is not rediscovered as one.
 6. Recording a turn whose story declares no `auto-assertion:` header produces
    `room-name-and-description` assertions — the same ones the tab would write for
    that turn, compared field by field. (D7, D8)
 7. No assertion-synthesis code, and no `Assertion[] → TreeAssertions` conversion,
    exists outside `packages/branch-tester`. (D7)
-8. `sharpee test` performs no writes to the project on any path. (D13)
+8. `sharpee test` performs no writes to the project on any path. (D13) — assert
+   this with a shared project-directory no-write helper, not a bespoke check:
+   ADR-314 AC-11 states the identical property for its report, and one property
+   tested twice two ways drifts.
 9. Every written card carries persisted assertions; no path produces a bare
    card, which the walker treats as an ADR-294 D2 failure. (D10)
 10. A malformed document is reported by name and left byte-for-byte unchanged on
@@ -372,6 +386,13 @@ derived file has no standing), refuse and require an explicit re-project, or sho
 the difference and ask. The answer has to hold up when the tab is open at the
 same time (D12's re-read-before-replace).
 
+D12 does not settle this and must not be read as settling it. **D12 protects the
+JSON; nothing protects the projection.** "Regenerate silently" is therefore not
+symmetrical with D12's hash-refuse: it discards whatever the author typed into
+the projection since it was written, which is the one direction D12's rule does
+not cover and the same silent-total-loss shape D12 exists to close. Whichever
+option wins, say explicitly what happens to unsaved-to-tree projection edits.
+
 **Q-5 — Does a write replay the whole tree, or only lines whose commands
 changed?** Whole-tree replay is simpler and obviously correct, and costs a full
 run of every line every time. Selective replay is faster and has to define
@@ -381,6 +402,18 @@ run of every line every time. Selective replay is faster and has to define
 and may mislead, given the CLI's input is an edited projection rather than live
 play. `project`, `write`, and `sync` each describe a different half of what it
 does.
+
+**Decide this together with ADR-314's Q-2.** Both ADRs add a verb to one CLI in
+the same season, and the verb set is a shared surface — D13's argument that a
+habitually-run command must not grow a writing branch is a namespace argument as
+much as a safety one. Two independent answers can easily produce a command list
+nobody can read.
+
+**Q-7 — How does a write-locked session recover?** D12 write-locks on
+`malformed`, matching `refused`. Neither ADR-307 nor this ADR says how an author
+who repairs the file on disk gets the lock back — reopen the project, an explicit
+reload, or nothing until relaunch. This is the recovery path for the exact
+scenario D12 creates, and AC-10 currently stops at "the bytes are unchanged."
 
 ## Consequences
 

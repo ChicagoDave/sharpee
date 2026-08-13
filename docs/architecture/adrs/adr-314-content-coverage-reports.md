@@ -4,9 +4,11 @@
 must not be implemented (rule 11a).
 **Date**: 2026-08-12 (session 787eea)
 **Parent**: ADR-294 (D13's coverage discipline — coverage computes over declared
-surfaces, never over inference), ADR-306 (D4's authoring/reading boundary — a
-report is reading), ADR-184/185 (`sharpee introspect` and the `ProjectManifest`
-this reads), ADR-307 (the testing tree, whose job this deliberately does not do).
+surfaces, never over inference — **and D13's "world coverage" family, whose
+ground this realizes**; see Consequences), ADR-306 (post-go-live ruling 1 — the
+Testing tab *is* the surface), ADR-184/185 (`sharpee introspect` and the
+`ProjectManifest` this reads), ADR-307 (the testing tree, whose job this
+deliberately does not do).
 **Promotes**: `docs/work/testing/design-testing-play-surface.md` §14
 ("response-coverage checks", David 2026-08-09 — captured, not yet ruled, pending
 the platform discussion this ADR is the outcome of).
@@ -24,11 +26,21 @@ second question authors ask constantly — *what does the story have* — and th
 tree is the wrong instrument for it in two independent ways.
 
 **It is ruinously expensive.** Every branch fresh-boots and replays its
-suppressed prefix (ADR-307 D5). Measured on the real fernhill document
-(2026-08-12): 14 commands executed to test 8 authored ones, with two branches. A
-content suite is the worst possible shape for that model — a long trunk to a
-location, then a bush of one-command branches. Forty `examine` checks hanging off
-one room is forty boots and forty trunk replays to test forty commands.
+suppressed prefix (ADR-307 D5). Measured on the real fernhill document —
+`node packages/devkit/dist/cli.js test branch-stories/fernhill/fernhill.story
+--verbose`, run 2026-08-12, which reports on its last line:
+
+```
+Tree document: fernhill.tests.json (seed 42, 3 line(s))
+9 cards passing, 18 assertions passing
+14 commands (8 authored + 6 replayed)
+```
+
+Three lines — a trunk and two branches — cost 14 executed commands to test 8
+authored ones. A content suite is the worst possible shape for that model: a long
+trunk to a location, then a bush of one-command branches. Forty `examine` checks
+hanging off one room is forty boots and forty trunk replays to test forty
+commands.
 
 **It rots on contact with prose.** A test asserts *this must not change*, and
 prose is the thing that changes most. Forty room descriptions pinned as
@@ -148,7 +160,7 @@ This keeps the report independent of the testing tree entirely. A story with no
 tests at all gets a full report, which is the point: content checking should not
 be gated on having recorded anything.
 
-**Resolved (Q-6, David 2026-08-12): all prose the player can read.** That is
+**Resolved (David, 2026-08-12): all prose the player can read.** That is
 wider than the manifest carries, and D10 works out what it costs.
 
 ### D4 — The manifest gains the parser's vocabulary, and each room's scope
@@ -157,17 +169,33 @@ Two additions, both serving check 3, both additive to a projection whose index
 signature is already declared forward-compatible (`types.ts:73-83`), so neither
 costs an existing consumer a change.
 
+*"Projection" here means `TraitSummary`'s per-trait view of an entity — not
+ADR-313's tree projection (its author-editable second serialization), and not
+ADR-307 D1's "files are a projection." Three senses, one season; this one is the
+manifest's.*
+
 **Vocabulary.** `TraitSummary.identity` projects `name`, `aliases`, and
 `adjectives` alongside `description`. Without them, check 3 can find a residue
 word but cannot tell whether the parser would accept it, which is the only
 question that matters.
 
-**Scope.** Each room carries the ids of the entities in scope there, precomputed
-by `WorldModel.evaluateScope()` at manifest-build time (D9). This is what keeps
-the checker a pure function over the manifest rather than something needing a
-live world — which matters because one of its two consumers is Swift (Q-1). The
+**Scope.** Each room carries the ids of the entities in scope there, computed
+from the runtime's own scope evaluator at manifest-build time (D9). This is what
+keeps the checker a pure function over the manifest rather than something needing
+a live world — which matters because one of its two consumers is Swift (Q-1). The
 cost is manifest size, roughly rooms × entities-in-scope; the alternative is
 every consumer assembling a world, which the IDE cannot do.
+
+**The runtime does not currently expose this per room, and that is Q-9.**
+`WorldModel.evaluateScope(actorId, actionId?)` takes an *actor* and derives the
+location from it — `const currentLocation = this.getLocation(actorId)`
+(`packages/world-model/src/world/WorldModel.ts:1611-1620`, read 2026-08-12).
+There is no entry point that answers "what is in scope in room X." Getting a
+per-room answer therefore needs either a new location-taking entry point or a
+walk that relocates an actor room by room during manifest build, and the second
+mutates the world in the middle of a read. Named here so it is not discovered
+mid-implementation — this is the same class of gap as the identity-projection
+one above.
 
 ### D5 — The subtraction is portable; only the noun filter needs NLTagger
 
@@ -175,13 +203,21 @@ Because D2 makes check 3 a pipeline, its stages split cleanly by platform:
 
 | Stage | Needs | Portable |
 | --- | --- | --- |
-| Tokenize, lemmatize, subtract declared vocabulary and stopwords | set arithmetic | **yes** |
+| Tokenize; subtract declared vocabulary and stopwords | set arithmetic | **yes** |
+| Lemmatize | a lemmatizer or a stemmer | **only with a portable stemmer** — see Q-7 |
 | Decide which residue words read as nouns | part-of-speech tagging | **no** — `NaturalLanguage` |
 
+Lemmatization is called out as its own row deliberately: it is the one stage
+whose portability is not yet settled. On macOS `NLTagger.lemma` supplies it for
+free alongside `.lexicalClass`; off macOS there is nothing supplying it today,
+and Q-7 is where that is decided.
+
 The noun filter uses Apple's `NaturalLanguage` framework (`NLTagger`,
-`.lexicalClass`, with `.lemma` also serving the lemmatization above where it is
-available). No Python runtime, no model download, no third-party dependency, and
-the quality is more than sufficient for ordinary English narration.
+`.lexicalClass`). No Python runtime, no model download, no third-party
+dependency. **Assumed** — not established — that its tagging quality is
+sufficient for ordinary English narration; Q-7's trial over real Chord prose is
+the check that establishes it, and it is the same trial that answers whether the
+portable path ships at all.
 
 Adjective+noun phrases are checked as phrases, not only as bare nouns, because
 interactive fiction prose and interactive fiction *parsers* both work in that
@@ -194,12 +230,18 @@ them.
 smaller asymmetry than it first appeared, and the reason to state the pipeline
 explicitly. An author without `NaturalLanguage` still gets checks 1 and 2 in full
 and the residue of check 3, unfiltered: noisier, since it carries verbs and
-abstractions the tagger would have dropped, but the substance is there and it is
-computed identically on every platform. Precision is what varies, never the
-finding set's basis.
+abstractions the tagger would have dropped, but the substance is there.
+
+**The subtraction is the same computation on every platform; its input and its
+output precision both vary with the language stage available.** The earlier
+formulation here — "computed identically on every platform, precision is what
+varies, never the finding set's basis" — was too strong, and the lemmatize row
+above is why: if two platforms lemmatize differently, they subtract different
+tokens and the residues genuinely differ. Only once Q-7 settles lemmatization can
+the stronger claim be made, and it should be restated here when it is.
 
 The alternative — a Python environment in a Node toolchain for spaCy or Stanza —
-remains a much larger tax on every author to serve one filter. Q-8 asks whether
+remains a much larger tax on every author to serve one filter. Q-7 asks whether
 the unfiltered residue is good enough to ship as the portable default.
 
 ### D6 — A report says what it could not check
@@ -243,7 +285,7 @@ The grouping unit is Q-5.
 
 ### D9 — `declared(S)` is room-scoped, and the scope is the parser's own
 
-**Resolved (Q-9, David 2026-08-12): room-scoped — "that's the bug we're looking
+**Resolved (David, 2026-08-12): room-scoped — "that's the bug we're looking
 for."**
 
 Global subtraction only ever reports a noun that was never implemented anywhere.
@@ -252,14 +294,19 @@ here names something whose entity lives somewhere else, so the player reads abou
 it in this room and cannot examine it in this room. That is the bug. Global
 subtraction is blind to it by construction, because the entity exists.
 
-**Scope is computed, not approximated.** `WorldModel.evaluateScope()` already
-answers "which entities are in scope for a given actor at a given location," and
-it is what populates the parser's entity vocabulary before every turn
-(`packages/world-model/src/scope/scope-evaluator.ts:1-13`). The report uses it.
-The question check 3 asks is *would the player be able to refer to this here*,
-and the runtime already has one answer to that — a second implementation would be
-a second answer, and the two would drift. This is the same discipline ADR-313 D7
-applies to assertion synthesis.
+**Scope is computed, not approximated.** The runtime's scope evaluator already
+answers "which entities are in scope for this actor, at wherever this actor is,"
+and it is what populates the parser's entity vocabulary before every turn
+(`packages/world-model/src/scope/scope-evaluator.ts:1-13`). The report uses that
+evaluator. The question check 3 asks is *would the player be able to refer to
+this here*, and the runtime already has one answer to that — a second
+implementation would be a second answer, and the two would drift. This is the
+same discipline ADR-313 D7 applies to assertion synthesis.
+
+The evaluator's current entry point is actor-shaped rather than room-shaped, so
+"the report uses it" costs a small addition rather than nothing; D4 states the
+gap and Q-9 decides how it is closed. What is settled here is that the answer
+comes from the evaluator and not from a second traversal written for this report.
 
 **Two finding kinds fall out, and one is far stronger.** Once scope is per room,
 a residue word can be tested against the global entity set for one more bit:
@@ -283,7 +330,7 @@ the price of not replaying (D3).
 
 ### D10 — The corpus is every string the player can read
 
-**Resolved (Q-6, David 2026-08-12): "all prose the player can read."**
+**Resolved (David, 2026-08-12): "all prose the player can read."**
 
 Not room descriptions, and not description fields. Every string the story can put
 in front of a player: room and object descriptions, examine text, initial
@@ -328,19 +375,37 @@ It writes no story file, no tree document, and no configuration. This keeps it
 entirely outside the two-writer problem ADR-313 D12 is about, and makes it safe
 to run while Chord Writer has the project open.
 
+**The manifest is computed per invocation and never persisted beside the
+project.** Stating it, because D4 changes the manifest and the report is not the
+only thing that reads one: a `<story-id>.manifest.json` landing next to
+`<story-id>.tests.json` would acquire exactly the concurrency exposure ADR-313
+D12 just closed for the tree document, and would inherit none of the fix. If a
+cached manifest is ever wanted for speed, that is a decision to take against
+ADR-313 D12's atomic-write and re-read rules, not a detail to slip in.
+
 ### D12 — It surfaces in both places, from one implementation
 
-The Testing tab is where a report belongs in the IDE — the reading side of
-ADR-306 D4's authoring/reading boundary, never the play surface or its run
-column. The CLI carries the same report for Tier 1. Both render one computation;
-neither reimplements it.
+The Testing tab is where a report belongs in the IDE — never the play surface or
+its run column. The CLI carries the same report for Tier 1. Both render one
+computation; neither reimplements it. Where the one implementation lives is Q-1,
+and that question is what makes "neither reimplements it" a decision rather than
+a hope.
+
+**The authority for the tab is ADR-306's post-go-live ruling 1, not an
+authoring/reading split.** An earlier draft of this decision cited "ADR-306 D4's
+authoring/reading boundary." ADR-306 has no D4 — that boundary is ADR-305's, and
+ADR-306 records David's ruling that it is *superseded*: *"The Testing tab IS the
+surface... there is no separate reading surface."* The conclusion is unchanged
+and in fact better supported: the tab is the surface, so the report goes there.
 
 ## Implementation
 
 | Module | Change |
 | --- | --- |
 | `packages/ide-protocol/src/types.ts` | **Extended (D4).** `TraitSummary.identity` gains `name`, `aliases`, `adjectives`. |
-| `packages/bootstrap/src/introspect.ts` | **Extended.** `buildManifest` projects the three new identity fields it already has in hand. |
+| `packages/bootstrap/src/introspect.ts` | **Extended (D4).** `buildManifest` projects the three new identity fields it already has in hand, and attaches each room's in-scope entity ids. The second half is blocked on Q-9 — the evaluator has no room-shaped entry point today. |
+| `packages/world-model` — scope evaluator | **Possibly extended**, pending Q-9. A location-taking entry point beside `evaluateScope(actorId)`; the evaluator already builds its `IScopeContext` from a `currentLocation`, so this is an entry point rather than new logic. If Q-9 resolves the other way, this row goes away and the walk lives in `buildManifest`. |
+| Prose inventory over the Chord IR | **New**, location pending Q-1. D10's second source: walks the built story's IR by node kind — prose blocks (`ast.ts:453,462-464`), per-entity phrase overrides (`:535`), message overrides (`:743,758`), `define-text` (`:843`), death text (`:640`) — and yields (prose, scope) pairs per D10's table. Literal spans only; `{…}` markers are slots, not words. Without this the manifest alone sees room descriptions and the desk/drawer case is invisible. |
 | Tier 1 checker | **New**, location pending Q-1. Pure function over `ProjectManifest` → findings. No I/O, no engine, trivially testable. |
 | `packages/devkit/src/commands/` | **New command**, spelling pending Q-2. Runs Tier 1 and check 3's subtraction, renders findings, labels the residue unfiltered per D6. |
 | `tools/ide` (Swift) | **New.** The NLTagger pass (D5) and the Testing tab's report view (D12). |
@@ -355,10 +420,14 @@ neither reimplements it.
 3. A description mentioning an adjective+noun phrase whose adjective is not in
    the entity's `adjectives` is reported, even when the bare noun matches. (D5)
 4. The same story reports identical Tier 1 findings from the CLI and from the
-   Testing tab. (D12)
+   Testing tab. (D12) — **premise-dependent**: it can only be run once Q-1 has
+   placed the one implementation somewhere both surfaces reach. Until then this
+   AC asserts a property whose mechanism does not exist.
 5. On a machine without `NaturalLanguage`, the report completes, states that
    the noun filter did not run, labels check 3 unfiltered, and exits the same
-   way it would with no findings. (D6)
+   way it would with no findings. (D6) — **premise-dependent**: needs a non-macOS
+   runner, and needs Q-7 to have settled what the portable path does about
+   lemmatization. Name the machine the check runs on.
 6. No check 3 finding is presented as a failure or a defect. (D7)
 7. No view presents findings as one undifferentiated list; every finding arrives
    inside a group small enough to read at a glance. (D8)
@@ -370,7 +439,17 @@ neither reimplements it.
     against themselves; no finding is reported against a room whose prose does
     not contain it. (D9)
 11. Running the report leaves every file in the project byte-identical, including
-    while Chord Writer holds the project open. (D11)
+    while Chord Writer holds the project open. (D11) — assert this with the same
+    shared project-directory no-write helper ADR-313 AC-8 uses; it is one
+    property, and testing it twice two ways is how the two answers drift apart.
+12. A drawer named only in the **desk's examine text**, with no drawer entity
+    anywhere, is reported against the desk's room. (D10) — the case D10 calls the
+    most common instance of the bug this exists to find, and the one that fails
+    if the prose inventory is built from the manifest alone.
+13. A story whose prose is reached only through the IR — an NPC topic response,
+    an authored action response, death text — contributes findings; prose with no
+    location (banner, prologue, global event text) contributes **unimplemented**
+    findings only, never **out of scope here**. (D10)
 
 ## Open Questions
 
@@ -382,7 +461,11 @@ import) bears on this and may settle it.
 
 **Q-2 — What is the command called, and does it stand alone?** `sharpee report`,
 `sharpee check`, `sharpee coverage`, or a flag on `introspect`, which already
-loads exactly what the report needs.
+loads exactly what the report needs. **Decide this together with ADR-313's Q-6**
+— both ADRs add a verb to one CLI in the same season, and two independent answers
+can easily produce a command list nobody can read. Note also that `--coverage` is
+already retired by name on `sharpee test` (`packages/devkit/src/commands/test.ts:62`),
+so reusing that word needs to be a deliberate reclaiming rather than an accident.
 
 **Q-3 — What counts as a vocabulary match for an adjective+noun phrase?** Head
 noun matches and adjective does not; adjective matches another entity's; the
@@ -412,10 +495,33 @@ does more harm than saying "not available" — is an empirical question about re
 Chord prose, not a design one. It also decides whether a portable stemmer is
 needed for `lemmatize()`, since `NLTagger.lemma` is not there to supply it.
 
-**Q-8 — How does this compose with §13's annotated puzzle coverage?** That
-design (`design-testing-play-surface.md` §13) proposes author-declared coverage
-surfaces evaluated over visited states. One report or two, and does the annotated
-denominator belong beside these findings or apart from them?
+**Q-8 — How does this compose with §13's annotated puzzle coverage, and with
+ADR-294 D13?** That design (`design-testing-play-surface.md` §13) proposes
+author-declared coverage surfaces evaluated over visited states. One report or
+two, and does the annotated denominator belong beside these findings or apart
+from them?
+
+The larger half of this question is ADR-294 D13, which is ACCEPTED and already
+claims part of this ground: its **world coverage** family is *"rooms never
+visited, objects never referenced, actions never exercised by any transcript —
+computed from the world model / `--introspect` manifest (ADR-184)."* Same
+substrate, overlapping question, decided in an accepted ADR. Two differences
+matter and should drive the answer: D13's denominator is *play* ("by any
+transcript") where Tier 1's is the declared entity set with no play at all (D3);
+and D13's delivery vehicle was "a CLI `--coverage` report", which no longer
+exists — `--coverage` is retired by name at `packages/devkit/src/commands/test.ts:62`.
+So this ADR is realizing part of D13 on a new vehicle. Say so explicitly, and
+say which parts of D13's family this does *not* take (its prose-and-plumbing and
+outcome-class families both need play traces this report never gathers).
+
+**Q-9 — How does the report get a per-room scope answer?**
+`WorldModel.evaluateScope(actorId, actionId?)` derives the location from the
+actor (`WorldModel.ts:1611-1620`); nothing answers "what is in scope in room X."
+Either the evaluator gains a location-taking entry point — cheap, since
+`IScopeContext` is already built from a `currentLocation` — or `buildManifest`
+walks an actor room by room, which mutates the world during what is otherwise a
+read. D4 and D9 both depend on the answer, and D9's "computed, not approximated"
+is not satisfiable until it lands.
 
 ## Consequences
 
@@ -437,6 +543,12 @@ denominator belong beside these findings or apart from them?
   tagger appears that does not drag in a second runtime.
 - **`design-testing-play-surface.md` §14 stops being an unruled capture.** Its
   status marker should be updated to point here by whoever lands this.
+- **ADR-294 D13 needs a status note, flipped by whoever lands this and not
+  before.** D13's world-coverage family and its `--coverage` delivery vehicle are
+  both overtaken — the vehicle already gone from the code, the family realized
+  here on a different denominator (Q-8). Left unowned, D13 reads as live and a
+  future session re-derives it. Same discipline ADR-313 applies to its three
+  ADR-307 notes.
 
 ## Session
 
