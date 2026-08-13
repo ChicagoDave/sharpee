@@ -2,6 +2,9 @@
 
 **Created**: 2026-08-11
 **Plan Status**: ACTIVE
+**Superseded by**: `docs/work/adr-312-cli-test-recording/plan.md` (2026-08-12) —
+on hold at David's direction until Saturday 2026-08-15. Phase 1 remains CURRENT
+and every phase status is untouched; this plan resumes exactly where it stands.
 **Overall scope**: Give `@sharpee/character` — 301 tests, zero consumers — its
 first consumer, by mapping all six subsystems (personality, mood/disposition,
 cognitive profile, goals, influence/resistance, information propagation) onto

@@ -1,0 +1,16 @@
+story    fernhill
+seed     42
+format   1
+
+opening
+boot
+
+> north
+> north
+    fork 1
+        > west
+    fork 2
+        > east
+> north
+> east
+> take all

@@ -1,0 +1,105 @@
+# Candidate B — YAML, for comparison against the same cases.
+#
+# Two halves: the authoring-first case (compare against
+# 02-fernhill-authored.tests.txt, 15 lines) and the adversarial cases YAML
+# handles differently from Candidate A.
+
+# ---------------------------------------------------------------------------
+# The authoring case: what a person hand-writes before anything is filled.
+# Candidate A does this in 15 lines. This is 34, and every one of the extra
+# lines is punctuation the author has to get right rather than content.
+# ---------------------------------------------------------------------------
+story: fernhill
+seed: 42
+format: 1
+cards:
+  - type: opening
+  - type: boot
+  - type: turn
+    command: north
+  - type: turn
+    command: north
+    branches:
+      - branch: 1
+        cards:
+          - type: turn
+            command: west
+      - branch: 2
+        cards:
+          - type: turn
+            command: east
+  - type: turn
+    command: north
+  - type: turn
+    command: east
+  - type: turn
+    command: take all
+
+# ---------------------------------------------------------------------------
+# The adversarial cases, by their A-n numbers. YAML's answers differ from
+# Candidate A's in three places worth weighing.
+# ---------------------------------------------------------------------------
+
+#   A-1/A-2/A-3  commands that collide with keywords: a non-issue. `command`
+#                is a named field, so `skip`, `fork 1`, and `> look` are
+#                ordinary scalars. Candidate A needs its `>` sigil to get the
+#                same property; it does get it.
+#
+#   A-4          empty command: `command: ""` — explicit and unambiguous.
+#                Candidate A's bare `>` line is easy to produce by accident.
+#
+#   A-6          multi-line values: `|` block scalars, well-specified, with
+#                chomping indicators for trailing newlines. Strictly better
+#                specified than a hand-rolled block form.
+#
+#   A-18/A-19    values needing quotes: YAML decides for you, and that is the
+#                problem — a value's quoting changes with its content, so a
+#                claim's spelling in the file is unstable across edits. A
+#                prose claim beginning with `- ` or containing `: ` gets
+#                requoted on the next write, producing diff churn that has
+#                nothing to do with the test changing.
+
+adversarial:
+  # A-6 — the block form, and the reason this case matters: room descriptions
+  # are routinely multi-paragraph, so this is the common path.
+  - type: turn
+    command: read notice
+    assertions:
+      contains:
+        - |-
+          FERNHILL HOUSE AND GROUNDS,
+          BY ORDER OF THE ESTATE,
+          AT DAWN.
+
+  # A-8 — a value whose own lines look like structure. Indentation settles it.
+  - type: turn
+    command: read manual
+    assertions:
+      contains:
+        - |-
+          contains Iron Gates
+          skip
+          fork 3
+
+  # A-18/A-19 — quoting is content-dependent. Note that these three claims are
+  # spelled three different ways for reasons the author never chose.
+  - type: turn
+    command: read plaque
+    assertions:
+      contains:
+        - '"Fernhill" — built 1847 · C:\Users\ · [SKIP] · 🕯'
+        - "> north"
+        - plain value needing no quotes at all
+
+  # A-10 — a card with a fork and no claims. The void reads as an absent
+  # `assertions` key, exactly as it does in the JSON.
+  - type: turn
+    command: north
+    branches:
+      - branch: 1
+        cards:
+          - type: turn
+            command: west
+            assertions:
+              contains:
+                - Elsewhere

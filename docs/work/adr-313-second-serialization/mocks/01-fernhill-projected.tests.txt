@@ -1,0 +1,41 @@
+story    fernhill
+seed     42
+format   1
+
+opening
+    channel info.title is The Folly at Fernhill
+    channel info.description is One cold winter night to find the deed that keeps Fernhill in the family.
+
+boot
+    contains Iron Gates
+    contains The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN.
+
+> north
+    contains Gravel Drive
+    contains The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
+
+> north
+    contains Fountain Court
+    contains A paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhouse glimmers palely to the west; a squat brick shed hunches to the east; the front door of the house is north.
+
+    fork 1
+        > west
+            contains Greenhouse
+            contains Glass panes furred with frost on both sides. Staging benches run the length of the house, and a door in the north wall — glass too — leads up toward the folly, if it would open.
+
+    fork 2
+        > east
+            contains Boiler Shed
+            contains Brick, low, and bitter with old coal dust. The estate's boiler sits cold as a tomb against the back wall, its pipes running off through the earth toward the greenhouse.
+
+> north
+    contains Entrance Hall
+    contains The heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock standing silent against the stairs. Doors lead west to the study and east to the kitchen; a colder passage runs north.
+
+> east
+    contains Kitchen
+    contains Copper pans hang in ranks over the cold range. The pantry door stands in the north wall.
+
+> take all
+    contains a garden shears: Taken.
+    contains a sherry bottle: Taken.

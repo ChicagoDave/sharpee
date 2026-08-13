@@ -1,0 +1,126 @@
+story    hostile
+seed     7
+format   1
+
+# Every case here is numbered A-n and catalogued in README.md with its
+# expected outcome. Cases that cannot be represented in a committed text file
+# (trailing whitespace, CRLF, tab indentation, a BOM) are marked GENERATED in
+# the catalogue and must be produced by the fixture script, not read from here.
+
+opening
+    channel info.title is Hostile
+
+boot
+    contains Nowhere
+
+# A-1  a command that is a claim keyword
+> skip
+
+# A-2  a command that is a structural keyword with an argument
+> fork 1
+
+# A-3  a command beginning with the card sigil
+> > look
+
+# A-4  a command that is the empty string (nothing after the sigil and space)
+>
+
+# A-5  a claim value that begins with a claim keyword
+> examine sign
+    contains contains no warranty
+
+# A-6  a claim value spanning lines — the block form. Joined with \n, verbatim
+#      after the block indent. Real: room descriptions are frequently
+#      multi-paragraph, so this is the common case, not the exotic one.
+> read notice
+    contains
+        FERNHILL HOUSE AND GROUNDS,
+        BY ORDER OF THE ESTATE,
+        AT DAWN.
+
+# A-7  a claim value that is the empty string
+> listen
+    contains
+
+# A-8  a block value whose own lines look like claim lines
+> read manual
+    contains
+        contains Iron Gates
+        skip
+        fork 3
+
+# A-9  exact and contains on the same card. The schema says exact supersedes
+#      (tree-walker.ts:503-504); the FILE can still spell both. Round-trip has
+#      to either preserve the pair or reject it — silently dropping contains
+#      would make projection lossy.
+> look
+    exact
+        Hostile Room
+        Nothing here but the test.
+    contains Hostile Room
+
+# A-10 a card carrying a fork and no claims — a VOID that is not childless
+> north
+    fork 1
+        > west
+            contains Elsewhere
+
+# A-11 a branch with zero cards
+> south
+    contains Dead End
+    fork 2
+
+# A-12 a fork nested inside a branch's card
+> east
+    contains Junction
+    fork 3
+        > north
+            contains Upper
+            fork 4
+                > up
+                    contains Roof
+
+# A-13 non-sequential and non-monotonic fork ids (they are stable ids the
+#      sidecar references, never positions)
+> west
+    contains Crossing
+    fork 9
+        > north
+            contains Nine
+    fork 5
+        > south
+            contains Five
+
+# A-14 every remaining assertion family, one card
+> unlock door with key
+    not-contains locked
+    state door.locked = false
+    event if.event.unlocked
+    channel status is Unlocked
+    channel score.value contains 10
+
+# A-15 a channel id with dots (real — fernhill uses info.title)
+> title
+    channel info.description is One cold winter night.
+
+# A-16 a channel claim whose value is the empty string
+> blank
+    channel status is
+
+# A-17 the same value asserted present and absent on one card
+> paradox
+    contains ghost
+    not-contains ghost
+
+# A-18 unicode, quotes, backslashes, and a bracket pair in a value
+> read plaque
+    contains "Fernhill" — built 1847 · C:\Users\ · [SKIP] · 🕯
+
+# A-19 a value that is exactly a structural line
+> echo
+    contains > north
+
+# A-20 a very long single-line value (real: fernhill's descriptions run 200+
+#      characters; wrapping would change the value, so it stays on one line)
+> survey
+    contains The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south, and the whole of it is one claim on one line because a line break here would be a different string.
