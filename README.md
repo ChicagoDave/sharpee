@@ -80,7 +80,7 @@ open dist/web/index.html
 - **Daemons & Fuses** — Timed events and background processes
 - **Perception System** — Darkness, blindness, and sensory restrictions
 - **Language Layer Separation** — All text output goes through localizable message IDs
-- **Channel-Based UI** — Story→UI signals flow over channels (ADR-163); the same story runs in the CLI, a framework-free browser client, and the Zifmia multi-user server
+- **Channel-Based UI** — Story→UI signals flow over channels (ADR-163); the same story runs in the CLI and in a framework-free browser client
 - **Full TypeScript** — Strict typing throughout
 
 ## Creating a Story
@@ -198,10 +198,6 @@ UI by channels (ADR-163/174) — there is no separate text service.
 3. **Traits compose entity capabilities** — Add container, lockable, wearable, etc.
 4. **Parser scope is permissive** — Actions decide if visibility is truly required
 
-## Zifmia Multi-User Server
-
-[Zifmia](https://sharpee.net/downloads/) is the multi-user server (ADR-177) for hosting `.sharpee` story bundles — each player gets their own session over a shared story, with per-room saves. It ships as a self-contained Docker container and is built with `sharpee build --zifmia`.
-
 ## Standard Actions
 
 **Movement**: going, entering, exiting, climbing
@@ -262,7 +258,7 @@ Sharpee is actively developed. These are the open [Architecture Decision Records
 
 ### Accepted (Implementation Planned)
 
-- **Screen Reader Accessibility** (ADR-100) — ARIA support for the Zifmia client
+- **Screen Reader Accessibility** (ADR-100) — ARIA support for the browser client
 - **Speech Accessibility** (ADR-139) — TTS/STT for blind and motor-impaired players
 - **Equivalent Objects** (ADR-147) — Identical object groups, numeric commands, trade/sell/barter
 
@@ -277,9 +273,9 @@ Sharpee is actively developed. These are the open [Architecture Decision Records
 | Clients | ADR-098 | Terminal Client — CLI-based game client |
 | Clients | ADR-099 | GLK Client — Standard IF interpreter protocol |
 | Clients | ADR-122 | Rich Media and Story Styling — Embedded media in output |
-| Zifmia | ADR-125 | Panel and Windowing System — Multi-panel desktop client |
-| Zifmia | ADR-128 | Walkthrough Panel — In-client walkthrough display |
-| Zifmia | ADR-130 | Story Installers — Split runner from author packaging tool |
+| Zifmia (retired) | ADR-125 | Panel and Windowing System — Multi-panel desktop client |
+| Zifmia (retired) | ADR-128 | Walkthrough Panel — In-client walkthrough display |
+| Zifmia (retired) | ADR-130 | Story Installers — Split runner from author packaging tool |
 | Author Tools | ADR-115 | Map Export CLI — Export story maps from code |
 | Author Tools | ADR-116 | Prompt-to-Playable — AI-assisted story development |
 | Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
@@ -296,5 +292,5 @@ MIT License — Copyright 2025-2026 David Cornelson
 - [Website](https://sharpee.net)
 - [npm Package](https://www.npmjs.com/package/@sharpee/sharpee)
 - [Documentation](https://sharpee.net/docs/)
-- [Downloads (Zifmia)](https://sharpee.net/downloads/)
+- [Downloads (Chord Writer)](https://sharpee.net/chord-writer/download)
 - [Issue Tracker](https://github.com/ChicagoDave/sharpee/issues)

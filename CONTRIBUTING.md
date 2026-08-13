@@ -85,8 +85,7 @@ packages/
 │   └── testing/           # Debug tools (/debug, /trace, $teleport)
 ├── transcript-tester/     # Transcript-based testing framework
 ├── platform-browser/      # Browser client infrastructure
-├── sharpee/               # Umbrella package and CLI
-└── zifmia/                # Tauri desktop runner
+└── sharpee/               # Umbrella package and CLI
 stories/
 ├── dungeo/                # Mainframe Zork (~191 rooms, 650 + 100 endgame points)
 ├── cloak-of-darkness/     # Classic IF demo
