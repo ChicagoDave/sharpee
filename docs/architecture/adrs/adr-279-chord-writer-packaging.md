@@ -117,8 +117,165 @@ minimum-toolchain note in the test panel's error surface is the cheap
 mitigation. The bundled devkit carries whatever the devkit carries —
 e.g. the ADR-286 template transform — with no packaging change.
 
+> **Amended 2026-08-12 (session 1744e6) — the coupling note above is stale in
+> both halves.** The IDE does not write fence-grammar transcripts: ADR-307's
+> cutover (landed 2026-08-10) made one JSON tree document per story
+> (`<story-id>.tests.json`) the Chord/IDE world's only serialization, and
+> retired the `.transcript` grammar `@sharpee/branch-tester` carried. ADR-287's
+> grammar survives only in `@sharpee/transcript-tester` — Dungeo's text world,
+> which the IDE neither reads nor writes.
+>
+> The version-drift risk therefore moved rather than vanished, and it moved
+> somewhere better. `tree-document.ts` refuses a document whose `version` is
+> newer than the reader with a named message, and reports anything else it
+> cannot understand as MALFORMED so the caller degrades to a fresh empty tree —
+> it never throws, and the grammar is closed, so additive fields must arrive
+> with a version bump. That is a stronger guard than the "minimum-toolchain
+> note" proposed above, it is already implemented and tested (AC-4), and it
+> holds for a PATH-resolved toolchain exactly as it does for a bundled one. The
+> mitigation this note asked for is not needed and should not be built.
+
 *(Original D4 — "no silent bundling; first-run says `npm install -g
 @sharpee/devkit`" — is superseded by this ruling.)*
+
+> **INTERIM 2026-08-12 (session 1744e6) — the original D4 is temporarily back in
+> service, by necessity.** Toolchain-bearing bundles do not clear notarization:
+> seven submissions containing the real vendored devkit closure have returned no
+> verdict at all — no Accepted, no Invalid, no log — while the same app with the
+> toolchain removed clears in 31 seconds and nine control fixtures cleared in
+> under two minutes. The full bisection, fixture ids and falsified hypotheses are
+> in [`docs/work/adr-279-chord-writer-packaging/notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md).
+>
+> So `package.sh --dmg-from <app> --no-toolchain` packages a deliberately
+> toolchain-less Chord Writer, and the download page tells authors to
+> `npm install -g @sharpee/devkit`. This works because the resolution order this
+> decision established puts the login-shell PATH (tier 2) **above** the bundled
+> toolchain (tier 3), so a global install is found whether or not tier 3 exists,
+> and a missing tier 3 is non-fatal by construction
+> (`BundledToolchain.executable` returns nil, never throws).
+>
+> **This does not reverse the ruling.** Everything D4 says about first-run cost
+> still stands — requiring a JavaScript package manager before Build works is
+> exactly the wall David hit and ruled against, and shipping toolchain-less
+> re-imposes it. What changed is the alternative: in July the choice was
+> bundled-versus-not, and today it is toolchain-less-and-shipping versus
+> bundled-and-blocked-indefinitely. Bundling remains the target and the flag
+> should stop being used the day a toolchain-bearing bundle gets a verdict.
+> The flag is deliberately narrow: it skips exactly three toolchain gates and
+> refuses any bundle that actually carries a toolchain.
+
+> **INTERIM LIFTED 2026-08-13 (session 73a646) — a toolchain-bearing DMG
+> shipped, and nothing in this repo was ever the cause.**
+>
+> **The whole of it: Apple's notary intermittently stalls.** Not on a property
+> of the bundle — on nothing detectable at all. The same archive, same SHA-256
+> `43a3bddb…76d`, one account, one command:
+>
+> | Submission | Submitted | Outcome |
+> | --- | --- | --- |
+> | `359b004e-ccd2-4ab0-a02e-0516b5598b75` | 2026-08-13T05:40:32Z | In Progress at 10h+ |
+> | `f0c04838-dda4-4172-8d79-cc1cfaaef601` | 2026-08-13T15:55:14Z | **Accepted in 72s** |
+>
+> Identical bytes, opposite outcomes. Fifteen submissions on 2026-08-13 spanning
+> every shape — with and without the dependency tree, with and without a signed
+> binary, plain and encrypted archives, 11MB to 60MB, high-entropy and trivially
+> compressible — produced eight hangs and no content-shaped pattern.
+>
+> **A false lead, recorded because it is the more instructive half.** During the
+> investigation the raw `vendor-toolchain.sh` output was archived directly and
+> submitted; it came back Invalid in 115 seconds naming npm's ad-hoc-signed
+> esbuild (`c27bc940`), and re-signing that binary made the same tree Accepted
+> in 92 seconds (`6486cc83`). That looked like the root cause and was briefly
+> written up as one. **It was an artifact of the fixture.** `package.sh` has
+> always signed every Mach-O under the bundled toolchain — generically, by
+> `find`, splitting node (with `bundled-node.entitlements`) from everything else
+> — under a comment that already named the problem: *"esbuild and friends arrive
+> ad-hoc/linker-signed, which never notarizes."* Zipping the toolchain tree
+> bypassed that step; a real bundle never does. A `vendor-toolchain.sh` step 4.6
+> was added to re-sign the closure and then **reverted** as redundant with the
+> script that owns signing.
+>
+> **What was actually run, and what it proved.** `package.sh` end to end,
+> 2026-08-13T17:30Z. Platform build, archive, toolchain seal, nested signing
+> (2 binaries), deep-strict verification, hardened runtime on app and node,
+> node entitlements asserted correct — every gate green, app submitted as
+> `da156648-79c6-4295-bedd-4d01f1b2b19b`.
+>
+> **That app came back Invalid in ~8 minutes, and the finding matters: the
+> toolchain passed.** The notary's only objection was
+> `Contents/Frameworks/libswift_Concurrency.dylib` — no Developer ID
+> certificate, no secure timestamp, both slices. Nothing about the toolchain,
+> node, esbuild, or the 7,900 files. A toolchain-bearing app was fully
+> inspected and the vendored toolchain cleared.
+>
+> **A real gap in `package.sh`'s build path, and the reason the Xcode route is
+> the standing preference.** Its nested-signing loop covers `$BUNDLED_TC` only
+> and never re-signs `Contents/Frameworks/`. Xcode's Distribute App → Direct
+> Distribution does, which is why `--dmg-from` exists and why notarizing
+> through Xcode is the recorded workflow. Local verification cannot catch it:
+> the dylib carries a valid Apple signature, so `codesign --verify --deep
+> --strict` passes, exactly as this script's own header warns ("Neither gap
+> fails a `codesign --verify` of the outer bundle").
+>
+> **The INTERIM is lifted — a stapled toolchain-bearing DMG shipped
+> 2026-08-13.** Route taken: `xcodebuild archive` with
+> `SHARPEE_VENDOR_TOOLCHAIN=1`, Xcode Distribute App → Direct Distribution,
+> then `package.sh --dmg-from`. `ChordWriter-1.0.0.dmg`, 56MB, Accepted and
+> stapled, Gatekeeper `source=Notarized Developer ID`.
+>
+> `package.sh`'s own build path remains broken for the framework reason above
+> and was not fixed. Extending its signing loop to `Contents/Frameworks/` would
+> repair it, but then two routes sign the same bundle two ways — a decision,
+> not a detail, and deferred rather than taken.
+>
+> **Consequences.**
+>
+> - **No code change was required.** The packaging path was correct as written
+>   in July. Three sessions of bisection found a defect that was not there.
+> - **`--no-toolchain` stays, with a changed rationale** — a release escape
+>   hatch for the intermittency, not evidence that bundling is blocked. First
+>   response to a stall past ~15 minutes is to **resubmit**.
+> - **The download page and `/chord-writer` are rewritten and SHIPPED** —
+>   merged to `main` (PR #261), the DMG uploaded to plover, site deployed
+>   2026-08-13. D4's first-run cost argument is satisfied rather than deferred,
+>   and verified on the installed app: `which sharpee` → not found,
+>   `npm ls -g @sharpee/devkit` → empty, ⌘B builds from the bundled toolchain
+>   (`Sharpee 5.0.0 · Chord 3.0.0`). **This INTERIM is lifted.**
+> - **[`notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md)
+>   is superseded in its conclusions**, not its data. Its "content-borne and
+>   layout-independent" finding, its eight exonerated properties, and its
+>   `.pnpm`-naming lead are all artifacts of intermittency. Its ledger, the
+>   Invalid-in-113s log behaviour, and the deletion of hung submissions 21–26
+>   hours after creation all stand.
+> - **§5a's Intel conclusion is FALSIFIED, and Intel shipped the same day.**
+>   It rested on a single matched pair 14 minutes apart — exactly the shape this
+>   session showed proves nothing. Re-tested 2026-08-13: a universal build was
+>   **Accepted in ~103 seconds** (`975d1c21-68bd-400a-a591-14818bb4b425`). Arch
+>   and notarization are unrelated.
+>
+>   Intel now ships as a **separate per-arch installer** rather than a universal
+>   binary (David 2026-08-13): each app carries a bundled toolchain for exactly
+>   one architecture, so a universal slice would ship a Build button with the
+>   wrong toolchain behind it for half the machines it runs on.
+>   `ChordWriter-1.0.0-x86_64.dmg` is signed, notarized, stapled and live
+>   alongside the arm64 build. Both target macOS 11.0 — verified on the real
+>   tarballs that both Node runtimes are `minos 11.0`.
+>
+>   Verified under Rosetta only; no genuine Intel hardware was available, and
+>   David accepted that for v1. What Rosetta did establish: correct slices and
+>   teams throughout, and a full `sharpee build` of a real story through the
+>   bundled x64 toolchain.
+> - **The intermittency is Apple's bug**, reported in forum thread 841846. Not a
+>   Sharpee problem, and not a shipping gate.
+>
+> **The lesson worth carrying.** Every hypothesis here failed the same way:
+> a cohort was compared against another cohort submitted at a different time,
+> and the difference was attributed to the artifacts. Against intermittent
+> infrastructure, only a *matched pair of identical bytes* proves anything —
+> which is what finally did.
+>
+> Full fixture matrix, all fifteen submissions and the falsified hypotheses:
+> [`docs/work/adr-279-chord-writer-packaging/fixtures/RESULTS.md`](../../work/adr-279-chord-writer-packaging/fixtures/RESULTS.md).
 
 ### D5 — Chord Writer stays in the sharpee monorepo (ruled 2026-07-27, session fda0f0)
 
