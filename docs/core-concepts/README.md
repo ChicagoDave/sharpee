@@ -73,7 +73,7 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 
 ### Channels and clients
 
-**`@sharpee/channel-service`** — The channel-I/O wire producer (ADR-163), the universal surface carrying every story→UI signal: prose, status, media, layout. It runs in-process wherever the engine runs — Node CLI, multi-user server, browser.
+**`@sharpee/channel-service`** — The channel-I/O wire producer (ADR-163), the universal surface carrying every story→UI signal: prose, status, media, layout. It runs in-process wherever the engine runs — Node CLI, browser clients, the IDE's Play and Testing surfaces.
 
 **`@sharpee/platform-browser`** — Browser client infrastructure: `BrowserClient`, a renderer per channel, and managers for save/restore, themes, menus, dialogs, input, and display. Framework-free, with `lz-string` as its only runtime dependency.
 
@@ -90,6 +90,8 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 **`@sharpee/devkit`** — The `sharpee` author CLI (ADR-180, ADR-187): scaffold, build, test, verify, compose, and introspect an author's own story project. In-repo platform builds deliberately use a separate tool, `repokit`.
 
 **`@sharpee/transcript-tester`** — Transcript-based testing: the `.transcript` parser and its matched canonical serializer, the runner, golden recordings, coverage, outcome search, and watch mode. It owns the transcript grammar, so parser and serializer ship as a pair pinned by their own tests.
+
+**`@sharpee/branch-tester`** — The tree-document testing runtime (ADR-307). One test tree per story, serialized as `<story-id>.tests.json`: the walker replays it against a real engine and owns the shared assertion machinery — channel claims, policy synthesis — that both the walker and the IDE's Testing tab consume. Distinct from `transcript-tester`, which owns the `.transcript` grammar for Sharpee's own hand-authored suites; the Chord/IDE world uses this one.
 
 **`@sharpee/sharpee`** — The umbrella package aggregating the others for consumption. It deliberately does not re-export everything (ADR-178); the baseline sub-packages remain the import contract.
 
@@ -1049,6 +1051,31 @@ This pattern enables maximum flexibility - the action just signals intent, allow
 2. **Adding a new action**: Create in `/packages/stdlib/src/actions/standard/`
 3. **Custom game logic**: Add event handlers to entities or story
 4. **Testing**: Write unit and integration tests
+
+## Reading This Repository
+
+**Never take an ADR as a description of current code.** ADRs record what was
+decided, at the moment it was decided. Code moves; the ADR does not follow it,
+and Status lines are unreliable — "Proposed" often means shipped, and an
+accepted decision may have been superseded by a later one that never
+back-referenced it. Before asserting how something works, read the source.
+
+The concrete failure this prevents, seen repeatedly: a claim is built from an
+adjacent fact — another ADR's wording, a type name that matches a domain term,
+a package that exists — instead of from the thing itself, and it survives until
+review or someone opens the file. Recent instances include a decision citing
+"ADR-306 D4" (ADR-306 has no D4; that boundary is ADR-305's, and ADR-306 records
+it superseded), and a design whose central mechanism assumed
+`WorldModel.evaluateScope()` took a location when it takes an actor.
+
+**The rule: if a statement is about what the code does now, cite a file and a
+line you have actually read.** A grep is cheap; a design built on a stale
+premise is not. This applies to ADR authoring, review, planning, and ordinary
+answers alike.
+
+*(This directive was reported as written on 2026-08-12 and was not — it existed
+only in session summaries until 2026-08-13. That is itself an instance of the
+pattern.)*
 
 ## Important Notes
 

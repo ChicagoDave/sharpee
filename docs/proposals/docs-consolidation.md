@@ -1,6 +1,6 @@
 # Proposal: docs/ consolidation
 
-**Status**: ACCEPTED — all fourteen items accepted; none rejected or deferred. `proposal-review` ran 2026-08-08 and raised 2 blocking
+**Status**: ACCEPTED — all fourteen items accepted; none rejected or deferred. P-13 is DONE (executed directly 2026-08-13); P-9 is accepted but deliberately unplanned for now. `proposal-review` ran 2026-08-08 and raised 2 blocking
 findings plus 5 advisory. **Amended 2026-08-13** (session 756ff6) for the
 zifmia retirement, which moved one inventoried directory and partly executed
 P-4; P-3, P-4 and the headline inventory are annotated in place. The amendment
@@ -491,7 +491,25 @@ question, since the reasoning is what a future session will want.
 - **Note**: this is a content fix, not a move, and it is the one item here with
   a per-session cost while it goes unfixed.
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: ACCEPTED
+- **DONE 2026-08-13** — executed directly rather than planned, at David's
+  instruction ("do 13"), because it is independent of every move in this
+  proposal and was wrong for every session in the meantime. What was found:
+  - The `@sharpee/text-service` half was **already fixed** — the removal note
+    and the prose-pipeline/channel-IO replacement were in place.
+  - The second clause (claims checked against source) was not. A mechanical
+    diff of the package list against `packages/` found `@sharpee/branch-tester`
+    — the ADR-307 tree-document test runtime — **undescribed entirely**, and
+    `channel-service` still listing a "multi-user server" among its hosts.
+    Both fixed.
+  - **The standing "never rely on ADRs, read the code" directive did not
+    exist.** `git log -S` on this file returns nothing and a repo-wide grep
+    finds it only inside session summaries claiming it was written. Today's
+    `pattern-recurrence-detector` had named that pattern top-priority
+    *precisely because* it "recurred after its own fix was in place" — the fix
+    was never in place. Now written, as `## Reading This Repository`, with the
+    two concrete 2026-08-13 instances and a note that its own absence was an
+    instance of the pattern.
+- **Status**: DONE
 
 ### P-14: Adopt DevArch's `unofficial/` gate, and write the rule for humans
 - **Done when**: the rule is stated in `CLAUDE.md` in the same register as the
