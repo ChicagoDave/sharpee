@@ -19,7 +19,10 @@ packages:
   # tutorials/familyzoo is a standalone book-aligned project that consumes the
   # published @sharpee/* npm packages — it is no longer a workspace member.
   - tools/shite
-  - tools/zifmia
+  # tools/zifmia retired 2026-08-13 (David) — the name was misused and the
+  # tool was never in active development. Source archived at
+  # tools/_archive/zifmia, out of the workspace so its deps and build
+  # artifacts stop being installed and rebuilt.
   - tools/repokit
 
 # Public-hoist @sharpee/* and the lz-string vendored baseline entry so

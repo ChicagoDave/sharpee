@@ -23,7 +23,6 @@ import { runGrammarStep } from './grammar';
 import { runManifestStep } from './manifest';
 import { buildBrowserClient, chordStoryFile } from './browser';
 import { buildPlaygroundClient } from './playground';
-import { buildZifmiaServer } from './zifmia';
 
 /**
  * The generator name written into stamped version.ts files. build.sh was retired at
@@ -54,8 +53,6 @@ export interface BuildOptions {
   browser?: boolean;
   /** Also build the story-agnostic playground bundle (ADR-191). Implies --esm; no story. */
   playground?: boolean;
-  /** Also build the zifmia multi-user server (tools/zifmia/dist/). Implies --esm. */
-  zifmia?: boolean;
   quiet?: boolean;
 }
 
@@ -127,11 +124,6 @@ export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, eng
     }
   }
 
-  // zifmia package.json version (build.sh update_versions stamps it for -c zifmia).
-  if (opts.zifmia) {
-    const zifmiaPkg = join(root, 'tools', 'zifmia', 'package.json');
-    if (existsSync(zifmiaPkg)) writePkgVersion(zifmiaPkg, sharpeeVersion);
-  }
   return sharpeeVersion;
 }
 
@@ -226,9 +218,9 @@ export function runBuild(opts: BuildOptions = {}): void {
   const root = opts.root ?? findRepoRoot();
   const log = (m: string) => !opts.quiet && console.log(m);
 
-  // Client targets (browser/playground/zifmia) need the ESM build pass (build.sh runs it when a client is requested).
+  // Client targets (browser/playground) need the ESM build pass (build.sh runs it when a client is requested).
   const effective: BuildOptions =
-    opts.browser || opts.playground || opts.zifmia ? { ...opts, esm: true } : opts;
+    opts.browser || opts.playground ? { ...opts, esm: true } : opts;
   if (effective.browser && !effective.story) throw new Error('--browser requires a story');
 
   log('=== devkit build ===');
@@ -243,7 +235,6 @@ export function runBuild(opts: BuildOptions = {}): void {
   if (effective.bundle !== false) runBundle({ root, quiet: effective.quiet });
   if (effective.browser) buildBrowserClient(root, effective.story!, { quiet: effective.quiet });
   if (effective.playground) buildPlaygroundClient(root, { quiet: effective.quiet });
-  if (effective.zifmia) buildZifmiaServer(root, { quiet: effective.quiet });
   log('=== build complete ===');
 }
 
@@ -265,7 +256,6 @@ function parseBuildArgs(args: string[]): BuildOptions {
     else if (a === '--esm') opts.esm = true;
     else if (a === '--browser') opts.browser = true;
     else if (a === '--playground') opts.playground = true;
-    else if (a === '--zifmia') opts.zifmia = true;
     else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
     else if (!opts.story) opts.story = a;
     else throw new Error(`unexpected argument: ${a}`);

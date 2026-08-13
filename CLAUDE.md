@@ -134,18 +134,16 @@ for `@sharpee/engine`.
 # Common platform workflows (in-repo)
 ./repokit build dungeo               # Build platform + story, then bundle
 ./repokit build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
-./repokit build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
 ./repokit build dungeo --skip stdlib # Resume the platform build from stdlib
 ./repokit clean                      # Remove dist/, dist-esm/, tsbuildinfo
 ./repokit verify                     # tsf build --npm + publish dry-run
 ```
 
-**Multi-user (zifmia)**: the corrected multi-user server (ADR-177) is built with `./repokit build --zifmia` → `tools/zifmia/dist/`. The abandoned `shite` parts bin and the legacy Tauri `--runner` are no longer built (ADR-180 dropped them); their source remains for reference only.
+**Multi-user (zifmia) — RETIRED 2026-08-13.** The name was misused and the tool was never in active development; `repokit`'s `--zifmia` flag and its `zifmia` command are removed, and the source is archived at `tools/_archive/zifmia`, outside the pnpm workspace. Its two real-path test suites were pinned to the `.sharpee` bundle format, which is itself deprecated. The abandoned `shite` parts bin and the legacy Tauri `--runner` were dropped earlier (ADR-180); their source likewise remains for reference only.
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
 - `dist/web/{story}/` — Self-contained single-player browser client (`--browser`)
-- `tools/zifmia/dist/` — zifmia multi-user server (`--zifmia`)
 
 **Version System**:
 - Versions use plain `X.Y.Z` — no `-beta` suffix, no timestamp (the npm `beta` DIST-TAG is separate from the version string)
