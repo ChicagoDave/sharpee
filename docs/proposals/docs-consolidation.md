@@ -1,6 +1,6 @@
 # Proposal: docs/ consolidation
 
-**Status**: REVIEWED — `proposal-review` ran 2026-08-08 and raised 2 blocking
+**Status**: ACCEPTED — all fourteen items accepted; none rejected or deferred. `proposal-review` ran 2026-08-08 and raised 2 blocking
 findings plus 5 advisory. **Amended 2026-08-13** (session 756ff6) for the
 zifmia retirement, which moved one inventoried directory and partly executed
 P-4; P-3, P-4 and the headline inventory are annotated in place. The amendment
@@ -374,7 +374,15 @@ question, since the reasoning is what a future session will want.
   `docs/work/archive/`. Every other target has been dispositioned by David and
   moved to `docs/work/archive/<slug>/`.
 - **The backlog**: **110 targets**, of which `.current-plan` names one
-  (`ide-go-live`). **109 need a disposition.** For context on why no automatic
+  (`ide-go-live`). **109 need a disposition.**
+- **Counts restated 2026-08-13**: **117 targets**, and the pointer has moved
+  twice since this was written — it named `ide-go-live`, then
+  `adr-312-cli-test-recording`, and now `chord-writer-intel`, which is DONE. So
+  116 need a disposition, and the figure grows with ordinary work; it is a
+  backfill against a moving baseline, not a fixed list. Rule 18b is live in
+  `DEVARCH.md` (exercised twice on 2026-08-13), so no NEW orphans accumulate;
+  whether Phase 3's archive-on-DONE has shipped was not confirmed and should be
+  before this item is planned. For context on why no automatic
   rule would have worked: 22 carry a CURRENT or PENDING phase, 56 have a plan
   with every phase closed, and **32 have no `plan.md` at all** — folders of
   notes and context that were never plans. Only the pointer distinguishes the
@@ -417,7 +425,8 @@ question, since the reasoning is what a future session will want.
 
   **Once 18b and Phase 3 ship, no new orphans accumulate.** P-9 is strictly the
   109 that predate the rule; it is a one-time debt, not a recurring sweep.
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ### P-10: Stop DevArch runtime state accumulating in `docs/context/`
 - **Done when**: the 103 gitignored runtime files under `docs/context/` — 68
@@ -427,7 +436,8 @@ question, since the reasoning is what a future session will want.
 - **Note**: gitignored, so invisible to `git status` and to every count above,
   but growing once per session and sharing a directory with the session
   summaries that are the point of `context/`.
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ### P-11: Rewrite `docs/README.md` to describe the settled shape
 - **Done when**: `docs/README.md` lists the eight surviving directories, says
@@ -435,7 +445,8 @@ question, since the reasoning is what a future session will want.
   the next person does not re-derive this from directory listings, and does not
   mistake an archived tree for current material.
 - **Depends on**: P-1, P-2, P-3, P-4, P-5
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ### P-12: Repair references to moved paths, including published ones
 - **Done when**: both of these return nothing unintentional —
@@ -462,7 +473,8 @@ question, since the reasoning is what a future session will want.
 - **Note**: this is the item that determines whether the cleanup is felt as an
   improvement or as a week of broken references. Worth doing in the same commit
   as each move rather than as a trailing pass.
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ### P-13: Fix `docs/core-concepts/README.md`, which every session is told to read
 - **Done when**: the file no longer describes removed architecture — specifically
@@ -478,7 +490,8 @@ question, since the reasoning is what a future session will want.
   this proposal.
 - **Note**: this is a content fix, not a move, and it is the one item here with
   a per-session cost while it goes unfixed.
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ### P-14: Adopt DevArch's `unofficial/` gate, and write the rule for humans
 - **Done when**: the rule is stated in `CLAUDE.md` in the same register as the
@@ -508,7 +521,8 @@ question, since the reasoning is what a future session will want.
   call; it does not tell a person opening the folder what the folder is. The
   `CLAUDE.md` paragraph and the folder's own `README.md` remain this item.
 - **Depends on**: P-1 (ACCEPTED)
-- **Status**: PROPOSED
+- **Accepted**: David, 2026-08-13 (session 756ff6)
+- **Status**: ACCEPTED
 
 ---
 
