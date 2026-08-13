@@ -5,7 +5,7 @@
  * closure-per-channel model — 2026-05-02 rewrite + 2026-05-03 refinement).
  *
  * Owner context: platform package — runs in-process wherever the engine
- * runs (Node CLI, multi-user server, browser zifmia, platform-browser).
+ * runs (Node CLI, browser clients, platform-browser).
  *
  * Public interface:
  *

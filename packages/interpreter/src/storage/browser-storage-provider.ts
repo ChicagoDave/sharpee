@@ -5,6 +5,10 @@
  * with story-scoped keys.
  *
  * Key scheme:
+ * The `zifmia-` prefix outlives the retired name deliberately: these keys
+ * address saves already sitting in players' browsers, so renaming them would
+ * orphan that data rather than tidy anything.
+ *
  *   zifmia-{storyId}-saves-index   → SaveSlotInfo[]
  *   zifmia-{storyId}-save-{slot}   → compressed JSON save data
  *   zifmia-{storyId}-save-autosave → compressed JSON auto-save

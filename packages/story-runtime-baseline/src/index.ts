@@ -2,7 +2,7 @@
  * @sharpee/story-runtime-baseline — Story Runtime Baseline manifest (ADR-178).
  *
  * Single source of truth for the set of packages a `.sharpee` story bundle
- * may import. Zifmia depends on this package so every baseline entry is
+ * may import. The multi-user server depended on this package so every baseline entry is
  * installed transitively. The story build pipeline imports
  * `STORY_RUNTIME_BASELINE` to validate that bundles only reference packages
  * in the list.

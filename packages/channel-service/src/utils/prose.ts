@@ -15,7 +15,7 @@
  * consumers project the same packets to text — the headless bootstrap
  * harness (`@sharpee/bootstrap`, what `sharpee test` compares against),
  * the CLI bundle, the browser client's IDE recording bridge
- * (`@sharpee/platform-browser`, ADR-277 D5 / ADR-282 D2), and zifmia's
+ * (`@sharpee/platform-browser`, ADR-277 D5 / ADR-282 D2), and the
  * multi-user pane. They MUST agree character-for-character, since
  * ADR-282's blessed verbatim assertions are captured through one and
  * replayed through the other. The join rule previously had two copies
@@ -60,7 +60,7 @@ import { flattenContent } from './flatten.js';
  * not sent it, which is a subscription fact, not a corrupt packet.
  *
  * @param payload — a `TurnPacket.payload`, or any equivalent map of
- *   channel id → emitted value (zifmia stores turns in that shape).
+ *   channel id → emitted value (turns are stored in that shape).
  * @returns the turn's prose entries in reading order.
  */
 export function composeProse(payload: unknown): unknown[] {

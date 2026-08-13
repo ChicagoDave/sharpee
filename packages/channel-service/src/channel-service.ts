@@ -2,7 +2,7 @@
  * @sharpee/channel-service — `ChannelService` class.
  *
  * Owner context: platform package — runs in-process wherever the engine
- * runs (Node CLI, multi-user server, browser zifmia, platform-browser).
+ * runs (Node CLI, browser clients, platform-browser).
  *
  * Public interface (per ADR-163 §6, §13, §14):
  *

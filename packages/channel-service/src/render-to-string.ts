@@ -19,11 +19,11 @@
  *  - `CLIRenderOptions` — option shape (ansi, blockSeparator,
  *    colors, includeStatus). Name preserved from the prior
  *    `@sharpee/text-service` home; not CLI-specific in practice
- *    (zifmia uses `renderToString` for browser chat bubbles).
+ *    (browser chat bubbles use `renderToString`).
  *
  * Ported from `@sharpee/text-service/src/cli-renderer.ts` per ADR-174
  * Phase 2 (OQ-1 resolution, 2026-05-10). The original file remains
- * compilable in text-service through Phase 2 for zifmia's sake; Phase
+ * compilable in text-service through Phase 2 for the browser client's sake; Phase
  * 3 deletes the package.
  *
  * @see ADR-174 — Decoration Architecture and Engine-Internal Prose Pipeline

@@ -1,8 +1,16 @@
 /**
  * @sharpee/interpreter
  *
- * Sharpee story interpreter (legacy Tauri runner; the `zifmia` name
- * is reserved for the multi-user web product).
+ * Sharpee story interpreter (legacy Tauri runner). Excluded from the pnpm
+ * workspace and not built.
+ *
+ * The `zifmia` name is RETIRED (2026-08-13) — the multi-user product it was
+ * reserved for is archived at tools/_archive/zifmia. Two things here keep it
+ * anyway and should NOT be renamed on sight:
+ *   - `ZifmiaRunner` / `ZifmiaRunnerProps` are exported identifiers.
+ *   - storage/browser-storage-provider.ts builds localStorage keys from the
+ *     literal `zifmia-` prefix. Renaming them orphans every save any player
+ *     already has, which is a migration, not a cleanup.
  */
 
 // Context and providers

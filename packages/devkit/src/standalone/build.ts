@@ -536,7 +536,7 @@ Options:
   --no-sourcemap     Skip source map generation (browser client)
 
 Output:
-  dist/<story>.sharpee   Story bundle for Zifmia runner
+  dist/<story>.sharpee   Story bundle (legacy TypeScript-story format)
   dist/web/              Browser client (if browser-entry.ts exists)
   dist/index.js          Compiled story (declaration files land alongside)
 

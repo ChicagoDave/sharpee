@@ -63,8 +63,8 @@ export interface ProseChannelRenderers {
    * Render one whole turn payload at once.
    *
    * For surfaces that hold complete turns rather than consuming a
-   * dispatched packet stream — zifmia replays a room's stored transcript
-   * this way, and a backlog turn is a payload map, not a live dispatch.
+   * dispatched packet stream — replaying a stored transcript works this
+   * way, and a backlog turn is a payload map, not a live dispatch.
    * Equivalent to letting the dispatcher walk the same payload, so both
    * paths compose through the same rule.
    */
@@ -72,7 +72,7 @@ export interface ProseChannelRenderers {
   /**
    * Empty the slot and drop any half-buffered turn. Same effect as the
    * dispatcher's `clear` channel, for surfaces that reset the pane
-   * themselves (zifmia does when a room's transcript is replaced).
+   * themselves (as when a stored transcript is replaced wholesale).
    */
   clear(): void;
 }
