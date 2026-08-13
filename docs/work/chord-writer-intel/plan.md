@@ -58,6 +58,25 @@ packaging and is not a dependency of any phase here.
 - **Entry state**: arm64-only vendoring works as today (`vendor-toolchain.sh <resources-dir>` hardcodes `NODE_ARCH="darwin-arm64"`); `@esbuild/darwin-x64@0.27.2` is already resolvable in `pnpm-lock.yaml`, but `pnpm deploy` resolves optional platform deps for the host arch, so an x64 closure needs an explicit push (pnpm's `supportedArchitectures` config, or an equivalent override) rather than falling out for free.
 - **Deliverable**: `vendor-toolchain.sh` takes an arch parameter (arm64 | x86_64) instead of a hardcoded constant; `tools/ide/vendor/node/` gains the `node-v22.23.1-darwin-x64.tar.xz` official tarball plus an updated `SHASUMS256.txt` (never hand-edited — refreshed from nodejs.org per the script's own existing rule); the `pnpm deploy` step for `@sharpee/devkit` and `@sharpee/platform-browser` is made to resolve the **x64** esbuild optional dependency when assembling the x64 toolchain, on an Apple-silicon build host; both toolchains can be assembled side by side into separate staging dirs without cross-contaminating each other's `.stamp` fingerprint or seal; step 4.5 (seal enforcement) and step 4.6 (Developer ID signing) both pass unmodified for the x64 assembly, since neither is arch-specific logic today.
 - **Exit state**: a clean-checkout run of `vendor-toolchain.sh <dir> --arch x86_64` (or equivalent flag) produces a sealed, signed x64 toolchain whose `node/bin/node` and the deployed esbuild binary both execute under `arch -x86_64` Rosetta on the arm64 build machine; the existing arm64 path is unchanged in behavior and output.
+- **GATE CLEARED 2026-08-13 — `minos 11.0`.** Checked ahead of the phase, on the
+  real tarball rather than by inference:
+
+  ```
+  $ curl -sSL -o n.tar.xz https://nodejs.org/dist/v22.23.1/node-v22.23.1-darwin-x64.tar.xz
+  $ tar -xf n.tar.xz node-v22.23.1-darwin-x64/bin/node
+  $ otool -l node-v22.23.1-darwin-x64/bin/node | grep -A4 LC_BUILD_VERSION
+        cmd LC_BUILD_VERSION
+    cmdsize 32
+   platform 1
+      minos 11.0
+        sdk 15.0
+  ```
+
+  Same floor as the arm64 runtime, so `project.yml`'s "the vendored node is minos
+  11.0 too, so the toolchain reaches as far as the app does" holds for x64
+  unchanged, and the deployment-target decision needs no revisiting. The gate
+  below is kept as the standing rule for any future runtime bump.
+
 - **BLOCKING GATE — verify the x64 node's minimum OS before anything else.**
   `project.yml:158-162` records the invariant "the deployment target is 11.0...
   The vendored node is minos 11.0 too, so the toolchain reaches as far as the app
