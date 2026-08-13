@@ -1,7 +1,10 @@
 # Proposal: docs/ consolidation
 
 **Status**: REVIEWED — `proposal-review` ran 2026-08-08 and raised 2 blocking
-findings plus 5 advisory. **Both blockers are void**: they assumed the
+findings plus 5 advisory. **Amended 2026-08-13** (session 756ff6) for the
+zifmia retirement, which moved one inventoried directory and partly executed
+P-4; P-3, P-4 and the headline inventory are annotated in place. The amendment
+was targeted, not a re-review — no other item's premises changed. **Both blockers are void**: they assumed the
 guides/reference destination was a sharpee.net route, and David ruled it an
 in-repo quarantine (P-1). Eight items are ACCEPTED (P-1 through P-8); six
 remain PROPOSED. **Every directory in `docs/` now has a disposition.**
@@ -11,7 +14,12 @@ remain PROPOSED. **Every directory in `docs/` now has a disposition.**
 
 ## Context
 
-`docs/` holds **31 top-level directories and one loose file** (`README.md`).
+`docs/` holds **30 top-level directories and one loose file** (`README.md`).
+
+> **Inventory amended 2026-08-13.** Was 31. `docs/zifmia/` moved into
+> `docs/_archive/zifmia/` when the zifmia product line was retired, which
+> partly executes P-4 and adds a tenant to one of the trees P-3 consolidates.
+> Both items are annotated below. Nothing else in this inventory moved.
 
 **The keep-list is eight** (David, 2026-08-08 — the original four, plus
 `proposals/`, `book/`, `core-concepts/` and `brainstorm/`):
@@ -27,7 +35,7 @@ remain PROPOSED. **Every directory in `docs/` now has a disposition.**
 | `core-concepts/` | Required session-start reading per `CLAUDE.md` |
 | `brainstorm/` | DevArch skill output — `/devarch:brainstorm` writes here |
 
-So **23 directories need a disposition**, not 27.
+So **22 directories need a disposition**, not 27 (was 23 before the 2026-08-13 amendment).
 
 The directive's premise is sound and the inventory supports it: **14 of the 31
 directories have had no commit in over a month**, six of them in over six
@@ -195,7 +203,7 @@ question, since the reasoning is what a future session will want.
   | Tree | What is in it | Destination |
   | --- | --- | --- |
   | `archive/` (27 dirs) | **24 carry a `plan.md`** — archived work targets (`chord-211-core`, `chord-author-pipeline`, …) | **`docs/work/archive/<slug>/`** — DevArch Phase 3's canonical path |
-  | `_archive/` (3 dirs) | `site` 5.1M, `web-save` 24M, `website` 9.8M — old website material | **`docs/unofficial/archive/`** |
+  | `_archive/` (4 dirs) | `site` 5.1M, `web-save` 24M, `website` 9.8M — old website material — **plus `zifmia/` (5 banner-topped operator guides, added 2026-08-13)** | **`docs/unofficial/archive/`** |
   | `_archived/` (28 entries) | Loose superseded docs — `blog/`, `book/`, `debug-mode.md`, `forge-brainstorm.md`, `grammar-table.md`, … | **`docs/unofficial/archive/`** |
 
   The principle that separates them: **an archived plan is history you may
@@ -237,10 +245,19 @@ question, since the reasoning is what a future session will want.
   `/devarch:brainstorm` has not run since 2026-05-10, not because it is dead.
 - **Done when**: each is moved (never deleted) into **`docs/unofficial/archive/`**
   per P-3, and `docs/` no longer carries any of them at top level.
-- **Two to check individually before moving**: `zifmia/` (five deployment docs
-  for a shipping product — likely belongs beside the tool at `tools/zifmia/`,
-  not in an archive) and `tutorials/fernhill/` (may be superseded by the site's
-  Chord tutorial, or may be the only copy).
+- **One to check individually before moving**: `tutorials/fernhill/` (may be
+  superseded by the site's Chord tutorial, or may be the only copy).
+- **AMENDED 2026-08-13 — `zifmia/` is already done, and its reasoning is void.**
+  This item said `zifmia/` "likely belongs beside the tool at `tools/zifmia/`,
+  not in an archive," on the grounds that it documented a shipping product.
+  Both halves are now false: the zifmia line was retired that day (the name was
+  misused — the same server shipped twice, as `tools/zifmia` and `tools/shite`)
+  and the tool itself is archived at `tools/_archive/zifmia`. The five
+  deployment docs moved to `docs/_archive/zifmia/` with per-file retirement
+  banners, kept because ADR-153 AC-9 requires operator documentation to exist.
+  So this item's scope is **thirteen** trees, not fourteen; `zifmia/` needs
+  only to be carried along by P-3's archive consolidation, not dispositioned
+  again.
 - **The signal that was wrong, and where else it applies**: `brainstorm/` was
   in this item because it is git-cold. Git-coldness measures *when a tool last
   ran*, not whether the directory is live, so it misclassifies every
