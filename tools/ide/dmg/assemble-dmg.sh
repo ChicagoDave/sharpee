@@ -106,12 +106,47 @@ hdiutil create \
   "$RW" >/dev/null \
   || die "hdiutil failed to create the read-write image."
 
+# --- Clear stranded volumes from earlier runs ------------------------
+# The EXIT trap above detaches this run's volume, but it cannot fire when a run
+# is SIGKILLed or the shell hosting it dies — and nothing else ever cleans up.
+# Because the mount below TOLERATES a collision by accepting macOS's suffixed
+# name, a stranded volume is invisible to this script and accumulates: four
+# ("Chord Writer 1.0.0" plus " 1", " 2", " 3") were found mounted on
+# 2026-08-13, each registering with Launch Services as another copy of the app,
+# one of which presents to the user as an installer rather than the installed
+# app.
+#
+# Only disk images are detached, never a real volume that happens to collide:
+# `hdiutil info` lists a backing image path for an image and nothing for a
+# physical disk, and that distinction is the guard.
+stranded=0
+for vol in "/Volumes/$VOLNAME" "/Volumes/$VOLNAME "*; do
+  [ -d "$vol" ] || continue
+  case "$(basename "$vol")" in
+    "$VOLNAME") ;;
+    "$VOLNAME "[0-9]*) ;;
+    *) continue ;;
+  esac
+  hdiutil info | grep -qF "$vol" || continue   # not a disk image — leave it alone
+  if hdiutil detach "$vol" -force >/dev/null 2>&1; then
+    stranded=$(( stranded + 1 ))
+  else
+    die "a volume named '$(basename "$vol")' is mounted from an earlier run and
+  could not be detached. Eject it in Finder and re-run — leaving it mounted
+  makes macOS suffix this run's volume and strands another copy."
+  fi
+done
+[ "$stranded" -eq 0 ] || note "detached $stranded stranded volume(s) from an earlier run"
+
 # --- Mount -----------------------------------------------------------
 # Read the mount point back rather than assuming /Volumes/<volname>: if a
 # volume of that name is already mounted, macOS silently appends a suffix and
 # the styling below would be applied to whatever else answers to the name we
 # guessed. The sed takes everything from /Volumes to end-of-line, because the
 # volume name contains spaces and would defeat field splitting.
+#
+# The sweep above should make a collision impossible; this stays because a
+# collision is still possible from a volume mounted between the sweep and here.
 MOUNT_POINT="$(
   hdiutil attach "$RW" -readwrite -noverify -noautoopen \
     | sed -n 's#.*\(/Volumes/.*\)$#\1#p' | head -1
