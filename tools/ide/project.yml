@@ -97,8 +97,13 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           if [ "${SHARPEE_VENDOR_TOOLCHAIN:-0}" = "1" ]; then
+            # SHARPEE_TOOLCHAIN_ARCH is set by package.sh alongside ARCHS so the
+            # bundled toolchain matches the slice being built. Unset (a plain
+            # xcodebuild) means vendor-toolchain.sh defaults to the build host,
+            # which is what the dev loop wants.
             "$PROJECT_DIR/vendor-toolchain.sh" \
-              "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+              "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" \
+              ${SHARPEE_TOOLCHAIN_ARCH:+--arch "$SHARPEE_TOOLCHAIN_ARCH"}
           else
             echo "note: skipping bundled toolchain (set SHARPEE_VENDOR_TOOLCHAIN=1 to assemble it)"
           fi
@@ -127,20 +132,34 @@ targets:
         # SharpeeIDE` keeps working across SharpeeIDETests.
         PRODUCT_NAME: Chord Writer
         PRODUCT_MODULE_NAME: SharpeeIDE
-        # ADR-279 D4: the bundled Node runtime is vendored for arm64 ONLY
-        # (tools/ide/vendor/node). ARCHS is pinned to match — a universal
-        # build would ship an x86_64 slice whose Build button has no
-        # toolchain behind it.
+        # SINGLE-SLICE, AND DELIBERATELY SO — but no longer arm64-only.
+        # Chord Writer ships as SEPARATE PER-ARCH INSTALLERS (David 2026-08-13),
+        # not a universal binary. Each app carries a bundled Node runtime and
+        # devkit closure for exactly one architecture (ADR-279 D4), so a
+        # universal slice would ship a Build button with the wrong toolchain
+        # behind it for half the machines it runs on. Two thin apps, two DMGs.
         #
-        # Apple silicon is therefore the requirement, but the OS is NOT: the
-        # deployment target is 11.0, the release M1 Macs shipped with, so
-        # every Apple silicon Mac can run this whatever macOS it is on
-        # (David's ruling 2026-08-10 — "any M chip OS, we can't require 26").
-        # The vendored node is minos 11.0 too, so the toolchain reaches as far
-        # as the app does. Three `isInspectable` calls are availability-guarded
-        # and one `loadViewIfNeeded()` was replaced with the portable `_ = view`
-        # to hold that floor; raising it again should be a decision, not a
-        # side effect of reaching for a newer API.
+        # This default is the DEV-LOOP value, matching the machine the project
+        # is developed on. Release packaging overrides it per arch:
+        #   xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO ...
+        # and package.sh passes the same arch on to vendor-toolchain.sh so the
+        # bundled toolchain and the app slice always agree. They must: a mismatch
+        # is not a build error, it is an app that launches and then cannot build.
+        #
+        # NOT a notarization constraint. An earlier note here claimed universal
+        # builds could not be notarized, from one matched pair on 2026-08-12.
+        # That was falsified 2026-08-13 — a universal build was Accepted in ~103
+        # seconds (submission 975d1c21-68bd-400a-a591-14818bb4b425) — once the
+        # notary's intermittency was understood. Arch and notarization are
+        # unrelated; do not reintroduce that reasoning.
+        #
+        # DEPLOYMENT TARGET 11.0 FOR BOTH ARCHES (David 2026-08-13). Verified on
+        # the real tarballs: both the arm64 and x64 Node runtimes are minos 11.0,
+        # so the toolchain reaches as far as the app does on either. Three
+        # `isInspectable` calls are availability-guarded and one
+        # `loadViewIfNeeded()` was replaced with the portable `_ = view` to hold
+        # that floor; raising it again should be a decision, not a side effect of
+        # reaching for a newer API.
         ARCHS: arm64
         # Dev builds sign with the Apple Development cert (not ad-hoc "-"):
         # TCC ties folder-access grants to the signing identity, and an ad-hoc
@@ -148,7 +167,7 @@ targets:
         # Desktop access on each ⌘R. Release packaging (package.sh) still
         # re-signs with Developer ID.
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        DEVELOPMENT_TEAM: RSNGKW5LNH
         CODE_SIGN_IDENTITY: "Apple Development"
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
@@ -175,7 +194,7 @@ targets:
         # library validation requires (ad-hoc "-" was tried and refused to
         # load: "different Team IDs").
         CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        DEVELOPMENT_TEAM: RSNGKW5LNH
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
 

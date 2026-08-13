@@ -2,16 +2,19 @@ Two downloads: the app you write in, and a finished story to open in it.
 
 ## Chord Writer
 
-<Callout title="Apple silicon Mac, macOS 11 or later">
-  M1 or later, on any macOS those machines run — the build targets macOS 11,
-  which is what the first Apple silicon Macs shipped with.
-</Callout>
-
 Chord Writer carries the whole Sharpee toolchain inside its own application
 bundle — a Node runtime and the command-line tool, vendored at build time — so
-installing it is the only step.
+installing it is the only step. That bundled toolchain is built for one
+processor, which is why there are two downloads rather than one:
 
-**[Download Chord Writer 1.0.0 (.dmg)](/downloads/ChordWriter-1.0.0.dmg)**
+<DownloadRow />
+
+<Callout title="Not sure which?">
+  Apple menu → **About This Mac**. A "Chip" line naming an M-series processor
+  means Apple silicon; a "Processor" line naming an Intel one means Intel. Both
+  builds need macOS 11 or later, and both are identical apart from the
+  processor they run on.
+</Callout>
 
 ### Installing
 

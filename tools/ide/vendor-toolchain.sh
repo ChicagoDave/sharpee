@@ -46,10 +46,14 @@ readonly VENDOR_DIR="$IDE_DIR/vendor/node"
 # rather than an extracted binary: bin/node is 112.9MB, over GitHub's hard
 # 100MB per-file limit. Bump both together, and refresh SHASUMS256.txt from
 # nodejs.org — never hand-edit the checksum.
+#
+# ONE VERSION, TWO ARCHES. Chord Writer ships as separate per-arch installers
+# (David 2026-08-13), never a universal binary: a universal app would carry one
+# toolchain that is wrong for half the machines it runs on. Both runtimes are
+# minos 11.0 — verified on the real tarballs 2026-08-13, arm64 and x64 alike —
+# so the deployment target is 11.0 for both and the toolchain reaches as far as
+# the app does on either.
 readonly NODE_VERSION="22.23.1"
-readonly NODE_ARCH="darwin-arm64"
-readonly NODE_DIST="node-v${NODE_VERSION}-${NODE_ARCH}"
-readonly NODE_TARBALL="${VENDOR_DIR}/${NODE_DIST}.tar.xz"
 
 # Signing inputs for step 4.6. Same defaults and same overrides as package.sh —
 # the two sign one bundle and must not be able to disagree about identity, team,
@@ -61,16 +65,38 @@ die() { echo "vendor-toolchain: $*" >&2; exit 1; }
 step() { echo "  → $*"; }
 
 # --- Arguments -----------------------------------------------------
+readonly USAGE="usage: vendor-toolchain.sh <resources-dir> [--arch arm64|x86_64] [--force]"
 FORCE=0
 RESOURCES=""
+ARCH=""
+expect_arch=0
 for arg in "$@"; do
+  if [ "$expect_arch" -eq 1 ]; then
+    ARCH="$arg"; expect_arch=0; continue
+  fi
   case "$arg" in
     --force) FORCE=1 ;;
-    -*) die "unknown flag '$arg' (usage: vendor-toolchain.sh <resources-dir> [--force])" ;;
+    --arch) expect_arch=1 ;;
+    --arch=*) ARCH="${arg#--arch=}" ;;
+    -*) die "unknown flag '$arg' ($USAGE)" ;;
     *) [ -n "$RESOURCES" ] && die "unexpected extra argument '$arg'"; RESOURCES="$arg" ;;
   esac
 done
-[ -n "$RESOURCES" ] || die "missing <resources-dir> (usage: vendor-toolchain.sh <resources-dir> [--force])"
+[ "$expect_arch" -eq 0 ] || die "--arch needs a value ($USAGE)"
+[ -n "$RESOURCES" ] || die "missing <resources-dir> ($USAGE)"
+
+# Default to the build host's own arch so the in-repo dev loop is unchanged by
+# the addition of per-arch builds. Release packaging always passes --arch
+# explicitly (package.sh), because the host and the target are routinely
+# different — an x86_64 installer is built on an Apple silicon Mac.
+[ -n "$ARCH" ] || ARCH="$(uname -m)"
+case "$ARCH" in
+  arm64|aarch64) readonly NODE_ARCH="darwin-arm64" ESBUILD_PKG="@esbuild/darwin-arm64" ;;
+  x86_64|x64)    readonly NODE_ARCH="darwin-x64"   ESBUILD_PKG="@esbuild/darwin-x64" ;;
+  *) die "unsupported --arch '$ARCH' — expected arm64 or x86_64." ;;
+esac
+readonly NODE_DIST="node-v${NODE_VERSION}-${NODE_ARCH}"
+readonly NODE_TARBALL="${VENDOR_DIR}/${NODE_DIST}.tar.xz"
 
 readonly TOOLCHAIN="${RESOURCES%/}/toolchain"
 readonly STAMP="$TOOLCHAIN/.stamp"
@@ -150,6 +176,113 @@ pnpm --filter @sharpee/platform-browser deploy --prod --legacy "$STAGING/platfor
 rm -rf "$STAGING/devkit/node_modules/@sharpee/platform-browser"
 mkdir -p "$STAGING/devkit/node_modules/@sharpee"
 cp -R "$STAGING/platform-browser" "$STAGING/devkit/node_modules/@sharpee/platform-browser"
+
+# --- 2.5 esbuild for the TARGET arch --------------------------------
+# esbuild ships its compiler as a per-platform optional dependency, and pnpm
+# resolves optional deps for the BUILD HOST — so a deploy on an Apple silicon
+# Mac yields @esbuild/darwin-arm64 no matter which arch we are assembling for.
+# `--config.supportedArchitectures` does not change that on `deploy` (tried,
+# 2026-08-13: still arm64-only), and the foreign-arch package is not in the
+# local store at all, because pnpm skipped installing it for this platform.
+#
+# So when the target differs from the host, fetch that one package and graft it
+# in. Verified against the integrity hash ALREADY IN pnpm-lock.yaml rather than
+# trusted: the lockfile stays the single source of truth for the version, which
+# is what keeps this from becoming a second thing to bump when devkit's esbuild
+# moves. A committed tarball (as node's is) would need exactly that.
+host_arch="$(uname -m)"
+case "$host_arch" in aarch64) host_arch="arm64" ;; esac
+host_esbuild="@esbuild/darwin-arm64"
+[ "$host_arch" = "x86_64" ] && host_esbuild="@esbuild/darwin-x64"
+
+if [ "$ESBUILD_PKG" != "$host_esbuild" ]; then
+  step "Grafting $ESBUILD_PKG (target arch differs from build host)"
+
+  esbuild_version="$(node -p "require('$REPO_ROOT/packages/devkit/package.json').dependencies.esbuild.replace(/^[^0-9]*/,'')")"
+  [ -n "$esbuild_version" ] || die "could not read devkit's esbuild version."
+
+  want="$(node -e "
+    const fs=require('fs');
+    const key=\"'${ESBUILD_PKG}@${esbuild_version}':\";
+    const lines=fs.readFileSync('$REPO_ROOT/pnpm-lock.yaml','utf8').split('\n');
+    const i=lines.findIndex(l=>l.trim()===key);
+    if(i<0) process.exit(0);
+    const m=(lines[i+1]||'').match(/integrity: (sha512-[A-Za-z0-9+/=]+)/);
+    if(m) process.stdout.write(m[1]);
+  ")"
+  [ -n "$want" ] || die "pnpm-lock.yaml has no integrity entry for
+  ${ESBUILD_PKG}@${esbuild_version}. Refusing to fetch an unverifiable binary —
+  run 'pnpm install' so the lockfile records it, then re-run."
+
+  fetch_dir="$STAGING/esbuild-fetch"
+  mkdir -p "$fetch_dir"
+  ( cd "$fetch_dir" && npm pack "${ESBUILD_PKG}@${esbuild_version}" --silent >/dev/null 2>&1 ) \
+    || die "npm pack of ${ESBUILD_PKG}@${esbuild_version} failed (network?)."
+  tgz="$(find "$fetch_dir" -maxdepth 1 -name '*.tgz' | head -1)"
+  [ -n "$tgz" ] || die "npm pack produced no tarball for ${ESBUILD_PKG}."
+
+  got="$(node -e "
+    const c=require('crypto'),f=require('fs');
+    process.stdout.write('sha512-'+c.createHash('sha512').update(f.readFileSync('$tgz')).digest('base64'));
+  ")"
+  [ "$got" = "$want" ] || die "integrity mismatch for ${ESBUILD_PKG}@${esbuild_version}
+  expected (pnpm-lock.yaml): $want
+  got (npm pack):            $got
+  Refusing to bundle a binary that does not match the lockfile."
+
+  tar -xzf "$tgz" -C "$fetch_dir" || die "failed to unpack ${ESBUILD_PKG}."
+  [ -x "$fetch_dir/package/bin/esbuild" ] || die "${ESBUILD_PKG} has no executable bin/esbuild."
+
+  # Mirror pnpm's own layout rather than dropping a directory in. The package
+  # exists ONCE under .pnpm/<name>@<version>/node_modules/... and every consumer
+  # reaches it by a RELATIVE symlink; replacing the real directory in place
+  # leaves those links pointing at a name that no longer exists, which step 4.5
+  # correctly refuses (measured 2026-08-13 — two dangling links).
+  #
+  # So: build the target's store entry, then re-point each consumer link by
+  # rewriting its existing target string. Deriving the new link from the old one
+  # preserves relativity for free, which hand-computing `../` depth would not.
+  esb_root="$STAGING/devkit/node_modules"
+  host_short="${host_esbuild#@esbuild/}"     # darwin-arm64
+  want_short="${ESBUILD_PKG#@esbuild/}"      # darwin-x64
+
+  store_src="$(find "$esb_root/.pnpm" -maxdepth 4 -type d \
+    -path "*/@esbuild+${host_short}@${esbuild_version}/node_modules/@esbuild/${host_short}" \
+    2>/dev/null | head -1)"
+  [ -n "$store_src" ] || die "no .pnpm store entry for ${host_esbuild}@${esbuild_version}
+  in the deployed closure — the deploy layout changed and this graft is now wrong."
+
+  store_dst="$(printf '%s' "$store_src" \
+    | sed "s#@esbuild+${host_short}@#@esbuild+${want_short}@#; s#@esbuild/${host_short}\$#@esbuild/${want_short}#")"
+  mkdir -p "$store_dst"
+  cp -R "$fetch_dir/package/." "$store_dst/"
+
+  # Re-point consumers, then drop the host-arch entries entirely. Shipping both
+  # would leave a sealed toolchain carrying two compilers, picking by accident.
+  relinked=0
+  while IFS= read -r link; do
+    [ -n "$link" ] || continue
+    old_target="$(readlink "$link")"
+    new_target="$(printf '%s' "$old_target" \
+      | sed "s#@esbuild+${host_short}@#@esbuild+${want_short}@#; s#${host_short}\$#${want_short}#")"
+    ln -s "$new_target" "$(dirname "$link")/${want_short}" \
+      || die "failed to link $(dirname "$link")/${want_short}"
+    rm -f "$link"
+    relinked=$(( relinked + 1 ))
+  done <<EOF
+$(find "$esb_root" -type l -path "*/@esbuild/${host_short}" 2>/dev/null)
+EOF
+
+  rm -rf "$(printf '%s' "$store_src" | sed "s#\(/@esbuild+${host_short}@${esbuild_version}\)/.*#\1#")"
+  echo "    store entry + $relinked consumer link(s) re-pointed to ${want_short}"
+
+  grafted="$(find "$esb_root" -type f -path "*/@esbuild/*/bin/esbuild" | head -1)"
+  [ -n "$grafted" ] || die "graft produced no @esbuild/*/bin/esbuild."
+  file "$grafted" | grep -q "x86_64" || [ "$ESBUILD_PKG" = "@esbuild/darwin-arm64" ] \
+    || die "grafted esbuild is not x86_64: $(file -b "$grafted")"
+  rm -rf "$fetch_dir"
+  echo "    grafted $ESBUILD_PKG, integrity verified against pnpm-lock.yaml"
+fi
 
 # --- 3. The shim ----------------------------------------------------
 # The IDE resolves THIS file, never the Node binary directly (see
