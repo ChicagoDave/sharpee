@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sharpee — Parser IF, composed",
+  title: "Sharpee and Chord - An IF Modeling Language",
   description:
     "Sharpee is a parser-based interactive fiction platform; Chord is its story language. Write worlds in Chord, run them anywhere.",
 };
