@@ -76,13 +76,21 @@ afterAll(() => {
  * it still runs, unstubbed, for anyone who HAS the artifact, and it never
  * passes vacuously — a skip is reported as a skip. What it stops doing is
  * failing for a reason that has nothing to do with the code under test.
+ *
+ * DO NOT "FIX" THIS BY REGENERATING THE BUNDLE. The `.sharpee` path is
+ * DEPRECATED (David, 2026-08-13) — it is the TypeScript-story bundle format,
+ * and the platform's story path is Chord. These two suites are therefore
+ * pinned to a format on its way out, in a tool (zifmia) that is not in active
+ * development. The honest resolution is retiring them, not restoring the
+ * artifact; the skip is a holding position, not a repair.
  */
 const STORY_BUNDLE = join(STORIES_DIR, 'dungeo.sharpee');
 const HAVE_BUNDLE = existsSync(STORY_BUNDLE);
 if (!HAVE_BUNDLE) {
   console.warn(
     `\n  [zifmia] SKIPPING real-path tests — no ${STORY_BUNDLE}.\n` +
-    `  Build the dungeo bundle into dist/stories/ to run them.\n`,
+    `  The .sharpee bundle path is deprecated; these suites are candidates\n` +
+    `  for retirement rather than for regenerating the artifact.\n`,
   );
 }
 
