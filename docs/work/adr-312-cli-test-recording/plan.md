@@ -2,6 +2,19 @@
 
 **Created**: 2026-08-12
 **Plan Status**: ACTIVE
+**Superseded by**: docs/work/chord-writer-intel/plan.md (2026-08-13, rule 18b —
+David's "still live" disposition). Every phase is left exactly as it stands and
+this plan remains resumable at Phase 1.
+
+> **Read this before resuming.** The ADR this plan implements — ADR-312 — was
+> deleted on 2026-08-12 and replaced by ADR-313 (tree second serialization) and
+> ADR-314 (content coverage reports), both still DRAFT with open questions. The
+> plan is therefore stale from Phase 2 onward and its directory name points at a
+> retired ADR number. What survives intact is **Phase 1** — relocating
+> `recordedTurnAssertions` / `openingDefaultClaims` out of
+> `tools/ide/web/testing-surface/src/compose.ts` into `packages/branch-tester` —
+> which was carried forward verbatim as ADR-313 D7 and is still the right unit
+> of work. Resume there, not at the top.
 **Overall scope**: Give `@sharpee/devkit` a `sharpee record <list>` command that
 turns a committed, newline-delimited command list into the ADR-307 tree
 document's per-element assertions — the same synthesis the Testing tab uses —
