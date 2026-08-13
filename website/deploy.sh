@@ -99,6 +99,13 @@ fi
 # ── Playground bundle (ADR-191) — gitignored, so (re)build it on deploy. ──
 # Requires the platform toolchain (pnpm workspace + built packages) on this
 # host. Guarded: a failure warns but never aborts the website deploy.
+#
+# ./repokit bootstraps its own engine if tools/repokit/dist/ is missing, which
+# is the normal state on a deploy host: that dist is gitignored so git pull
+# never supplies it, and tsf build deliberately skips repokit. Nothing extra
+# is needed here — see the repokit wrapper for why the obvious manual fix
+# does not work on its own. (plover, 2026-08-13.)
+
 log "Rebuilding the playground bundle (./repokit build --playground) ..."
 if ( cd "$REPO_ROOT" && ./repokit build --playground ); then
   log "Playground bundle refreshed at website/public/playground/."

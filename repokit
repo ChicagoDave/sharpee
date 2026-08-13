@@ -17,9 +17,24 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="$ROOT/tools/repokit/dist/cli.js"
 
 if [ ! -f "$CLI" ]; then
-  echo "repokit: engine not built ($CLI missing)." >&2
-  echo "  run: pnpm --filter @sharpee/repokit build" >&2
-  exit 1
+  # Rebuild inline rather than telling the operator to do it. The obvious
+  # instruction is also a trap: `pnpm --filter @sharpee/repokit build` runs
+  # plain `tsc`, and if tsconfig.tsbuildinfo survived whatever removed dist/,
+  # tsc decides it is up to date and emits NOTHING — so the fix appears to
+  # succeed and `./repokit` still reports this same error. Dropping the
+  # tsbuildinfo first is what actually restores the engine.
+  #
+  # Hit on plover 2026-08-13: website/deploy.sh calls `./repokit build
+  # --playground`, tools/repokit/dist/ is gitignored so git pull never
+  # supplies it, and `tsf build` deliberately skips repokit — so a host that
+  # never built it by hand serves a 404 playground.
+  echo "repokit: engine not built ($CLI missing) — building it now." >&2
+  rm -f "$ROOT/tools/repokit/tsconfig.tsbuildinfo"
+  ( cd "$ROOT" && pnpm --filter @sharpee/repokit build ) >&2 || {
+    echo "repokit: could not build the engine." >&2
+    exit 1
+  }
+  [ -f "$CLI" ] || { echo "repokit: build produced no $CLI." >&2; exit 1; }
 fi
 
 # Staleness gate (2026-07-27 incident): a repokit dist compiled before its
