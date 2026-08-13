@@ -133,3 +133,61 @@ In sequence: (1) "content-borne" trigger; (2) "name-borne," based on believing Z
 ---
 
 **Progressive update**: Session completed 2026-08-13 13:06
+
+---
+
+## Post-session verification — 2026-08-13 (appended)
+
+The two acceptance criteria this summary and the `pattern-recurrence-detector`
+run both flagged as `[reported, unverified]` are now verified inline, on the
+installed DMG rather than the build tree.
+
+**AC6 — ⌘B works with no global toolchain.** David installed the shipped DMG and
+confirmed the build succeeds. Verified that no global install could have
+satisfied it, so the resolution genuinely fell to tier 3 (ADR-279 D4's bundled
+toolchain):
+
+```
+$ which sharpee
+sharpee not found
+$ npm ls -g @sharpee/devkit --depth=0
+└── (empty)
+$ "/Applications/Chord Writer.app/Contents/Resources/toolchain/bin/sharpee" --version
+Sharpee 5.0.0 · Chord 3.0.0
+```
+
+This is the first time ADR-279 D4's premise has held end to end: a machine with
+no Node, no npm and no CLI builds a story straight off the DMG.
+
+**AC3 — Gatekeeper.** `package.sh`'s own assessment during the release run:
+
+```
+/Users/david/repos/sharpee/tools/ide/release/ChordWriter-1.0.0.dmg: accepted
+source=Notarized Developer ID
+origin=Developer ID Application: David Cornelson (RSNGKW5LNH)
+```
+
+Still outstanding: acceptance on a Mac that never built this one — the assessment
+above ran on the build machine.
+
+**Installed artifact**, `/Applications/Chord Writer.app`: 177M, `arm64`,
+`toolchain: present`, `stapler validate` passes, `Identifier=net.sharpee.chord-writer`,
+`TeamIdentifier=RSNGKW5LNH`.
+
+**§5a falsified — the x86_64 notarization trigger is not real.** A universal
+(`x86_64 arm64`) build was archived, signed, and submitted
+(`975d1c21-68bd-400a-a591-14818bb4b425`, 18:23:00Z): **Accepted in ~103
+seconds**. The 2026-08-12 conclusion rested on a single matched pair 14 minutes
+apart, which is exactly the coin-flip this session showed that evidence to be.
+Intel remains unshippable for a different and real reason — only
+`node-v22.23.1-darwin-arm64.tar.xz` is vendored, so an x86_64 slice would ship
+with no toolchain behind its Build button. David's direction: **separate
+per-arch installers** rather than a universal binary. `@esbuild/darwin-x64@0.27.2`
+is already in `pnpm-lock.yaml`, so the x64 closure is resolvable.
+
+**A packaging bug found while diagnosing duplicate app icons**: `package.sh`
+does not detach the disk image it mounts during DMG assembly. Four volumes
+(`Chord Writer 1.0.0`, ` 1`, ` 2`, ` 3`) were left mounted across today's runs,
+each registering with Launch Services as another copy of the app — one of which
+presents as an installer rather than the installed app. Detaching them resolved
+it. The leak is in the assembly path, not in the DMG.
