@@ -96,6 +96,27 @@ if [ "$1" != "--no-pull" ]; then
   git pull --ff-only
 fi
 
+# ── Workspace dependencies for the platform build ──
+# The playground bundle below is built by repokit out of the pnpm workspace,
+# which is a DIFFERENT dependency tree from the website's own npm one further
+# down. A pull that changes pnpm-lock.yaml leaves this host's node_modules
+# stale, and the failure is indirect: repokit reports a missing package rather
+# than a missing install. Retiring zifmia/shite/interpreter on 2026-08-13
+# changed that lockfile, which is exactly the case that would bite.
+#
+# --frozen-lockfile because a deploy host should install what the commit says
+# and fail if it cannot, never silently resolve something newer.
+#
+# Guarded like the playground step: the website deploy does not depend on the
+# pnpm workspace, so a failure here warns rather than aborting the site.
+if command -v pnpm >/dev/null 2>&1; then
+  log "Installing workspace dependencies (pnpm install --frozen-lockfile) ..."
+  ( cd "$REPO_ROOT" && pnpm install --frozen-lockfile ) \
+    || warn "pnpm install failed — the playground build below will likely fail too."
+else
+  warn "pnpm not found — skipping workspace install; the playground build needs it."
+fi
+
 # ── Playground bundle (ADR-191) — gitignored, so (re)build it on deploy. ──
 # Requires the platform toolchain (pnpm workspace + built packages) on this
 # host. Guarded: a failure warns but never aborts the website deploy.
