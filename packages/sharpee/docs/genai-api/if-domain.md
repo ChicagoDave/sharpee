@@ -2440,7 +2440,7 @@ export declare const PREFERRED_LAYOUT_CHANNEL = "preferred-layout";
  *
  * This lives in if-domain rather than stdlib because it is wire
  * vocabulary: the engine-side producer (stdlib) and every consumer (the
- * browser renderers, the CLI bundle, zifmia's pane, the headless
+ * browser renderers, the CLI bundle, the headless
  * harness) must agree on these strings, and a duplicated list is a
  * protocol drift waiting to happen. What each id *means in terms of
  * text blocks* is stdlib's business and stays there.

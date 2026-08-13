@@ -2458,7 +2458,7 @@ export declare function createSeededRandom(seed?: number): SeededRandom;
  *
  * The catalog is process-global BY DESIGN (D2, amended A1): entries are immutable,
  * idempotent metadata holding no stream, which is what makes import-time registration
- * safe where D6 kills module-scope *streams*. In a multi-story process (zifmia) the
+ * safe where D6 kills module-scope *streams*. In a multi-story process the
  * catalog holds the union; consumers filter by story id / package prefix, which works
  * because entries retain their D2 name prefix.
  */

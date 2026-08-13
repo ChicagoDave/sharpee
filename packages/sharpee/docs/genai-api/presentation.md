@@ -1322,7 +1322,7 @@ export declare function registerDefaultBrowserRenderers(renderer: IRenderer, lay
  * @sharpee/channel-service — `ChannelService` class.
  *
  * Owner context: platform package — runs in-process wherever the engine
- * runs (Node CLI, multi-user server, browser zifmia, platform-browser).
+ * runs (Node CLI, browser clients, platform-browser).
  *
  * Public interface (per ADR-163 §6, §13, §14):
  *
@@ -1582,7 +1582,7 @@ export declare function flattenContent(content: ReadonlyArray<TextContent>): str
  * consumers project the same packets to text — the headless bootstrap
  * harness (`@sharpee/bootstrap`, what `sharpee test` compares against),
  * the CLI bundle, the browser client's IDE recording bridge
- * (`@sharpee/platform-browser`, ADR-277 D5 / ADR-282 D2), and zifmia's
+ * (`@sharpee/platform-browser`, ADR-277 D5 / ADR-282 D2), and the
  * multi-user pane. They MUST agree character-for-character, since
  * ADR-282's blessed verbatim assertions are captured through one and
  * replayed through the other. The join rule previously had two copies
@@ -1622,7 +1622,7 @@ export declare function flattenContent(content: ReadonlyArray<TextContent>): str
  * not sent it, which is a subscription fact, not a corrupt packet.
  *
  * @param payload — a `TurnPacket.payload`, or any equivalent map of
- *   channel id → emitted value (zifmia stores turns in that shape).
+ *   channel id → emitted value (turns are stored in that shape).
  * @returns the turn's prose entries in reading order.
  */
 export declare function composeProse(payload: unknown): unknown[];
@@ -1680,11 +1680,11 @@ export declare function packetProseText(payload: unknown): string;
  *  - `CLIRenderOptions` — option shape (ansi, blockSeparator,
  *    colors, includeStatus). Name preserved from the prior
  *    `@sharpee/text-service` home; not CLI-specific in practice
- *    (zifmia uses `renderToString` for browser chat bubbles).
+ *    (browser chat bubbles use `renderToString`).
  *
  * Ported from `@sharpee/text-service/src/cli-renderer.ts` per ADR-174
  * Phase 2 (OQ-1 resolution, 2026-05-10). The original file remains
- * compilable in text-service through Phase 2 for zifmia's sake; Phase
+ * compilable in text-service through Phase 2 for the browser client's sake; Phase
  * 3 deletes the package.
  *
  * @see ADR-174 — Decoration Architecture and Engine-Internal Prose Pipeline
