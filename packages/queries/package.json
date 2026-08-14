@@ -13,7 +13,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@sharpee/world-model": "workspace:*",

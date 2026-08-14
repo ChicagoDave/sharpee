@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "test:watch": "vitest watch",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"

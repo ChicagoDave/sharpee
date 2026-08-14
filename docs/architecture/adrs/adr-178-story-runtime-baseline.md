@@ -283,14 +283,13 @@ operators can audit at a glance.
   package, the validator exits non-zero with stderr naming the
   package and source file. Given a bundle that uses only baseline
   packages, the validator exits zero.
-- `tools/zifmia/tests/story-health.test.ts` — given a `.sharpee` file
-  that imports a non-installed package, `StoryHealth.validate()`
-  returns `{ ok: false, reason: 'missing_package', package: '...' }`
-  and the story is excluded from `GET /api/stories`.
-- `tools/zifmia/tests/e2e/ac-baseline.spec.ts` — `GET /api/stories`
-  includes `baseline_version: number` at the top level (REAL-PATH
-  against a spawned `node dist/main.js`, mirroring the ADR-177
-  Phase 8 e2e harness).
+
+This list previously named two zifmia-side tests (`story-health.test.ts`
+and the `ac-baseline.spec.ts` e2e). Both were dropped when zifmia was
+retired 2026-08-13 and its source moved to `tools/_archive/zifmia`,
+outside the pnpm workspace — nothing runs them, so they cannot gate
+anything. The ACs they backed (AC-6 boot-time validation, AC-4 API
+surface) remain as written; they simply have no live test today.
 
 ## Constrains Future Sessions
 
