@@ -1,6 +1,6 @@
 # Chord thief — validated against the original MDL (Dungeon-81)
 
-**Source:** the 1981 Dungeon MDL in-repo at `docs/internal/dungeon-81/patched_confusion/`
+**Source:** the 1981 Dungeon MDL in-repo at `docs/references/dungeon-81/patched_confusion/`
 — daemon `ROBBER` + handler `ROBBER-FUNCTION` (`act1.mud:1062-1420`), THIEF object +
 `THIEF-MELEE` + descriptions (`dung.mud`), melee engine (`melee.mud`), robbing helpers
 (`util.mud`).

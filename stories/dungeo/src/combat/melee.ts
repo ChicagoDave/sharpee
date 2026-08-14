@@ -11,8 +11,8 @@
  * - Wound healing daemon (CURE-CLOCK, 30 turns per point)
  * - WINNING? function for thief fight/flee AI
  *
- * Source: docs/internal/dungeon-81/original_source/melee.137
- *         docs/internal/dungeon-81/original_source/dung.355
+ * Source: docs/references/dungeon-81/original_source/melee.137
+ *         docs/references/dungeon-81/original_source/dung.355
  *
  * This is a pure story-level module — no platform changes required.
  */

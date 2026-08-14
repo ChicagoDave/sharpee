@@ -6,7 +6,7 @@ These files are a 1:1 companion to *The Sharpee Author and Developer Manual*
 order, with the book's code.
 
 This **is** the Family Zoo tutorial. The original `v01`–`v18` versions are kept as
-the historical record under `docs/archive/tutorial/`. The set was rebuilt to the
+the historical record under `docs/unofficial/archive/tutorial/`. The set was rebuilt to the
 book's order because the book **reorders the curriculum** relative to the version
 numbers (notably: NPCs are taught late, at Chapter 20, *after* capability dispatch
 at Chapter 15); following the book against `vNN.ts` hit an ordering mismatch, which

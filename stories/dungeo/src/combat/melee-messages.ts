@@ -9,7 +9,7 @@
  *   {weapon} = name of the weapon being used/lost
  *   {villain} = name of the villain (troll, thief, cyclops)
  *
- * Source: docs/internal/dungeon-81/original_source/dung.355 lines 904-1081
+ * Source: docs/references/dungeon-81/original_source/dung.355 lines 904-1081
  */
 
 import type { MeleeOutcomeType } from './melee-tables';

@@ -93,8 +93,10 @@ The engine includes 57 standard IF actions out of the box:
 ## Documentation
 
 - [GitHub Repository](https://github.com/ChicagoDave/sharpee)
-- [Author's Guide](https://github.com/ChicagoDave/sharpee/blob/main/docs/getting-started/authors/README.md)
-- [API Reference](https://github.com/ChicagoDave/sharpee/blob/main/docs/api/README.md)
+- [Author's Tutorial](https://sharpee.net/learn/fernhill) — build a complete story, eight chapters
+- [Chord Language Guide](https://sharpee.net/chord/guide/world)
+- [Stdlib Reference](https://sharpee.net/chord/stdlib)
+- [API Reference](https://github.com/ChicagoDave/sharpee/blob/main/packages/sharpee/docs/genai-api/index.md)
 - [Architecture Decisions](https://github.com/ChicagoDave/sharpee/blob/main/docs/architecture/adrs/)
 
 ## Example Stories

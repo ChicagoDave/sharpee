@@ -5,8 +5,8 @@
  * to determine combat outcomes. Each sub-table has 9 entries; one is picked
  * at random per blow.
  *
- * Source: docs/internal/dungeon-81/original_source/dung.355
- *         docs/internal/dungeon-81/original_source/melee.137
+ * Source: docs/references/dungeon-81/original_source/dung.355
+ *         docs/references/dungeon-81/original_source/melee.137
  */
 
 /**

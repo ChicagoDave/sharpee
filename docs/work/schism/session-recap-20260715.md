@@ -24,7 +24,7 @@ Captured durably in the gnome/gap caveat now sitting uncommitted on
 `dungeo-completeness-matrix.md`:
 
 1. **Target = one specific corpus.** The canon is the **1981 mainframe Zork MDL** in
-   `docs/internal/dungeon-81/` — a single finite corpus. **Not** Zork I/II/III, **not**
+   `docs/references/dungeon-81/` — a single finite corpus. **Not** Zork I/II/III, **not**
    open-ended "IF canon." This makes "complete" a bounded, reachable target.
 2. **Gnome = intentional drop.** The gnome logic is David's one deliberate out-of-scope
    exclusion — do not reproduce it, do not count its primitives.

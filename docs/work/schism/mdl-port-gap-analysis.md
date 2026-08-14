@@ -1,7 +1,7 @@
 # Dungeo Port ↔ 1981 MDL — Definitive Gap Analysis
 
 **Date:** 2026-07-15 · **Session:** 5c4f8a (chord-foundations) · **Canon:** the 1981-07-22
-Mainframe Zork MDL in `docs/internal/dungeon-81/` (David, 2026-07-15 — `patched_confusion/` =
+Mainframe Zork MDL in `docs/references/dungeon-81/` (David, 2026-07-15 — `patched_confusion/` =
 Russotto's run-under-Confusion patch of that MDL; `original_source/` = pristine versioned
 originals). The port under audit is `stories/dungeo/src/`.
 

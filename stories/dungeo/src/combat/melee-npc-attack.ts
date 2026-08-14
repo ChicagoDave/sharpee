@@ -12,7 +12,7 @@
  * 5. Apply side effects to hero: wounds, stagger, lose weapon, death.
  * 6. Return events with canonical villain attack message.
  *
- * Source: docs/internal/dungeon-81/original_source/melee.137
+ * Source: docs/references/dungeon-81/original_source/melee.137
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';

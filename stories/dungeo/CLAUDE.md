@@ -10,7 +10,7 @@ This is a port of the 1981 version of mainframe Zork (aka Dungeon aka DUNGEO) wi
 
 ## MDL Source Reference
 
-The authoritative MDL source is at `docs/internal/dungeon-81/patched_confusion/`. Key files:
+The authoritative MDL source is at `docs/references/dungeon-81/patched_confusion/`. Key files:
 - `dung.mud` — room definitions, object definitions, global flags
 - `act1.mud` — room handlers and action functions (carousel, magnet room, etc.)
 - `act2.mud`, `act3.mud` — additional action handlers

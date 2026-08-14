@@ -182,7 +182,17 @@ disposition question is needed; the pointer below repoints cleanly.
   top-level entries (confirmed this session: 24 directories carrying a
   `plan.md`, 3 directories that do not — `chord-grammar-ordering`,
   `chord-parity`, `tutorial` — plus 6 loose `plan-*.md` files at the tree's
-  own top level, outside any slug directory). `docs/_archive/` holds `site/`,
+  own top level, outside any slug directory).
+  > **Entry state corrected 2026-08-14 at execution.** Two counts in the
+  > paragraph above are wrong. (1) There are **15** loose `plan-*.md` files, not
+  > 6 — so `docs/archive/` holds 42 top-level entries (27 directories + 15
+  > files), not 27, and the ambiguous set this phase must put to David is **18**
+  > entries (3 directories + 15 files), not 9. (2) `docs/work/archive/` **already
+  > existed** at HEAD with 26 entries, created by `cddf8446` ("archive completed
+  > chord-* and adr-NNN work folders"); this phase's 24 joined them for 50. The
+  > destination was in use before this plan proposed it — which is corroboration
+  > that it is the right path, not a conflict.
+  `docs/_archive/` holds `site/`,
   `web-save/`, `website/`, and `zifmia/` (the 2026-08-13 amendment's fourth
   tenant). `docs/_archived/` holds 28 loose superseded documents. All three
   trees still live at `docs/` top level. `docs/context/archive/` is untouched
@@ -219,7 +229,40 @@ disposition question is needed; the pointer below repoints cleanly.
   session summary. `docs/unofficial/archive/` holds the `site`/`web-save`/
   `website`/`zifmia` material and the 28 loose superseded documents.
   `docs/context/archive/` is byte-for-byte unchanged. Nothing deleted.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-14)
+- **Outcome**: All three trees resolved; `docs/archive/`, `docs/_archive/` and
+  `docs/_archived/` no longer exist at `docs/` top level. Final counts:
+  `docs/work/archive/` 65 entries (26 pre-existing + 24 plan-bearing dirs + 15
+  loose plans), `docs/unofficial/archive/` 35 (4 from `_archive/` + 28 from
+  `_archived/` + the 3 non-plan dirs). Nothing deleted — every entry moved by
+  `git mv`. The two emptied directories were removed with `rmdir`, which
+  refuses a non-empty target, after all content was staged as renames.
+  - **Entry-state corrections**: see the boxed note above — 15 loose plans not
+    6 (18 ambiguous entries, not 9), and `docs/work/archive/` already existed
+    with 26 entries.
+  - **David's disposition call on the 18 ambiguous entries** (2026-08-14, in
+    session; the plan required this be raised, not inferred): the **15 loose
+    `plan-*.md` files → `docs/work/archive/`** — they are session plans of the
+    same genre as the 24, differing only in lacking a slug directory; the
+    **3 directories → `docs/unofficial/archive/`** — `chord-grammar-ordering/`
+    is one-off experiment artifacts (`.cjs` scripts + JSON dumps),
+    `chord-parity/` is design notes plus a roadmap, and `tutorial/` is the
+    superseded v01–v18 familyzoo series replaced by the book-aligned
+    `tutorials/familyzoo/v2.0.0/ch*` snapshots. The split follows P-3's own
+    plan-vs-documentation test.
+  - **P-12 check clean, after four repairs the plan did not anticipate.** No
+    live surface referenced `docs/archive/`, `docs/_archive/` or
+    `docs/_archived/` — except four provenance citations of
+    `docs/archive/tutorial/` in live source outside `docs/`:
+    `tutorials/familyzoo/{v1.5.0,v2.0.0}/src/index.ts:9` and the matching
+    `src/README.md:9`. All four repointed to
+    `docs/unofficial/archive/tutorial/`. **These were found only because
+    Phase 1's lesson prompted a sweep outside the plan's named grep targets**
+    — `tutorials/` is not among them, and none of the three trees was in
+    P-12's own pattern list.
+  - `docs/context/archive/` verified untouched by this phase (`git status`
+    reports 0 changes under it). Note that it is *not* immune generally — the
+    `commit-local` housekeeping writes there, as Phase 1's commit showed.
 
 ### Phase 3: Archive the git-cold and superseded-doc trees; repair the published npm README
 - **Tier**: Large
@@ -297,7 +340,48 @@ disposition question is needed; the pointer below repoints cleanly.
   `docs/work/readme-audit/plan.md` no longer cite a moved `docs/publish/`
   path without repair. Both of P-12's Done-when greps return nothing
   unintentional — P-12 is fully closed by the end of this phase.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-14)
+- **Outcome**: All sixteen trees moved to `docs/unofficial/archive/` (51
+  entries). `scripts/publish-npm.sh` archived beside `npm-ci.md`, not deleted.
+  `docs/` top level is now the survivors plus `README.md` and `unofficial/`.
+  - **`docs/tutorials/fernhill/` decision point resolved on-disk, no call
+    needed** — the plan's own condition. The site carries all eight chapters at
+    `website/src/app/learn/fernhill/` with identical section structure, and its
+    copy is newer (2026-08-10 vs 2026-07-23); the per-chapter line delta is the
+    H1 and frontmatter. Genuinely superseded.
+  - **P-12 CLOSED.** Both Done-when greps pass. Remaining hits are the two
+    gitignored `settings.local.json` permission strings (exception documented
+    in Phase 1) and L98's `architecture/adrs/` link, which this plan states
+    survives. Candidate URLs re-verified live at execution time rather than
+    trusted from the plan: `/chord/guide` **404** (the 2026-08-13 finding still
+    holds), `/chord/guide/world` 200, `/chord/stdlib` 200, `/learn/fernhill`
+    200. `packages/sharpee/README.md`'s two broken links replaced by four
+    working ones, including `packages/sharpee/docs/genai-api/index.md` — tracked
+    in git and regenerated every build, so an API reference that cannot rot.
+    `docs/core-concepts/README.md` no longer cites quarantined material at all:
+    the seventh-registration-point fact is restated locally with the 4.5.0
+    release it was learned from. `docs/work/readme-audit/plan.md` likewise.
+  - **P-4 partially declined — `internal/dungeon-81/` recovered to a NEW ninth
+    survivor, `docs/references/`** (David's ruling, 2026-08-14: "The MDL source
+    needs to stay in docs/references"). It is the 1981 Mainframe Zork MDL,
+    named *the authoritative MDL source* by `stories/dungeo/CLAUDE.md:13` and
+    cited by **11 live files** — five Dungeo combat sources carrying
+    line-level provenance, and six work docs under `docs/work/schism/` and
+    `docs/work/dungeo/` that treat it as canon. All 11 repointed;
+    `grep -rn 'docs/internal'` over live trees returns nothing.
+    `internal/fonts/` and `internal/images/` stay quarantined (no consumers,
+    verified). `docs/references/README.md` records what the directory is for.
+  - **The third recovery in three phases, and the clearest statement of the
+    pattern**: git-coldness is the wrong signal for a frozen reference corpus.
+    **Unmaintained and unchanging look identical in git history and mean
+    opposite things.** `chord.ebnf` (Phase 1), `transcript-testing.md`
+    (Phase 1), and now `dungeon-81/` were all classified by proxy signals —
+    "superseded on the site," "no site equivalent," "no commit in six months" —
+    and all three were load-bearing. Every one was caught by sweeping outside
+    the plan's named grep targets, never by the targets themselves.
+- **Note for Phase 5**: the keep-list is now **nine**, not eight —
+  `docs/references/` joins it. `docs/README.md`'s rewrite must say what it is
+  and how it differs from `docs/unofficial/`.
 
 ### Phase 4: Stop DevArch runtime state accumulating in `docs/context/`
 - **Tier**: Small

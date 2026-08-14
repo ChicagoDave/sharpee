@@ -12,7 +12,7 @@
 
 Can Chord (as a composition of generic Sharpee+TS primitives) implement **every** Dungeo
 puzzle? Audited across all 15 regions, 5 NPCs, ~90 actions, 28 handlers
-(`stories/dungeo/src/`), cross-checked against the 1981 MDL (`docs/internal/dungeon-81/`).
+(`stories/dungeo/src/`), cross-checked against the 1981 MDL (`docs/references/dungeon-81/`).
 Extends the thief primitive set (P1–P22, `thief-primitive-decomposition.md`).
 
 ## Verdict
@@ -134,7 +134,7 @@ extensions; one-off non-IF puzzles are impure `define … from`.)
 
 ## Fidelity findings (the TS port itself diverges from the MDL canon)
 
-**Canon = the MDL in `docs/internal/dungeon-81/` (a single finite corpus), MINUS the gnome
+**Canon = the MDL in `docs/references/dungeon-81/` (a single finite corpus), MINUS the gnome
 logic** — the gnome is David's one *intentional* drop (out of scope, do not reproduce).
 **Every other divergence below is a real gap to account for** — a canon feature the port
 hasn't finished, not a design change.

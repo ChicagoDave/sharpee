@@ -2,7 +2,7 @@
 
 ## Context
 
-The volcano region is ~70% implemented (rooms, balloon objects, traits, daemons, some actions) but has critical gaps: wrong room connections, misplaced treasures, hooks in wrong location, incomplete balloon flight mechanics, and no walkthrough coverage. This plan fixes those issues based on verified MDL source (`docs/internal/dungeon-81/patched_confusion/dung.mud`).
+The volcano region is ~70% implemented (rooms, balloon objects, traits, daemons, some actions) but has critical gaps: wrong room connections, misplaced treasures, hooks in wrong location, incomplete balloon flight mechanics, and no walkthrough coverage. This plan fixes those issues based on verified MDL source (`docs/references/dungeon-81/patched_confusion/dung.mud`).
 
 ---
 

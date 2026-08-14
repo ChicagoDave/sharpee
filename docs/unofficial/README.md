@@ -31,11 +31,25 @@ file consulted where it sits has skipped that step.
 | `guides/` | Author guides, superseded by sharpee.net's `chord/guide` and `chord/cookbook` pages |
 | `reference/` | Language and stdlib reference, superseded by sharpee.net's `chord/stdlib` pages |
 | `spec/` | Specification material of uncertain current purpose — see [issue #247](https://github.com/ChicagoDave/sharpee/issues/247) |
+| `archive/` | Superseded documentation and working material, consolidated here 2026-08-14 from `docs/_archive/`, `docs/_archived/`, and the non-plan part of `docs/archive/` |
 
-## Two files were pulled back out on the way in (2026-08-14)
+**Archived *plans* are not here.** They live at `docs/work/archive/`, which is
+deliberately outside the quarantine — a past plan is a record of what was
+decided and may legitimately be consulted. What is in `archive/` below is the
+other kind: superseded documentation, one-off experiment artifacts, and
+retired product material.
 
-Both were misfiled here by the move that created this folder, and both are
+## Three things were pulled back out on the way in (2026-08-14)
+
+All were misfiled here by the moves that created this folder, and all are
 recorded so the next person does not go looking for them:
+
+- **`internal/dungeon-81/` → [`docs/references/dungeon-81/`](../references/README.md).**
+  The 1981 Mainframe Zork MDL source — canon for the Dungeo port, named
+  *authoritative* by `stories/dungeo/CLAUDE.md` and cited by 11 live files. It
+  was classified git-cold, which for a frozen source archive is the wrong
+  signal entirely. Only `internal/fonts/` and `internal/images/` remain here,
+  and neither has any consumer.
 
 - **`reference/chord.ebnf` → `packages/chord/chord.ebnf`.** Not stale reference
   material at all — it is the machine-readable Chord grammar that

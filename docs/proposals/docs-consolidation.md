@@ -1,9 +1,11 @@
 # Proposal: docs/ consolidation
 
-**Status**: IN PROGRESS — **five items DONE** (P-1, P-2, P-6, P-14 via plan
-Phase 1 on 2026-08-14; P-13 executed directly 2026-08-13). Eight remain PLANNED
-(P-3, P-4, P-5, P-7, P-8, P-10, P-11, P-12 — P-12 spans Phases 1-3 and closes
-only at the end of Phase 3) via `docs/work/docs-consolidation/plan.md`. P-9
+**Status**: IN PROGRESS — **nine items DONE** (P-1, P-2, P-6, P-14 via plan
+Phase 1; P-3 via Phase 2; P-4, P-5, P-12 via Phase 3 — all 2026-08-14; P-13
+executed directly 2026-08-13). Four remain PLANNED (P-7, P-8, P-10, P-11) via
+`docs/work/docs-consolidation/plan.md`. **The keep-list is now nine, not
+eight**: `docs/references/` was created in Phase 3 to hold the 1981 MDL source,
+which P-4 would otherwise have quarantined (David's ruling — see P-4). P-9
 remains ACCEPTED but deliberately unplanned (David: "hold 9" — see P-9).
 **Phase 1 found the "superseded" premise does not hold uniformly** — two files
 were live consumers and were moved back out; see P-2's execution note before
@@ -257,7 +259,14 @@ question, since the reasoning is what a future session will want.
 - **Accepted**: David, 2026-08-08; re-accepted the same day with the
   two-destination split after the DevArch plan made the original single-tree
   wording self-contradictory.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 2, 2026-08-14). All three trees are gone from
+  `docs/` top level. `docs/work/archive/` holds 65 entries, `docs/unofficial/
+  archive/` 35; nothing deleted. Two entry-state figures were wrong and are
+  corrected in the plan: there were **15** loose `plan-*.md` files, not 6, and
+  `docs/work/archive/` **already existed** with 26 entries (`cddf8446`) rather
+  than being created here — which corroborates the destination choice above.
+  David's call on the 18 ambiguous entries: the 15 loose plans went to
+  `docs/work/archive/`, the 3 non-plan directories to `docs/unofficial/archive/`.
 
 ### P-4: Archive the fourteen git-cold trees
 - **Scope**: `packages/`, `templates/`, `releases/`, `agents/`, `extensions/`,
@@ -294,7 +303,20 @@ question, since the reasoning is what a future session will want.
   are elsewhere.
 - **Accepted**: David, 2026-08-08, less `brainstorm/`.
 - **Depends on**: P-3 (ACCEPTED)
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **The wrong-signal note above proved right a second way, and it cost this
+  item one tree.** `brainstorm/` was excluded because git-coldness measures
+  *when a tool last ran*. The same signal fails again for a **frozen reference
+  corpus**: `internal/dungeon-81/` is the 1981 Mainframe Zork MDL, git-cold
+  since 2026-02-04 precisely because a 1981 source archive should never change.
+  It is named *the authoritative MDL source* by `stories/dungeo/CLAUDE.md:13`
+  and cited by 11 live files. Generalized: **unmaintained and unchanging look
+  identical in git history and mean opposite things.**
+- **Status**: DONE, partially declined (plan Phase 3, 2026-08-14). Twelve of
+  the thirteen trees are at `docs/unofficial/archive/`. `internal/dungeon-81/`
+  was recovered to a **new ninth survivor, `docs/references/`**, by David's
+  ruling ("The MDL source needs to stay in docs/references"); `internal/fonts/`
+  and `internal/images/` stayed quarantined, having no consumers. All 11
+  citations repointed.
 
 ### P-5: Archive `actions/`, `api/` and `publish/`
 - **Done when**: all three are moved into **`docs/unofficial/archive/`** per
@@ -346,6 +368,13 @@ question, since the reasoning is what a future session will want.
   registration point for a publishable package. That second one sits in a file
   every session is instructed to read, so it is P-13's problem too.
 - **Accepted**: David, 2026-08-08 — `actions/`, `api/` and `publish/` all archived.
+- **Status**: DONE (plan Phase 3, 2026-08-14). All three trees are at
+  `docs/unofficial/archive/`, and `scripts/publish-npm.sh` is archived beside
+  `npm-ci.md` at `docs/unofficial/archive/publish/` — moved, not deleted (Part
+  E's E3). Both live references repaired: `docs/core-concepts/README.md` now
+  restates the seventh-registration-point fact locally, including the 4.5.0
+  release it was learned from, so the required-reading file cites no
+  quarantined material at all.
 - **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-6: `docs/spec/` moves to `docs/unofficial/`, with an issue to revisit its purpose
@@ -497,6 +526,25 @@ question, since the reasoning is what a future session will want.
 - **Note**: this is the item that determines whether the cleanup is felt as an
   improvement or as a week of broken references. Worth doing in the same commit
   as each move rather than as a trailing pass.
+- **The Done-when greps were necessary and not sufficient.** Both pass, but
+  every genuinely broken reference this consolidation produced was found
+  *outside* their named targets, by sweeping code and published READMEs the
+  patterns do not cover: `packages/chord/tests/language-version.test.ts`
+  (a `readFileSync` build gate, Phase 1), two npm-published tester READMEs
+  (Phase 1), four provenance citations in `tutorials/familyzoo/` (Phase 2), and
+  eleven `docs/internal/dungeon-81/` citations across Dungeo combat sources and
+  `docs/work/schism/` (Phase 3). A future move should treat these greps as the
+  floor, and sweep `--include='*.ts'` across `packages/`, `stories/`,
+  `tutorials/` and `scripts/` as the actual check.
+- **Status**: DONE (plan Phase 3, 2026-08-14). Both Done-when greps return
+  nothing unintentional — remaining hits are the two gitignored
+  `settings.local.json` permission strings and L98, which survives by design.
+  Every candidate URL was re-verified live at execution time: `/chord/guide`
+  still **404**, so it was not used; `/learn/fernhill`, `/chord/guide/world`
+  and `/chord/stdlib` all 200. L96/L97 replaced by four working links, one of
+  them `packages/sharpee/docs/genai-api/index.md` — tracked in git and
+  regenerated on every build, so it cannot rot the way a hand-maintained copy
+  does.
 - **Accepted**: David, 2026-08-13 (session 756ff6)
 - **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 

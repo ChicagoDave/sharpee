@@ -168,7 +168,7 @@ The one-time bootstrap, done **before** the package is first included in a relea
 
 **Expect the registry to 404 the package for a few minutes afterward.** `npm view @sharpee/<name>` reads the CDN packument, which lags a first publish; `npm access get status @sharpee/<name>` reads the auth layer and answers immediately. A `public` there means the publish landed regardless of what `npm view` says.
 
-This is a **seventh registration point** for a new publishable package, on top of the six in the workspace config, and the only one that lives outside the repository. Full detail, including the release this was learned from, is in `docs/publish/npm-ci.md` §10.2.
+This is a **seventh registration point** for a new publishable package, on top of the six in the workspace config, and the only one that lives outside the repository. It was learned from the **4.5.0 release**, which broke on exactly this: a package with no publish history has no npm settings page, so it cannot be configured as a trusted publisher and cannot ride a CI release until it has been published once by hand. Any package added to the workspace from now on needs that bootstrap first.
 
 ## Entity System
 

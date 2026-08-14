@@ -3,8 +3,11 @@
 Parked 2026-07-25 after the audit/fix pass (see `findings.md`; fixes landed in
 `85676e9d`). Nothing here is scheduled — pick up items as they become relevant.
 The publish angle: tsf stages README.md into every tarball, so missing/stale
-READMEs are public npm pages. None of this blocks Part D of
-`docs/publish/npm-ci.md`.
+READMEs are public npm pages. None of this blocks the npm CI first-run work,
+which completed 2026-07-26 (`@sharpee/ext-hunger@3.6.1` published via OIDC with
+SLSA provenance). That checklist was archived to
+`docs/unofficial/archive/publish/npm-ci.md` in the 2026-08-14 docs
+consolidation — quarantined, so treat it as history rather than a live plan.
 
 ## 1. Missing READMEs (published packages)
 

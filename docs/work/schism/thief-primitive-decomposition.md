@@ -4,7 +4,7 @@
 anything. Every element below is a *general* platform primitive; the thief is a **Chord
 composition** of them. Each primitive is proven generic by a **non-thief use**. This is
 the elegance-oracle / access-not-implementation rule made concrete against the canonical
-robber (`docs/internal/dungeon-81/patched_confusion/`, validated in
+robber (`docs/references/dungeon-81/patched_confusion/`, validated in
 `thief-mdl-validation.md`). Combat is the **existing melee plugin** (access).
 
 Status: **EXISTS** (in platform/Chord today) · **GAP** (to build, generically).
