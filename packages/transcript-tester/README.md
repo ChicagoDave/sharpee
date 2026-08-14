@@ -50,7 +50,7 @@ description: Verify the brass key unlocks the cellar door
 
 For the full guide covering syntax, assertions, directives, CLI flags, and best practices:
 
-**[Transcript Testing Guide](../../docs/guides/transcript-testing.md)**
+**[Transcript Testing Guide](../../docs/core-concepts/transcript-testing.md)**
 
 Architecture decisions:
 - [ADR-073: Transcript Story Testing](../../docs/architecture/adrs/adr-073-transcript-story-testing.md)

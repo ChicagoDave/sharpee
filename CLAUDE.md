@@ -10,6 +10,7 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in TypeScript
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - We currently don't care about backward compatibility.
 - **Platform changes require discussion first.** Any changes to `packages/` (engine, stdlib, world-model, parser-en-us, etc.) must be discussed with the user before implementation. Story-level changes (`stories/`) can proceed autonomously.
+- **`docs/unofficial/` is junk mail.** It is unmaintained, unpublished, and superseded. Do not cite it, plan from it, research in it, or treat anything in it as current. To use anything in it, move it out first — and moving it out is a human decision, not yours.
 
 ## Agents
 

@@ -9,8 +9,8 @@
 
    Coverage: Phase A subset + Phase B declarations + Phase C ownership
    package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
-   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers), as of
-   2026-07-17.
+   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers) +
+   ADR-261 (`use scoring` with its rank ladder), as of 2026-07-24.
 
    Notation:
      UPPER      = token class          "quoted" = literal word
@@ -39,13 +39,86 @@ MARKER  = "{" content "}" ;                                (* inside prose text 
 LOCALE  = WORD ;                                           (* e.g. en-US *)
 
 
+(* ---- Comments (ADR-249) ------------------------------------------------ *)
+
+comment-line = "##" rest-of-line NL ;          (* column 1 — indent 0 only *)
+comment-run  = comment-line { comment-line } ; (* blank-delimited on both sides;
+                                                  file start/end count as blank.
+                                                  Legal only between top-level
+                                                  constructs; contributes nothing.
+                                                  No end-of-line comment form
+                                                  exists. Inside a construct:
+                                                  parse.comment-inside-block;
+                                                  undelimited:
+                                                  lex.comment-blank-lines. *)
+
 (* ---- Top level --------------------------------------------------------- *)
 
-story-file   = [ story-header ] { declaration } ;
-story-header = "story" STRING [ "by" STRING ] NL
+story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
+
+grammar-file   = [ comment-run ] grammar-header
+                 { define-action | "import" STRING NL | comment-run } ;
+                                                  (* ADR-269 D8: a grammar file carries
+                                                     define-action GRAMMAR surfaces only —
+                                                     behavior lines (must / refuse /
+                                                     otherwise / score / phrases / body)
+                                                     and every other declaration kind are
+                                                     analyzer errors
+                                                     (analysis.grammar-file-behavior /
+                                                     analysis.grammar-file-declaration).
+                                                     D10: `define action <name>` binds the
+                                                     platform action id derived from
+                                                     <name>, validated by the consuming
+                                                     build step — never minted as
+                                                     chord.action.*. The two headers are
+                                                     mutually exclusive
+                                                     (parse.mixed-headers). *)
+grammar-header = "grammar" STRING NL ;            (* no `by`, no indented body
+                                                     (parse.grammar-header-body) *)
+
+story-header = "story" NL                         (* ADR-298: positional
+                                                     `story STRING ["by" STRING]`
+                                                     removed
+                                                     (parse.removed-story-header) *)
                >>> { states-line | score-line | story-on-clause | use-line
-                   | WORD ":" rest-of-line NL } ;
-use-line     = "use" WORD NL ;                             (* ADR-215: one trusted
+                   | use-phrasebook-line
+                   | meta-field } ;
+meta-field   = "title" ":" rest-of-line NL        (* required (parse.story-title) *)
+             | "id" ":" rest-of-line NL
+             | "story-version" ":" rest-of-line NL
+             | "ifid" ":" rest-of-line NL         (* absent → analysis.missing-ifid
+                                                     warning; publish hard-errors
+                                                     (ADR-284) *)
+             | name-list-field | prose-field
+             | client-config-field ;
+client-config-field                               (* ADR-252 D3 browser-build keys,
+                                                     folded into the closed set by
+                                                     the ADR-298 amendment
+                                                     (GH #221, 2026-08-03) *)
+             = ( "client" | "theme" | "template"
+               | "default-theme" | "storage-prefix" ) ":" rest-of-line NL
+             | "themes" ":" rest-of-line NL ;     (* comma list of theme names *)
+                                                  (* Closed schema (ADR-298 D4):
+                                                     any other key is
+                                                     parse.header-unknown-field;
+                                                     `version:` / `blurb:` / `by:`
+                                                     are removed spellings with
+                                                     fix-its (story-version /
+                                                     description / authors). *)
+name-list-field = ( "authors" | "testers" ) ":" [ rest-of-line ] NL
+                  { >>> rest-of-line NL } ;       (* one name per indented line,
+                                                     or a single inline name;
+                                                     empty list is
+                                                     parse.header-list-empty *)
+prose-field  = ( "prologue" | "description" ) ":" [ rest-of-line ] NL
+               { >>> rest-of-line NL } ;          (* value is literal prose UNLESS
+                                                     it is exactly one kebab atom —
+                                                     then it is a phrase reference
+                                                     (analysis.missing-phrase if
+                                                     undeclared). Never
+                                                     resolve-if-exists. *)
+use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
+use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per
                                                               line (combat,
                                                               state-machines); admits
@@ -57,7 +130,61 @@ use-line     = "use" WORD NL ;                             (* ADR-215: one trust
                                                               vocabulary (npc) are
                                                               compile errors; top-level
                                                               placement gets a header
-                                                              fix-it *)
+                                                              fix-it. Takes NO body —
+                                                              an indented block under
+                                                              any name but `scoring`
+                                                              is parse.use-body *)
+use-scoring-line = "use" "scoring" [ announce-suffix ] NL
+               >>> { rank-line } ;                         (* ADR-261 D2: the only
+                                                              `use` line with a body —
+                                                              the rank ladder rides the
+                                                              line that enables it, so
+                                                              a ladder can never be
+                                                              silently disabled *)
+announce-suffix = "," "announce"
+                  ( "all" | "collapsed" | "combined" | "silent" ) ;
+                                                           (* ADR-262 D3: how a
+                                                              metering extension's band
+                                                              crossings narrate. `all`
+                                                              (default) reports each
+                                                              elevation; `silent` is
+                                                              the only route to no
+                                                              output *)
+use-hunger-line = "use" "hunger" [ announce-suffix ] NL
+               >>> { hunger-grows-line
+                   | meter-rung-line
+                   | hunger-fatal-line } ;                (* ADR-263 D1: a depleting
+                                                              satiety meter over the
+                                                              ADR-262 engine *)
+hunger-grows-line = "grows" NUMBER "each" "turn" NL ;     (* per-turn severity gain,
+                                                              lowered to `on every turn` *)
+meter-rung-line = WORD "at" NUMBER [ "says" WORD ] NL ;   (* a band: bareword name
+                                                              (its id), absolute
+                                                              threshold, optional
+                                                              story phrase *)
+hunger-fatal-line = "fatal" "at" NUMBER NL ;              (* a raw-value death trigger
+                                                              above the top band,
+                                                              lowered to `kill the
+                                                              player` *)
+rank-line    = "rank" STRING "at" NUMBER [ "says" WORD ] NL ;
+                                                           (* ADR-261 D2/D7: a rung.
+                                                              STRING is author prose,
+                                                              never a phrasebook key
+                                                              (ADR-260 D4). NUMBER is
+                                                              ABSOLUTE points, never a
+                                                              percentage of max — so a
+                                                              maxScore change cannot
+                                                              move a boundary. `says`
+                                                              names a key in the story's
+                                                              own phrase namespace,
+                                                              spoken once on crossing;
+                                                              a rung without it is
+                                                              silent, there being no
+                                                              platform sentence to fall
+                                                              back to. Rungs sort at
+                                                              compile time; a rung
+                                                              outside this body is
+                                                              parse.rank-outside-scoring *)
 story-on-clause = on-clause ;                              (* ADR-236 D7 (ratchet R4):
                                                               `on every turn` ONLY —
                                                               any other clause form is
@@ -67,14 +194,65 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
 declaration  = create | define-condition | define-phrase | define-phrases
-             | define-verb | define-text
+             | define-text                                 (* define-verb REMOVED — ADR-270 D7 *)
              | define-trait | define-action | define-hatch
              | define-sequence
+             | define-counter                              (* ADR-264 *)
              | define-machine                              (* ADR-215, use-gated *)
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
-             | define-pronouns ;                           (* ADR-242 *)
+             | define-pronouns                             (* ADR-242 *)
+             | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
+             | override-message | override-messages       (* ADR-255 *)
+             | extend-action | remove-from-action ;       (* ADR-270 *)
+
+(* ---- Message overrides (ADR-255, 2026-07-22) --------------------------- *)
+
+override-message    = "override" "message" ALIAS
+                      [ "," ( STRATEGY | "verbatim" ) ] NL
+                      >>> prose { "or" NL >>> prose }
+                      "end" "override" NL ;                (* the full define-phrase body;
+                                                              an alias absent from the ACL
+                                                              catalog is
+                                                              analysis.unknown-message-alias *)
+override-messages   = "override" "messages" LOCALE NL
+                      >>> { ALIAS ":" NL >>> prose } ;     (* localizable flat block *)
+ALIAS               = WORD ;                               (* an ACL alias, <action>-<message>,
+                                                             single kebab word (ADR-254/255) *)
+
+(* ---- Phrasebooks (ADR-245/250, 2026-07-21) ----------------------------- *)
+
+define-phrasebook   = "define" "phrasebook" WORD [ "while" condition ] NL
+                      >>> { phrasebook-entry }
+                      "end" "phrasebook" NL ;              (* entry-level `while` is
+                                                              analysis.phrasebook-entry-gate;
+                                                              keys are STORY keys only —
+                                                              dotted platform IDs are
+                                                              analysis.phrasebook-dotted-key.
+                                                              Predicate-less = the DEFAULT
+                                                              (always) book. Arbitration:
+                                                              first predicate-match in
+                                                              file-appearance order, per
+                                                              key; story define phrase /
+                                                              per-entity phrase always win. *)
+phrasebook-entry    = WORD [ "," STRATEGY | "," "verbatim" ] ":" NL
+                      >>> prose { "or" NL >>> prose } ;    (* the phrase-override entry
+                                                              grammar, book-scoped *)
+use-phrasebook-line = "use" "phrasebook" WORD [ "while" condition ] NL ;
+                                                           (* header body; stackable; the
+                                                              `phrasebook` sub-word selects
+                                                              the two-word form — plain
+                                                              one-word `use` untouched.
+                                                              Unknown name:
+                                                              analysis.unknown-phrasebook *)
+import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING ends
+                                                              ".story"; fragment holds only
+                                                              define-phrasebook blocks +
+                                                              ## comments; splices at the
+                                                              import site (= arbitration
+                                                              position). Bare import is
+                                                              reserved (parked ADR). *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
    error with a fix-it naming `define trait` + clauses or `define action
@@ -92,6 +270,10 @@ states-line  = "states" [ "," "reversible" ] ":" WORD { "," WORD } NL ;
                (* legal in story header, create blocks, define trait blocks *)
 score-line   = "score" WORD "worth" NUMBER NL ;
                (* legal in story header, create, define trait, define action *)
+counter-line = "counter" WORD [ "starts" NUMBER ]
+                         [ "between" NUMBER "and" NUMBER ] NL ;
+               (* ADR-264 D1: a per-entity numeric counter, legal in a create
+                  block; story-global counters use `define counter` instead *)
 
 
 (* ---- on / after clauses (D3/D5) ---------------------------------------- *)
@@ -132,6 +314,7 @@ create-line  = "aka" alias { "," alias } NL
                                                               never an injected default *)
              | states-line
              | score-line
+             | counter-line                                (* ADR-264 D1 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
@@ -244,8 +427,13 @@ define-phrase    = "define" "phrase" phrase-key [ "," ( STRATEGY | "verbatim" ) 
 variant          = prose-paragraph ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
-define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
-pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
+(* define-verb REMOVED (ADR-270 D7, 2026-07-26, Chord 3.0.0): `extend action`
+   subsumes it — the parser emits parse.removed-define-verb with a fix-it. *)
+pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line
+                                                              and the ADR-270 alteration blocks *)
+pattern-elem     = plain-elem | "[" plain-elem "]" ;       (* [x] = optional (D9) *)
+plain-elem       = WORD { "or" WORD } | "the" WORD ;       (* or = alternation, ONE rule (D8);
+                                                              "the" WORD = slot (D15) *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
 STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
                    (* Z5: mirrors the Choice selectors 1:1. `ordered`/`once`
@@ -274,6 +462,12 @@ trait-field    = field-words ":" [ "optional" ]
 define-action  = "define" "action" WORD NL action-line* ;  (* dedent-terminated *)
 action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
+               | "the" WORD "takes" "the" "rest" "of" "the" "line" NL
+                                                           (* greedy slot → :slot... (D10) *)
+               | "the" WORD "is" ( "an" | "a" ) WORD NL    (* typed slot — instrument | topic (D11) *)
+               | "directions" NL >>> { WORD { "or" WORD } NL }
+                                                           (* direction map bound to the `direction`
+                                                              slot; per-action vocabulary (D12) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
                | "refuse" "without" WORD ":" phrase-key NL
@@ -281,14 +475,47 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
-pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
+pattern-line   = pattern [ "→" token { token } ] NL
+                 { "means" WORD WORD NL } ;                 (* ADR-267 D1: one slot production
+                                                              (pattern-elem); → = cardinality;
+                                                              indented "means <key> <value>" lines
+                                                              = static defaults for THIS pattern (D12) *)
 
-define-hatch   = "define" "action" WORD "from" STRING NL ; (* `define behavior` REMOVED
-                                                              (ADR-235 D2) — parse error
-                                                              with fix-it *)
+(* ---- ADR-270 author alteration model (2026-07-26) ---------------------- *)
+
+extend-action  = "extend" "action" WORD NL action-line* ;  (* dedent-terminated. Grammar
+                                                              surfaces only: behavior lines
+                                                              (must-line, score-line, refuse,
+                                                              otherwise, phrases, statements)
+                                                              parse but are analyzer errors
+                                                              (analysis.alteration-behavior).
+                                                              The target action resolves
+                                                              story-first, else the stdlib
+                                                              id set — unknown name is a
+                                                              load error with a suggestion *)
+remove-from-action
+               = "remove" "from" "action" WORD NL
+                 >>> { pattern NL } ;                       (* shapes only — a "means" line or
+                                                              "→" cardinality here is
+                                                              analysis.removal-shape; an
+                                                              unmatched shape is a load
+                                                              error, never a silent no-op *)
+
+define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
+               | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is
+                                                              a curated stdlib chain alias
+                                                              (opened-revealed), else
+                                                              analysis.unknown-chain. `define
+                                                              behavior` REMOVED, ADR-235 D2. *)
 
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
+
+(* ---- ADR-264 numeric counters ------------------------------------------ *)
+
+define-counter = "define" "counter" WORD [ "starts" NUMBER ]
+                          [ "between" NUMBER "and" NUMBER ] NL ;
+                 (* a story-global counter; `starts`/bounds optional *)
 
 (* ---- ADR-215 state-machine depth (`use state-machines`; spelling A) ---- *)
 
@@ -330,17 +557,48 @@ define-family-channel                                      (* ADR-241: a named a
                                                               be declared — never-guess *)
              = "define" ( "ambient" | "layer" ) WORD NL ;
 
-define-channel = "define" "channel" WORD NL                (* spelling A, 2026-07-18 *)
+define-channel = "define" "channel" WORD NL                (* spelling A; ADR-253 *)
                  >>> { "mode" ( "replace" | "append" | "event" ) NL
                      | "gated" "by" WORD NL                (* a client capability flag *)
-                     | "from" "event" phrase-key NL
-                     | "take" WORD { "," WORD } NL }
+                     | "return" channel-return "from" WORD NL
+                       [ channel-record-body ] }           (* record members: ADR-300 D10 *)
                  "end" "channel" NL ;
-                                                           (* a JSON data projection:
-                                                              the turn's last matching
-                                                              event, `take` fields only;
-                                                              renderers ship platform-
-                                                              side (ADR-215 registry) *)
+channel-return = WORD | STRING | "phrase" WORD             (* field | "text (slot)" | phrase;
+                                                              ADR-253 replaced `from event`
+                                                              + `take` (a `take` line is now
+                                                              parse.channel-take-removed). The
+                                                              value renders by DOM-name, else
+                                                              the generic panel. *)
+               | "record" ;                                (* ADR-300 D10: a structured
+                                                              value. Present only so an
+                                                              author can DECLARE what the
+                                                              platform already emits — a
+                                                              channel's value may be a
+                                                              record (ADR-300 D7; the
+                                                              banner is one). Its members
+                                                              follow as an indented block. *)
+channel-record-body                                        (* ADR-300 D10; legal only after
+                                                              `return record from <event>`.
+                                                              Members project from THAT
+                                                              event's payload — a record is
+                                                              one event read as structure,
+                                                              not several joined. An empty
+                                                              body is analysis.channel-
+                                                              record-empty; a duplicate
+                                                              member name is analysis.
+                                                              channel-record-duplicate. *)
+             = >>> { channel-record-member }
+               "end" "record" NL ;
+channel-record-member                                      (* `list of` yields an array:
+                                                              an array field passes through,
+                                                              a single value becomes one
+                                                              element, an absent field
+                                                              becomes []. An absent scalar
+                                                              member is OMITTED, so a
+                                                              consumer can branch on
+                                                              presence. Records do not nest
+                                                              (parse.channel-record-nested). *)
+             = WORD [ "list" "of" ] channel-return NL ;
 define-topics  = "define" "topics" "for" name NL           (* ADR-239 D3 as amended:
                                                               the ask/tell topic table.
                                                               One block per entity
@@ -433,6 +691,9 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "remove" name [ stmt-when ] NL              (* Z6: remove from play;
                                                               never the player *)
              | "award" { token } [ "," "once" ] [ stmt-when ] NL
+             | ( "raise" | "lower" ) counter-ref "by" NUMBER
+               [ stmt-when ] NL                            (* ADR-264 D2: additive
+                                                              counter mutation, clamped *)
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
              | select-on | select-strategy | ordinal-block | each-block ;
@@ -440,7 +701,8 @@ stmt-when    = "when" condition ;                          (* statement-final su
                                                               legal on phrase, emit, change,
                                                               move, remove, award, win, lose —
                                                               not on set or bare refuse *)
-phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
+phrase-key   = WORD ;                                      (* single kebab word; a "." is
+                                                              parse.dotted-key (ADR-254/256) *)
 param        = "with" WORD { WORD } "=" value-expr ;
 
 (* ---- ADR-216 emit payload + media sugar -------------------------------- *)
@@ -517,9 +779,15 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                               | "here"                         (* Z4 deictic: subject shares
                                                                   the player's location;
                                                                   entity subjects only *)
+                              | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
              | ( "has" | "holds" | "wears" ) name
-             | "can" ( "see" | "reach" ) name ;
+             | "can" ( "see" | "reach" ) name
+             | compare-op NUMBER ;                            (* ADR-264 D3 symbolic form *)
+word-compare = "at" "least" | "more" "than" | "at" "most" | "less" "than" ;
+compare-op   = ">=" | ">" | "<=" | "<" ;                      (* ADR-264: lexed as one token *)
+counter-ref  = WORD | "its" WORD | name "'s" WORD ;           (* ADR-264: a counter, story-global
+                                                                 (bare) or per-entity (possessive) *)
 
 value-expr   = NUMBER | STRING
              | "the" "match"                               (* E3 binder, standalone only —

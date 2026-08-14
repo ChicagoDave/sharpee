@@ -7,15 +7,17 @@
 New to Sharpee? Start here:
 
 1. **[Core Concepts](./core-concepts/README.md)** — Entities, traits, actions, events
-2. **[Creating Stories](./guides/creating-stories.md)** — Build your first IF game
-3. **[Build System](./guides/build-system.md)** — Build and test your story
+2. **[sharpee.net](https://sharpee.net)** — the maintained home of author documentation
+
+The author guides that used to be listed here now live in
+[`unofficial/`](./unofficial/README.md) and are unmaintained. See that folder's
+README before using anything in it.
 
 ## Documentation Structure
 
 ```
 docs/
-├── reference/          # Core concepts, transcript testing
-├── guides/             # How-to guides for authors
+├── unofficial/         # Quarantine — unmaintained, superseded (guides, reference, spec)
 ├── architecture/       # ADRs, diagrams, design decisions
 ├── getting-started/    # Installation and setup
 ├── work/               # Active development tracking
@@ -28,10 +30,10 @@ docs/
 | Guide | Description |
 |-------|-------------|
 | [Core Concepts](./core-concepts/README.md) | Entity system, traits, actions, and events |
-| [Creating Stories](./guides/creating-stories.md) | Complete guide to building IF games |
-| [Event Handlers](./guides/event-handlers.md) | React to game events with custom logic |
-| [Build System](./guides/build-system.md) | Building and bundling stories |
-| [Transcript Testing](./guides/transcript-testing.md) | Test your story with transcript files |
+| [sharpee.net](https://sharpee.net) | Author guides, Chord language reference, cookbook |
+
+The former `guides/` entries in this table moved to
+[`unofficial/guides/`](./unofficial/README.md) and are no longer maintained.
 
 ## For Developers
 

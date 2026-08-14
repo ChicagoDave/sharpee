@@ -44,7 +44,10 @@ const PINNED = {
   ebnfSha256: 'c88bb89fb44bb5b40b41537dd12e40742bd9bc8a2f8ec6a20b620b33a1738ab4',
 };
 
-const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');
+// Colocated with the version pin it gates (2026-08-14). It previously lived at
+// docs/reference/chord.ebnf; the docs-consolidation quarantine moved that tree
+// into docs/unofficial/, and a live build gate must not read from there.
+const EBNF_PATH = join(__dirname, '..', 'chord.ebnf');
 const ebnfSha = () => createHash('sha256').update(readFileSync(EBNF_PATH)).digest('hex');
 
 describe('Chord language version (ADR-257)', () => {

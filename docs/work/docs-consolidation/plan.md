@@ -134,7 +134,42 @@ disposition question is needed; the pointer below repoints cleanly.
   `packages/*/CLAUDE.md`, `.claude/`, `tools/` returns nothing unintentional.
   `docs/README.md` has no dangling links into the moved trees (full rewrite
   still pending Phase 5).
-- **Status**: CURRENT (since 2026-08-13)
+- **Status**: DONE (2026-08-14)
+- **Outcome**: All deliverables met. 37 renames, nothing deleted.
+  `docs/unofficial/README.md` states P-1's four points; `CLAUDE.md` carries
+  P-14's paragraph verbatim; `docs/README.md` patched minimally.
+  - **P-14 gate: confirmed NOT shipped upstream.** No `resolution-anchors.sh`
+    under `~/.devarch/`, `~/.claude/hooks/`, or `docs/workflow/hooks/`, and
+    `.claude/settings.json` has no `PreToolUse` hook on `Read`/`Grep`/`Glob`.
+    Nothing was stubbed in locally, per this phase's own instruction.
+  - **Two files were misclassified by this phase's premise and pulled back
+    out** — the "three low-risk trees" framing does not hold uniformly:
+    - `docs/reference/chord.ebnf` → `packages/chord/chord.ebnf`. It is a live
+      conformance artifact, not stale reference: `packages/chord/tests/
+      language-version.test.ts` hashes it as ADR-257 D5's build gate. The move
+      broke that test with ENOENT; verified failing, then verified passing
+      after the relocation (56 files / 740 tests green in `@sharpee/chord`).
+      A live build gate must not read out of the quarantine.
+    - `docs/guides/transcript-testing.md` → `docs/core-concepts/transcript-testing.md`.
+      `@sharpee/transcript-tester` and `@sharpee/branch-tester` both link it
+      from npm-published READMEs, and P-2 records it as having no sharpee.net
+      equivalent — so Phase 3's repoint-to-site fix was unavailable. Both
+      README links updated; `docs/core-concepts/README.md` now indexes it.
+  - **Live bug found and fixed on the way** (outside the plan's scope, folded
+    in): `website/public/chord.ebnf` — published on sharpee.net as a download —
+    was stale Chord 2, still specifying the positional `story "Title" by
+    "Author"` header ADR-298 removed, and missing comments (ADR-249), records
+    (ADR-300 D10) and counters (ADR-264). No generation step exists between
+    the two copies; the website's was last touched at the initial site ship
+    (`d0cc4807`) while the real one advanced through ADR-298 and ADR-300.
+    Synced from `packages/chord/chord.ebnf`; both now hash `c88bb89f…8ab4`.
+    **The duplication itself is unresolved** — two hand-maintained copies with
+    nothing keeping them honest, which is what let this rot silently.
+  - **`.claude/settings.local.json:226-227` left unrepaired, with reason.**
+    Globally gitignored and untracked, so machine-local and unfixable for
+    anyone else; repointing them would preserve a standing permission to `awk`
+    over quarantined content, which is the access P-14's rule bars. The
+    allow-list regrows on next use.
 
 ### Phase 2: Resolve the three archive trees to their two destinations
 - **Tier**: Large

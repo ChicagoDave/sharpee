@@ -89,7 +89,7 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/devkit`** — The `sharpee` author CLI (ADR-180, ADR-187): scaffold, build, test, verify, compose, and introspect an author's own story project. In-repo platform builds deliberately use a separate tool, `repokit`.
 
-**`@sharpee/transcript-tester`** — Transcript-based testing: the `.transcript` parser and its matched canonical serializer, the runner, golden recordings, coverage, outcome search, and watch mode. It owns the transcript grammar, so parser and serializer ship as a pair pinned by their own tests.
+**`@sharpee/transcript-tester`** — Transcript-based testing: the `.transcript` parser and its matched canonical serializer, the runner, golden recordings, coverage, outcome search, and watch mode. It owns the transcript grammar, so parser and serializer ship as a pair pinned by their own tests. The full guide — syntax, assertions, directives, CLI flags — is [`transcript-testing.md`](./transcript-testing.md), beside this file.
 
 **`@sharpee/branch-tester`** — The tree-document testing runtime (ADR-307). One test tree per story, serialized as `<story-id>.tests.json`: the walker replays it against a real engine and owns the shared assertion machinery — channel claims, policy synthesis — that both the walker and the IDE's Testing tab consume. Distinct from `transcript-tester`, which owns the `.transcript` grammar for Sharpee's own hand-authored suites; the Chord/IDE world uses this one.
 

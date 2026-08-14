@@ -1,9 +1,13 @@
 # Proposal: docs/ consolidation
 
-**Status**: PLANNED — twelve items (P-1 through P-8, P-10, P-11, P-12, P-14)
-planned via `docs/work/docs-consolidation/plan.md`, 2026-08-13. P-13 is DONE
-(executed directly 2026-08-13); P-9 remains ACCEPTED but deliberately
-unplanned (David: "hold 9" — see P-9). `proposal-review` ran 2026-08-08 and raised 2 blocking
+**Status**: IN PROGRESS — **five items DONE** (P-1, P-2, P-6, P-14 via plan
+Phase 1 on 2026-08-14; P-13 executed directly 2026-08-13). Eight remain PLANNED
+(P-3, P-4, P-5, P-7, P-8, P-10, P-11, P-12 — P-12 spans Phases 1-3 and closes
+only at the end of Phase 3) via `docs/work/docs-consolidation/plan.md`. P-9
+remains ACCEPTED but deliberately unplanned (David: "hold 9" — see P-9).
+**Phase 1 found the "superseded" premise does not hold uniformly** — two files
+were live consumers and were moved back out; see P-2's execution note before
+running any further move. `proposal-review` ran 2026-08-08 and raised 2 blocking
 findings plus 5 advisory. **Amended 2026-08-13** (session 756ff6) for the
 zifmia retirement, which moved one inventoried directory and partly executed
 P-4; P-3, P-4 and the headline inventory are annotated in place. The amendment
@@ -171,7 +175,9 @@ question, since the reasoning is what a future session will want.
   does not apply and ADR-281's "canon is canon because it is maintained" is not
   threatened. No ADR is needed — this is not a durable promise to readers,
   because there are no readers outside the repo.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 1, 2026-08-14) — `docs/unofficial/` exists and
+  carries a `README.md` stating all four points; the bar is written in
+  `CLAUDE.md` per P-14.
 
 ### P-2: Move `docs/guides/` and `docs/reference/` into `docs/unofficial/`
 - **Done when**: both trees (22 files, 9,530 + 3,395 lines) live under
@@ -192,7 +198,21 @@ question, since the reasoning is what a future session will want.
   the two files whose material genuinely leaves circulation. The transcript one
   is already covered — the author-facing gap it leaves is #246.
 - **Accepted**: David, 2026-08-08.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Two exceptions found during execution, both moved back out** (plan Phase 1
+  Outcome has the detail). `reference/chord.ebnf` is a live ADR-257 D5 build
+  gate, not superseded reference — quarantining it broke
+  `language-version.test.ts` outright; it now lives at
+  `packages/chord/chord.ebnf`. `guides/transcript-testing.md` is linked from two
+  npm-published READMEs and, per the note above, has no site equivalent — so
+  the quarantine would have broken a public package page with no repointing
+  target; it now lives at `docs/core-concepts/transcript-testing.md`. **The
+  general lesson for P-3/P-4/P-5**: "git-cold" and "superseded on the site" do
+  not imply "nothing live reads it." Grep for code and published-README
+  consumers before each remaining move, not only for the doc-path patterns
+  P-12 names.
+- **Status**: DONE (plan Phase 1, 2026-08-14) — both trees live under
+  `docs/unofficial/`, neither exists at its old path, nothing deleted, minus
+  the two exceptions above.
 
 ### P-3: Resolve the three archive trees to two destinations, by what they hold
 - **Done when**: `_archive/`, `_archived/` and `archive/` no longer exist at
@@ -348,7 +368,8 @@ question, since the reasoning is what a future session will want.
   sit. That is the intent — they should not be cited until re-qualified — but it
   does mean the engine has **no citable written contract** until the issue is
   picked up. Worth knowing rather than discovering.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 1, 2026-08-14) — all 10 files live at
+  `docs/unofficial/spec/`; issue #247 was already filed and remains OPEN.
 
 ### P-7: The Sharpee Book stays at `docs/book/`
 - **Done when**: `docs/book/` is untouched by the sweep and is named as a
@@ -543,7 +564,15 @@ question, since the reasoning is what a future session will want.
   `CLAUDE.md` paragraph and the folder's own `README.md` remain this item.
 - **Depends on**: P-1 (ACCEPTED)
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 1, 2026-08-14) — the human-facing half, which is
+  what this item scopes as "Sharpee's to write," is written: `CLAUDE.md` carries
+  the paragraph verbatim under MAJOR DIRECTIONS, and `docs/unofficial/README.md`
+  says the same to a human. **The mechanical half is confirmed NOT yet shipped
+  upstream** (checked 2026-08-14: no `resolution-anchors.sh` under
+  `~/.devarch/`, `~/.claude/hooks/`, or `docs/workflow/hooks/`; no `PreToolUse`
+  hook on Read/Grep/Glob in `.claude/settings.json`). Nothing was stubbed in
+  locally. Adopting the gate when it ships remains outstanding under this
+  item's own "adopt, not build" ruling.
 
 ---
 
