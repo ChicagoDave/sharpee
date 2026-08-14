@@ -47,12 +47,12 @@ export default function Home() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card href="/chord/getting-started/install" title="Chord — the language">
+        <Card href="/chord" title="Chord — the language">
           An IF Modeling Language. One .story file, no build config; the
           compiler checks every name, state, and topic before the game runs.
-          Install the CLI and scaffold a playable story in one command.
+          Start here for what the language is and how it reads.
         </Card>
-        <Card href="/sharpee/platform" title="Sharpee — the platform">
+        <Card href="/sharpee" title="Sharpee — the platform">
           The TypeScript engine underneath: traits, four-phase actions,
           event-sourced turns, and a text system that never mangles an
           article. Author against it directly, or look under Chord's hood.
