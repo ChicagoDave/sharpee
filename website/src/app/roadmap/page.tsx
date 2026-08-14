@@ -15,7 +15,7 @@ import roadmap from "@/lib/roadmap-data.json";
 
 /** Versions shown in the intro. Each moves on its own cadence (ADR-257). */
 const VERSIONS = [
-  { label: "Sharpee", value: "5.0.0" },
+  { label: "Sharpee", value: "5.0.1" },
   { label: "Chord language", value: "3.0.0" },
   { label: "Chord Writer", value: "1.0.0" },
 ];

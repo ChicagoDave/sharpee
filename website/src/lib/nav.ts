@@ -329,7 +329,7 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Sharpee',
-    version: '5.0.0',
+    version: '5.0.1',
     groups: [
       { title: 'Platform', items: [{ title: 'What is Sharpee?', href: '/sharpee' }, { title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },
