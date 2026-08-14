@@ -96,11 +96,11 @@ In sequence: (1) "content-borne" trigger; (2) "name-borne," based on believing Z
 
 ## Session Metadata
 
-- **Status**: COMPLETE (unverified: genuine-Intel-silicon behavior — Rosetta-verified only, David accepted this for v1; the `website/public/` restart trap is diagnosed but not yet encoded into `deploy.sh`; the Half 4 "72 files / 480 tests passing" figure and the `tsf`-vs-`repokit` rebuild sequence — no command output captured, only the surrounding build-failed/build-passed event shape)
-- **Blocker** (if any): N/A — the shipped Intel/arm64 release is complete and live, the website is retitled, and zifmia/shite/packages/interpreter are fully retired and archived on `main`; what remains open (Phase 3 doc cleanup, ADR-313/314 interviews, the unmerged `feat/adr-312-cli-test-recording` branch) is follow-up work, not a blocker on what this record covers.
+- **Status**: COMPLETE (unverified: genuine-Intel-silicon behavior — Rosetta-verified only, David accepted this for v1; the `website/public/` restart trap is diagnosed but not yet encoded into `deploy.sh`; the Half 4 "72 files / 480 tests passing" figure and the `tsf`-vs-`repokit` rebuild sequence — no command output captured, only the surrounding build-failed/build-passed event shape; Half 5's diagnosis that the sharpee.net 500s trace to David's own in-progress server work rather than the deploy commits is corroborated only indirectly, via an empty `pnpm-lock.yaml` diff on both deploy commits — no direct server-side evidence captured this pass)
+- **Blocker** (if any): N/A — the shipped Intel/arm64 release is complete and live, the website is retitled and its deploy path hardened against two reproduced failure modes, zifmia/shite/packages/interpreter are fully retired and archived on `main`, and the docs-consolidation proposal is fully ACCEPTED with twelve of fourteen items planned; what remains open (Phase 3 doc cleanup, ADR-313/314 interviews, the unmerged `feat/adr-312-cli-test-recording` branch, the unpushed docs-consolidation plan, P-9 unplanned) is follow-up work, not a blocker on what this record covers.
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
-- **Rollback Safety**: safe to revert on `main` — the Intel work (vendor-toolchain, package.sh, project.yml, website) is committed and merged via PR #262; the Half 4 work (website retitle, zifmia/shite/packages/interpreter retirement, eight commits `24cf5ef3`..`14d398b5`) is committed directly to `main` and pushed (`HEAD` and `origin/main` both `14d398b5`, verified this pass), each step moved with `git mv` so history follows and nothing was deleted; `feat/adr-312-cli-test-recording` (ADR-313/314 review, notarization docs, drafts) remains a separate unmerged branch, untouched by anything on `main`.
+- **Rollback Safety**: safe to revert on `main` — the Intel work (vendor-toolchain, package.sh, project.yml, website) is committed and merged via PR #262; the Half 4 work (website retitle, zifmia/shite/packages/interpreter retirement) and the Half 5 work (deploy hardening, docs-consolidation amendment/acceptance, P-13, Intel plan closure — commits `24cf5ef3`..`7e903ea2`) are committed directly to `main` and pushed, verified this pass (`git rev-parse origin/main` = `7e903ea2`); `5c4a7656` (the docs-consolidation plan) is the sole local commit ahead of `origin/main`, confirmed via `git log origin/main..HEAD`, and safe to push or drop independently since nothing later depends on it; `feat/adr-312-cli-test-recording` (ADR-313/314 review, notarization docs, drafts) remains a separate unmerged branch, untouched by anything on `main`.
 
 ## Dependency/Prerequisite Check
 
@@ -112,23 +112,24 @@ In sequence: (1) "content-borne" trigger; (2) "name-borne," based on believing Z
 - ADR-313, ADR-314: reviewed via `/devarch:adr-review` multi-ADR mode; both remain DRAFT with expanded Open Questions (7 and 9). No ADR promoted to ACCEPTED this session.
 - ADR-279: amendment rewritten twice — the INTERIM section's "content-borne, layout-independent" trigger premise is retracted; §5a's Intel/universal conclusion is flagged unsafe/untested rather than removed, since its single-matched-pair test is exactly the shape now known to produce spurious results by chance alone.
 - Pattern applied: matched-pair experimental design (byte-identical submissions, staggered submission times) replacing cohort comparison — the only method across 5 sessions of notarization work to produce a falsifiable result.
+- docs-consolidation proposal (`docs/proposals/docs-consolidation.md`): all fourteen items now ACCEPTED (Half 5); twelve planned into `docs/work/docs-consolidation/plan.md` via `session-planner`, reviewed twice by `/devarch:plan-review` (two blockers found and fixed on the first pass, one more on the re-run, CLEAN on the second). P-9 deliberately unplanned at David's instruction; P-13 executed directly outside the plan.
 
 ## Mutation Audit
 
-- Files with state-changing logic modified: `tools/ide/vendor-toolchain.sh` (adds a codesign step over vendored binaries).
-- Tests verify actual state mutations (not just events): N/A — no automated test harness exists for the signing script. Verification was the real Xcode-archive → notarization → stapled-DMG pipeline itself (Gatekeeper `source=Notarized Developer ID`), reported by the session but not corroborated by the event log or an inline command output this pass.
-- If NO: a future session should capture the `spctl -a -vvv` (or equivalent Gatekeeper) command and its output, dated, inline in the summary rather than narrating the result.
+- Files with state-changing logic modified: `tools/ide/vendor-toolchain.sh` (adds a codesign step over vendored binaries); `website/deploy.sh` (adds a `pnpm install --frozen-lockfile` step and asserts `repokit`'s `cli.js` exists rather than trusting its exit code); `tools/repokit` (clears `tsconfig.tsbuildinfo` before rebuilding).
+- Tests verify actual state mutations (not just events): N/A — no automated test harness exists for either the signing script or the deploy wrapper. `vendor-toolchain.sh` was verified by the real Xcode-archive → notarization → stapled-DMG pipeline (Gatekeeper `source=Notarized Developer ID`), reported by the session but not corroborated by the event log or an inline command output this pass. The `repokit` self-heal fix was verified by direct local reproduction per `ddfcdde2`'s own commit message ("removing `dist/` alone leaves the documented command a no-op... dropping the tsbuildinfo first is what restores it"), which is command-shaped evidence but not a captured command transcript in this summary.
+- If NO: a future session should capture the `spctl -a -vvv` (or equivalent Gatekeeper) command and its output, dated, inline in the summary rather than narrating the result; likewise a captured before/after transcript of the `repokit` self-heal against a live deploy host.
 
 ## Recurrence Check
 
-- Similar to past issue? YES — `session-20260812-1944-feat-adr-312-cli-test-recording.md`'s `pattern-recurrence-detector` run already flagged "Notarization pipeline root-cause churn — 4 sessions (2232, 1540, 0152, 0703)" before this session ran. This session adds a 5th prior root-cause claim (ad-hoc-signed esbuild) that was made and retracted within the same session, extending the pattern to 5 sessions — but is also the session where the pattern finally broke, via matched-pair design rather than another round of cohort inference.
-- If YES: re-run `pattern-recurrence-detector` (rule 19) given this session's own four sequential retracted claims.
+- Similar to past issue? YES — `session-20260812-1944-feat-adr-312-cli-test-recording.md`'s `pattern-recurrence-detector` run already flagged "Notarization pipeline root-cause churn — 4 sessions (2232, 1540, 0152, 0703)" before this session ran. This session adds a 5th prior root-cause claim (ad-hoc-signed esbuild) that was made and retracted within the same session, extending the pattern to 5 sessions — but is also the session where the pattern finally broke, via matched-pair design rather than another round of cohort inference. Separately, Half 5's P-13 finding is itself a second instance of a distinct recurring pattern this session surfaced directly: a directive believed to exist and already fixed ("never rely on ADRs — read the code") that in fact had never been written at all, only described as written in prior session summaries.
+- If YES: re-run `pattern-recurrence-detector` (rule 19) given this session's own five sequential retracted notarization claims plus the P-13 "phantom fix" finding.
 
 ## Test Coverage Delta
 
 - Tests added: 0 (no automated test suite changed this session)
-- Tests passing before: N/A → after: N/A — event log records 2 `kind:"build"` rows only (ESB toolchain build at `04:53:58Z`, website STAGE build at `15:59:28Z`, `docs/context/.devarch-events-73a646.jsonl`); no `kind:"test"` rows this session.
-- Known untested areas: the shipped DMG's Gatekeeper acceptance and the website mdx build's final state (post-`16:12:21Z` edits) are both reported by the session narrative with no corroborating event-log or command-output evidence captured this pass.
+- Tests passing before: N/A → after: N/A — event log records 2 `kind:"build"` rows only for the earlier state id (`73a646`); Half 4 and Half 5 ran under state id `756ff6`, whose event log (`docs/context/.devarch-events-756ff6.jsonl`) records `@sharpee/story-loader` build failures at `19:57:48Z` and `22:25:30Z` with passing builds resuming at `22:37:47Z` (Half 4), but no distinct build/test rows are cited for the Half 5 work specifically in this pass.
+- Known untested areas: the shipped DMG's Gatekeeper acceptance and the website mdx build's final state are reported by the session narrative with no corroborating event-log or command-output evidence captured in this pass; the `repokit` and `deploy.sh` fixes have no automated regression coverage — verification was manual reproduction plus commit-message narrative, not a captured transcript.
 
 ---
 
@@ -496,4 +497,160 @@ zifmia work added to what sits ahead of it: Phase 3 doc cleanup on the tabled
 open-questions interviews (7 and 9 questions, rule 11a) — the session's
 original stated goal — still untouched; AC3 Gatekeeper still only verified on
 the machine that built the artifact; the `website/public/` restart trap still
+not written into `deploy.sh`.
+
+---
+
+## Half 5 — Deploy hardening, and the docs-consolidation proposal finished and planned — 2026-08-13, later same day (appended)
+
+Continuation of the same day's work, still on `main`. `git status` clean,
+`git rev-parse HEAD` and `git rev-parse origin/main` diverge by exactly one
+local commit (`5c4a7656`, the docs-consolidation plan, not yet pushed) —
+verified this pass.
+
+**Deploy failure on plover, two traps behind it fixed** (`ddfcdde2`,
+`dd9c7882`). `./deploy.sh` failed with "repokit: engine not built."
+
+- `tools/repokit/dist/` is gitignored so `git pull` never supplies it, and
+  `tsf build` deliberately skips `repokit` (not in `ts-forge.config.json`) —
+  so any deploy host that never built it by hand hits this. `deploy.sh` has
+  called `./repokit build --playground` since `e1128470` without ensuring
+  `repokit` exists, warning rather than aborting, which is why it surfaced as
+  a 404 playground rather than a failed deploy.
+- The error message's own remediation was a second trap: `pnpm --filter
+  @sharpee/repokit build` runs plain `tsc`, and if `tsconfig.tsbuildinfo`
+  survived whatever removed `dist/`, `tsc` decides it is up to date and emits
+  nothing. Reproduced locally, per `ddfcdde2`'s own commit message: "removing
+  `dist/` alone leaves the documented command a no-op." The wrapper
+  (`tools/repokit`, 21 lines changed) now clears the tsbuildinfo, rebuilds
+  inline, and asserts `cli.js` exists rather than trusting the exit code.
+- `dd9c7882` added `pnpm install --frozen-lockfile` before the playground
+  build — `deploy.sh` installed the website's npm tree but never the pnpm
+  workspace the playground is built from, and Half 4's retirements changed
+  `pnpm-lock.yaml`. Guarded the same way as the playground step: a failure
+  warns rather than aborting the whole site deploy.
+
+**sharpee.net returned 500 on every dynamic route for a period; not caused by
+the deploy changes.** Static files kept serving throughout. Checked whether
+either deploy commit could be the cause: `git show ddfcdde2 --
+pnpm-lock.yaml` and `git show dd9c7882 -- pnpm-lock.yaml` both produce empty
+diffs — neither commit touches the lockfile, so neither moved `typescript`.
+Root `package.json` pins `"typescript": "^5.2.2"` (`package.json:65`) and
+`packages/devkit/package.json` pins `"^5.3.3"` (`packages/devkit/package.json:30`)
+— both verified this pass — caret ranges, so a fresh install with no
+lockfile pin resolves to whatever 5.x is current on the day it runs. That is
+the mechanism by which an unasked `tsc` upgrade would arrive on a host, and
+`--frozen-lockfile` (just added) is what stops it recurring — but the 500s
+this pass are attributed to David's own in-progress work on the server
+(playground upheaval, a `tsc` upgrade), not to anything in this session. Site
+confirmed back up, new title live.
+
+**docs-consolidation proposal amended for the zifmia retirement, then fully
+accepted** (`0932de62`, `12b57897`). Verified via `git show --stat` and
+reading `docs/proposals/docs-consolidation.md` directly:
+
+- Amendment (`0932de62`): P-4's scope dropped from fourteen git-cold trees to
+  thirteen (`zifmia/` already moved and archived under Half 4), its "belongs
+  beside the shipping tool" reasoning recorded void in place; P-3's
+  `_archive/` table went from three tenants to four; the headline inventory
+  from 31 top-level directories to 30 (confirmed in the file: "`docs/` holds
+  **30 top-level directories**"), and the derived needs-a-disposition figure
+  from 23 to 22 (confirmed: "So **22 directories need a disposition** ...
+  (was 23 before the 2026-08-13 amendment)"). Targeted amendment, not a
+  re-review — P-1/P-2/P-5 through P-8 untouched.
+- Acceptance (`12b57897`): P-9 through P-14 accepted, all fourteen items now
+  ACCEPTED. P-9's figures restated in the commit message and confirmed in the
+  proposal file (`docs/proposals/docs-consolidation.md:367-429`): written
+  against 110 work targets when `.current-plan` named `ide-go-live`; 117 now,
+  the pointer having moved twice since (`adr-312-cli-test-recording`, then
+  `chord-writer-intel`, both since superseded or DONE). 116 dispositions
+  against a moving baseline, not a fixed list.
+
+**P-13 executed directly** (`7e903ea2`, not planned — independent of every
+move in `docs-consolidation`). Target: `docs/core-concepts/README.md`, the
+file CLAUDE.md tells every session to read at start. Diff verified via `git
+show`:
+
+- The `@sharpee/text-service` removal was already reflected there — no
+  change needed.
+- `@sharpee/branch-tester` (the ADR-307 tree-document test runtime) was
+  undescribed entirely; added, with the distinction from `transcript-tester`
+  (owns the `.transcript` grammar for Sharpee's own hand-authored suites).
+- `channel-service`'s description still listed "multi-user server" among the
+  hosts it runs in — retired in Half 4 — corrected to "browser clients, the
+  IDE's Play and Testing surfaces."
+- The load-bearing finding: a new `## Reading This Repository` section
+  states "never rely on ADRs for architecture — read the code" as if
+  restoring an existing directive. `git log -S` on that exact phrase against
+  the file returns nothing, and a repo-wide grep finds it only inside
+  session summaries describing it as already written. The prior session's
+  `pattern-recurrence-detector` run had ranked this pattern top priority
+  specifically because it appeared to have "recurred after its own fix was
+  already in place" — the fix had never actually landed. The section now
+  cites two concrete 2026-08-13 instances (a decision citing a nonexistent
+  "ADR-306 D4"; a design assuming `WorldModel.evaluateScope()` took a
+  location when it takes an actor) and records its own prior absence as an
+  instance of the same pattern.
+
+**Intel plan closed** (`a165c935`) — `docs/work/chord-writer-intel/plan.md`,
+all three phases marked DONE with outcomes and commit ids recorded per phase,
+not a bare status flip. Deliberately did not carry ADR-313's stale
+Apple-silicon-only Context claim into the plan — that ADR is still DRAFT on
+the tabled `feat/adr-312-cli-test-recording` branch, so the fix belongs with
+whatever revives it.
+
+**docs-consolidation planned** (`5c4a7656`, local, **not pushed** — confirmed
+by `git log origin/main..HEAD`). Five phases, twelve of the fourteen accepted
+items (all but P-9, held at David's instruction, and P-13, already executed
+directly). `docs/context/.current-plan` now points to
+`docs/work/docs-consolidation/plan.md` (confirmed by reading the file
+directly). `/devarch:plan-review` ran twice:
+
+- First pass, two blockers, both fixed in the same commit: P-7 and P-8 were
+  in scope but cited nowhere, so neither would ever have been closeable — now
+  explicit no-op assertions in Phase 5; Phase 3 proposed repointing a
+  published npm README link at `https://sharpee.net/chord/guide`, which
+  returns 404 (confirmed live in `docs/work/docs-consolidation/plan.md:239-240`)
+  — that README ships to npmjs.com, so the substitution would have traded a
+  broken repo link for a broken web link. Phase 3 now requires each candidate
+  URL to verify 200 before substitution.
+- Re-run caught a third instance of the *same* defect class: Phase 4
+  implemented P-10 without citing it (confirmed:
+  `docs/work/docs-consolidation/plan.md:281`, "**Deliverable** (P-10): define
+  and apply..."). Notable that the proposal side already showed all twelve
+  items as PLANNED, so the citation gap was invisible from that side and
+  only visible reading the plan itself.
+- Second pass: CLEAN.
+- Rule 18b needed no disposition question: the outgoing plan
+  `docs/work/chord-writer-intel/plan.md` was already Plan Status DONE with
+  every phase DONE (from the closure above), so no live-work conflict
+  existed at repoint time.
+
+**Verified rather than assumed, worth recording.** Phase 4's runtime-file
+counts match disk exactly — confirmed at
+`docs/work/docs-consolidation/plan.md:275-276`: "`docs/context/` holds 74
+`.devarch-events-*.jsonl`, 23 `.session-state-*.json`, 11
+`.devarch-gate-blocks-*`." P-10's own Done-when criterion is already stale as
+written — it names 68 events — because it measures a count that grows every
+session, including several from this one; the plan's own P-9 section makes
+the same "moving baseline" point explicitly.
+
+**My errors this half, recorded rather than smoothed over:**
+
+1. Flagged `/chord/getting-started`'s 404 as a defect during plan review;
+   David corrected that it is a Next.js route group, not a page, and does
+   not itself resolve to a URL.
+2. Missed P-10's missing citation on the first `/devarch:plan-review` pass,
+   catching it only on the re-run.
+
+**Still open, carried forward from Half 4 with two items added:** the
+docs-consolidation plan is committed locally and unpushed, Phase 1
+unstarted; Phase 2 has three ambiguous archive directories and six loose
+plan files needing David's call; Phase 3 needs `chord/guide` resolved (or
+the link removed) before it can substitute a URL; P-9 remains unplanned;
+Phase 3's archive-on-DONE behavior (rule 18b's mechanism) is itself
+unconfirmed to have shipped, per the acceptance commit's own note;
+`feat/adr-312-cli-test-recording` remains tabled and unmerged, its
+ADR-313/314 interviews untouched; AC3 Gatekeeper still only verified on the
+machine that built the artifact; the `website/public/` restart trap still
 not written into `deploy.sh`.
