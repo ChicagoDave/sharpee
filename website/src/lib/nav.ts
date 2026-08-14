@@ -358,6 +358,19 @@ export const NAV: NavSection[] = [
       { title: 'Playground', href: '/playground' },
     ],
   },
+  {
+    // Deliberately its own section rather than a page under Sharpee or Chord:
+    // the roadmap spans both (and Chord Writer), so filing it under either
+    // would misstate its scope. No `version` — it documents no one artifact.
+    title: 'Roadmap',
+    groups: [
+      {
+        title: 'Roadmap',
+        open: true,
+        items: [{ title: 'What we are building', href: '/roadmap' }],
+      },
+    ],
+  },
 ];
 
 /**

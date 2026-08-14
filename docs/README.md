@@ -15,7 +15,7 @@ two disagree, the site is canon.
 
 ## Documentation Structure
 
-Nine directories are current and maintained. Everything else that used to live
+Ten directories are current and maintained. Everything else that used to live
 here has been quarantined or archived; see [Where the rest went](#where-the-rest-went).
 
 ```
@@ -28,6 +28,7 @@ docs/
 ├── design/          # Visual design: palette, mockups, brand assets
 ├── proposals/       # Templated proposals; the front door for planned work
 ├── references/      # Frozen external source material, kept verbatim
+├── roadmap/         # What is planned, being designed, or shipped
 ├── work/            # Active work targets, plus work/archive/
 └── unofficial/      # QUARANTINE — unmaintained and superseded. Not current.
 ```
@@ -42,6 +43,7 @@ docs/
 | [`design/`](./design/) | Visual design rather than software design: palette, colors, site mockups, brand assets. |
 | [`proposals/`](./proposals/) | Accepted and in-progress proposals with `P-n` items. Mechanically load-bearing — `session-planner` reads this directory, so it cannot move. |
 | [`references/`](./references/README.md) | External source material kept verbatim as canon, such as the 1981 Mainframe Zork MDL that Dungeo's combat is ported from. **The deliberate opposite of `unofficial/`**: unchanging because it is finished, not because it was abandoned. |
+| [`roadmap/`](./roadmap/README.md) | One file per roadmap item: status, created date, and target date/version. Presence means a direction worth pursuing, never a delivery commitment. Rendered on sharpee.net. |
 | [`work/`](./work/) | One folder per work target, each with its plan and context notes. Completed targets move to [`work/archive/`](./work/archive/). |
 
 ## Where the rest went

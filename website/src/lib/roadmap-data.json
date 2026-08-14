@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "id": "001",
+      "title": "Sharpee and Chord Temporal Controls",
+      "status": "DRAFT",
+      "built": "none — no implementation authorized by any of the three ADRs",
+      "created": "2026-08-14",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "TBD",
+      "tracesTo": "docs/work/temporal-controls/README.md (umbrella) · issue #263 · ADR-315 · ADR-316 · ADR-317",
+      "summary": "Who controls time in a Sharpee story: whether a command advances the clock, by how much, in what order the turn's work happens, and how much of that a Chord author can say."
+    },
+    {
+      "id": "002",
+      "title": "The character model in Chord",
+      "status": "DRAFT",
+      "built": "partial — @sharpee/character exists and passes 301 tests across 19 files, but had zero consumers when ADR-310 was written; the Chord surface over it does not exist",
+      "created": "2026-08-11",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "TBD",
+      "tracesTo": "ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in docs/work/adr-310/prior-art.md · consumed by 003",
+      "summary": "Giving Chord authors a way to write characters — words the author writes, numbers the runtime owns. @sharpee/character was designed and built across four days in April 2026 (ADRs 141–146) and works, but an audit found it shipping with zero consumers. ADR-310 is the response: what the Chord surface over it should be."
+    },
+    {
+      "id": "003",
+      "title": "Visual novel client",
+      "status": "DRAFT",
+      "built": "none — but most of its substrate exists (channels, media declarations, renderers, input modes)",
+      "created": "2026-08-11",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "TBD",
+      "tracesTo": "ADR-311 · consumes 002 (ADR-310) · builds on ADR-137, ADR-138, ADR-163, ADR-165, ADR-170, ADR-239, ADR-250",
+      "summary": "Character art that reacts, backgrounds, music, dialogue attributed to a speaker, and choices rather than a parser prompt — as a renderer over the existing platform, not a second product."
+    },
+    {
+      "id": "004",
+      "title": "Screen reader client",
+      "status": "ACCEPTED — design settled; see *Built?*",
+      "built": "none — packages/ contains no screen-reader or accessibility package, and a repo-wide search for aria-live / screenReader turns up one incidental hit in packages/platform-browser/src/channels/layout.ts",
+      "created": "2026-01-13 (identified) · 2026-02-18 (accepted with an implementation plan)",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "n/a — a client concern, not a language one",
+      "tracesTo": "ADR-100 · related clients: ADR-098 (terminal), ADR-099 (Glk), ADR-170 (browser client vocabulary)",
+      "summary": "Making Sharpee stories work well for blind players — JAWS, NVDA, VoiceOver — rather than merely being technically reachable. Interactive Fiction has a strong accessibility tradition precisely because text games are inherently more accessible than graphical ones, and the platform should make that the easy path for authors rather than a thing each author solves alone."
+    },
+    {
+      "id": "005",
+      "title": "Multi-user website *(name TBD)*",
+      "status": "ACCEPTED — the ADR line is settled; the product name is not",
+      "built": "archived — a working server existed and was moved out of the workspace to tools/_archive/zifmia on 2026-08-13, along with tools/_archive/shite (the same server under a second name). repokit's --zifmia flag and zifmia command were removed with it.",
+      "created": "2026-05-10 (ADR-175, the product ADR; the server ADRs begin earlier)",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "n/a — a server and client concern, not a language one",
+      "tracesTo": "ADR-152, ADR-153, ADR-153a, ADR-156, ADR-164, ADR-175, ADR-176, ADR-177 · ADR-125 and ADR-130 (panels, packaging) · ADR-179 (published image)",
+      "summary": "Playing a Sharpee story on the web with more than one person in it — a stateless multi-user server, a browser client per user, and a component vocabulary for what each user sees."
+    },
+    {
+      "id": "006",
+      "title": "Native Windows IDE",
+      "status": "PROPOSED — no ADR exists",
+      "built": "none — Chord Writer is macOS-only (tools/ide/project.yml declares platform: macOS)",
+      "created": "2026-08-14 (first recorded as a roadmap item; no prior design doc)",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "TBD",
+      "tracesTo": "nothing yet — Chord Writer's own ADRs (ADR-279 packaging, ADR-280 project model) are the closest prior art",
+      "summary": "A Chord authoring IDE for Windows. Chord Writer 1.0.0 shipped for macOS; Windows authors currently have the CLI and a text editor."
+    },
+    {
+      "id": "007",
+      "title": "Choice-based (CYOA) mode",
+      "status": "PROPOSED",
+      "built": "none — no implementing package; packages/ has nothing choice- or CYOA-specific",
+      "created": "2026-01-14",
+      "targetDate": "TBD",
+      "targetSharpee": "TBD",
+      "targetChord": "TBD",
+      "tracesTo": "ADR-103 · ADR-136 (context-driven action menus) · ADR-137 (input modes) · overlaps 003",
+      "summary": "Letting an author write a choice-based story — the player picks from offered options rather than typing commands — on the same platform, rather than reaching for a different tool."
+    }
+  ]
+}
