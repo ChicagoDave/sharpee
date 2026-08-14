@@ -1,15 +1,20 @@
 # ADR-310: The Character Model in Chord — Words the Author Writes, Numbers the Runtime Owns
 
-**Status**: DRAFT (2026-08-11, session c86356 — seven open questions below; two
-others were resolved in session — one by D12, one by D5.
+**Status**: DRAFT (2026-08-11, session c86356 — three open questions remain: 1, 3
+and 5. Five have been resolved: 6 by D12 and 8 by D5 in the original session;
+2 by D14, 4 by D15 and 7 by D16 in the 2026-08-14 amendment.
 Written at David's request after an audit found `@sharpee/character` shipping
 with zero consumers, then expanded on his ruling that goals, influence and
 propagation are the point rather than the deferrable part. No implementation is
 authorized by this document.)
-**Date**: 2026-08-11 (session c86356)
+**Date**: 2026-08-11 (session c86356); amended 2026-08-14 (session 4e8fc1)
 **Builds on**: ADR-141 (character model), ADR-142 (conversation), ADR-144
 (information propagation), ADR-145 (goal pursuit), ADR-146 (influence),
 ADR-210 (Chord), ADR-222 (Chord as elegance oracle), ADR-239 (topic tables)
+**Prior art review**: `docs/work/adr-310/prior-art.md` — Short's IF Theory Reader
+chapter, Ryan & Mateas on *Talk of the Town*, McCoy et al. on Comme il Faut,
+Eve on TADS 3 conversation, and Versu via Short's own account. D14–D16 below are
+its findings folded in.
 
 ---
 
@@ -20,15 +25,27 @@ ADRs 141 through 146 — and it works. As of 2026-08-11 it has **301 tests acros
 19 files, all passing**, a clean `tsc`, and it was version-stamped 5.0.0 and
 published to npm with the rest of the platform on 2026-08-10.
 
-**Nothing imports it.** A repository-wide search for `@sharpee/character` finds
-the package's own source, and one line in the `@sharpee/sharpee` umbrella's
-dependency list. Not the Chord compiler, not the story loader, not one story.
+**Almost nothing imports it.** A repository-wide search for `@sharpee/character`
+finds the package's own source, one line in the `@sharpee/sharpee` umbrella's
+dependency list, and one story — `stories/thealderman`, which imports
+`ConversationBuilder` (`src/npcs/index.ts:30`) and builds six suspects with it
+across 862 lines. It landed 2026-04-09 (`812a753e`, "scaffold TheAlderman story as
+character-package reference implementation"), four months before this ADR was
+written, and the original draft of this Context missed it.
+
+That story is not a workspace member (`pnpm-workspace.yaml`) and not a build target
+(`ts-forge.config.json`), so it is neither compiled nor type-checked — but repo-wide
+refactor sweeps still touch it. So: the Chord compiler does not reach the package,
+the story loader does not, and no built story does. One unbuilt reference story
+does, and the cost of a breaking change is measured against it (D11a).
 
 Chord *does* have an NPC surface, and it is a different subsystem. Its `npc`
 manifest vocabulary is `guard`, `follower`, `wanderer`, `patrol`, `route`,
 `loop`, `can-move`, `move-chance`, `allowed-rooms`, `forbidden-rooms`,
-`announces-movement`, `wait-turns` — that is `@sharpee/plugin-npc`, the movement
-and behavior layer. Not one psychological term appears in it. Conversation is
+`announces-movement`, `wait-turns` — declared in the Chord compiler's own manifest
+(`packages/chord/src/stdlib-manifest.ts:119–123`, `src/manifests/npc.ts`) and
+executed by `story-loader`; the movement and behavior layer. Not one psychological
+term appears in it. Conversation is
 the near-miss: Chord's `define topics for …` (ADR-239) wired to the simpler
 stdlib topic table, while `character/src/conversation/dialogue-extension.ts`
 drives dialogue from belief and disposition. The two never met.
@@ -375,10 +392,12 @@ so I think we're safe to normalize it and align it to Chord properly."*
 This changes what the work is. Not "map Chord onto the existing builder" —
 **reshape both surfaces to one design**, while that is still free.
 
-**The window is real and it is measurable.** Zero imports outside the package
-(Context), no story uses it, no published artifact depends on its API shape. A
-breaking change today costs one package's tests. The same change after the first
-story ships costs every story that named a preset, a mood, or a goal step.
+**The window is real and it is measurable.** No built story uses it, no published
+artifact depends on its API shape, and the Chord compiler does not reach it. A
+breaking change today costs one package's tests plus `stories/thealderman`, which
+is unbuilt and untype-checked (Context) — real work, but bounded and known. The
+same change after the first *built* story ships costs every story that named a
+preset, a mood, or a goal step.
 
 **Chord is the reference where they disagree.** D11 says a cleaner Chord form
 proves the TypeScript has a seam; D11a says what to do about it — fix the seam.
@@ -506,6 +525,161 @@ that also carries `when` — three gates on one line. ADR-250's existing
 phrasebook resolution seam is where that belongs, and this ADR does not settle
 it. Added to Open Questions.
 
+### D14. A belief is addressed by holder, subject and facet, and carries a value. One level of belief, no theory of mind.
+
+Resolves Open Question 2, which this ADR called its largest single gap. It turns
+out to be a missing field rather than a missing subsystem.
+
+**The gap, stated against the implementation rather than against ADR-144.**
+The builder keeps two parallel maps, both keyed by a topic string
+(`packages/character/src/character-builder.ts:184–185`):
+
+- `_knowledge` — `{ source: FactSource; confidence: ConfidenceWord; turn: number }`,
+  written by `knows()`, where `FactSource` is witnessed / told / inferred / assumed /
+  hallucinated and `ConfidenceWord` is uncertain / suspects / believes / certain
+  (`packages/world-model/src/traits/character-model/character-vocabulary.ts:255–264`).
+- `_beliefs` — `{ strength: ConfidenceWord; resistance: 'none' | 'reinterprets' |
+  'ignores' }`, written by `believes()` (line 359), which models how firmly a
+  character holds a topic and how they react to contradiction.
+
+**Neither has a value slot**, and that is the gap. A fact is a bare topic string a
+character either holds or does not. Two characters can differ in *confidence* or in
+*resistance* about a topic. They cannot differ about what is *true*, because there
+is nowhere to put the differing value. "The Maid thinks the Colonel did it, the Cook
+thinks the Butler did" is not representable, and neither is a belief that changes
+its mind, because there is nothing to change. D10's propagation moves a token, not
+a claim.
+
+`_beliefs` is the nearer miss of the two — `resistance: 'reinterprets'` presupposes
+something to reinterpret *into* — and the value slot is what would make it mean
+something.
+
+**The decision.** A belief is `(holder, subject, facet) → value`, carrying the
+source and confidence already modelled. *Talk of the Town* (Ryan & Mateas 2017) is
+the precedent: a character's mental model of an entity is a list of belief facets
+keyed by attribute, each with its own value, so **disagreement between characters
+is the ordinary case rather than an unrepresentable one**.
+
+`knows` keeps its current meaning — the character holds a topic, valueless, as in
+D3's `knows the murder, witnessed`. Valued belief is a new construct beside it, and
+it is spelled **`thinks`**, not `believes`:
+
+```chord
+define fact the killer
+  the Colonel, the Butler, the Maid, nobody
+end fact
+
+create the Cook
+  a person, honest, anxious
+  thinks the killer is the Butler, suspects, told
+
+create the Maid
+  a person, gossipy, nervous
+  thinks the killer is the Colonel, certain, witnessed
+```
+
+**Why not `believes`.** `believes()` is already taken, with a different meaning —
+firmness plus resistance to contradiction, above — and `holds` is already a Chord
+predicate for physical possession (`packages/chord/src/parser.ts:134`, alongside
+`has` and `wears`). `thinks` is unclaimed on both surfaces. Whether `_beliefs`
+should survive D14 at all, or fold into the valued construct as its firmness
+fields, is an implementation call for the D11a pass; the two must not both exist
+under names an author would confuse.
+
+Declaring the fact's possible values makes the value set closed and therefore
+checkable — a misspelled suspect is a compile error, in the same shape as D2's
+unknown-adjective diagnostic. As with D5's custom moods, the exact spelling is left
+to implementation; the decision here is the addressing, not the syntax.
+
+**What is deliberately not taken from the precedent.** *Talk of the Town* also
+carries per-belief evidence lists, predecessor chains, parent pointers to the
+beliefs that spawned each belief, hand-authored belief mutation graphs, and
+salience-weighted observation. Those serve a simulation of three to five hundred
+people holding a thousand beliefs each. Ours is a household. The addressing is the
+minimum that makes propagation meaningful; the apparatus around it is not.
+
+**The scope line: one level of belief.** A character may believe something about
+the world. A character does **not** hold a model of what another character
+believes. Versu made the same cut deliberately — its characters track no map of
+others' knowledge, and information moves only by explicit conversation. `the Maid
+believes the Cook believes the Colonel did it` is out of scope, and should be a
+diagnostic rather than an unimplemented feature that fails quietly.
+
+**NPC-to-NPC disposition** — Open Question 2's other half — needs no new mechanism.
+D3's `feels wary of the player` generalises by allowing any entity where the player
+stands, giving `the Maid feels trusts toward the Cook`. Comme il Faut reached the
+same shape from the other direction: its social state is subject / relation / object
+triples.
+
+**The cost, stated plainly.** This changes `@sharpee/character`, not only Chord: the
+knowledge map grows a value, and facts acquire a declaration so their values form a
+closed set. That is exactly the kind of change D11a rules affordable *now* and
+expensive after the first story ships.
+
+### D15. Topic tables are the interface. The character model is the model. They compose.
+
+Resolves Open Question 4, which asked whether the conversation system should
+replace or coexist with ADR-239's topic tables. The question presumed they compete,
+and they do not.
+
+Short's *IF Theory Reader* chapter separates two axes that are easy to conflate:
+the **interface** (how the player says something — menus, TALK TO, ASK/TELL, topic
+words) and the **model** (what is represented internally — topics, facts, quips,
+effects, conversational goals). Chord's `define topics for …` is an interface:
+topic-word ASK/TELL. `character/src/conversation/dialogue-extension.ts` is a model:
+it selects a line from belief and disposition. An author never had to choose.
+
+**The decision: keep the interface, replace the selector.** The author writes
+`define topics for …` exactly as today. When the NPC carries a character model,
+which response comes back is decided by belief, disposition and mood rather than by
+the table's own ordering. An NPC with no character model behaves exactly as today,
+per D7.
+
+Short's warning is why this is worth writing down rather than leaving to
+implementation: she argues the model should be chosen explicitly instead of
+inherited by default from whichever interface was picked first, and most of her
+chapter is a record of what the default cost her.
+
+**What does not exist yet, stated as code rather than as paperwork.**
+`character/src/conversation/dialogue-extension.ts` already implements a
+`DialogueExtension` and its header says it wires into stdlib's ASK/TELL/SAY/TALK TO
+actions. It does not: `packages/stdlib/src` contains no reference to
+`DialogueExtension`. So the selector D15 describes has a shape but no socket, and
+building that socket is the first implementation task this decision implies —
+whatever it ends up being called.
+
+**Terminology.** The field calls the unit a **quip** — Short's vocabulary, and
+Versu's. Chord calls it a `phrase`. Keep `phrase`; record the synonym during
+D11a's normalization pass so the documentation is legible to anyone arriving from
+the literature.
+
+### D16. When gates stack, the innermost active context wins outright.
+
+Resolves Open Question 7. TADS 3 shipped this answer and has lived with it for
+twenty years: an actor has at most one active `ConvNode`, and while it is active it
+overrides every other topic response *regardless of match score* — and suppresses
+the actor's agenda entirely.
+
+Mapped onto D13's three stacked gates:
+
+1. **Voice selection is by specificity, and character-scoped beats story-scoped.**
+   `while the Colonel is panicked` wins over `while midnight`.
+2. **It is total override, not score blending.** The losing phrasebook contributes
+   nothing to the selection — no fallback line, no merge.
+3. **Within the selected voice, per-line `when` filters** as it does today.
+
+Two phrasebooks active at the same specificity for the same speaker is genuinely
+ambiguous and should be a compile-time diagnostic rather than a silent pick. The
+failure Q7 named — prose that quietly comes from the wrong voice, invisible in
+testing — is worth spending an error on.
+
+**And the lifecycle rule that comes with it**, which D8 left implicit: a
+conversation in progress suppresses goal pursuit. TADS suppresses agendas outright
+while a conversation node is active, and the reason generalises — an NPC who walks
+out mid-sentence to pursue a goal reads as a bug every time, whatever the goal was.
+D8's `active when` is still re-evaluated each NPC turn; the goal simply does not act
+while the NPC is in conversation with the player.
+
 ## Consequences
 
 - **`@sharpee/character` acquires its first consumer.** Fourteen months of
@@ -556,22 +730,26 @@ it. Added to Open Questions.
    for the implementation rather than a follow-up to it, and it is the only way
    to learn whether the emergent behaviour is legible to a player at all.
 
-2. **Where does disposition toward *other NPCs* live, and how is knowledge
-   addressed?** D3 shows `feels wary of the player` and `knows the murder`.
-   Propagation needs both to generalise: NPC-to-NPC disposition (`the Maid trusts
-   the Cook`), and a way to name a fact that several characters can hold with
-   different confidence. Chord has no vocabulary for either. This is the largest
-   single gap in D8–D10 and probably wants its own ADR.
+2. ~~**Where does disposition toward *other NPCs* live, and how is knowledge
+   addressed?**~~ **Resolved 2026-08-14 by D14**: a belief is
+   `(holder, subject, facet) → value`, and NPC-to-NPC disposition is D3's `feels`
+   with any entity in the player's place. It did not want its own ADR — the
+   question was phrased as a missing vocabulary, and the prior-art review found it
+   was a missing *field*: the shipped knowledge map has no value slot, so
+   characters cannot disagree about what is true, only about how sure they are.
+   D14 also draws the scope line the question implied but did not state: one level
+   of belief, no theory of mind.
 
 3. **Does `mood` want to be a state?** Chord already has `states: guarded,
    softened` with scoring and transitions. Mood is a state with a fixed
    vocabulary and automatic decay. Two mechanisms that behave alike but are
    spelled differently is exactly the seam ADR-222 hunts.
 
-4. **Should the conversation system replace or coexist with topic tables?**
-   ADR-239's `define topics for …` shipped and works. `dialogue-extension.ts`
-   drives dialogue from belief and disposition. An author facing both will ask
-   which one to use, and this ADR does not answer.
+4. ~~**Should the conversation system replace or coexist with topic tables?**~~
+   **Resolved 2026-08-14 by D15**: neither — they are different layers. `define
+   topics for …` is the interface; the character model is the model that selects
+   the response. The author never chooses between them, so the question an author
+   was going to ask does not arise.
 
 5. **Is any of this wanted?** The audit that produced this ADR found a subsystem
    nobody had missed in fourteen months. That is evidence about demand, and it
@@ -588,12 +766,13 @@ it. Added to Open Questions.
    author's prose problem before it is the platform's. Carried into Open Question
    1: the demonstration story is the test of whether it can be done.
 
-7. **What is the resolution order when three gates stack?** D13 allows a
-   character-voice phrasebook (`while the Colonel is panicked`) nested inside a
-   story-state phrasebook (`while midnight`), emitting a phrase that itself
-   carries `when`. ADR-250's phrasebook resolution seam is where this is decided;
-   the wrong answer here produces prose that silently comes from the wrong voice,
-   which is the failure mode hardest to notice in testing.
+7. ~~**What is the resolution order when three gates stack?**~~ **Resolved
+   2026-08-14 by D16**: innermost active context wins by total override —
+   character-scoped voice over story-scoped voice, then per-line `when` inside the
+   winner. Taken from TADS 3, which chose total override over score-blending after
+   shipping both. The failure mode the question named is answered by making a
+   same-specificity tie a compile-time diagnostic rather than a silent pick.
+   ADR-250's phrasebook resolution seam still owns the implementation.
 
 8. ~~**Should the platform ship clinically-named presets at all?**~~ **Resolved
    2026-08-11 by D5**: renamed to describe behavior, not diagnosis. The dimension
@@ -607,3 +786,13 @@ Session c86356 (2026-08-11). Written after an audit, requested during the wait
 on Apple's notarization of Chord Writer 1.0.0, established that
 `@sharpee/character` is fully working, fully tested, published, and entirely
 unreferenced — and that ADR-141's vocabulary was already shaped like Chord.
+
+Amended session 4e8fc1 (2026-08-14), adding D14–D16 and resolving Open Questions
+2, 4 and 7. The amendment came out of a prior-art review
+(`docs/work/adr-310/prior-art.md`) of the systems this ADR had named but not
+cited. Three of the six live open questions turned out to have answers already in
+the literature: one was a missing field rather than a missing subsystem, one was a
+category error, and one had a twenty-year-old shipped answer in TADS 3. D12 was
+left open to the interview despite the review finding a direct counter-argument to
+it in Short's *IF Theory Reader* chapter, because D12 is a ruling rather than a
+lookup. Open Questions 1, 3 and 5 remain.
