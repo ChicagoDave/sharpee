@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "search-index": "node scripts/build-search-index.mjs",
-    "prebuild": "node scripts/build-search-index.mjs",
-    "predev": "node scripts/build-search-index.mjs",
+    "prebuild": "node scripts/sync-chord-ebnf.mjs && node scripts/build-search-index.mjs",
+    "predev": "node scripts/sync-chord-ebnf.mjs && node scripts/build-search-index.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
