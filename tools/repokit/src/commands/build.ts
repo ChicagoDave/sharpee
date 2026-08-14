@@ -189,7 +189,11 @@ export function generateGenaiApi(root: string, opts: BuildOptions): void {
 /** Build a story package (build.sh build_story + resolve_story_pkg). */
 export function buildStory(root: string, story: string, opts: BuildOptions): void {
   const resolved = resolveStory(root, story);
-  if (!resolved) throw new Error(`story not found: ${story} (a path, or a stories/|tutorials/ name)`);
+  if (!resolved) {
+    throw new Error(
+      `story not found: ${story} (a path, or a stories/|tutorials/|branch-stories/ name)`,
+    );
+  }
   if (!resolved.inRepo) {
     throw new Error(`'${story}' is not an in-repo story (stories/ or tutorials/)`);
   }

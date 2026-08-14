@@ -159,10 +159,20 @@ export function tsfBin(root: string): string {
 
 /**
  * Resolve a story name to its directory (build.sh resolve_story_dir, 39-48):
- * `stories/<name>` then `tutorials/<name>`. Returns absolute path or null.
+ * `stories/<name>`, then `tutorials/<name>`, then `branch-stories/<name>`.
+ * Returns absolute path or null.
+ *
+ * `branch-stories/` was added after ADR-302 D16 moved Fernhill there (18d65ab3)
+ * and this resolver — which knew only the first two bases — silently stopped
+ * finding it. The visible casualty was the website mirror: `mirrorToWebsite`
+ * runs only on repokit's `--browser` path, so an unresolvable story meant
+ * `website/public/web/fernhill/` was never regenerated and `/play` served an
+ * empty iframe for nine days. Nothing failed loudly because that artifact is
+ * gitignored. A story is a location (ADR-180 Decision 4) — which harness a
+ * story belongs to does not change whether repokit can build it.
  */
 export function resolveStoryDir(root: string, name: string): string | null {
-  for (const base of ['stories', 'tutorials']) {
+  for (const base of ['stories', 'tutorials', 'branch-stories']) {
     const dir = join(root, base, name);
     if (existsSync(dir)) return dir;
   }
