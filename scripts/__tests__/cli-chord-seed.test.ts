@@ -24,9 +24,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const REPO_ROOT = resolve(__dirname, '..', '..');
 const BUNDLE = join(REPO_ROOT, 'dist', 'cli', 'sharpee.js');
 
-const STORY = `story "Chance Probe" by "Tests"
+const STORY = `story
+  title: Chance Probe
+  authors: Tests
   id: chance-probe
-  version: 1.0.0
+  story-version: 1.0.0
 
 create the Den
   a room

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-const REPO_ROOT = resolve(__dirname, '..', '..');
+const REPO_ROOT = resolve(__dirname, '..', '..', '..');
 const SCRIPT = join(REPO_ROOT, 'scripts', 'validate-bundle-baseline.js');
 const BASELINE_DIST = join(
   REPO_ROOT,

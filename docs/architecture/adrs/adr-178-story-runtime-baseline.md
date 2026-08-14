@@ -278,7 +278,7 @@ operators can audit at a glance.
   package the manifest's `dependencies` lists (no drift between the
   TS constant and the package.json deps), and that `BASELINE_VERSION`
   is a positive integer.
-- `scripts/__tests__/baseline-validation.test.ts` — given a bundle
+- `packages/story-runtime-baseline/__tests__/baseline-validation.test.ts` — given a bundle
   whose module-resolution metadata includes an out-of-baseline
   package, the validator exits non-zero with stderr naming the
   package and source file. Given a bundle that uses only baseline

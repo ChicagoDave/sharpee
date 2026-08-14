@@ -96,6 +96,7 @@ Read `/docs/core-concepts/README.md` at the start of each session for:
 
 - **DO NOT** use `2>&1` with pnpm commands — they don't work together properly.
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`.
+- `pnpm test:scripts` runs the repo-level suites under `scripts/__tests__/`, which drive the assembled CLI bundle. Build the bundle (`./repokit build dungeo`) first — these tests spawn `dist/cli/sharpee.js` rather than importing packages.
 
 ### Build (`./repokit` in-repo; `./sharpee` is the author tool)
 
@@ -242,7 +243,7 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 **At session start**, create a session file:
 
 - Location: `docs/context/session-YYYYMMDD-HHMM-{branch}.md`
-- Template: `docs/context/.session-template.md`
+- Template: `.claude/.session-template.md`
 - Naming ensures chronological sort order for statistics/progress reports.
 
 **During the session**, update the session file progressively:
