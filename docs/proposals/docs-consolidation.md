@@ -1,6 +1,9 @@
 # Proposal: docs/ consolidation
 
-**Status**: ACCEPTED — all fourteen items accepted; none rejected or deferred. P-13 is DONE (executed directly 2026-08-13); P-9 is accepted but deliberately unplanned for now. `proposal-review` ran 2026-08-08 and raised 2 blocking
+**Status**: PLANNED — twelve items (P-1 through P-8, P-10, P-11, P-12, P-14)
+planned via `docs/work/docs-consolidation/plan.md`, 2026-08-13. P-13 is DONE
+(executed directly 2026-08-13); P-9 remains ACCEPTED but deliberately
+unplanned (David: "hold 9" — see P-9). `proposal-review` ran 2026-08-08 and raised 2 blocking
 findings plus 5 advisory. **Amended 2026-08-13** (session 756ff6) for the
 zifmia retirement, which moved one inventoried directory and partly executed
 P-4; P-3, P-4 and the headline inventory are annotated in place. The amendment
@@ -168,7 +171,7 @@ question, since the reasoning is what a future session will want.
   does not apply and ADR-281's "canon is canon because it is maintained" is not
   threatened. No ADR is needed — this is not a durable promise to readers,
   because there are no readers outside the repo.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-2: Move `docs/guides/` and `docs/reference/` into `docs/unofficial/`
 - **Done when**: both trees (22 files, 9,530 + 3,395 lines) live under
@@ -189,7 +192,7 @@ question, since the reasoning is what a future session will want.
   the two files whose material genuinely leaves circulation. The transcript one
   is already covered — the author-facing gap it leaves is #246.
 - **Accepted**: David, 2026-08-08.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-3: Resolve the three archive trees to two destinations, by what they hold
 - **Done when**: `_archive/`, `_archived/` and `archive/` no longer exist at
@@ -234,7 +237,7 @@ question, since the reasoning is what a future session will want.
 - **Accepted**: David, 2026-08-08; re-accepted the same day with the
   two-destination split after the DevArch plan made the original single-tree
   wording self-contradictory.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-4: Archive the fourteen git-cold trees
 - **Scope**: `packages/`, `templates/`, `releases/`, `agents/`, `extensions/`,
@@ -271,7 +274,7 @@ question, since the reasoning is what a future session will want.
   are elsewhere.
 - **Accepted**: David, 2026-08-08, less `brainstorm/`.
 - **Depends on**: P-3 (ACCEPTED)
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-5: Archive `actions/`, `api/` and `publish/`
 - **Done when**: all three are moved into **`docs/unofficial/archive/`** per
@@ -323,7 +326,7 @@ question, since the reasoning is what a future session will want.
   registration point for a publishable package. That second one sits in a file
   every session is instructed to read, so it is P-13's problem too.
 - **Accepted**: David, 2026-08-08 — `actions/`, `api/` and `publish/` all archived.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-6: `docs/spec/` moves to `docs/unofficial/`, with an issue to revisit its purpose
 - **Done when**: `docs/spec/` (10 files, 268K) lives under `docs/unofficial/`
@@ -345,21 +348,21 @@ question, since the reasoning is what a future session will want.
   sit. That is the intent — they should not be cited until re-qualified — but it
   does mean the engine has **no citable written contract** until the issue is
   picked up. Worth knowing rather than discovering.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-7: The Sharpee Book stays at `docs/book/`
 - **Done when**: `docs/book/` is untouched by the sweep and is named as a
   survivor in `docs/README.md`.
 - **Decided**: David, 2026-08-08. 420 files, 4.2M, complete and QA'd as of
   2026-06-23.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-8: `docs/proposals/` stays at its current path
 - **Done when**: `docs/proposals/` is named as a survivor in `docs/README.md`.
 - **Decided**: David, 2026-08-08 — and mechanically forced regardless:
   `session-planner` refuses to plan from items outside it (ADR-0008 D5) and
   DEVARCH.md rule 18a hardcodes `docs/proposals/<slug>.md`.
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-9: `docs/work/` holds the one active plan; everything else is dispositioned and moved
 - **The rule** (David, 2026-08-08): *"only active plans cannot be swept —
@@ -437,7 +440,7 @@ question, since the reasoning is what a future session will want.
   but growing once per session and sharing a directory with the session
   summaries that are the point of `context/`.
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-11: Rewrite `docs/README.md` to describe the settled shape
 - **Done when**: `docs/README.md` lists the eight surviving directories, says
@@ -446,7 +449,7 @@ question, since the reasoning is what a future session will want.
   mistake an archived tree for current material.
 - **Depends on**: P-1, P-2, P-3, P-4, P-5
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-12: Repair references to moved paths, including published ones
 - **Done when**: both of these return nothing unintentional —
@@ -474,7 +477,7 @@ question, since the reasoning is what a future session will want.
   improvement or as a week of broken references. Worth doing in the same commit
   as each move rather than as a trailing pass.
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ### P-13: Fix `docs/core-concepts/README.md`, which every session is told to read
 - **Done when**: the file no longer describes removed architecture — specifically
@@ -540,7 +543,7 @@ question, since the reasoning is what a future session will want.
   `CLAUDE.md` paragraph and the folder's own `README.md` remain this item.
 - **Depends on**: P-1 (ACCEPTED)
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: ACCEPTED
+- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
 
 ---
 
