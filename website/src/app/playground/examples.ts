@@ -2,7 +2,18 @@
  * examples.ts — seeded starter + example-picker stories for the playground.
  *
  * Every string here is single-file, hatch-free, and gate-clean under the
- * CURRENT (dotless) Chord — verified by `scripts/playground-examples-check.mjs`.
+ * CURRENT (dotless) Chord — verified by `scripts/playground-examples-check.mjs`,
+ * which compiles each one with the real @sharpee/chord and exits non-zero on
+ * any diagnostic error. Run it after touching anything below.
+ *
+ * That claim used to be written here while the script did not exist — no file,
+ * no git history — and every example duly rotted past Chord 3.0.0's fielded
+ * story block (ADR-298), each opening with the removed positional
+ * `story "Title" by "Author"` form and a removed `version:` key. Three errors
+ * apiece, in the starter a first-time visitor sees before touching anything.
+ * The header form is now: a bare `story` line, then indented `title:`,
+ * `authors:`, `id:`, `story-version:`.
+ *
  * NB: the docs/work/stdlib-cookbook/fixtures/*.story files are NOT usable yet —
  * they still carry pre-dotless `if.action.*` keys and fail to compile (a Phase 3
  * finding recorded in docs/work/playground-adr191/plan.md). Curate here until
@@ -20,9 +31,11 @@ export interface PlaygroundExample {
   source: string;
 }
 
-const STARTER = `story "Welcome to the Playground" by "You"
+const STARTER = `story
+  title: Welcome to the Playground
+  authors: You
   id: playground-starter
-  version: 0.1.0
+  story-version: 0.1.0
 
 create the Study
   a room
@@ -56,9 +69,11 @@ define phrase pocketed
 end phrase
 `;
 
-const TWO_ROOMS = `story "Two Rooms and a Door" by "You"
+const TWO_ROOMS = `story
+  title: Two Rooms and a Door
+  authors: You
   id: playground-door
-  version: 0.1.0
+  story-version: 0.1.0
 
 create the Kitchen
   a room
@@ -82,9 +97,11 @@ create the player
   You.
 `;
 
-const LAMP_ROOM = `story "The Lamp Room" by "You"
+const LAMP_ROOM = `story
+  title: The Lamp Room
+  authors: You
   id: playground-lamp
-  version: 0.1.0
+  story-version: 0.1.0
 
 create the Lamp Room
   a room
@@ -110,9 +127,11 @@ create the player
   You.
 `;
 
-const LOCKED_STUDY = `story "The Locked Study" by "You"
+const LOCKED_STUDY = `story
+  title: The Locked Study
+  authors: You
   id: playground-locked-study
-  version: 0.1.0
+  story-version: 0.1.0
 
 create the Landing
   a room

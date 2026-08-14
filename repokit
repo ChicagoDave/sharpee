@@ -29,6 +29,62 @@ if [ ! -f "$CLI" ]; then
   # supplies it, and `tsf build` deliberately skips repokit — so a host that
   # never built it by hand serves a 404 playground.
   echo "repokit: engine not built ($CLI missing) — building it now." >&2
+
+  # The engine MUST be compiled by the workspace TypeScript, never by whatever
+  # `tsc` happens to be on PATH. pnpm puts tools/repokit/node_modules/.bin
+  # first, so this only matters when that directory does not exist yet — which
+  # is precisely the cold-deploy case this bootstrap block exists for. Then
+  # `tsc` resolves off PATH, and a compiler too old for this repo's `ES2022`
+  # target does NOT stop: it reports the target as a config error, falls back
+  # to its ES5 defaults, and emits anyway. Under ES5 every `for...of` over an
+  # iterator becomes an index loop over `.length`, which is `undefined` on an
+  # iterator, so the loop body never runs. The engine then loads and behaves
+  # like a build tool while reading empty results out of every such loop —
+  # `repokit grammar` counted 0 stdlib action ids and blamed the constants
+  # file for moving. Silently-wrong output is worse than no output, so refuse.
+  # (plover 2026-08-14: /usr/local/bin/tsc is 4.3.4; a sudo-run deploy.sh hit
+  # exactly this and shipped a broken engine.)
+  LOCAL_TSC="$ROOT/tools/repokit/node_modules/.bin/tsc"
+  if [ ! -x "$LOCAL_TSC" ]; then
+    echo "repokit: $LOCAL_TSC is missing — the workspace is not installed." >&2
+    echo "repokit: refusing to build the engine with whatever tsc is on PATH." >&2
+    echo "repokit: run 'pnpm install --frozen-lockfile' at the repo root first." >&2
+    exit 1
+  fi
+  TSC_MAJOR="$("$LOCAL_TSC" --version | sed 's/^Version \([0-9]*\).*/\1/')"
+  if [ "$TSC_MAJOR" -lt 5 ] 2>/dev/null; then
+    echo "repokit: $LOCAL_TSC is TypeScript $TSC_MAJOR; this repo needs 5+." >&2
+    exit 1
+  fi
+
+  # The engine's own SOURCE imports types from @sharpee/devkit and
+  # @sharpee/bootstrap, so those two must be built before repokit can compile
+  # — but on this path they are normally built BY repokit. That circularity is
+  # what CLAUDE.md's cold-start `npx tsf build` step exists to break: tsf
+  # compiles the platform packages (both are in ts-forge.config.json) and
+  # deliberately skips repokit, emitting exactly the .d.ts this compile needs.
+  #
+  # It stayed invisible for as long as it did because the old PATH tsc emitted
+  # despite the resulting TS2307s. A correct tsc exits non-zero instead, which
+  # is how a cold deploy host finally surfaced it (plover, 2026-08-14).
+  #
+  # Keyed on the .d.ts files rather than on dist/ existing, because a partial
+  # platform build leaves some dist/ directories present and these absent.
+  if [ ! -f "$ROOT/packages/devkit/dist/index.d.ts" ] || \
+     [ ! -f "$ROOT/packages/bootstrap/dist/index.d.ts" ]; then
+    echo "repokit: platform type declarations missing — running tsf build first." >&2
+    TSF="$ROOT/node_modules/.bin/tsf"
+    if [ ! -x "$TSF" ]; then
+      echo "repokit: $TSF is missing — the workspace is not installed." >&2
+      echo "repokit: run 'pnpm install --frozen-lockfile' at the repo root first." >&2
+      exit 1
+    fi
+    ( cd "$ROOT" && "$TSF" build ) >&2 || {
+      echo "repokit: tsf build failed — cannot compile the engine without it." >&2
+      exit 1
+    }
+  fi
+
   rm -f "$ROOT/tools/repokit/tsconfig.tsbuildinfo"
   ( cd "$ROOT" && pnpm --filter @sharpee/repokit build ) >&2 || {
     echo "repokit: could not build the engine." >&2

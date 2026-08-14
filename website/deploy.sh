@@ -42,6 +42,30 @@ if [ "$1" = "--setup" ]; then
   exit 0
 fi
 
+# ── Guard: this script must NOT be run as root ──
+# It calls sudo itself for the three steps that need it (the analytics dir,
+# the systemd restart, --setup). Running the whole thing under sudo instead
+# leaves every artifact it builds owned by root — website/.next,
+# website/node_modules, packages/*/dist, tools/repokit/dist — and the service
+# runs as an ordinary user, as does every later build. Those builds then die
+# on EACCES.
+#
+# The worse half is silent: a root build resolves `tsc` off PATH rather than
+# the workspace, and a tsc too old for this repo's ES2022 target emits ES5
+# ANYWAY after reporting the target as a config error. Downlevelled ES5 turns
+# `for...of` over an iterator into an index loop over `.length` — undefined on
+# an iterator — so the engine runs and reads every such loop as empty.
+# `repokit grammar` reported 0 stdlib action ids and blamed a moved file.
+# Repair with scripts/fix-root-owned-artifacts.sh. (plover, 2026-08-14.)
+if [ "$(id -u)" -eq 0 ]; then
+  err "do not run this script as root (or with sudo)."
+  err "It calls sudo itself for the steps that need it. Running it as root"
+  err "leaves .next/, node_modules/ and every dist/ owned by root, and builds"
+  err "the repokit engine with the wrong tsc — which fails silently, not loudly."
+  err "Run it as the service user:  ./website/deploy.sh"
+  exit 1
+fi
+
 # ── Normal deploy: pull, build, restart ──
 cd "$REPO_ROOT"
 
@@ -86,8 +110,13 @@ if [ ! -d "$ANALYTICS_DIR" ]; then
 fi
 if [ ! -w "$ANALYTICS_DIR" ]; then
   err "$ANALYTICS_DIR exists but is not writable by $(id -un)."
-  err "The site would run and collect nothing, silently. Fix with:"
-  err "  sudo chown $(id -un) $ANALYTICS_DIR"
+  err "The site would run and collect nothing, silently."
+  err "Usually means an earlier deploy was run under sudo, so the directory"
+  err "was created owned by root. Fix with:"
+  err "  sudo ./scripts/fix-root-owned-artifacts.sh"
+  err "or directly — note the -R, so the existing salt and .jsonl data become"
+  err "writable too, not just the directory:"
+  err "  sudo chown -R $(id -un):$(id -gn) $ANALYTICS_DIR"
   exit 1
 fi
 
@@ -132,6 +161,21 @@ if ( cd "$REPO_ROOT" && ./repokit build --playground ); then
   log "Playground bundle refreshed at website/public/playground/."
 else
   warn "playground build failed — /playground will 404 until './repokit build --playground' succeeds on this host."
+fi
+
+# ── The playground's seeded examples must actually compile ──
+# They are strings in a website source file, so nothing in the platform's own
+# test suite ever sees them: they drifted a whole Chord major behind (the
+# ADR-298 fielded story block) and the starter a first-time visitor lands on
+# failed with three parse errors. Checked here because this is the only step
+# that has both the website source and the workspace's @sharpee/chord to hand.
+#
+# Warn rather than abort, matching the playground step above: a stale example
+# is a bad first impression, not a reason to leave sharpee.net unbuilt.
+if command -v node >/dev/null 2>&1; then
+  log "Checking the playground examples compile ..."
+  ( cd "$REPO_ROOT" && node scripts/playground-examples-check.mjs ) \
+    || warn "playground examples do not compile — see above. The editor will open on a broken story."
 fi
 
 cd "$WEBSITE_DIR"
