@@ -63,6 +63,7 @@ export const NAV: NavSection[] = [
         title: 'Getting Started',
         open: true,
         items: [
+          { title: 'What is Chord?', href: '/chord' },
           { title: 'Install', href: '/chord/getting-started/install' },
           { title: 'Your first story', href: '/chord/getting-started/first-story' },
           { title: 'Compose & run', href: '/chord/getting-started/compose-and-run' },
@@ -330,7 +331,7 @@ export const NAV: NavSection[] = [
     title: 'Sharpee',
     version: '5.0.0',
     groups: [
-      { title: 'Platform', items: [{ title: 'Overview', href: '/sharpee/platform' }] },
+      { title: 'Platform', items: [{ title: 'What is Sharpee?', href: '/sharpee' }, { title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },
     ],
   },

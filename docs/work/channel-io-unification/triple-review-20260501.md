@@ -7,7 +7,7 @@
 - `docs/architecture/adrs/adr-163-channel-service-platform.md`
 - `docs/architecture/adrs/adr-164-stateless-multiuser-server.md`
 - `docs/architecture/adrs/adr-165-renderer-architecture.md`
-- Spike validation in `spikes/channel-io/`
+- Spike validation in `docs/unofficial/archive/spikes/channel-io/`
 
 **Verdict**: the trio is **mutually consistent and ready for implementation**. Three small clarifications worth landing; one architectural detail (story init overloading) worth surfacing before the asset-pipeline ADR.
 
@@ -72,7 +72,7 @@ These are gaps that appear only when reading the trio together.
 
 **The seam.** ADR-163 §14 step 4 specifies that on repaint, the consumer should call `produceCmgtManifest(capabilities)` *fresh* and pass the result to `applyCmgt`. Only the captured turn packets get replayed. The implication is that story init is deterministic and a fresh CMGT will match the original.
 
-The spike (`spikes/channel-io/index.html`) does the opposite: it captures the original CMGT alongside turn packets and replays the captured CMGT. Both work because story init is deterministic — but the two patterns differ in which side bears the determinism burden.
+The spike (`docs/unofficial/archive/spikes/channel-io/index.html`) does the opposite: it captures the original CMGT alongside turn packets and replays the captured CMGT. Both work because story init is deterministic — but the two patterns differ in which side bears the determinism burden.
 
 **Implications:**
 - Single-bundle deployments can use either pattern; either works.
@@ -223,4 +223,4 @@ The mechanizable parts catch most of the routine drift; the LLM-driven seam walk
   - `docs/architecture/adrs/adr-163-channel-service-platform.md`
   - `docs/architecture/adrs/adr-164-stateless-multiuser-server.md`
   - `docs/architecture/adrs/adr-165-renderer-architecture.md`
-- Spike: `spikes/channel-io/index.html` + `spikes/channel-io/findings.md`
+- Spike: `docs/unofficial/archive/spikes/channel-io/index.html` + `docs/unofficial/archive/spikes/channel-io/findings.md`

@@ -64,7 +64,7 @@ ADR-170 §"Doesn't touch" said:
 
 That carve-out is obsolete. ADR-175 settled that Zifmia is the
 multi-user web product (not a React client), and the 2026-05-11
-Phase 2 spike (`spikes/zifmia-renderer/findings.md`) settled that
+Phase 2 spike (`docs/unofficial/archive/spikes/zifmia-renderer/findings.md`) settled that
 Zifmia matches `packages/platform-browser/`'s framework-free pattern.
 Zifmia therefore reuses ADR-170's component vocabulary and theme
 files, with this ADR's additions covering the multi-user surfaces.
@@ -644,7 +644,7 @@ ADR-171 makes it shippable.
   future affordance for author-shipped multi-user themes.
 - `packages/platform-browser/src/managers/` — pattern for the
   Zifmia manager classes that toggle the new state modifiers.
-- `spikes/zifmia-renderer/findings.md` — Phase 2 outcome that
+- `docs/unofficial/archive/spikes/zifmia-renderer/findings.md` — Phase 2 outcome that
   established Zifmia matches the platform-browser pattern.
 - `docs/work/zifmia/plan-20260511-adr-175.md` — Phase 6 entry-state
   expects this ADR to be ready before the web client begins.

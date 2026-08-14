@@ -918,7 +918,7 @@ and emit channel values) and tests/fixtures.
   — the Phase 4A audit that surfaced the rule-vs-closure decision.
 - `docs/work/channel-io-unification/sequence-diagrams-20260429.md`
   — turn-by-turn message flows.
-- `spikes/channel-io/` — runnable spike validating the platform
+- `docs/unofficial/archive/spikes/channel-io/` — runnable spike validating the platform
   contract.
 - Original FyreVM channel I/O design — David Cornelson, 2010-era
   fyrevm-server.

@@ -859,7 +859,7 @@ would be backwards-incompatible with the audit log's promise.
   Playwright e2e patterns. Not a starting point for the rebuild.
 - `docs/brainstorm/stateless-multiuser/overview.md` — the
   2026-04-28 brainstorm that produced ADR-163 / ADR-164.
-- `spikes/channel-io/` — the renderer spike validating ADR-165.
+- `docs/unofficial/archive/spikes/channel-io/` — the renderer spike validating ADR-165.
 
 ## Session
 

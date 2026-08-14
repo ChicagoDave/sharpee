@@ -335,7 +335,7 @@ The findings and validation that drove this proposal:
 - `docs/architecture/adrs/adr-163-channel-service-platform.md` — platform ADR.
 - `docs/architecture/adrs/adr-164-stateless-multiuser-server.md` — multi-user server ADR.
 - `docs/architecture/adrs/adr-165-renderer-architecture.md` — renderer architecture ADR.
-- `spikes/channel-io/` — the spike that informed all three ADRs and surfaced the original 8 gaps.
+- `docs/unofficial/archive/spikes/channel-io/` — the spike that informed all three ADRs and surfaced the original 8 gaps.
 - `~/.claude/skills/adr-review/` — the existing single-ADR review skill (the baseline this proposal extends).
 
 ---

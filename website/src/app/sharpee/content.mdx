@@ -1,0 +1,72 @@
+Sharpee is a parser interactive fiction platform written in TypeScript. It is
+the engine that runs every [Chord](/chord) story, and it is a complete
+authoring surface in its own right for anyone who would rather write code.
+
+If you are here to write a story, you probably want Chord and can stop reading
+after the next section. If you want to know what is actually running your
+story, or you intend to author in TypeScript, read on.
+
+## One engine, two surfaces
+
+A Chord `.story` file compiles to a story IR, and the story loader turns that
+IR into entities, traits, phrases, and wiring. A TypeScript story builds those
+same things directly against the API. Either way the same engine runs the game.
+
+Chord is not a restricted subset. The two surfaces aim for full parity: what
+you can express in one, you can express in the other. Chord trades direct
+access for compile-time checking; TypeScript trades checking for direct access.
+Mixing them in one story is expected, not a fallback.
+
+## What you get
+
+| Layer | Owns |
+| --- | --- |
+| **Engine** | The turn cycle, command execution, event dispatch, plugins |
+| **World model** | Entities composed of traits (data) and behaviors (logic), with no deep inheritance |
+| **Standard library** | 45 world actions — take, drop, open, lock, go, look, and the rest — plus save, restore, undo, again, score, and help |
+| **Parser** | Grammar-based parsing with verb aliases, slot constraints, and story-defined patterns |
+| **Language layer** | Every user-facing string, addressed by message ID |
+| **Channels** | Structured story output: prose, status, media, layout |
+| **Extensions** | Opt-in systems: scoring, hunger, basic combat, conversation, testing |
+
+Two of those deserve a word, because they are the unusual ones.
+
+**The engine and standard library never emit English.** Not a single string.
+Everything a player reads comes from the language layer through a message ID,
+which is what makes localization a matter of adding a language package rather
+than auditing the codebase for hardcoded prose.
+
+**Stories do not print — they emit.** A story sends structured data on named
+channels, and something else decides how that becomes an interface. This is why
+the same story can drive a terminal, the browser client, or an interface you
+write yourself, and why an author can restyle or replace any part of the
+presentation without touching story logic.
+
+## Actions are four-phase
+
+Every action in the standard library splits into **validate**, **execute**,
+**report**, and **blocked**. Validation decides whether the action can happen,
+execution mutates the world, reporting turns what happened into events, and
+blocked explains a refusal. The split is what lets a story intervene at exactly
+one point — refuse an action, change what it reports — without reimplementing
+the rest of it.
+
+Verbs whose meaning depends on the object (turn, lower, wave) dispatch to
+behaviors registered by traits, rather than accumulating branches inside one
+handler.
+
+## Practical details
+
+Sharpee is open source under the MIT license, published to npm under the
+`@sharpee` scope, and developed [on GitHub](https://github.com/ChicagoDave/sharpee).
+It runs anywhere Node runs. Stories build to a self-contained browser bundle
+that you host or hand out directly; players need only a browser.
+
+## Where to go next
+
+| If you want to | Go to |
+| --- | --- |
+| Write stories, not engine code | [What is Chord?](/chord) |
+| Tour the platform properly | [Platform overview](/sharpee/platform) |
+| Understand traits and actions | [Actions & traits](/sharpee/actions-and-traits) |
+| Read the source | [GitHub](https://github.com/ChicagoDave/sharpee) |

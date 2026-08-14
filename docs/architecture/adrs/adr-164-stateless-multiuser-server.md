@@ -545,7 +545,7 @@ specific replacement. Zifmia migration is deferred under the
 platform ADR; this ADR is unaffected.
 
 2026-05-01 main (spike validation) — the renderer spike at
-`spikes/channel-io/` validated the multi-user-relevant pieces of
+`docs/unofficial/archive/spikes/channel-io/` validated the multi-user-relevant pieces of
 this ADR: the merge-after pattern for `chat` / `presence` /
 `command_echo` (§3) works against the platform's trimmed
 `produceTurnPacket` API, and re-emission identity holds for

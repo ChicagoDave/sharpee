@@ -37,7 +37,7 @@ packets to per-channel rendering logic, how stories register their
 own channel renderers, how layouts compose, or how renderer-local
 UI state is held separate from channel-driven state.
 
-The spike at `spikes/channel-io/` validated the producer contract
+The spike at `docs/unofficial/archive/spikes/channel-io/` validated the producer contract
 against the Alderman case (custom channels, story-overridden `main`,
 synthesized commands). Eight gaps surfaced; two were absorbed into
 ADR-163. This ADR addresses the remaining six:
@@ -576,7 +576,7 @@ across surfaces. Land progressively.
     with a story-supplied layout, and overrides the platform
     default `main` renderer with a story-styled variant. The
     resulting render matches the spike at
-    `spikes/channel-io/index.html` for an equivalent turn
+    `docs/unofficial/archive/spikes/channel-io/index.html` for an equivalent turn
     sequence.
 
 ## Consequences
@@ -711,9 +711,9 @@ across surfaces. Land progressively.
   this ADR consumes.
 - ADR-164: Stateless Multi-User Server — one downstream consumer
   of this renderer architecture.
-- `spikes/channel-io/index.html` — runnable validation of the
+- `docs/unofficial/archive/spikes/channel-io/index.html` — runnable validation of the
   renderer architecture against the Alderman case.
-- `spikes/channel-io/findings.md` — eight gaps from the spike;
+- `docs/unofficial/archive/spikes/channel-io/findings.md` — eight gaps from the spike;
   six are resolved here, two are resolved in ADR-163 §4 and §17.
 - `docs/work/channel-io-unification/diagrams/renderer-architecture.html`
   — six-panel sketch of the consumer side. Visual companion to
@@ -728,7 +728,7 @@ across surfaces. Land progressively.
 ## Session
 
 2026-05-01 main — derived from the renderer spike at
-`spikes/channel-io/`, which validated the platform contract
+`docs/unofficial/archive/spikes/channel-io/`, which validated the platform contract
 against the Alderman case and surfaced eight gaps. Two gaps
 were absorbed into ADR-163 (append-mode payload value shape;
 standard repaint sequence) plus one boundary rule into ADR-163
