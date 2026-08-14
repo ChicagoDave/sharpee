@@ -231,7 +231,7 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 
 - Planning docs: `docs/work/{target}/`
 - Work summaries: `docs/work/{target}/context/` (detailed, target-specific)
-- Session summaries: `docs/context/` (progressive, project-level)
+- Session summaries: `docs/context/` (progressive, project-level) — see `docs/context/README.md`; DevArch's gitignored per-session runtime files accumulate there and are pruned by hand with `./scripts/prune-devarch-runtime.sh`
 - **Plans**: Write plans to the current work target (NOT to `~/.claude/plans/`).
 - Logs: `logs/`
 

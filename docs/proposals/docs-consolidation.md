@@ -1,12 +1,13 @@
 # Proposal: docs/ consolidation
 
-**Status**: IN PROGRESS — **nine items DONE** (P-1, P-2, P-6, P-14 via plan
-Phase 1; P-3 via Phase 2; P-4, P-5, P-12 via Phase 3 — all 2026-08-14; P-13
-executed directly 2026-08-13). Four remain PLANNED (P-7, P-8, P-10, P-11) via
-`docs/work/docs-consolidation/plan.md`. **The keep-list is now nine, not
-eight**: `docs/references/` was created in Phase 3 to hold the 1981 MDL source,
-which P-4 would otherwise have quarantined (David's ruling — see P-4). P-9
-remains ACCEPTED but deliberately unplanned (David: "hold 9" — see P-9).
+**Status**: COMPLETE except P-9 — **thirteen of fourteen items DONE** (P-1, P-2,
+P-6, P-14 via plan Phase 1; P-3 via Phase 2; P-4, P-5, P-12 via Phase 3; P-10
+via Phase 4; P-7, P-8, P-11 via Phase 5 — all 2026-08-14; P-13 executed directly
+2026-08-13). `docs/work/docs-consolidation/plan.md` is DONE, all five phases
+complete. **The keep-list is nine, not eight**: `docs/references/` was created
+in Phase 3 to hold the 1981 MDL source, which P-4 would otherwise have
+quarantined (David's ruling — see P-4). P-9 remains ACCEPTED but deliberately
+unplanned (David: "hold 9" — see P-9), and is the only item left.
 **Phase 1 found the "superseded" premise does not hold uniformly** — two files
 were live consumers and were moved back out; see P-2's execution note before
 running any further move. `proposal-review` ran 2026-08-08 and raised 2 blocking
@@ -405,14 +406,21 @@ question, since the reasoning is what a future session will want.
   survivor in `docs/README.md`.
 - **Decided**: David, 2026-08-08. 420 files, 4.2M, complete and QA'd as of
   2026-06-23.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 5, 2026-08-14) — both halves asserted rather than
+  assumed. `docs/book/` appears as a survivor in the rewritten `docs/README.md`,
+  and it is a rename source in neither consolidation commit (`3bb7af37`,
+  `17cbfa34`); the renames git shows under it belong to the book's own
+  versioned-edition split (`e6540ec0`), not to this sweep.
 
 ### P-8: `docs/proposals/` stays at its current path
 - **Done when**: `docs/proposals/` is named as a survivor in `docs/README.md`.
 - **Decided**: David, 2026-08-08 — and mechanically forced regardless:
   `session-planner` refuses to plan from items outside it (ADR-0008 D5) and
   DEVARCH.md rule 18a hardcodes `docs/proposals/<slug>.md`.
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 5, 2026-08-14) — named as a survivor in the
+  rewritten `docs/README.md`, which also records *why* it cannot move, so the
+  mechanical constraint is discoverable by whoever next reorganizes `docs/`.
+  Confirmed untouched by both consolidation commits, same check as P-7.
 
 ### P-9: `docs/work/` holds the one active plan; everything else is dispositioned and moved
 - **The rule** (David, 2026-08-08): *"only active plans cannot be swept —
@@ -490,7 +498,18 @@ question, since the reasoning is what a future session will want.
   but growing once per session and sharing a directory with the session
   summaries that are the point of `context/`.
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
+- **Status**: DONE (plan Phase 4, 2026-08-14) — **pruned on a stated retention
+  rule**; relocation was found to be unavailable to this repository. Every
+  writer of these paths is upstream DevArch (`~/.devarch/hooks/`), which
+  hardcodes `docs/context/` as an explicit invariant and is overwritten on
+  `devarch update`, so a move would be undone by the next upgrade. The rule is
+  `scripts/prune-devarch-runtime.sh` (dry-run by default, `--keep 20`, never
+  touches the `.active-session` id), documented in the new
+  `docs/context/README.md` and pointed at from `CLAUDE.md`. Applied: 90 files
+  removed of 123, 97 → 20 session ids (net 88 — two turned out to be tracked by
+  git, committed before the ignore rule existed; both restored, and the script
+  now refuses to delete anything git tracks). The counts in Done-when had grown
+  to 76/24/11/1 by execution time from the 68/23/10/1 recorded here.
 
 ### P-11: Rewrite `docs/README.md` to describe the settled shape
 - **Done when**: `docs/README.md` lists the eight surviving directories, says
@@ -499,9 +518,17 @@ question, since the reasoning is what a future session will want.
   mistake an archived tree for current material.
 - **Depends on**: P-1, P-2, P-3, P-4, P-5
 - **Accepted**: David, 2026-08-13 (session 756ff6)
-- **Status**: PLANNED (docs/work/docs-consolidation/plan.md, 2026-08-13)
-
-### P-12: Repair references to moved paths, including published ones
+- **Status**: DONE (plan Phase 5, 2026-08-14) — **nine surviving directories,
+  not the eight this item says**; `docs/references/` joined the keep-list in
+  Phase 3 when P-4 was partially declined. The rewrite carries a per-directory
+  table of what belongs in each, a "Where the rest went" table naming all three
+  destinations and how to treat them, and the quarantine rule in `CLAUDE.md`'s
+  own terms. Also corrected while there: the header claimed version 0.9.85
+  (actual 5.0.0 — the banner was dropped rather than re-pinned), the ADR table
+  claimed 135 (actual 320), the structure tree still listed two directories
+  archived in Phase 3, and two "For Developers" links into `development/` were
+  already broken. All 25 relative links in the new file were stat-checked and
+  resolve.
 - **Done when**: both of these return nothing unintentional —
   - in-repo relative paths:
     `grep -rn 'docs/guides\|docs/reference\|docs/actions\|docs/api\|docs/getting-started\|docs/publish' CLAUDE.md packages/*/CLAUDE.md .claude/ tools/`

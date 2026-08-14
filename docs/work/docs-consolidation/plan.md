@@ -1,7 +1,9 @@
 # Session Plan: Consolidate docs/ per the docs-consolidation proposal
 
 **Created**: 2026-08-13
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-08-14) — all five phases complete. Twelve of the
+twelve plannable items closed; P-9 remains held at David's instruction and was
+never in this plan's scope.
 **Overall scope**: Execute the twelve ACCEPTED, plannable items of
 `docs/proposals/docs-consolidation.md` — quarantine three trees into
 `docs/unofficial/`, resolve three overlapping archive trees to two
@@ -415,7 +417,77 @@ disposition question is needed; the pointer below repoints cleanly.
   `docs/context/` with every hook/skill that reads them continuing to
   function unchanged, verified by a subsequent session actually running
   (state file created/updated, gate cleared) without error.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-14)
+- **Outcome**: Disposition **(a)**, a retention rule — because **(b) proved
+  unavailable**, which is the finding this phase turned on. The deliverable's
+  own instruction to "verify against the hook scripts under
+  `docs/workflow/hooks/`" could not be followed as written: that directory does
+  not exist in this repo, and `.claude/settings.json` declares no hooks. Every
+  writer and reader of these paths is **upstream DevArch**, outside the repo —
+  `~/.devarch/hooks/emit-event.sh:70,105`, `gate.sh:67,110,146`,
+  `session-state.sh:55,63,72,101`, `session-start.sh:45` each hardcode
+  `$repo_root/docs/context/`, and `gate.sh:43` / `session-state.sh:32` state it
+  as a deliberate invariant ("One name, one directory"). Those files carry the
+  "managed by DevArch and will be overwritten on update" warning, so a
+  relocation would be undone by the next `devarch update`. Option (b) is not a
+  choice this repository can make.
+  - **The script**: `scripts/prune-devarch-runtime.sh`. Dry-run by default,
+    `--apply` to delete, `--keep N` (default 20). Selects only the four runtime
+    patterns; `session-*.md`, `project-profile.md`, `plan.md`, `README.md`,
+    `.active-session` and `.current-plan` are structurally unmatchable. The id
+    in `.active-session` is retained whatever its rank — a session mid-flight
+    depends on its files existing where its hooks expect. No CI gate, per the
+    project's standing direction; it is a documented manual step.
+  - **Why 20 is safe**: no DevArch consumer reads a *historical* runtime file.
+    `standup/SKILL.md:22,24` and `finalize/SKILL.md:32`, like the hooks
+    themselves, resolve `{id}` from `.active-session` and read only the current
+    session. The window exists so a recent summary can still be corroborated
+    against its own event log (ADR-0019), not because anything requires it.
+  - **Verified before applying, on a fixture** — the real script, real `rm`, no
+    stub: six sessions, `--keep 2`, active session deliberately ranked *oldest*.
+    Removed 12 files, retained 3 ids (the 2 newest **plus** the active one);
+    every decoy survived. All four bad-usage paths exit 1 with a message
+    (`--keep 0`, `--keep abc`, `--keep` with no value, unknown argument), as
+    does running outside a git repository.
+  - **Applied**: 90 of 123 files removed, 20 of 97 session ids retained
+    including live `2420bc`. Counts went 76/24/11/1 → 19/2/1/0 across
+    events/state/gate-blocks/gate (21/2/1/0 after the two restores described
+    next). Among the removed: `.devarch-gate-13c113`, a gate a past session
+    never cleared.
+  - **A defect the apply run exposed, fixed in the same phase.** `git status`
+    afterward showed two ` D` entries: `.devarch-events-297ac8.jsonl` and
+    `.devarch-events-2d2ba5.jsonl` were **tracked**, committed by `55c5bc06`
+    before `.gitignore:166` existed — and gitignore has no effect on files
+    already committed. The first version of the script trusted "these are all
+    gitignored" as an inference from the pattern list instead of asking git, so
+    it deleted two tracked files. Both restored with `git checkout --`
+    (verified: `git status` clean of them). The script now reads
+    `git ls-files` and refuses to delete anything git tracks, reporting it as
+    `SKIPPED (tracked by git)` instead — a fifth rejection path, verified in a
+    second fixture where a committed runtime log ranked oldest and outside
+    `--keep 1`: it survived, its untracked sibling was removed, and
+    `git status` showed no deletion. The two restored files now carry fresh
+    mtimes and so rank inside the retention window; they were left in place
+    rather than re-pruned, since deleting a tracked file is a human's call.
+    **The general shape is this plan's recurring one** — a proxy signal ("it
+    matches a gitignore pattern") standing in for the real property ("git does
+    not track it"), the same substitution that made `chord.ebnf`,
+    `transcript-testing.md`, and `dungeon-81/` look inert in Phases 1 and 3.
+  - **Exit-state check**: the live session's `.devarch-events-2420bc.jsonl`
+    survived the prune and kept appending afterward (the hook wrote an `edit`
+    row for this very plan update), `.session-state-2420bc.json` continued
+    tracking, and the gate had already been cleared normally at session start.
+  - **Documented**: new `docs/context/README.md` states what is committed
+    versus runtime, names each of the four families and its writing hook,
+    records why relocation is unavailable, and gives the prune invocations.
+    `CLAUDE.md`'s Work Patterns points at it.
+  - **Found in passing, outside this phase's targets** (the pattern Phases 1-3
+    kept hitting, again): `CLAUDE.md` cites the session template at
+    `docs/context/.session-template.md`; the file is actually at
+    `.claude/.session-template.md`. Same class of broken reference P-12 closed.
+    Separately, `scripts/__tests__/` holds four vitest files that no runner
+    picks up — there is no root vitest config and `test:arch` covers only
+    `tests/architecture`. Both reported to David, neither actioned here.
 
 ### Phase 5: Rewrite `docs/README.md` to describe the settled shape
 - **Tier**: Small
@@ -452,7 +524,50 @@ disposition question is needed; the pointer below repoints cleanly.
   states `docs/unofficial/`'s quarantine rule in the same terms as
   `CLAUDE.md`'s new paragraph (Phase 1), names both archive destinations, and
   contains no live link into a path this plan moved or archived.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-14)
+- **Outcome**: `docs/README.md` rewritten. **Nine survivors, not the eight this
+  phase's own Deliverable and Exit state say** — the plan's "Note for Phase 5"
+  (added by Phase 3) is the correct count; `docs/references/` joined the
+  keep-list when David ruled the MDL source out of the quarantine. The
+  Deliverable's parenthetical list of eight was left as written above rather
+  than edited, so the discrepancy stays visible.
+  - **Structure**: the tree and a per-directory table now name all nine
+    (`architecture/`, `book/`, `brainstorm/`, `context/`, `core-concepts/`,
+    `design/`, `proposals/`, `references/`, `work/`) plus `unofficial/` marked
+    as quarantine, each with what belongs in it. `references/` is described as
+    *the deliberate opposite of `unofficial/`* — unchanging because it is
+    finished, not because it was abandoned — which is the Phase 3 distinction
+    stated where a reader will actually meet it.
+  - **Where the rest went**: a table naming all three destinations
+    (`unofficial/`, `unofficial/archive/`, `work/archive/`), what is in each,
+    and how to treat it. The quarantine rule is stated in `CLAUDE.md`'s terms
+    ("junk mail", do not cite/plan/research, moving it out is a human
+    decision), plus the guidance that a hit under `unofficial/` is a lead to
+    verify, never an answer.
+  - **Stale content removed, all of it verified rather than assumed**: the
+    header claimed **version 0.9.85** (actual: `packages/sharpee` is **5.0.0**),
+    the ADR table claimed **135 ADRs** (actual: **320**), the structure tree
+    still listed `getting-started/` and `internal/` (both gone since Phase 3),
+    and "For Developers" linked `development/setup/setup-guide.md` and
+    `development/standards/coding.md` — **both broken**, archived in Phase 3.
+    Those two rows are replaced by the root `README.md` and `CLAUDE.md`, which
+    is where build and setup instructions actually live. The version banner was
+    dropped rather than corrected: a pinned number in a structure document is
+    the same rot in slower motion.
+  - **P-7 and P-8 asserted, so both are closeable**: `ls -d docs/book
+    docs/proposals` returns both, and neither appears as a rename source in
+    either consolidation commit (`3bb7af37`, `17cbfa34`) — checked with
+    `git log --diff-filter=R --name-status` filtered to those paths, which
+    returns empty. The renames git does show under `docs/book/` are internal
+    to the book's own versioned-edition split (`e6540ec0`), not moves of the
+    directory. `docs/README.md` now states both stay-puts and why
+    `proposals/` mechanically cannot move (`session-planner` reads it).
+  - **Exit state verified**: all **25** relative links in the new file resolve
+    (extracted with a grep over `](./…)` and stat-checked one by one, zero
+    broken). The only links into moved paths are the three archive destinations
+    in the "Where the rest went" table, each labelled as an archive — which the
+    Deliverable requires. The seven archived tree names cited in that table
+    were each confirmed present under `docs/unofficial/archive/`.
 
 ## Items excluded, deliberately
 
