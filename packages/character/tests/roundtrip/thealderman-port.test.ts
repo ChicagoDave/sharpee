@@ -69,4 +69,60 @@ describe('thealderman Chord port — descriptive layer (ADR-310 D18)', () => {
     expect(chelsea.resists).toMatchObject([{ influence: 'bullying' }]);
     expect(result.ir.customMoods?.map((m) => m.name)).toEqual(['composed', 'concerned', 'agitated', 'fearful']);
   });
+
+  it('normative layer (ADR-318, Phase 4): translation rules held and the traits carry it', () => {
+    const world = new WorldModel();
+    const applied = (id: string) => {
+      const entity = result.ir.entities.find((e) => e.id === id)!;
+      const npc = world.createEntity(id, 'actor');
+      return applyCompiledCharacter(npc, entity.character!, {
+        customMoods: result.ir.customMoods,
+        customPersonalities: result.ir.customPersonalities,
+      }).trait;
+    };
+
+    // John — confided arrangement, the enforcer's discretion, professional discipline.
+    const john = applied('john-barber');
+    expect(john.knowledge['business-arrangement']).toMatchObject({ source: 'witnessed', confided: true });
+    expect(john.principles).toEqual([{ category: 'betray a confidence' }]);
+    expect(john.temperaments).toEqual([{ name: 'professional' }]);
+
+    // Catherine — the entrusted secret, maternal protection, duty over fear.
+    const catherine = applied('catherine-shelby');
+    expect(catherine.knowledge['viola-half-sister']).toMatchObject({ confided: true });
+    expect(catherine.principles).toEqual([{ category: 'betray a confidence' }]);
+    expect(catherine.obligations).toEqual([{ kind: 'protects', scope: 'chelsea-sumner' }]);
+    expect(catherine.temperaments).toEqual([{ name: 'catherine-shelby@temperament-1' }]);
+
+    // Viola — the secret eats at her; charm holds the mask under fear.
+    const viola = applied('viola-wainright');
+    expect(viola.burdenedBy).toEqual(['half-sister']);
+    expect(viola.pressure.band).toBe('clear');
+    expect(viola.temperaments).toEqual([{ name: 'viola-wainright@temperament-1' }]);
+
+    // Jack — the brazen-it-out shape: full face-act bundle before anyone.
+    const jack = applied('jack-margolin');
+    expect(jack.honor).toMatchObject({ scope: 'anyone', faceActs: expect.arrayContaining(['backs down', 'shows fear']) });
+    expect(jack.temperaments).toEqual([{ name: 'jack-margolin@temperament-1' }]);
+
+    // Chelsea — never lies, but no answers-honestly: omission stays open to her.
+    const chelsea = applied('chelsea-sumner');
+    expect(chelsea.principles).toEqual([{ category: 'lie' }]);
+    expect(chelsea.obligations).toEqual([]);
+
+    // Ross — the D2 default IS his characterization: zero normative fields.
+    const ross = applied('ross-bielack');
+    expect(ross.principles).toEqual([]);
+    expect(ross.temperaments).toEqual([]);
+    expect(ross.honor).toBeUndefined();
+
+    // The story's temperament defs (named + synthesized) all reach the wire.
+    const defNames = result.ir.temperaments!.map((t) => t.name);
+    expect(defNames).toContain('professional');
+    expect(defNames).toContain('catherine-shelby@temperament-1');
+    expect(result.ir.temperaments!.find((t) => t.name === 'professional')!.pairs).toEqual([
+      ['duty', 'fear'],
+      ['duty', 'desire'],
+    ]);
+  });
 });

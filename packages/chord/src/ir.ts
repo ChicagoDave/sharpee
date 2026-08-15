@@ -132,6 +132,20 @@ export interface StoryIR {
    */
   facts?: IRFactDef[];
   /**
+   * Named force orderings (ADR-318 D3) — `define temperament` blocks plus
+   * the defs the compiler synthesizes for inline orderings and `with`
+   * overrides (names carry `@`, unreachable from author kebab words).
+   * Additive and optional — absent when the story declares none.
+   */
+  temperaments?: IRTemperamentDef[];
+  /**
+   * `define topic … as …` witnessed-act aliases (ADR-318 D12a) — the alias
+   * is the minted topic's name everywhere. The namespace is closed (actors
+   * × detectable acts); derivation of the default name is runtime-owned.
+   * Additive and optional.
+   */
+  witnessedTopics?: IRWitnessedTopicDef[];
+  /**
    * `define mood` declarations (ADR-310 D5, Option 2) — the loader lowers
    * each to a custom-mood registration (anchor coordinates + nudge, all
    * runtime-owned numbers). Additive and optional.
@@ -329,6 +343,95 @@ export interface IRCharacter {
   influences: IRInfluenceDef[];
   /** `resists` lines (D9) — resistance on the target, joined to an influence by name. */
   resists: IRResistsEntry[];
+  /** `temperament` bindings (ADR-318 D3/D7), in declaration order — at most one live per state (compile-checked). */
+  temperaments: IRTemperamentBinding[];
+  /** `never …` principle lines (ADR-318 D4) — `code` bundles flattened in, categories in infinitive form. */
+  principles: IRPrincipleEntry[];
+  /** `protects <scope>` / `answers honestly` lines (ADR-318 D4/D5) — compile to standing goals at load. */
+  obligations: IRObligationEntry[];
+  /** The `honor` declaration (ADR-318 D7); absent = the character carries no honor force. */
+  honor?: IRHonorDecl;
+  /** `burdened by <topic>` conscience seeds (ADR-318 D8) — canonical topic strings, each held via `knows`. */
+  burdenedBy: string[];
+}
+
+/**
+ * A scope reference (ADR-310 D9/D10 grammar): everyone, an entity kind by
+ * classifier (article `a`/`an`), or a resolved entity. The resists
+ * `exceptFrom` idiom, promoted to a shared shape.
+ */
+export type IRScopeRef =
+  | { kind: 'anyone' }
+  | { kind: 'classifier'; value: string }
+  | { kind: 'entity'; value: string };
+
+/**
+ * One principle (ADR-318 D4): a `never` line. The category is the
+ * manifest's infinitive spelling (`betray a confidence`), never the
+ * third-person surface form. `except.kind` distinguishes the collision
+ * carve-out (`to protect <scope>` — yields to the obligation protecting
+ * that scope, exp-02's trace) from the object carve-out (`except <scope>`
+ * — the act's object in scope is exempt).
+ */
+export interface IRPrincipleEntry {
+  category: string;
+  scope?: IRScopeRef;
+  except?: { kind: 'object' | 'protect'; scope: IRScopeRef };
+  span: Span;
+}
+
+/** One obligation (ADR-318 D4/D5): `protects` (scoped) or `answers honestly`. */
+export interface IRObligationEntry {
+  kind: 'protects' | 'answers honestly';
+  scope?: IRScopeRef;
+  span: Span;
+}
+
+/**
+ * The honor declaration (ADR-318 D7): audience scope plus the face-acts
+ * it binds on — the full platform six for `honor before <scope>`, the
+ * named bundle's subset for `honor <name> before <scope>`. Honor sees the
+ * room: it binds on declared audience PRESENCE, never anticipation.
+ */
+export interface IRHonorDecl {
+  scope: IRScopeRef;
+  /** `except <entities>` — resolved entity ids (the spreads idiom). */
+  except: string[];
+  faceActs: string[];
+  span: Span;
+}
+
+/**
+ * A named force ordering (ADR-318 D3). Pairs read `[first, second]` =
+ * "first over second"; the arbiter applies them as overrides of the D2
+ * intensity default for exactly the pairs they name.
+ */
+export interface IRTemperamentDef {
+  /** The `define temperament` name, or a synthesized `<entity-id>@temperament-<n>` for inline/override forms. */
+  name: string;
+  pairs: Array<[string, string]>;
+  span: Span;
+}
+
+/**
+ * One witnessed-act topic alias (ADR-318 D12a). `act` is the canonical
+ * vocabulary word — a face-act as spelled (`backs down`) or an act
+ * category in infinitive form (`lie`).
+ */
+export interface IRWitnessedTopicDef {
+  actor: string;
+  act: string;
+  alias: string;
+  span: Span;
+}
+
+/** One temperament binding (ADR-318 D3): static (`while` absent) or bound to an entity state. */
+export interface IRTemperamentBinding {
+  /** The bound def's name in {@link StoryIR.temperaments}. */
+  name: string;
+  /** The entity state that makes this binding live; absent = unconditional. */
+  while?: string;
+  span: Span;
 }
 
 /** A `goal` block (ADR-310 D8): named, prioritized, an ordered step sequence. */
@@ -630,6 +733,14 @@ export interface IRPhrase {
    * seam keyed `(roomId, marker)`. Absent when ungated.
    */
   condition?: IRCondition;
+  /**
+   * ADR-318 D9: what delivering this line asserts — `(factId, value)`
+   * checked against the fact's declared set. The runtime's mint rule keys
+   * on it: delivery contradicting the speaker's held belief mints a ledger
+   * entry; honest assertion mints nothing. Absent = the line asserts
+   * nothing and carries nothing. Additive field.
+   */
+  claims?: { factId: string; value: string };
   variants: IRPhraseVariant[];
   span: Span;
 }

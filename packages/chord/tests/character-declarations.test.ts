@@ -696,3 +696,508 @@ describe('D10 — spreads propagation lines', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('ADR-318 D3/D7 — temperaments', () => {
+  it('a named def reaches StoryIR.temperaments and the binding references it', () => {
+    const result = compileStory(
+      'define temperament steadfast\n  duty over fear\n  duty over desire\nend temperament\n\ncreate Tobias\n  a person\n  temperament steadfast\n\n  A man.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.ir.temperaments?.map((t) => ({ name: t.name, pairs: t.pairs }))).toEqual([
+      { name: 'steadfast', pairs: [['duty', 'fear'], ['duty', 'desire']] },
+    ]);
+    const tobias = result.ir.entities.find((e) => e.id === 'tobias')!;
+    expect(tobias.character?.temperaments.map((b) => ({ name: b.name, while: b.while }))).toEqual([
+      { name: 'steadfast', while: undefined },
+    ]);
+  });
+
+  it('state-bound bindings carry their `while` state (the Witness shape)', () => {
+    const result = compileStory(
+      'define temperament timid\n  fear over duty\nend temperament\n\ndefine temperament steadfast\n  duty over fear\nend temperament\n\ncreate the Witness\n  a person\n  states: cowed, resolute\n  temperament timid while cowed\n  temperament steadfast while resolute\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const witness = result.ir.entities.find((e) => e.id === 'witness')!;
+    expect(witness.character?.temperaments.map((b) => ({ name: b.name, while: b.while }))).toEqual([
+      { name: 'timid', while: 'cowed' },
+      { name: 'steadfast', while: 'resolute' },
+    ]);
+  });
+
+  it('an inline ordering synthesizes an @-named def (the Colonel shape)', () => {
+    const result = compileStory(
+      'create the Colonel\n  a person\n  temperament honor over fear and honor over duty\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const colonel = result.ir.entities.find((e) => e.id === 'colonel')!;
+    expect(colonel.character?.temperaments).toHaveLength(1);
+    const defName = colonel.character!.temperaments[0].name;
+    expect(defName).toBe('colonel@temperament-1');
+    expect(result.ir.temperaments?.find((t) => t.name === defName)?.pairs).toEqual([
+      ['honor', 'fear'],
+      ['honor', 'duty'],
+    ]);
+  });
+
+  it('`with` overrides fold onto the named base as a synthesized def', () => {
+    const result = compileStory(
+      'define temperament steadfast\n  duty over fear\n  duty over desire\nend temperament\n\ncreate Tobias\n  a person\n  temperament steadfast with fear over duty\n\n  A man.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const tobias = result.ir.entities.find((e) => e.id === 'tobias')!;
+    const defName = tobias.character!.temperaments[0].name;
+    expect(defName).toBe('tobias@temperament-1');
+    // The override replaces the base's (duty, fear) pair and keeps the rest.
+    expect(result.ir.temperaments?.find((t) => t.name === defName)?.pairs).toEqual([
+      ['duty', 'desire'],
+      ['fear', 'duty'],
+    ]);
+    // The base def still ships untouched.
+    expect(result.ir.temperaments?.find((t) => t.name === 'steadfast')?.pairs).toEqual([
+      ['duty', 'fear'],
+      ['duty', 'desire'],
+    ]);
+  });
+
+  it('a temperament-only block still creates the character (D7 presence)', () => {
+    const result = compileStory('create Tobias\n  a person\n  temperament duty over fear\n\n  A man.\n');
+    const tobias = result.ir.entities.find((e) => e.id === 'tobias')!;
+    expect(tobias.character).toBeDefined();
+    expect(tobias.character?.personality).toEqual([]);
+  });
+
+  it('an unknown force errors with the vocabulary and a suggestion', () => {
+    const errors = errorsOf(
+      'define temperament brave\n  duty over feer\nend temperament\n\ncreate Tobias\n  a person\n  temperament brave\n\n  A man.\n',
+    );
+    const unknown = errors.filter((e) => e.code === 'analysis.unknown-force');
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('fear');
+  });
+
+  it('a self-pair and a reversed duplicate each error', () => {
+    expect(
+      errorsOf('define temperament odd\n  duty over duty\nend temperament\n').filter(
+        (e) => e.code === 'analysis.temperament-self-pair',
+      ),
+    ).toHaveLength(1);
+    const reversed = errorsOf(
+      'define temperament torn\n  duty over fear\n  fear over duty\nend temperament\n',
+    ).filter((e) => e.code === 'analysis.temperament-pair-duplicate');
+    expect(reversed).toHaveLength(1);
+    expect(reversed[0].message).toContain('contradicts');
+  });
+
+  it('a duplicate def name and an unknown reference each error', () => {
+    expect(
+      errorsOf(
+        'define temperament brave\n  duty over fear\nend temperament\n\ndefine temperament brave\n  honor over fear\nend temperament\n',
+      ).filter((e) => e.code === 'analysis.duplicate-temperament'),
+    ).toHaveLength(1);
+    const unknown = errorsOf(
+      'define temperament steadfast\n  duty over fear\nend temperament\n\ncreate Tobias\n  a person\n  temperament stedfast\n\n  A man.\n',
+    ).filter((e) => e.code === 'analysis.unknown-temperament');
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('steadfast');
+  });
+
+  it('a `while` state the entity never declares errors', () => {
+    expect(
+      errorsOf(
+        'define temperament timid\n  fear over duty\nend temperament\n\ncreate Tobias\n  a person\n  states: calm-state, angry-state\n  temperament timid while cowed\n\n  A man.\n',
+      ).filter((e) => e.code === 'analysis.temperament-unknown-state'),
+    ).toHaveLength(1);
+  });
+
+  it('two bindings live for the same state — and two unconditional — are ties', () => {
+    const sameState = errorsOf(
+      'define temperament timid\n  fear over duty\nend temperament\n\ndefine temperament brave\n  duty over fear\nend temperament\n\ncreate Tobias\n  a person\n  states: cowed, free\n  temperament timid while cowed\n  temperament brave while cowed\n\n  A man.\n',
+    ).filter((e) => e.code === 'analysis.temperament-tie');
+    expect(sameState).toHaveLength(1);
+    const unconditional = errorsOf(
+      'create Tobias\n  a person\n  temperament duty over fear\n  temperament honor over fear\n\n  A man.\n',
+    ).filter((e) => e.code === 'analysis.temperament-tie');
+    expect(unconditional).toHaveLength(1);
+  });
+
+  it('temperament on a non-person and on the player each gate', () => {
+    expect(
+      errorsOf('create the Lantern\n  temperament duty over fear\n\n  A lantern.\n').filter(
+        (e) => e.code === 'analysis.character-line-person-only',
+      ),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('create the player\n  a person\n  temperament duty over fear\n\n  Me.\n').filter(
+        (e) => e.code === 'analysis.character-line-player',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('an empty define block and a malformed pair line each error at parse', () => {
+    expect(
+      errorsOf('define temperament hollow\nend temperament\n').filter((e) => e.code === 'parse.temperament-empty'),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('define temperament odd\n  duty above fear\nend temperament\n').filter(
+        (e) => e.code === 'parse.temperament-pair',
+      ),
+    ).toHaveLength(1);
+  });
+});
+
+describe('ADR-318 D4/D5 — principles, obligations, codes', () => {
+  it('never-lines land as infinitive categories; scope and except resolve (the Housekeeper shape)', () => {
+    const result = compileStory(
+      'create the Children\n  a person\n\n  Them.\n\ncreate the Housekeeper\n  a person, very loyal\n  never lies, except to protect the Children\n  protects the Children\n\n  Her.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const hk = result.ir.entities.find((e) => e.id === 'housekeeper')!;
+    expect(hk.character?.principles.map((p) => ({ category: p.category, except: p.except }))).toEqual([
+      { category: 'lie', except: { kind: 'protect', scope: { kind: 'entity', value: 'children' } } },
+    ]);
+    expect(hk.character?.obligations).toMatchObject([{ kind: 'protects', scope: { kind: 'entity', value: 'children' } }]);
+  });
+
+  it('multi-word categories longest-match their third-person surface', () => {
+    const result = compileStory(
+      'create the Witness\n  a person\n  never betrays a confidence\n  never breaks a promise\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const witness = result.ir.entities.find((e) => e.id === 'witness')!;
+    expect(witness.character?.principles.map((p) => p.category)).toEqual(['betray a confidence', 'break a promise']);
+  });
+
+  it('harms takes anyone/classifier/entity scopes; a plain except is the object carve-out', () => {
+    const result = compileStory(
+      'create the Duke\n  a person\n\n  Him.\n\ncreate the Bodyguard\n  a person\n  never harms a servant\n  never abandons the Duke\n  never steals, except the Duke\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const guard = result.ir.entities.find((e) => e.id === 'bodyguard')!;
+    expect(guard.character?.principles).toMatchObject([
+      { category: 'harm', scope: { kind: 'classifier', value: 'servant' } },
+      { category: 'abandon', scope: { kind: 'entity', value: 'duke' } },
+      { category: 'steal', except: { kind: 'object', scope: { kind: 'entity', value: 'duke' } } },
+    ]);
+  });
+
+  it('`answers honestly` is its own obligation word', () => {
+    const result = compileStory('create the Vicar\n  a person\n  answers honestly\n\n  Him.\n');
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const vicar = result.ir.entities.find((e) => e.id === 'vicar')!;
+    expect(vicar.character?.obligations).toMatchObject([{ kind: 'answers honestly' }]);
+    expect(vicar.character?.principles).toEqual([]);
+  });
+
+  it('a code flattens before bare lines and never reaches the wire', () => {
+    const result = compileStory(
+      'define code servants-code\n  never betrays a confidence\n  never steals\n  protects the Household\nend code\n\ncreate the Household\n  a person\n\n  Them.\n\ncreate the Butler\n  a person\n  code servants-code\n  never lies\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const butler = result.ir.entities.find((e) => e.id === 'butler')!;
+    expect(butler.character?.principles.map((p) => p.category)).toEqual(['betray a confidence', 'steal', 'lie']);
+    expect(butler.character?.obligations).toMatchObject([{ kind: 'protects', scope: { kind: 'entity', value: 'household' } }]);
+    expect(JSON.stringify(result.ir).includes('servants-code')).toBe(false);
+  });
+
+  it('an unknown category surface errors with the third-person vocabulary', () => {
+    const errors = errorsOf('create Tobias\n  a person\n  never gossips\n\n  A man.\n');
+    const unknown = errors.filter((e) => e.code === 'analysis.unknown-act-category');
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('betrays a confidence');
+    expect(unknown[0].message).toContain('trespasses');
+  });
+
+  it('scope on a scopeless category errors', () => {
+    expect(
+      errorsOf('create the Duke\n  a person\n\n  Him.\n\ncreate Tobias\n  a person\n  never lies the Duke\n\n  A man.\n').filter(
+        (e) => e.code === 'analysis.principle-scope',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('an unknown code, a duplicate code, and duplicate lines each error', () => {
+    expect(
+      errorsOf('create Tobias\n  a person\n  code servants-code\n\n  A man.\n').filter(
+        (e) => e.code === 'analysis.unknown-code',
+      ),
+    ).toHaveLength(1);
+    expect(
+      errorsOf(
+        'define code oath\n  never lies\nend code\n\ndefine code oath\n  never steals\nend code\n',
+      ).filter((e) => e.code === 'analysis.duplicate-code'),
+    ).toHaveLength(1);
+    expect(
+      errorsOf(
+        'define code oath\n  never lies\nend code\n\ncreate Tobias\n  a person\n  code oath\n  never lies\n\n  A man.\n',
+      ).filter((e) => e.code === 'analysis.principle-duplicate'),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('create Tobias\n  a person\n  answers honestly\n  answers honestly\n\n  A man.\n').filter(
+        (e) => e.code === 'analysis.obligation-duplicate',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('principle lines on a non-person gate; an empty or malformed code block errors at parse', () => {
+    expect(
+      errorsOf('create the Lantern\n  never lies\n\n  A lantern.\n').filter(
+        (e) => e.code === 'analysis.character-line-person-only',
+      ),
+    ).toHaveLength(1);
+    expect(errorsOf('define code hollow\nend code\n').filter((e) => e.code === 'parse.code-empty')).toHaveLength(1);
+    expect(
+      errorsOf('define code odd\n  goal flee, low\nend code\n').filter((e) => e.code === 'parse.code-line'),
+    ).toHaveLength(1);
+  });
+});
+
+describe('ADR-318 D7 — honor', () => {
+  it('`honor before <scope>` binds the full platform bundle (the Colonel shape)', () => {
+    const result = compileStory(
+      'create the Regiment\n  a person\n\n  Them.\n\ncreate the Colonel\n  a person, vain\n  honor before the Regiment\n  temperament honor over fear\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const colonel = result.ir.entities.find((e) => e.id === 'colonel')!;
+    expect(colonel.character?.honor).toMatchObject({
+      scope: { kind: 'entity', value: 'regiment' },
+      except: [],
+      faceActs: ['backs down', 'shows fear', 'admits fault', 'pleads', 'accepts insult', 'caught lying'],
+    });
+  });
+
+  it('a named bundle binds its subset; the def never reaches the wire; except lists entities', () => {
+    const result = compileStory(
+      'define honor soldiers-honor\n  backs down\n  shows fear\nend honor\n\ncreate the Duke\n  a person\n\n  Him.\n\ncreate the Sergeant\n  a person\n  honor soldiers-honor before anyone, except the Duke\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const sergeant = result.ir.entities.find((e) => e.id === 'sergeant')!;
+    expect(sergeant.character?.honor).toMatchObject({
+      scope: { kind: 'anyone' },
+      except: ['duke'],
+      faceActs: ['backs down', 'shows fear'],
+    });
+    expect(JSON.stringify(result.ir).includes('soldiers-honor')).toBe(false);
+  });
+
+  it('a classifier scope resolves (`honor before a servant`)', () => {
+    const result = compileStory('create the Master\n  a person\n  honor before a servant\n\n  Him.\n');
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const master = result.ir.entities.find((e) => e.id === 'master')!;
+    expect(master.character?.honor?.scope).toEqual({ kind: 'classifier', value: 'servant' });
+  });
+
+  it('an unknown face-act, a duplicate face-act, and a duplicate bundle each error', () => {
+    const unknown = errorsOf('define honor odd\n  faints\nend honor\n').filter(
+      (e) => e.code === 'analysis.unknown-face-act',
+    );
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('backs down');
+    expect(
+      errorsOf('define honor odd\n  backs down\n  backs down\nend honor\n').filter(
+        (e) => e.code === 'analysis.face-act-duplicate',
+      ),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('define honor odd\n  pleads\nend honor\n\ndefine honor odd\n  backs down\nend honor\n').filter(
+        (e) => e.code === 'analysis.duplicate-honor',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('an unknown bundle reference and a second honor line each error', () => {
+    const unknown = errorsOf(
+      'define honor soldiers-honor\n  backs down\nend honor\n\ncreate Tobias\n  a person\n  honor soldier-honor before anyone\n\n  A man.\n',
+    ).filter((e) => e.code === 'analysis.unknown-honor');
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('soldiers-honor');
+    expect(
+      errorsOf('create Tobias\n  a person\n  honor before anyone\n  honor before anyone\n\n  A man.\n').filter(
+        (e) => e.code === 'analysis.honor-duplicate',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('honor on a non-person gates; a missing `before` and an empty bundle error at parse', () => {
+    expect(
+      errorsOf('create the Lantern\n  honor before anyone\n\n  A lantern.\n').filter(
+        (e) => e.code === 'analysis.character-line-person-only',
+      ),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('create Tobias\n  a person\n  honor the Regiment\n\n  A man.\n').filter(
+        (e) => e.code === 'parse.honor-before',
+      ),
+    ).toHaveLength(1);
+    expect(errorsOf('define honor hollow\nend honor\n').filter((e) => e.code === 'parse.honor-empty')).toHaveLength(1);
+  });
+});
+
+describe('ADR-318 D8/D4 — burdened by, confided, band predicates', () => {
+  it('`confided` rides the knows comma slot (the Witness shape)', () => {
+    const result = compileStory(
+      'create the Witness\n  a person\n  knows the secret, witnessed, confided\n  never betrays a confidence\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const witness = result.ir.entities.find((e) => e.id === 'witness')!;
+    expect(witness.character?.knows).toMatchObject([{ topic: 'secret', source: 'witnessed', confided: true }]);
+  });
+
+  it('`burdened by` a held topic lands; slot order stays free', () => {
+    const result = compileStory(
+      'create the Penitent\n  a person\n  knows the accident, confided, witnessed\n  burdened by the accident\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const penitent = result.ir.entities.find((e) => e.id === 'penitent')!;
+    expect(penitent.character?.burdenedBy).toEqual(['accident']);
+    expect(penitent.character?.knows[0]).toMatchObject({ confided: true, source: 'witnessed' });
+  });
+
+  it('band words gate conditions and goal activation (`active when it is breaking`)', () => {
+    const result = compileStory(
+      'create the Chapel\n  a room\n\n  A chapel.\n\ncreate the Penitent\n  a person\n  knows the accident, witnessed\n  burdened by the accident\n  goal confess, critical\n    active when it is breaking\n    move to the Chapel\n  end goal\n\n  Him.\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const penitent = result.ir.entities.find((e) => e.id === 'penitent')!;
+    const goal = penitent.character?.goals[0];
+    expect(goal?.activeWhen).toMatchObject({ kind: 'predicate', pred: 'is', object: { kind: 'symbol', name: 'breaking' } });
+  });
+
+  it('two character-scoped books split on different band words are provably exclusive (D16)', () => {
+    const result = compileStory(
+      'create the Steward\n  a person\n  knows the crime, witnessed\n\n  Him.\n\ndefine phrasebook steward-calm while the Steward is clear\n  greeting: Fine day.\nend phrasebook\n\ndefine phrasebook steward-strained while the Steward is burdened\n  greeting: What do you want.\nend phrasebook\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.ir.phrasebooks.map((b) => b.specificity)).toEqual(['character', 'character']);
+  });
+
+  it('`burdened by` an unheld topic and a duplicate each error', () => {
+    const unheld = errorsOf('create Tobias\n  a person\n  burdened by the accident\n\n  A man.\n').filter(
+      (e) => e.code === 'analysis.burdened-unheld',
+    );
+    expect(unheld).toHaveLength(1);
+    expect(unheld[0].message).toContain('knows');
+    expect(
+      errorsOf(
+        'create Tobias\n  a person\n  knows the accident, witnessed\n  burdened by the accident\n  burdened by the accident\n\n  A man.\n',
+      ).filter((e) => e.code === 'analysis.burdened-duplicate'),
+    ).toHaveLength(1);
+  });
+
+  it('`confided` on a thinks line and a duplicate confided each error', () => {
+    expect(
+      errorsOf(
+        'define fact the killer\n  the Master, nobody\nend fact\n\ncreate the Master\n  a person\n\n  Him.\n\ncreate Tobias\n  a person\n  thinks the killer is nobody, confided\n\n  A man.\n',
+      ).filter((e) => e.code === 'analysis.unknown-thinks-slot'),
+    ).toHaveLength(1);
+    expect(
+      errorsOf('create Tobias\n  a person\n  knows the secret, witnessed, confided, confided\n\n  A man.\n').filter(
+        (e) => e.code === 'analysis.knows-slot-duplicate',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('a malformed burdened line errors at parse', () => {
+    expect(
+      errorsOf('create Tobias\n  a person\n  burdened with guilt\n\n  A man.\n').filter(
+        (e) => e.code === 'parse.burdened-by',
+      ),
+    ).toHaveLength(1);
+  });
+});
+
+describe('ADR-318 D9/D12a — claims tags and witnessed-act aliases', () => {
+  const STEWARD_FACTS =
+    'define fact the killer\n  the Master, nobody\nend fact\n\ncreate the Master\n  a person\n\n  Him.\n\n';
+
+  it('a claims tag lands on the phrase with the canonical value (the Steward shape)', () => {
+    const result = compileStory(
+      STEWARD_FACTS +
+        'define phrase steward-truth, claims the killer is the Master\n  He did it.\nend phrase\n\ndefine phrase steward-alibi, claims the killer is nobody\n  No one did.\nend phrase\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const phrases = result.ir.phrases.locales['en-US'];
+    expect(phrases['steward-truth'].claims).toEqual({ factId: 'killer', value: 'master' });
+    expect(phrases['steward-alibi'].claims).toEqual({ factId: 'killer', value: 'nobody' });
+  });
+
+  it('claims composes with a strategy slot; a line without the tag carries nothing', () => {
+    const result = compileStory(
+      STEWARD_FACTS +
+        'define phrase steward-dodge, cycling, claims the killer is nobody\n  Not me.\n  or\n  Ask another.\nend phrase\n\ndefine phrase steward-weather\n  Fine day.\nend phrase\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const phrases = result.ir.phrases.locales['en-US'];
+    expect(phrases['steward-dodge'].strategy).toBe('cycling');
+    expect(phrases['steward-dodge'].claims).toEqual({ factId: 'killer', value: 'nobody' });
+    expect(phrases['steward-weather'].claims).toBeUndefined();
+  });
+
+  it('a claims value outside the fact set and an unknown fact each error', () => {
+    const outside = errorsOf(
+      STEWARD_FACTS + 'define phrase steward-wild, claims the killer is somebody\n  Them!\nend phrase\n',
+    );
+    expect(outside.filter((e) => e.code === 'analysis.unknown-claim-value')).toHaveLength(1);
+    expect(
+      errorsOf('define phrase p, claims the weapon is a knife\n  A knife.\nend phrase\n').filter(
+        (e) => e.code === 'analysis.unknown-fact',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('a witnessed face-act aliases at story level (the Colonel shape)', () => {
+    const result = compileStory(
+      'create the Colonel\n  a person\n\n  Him.\n\ndefine topic the Colonel backs down as the-colonels-shame\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.ir.witnessedTopics).toEqual([
+      expect.objectContaining({ actor: 'colonel', act: 'backs down', alias: 'the-colonels-shame' }),
+    ]);
+  });
+
+  it('an act-category surface aliases with the infinitive on the wire', () => {
+    const result = compileStory(
+      'create the Steward\n  a person\n\n  Him.\n\ndefine topic the Steward breaks a promise as the-broken-oath\n',
+    );
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.ir.witnessedTopics?.[0]).toMatchObject({ actor: 'steward', act: 'break a promise' });
+  });
+
+  it('no detectable act, a duplicate alias, and a second alias for a pair each error', () => {
+    const noAct = errorsOf(
+      'create the Colonel\n  a person\n\n  Him.\n\ndefine topic the Colonel sneezes as the-sneeze\n',
+    ).filter((e) => e.code === 'analysis.unknown-witnessed-act');
+    expect(noAct).toHaveLength(1);
+    expect(noAct[0].message).toContain('backs down');
+    expect(
+      errorsOf(
+        'create the Colonel\n  a person\n\n  Him.\n\ndefine topic the Colonel backs down as shame\ndefine topic the Colonel pleads as shame\n',
+      ).filter((e) => e.code === 'analysis.duplicate-witnessed-alias'),
+    ).toHaveLength(1);
+    expect(
+      errorsOf(
+        'create the Colonel\n  a person\n\n  Him.\n\ndefine topic the Colonel backs down as shame\ndefine topic the Colonel backs down as disgrace\n',
+      ).filter((e) => e.code === 'analysis.witnessed-duplicate'),
+    ).toHaveLength(1);
+  });
+
+  it('a malformed alias line errors at parse; no declarations leaves the field absent', () => {
+    expect(
+      errorsOf('create the Colonel\n  a person\n\n  Him.\n\ndefine topic the Colonel backs down\n').filter(
+        (e) => e.code === 'parse.topic-alias',
+      ),
+    ).toHaveLength(1);
+    const bare = compileStory('create Tobias\n  a person\n\n  A man.\n');
+    expect('witnessedTopics' in bare.ir).toBe(false);
+  });
+});
+
+describe('ADR-318 D8 — unknown band word in a predicate', () => {
+  it('a near-band typo errors with the band words in the offered vocabulary', () => {
+    const errors = errorsOf(
+      'create Tobias\n  a person\n  knows the accident, witnessed\n  goal confess, low\n    active when it is burdned\n    move to Tobias\n  end goal\n\n  A man.\n',
+    );
+    const unknown = errors.filter((e) => e.code === 'analysis.unknown-value');
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].message).toContain('burdened');
+  });
+});

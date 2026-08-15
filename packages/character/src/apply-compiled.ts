@@ -12,9 +12,20 @@
  * Owner context: @sharpee/character
  */
 
-import type { IFEntity, CognitiveProfile, DispositionWord, FactSource, ConfidenceWord, MoodModifier } from '@sharpee/world-model';
+import type {
+  IFEntity,
+  CognitiveProfile,
+  DispositionWord,
+  FactSource,
+  ConfidenceWord,
+  MoodModifier,
+  ActCategory,
+  FaceAct,
+  Force,
+  TemperamentDef,
+} from '@sharpee/world-model';
 import { MOOD_AXES, applyMoodModifier } from '@sharpee/world-model';
-import type { IRCharacter, IRGoalStep, IRMoodDef, IRWordDef } from '@sharpee/chord';
+import type { IRCharacter, IRGoalStep, IRMoodDef, IRWordDef, IRScopeRef, IRTemperamentDef } from '@sharpee/chord';
 import { CharacterBuilder } from './character-builder.js';
 import { applyCharacter, AppliedCharacter } from './apply.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
@@ -52,6 +63,37 @@ function buildVocabulary(ctx?: CompiledCharacterContext): VocabularyExtension | 
     ext.definePersonality(word.name);
   }
   return ext;
+}
+
+/**
+ * Canonical trait-side spelling of a wire scope ref (ADR-318 D4/D7):
+ * `anyone` / `a <classifier>` / the entity id — the resists-except idiom.
+ */
+function scopeToString(scope: IRScopeRef): string {
+  switch (scope.kind) {
+    case 'anyone':
+      return 'anyone';
+    case 'classifier':
+      return `a ${scope.value}`;
+    case 'entity':
+      return scope.value;
+  }
+}
+
+/**
+ * Map compiled `define temperament` defs (plus the compiler's synthesized
+ * inline/override defs) to the arbiter's registry shape — the loader hands
+ * the result to ArbiterContext.temperamentDefs at load (ADR-318 D3).
+ *
+ * @param defs - StoryIR.temperaments
+ * @returns name → TemperamentDef record
+ */
+export function temperamentDefsFrom(defs: readonly IRTemperamentDef[]): Record<string, TemperamentDef> {
+  const out: Record<string, TemperamentDef> = {};
+  for (const def of defs) {
+    out[def.name] = { name: def.name, pairs: def.pairs.map(([a, b]) => [a, b] as [Force, Force]) };
+  }
+  return out;
 }
 
 /** Map one compiled goal step to the builder-native GoalStep shape. */
@@ -172,6 +214,34 @@ export function applyCompiledCharacter(
           except: [r.exceptFrom.kind === 'classifier' ? `from a ${r.exceptFrom.value}` : `from ${r.exceptFrom.value}`],
         }
       : undefined);
+  }
+
+  // Normative layer (ADR-318). Scopes and excepts canonicalize to the
+  // resists-except string idiom; the runtime interprets them at the
+  // arbitration seam (Phases 5-6), never here.
+  for (const t of data.temperaments) {
+    builder.temperament(t.name, t.while !== undefined ? { while: t.while } : undefined);
+  }
+  for (const p of data.principles) {
+    builder.never(p.category as ActCategory, {
+      ...(p.scope !== undefined ? { scope: scopeToString(p.scope) } : {}),
+      ...(p.except !== undefined
+        ? { except: p.except.kind === 'protect' ? `to protect ${scopeToString(p.except.scope)}` : scopeToString(p.except.scope) }
+        : {}),
+    });
+  }
+  for (const o of data.obligations) {
+    if (o.kind === 'protects') builder.protects(scopeToString(o.scope!));
+    else builder.answersHonestly();
+  }
+  if (data.honor !== undefined) {
+    builder.honor(scopeToString(data.honor.scope), {
+      faceActs: data.honor.faceActs as FaceAct[],
+      ...(data.honor.except.length > 0 ? { except: [...data.honor.except] } : {}),
+    });
+  }
+  for (const topic of data.burdenedBy) {
+    builder.burdenedBy(topic);
   }
 
   return applyCharacter(entity, builder.compile());

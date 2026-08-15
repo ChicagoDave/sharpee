@@ -5,8 +5,9 @@
  * (`repokit manifest --check`, run by `repokit verify` and the platform
  * build) fails the build on drift.
  *
- * The descriptive character vocabulary the analyzer gates ADR-310 D2-D5/
- * D14 constructs against at compile time. Data only — chord stays
+ * The character vocabulary the analyzer gates ADR-310 D2-D5/D14
+ * (descriptive) and ADR-318 D3-D9 (normative) constructs against at
+ * compile time. Data only — chord stays
  * platform-FREE. These word lists are frozen author-facing compatibility
  * surface (freeze review: David, 2026-08-15 — docs/work/adr-310/
  * contracts.md §6): removing a word breaks stories, additions stay possible.
@@ -42,6 +43,16 @@ export interface CharacterManifest {
   influenceModes: readonly string[];
   /** Influence ranges (the `influence` header, ADR-310 D9). */
   influenceRanges: readonly string[];
+  /** The five arbiter forces (`<force> over <force>` temperament pairs, ADR-318 D1/D3). */
+  forces: readonly string[];
+  /** Act categories principle lines gate (`never <category>`, ADR-318 D4) — some are multi-word. */
+  actCategories: readonly string[];
+  /** Obligation words (`protects <scope>` / `answers honestly`, ADR-318 D4/D5). */
+  obligationWords: readonly string[];
+  /** Face-acts — the closed honor vocabulary (`honor before <scope>` / `define honor`, ADR-318 D7). */
+  faceActs: readonly string[];
+  /** Conscience pressure bands in monotonic order (predicate vocabulary, ADR-318 D8). */
+  pressureBands: readonly string[];
   /** The five cognitive dimensions (kebab spelling) and their closed value sets (ADR-310 D4). */
   cognitiveDimensions: Readonly<Record<string, readonly string[]>>;
   /** Profile presets (ADR-310 D5 behavioral names) — preset name → dimension (kebab) → value. */
@@ -62,6 +73,11 @@ export const CHARACTER_MANIFEST: CharacterManifest = {
   goalPriorities: ["critical", "high", "medium", "low"],
   influenceModes: ["passive", "active"],
   influenceRanges: ["proximity", "targeted", "room"],
+  forces: ["fear", "desire", "duty", "honor", "love"],
+  actCategories: ["betray a confidence", "lie", "harm", "steal", "break a promise", "abandon", "trespass"],
+  obligationWords: ["protects", "answers honestly"],
+  faceActs: ["backs down", "shows fear", "admits fault", "pleads", "accepts insult", "caught lying"],
+  pressureBands: ["clear", "burdened", "breaking"],
   cognitiveDimensions: {
     "perception": ["accurate", "filtered", "augmented"],
     "belief-formation": ["flexible", "rigid", "resistant"],

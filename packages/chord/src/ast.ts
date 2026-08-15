@@ -279,6 +279,10 @@ export type Declaration =
   | DefineTopics
   // ADR-310 D14 valued-belief fact declarations:
   | DefineFact
+  | DefineTemperament
+  | DefineCode
+  | DefineHonor
+  | DefineWitnessedTopic
   // ADR-310 D4 named cognitive profiles:
   | DefineProfile
   // ADR-310 D5 custom vocabulary (Option 2, David 2026-08-15):
@@ -562,6 +566,92 @@ export interface CreateDecl {
   influences: InfluenceDecl[];
   /** `resists <influence>[, except from <ref>]` lines (ADR-310 D9). */
   resists: ResistsDecl[];
+  /** `temperament …` binding lines (ADR-318 D3/D7). */
+  temperaments: TemperamentDecl[];
+  /** `never <category> [scope][, except …]` principle lines (ADR-318 D4). */
+  nevers: NeverDecl[];
+  /** `protects <scope>` / `answers honestly` obligation lines (ADR-318 D4/D5). */
+  obligations: ObligationLineDecl[];
+  /** `code <name>` bundle references (ADR-318 D4) — union with the bare lines. */
+  codes: Array<{ name: string; span: Span }>;
+  /** `honor [<name>] before <scope>[, except …]` lines (ADR-318 D7) — at most one is legal (analyzer gate). */
+  honors: HonorLineDecl[];
+  /** `burdened by <topic>` pre-story conscience seeds (ADR-318 D8) — the topic must be held (analyzer gate). */
+  burdens: Array<{ topic: NameRef; span: Span }>;
+  span: Span;
+}
+
+/**
+ * One `honor` line (ADR-318 D7): the full face-act bundle (`honor before
+ * the regiment`) or a named selective bundle (`honor soldiers-honor before
+ * anyone`). Audience scope reuses the D9/D10 grammar; `except` lists
+ * entities (the spreads idiom).
+ */
+export interface HonorLineDecl {
+  /** The `define honor` bundle name; null = the full platform bundle. */
+  name: string | null;
+  scope: ScopeRefDecl;
+  except: NameRef[];
+  span: Span;
+}
+
+/**
+ * One `never …` principle line (ADR-318 D4). Pre-comma words are raw —
+ * the category longest-match (third-person surface against the manifest's
+ * infinitives) and the trailing scope are the analyzer's gates, so the
+ * parser stays vocabulary-free.
+ */
+export interface NeverDecl {
+  words: Array<{ word: string; span: Span }>;
+  except: ExceptClauseDecl | null;
+  span: Span;
+}
+
+/**
+ * `, except [to protect] <scope>` (ADR-318 D4/D6 — exp-02's collision
+ * carve-out). With `to protect`, the principle yields to the obligation
+ * protecting that scope; without, the act's object in scope is exempt.
+ */
+export interface ExceptClauseDecl {
+  protect: boolean;
+  scope: ScopeRefDecl;
+  span: Span;
+}
+
+/** A scope reference (ADR-310 D9/D10 grammar): `anyone`, a classifier, or an entity. */
+export type ScopeRefDecl =
+  | { kind: 'anyone'; span: Span }
+  | { kind: 'ref'; ref: NameRef };
+
+/** One obligation line (ADR-318 D4/D5): `protects <scope>` or `answers honestly`. */
+export interface ObligationLineDecl {
+  kind: 'protects' | 'answers-honestly';
+  /** Present for `protects`; null for `answers honestly`. */
+  scope: ScopeRefDecl | null;
+  span: Span;
+}
+
+/**
+ * One `temperament` line on a create block (ADR-318 D3/D7): a named
+ * reference with optional pair overrides (`temperament steadfast with
+ * desire over fear while resolute`) or an inline anonymous ordering
+ * (`temperament honor over fear`). Word resolution, the override fold,
+ * and the same-state tie are the analyzer's gates.
+ */
+export interface TemperamentDecl {
+  /** The referenced `define temperament` name; null for an inline ordering. */
+  name: string | null;
+  /** Inline pairs, or `with` override pairs on a named reference. */
+  pairs: ForcePairDecl[];
+  /** `while <state>` binding; null = unconditional. */
+  while: { word: string; span: Span } | null;
+  span: Span;
+}
+
+/** One `<force> over <force>` ordering pair (ADR-318 D3) — force words resolve in the analyzer. */
+export interface ForcePairDecl {
+  first: { word: string; span: Span };
+  second: { word: string; span: Span };
   span: Span;
 }
 
@@ -704,6 +794,57 @@ export interface DefineMood {
 export interface DefinePersonality {
   kind: 'define-personality';
   name: string;
+  span: Span;
+}
+
+/**
+ * `define code <name> … end code` (ADR-318 D4): a named principle bundle.
+ * Body lines are `never …` and obligation lines; `code <name>` on a create
+ * block unions the bundle with the block's bare lines. Codes flatten at
+ * compile time — they never reach the wire.
+ */
+export interface DefineCode {
+  kind: 'define-code';
+  name: string;
+  nevers: NeverDecl[];
+  obligations: ObligationLineDecl[];
+  span: Span;
+}
+
+/**
+ * `define topic <actor> <act> as <alias>` (ADR-318 D12a): names a
+ * mechanically-minted witnessed-act topic. One line, no body. Words before
+ * `as` are raw — the actor/act split (longest act-surface suffix) is the
+ * analyzer's gate.
+ */
+export interface DefineWitnessedTopic {
+  kind: 'define-witnessed-topic';
+  words: Array<{ word: string; span: Span }>;
+  alias: string;
+  span: Span;
+}
+
+/**
+ * `define honor <name> … end honor` (ADR-318 D7): a named selective
+ * face-act bundle — one face-act per body line, raw words (resolution is
+ * the analyzer's gate). The ladder rung above `honor before <scope>`.
+ */
+export interface DefineHonor {
+  kind: 'define-honor';
+  name: string;
+  faceActs: Array<{ words: Array<{ word: string; span: Span }>; span: Span }>;
+  span: Span;
+}
+
+/**
+ * `define temperament <name> … end temperament` (ADR-318 D3): a named
+ * force ordering. Body lines are `<force> over <force>` pairs; force
+ * resolution is the analyzer's gate.
+ */
+export interface DefineTemperament {
+  kind: 'define-temperament';
+  name: string;
+  pairs: ForcePairDecl[];
   span: Span;
 }
 
@@ -887,7 +1028,18 @@ export interface DefineCondition {
   span: Span;
 }
 
-/** `define phrase <key>[, <strategy>|, verbatim] [while <condition>] … end phrase`. */
+/**
+ * `, claims <fact> is <value>` on a `define phrase` header (ADR-318 D9):
+ * the lie-ledger tag — what this line asserts, in checkable words. Fact
+ * and value resolve against `define fact` in the analyzer.
+ */
+export interface ClaimsTagDecl {
+  fact: NameRef;
+  value: NameRef;
+  span: Span;
+}
+
+/** `define phrase <key>[, <strategy>|, verbatim][, claims <fact> is <value>] [while <condition>] … end phrase`. */
 export interface DefinePhrase {
   kind: 'define-phrase';
   key: string;
@@ -895,6 +1047,8 @@ export interface DefinePhrase {
   strategy: string | null;
   /** Whitespace-preserving text (grammar log 2026-07-10); excludes strategies. */
   verbatim: boolean;
+  /** The ADR-318 D9 lie-ledger tag; null for a line that asserts nothing. */
+  claims: ClaimsTagDecl | null;
   /**
    * Trailing `while <condition>` header gate (Z2/CP1'): a presence condition
    * compiles to ADR-209 `mentions`; anything else registers on the ADR-211

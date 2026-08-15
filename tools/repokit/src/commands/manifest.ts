@@ -177,6 +177,11 @@ export function generateCharacterManifestModule(root: string): { source: string;
     FACT_SOURCES: readonly string[];
     RESISTANCE_MODES: readonly string[];
     COGNITIVE_DIMENSIONS: Readonly<Record<string, readonly string[]>>;
+    FORCES: readonly string[];
+    ACT_CATEGORIES: readonly string[];
+    OBLIGATION_WORDS: readonly string[];
+    FACE_ACTS: readonly string[];
+    PRESSURE_BANDS: readonly string[];
   };
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { COGNITIVE_PRESETS } = require(join(root, 'packages/character/dist/cognitive-presets.js')) as {
@@ -210,6 +215,11 @@ export function generateCharacterManifestModule(root: string): { source: string;
     ['goalPriorities', 'Goal priorities (`goal <name>, <priority>`, ADR-310 D8).', GOAL_PRIORITIES],
     ['influenceModes', 'Influence modes (the `influence` header, ADR-310 D9).', INFLUENCE_MODES],
     ['influenceRanges', 'Influence ranges (the `influence` header, ADR-310 D9).', INFLUENCE_RANGES],
+    ['forces', 'The five arbiter forces (`<force> over <force>` temperament pairs, ADR-318 D1/D3).', vocab.FORCES],
+    ['actCategories', 'Act categories principle lines gate (`never <category>`, ADR-318 D4) — some are multi-word.', vocab.ACT_CATEGORIES],
+    ['obligationWords', 'Obligation words (`protects <scope>` / `answers honestly`, ADR-318 D4/D5).', vocab.OBLIGATION_WORDS],
+    ['faceActs', 'Face-acts — the closed honor vocabulary (`honor before <scope>` / `define honor`, ADR-318 D7).', vocab.FACE_ACTS],
+    ['pressureBands', 'Conscience pressure bands in monotonic order (predicate vocabulary, ADR-318 D8).', vocab.PRESSURE_BANDS],
   ];
   const words = wordLists.reduce((n, [, , list]) => n + list.length, 0);
 
@@ -221,8 +231,9 @@ export function generateCharacterManifestModule(root: string): { source: string;
   lines.push(' * (`repokit manifest --check`, run by `repokit verify` and the platform');
   lines.push(' * build) fails the build on drift.');
   lines.push(' *');
-  lines.push(' * The descriptive character vocabulary the analyzer gates ADR-310 D2-D5/');
-  lines.push(' * D14 constructs against at compile time. Data only — chord stays');
+  lines.push(' * The character vocabulary the analyzer gates ADR-310 D2-D5/D14');
+  lines.push(' * (descriptive) and ADR-318 D3-D9 (normative) constructs against at');
+  lines.push(' * compile time. Data only — chord stays');
   lines.push(' * platform-FREE. These word lists are frozen author-facing compatibility');
   lines.push(' * surface (freeze review: David, 2026-08-15 — docs/work/adr-310/');
   lines.push(' * contracts.md §6): removing a word breaks stories, additions stay possible.');

@@ -31,7 +31,7 @@ export {
 } from './vocabulary-extension.js';
 
 export { applyCharacter, type AppliedCharacter } from './apply.js';
-export { applyCompiledCharacter, type CompiledCharacterContext } from './apply-compiled.js';
+export { applyCompiledCharacter, temperamentDefsFrom, type CompiledCharacterContext } from './apply-compiled.js';
 
 // Conversation system (ADR-142)
 export {

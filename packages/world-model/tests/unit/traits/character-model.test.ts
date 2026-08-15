@@ -26,6 +26,11 @@ import {
   CONFIDENCE_WORDS,
   RESISTANCE_MODES,
   COGNITIVE_DIMENSIONS,
+  FORCES,
+  ACT_CATEGORIES,
+  OBLIGATION_WORDS,
+  FACE_ACTS,
+  PRESSURE_BANDS,
 } from '../../../src/traits/character-model/character-vocabulary';
 import { TraitType } from '../../../src/traits/trait-types';
 
@@ -157,6 +162,19 @@ describe('character-vocabulary', () => {
       expect(FACT_SOURCES).toHaveLength(5);
       expect(RESISTANCE_MODES).toHaveLength(3);
       expect(new Set(PERSONALITY_TRAITS).size).toBe(14);
+    });
+
+    it('normative arrays (ADR-318) carry the frozen list sizes', () => {
+      // Same rule as above: these unions have no Record to diff against;
+      // pin the frozen counts (contracts.md §6). Forces D1, act categories
+      // and obligations D4, face-acts D7, bands D8.
+      expect(FORCES).toEqual(['fear', 'desire', 'duty', 'honor', 'love']);
+      expect(ACT_CATEGORIES).toHaveLength(7);
+      expect(OBLIGATION_WORDS).toEqual(['protects', 'answers honestly']);
+      expect(FACE_ACTS).toHaveLength(6);
+      expect(PRESSURE_BANDS).toEqual(['clear', 'burdened', 'breaking']);
+      expect(new Set(ACT_CATEGORIES).size).toBe(7);
+      expect(new Set(FACE_ACTS).size).toBe(6);
     });
   });
 });

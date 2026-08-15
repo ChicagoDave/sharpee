@@ -6,7 +6,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": "a",
@@ -69,6 +71,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -88,6 +91,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "Room",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [
         {
           "action": "entering",
@@ -136,13 +141,16 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
     {
       "aka": [],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": "a",
@@ -205,6 +213,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -224,6 +233,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "Room",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [
         {
           "action": "entering",
@@ -312,13 +323,16 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
     {
       "aka": [],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [],
       "containing": [],
       "counters": [],
@@ -339,6 +353,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -357,6 +372,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "player",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": {
@@ -396,10 +413,12 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
     {
+      "claims": null,
       "condition": null,
       "key": "crossing-mutter",
       "kind": "define-phrase",
@@ -639,7 +658,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           },
         },
       ],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": "a",
@@ -726,6 +747,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       ],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -748,6 +770,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "House",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
@@ -764,6 +788,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
@@ -772,7 +797,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloakroom",
       ],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": "a",
@@ -809,6 +836,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -827,6 +855,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "Cloakroom",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
@@ -843,6 +873,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
@@ -851,7 +882,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "bar",
       ],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": "a",
@@ -956,6 +989,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -975,6 +1009,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "Bar",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [
         {
           "action": "entering",
@@ -1106,13 +1142,16 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
     {
       "aka": [],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [],
       "containing": [],
       "counters": [],
@@ -1133,6 +1172,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -1151,6 +1191,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "player",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": {
@@ -1193,6 +1235,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [
         {
@@ -1216,7 +1259,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloak",
       ],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": null,
@@ -1253,6 +1298,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -1272,6 +1318,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "cloak",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
@@ -1288,6 +1336,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
@@ -1297,7 +1346,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "peg",
       ],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": null,
@@ -1363,6 +1414,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -1382,6 +1434,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "hook",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [],
       "phraseOverrides": [],
       "placement": {
@@ -1420,6 +1474,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },
@@ -1431,7 +1486,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "writing",
       ],
       "blockedExits": [],
+      "burdens": [],
       "carries": [],
+      "codes": [],
       "compositions": [
         {
           "article": null,
@@ -1457,6 +1514,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "exits": [],
       "feels": [],
       "goals": [],
+      "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
@@ -1478,6 +1536,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "sawdust",
         ],
       },
+      "nevers": [],
+      "obligations": [],
       "onClauses": [
         {
           "action": "reading",
@@ -1703,6 +1763,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         },
       ],
       "statesReversible": false,
+      "temperaments": [],
       "thinks": [],
       "wears": [],
     },

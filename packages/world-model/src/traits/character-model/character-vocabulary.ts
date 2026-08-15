@@ -560,6 +560,8 @@ export interface ObligationDecl {
 /** Honor declaration: audience scope plus the face-acts it binds on (ADR-318 D7). */
 export interface HonorDecl {
   scope: string;
+  /** `except <entities>` audience carve-out — entity ids (D9/D10 scope grammar). */
+  except?: string[];
   faceActs: FaceAct[];
 }
 

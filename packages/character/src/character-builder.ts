@@ -30,6 +30,13 @@ import {
   type PerceivedEvent,
   type CharacterPredicate,
   type ICharacterModelData,
+  type ActCategory,
+  type FaceAct,
+  FACE_ACTS,
+  type TemperamentBinding,
+  type PrincipleDecl,
+  type ObligationDecl,
+  type HonorDecl,
 } from '@sharpee/world-model';
 import { COGNITIVE_PRESETS, CognitivePresetName, isCognitivePreset } from './cognitive-presets.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
@@ -200,6 +207,11 @@ export class CharacterBuilder {
   private readonly _influenceDefs: InfluenceDef[] = [];
   private readonly _resistanceDefs: ResistanceDef[] = [];
   private _activeInfluenceBuilder?: InfluenceBuilder<CharacterBuilder>;
+  private readonly _temperaments: TemperamentBinding[] = [];
+  private readonly _principles: PrincipleDecl[] = [];
+  private readonly _obligations: ObligationDecl[] = [];
+  private _honor?: HonorDecl;
+  private readonly _burdenedBy: string[] = [];
 
   /**
    * Create a new character builder.
@@ -605,6 +617,100 @@ export class CharacterBuilder {
     return this;
   }
 
+  // =========================================================================
+  // Normative layer (ADR-318)
+  // =========================================================================
+
+  /**
+   * Bind a named temperament — a force ordering (ADR-318 D3). Static when
+   * `while` is absent; state-bound otherwise. Never directly mutated: the
+   * entity-state ratchet is the only lever.
+   *
+   * @param name - The temperament definition's name (defs are story data,
+   *   registered with the arbiter at load)
+   * @param opts - `while`: the entity state that makes this binding live
+   * @returns this for chaining
+   */
+  temperament(name: string, opts?: { while?: string }): CharacterBuilder {
+    this._temperaments.push({ name, ...(opts?.while !== undefined ? { while: opts.while } : {}) });
+    return this;
+  }
+
+  /**
+   * Declare a principle — `never <category>` (ADR-318 D4). Feeds duty at a
+   * strong fixed baseline; a temperament is what makes it unconditional.
+   *
+   * @param category - An act category the runtime can detect
+   * @param opts - `scope`: canonical scope string (`anyone` / `a <kind>` /
+   *   entity id — `harm`/`abandon` only); `except`: canonical carve-out
+   *   (`to protect <scope>` yields to that obligation; a bare scope exempts
+   *   the act's object)
+   * @returns this for chaining
+   */
+  never(category: ActCategory, opts?: { scope?: string; except?: string }): CharacterBuilder {
+    this._principles.push({
+      category,
+      ...(opts?.scope !== undefined ? { scope: opts.scope } : {}),
+      ...(opts?.except !== undefined ? { except: opts.except } : {}),
+    });
+    return this;
+  }
+
+  /**
+   * Declare the `protects <scope>` obligation (ADR-318 D5) — compiles to a
+   * standing goal with a duty feed at load; recorded on the trait so the
+   * author channel can attribute it.
+   *
+   * @param scope - Canonical scope string (`anyone` / `a <kind>` / entity id)
+   * @returns this for chaining
+   */
+  protects(scope: string): CharacterBuilder {
+    this._obligations.push({ kind: 'protects', scope });
+    return this;
+  }
+
+  /**
+   * Declare the `answers honestly` obligation (ADR-318 D4) — the dual of
+   * `lie`: evasion satisfies `never lies` but violates this.
+   *
+   * @returns this for chaining
+   */
+  answersHonestly(): CharacterBuilder {
+    this._obligations.push({ kind: 'answers honestly' });
+    return this;
+  }
+
+  /**
+   * Declare honor before an audience (ADR-318 D7). Binds on audience
+   * PRESENCE — honor sees the room, never anticipated reputation.
+   *
+   * @param scope - Canonical audience scope string
+   * @param opts - `faceActs`: a selective bundle (default: the full
+   *   platform six); `except`: audience carve-out entity ids
+   * @returns this for chaining
+   */
+  honor(scope: string, opts?: { faceActs?: FaceAct[]; except?: string[] }): CharacterBuilder {
+    this._honor = {
+      scope,
+      faceActs: opts?.faceActs ? [...opts.faceActs] : [...FACE_ACTS],
+      ...(opts?.except && opts.except.length > 0 ? { except: [...opts.except] } : {}),
+    };
+    return this;
+  }
+
+  /**
+   * Seed pre-story conscience pressure (ADR-318 D8) — `burdened by` a held
+   * topic. States are declarable; curves are runtime-owned.
+   *
+   * @param topic - A topic this character `knows` (checked at compile/load,
+   *   not here)
+   * @returns this for chaining
+   */
+  burdenedBy(topic: string): CharacterBuilder {
+    this._burdenedBy.push(topic);
+    return this;
+  }
+
   /** @internal Finalize any pending influence builder. */
   private _finalizePendingInfluenceBuilder(): void {
     if (this._activeInfluenceBuilder) {
@@ -698,6 +804,13 @@ export class CharacterBuilder {
       currentLucidityState: this._lucidityConfig?.baseline,
       perceptionFilters: this._perceptionFilters,
       perceivedEvents,
+      // Normative layer (ADR-318) — present only when declared, so a
+      // character without the layer costs zero fields.
+      ...(this._temperaments.length > 0 ? { temperaments: this._temperaments.map((t) => ({ ...t })) } : {}),
+      ...(this._principles.length > 0 ? { principles: this._principles.map((p) => ({ ...p })) } : {}),
+      ...(this._obligations.length > 0 ? { obligations: this._obligations.map((o) => ({ ...o })) } : {}),
+      ...(this._honor !== undefined ? { honor: { ...this._honor, faceActs: [...this._honor.faceActs] } } : {}),
+      ...(this._burdenedBy.length > 0 ? { burdenedBy: [...this._burdenedBy] } : {}),
     };
 
     // Collect custom predicates

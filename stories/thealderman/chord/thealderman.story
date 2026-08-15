@@ -9,8 +9,33 @@ story
 ## This file grows with the implementation the way Fernhill grew alongside
 ## Chord: Phase 3 lands the DESCRIPTIVE layer below (translated from
 ## src/npcs/index.ts, the ConversationBuilder reference implementation);
-## Phase 4 adds the normative layer; Phase 6 completes the port (topics,
+## Phase 4 adds the normative layer (ADR-318, translated from the docs/
+## design.md psychology sections); Phase 6 completes the port (topics,
 ## response chains, scenes, phrases) and retires the TS builder.
+##
+## Translation rules (Phase 4 — source: docs/design.md Psychology lines):
+## - A secret entrusted by Stephanie -> `confided` on the knows line
+##   (John's business arrangement; Catherine's knowledge of Viola, as
+##   executor and closest friend) + `never betrays a confidence`.
+## - "The family secret eats at her" (Viola) -> `burdened by half-sister`.
+## - "Cold, calculating, professional" (John) -> named temperament
+##   `professional` (duty over fear and desire).
+## - "Fiercely protective" (Catherine) -> inline `duty over fear`;
+##   protects Chelsea (maternal + the locket suspicion).
+## - "Loud, brash, dominates every room / underneath the bluster,
+##   genuinely terrified" (Jack) -> `honor before anyone` + inline
+##   `honor over fear` (D7's brazen-it-out shape).
+## - "Practiced liar... charm and wit as armor" (Viola) -> inline
+##   `desire over fear`.
+## - "Omits information out of fear, not malice" + honest (Chelsea) ->
+##   `never lies` WITHOUT `answers honestly` (evasion satisfies the
+##   principle — exactly ADR-318 D4's distinction).
+## - Ross carries no normative line: hot temper and fear rule him — the
+##   D2 intensity default IS his characterization.
+## - `claims` tags and `witnessed as` aliases wait for Phase 6: claims
+##   ride the response-chain phrases (`.lie()` lines) Phase 6 authors,
+##   and the randomized-killer structure needs David's call on which
+##   assertions are static.
 ##
 ## Translation rules (Phase 3):
 ## - `witnessed: true` knowledge -> `witnessed`; non-witnessed -> `told`
@@ -52,6 +77,11 @@ define mood composed like calm
 define mood concerned like anxious, but stiller
 define mood agitated like anxious, but restless
 define mood fearful like anxious, but darker
+
+define temperament professional
+  duty over fear
+  duty over desire
+end temperament
 
 ## --------------------------------------------------------------------- rooms
 
@@ -148,6 +178,8 @@ create Viola Wainright
   knows catherine-knows-secret, inferred, suspects
   cognitive-profile clear-headed
   spreads stephanie-death and hotel-gossip to trusted
+  temperament desire over fear
+  burdened by half-sister
 
   A striking woman in her mid-thirties with dark eyes and an actress's poise. Every gesture seems rehearsed.
 
@@ -162,10 +194,12 @@ create John Barber
   feels dislikes toward Jack Margolin
   feels devoted to Stephanie Bordeau
   knows stephanie-death, told, certain
-  knows business-arrangement, witnessed, certain
+  knows business-arrangement, witnessed, certain, confided
   knows enforcement-work, witnessed, certain
   cognitive-profile clear-headed
   spreads nothing
+  never betrays a confidence
+  temperament professional
 
   goal destroy-evidence, high
     active when it is not calm
@@ -195,13 +229,16 @@ create Catherine Shelby
   feels wary of John Barber
   knows stephanie-death, told, certain
   knows executor-of-will, witnessed, certain
-  knows viola-half-sister, witnessed, certain
+  knows viola-half-sister, witnessed, certain, confided
   knows ross-at-bar, witnessed, certain
   knows jack-debts, told, suspects
   knows chelsea-locket, witnessed, suspects
   knows john-business, told, suspects
   cognitive-profile clear-headed
   spreads stephanie-death and ross-at-bar and jack-debts and chelsea-locket and john-business to anyone
+  never betrays a confidence
+  protects Chelsea Sumner
+  temperament duty over fear
 
   A handsome woman in her fifties with sharp eyes behind wire-rimmed spectacles. She moves through the restaurant like she owns it.
 
@@ -220,6 +257,8 @@ create Jack Margolin
   knows hotel-deed, witnessed, certain
   cognitive-profile clear-headed
   spreads stephanie-death to anyone
+  honor before anyone
+  temperament honor over fear
 
   influence bullying, active, targeted
     makes mood nervous
@@ -245,6 +284,7 @@ create Chelsea Sumner
   knows catherine-knows-truth, inferred, suspects
   cognitive-profile clear-headed
   spreads stephanie-death to trusted
+  never lies
 
   goal seek-truth, high
     seek Catherine Shelby in the Restaurant
