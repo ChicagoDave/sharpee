@@ -281,11 +281,24 @@ pre-existing near-miss, unchanged by this work, noted for the review.
 
 `VocabularyExtension.defineCustomMood(name, { valence, arousal })` and
 `defineCustomPersonality(name)` already exist. The contract: Chord's
-`define mood` / `define personality` (exact grammar is Phase 3 work) lowers
-to these two calls, and custom words join the same compile-time vocabulary
-check as platform words. Numbers appear nowhere in Chord source — a custom
-mood is placed by *nearest platform mood* (`define mood haunted like grieving
-but restless` — final syntax Phase 3), never by raw valence/arousal.
+`define mood` / `define personality` lowers to these two calls, and custom
+words join the same compile-time vocabulary check as platform words.
+Numbers appear nowhere in Chord source.
+
+**Final syntax (Option 2 — David, 2026-08-15, session ff8983):**
+
+- `define personality <name>` — one line, no body; intensity words compose
+  as usual.
+- `define mood <name> like <mood>[, but <modifier>]` — anchored at a
+  PLATFORM mood's coordinates (custom anchors disallowed), optionally
+  nudged ONE axis by a closed modifier word: `restless` / `stiller`
+  (energy up/down), `darker` / `brighter` (outlook down/up). The four
+  modifier words join the frozen vocabulary (§6); the nudge step sizes are
+  runtime-owned (`applyMoodModifier`, world-model).
+
+The earlier sketch's free-word modifier (`but restless` with `restless`
+unchecked) was rejected as uncheckable; a mood far from every anchor is a
+platform-list conversation, not a syntax one.
 
 ## 8. What Phase 1 removes
 

@@ -29,8 +29,19 @@ export type PersonalityTrait =
   | 'generous' | 'vain' | 'devout' | 'impulsive'
   | 'remorseful' | 'untroubled';
 
+/** All personality traits, for vocabulary export and iteration (ADR-310 D2). */
+export const PERSONALITY_TRAITS: readonly PersonalityTrait[] = [
+  'honest', 'loyal', 'cowardly', 'paranoid',
+  'cruel', 'cunning', 'curious', 'stubborn',
+  'generous', 'vain', 'devout', 'impulsive',
+  'remorseful', 'untroubled',
+];
+
 /** Intensity modifiers for personality traits. */
 export type Intensity = 'slightly' | 'somewhat' | 'very' | 'extremely';
+
+/** All intensity words, for vocabulary export and iteration (excludes the internal `bare` step). */
+export const INTENSITY_WORDS: readonly Intensity[] = ['slightly', 'somewhat', 'very', 'extremely'];
 
 /** A personality expression: bare trait or intensity-qualified. */
 export type PersonalityExpr = PersonalityTrait | `${Intensity} ${PersonalityTrait}`;
@@ -72,6 +83,12 @@ export function parsePersonalityExpr(expr: PersonalityExpr): [PersonalityTrait, 
 export type DispositionWord =
   | 'despises' | 'hates' | 'dislikes' | 'wary of'
   | 'neutral' | 'likes' | 'trusts' | 'devoted to';
+
+/** All disposition words, for vocabulary export and iteration (ADR-310 D3). */
+export const DISPOSITION_WORDS: readonly DispositionWord[] = [
+  'despises', 'hates', 'dislikes', 'wary of',
+  'neutral', 'likes', 'trusts', 'devoted to',
+];
 
 /** Internal numeric ranges for each disposition word. */
 export const DISPOSITION_RANGES: Record<DispositionWord, { min: number; max: number; midpoint: number }> = {
@@ -128,6 +145,15 @@ export type Mood =
   | 'sad' | 'grieving'
   | 'suspicious' | 'confused' | 'resigned';
 
+/** All platform mood words, for vocabulary export and iteration (ADR-310 D3). */
+export const MOODS: readonly Mood[] = [
+  'calm', 'content', 'cheerful',
+  'nervous', 'anxious', 'panicked',
+  'angry', 'furious',
+  'sad', 'grieving',
+  'suspicious', 'confused', 'resigned',
+];
+
 /**
  * Internal valence-arousal coordinates for each mood.
  * Valence: -1 (negative) to +1 (positive).
@@ -148,6 +174,42 @@ export const MOOD_AXES: Record<Mood, { valence: number; arousal: number }> = {
   'confused':   { valence: -0.2,  arousal: 0.3 },
   'resigned':   { valence: -0.4,  arousal: 0.1 },
 };
+
+/**
+ * Mood nudge modifiers (ADR-310 D5 custom-mood syntax — Option 2, David
+ * 2026-08-15): `define mood <name> like <mood>, but <modifier>`. Each
+ * shifts ONE axis a fixed runtime-owned step from the anchor mood.
+ */
+export type MoodModifier = 'restless' | 'stiller' | 'darker' | 'brighter';
+
+/** All mood modifiers, for vocabulary export and iteration. */
+export const MOOD_MODIFIERS: readonly MoodModifier[] = ['restless', 'stiller', 'darker', 'brighter'];
+
+/**
+ * Apply a mood modifier's fixed nudge to valence-arousal coordinates.
+ * The step sizes are runtime-owned (numbers never appear in Chord);
+ * results clamp to the axes' ranges.
+ *
+ * @param axes - The anchor mood's coordinates
+ * @param modifier - The nudge word
+ * @returns Nudged, clamped coordinates
+ */
+export function applyMoodModifier(
+  axes: { valence: number; arousal: number },
+  modifier: MoodModifier,
+): { valence: number; arousal: number } {
+  const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+  switch (modifier) {
+    case 'restless':
+      return { valence: axes.valence, arousal: clamp(axes.arousal + 0.25, 0, 1) };
+    case 'stiller':
+      return { valence: axes.valence, arousal: clamp(axes.arousal - 0.25, 0, 1) };
+    case 'darker':
+      return { valence: clamp(axes.valence - 0.3, -1, 1), arousal: axes.arousal };
+    case 'brighter':
+      return { valence: clamp(axes.valence + 0.3, -1, 1), arousal: axes.arousal };
+  }
+}
 
 /**
  * Find the closest mood word to a valence-arousal coordinate.
@@ -179,6 +241,11 @@ export function nearestMood(valence: number, arousal: number): Mood {
  */
 export type ThreatLevel =
   | 'safe' | 'uneasy' | 'wary' | 'threatened' | 'cornered' | 'desperate';
+
+/** All threat words, for vocabulary export and iteration. */
+export const THREAT_LEVELS: readonly ThreatLevel[] = [
+  'safe', 'uneasy', 'wary', 'threatened', 'cornered', 'desperate',
+];
 
 /** Maps threat words to internal 0-100 values. */
 export const THREAT_VALUES: Record<ThreatLevel, number> = {
@@ -248,6 +315,20 @@ export interface CognitiveProfile {
   selfModel: SelfModel;
 }
 
+/**
+ * The five cognitive dimensions and their closed value sets, keyed by the
+ * Chord (kebab-case) dimension spelling (ADR-310 D4). Data mirror of the
+ * dimension types above, for vocabulary export and iteration; the TS-side
+ * camelCase field names live on CognitiveProfile.
+ */
+export const COGNITIVE_DIMENSIONS: Readonly<Record<string, readonly string[]>> = {
+  'perception': ['accurate', 'filtered', 'augmented'],
+  'belief-formation': ['flexible', 'rigid', 'resistant'],
+  'coherence': ['focused', 'drifting', 'fragmented'],
+  'lucidity': ['stable', 'fluctuating', 'episodic'],
+  'self-model': ['intact', 'uncertain', 'fractured'],
+};
+
 /** Default stable cognitive profile. */
 export const STABLE_COGNITIVE_PROFILE: Readonly<CognitiveProfile> = {
   perception: 'accurate',
@@ -264,8 +345,18 @@ export const STABLE_COGNITIVE_PROFILE: Readonly<CognitiveProfile> = {
 /** How the NPC acquired a piece of knowledge. */
 export type FactSource = 'witnessed' | 'told' | 'inferred' | 'assumed' | 'hallucinated';
 
+/** All fact sources, for vocabulary export and iteration (ADR-310 D3). */
+export const FACT_SOURCES: readonly FactSource[] = [
+  'witnessed', 'told', 'inferred', 'assumed', 'hallucinated',
+];
+
 /** How confident the NPC is in a piece of knowledge. */
 export type ConfidenceWord = 'uncertain' | 'suspects' | 'believes' | 'certain';
+
+/** All confidence words, in ascending order (ADR-310 D14). */
+export const CONFIDENCE_WORDS: readonly ConfidenceWord[] = [
+  'uncertain', 'suspects', 'believes', 'certain',
+];
 
 /** Maps confidence words to internal 0-1 values. */
 export const CONFIDENCE_VALUES: Record<ConfidenceWord, number> = {
@@ -277,6 +368,9 @@ export const CONFIDENCE_VALUES: Record<ConfidenceWord, number> = {
 
 /** How resistant a held topic or belief is to counter-evidence. */
 export type ResistanceMode = 'none' | 'reinterprets' | 'ignores';
+
+/** All resistance modes, for vocabulary export and iteration. */
+export const RESISTANCE_MODES: readonly ResistanceMode[] = ['none', 'reinterprets', 'ignores'];
 
 /**
  * A single valueless fact in the NPC's knowledge base (`knows`).

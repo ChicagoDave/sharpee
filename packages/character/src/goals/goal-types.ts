@@ -9,6 +9,7 @@
  */
 
 import type { GoalRuntimeState } from '@sharpee/world-model';
+import type { IRCondition } from '@sharpee/chord';
 
 // ---------------------------------------------------------------------------
 // Priority
@@ -16,6 +17,9 @@ import type { GoalRuntimeState } from '@sharpee/world-model';
 
 /** Goal priority levels. */
 export type GoalPriority = 'critical' | 'high' | 'medium' | 'low';
+
+/** All goal priorities, for vocabulary export and iteration (ADR-310 D8). */
+export const GOAL_PRIORITIES: readonly GoalPriority[] = ['critical', 'high', 'medium', 'low'];
 
 /** Maps priority words to numeric values for sorting. */
 export const GOAL_PRIORITY_VALUES: Record<GoalPriority, number> = {
@@ -64,6 +68,13 @@ export interface AcquireStep extends StepBase {
 export interface WaitForStep extends StepBase {
   type: 'waitFor';
   conditions: string[];
+  /**
+   * Compiled-story condition (ADR-310 Phase 3): a Chord `wait for` step
+   * carries its structured IRCondition here; `conditions` strings are the
+   * TS-builder surface. The step evaluator learns this form with the
+   * Phase 5 loader wiring.
+   */
+  conditionCompiled?: IRCondition;
 }
 
 /** Go to a specific location. */
@@ -121,6 +132,14 @@ export interface GoalDef {
 
   /** Predicate conditions that activate this goal. */
   activatesWhen: string[];
+  /**
+   * Compiled-story activation condition (ADR-310 Phase 3): a Chord
+   * `active when` line carries its structured IRCondition here;
+   * `activatesWhen` strings are the TS-builder surface. Absent BOTH ways
+   * means always active. The activation evaluator learns this form with
+   * the Phase 5 loader wiring.
+   */
+  activeWhenCompiled?: IRCondition;
 
   /** Predicate conditions that interrupt (suspend) this goal. */
   interruptedBy?: string[];

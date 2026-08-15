@@ -123,6 +123,38 @@ export interface StoryIR {
   pronounSets: IRPronounSetDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
+  /**
+   * `define fact` declarations (ADR-310 D14) — closed value sets the
+   * compiler checked `thinks` lines against and the loader re-checks at
+   * load; act detection reads them at runtime (a claim's value lives in a
+   * fact's set). Additive and optional — absent when the story declares
+   * none.
+   */
+  facts?: IRFactDef[];
+  /**
+   * `define mood` declarations (ADR-310 D5, Option 2) — the loader lowers
+   * each to a custom-mood registration (anchor coordinates + nudge, all
+   * runtime-owned numbers). Additive and optional.
+   */
+  customMoods?: IRMoodDef[];
+  /** `define personality` declarations (ADR-310 D5). Additive and optional. */
+  customPersonalities?: IRWordDef[];
+}
+
+/** A `define mood <name> like <mood>[, but <modifier>]` declaration (ADR-310 D5). */
+export interface IRMoodDef {
+  name: string;
+  /** The platform anchor mood. */
+  like: string;
+  /** The nudge modifier word, if any. */
+  but?: string;
+  span: Span;
+}
+
+/** A bare custom vocabulary word declaration (`define personality watchful`). */
+export interface IRWordDef {
+  name: string;
+  span: Span;
 }
 
 /**
@@ -254,6 +286,181 @@ export interface IREntity {
    * fuzzy; a miss falls to the owner's `on asking it` catch-all (D5).
    */
   topics: IRTopicRow[];
+  /**
+   * The declared character model (ADR-310) — present exactly when the
+   * `create` block carries at least one character construct (D7: a person
+   * with no character line compiles exactly as today, no model attached).
+   */
+  character?: IRCharacter;
+  span: Span;
+}
+
+/**
+ * A person entity's declared character model (ADR-310 D2–D5, D14). The
+ * invariant of the shape: WORDS as written, never numbers — the word→value
+ * mapping is @sharpee/character's at load time, so the wire carries exactly
+ * what the author said. Personality words never join parser vocabulary
+ * (D2); nothing here may reach player-facing text (D12). Goal, influence,
+ * and propagation declarations (D8–D10) join this shape with their grammar.
+ */
+export interface IRCharacter {
+  /** Personality adjectives (D2), in declaration order. */
+  personality: IRPersonalityEntry[];
+  /** Starting mood word (`mood nervous`, D3); absent = runtime default. */
+  mood?: string;
+  /** `feels <disposition> toward <entity>` lines (D3; any entity — NPC-to-NPC included, D14). */
+  feels: IRFeelsEntry[];
+  /** `knows <topic>, <source>` valueless held topics (D3). */
+  knows: IRKnowsEntry[];
+  /** `thinks <fact> is <value>, …` valued beliefs (D14). */
+  thinks: IRThinksEntry[];
+  /**
+   * Resolved-COMPLETE cognitive profile (D4) — all five dimensions, kebab
+   * keys. Named profiles and partial overrides are inlined at compile time
+   * (a profile is always complete at compile time, so `define profile`
+   * blocks never reach the wire). Absent = the platform default.
+   */
+  profile?: Record<string, string>;
+  /** `spreads …` propagation declaration (D10); absent = the runtime default. */
+  spreads?: IRSpreads;
+  /** `goal` blocks (D8), in declaration order. */
+  goals: IRGoalDef[];
+  /** `influence` blocks (D9) — defined on the exerter. */
+  influences: IRInfluenceDef[];
+  /** `resists` lines (D9) — resistance on the target, joined to an influence by name. */
+  resists: IRResistsEntry[];
+}
+
+/** A `goal` block (ADR-310 D8): named, prioritized, an ordered step sequence. */
+export interface IRGoalDef {
+  /** The author's goal name (kebab word) — unique per entity. */
+  id: string;
+  /** Priority word (critical / high / medium / low). */
+  priority: string;
+  /** `active when` — re-evaluated each NPC turn; null = always active. */
+  activeWhen: IRCondition | null;
+  steps: IRGoalStep[];
+  span: Span;
+}
+
+/** One goal step (ADR-310 D8) — verbs per ADR-145's step types; entity refs resolved. */
+export type IRGoalStep =
+  | { kind: 'seek'; target: string; in?: string; span: Span }
+  | { kind: 'acquire'; target: string; span: Span }
+  | { kind: 'wait-for'; condition: IRCondition; span: Span }
+  | { kind: 'move-to'; target: string; span: Span }
+  | { kind: 'act'; phraseKey: string; span: Span }
+  | { kind: 'say'; phraseKey: string; target?: string; span: Span }
+  | { kind: 'give'; item: string; target: string; span: Span }
+  | { kind: 'drop'; item: string; in?: string; span: Span };
+
+/**
+ * An `influence` block (ADR-310 D9), defined on the exerter. Effect axes
+ * carry vocabulary words (`focus: 'clouded'`, mood and threat words);
+ * `witnessed`/`resisted` are the author-written phrase keys (D12 — prose
+ * about an event, never a readout of state).
+ */
+export interface IRInfluenceDef {
+  /** Author-invented name — the join key `resists` refers to. */
+  name: string;
+  mode: string;
+  range: string;
+  effect: Record<string, string>;
+  witnessed?: string;
+  resisted?: string;
+  span: Span;
+}
+
+/** One `resists` line (ADR-310 D9) on the target. */
+export interface IRResistsEntry {
+  influence: string;
+  /**
+   * `except from a woman` (classifier — article `a`/`an`) or `except from
+   * the Duke` (resolved entity ID). Absent = unconditional resistance.
+   */
+  exceptFrom?: { kind: 'classifier' | 'entity'; value: string };
+  span: Span;
+}
+
+/**
+ * A `spreads` propagation declaration (ADR-310 D10). `nothing` is `mute`
+ * said in English; the spreads form implies the chatty tendency, and its
+ * topic list (possibly empty = everything held) is the whitelist — listing
+ * IS selectivity.
+ */
+export type IRSpreads =
+  | { kind: 'nothing'; span: Span }
+  | {
+      kind: 'spreads';
+      /** Canonical topic strings (normalized like `knows` topics). */
+      topics: string[];
+      /** Audience word: trusted / anyone / allied. */
+      to: string;
+      /** `except <entities>` — resolved entity IDs. */
+      except: string[];
+      span: Span;
+    };
+
+/** One personality adjective (D2): trait word plus optional intensity word. */
+export interface IRPersonalityEntry {
+  trait: string;
+  /** Intensity word (`very`) as written; absent = the bare step. */
+  intensity?: string;
+  span: Span;
+}
+
+/** One `feels <disposition> toward <entity>` line (D3). */
+export interface IRFeelsEntry {
+  /** Disposition word — may be two words (`wary of`, `devoted to`). */
+  disposition: string;
+  /** Resolved entity ID of the disposition's object. */
+  target: string;
+  span: Span;
+}
+
+/** One `knows <topic>, <source>` line (D3) — a valueless held topic. */
+export interface IRKnowsEntry {
+  /** Canonical topic string (name words joined, article dropped). */
+  topic: string;
+  /** Fact source word (`witnessed`, `told`, …). */
+  source: string;
+  /** Confidence word; absent = the runtime default. */
+  confidence?: string;
+  /** The topic was received in confidence (ADR-318 D4 comma-slot marker). */
+  confided?: boolean;
+  span: Span;
+}
+
+/** One `thinks <fact> is <value>, <confidence>, <source>` line (D14). */
+export interface IRThinksEntry {
+  /** The `define fact` id this belief addresses. */
+  factId: string;
+  /** The believed value — canonical: an entity-name value is its resolved id; a plain word stays the word. */
+  value: string;
+  /** Confidence word; absent = the runtime default. */
+  confidence?: string;
+  /** Fact source word; absent = the runtime default. */
+  source?: string;
+  span: Span;
+}
+
+/**
+ * A `define fact` declaration (ADR-310 D14) — the closed value set that
+ * makes valued belief checkable: a `thinks` value outside the set is a
+ * compile error, in the same shape as an unknown personality word.
+ */
+export interface IRFactDef {
+  /** Canonical fact id (lowercased name words joined with `-`). Unique. */
+  id: string;
+  /** Display name without article. */
+  name: string;
+  /** Leading article as written (`the`), or null. */
+  article: string | null;
+  /**
+   * The closed value set, canonicalized: an entity-name value is the
+   * resolved entity ID; a non-entity word (`nobody`) stays the word.
+   */
+  values: string[];
   span: Span;
 }
 
@@ -451,6 +658,13 @@ export interface IRPhrasebook {
   condition: IRCondition | null;
   /** Present for 'define'; absent for 'use'. Keys are story keys (never dotted platform IDs). */
   entries?: Record<string, IRPhrase>;
+  /**
+   * ADR-310 D16: present (`'character'`) when the `while` gates on an
+   * entity's interior state (mood/threat `is`, `feels`, `knows`) — the
+   * loader's arbitration reads it: character-scoped beats story-scoped by
+   * total override; within a specificity, file order stays the rule.
+   */
+  specificity?: 'character';
   span: Span;
 }
 
@@ -841,6 +1055,10 @@ export type IRStatement =
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
+  /** `change mood to <word>` (ADR-310 D3) — the clause's `it` takes the mood. */
+  | { kind: 'change-mood'; mood: string; stmtWhen?: IRCondition | null; span: Span }
+  /** `change feeling toward <entity> to <disposition>` (ADR-310 D3) — `it` feels differently about the target. */
+  | { kind: 'change-feeling'; target: IRValue; disposition: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /** `remove <entity>` (Z6, ADR-213 Q3) — out of play via `world.removeEntity`; observers fire. */
   | { kind: 'remove'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
@@ -976,4 +1194,11 @@ export type IRCondition =
       op: 'gte' | 'gt' | 'lte' | 'lt' | 'eq';
       left: IRValue;
       right: IRValue;
-    };
+    }
+  /**
+   * `<subject> feels <disposition> toward <entity>` (ADR-310 D13) — the
+   * subject's disposition toward the target reads as the named word band.
+   */
+  | { kind: 'feels'; subject: IRValue; disposition: string; target: IRValue }
+  /** `<subject> knows <topic>` (ADR-310 D13) — the subject holds the topic. */
+  | { kind: 'knows-topic'; subject: IRValue; topic: string };

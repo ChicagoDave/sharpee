@@ -9,6 +9,7 @@
  */
 
 export {
+  PROPAGATION_AUDIENCES,
   type PropagationTendency,
   type PropagationAudience,
   type PropagationPace,

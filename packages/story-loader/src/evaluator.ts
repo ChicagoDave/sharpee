@@ -152,6 +152,14 @@ export class Evaluator {
       }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
+      case 'feels':
+      case 'knows-topic':
+        // ADR-310 D13 interior-state predicates: evaluation reads the
+        // character-model trait, which the Phase 5 loader wiring binds.
+        // No built story can carry these before that lands (the grammar
+        // shipped in the same plan), so refuse loudly rather than
+        // evaluate to a silent false.
+        throw new LoadError('Character conditions (`feels`, `knows`) are not wired into this runtime yet.');
       case 'compare': {
         // ADR-264 D3: numeric comparison of two values (a counter vs a number).
         const left = Number(this.evalValue(cond.left, ctx));

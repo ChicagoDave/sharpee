@@ -9,6 +9,8 @@
  */
 
 export {
+  INFLUENCE_MODES,
+  INFLUENCE_RANGES,
   type InfluenceMode,
   type InfluenceRange,
   type InfluenceDuration,

@@ -23,6 +23,9 @@ export type PropagationTendency = 'chatty' | 'mute';
 /** Who the NPC shares with. */
 export type PropagationAudience = 'trusted' | 'anyone' | 'allied';
 
+/** All propagation audiences, for vocabulary export and iteration (ADR-310 D10). */
+export const PROPAGATION_AUDIENCES: readonly PropagationAudience[] = ['trusted', 'anyone', 'allied'];
+
 /** How quickly the NPC shares when conditions are met. */
 export type PropagationPace = 'eager' | 'gradual' | 'reluctant';
 

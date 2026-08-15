@@ -9,6 +9,7 @@
  */
 
 export {
+  GOAL_PRIORITIES,
   type GoalPriority,
   type PursuitMode,
   type GoalStep,

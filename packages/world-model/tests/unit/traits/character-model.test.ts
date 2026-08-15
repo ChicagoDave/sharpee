@@ -17,6 +17,15 @@ import {
   THREAT_VALUES,
   CONFIDENCE_VALUES,
   STABLE_COGNITIVE_PROFILE,
+  PERSONALITY_TRAITS,
+  INTENSITY_WORDS,
+  DISPOSITION_WORDS,
+  MOODS,
+  THREAT_LEVELS,
+  FACT_SOURCES,
+  CONFIDENCE_WORDS,
+  RESISTANCE_MODES,
+  COGNITIVE_DIMENSIONS,
 } from '../../../src/traits/character-model/character-vocabulary';
 import { TraitType } from '../../../src/traits/trait-types';
 
@@ -95,6 +104,59 @@ describe('character-vocabulary', () => {
       expect(valueToThreat(85)).toBe('cornered');
       expect(valueToThreat(86)).toBe('desperate');
       expect(valueToThreat(100)).toBe('desperate');
+    });
+  });
+
+  // ADR-310 Phase 3: the runtime word arrays feed the generated Chord
+  // character manifest (`repokit manifest`). Each array must stay in
+  // lockstep with the value Record it mirrors — a word added to one side
+  // only would ship a vocabulary the compiler and runtime disagree on.
+  describe('vocabulary arrays (Chord manifest source)', () => {
+    it('INTENSITY_WORDS matches INTENSITY_VALUES keys (minus internal bare)', () => {
+      expect([...INTENSITY_WORDS].sort()).toEqual(
+        Object.keys(INTENSITY_VALUES).filter((w) => w !== 'bare').sort(),
+      );
+    });
+
+    it('DISPOSITION_WORDS matches DISPOSITION_RANGES keys', () => {
+      expect([...DISPOSITION_WORDS].sort()).toEqual(Object.keys(DISPOSITION_RANGES).sort());
+    });
+
+    it('MOODS matches MOOD_AXES keys', () => {
+      expect([...MOODS].sort()).toEqual(Object.keys(MOOD_AXES).sort());
+    });
+
+    it('THREAT_LEVELS matches THREAT_VALUES keys', () => {
+      expect([...THREAT_LEVELS].sort()).toEqual(Object.keys(THREAT_VALUES).sort());
+    });
+
+    it('CONFIDENCE_WORDS matches CONFIDENCE_VALUES keys', () => {
+      expect([...CONFIDENCE_WORDS].sort()).toEqual(Object.keys(CONFIDENCE_VALUES).sort());
+    });
+
+    it('COGNITIVE_DIMENSIONS covers the five profile dimensions with three values each', () => {
+      expect(Object.keys(COGNITIVE_DIMENSIONS).sort()).toEqual(
+        ['belief-formation', 'coherence', 'lucidity', 'perception', 'self-model'],
+      );
+      for (const values of Object.values(COGNITIVE_DIMENSIONS)) {
+        expect(values).toHaveLength(3);
+      }
+      // The default profile's values are all drawn from the declared sets
+      // (kebab key ↔ camelCase field, same order as the declaration).
+      expect(COGNITIVE_DIMENSIONS['perception']).toContain(STABLE_COGNITIVE_PROFILE.perception);
+      expect(COGNITIVE_DIMENSIONS['belief-formation']).toContain(STABLE_COGNITIVE_PROFILE.beliefFormation);
+      expect(COGNITIVE_DIMENSIONS['coherence']).toContain(STABLE_COGNITIVE_PROFILE.coherence);
+      expect(COGNITIVE_DIMENSIONS['lucidity']).toContain(STABLE_COGNITIVE_PROFILE.lucidity);
+      expect(COGNITIVE_DIMENSIONS['self-model']).toContain(STABLE_COGNITIVE_PROFILE.selfModel);
+    });
+
+    it('PERSONALITY_TRAITS, FACT_SOURCES, RESISTANCE_MODES carry the frozen list sizes', () => {
+      // Type-only unions have no Record to diff against; pin the frozen
+      // counts (contracts.md §6) so silent shrinkage fails loudly.
+      expect(PERSONALITY_TRAITS).toHaveLength(14);
+      expect(FACT_SOURCES).toHaveLength(5);
+      expect(RESISTANCE_MODES).toHaveLength(3);
+      expect(new Set(PERSONALITY_TRAITS).size).toBe(14);
     });
   });
 });

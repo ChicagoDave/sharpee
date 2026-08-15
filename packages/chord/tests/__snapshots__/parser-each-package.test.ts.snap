@@ -750,8 +750,13 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "text": "A barn with a ledger and strong opinions.",
       },
       "exits": [],
+      "feels": [],
+      "goals": [],
+      "influences": [],
       "initialDescription": null,
       "kind": "create",
+      "knows": [],
+      "moods": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -770,6 +775,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "phraseOverrides": [],
       "placement": null,
       "pronouns": [],
+      "resists": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -777,9 +783,11 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 50,
         "line": 46,
       },
+      "spreads": [],
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "thinks": [],
       "wears": [],
     },
     {
@@ -793,8 +801,13 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "deadlyExits": [],
       "description": null,
       "exits": [],
+      "feels": [],
+      "goals": [],
+      "influences": [],
       "initialDescription": null,
       "kind": "create",
+      "knows": [],
+      "moods": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -835,6 +848,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       },
       "pronouns": [],
+      "resists": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -842,9 +856,11 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 53,
         "line": 52,
       },
+      "spreads": [],
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "thinks": [],
       "wears": [],
     },
     {
@@ -858,8 +874,13 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "deadlyExits": [],
       "description": null,
       "exits": [],
+      "feels": [],
+      "goals": [],
+      "influences": [],
       "initialDescription": null,
       "kind": "create",
+      "knows": [],
+      "moods": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1110,6 +1131,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       },
       "pronouns": [],
+      "resists": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1117,6 +1139,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 59,
         "line": 55,
       },
+      "spreads": [],
       "startsStates": [],
       "states": [
         {
@@ -1139,6 +1162,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       ],
       "statesReversible": false,
+      "thinks": [],
       "wears": [],
     },
     {

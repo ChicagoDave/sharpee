@@ -335,13 +335,15 @@ export class CharacterBuilder {
    * Declare that the NPC knows about a topic (valueless — ADR-310 D14).
    *
    * @param topic - What the NPC knows about
-   * @param opts - Optional: how they know, how confident, and how resistant
-   *   to counter-evidence (the fold of the retired belief map)
+   * @param opts - Optional: how they know (`source` names any FactSource —
+   *   Chord parity for `knows the murder, told`; the `witnessed` boolean
+   *   is the older shorthand), how confident, and how resistant to
+   *   counter-evidence (the fold of the retired belief map)
    * @returns this for chaining
    */
-  knows(topic: string, opts?: { witnessed?: boolean; confidence?: ConfidenceWord; resistance?: ResistanceMode; confided?: boolean }): CharacterBuilder {
+  knows(topic: string, opts?: { witnessed?: boolean; source?: FactSource; confidence?: ConfidenceWord; resistance?: ResistanceMode; confided?: boolean }): CharacterBuilder {
     this._knowledge.set(topic, {
-      source: opts?.witnessed ? 'witnessed' : 'assumed',
+      source: opts?.source ?? (opts?.witnessed ? 'witnessed' : 'assumed'),
       confidence: opts?.confidence ?? 'believes',
       turn: 0,
       ...(opts?.resistance ? { resistance: opts.resistance } : {}),

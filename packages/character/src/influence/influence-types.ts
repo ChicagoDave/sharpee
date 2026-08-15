@@ -19,6 +19,9 @@
  */
 export type InfluenceMode = 'passive' | 'active';
 
+/** All influence modes, for vocabulary export and iteration (ADR-310 D9). */
+export const INFLUENCE_MODES: readonly InfluenceMode[] = ['passive', 'active'];
+
 /**
  * Who the influence affects.
  * - proximity: target must be in the same room
@@ -26,6 +29,9 @@ export type InfluenceMode = 'passive' | 'active';
  * - room: affects all entities in the room (aura)
  */
 export type InfluenceRange = 'proximity' | 'targeted' | 'room';
+
+/** All influence ranges, for vocabulary export and iteration (ADR-310 D9). */
+export const INFLUENCE_RANGES: readonly InfluenceRange[] = ['proximity', 'targeted', 'room'];
 
 /**
  * How long the effect lasts.

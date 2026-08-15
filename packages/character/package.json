@@ -20,7 +20,8 @@
   "dependencies": {
     "@sharpee/core": "workspace:*",
     "@sharpee/world-model": "workspace:*",
-    "@sharpee/stdlib": "workspace:*"
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/chord": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
