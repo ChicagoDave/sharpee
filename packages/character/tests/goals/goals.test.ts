@@ -51,8 +51,8 @@ describe('GoalManager — activation', () => {
     const trait = makeTrait({ threat: 'threatened' });
     manager.evaluate(trait);
 
-    expect(manager.isActive('eliminate-player')).toBe(true);
-    expect(manager.getTopGoal()?.def.id).toBe('eliminate-player');
+    expect(manager.isActive(trait, 'eliminate-player')).toBe(true);
+    expect(manager.getTopGoal(trait)?.def.id).toBe('eliminate-player');
   });
 
   it('should not activate a goal when predicates are not satisfied', () => {
@@ -67,7 +67,7 @@ describe('GoalManager — activation', () => {
     const trait = makeTrait({ threat: 'safe' });
     manager.evaluate(trait);
 
-    expect(manager.isActive('eliminate-player')).toBe(false);
+    expect(manager.isActive(trait, 'eliminate-player')).toBe(false);
   });
 
   it('should not double-activate an already active goal', () => {
@@ -83,7 +83,7 @@ describe('GoalManager — activation', () => {
     manager.evaluate(trait);
     manager.evaluate(trait);
 
-    expect(manager.getActiveGoals()).toHaveLength(1);
+    expect(manager.getActiveGoals(trait)).toHaveLength(1);
   });
 
   it('should sort active goals by priority', () => {
@@ -95,9 +95,8 @@ describe('GoalManager — activation', () => {
     ]);
 
     const trait = makeTrait({ threat: 'threatened' });
-    manager.evaluate(trait);
+    const goals = manager.evaluate(trait);
 
-    const goals = manager.getActiveGoals();
     expect(goals[0].def.id).toBe('eliminate-player');
     expect(goals[1].def.id).toBe('act-natural');
     expect(goals[2].def.id).toBe('hide-evidence');
@@ -121,15 +120,15 @@ describe('GoalManager — interruption', () => {
 
     const trait = makeTrait({ threat: 'threatened' });
     manager.evaluate(trait);
-    expect(manager.getTopGoal()?.def.id).toBe('eliminate-player');
+    expect(manager.getTopGoal(trait)?.def.id).toBe('eliminate-player');
 
     // Calm down → interrupt
     trait.setThreat('safe');
     manager.evaluate(trait);
 
     // Goal is still active but interrupted — getTopGoal skips it
-    expect(manager.isActive('eliminate-player')).toBe(true);
-    expect(manager.getTopGoal()).toBeUndefined();
+    expect(manager.isActive(trait, 'eliminate-player')).toBe(true);
+    expect(manager.getTopGoal(trait)).toBeUndefined();
   });
 
   it('should resume a goal when interruption clears and resumeOnClear is true', () => {
@@ -149,12 +148,12 @@ describe('GoalManager — interruption', () => {
     // Interrupt
     trait.setThreat('safe');
     manager.evaluate(trait);
-    expect(manager.getTopGoal()).toBeUndefined();
+    expect(manager.getTopGoal(trait)).toBeUndefined();
 
     // Resume
     trait.setThreat('threatened');
     manager.evaluate(trait);
-    expect(manager.getTopGoal()?.def.id).toBe('eliminate-player');
+    expect(manager.getTopGoal(trait)?.def.id).toBe('eliminate-player');
   });
 });
 
@@ -179,14 +178,14 @@ describe('GoalManager — step advancement', () => {
     const trait = makeTrait({ threat: 'threatened' });
     manager.evaluate(trait);
 
-    expect(manager.getTopGoal()!.currentStep).toBe(0);
+    expect(manager.getTopGoal(trait)!.state.currentStep).toBe(0);
 
-    manager.advanceStep('test-goal');
-    expect(manager.getTopGoal()!.currentStep).toBe(1);
+    manager.advanceStep(trait, 'test-goal');
+    expect(manager.getTopGoal(trait)!.state.currentStep).toBe(1);
 
-    manager.advanceStep('test-goal');
+    manager.advanceStep(trait, 'test-goal');
     // Goal completed and removed
-    expect(manager.isActive('test-goal')).toBe(false);
+    expect(manager.isActive(trait, 'test-goal')).toBe(false);
   });
 
   it('should switch prepared goal to opportunistic after steps complete', () => {
@@ -205,11 +204,11 @@ describe('GoalManager — step advancement', () => {
     manager.evaluate(trait);
 
     // Complete the prep step
-    manager.advanceStep('prepared-goal');
+    manager.advanceStep(trait, 'prepared-goal');
 
     // Goal should still be active, now in prepared state
-    expect(manager.isActive('prepared-goal')).toBe(true);
-    expect(manager.getTopGoal()!.prepared).toBe(true);
+    expect(manager.isActive(trait, 'prepared-goal')).toBe(true);
+    expect(manager.getTopGoal(trait)!.state.prepared).toBe(true);
   });
 });
 
@@ -224,7 +223,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'act', messageId: 'attack-player' }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ playerPresent: true }));
@@ -238,7 +237,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'act', messageId: 'attack-player' }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ playerPresent: false }));
@@ -253,7 +252,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'waitFor', conditions: ['threatened'] }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ trait }));
@@ -267,7 +266,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'waitFor', conditions: ['threatened'] }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ trait }));
@@ -280,7 +279,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'acquire', target: 'knife', witnessed: 'takes-knife' }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({
@@ -298,7 +297,7 @@ describe('evaluateGoalStep — sequential', () => {
         id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
         steps: [{ type: 'acquire', target: 'knife' }],
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({
@@ -322,7 +321,7 @@ describe('evaluateGoalStep — opportunistic', () => {
         actsWhen: ['cornered'],
         actMessageId: 'attack',
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ trait }));
@@ -337,7 +336,7 @@ describe('evaluateGoalStep — opportunistic', () => {
         actsWhen: ['cornered'],
         actMessageId: 'attack',
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({ trait, playerPresent: true }));
@@ -360,7 +359,7 @@ describe('evaluateGoalStep — prepared mode', () => {
         actsWhen: ['cornered'],
         actMessageId: 'attack',
       },
-      currentStep: 0, paused: false, interrupted: false, prepared: false,
+      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
     // Step 1: acquire — item not in room → waiting
@@ -375,8 +374,8 @@ describe('evaluateGoalStep — prepared mode', () => {
     expect(r2.status).toBe('completed');
 
     // Mark prepared after advancing past all steps
-    goal.currentStep = 1;
-    goal.prepared = true;
+    goal.state.currentStep = 1;
+    goal.state.prepared = true;
 
     // Now in opportunistic mode — wait for act conditions
     const r3 = evaluateGoalStep(goal, makeStepContext({ trait }));
@@ -491,11 +490,11 @@ describe('findNextRoom — BFS pathfinding', () => {
 });
 
 // ===========================================================================
-// GoalManager — serialization
+// Goal state persistence (ADR-310 D17 — rides the trait, not the manager)
 // ===========================================================================
 
-describe('GoalManager — serialization', () => {
-  it('should round-trip through toJSON/restoreState', () => {
+describe('Goal state — trait persistence', () => {
+  it('should resume mid-sequence from a trait JSON round-trip', () => {
     const manager = new GoalManager();
     const def: GoalDef = {
       id: 'test',
@@ -511,16 +510,66 @@ describe('GoalManager — serialization', () => {
 
     const trait = makeTrait({ threat: 'threatened' });
     manager.evaluate(trait);
-    manager.advanceStep('test'); // Move to step 1
+    manager.advanceStep(trait, 'test'); // Move to step 1
 
-    const serialized = manager.toJSON();
+    // Save/restore is a trait round-trip; a fresh manager only re-registers defs
+    const restoredTrait = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(trait)) as ICharacterModelData,
+    );
+    const restoredManager = new GoalManager();
+    restoredManager.registerGoal(def);
 
-    // Restore into new manager with same defs
-    const restored = new GoalManager();
-    restored.registerGoal(def);
-    restored.restoreState(serialized);
+    expect(restoredManager.isActive(restoredTrait, 'test')).toBe(true);
+    expect(restoredManager.getTopGoal(restoredTrait)!.state.currentStep).toBe(1);
+  });
 
-    expect(restored.isActive('test')).toBe(true);
-    expect(restored.getTopGoal()!.currentStep).toBe(1);
+  it('complete() deactivates and resets the trait state', () => {
+    const manager = new GoalManager();
+    manager.registerGoal({
+      id: 'test',
+      activatesWhen: ['threatened'],
+      priority: 'critical',
+      mode: 'sequential',
+      steps: [
+        { type: 'acquire', target: 'knife' },
+        { type: 'act', messageId: 'attack' },
+      ],
+    });
+
+    const trait = makeTrait({ threat: 'threatened' });
+    manager.evaluate(trait);
+    manager.advanceStep(trait, 'test'); // mid-sequence
+
+    manager.complete(trait, 'test');
+
+    expect(manager.isActive(trait, 'test')).toBe(false);
+    expect(trait.goalState['test']).toEqual({
+      active: false, currentStep: 0, paused: false, interrupted: false, prepared: false,
+    });
+  });
+
+  it('should reset pursuit state on completion so re-activation starts clean', () => {
+    const manager = new GoalManager();
+    manager.registerGoal({
+      id: 'test',
+      activatesWhen: ['threatened'],
+      priority: 'critical',
+      mode: 'sequential',
+      steps: [{ type: 'act', messageId: 'attack' }],
+    });
+
+    const trait = makeTrait({ threat: 'threatened' });
+    manager.evaluate(trait);
+    manager.advanceStep(trait, 'test'); // Completes the single-step goal
+
+    expect(manager.isActive(trait, 'test')).toBe(false);
+    expect(trait.goalState['test']).toEqual({
+      active: false, currentStep: 0, paused: false, interrupted: false, prepared: false,
+    });
+
+    // Conditions still hold → re-activates at step 0
+    manager.evaluate(trait);
+    expect(manager.isActive(trait, 'test')).toBe(true);
+    expect(trait.goalState['test'].currentStep).toBe(0);
   });
 });

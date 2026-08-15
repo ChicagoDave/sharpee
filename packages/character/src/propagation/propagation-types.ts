@@ -13,8 +13,12 @@
 // Vocabulary types
 // ---------------------------------------------------------------------------
 
-/** How freely the NPC shares information. */
-export type PropagationTendency = 'chatty' | 'selective' | 'mute';
+/**
+ * How freely the NPC shares information. `selective` is retired (ADR-310
+ * D10): listing what an NPC spreads IS selectivity — a non-empty `spreads`
+ * list narrows a chatty speaker to exactly those topics.
+ */
+export type PropagationTendency = 'chatty' | 'mute';
 
 /** Who the NPC shares with. */
 export type PropagationAudience = 'trusted' | 'anyone' | 'allied';
@@ -80,10 +84,10 @@ export interface PropagationProfile {
   /** NPC IDs explicitly excluded from sharing. */
   excludes?: string[];
 
-  /** Topics the chatty NPC withholds (blacklist for chatty tendency). */
+  /** Topics the chatty NPC withholds (blacklist). */
   withholds?: string[];
 
-  /** Topics the selective NPC will share (whitelist for selective tendency). */
+  /** Topics the NPC will share — a non-empty list is a whitelist (ADR-310 D10). */
   spreads?: string[];
 
   /** Per-fact overrides. */
@@ -130,60 +134,7 @@ export interface PropagationTransfer {
   witnessedOverride?: string;
 }
 
-/**
- * Tracks which facts an NPC has already told to each listener.
- * Prevents repeated sharing of the same fact to the same NPC.
- */
-export class AlreadyToldRecord {
-  /** speakerId → listenerId → Set of topic names */
-  private readonly records: Map<string, Map<string, Set<string>>> = new Map();
-
-  /**
-   * Check if a speaker has already told a listener about a topic.
-   */
-  hasTold(speakerId: string, listenerId: string, topic: string): boolean {
-    return this.records.get(speakerId)?.get(listenerId)?.has(topic) ?? false;
-  }
-
-  /**
-   * Record that a speaker told a listener about a topic.
-   */
-  record(speakerId: string, listenerId: string, topic: string): void {
-    let speakerRecord = this.records.get(speakerId);
-    if (!speakerRecord) {
-      speakerRecord = new Map();
-      this.records.set(speakerId, speakerRecord);
-    }
-    let listenerSet = speakerRecord.get(listenerId);
-    if (!listenerSet) {
-      listenerSet = new Set();
-      speakerRecord.set(listenerId, listenerSet);
-    }
-    listenerSet.add(topic);
-  }
-
-  /** Export for serialization. */
-  toJSON(): Record<string, Record<string, string[]>> {
-    const result: Record<string, Record<string, string[]>> = {};
-    for (const [speakerId, listenerMap] of this.records) {
-      result[speakerId] = {};
-      for (const [listenerId, topics] of listenerMap) {
-        result[speakerId][listenerId] = Array.from(topics);
-      }
-    }
-    return result;
-  }
-
-  /** Restore from serialized data. */
-  static fromJSON(data: Record<string, Record<string, string[]>>): AlreadyToldRecord {
-    const record = new AlreadyToldRecord();
-    for (const [speakerId, listeners] of Object.entries(data)) {
-      for (const [listenerId, topics] of Object.entries(listeners)) {
-        for (const topic of topics) {
-          record.record(speakerId, listenerId, topic);
-        }
-      }
-    }
-    return record;
-  }
-}
+// The AlreadyToldRecord service class is retired (ADR-310 D17): the
+// told-record now rides each speaker's CharacterModelTrait (`trait.told`,
+// `hasTold`/`recordTold`), so it serializes with the world and never lives
+// in module-level service state.

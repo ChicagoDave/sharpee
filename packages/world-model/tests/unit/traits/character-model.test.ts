@@ -113,14 +113,25 @@ describe('CharacterModelTrait', () => {
 
     it('should initialize with sensible defaults', () => {
       const trait = new CharacterModelTrait();
+      expect(trait.schemaVersion).toBe(1);
       expect(trait.personality).toEqual({});
       expect(trait.dispositions).toEqual({});
       expect(trait.getMood()).toBe('calm');
       expect(trait.getThreat()).toBe('safe');
       expect(trait.cognitiveProfile).toEqual(STABLE_COGNITIVE_PROFILE);
       expect(trait.knowledge).toEqual({});
-      expect(trait.beliefs).toEqual({});
+      expect(trait.factBeliefs).toEqual({});
+      expect(trait.told).toEqual({});
       expect(trait.goals).toEqual([]);
+      expect(trait.goalState).toEqual({});
+      expect(trait.influencesInForce).toEqual([]);
+      expect(trait.temperaments).toEqual([]);
+      expect(trait.principles).toEqual([]);
+      expect(trait.obligations).toEqual([]);
+      expect(trait.honor).toBeUndefined();
+      expect(trait.pressure).toEqual({ value: 0, band: 'clear' });
+      expect(trait.burdenedBy).toEqual([]);
+      expect(trait.ledger).toEqual([]);
       expect(trait.currentLucidityState).toBe('stable');
       expect(trait.lucidityWindowTurns).toBe(-1);
     });
@@ -133,7 +144,12 @@ describe('CharacterModelTrait', () => {
         threat: 'wary',
         cognitiveProfile: { perception: 'filtered', coherence: 'drifting' },
         knowledge: { murder: { source: 'witnessed', confidence: 'certain', turnLearned: 1 } },
-        beliefs: { 'lady-grey-innocent': { strength: 'believes', resistance: 'reinterprets' } },
+        factBeliefs: {
+          'the-killer': {
+            value: 'the-butler', confidence: 'believes', source: 'told',
+            turnLearned: 2, resistance: 'reinterprets',
+          },
+        },
         goals: [{ id: 'protect-lady-grey', priority: 10 }],
       };
       const trait = new CharacterModelTrait(data);
@@ -148,7 +164,8 @@ describe('CharacterModelTrait', () => {
       // Unspecified dimensions fall back to stable defaults
       expect(trait.cognitiveProfile.beliefFormation).toBe('flexible');
       expect(trait.knows('murder')).toBe(true);
-      expect(trait.hasBelief('lady-grey-innocent')).toBe(true);
+      expect(trait.hasFactBelief('the-killer')).toBe(true);
+      expect(trait.getFactBelief('the-killer')?.value).toBe('the-butler');
       expect(trait.hasGoal('protect-lady-grey')).toBe(true);
     });
 
@@ -329,26 +346,294 @@ describe('CharacterModelTrait', () => {
   });
 
   // =========================================================================
-  // Beliefs
+  // Valued beliefs (ADR-310 D14)
   // =========================================================================
 
-  describe('beliefs', () => {
-    it('should add and retrieve beliefs', () => {
+  describe('valued beliefs', () => {
+    it('should store what the character thinks a fact value is', () => {
       const trait = new CharacterModelTrait();
-      trait.addBelief('lady-grey-innocent', 'believes', 'reinterprets');
+      trait.setFactBelief('the-killer', {
+        value: 'the-colonel', confidence: 'certain', source: 'witnessed',
+        turnLearned: 3, resistance: 'none',
+      });
 
-      expect(trait.hasBelief('lady-grey-innocent')).toBe(true);
-      expect(trait.getBelief('lady-grey-innocent')).toEqual({
-        strength: 'believes',
-        resistance: 'reinterprets',
+      expect(trait.hasFactBelief('the-killer')).toBe(true);
+      expect(trait.getFactBelief('the-killer')).toEqual({
+        value: 'the-colonel', confidence: 'certain', source: 'witnessed',
+        turnLearned: 3, resistance: 'none',
       });
     });
 
-    it('should default resistance to none', () => {
+    it('should replace the whole belief when the character changes its mind', () => {
       const trait = new CharacterModelTrait();
-      trait.addBelief('earth-is-flat', 'certain');
+      trait.setFactBelief('the-killer', {
+        value: 'the-butler', confidence: 'suspects', source: 'told',
+        turnLearned: 1, resistance: 'none',
+      });
+      trait.setFactBelief('the-killer', {
+        value: 'nobody', confidence: 'believes', source: 'inferred',
+        turnLearned: 9, resistance: 'reinterprets',
+      });
 
-      expect(trait.getBelief('earth-is-flat')?.resistance).toBe('none');
+      expect(trait.getFactBelief('the-killer')).toEqual({
+        value: 'nobody', confidence: 'believes', source: 'inferred',
+        turnLearned: 9, resistance: 'reinterprets',
+      });
+    });
+
+    it('should let two traits disagree about the same fact', () => {
+      const maid = new CharacterModelTrait();
+      const cook = new CharacterModelTrait();
+      maid.setFactBelief('the-killer', {
+        value: 'the-colonel', confidence: 'certain', source: 'witnessed',
+        turnLearned: 1, resistance: 'none',
+      });
+      cook.setFactBelief('the-killer', {
+        value: 'the-butler', confidence: 'suspects', source: 'told',
+        turnLearned: 1, resistance: 'none',
+      });
+
+      expect(maid.getFactBelief('the-killer')?.value).toBe('the-colonel');
+      expect(cook.getFactBelief('the-killer')?.value).toBe('the-butler');
+    });
+
+    it('should carry folded resistance on valueless facts', () => {
+      const trait = new CharacterModelTrait();
+      trait.addFact('lady-grey-innocent', 'assumed', 'believes', 2, 'reinterprets');
+      trait.addFact('murder', 'witnessed', 'certain', 5);
+
+      expect(trait.getFact('lady-grey-innocent')?.resistance).toBe('reinterprets');
+      expect(trait.getFact('murder')?.resistance).toBeUndefined();
+    });
+  });
+
+  // =========================================================================
+  // Told-record (ADR-310 D10/D17)
+  // =========================================================================
+
+  describe('told-record', () => {
+    it('should record and report told topics per listener', () => {
+      const trait = new CharacterModelTrait();
+      trait.recordTold('npc-cook', 'murder');
+
+      expect(trait.hasTold('npc-cook', 'murder')).toBe(true);
+      expect(trait.hasTold('npc-cook', 'weapon')).toBe(false);
+      expect(trait.hasTold('npc-maid', 'murder')).toBe(false);
+      expect(trait.told['npc-cook']).toEqual(['murder']);
+    });
+
+    it('should be idempotent for repeat tells', () => {
+      const trait = new CharacterModelTrait();
+      trait.recordTold('npc-cook', 'murder');
+      trait.recordTold('npc-cook', 'murder');
+
+      expect(trait.told['npc-cook']).toEqual(['murder']);
+    });
+  });
+
+  // =========================================================================
+  // Goal runtime state (ADR-310 D17)
+  // =========================================================================
+
+  describe('goal runtime state', () => {
+    it('should create and persist default state on first access', () => {
+      const trait = new CharacterModelTrait();
+      const state = trait.getGoalState('eliminate-player');
+
+      expect(state).toEqual({ active: false, currentStep: 0, paused: false, interrupted: false });
+      expect(trait.goalState['eliminate-player']).toBe(state);
+    });
+
+    it('should persist mutations through the returned reference', () => {
+      const trait = new CharacterModelTrait();
+      const state = trait.getGoalState('eliminate-player');
+      state.currentStep = 2;
+      state.paused = true;
+
+      expect(trait.goalState['eliminate-player']).toEqual({
+        active: false, currentStep: 2, paused: true, interrupted: false,
+      });
+      expect(trait.getGoalState('eliminate-player').currentStep).toBe(2);
+    });
+  });
+
+  // =========================================================================
+  // Influences in force (ADR-310 D17)
+  // =========================================================================
+
+  describe('influences in force', () => {
+    it('should record applied influence effects on the target trait', () => {
+      const trait = new CharacterModelTrait();
+      trait.addInfluenceInForce({
+        influenceName: 'seduction', influencerId: 'npc-ginger',
+        effect: { focus: 'clouded', mood: 'distracted' },
+        duration: 'while present', appliedAtTurn: 4,
+      });
+
+      expect(trait.influencesInForce).toHaveLength(1);
+      expect(trait.influencesInForce[0].influencerId).toBe('npc-ginger');
+      expect(trait.influencesInForce[0].effect.mood).toBe('distracted');
+    });
+  });
+
+  // =========================================================================
+  // Normative layer (ADR-318)
+  // =========================================================================
+
+  describe('temperament resolution', () => {
+    it('should pick the binding bound to a current state over the unconditional one', () => {
+      const trait = new CharacterModelTrait({
+        temperaments: [
+          { name: 'timid' },
+          { name: 'steadfast', while: 'resolute' },
+        ],
+      });
+
+      expect(trait.activeTemperament(['resolute'])).toBe('steadfast');
+      expect(trait.activeTemperament(['cowed'])).toBe('timid');
+      expect(trait.activeTemperament([])).toBe('timid');
+    });
+
+    it('should return undefined with no bindings', () => {
+      const trait = new CharacterModelTrait();
+      expect(trait.activeTemperament(['anything'])).toBeUndefined();
+    });
+  });
+
+  describe('conscience pressure', () => {
+    it('should store value and band together', () => {
+      const trait = new CharacterModelTrait();
+      trait.setPressure(42, 'burdened');
+
+      expect(trait.pressure).toEqual({ value: 42, band: 'burdened' });
+    });
+
+    it('should clamp negative values to zero', () => {
+      const trait = new CharacterModelTrait();
+      trait.setPressure(-5, 'clear');
+
+      expect(trait.pressure.value).toBe(0);
+    });
+
+    it('should gate band predicates exactly as mood words do', () => {
+      const trait = new CharacterModelTrait();
+      expect(trait.evaluate('clear')).toBe(true);
+      expect(trait.evaluate('burdened')).toBe(false);
+
+      trait.setPressure(70, 'breaking');
+      expect(trait.evaluate('breaking')).toBe(true);
+      expect(trait.evaluate('clear')).toBe(false);
+    });
+  });
+
+  describe('lie ledger', () => {
+    it('should mint entries and return the active pin for an audience and fact', () => {
+      const trait = new CharacterModelTrait();
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'player', factId: 'the-killer',
+        claimedValue: 'nobody', turnMinted: 6, pinned: true,
+      });
+
+      const pin = trait.getActivePin('player', 'the-killer');
+      expect(pin?.claimedValue).toBe('nobody');
+      expect(trait.getActivePin('npc-cook', 'the-killer')).toBeUndefined();
+      expect(trait.getActivePin('player', 'the-weapon')).toBeUndefined();
+    });
+
+    it('should return the most recent pinned claim when re-minted', () => {
+      const trait = new CharacterModelTrait();
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'player', factId: 'the-killer',
+        claimedValue: 'nobody', turnMinted: 6, pinned: true,
+      });
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'player', factId: 'the-killer',
+        claimedValue: 'the-maid', turnMinted: 9, pinned: true,
+      });
+
+      expect(trait.getActivePin('player', 'the-killer')?.claimedValue).toBe('the-maid');
+    });
+
+    it('should skip promises when resolving a pin', () => {
+      const trait = new CharacterModelTrait();
+      trait.mintLedgerEntry({
+        kind: 'promise', audience: 'player', factId: 'the-killer',
+        claimedValue: 'will-confess', turnMinted: 6, pinned: true,
+      });
+
+      expect(trait.getActivePin('player', 'the-killer')).toBeUndefined();
+    });
+
+    it('should release pins on discharge while keeping ledger history', () => {
+      const trait = new CharacterModelTrait();
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'player', factId: 'the-killer',
+        claimedValue: 'nobody', turnMinted: 6, pinned: true,
+      });
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'npc-cook', factId: 'the-killer',
+        claimedValue: 'nobody', turnMinted: 7, pinned: true,
+      });
+
+      trait.unpinLedger({ audience: 'player' });
+      expect(trait.getActivePin('player', 'the-killer')).toBeUndefined();
+      expect(trait.getActivePin('npc-cook', 'the-killer')?.claimedValue).toBe('nobody');
+      expect(trait.ledger).toHaveLength(2);
+
+      trait.unpinLedger();
+      expect(trait.getActivePin('npc-cook', 'the-killer')).toBeUndefined();
+      expect(trait.ledger).toHaveLength(2);
+    });
+  });
+
+  // =========================================================================
+  // Serialization round-trip (ADR-310 D17)
+  // =========================================================================
+
+  describe('serialization round-trip', () => {
+    it('should carry all mutable state through JSON and back', () => {
+      const trait = new CharacterModelTrait({
+        personality: { honest: 0.8 },
+        temperaments: [{ name: 'steadfast', while: 'resolute' }],
+        principles: [{ category: 'lie', except: 'to protect the children' }],
+        obligations: [{ kind: 'protects', scope: 'the children' }],
+        honor: { scope: 'the regiment', faceActs: ['backs down', 'shows fear'] },
+        burdenedBy: ['the-first-lie'],
+      });
+      trait.setFactBelief('the-killer', {
+        value: 'the-butler', confidence: 'suspects', source: 'told',
+        turnLearned: 2, resistance: 'none',
+      });
+      trait.recordTold('npc-cook', 'murder');
+      trait.getGoalState('flee').currentStep = 1;
+      trait.addInfluenceInForce({
+        influenceName: 'intimidation', influencerId: 'npc-colonel',
+        effect: { mood: 'nervous' }, duration: 'lingering',
+        appliedAtTurn: 3, expiresAtTurn: 8,
+      });
+      trait.setPressure(55, 'burdened');
+      trait.mintLedgerEntry({
+        kind: 'claim', audience: 'player', factId: 'the-killer',
+        claimedValue: 'nobody', turnMinted: 6, pinned: true,
+      });
+
+      const restored = new CharacterModelTrait(
+        JSON.parse(JSON.stringify(trait)) as ICharacterModelData,
+      );
+
+      expect(restored.schemaVersion).toBe(1);
+      expect(restored.getFactBelief('the-killer')?.value).toBe('the-butler');
+      expect(restored.hasTold('npc-cook', 'murder')).toBe(true);
+      expect(restored.getGoalState('flee').currentStep).toBe(1);
+      expect(restored.influencesInForce).toHaveLength(1);
+      expect(restored.influencesInForce[0].expiresAtTurn).toBe(8);
+      expect(restored.activeTemperament(['resolute'])).toBe('steadfast');
+      expect(restored.principles[0].except).toBe('to protect the children');
+      expect(restored.obligations[0].scope).toBe('the children');
+      expect(restored.honor?.faceActs).toContain('shows fear');
+      expect(restored.pressure).toEqual({ value: 55, band: 'burdened' });
+      expect(restored.burdenedBy).toEqual(['the-first-lie']);
+      expect(restored.getActivePin('player', 'the-killer')?.claimedValue).toBe('nobody');
     });
   });
 

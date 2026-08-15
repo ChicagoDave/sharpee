@@ -1,12 +1,22 @@
 /**
- * NPC tick phase implementations (ADR-144, 145, 146)
+ * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
- * Factory functions that create tick phase handlers for propagation,
- * goal pursuit, and influence evaluation. Register these with
- * NpcService.registerTickPhase() during story initialization.
+ * One tick-phase registration — `'character-model'` — running ordered
+ * sub-steps: influence → propagation → goals. (Decay folds in from
+ * stdlib in the Phase 2 integration; arbiter bookkeeping arrives with
+ * ADR-318's arbiter.) Ordering between sub-steps is a contract, which is
+ * why this is one registration rather than three
+ * (docs/work/adr-310/contracts.md §2).
  *
- * Public interface: createPropagationPhase, createGoalPhase,
- *   createInfluencePhase, CharacterPhaseConfig.
+ * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
+ * below holds ONLY authored configuration, re-registered at load, and has
+ * no serialization path of its own.
+ *
+ * The registration signature is platform-internal — not author-facing
+ * compatibility surface; revisable by ADR-317/R3 at refactor cost.
+ *
+ * Public interface: createCharacterModelPhase, CharacterPhaseRegistry,
+ *   CharacterPhaseConfig.
  * Owner context: @sharpee/character
  */
 
@@ -27,7 +37,6 @@ import {
   evaluatePropagation,
   transferFact,
   getVisibilityResult,
-  AlreadyToldRecord,
 } from './propagation/index.js';
 import {
   GoalDef,
@@ -43,7 +52,8 @@ import {
   InfluenceRoomEntity,
   InfluenceResult,
   evaluatePassiveInfluences,
-  InfluenceTracker,
+  trackInfluence,
+  expireInfluencesForTurn,
 } from './influence/index.js';
 
 // ---------------------------------------------------------------------------
@@ -60,7 +70,7 @@ interface TickContext {
   playerId: EntityId;
 }
 
-/** Per-NPC character configuration for tick phases. */
+/** Per-NPC character configuration for the tick phase. Authored data only. */
 export interface CharacterPhaseConfig {
   propagationProfile?: PropagationProfile;
   goalDefs?: GoalDef[];
@@ -69,12 +79,15 @@ export interface CharacterPhaseConfig {
   resistanceDefs?: ResistanceDef[];
 }
 
-/** Manages per-NPC configs and shared state for tick phases. */
+/**
+ * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
+ * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
+ * the old toJSON/restoreState side path is deleted; everything it carried
+ * now rides CharacterModelTrait).
+ */
 export class CharacterPhaseRegistry {
   private readonly configs: Map<string, CharacterPhaseConfig> = new Map();
   private readonly goalManagers: Map<string, GoalManager> = new Map();
-  readonly influenceTracker: InfluenceTracker = new InfluenceTracker();
-  readonly alreadyToldRecord: AlreadyToldRecord = new AlreadyToldRecord();
 
   /**
    * Register character configuration for an NPC.
@@ -105,76 +118,6 @@ export class CharacterPhaseRegistry {
   get hasConfigs(): boolean {
     return this.configs.size > 0;
   }
-
-  /**
-   * Export serializable state for save/restore.
-   * Configs are authored (re-registered on load), so only mutable state is saved.
-   */
-  toJSON(): {
-    goalStates: Record<string, ReturnType<GoalManager['toJSON']>>;
-    influenceEffects: ReturnType<InfluenceTracker['toJSON']>;
-    alreadyTold: ReturnType<AlreadyToldRecord['toJSON']>;
-  } {
-    const goalStates: Record<string, ReturnType<GoalManager['toJSON']>> = {};
-    for (const [id, manager] of this.goalManagers) {
-      goalStates[id] = manager.toJSON();
-    }
-    return {
-      goalStates,
-      influenceEffects: this.influenceTracker.toJSON(),
-      alreadyTold: this.alreadyToldRecord.toJSON(),
-    };
-  }
-
-  /**
-   * Restore mutable state from saved data.
-   * Call after re-registering all NPC configs.
-   */
-  restoreState(saved: {
-    goalStates?: Record<string, ReturnType<GoalManager['toJSON']>>;
-    influenceEffects?: ReturnType<InfluenceTracker['toJSON']>;
-    alreadyTold?: ReturnType<AlreadyToldRecord['toJSON']>;
-  }): void {
-    // Restore goal manager states
-    if (saved.goalStates) {
-      for (const [id, states] of Object.entries(saved.goalStates)) {
-        const manager = this.goalManagers.get(id);
-        if (manager) {
-          manager.restoreState(states);
-        }
-      }
-    }
-
-    // Restore influence tracker
-    if (saved.influenceEffects) {
-      const restored = InfluenceTracker.fromJSON(saved.influenceEffects);
-      // Copy effects into the existing tracker
-      for (const effect of restored.toJSON()) {
-        this.influenceTracker.track(
-          effect.influenceName, effect.influencerId, effect.targetId,
-          effect.effect, {
-            duration: effect.duration,
-            turn: effect.appliedAtTurn,
-            lingeringTurns: effect.expiresAtTurn != null ? effect.expiresAtTurn - effect.appliedAtTurn : undefined,
-            clearCondition: effect.clearCondition,
-          },
-        );
-      }
-    }
-
-    // Restore already-told record
-    if (saved.alreadyTold) {
-      AlreadyToldRecord.fromJSON(saved.alreadyTold);
-      // The alreadyToldRecord is readonly, so we need to record each entry
-      for (const [speakerId, listeners] of Object.entries(saved.alreadyTold)) {
-        for (const [listenerId, topics] of Object.entries(listeners)) {
-          for (const topic of topics) {
-            this.alreadyToldRecord.record(speakerId, listenerId, topic);
-          }
-        }
-      }
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -196,42 +139,64 @@ function createEvent(
 }
 
 // ---------------------------------------------------------------------------
-// Propagation phase (ADR-144)
+// The character-model phase (single registration, ordered sub-steps)
 // ---------------------------------------------------------------------------
 
 /**
- * Create a propagation tick phase handler.
+ * Create the character-model tick phase handler. Register it once:
+ * `npcService.registerTickPhase('character-model', handler)`.
  *
- * @param registry - The character phase registry
+ * Sub-step order (a contract, not a coincidence): influence effects are
+ * applied and expired first, so propagation and goal evaluation the same
+ * turn see them; propagation moves knowledge before goals re-evaluate
+ * activation conditions that may reference it.
+ *
+ * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
  */
-export function createPropagationPhase(
+export function createCharacterModelPhase(
   registry: CharacterPhaseRegistry,
 ): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
-    const events: ISemanticEvent[] = [];
-    const { world, turn, playerLocation } = ctx;
-
-    // Group NPCs by room
-    const roomNpcs = new Map<string, IFEntity[]>();
-    for (const npc of npcs) {
-      const loc = world.getLocation(npc.id);
-      if (!loc) continue;
-      const config = registry.getConfig(npc.id);
-      if (!config?.propagationProfile) continue;
-      if (!npc.has(TraitType.CHARACTER_MODEL)) continue;
-      const list = roomNpcs.get(loc) ?? [];
-      list.push(npc);
-      roomNpcs.set(loc, list);
-    }
-
-    for (const [roomId, roomNpcList] of roomNpcs) {
-      if (roomNpcList.length < 2) continue;
-      handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events);
-    }
-
-    return events;
+    return [
+      ...runInfluenceSubStep(npcs, ctx, registry),
+      ...runPropagationSubStep(npcs, ctx, registry),
+      ...runGoalSubStep(npcs, ctx, registry),
+    ];
   };
+}
+
+// ---------------------------------------------------------------------------
+// Propagation sub-step (ADR-144)
+// ---------------------------------------------------------------------------
+
+function runPropagationSubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const { world, turn, playerLocation } = ctx;
+
+  // Group NPCs by room
+  const roomNpcs = new Map<string, IFEntity[]>();
+  for (const npc of npcs) {
+    const loc = world.getLocation(npc.id);
+    if (!loc) continue;
+    const config = registry.getConfig(npc.id);
+    if (!config?.propagationProfile) continue;
+    if (!npc.has(TraitType.CHARACTER_MODEL)) continue;
+    const list = roomNpcs.get(loc) ?? [];
+    list.push(npc);
+    roomNpcs.set(loc, list);
+  }
+
+  for (const [roomId, roomNpcList] of roomNpcs) {
+    if (roomNpcList.length < 2) continue;
+    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events);
+  }
+
+  return events;
 }
 
 /**
@@ -239,7 +204,7 @@ export function createPropagationPhase(
  *
  * @param roomId - The room entity ID
  * @param roomNpcList - NPCs co-located in this room
- * @param registry - Character phase registry for configs and records
+ * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
  * @param playerLocation - Player's current room ID
@@ -270,7 +235,6 @@ function handleRoomPropagation(
     const propContext: PropagationContext = {
       speaker: { id: speaker.id, trait, profile: config.propagationProfile },
       listeners,
-      alreadyTold: registry.alreadyToldRecord,
       playerPresent: roomId === playerLocation,
       turn,
     };
@@ -278,7 +242,7 @@ function handleRoomPropagation(
     const transfers = evaluatePropagation(propContext);
 
     for (const transfer of transfers) {
-      recordTransfer(transfer, speaker, roomId, registry, world, turn, playerLocation, events);
+      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, playerLocation, events);
     }
   }
 }
@@ -288,8 +252,9 @@ function handleRoomPropagation(
  *
  * @param transfer - The propagation transfer to apply
  * @param speaker - The speaking NPC entity
+ * @param speakerTrait - The speaker's trait (told-record home, ADR-310 D17)
  * @param roomId - The room where propagation occurs
- * @param registry - Character phase registry for configs and records
+ * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
  * @param playerLocation - Player's current room ID
@@ -298,6 +263,7 @@ function handleRoomPropagation(
 function recordTransfer(
   transfer: ReturnType<typeof evaluatePropagation>[number],
   speaker: IFEntity,
+  speakerTrait: CharacterModelTrait,
   roomId: string,
   registry: CharacterPhaseRegistry,
   world: WorldModel,
@@ -313,9 +279,7 @@ function recordTransfer(
   const listenerConfig = registry.getConfig(transfer.listenerId);
   const receivesAs = listenerConfig?.propagationProfile?.receives ?? 'as fact';
 
-  const result = transferFact(
-    transfer, listenerTrait, registry.alreadyToldRecord, turn, receivesAs,
-  );
+  const result = transferFact(transfer, speakerTrait, listenerTrait, turn, receivesAs);
 
   if (roomId === playerLocation && !result.alreadyKnew) {
     const visibility = getVisibilityResult(transfer, 'present');
@@ -333,32 +297,27 @@ function recordTransfer(
 }
 
 // ---------------------------------------------------------------------------
-// Goal pursuit phase (ADR-145)
+// Goal sub-step (ADR-145)
 // ---------------------------------------------------------------------------
 
-/**
- * Create a goal pursuit tick phase handler.
- *
- * @param registry - The character phase registry
- * @returns Tick phase handler function
- */
-export function createGoalPhase(
+function runGoalSubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
   registry: CharacterPhaseRegistry,
-): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
-  return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
-    const events: ISemanticEvent[] = [];
-    const { world, playerLocation } = ctx;
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const { world, playerLocation } = ctx;
 
-    for (const npc of npcs) {
-      executeNpcGoals(npc, registry, world, playerLocation, events);
-    }
+  for (const npc of npcs) {
+    executeNpcGoals(npc, registry, world, playerLocation, events);
+  }
 
-    return events;
-  };
+  return events;
 }
 
 /**
- * Evaluate and execute the top active goal for a single NPC.
+ * Evaluate and execute the top active goal for a single NPC. All pursuit
+ * state reads and writes go through the trait (ADR-310 D17).
  *
  * @param npc - The NPC entity to evaluate
  * @param registry - Character phase registry for configs and goal managers
@@ -379,10 +338,8 @@ function executeNpcGoals(
   const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
   if (!trait) return;
 
-  manager.evaluate(trait);
-
-  const activeGoals = manager.getActiveGoals();
-  const activeGoal = activeGoals.find(g => !g.paused && !g.interrupted);
+  const activeGoals = manager.evaluate(trait);
+  const activeGoal = activeGoals.find(g => !g.state.paused && !g.state.interrupted);
   if (!activeGoal) return;
 
   const config = registry.getConfig(npc.id);
@@ -410,100 +367,104 @@ function executeNpcGoals(
     events.push(createEvent('character.goal.step', {
       npcId: npc.id,
       goalId: activeGoal.def.id,
-      step: activeGoal.currentStep,
+      step: activeGoal.state.currentStep,
       messageId: stepResult.witnessed,
       speaker: nounPhraseFor(npc),
     }, npc.id));
   }
 
   if (stepResult.status === 'completed') {
-    manager.advanceStep(activeGoal.def.id);
+    manager.advanceStep(trait, activeGoal.def.id);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Influence phase (ADR-146)
+// Influence sub-step (ADR-146)
 // ---------------------------------------------------------------------------
 
-/**
- * Create an influence evaluation tick phase handler.
- *
- * @param registry - The character phase registry
- * @returns Tick phase handler function
- */
-export function createInfluencePhase(
+function runInfluenceSubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
   registry: CharacterPhaseRegistry,
-): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
-  return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
-    const events: ISemanticEvent[] = [];
-    const { world, turn, playerLocation, playerId } = ctx;
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const { world, turn, playerLocation, playerId } = ctx;
 
-    // Group entities by room
-    const roomEntities = new Map<string, InfluenceRoomEntity[]>();
-    for (const npc of npcs) {
-      const loc = world.getLocation(npc.id);
-      if (!loc) continue;
+  // Group entities by room
+  const roomEntities = new Map<string, InfluenceRoomEntity[]>();
+  for (const npc of npcs) {
+    const loc = world.getLocation(npc.id);
+    if (!loc) continue;
 
-      const config = registry.getConfig(npc.id);
-      const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+    const config = registry.getConfig(npc.id);
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 
-      roomEntities.set(loc, [
-        ...(roomEntities.get(loc) ?? []),
-        {
-          id: npc.id,
-          influences: config?.influenceDefs ?? [],
-          resistances: config?.resistanceDefs ?? [],
-          evaluatePredicate: (pred: string) => trait ? trait.evaluate(pred) : false,
-        },
-      ]);
-    }
+    roomEntities.set(loc, [
+      ...(roomEntities.get(loc) ?? []),
+      {
+        id: npc.id,
+        influences: config?.influenceDefs ?? [],
+        resistances: config?.resistanceDefs ?? [],
+        evaluatePredicate: (pred: string) => trait ? trait.evaluate(pred) : false,
+      },
+    ]);
+  }
 
-    // Add player as potential target in their room
-    const playerList = roomEntities.get(playerLocation) ?? [];
-    playerList.push({
-      id: playerId,
-      influences: [],
-      resistances: [],
-      evaluatePredicate: () => false,
-    });
-    roomEntities.set(playerLocation, playerList);
+  // Add player as potential target in their room
+  const playerList = roomEntities.get(playerLocation) ?? [];
+  playerList.push({
+    id: playerId,
+    influences: [],
+    resistances: [],
+    evaluatePredicate: () => false,
+  });
+  roomEntities.set(playerLocation, playerList);
 
-    // Evaluate passive influences per room
-    for (const [roomId, entities] of roomEntities) {
-      const results = evaluatePassiveInfluences(entities);
-      handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
-    }
+  // Evaluate passive influences per room
+  for (const [roomId, entities] of roomEntities) {
+    const results = evaluatePassiveInfluences(entities);
+    handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
+  }
 
-    // Expire effects
-    const expired = registry.influenceTracker.expireTurn(turn, (targetId, pred) => {
-      const entity = world.getEntity(targetId);
-      if (!entity) return false;
-      const trait = entity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
-      return trait ? trait.evaluate(pred) : false;
+  // Expire effects — each NPC's trait homes its own inbound effects plus
+  // any exerter-side records (player targets)
+  for (const npc of npcs) {
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (!trait) continue;
+
+    const expired = expireInfluencesForTurn(trait, turn, (effect, pred) => {
+      // A clear condition evaluates against the effect's TARGET
+      const targetId = effect.target ?? npc.id;
+      const targetEntity = world.getEntity(targetId);
+      const targetTrait = targetEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+      return targetTrait ? targetTrait.evaluate(pred) : false;
     });
 
     for (const effect of expired) {
-      const target = world.getEntity(effect.targetId);
+      const targetId = effect.target ?? npc.id;
+      const target = world.getEntity(targetId);
       const targetLoc = target ? world.getLocation(target.id) : undefined;
       if (targetLoc === playerLocation) {
         events.push(createEvent('character.influence.expired', {
           influenceName: effect.influenceName,
-          targetId: effect.targetId,
-          targetName: target?.name ?? effect.targetId,
+          targetId,
+          targetName: target?.name ?? targetId,
         }));
       }
     }
+  }
 
-    return events;
-  };
+  return events;
 }
 
 /**
- * Process influence evaluation results: track applied effects and emit events.
+ * Process influence evaluation results: record applied effects on the trait
+ * that homes them (target's trait; exerter's trait for the player — ADR-310
+ * D17 home rule) and emit witnessed/resisted events.
  *
  * @param results - Influence evaluation results for one room
  * @param roomId - The room where influences were evaluated
- * @param registry - Character phase registry for configs and tracker
+ * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
  * @param playerLocation - Player's current room ID
@@ -525,15 +486,22 @@ function handleInfluenceResults(
         d => d.name === result.influenceName,
       );
 
-      registry.influenceTracker.track(
-        result.influenceName, result.influencerId, result.targetId,
-        result.effect, {
+      // Resolve the home trait per the D17 home rule
+      const targetEntity = world.getEntity(result.targetId);
+      const targetTrait = targetEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+      const influencerEntity = world.getEntity(result.influencerId);
+      const influencerTrait = influencerEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+
+      const homeTrait = targetTrait ?? influencerTrait;
+      if (homeTrait) {
+        trackInfluence(homeTrait, result.influenceName, result.influencerId, result.effect, {
           duration: influenceDef?.duration ?? 'while present',
           turn,
           lingeringTurns: influenceDef?.lingeringTurns,
           clearCondition: influenceDef?.lingeringClearCondition,
-        },
-      );
+          ...(targetTrait ? {} : { target: result.targetId }),
+        });
+      }
 
       if (roomId === playerLocation && result.witnessed) {
         const influencer = world.getEntity(result.influencerId);

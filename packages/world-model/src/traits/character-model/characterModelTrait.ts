@@ -1,11 +1,19 @@
 /**
- * Character model trait (ADR-141)
+ * Character model trait (ADR-141, ADR-310, ADR-318)
  *
  * Rich internal state for NPCs: personality, disposition, mood, threat,
- * cognitive profile, knowledge, beliefs, and goals. Opt-in — only NPCs
- * that need behavioral depth carry this trait alongside NpcTrait.
+ * cognitive profile, knowledge, valued beliefs, goals, and the normative
+ * layer (temperaments, principles, obligations, honor, conscience pressure,
+ * the lie ledger). Opt-in — only NPCs that need behavioral depth carry this
+ * trait alongside NpcTrait.
  *
- * Public interface: ICharacterModelData, CharacterModelTrait, CharacterPredicate.
+ * Persistence rule (ADR-310 D17): everything the model remembers rides this
+ * trait — no character-model runtime state may live in module-level service
+ * state or closures. The serialized shape carries `schemaVersion`; later
+ * shape changes add a versioned reader, never a hard break.
+ *
+ * Public interface: ICharacterModelData, CharacterModelTrait,
+ *   CharacterPredicate, CHARACTER_MODEL_SCHEMA_VERSION.
  * Owner context: world-model / character-model trait
  */
 
@@ -28,13 +36,25 @@ import {
   ConfidenceWord,
   Fact,
   FactSource,
-  Belief,
+  ValuedBelief,
   ResistanceMode,
   Goal,
+  GoalRuntimeState,
+  InfluenceInForce,
+  TemperamentBinding,
+  PrincipleDecl,
+  ObligationDecl,
+  HonorDecl,
+  PressureState,
+  PressureBand,
+  LedgerEntry,
   LucidityConfig,
   PerceptionFilterConfig,
   PerceivedEvent,
 } from './character-vocabulary.js';
+
+/** Current serialized shape version (ADR-310 D17 format discipline). */
+export const CHARACTER_MODEL_SCHEMA_VERSION = 1;
 
 // ---------------------------------------------------------------------------
 // Data interface
@@ -42,6 +62,9 @@ import {
 
 /** Serializable data for constructing a CharacterModelTrait. */
 export interface ICharacterModelData {
+  /** Serialized shape version. Absent means pre-versioning data (treated as current). */
+  schemaVersion?: number;
+
   /** Personality traits with intensity values (0-1). */
   personality?: Record<PersonalityTrait, number>;
 
@@ -60,14 +83,44 @@ export interface ICharacterModelData {
   /** Five-dimensional cognitive profile. */
   cognitiveProfile?: Partial<CognitiveProfile>;
 
-  /** Knowledge base: topic -> fact. */
+  /** Knowledge base: topic -> valueless fact (`knows`). */
   knowledge?: Record<string, Fact>;
 
-  /** Beliefs: topic -> belief. */
-  beliefs?: Record<string, Belief>;
+  /** Valued beliefs: factId -> what this character thinks the value is (`thinks`, ADR-310 D14). */
+  factBeliefs?: Record<string, ValuedBelief>;
+
+  /** Propagation record: listenerId -> topics/factIds this character has told them (ADR-310 D17). */
+  told?: Record<string, string[]>;
 
   /** Goals ordered by priority. */
   goals?: Goal[];
+
+  /** Per-goal mutable pursuit state: goalId -> runtime state (ADR-310 D17). */
+  goalState?: Record<string, GoalRuntimeState>;
+
+  /** Influence effects currently applied to this character (ADR-310 D17). */
+  influencesInForce?: InfluenceInForce[];
+
+  /** Temperament bindings — static or state-bound orderings (ADR-318 D3). */
+  temperaments?: TemperamentBinding[];
+
+  /** Principle lines — `never` categories with scope/except (ADR-318 D4). */
+  principles?: PrincipleDecl[];
+
+  /** Obligation lines — compile to standing goals (ADR-318 D5). */
+  obligations?: ObligationDecl[];
+
+  /** Honor declaration — audience scope and bound face-acts (ADR-318 D7). */
+  honor?: HonorDecl;
+
+  /** Conscience pressure: curve value and band (ADR-318 D8). */
+  pressure?: PressureState;
+
+  /** Pre-story guilt seeds — topics must be held (compile-checked) (ADR-318 D8). */
+  burdenedBy?: string[];
+
+  /** The lie ledger: own claims and promises per audience (ADR-318 D9). */
+  ledger?: LedgerEntry[];
 
   /** Lucidity window configuration. */
   lucidityConfig?: LucidityConfig;
@@ -109,6 +162,9 @@ export class CharacterModelTrait implements ITrait {
   static readonly type = 'characterModel' as const;
   readonly type = 'characterModel' as const;
 
+  // -- Serialized shape version (ADR-310 D17) --
+  schemaVersion: number;
+
   // -- Personality (fixed at creation) --
   personality: Record<string, number>;
 
@@ -125,14 +181,32 @@ export class CharacterModelTrait implements ITrait {
   // -- Cognitive profile --
   cognitiveProfile: CognitiveProfile;
 
-  // -- Knowledge --
+  // -- Knowledge (valueless held topics) --
   knowledge: Record<string, Fact>;
 
-  // -- Beliefs --
-  beliefs: Record<string, Belief>;
+  // -- Valued beliefs (ADR-310 D14): factId -> ValuedBelief --
+  factBeliefs: Record<string, ValuedBelief>;
+
+  // -- Propagation told-record (ADR-310 D17): listenerId -> topics --
+  told: Record<string, string[]>;
 
   // -- Goals --
   goals: Goal[];
+
+  // -- Per-goal pursuit state (ADR-310 D17): goalId -> runtime state --
+  goalState: Record<string, GoalRuntimeState>;
+
+  // -- Influence effects applied to this character (ADR-310 D17) --
+  influencesInForce: InfluenceInForce[];
+
+  // -- Normative layer (ADR-318) --
+  temperaments: TemperamentBinding[];
+  principles: PrincipleDecl[];
+  obligations: ObligationDecl[];
+  honor?: HonorDecl;
+  pressure: PressureState;
+  burdenedBy: string[];
+  ledger: LedgerEntry[];
 
   // -- Lucidity --
   lucidityConfig?: LucidityConfig;
@@ -147,6 +221,9 @@ export class CharacterModelTrait implements ITrait {
   private predicates: Map<string, CharacterPredicate> = new Map();
 
   constructor(data: ICharacterModelData = {}) {
+    // Schema version — absent input means pre-versioning data; stamp current.
+    this.schemaVersion = CHARACTER_MODEL_SCHEMA_VERSION;
+
     // Personality
     this.personality = data.personality ? { ...data.personality } : {};
 
@@ -185,11 +262,31 @@ export class CharacterModelTrait implements ITrait {
     // Knowledge
     this.knowledge = data.knowledge ? { ...data.knowledge } : {};
 
-    // Beliefs
-    this.beliefs = data.beliefs ? { ...data.beliefs } : {};
+    // Valued beliefs
+    this.factBeliefs = data.factBeliefs ? { ...data.factBeliefs } : {};
+
+    // Told-record
+    this.told = data.told
+      ? Object.fromEntries(Object.entries(data.told).map(([k, v]) => [k, [...v]]))
+      : {};
 
     // Goals
     this.goals = data.goals ? [...data.goals] : [];
+
+    // Goal runtime state
+    this.goalState = data.goalState ? { ...data.goalState } : {};
+
+    // Influences in force
+    this.influencesInForce = data.influencesInForce ? [...data.influencesInForce] : [];
+
+    // Normative layer (ADR-318)
+    this.temperaments = data.temperaments ? [...data.temperaments] : [];
+    this.principles = data.principles ? [...data.principles] : [];
+    this.obligations = data.obligations ? [...data.obligations] : [];
+    this.honor = data.honor;
+    this.pressure = data.pressure ? { ...data.pressure } : { value: 0, band: 'clear' };
+    this.burdenedBy = data.burdenedBy ? [...data.burdenedBy] : [];
+    this.ledger = data.ledger ? data.ledger.map(e => ({ ...e })) : [];
 
     // Lucidity
     this.lucidityConfig = data.lucidityConfig;
@@ -353,9 +450,14 @@ export class CharacterModelTrait implements ITrait {
    * @param source - How the NPC learned this fact
    * @param confidence - How confident the NPC is
    * @param turn - The turn number when the fact was learned
+   * @param resistance - Optional resistance to counter-evidence (the fold of
+   *   the retired standalone belief map, ADR-310 D14)
    */
-  addFact(topic: string, source: FactSource, confidence: ConfidenceWord, turn: number): void {
-    this.knowledge[topic] = { source, confidence, turnLearned: turn };
+  addFact(topic: string, source: FactSource, confidence: ConfidenceWord, turn: number,
+    resistance?: ResistanceMode): void {
+    this.knowledge[topic] = resistance
+      ? { source, confidence, turnLearned: turn, resistance }
+      : { source, confidence, turnLearned: turn };
   }
 
   /**
@@ -379,38 +481,166 @@ export class CharacterModelTrait implements ITrait {
   }
 
   // =========================================================================
-  // Beliefs
+  // Valued beliefs (ADR-310 D14)
   // =========================================================================
 
   /**
-   * Add or update a belief.
+   * Set what this character thinks a declared fact's value is (`thinks`).
+   * Overwrites any prior belief about the same fact — a belief that changes
+   * its mind is the point of the value slot.
    *
-   * @param topic - What the belief is about
-   * @param strength - How strongly held
-   * @param resistance - How resistant to counter-evidence
+   * @param factId - The fact declaration's id
+   * @param belief - Value, confidence, source, turn, and resistance
    */
-  addBelief(topic: string, strength: ConfidenceWord, resistance: ResistanceMode = 'none'): void {
-    this.beliefs[topic] = { strength, resistance };
+  setFactBelief(factId: string, belief: ValuedBelief): void {
+    this.factBeliefs[factId] = { ...belief };
   }
 
   /**
-   * Check whether the NPC holds a belief about a topic.
+   * Check whether this character holds a valued belief about a fact.
    *
-   * @param topic - The topic to check
-   * @returns True if the NPC has a belief about this topic
+   * @param factId - The fact declaration's id
+   * @returns True if a belief exists
    */
-  hasBelief(topic: string): boolean {
-    return topic in this.beliefs;
+  hasFactBelief(factId: string): boolean {
+    return factId in this.factBeliefs;
   }
 
   /**
-   * Get a belief.
+   * Get this character's valued belief about a fact.
    *
-   * @param topic - The topic to query
+   * @param factId - The fact declaration's id
    * @returns The belief, or undefined
    */
-  getBelief(topic: string): Belief | undefined {
-    return this.beliefs[topic];
+  getFactBelief(factId: string): ValuedBelief | undefined {
+    return this.factBeliefs[factId];
+  }
+
+  // =========================================================================
+  // Told-record (ADR-310 D10/D17)
+  // =========================================================================
+
+  /**
+   * Check whether this character has already told a listener about a topic.
+   *
+   * @param listenerId - The listener entity id
+   * @param topic - Topic or factId
+   * @returns True if already told
+   */
+  hasTold(listenerId: string, topic: string): boolean {
+    return this.told[listenerId]?.includes(topic) ?? false;
+  }
+
+  /**
+   * Record that this character told a listener about a topic. Idempotent.
+   *
+   * @param listenerId - The listener entity id
+   * @param topic - Topic or factId
+   */
+  recordTold(listenerId: string, topic: string): void {
+    const topics = this.told[listenerId] ?? (this.told[listenerId] = []);
+    if (!topics.includes(topic)) topics.push(topic);
+  }
+
+  // =========================================================================
+  // Goal runtime state (ADR-310 D17)
+  // =========================================================================
+
+  /**
+   * Get the mutable pursuit state for a goal, defaulting to step zero.
+   *
+   * @param goalId - Goal identifier
+   * @returns The runtime state (a live reference; mutations persist)
+   */
+  getGoalState(goalId: string): GoalRuntimeState {
+    return this.goalState[goalId]
+      ?? (this.goalState[goalId] = { active: false, currentStep: 0, paused: false, interrupted: false });
+  }
+
+  // =========================================================================
+  // Influences in force (ADR-310 D17)
+  // =========================================================================
+
+  /**
+   * Record an influence effect applied to this character.
+   *
+   * @param effect - The effect record (influencer, mutations, duration)
+   */
+  addInfluenceInForce(effect: InfluenceInForce): void {
+    this.influencesInForce.push({ ...effect });
+  }
+
+  // =========================================================================
+  // Normative layer (ADR-318)
+  // =========================================================================
+
+  /**
+   * Resolve the live temperament binding for the current entity states.
+   * A state-bound binding wins over an unconditional one; two live bindings
+   * at the same specificity is a compile-time diagnostic, so runtime takes
+   * the first (D3).
+   *
+   * @param activeStates - The owner entity's current state names
+   * @returns The live binding's temperament name, or undefined
+   */
+  activeTemperament(activeStates: readonly string[]): string | undefined {
+    const bound = this.temperaments.find(t => t.while !== undefined && activeStates.includes(t.while));
+    if (bound) return bound.name;
+    return this.temperaments.find(t => t.while === undefined)?.name;
+  }
+
+  /**
+   * Set conscience pressure. Band computation is runtime-owned (the curve
+   * lives in @sharpee/character); the trait stores both so a restore
+   * needs no recomputation (ADR-318 D12).
+   *
+   * @param value - The curve value (>= 0)
+   * @param band - The derived band
+   */
+  setPressure(value: number, band: PressureBand): void {
+    this.pressure.value = Math.max(0, value);
+    this.pressure.band = band;
+  }
+
+  /**
+   * Append a ledger entry (a claim or promise minted this turn, ADR-318 D9).
+   *
+   * @param entry - The entry to mint
+   */
+  mintLedgerEntry(entry: LedgerEntry): void {
+    this.ledger.push({ ...entry });
+  }
+
+  /**
+   * Get the active pin for an audience and fact: the most recent pinned
+   * claim, which the dialogue selector must hold consistent (ADR-318 D9).
+   *
+   * @param audience - The audience entity id
+   * @param factId - The fact the claim is about
+   * @returns The pinned entry, or undefined
+   */
+  getActivePin(audience: string, factId: string): LedgerEntry | undefined {
+    for (let i = this.ledger.length - 1; i >= 0; i--) {
+      const e = this.ledger[i];
+      if (e.pinned && e.kind === 'claim' && e.audience === audience && e.factId === factId) {
+        return e;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Release ledger pins — on an authored break or a `breaking` discharge
+   * (ADR-318 D8/D9). With no filter, every pin releases.
+   *
+   * @param filter - Optional audience and/or fact to narrow the release
+   */
+  unpinLedger(filter: { audience?: string; factId?: string } = {}): void {
+    for (const e of this.ledger) {
+      if (filter.audience !== undefined && e.audience !== filter.audience) continue;
+      if (filter.factId !== undefined && e.factId !== filter.factId) continue;
+      e.pinned = false;
+    }
   }
 
   // =========================================================================
@@ -569,23 +799,21 @@ export class CharacterModelTrait implements ITrait {
     this.registerPredicate('cornered', (t) => t.threatValue >= THREAT_VALUES.cornered);
 
     // --- Personality ---
-    this.registerPredicate('cowardly', (t) => t.getPersonality('cowardly') > 0.4);
-    this.registerPredicate('honest', (t) => t.getPersonality('honest') > 0.4);
-    this.registerPredicate('loyal', (t) => t.getPersonality('loyal') > 0.4);
-    this.registerPredicate('cunning', (t) => t.getPersonality('cunning') > 0.4);
-    this.registerPredicate('paranoid', (t) => t.getPersonality('paranoid') > 0.4);
-    this.registerPredicate('cruel', (t) => t.getPersonality('cruel') > 0.4);
-    this.registerPredicate('curious', (t) => t.getPersonality('curious') > 0.4);
-    this.registerPredicate('stubborn', (t) => t.getPersonality('stubborn') > 0.4);
-    this.registerPredicate('generous', (t) => t.getPersonality('generous') > 0.4);
-    this.registerPredicate('vain', (t) => t.getPersonality('vain') > 0.4);
-    this.registerPredicate('devout', (t) => t.getPersonality('devout') > 0.4);
-    this.registerPredicate('impulsive', (t) => t.getPersonality('impulsive') > 0.4);
+    for (const word of ['cowardly', 'honest', 'loyal', 'cunning', 'paranoid', 'cruel',
+      'curious', 'stubborn', 'generous', 'vain', 'devout', 'impulsive',
+      'remorseful', 'untroubled'] as const) {
+      this.registerPredicate(word, (t) => t.getPersonality(word) > 0.4);
+    }
 
     // --- Mood ---
     for (const mood of ['calm', 'content', 'cheerful', 'nervous', 'anxious', 'panicked',
       'angry', 'furious', 'sad', 'grieving', 'suspicious', 'confused', 'resigned'] as const) {
       this.registerPredicate(mood, (t) => t.getMood() === mood);
+    }
+
+    // --- Conscience pressure bands (ADR-318 D8: gate exactly as mood words do) ---
+    for (const band of ['clear', 'burdened', 'breaking'] as const) {
+      this.registerPredicate(band, (t) => t.pressure.band === band);
     }
 
     // --- Cognitive state ---

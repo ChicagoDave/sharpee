@@ -101,7 +101,6 @@ export {
   type RoomOccupant,
   type PropagationContext,
   type TransferResult,
-  AlreadyToldRecord,
   evaluatePropagation,
   transferFact,
   applyTransfers,
@@ -129,7 +128,6 @@ export {
   type ActiveGoal,
   type MovementProfile,
   type StepResult,
-  type ActiveGoalState,
   type GoalStepContext,
   type RoomConnection,
   type RoomGraph,
@@ -150,13 +148,15 @@ export {
   type InfluenceSchedule,
   type InfluenceDef,
   type ResistanceDef,
-  type ActiveInfluenceEffect,
   type InfluenceResult,
   type InfluenceRoomEntity,
   checkResistance,
   evaluatePassiveInfluences,
   evaluateActiveInfluence,
-  InfluenceTracker,
+  trackInfluence,
+  isUnderInfluence,
+  expireInfluencesForTurn,
+  expireInfluencesOnDeparture,
   type PcInfluenceResult,
   evaluatePcInfluence,
   InfluenceBuilder,
@@ -165,11 +165,18 @@ export {
   type InfluenceMessageId,
 } from './influence/index.js';
 
-// NPC tick phase handlers (ADR-142/144/145/146)
+// The character-model NPC tick phase (ADR-310 D15 — one registration,
+// ordered sub-steps; the per-subsystem factories folded into it)
 export {
   type CharacterPhaseConfig,
   CharacterPhaseRegistry,
-  createPropagationPhase,
-  createGoalPhase,
-  createInfluencePhase,
+  createCharacterModelPhase,
 } from './tick-phases.js';
+
+// The character clock seam (temporal amendment 2026-08-15)
+export {
+  expiryTurn,
+  hasExpired,
+  isMomentaryExpired,
+  turnsSince,
+} from './character-clock.js';

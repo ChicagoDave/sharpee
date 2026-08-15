@@ -16,7 +16,6 @@ export {
   type InfluenceSchedule,
   type InfluenceDef,
   type ResistanceDef,
-  type ActiveInfluenceEffect,
   type InfluenceResult,
 } from './influence-types.js';
 
@@ -27,7 +26,12 @@ export {
   evaluateActiveInfluence,
 } from './influence-evaluator.js';
 
-export { InfluenceTracker } from './influence-duration.js';
+export {
+  trackInfluence,
+  isUnderInfluence,
+  expireInfluencesForTurn,
+  expireInfluencesOnDeparture,
+} from './influence-duration.js';
 
 export {
   type PcInfluenceResult,

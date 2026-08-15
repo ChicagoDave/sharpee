@@ -124,10 +124,10 @@ describe('CharacterBuilder', () => {
   describe('cognitiveProfile', () => {
     it('should compile from named preset', () => {
       const compiled = new CharacterBuilder('eleanor')
-        .cognitiveProfile('schizophrenic')
+        .cognitiveProfile('unquiet')
         .compile();
 
-      expect(compiled.traitData.cognitiveProfile).toEqual(COGNITIVE_PRESETS.schizophrenic);
+      expect(compiled.traitData.cognitiveProfile).toEqual(COGNITIVE_PRESETS.unquiet);
     });
 
     it('should compile from partial override', () => {
@@ -166,18 +166,43 @@ describe('CharacterBuilder', () => {
       });
     });
 
-    it('should compile beliefs', () => {
+    it('should carry folded resistance on knowledge facts (ADR-310 D14)', () => {
       const compiled = new CharacterBuilder('margaret')
-        .believes('lady-grey-innocent', { strength: 'certain', resistance: 'reinterprets' })
-        .believes('weather-nice')
+        .knows('lady-grey-innocent', { confidence: 'certain', resistance: 'reinterprets' })
         .compile();
 
-      expect(compiled.traitData.beliefs?.['lady-grey-innocent']).toEqual({
-        strength: 'certain', resistance: 'reinterprets',
+      expect(compiled.traitData.knowledge?.['lady-grey-innocent']).toEqual({
+        source: 'assumed', confidence: 'certain', turnLearned: 0,
+        resistance: 'reinterprets',
       });
-      expect(compiled.traitData.beliefs?.['weather-nice']).toEqual({
-        strength: 'believes', resistance: 'none',
+    });
+
+    it('should compile valued beliefs from thinks() (ADR-310 D14)', () => {
+      const compiled = new CharacterBuilder('cook')
+        .thinks('the-killer', 'the-butler', { confidence: 'suspects', source: 'told' })
+        .thinks('the-weapon', 'the-knife')
+        .compile();
+
+      expect(compiled.traitData.factBeliefs?.['the-killer']).toEqual({
+        value: 'the-butler', confidence: 'suspects', source: 'told',
+        turnLearned: 0, resistance: 'none',
       });
+      expect(compiled.traitData.factBeliefs?.['the-weapon']).toEqual({
+        value: 'the-knife', confidence: 'believes', source: 'assumed',
+        turnLearned: 0, resistance: 'none',
+      });
+    });
+
+    it('should let two compiled characters disagree about the same fact', () => {
+      const maid = new CharacterBuilder('maid')
+        .thinks('the-killer', 'the-colonel', { confidence: 'certain', source: 'witnessed' })
+        .compile();
+      const cook = new CharacterBuilder('cook')
+        .thinks('the-killer', 'the-butler', { confidence: 'suspects', source: 'told' })
+        .compile();
+
+      expect(maid.traitData.factBeliefs?.['the-killer']?.value).toBe('the-colonel');
+      expect(cook.traitData.factBeliefs?.['the-killer']?.value).toBe('the-butler');
     });
   });
 
@@ -233,7 +258,7 @@ describe('CharacterBuilder', () => {
   describe('perception', () => {
     it('should compile perception filters', () => {
       const compiled = new CharacterBuilder('james')
-        .cognitiveProfile('ptsd')
+        .cognitiveProfile('braced')
         .filters({ misses: ['quiet actions'], amplifies: ['sudden movements'] })
         .compile();
 
@@ -245,7 +270,7 @@ describe('CharacterBuilder', () => {
 
     it('should compile perceived events (hallucinations)', () => {
       const compiled = new CharacterBuilder('eleanor')
-        .cognitiveProfile('schizophrenic')
+        .cognitiveProfile('unquiet')
         .perceives('shadow-figure', { when: 'hallucinating', as: 'witnessed', content: 'shadow-figure' })
         .compile();
 
@@ -396,14 +421,14 @@ describe('CharacterBuilder', () => {
   });
 
   // =========================================================================
-  // Full ADR-141 example: Eleanor (schizophrenic)
+  // Full ADR-141 example: Eleanor (unquiet)
   // =========================================================================
 
   describe('full Eleanor example from ADR-141', () => {
     it('should compile the complete Eleanor character with cognitive profile', () => {
       const compiled = new CharacterBuilder('eleanor')
         .personality('very curious', 'honest', 'slightly paranoid')
-        .cognitiveProfile('schizophrenic')
+        .cognitiveProfile('unquiet')
         .likes('player')
         .mood('anxious')
         .knows('murder', { witnessed: true })
@@ -436,7 +461,7 @@ describe('CharacterBuilder', () => {
         .compile();
 
       // Cognitive profile
-      expect(compiled.traitData.cognitiveProfile).toEqual(COGNITIVE_PRESETS.schizophrenic);
+      expect(compiled.traitData.cognitiveProfile).toEqual(COGNITIVE_PRESETS.unquiet);
 
       // Lucidity
       expect(compiled.traitData.lucidityConfig?.baseline).toBe('fragmented');
@@ -457,20 +482,27 @@ describe('CharacterBuilder', () => {
 // ===========================================================================
 
 describe('COGNITIVE_PRESETS', () => {
-  it('should have all eight presets from ADR-141', () => {
+  it('should have all eight presets under the ADR-310 D5 behavioral names', () => {
     expect(Object.keys(COGNITIVE_PRESETS)).toHaveLength(8);
-    expect(isCognitivePreset('stable')).toBe(true);
-    expect(isCognitivePreset('schizophrenic')).toBe(true);
-    expect(isCognitivePreset('ptsd')).toBe(true);
-    expect(isCognitivePreset('dementia')).toBe(true);
-    expect(isCognitivePreset('dissociative')).toBe(true);
-    expect(isCognitivePreset('tbi')).toBe(true);
-    expect(isCognitivePreset('obsessive')).toBe(true);
-    expect(isCognitivePreset('intoxicated')).toBe(true);
+    expect(isCognitivePreset('clear-headed')).toBe(true);
+    expect(isCognitivePreset('fixated')).toBe(true);
+    expect(isCognitivePreset('elsewhere')).toBe(true);
+    expect(isCognitivePreset('loosened')).toBe(true);
+    expect(isCognitivePreset('fogged')).toBe(true);
+    expect(isCognitivePreset('braced')).toBe(true);
+    expect(isCognitivePreset('unmoored')).toBe(true);
+    expect(isCognitivePreset('unquiet')).toBe(true);
   });
 
-  it('should match ADR-141 condition table for schizophrenic', () => {
-    const p = COGNITIVE_PRESETS.schizophrenic;
+  it('should reject the retired clinical names (ADR-310 D5)', () => {
+    for (const retired of ['stable', 'schizophrenic', 'ptsd', 'dementia',
+      'dissociative', 'tbi', 'obsessive', 'intoxicated']) {
+      expect(isCognitivePreset(retired)).toBe(false);
+    }
+  });
+
+  it('should match ADR-141 dimension table for unquiet', () => {
+    const p = COGNITIVE_PRESETS.unquiet;
     expect(p.perception).toBe('augmented');
     expect(p.beliefFormation).toBe('resistant');
     expect(p.coherence).toBe('fragmented');
@@ -478,8 +510,8 @@ describe('COGNITIVE_PRESETS', () => {
     expect(p.selfModel).toBe('uncertain');
   });
 
-  it('should match ADR-141 condition table for PTSD', () => {
-    const p = COGNITIVE_PRESETS.ptsd;
+  it('should match ADR-141 dimension table for braced', () => {
+    const p = COGNITIVE_PRESETS.braced;
     expect(p.perception).toBe('filtered');
     expect(p.beliefFormation).toBe('rigid');
     expect(p.coherence).toBe('drifting');
@@ -487,8 +519,8 @@ describe('COGNITIVE_PRESETS', () => {
     expect(p.selfModel).toBe('uncertain');
   });
 
-  it('should match ADR-141 condition table for dementia', () => {
-    const p = COGNITIVE_PRESETS.dementia;
+  it('should match ADR-141 dimension table for unmoored', () => {
+    const p = COGNITIVE_PRESETS.unmoored;
     expect(p.perception).toBe('filtered');
     expect(p.beliefFormation).toBe('rigid');
     expect(p.coherence).toBe('fragmented');

@@ -81,17 +81,17 @@ export function evaluateGoalStep(
   }
 
   // Prepared mode with all prep steps done — switch to opportunistic
-  if (goal.def.mode === 'prepared' && goal.prepared) {
+  if (goal.def.mode === 'prepared' && goal.state.prepared) {
     return evaluateOpportunistic(goal, ctx);
   }
 
   // Sequential/prepared mode — execute current step
   const steps = goal.def.steps;
-  if (!steps || goal.currentStep >= steps.length) {
+  if (!steps || goal.state.currentStep >= steps.length) {
     return { status: 'completed' };
   }
 
-  const step = steps[goal.currentStep];
+  const step = steps[goal.state.currentStep];
   return evaluateStep(step, ctx);
 }
 

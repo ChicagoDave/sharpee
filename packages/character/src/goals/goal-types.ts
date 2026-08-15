@@ -8,6 +8,8 @@
  * Owner context: @sharpee/character / goals
  */
 
+import type { GoalRuntimeState } from '@sharpee/world-model';
+
 // ---------------------------------------------------------------------------
 // Priority
 // ---------------------------------------------------------------------------
@@ -152,25 +154,17 @@ export interface GoalDef {
 // Active goal state
 // ---------------------------------------------------------------------------
 
-/** Runtime state of an active goal. */
+/**
+ * An active goal: the authored definition paired with its live pursuit
+ * state on the NPC's trait (ADR-310 D17 — mutations to `state` persist
+ * through save/restore because the state object IS trait state).
+ */
 export interface ActiveGoal {
   /** The goal definition. */
   def: GoalDef;
 
-  /** Current step index (for sequential/prepared modes). */
-  currentStep: number;
-
-  /** Whether the goal is paused (preempted by higher priority). */
-  paused: boolean;
-
-  /** Whether the goal is interrupted (conditions met). */
-  interrupted: boolean;
-
-  /**
-   * Whether the preparatory steps are complete (for prepared mode).
-   * When true, the goal switches to opportunistic behavior.
-   */
-  prepared: boolean;
+  /** Live reference to the goal's runtime state on the trait. */
+  state: GoalRuntimeState;
 }
 
 // ---------------------------------------------------------------------------

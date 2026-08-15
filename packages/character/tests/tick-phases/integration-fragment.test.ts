@@ -16,7 +16,8 @@
 import { ConversationBuilder } from '../../src/conversation/builder';
 import { applyCharacter } from '../../src/apply';
 import { CharacterPhaseRegistry } from '../../src/tick-phases';
-import { CharacterModelTrait, IFEntity, EntityType } from '@sharpee/world-model';
+import { trackInfluence, isUnderInfluence } from '../../src/influence';
+import { CharacterModelTrait, ICharacterModelData, IFEntity, EntityType } from '@sharpee/world-model';
 
 /** Create a minimal entity for testing. */
 function createStubEntity(id: string, _name: string): IFEntity {
@@ -172,35 +173,31 @@ describe('Integration: 3-NPC mystery fragment', () => {
     expect(registry.getGoalManager('maid')).toBeUndefined();
   });
 
-  test('registry save/restore preserves mutable state', () => {
+  test('mutable state rides traits, not the registry (ADR-310 D17)', () => {
     const registry = new CharacterPhaseRegistry();
     registry.register('colonel', {
       goalDefs: colonelCompiled.goalDefs,
       influenceDefs: colonelCompiled.influenceDefs,
     });
 
-    // Simulate some game state
-    registry.alreadyToldRecord.record('maid', 'cook', 'murder');
-    registry.influenceTracker.track(
-      'intimidation', 'colonel', 'gardener',
+    // Simulate some game state — on the traits that own it
+    const maidTrait = new CharacterModelTrait();
+    maidTrait.recordTold('cook', 'murder');
+    const gardenerTrait = new CharacterModelTrait();
+    trackInfluence(gardenerTrait, 'intimidation', 'colonel',
       { propagation: 'mute', mood: 'fearful' },
-      { duration: 'lingering', turn: 10, lingeringTurns: 3 },
-    );
+      { duration: 'lingering', turn: 10, lingeringTurns: 3 });
 
-    // Save
-    const saved = registry.toJSON();
+    // Save/restore is a trait round-trip; the registry has no state path
+    const restoredMaid = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(maidTrait)) as ICharacterModelData);
+    const restoredGardener = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(gardenerTrait)) as ICharacterModelData);
 
-    // Restore into fresh registry
-    const registry2 = new CharacterPhaseRegistry();
-    registry2.register('colonel', {
-      goalDefs: colonelCompiled.goalDefs,
-      influenceDefs: colonelCompiled.influenceDefs,
-    });
-    registry2.restoreState(saved);
-
-    // Verify state restored
-    expect(registry2.alreadyToldRecord.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(registry2.influenceTracker.isUnderInfluence('gardener', 'intimidation')).toBe(true);
+    expect(restoredMaid.hasTold('cook', 'murder')).toBe(true);
+    expect(isUnderInfluence(restoredGardener, 'intimidation')).toBe(true);
+    expect(restoredGardener.influencesInForce[0].expiresAtTurn).toBe(13);
+    expect((registry as any).toJSON).toBeUndefined();
   });
 
   test('full builder API — all four ADRs on one character', () => {

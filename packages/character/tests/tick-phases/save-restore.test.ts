@@ -1,149 +1,100 @@
 /**
- * Save/restore round-trip tests for CharacterPhaseRegistry
+ * Save/restore round-trip tests (ADR-310 D17)
  *
- * Verifies that all mutable state (goal progress, influence effects,
- * already-told records) survives serialization and restoration.
+ * Verifies that all mutable character state — goal progress, influence
+ * effects in force, told-records — rides CharacterModelTrait through a
+ * JSON round-trip, and that a fresh CharacterPhaseRegistry (authored
+ * configs only, no serialization path of its own) continues from the
+ * restored traits.
  *
  * Owner context: @sharpee/character / tick-phases
  */
 
+import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 import { CharacterPhaseRegistry } from '../../src/tick-phases';
+import { trackInfluence, isUnderInfluence } from '../../src/influence';
+import { GoalDef } from '../../src/goals/goal-types';
 
-describe('CharacterPhaseRegistry save/restore', () => {
-  test('round-trips goal manager state', () => {
+const FIND_WEAPON: GoalDef = {
+  id: 'find-weapon',
+  activatesWhen: ['threatened'],
+  priority: 'high',
+  mode: 'sequential',
+  steps: [
+    { type: 'moveTo', target: 'study' },
+    { type: 'acquire', target: 'knife' },
+  ],
+};
+
+function roundTrip(trait: CharacterModelTrait): CharacterModelTrait {
+  return new CharacterModelTrait(JSON.parse(JSON.stringify(trait)) as ICharacterModelData);
+}
+
+describe('character state save/restore (ADR-310 D17)', () => {
+  test('registry holds no serializable state — no toJSON/restoreState', () => {
     const registry = new CharacterPhaseRegistry();
-    registry.register('colonel', {
-      goalDefs: [
-        {
-          id: 'find-weapon',
-          activatesWhen: ['needs weapon'],
-          priority: 'high',
-          mode: 'sequential',
-          steps: [
-            { type: 'moveTo', target: 'study' },
-            { type: 'acquire', target: 'knife' },
-          ],
-        },
-      ],
-    });
+    expect((registry as any).toJSON).toBeUndefined();
+    expect((registry as any).restoreState).toBeUndefined();
+  });
 
-    // Advance the goal state
+  test('goal progress rides the trait; a fresh registry continues mid-sequence', () => {
+    const registry = new CharacterPhaseRegistry();
+    registry.register('colonel', { goalDefs: [FIND_WEAPON] });
+
+    const trait = new CharacterModelTrait({ threat: 'threatened' });
     const manager = registry.getGoalManager('colonel')!;
-    // Manually activate by setting up a mock trait evaluation
-    // GoalManager.evaluate needs a real trait, so we simulate by checking toJSON
-    expect(manager).toBeDefined();
+    manager.evaluate(trait);
+    manager.advanceStep(trait, 'find-weapon'); // moveTo done → step 1 (acquire)
 
-    // Serialize
-    const saved = registry.toJSON();
-    expect(saved.goalStates).toBeDefined();
-    expect(saved.goalStates['colonel']).toBeDefined();
+    const restoredTrait = roundTrip(trait);
 
-    // Create new registry, re-register configs, restore state
+    // A brand-new registry re-registers only authored configs
     const registry2 = new CharacterPhaseRegistry();
-    registry2.register('colonel', {
-      goalDefs: [
-        {
-          id: 'find-weapon',
-          activatesWhen: ['needs weapon'],
-          priority: 'high',
-          mode: 'sequential',
-          steps: [
-            { type: 'moveTo', target: 'study' },
-            { type: 'acquire', target: 'knife' },
-          ],
-        },
-      ],
-    });
-    registry2.restoreState(saved);
-
+    registry2.register('colonel', { goalDefs: [FIND_WEAPON] });
     const manager2 = registry2.getGoalManager('colonel')!;
-    expect(manager2).toBeDefined();
+
+    expect(manager2.isActive(restoredTrait, 'find-weapon')).toBe(true);
+    expect(manager2.getTopGoal(restoredTrait)!.state.currentStep).toBe(1);
   });
 
-  test('round-trips influence tracker state', () => {
-    const registry = new CharacterPhaseRegistry();
-    registry.register('ginger', {
-      influenceDefs: [{
-        name: 'seduction',
-        mode: 'passive',
-        range: 'proximity',
-        effect: { focus: 'clouded' },
-        duration: 'while present',
-      }],
-    });
+  test('influence effects in force ride the trait, player-target records included', () => {
+    const gingerTrait = new CharacterModelTrait();
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 5, target: 'player' });
 
-    // Track an effect
-    registry.influenceTracker.track(
-      'seduction', 'ginger', 'player',
-      { focus: 'clouded' }, { duration: 'while present', turn: 5 },
-    );
-    expect(registry.influenceTracker.isUnderInfluence('player', 'seduction')).toBe(true);
+    const jamesTrait = new CharacterModelTrait();
+    trackInfluence(jamesTrait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 5 });
 
-    // Serialize
-    const saved = registry.toJSON();
-    expect(saved.influenceEffects).toHaveLength(1);
+    const restoredGinger = roundTrip(gingerTrait);
+    const restoredJames = roundTrip(jamesTrait);
 
-    // Restore into new registry
-    const registry2 = new CharacterPhaseRegistry();
-    registry2.register('ginger', {
-      influenceDefs: [{
-        name: 'seduction',
-        mode: 'passive',
-        range: 'proximity',
-        effect: { focus: 'clouded' },
-        duration: 'while present',
-      }],
-    });
-    registry2.restoreState(saved);
-
-    expect(registry2.influenceTracker.isUnderInfluence('player', 'seduction')).toBe(true);
-    expect(registry2.influenceTracker.count).toBe(1);
+    expect(restoredGinger.influencesInForce[0].target).toBe('player');
+    expect(isUnderInfluence(restoredJames, 'seduction')).toBe(true);
   });
 
-  test('round-trips already-told record', () => {
-    const registry = new CharacterPhaseRegistry();
+  test('told-records ride the speaker trait', () => {
+    const maidTrait = new CharacterModelTrait();
+    maidTrait.recordTold('cook', 'murder');
+    maidTrait.recordTold('cook', 'weapon');
 
-    // Record some transfers
-    registry.alreadyToldRecord.record('maid', 'cook', 'murder');
-    registry.alreadyToldRecord.record('maid', 'cook', 'weapon');
-    registry.alreadyToldRecord.record('cook', 'colonel', 'murder');
+    const cookTrait = new CharacterModelTrait();
+    cookTrait.recordTold('colonel', 'murder');
 
-    expect(registry.alreadyToldRecord.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(registry.alreadyToldRecord.hasTold('cook', 'colonel', 'murder')).toBe(true);
+    const restoredMaid = roundTrip(maidTrait);
+    const restoredCook = roundTrip(cookTrait);
 
-    // Serialize
-    const saved = registry.toJSON();
-
-    // Restore into new registry
-    const registry2 = new CharacterPhaseRegistry();
-    registry2.restoreState(saved);
-
-    expect(registry2.alreadyToldRecord.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(registry2.alreadyToldRecord.hasTold('maid', 'cook', 'weapon')).toBe(true);
-    expect(registry2.alreadyToldRecord.hasTold('cook', 'colonel', 'murder')).toBe(true);
-    expect(registry2.alreadyToldRecord.hasTold('maid', 'colonel', 'murder')).toBe(false);
+    expect(restoredMaid.hasTold('cook', 'murder')).toBe(true);
+    expect(restoredMaid.hasTold('cook', 'weapon')).toBe(true);
+    expect(restoredCook.hasTold('colonel', 'murder')).toBe(true);
+    expect(restoredMaid.hasTold('colonel', 'murder')).toBe(false);
   });
 
-  test('handles empty state gracefully', () => {
-    const registry = new CharacterPhaseRegistry();
-    const saved = registry.toJSON();
+  test('a trait with no character activity round-trips to defaults', () => {
+    const restored = roundTrip(new CharacterModelTrait());
 
-    expect(saved.goalStates).toEqual({});
-    expect(saved.influenceEffects).toEqual([]);
-    expect(saved.alreadyTold).toEqual({});
-
-    // Restore empty into new registry
-    const registry2 = new CharacterPhaseRegistry();
-    registry2.restoreState(saved);
-
-    expect(registry2.influenceTracker.count).toBe(0);
-  });
-
-  test('handles missing saved fields', () => {
-    const registry = new CharacterPhaseRegistry();
-    // Restore with partial data (e.g., old save format)
-    registry.restoreState({});
-
-    expect(registry.influenceTracker.count).toBe(0);
+    expect(restored.goalState).toEqual({});
+    expect(restored.influencesInForce).toEqual([]);
+    expect(restored.told).toEqual({});
   });
 });

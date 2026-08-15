@@ -23,6 +23,8 @@ import {
   STABLE_COGNITIVE_PROFILE,
   type ConfidenceWord,
   type FactSource,
+  type ResistanceMode,
+  type ValuedBelief,
   type LucidityConfig,
   type PerceptionFilterConfig,
   type PerceivedEvent,
@@ -181,8 +183,8 @@ export class CharacterBuilder {
   private _mood: Mood | string = 'calm';
   private _threat: ThreatLevel = 'safe';
   private _cognitiveProfile: CognitiveProfile = { ...STABLE_COGNITIVE_PROFILE };
-  private _knowledge: Map<string, { source: FactSource; confidence: ConfidenceWord; turn: number }> = new Map();
-  private _beliefs: Map<string, { strength: ConfidenceWord; resistance: 'none' | 'reinterprets' | 'ignores' }> = new Map();
+  private _knowledge: Map<string, { source: FactSource; confidence: ConfidenceWord; turn: number; resistance?: ResistanceMode }> = new Map();
+  private _factBeliefs: Map<string, ValuedBelief> = new Map();
   private _goals: Map<string, number> = new Map();
   private _lucidityConfig?: LucidityConfig;
   private _perceptionFilters?: PerceptionFilterConfig;
@@ -330,35 +332,49 @@ export class CharacterBuilder {
   // =========================================================================
 
   /**
-   * Declare that the NPC knows about a topic.
+   * Declare that the NPC knows about a topic (valueless — ADR-310 D14).
    *
    * @param topic - What the NPC knows about
-   * @param opts - Optional: how they know and how confident
+   * @param opts - Optional: how they know, how confident, and how resistant
+   *   to counter-evidence (the fold of the retired belief map)
    * @returns this for chaining
    */
-  knows(topic: string, opts?: { witnessed?: boolean; confidence?: ConfidenceWord }): CharacterBuilder {
+  knows(topic: string, opts?: { witnessed?: boolean; confidence?: ConfidenceWord; resistance?: ResistanceMode }): CharacterBuilder {
     this._knowledge.set(topic, {
       source: opts?.witnessed ? 'witnessed' : 'assumed',
       confidence: opts?.confidence ?? 'believes',
       turn: 0,
+      ...(opts?.resistance ? { resistance: opts.resistance } : {}),
     });
     return this;
   }
 
   // =========================================================================
-  // Beliefs
+  // Valued beliefs (ADR-310 D14)
   // =========================================================================
 
   /**
-   * Declare a belief the NPC holds (may differ from facts).
+   * Declare what this NPC thinks a declared fact's value is — Chord parity
+   * for `thinks the killer is the Butler, suspects, told`. Replaces the
+   * retired `believes()` method (its firmness/resistance fields fold in
+   * here and into `knows()`).
    *
-   * @param topic - What the belief is about
-   * @param opts - Strength and resistance
+   * @param factId - The fact declaration's id
+   * @param value - The value this NPC thinks is true (checked against the
+   *   fact's closed value set at compile/load time, not here)
+   * @param opts - Confidence, source, and resistance
    * @returns this for chaining
    */
-  believes(topic: string, opts?: { strength?: ConfidenceWord; resistance?: 'none' | 'reinterprets' | 'ignores' }): CharacterBuilder {
-    this._beliefs.set(topic, {
-      strength: opts?.strength ?? 'believes',
+  thinks(factId: string, value: string, opts?: {
+    confidence?: ConfidenceWord;
+    source?: FactSource;
+    resistance?: ResistanceMode;
+  }): CharacterBuilder {
+    this._factBeliefs.set(factId, {
+      value,
+      confidence: opts?.confidence ?? 'believes',
+      source: opts?.source ?? 'assumed',
+      turnLearned: 0,
       resistance: opts?.resistance ?? 'none',
     });
     return this;
@@ -637,15 +653,18 @@ export class CharacterBuilder {
     }
 
     // Build knowledge record
-    const knowledge: Record<string, { source: FactSource; confidence: ConfidenceWord; turnLearned: number }> = {};
+    const knowledge: Record<string, { source: FactSource; confidence: ConfidenceWord; turnLearned: number; resistance?: ResistanceMode }> = {};
     for (const [topic, fact] of this._knowledge) {
-      knowledge[topic] = { source: fact.source, confidence: fact.confidence, turnLearned: fact.turn };
+      knowledge[topic] = {
+        source: fact.source, confidence: fact.confidence, turnLearned: fact.turn,
+        ...(fact.resistance ? { resistance: fact.resistance } : {}),
+      };
     }
 
-    // Build beliefs record
-    const beliefs: Record<string, { strength: ConfidenceWord; resistance: 'none' | 'reinterprets' | 'ignores' }> = {};
-    for (const [topic, belief] of this._beliefs) {
-      beliefs[topic] = belief;
+    // Build valued-beliefs record (ADR-310 D14)
+    const factBeliefs: Record<string, ValuedBelief> = {};
+    for (const [factId, belief] of this._factBeliefs) {
+      factBeliefs[factId] = { ...belief };
     }
 
     // Build goals array
@@ -669,7 +688,7 @@ export class CharacterBuilder {
       threat: this._threat,
       cognitiveProfile: this._cognitiveProfile,
       knowledge,
-      beliefs,
+      factBeliefs,
       goals,
       lucidityConfig: this._lucidityConfig,
       currentLucidityState: this._lucidityConfig?.baseline,

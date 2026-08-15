@@ -14,9 +14,17 @@ import {
   checkResistance,
   evaluatePassiveInfluences,
   evaluateActiveInfluence,
-  InfluenceTracker,
+  trackInfluence,
+  isUnderInfluence,
+  expireInfluencesForTurn,
+  expireInfluencesOnDeparture,
   evaluatePcInfluence,
 } from '../../src/influence';
+import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
+
+function makeTrait(): CharacterModelTrait {
+  return new CharacterModelTrait();
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -247,121 +255,117 @@ describe('evaluateActiveInfluence', () => {
 });
 
 // =========================================================================
-// Influence tracker (duration management)
+// Influence duration (trait-based, ADR-310 D17)
 // =========================================================================
 
-describe('InfluenceTracker', () => {
-  test('tracks and queries active effects', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+describe('influence duration — trait-based', () => {
+  test('tracks and queries effects on the home trait', () => {
+    const jamesTrait = makeTrait();
+    trackInfluence(jamesTrait, 'seduction', 'ginger', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
 
-    expect(tracker.isUnderInfluence('player', 'seduction')).toBe(true);
-    expect(tracker.isUnderInfluence('james', 'seduction')).toBe(false);
-    expect(tracker.count).toBe(1);
+    expect(isUnderInfluence(jamesTrait, 'seduction')).toBe(true);
+    expect(isUnderInfluence(makeTrait(), 'seduction')).toBe(false);
+    expect(jamesTrait.influencesInForce).toHaveLength(1);
+    expect(jamesTrait.influencesInForce[0].influencerId).toBe('ginger');
   });
 
-  test('getEffectsOn returns effects for specific target', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+  test('player-targeted effects ride the exerter trait with explicit target', () => {
+    const gingerTrait = makeTrait();
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 1, target: 'player' });
 
-    expect(tracker.getEffectsOn('player')).toHaveLength(1);
-    expect(tracker.getEffectsOn('james')).toHaveLength(1);
-  });
-
-  test('getEffectsFrom returns effects from specific influencer', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-
-    expect(tracker.getEffectsFrom('ginger')).toHaveLength(2);
-    expect(tracker.getEffectsFrom('colonel')).toHaveLength(0);
+    expect(gingerTrait.influencesInForce[0].target).toBe('player');
   });
 
   test('does not double-track same influence/influencer/target', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 2 });
+    const trait = makeTrait();
+    const first = trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    const second = trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' }, { duration: 'while present', turn: 2 });
 
-    expect(tracker.count).toBe(1);
+    expect(first).toBe(true);
+    expect(second).toBe(false);
+    expect(trait.influencesInForce).toHaveLength(1);
   });
 
-  test('expireOnDeparture clears "while present" effects', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+  test('expireInfluencesOnDeparture clears "while present" effects from that influencer', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    trackInfluence(trait, 'calming', 'priest', { mood: 'at ease' }, { duration: 'while present', turn: 1 });
 
-    const expired = tracker.expireOnDeparture('ginger');
-    expect(expired).toHaveLength(2);
-    expect(tracker.count).toBe(0);
-    expect(tracker.isUnderInfluence('player', 'seduction')).toBe(false);
+    const expired = expireInfluencesOnDeparture(trait, 'ginger');
+    expect(expired).toHaveLength(1);
+    expect(isUnderInfluence(trait, 'seduction')).toBe(false);
+    expect(isUnderInfluence(trait, 'calming')).toBe(true);
   });
 
-  test('expireOnDeparture does not clear momentary or lingering effects', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 1 });
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 1, lingeringTurns: 5 });
+  test('expireInfluencesOnDeparture does not clear momentary or lingering effects', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'intimidation', 'colonel', { mood: 'fearful' }, { duration: 'momentary', turn: 1 });
+    trackInfluence(trait, 'curse', 'witch', { mood: 'anxious' }, { duration: 'lingering', turn: 1, lingeringTurns: 5 });
 
-    const expired = tracker.expireOnDeparture('colonel');
+    const expired = expireInfluencesOnDeparture(trait, 'colonel');
     expect(expired).toHaveLength(0);
-    expect(tracker.count).toBe(2);
+    expect(trait.influencesInForce).toHaveLength(2);
   });
 
-  test('expireTurn clears momentary effects after one turn', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
+  test('expireInfluencesForTurn clears momentary effects after one turn', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'intimidation', 'colonel', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
 
     // Same turn — not expired yet
-    let expired = tracker.expireTurn(5);
+    let expired = expireInfluencesForTurn(trait, 5);
     expect(expired).toHaveLength(0);
 
     // Next turn — expired
-    expired = tracker.expireTurn(6);
+    expired = expireInfluencesForTurn(trait, 6);
     expect(expired).toHaveLength(1);
-    expect(tracker.count).toBe(0);
+    expect(trait.influencesInForce).toHaveLength(0);
   });
 
-  test('expireTurn clears lingering effects after authored turns', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 10, lingeringTurns: 3 });
+  test('expireInfluencesForTurn clears lingering effects after authored turns', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'curse', 'witch', { mood: 'anxious' }, { duration: 'lingering', turn: 10, lingeringTurns: 3 });
 
     // Turn 12 — not expired yet
-    let expired = tracker.expireTurn(12);
+    let expired = expireInfluencesForTurn(trait, 12);
     expect(expired).toHaveLength(0);
 
     // Turn 13 (10 + 3) — expired
-    expired = tracker.expireTurn(13);
+    expired = expireInfluencesForTurn(trait, 13);
     expect(expired).toHaveLength(1);
-    expect(tracker.count).toBe(0);
+    expect(trait.influencesInForce).toHaveLength(0);
   });
 
-  test('expireTurn clears lingering effects when clear condition met', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 10, clearCondition: 'has holy water' });
+  test('expireInfluencesForTurn clears lingering effects when clear condition met', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'curse', 'witch', { mood: 'anxious' }, { duration: 'lingering', turn: 10, clearCondition: 'has holy water' });
 
     // Condition not met
-    let expired = tracker.expireTurn(15, (_target, _pred) => false);
+    let expired = expireInfluencesForTurn(trait, 15, () => false);
     expect(expired).toHaveLength(0);
 
     // Condition met
-    expired = tracker.expireTurn(16, (targetId, pred) =>
-      targetId === 'player' && pred === 'has holy water',
+    expired = expireInfluencesForTurn(trait, 16, (effect, pred) =>
+      effect.influenceName === 'curse' && pred === 'has holy water',
     );
     expect(expired).toHaveLength(1);
-    expect(tracker.count).toBe(0);
+    expect(trait.influencesInForce).toHaveLength(0);
   });
 
-  test('serialization round-trip', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
+  test('effects in force ride the trait through a JSON round-trip', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 1, target: 'player' });
+    trackInfluence(trait, 'intimidation', 'colonel', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
 
-    const json = tracker.toJSON();
-    const restored = InfluenceTracker.fromJSON(json);
+    const restored = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(trait)) as ICharacterModelData,
+    );
 
-    expect(restored.count).toBe(2);
-    expect(restored.isUnderInfluence('player', 'seduction')).toBe(true);
-    expect(restored.isUnderInfluence('gardener', 'intimidation')).toBe(true);
+    expect(restored.influencesInForce).toHaveLength(2);
+    expect(isUnderInfluence(restored, 'seduction')).toBe(true);
+    expect(isUnderInfluence(restored, 'intimidation')).toBe(true);
+    expect(restored.influencesInForce[0].target).toBe('player');
   });
 });
 
@@ -371,19 +375,19 @@ describe('InfluenceTracker', () => {
 
 describe('evaluatePcInfluence', () => {
   test('returns clear when player has no active effects', () => {
-    const tracker = new InfluenceTracker();
-    const result = evaluatePcInfluence('player', tracker, new Map());
+    const result = evaluatePcInfluence('player', [], new Map());
     expect(result.status).toBe('clear');
   });
 
   test('intercepts when focus is clouded', () => {
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded', mood: 'distracted' }, { duration: 'while present', turn: 1 });
+    const gingerTrait = makeTrait();
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { focus: 'clouded', mood: 'distracted' },
+      { duration: 'while present', turn: 1, target: 'player' });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('ginger', [SEDUCTION]);
 
-    const result = evaluatePcInfluence('player', tracker, defs);
+    const result = evaluatePcInfluence('player', gingerTrait.influencesInForce, defs);
     expect(result.status).toBe('intercepted');
     if (result.status === 'intercepted') {
       expect(result.clearConversationContext).toBe(true);
@@ -397,13 +401,14 @@ describe('evaluatePcInfluence', () => {
       effect: { mood: 'distracted' }, // no focus: clouded
       onPlayerAction: 'ginger-distracts-from-{action}',
     };
-    const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { mood: 'distracted' }, { duration: 'while present', turn: 1 });
+    const gingerTrait = makeTrait();
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { mood: 'distracted' },
+      { duration: 'while present', turn: 1, target: 'player' });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('ginger', [influenceWithAction]);
 
-    const result = evaluatePcInfluence('player', tracker, defs);
+    const result = evaluatePcInfluence('player', gingerTrait.influencesInForce, defs);
     expect(result.status).toBe('intercepted');
     if (result.status === 'intercepted') {
       expect(result.onPlayerAction).toBe('ginger-distracts-from-{action}');
@@ -417,13 +422,28 @@ describe('evaluatePcInfluence', () => {
       ...CALMING,
       onPlayerAction: undefined,
     };
-    const tracker = new InfluenceTracker();
-    tracker.track('calming', 'priest', 'player', { mood: 'at ease' }, { duration: 'while present', turn: 1 });
+    const priestTrait = makeTrait();
+    trackInfluence(priestTrait, 'calming', 'priest', { mood: 'at ease' },
+      { duration: 'while present', turn: 1, target: 'player' });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('priest', [calmInfluence]);
 
-    const result = evaluatePcInfluence('player', tracker, defs);
+    const result = evaluatePcInfluence('player', priestTrait.influencesInForce, defs);
+    expect(result.status).toBe('clear');
+  });
+
+  test('ignores effects targeting someone else', () => {
+    const gingerTrait = makeTrait();
+    // Effect on an NPC target rides the target's trait with no target field;
+    // this one is exerter-homed but aimed at james, not the player
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 1, target: 'james' });
+
+    const defs = new Map<string, InfluenceDef[]>();
+    defs.set('ginger', [SEDUCTION]);
+
+    const result = evaluatePcInfluence('player', gingerTrait.influencesInForce, defs);
     expect(result.status).toBe('clear');
   });
 });

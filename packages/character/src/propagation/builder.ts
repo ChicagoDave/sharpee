@@ -25,8 +25,12 @@ import {
  * All fields map directly to PropagationProfile.
  */
 export interface PropagationOptions {
-  /** How freely the NPC shares information. */
-  tendency: PropagationTendency;
+  /**
+   * How freely the NPC shares information (default: 'chatty'). A non-empty
+   * `spreads` list narrows sharing to exactly those topics (ADR-310 D10 —
+   * the retired `selective` keyword, said by listing).
+   */
+  tendency?: PropagationTendency;
 
   /** Who the NPC shares with (default: 'trusted'). */
   audience?: PropagationAudience;
@@ -34,10 +38,10 @@ export interface PropagationOptions {
   /** NPC IDs explicitly excluded from sharing. */
   excludes?: string[];
 
-  /** Topics the chatty NPC withholds (blacklist for chatty tendency). */
+  /** Topics the chatty NPC withholds (blacklist). */
   withholds?: string[];
 
-  /** Topics the selective NPC will share (whitelist for selective tendency). */
+  /** Topics the NPC will share — a non-empty list is a whitelist (ADR-310 D10). */
   spreads?: string[];
 
   /** Per-fact overrides. */
@@ -67,7 +71,7 @@ export interface PropagationOptions {
  */
 export function buildPropagationProfile(opts: PropagationOptions): PropagationProfile {
   const profile: PropagationProfile = {
-    tendency: opts.tendency,
+    tendency: opts.tendency ?? 'chatty',
   };
 
   if (opts.audience !== undefined) profile.audience = opts.audience;

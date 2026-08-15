@@ -126,36 +126,10 @@ export interface ResistanceDef {
   except?: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Active influence effect tracking
-// ---------------------------------------------------------------------------
-
-/** Runtime tracking of an applied influence effect. */
-export interface ActiveInfluenceEffect {
-  /** The influence name. */
-  influenceName: string;
-
-  /** The influencer's entity ID. */
-  influencerId: string;
-
-  /** The target's entity ID. */
-  targetId: string;
-
-  /** The applied effect mutations. */
-  effect: InfluenceEffect;
-
-  /** Duration type. */
-  duration: InfluenceDuration;
-
-  /** Turn when the effect was applied. */
-  appliedAtTurn: number;
-
-  /** For lingering: turn when the effect expires. */
-  expiresAtTurn?: number;
-
-  /** For lingering: predicate condition that clears the effect. */
-  clearCondition?: string;
-}
+// The ActiveInfluenceEffect service-side record is retired (ADR-310 D17):
+// effects in force are now `InfluenceInForce` records from
+// @sharpee/world-model, riding the target's trait (or the exerter's, for
+// targets with no character model — the player).
 
 // ---------------------------------------------------------------------------
 // Evaluation results

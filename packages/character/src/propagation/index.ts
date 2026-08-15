@@ -19,7 +19,6 @@ export {
   type PropagationSchedule,
   type PropagationProfile,
   type PropagationTransfer,
-  AlreadyToldRecord,
 } from './propagation-types.js';
 
 export {

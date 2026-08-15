@@ -1,9 +1,11 @@
 /**
- * Goal activation and lifecycle (ADR-145)
+ * Goal activation and lifecycle (ADR-145, relocated per ADR-310 D17)
  *
- * Evaluates goal activation conditions against character state,
- * manages the active goal queue (priority-sorted), and handles
- * interruption/resumption.
+ * Evaluates goal activation conditions against character state and manages
+ * the active goal queue. Holds ONLY authored goal definitions — all mutable
+ * pursuit state (active flag, current step, paused/interrupted/prepared)
+ * lives on the NPC's CharacterModelTrait (`trait.goalState`), so it rides
+ * the world-model save path.
  *
  * Public interface: GoalManager.
  * Owner context: @sharpee/character / goals
@@ -21,15 +23,13 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Manages goal activation, deactivation, interruption, and the
- * active goal queue for a single NPC.
+ * Manages goal activation, deactivation, and interruption for a single NPC.
+ * Stateless between turns by construction (ADR-310 D17): definitions are
+ * authored and re-registered at load; every mutation goes to the trait.
  */
 export class GoalManager {
   /** All authored goal definitions for this NPC. */
   private readonly defs: GoalDef[] = [];
-
-  /** Currently active goals, sorted by priority (highest first). */
-  private activeGoals: ActiveGoal[] = [];
 
   // =========================================================================
   // Registration
@@ -58,38 +58,46 @@ export class GoalManager {
   // =========================================================================
 
   /**
-   * Evaluate all goal activation and interruption conditions.
-   * Activates new goals, interrupts active ones, resumes cleared ones.
+   * Evaluate all goal activation and interruption conditions against the
+   * trait, mutating `trait.goalState` in place. Activates new goals,
+   * interrupts active ones, resumes cleared ones.
    *
    * @param trait - The NPC's CharacterModelTrait
-   * @returns The current active goal queue (priority-sorted)
+   * @returns The current active goal queue (priority-sorted, interrupted last)
    */
   evaluate(trait: CharacterModelTrait): ActiveGoal[] {
     // Check for new activations
     for (const def of this.defs) {
-      if (this.isActive(def.id)) continue;
+      const state = trait.getGoalState(def.id);
+      if (state.active) continue;
 
       const shouldActivate = def.activatesWhen.every(pred =>
         trait.evaluate(pred),
       );
 
       if (shouldActivate) {
-        this.activate(def);
+        state.active = true;
+        state.currentStep = 0;
+        state.paused = false;
+        state.interrupted = false;
+        state.prepared = false;
       }
     }
 
+    const activeGoals = this.getActiveGoals(trait);
+
     // Check for interruptions on active goals
-    this.evaluateInterruptions(this.activeGoals, trait);
+    this.evaluateInterruptions(activeGoals, trait);
 
     // Sort by priority (highest first), interrupted goals at the end
-    this.activeGoals.sort((a, b) => {
-      if (a.interrupted !== b.interrupted) {
-        return a.interrupted ? 1 : -1;
+    activeGoals.sort((a, b) => {
+      if (a.state.interrupted !== b.state.interrupted) {
+        return a.state.interrupted ? 1 : -1;
       }
       return GOAL_PRIORITY_VALUES[b.def.priority] - GOAL_PRIORITY_VALUES[a.def.priority];
     });
 
-    return this.activeGoals;
+    return activeGoals;
   }
 
   // =========================================================================
@@ -97,100 +105,96 @@ export class GoalManager {
   // =========================================================================
 
   /**
-   * Get the highest-priority non-interrupted active goal.
+   * Get the highest-priority non-interrupted, non-paused active goal.
    *
+   * @param trait - The NPC's CharacterModelTrait
    * @returns The top goal, or undefined
    */
-  getTopGoal(): ActiveGoal | undefined {
-    return this.activeGoals.find(g => !g.interrupted && !g.paused);
+  getTopGoal(trait: CharacterModelTrait): ActiveGoal | undefined {
+    return this.evaluateOrder(trait).find(g => !g.state.interrupted && !g.state.paused);
   }
 
   /**
    * Check if a goal is currently active.
    *
+   * @param trait - The NPC's CharacterModelTrait
    * @param goalId - The goal ID
-   * @returns True if the goal is in the active queue
+   * @returns True if the goal is active
    */
-  isActive(goalId: string): boolean {
-    return this.activeGoals.some(g => g.def.id === goalId);
+  isActive(trait: CharacterModelTrait, goalId: string): boolean {
+    return trait.goalState[goalId]?.active ?? false;
   }
 
   /**
-   * Get all active goals.
+   * Get all active goals in registration order (unsorted view).
    *
-   * @returns The active goal queue
+   * @param trait - The NPC's CharacterModelTrait
+   * @returns Active goals paired with their live trait state
    */
-  getActiveGoals(): readonly ActiveGoal[] {
-    return this.activeGoals;
+  getActiveGoals(trait: CharacterModelTrait): ActiveGoal[] {
+    const active: ActiveGoal[] = [];
+    for (const def of this.defs) {
+      const state = trait.goalState[def.id];
+      if (state?.active) {
+        active.push({ def, state });
+      }
+    }
+    return active;
   }
 
   /**
-   * Advance the current step of a goal (after step completion).
+   * Advance the current step of a goal (after step completion). A completed
+   * sequential goal deactivates; a completed prepared goal switches to
+   * opportunistic behavior.
    *
+   * @param trait - The NPC's CharacterModelTrait
    * @param goalId - The goal ID
    */
-  advanceStep(goalId: string): void {
-    const goal = this.activeGoals.find(g => g.def.id === goalId);
-    if (!goal) return;
+  advanceStep(trait: CharacterModelTrait, goalId: string): void {
+    const state = trait.goalState[goalId];
+    if (!state?.active) return;
+    const def = this.defs.find(d => d.id === goalId);
+    if (!def) return;
 
-    goal.currentStep++;
+    state.currentStep++;
 
     // Check if all sequential steps are done
-    if (goal.def.steps && goal.currentStep >= goal.def.steps.length) {
-      if (goal.def.mode === 'prepared') {
+    if (def.steps && state.currentStep >= def.steps.length) {
+      if (def.mode === 'prepared') {
         // Switch to opportunistic for the final act
-        goal.prepared = true;
+        state.prepared = true;
       } else {
-        // Sequential goal complete — remove from active
-        this.deactivate(goalId);
+        // Sequential goal complete — deactivate
+        this.deactivate(trait, goalId);
       }
     }
   }
 
   /**
-   * Complete a goal and remove it from the active queue.
+   * Complete a goal and deactivate it.
    *
+   * @param trait - The NPC's CharacterModelTrait
    * @param goalId - The goal ID
    */
-  complete(goalId: string): void {
-    this.deactivate(goalId);
-  }
-
-  // =========================================================================
-  // Serialization
-  // =========================================================================
-
-  /** Export active goals for save/restore. */
-  toJSON(): ActiveGoalState[] {
-    return this.activeGoals.map(g => ({
-      defId: g.def.id,
-      currentStep: g.currentStep,
-      paused: g.paused,
-      interrupted: g.interrupted,
-      prepared: g.prepared,
-    }));
-  }
-
-  /** Restore active goals from serialized state. */
-  restoreState(states: ActiveGoalState[]): void {
-    this.activeGoals = [];
-    for (const state of states) {
-      const def = this.defs.find(d => d.id === state.defId);
-      if (!def) continue;
-
-      this.activeGoals.push({
-        def,
-        currentStep: state.currentStep,
-        paused: state.paused,
-        interrupted: state.interrupted,
-        prepared: state.prepared,
-      });
-    }
+  complete(trait: CharacterModelTrait, goalId: string): void {
+    this.deactivate(trait, goalId);
   }
 
   // =========================================================================
   // Private helpers
   // =========================================================================
+
+  /** Active goals in priority order (interrupted last) without re-evaluating conditions. */
+  private evaluateOrder(trait: CharacterModelTrait): ActiveGoal[] {
+    const goals = this.getActiveGoals(trait);
+    goals.sort((a, b) => {
+      if (a.state.interrupted !== b.state.interrupted) {
+        return a.state.interrupted ? 1 : -1;
+      }
+      return GOAL_PRIORITY_VALUES[b.def.priority] - GOAL_PRIORITY_VALUES[a.def.priority];
+    });
+    return goals;
+  }
 
   /**
    * Evaluate interruption and resumption conditions for all active goals.
@@ -207,14 +211,14 @@ export class GoalManager {
     trait: CharacterModelTrait,
   ): void {
     for (const goal of activeGoals) {
-      if (goal.interrupted) {
+      if (goal.state.interrupted) {
         // Check if interruption conditions cleared and goal should resume
         if (goal.def.resumeOnClear && goal.def.interruptedBy) {
           const stillInterrupted = goal.def.interruptedBy.some(pred =>
             trait.evaluate(pred),
           );
           if (!stillInterrupted) {
-            goal.interrupted = false;
+            goal.state.interrupted = false;
           }
         }
         continue;
@@ -226,36 +230,20 @@ export class GoalManager {
           trait.evaluate(pred),
         );
         if (shouldInterrupt) {
-          goal.interrupted = true;
+          goal.state.interrupted = true;
         }
       }
     }
   }
 
-  private activate(def: GoalDef): void {
-    this.activeGoals.push({
-      def,
-      currentStep: 0,
-      paused: false,
-      interrupted: false,
-      prepared: false,
-    });
+  /** Deactivate a goal, resetting its pursuit state for a possible future re-activation. */
+  private deactivate(trait: CharacterModelTrait, goalId: string): void {
+    const state = trait.goalState[goalId];
+    if (!state) return;
+    state.active = false;
+    state.currentStep = 0;
+    state.paused = false;
+    state.interrupted = false;
+    state.prepared = false;
   }
-
-  private deactivate(goalId: string): void {
-    this.activeGoals = this.activeGoals.filter(g => g.def.id !== goalId);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Serialization types
-// ---------------------------------------------------------------------------
-
-/** Serialized active goal state. */
-export interface ActiveGoalState {
-  defId: string;
-  currentStep: number;
-  paused: boolean;
-  interrupted: boolean;
-  prepared: boolean;
 }

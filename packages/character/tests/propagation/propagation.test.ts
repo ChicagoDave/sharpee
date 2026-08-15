@@ -1,9 +1,9 @@
 /**
- * Unit tests for information propagation (ADR-144)
+ * Unit tests for information propagation (ADR-144, ADR-310 D10/D14/D17)
  *
- * Verifies propagation evaluation (tendency, audience, pace, schedule),
- * fact transfer with provenance, already-told tracking, and
- * player-leverage gating.
+ * Verifies propagation evaluation (spreads whitelist / withholds blacklist,
+ * audience, pace, schedule), fact transfer with provenance, the trait-based
+ * told-record, and player-leverage gating.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -12,10 +12,7 @@ import {
   PropagationContext,
   RoomOccupant,
 } from '../../src/propagation/propagation-evaluator';
-import {
-  AlreadyToldRecord,
-  PropagationProfile,
-} from '../../src/propagation/propagation-types';
+import { PropagationProfile } from '../../src/propagation/propagation-types';
 import { transferFact, applyTransfers } from '../../src/propagation/fact-transfer';
 import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 
@@ -42,7 +39,6 @@ function makeContext(overrides: Partial<PropagationContext>): PropagationContext
     speaker: overrides.speaker!,
     listeners: overrides.listeners ?? [],
     playerPresent: overrides.playerPresent ?? false,
-    alreadyTold: overrides.alreadyTold ?? new AlreadyToldRecord(),
     turn: overrides.turn ?? 1,
     turnsColocated: overrides.turnsColocated,
   };
@@ -165,14 +161,14 @@ describe('Propagation — chatty tendency', () => {
 });
 
 // ===========================================================================
-// Tendency: selective
+// Spreads whitelist (ADR-310 D10 — the retired `selective`, said by listing)
 // ===========================================================================
 
-describe('Propagation — selective tendency', () => {
-  it('should only transfer explicitly listed topics', () => {
+describe('Propagation — spreads whitelist', () => {
+  it('should only transfer explicitly listed topics when spreads is non-empty', () => {
     const speaker = makeOccupant(
       'cook',
-      { tendency: 'selective', spreads: ['murder'], audience: 'anyone' },
+      { tendency: 'chatty', spreads: ['murder'], audience: 'anyone' },
       {
         murder: { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
         weapon: { source: 'witnessed', confidence: 'certain', turnLearned: 1 },
@@ -339,24 +335,22 @@ describe('Propagation — schedule', () => {
 });
 
 // ===========================================================================
-// Already-told tracking
+// Already-told tracking (trait-based, ADR-310 D17)
 // ===========================================================================
 
 describe('Propagation — already-told', () => {
-  it('should not re-transfer a fact already told to a listener', () => {
+  it('should not re-transfer a fact the speaker trait has already told the listener', () => {
     const speaker = makeOccupant(
       'maid',
       { tendency: 'chatty', audience: 'anyone' },
       { murder: { source: 'witnessed', confidence: 'certain', turnLearned: 0 } },
     );
     const listener = makeOccupant('cook');
-    const alreadyTold = new AlreadyToldRecord();
-    alreadyTold.record('maid', 'cook', 'murder');
+    speaker.trait.recordTold('cook', 'murder');
 
     const transfers = evaluatePropagation(makeContext({
       speaker,
       listeners: [listener],
-      alreadyTold,
     }));
 
     expect(transfers).toHaveLength(0);
@@ -413,9 +407,9 @@ describe('Propagation — player leverage', () => {
 // ===========================================================================
 
 describe('Fact transfer — provenance', () => {
-  it('should create fact in listener knowledge with source provenance', () => {
+  it('should create fact in listener knowledge and record on the speaker trait', () => {
+    const speakerTrait = makeTrait();
     const listenerTrait = makeTrait();
-    const alreadyTold = new AlreadyToldRecord();
 
     const result = transferFact(
       {
@@ -425,8 +419,8 @@ describe('Fact transfer — provenance', () => {
         version: 'truth',
         coloring: 'dramatic',
       },
+      speakerTrait,
       listenerTrait,
-      alreadyTold,
       5,
     );
 
@@ -437,17 +431,17 @@ describe('Fact transfer — provenance', () => {
     expect(fact.confidence).toBe('believes');
     expect(fact.turnLearned).toBe(5);
 
-    // Already-told is recorded
-    expect(alreadyTold.hasTold('maid', 'cook', 'murder')).toBe(true);
+    // Told-record rides the speaker's trait
+    expect(speakerTrait.hasTold('cook', 'murder')).toBe(true);
 
     // Result reflects what happened
     expect(result.source).toBe('told by maid');
     expect(result.alreadyKnew).toBe(false);
   });
 
-  it('should add as belief when receives is as belief', () => {
+  it('should hold the fact at lower confidence when receives is as belief', () => {
+    const speakerTrait = makeTrait();
     const listenerTrait = makeTrait();
-    const alreadyTold = new AlreadyToldRecord();
 
     transferFact(
       {
@@ -457,25 +451,27 @@ describe('Fact transfer — provenance', () => {
         version: 'truth',
         coloring: 'neutral',
       },
+      speakerTrait,
       listenerTrait,
-      alreadyTold,
       5,
       'as belief',
     );
 
-    // Colonel holds it as a belief, not a fact
-    expect(listenerTrait.knows('murder')).toBe(false);
-    expect(listenerTrait.hasBelief('murder')).toBe(true);
-    expect(listenerTrait.getBelief('murder')!.strength).toBe('suspects');
+    // The skeptical Colonel holds the topic at 'suspects' — the fold of the
+    // retired standalone belief map (ADR-310 D14)
+    expect(listenerTrait.knows('murder')).toBe(true);
+    const fact = listenerTrait.getFact('murder')!;
+    expect(fact.confidence).toBe('suspects');
+    expect(fact.source).toBe('told');
   });
 
   it('should not overwrite existing knowledge', () => {
+    const speakerTrait = makeTrait();
     const listenerTrait = makeTrait({
       knowledge: {
         murder: { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
       },
     });
-    const alreadyTold = new AlreadyToldRecord();
 
     const result = transferFact(
       {
@@ -485,8 +481,8 @@ describe('Fact transfer — provenance', () => {
         version: 'truth',
         coloring: 'neutral',
       },
+      speakerTrait,
       listenerTrait,
-      alreadyTold,
       5,
     );
 
@@ -494,8 +490,8 @@ describe('Fact transfer — provenance', () => {
     expect(listenerTrait.getFact('murder')!.source).toBe('witnessed');
     expect(result.alreadyKnew).toBe(true);
 
-    // But still recorded in already-told
-    expect(alreadyTold.hasTold('maid', 'cook', 'murder')).toBe(true);
+    // But still recorded on the speaker's told-record
+    expect(speakerTrait.hasTold('cook', 'murder')).toBe(true);
   });
 });
 
@@ -505,20 +501,19 @@ describe('Fact transfer — provenance', () => {
 
 describe('Fact transfer — multi-hop provenance', () => {
   it('should track provenance across multiple hops', () => {
-    makeTrait({
+    const maidTrait = makeTrait({
       knowledge: {
         murder: { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
       },
     });
     const cookTrait = makeTrait();
     const colonelTrait = makeTrait();
-    const alreadyTold = new AlreadyToldRecord();
 
     // Maid → Cook
     transferFact(
       { speakerId: 'maid', listenerId: 'cook', topic: 'murder', version: 'truth', coloring: 'dramatic' },
+      maidTrait,
       cookTrait,
-      alreadyTold,
       1,
     );
 
@@ -528,17 +523,18 @@ describe('Fact transfer — multi-hop provenance', () => {
     // Cook → Colonel
     transferFact(
       { speakerId: 'cook', listenerId: 'colonel', topic: 'murder', version: 'truth', coloring: 'neutral' },
+      cookTrait,
       colonelTrait,
-      alreadyTold,
       2,
     );
 
     expect(colonelTrait.knows('murder')).toBe(true);
     expect(colonelTrait.getFact('murder')!.source).toBe('told');
 
-    // Both hops recorded
-    expect(alreadyTold.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(alreadyTold.hasTold('cook', 'colonel', 'murder')).toBe(true);
+    // Each hop recorded on its speaker's trait
+    expect(maidTrait.hasTold('cook', 'murder')).toBe(true);
+    expect(cookTrait.hasTold('colonel', 'murder')).toBe(true);
+    expect(maidTrait.hasTold('colonel', 'murder')).toBe(false);
   });
 });
 
@@ -548,11 +544,12 @@ describe('Fact transfer — multi-hop provenance', () => {
 
 describe('applyTransfers — batch', () => {
   it('should apply multiple transfers and return results', () => {
+    const maidTrait = makeTrait();
     const cookTrait = makeTrait();
     const colonelTrait = makeTrait();
-    const alreadyTold = new AlreadyToldRecord();
 
-    const getListener = (id: string) => {
+    const getTrait = (id: string) => {
+      if (id === 'maid') return maidTrait;
       if (id === 'cook') return cookTrait;
       if (id === 'colonel') return colonelTrait;
       return undefined;
@@ -563,22 +560,24 @@ describe('applyTransfers — batch', () => {
         { speakerId: 'maid', listenerId: 'cook', topic: 'murder', version: 'truth', coloring: 'dramatic' },
         { speakerId: 'maid', listenerId: 'colonel', topic: 'murder', version: 'truth', coloring: 'neutral' },
       ],
-      getListener,
-      alreadyTold,
+      getTrait,
       1,
     );
 
     expect(results).toHaveLength(2);
     expect(cookTrait.knows('murder')).toBe(true);
     expect(colonelTrait.knows('murder')).toBe(true);
+    expect(maidTrait.hasTold('cook', 'murder')).toBe(true);
+    expect(maidTrait.hasTold('colonel', 'murder')).toBe(true);
   });
 
   it('should respect per-listener receives setting', () => {
+    const maidTrait = makeTrait();
     const cookTrait = makeTrait();
     const colonelTrait = makeTrait();
-    const alreadyTold = new AlreadyToldRecord();
 
-    const getListener = (id: string) => {
+    const getTrait = (id: string) => {
+      if (id === 'maid') return maidTrait;
       if (id === 'cook') return cookTrait;
       if (id === 'colonel') return colonelTrait;
       return undefined;
@@ -589,38 +588,37 @@ describe('applyTransfers — batch', () => {
         { speakerId: 'maid', listenerId: 'cook', topic: 'murder', version: 'truth', coloring: 'neutral' },
         { speakerId: 'maid', listenerId: 'colonel', topic: 'murder', version: 'truth', coloring: 'neutral' },
       ],
-      getListener,
-      alreadyTold,
+      getTrait,
       1,
       (id) => id === 'colonel' ? 'as belief' : 'as fact',
     );
 
-    // Cook gets it as fact
-    expect(cookTrait.knows('murder')).toBe(true);
+    // Cook gets it at full confidence
+    expect(cookTrait.getFact('murder')!.confidence).toBe('believes');
 
-    // Colonel gets it as belief
-    expect(colonelTrait.knows('murder')).toBe(false);
-    expect(colonelTrait.hasBelief('murder')).toBe(true);
+    // The skeptical Colonel holds it at 'suspects'
+    expect(colonelTrait.getFact('murder')!.confidence).toBe('suspects');
   });
 });
 
 // ===========================================================================
-// AlreadyToldRecord serialization
+// Told-record persistence (ADR-310 D17)
 // ===========================================================================
 
-describe('AlreadyToldRecord — serialization', () => {
-  it('should round-trip through toJSON/fromJSON', () => {
-    const record = new AlreadyToldRecord();
-    record.record('maid', 'cook', 'murder');
-    record.record('maid', 'cook', 'weapon');
-    record.record('cook', 'colonel', 'murder');
+describe('Told-record — persistence', () => {
+  it('should ride the speaker trait through a JSON round-trip', () => {
+    const speakerTrait = makeTrait();
+    speakerTrait.recordTold('cook', 'murder');
+    speakerTrait.recordTold('cook', 'weapon');
+    speakerTrait.recordTold('colonel', 'murder');
 
-    const serialized = record.toJSON();
-    const restored = AlreadyToldRecord.fromJSON(serialized);
+    const restored = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(speakerTrait)) as ICharacterModelData,
+    );
 
-    expect(restored.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(restored.hasTold('maid', 'cook', 'weapon')).toBe(true);
-    expect(restored.hasTold('cook', 'colonel', 'murder')).toBe(true);
-    expect(restored.hasTold('maid', 'colonel', 'murder')).toBe(false);
+    expect(restored.hasTold('cook', 'murder')).toBe(true);
+    expect(restored.hasTold('cook', 'weapon')).toBe(true);
+    expect(restored.hasTold('colonel', 'murder')).toBe(true);
+    expect(restored.hasTold('colonel', 'weapon')).toBe(false);
   });
 });

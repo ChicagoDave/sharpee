@@ -113,7 +113,7 @@ describe('ADR-141 end-to-end integration', () => {
       .likes('player')
       .mood('nervous')
       .threat('safe')
-      .cognitiveProfile('ptsd')
+      .cognitiveProfile('braced')
       .filters({ misses: ['quiet actions'], amplifies: ['attacked'] })
       .lucidity({
         baseline: 'drifting',
@@ -210,10 +210,10 @@ describe('ADR-141 end-to-end integration', () => {
     expect(trait.getDispositionValue('player')).toBe(40);
   });
 
-  it('should handle NPC with schizophrenic profile and hallucinations', () => {
+  it('should handle NPC with unquiet profile and hallucinations', () => {
     const compiled = new CharacterBuilder('eleanor')
       .personality('very curious', 'honest', 'slightly paranoid')
-      .cognitiveProfile('schizophrenic')
+      .cognitiveProfile('unquiet')
       .likes('player')
       .mood('anxious')
       .knows('murder', { witnessed: true })
@@ -234,8 +234,8 @@ describe('ADR-141 end-to-end integration', () => {
     world.moveEntity(eleanor.id, room.id);
     const { trait } = applyCharacter(eleanor, compiled);
 
-    // Verify schizophrenic profile
-    expect(trait.cognitiveProfile).toEqual(COGNITIVE_PRESETS.schizophrenic);
+    // Verify unquiet profile
+    expect(trait.cognitiveProfile).toEqual(COGNITIVE_PRESETS.unquiet);
     expect(trait.evaluate('fragmented')).toBe(true);
     expect(trait.evaluate('belief resistant')).toBe(true);
 
@@ -256,10 +256,10 @@ describe('ADR-141 end-to-end integration', () => {
     expect(events.some(e => e.type === CharacterMessages.HALLUCINATION_ONSET)).toBe(true);
   });
 
-  it('should skip filtered events for PTSD character', () => {
+  it('should skip filtered events for braced character', () => {
     const compiled = new CharacterBuilder('james')
       .personality('honest', 'very stubborn')
-      .cognitiveProfile('ptsd')
+      .cognitiveProfile('braced')
       .filters({
         misses: ['quiet'],
         amplifies: ['sudden', 'loud'],
