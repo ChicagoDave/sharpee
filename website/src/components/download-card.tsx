@@ -43,7 +43,7 @@ const DOWNLOADS: Download[] = [
     file: "ChordWriter-1.0.1-arm64.dmg",
     label: "Apple silicon",
     requirement: "M1 or later · macOS 11+",
-    size: "56 MB",
+    size: "57 MB",
   },
   {
     file: "ChordWriter-1.0.1-x86_64.dmg",
