@@ -46,6 +46,7 @@ import type {
 } from '../capabilities/interceptor-binding.js';
 import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
+import type { DialogueSelector } from '../capabilities/dialogue-selector-binding.js';
 import {
   type WorldState,
   type WorldConfig,
@@ -591,6 +592,14 @@ export class WorldModel implements IWorldModel {
   private exitResolvers: Map<string, ExitResolver> = new Map();
 
   /**
+   * ADR-310 D15: the per-world dialogue selector consulted by the
+   * conversation actions for character-modeled NPCs. One per world —
+   * concrete-class surface only (not on IWorldModel); same lifecycle as
+   * the binding maps above: never serialized, re-registered on story load.
+   */
+  private dialogueSelector?: DialogueSelector;
+
+  /**
    * ADR-240: the per-world evaluator registry — named world-evaluators
    * consulted at point of use (live derived state; no cached derivations).
    * Lives and dies with this WorldModel instance, like the binding maps.
@@ -882,6 +891,26 @@ export class WorldModel implements IWorldModel {
 
   registerExitResolver(traitType: string, resolver: ExitResolver): void {
     this.exitResolvers.set(traitType, resolver);
+  }
+
+  /**
+   * Register the world's dialogue selector (ADR-310 D15). Idempotent
+   * last-wins, scoped to this instance; re-register on every story load.
+   *
+   * @param selector - The selector the conversation actions consult
+   */
+  registerDialogueSelector(selector: DialogueSelector): void {
+    this.dialogueSelector = selector;
+  }
+
+  /**
+   * The registered dialogue selector, or `undefined` when no character
+   * subsystem wired one (the actions then keep their default behavior).
+   *
+   * @returns The selector, or `undefined`
+   */
+  getDialogueSelector(): DialogueSelector | undefined {
+    return this.dialogueSelector;
   }
 
   getExitResolver(traitType: string): ExitResolver | undefined {

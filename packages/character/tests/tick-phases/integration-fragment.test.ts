@@ -1,7 +1,7 @@
 /**
  * Integration test story fragment (Phase 7)
  *
- * Constructs 3 NPCs (maid: chatty propagator; cook: selective;
+ * Constructs 3 NPCs (maid: chatty propagator; cook: whitelist-narrowed (spreads);
  * colonel: ruthless killer with intimidation) using all four ADR
  * builder APIs and verifies the full pipeline:
  * - Conversation builder (ADR-142)
@@ -55,9 +55,8 @@ describe('Integration: 3-NPC mystery fragment', () => {
     .personality('cautious', 'loyal')
     .mood('calm')
     .threat('safe')
-    // Propagation — selective, only shares murder topic
+    // Propagation — whitelist-narrowed: spreads IS the narrowing (ADR-310 D10)
     .propagation({
-      tendency: 'selective',
       spreads: ['murder'],
       audience: 'trusted',
       pace: 'gradual',
@@ -112,7 +111,7 @@ describe('Integration: 3-NPC mystery fragment', () => {
 
     // Cook
     expect(cookCompiled.propagationProfile).toBeDefined();
-    expect(cookCompiled.propagationProfile!.tendency).toBe('selective');
+    expect(cookCompiled.propagationProfile!.tendency).toBe('chatty');
     expect(cookCompiled.propagationProfile!.receives).toBe('as belief');
 
     // Colonel
@@ -151,6 +150,7 @@ describe('Integration: 3-NPC mystery fragment', () => {
     registry.register('maid', {
       propagationProfile: maidApplied.propagationProfile,
       movementProfile: maidApplied.movementProfile,
+      baselineMood: maidApplied.baselineMood,
     });
     registry.register('cook', {
       propagationProfile: cookApplied.propagationProfile,
@@ -165,7 +165,13 @@ describe('Integration: 3-NPC mystery fragment', () => {
 
     // Verify configs stored
     expect(registry.getConfig('maid')?.propagationProfile?.tendency).toBe('chatty');
-    expect(registry.getConfig('cook')?.propagationProfile?.tendency).toBe('selective');
+    // The applyCharacter → registry.register consumer path carries the
+    // mood-decay baseline (the maid's authored 'anxious' axes, ADR-310 D6)
+    expect(registry.getConfig('maid')?.baselineMood).toEqual({
+      valence: maidApplied.trait.moodValence,
+      arousal: maidApplied.trait.moodArousal,
+    });
+    expect(registry.getConfig('cook')?.propagationProfile?.tendency).toBe('chatty');
     expect(registry.getConfig('colonel')?.influenceDefs).toHaveLength(1);
 
     // Goal manager created for colonel

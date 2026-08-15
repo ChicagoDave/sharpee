@@ -2,11 +2,10 @@
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: influence → propagation → goals. (Decay folds in from
- * stdlib in the Phase 2 integration; arbiter bookkeeping arrives with
- * ADR-318's arbiter.) Ordering between sub-steps is a contract, which is
- * why this is one registration rather than three
- * (docs/work/adr-310/contracts.md §2).
+ * sub-steps: decay → influence → propagation → goals. (Arbiter
+ * bookkeeping arrives with ADR-318's arbiter.) Ordering between
+ * sub-steps is a contract, which is why this is one registration rather
+ * than three (docs/work/adr-310/contracts.md §2).
  *
  * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
  * below holds ONLY authored configuration, re-registered at load, and has
@@ -15,8 +14,8 @@
  * The registration signature is platform-internal — not author-facing
  * compatibility surface; revisable by ADR-317/R3 at refactor cost.
  *
- * Public interface: createCharacterModelPhase, CharacterPhaseRegistry,
- *   CharacterPhaseConfig.
+ * Public interface: createCharacterModelPhase, registerCharacterModelPhase,
+ *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME.
  * Owner context: @sharpee/character
  */
 
@@ -29,7 +28,7 @@ import {
   RoomTrait,
   type IExitInfo,
 } from '@sharpee/world-model';
-import { nounPhraseFor } from '@sharpee/stdlib';
+import { nounPhraseFor, processLucidityDecay, CharacterMessages } from '@sharpee/stdlib';
 import {
   PropagationProfile,
   PropagationContext,
@@ -77,6 +76,12 @@ export interface CharacterPhaseConfig {
   movementProfile?: MovementProfile;
   influenceDefs?: InfluenceDef[];
   resistanceDefs?: ResistanceDef[];
+  /**
+   * Authored starting mood as valence-arousal axes — the mood-decay
+   * baseline (ADR-310 D6: the author declares a starting state; the
+   * runtime owns the curve). Absent → no mood decay for this NPC.
+   */
+  baselineMood?: { valence: number; arousal: number };
 }
 
 /**
@@ -142,12 +147,16 @@ function createEvent(
 // The character-model phase (single registration, ordered sub-steps)
 // ---------------------------------------------------------------------------
 
+/** The one tick-phase name this package registers (contracts.md §2 — frozen, platform-internal). */
+export const CHARACTER_MODEL_PHASE_NAME = 'character-model';
+
 /**
  * Create the character-model tick phase handler. Register it once:
- * `npcService.registerTickPhase('character-model', handler)`.
+ * `registerCharacterModelPhase(npcService, registry)`.
  *
- * Sub-step order (a contract, not a coincidence): influence effects are
- * applied and expired first, so propagation and goal evaluation the same
+ * Sub-step order (a contract, not a coincidence): decay runs first so the
+ * turn's evaluation sees settled mood/lucidity; influence effects are
+ * applied and expired next, so propagation and goal evaluation the same
  * turn see them; propagation moves knowledge before goals re-evaluate
  * activation conditions that may reference it.
  *
@@ -159,11 +168,86 @@ export function createCharacterModelPhase(
 ): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
     return [
+      ...runDecaySubStep(npcs, ctx, registry),
       ...runInfluenceSubStep(npcs, ctx, registry),
       ...runPropagationSubStep(npcs, ctx, registry),
       ...runGoalSubStep(npcs, ctx, registry),
     ];
   };
+}
+
+/**
+ * Register the character-model phase on an NPC service under its contract
+ * name (ADR-310 D15 — one registration, ordered sub-steps inside).
+ *
+ * @param service - Anything with stdlib's `registerTickPhase` socket
+ * @param registry - The character phase registry (authored configs)
+ */
+export function registerCharacterModelPhase(
+  service: { registerTickPhase(name: string, handler: (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[]): void },
+  registry: CharacterPhaseRegistry,
+): void {
+  service.registerTickPhase(CHARACTER_MODEL_PHASE_NAME, createCharacterModelPhase(registry));
+}
+
+// ---------------------------------------------------------------------------
+// Decay sub-step (ADR-310 D6 — runtime-owned curves, never declared)
+// ---------------------------------------------------------------------------
+
+/** Fraction of the mood-to-baseline distance that survives each turn. */
+const MOOD_DECAY_FACTOR = 0.85;
+/** Distance under which mood snaps to baseline (ends the drift). */
+const MOOD_DECAY_SNAP = 0.02;
+
+/**
+ * Decay mutable per-NPC curves toward their authored baselines: mood
+ * (valence-arousal, exponential approach) and lucidity (window countdown,
+ * folded from stdlib's `processLucidityDecay` — the call that used to be
+ * inlined in `NpcService.tick`).
+ *
+ * Emits `CharacterMessages.MOOD_CHANGED` when the drift crosses a mood-word
+ * boundary, and whatever lucidity events stdlib's decay emits.
+ */
+function runDecaySubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const { world, turn } = ctx;
+
+  for (const npc of npcs) {
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (!trait) continue;
+
+    // Mood toward authored baseline (only for NPCs whose config carries one)
+    const baseline = registry.getConfig(npc.id)?.baselineMood;
+    if (baseline) {
+      const previousMood = trait.getMood();
+      const dv = trait.moodValence - baseline.valence;
+      const da = trait.moodArousal - baseline.arousal;
+      if (Math.abs(dv) > 0 || Math.abs(da) > 0) {
+        const targetValence = Math.abs(dv) <= MOOD_DECAY_SNAP
+          ? baseline.valence
+          : baseline.valence + dv * MOOD_DECAY_FACTOR;
+        const targetArousal = Math.abs(da) <= MOOD_DECAY_SNAP
+          ? baseline.arousal
+          : baseline.arousal + da * MOOD_DECAY_FACTOR;
+        trait.adjustMood(targetValence - trait.moodValence, targetArousal - trait.moodArousal);
+        const newMood = trait.getMood();
+        if (newMood !== previousMood) {
+          events.push(createEvent(CharacterMessages.MOOD_CHANGED, {
+            from: previousMood, to: newMood,
+          }, npc.id));
+        }
+      }
+    }
+
+    // Lucidity window countdown (fold of the old NpcService.tick inline call)
+    events.push(...processLucidityDecay(npc, world, turn));
+  }
+
+  return events;
 }
 
 // ---------------------------------------------------------------------------

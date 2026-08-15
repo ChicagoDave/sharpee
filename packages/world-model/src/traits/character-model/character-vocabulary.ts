@@ -288,6 +288,12 @@ export interface Fact {
   confidence: ConfidenceWord;
   turnLearned: number;
   resistance?: ResistanceMode;
+  /**
+   * The topic was received in confidence (ADR-318 D4 — the `confided`
+   * marker in the knows line's comma slot). Revealing a confided topic
+   * is the `betray a confidence` act category.
+   */
+  confided?: boolean;
 }
 
 /**

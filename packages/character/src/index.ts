@@ -86,6 +86,9 @@ export {
   // Conversation message IDs
   ConversationMessages,
   type ConversationMessageId,
+  // The dialogue-selector socket adapter (ADR-310 D15)
+  createCharacterDialogueSelector,
+  registerCharacterDialogue,
 } from './conversation/index.js';
 
 // Information propagation (ADR-144)
@@ -171,7 +174,35 @@ export {
   type CharacterPhaseConfig,
   CharacterPhaseRegistry,
   createCharacterModelPhase,
+  registerCharacterModelPhase,
+  CHARACTER_MODEL_PHASE_NAME,
 } from './tick-phases.js';
+
+// Act detection over the event stream (ADR-318 D4/D7/D12a)
+export {
+  detectActs,
+  revealConfidedTopic,
+  witnessActs,
+  derivedTopicFor,
+  type DetectedAct,
+} from './act-detection/index.js';
+
+// The force arbiter and conscience bookkeeping (ADR-318 D1–D3, D6, D8)
+export {
+  arbitrate,
+  computeStancedReadings,
+  depositPressure,
+  drainPressure,
+  pressureBandFor,
+  PRINCIPLE_DUTY_INTENSITY,
+  HONOR_INTENSITY,
+  type ArbiterAct,
+  type ActCandidate,
+  type ForceReading,
+  type ArbiterVerdict,
+  type ArbiterContext,
+  type BandTransition,
+} from './arbiter/index.js';
 
 // The character clock seam (temporal amendment 2026-08-15)
 export {

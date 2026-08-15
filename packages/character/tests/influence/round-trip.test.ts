@@ -31,7 +31,6 @@ describe('Phase 6 round-trip: builder → compile → apply', () => {
         .done()
       // ADR-144 propagation
       .propagation({
-        tendency: 'selective',
         spreads: ['scandal'],
         audience: 'trusted',
         pace: 'gradual',
@@ -73,7 +72,7 @@ describe('Phase 6 round-trip: builder → compile → apply', () => {
 
     // Propagation
     expect(compiled.propagationProfile).toBeDefined();
-    expect(compiled.propagationProfile!.tendency).toBe('selective');
+    expect(compiled.propagationProfile!.tendency).toBe('chatty');
     expect(compiled.propagationProfile!.spreads).toEqual(['scandal']);
     expect(compiled.propagationProfile!.coloring).toBe('conspiratorial');
 

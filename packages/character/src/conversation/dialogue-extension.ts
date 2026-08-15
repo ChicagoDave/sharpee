@@ -10,7 +10,9 @@
  * Owner context: @sharpee/character / conversation
  */
 
+import { type ISemanticEvent } from '@sharpee/core';
 import { CharacterModelTrait } from '@sharpee/world-model';
+import { depositPressure } from '../arbiter/pressure.js';
 import { DialogueExtension, DialogueResult } from './dialogue-types.js';
 import { TopicRegistry } from './topic-registry.js';
 import { ResponseCandidate } from './response-types.js';
@@ -22,6 +24,27 @@ import {
   AuthoredResponse,
   ResponseStateMutation,
 } from './builder.js';
+
+// ---------------------------------------------------------------------------
+// Author-channel event helper (ADR-318 D11)
+// ---------------------------------------------------------------------------
+
+let authorEventCounter = 0;
+
+/** Build an author-channel event — no message ID, never player prose (ADR-310 D12). */
+function createAuthorEvent(
+  type: string,
+  npcId: string,
+  data: Record<string, unknown>,
+): ISemanticEvent {
+  return {
+    id: `char_author_${++authorEventCounter}`,
+    type,
+    timestamp: Date.now(),
+    entities: { actor: npcId },
+    data,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // NPC registration
@@ -116,8 +139,12 @@ export class CharacterModelDialogue implements DialogueExtension {
   /**
    * Handle ASK [npc] ABOUT [text].
    * Resolves topic, evaluates constraints, records response, builds intent.
+   *
+   * @param npcId - The NPC entity ID
+   * @param aboutText - The raw text after "about"
+   * @param audienceId - Who is asking — the lie ledger's audience (ADR-318 D9)
    */
-  handleAsk(npcId: string, aboutText: string): DialogueResult {
+  handleAsk(npcId: string, aboutText: string, audienceId?: string): DialogueResult {
     const npc = this.npcs.get(npcId);
     if (!npc) return { handled: false };
 
@@ -160,7 +187,7 @@ export class CharacterModelDialogue implements DialogueExtension {
     }
 
     // Select and record response, then apply side effects
-    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses);
+    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses, audienceId);
     if (!match) {
       return {
         handled: true,
@@ -184,6 +211,7 @@ export class CharacterModelDialogue implements DialogueExtension {
           _redirectedFrom: resolution.via.name,
         },
         responseIntent: intent,
+        authorEvents: match.authorEvents,
       };
     }
 
@@ -192,14 +220,19 @@ export class CharacterModelDialogue implements DialogueExtension {
       messageId: intent.messageId,
       params: intent.params,
       responseIntent: intent,
+      authorEvents: match.authorEvents,
     };
   }
 
   /**
    * Handle TELL [npc] ABOUT [text].
    * Confrontation path — the player presents information.
+   *
+   * @param npcId - The NPC entity ID
+   * @param aboutText - The raw text after "about"
+   * @param audienceId - Who is telling — the lie ledger's audience (ADR-318 D9)
    */
-  handleTell(npcId: string, aboutText: string): DialogueResult {
+  handleTell(npcId: string, aboutText: string, audienceId?: string): DialogueResult {
     const npc = this.npcs.get(npcId);
     if (!npc) return { handled: false };
 
@@ -237,7 +270,7 @@ export class CharacterModelDialogue implements DialogueExtension {
     }
 
     // Select and record response, then apply side effects
-    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses);
+    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses, audienceId);
     if (!match) {
       return {
         handled: true,
@@ -256,6 +289,7 @@ export class CharacterModelDialogue implements DialogueExtension {
       messageId: intent.messageId,
       params: intent.params,
       responseIntent: intent,
+      authorEvents: match.authorEvents,
     };
   }
 
@@ -263,11 +297,11 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Handle SAY [text] or SAY [text] TO [npc].
    * Routes free speech through topic resolution.
    */
-  handleSay(npcId: string | undefined, spokenText: string): DialogueResult {
+  handleSay(npcId: string | undefined, spokenText: string, audienceId?: string): DialogueResult {
     if (!npcId) return { handled: false };
 
     // Route through handleAsk — SAY is semantically similar
-    return this.handleAsk(npcId, spokenText);
+    return this.handleAsk(npcId, spokenText, audienceId);
   }
 
   /**
@@ -308,12 +342,18 @@ export class CharacterModelDialogue implements DialogueExtension {
    * Select the best response for a topic and record it in the evaluator.
    *
    * Evaluates constraints across all authored responses, picks the best
-   * match, and records the interaction.
+   * match, and records the interaction. The lie ledger is consulted
+   * before scoring (ADR-318 D9 / contracts.md §4): a pinned claim to this
+   * audience filters out contradicting lines — mood and disposition drift
+   * cannot evaporate a maintained lie — and the selection's own claim
+   * mints or maintains ledger entries afterward.
    *
    * @param npc - NPC conversation state
    * @param npcId - The NPC entity ID
    * @param topicName - The resolved topic name
    * @param authoredResponses - Authored responses for this trigger
+   * @param audienceId - The ledger audience (the conversing player); no
+   *   audience → no pin filtering, no minting
    * @returns The selected candidate and its authored response, or null
    */
   private selectAndRecordResponse(
@@ -321,8 +361,20 @@ export class CharacterModelDialogue implements DialogueExtension {
     npcId: string,
     topicName: string,
     authoredResponses: AuthoredResponse[],
-  ): { selected: ResponseCandidate; authoredResponse: AuthoredResponse } | null {
-    const candidates: ResponseCandidate[] = authoredResponses.map(r => r.candidate);
+    audienceId?: string,
+  ): { selected: ResponseCandidate; authoredResponse: AuthoredResponse; authorEvents?: ISemanticEvent[] } | null {
+    let candidates: ResponseCandidate[] = authoredResponses.map(r => r.candidate);
+
+    // The pin (§4): drop lines whose claim contradicts an active pin to
+    // this audience. Lines that claim nothing (deflect, refuse) survive.
+    if (audienceId !== undefined) {
+      candidates = candidates.filter(c => {
+        if (!c.claims) return true;
+        const pin = npc.trait.getActivePin(audienceId, c.claims.factId);
+        return !pin || pin.claimedValue === c.claims.value;
+      });
+    }
+
     const selected = evaluateConstraints(candidates, npc.trait);
 
     if (!selected) return null;
@@ -332,7 +384,80 @@ export class CharacterModelDialogue implements DialogueExtension {
 
     this.evaluator.recordResponse(npcId, topicName, selected.action, turn);
 
-    return { selected, authoredResponse };
+    let authorEvents: ISemanticEvent[] | undefined;
+    if (audienceId !== undefined && selected.claims) {
+      authorEvents = this.recordClaim(npc.trait, npcId, audienceId, selected.claims, turn);
+    }
+
+    return { selected, authoredResponse, authorEvents };
+  }
+
+  /**
+   * Ledger bookkeeping for a delivered claim (ADR-318 D9).
+   *
+   * Mint rule: a line whose claim contradicts the speaker's own held
+   * belief mints a pinned entry — honest assertion mints nothing
+   * (disagreement is not lying). Re-delivering an already-pinned claim
+   * mints no duplicate, but every pinned selection is a duty defeat
+   * feeding conscience pressure — maintaining a lie costs by construction.
+   *
+   * @param trait - The speaker's trait (mutated: ledger, pressure)
+   * @param npcId - The speaker's entity id (author-channel attribution)
+   * @param audienceId - Who the claim was delivered to
+   * @param claims - The line's claim tag
+   * @param turn - Current turn number
+   * @returns Author-channel events for the mint/deposit (ADR-318 D11)
+   */
+  private recordClaim(
+    trait: CharacterModelTrait,
+    npcId: string,
+    audienceId: string,
+    claims: { factId: string; value: string },
+    turn: number,
+  ): ISemanticEvent[] {
+    const held = trait.getFactBelief(claims.factId)?.value;
+    const isLie = held !== undefined && held !== claims.value;
+    const pin = trait.getActivePin(audienceId, claims.factId);
+    const events: ISemanticEvent[] = [];
+
+    if (isLie && !pin) {
+      trait.mintLedgerEntry({
+        kind: 'claim',
+        audience: audienceId,
+        factId: claims.factId,
+        claimedValue: claims.value,
+        turnMinted: turn,
+        pinned: true,
+      });
+      events.push(createAuthorEvent('character.author.ledger_mint', npcId, {
+        audience: audienceId, factId: claims.factId,
+        claimedValue: claims.value, heldValue: held,
+      }));
+    } else if (pin) {
+      events.push(createAuthorEvent('character.author.pin_held', npcId, {
+        audience: audienceId, factId: claims.factId,
+        claimedValue: pin.claimedValue,
+      }));
+    }
+
+    // D9: every pinned selection is a duty defeat feeding pressure —
+    // both the minting delivery and every maintenance of it.
+    if (isLie || pin) {
+      const transition = depositPressure(trait, {
+        winner: 'duty',
+        act: 'comply',
+        readings: [],
+        defeats: [{ force: 'duty', feed: `pin:${claims.factId}` }],
+      });
+      events.push(createAuthorEvent('character.author.pressure_deposit', npcId, {
+        feed: `pin:${claims.factId}`,
+        value: trait.pressure.value,
+        band: trait.pressure.band,
+        ...(transition ? { transition } : {}),
+      }));
+    }
+
+    return events;
   }
 
   /**

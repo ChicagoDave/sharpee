@@ -62,6 +62,14 @@ export interface ResponseCandidate {
    * Keys are state dimensions; values are target values.
    */
   stateMutations?: Record<string, unknown>;
+
+  /**
+   * What this line asserts (ADR-318 D9: `claims <fact> is <value>`).
+   * Prose is opaque — this one tag is the bridge. Lines that assert
+   * nothing carry nothing. Compile-checked against the fact's value set
+   * by the Chord compiler; the runtime trusts it.
+   */
+  claims?: { factId: string; value: string };
 }
 
 // ---------------------------------------------------------------------------

@@ -75,6 +75,12 @@ export {
   CharacterModelDialogue,
 } from './dialogue-extension.js';
 
+// The dialogue-selector socket adapter (ADR-310 D15; contracts.md §5)
+export {
+  createCharacterDialogueSelector,
+  registerCharacterDialogue,
+} from './selector.js';
+
 export {
   ConversationMessages,
   type ConversationMessageId,

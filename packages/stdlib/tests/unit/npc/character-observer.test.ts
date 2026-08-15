@@ -350,7 +350,7 @@ describe('observeEvent', () => {
       lucidityConfig: {
         baseline: 'fragmented',
         triggers: {
-          'npc.attacked': { target: 'dissociative', transition: 'immediate' },
+          'npc.attacked': { target: 'elsewhere', transition: 'immediate' },
         },
         decay: 'gradual',
         decayRate: 'fast',
@@ -361,11 +361,11 @@ describe('observeEvent', () => {
     const event = createTestEvent('npc.attacked', 'player');
     const events = observeEvent(npc, event, world, 1);
 
-    expect(trait.currentLucidityState).toBe('dissociative');
+    expect(trait.currentLucidityState).toBe('elsewhere');
     const lucidityEvent = events.find(e => e.type === CharacterMessages.LUCIDITY_SHIFT);
     expect(lucidityEvent).toBeDefined();
     expect(lucidityEvent?.data).toHaveProperty('from', 'fragmented');
-    expect(lucidityEvent?.data).toHaveProperty('to', 'dissociative');
+    expect(lucidityEvent?.data).toHaveProperty('to', 'elsewhere');
   });
 
   it('should accept custom state transition rules', () => {
@@ -550,13 +550,13 @@ describe('multi-turn observation scenario', () => {
       lucidityConfig: {
         baseline: 'fragmented',
         triggers: {
-          'npc.attacked': { target: 'dissociative', transition: 'immediate' },
+          'npc.attacked': { target: 'elsewhere', transition: 'immediate' },
         },
         decay: 'gradual',
         decayRate: 'fast',
       },
       perceivedEvents: {
-        'shadow-figure': { when: 'dissociative', as: 'witnessed', content: 'shadow-figure' },
+        'shadow-figure': { when: 'elsewhere', as: 'witnessed', content: 'shadow-figure' },
       },
     });
     trait.enterLucidityState('fragmented');
@@ -569,14 +569,14 @@ describe('multi-turn observation scenario', () => {
     // Verify: threat increased, mood shifted, lucidity changed to dissociative
     expect(trait.threatValue).toBeGreaterThan(0);
     expect(trait.getMood()).not.toBe('calm');
-    expect(trait.currentLucidityState).toBe('dissociative');
+    expect(trait.currentLucidityState).toBe('elsewhere');
 
     // Shadow hallucination should have been injected (dissociative matches)
     expect(trait.knows('shadow-figure')).toBe(true);
     expect(trait.getFact('shadow-figure')?.source).toBe('hallucinated');
 
     // Turn 2: Lucidity decay
-    trait.enterLucidityState('dissociative', 1); // set window for decay test
+    trait.enterLucidityState('elsewhere', 1); // set window for decay test
     const decayEvents = processLucidityDecay(npc, world, 2);
 
     // Verify: baseline restored after window expires

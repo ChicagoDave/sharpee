@@ -94,6 +94,15 @@ export type {
   ExitResolverContext
 } from './exit-resolver-binding.js';
 
+// Dialogue-selector binding (ADR-310 D15; contracts.md §5) — the
+// conversation-action socket, consulted for character-modeled NPCs.
+export type {
+  DialogueSelector,
+  ConversationIntent,
+  DialogueSelectionContext,
+  DialogueSelectionResult
+} from './dialogue-selector-binding.js';
+
 // Interceptor helpers
 export {
   findTraitWithInterceptor,

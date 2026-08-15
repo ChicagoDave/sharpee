@@ -16,7 +16,8 @@ import { createRequire } from 'module';
 // vite's transform and overflows its module graph.
 const nodeRequire = createRequire(__filename);
 const { assembleGame, flattenChannelValue } = nodeRequire('../dist/index.js');
-const { EntityType, IdentityTrait, RoomTrait } = nodeRequire('@sharpee/world-model');
+const { EntityType, IdentityTrait, RoomTrait, ActorTrait, CharacterModelTrait } =
+  nodeRequire('@sharpee/world-model');
 
 function makeStory(opts?: { registerGated?: boolean }) {
   return {
@@ -108,6 +109,59 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
   it('rejects an unknown declared channel by name', () => {
     expect(() => assembleGame(makeStory(), { seed: 42, channels: ['nonesuch'] }))
       .toThrow(/unknown channel 'nonesuch'/);
+  });
+
+  it('the character author channel rides the capture path — the raw "explain this NPC\'s turn" readout (ADR-318 D11)', async () => {
+    // A story with a modeled NPC and a registered dialogue selector whose
+    // selection carries author-channel events (the shape the character
+    // package's selector produces on a ledger mint).
+    const story = {
+      ...makeStory(),
+      initializeWorld(world: any) {
+        const room = world.createEntity('Test Chamber', EntityType.ROOM);
+        room.add(new IdentityTrait({
+          name: 'Test Chamber',
+          description: 'A bare chamber for channel testing.',
+        }));
+        room.add(new RoomTrait({ exits: {} }));
+        const player = world.getPlayer();
+        if (player) world.moveEntity(player.id, room.id);
+
+        const hermit = world.createEntity('hermit', EntityType.ACTOR);
+        hermit.add(new IdentityTrait({ name: 'hermit', description: 'A hermit.' }));
+        hermit.add(new ActorTrait({ isPlayer: false }));
+        hermit.add(new CharacterModelTrait({}));
+        world.moveEntity(hermit.id, room.id);
+
+        world.registerDialogueSelector((npc: any, intent: any) => ({
+          handled: true,
+          messageId: 'character.conversation.hermit-answers',
+          authorEvents: [{
+            id: 'a1', type: 'character.author.ledger_mint', timestamp: 0,
+            entities: { actor: npc.id },
+            data: {
+              audience: 'player', factId: 'the-killer',
+              claimedValue: 'nobody', topic: intent.text,
+            },
+          }],
+        }));
+      },
+    };
+
+    const game = assembleGame(story, { seed: 42, channels: ['character'] });
+    await game.executeCommand('ask hermit about the crime');
+
+    // The selection's author event rode the action's report events into the
+    // turn's packet, and the `character` channel projected it into a row —
+    // the raw per-NPC-turn readout a testing/IDE surface reads.
+    const rows = game.lastChannelValues.character?.flat() as Array<Record<string, unknown>>;
+    expect(rows).toBeDefined();
+    const mint = rows.find(r => r.kind === 'character.author.ledger_mint')!;
+    expect(mint).toBeDefined();
+    expect(mint.data).toMatchObject({
+      audience: 'player', factId: 'the-killer', claimedValue: 'nobody',
+    });
+    expect(typeof mint.turn).toBe('number');
   });
 });
 

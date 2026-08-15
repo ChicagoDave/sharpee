@@ -41,6 +41,13 @@ export interface AppliedCharacter {
 
   /** Resistance definitions (ADR-146), if defined. */
   resistanceDefs?: ResistanceDef[];
+
+  /**
+   * The authored starting mood as valence-arousal axes — the mood-decay
+   * baseline for the tick phase (ADR-310 D6). Always present: the builder
+   * defaults the starting mood when the author does not set one.
+   */
+  baselineMood: { valence: number; arousal: number };
 }
 
 /**
@@ -75,5 +82,8 @@ export function applyCharacter(
     movementProfile: compiled.movementProfile,
     influenceDefs: compiled.influenceDefs,
     resistanceDefs: compiled.resistanceDefs,
+    // Captured before any runtime mutation: the constructor has just resolved
+    // the authored mood (word, custom axes, or the calm default) into axes.
+    baselineMood: { valence: trait.moodValence, arousal: trait.moodArousal },
   };
 }

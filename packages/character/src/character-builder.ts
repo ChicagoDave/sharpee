@@ -183,7 +183,7 @@ export class CharacterBuilder {
   private _mood: Mood | string = 'calm';
   private _threat: ThreatLevel = 'safe';
   private _cognitiveProfile: CognitiveProfile = { ...STABLE_COGNITIVE_PROFILE };
-  private _knowledge: Map<string, { source: FactSource; confidence: ConfidenceWord; turn: number; resistance?: ResistanceMode }> = new Map();
+  private _knowledge: Map<string, { source: FactSource; confidence: ConfidenceWord; turn: number; resistance?: ResistanceMode; confided?: boolean }> = new Map();
   private _factBeliefs: Map<string, ValuedBelief> = new Map();
   private _goals: Map<string, number> = new Map();
   private _lucidityConfig?: LucidityConfig;
@@ -339,12 +339,13 @@ export class CharacterBuilder {
    *   to counter-evidence (the fold of the retired belief map)
    * @returns this for chaining
    */
-  knows(topic: string, opts?: { witnessed?: boolean; confidence?: ConfidenceWord; resistance?: ResistanceMode }): CharacterBuilder {
+  knows(topic: string, opts?: { witnessed?: boolean; confidence?: ConfidenceWord; resistance?: ResistanceMode; confided?: boolean }): CharacterBuilder {
     this._knowledge.set(topic, {
       source: opts?.witnessed ? 'witnessed' : 'assumed',
       confidence: opts?.confidence ?? 'believes',
       turn: 0,
       ...(opts?.resistance ? { resistance: opts.resistance } : {}),
+      ...(opts?.confided ? { confided: true } : {}),
     });
     return this;
   }
@@ -653,11 +654,12 @@ export class CharacterBuilder {
     }
 
     // Build knowledge record
-    const knowledge: Record<string, { source: FactSource; confidence: ConfidenceWord; turnLearned: number; resistance?: ResistanceMode }> = {};
+    const knowledge: Record<string, { source: FactSource; confidence: ConfidenceWord; turnLearned: number; resistance?: ResistanceMode; confided?: boolean }> = {};
     for (const [topic, fact] of this._knowledge) {
       knowledge[topic] = {
         source: fact.source, confidence: fact.confidence, turnLearned: fact.turn,
         ...(fact.resistance ? { resistance: fact.resistance } : {}),
+        ...(fact.confided ? { confided: true } : {}),
       };
     }
 
