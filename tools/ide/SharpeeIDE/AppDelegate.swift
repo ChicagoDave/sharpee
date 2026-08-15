@@ -16,6 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// it owns the streamed output wiring, not a per-run object.
     private let publishController = PublishController()
 
+    /// Sparkle's updater (ADR-279 D7). Created eagerly, like publishController
+    /// above: constructing it starts the scheduled background check, and an
+    /// updater that only wakes when the author opens the App menu is the
+    /// check-for-updates stopgap D7 rules out.
+    private let updateController = UpdateController()
+
     /// Drives the landing page at launch (go-live item 6). Held for the app's
     /// lifetime rather than the launch's: it owns the sheets it presented, and
     /// releasing it mid-flow would drop their callbacks.
@@ -134,6 +140,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                     chordVersion: toolchainVersions.chord),
                 attributes: [.font: NSFont.systemFont(ofSize: 11)]),
         ])
+    }
+
+    /// Starts a user-initiated update check (ADR-279 D7). Sparkle owns every
+    /// piece of UI from here on — progress, release notes, errors — so there is
+    /// nothing to present locally.
+    @objc func checkForUpdates(_ sender: Any?) {
+        updateController.checkForUpdates()
     }
 
     /// One-line, dismissible D9 warning: the toolchain's Chord is ahead of the IDE.
@@ -522,6 +535,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// Build requires an open `.story` that is not a grammar-header file (D2).
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
+        case #selector(checkForUpdates(_:)):
+            // Greys out while a check is in flight so repeated selections cannot
+            // stack sessions, and stays disabled entirely in a build whose
+            // Info.plist lacks the feed URL or public key — a menu item that
+            // silently does nothing is worse than one visibly unavailable.
+            return updateController.isConfigured && updateController.canCheckForUpdates
         case #selector(buildProject(_:)):
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true

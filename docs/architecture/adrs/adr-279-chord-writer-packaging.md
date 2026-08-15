@@ -303,6 +303,10 @@ wanting it without the platform.
 
 ### D6 — Distribution: sharpee.net front door, GitHub Releases storage (Q-3 resolved 2026-07-27, session fda0f0)
 
+> **SUPERSEDED by Amendment A2 (2026-08-15).** GitHub Releases was never used.
+> sharpee.net hosts the artifacts directly and the `chord-writer-v<version>` tag
+> scheme is withdrawn. Read A2 before acting on anything below.
+
 Downloads live on **GitHub Releases** in this repo, tagged
 **`chord-writer-v<version>`** (prefixed so app releases stay distinct from
 platform tags, per D5). **sharpee.net is the front door**: its download
@@ -313,6 +317,13 @@ at zero VPS cost; the site provides the writer-facing surface, and hosts
 the D7 appcast.
 
 ### D7 — Full Sparkle auto-update from v1 (Q-5 resolved 2026-07-27, session fda0f0)
+
+> **AMENDED by A2 and A3 (2026-08-15).** Archives are served from
+> sharpee.net, not GitHub Releases (A2); there is one appcast **per
+> architecture**, not one shared feed (A3); and "from v1" did not happen — 1.0.0
+> and 1.0.1 shipped with no updater, so 1.1.0 is the earliest version any install
+> can be updated from, and every earlier install is permanently on manual
+> re-download.
 
 Chord Writer ships with **Sparkle 2** auto-update in the first release
 (David's ruling: full Sparkle, not a check-for-updates stopgap). D4's
@@ -411,9 +422,95 @@ the compose IR (`meta.title`), so this amendment is unaffected by GH #187's
 positional-literal → `title:` field reshape; only the compiler's extraction
 changes.
 
+## Amendment A2 — sharpee.net hosts the artifacts directly; GitHub Releases is not used (2026-08-15, session 00d322)
+
+D6 decided that downloads live on **GitHub Releases** under a
+`chord-writer-v<version>` tag, with sharpee.net acting as a front door pointing
+at the release asset. **That is not what was built, and never has been.** The
+site serves the bytes itself:
+
+```
+$ curl -sS https://sharpee.net/chord-writer/download | grep -o 'href="[^"]*ChordWriter[^"]*"'
+href="/downloads/ChordWriter-1.0.1-arm64.dmg"
+href="/downloads/ChordWriter-1.0.1-x86_64.dmg"
+
+$ curl -o /dev/null -w '%{http_code}' https://sharpee.net/downloads/ChordWriter-1.0.1-arm64.dmg
+200
+```
+
+The installers exist **only on the plover server**. They are not committed
+(`website/public/downloads/` holds one story zip and no DMGs), and no
+`chord-writer-v*` tag or GitHub release carries them. Publishing a release means
+copying the artifacts to that server, which is a manual step outside
+`website/deploy.sh` — the deploy script has no download-asset handling at all.
+
+**Amended decision**: sharpee.net is both the front door and the artifact host.
+Update archives are served from `https://sharpee.net/downloads/` beside the
+DMGs, and the D7 appcast's enclosure URLs point there. The
+`chord-writer-v<version>` tag scheme is withdrawn — nothing produces or consumes
+it.
+
+**Why this is amended rather than implemented as written**: D7's appcast was
+first generated against D6's URL scheme, which would have produced a signed,
+well-formed feed whose every download 404'd for every author. The failure mode
+matters more than the URL — an appcast is not exercised by any build or test, so
+a wrong host would have surfaced only when a real author's update failed. This
+is the second decision in this ADR to describe a path the release process does
+not actually take (see A3 on D4/D3 below); the standing lesson is that an ADR
+records what was decided, not what is true, and anything load-bearing must be
+verified against the running system before code is written against it.
+
+## Amendment A3 — Sparkle forces per-architecture feeds, and `package.sh` now signs Contents/Frameworks (2026-08-15, session 00d322)
+
+Two consequences of implementing D7 that D7 did not anticipate.
+
+**Per-architecture appcasts.** D7 says "`SUFeedURL` pointing at the sharpee.net
+appcast", singular. Sparkle's appcast has no architecture filter — it supports
+`minimumSystemVersion`, `maximumSystemVersion`, `channel`, `belowVersion` and
+(2.9+) `hardwareRequirements`, but that last one only expresses "requires Apple
+silicon" and cannot express "Intel only"; Rosetta means an Apple-silicon Mac
+matches an Intel item regardless. Because D4 ships **separate per-arch
+installers**, each carrying a bundled toolchain for one architecture, a shared
+feed would eventually hand an author the other architecture's build — an app
+that launches and then cannot build a story. Amended: one feed per slice,
+`appcast-<arch>.xml`, with `SUFeedURL` written as
+`.../appcast-$(ARCHS).xml` so each build bakes in its own.
+
+Observed while generating the first real feed: `generate_appcast` inspects the
+binary's slices and emits `<sparkle:hardwareRequirements>arm64</...>` for the
+Apple-silicon build without being asked. That is a genuine partial safeguard —
+but only on the arm64 side. The Intel build gets no equivalent gate, because an
+x86_64 binary really does run on both architectures under Rosetta, so there is
+nothing for Sparkle to exclude. An Apple-silicon Mac pointed at the Intel feed
+would still be offered the Intel build and accept it. The per-arch split is what
+prevents that; the inferred requirement is a second line of defence on one side
+only, not a replacement.
+
+**`package.sh` must sign `Contents/Frameworks`.** The script signed the vendored
+toolchain and the outer bundle but never the embedded frameworks, because every
+shipped release went through Xcode's Distribute App, which re-signs them. That
+made the gap invisible until 2026-08-14, when a `package.sh`-signed submission
+was rejected on `libswift_Concurrency.dylib` ("not signed with a valid Developer
+ID certificate", "signature does not include a secure timestamp", both
+architectures). Sparkle makes it structural: `Sparkle.framework` carries an
+`Autoupdate` binary, an `Updater.app` and two XPC services, all in that
+unsigned corner. Amended: the signing step enumerates nested code bundles and
+loose Mach-Os under `Contents/Frameworks`, signs them deepest-first, and
+verification asserts the **Team ID on every nested item** — `codesign --verify
+--deep --strict` is insufficient by construction, as it checks that nested code
+carries *a* valid signature rather than *ours*, which is exactly why the
+rejected build passed locally. Confirmed by submission
+`2eb1a046-4d73-4932-b969-cbd46124a9ec` (Accepted, 2026-08-15), the first
+`package.sh`-only Sparkle-carrying build Apple has accepted.
+
+**Acceptance 7 remains open.** The payload builds, signs and verifies on the
+real path, but no installed app has yet updated itself — that needs two
+published versions and a served feed.
+
 ## Session
 
 Drafted 2026-07-27, session 8a8c83, immediately after ADR-277's
 implementation and the 4.2.0 platform bump
 (`docs/context/session-20260727-1640-main.md`).
 Amendment A1: 2026-08-02, session 7dd736.
+Amendments A2 and A3: 2026-08-15, session 00d322, during D7's implementation.

@@ -7,7 +7,12 @@ name: SharpeeIDE
 options:
   bundleIdPrefix: net.sharpee
   deploymentTarget:
-    macOS: "26.0"
+    # 11.0 here too. settings.base's MACOSX_DEPLOYMENT_TARGET already overrode
+    # this, so the effective target was always 11.0 — but leaving 26.0 in the
+    # spec invited exactly the confusion that let LSMinimumSystemVersion sit
+    # wrong for the app's whole life. Three places state the floor; all three
+    # now say the same thing.
+    macOS: "11.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
 
@@ -22,8 +27,21 @@ settings:
     ENABLE_DEBUG_DYLIB: NO
     ENABLE_PREVIEWS: NO
 
-# No Swift Package dependencies: highlighting is the in-process ChordLexer
+# Syntax highlighting takes no package: it is the in-process ChordLexer
 # (ADR-258 D7) — tree-sitter left with the TypeScript author path (D3).
+#
+# Sparkle is the project's only Swift Package dependency (ADR-279 D7).
+#
+# The floor is 2.9.5, not 2.x, and the exact number is load-bearing: 2.9.5
+# (2026-08-02) completes a fix begun in 2.9.2 for symlink handling while
+# patching. An updater is the one component where a lower bound is a security
+# boundary rather than a compatibility preference — it runs with the authority
+# to replace the application on disk, so the range starts at the first release
+# without the known defect.
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.9.5
 
 targets:
   SharpeeIDE:
@@ -74,6 +92,12 @@ targets:
         buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
+      # Sparkle embeds Autoupdate, Updater.app and two XPC services inside its
+      # framework, all of which must be copied and signed with the app. Xcode's
+      # Distribute App handles that on the release path, which is where every
+      # shipped build is signed (package.sh --dmg-from packages an already-signed
+      # bundle rather than signing one).
+      - package: Sparkle
     # The tab bundles are esbuild output the app copies in — cheap (one
     # esbuild pass each), so unlike the toolchain vendoring below they are NOT
     # opt-in: a stale bundle is a wrong bundle. Degrade to warnings without node.
@@ -132,17 +156,74 @@ targets:
         # an internal identifier, never user-visible.
         CFBundleName: Chord Writer
         CFBundleDisplayName: Chord Writer
-        # 1.0.1 — New Story could not scaffold in any 1.0.0 build: the Chord
-        # story template never reached Contents/Resources outside the opt-in
-        # vendored toolchain. package.sh reads this line for the DMG filenames.
-        CFBundleShortVersionString: "1.0.1"
-        CFBundleVersion: "2"
-        LSMinimumSystemVersion: "26.0"
+        # 1.2.0 — the first build carrying Sparkle auto-update (ADR-279 D7), and
+        # the first that can launch on the macOS versions it was always built
+        # for: LSMinimumSystemVersion below claimed 26.0 from the app's first
+        # commit through 1.0.1, while every binary is minos 11.0.
+        #
+        # A minor bump, not a patch: 1.0.0 and 1.0.1 shipped with no update path
+        # at all, so this is the earliest version an installed app can ever be
+        # updated FROM. Every install predating it stays on manual re-download
+        # permanently — a capability release, not a fix.
+        #
+        # 1.1.0 was built and notarized but never published; it carried the wrong
+        # LSMinimumSystemVersion and was superseded before release. Nothing polls
+        # a 1.1.0 feed and no 1.1.0 artifact was ever uploaded.
+        # package.sh reads this line for the DMG filenames.
+        CFBundleShortVersionString: "1.2.0"
+        CFBundleVersion: "4"
+        # 11.0, matching MACOSX_DEPLOYMENT_TARGET above — NOT 26.0, which this
+        # key carried from the first IDE commit (2f6df711) through 1.0.0 and
+        # 1.0.1. Every binary in the bundle is minos 11.0 (verified 2026-08-15
+        # with otool on the app, the vendored node, and Sparkle), so the 26.0
+        # declaration was false and Launch Services refused to start the app on
+        # macOS 11-25 for no reason. ADR-279 D7 raised the cost of getting this
+        # wrong: generate_appcast copies this value into the appcast as
+        # sparkle:minimumSystemVersion, so a too-high number also means those
+        # authors are silently never offered an update. Keep this in step with
+        # MACOSX_DEPLOYMENT_TARGET; they describe the same claim.
+        LSMinimumSystemVersion: "11.0"
         NSHumanReadableCopyright: "Copyright © 2026 David Cornelson"
         NSPrincipalClass: NSApplication
         LSApplicationCategoryType: public.app-category.developer-tools
         NSSupportsAutomaticTermination: true
         NSSupportsSuddenTermination: true
+        # --- Sparkle auto-update (ADR-279 D7) ---------------------------
+        # These two are a pair, and both are effectively permanent once a
+        # Sparkle-carrying build is in an author's hands: the running app polls
+        # the URL it was compiled with and trusts the key it was compiled with,
+        # so changing either strands every install that predates the change.
+        # Nothing has shipped with Sparkle yet, so both are still free to move.
+        # ONE FEED PER ARCHITECTURE, and this is not a preference.
+        #
+        # Chord Writer ships as separate per-arch installers (see ARCHS below),
+        # each carrying a bundled Node runtime and devkit closure for exactly one
+        # architecture. Sparkle cannot tell them apart: its appcast has no
+        # architecture filter. `sparkle:hardwareRequirements` (2.9+) can require
+        # Apple silicon, but there is no way to express "Intel only", and an
+        # Apple-silicon Mac would match an Intel item regardless because Rosetta
+        # means it genuinely could run it. A single shared feed therefore ends in
+        # an author being handed the other architecture's build — an app that
+        # launches and then cannot build a story.
+        #
+        # $(ARCHS) is substituted at Info.plist processing time, so each slice
+        # bakes in its own feed. package.sh passes ARCHS per slice; the dev-loop
+        # default below supplies it otherwise.
+        SUFeedURL: https://sharpee.net/downloads/chord-writer/appcast-$(ARCHS).xml
+        # NOT a secret — the public half ships in every binary by design, and is
+        # what makes a tampered download detectable. Its private counterpart was
+        # generated by Sparkle's generate_keys on 2026-08-15 and lives in the
+        # release machine's login keychain, never in this repository.
+        SUPublicEDKey: Z8/cDMk7BW5vRz8p3HZCQL0Wgi6fVG2wpSRP1uQNt0A=
+        # Scheduled checks on, without Sparkle's first-launch "check
+        # automatically?" prompt. D7 chose full auto-update over a
+        # check-for-updates stopgap, and D4 is the reason it matters: an author
+        # on an old app is on an old toolchain, which is not a state to leave
+        # behind a dialog the author may decline once and never revisit.
+        SUEnableAutomaticChecks: true
+        # One day, Sparkle's own default, spelled out because a silent default
+        # governing how fast a fix reaches authors should be visible here.
+        SUScheduledCheckInterval: 86400
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.chord-writer

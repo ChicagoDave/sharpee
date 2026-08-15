@@ -37,6 +37,17 @@ enum MenuBuilder {
         menu.addItem(about)
         menu.addItem(NSMenuItem.separator())
 
+        // Directly below About, which is where macOS apps have put this for long
+        // enough that anywhere else reads as a missing feature (ADR-279 D7).
+        // No key equivalent — Apple assigns none, and a check that costs a
+        // network round-trip should not sit under a stray keystroke.
+        let checkForUpdates = NSMenuItem(title: "Check for Updates…",
+                                         action: #selector(AppDelegate.checkForUpdates(_:)),
+                                         keyEquivalent: "")
+        checkForUpdates.target = target
+        menu.addItem(checkForUpdates)
+        menu.addItem(NSMenuItem.separator())
+
         let settings = NSMenuItem(title: "Settings…",
                                   action: #selector(AppDelegate.showSettings(_:)),
                                   keyEquivalent: ",")

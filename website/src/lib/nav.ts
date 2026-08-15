@@ -36,7 +36,7 @@ export interface NavSection {
 export const NAV: NavSection[] = [
   {
     title: 'Chord Writer',
-    version: '1.0.1',
+    version: '1.2.0',
     groups: [
       {
         title: 'Getting Started',

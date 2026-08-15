@@ -241,10 +241,30 @@ notarize_artifact() {  # notarize_artifact <path> <state-key> <label>
   if [ -z "$id" ]; then
     note "submitting $(du -h "$artifact" | cut -f1) $label to Apple (not waiting)"
     local out
-    out="$(xcrun notarytool submit "$artifact" --keychain-profile "$NOTARY_PROFILE" 2>&1 | tee "$WORK/notary-$key.log")"
+    out="$(xcrun notarytool submit "$artifact" --keychain-profile "$NOTARY_PROFILE" 2>&1 | tee "$WORK/notary-$key.log" || true)"
     id="$(printf '%s\n' "$out" | sed -n 's/^ *id: *//p' | head -1)"
-    [ -n "$id" ] || die "submit returned no submission id for the $label.
-  Full output: $WORK/notary-$key.log"
+
+    # RECOVER A CRASHED SUBMIT. notarytool dies mid-call on this machine —
+    # documented in the header for --wait, but plain `submit` does it too
+    # (2026-08-15: the Intel app and the arm64 DMG, both uploaded fine, both
+    # killed before returning). The upload is the expensive half and Apple
+    # already has it; only the id was lost. Failing here would strand a live
+    # submission and make the next run queue a duplicate, so look it up by
+    # artifact name instead. Newest match wins: submissions are listed most
+    # recent first, and this is the only run that just uploaded this file.
+    if [ -z "$id" ]; then
+      note "submit returned no id — checking whether it reached Apple anyway"
+      id="$(xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" 2>/dev/null \
+            | awk -v want="$(basename "$artifact")" '
+                /^ *id: / { candidate = $2 }
+                /^ *name: / { if ($2 == want && candidate != "") { print candidate; exit } }
+              ')"
+      [ -n "$id" ] && note "recovered submission $id from history"
+    fi
+
+    [ -n "$id" ] || die "submit returned no submission id for the $label, and no
+  matching submission appears in the notary history. Full output:
+  $WORK/notary-$key.log"
     state_set "$key" "$id"
     ok "$label submitted — id $id (recorded in $STATE_FILE)"
     NOTARY_RESULT=pending
@@ -408,6 +428,29 @@ assert_node_entitlements() {
 # project.yml is the source of truth for the DMG name, but the bundle carries its
 # own copy. If they disagree the DMG is mislabeled, and a mislabeled release is
 # unrecallable once downloaded.
+# assert_minimum_system_version <app> — the OS floor the bundle DECLARES matches
+# the floor its binaries actually carry.
+#
+# These drifted for the app's entire life: LSMinimumSystemVersion said 26.0 from
+# the first IDE commit through 1.0.1 while every Mach-O was minos 11.0, so Launch
+# Services refused to start a perfectly capable app on macOS 11-25. Nothing
+# caught it, because nothing compared the two. ADR-279 D7 raised the stakes —
+# generate_appcast copies the declared value into the appcast, so a too-high
+# number also means those authors are never offered an update.
+assert_minimum_system_version() {
+  local app="$1" declared actual
+  declared="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$app/Contents/Info.plist" 2>/dev/null || true)"
+  [ -n "$declared" ] || die "the bundle declares no LSMinimumSystemVersion."
+  actual="$(otool -l "$app/Contents/MacOS/Chord Writer" 2>/dev/null | awk '/minos/ { print $2; exit }')"
+  [ -n "$actual" ] || die "could not read the app binary's minimum OS version."
+  [ "$declared" = "$actual" ] || die "OS floor mismatch: the bundle declares
+  LSMinimumSystemVersion $declared but the binary is minos $actual. A declared
+  floor that is too HIGH locks out machines the app runs on perfectly well, and
+  Sparkle copies it into the appcast so they are never offered updates either.
+  Too LOW ships an app that launches and then crashes. Reconcile
+  LSMinimumSystemVersion and MACOSX_DEPLOYMENT_TARGET in project.yml."
+}
+
 assert_bundle_version() {
   local bundled
   bundled="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$1/Contents/Info.plist" 2>/dev/null || true)"
@@ -597,6 +640,7 @@ if [ -n "$DMG_FROM" ]; then
   note "source: $adopted"
 
   assert_bundle_version "$adopted"
+  assert_minimum_system_version "$adopted"
   ok "bundle version agrees with project.yml ($VERSION)"
 
   # --no-toolchain ships the app WITHOUT its third resolution tier, on the
@@ -757,6 +801,8 @@ readonly APP="$ARCHIVE/Products/Applications/Chord Writer.app"
 ok "archived $(basename "$APP")"
 
 assert_bundle_version "$APP"
+assert_minimum_system_version "$APP"
+ok "declared OS floor matches the binary (minos)"
 ok "bundle version agrees with project.yml"
 
 # =====================================================================
@@ -839,6 +885,79 @@ for macho in "${machos[@]}"; do
 done
 ok "${#machos[@]} nested binaries signed"
 
+# --- Contents/Frameworks ---------------------------------------------
+# The archive is produced with CODE_SIGN_IDENTITY "Apple Development" (see
+# project.yml), so everything Xcode embedded carries a DEVELOPMENT signature
+# that Apple's notary service rejects. Until Sparkle (ADR-279 D7) that was one
+# dylib and every shipped release went through Xcode's Distribute App, which
+# re-signs embedded frameworks — so this script's own path was never exercised
+# end to end and the gap stayed invisible. Sparkle makes it load-bearing:
+# Sparkle.framework carries an Autoupdate binary, an Updater.app and two XPC
+# services, all of which must be Developer-ID-signed before the outer bundle
+# seals them.
+#
+# DEEPEST FIRST. Signing seals a bundle's contents by hash, so a nested bundle
+# signed after its container invalidates the container. Sorting by path depth
+# descending gets XPCServices/*.xpc and Updater.app before Sparkle.framework,
+# and Sparkle.framework before the app — without hardcoding Sparkle's layout,
+# which is a detail of a dependency rather than a fact about this bundle.
+readonly FRAMEWORKS_DIR="$APP/Contents/Frameworks"
+
+# list_framework_code — every separately-signable item under Contents/Frameworks,
+# deepest path first.
+#
+# Two groups. Nested code BUNDLES (.xpc, .app, .framework) are signed as bundles,
+# which also signs each one's main executable. Then the Mach-Os that are NOT
+# covered by one of those signatures.
+#
+# The exclusion is .app and .xpc contents ONLY, deliberately: signing a bundle
+# covers its own executable, so its innards must not be signed again. A FRAMEWORK
+# is different — its signature covers its main binary and its resources, but not
+# a sibling executable sitting beside them, which is exactly what Sparkle's
+# Autoupdate helper is. Excluding .framework contents here left Autoupdate
+# carrying the Apple Development signature Xcode gave it, bound for a
+# notarization rejection.
+#
+# THIS IS A FUNCTION FOR A REASON. Inlining it as `done < <( ... )` with these
+# comments is what broke the 2026-08-15 release run: bash 3.2, which macOS still
+# ships as /bin/bash, scans comments naively inside a process substitution, so an
+# apostrophe in prose reads as an opening quote and the substitution never
+# closes. `bash -n` accepts it; only running it fails. Keep prose out of `<( )`.
+#
+# THE FILTER IS RELATIVE, ALSO FOR A REASON. Matching `.app/` against the
+# ABSOLUTE path excludes every file in the bundle, because the bundle itself is
+# "Chord Writer.app" — so the loose-Mach-O list came back empty and
+# libswift_Concurrency.dylib, the very file Apple rejected, went unsigned. Strip
+# the Frameworks prefix first and match what is left. `-type d` on the bundle
+# search likewise skips a framework's top-level symlinks (Sparkle.framework/
+# Updater.app points into Versions/Current), which would otherwise be signed
+# twice, once through each path.
+list_framework_code() {
+  find "$FRAMEWORKS_DIR" -type d \( -name '*.xpc' -o -name '*.app' -o -name '*.framework' \) -print
+  find "$FRAMEWORKS_DIR" -type f -exec sh -c \
+    'for f; do case "$(file -b "$f")" in *Mach-O*) echo "$f";; esac; done' _ {} + \
+    | while IFS= read -r found; do
+        rel="${found#"$FRAMEWORKS_DIR"/}"
+        case "$rel" in
+          *.xpc/*|*.app/*) ;;
+          *) echo "$found" ;;
+        esac
+      done
+}
+
+if [ -d "$FRAMEWORKS_DIR" ]; then
+  nested=()
+  while IFS= read -r found; do
+    [ -n "$found" ] && nested+=("$found")
+  done < <(list_framework_code | awk -F/ '{ print NF, $0 }' | sort -rn | cut -d' ' -f2-)
+
+  for item in "${nested[@]}"; do
+    sign_macho "$item"
+    note "signed ${item#"$APP/Contents/Frameworks"/}"
+  done
+  ok "${#nested[@]} items under Contents/Frameworks signed with Developer ID"
+fi
+
 sign_macho "$APP"
 ok "app bundle signed"
 
@@ -853,6 +972,19 @@ ok "signature verifies (deep, strict)"
 assert_hardened "$APP" "the app"
 assert_hardened "$BUNDLED_TC/node/bin/node" "the vendored node"
 ok "hardened runtime present on app and vendored node"
+
+# --deep --strict above is NOT sufficient, and this is not belt-and-braces. It
+# checks that nested code carries A valid signature, not that it carries OURS —
+# which is precisely why an Xcode-development-signed libswift_Concurrency.dylib
+# passed local verification here and was then rejected by Apple as "not signed
+# with a valid Developer ID certificate" (2026-08-14, both architectures). The
+# only check that would have caught it is the team on each nested item.
+if [ -d "$FRAMEWORKS_DIR" ]; then
+  for item in "${nested[@]}"; do
+    assert_signing_team "$item" "${item#"$APP/Contents/Frameworks"/}"
+  done
+  ok "every item under Contents/Frameworks carries team $EXPECTED_TEAM"
+fi
 
 assert_node_entitlements "$BUNDLED_TC/node/bin/node"
 assert_arch_agreement "$APP" "the built app"
@@ -968,6 +1100,21 @@ ok "Gatekeeper accepts the DMG"
 
 ( cd "$RELEASE_DIR" && shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256" ) \
   || die "failed to write the checksum."
+
+# =====================================================================
+# 10. Sparkle update payload — archive, sign, appcast entry (ADR-279 D7)
+# =====================================================================
+# Split into sparkle/make-update.sh for the same reason the DMG layout is:
+# everything around it here needs credentials and a ten-minute build, which
+# would leave it testable only by shipping. That script is driven directly
+# against an already-stapled app by sparkle/update-realpath-test.sh.
+#
+# It runs AFTER the Gatekeeper gate deliberately — the payload is built from the
+# stapled app, so it must not exist until the app has actually passed.
+step "Sparkle update payload"
+"$IDE_DIR/sparkle/make-update.sh" "$SHIP_APP" "$VERSION" "$ARCH_SLUG" "$RELEASE_DIR" \
+  || die "failed to build the Sparkle update payload."
+ok "update archive, signature and appcast written to release/sparkle/$ARCH_SLUG/"
 
 # Both artifacts are stapled and the ledger has nothing left to resume. Clearing
 # it is what makes the NEXT run a fresh build rather than a resume of a release
