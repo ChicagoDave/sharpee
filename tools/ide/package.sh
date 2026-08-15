@@ -83,7 +83,7 @@
 # Invalid, no log — while the same app with the toolchain removed clears in 31
 # seconds, and nine control fixtures cleared in under two minutes. The evidence,
 # the fixture ids and what has been falsified are written up in
-# docs/work/adr-279-chord-writer-packaging/notarization-bisection.md.
+# docs/work/archive/adr-279-chord-writer-packaging/notarization-bisection.md.
 #
 # So --no-toolchain ships the app under the ORIGINAL ADR-279 D4 contract ("no
 # silent bundling; first run says install the CLI"), which the 2026-07-27

@@ -144,7 +144,7 @@ e.g. the ADR-286 template transform — with no packaging change.
 > verdict at all — no Accepted, no Invalid, no log — while the same app with the
 > toolchain removed clears in 31 seconds and nine control fixtures cleared in
 > under two minutes. The full bisection, fixture ids and falsified hypotheses are
-> in [`docs/work/adr-279-chord-writer-packaging/notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md).
+> in [`docs/work/archive/adr-279-chord-writer-packaging/notarization-bisection.md`](../../work/archive/adr-279-chord-writer-packaging/notarization-bisection.md).
 >
 > So `package.sh --dmg-from <app> --no-toolchain` packages a deliberately
 > toolchain-less Chord Writer, and the download page tells authors to
@@ -241,7 +241,7 @@ e.g. the ADR-286 template transform — with no packaging change.
 >   and verified on the installed app: `which sharpee` → not found,
 >   `npm ls -g @sharpee/devkit` → empty, ⌘B builds from the bundled toolchain
 >   (`Sharpee 5.0.0 · Chord 3.0.0`). **This INTERIM is lifted.**
-> - **[`notarization-bisection.md`](../../work/adr-279-chord-writer-packaging/notarization-bisection.md)
+> - **[`notarization-bisection.md`](../../work/archive/adr-279-chord-writer-packaging/notarization-bisection.md)
 >   is superseded in its conclusions**, not its data. Its "content-borne and
 >   layout-independent" finding, its eight exonerated properties, and its
 >   `.pnpm`-naming lead are all artifacts of intermittency. Its ledger, the
@@ -275,7 +275,7 @@ e.g. the ADR-286 template transform — with no packaging change.
 > which is what finally did.
 >
 > Full fixture matrix, all fifteen submissions and the falsified hypotheses:
-> [`docs/work/adr-279-chord-writer-packaging/fixtures/RESULTS.md`](../../work/adr-279-chord-writer-packaging/fixtures/RESULTS.md).
+> [`docs/work/archive/adr-279-chord-writer-packaging/fixtures/RESULTS.md`](../../work/archive/adr-279-chord-writer-packaging/fixtures/RESULTS.md).
 
 ### D5 — Chord Writer stays in the sharpee monorepo (ruled 2026-07-27, session fda0f0)
 

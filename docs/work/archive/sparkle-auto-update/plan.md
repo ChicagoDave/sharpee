@@ -1,7 +1,7 @@
 # Session Plan: Implement Sparkle 2 auto-update for Chord Writer (ADR-279 D7)
 
 **Created**: 2026-08-15
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (closed 2026-08-15 — David confirmed the plan complete; served-appcast checks verified live, see Phase 4)
 **Overall scope**: Ship full Sparkle 2 auto-update in Chord Writer (`tools/ide/`) per ADR-279 D7 — EdDSA-signed update archives, an appcast hosted on sharpee.net pointing at GitHub Releases assets, app-side framework embedding with a "Check for Updates…" menu item and scheduled checks, and a `package.sh` release pipeline that produces and publishes it — gated on fixing the `Contents/Frameworks` codesign gap that currently blocks even the non-Sparkle 1.0.1 release, since Sparkle's own framework and embedded XPC services land in exactly that unsigned corner of the bundle.
 **Bounded contexts touched**: N/A — infrastructure/tooling (macOS app packaging, code signing, release scripting, static site hosting; no domain behavior change). Per the DDD-applicability check, this plan is framed in plain technical terms throughout.
 **Key domain language**: N/A
@@ -212,9 +212,13 @@
 - **Exit state**: `curl https://sharpee.net/<appcast-path>` (the exact path from Phase 2) returns the real appcast XML with a valid EdDSA signature on its `<item>`.
 - **Acceptance criteria covered**: the hosting half of D6/D7 (no standalone numbered AC — verified by the curl check above).
 - **External prerequisites before this phase can start**: none beyond Phase 3's output and David's availability for the final deploy step (same pattern as every other sharpee.net publish in this repo).
-- **Status**: CURRENT (since 2026-08-15). Entry state met — 1.2.0's per-arch appcasts and DMGs
-  are built, notarized, and staged in `tools/ide/release/1.2.0/`. Needs: upload to plover via
-  `scp` + `./website/deploy.sh --no-pull`, which needs David's `sudo`.
+- **Status**: DONE — closed 2026-08-15. 1.2.0's artifacts were uploaded to plover and the site
+  redeployed (David's manual step). Verified from this machine 2026-08-15:
+  `https://sharpee.net/downloads/chord-writer/appcast-arm64.xml` → 200,
+  `https://sharpee.net/downloads/chord-writer/appcast-x86_64.xml` → 200,
+  `https://sharpee.net/downloads/ChordWriter-1.2.0-arm64.zip` → 200 (per-arch feeds per
+  ADR-279 Amendment A3; the original single-feed path from Phase 2's working default is
+  superseded and intentionally 404s).
 
 ### Phase 5: End-to-end real-path proof (Acceptance 7)
 - **Tier**: Medium
@@ -233,7 +237,11 @@
   verify, nothing newer than the running version) alongside the success path.
 - **Acceptance criteria covered**: Acceptance 7 in full.
 - **External prerequisites before this phase can start**: a second, currently-nonexistent Chord Writer version to publish as "N+1" — coordinate with whatever version-numbering decision comes out of the open questions below, since this phase needs two real version bumps, not one.
-- **Status**: PENDING
+- **Status**: DONE — closed 2026-08-15 on David's confirmation that the plan is complete
+  (the end-to-end update was exercised outside this session; no evidence log was captured
+  here, so Acceptance 7's artifacts — submission IDs, before/after versions, Sparkle
+  verification log — are recorded as [reported by David], with the live per-arch feeds and
+  update ZIPs verified served (200) from this machine 2026-08-15).
 
 ## Open Questions (David's decision — not resolved by this plan)
 

@@ -1,13 +1,22 @@
 # ADR-310: The Character Model in Chord — Words the Author Writes, Numbers the Runtime Owns
 
-**Status**: DRAFT (2026-08-11, session c86356 — three open questions remain: 1, 3
-and 5. Five have been resolved: 6 by D12 and 8 by D5 in the original session;
-2 by D14, 4 by D15 and 7 by D16 in the 2026-08-14 amendment.
-Written at David's request after an audit found `@sharpee/character` shipping
-with zero consumers, then expanded on his ruling that goals, influence and
-propagation are the point rather than the deferrable part. No implementation is
-authorized by this document.)
-**Date**: 2026-08-11 (session c86356); amended 2026-08-14 (session 4e8fc1)
+**Status**: ACCEPTED (2026-08-15, session 00aaa0 — marked accepted by David
+after all eight open questions resolved across three sessions: 6 by D12 and
+8 by D5 in the original session; 2 by D14, 4 by D15 and 7 by D16 in the
+2026-08-14 amendment; 1 by D18, 3 per ADR-318 D3, and 5 affirmatively on
+2026-08-15. The post-interview `adr-review` returned two findings: the AC8
+channel-isolation parenthetical was fixed in place, and the TypeScript-level
+contracts finding (D5 custom-mood syntax, D14 spelling, D15 socket name)
+carries the same disposition as ADR-318's — first deliverables of the
+implementation plan, not ADR text. Originally written 2026-08-11 (session
+c86356) after an audit found `@sharpee/character` shipping with zero
+consumers, then expanded on David's ruling that goals, influence and
+propagation are the point rather than the deferrable part. Acceptance
+authorizes no implementation by itself — the work is planned separately.)
+**Date**: 2026-08-11 (session c86356); amended 2026-08-14 (session 4e8fc1);
+amended 2026-08-15 (session 00aaa0 — review-driven: Context corrections, D17
+persistence, Implementation and Acceptance sections, dated notes on D2, D11a,
+D12, D14 and D15)
 **Builds on**: ADR-141 (character model), ADR-142 (conversation), ADR-144
 (information propagation), ADR-145 (goal pursuit), ADR-146 (influence),
 ADR-210 (Chord), ADR-222 (Chord as elegance oracle), ADR-239 (topic tables)
@@ -38,6 +47,20 @@ That story is not a workspace member (`pnpm-workspace.yaml`) and not a build tar
 refactor sweeps still touch it. So: the Chord compiler does not reach the package,
 the story loader does not, and no built story does. One unbuilt reference story
 does, and the cost of a breaking change is measured against it (D11a).
+
+> **Correction (2026-08-15, adr-review).** Two understatements in the paragraph
+> above, both load-bearing for D11a's cost model. First, the *builder* is
+> unreached but the *trait* is not: stdlib ships three live consumers of
+> `CharacterModelTrait` — `packages/stdlib/src/npc/npc-service.ts` imports it
+> and runs lucidity decay inside the NPC turn phase, `lucidity-decay.ts`
+> implements that decay, and `character-observer.ts` (ADR-141) processes
+> witnessed events through cognitive-profile filters with default state
+> transitions. "The character model stopped being on the path" is true of
+> `@sharpee/character`; the trait half has been on the path all along. Second,
+> the umbrella does more than list the dependency: `packages/sharpee/src/index.ts:78–82`
+> re-exports `CharacterBuilder`, `applyCharacter`, `COGNITIVE_PRESETS` and
+> `CognitivePresetName`, so the API is published import surface in two packages
+> even though nothing consumes it.
 
 Chord *does* have an NPC surface, and it is a different subsystem. Its `npc`
 manifest vocabulary is `guard`, `follower`, `wanderer`, `patrol`, `route`,
@@ -132,6 +155,13 @@ create Tobias
 The intensity words are part of the adjective, exactly as ADR-141 defines them.
 An unknown trait is a compile error naming the vocabulary, in the same shape as
 every other unknown-adjective diagnostic — not a silent drop.
+
+**Personality words never become parser vocabulary** (added 2026-08-15). A
+descriptive adjective on an object (`a brass lantern`) enters the entity's
+noun-phrase vocabulary so the player can type it. Personality adjectives must
+not: they are consumed by the compiler into trait data and go no further. If
+`cowardly` were matchable, `X COWARDLY TOBIAS` succeeding or failing would leak
+the model to the player — D12's own violation, one adjective at a time.
 
 ### D3. Mood and disposition are declarations; transitions reuse `change`.
 
@@ -399,6 +429,15 @@ is unbuilt and untype-checked (Context) — real work, but bounded and known. Th
 same change after the first *built* story ships costs every story that named a
 preset, a mood, or a goal step.
 
+> **Cost-model correction (2026-08-15).** Per the Context correction, the window
+> is measurably wider than "one package's tests plus thealderman": normalization
+> that touches trait data shapes or vocabulary values also touches shipping
+> stdlib code (`npc-service.ts`, `lucidity-decay.ts`, `character-observer.ts`)
+> and the umbrella's re-export line. Still bounded, still all in-repo, still
+> affordable — but the pass must sweep stdlib's npc directory and
+> `packages/sharpee/src/index.ts` alongside `@sharpee/character` and the
+> world-model trait, or the normalization ships half-done.
+
 **Chord is the reference where they disagree.** D11 says a cleaner Chord form
 proves the TypeScript has a seam; D11a says what to do about it — fix the seam.
 The concepts must be named the same thing on both surfaces, with only the
@@ -461,6 +500,17 @@ influence resolved, where a belief came from. That belongs to the IDE and the
 testing surface, carried on its own channel (ADR-163), and it must be impossible
 for it to reach a published story's output. Player-facing prose and author-facing
 introspection are two channels, not one channel with a flag.
+
+**Shipped code this ruling retires** (added 2026-08-15). stdlib's
+`CharacterMessages` (`packages/stdlib/src/npc/character-messages.ts` —
+`MOOD_CHANGED`, `LUCIDITY_SHIFT`, `THREAT_CHANGED`, `DISPOSITION_CHANGED`,
+`FACT_LEARNED`, …) exists expressly so authors can "opt in per NPC to surface
+them to the player." That is exactly what this decision forbids — each is a
+platform-generated announcement of a model transition. No `lang-en-us` text was
+ever written for them, so nothing renders today and the retirement is free: the
+D11a pass reroutes these events to the author channel (where they are the raw
+material for "explain this NPC's turn") and removes the player-facing opt-in.
+No message ID may keep a player-facing rendering path.
 
 ### D13. Phrases gate on psychological state — and phrasebooks are how it scales.
 
@@ -586,6 +636,16 @@ should survive D14 at all, or fold into the valued construct as its firmness
 fields, is an implementation call for the D11a pass; the two must not both exist
 under names an author would confuse.
 
+**And `believes` collides a third time** (added 2026-08-15): it is also a
+`ConfidenceWord` *value* — the list is `uncertain | suspects | believes |
+certain` (`character-vocabulary.ts:258`). D14's own syntax puts a confidence
+word in the sentence, so `thinks the killer is the Butler, believes, told` is
+legal under the current vocabulary and unreadable in exactly the way
+`cognitive-profile stable with lucidity stable` was (D5). The D11a pass owns the
+confidence word list too: rename the value so the word appears in exactly one
+role — `convinced` is the working candidate, David to confirm — in the same
+normalization that settles `_beliefs`.
+
 Declaring the fact's possible values makes the value set closed and therefore
 checkable — a misspelled suspect is a compile error, in the same shape as D2's
 unknown-adjective diagnostic. As with D5's custom moods, the exact spelling is left
@@ -648,6 +708,14 @@ actions. It does not: `packages/stdlib/src` contains no reference to
 building that socket is the first implementation task this decision implies —
 whatever it ends up being called.
 
+**One socket does exist, for the other half** (added 2026-08-15). stdlib's
+`NpcService` already exposes `registerTickPhase` (`npc-service.ts:100`), and its
+doc comment names `@sharpee/character` as the intended registrant. Nothing
+registers today, but this — not a new mechanism — is the intended home for the
+per-NPC-turn evaluation loop D8, D9 and D10 need: goal activation, passive
+influence, propagation ticks. The missing-socket finding is real for dialogue
+selection only; the evaluation loop's socket has been waiting since ADR-070.
+
 **Terminology.** The field calls the unit a **quip** — Short's vocabulary, and
 Versu's. Chord calls it a `phrase`. Keep `phrase`; record the synonym during
 D11a's normalization pass so the documentation is legible to anyone arriving from
@@ -679,6 +747,60 @@ while a conversation node is active, and the reason generalises — an NPC who w
 out mid-sentence to pursue a goal reads as a bug every time, whatever the goal was.
 D8's `active when` is still re-evaluated each NPC turn; the goal simply does not act
 while the NPC is in conversation with the player.
+
+### D17. Everything the model remembers rides the trait, and the save format knows it.
+
+Added 2026-08-15; the review found this ADR silent on persistence while
+describing a feature that is mostly persistent state.
+
+**The inventory of what must survive save/restore**: valued beliefs with source
+and confidence (D14), mood and its decay clock (D6), dispositions including
+NPC-to-NPC (D3, D14), goal state — *including which step of an active goal's
+sequence the NPC is on*, not just which goals are active (D8) — influence
+effects in force on a target (D9), and propagation in flight: who has been told
+what, with what confidence, and what has not yet reached its audience (D10). A
+restore that loses any of these mid-story produces an NPC who visibly forgets,
+which under D12 is indistinguishable from a bug in the story.
+
+**The decision**: all of it serializes as `CharacterModelTrait` data, because
+traits already ride the world-model save and that path is proven. The rule this
+imposes on implementation: **no character-model runtime state may live in
+module-level service state or closures** — anything a tick computes that must
+survive the session is written back to the trait before the turn ends. The
+runtime services (tick phases, the dialogue selector) are stateless between
+turns by construction. Propagation's information graph is the one piece that is
+not naturally per-entity; it is stored decomposed onto the holders (each NPC's
+trait carries what *they* know), which D14's addressing makes sufficient — there
+is no separate graph object to persist.
+
+**Format discipline**: the trait's serialized shape carries a version field from
+its first release, and later shape changes add a versioned reader rather than a
+hard break — the v3→v4 save-format lesson, applied in advance this time.
+
+### D18. The demonstration story is thealderman, ported to Chord.
+
+Resolves Open Question 1. David's ruling, 2026-08-15.
+
+`stories/thealderman` already has the shape the question asked for: six suspects
+with beliefs, dispositions, and secrets, built with `ConversationBuilder` as the
+character package's reference implementation — story content that exists, not
+content to invent. Porting it to Chord is the demonstration: it exercises the
+three hard subsystems against characters designed for them, and it answers the
+legibility question D12 left standing (Open Question 6's residue) with a real
+story a player can sit in front of.
+
+**What the port also settles.** thealderman is the last consumer of the
+TypeScript builder as an authoring surface. Once ported, the D11a cost line
+"plus `stories/thealderman`" goes to zero — the builder becomes what D15 made
+it, the model behind Chord, with no story writing to it directly. The port is
+therefore sequenced *with* the implementation, not after it: it is the working
+proof each construct lands against as it is built, in the same way Fernhill
+grew alongside Chord itself.
+
+**Scope note.** AC2's purpose-built mechanical test story is still separate —
+transcript tests need a fixture that stays frozen, and a demonstration story
+that is also a regression fixture can never be revised as a story again.
+thealderman proves legibility; the fixture proves mechanics.
 
 ## Consequences
 
@@ -721,14 +843,104 @@ while the NPC is in conversation with the player.
   player's laptop. Nobody has measured this — the package has never run inside a
   story.
 
+## Implementation
+
+Added 2026-08-15. This is the platform-change line the acceptance criteria
+discharge against; a criterion whose only home is a package not on this list
+means the list is wrong, not the criterion.
+
+**Packages that change**:
+
+- **`packages/chord`** — all new grammar: personality adjectives on `create`
+  (D2), `mood` / `feels` / `knows` / `thinks` declarations (D3, D14),
+  `define profile` and profile manifests (D4), `define fact` (D14), `goal` and
+  `influence` blocks (D8, D9), `resists` (D9), `spreads` (D10), the shared
+  predicate language and the entity-scoped extension of `while`/`when` (D13),
+  and every diagnostic named in this document. Emits character data in the
+  compiled story in whatever form the loader contract below fixes.
+- **`packages/world-model`** — `CharacterModelTrait` and
+  `character-vocabulary.ts`: the belief value slot and fact declarations (D14),
+  the confidence-word rename (D14), vocabulary normalization (D11a), trait
+  serialization shape with version field (D17).
+- **`packages/character`** — the D11a normalization pass: preset rename (D5),
+  builder/Chord naming parity, `selective` and other proven-redundant vocabulary
+  dropped, `_beliefs` folded or renamed (D14), tests re-derived from the ADRs
+  rather than mechanically renamed. Registers its evaluation loop into stdlib's
+  tick-phase socket; provides the dialogue selector D15 names.
+- **`packages/stdlib`** — the dialogue-selector socket in ASK/TELL/SAY/TALK TO
+  (D15); `character-observer.ts` and `lucidity-decay.ts` swept by the D11a
+  normalization; `CharacterMessages` player-facing opt-in retired and rerouted
+  to the author channel (D12).
+- **`packages/story-loader`** — instantiates compiled character data onto
+  entities at load, the same boundary it already owns for the `npc` manifest.
+- **`packages/engine`** — carries the trait through save/restore (D17);
+  no new turn-cycle mechanism (the NPC phase and tick-phase socket are stdlib's).
+- **IDE / testing surface** (`tools/ide`, ADR-294 surfaces) — author-channel
+  introspection ("explain this NPC's turn"), consuming the events D12 reroutes.
+  Sequenced with the platform work, not after it (Consequences).
+
+**Packages that deliberately do not change**: `packages/parser-en-us` (Chord is
+its own language; no player-facing verb is added), `packages/lang-en-us` (D12 —
+the model generates no player prose; the seven orphaned `CharacterMessages` IDs
+never got text and never will).
+
+**Boundary contracts** (who calls whom): chord compiles declarations →
+compiled-story character data → story-loader applies it as
+`CharacterModelTrait` on load → stdlib's NPC phase drives
+`@sharpee/character`'s registered tick phases each NPC turn → trait mutations
+are written back before the turn ends (D17) → the author channel (ADR-163)
+carries the introspection events; the player channel carries only
+author-written phrases. The exact wire shape of "compiled-story character data"
+is the first thing implementation fixes, in the loader's existing manifest
+idiom.
+
+## Acceptance
+
+Added 2026-08-15. Each criterion names the packages it discharges against.
+
+1. **Round-trip per construct** — for every construct in D2–D10 and D14: Chord
+   source in, `CharacterModelTrait` out, equal to the trait the normalized
+   builder produces for the same declaration. (chord, world-model, character)
+2. **Behavior end-to-end** — in a purpose-built test story (never Dungeo or a
+   shipped story), a transcript test against the bundle: threaten an NPC whose
+   panicked phrasebook exists, and the next conversational response comes from
+   the panicked voice; no model word appears in any player-visible line. (chord,
+   stdlib, story-loader; transcript-tester harness)
+3. **Goals live** — a goal's `active when` flips true mid-story, the NPC
+   executes its steps across subsequent turns in order, and a conversation with
+   the player suspends pursuit until it ends (D16). (character, stdlib)
+4. **Influence resolves both ways** — an influence with a `resisted` phrase
+   fires it against a resisting target and its `witnessed` phrase otherwise,
+   Margaret's `except` included. (character, stdlib)
+5. **Propagation moves a claim, not a token** — NPC A `thinks the killer is the
+   Butler`; after propagation reaches NPC B per A's `spreads` line, B's
+   dialogue selection reflects the belief *value*, with B's own confidence and
+   source. (character, world-model, stdlib)
+6. **Diagnostics** — each named diagnostic is a compile error, asserted by
+   test: unknown personality word (D2), misspelled fact value (D14),
+   theory-of-mind attempt (D14), same-specificity phrasebook tie (D16). (chord)
+7. **Save/restore** — save mid-story after a belief change, a mood change, and
+   with a goal two steps into its sequence; restore; the NPC continues from the
+   same belief, mood, and goal step. Asserted on trait state, not on absence of
+   errors. (engine, world-model)
+8. **D12 isolation** — a published story's output stream provably cannot carry
+   the author channel: asserted at the channel layer in a built story, not by
+   inspecting prose. (stdlib, engine — the isolation is the channel layer's
+   job; a published bundle carries no author channel, so clients receive
+   nothing to leak and no client package changes)
+9. **Nothing changes uninvited** — the Dungeo walkthrough chain and Fernhill's
+   transcript tests are byte-identical before and after the platform work
+   lands. (whole-platform regression, existing harness)
+
 ## Open Questions
 
-1. **What is the smallest story that proves this?** The three hard subsystems
-   only show themselves with several NPCs who know things about each other, so
-   the usual "add it to Fernhill" answer does not work — Fernhill has four people
-   and no secrets. A purpose-built demonstration story is probably a prerequisite
-   for the implementation rather than a follow-up to it, and it is the only way
-   to learn whether the emergent behaviour is legible to a player at all.
+1. ~~**What is the smallest story that proves this?**~~ **Resolved 2026-08-15 by
+   D18**: thealderman, ported to Chord. The story the question was asking for
+   already existed — six suspects with secrets, built as the character package's
+   own reference implementation — and porting it both demonstrates the model and
+   retires the last direct consumer of the TypeScript builder. AC2's mechanical
+   test fixture stays separate; the demonstration proves legibility, the fixture
+   proves mechanics.
 
 2. ~~**Where does disposition toward *other NPCs* live, and how is knowledge
    addressed?**~~ **Resolved 2026-08-14 by D14**: a belief is
@@ -740,10 +952,15 @@ while the NPC is in conversation with the player.
    D14 also draws the scope line the question implied but did not state: one level
    of belief, no theory of mind.
 
-3. **Does `mood` want to be a state?** Chord already has `states: guarded,
-   softened` with scoring and transitions. Mood is a state with a fixed
-   vocabulary and automatic decay. Two mechanisms that behave alike but are
-   spelled differently is exactly the seam ADR-222 hunts.
+3. ~~**Does `mood` want to be a state?**~~ **Resolved 2026-08-15, David's
+   ruling per ADR-318 D3**: no. The two mechanisms differ on every
+   load-bearing axis — states are authored, forward-ratcheted, score-able
+   plot facts; mood is simulation-driven, freely reversible, decaying, and
+   tone-selecting (the conversation ACL already renders it as a message-ID
+   tone suffix). The seam ADR-222 smelled is real but lives at the surface,
+   not the mechanism: one `change` verb, one predicate grammar, shared by
+   both. Where character change *is* a state is the arc — ADR-318 D3's
+   state-bound temperaments. Mood is weather; the arc is a state.
 
 4. ~~**Should the conversation system replace or coexist with topic tables?**~~
    **Resolved 2026-08-14 by D15**: neither — they are different layers. `define
@@ -751,12 +968,16 @@ while the NPC is in conversation with the player.
    the response. The author never chooses between them, so the question an author
    was going to ask does not arise.
 
-5. **Is any of this wanted?** The audit that produced this ADR found a subsystem
-   nobody had missed in fourteen months. That is evidence about demand, and it
-   should be weighed before implementation rather than after. The counter-argument
-   is that nobody missed it because nobody could reach it — an authoring language
-   is how a capability becomes wantable, and no author has ever been offered this
-   one.
+5. ~~**Is any of this wanted?**~~ **Resolved 2026-08-15, David's ruling:
+   yes — wanted.** The counter-argument the question recorded ("nobody
+   missed it because nobody could reach it; an authoring language is how a
+   capability becomes wantable") got its test the day the surface was
+   offered: the frontier-experiment series ran, and ADR-318 — the normative
+   layer, which depends on this ADR's machinery at nearly every joint
+   (D14's values make lying detectable, D8 carries obligations and
+   confessions, D9/D10 carry honor's grammar and reputation, D13/D15/D16
+   carry every outlet) — was accepted the same day. Demand is no longer
+   inferred; it is recorded in an accepted dependent ADR.
 
 6. ~~**Does the player ever see the model, or only its shadow?**~~ **Resolved
    2026-08-11 by D12**: only the shadow. The player never sees or senses the
@@ -796,3 +1017,13 @@ category error, and one had a twenty-year-old shipped answer in TADS 3. D12 was
 left open to the interview despite the review finding a direct counter-argument to
 it in Short's *IF Theory Reader* chapter, because D12 is a ruling rather than a
 lookup. Open Questions 1, 3 and 5 remain.
+
+Amended session 00aaa0 (2026-08-15), after an `adr-review` pass that verified
+every code citation and found five gaps between the design and an implementable
+contract. Added: the Context correction (stdlib's trait consumers and the
+umbrella re-export — the "greenfield" claim was half right), the D2
+no-parser-vocabulary rule, the D11a cost-model correction, the D12 ruling
+retiring `CharacterMessages`' player-facing opt-in, the D14 `believes`
+confidence-word collision, the D15 tick-phase-socket note, D17 (persistence),
+and the Implementation and Acceptance sections the review found absent. Open
+Questions 1, 3 and 5 are untouched and remain.

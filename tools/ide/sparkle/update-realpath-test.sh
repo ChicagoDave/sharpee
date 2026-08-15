@@ -12,10 +12,10 @@
 # generate_appcast, real keychain key, real signature — no stub standing in for
 # an owned dependency. It proves the payload is BUILDABLE and WELL-FORMED.
 #
-# It is NOT proof that an installed app updates itself. That is Acceptance 7 and
-# needs two published versions and a served feed; see Phase 5 of
-# docs/work/sparkle-auto-update/plan.md. Do not let a pass here be read as
-# closing that.
+# It is NOT proof that an installed app updates itself. That is ADR-279
+# Acceptance 7 and needs two published versions and a served feed; see Phase 5 of
+# docs/work/archive/sparkle-auto-update/plan.md. Do not let a pass here be read
+# as closing that.
 
 set -euo pipefail
 
