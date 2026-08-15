@@ -268,6 +268,23 @@ describe('STANDARD_CHANNELS registration order', () => {
     }
   });
 
+  it('registers the opening (prologue, banner) before the prose flush', () => {
+    // ORDER-SENSITIVE. A client that appends each channel's output as it is
+    // dispatched renders in registration order, so the story-start emissions
+    // have to arrive before `preferred-layout` flushes the turn's prose —
+    // otherwise the banner lands behind the first room description, which is
+    // what ADR-298 D3's "prologue precedes the banner, banner opens the game"
+    // rules out.
+    const ids = STANDARD_CHANNELS.map((c) => c.id);
+    const layoutAt = ids.indexOf('preferred-layout');
+    expect(ids.indexOf('prologue')).toBeLessThan(layoutAt);
+    expect(ids.indexOf('banner')).toBeLessThan(layoutAt);
+    expect(ids.indexOf('prologue')).toBeLessThan(ids.indexOf('banner'));
+    for (const prose of PROSE_CHANNELS) {
+      expect(ids.indexOf('banner')).toBeLessThan(ids.indexOf(prose.id));
+    }
+  });
+
   it('registers exactly one channel per prose id, with no `main` left', () => {
     const ids = STANDARD_CHANNELS.map((c) => c.id);
     expect(ids).not.toContain('main');

@@ -99,6 +99,48 @@ final class StoryScaffoldTests: XCTestCase {
         XCTAssertEqual(StoryHeaderIFID.read(from: story), ifid)
     }
 
+    /// The DEFAULT path — no `templateDirectory:` — which is the only one the
+    /// shipping app ever takes, and the one that had no coverage until it
+    /// failed in front of an author with "Story template is missing:
+    /// story.story.template". Every other test here injects a directory, so all
+    /// of them passed while New Story was broken in every build configuration:
+    /// the template reached Contents/Resources only inside the OPT-IN vendored
+    /// toolchain (ADR-279 D4), three directories below where the code looked.
+    /// This test is the real path (rule 13a) — Bundle.main is the host app, so
+    /// it resolves the folder resource vendor-story-templates.sh mirrors.
+    func testScaffoldsFromTheAppBundleWithNoInjectedDirectory() throws {
+        let dir = tmp.appendingPathComponent("bundle-default")
+        try StoryScaffold.create(in: dir, info: info("Bundle Default"))
+
+        let story = dir.appendingPathComponent("bundle-default.story")
+        let rendered = try String(contentsOf: story, encoding: String.Encoding.utf8)
+        XCTAssertFalse(rendered.contains("{{"), "the bundled template rendered, placeholders and all")
+        XCTAssertTrue(rendered.contains("title: Bundle Default"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent("package.json").path),
+                       "ADR-258 D2 — a `.story` needs no package.json")
+
+        // create() makes four filesystem mutations; the `.story` render above is
+        // one. Assert the other two writes on THIS path too — the injected-directory
+        // tests cover them, but only on the synthetic path, and this is the one
+        // that shipped broken.
+        let fm = FileManager.default
+        XCTAssertTrue(fm.fileExists(atPath: dir.appendingPathComponent("bundle-default.config.json").path),
+                      "the config sidecar is written on the real bundle path too")
+        XCTAssertTrue(fm.fileExists(atPath: dir.appendingPathComponent(".gitignore").path),
+                      "the .gitignore is written on the real bundle path too")
+    }
+
+    /// The mirror itself, named so a failure says which script to run rather
+    /// than only that a file is absent.
+    func testTheAppBundleCarriesTheStoryTemplate() throws {
+        let resources = try XCTUnwrap(Bundle.main.resourceURL)
+        let template = resources
+            .appendingPathComponent("story-templates")
+            .appendingPathComponent("story.story.template")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: template.path),
+                      "the app's vendored mirror carries the Chord story template — run tools/ide/vendor-story-templates.sh if this fails")
+    }
+
     /// The REAL bundled template: a scaffolded story composes clean through the
     /// real CLI (rule 13a) — proving template, scaffold, and compiler agree.
     func testRealTemplateScaffoldComposesClean() throws {

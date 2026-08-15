@@ -623,11 +623,22 @@ export const lifecycleChannel: IOChannel<LifecyclePayload> = {
  * `ChannelService` itself does not depend on ordering.
  */
 export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
-  // ADR-300 D9 — ORDER-SENSITIVE. `preferred-layout` must be registered
-  // after every prose channel: the manifest is walked in registration
-  // order, so a client that composes prose by buffering each channel's
-  // entries and flushing them when the layout arrives depends on the
-  // layout arriving last. `channels/standard.test.ts` pins this.
+  // ORDER-SENSITIVE, part 1 — the opening precedes the turn it opens.
+  // `prologue` and `banner` are story-start emissions that must reach a
+  // client BEFORE the prose flush below, because a client that appends
+  // each channel's output as it is dispatched renders them in this order.
+  // Registered after `preferred-layout` they landed *behind* the first
+  // room description (ADR-298 D3 says the prologue precedes the banner and
+  // the banner opens the game). The CLI is unaffected either way: it
+  // renders the banner through the prose path's classed blocks, not this
+  // channel. `channels/standard.test.ts` pins this.
+  prologueChannel,
+  bannerChannel,
+  // ADR-300 D9 — ORDER-SENSITIVE, part 2. `preferred-layout` must be
+  // registered after every prose channel: the manifest is walked in
+  // registration order, so a client that composes prose by buffering each
+  // channel's entries and flushing them when the layout arrives depends on
+  // the layout arriving last. `channels/standard.test.ts` pins this.
   ...PROSE_CHANNELS,
   preferredLayoutChannel,
   promptChannel,
@@ -636,8 +647,6 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   turnChannel,
   infoChannel,
   ifidChannel,
-  prologueChannel,
-  bannerChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,

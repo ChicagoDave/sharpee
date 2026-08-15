@@ -1,0 +1,25 @@
+story
+  title: {{STORY_TITLE}}
+  authors: {{AUTHOR}}
+  id: {{STORY_ID}}
+  story-version: 0.1.0
+  ifid: {{IFID}}
+  description: {{DESCRIPTION}}
+  themes: modern-dark, retro-terminal, paper, system-6
+
+create the Landing
+  a room
+
+  A quiet place to begin. Doorways lead everywhere a story might go —
+  for now, this landing is the whole world.
+
+create the brass lantern
+  aka lamp
+
+  An old brass lantern, dented but serviceable.
+
+create the player
+  starts in the Landing
+  carries the brass lantern
+
+  As ready as you'll ever be.

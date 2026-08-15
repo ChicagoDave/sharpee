@@ -228,15 +228,17 @@ final class DocsTabRealPathTests: XCTestCase {
     func testThePagerFollowsNavOrder() async throws {
         try await waitForPage()
         // The page immediately after the section's Overview — whichever that
-        // is. Download took that slot when the download page was added; the
-        // rule under test is the relabel, not which page happens to be second.
-        tab.showPage("/chord-writer/download")
+        // is. Download briefly took that slot; it is no longer shipped
+        // (build.mjs EXCLUDED_PAGES — a download page inside the downloaded app),
+        // so "Your first story" holds it again. The rule under test is the
+        // relabel, not which page happens to be second.
+        tab.showPage("/chord-writer/your-first-story")
         try await settle()
 
         let prev = try await text(".pager-prev")
         let next = try await text(".pager-next")
         XCTAssertEqual(prev, "Getting Started", "a generic Overview is labeled with its group")
-        XCTAssertEqual(next, "Your first story", "next is the nav's following page")
+        XCTAssertEqual(next, "Building, playing, and testing", "next is the nav's following page")
     }
 
     /// The boundary that matters: the pager must not walk the reader out of one

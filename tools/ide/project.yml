@@ -38,6 +38,7 @@ targets:
           - "Resources/docs-tab/**"
           - "Resources/play-themes/**"
           - "Resources/testing-surface/**"
+          - "Resources/story-templates/**"
       # The Documentation tab's bundle (go-live Phase 3): sharpee.net's author
       # documentation, reduced from MDX and rendered to HTML fragments. A folder
       # reference for the same reasons as the Testing tab above — copied whole,
@@ -59,6 +60,16 @@ targets:
       # segment UI injected into the story's testing page. A committed folder
       # reference for the same reasons as the tabs above.
       - path: SharpeeIDE/Resources/testing-surface
+        type: folder
+        buildPhase: resources
+      # @sharpee/devkit's Chord story template, mirrored by
+      # vendor-story-templates.sh: what New Story renders into `<id>.story`.
+      # It must live HERE and not only inside the opt-in vendored toolchain
+      # below — scaffolding a story cannot depend on the 176MB tier, and before
+      # this entry existed New Story failed in every build configuration
+      # ("Story template is missing: story.story.template"). A committed folder
+      # reference for the same reasons as the three above.
+      - path: SharpeeIDE/Resources/story-templates
         type: folder
         buildPhase: resources
     dependencies:
@@ -83,6 +94,11 @@ targets:
       - name: Bundle the testing play surface (ADR-306 Phase 3)
         basedOnDependencyAnalysis: false
         script: '"$PROJECT_DIR/build-testing-surface.sh"'
+      # One small directory copy — too cheap to be opt-in, and a stale template
+      # would scaffold stories that diverge from what `sharpee init` writes.
+      - name: Vendor the Chord story template
+        basedOnDependencyAnalysis: false
+        script: '"$PROJECT_DIR/vendor-story-templates.sh"'
     # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
     # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
     # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds
@@ -116,8 +132,11 @@ targets:
         # an internal identifier, never user-visible.
         CFBundleName: Chord Writer
         CFBundleDisplayName: Chord Writer
-        CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "1"
+        # 1.0.1 — New Story could not scaffold in any 1.0.0 build: the Chord
+        # story template never reached Contents/Resources outside the opt-in
+        # vendored toolchain. package.sh reads this line for the DMG filenames.
+        CFBundleShortVersionString: "1.0.1"
+        CFBundleVersion: "2"
         LSMinimumSystemVersion: "26.0"
         NSHumanReadableCopyright: "Copyright © 2026 David Cornelson"
         NSPrincipalClass: NSApplication

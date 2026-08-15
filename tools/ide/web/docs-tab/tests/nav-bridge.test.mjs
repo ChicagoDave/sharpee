@@ -184,9 +184,16 @@ describe('shippedNav — the rail tree', () => {
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../../../..');
 const appDir = resolve(repoRoot, 'website/src/app');
+// These four MIRROR build.mjs's constants of the same names. The duplication is
+// a known hazard and has already bitten once: commit 1b1d5269 added
+// "What is Chord?" to Chord › Getting Started, growing the excluded group from
+// 3 pages to 4, and this file's hardcoded count went red unnoticed because the
+// docs-tab suite is not in `pnpm test:ci`. Keep them in step by hand until the
+// constants move somewhere both files can import.
 const SECTIONS = ['chord-writer', 'chord', 'learn'];
 const NAV_SECTIONS = ['Chord Writer', 'Chord', 'Tutorial'];
 const EXCLUDED_GROUPS = [{ section: 'Chord', group: 'Getting Started' }];
+const EXCLUDED_PAGES = ['/chord-writer/download'];
 
 function findContentFiles(dir, acc = []) {
   if (!existsSync(dir)) return acc;
@@ -208,8 +215,8 @@ async function loadRealNav() {
 describe('the real site', () => {
   it('places every shipped content.mdx in the nav, and names no page that is missing', async () => {
     const nav = await loadRealNav();
-    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS });
-    const { pages: unfiltered } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: [] });
+    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS, excludedPages: EXCLUDED_PAGES });
+    const { pages: unfiltered } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: [], excludedPages: [] });
 
     const walked = new Set(
       SECTIONS.flatMap((s) => findContentFiles(join(appDir, s))).map(
@@ -221,13 +228,14 @@ describe('the real site', () => {
 
     expect(pages.filter((p) => !walked.has(p.href)).map((p) => p.href)).toEqual([]);
     expect([...walked].filter((h) => !shipped.has(h) && !excluded.has(h))).toEqual([]);
-    expect(excluded.size).toBe(3);
+    // 4 pages in Chord › Getting Started, plus /chord-writer/download.
+    expect(excluded.size).toBe(5);
     expect(shipped.size).toBe(walked.size - excluded.size);
   });
 
   it('opens on Chord Writer rather than the alphabetically first page', async () => {
     const nav = await loadRealNav();
-    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS });
+    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS, excludedPages: EXCLUDED_PAGES });
 
     const alphabetical = SECTIONS.flatMap((s) => findContentFiles(join(appDir, s))).map(
       (f) => '/' + relative(appDir, dirname(f)).split(sep).join('/'),
@@ -241,7 +249,7 @@ describe('the real site', () => {
 
   it('keeps the command-line Getting Started pages out of the bundle', async () => {
     const nav = await loadRealNav();
-    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS });
+    const { pages } = shippedNav(nav, { sections: NAV_SECTIONS, excludedGroups: EXCLUDED_GROUPS, excludedPages: EXCLUDED_PAGES });
     expect(pages.filter((p) => p.href.startsWith('/chord/getting-started'))).toEqual([]);
   });
 });

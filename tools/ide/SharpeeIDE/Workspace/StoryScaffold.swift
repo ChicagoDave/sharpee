@@ -1,7 +1,8 @@
 // StoryScaffold.swift
 // Creates a new Chord story by rendering the bundled `story.story.template` (the
-// same `templates/story-chord` that @sharpee/devkit ships) into a chosen folder
-// as `<id>.story`. Deliberately writes NO package.json, no src/, no tsconfig —
+// same `templates/story-chord` that @sharpee/devkit ships, mirrored into
+// Contents/Resources/story-templates by vendor-story-templates.sh) into a chosen
+// folder as `<id>.story`. Deliberately writes NO package.json, no src/, no tsconfig —
 // a `.story` needs none of them (ADR-258 D2), diverging from `sharpee init`'s
 // current Chord scaffold, which still writes a package.json.
 // Public interface: StoryScaffold.create(in:info:templateDirectory:), storyId(from:).
@@ -30,7 +31,18 @@ enum StoryScaffold {
         }
     }
 
-    private static let storyTemplate = "story.story.template"
+    /// Path of the template relative to the template directory. In the app that
+    /// directory is `Contents/Resources`, where vendor-story-templates.sh's
+    /// mirror lands as a folder resource — NOT the opt-in vendored toolchain's
+    /// `toolchain/devkit/templates/story-chord/` copy (ADR-279 D4), which is
+    /// absent from any build that did not set SHARPEE_VENDOR_TOOLCHAIN=1.
+    /// Tests pass the devkit source directory directly, so they see the file at
+    /// the root and use `templateName`.
+    private static let storyTemplate = "story-templates/story.story.template"
+
+    /// The bare filename, which is what the template directory holds when the
+    /// caller supplies one (tests, and the devkit source tree).
+    private static let templateName = "story.story.template"
 
     private static let gitignore = """
     dist/
@@ -63,9 +75,17 @@ enum StoryScaffold {
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let id = storyId(from: info.title)
-        let src = templates.appendingPathComponent(storyTemplate)
-        guard let raw = try? String(contentsOf: src, encoding: .utf8) else {
-            throw ScaffoldError.templateMissing(storyTemplate)
+        // The app bundle carries the mirror as a folder resource; a caller-supplied
+        // directory (tests, devkit's own tree) holds the file at its root. Try the
+        // folder layout first so the app never picks up a stray root-level copy.
+        let candidates: [URL] = [templates.appendingPathComponent(storyTemplate),
+                                 templates.appendingPathComponent(templateName)]
+        var template: String?
+        for candidate in candidates where template == nil {
+            template = try? String(contentsOf: candidate, encoding: String.Encoding.utf8)
+        }
+        guard let raw = template else {
+            throw ScaffoldError.templateMissing(templateName)
         }
         // ADR-309 D2: the story is BORN with identity. The config sidecar is
         // written first and the header rendered from the same value — the

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { ChannelDefinition } from '@sharpee/if-domain';
 import { createPromptChannelRenderer } from '../../src/channels/prompt';
 import {
@@ -10,6 +12,7 @@ import {
   createInfoChannelRenderer,
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
+  createBannerChannelRenderer,
 } from '../../src/channels/info';
 
 const replaceJson: ChannelDefinition = { id: 'x', contentType: 'json', mode: 'replace' };
@@ -133,5 +136,36 @@ describe('info / ifid renderers', () => {
     r.onValue('', replaceText);
     r.onValue(undefined, replaceText);
     expect(meta.querySelectorAll('p').length).toBe(0);
+  });
+
+  // The bug this pins: ADR-300 D6/D12 moved the banner onto its own channel and
+  // this renderer began emitting `sharpee-banner-*` class names, while base.css
+  // still styled the prose path's `game-title`/`story-version`/… names. Nothing
+  // matched, so the title lost its bold and every piece fell back to the
+  // `.sharpee-prose-pane p` margin — a banner spread out instead of stacked.
+  // A renderer that emits a class no stylesheet knows about is the defect,
+  // whichever half moves next.
+  it('every banner class it emits has a rule in base.css', () => {
+    const r = createBannerChannelRenderer(meta);
+    r.onValue(
+      {
+        title: 'Aliens in Amberville',
+        storyVersion: 'Story v0.1.0',
+        platformVersion: 'Sharpee v5.0.1',
+        subtitle: 'A story of mis-matched perspectives...',
+        credits: ['By David Cornelson'],
+        tail: ['Type HELP for instructions.'],
+      },
+      replaceJson,
+    );
+
+    const emitted = [...meta.querySelectorAll('p')].map((p) => p.className);
+    expect(emitted.length).toBe(6);
+
+    const base = readFileSync(resolve(__dirname, '../../styles/base.css'), 'utf8');
+    for (const className of emitted) {
+      expect(base, `base.css has no rule for p.${className}`).toContain(`p.${className}`);
+    }
+    expect(base).toMatch(/p\.sharpee-banner-title\s*\{[^}]*font-weight:\s*bold/);
   });
 });

@@ -20,7 +20,7 @@
  *   website's search index does, and `navTitle` here is offered alongside it
  *   for the rail, never as a replacement.
  *
- * Public interface: shippedNav(NAV, { sections, excludedGroups }).
+ * Public interface: shippedNav(NAV, { sections, excludedGroups, excludedPages }).
  * Owner context: tools/ide — the Documentation tab's web bundle.
  */
 
@@ -28,15 +28,18 @@
  * Filters the site's navigation to what Chord Writer ships.
  *
  * @param {Array} nav The website's `NAV` export.
- * @param {{sections: string[], excludedGroups: Array<{section: string, group: string}>}} options
+ * @param {{sections: string[], excludedGroups: Array<{section: string, group: string}>, excludedPages: string[]}} options
  *   `sections` lists section titles to ship, in the order they should appear.
  *   `excludedGroups` names groups to drop from a shipped section.
+ *   `excludedPages` names individual page hrefs to drop, for the case a group
+ *   is otherwise wanted whole. Dropping an item drops its children with it.
  * @returns {{pages: Array<{href: string, navTitle: string, section: string, crumb: string}>, tree: Array}}
  *   `pages` in NAV traversal order; `tree` as nested sections → groups → items.
- * @throws If a named section or excluded group is not present in `nav` — a
- *   filter that matches nothing is a silent behavior change, not a no-op.
+ * @throws If a named section, excluded group, or excluded page is not present
+ *   in `nav` — a filter that matches nothing is a silent behavior change, not a
+ *   no-op.
  */
-export function shippedNav(nav, { sections, excludedGroups = [] }) {
+export function shippedNav(nav, { sections, excludedGroups = [], excludedPages = [] }) {
   const bySectionTitle = new Map(nav.map((section) => [section.title, section]));
 
   for (const title of sections) {
@@ -54,8 +57,25 @@ export function shippedNav(nav, { sections, excludedGroups = [] }) {
     }
   }
 
+  // Same discipline as the section and group checks above: an href that matches
+  // nothing means the page moved or was renamed, and the exclusion silently
+  // stopped applying. That must fail the build, not shrug.
+  const everyHref = new Set(
+    nav.flatMap((section) =>
+      (section.groups ?? []).flatMap((group) =>
+        (group.items ?? []).flatMap((item) => [item.href, ...(item.children ?? []).map((c) => c.href)]),
+      ),
+    ),
+  );
+  for (const href of excludedPages) {
+    if (!everyHref.has(href)) {
+      throw new Error(`shippedNav: excluded page "${href}" is in no nav group`);
+    }
+  }
+
   const isExcluded = (sectionTitle, groupTitle) =>
     excludedGroups.some((e) => e.section === sectionTitle && e.group === groupTitle);
+  const isExcludedPage = (href) => excludedPages.includes(href);
 
   const pages = [];
   const tree = [];
@@ -74,6 +94,7 @@ export function shippedNav(nav, { sections, excludedGroups = [] }) {
 
       const items = [];
       for (const item of group.items ?? []) {
+        if (isExcludedPage(item.href)) continue;
         // The crumb is the trail ABOVE the page, not including it: the tab
         // renders the crumb and the page's own title together, and a trail
         // ending in the title the reader is already looking at reads as a
@@ -88,6 +109,7 @@ export function shippedNav(nav, { sections, excludedGroups = [] }) {
 
         const children = [];
         for (const child of item.children ?? []) {
+          if (isExcludedPage(child.href)) continue;
           pages.push({
             href: child.href,
             navTitle: child.title,

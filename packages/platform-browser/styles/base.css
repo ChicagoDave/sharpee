@@ -204,6 +204,57 @@ ul, ol, menu {
   font-weight: bold;
 }
 
+/* ----- Opening banner (channel path — ADR-300 D6/D12) ----- */
+/* The banner moved onto its own channel, and `createBannerChannelRenderer`
+   re-emits the same pieces under `sharpee-banner-*` class names. The block
+   above styles the PROSE-path names (`game-title`, `story-version`, …), which
+   the channel path never produces — so without these rules the banner matched
+   no selector at all: unbold, and spread apart by `engine.css`'s
+   `.sharpee-prose-pane p { margin-bottom: 0.8em }` fallback.
+   Keep both blocks: the prose path still emits the old names. */
+
+.sharpee-prose-pane p.sharpee-banner-title,
+.sharpee-prose-pane p.sharpee-banner-story-version,
+.sharpee-prose-pane p.sharpee-banner-platform-version,
+.sharpee-prose-pane p.sharpee-banner-subtitle,
+.sharpee-prose-pane p.sharpee-banner-credit,
+.sharpee-prose-pane p.sharpee-banner-tail {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Bold, and the line break that separates the banner from whatever preceded
+   it (prologue, or nothing on a bare start). */
+.sharpee-prose-pane p.sharpee-banner-title {
+  font-weight: bold;
+  margin-top: 1em;
+}
+
+/* The gap `banner-spacer` used to occupy. The channel reassembly discards that
+   empty piece (`stdlib/src/channels/standard.ts` — `case 'banner-spacer'`), so
+   the separation before the story tail has to live here instead. Consecutive
+   tail lines stay flush with each other. */
+.sharpee-prose-pane p.sharpee-banner-tail {
+  margin-top: 1em;
+}
+
+.sharpee-prose-pane p.sharpee-banner-tail + p.sharpee-banner-tail {
+  margin-top: 0;
+}
+
+/* ----- Pre-banner prologue (ADR-298 D3) ----- */
+/* The prologue region sits OUTSIDE the prose pane (before `main`), so it gets
+   only the universal reset — no margins at all. That left its paragraphs
+   collapsed against each other and against whatever followed. */
+
+#sharpee-prologue {
+  margin-bottom: 1em;
+}
+
+#sharpee-prologue p.sharpee-prologue + p.sharpee-prologue {
+  margin-top: 1em;
+}
+
 /* ----- Input bar ----- */
 
 .sharpee-input-bar {

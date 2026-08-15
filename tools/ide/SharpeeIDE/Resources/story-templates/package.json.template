@@ -1,0 +1,31 @@
+{
+  "name": "{{STORY_ID}}",
+  "version": "0.1.0",
+  "description": "{{DESCRIPTION}}",
+  "private": true,
+  "scripts": {
+    "build": "sharpee build",
+    "build:browser": "sharpee build --browser",
+    "test": "sharpee test",
+    "play": "sharpee play"
+  },
+  "sharpee": {
+    "title": "{{STORY_TITLE}}",
+    "author": "{{AUTHOR}}"
+  },
+  "dependencies": {
+    "@sharpee/sharpee": "{{SHARPEE_VERSION}}",
+    "@sharpee/chord": "{{SHARPEE_VERSION}}",
+    "@sharpee/story-loader": "{{SHARPEE_VERSION}}"
+  },
+  "devDependencies": {
+    "@sharpee/devkit": "{{DEVKIT_VERSION}}"
+  },
+  "keywords": [
+    "interactive-fiction",
+    "sharpee",
+    "chord"
+  ],
+  "author": "{{AUTHOR}}",
+  "license": "MIT"
+}

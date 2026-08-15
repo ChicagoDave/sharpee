@@ -69,6 +69,16 @@ const NAV_SECTIONS = ['Chord Writer', 'Chord', 'Tutorial'];
  */
 const EXCLUDED_GROUPS = [{ section: 'Chord', group: 'Getting Started' }];
 
+/**
+ * Individual pages dropped from the shipped set, where the surrounding group is
+ * wanted whole. Also a DECISION: `/chord-writer/download` offers the Apple
+ * Silicon and Intel DMGs, which is noise inside the app those DMGs installed —
+ * and its `<DownloadRow>` renders site-relative `/downloads/*.dmg` links that
+ * would resolve to nothing in the tab's WebView. The rest of Chord Writer ›
+ * Getting Started (Overview, Your first story, Building, Publishing) ships.
+ */
+const EXCLUDED_PAGES = ['/chord-writer/download'];
+
 /** Recursively collect every content.mdx under `dir`. */
 function findContentFiles(dir, acc = []) {
   if (!existsSync(dir)) return acc;
@@ -167,11 +177,16 @@ const NAV = await loadNav();
 const { pages: navPages, tree: navTree } = shippedNav(NAV, {
   sections: NAV_SECTIONS,
   excludedGroups: EXCLUDED_GROUPS,
+  excludedPages: EXCLUDED_PAGES,
 });
 
 // The same walk with nothing excluded, so a page that is deliberately dropped
 // can be told apart from one nobody accounted for. Only the second is a bug.
-const { pages: unfilteredPages } = shippedNav(NAV, { sections: NAV_SECTIONS, excludedGroups: [] });
+const { pages: unfilteredPages } = shippedNav(NAV, {
+  sections: NAV_SECTIONS,
+  excludedGroups: [],
+  excludedPages: [],
+});
 
 const mdxByHref = new Map(files.map((mdxPath) => [hrefFor(mdxPath), mdxPath]));
 const shippedHrefs = new Set(navPages.map((p) => p.href));
@@ -296,7 +311,9 @@ renameSync(stageDir, outDir);
 
 console.log(
   `docs tab: ${pages.length} pages in nav order` +
-    (excludedHrefs.size > 0 ? `, ${excludedHrefs.size} excluded by EXCLUDED_GROUPS` : '') +
+    (excludedHrefs.size > 0
+      ? `, ${excludedHrefs.size} excluded by EXCLUDED_GROUPS/EXCLUDED_PAGES`
+      : '') +
     `, ${imageCount} images` +
     ` (Chord ${chordLanguageVersion()}) -> ${relative(repoRoot, outDir)}`,
 );

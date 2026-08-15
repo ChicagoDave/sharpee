@@ -40,13 +40,13 @@ type Download = {
  */
 const DOWNLOADS: Download[] = [
   {
-    file: "ChordWriter-1.0.0-arm64.dmg",
+    file: "ChordWriter-1.0.1-arm64.dmg",
     label: "Apple silicon",
     requirement: "M1 or later · macOS 11+",
     size: "56 MB",
   },
   {
-    file: "ChordWriter-1.0.0-x86_64.dmg",
+    file: "ChordWriter-1.0.1-x86_64.dmg",
     label: "Intel",
     requirement: "Intel Mac · macOS 11+",
     size: "59 MB",
