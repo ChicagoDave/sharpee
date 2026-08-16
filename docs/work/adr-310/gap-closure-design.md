@@ -133,7 +133,7 @@ here for sign-off as a platform change; it is the one gap whose fix adds public 
 
 ---
 
-## G4. 318-AC3's remaining legs — strained voice, the forcing clause, seek-out — legs CLOSED (2026-08-16, session 2aea28; forcing clause still David's call)
+## G4. 318-AC3's remaining legs — strained voice, the forcing clause, seek-out — CLOSED (legs 2026-08-16, session 2aea28; forcing-clause amendment written 2026-08-16, session 55a70a, in the batch David ordered)
 
 > As-built: the legs live in a self-contained sibling fixture
 > (`b3-conscience.story` + 3 transcripts, 26 steps) rather than inside the
