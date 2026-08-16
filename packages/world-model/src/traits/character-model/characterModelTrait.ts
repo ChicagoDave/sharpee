@@ -482,6 +482,68 @@ export class CharacterModelTrait implements ITrait {
   }
 
   // =========================================================================
+  // Effective state (ADR-310 D8 — influence overlay)
+  // =========================================================================
+
+  /**
+   * In-force influence records that overlay this character's own state:
+   * homed here for the owner (no explicit target) and not resisted.
+   */
+  private overlayRecords(): InfluenceInForce[] {
+    return this.influencesInForce.filter(
+      e => e.target === undefined && e.status !== 'resisted',
+    );
+  }
+
+  /**
+   * The mood observable behavior should read: the base mood masked by the
+   * latest-applied in-force influence effect that carries a mood word.
+   * Influences never write to the base axes — decay and transitions keep
+   * sole ownership of those — so expiry is instant unmasking.
+   *
+   * @returns The effective mood word
+   */
+  getEffectiveMood(): Mood {
+    let masked: Mood | undefined;
+    let maskedTurn = -Infinity;
+    for (const e of this.overlayRecords()) {
+      const word = e.effect.mood;
+      if (word && word in MOOD_AXES && e.appliedAtTurn >= maskedTurn) {
+        masked = word as Mood;
+        maskedTurn = e.appliedAtTurn;
+      }
+    }
+    return masked ?? this.getMood();
+  }
+
+  /**
+   * The threat value observable behavior should read: the base value floored
+   * at the highest in-force influence threat word (a menace can raise felt
+   * threat, never lower it — masking would let 'wary' calm a cornered NPC).
+   *
+   * @returns The effective threat value (0..100)
+   */
+  getEffectiveThreatValue(): number {
+    let value = this.threatValue;
+    for (const e of this.overlayRecords()) {
+      const word = e.effect.threat;
+      if (word && word in THREAT_VALUES) {
+        value = Math.max(value, THREAT_VALUES[word as ThreatLevel]);
+      }
+    }
+    return value;
+  }
+
+  /**
+   * The effective threat level as a word (see getEffectiveThreatValue).
+   *
+   * @returns The effective threat level word
+   */
+  getEffectiveThreat(): ThreatLevel {
+    return valueToThreat(this.getEffectiveThreatValue());
+  }
+
+  // =========================================================================
   // Knowledge
   // =========================================================================
 
@@ -852,10 +914,11 @@ export class CharacterModelTrait implements ITrait {
     this.registerPredicate('dislikes player', (t) => t.getDispositionValue('player') < -30);
     this.registerPredicate('likes player', (t) => t.getDispositionValue('player') > 30);
 
-    // --- Threat (>= thresholds match THREAT_VALUES so word and predicate align) ---
-    this.registerPredicate('safe', (t) => t.threatValue <= 10);
-    this.registerPredicate('threatened', (t) => t.threatValue >= THREAT_VALUES.threatened);
-    this.registerPredicate('cornered', (t) => t.threatValue >= THREAT_VALUES.cornered);
+    // --- Threat (>= thresholds match THREAT_VALUES so word and predicate align;
+    //     effective value so in-force influences are observable, ADR-310 D8) ---
+    this.registerPredicate('safe', (t) => t.getEffectiveThreatValue() <= 10);
+    this.registerPredicate('threatened', (t) => t.getEffectiveThreatValue() >= THREAT_VALUES.threatened);
+    this.registerPredicate('cornered', (t) => t.getEffectiveThreatValue() >= THREAT_VALUES.cornered);
 
     // --- Personality ---
     for (const word of ['cowardly', 'honest', 'loyal', 'cunning', 'paranoid', 'cruel',
@@ -864,10 +927,10 @@ export class CharacterModelTrait implements ITrait {
       this.registerPredicate(word, (t) => t.getPersonality(word) > 0.4);
     }
 
-    // --- Mood ---
+    // --- Mood (effective mood so in-force influences are observable, ADR-310 D8) ---
     for (const mood of ['calm', 'content', 'cheerful', 'nervous', 'anxious', 'panicked',
       'angry', 'furious', 'sad', 'grieving', 'suspicious', 'confused', 'resigned'] as const) {
-      this.registerPredicate(mood, (t) => t.getMood() === mood);
+      this.registerPredicate(mood, (t) => t.getEffectiveMood() === mood);
     }
 
     // --- Conscience pressure bands (ADR-318 D8: gate exactly as mood words do) ---

@@ -556,6 +556,74 @@ describe('CharacterModelTrait', () => {
     });
   });
 
+  describe('effective state — influence overlay (ADR-310 D8)', () => {
+    it('should mask mood with an in-force effect and unmask on removal, base untouched', () => {
+      const trait = new CharacterModelTrait({ mood: 'anxious' });
+      trait.addInfluenceInForce({
+        influenceName: 'menace', influencerId: 'npc-john',
+        effect: { mood: 'nervous', threat: 'wary' },
+        duration: 'while present', appliedAtTurn: 4,
+      });
+
+      expect(trait.getEffectiveMood()).toBe('nervous');
+      expect(trait.getMood()).toBe('anxious');
+      expect(trait.evaluate('nervous')).toBe(true);
+      expect(trait.evaluate('anxious')).toBe(false);
+
+      trait.influencesInForce = [];
+      expect(trait.getEffectiveMood()).toBe('anxious');
+      expect(trait.evaluate('anxious')).toBe(true);
+    });
+
+    it('should let the latest-applied mood effect win a conflict', () => {
+      const trait = new CharacterModelTrait({ mood: 'calm' });
+      trait.addInfluenceInForce({
+        influenceName: 'menace', influencerId: 'npc-john',
+        effect: { mood: 'nervous' }, duration: 'while present', appliedAtTurn: 4,
+      });
+      trait.addInfluenceInForce({
+        influenceName: 'calming', influencerId: 'npc-priest',
+        effect: { mood: 'content' }, duration: 'while present', appliedAtTurn: 7,
+      });
+
+      expect(trait.getEffectiveMood()).toBe('content');
+    });
+
+    it('should floor threat at the influence word but never lower it', () => {
+      const wary = new CharacterModelTrait({ threat: 'safe' });
+      wary.addInfluenceInForce({
+        influenceName: 'menace', influencerId: 'npc-john',
+        effect: { threat: 'wary' }, duration: 'while present', appliedAtTurn: 4,
+      });
+      expect(wary.getEffectiveThreatValue()).toBe(THREAT_VALUES.wary);
+      expect(wary.threatValue).toBe(THREAT_VALUES.safe);
+
+      const cornered = new CharacterModelTrait({ threat: 'cornered' });
+      cornered.addInfluenceInForce({
+        influenceName: 'menace', influencerId: 'npc-john',
+        effect: { threat: 'wary' }, duration: 'while present', appliedAtTurn: 4,
+      });
+      expect(cornered.getEffectiveThreatValue()).toBe(THREAT_VALUES.cornered);
+      expect(cornered.evaluate('cornered')).toBe(true);
+    });
+
+    it('should ignore resisted and exerter-homed (explicit target) records', () => {
+      const trait = new CharacterModelTrait({ mood: 'calm' });
+      trait.addInfluenceInForce({
+        influenceName: 'menace', influencerId: 'npc-john',
+        effect: { mood: 'nervous' }, duration: 'while present', appliedAtTurn: 4,
+        status: 'resisted',
+      });
+      trait.addInfluenceInForce({
+        influenceName: 'seduction', influencerId: 'npc-ginger', target: 'player',
+        effect: { mood: 'distracted' }, duration: 'while present', appliedAtTurn: 5,
+      });
+
+      expect(trait.getEffectiveMood()).toBe('calm');
+      expect(trait.getEffectiveThreatValue()).toBe(trait.threatValue);
+    });
+  });
+
   // =========================================================================
   // Normative layer (ADR-318)
   // =========================================================================

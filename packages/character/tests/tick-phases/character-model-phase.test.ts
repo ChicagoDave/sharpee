@@ -103,11 +103,11 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
     });
   });
 
-  function runPhase() {
+  function runPhase(turn = 1) {
     const handler = createCharacterModelPhase(registry);
     return handler([maid, cook, ginger], {
       world,
-      turn: 1,
+      turn,
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
@@ -156,6 +156,125 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
     const secondRun = runPhase();
 
     expect(secondRun.some(e => e.type === 'character.propagation.witnessed')).toBe(false);
+  });
+
+  describe('influence edge minting and overlay (ADR-310 D8)', () => {
+    it('mints ONE witnessed event per exertion, however many co-located targets', () => {
+      const events = runPhase();
+
+      const applied = events.filter(e => e.type === 'character.influence.applied');
+      expect(applied).toHaveLength(1);
+      const data = applied[0].data as { messageId: string; targetIds: string[] };
+      expect(data.messageId).toBe('ginger-brushes-against');
+      expect(data.targetIds.sort()).toEqual([cook.id, maid.id, player.id].sort());
+    });
+
+    it('mints nothing while the influence stays in force — events mark transitions', () => {
+      runPhase(1);
+      const second = runPhase(2);
+      const third = runPhase(3);
+
+      expect(second.some(e => e.type === 'character.influence.applied')).toBe(false);
+      expect(third.some(e => e.type === 'character.influence.applied')).toBe(false);
+    });
+
+    it('separation expires while-present records; re-entry re-transitions and re-fires', () => {
+      runPhase(1);
+      const cookTrait = cook.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      expect(cookTrait.influencesInForce.some(e => e.influenceName === 'seduction')).toBe(true);
+
+      const elsewhere = createRoom(world, 'Garden');
+      world.moveEntity(ginger.id, elsewhere.id);
+      const afterLeave = runPhase(2);
+
+      expect(cookTrait.influencesInForce.some(e => e.influenceName === 'seduction')).toBe(false);
+      expect(afterLeave.some(e => e.type === 'character.influence.expired')).toBe(true);
+      expect(afterLeave.some(e => e.type === 'character.influence.applied')).toBe(false);
+
+      world.moveEntity(ginger.id, room.id);
+      const afterReturn = runPhase(3);
+
+      expect(cookTrait.influencesInForce.some(e => e.influenceName === 'seduction')).toBe(true);
+      expect(afterReturn.filter(e => e.type === 'character.influence.applied')).toHaveLength(1);
+    });
+
+    it('mints resisted per resisting target on its own transition, once', () => {
+      const colonel = createNpc(world, 'Colonel', new CharacterModelTrait());
+      world.moveEntity(colonel.id, room.id);
+      registry.register(colonel.id, {
+        influenceDefs: [{
+          name: 'intimidation',
+          mode: 'passive',
+          range: 'room',
+          effect: { mood: 'nervous' },
+          duration: 'while present',
+          witnessed: 'colonel-looms',
+          resisted: 'colonel-looms-unfazed',
+        }],
+      });
+      // The maid alone resists; the cook and player are still applied targets.
+      registry.register(maid.id, {
+        propagationProfile: { tendency: 'chatty', audience: 'anyone' },
+        resistanceDefs: [{ influenceName: 'intimidation' }],
+      });
+      const handler = createCharacterModelPhase(registry);
+      const tick = (turn: number) => handler([maid, cook, ginger, colonel], {
+        world, turn, random: {} as unknown as RandomService,
+        playerLocation: room.id, playerId: player.id,
+      });
+
+      const first = tick(1);
+      const maidTrait = maid.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      const record = maidTrait.influencesInForce.find(e => e.influenceName === 'intimidation');
+      expect(record?.status).toBe('resisted');
+      // The resisted overlay never masks the maid's own state.
+      expect(maidTrait.evaluate('nervous')).toBe(false);
+
+      const resisted = first.filter(e => e.type === 'character.influence.resisted');
+      expect(resisted).toHaveLength(1);
+      expect(resisted[0].data).toMatchObject({
+        influencerId: colonel.id, targetId: maid.id, messageId: 'colonel-looms-unfazed',
+      });
+
+      // While the resistance holds it is a level, not a transition: no re-mint.
+      const second = tick(2);
+      expect(second.some(e => e.type === 'character.influence.resisted')).toBe(false);
+    });
+
+    it('overlays effective mood and threat on targets while in force, reverting on separation', () => {
+      const john = createNpc(world, 'John', new CharacterModelTrait());
+      world.moveEntity(john.id, room.id);
+      registry.register(john.id, {
+        influenceDefs: [{
+          name: 'menace',
+          mode: 'passive',
+          range: 'room',
+          effect: { mood: 'nervous', threat: 'wary' },
+          duration: 'while present',
+          witnessed: 'john-menace-noticed',
+        }],
+      });
+      const handler = createCharacterModelPhase(registry);
+      const tick = (turn: number) => handler([maid, cook, ginger, john], {
+        world, turn, random: {} as unknown as RandomService,
+        playerLocation: room.id, playerId: player.id,
+      });
+
+      tick(1);
+      const cookTrait = cook.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      // Effective state carries the influence; base state is untouched.
+      expect(cookTrait.evaluate('nervous')).toBe(true);
+      expect(cookTrait.getMood()).toBe('calm');
+      expect(cookTrait.getEffectiveThreatValue()).toBeGreaterThan(cookTrait.threatValue);
+
+      const elsewhere = createRoom(world, 'Cellar');
+      world.moveEntity(john.id, elsewhere.id);
+      tick(2);
+      // Instant unmasking — nothing to undo because nothing was written.
+      expect(cookTrait.evaluate('nervous')).toBe(false);
+      expect(cookTrait.evaluate('calm')).toBe(true);
+      expect(cookTrait.getEffectiveThreatValue()).toBe(cookTrait.threatValue);
+    });
   });
 });
 

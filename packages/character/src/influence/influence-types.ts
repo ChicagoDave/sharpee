@@ -162,3 +162,34 @@ export type InfluenceResult =
       status: 'skipped';
       reason: string;
     };
+
+/** One target's outcome within a passive exertion. */
+export interface InfluenceTargetOutcome {
+  /** The target entity id. */
+  targetId: string;
+
+  /** Whether the influence took hold on this target or was resisted. */
+  status: 'applied' | 'resisted';
+}
+
+/**
+ * Result of one passive influence exertion in a room (ADR-310 D8).
+ *
+ * The exertion is one fact — its `witnessed` phrase, effect, and message
+ * ids exist exactly once here — while per-target outcomes nest inside.
+ * This shape is what makes duplicate witnessed events unrepresentable.
+ */
+export type PassiveInfluenceExertion =
+  | {
+      status: 'exerted';
+      influenceName: string;
+      influencerId: string;
+      effect: InfluenceEffect;
+      witnessed?: string;
+      resisted?: string;
+      targets: InfluenceTargetOutcome[];
+    }
+  | {
+      status: 'skipped';
+      reason: string;
+    };

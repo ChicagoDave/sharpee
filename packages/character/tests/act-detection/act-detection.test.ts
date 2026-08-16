@@ -126,6 +126,9 @@ describe('taking site → steal-candidate', () => {
     expect(acts[0].category).toBe('steal');
     expect(acts[0].actorId).toBe(player.id);
     expect(acts[0].targetId).toBe(victim.id);
+    // ADR-310 D10: player-actor topics derive from the stable token, not
+    // the self-referential display name ('yourself stole').
+    expect(acts[0].derivedTopic).toBe('the player stole');
   });
 });
 

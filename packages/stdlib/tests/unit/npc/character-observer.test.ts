@@ -234,17 +234,6 @@ describe('observeEvent', () => {
     expect(events).toEqual([]);
   });
 
-  it('should add witnessed fact to knowledge', () => {
-    const { npc, trait } = createNpcWithCharacter();
-    const event = createTestEvent('npc.attacked', 'player');
-
-    observeEvent(npc, event, world, 5);
-
-    expect(trait.knows('npc.attacked')).toBe(true);
-    expect(trait.getFact('npc.attacked')?.source).toBe('witnessed');
-    expect(trait.getFact('npc.attacked')?.turnLearned).toBe(5);
-  });
-
   it('should increase threat when violence event observed', () => {
     const { npc, trait } = createNpcWithCharacter({ threat: 'safe' });
     const event = createTestEvent('npc.attacked', 'player');
@@ -324,15 +313,17 @@ describe('observeEvent', () => {
     expect(threatEvent?.data).toHaveProperty('from', 'safe');
   });
 
-  it('should emit fact learned event', () => {
-    const { npc } = createNpcWithCharacter();
+  it('does not mint raw event types as knowledge topics (ADR-310 D10)', () => {
+    const { npc, trait } = createNpcWithCharacter();
     const event = createTestEvent('npc.attacked', 'player');
 
     const events = observeEvent(npc, event, world, 1);
 
-    const factEvent = events.find(e => e.type === CharacterMessages.FACT_LEARNED);
-    expect(factEvent).toBeDefined();
-    expect(factEvent?.data).toHaveProperty('topic', 'npc.attacked');
+    // Knowledge stays free of platform wire vocabulary — derived-act
+    // topics and authored `knows` are the only topic factories.
+    expect(trait.knows('npc.attacked')).toBe(false);
+    expect(Object.keys(trait.knowledge)).toHaveLength(0);
+    expect(events.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(false);
   });
 
   it('should adjust disposition toward event actor on giving', () => {

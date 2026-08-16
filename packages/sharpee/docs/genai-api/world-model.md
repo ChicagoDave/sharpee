@@ -5178,6 +5178,34 @@ export declare class CharacterModelTrait implements ITrait {
      */
     getThreat(): ThreatLevel;
     /**
+     * In-force influence records that overlay this character's own state:
+     * homed here for the owner (no explicit target) and not resisted.
+     */
+    private overlayRecords;
+    /**
+     * The mood observable behavior should read: the base mood masked by the
+     * latest-applied in-force influence effect that carries a mood word.
+     * Influences never write to the base axes — decay and transitions keep
+     * sole ownership of those — so expiry is instant unmasking.
+     *
+     * @returns The effective mood word
+     */
+    getEffectiveMood(): Mood;
+    /**
+     * The threat value observable behavior should read: the base value floored
+     * at the highest in-force influence threat word (a menace can raise felt
+     * threat, never lower it — masking would let 'wary' calm a cornered NPC).
+     *
+     * @returns The effective threat value (0..100)
+     */
+    getEffectiveThreatValue(): number;
+    /**
+     * The effective threat level as a word (see getEffectiveThreatValue).
+     *
+     * @returns The effective threat level word
+     */
+    getEffectiveThreat(): ThreatLevel;
+    /**
      * Add or update a fact in the NPC's knowledge base.
      *
      * @param topic - The topic this fact is about
@@ -5625,6 +5653,13 @@ export interface InfluenceInForce {
     target?: string;
     /** Vocabulary-word state mutations in effect (mood, threat, focus, ...). */
     effect: Record<string, string>;
+    /**
+     * Whether the target resists this exertion. Absent means 'applied'
+     * (pre-status records deserialize as applied). Resisted records exist so
+     * the applied↔resisted flip is a detectable transition; they never
+     * contribute to effective state.
+     */
+    status?: 'applied' | 'resisted';
     /** Duration mode. */
     duration: 'while present' | 'momentary' | 'lingering';
     /** Turn the effect was applied. */

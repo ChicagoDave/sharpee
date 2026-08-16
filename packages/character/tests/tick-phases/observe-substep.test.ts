@@ -40,20 +40,15 @@ function npcIn(world: WorldModel, name: string, at: IFEntity, withModel: boolean
   return npc;
 }
 
-const ATTACK_EVENT: ISemanticEvent = {
-  id: 'e1',
-  type: 'if.event.attacked',
-  timestamp: 0,
-  entities: { actor: 'player' },
-  data: {},
-};
-
 describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
   let world: WorldModel;
   let kitchen: IFEntity;
   let cellar: IFEntity;
   let player: IFEntity;
   let registry: CharacterPhaseRegistry;
+  // Carries the real player id so act detection resolves the actor
+  // (rebuilt per test in beforeEach).
+  let ATTACK_EVENT: ISemanticEvent;
 
   beforeEach(() => {
     world = new WorldModel();
@@ -66,6 +61,13 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     world.setPlayer(player.id);
     world.moveEntity(player.id, kitchen.id);
     registry = new CharacterPhaseRegistry();
+    ATTACK_EVENT = {
+      id: 'e1',
+      type: 'if.event.attacked',
+      timestamp: 0,
+      entities: { actor: player.id },
+      data: {},
+    };
   });
 
   function runPhase(npcs: IFEntity[], actionEvents?: ISemanticEvent[]) {
@@ -79,7 +81,7 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     });
   }
 
-  it('a co-located character-model NPC observes the action: threat rises, the fact is witnessed', () => {
+  it('a co-located character-model NPC observes the action: threat rises, no raw-type topic minted', () => {
     const cook = npcIn(world, 'Cook', kitchen, true);
     const trait = cook.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
     const threatBefore = trait.threatValue;
@@ -87,7 +89,10 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     runPhase([cook], [ATTACK_EVENT]);
 
     expect(trait.threatValue).toBeGreaterThan(threatBefore);
-    expect(trait.knowledge['if.event.attacked']).toMatchObject({ source: 'witnessed', turnLearned: 3 });
+    // ADR-310 D10: the wire type never becomes knowledge; the same attack
+    // reaches knowledge only as act detection's derived topic.
+    expect(trait.knowledge['if.event.attacked']).toBeUndefined();
+    expect(trait.knows('the player harmed')).toBe(true);
   });
 
   it('an NPC in another room observes nothing', () => {

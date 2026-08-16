@@ -17,7 +17,7 @@ import {
   trackInfluence,
   isUnderInfluence,
   expireInfluencesForTurn,
-  expireInfluencesOnDeparture,
+  expireInfluencesBySeparation,
   evaluatePcInfluence,
 } from '../../src/influence';
 import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
@@ -118,47 +118,57 @@ describe('checkResistance', () => {
 // =========================================================================
 
 describe('evaluatePassiveInfluences', () => {
-  test('applies passive influence to all room entities', () => {
+  test('one exertion per influence, with an outcome per room entity', () => {
     const ginger = makeEntity('ginger', [SEDUCTION]);
     const james = makeEntity('james');
     const player = makeEntity('player');
 
     const results = evaluatePassiveInfluences([ginger, james, player]);
 
-    const applied = results.filter(r => r.status === 'applied');
-    expect(applied).toHaveLength(2);
-    expect(applied[0].status === 'applied' && applied[0].targetId).toBe('james');
-    expect(applied[1].status === 'applied' && applied[1].targetId).toBe('player');
+    expect(results).toHaveLength(1);
+    expect(results[0].status).toBe('exerted');
+    if (results[0].status === 'exerted') {
+      expect(results[0].influencerId).toBe('ginger');
+      expect(results[0].targets).toEqual([
+        { targetId: 'james', status: 'applied' },
+        { targetId: 'player', status: 'applied' },
+      ]);
+    }
   });
 
-  test('resistance blocks the effect and produces resisted result', () => {
+  test('resistance yields a resisted outcome for that target', () => {
     const ginger = makeEntity('ginger', [SEDUCTION]);
     const james = makeEntity('james', [], [{ influenceName: 'seduction' }]);
 
     const results = evaluatePassiveInfluences([ginger, james]);
 
     expect(results).toHaveLength(1);
-    expect(results[0].status).toBe('resisted');
-    if (results[0].status === 'resisted') {
-      expect(results[0].targetId).toBe('james');
+    expect(results[0].status).toBe('exerted');
+    if (results[0].status === 'exerted') {
+      expect(results[0].targets).toEqual([{ targetId: 'james', status: 'resisted' }]);
       expect(results[0].resisted).toBe('ginger-brushes-against-{target}-no-effect');
     }
   });
 
-  test('room-wide aura affects all entities', () => {
+  test('room-wide aura reaches all entities in one exertion', () => {
     const priest = makeEntity('priest', [CALMING]);
     const james = makeEntity('james');
     const margaret = makeEntity('margaret');
 
     const results = evaluatePassiveInfluences([priest, james, margaret]);
-    const applied = results.filter(r => r.status === 'applied');
-    expect(applied).toHaveLength(2);
+    expect(results).toHaveLength(1);
+    if (results[0].status === 'exerted') {
+      expect(results[0].targets.filter(t => t.status === 'applied')).toHaveLength(2);
+    }
   });
 
   test('influencer does not influence themselves', () => {
     const ginger = makeEntity('ginger', [SEDUCTION]);
     const results = evaluatePassiveInfluences([ginger]);
-    expect(results).toHaveLength(0);
+    expect(results).toHaveLength(1);
+    if (results[0].status === 'exerted') {
+      expect(results[0].targets).toHaveLength(0);
+    }
   });
 
   test('active influences are skipped during passive evaluation', () => {
@@ -191,8 +201,10 @@ describe('evaluatePassiveInfluences', () => {
     const james = makeEntity('james');
 
     const results = evaluatePassiveInfluences([ginger, james]);
-    const applied = results.filter(r => r.status === 'applied');
-    expect(applied).toHaveLength(1);
+    expect(results[0].status).toBe('exerted');
+    if (results[0].status === 'exerted') {
+      expect(results[0].targets).toEqual([{ targetId: 'james', status: 'applied' }]);
+    }
   });
 
   test('except condition makes resistance conditional', () => {
@@ -204,18 +216,26 @@ describe('evaluatePassiveInfluences', () => {
 
     const results = evaluatePassiveInfluences([ginger, margaret]);
     expect(results).toHaveLength(1);
-    expect(results[0].status).toBe('applied');
+    if (results[0].status === 'exerted') {
+      expect(results[0].targets).toEqual([{ targetId: 'margaret', status: 'applied' }]);
+    }
   });
 
-  test('applied result includes correct effect and witnessed message', () => {
+  test('the exertion carries effect and witnessed message exactly once', () => {
     const ginger = makeEntity('ginger', [SEDUCTION]);
     const james = makeEntity('james');
+    const player = makeEntity('player');
 
-    const results = evaluatePassiveInfluences([ginger, james]);
-    expect(results[0].status).toBe('applied');
-    if (results[0].status === 'applied') {
+    const results = evaluatePassiveInfluences([ginger, james, player]);
+    expect(results[0].status).toBe('exerted');
+    if (results[0].status === 'exerted') {
       expect(results[0].effect).toEqual({ focus: 'clouded', mood: 'distracted' });
       expect(results[0].witnessed).toBe('ginger-brushes-against-{target}');
+      // The witnessed fact lives on the exertion, not on any target outcome —
+      // duplicate witnessed events are unrepresentable (ADR-310 D8).
+      for (const outcome of results[0].targets) {
+        expect(Object.keys(outcome).sort()).toEqual(['status', 'targetId']);
+      }
     }
   });
 });
@@ -287,23 +307,60 @@ describe('influence duration — trait-based', () => {
     expect(trait.influencesInForce).toHaveLength(1);
   });
 
-  test('expireInfluencesOnDeparture clears "while present" effects from that influencer', () => {
+  test('applied↔resisted flip updates the record in place and reports a transition', () => {
+    const trait = makeTrait();
+    trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 1, status: 'resisted' });
+    expect(isUnderInfluence(trait, 'seduction')).toBe(false);
+
+    // Resistance lapses (except-condition became true): a real transition.
+    const flipped = trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 3, status: 'applied' });
+    expect(flipped).toBe(true);
+    expect(trait.influencesInForce).toHaveLength(1);
+    expect(trait.influencesInForce[0].status).toBe('applied');
+    expect(trait.influencesInForce[0].appliedAtTurn).toBe(3);
+    expect(isUnderInfluence(trait, 'seduction')).toBe(true);
+
+    // Same status again: level, not a transition.
+    const held = trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 4, status: 'applied' });
+    expect(held).toBe(false);
+  });
+
+  test('expireInfluencesBySeparation clears "while present" effects when the parties split', () => {
     const trait = makeTrait();
     trackInfluence(trait, 'seduction', 'ginger', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
     trackInfluence(trait, 'calming', 'priest', { mood: 'at ease' }, { duration: 'while present', turn: 1 });
 
-    const expired = expireInfluencesOnDeparture(trait, 'ginger');
+    // Ginger left the room; the priest is still co-located with James.
+    const rooms: Record<string, string> = { james: 'salon', ginger: 'garden', priest: 'salon' };
+    const expired = expireInfluencesBySeparation(trait, 'james', id => rooms[id]);
     expect(expired).toHaveLength(1);
     expect(isUnderInfluence(trait, 'seduction')).toBe(false);
     expect(isUnderInfluence(trait, 'calming')).toBe(true);
   });
 
-  test('expireInfluencesOnDeparture does not clear momentary or lingering effects', () => {
+  test('expireInfluencesBySeparation resolves an explicit target, not the owner', () => {
+    const gingerTrait = makeTrait();
+    trackInfluence(gingerTrait, 'seduction', 'ginger', { focus: 'clouded' },
+      { duration: 'while present', turn: 1, target: 'player' });
+
+    // The player walked away from Ginger: the exerter-homed record expires.
+    const rooms: Record<string, string> = { ginger: 'salon', player: 'garden' };
+    const expired = expireInfluencesBySeparation(gingerTrait, 'ginger', id => rooms[id]);
+    expect(expired).toHaveLength(1);
+    expect(gingerTrait.influencesInForce).toHaveLength(0);
+  });
+
+  test('expireInfluencesBySeparation does not clear momentary or lingering effects', () => {
     const trait = makeTrait();
     trackInfluence(trait, 'intimidation', 'colonel', { mood: 'fearful' }, { duration: 'momentary', turn: 1 });
     trackInfluence(trait, 'curse', 'witch', { mood: 'anxious' }, { duration: 'lingering', turn: 1, lingeringTurns: 5 });
 
-    const expired = expireInfluencesOnDeparture(trait, 'colonel');
+    // Both influencers are elsewhere — only 'while present' cares.
+    const rooms: Record<string, string> = { james: 'salon' };
+    const expired = expireInfluencesBySeparation(trait, 'james', id => rooms[id]);
     expect(expired).toHaveLength(0);
     expect(trait.influencesInForce).toHaveLength(2);
   });

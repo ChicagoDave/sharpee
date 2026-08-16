@@ -19,6 +19,8 @@ export {
   type InfluenceDef,
   type ResistanceDef,
   type InfluenceResult,
+  type InfluenceTargetOutcome,
+  type PassiveInfluenceExertion,
 } from './influence-types.js';
 
 export {
@@ -32,7 +34,7 @@ export {
   trackInfluence,
   isUnderInfluence,
   expireInfluencesForTurn,
-  expireInfluencesOnDeparture,
+  expireInfluencesBySeparation,
 } from './influence-duration.js';
 
 export {

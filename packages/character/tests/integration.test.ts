@@ -178,10 +178,11 @@ describe('ADR-141 end-to-end integration', () => {
     // Lucidity trigger fired (npc.attacked → flashback, immediate)
     expect(trait.currentLucidityState).toBe('flashback');
 
-    // Observable events were emitted
+    // Observable events were emitted — but no raw-type knowledge minted (D10)
     expect(observeEvents.some(e => e.type === CharacterMessages.THREAT_CHANGED)).toBe(true);
     expect(observeEvents.some(e => e.type === CharacterMessages.LUCIDITY_SHIFT)).toBe(true);
-    expect(observeEvents.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(true);
+    expect(observeEvents.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(false);
+    expect(trait.knows(attackEvent.type)).toBe(false);
 
     // ----- Layer 2: Lucidity decay over turns -----
     enterLucidityWindow(trait, 'flashback'); // 'fast' = 2 turns

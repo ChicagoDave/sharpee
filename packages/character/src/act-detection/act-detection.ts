@@ -78,6 +78,10 @@ export function derivedTopicFor(actorName: string, act: ActCategory | FaceAct): 
 }
 
 function actorNameOf(world: WorldModel, actorId: string): string {
+  // Topic identity must be stable and third-person: the player's display
+  // name is the self-referential 'yourself', which reads as a fact about
+  // the listener once the topic propagates NPC-to-NPC (ADR-310 D10).
+  if (world.getPlayer()?.id === actorId) return 'the player';
   return world.getEntity(actorId)?.name ?? actorId;
 }
 

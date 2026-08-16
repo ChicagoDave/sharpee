@@ -11,7 +11,7 @@
  * All turn arithmetic goes through the character-clock seam.
  *
  * Public interface: trackInfluence, isUnderInfluence,
- *   expireInfluencesForTurn, expireInfluencesOnDeparture.
+ *   expireInfluencesForTurn, expireInfluencesBySeparation.
  * Owner context: @sharpee/character / influence
  */
 
@@ -20,17 +20,21 @@ import { expiryTurn, hasExpired, isMomentaryExpired } from '../character-clock.j
 import { InfluenceEffect, InfluenceDuration } from './influence-types.js';
 
 /**
- * Record a new influence effect on the trait that homes it (the target's
- * trait normally; the exerter's trait with an explicit `target` for
- * targets with no character model). Skips duplicates: the same influence
- * from the same source on the same target is never double-tracked.
+ * Record an influence exertion outcome on the trait that homes it (the
+ * target's trait normally; the exerter's trait with an explicit `target`
+ * for targets with no character model). The record set is level-state:
+ * an identical outcome already in force is never double-tracked, and the
+ * return value is the edge detector callers mint events from (ADR-310
+ * D8 — events mark transitions, records mark levels). A record whose
+ * status differs (resistance lapsing or re-establishing) is updated in
+ * place and reports as a transition.
  *
  * @param homeTrait - The trait the record rides
  * @param influenceName - The influence name
  * @param influencerId - The influencer entity ID
  * @param effect - The applied effect mutations
- * @param options - Duration, timing, clear condition, and explicit target
- * @returns True if tracked, false if it was already in force
+ * @param options - Status, duration, timing, clear condition, explicit target
+ * @returns True when the outcome newly transitioned into force
  */
 export function trackInfluence(
   homeTrait: CharacterModelTrait,
@@ -40,6 +44,8 @@ export function trackInfluence(
   options: {
     duration: InfluenceDuration;
     turn: number;
+    /** Absent means 'applied' (matching InfluenceInForce deserialization). */
+    status?: 'applied' | 'resisted';
     lingeringTurns?: number;
     clearCondition?: string;
     /** Set only when the record rides the exerter's trait (player target). */
@@ -47,14 +53,22 @@ export function trackInfluence(
   },
 ): boolean {
   const { duration, turn, lingeringTurns, clearCondition, target } = options;
+  const status = options.status ?? 'applied';
 
-  const exists = homeTrait.influencesInForce.some(
+  const existing = homeTrait.influencesInForce.find(
     e =>
       e.influenceName === influenceName &&
       e.influencerId === influencerId &&
       e.target === target,
   );
-  if (exists) return false;
+  if (existing) {
+    if ((existing.status ?? 'applied') === status) return false;
+    // Applied↔resisted flip: a real transition — refresh the record in place.
+    existing.status = status;
+    existing.effect = { ...effect } as Record<string, string>;
+    existing.appliedAtTurn = turn;
+    return true;
+  }
 
   homeTrait.addInfluenceInForce({
     influenceName,
@@ -63,6 +77,7 @@ export function trackInfluence(
     effect: { ...effect } as Record<string, string>,
     duration,
     appliedAtTurn: turn,
+    status,
     ...(lingeringTurns != null ? { expiresAtTurn: expiryTurn(turn, lingeringTurns) } : {}),
     ...(clearCondition !== undefined ? { clearCondition } : {}),
   });
@@ -70,17 +85,20 @@ export function trackInfluence(
 }
 
 /**
- * Check if a trait's owner is under a specific influence.
+ * Check if a trait's owner is under a specific influence. Resisted
+ * records exist only as flip-transition state and do not count.
  *
  * @param trait - The trait to check (effects homed here)
  * @param influenceName - The influence name
- * @returns True if an effect with this name is in force
+ * @returns True if an applied effect with this name is in force
  */
 export function isUnderInfluence(
   trait: CharacterModelTrait,
   influenceName: string,
 ): boolean {
-  return trait.influencesInForce.some(e => e.influenceName === influenceName);
+  return trait.influencesInForce.some(
+    e => e.influenceName === influenceName && (e.status ?? 'applied') === 'applied',
+  );
 }
 
 /**
@@ -127,20 +145,28 @@ export function expireInfluencesForTurn(
 }
 
 /**
- * Expire 'while present' effects from a specific influencer, homed on a
- * trait. Call when the influencer leaves the trait owner's room.
+ * Expire 'while present' effects whose influencer and target no longer
+ * share a room, homed on a trait. Run once per turn per trait, BEFORE
+ * evaluation, so a re-entry re-transitions (and re-fires its witnessed
+ * phrase) the same turn the parties reunite (ADR-310 D8).
  *
  * @param trait - The trait whose effects to expire
- * @param influencerId - The influencer who left
+ * @param ownerId - The trait owner's entity id (the target unless the
+ *   record carries an explicit `target`)
+ * @param getLocation - Resolves an entity's current room (undefined = gone)
  * @returns Effects that were removed
  */
-export function expireInfluencesOnDeparture(
+export function expireInfluencesBySeparation(
   trait: CharacterModelTrait,
-  influencerId: string,
+  ownerId: string,
+  getLocation: (entityId: string) => string | undefined,
 ): InfluenceInForce[] {
   const expired: InfluenceInForce[] = [];
   trait.influencesInForce = trait.influencesInForce.filter(e => {
-    if (e.influencerId === influencerId && e.duration === 'while present') {
+    if (e.duration !== 'while present') return true;
+    const influencerRoom = getLocation(e.influencerId);
+    const targetRoom = getLocation(e.target ?? ownerId);
+    if (influencerRoom === undefined || targetRoom === undefined || influencerRoom !== targetRoom) {
       expired.push(e);
       return false;
     }

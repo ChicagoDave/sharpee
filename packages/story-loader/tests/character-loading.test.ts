@@ -114,7 +114,10 @@ describe('Phase 5 — character blocks through the real loader', () => {
     const threatBefore = maidTrait().threatValue;
     tick([{ id: 'e1', type: 'if.event.attacked', timestamp: 0, entities: { actor: player.id }, data: {} }]);
     expect(maidTrait().threatValue).toBeGreaterThan(threatBefore);
-    expect(maidTrait().knowledge['if.event.attacked']).toMatchObject({ source: 'witnessed' });
+    // ADR-310 D10: the raw wire type never becomes knowledge; the witnessed
+    // attack lands only as act detection's derived topic (stable player name).
+    expect(maidTrait().knowledge['if.event.attacked']).toBeUndefined();
+    expect(maidTrait().knowledge['the player harmed']).toMatchObject({ source: 'witnessed' });
   });
 
   it('compiled goal conditions evaluate through the story oracle: knows-topic activates, wait-for gates on world state', () => {

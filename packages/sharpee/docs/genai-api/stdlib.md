@@ -3443,11 +3443,15 @@ export declare function injectHallucinations(trait: CharacterModelTrait, npcId: 
  *
  * 1. Checks for CharacterModelTrait (returns early if absent — opt-in).
  * 2. Filters event through cognitive profile perception mode.
- * 3. Adds witnessed fact to knowledge.
- * 4. Applies default state transition rules.
- * 5. Checks lucidity triggers.
- * 6. Injects hallucinated facts (augmented perception).
- * 7. Emits observable behavior events for state changes.
+ * 3. Applies default state transition rules.
+ * 4. Checks lucidity triggers.
+ * 5. Injects hallucinated facts (augmented perception).
+ * 6. Emits observable behavior events for state changes.
+ *
+ * Knowledge topics are NOT minted here (ADR-310 D10): raw event types are
+ * platform wire vocabulary, not author-facing topics. Witnessed events
+ * become knowledge only through act detection's derived topics
+ * (@sharpee/character, D12a) and authored `knows` declarations.
  *
  * @param npc - The NPC entity
  * @param event - The observed event

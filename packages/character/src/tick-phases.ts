@@ -56,10 +56,11 @@ import {
   InfluenceDef,
   ResistanceDef,
   InfluenceRoomEntity,
-  InfluenceResult,
+  PassiveInfluenceExertion,
   evaluatePassiveInfluences,
   trackInfluence,
   expireInfluencesForTurn,
+  expireInfluencesBySeparation,
 } from './influence/index.js';
 
 // ---------------------------------------------------------------------------
@@ -211,8 +212,10 @@ export { CHARACTER_TURN_KEY } from './character-clock.js';
  * Sub-step order (a contract, not a coincidence — contracts.md §2): decay
  * runs first so the turn's evaluation sees settled mood/lucidity;
  * observation second, so the turn's remaining evaluation reacts to what
- * the player just did; influence effects are applied and expired next, so
- * propagation and goal evaluation the same turn see them; propagation
+ * the player just did; influence effects are expired then applied next
+ * (expiry first so a recurring influence re-transitions the turn it
+ * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
+ * see them; propagation
  * moves knowledge before goals re-evaluate activation conditions that may
  * reference it.
  *
@@ -645,6 +648,37 @@ function runInfluenceSubStep(
   const events: ISemanticEvent[] = [];
   const { world, turn, playerLocation, playerId } = ctx;
 
+  // Expire BEFORE evaluating (ADR-310 D8): separation ends 'while present'
+  // records, the clock ends momentary/lingering ones — so an influence that
+  // recurs this turn (re-entry, momentary re-exertion) re-transitions into
+  // force below and its witnessed phrase re-fires the turn it recurs.
+  for (const npc of npcs) {
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (!trait) continue;
+
+    const separated = expireInfluencesBySeparation(trait, npc.id, id => world.getLocation(id));
+    const lapsed = expireInfluencesForTurn(trait, turn, (effect, pred) => {
+      // A clear condition evaluates against the effect's TARGET
+      const targetId = effect.target ?? npc.id;
+      const targetEntity = world.getEntity(targetId);
+      const targetTrait = targetEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+      return targetTrait ? targetTrait.evaluate(pred) : false;
+    });
+
+    for (const effect of [...separated, ...lapsed]) {
+      const targetId = effect.target ?? npc.id;
+      const target = world.getEntity(targetId);
+      const targetLoc = target ? world.getLocation(target.id) : undefined;
+      if (targetLoc === playerLocation) {
+        events.push(createEvent('character.influence.expired', {
+          influenceName: effect.influenceName,
+          targetId,
+          targetName: target?.name ?? targetId,
+        }));
+      }
+    }
+  }
+
   // Group entities by room
   const roomEntities = new Map<string, InfluenceRoomEntity[]>();
   for (const npc of npcs) {
@@ -681,43 +715,18 @@ function runInfluenceSubStep(
     handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
   }
 
-  // Expire effects — each NPC's trait homes its own inbound effects plus
-  // any exerter-side records (player targets)
-  for (const npc of npcs) {
-    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
-    if (!trait) continue;
-
-    const expired = expireInfluencesForTurn(trait, turn, (effect, pred) => {
-      // A clear condition evaluates against the effect's TARGET
-      const targetId = effect.target ?? npc.id;
-      const targetEntity = world.getEntity(targetId);
-      const targetTrait = targetEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
-      return targetTrait ? targetTrait.evaluate(pred) : false;
-    });
-
-    for (const effect of expired) {
-      const targetId = effect.target ?? npc.id;
-      const target = world.getEntity(targetId);
-      const targetLoc = target ? world.getLocation(target.id) : undefined;
-      if (targetLoc === playerLocation) {
-        events.push(createEvent('character.influence.expired', {
-          influenceName: effect.influenceName,
-          targetId,
-          targetName: target?.name ?? targetId,
-        }));
-      }
-    }
-  }
-
   return events;
 }
 
 /**
- * Process influence evaluation results: record applied effects on the trait
+ * Process influence exertions: record per-target outcomes on the trait
  * that homes them (target's trait; exerter's trait for the player — ADR-310
- * D17 home rule) and emit witnessed/resisted events.
+ * D17 home rule) and mint witnessed/resisted events on transitions only
+ * (ADR-310 D8 — events mark transitions, records mark levels). One
+ * witnessed event per exertion, however many targets it newly took hold
+ * on; one resisted event per target on that target's own flip.
  *
- * @param results - Influence evaluation results for one room
+ * @param exertions - Influence exertion results for one room
  * @param roomId - The room where influences were evaluated
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
@@ -726,7 +735,7 @@ function runInfluenceSubStep(
  * @param events - Accumulator for witnessed events
  */
 function handleInfluenceResults(
-  results: InfluenceResult[],
+  exertions: PassiveInfluenceExertion[],
   roomId: string,
   registry: CharacterPhaseRegistry,
   world: WorldModel,
@@ -734,49 +743,58 @@ function handleInfluenceResults(
   playerLocation: EntityId,
   events: ISemanticEvent[],
 ): void {
-  for (const result of results) {
-    if (result.status === 'applied') {
-      const influencerConfig = registry.getConfig(result.influencerId);
-      const influenceDef = influencerConfig?.influenceDefs?.find(
-        d => d.name === result.influenceName,
-      );
+  for (const exertion of exertions) {
+    if (exertion.status !== 'exerted') continue;
 
+    const influencerConfig = registry.getConfig(exertion.influencerId);
+    const influenceDef = influencerConfig?.influenceDefs?.find(
+      d => d.name === exertion.influenceName,
+    );
+    const influencerEntity = world.getEntity(exertion.influencerId);
+    const influencerTrait = influencerEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+
+    const newlyApplied: EntityId[] = [];
+
+    for (const outcome of exertion.targets) {
       // Resolve the home trait per the D17 home rule
-      const targetEntity = world.getEntity(result.targetId);
+      const targetEntity = world.getEntity(outcome.targetId);
       const targetTrait = targetEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
-      const influencerEntity = world.getEntity(result.influencerId);
-      const influencerTrait = influencerEntity?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
-
       const homeTrait = targetTrait ?? influencerTrait;
-      if (homeTrait) {
-        trackInfluence(homeTrait, result.influenceName, result.influencerId, result.effect, {
+      if (!homeTrait) continue;
+
+      const transitioned = trackInfluence(
+        homeTrait, exertion.influenceName, exertion.influencerId, exertion.effect, {
           duration: influenceDef?.duration ?? 'while present',
           turn,
+          status: outcome.status,
           lingeringTurns: influenceDef?.lingeringTurns,
           clearCondition: influenceDef?.lingeringClearCondition,
-          ...(targetTrait ? {} : { target: result.targetId }),
+          ...(targetTrait ? {} : { target: outcome.targetId }),
         });
-      }
+      if (!transitioned) continue;
 
-      if (roomId === playerLocation && result.witnessed) {
-        const influencer = world.getEntity(result.influencerId);
-        const target = world.getEntity(result.targetId);
-        events.push(createEvent('character.influence.applied', {
-          influencerId: result.influencerId, targetId: result.targetId,
-          influenceName: result.influenceName, messageId: result.witnessed,
-          influencerName: influencer?.name ?? result.influencerId,
-          targetName: target?.name ?? result.targetId,
-        }, result.influencerId));
+      if (outcome.status === 'applied') {
+        newlyApplied.push(outcome.targetId);
+      } else if (exertion.resisted && roomId === playerLocation) {
+        events.push(createEvent('character.influence.resisted', {
+          influencerId: exertion.influencerId, targetId: outcome.targetId,
+          influenceName: exertion.influenceName, messageId: exertion.resisted,
+          influencerName: influencerEntity?.name ?? exertion.influencerId,
+          targetName: targetEntity?.name ?? outcome.targetId,
+        }, exertion.influencerId));
       }
-    } else if (result.status === 'resisted' && result.resisted && roomId === playerLocation) {
-      const influencer = world.getEntity(result.influencerId);
-      const target = world.getEntity(result.targetId);
-      events.push(createEvent('character.influence.resisted', {
-        influencerId: result.influencerId, targetId: result.targetId,
-        influenceName: result.influenceName, messageId: result.resisted,
-        influencerName: influencer?.name ?? result.influencerId,
-        targetName: target?.name ?? result.targetId,
-      }, result.influencerId));
+    }
+
+    if (newlyApplied.length > 0 && exertion.witnessed && roomId === playerLocation) {
+      const firstTarget = world.getEntity(newlyApplied[0]);
+      events.push(createEvent('character.influence.applied', {
+        influencerId: exertion.influencerId,
+        targetId: newlyApplied[0],
+        targetIds: [...newlyApplied],
+        influenceName: exertion.influenceName, messageId: exertion.witnessed,
+        influencerName: influencerEntity?.name ?? exertion.influencerId,
+        targetName: firstTarget?.name ?? newlyApplied[0],
+      }, exertion.influencerId));
     }
   }
 }

@@ -455,6 +455,13 @@ export interface InfluenceInForce {
   target?: string;
   /** Vocabulary-word state mutations in effect (mood, threat, focus, ...). */
   effect: Record<string, string>;
+  /**
+   * Whether the target resists this exertion. Absent means 'applied'
+   * (pre-status records deserialize as applied). Resisted records exist so
+   * the applied↔resisted flip is a detectable transition; they never
+   * contribute to effective state.
+   */
+  status?: 'applied' | 'resisted';
   /** Duration mode. */
   duration: 'while present' | 'momentary' | 'lingering';
   /** Turn the effect was applied. */
