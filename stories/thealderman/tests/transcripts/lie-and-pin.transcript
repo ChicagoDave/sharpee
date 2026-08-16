@@ -1,0 +1,21 @@
+title: The maintained lie
+story: thealderman
+author: Sharpee Team
+description: Viola's killer denial mints a pinned claim and stays
+  consistent on re-asking (ADR-318 D9 through the topic dispatch).
+
+---
+
+> south
+[OK: contains "Ballroom"]
+
+# First ask mints the lie
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+# Re-asking maintains the same pinned claim — the lie never wavers
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the murder
+[OK: contains "Some accident"]

@@ -89,7 +89,10 @@ describe('thealderman Chord port — descriptive layer (ADR-310 D18)', () => {
 
     // Catherine — the entrusted secret, maternal protection, duty over fear.
     const catherine = applied('catherine-shelby');
-    expect(catherine.knowledge['viola-half-sister']).toMatchObject({ confided: true });
+    // Renamed `viola-half-sister` → `viola-secret` in the Phase 6 port so
+    // the confided topic matches its topic-table row (the reveal gate
+    // matches row candidates against knowledge topics).
+    expect(catherine.knowledge['viola-secret']).toMatchObject({ confided: true });
     expect(catherine.principles).toEqual([{ category: 'betray a confidence' }]);
     expect(catherine.obligations).toEqual([{ kind: 'protects', scope: 'chelsea-sumner' }]);
     expect(catherine.temperaments).toEqual([{ name: 'catherine-shelby@temperament-1' }]);

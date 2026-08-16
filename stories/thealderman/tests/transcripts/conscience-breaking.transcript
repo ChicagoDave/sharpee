@@ -1,0 +1,35 @@
+title: The breaking point
+story: thealderman
+author: Sharpee Team
+description: Maintaining the lie costs — every pinned delivery deposits
+  conscience pressure until Viola reaches the breaking band, and the
+  truth comes out (ADR-318 D8/D9 through gameplay).
+
+---
+
+> south
+[OK: contains "Ballroom"]
+
+# Before the pressure builds, the truth is just another role
+> ask viola about the truth
+[OK: contains "a role like any other"]
+
+# Each maintained lie deposits conscience pressure (mint, then upkeep)
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+# The band crosses into breaking — and the performance ends
+> ask viola about the truth
+[OK: contains "the cord was in my hands"]

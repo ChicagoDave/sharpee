@@ -20,6 +20,7 @@
     "test:ci": "vitest run"
   },
   "dependencies": {
+    "@sharpee/character": "workspace:*",
     "@sharpee/chord": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",

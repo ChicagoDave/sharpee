@@ -1017,4 +1017,62 @@ describe('CharacterModelTrait', () => {
       expect(trait.evaluate('threatened')).toBe(false);
     });
   });
+
+  // =========================================================================
+  // Rehydration (ADR-310 Phase 5 — the engine save/restore trait path)
+  // =========================================================================
+
+  describe('rehydration through IFEntity.toJSON/fromJSON (D17)', () => {
+    it('a rehydrated trait keeps every mutable field and evaluates predicates', async () => {
+      // The real save path: entity.toJSON → JSON text → IFEntity.fromJSON
+      // (Object.create + Object.assign — the constructor never runs).
+      const { IFEntity } = await import('../../../src/entities/if-entity');
+      // Importing the barrel registers the trait rehydrator (leaf-module seam).
+      await import('../../../src/index');
+
+      const entity = new IFEntity('npc-1', 'actor');
+      const trait = new CharacterModelTrait({
+        personality: { cowardly: 0.8 },
+        mood: 'nervous',
+        threat: 'uneasy',
+        knowledge: { murder: { source: 'witnessed', confidence: 'certain', turnLearned: 2 } },
+        factBeliefs: { 'weapon.location': { value: 'cellar', confidence: 'believes', source: 'told', turnLearned: 3, resistance: 'none' } },
+        goalState: { flee: { active: true, currentStep: 1, paused: false, interrupted: false } },
+        pressure: { value: 40, band: 'burdened' },
+        burdenedBy: ['secret'],
+        ledger: [{ kind: 'claim', audience: 'player', factId: 'weapon.location', claimedValue: 'attic', turnMinted: 4, pinned: true }],
+        told: { maid: ['murder'] },
+      });
+      trait.registerPredicate('story-custom', () => true);
+      entity.add(trait);
+
+      const restored = IFEntity.fromJSON(JSON.parse(JSON.stringify(entity.toJSON())));
+      const rt = restored.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+
+      // Every mutable field survives byte-faithfully
+      expect(rt.getMood()).toBe('nervous');
+      expect(rt.getThreat()).toBe('uneasy');
+      expect(rt.knowledge).toEqual(trait.knowledge);
+      expect(rt.factBeliefs).toEqual(trait.factBeliefs);
+      expect(rt.goalState).toEqual(trait.goalState);
+      expect(rt.pressure).toEqual({ value: 40, band: 'burdened' });
+      expect(rt.burdenedBy).toEqual(['secret']);
+      expect(rt.ledger).toEqual(trait.ledger);
+      expect(rt.told).toEqual({ maid: ['murder'] });
+
+      // Platform predicates rebuild lazily on the rehydrated instance —
+      // the old own-field Map came back as a plain object and threw here.
+      expect(rt.evaluate('cowardly')).toBe(true);
+      expect(rt.evaluate('burdened')).toBe(true);
+      expect(rt.evaluate('not threatened')).toBe(true);
+
+      // Load-time registrations are transient by design: gone after
+      // restore until the loader re-registers them.
+      expect(() => rt.evaluate('story-custom')).toThrow(/Unknown character predicate/);
+
+      // And registration on the rehydrated instance works.
+      rt.registerPredicate('story-custom', () => true);
+      expect(rt.evaluate('story-custom')).toBe(true);
+    });
+  });
 });

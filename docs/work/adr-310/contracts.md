@@ -141,7 +141,12 @@ npcService.registerTickPhase('character-model', handler); // NpcTickPhase, npc-s
   tests and the author channel reference it; authors never see it).
 - The single handler runs ordered sub-steps: **decay** (mood toward baseline,
   lucidity — folding the `processLucidityDecay` call currently inlined at
-  `npc-service.ts:229–233`) → **influence** → **propagation** → **goals**
+  `npc-service.ts:229–233`) → **observe** (Phase 5 amendment, 2026-08-15:
+  the turn's player-action events — `NpcTickContext.actionEvents`, additive
+  — forward to co-located character-model NPCs through stdlib's
+  `observeEvent`; after decay so the turn evaluates from settled state,
+  before influence so the rest of the turn reacts to what the player just
+  did) → **influence** → **propagation** → **goals**
   (activation re-evaluation, step execution, obligation-generated goals) →
   **bookkeeping** (pressure deposits/band transitions from the turn's
   arbitrations, pin maintenance, author-channel emission). One registration,
@@ -161,6 +166,27 @@ expiry, propagation pacing, pressure curve) reads time through one module —
 `character-clock.ts`, wrapping `NpcTickContext.turn` — never scattered raw
 `ctx.turn` reads. ADR-316's elapsed-time semantics, when un-deferred, changes
 one seam.
+
+### 2.2 The story oracle (Phase 5 amendment, 2026-08-15)
+
+The character runtime's ONE injected seam for asking the loaded story a
+question trait state cannot answer:
+
+```ts
+interface CompiledStoryOracle {
+  evalCondition(cond: IRCondition, opts: { self: entityId; world: WorldModel }): boolean;
+  isKindMember(entityId: string, kind: string): boolean;  // reserved: Phase 6 arbitration scopes
+}
+```
+
+Bound on `CharacterPhaseRegistry` by the loader at load (authored wiring,
+never serialized). Goal `active when` / `wait for` compiled conditions
+evaluate through it, `it` bound to the asking NPC; a compiled condition
+with no oracle bound throws — a wiring defect, never a silent false.
+`isKindMember` is the reserved slot the Phase 6 arbitration seam fills for
+classifier scopes (`a merchant`) — kind membership lives in the story's
+IR, so Phase 6 extends this seam rather than adding a second one.
+Platform-internal (§7).
 
 ## 3. Arbiter API (ADR-318 D1–D3)
 

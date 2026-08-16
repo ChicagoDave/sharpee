@@ -90,6 +90,14 @@ export interface ArbiterContext {
   audienceId?: string;
   /** The desire feed, when an active goal bears on this act (ADR-310 D8). */
   desire?: { intensity: number; stance: 'for' | 'against'; feed: string };
+  /**
+   * The act's OBJECT for principle scope/except matching (ADR-318 D4 —
+   * the asker at the dialogue site, the act target at detection sites).
+   * Absent = unknown: scoped principles stay in force, excepts never lift.
+   */
+  actObjectId?: string;
+  /** Kind membership for classifier scopes (`a <kind>`) — the story oracle's slot. */
+  isKindMember?: (entityId: string, kind: string) => boolean;
 }
 
 /** A reading plus which side of the candidate act it pushes (internal). */

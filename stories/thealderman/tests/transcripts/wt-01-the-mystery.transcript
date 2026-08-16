@@ -1,0 +1,104 @@
+title: The Alderman — full mystery walkthrough
+story: thealderman
+author: Sharpee Team
+description: Evidence, interviews, the maintained lie, the confided-secret
+  refusals, and the accusation of Viola Wainright (ADR-310 AC2-6 /
+  ADR-318 AC1-4 coverage backbone).
+
+---
+
+# The foyer and the dropped program
+> look
+[OK: contains "Foyer"]
+[OK: contains "theatre program"]
+
+> take the program
+[OK: contains "Taken"]
+
+> examine the program
+[OK: contains "NINE"]
+
+# The ballroom: the murder room's tells, and the killer herself
+> south
+[OK: contains "Ballroom"]
+[OK: contains "stain"]
+
+> examine the curtain
+[OK: contains "torn away"]
+
+> ask viola about the alibi
+[OK: contains "until ten"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the family
+[OK: contains "friendly strangers"]
+
+# The body and the misplaced cord
+> north
+[OK: contains "Foyer"]
+
+> north
+[OK: contains "Staircase"]
+
+> north
+[OK: contains "Three-Oh-Two"]
+
+> examine stephanie
+[OK: contains "throat"]
+
+> examine the cord
+[OK: contains "frayed"]
+[OK: contains "did not come from this room"]
+
+> take the cord
+[OK: contains "Taken"]
+
+# Catherine: the hub, and a confidence that holds
+> south
+[OK: contains "Staircase"]
+
+> south
+[OK: contains "Foyer"]
+
+> west
+[OK: contains "Restaurant"]
+
+> ask catherine about ross
+[OK: contains "twenty minutes"]
+
+> ask catherine about viola
+[OK: contains "acquainted"]
+
+> ask catherine about the viola secret
+[OK: not contains "half-sister"]
+
+# The bar: Ross's denial and John's discretion
+> east
+[OK: contains "Foyer"]
+
+> east
+[OK: contains "Bar"]
+
+> ask ross about gambling
+[OK: contains "Paid"]
+
+> ask ross about the alibi
+[OK: contains "stool"]
+
+> ask john about the business arrangement
+[OK: not contains "financed"]
+
+# Confront Viola with the program, then accuse
+> west
+[OK: contains "Foyer"]
+
+> south
+[OK: contains "Ballroom"]
+
+> ask viola about the program
+[OK: contains "Printers"]
+
+> accuse viola
+[OK: contains "collected mine late"]

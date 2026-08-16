@@ -26,6 +26,12 @@ export {
   TopicRegistry,
 } from './topic-registry.js';
 
+// Shared claim-delivery bookkeeping and author-event constructor (ADR-318
+// D9/D11) — one implementation for the TS dialogue extension and the
+// loader's topic dispatch.
+export { pinAllowsClaim, recordClaimDelivery, type ClaimTag } from './claims.js';
+export { createAuthorEvent } from './author-events.js';
+
 export {
   type Contradiction,
   type ConstraintEvaluatorState,

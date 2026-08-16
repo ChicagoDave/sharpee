@@ -12,11 +12,15 @@
  */
 
 import { CharacterModelTrait } from '@sharpee/world-model';
+import type { IRCondition } from '@sharpee/chord';
 import {
   GoalDef,
   ActiveGoal,
   GOAL_PRIORITY_VALUES,
 } from './goal-types.js';
+
+/** Pre-bound compiled-condition evaluator (the story oracle, closed over one NPC). */
+export type CompiledConditionEval = (cond: IRCondition) => boolean;
 
 // ---------------------------------------------------------------------------
 // Goal manager
@@ -63,17 +67,29 @@ export class GoalManager {
    * interrupts active ones, resumes cleared ones.
    *
    * @param trait - The NPC's CharacterModelTrait
+   * @param evalCompiled - Compiled-condition evaluator for `activeWhenCompiled`
+   *   defs (required whenever any def carries one; throws otherwise — an
+   *   unbound oracle under a compiled story is a wiring defect, not a state)
    * @returns The current active goal queue (priority-sorted, interrupted last)
    */
-  evaluate(trait: CharacterModelTrait): ActiveGoal[] {
+  evaluate(trait: CharacterModelTrait, evalCompiled?: CompiledConditionEval): ActiveGoal[] {
     // Check for new activations
     for (const def of this.defs) {
       const state = trait.getGoalState(def.id);
       if (state.active) continue;
 
-      const shouldActivate = def.activatesWhen.every(pred =>
+      let shouldActivate = def.activatesWhen.every(pred =>
         trait.evaluate(pred),
       );
+      if (shouldActivate && def.activeWhenCompiled !== undefined) {
+        if (!evalCompiled) {
+          // ADR-310 Phase 5: refuse loudly — silent false would strand the goal.
+          throw new Error(
+            `Goal \`${def.id}\` carries a compiled activation condition but no story oracle is bound.`,
+          );
+        }
+        shouldActivate = evalCompiled(def.activeWhenCompiled);
+      }
 
       if (shouldActivate) {
         state.active = true;

@@ -56,6 +56,14 @@ import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-doma
 import type { Story, StoryConfig } from '@sharpee/engine';
 import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import { NpcPlugin } from '@sharpee/plugin-npc';
+import {
+  applyCompiledCharacter,
+  temperamentDefsFrom,
+  CharacterPhaseRegistry,
+  registerCharacterModelPhase,
+  type AppliedCharacter,
+  type CompiledStoryOracle,
+} from '@sharpee/character';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import type {
@@ -104,6 +112,7 @@ import {
   SceneryTrait,
   SupporterTrait,
   SwitchableTrait,
+  type TemperamentDef,
   TraitType,
   WeaponTrait,
   WearableTrait,
@@ -636,6 +645,7 @@ export class ChordStory implements Story {
     // keys) now that every entity exists (forward references resolve here).
     this.resolvePendingEntityRefs();
 
+
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
     this.runtime.bind(world);
@@ -750,8 +760,127 @@ export class ChordStory implements Story {
       wearable.wornBy = player.id;
     }
 
+    // ADR-310/318 Phase 5: apply compiled character blocks. Runs here —
+    // the second lifecycle hook — because a block's refs (`feels …
+    // toward the player`) need the FULLY built world in either
+    // createPlayer/initializeWorld order, the same reason Gap-2
+    // composition lives here.
+    this.applyCharacterBlocks(world);
+
     // ADR-240: no initial derived-property evaluation — derived state is
     // registered evaluators, consulted live at every read.
+  }
+
+  /**
+   * Applied compiled-character results awaiting engine-ready registration
+   * (tick-phase configs, mood-decay baselines), by WORLD entity id.
+   */
+  private readonly appliedCharacters: Array<{ worldId: string; applied: AppliedCharacter }> = [];
+
+  /**
+   * The character-phase registry, built at load (authored configs, the
+   * story oracle, temperament defs — never serialized, D17). Undefined
+   * when the story declares no character blocks. The topic dispatch
+   * reads it through `characterStoryData()`; engine-ready registers the
+   * tick phase with it.
+   */
+  private characterRegistry?: CharacterPhaseRegistry;
+
+  /**
+   * RuntimeHost accessor (ADR-310/318 Phase 6): character story data for
+   * the topic dispatch. Undefined = no character blocks, no consultation.
+   */
+  characterStoryData(): {
+    temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
+    isKindMember: (entityId: string, kind: string) => boolean;
+  } | undefined {
+    if (!this.characterRegistry) return undefined;
+    const oracle = this.storyOracle();
+    const temperamentDefs = this.characterRegistry.getTemperamentDefs();
+    return {
+      ...(temperamentDefs ? { temperamentDefs } : {}),
+      isKindMember: (entityId, kind) => oracle.isKindMember(entityId, kind),
+    };
+  }
+
+  /**
+   * Apply every `IREntity.character` block through the one seam
+   * (`applyCompiledCharacter`, ADR-310 Phase 3): the loader supplies the
+   * IR→world id mapping and the story's custom mood/personality
+   * vocabulary; the seam owns the walk. A character-model person without
+   * an NPC behavior adjective composes a passive `NpcTrait` — the NPC
+   * turn machinery is how the character model runs, so carrying the
+   * model makes the entity an NPC (ADR-215 Q4 keeps `passive` built in).
+   */
+  private applyCharacterBlocks(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      if (irEntity.character === undefined) continue;
+      const worldId = this.requireWorldId(irEntity.id, irEntity);
+      const entity = world.getEntity(worldId);
+      if (!entity) {
+        throw new LoadError(`\`${irEntity.name}\`: the entity carrying a character block was never built.`, irEntity.span);
+      }
+      if (!irEntity.isPlayer && !entity.has(TraitType.NPC)) {
+        entity.add(new NpcTrait({ behaviorId: 'passive', canMove: false }));
+      }
+      const applied = applyCompiledCharacter(entity, irEntity.character, {
+        ...(this.ir.customMoods?.length ? { customMoods: this.ir.customMoods } : {}),
+        ...(this.ir.customPersonalities?.length ? { customPersonalities: this.ir.customPersonalities } : {}),
+        resolveEntityId: (irId) => this.requireWorldId(irId, irEntity),
+      });
+      this.appliedCharacters.push({ worldId, applied });
+    }
+
+    // Build the phase registry NOW (authored data only, D17): the topic
+    // dispatch consults temperament defs and the oracle during player
+    // actions, which precede engine-ready registration of the tick phase.
+    if (this.appliedCharacters.length > 0) {
+      const registry = new CharacterPhaseRegistry();
+      for (const { worldId, applied } of this.appliedCharacters) {
+        registry.register(worldId, {
+          ...(applied.propagationProfile ? { propagationProfile: applied.propagationProfile } : {}),
+          ...(applied.goalDefs ? { goalDefs: applied.goalDefs } : {}),
+          ...(applied.movementProfile ? { movementProfile: applied.movementProfile } : {}),
+          ...(applied.influenceDefs ? { influenceDefs: applied.influenceDefs } : {}),
+          ...(applied.resistanceDefs ? { resistanceDefs: applied.resistanceDefs } : {}),
+          baselineMood: applied.baselineMood,
+        });
+      }
+      if (this.ir.temperaments?.length) {
+        registry.setTemperamentDefs(temperamentDefsFrom(this.ir.temperaments));
+      }
+      if (this.ir.witnessedTopics?.length) {
+        // D12a aliases with actors pre-resolved to world ids — the tick
+        // phase matches detected acts by world actor.
+        registry.setWitnessedAliases(this.ir.witnessedTopics.map((w) => ({
+          actor: this.requireWorldId(w.actor),
+          act: w.act,
+          alias: w.alias,
+        })));
+      }
+      registry.setOracle(this.storyOracle());
+      this.characterRegistry = registry;
+    }
+  }
+
+  /**
+   * The loaded story's answer surface for the character runtime (ADR-310
+   * Phase 5): compiled conditions evaluate through the loader's own
+   * evaluator with `it` bound to the asking NPC; kind membership reads
+   * the IR's kind-noun compositions (the same source `is-a` uses).
+   */
+  private storyOracle(): CompiledStoryOracle {
+    return {
+      evalCondition: (cond, { self, world }) => {
+        const irId = this.irIdOf(self);
+        return this.evaluator.evalCondition(cond, { world, ...(irId !== undefined ? { it: irId } : {}) });
+      },
+      isKindMember: (entityId, kind) => {
+        const irId = this.irIdOf(entityId);
+        const irEntity = irId !== undefined ? this.ir.entities.find((e) => e.id === irId) : undefined;
+        return irEntity?.kinds.some((k) => k.name === kind) ?? false;
+      },
+    };
   }
 
   extendLanguage(language: LanguageProvider): void {
@@ -837,6 +966,15 @@ export class ChordStory implements Story {
     const npcService = npcPlugin.getNpcService();
     for (const pending of this.npcBehaviors) {
       npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
+    }
+
+    // ADR-310/318 Phase 5: the character-model tick phase. The registry
+    // was built at load (applyCharacterBlocks — authored configs only;
+    // every mutable runtime field rides CharacterModelTrait through the
+    // world snapshot, D17); engine-ready is where the NPC service exists
+    // to register it on.
+    if (this.characterRegistry) {
+      registerCharacterModelPhase(npcService, this.characterRegistry);
     }
 
     // ADR-215 `use state-machines`: the plugin registers engine-side and

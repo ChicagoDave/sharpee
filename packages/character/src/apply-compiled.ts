@@ -35,11 +35,21 @@ import type { GoalBuilder } from './goals/builder.js';
 /**
  * Story-level context for compiled character application: the custom
  * vocabulary the story's `define mood` / `define personality` lines
- * declared (StoryIR.customMoods / customPersonalities).
+ * declared (StoryIR.customMoods / customPersonalities), plus the loader's
+ * IR→world entity-id mapping.
  */
 export interface CompiledCharacterContext {
   customMoods?: readonly IRMoodDef[];
   customPersonalities?: readonly IRWordDef[];
+  /**
+   * Maps a wire entity ref (IR id) to the built world entity id. The
+   * LOADER owns the mapping (it is the only party holding both id
+   * spaces); this seam owns the walk over every ref-bearing field.
+   * Absent = identity (direct seam callers, AC1 round-trip tests).
+   * Implementations should throw on an unresolvable id — an unresolved
+   * ref here is rogue IR, not a story state.
+   */
+  resolveEntityId?: (irId: string) => string;
 }
 
 /**
@@ -65,18 +75,22 @@ function buildVocabulary(ctx?: CompiledCharacterContext): VocabularyExtension | 
   return ext;
 }
 
+/** IR→world entity-id mapping function (identity when no loader is involved). */
+type ResolveEntityId = (irId: string) => string;
+
 /**
  * Canonical trait-side spelling of a wire scope ref (ADR-318 D4/D7):
- * `anyone` / `a <classifier>` / the entity id — the resists-except idiom.
+ * `anyone` / `a <classifier>` / the WORLD entity id — the resists-except
+ * idiom. Entity refs pass through the loader's id mapping.
  */
-function scopeToString(scope: IRScopeRef): string {
+function scopeToString(scope: IRScopeRef, resolve: ResolveEntityId): string {
   switch (scope.kind) {
     case 'anyone':
       return 'anyone';
     case 'classifier':
       return `a ${scope.value}`;
     case 'entity':
-      return scope.value;
+      return resolve(scope.value);
   }
 }
 
@@ -96,27 +110,28 @@ export function temperamentDefsFrom(defs: readonly IRTemperamentDef[]): Record<s
   return out;
 }
 
-/** Map one compiled goal step to the builder-native GoalStep shape. */
-function mapGoalStep(step: IRGoalStep): GoalStep {
+/** Map one compiled goal step to the builder-native GoalStep shape (entity refs through the loader's id mapping). */
+function mapGoalStep(step: IRGoalStep, resolve: ResolveEntityId): GoalStep {
   switch (step.kind) {
     case 'seek':
-      return { type: 'seek', target: step.target, ...(step.in !== undefined ? { from: step.in } : {}) };
+      return { type: 'seek', target: resolve(step.target), ...(step.in !== undefined ? { from: resolve(step.in) } : {}) };
     case 'acquire':
-      return { type: 'acquire', target: step.target };
+      return { type: 'acquire', target: resolve(step.target) };
     case 'wait-for':
-      // The structured condition rides `conditionCompiled`; the string
-      // surface stays empty (the Phase 5 evaluator learns the IR form).
+      // The structured condition rides `conditionCompiled` in IR terms —
+      // the story oracle evaluates it, so its refs stay IR ids; the
+      // string surface stays empty.
       return { type: 'waitFor', conditions: [], conditionCompiled: step.condition };
     case 'move-to':
-      return { type: 'moveTo', target: step.target };
+      return { type: 'moveTo', target: resolve(step.target) };
     case 'act':
       return { type: 'act', messageId: step.phraseKey };
     case 'say':
-      return { type: 'say', messageId: step.phraseKey, ...(step.target !== undefined ? { target: step.target } : {}) };
+      return { type: 'say', messageId: step.phraseKey, ...(step.target !== undefined ? { target: resolve(step.target) } : {}) };
     case 'give':
-      return { type: 'give', item: step.item, target: step.target };
+      return { type: 'give', item: resolve(step.item), target: resolve(step.target) };
     case 'drop':
-      return { type: 'drop', item: step.item, ...(step.in !== undefined ? { location: step.in } : {}) };
+      return { type: 'drop', item: resolve(step.item), ...(step.in !== undefined ? { location: resolve(step.in) } : {}) };
   }
 }
 
@@ -137,6 +152,7 @@ export function applyCompiledCharacter(
   ctx?: CompiledCharacterContext,
 ): AppliedCharacter {
   const builder = new CharacterBuilder(entity.id);
+  const resolve: ResolveEntityId = ctx?.resolveEntityId ?? ((irId) => irId);
 
   const vocabulary = buildVocabulary(ctx);
   if (vocabulary) builder.withVocabulary(vocabulary);
@@ -146,7 +162,7 @@ export function applyCompiledCharacter(
   }
   if (data.mood !== undefined) builder.mood(data.mood);
   for (const f of data.feels) {
-    builder.dispositionToward(f.target, f.disposition as DispositionWord);
+    builder.dispositionToward(resolve(f.target), f.disposition as DispositionWord);
   }
   for (const k of data.knows) {
     builder.knows(k.topic, {
@@ -180,7 +196,7 @@ export function applyCompiledCharacter(
         tendency: 'chatty',
         audience: data.spreads.to as 'trusted' | 'anyone' | 'allied',
         ...(data.spreads.topics.length > 0 ? { spreads: [...data.spreads.topics] } : {}),
-        ...(data.spreads.except.length > 0 ? { excludes: [...data.spreads.except] } : {}),
+        ...(data.spreads.except.length > 0 ? { excludes: data.spreads.except.map(resolve) } : {}),
       });
     }
   }
@@ -189,7 +205,7 @@ export function applyCompiledCharacter(
     const gb = builder.goal(g.id) as GoalBuilder<CharacterBuilder>;
     gb.priority(g.priority as GoalPriority)
       .mode('sequential')
-      .pursues(g.steps.map(mapGoalStep));
+      .pursues(g.steps.map((s) => mapGoalStep(s, resolve)));
     if (g.activeWhen !== null) gb.activeWhenCompiled(g.activeWhen);
     gb.done();
   }
@@ -209,9 +225,9 @@ export function applyCompiledCharacter(
   for (const r of data.resists) {
     builder.resistsInfluence(r.influence, r.exceptFrom !== undefined
       ? {
-          // Canonical except-predicate spellings the Phase 5 evaluator seam
-          // interprets: `from a <classifier>` / `from <entity-id>`.
-          except: [r.exceptFrom.kind === 'classifier' ? `from a ${r.exceptFrom.value}` : `from ${r.exceptFrom.value}`],
+          // Canonical except-predicate spellings the runtime interprets:
+          // `from a <classifier>` / `from <world-entity-id>`.
+          except: [r.exceptFrom.kind === 'classifier' ? `from a ${r.exceptFrom.value}` : `from ${resolve(r.exceptFrom.value)}`],
         }
       : undefined);
   }
@@ -224,20 +240,20 @@ export function applyCompiledCharacter(
   }
   for (const p of data.principles) {
     builder.never(p.category as ActCategory, {
-      ...(p.scope !== undefined ? { scope: scopeToString(p.scope) } : {}),
+      ...(p.scope !== undefined ? { scope: scopeToString(p.scope, resolve) } : {}),
       ...(p.except !== undefined
-        ? { except: p.except.kind === 'protect' ? `to protect ${scopeToString(p.except.scope)}` : scopeToString(p.except.scope) }
+        ? { except: p.except.kind === 'protect' ? `to protect ${scopeToString(p.except.scope, resolve)}` : scopeToString(p.except.scope, resolve) }
         : {}),
     });
   }
   for (const o of data.obligations) {
-    if (o.kind === 'protects') builder.protects(scopeToString(o.scope!));
+    if (o.kind === 'protects') builder.protects(scopeToString(o.scope!, resolve));
     else builder.answersHonestly();
   }
   if (data.honor !== undefined) {
-    builder.honor(scopeToString(data.honor.scope), {
+    builder.honor(scopeToString(data.honor.scope, resolve), {
       faceActs: data.honor.faceActs as FaceAct[],
-      ...(data.honor.except.length > 0 ? { except: [...data.honor.except] } : {}),
+      ...(data.honor.except.length > 0 ? { except: data.honor.except.map(resolve) } : {}),
     });
   }
   for (const topic of data.burdenedBy) {

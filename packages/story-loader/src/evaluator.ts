@@ -20,14 +20,21 @@
 import type { IRCondition, IREntity, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type SeededRandom } from '@sharpee/core';
 import {
+  CharacterModelTrait,
   LightSourceTrait,
   LockableTrait,
+  MOOD_AXES,
   OpenableTrait,
+  PRESSURE_BANDS,
   SwitchableTrait,
+  THREAT_LEVELS,
   TraitType,
   VisibilityBehavior,
   WearableTrait,
   WorldModel,
+  applyMoodModifier,
+  type Mood,
+  type MoodModifier,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
@@ -86,6 +93,15 @@ export class Evaluator {
     this.capabilitiesProvider = provider;
   }
 
+  /**
+   * Mood-word coordinate table for interior `is`-values (ADR-310 D16):
+   * platform words plus the story's `define mood` customs, whose axes
+   * resolve here (anchor mood, one-axis modifier nudge) — the same
+   * resolution the compile-time seam applies, so `is <custom-mood>`
+   * classifies against the identical coordinates.
+   */
+  private readonly moodWordAxes: Record<string, { valence: number; arousal: number }>;
+
   constructor(
     ir: StoryIR,
     private readonly ids: EntityIdResolver,
@@ -99,6 +115,11 @@ export class Evaluator {
         trait.name,
         new Set(trait.data.filter((f) => f.type === 'entity').map((f) => f.name)),
       );
+    }
+    this.moodWordAxes = { ...MOOD_AXES };
+    for (const mood of ir.customMoods ?? []) {
+      const anchor = MOOD_AXES[mood.like as Mood];
+      this.moodWordAxes[mood.name] = mood.but ? applyMoodModifier(anchor, mood.but as MoodModifier) : anchor;
     }
     this.rng = createSeededRandom(seed);
   }
@@ -152,14 +173,20 @@ export class Evaluator {
       }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
-      case 'feels':
-      case 'knows-topic':
-        // ADR-310 D13 interior-state predicates: evaluation reads the
-        // character-model trait, which the Phase 5 loader wiring binds.
-        // No built story can carry these before that lands (the grammar
-        // shipped in the same plan), so refuse loudly rather than
-        // evaluate to a silent false.
-        throw new LoadError('Character conditions (`feels`, `knows`) are not wired into this runtime yet.');
+      case 'feels': {
+        // ADR-310 D13: the subject's disposition toward the target reads
+        // as the named word band. No character model = the predicate
+        // simply does not hold (D7: no model, no change).
+        const trait = this.characterTrait(this.entityValue(cond.subject, ctx), ctx);
+        if (!trait) return false;
+        const targetId = this.entityValue(cond.target, ctx);
+        return trait.getDispositionWord(targetId) === cond.disposition;
+      }
+      case 'knows-topic': {
+        // ADR-310 D13: the subject holds the topic (valueless knowledge).
+        const trait = this.characterTrait(this.entityValue(cond.subject, ctx), ctx);
+        return trait ? trait.knows(cond.topic) : false;
+      }
       case 'compare': {
         // ADR-264 D3: numeric comparison of two values (a counter vs a number).
         const left = Number(this.evalValue(cond.left, ctx));
@@ -274,9 +301,55 @@ export class Evaluator {
         }
         const adjective = this.stateAdjectiveHolds(entity, symbol);
         if (adjective !== null) return adjective;
+        // ADR-310 D16 / ADR-318: interior classification — mood, threat,
+        // and pressure-band words read the character-model trait, the
+        // same pure-read pattern as the state adjectives above.
+        const character = entity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+        if (character) {
+          const interior = this.characterWordHolds(character, symbol);
+          if (interior !== null) return interior;
+        }
       }
     }
     return false;
+  }
+
+  /**
+   * Interior `is`-value reads (ADR-310 D16, ADR-318 D8): mood words
+   * (platform + story customs) classify by nearest coordinates over the
+   * extended table; threat words read the threat curve's word; band
+   * words read the conscience band. Null when `symbol` is none of these.
+   */
+  private characterWordHolds(trait: CharacterModelTrait, symbol: string): boolean | null {
+    if (symbol in this.moodWordAxes) {
+      return this.nearestMoodWord(trait.moodValence, trait.moodArousal) === symbol;
+    }
+    if ((THREAT_LEVELS as readonly string[]).includes(symbol)) {
+      return trait.getThreat() === symbol;
+    }
+    if ((PRESSURE_BANDS as readonly string[]).includes(symbol)) {
+      return trait.pressure.band === symbol;
+    }
+    return null;
+  }
+
+  /** Nearest mood word over the extended (platform + custom) coordinate table — world-model's `nearestMood` metric. */
+  private nearestMoodWord(valence: number, arousal: number): string {
+    let best = 'calm';
+    let bestDist = Infinity;
+    for (const [word, axes] of Object.entries(this.moodWordAxes)) {
+      const dist = (axes.valence - valence) ** 2 + (axes.arousal - arousal) ** 2;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = word;
+      }
+    }
+    return best;
+  }
+
+  /** The character-model trait of a WORLD entity, if it carries one. */
+  private characterTrait(worldId: string, ctx: EvalContext): CharacterModelTrait | undefined {
+    return ctx.world.getEntity(worldId)?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
   }
 
   /**

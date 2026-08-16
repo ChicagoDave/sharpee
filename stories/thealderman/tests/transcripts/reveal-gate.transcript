@@ -1,0 +1,37 @@
+title: Confidences hold
+story: thealderman
+author: Sharpee Team
+description: The confided-secret arbitration gate — Catherine
+  (duty-over-fear temperament) and John (professional) both decline
+  their confided topics to an unthreatening detective (ADR-318 D4).
+
+---
+
+> west
+[OK: contains "Restaurant"]
+
+# Catherine never betrays Stephanie's confidence
+> ask catherine about the viola secret
+[OK: not contains "half-sister"]
+[OK: not contains "Same father"]
+
+# Asking twice does not wear her down — duty holds every time
+> ask catherine about the viola secret
+[OK: not contains "half-sister"]
+
+> east
+[OK: contains "Foyer"]
+
+> east
+[OK: contains "Bar"]
+
+# John's business arrangement stays a confidence too
+> ask john about the business arrangement
+[OK: not contains "financed"]
+
+# His unconfided topics answer normally
+> ask john about the alibi
+[OK: contains "docks"]
+
+> ask john about jack
+[OK: contains "arithmetic"]

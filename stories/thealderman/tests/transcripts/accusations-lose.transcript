@@ -1,0 +1,22 @@
+title: Three wrong accusations
+story: thealderman
+author: Sharpee Team
+description: Wrong accusations burn chances; the third loses the case
+  (fixed-solution accusation mechanics).
+
+---
+
+# Chelsea is in the foyer — first wrong accusation
+> accuse chelsea
+[OK: contains "drops her tray"]
+
+# Ross, at the bar — second
+> east
+[OK: contains "Bar"]
+
+> accuse ross
+[OK: contains "LOVED"]
+
+# John, also at the bar — third, and the case collapses
+> accuse john
+[OK: contains "downtown man"]

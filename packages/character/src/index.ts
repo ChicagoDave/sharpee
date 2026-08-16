@@ -90,6 +90,11 @@ export {
   // The dialogue-selector socket adapter (ADR-310 D15)
   createCharacterDialogueSelector,
   registerCharacterDialogue,
+  // Shared claim-delivery bookkeeping (ADR-318 D9/D11 — Phase 6)
+  pinAllowsClaim,
+  recordClaimDelivery,
+  type ClaimTag,
+  createAuthorEvent,
 } from './conversation/index.js';
 
 // Information propagation (ADR-144)
@@ -177,7 +182,12 @@ export {
   createCharacterModelPhase,
   registerCharacterModelPhase,
   CHARACTER_MODEL_PHASE_NAME,
+  CHARACTER_TURN_KEY,
 } from './tick-phases.js';
+
+// The compiled-story oracle (ADR-310/318 Phase 5 — the loader binds it)
+export { type CompiledStoryOracle } from './story-oracle.js';
+export { type CompiledConditionEval } from './goals/goal-activation.js';
 
 // Act detection over the event stream (ADR-318 D4/D7/D12a)
 export {
@@ -195,6 +205,9 @@ export {
   depositPressure,
   drainPressure,
   pressureBandFor,
+  scopeMatches,
+  exceptLifts,
+  arbitrateConfidedReveal,
   PRINCIPLE_DUTY_INTENSITY,
   HONOR_INTENSITY,
   type ArbiterAct,
@@ -203,6 +216,9 @@ export {
   type ArbiterVerdict,
   type ArbiterContext,
   type BandTransition,
+  type KindMembership,
+  type RevealArbitrationInput,
+  type RevealArbitration,
 } from './arbiter/index.js';
 
 // The character clock seam (temporal amendment 2026-08-15)

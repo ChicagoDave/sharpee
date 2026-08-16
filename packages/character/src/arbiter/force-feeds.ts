@@ -16,6 +16,7 @@ import {
   type PrincipleDecl,
 } from '@sharpee/world-model';
 import type { ActCandidate, ArbiterContext, StancedReading } from './arbiter-types.js';
+import { exceptLifts, scopeMatches } from './scope.js';
 
 /**
  * Principles and obligations burn at a strong fixed baseline (ADR-318 D4:
@@ -34,16 +35,27 @@ const FEAR_LIVE_THRESHOLD = 0.2;
 const LOVE_LIVE_THRESHOLD = 0.2;
 
 /**
- * Whether a principle applies: its category is among the committed ones and
- * its `except` predicate (if any) does not currently hold on the trait.
+ * Whether a principle applies: its category is among the committed ones,
+ * its scope (if any) covers the act's object, and its `except` (if any)
+ * does not lift it — both interpreted over the canonical scope-string
+ * idiom (ADR-318 D4; Phase 6 retires the old `trait.evaluate(except)`
+ * placeholder). A scoped principle with no known act object stays in
+ * force (conservative both ways: scope can't be shown to miss, except
+ * can't be shown to lift).
  */
 function principleApplies(
   principle: PrincipleDecl,
   committed: readonly string[],
-  trait: CharacterModelTrait,
+  ctx: ArbiterContext,
 ): boolean {
   if (!committed.includes(principle.category)) return false;
-  if (principle.except && trait.evaluate(principle.except)) return false;
+  if (principle.scope && ctx.actObjectId !== undefined
+      && !scopeMatches(principle.scope, ctx.actObjectId, ctx.isKindMember)) {
+    return false;
+  }
+  if (principle.except && exceptLifts(principle.except, ctx.actObjectId, ctx.isKindMember)) {
+    return false;
+  }
   return true;
 }
 
@@ -96,7 +108,7 @@ export function computeStancedReadings(
 
   // --- duty: principles and obligations (D1, D4, D5) ---
   for (const principle of trait.principles) {
-    if (principleApplies(principle, ctx.commits ?? [], trait)) {
+    if (principleApplies(principle, ctx.commits ?? [], ctx)) {
       readings.push({
         force: 'duty',
         intensity: PRINCIPLE_DUTY_INTENSITY,
@@ -105,7 +117,7 @@ export function computeStancedReadings(
         stance: 'against',
       });
     }
-    if (principleApplies(principle, ctx.refusalCommits ?? [], trait)) {
+    if (principleApplies(principle, ctx.refusalCommits ?? [], ctx)) {
       readings.push({
         force: 'duty',
         intensity: PRINCIPLE_DUTY_INTENSITY,

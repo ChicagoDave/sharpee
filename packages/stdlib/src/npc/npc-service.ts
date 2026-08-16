@@ -75,6 +75,13 @@ export interface NpcTickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The player action's events this turn (ADR-310 Phase 5) — input for
+   * observation-driven tick phases (the character model's observe
+   * sub-step). Optional and additive: callers without action events
+   * (tests, bare harnesses) simply produce no observations.
+   */
+  actionEvents?: ISemanticEvent[];
 }
 
 /**

@@ -81,16 +81,47 @@ describe('arbitrate — B1: the threatened Witness', () => {
     expect(verdict.winner).toBe('duty');
   });
 
-  it('an except predicate that holds disarms the principle', () => {
+  it('an object carve-out except matching the act object disarms the principle (Phase 6 scope contract)', () => {
+    // The canonical except idiom (ADR-318 D4, apply-compiled): a bare
+    // scope string — here an entity id — lifts the principle when the
+    // act's object is in scope. The Phase 2 registered-predicate except
+    // is retired.
     const trait = new CharacterModelTrait({
       threat: 'cornered',
-      principles: [{ category: 'betray a confidence', except: 'protecting-the-children' }],
+      principles: [{ category: 'betray a confidence', except: 'the-confider' }],
     });
-    trait.registerPredicate('protecting-the-children', () => true);
-    const verdict = arbitrate(trait, demand, witnessCtx);
+    const verdict = arbitrate(trait, demand, { ...witnessCtx, actObjectId: 'the-confider' });
 
     expect(verdict.act).toBe('comply');
     expect(verdict.readings.filter(r => r.force === 'duty')).toEqual([]);
+  });
+
+  it('the same except stays in force for a different act object', () => {
+    const trait = new CharacterModelTrait({
+      threat: 'safe',
+      principles: [{ category: 'betray a confidence', except: 'the-confider' }],
+    });
+    const verdict = arbitrate(trait, demand, { ...witnessCtx, actObjectId: 'a-stranger' });
+
+    expect(verdict.act).toBe('refuse');
+    expect(verdict.winner).toBe('duty');
+  });
+
+  it('a classifier scope on the principle consults kind membership for the act object', () => {
+    // `never harms a servant` — harming a servant is forbidden; harming
+    // anyone else does not engage the principle.
+    const trait = new CharacterModelTrait({
+      threat: 'safe',
+      principles: [{ category: 'harm', scope: 'a servant' }],
+    });
+    const isKindMember = (id: string, kind: string) => kind === 'servant' && id === 'maid-1';
+
+    const against = arbitrate(trait, demand, { commits: ['harm'], actObjectId: 'maid-1', isKindMember });
+    expect(against.act).toBe('refuse');
+    expect(against.winner).toBe('duty');
+
+    const clear = arbitrate(trait, demand, { commits: ['harm'], actObjectId: 'duke-1', isKindMember });
+    expect(clear.readings.filter(r => r.force === 'duty')).toEqual([]);
   });
 });
 

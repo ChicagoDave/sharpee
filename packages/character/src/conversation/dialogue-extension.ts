@@ -12,7 +12,8 @@
 
 import { type ISemanticEvent } from '@sharpee/core';
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { depositPressure } from '../arbiter/pressure.js';
+import { createAuthorEvent } from './author-events.js';
+import { pinAllowsClaim, recordClaimDelivery } from './claims.js';
 import { DialogueExtension, DialogueResult } from './dialogue-types.js';
 import { TopicRegistry } from './topic-registry.js';
 import { ResponseCandidate } from './response-types.js';
@@ -24,27 +25,6 @@ import {
   AuthoredResponse,
   ResponseStateMutation,
 } from './builder.js';
-
-// ---------------------------------------------------------------------------
-// Author-channel event helper (ADR-318 D11)
-// ---------------------------------------------------------------------------
-
-let authorEventCounter = 0;
-
-/** Build an author-channel event — no message ID, never player prose (ADR-310 D12). */
-function createAuthorEvent(
-  type: string,
-  npcId: string,
-  data: Record<string, unknown>,
-): ISemanticEvent {
-  return {
-    id: `char_author_${++authorEventCounter}`,
-    type,
-    timestamp: Date.now(),
-    entities: { actor: npcId },
-    data,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // NPC registration
@@ -368,11 +348,7 @@ export class CharacterModelDialogue implements DialogueExtension {
     // The pin (§4): drop lines whose claim contradicts an active pin to
     // this audience. Lines that claim nothing (deflect, refuse) survive.
     if (audienceId !== undefined) {
-      candidates = candidates.filter(c => {
-        if (!c.claims) return true;
-        const pin = npc.trait.getActivePin(audienceId, c.claims.factId);
-        return !pin || pin.claimedValue === c.claims.value;
-      });
+      candidates = candidates.filter(c => pinAllowsClaim(npc.trait, audienceId, c.claims));
     }
 
     const selected = evaluateConstraints(candidates, npc.trait);
@@ -386,78 +362,12 @@ export class CharacterModelDialogue implements DialogueExtension {
 
     let authorEvents: ISemanticEvent[] | undefined;
     if (audienceId !== undefined && selected.claims) {
-      authorEvents = this.recordClaim(npc.trait, npcId, audienceId, selected.claims, turn);
+      // Shared D9 bookkeeping (conversation/claims.ts) — one mint rule
+      // for every dialogue surface.
+      authorEvents = recordClaimDelivery(npc.trait, npcId, audienceId, selected.claims, turn);
     }
 
     return { selected, authoredResponse, authorEvents };
-  }
-
-  /**
-   * Ledger bookkeeping for a delivered claim (ADR-318 D9).
-   *
-   * Mint rule: a line whose claim contradicts the speaker's own held
-   * belief mints a pinned entry — honest assertion mints nothing
-   * (disagreement is not lying). Re-delivering an already-pinned claim
-   * mints no duplicate, but every pinned selection is a duty defeat
-   * feeding conscience pressure — maintaining a lie costs by construction.
-   *
-   * @param trait - The speaker's trait (mutated: ledger, pressure)
-   * @param npcId - The speaker's entity id (author-channel attribution)
-   * @param audienceId - Who the claim was delivered to
-   * @param claims - The line's claim tag
-   * @param turn - Current turn number
-   * @returns Author-channel events for the mint/deposit (ADR-318 D11)
-   */
-  private recordClaim(
-    trait: CharacterModelTrait,
-    npcId: string,
-    audienceId: string,
-    claims: { factId: string; value: string },
-    turn: number,
-  ): ISemanticEvent[] {
-    const held = trait.getFactBelief(claims.factId)?.value;
-    const isLie = held !== undefined && held !== claims.value;
-    const pin = trait.getActivePin(audienceId, claims.factId);
-    const events: ISemanticEvent[] = [];
-
-    if (isLie && !pin) {
-      trait.mintLedgerEntry({
-        kind: 'claim',
-        audience: audienceId,
-        factId: claims.factId,
-        claimedValue: claims.value,
-        turnMinted: turn,
-        pinned: true,
-      });
-      events.push(createAuthorEvent('character.author.ledger_mint', npcId, {
-        audience: audienceId, factId: claims.factId,
-        claimedValue: claims.value, heldValue: held,
-      }));
-    } else if (pin) {
-      events.push(createAuthorEvent('character.author.pin_held', npcId, {
-        audience: audienceId, factId: claims.factId,
-        claimedValue: pin.claimedValue,
-      }));
-    }
-
-    // D9: every pinned selection is a duty defeat feeding pressure —
-    // both the minting delivery and every maintenance of it.
-    if (isLie || pin) {
-      const transition = depositPressure(trait, {
-        winner: 'duty',
-        act: 'comply',
-        readings: [],
-        defeats: [{ force: 'duty', feed: `pin:${claims.factId}` }],
-      });
-      events.push(createAuthorEvent('character.author.pressure_deposit', npcId, {
-        feed: `pin:${claims.factId}`,
-        value: trait.pressure.value,
-        band: trait.pressure.band,
-        ...(transition ? { transition } : {}),
-      }));
-    }
-
-    return events;
   }
 
   /**

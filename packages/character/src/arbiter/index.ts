@@ -24,3 +24,9 @@ export {
   pressureBandFor,
   type BandTransition,
 } from './pressure.js';
+export { scopeMatches, exceptLifts, type KindMembership } from './scope.js';
+export {
+  arbitrateConfidedReveal,
+  type RevealArbitrationInput,
+  type RevealArbitration,
+} from './reveal.js';

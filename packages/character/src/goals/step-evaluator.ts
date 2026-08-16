@@ -15,6 +15,7 @@ import {
   StepResult,
   MovementProfile,
 } from './goal-types.js';
+import type { CompiledConditionEval } from './goal-activation.js';
 import { findNextRoom, RoomGraph } from './pathfinding.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +53,13 @@ export interface GoalStepContext {
    * Used for seek steps targeting entities.
    */
   getEntityRoom?: (entityId: string) => string | undefined;
+
+  /**
+   * Compiled-condition evaluator (the story oracle, pre-bound to this
+   * NPC). Required whenever a wait-for step carries `conditionCompiled`;
+   * evaluating such a step without it throws (wiring defect, not a state).
+   */
+  evalCompiled?: CompiledConditionEval;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,7 +119,7 @@ function evaluateStep(step: GoalStep, ctx: GoalStepContext): StepResult {
       return evaluateAcquire(step.target, step.witnessed, ctx);
 
     case 'waitFor':
-      return evaluateWaitFor(step.conditions, ctx);
+      return evaluateWaitFor(step, ctx);
 
     case 'act':
     case 'say':
@@ -197,10 +205,18 @@ function evaluateAcquire(
 }
 
 function evaluateWaitFor(
-  conditions: string[],
+  step: Extract<GoalStep, { type: 'waitFor' }>,
   ctx: GoalStepContext,
 ): StepResult {
-  const allMet = conditions.every(cond => ctx.trait.evaluate(cond));
+  let allMet = step.conditions.every(cond => ctx.trait.evaluate(cond));
+
+  if (allMet && step.conditionCompiled !== undefined) {
+    if (!ctx.evalCompiled) {
+      // ADR-310 Phase 5: refuse loudly — silent 'waiting' would hang the goal forever.
+      throw new Error('A wait-for step carries a compiled condition but no story oracle is bound.');
+    }
+    allMet = ctx.evalCompiled(step.conditionCompiled);
+  }
 
   if (allMet) {
     return { status: 'completed' };

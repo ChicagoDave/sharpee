@@ -31,6 +31,7 @@ import {
   type CapabilityEffect,
   type CapabilitySharedData,
   type CapabilityValidationResult,
+  CharacterModelTrait,
   Direction,
   type DirectionType,
   IFEntity,
@@ -41,10 +42,22 @@ import {
   ReadableTrait,
   RoomTrait,
   darkKey,
+  type TemperamentDef,
   TraitType,
   WorldModel,
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
+import {
+  CHARACTER_TURN_KEY,
+  arbitrateConfidedReveal,
+  createAuthorEvent,
+  pinAllowsClaim,
+  recordClaimDelivery,
+  revealConfidedTopic,
+  witnessActs,
+  type ClaimTag,
+  type KindMembership,
+} from '@sharpee/character';
 import { Evaluator, EvalContext } from './evaluator.js';
 import { DecisionLedger, type DecisionRecord } from './decisions.js';
 import { LoadError } from './errors.js';
@@ -96,6 +109,16 @@ export interface RuntimeHost {
   irIdOf(worldId: string): string | undefined;
   producers: Map<string, PhraseProducer>;
   triggerEnding(world: WorldModel, ending: StoryEndingKind, messageId?: string): ISemanticEvent;
+  /**
+   * Character-model story data for the topic dispatch (ADR-310/318 Phase
+   * 6): authored temperament defs and the kind-membership half of the
+   * story oracle. Undefined when the story declares no character blocks
+   * — the dispatch then skips every character consultation.
+   */
+  characterStoryData?(): {
+    temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
+    isKindMember: KindMembership;
+  } | undefined;
 }
 
 interface ExecContext extends EvalContext {
@@ -845,6 +868,53 @@ export class ChordRuntime {
 
   // ------------------------------------------------- topic tables (ADR-239)
 
+  /** Lazily built phrase-key → claims-tag map (ADR-318 D9). */
+  private phraseClaims?: Map<string, ClaimTag>;
+
+  /** The claims tag a phrase key carries, if any (ADR-318 D9). */
+  private claimsFor(phraseKey: string): ClaimTag | undefined {
+    if (!this.phraseClaims) {
+      this.phraseClaims = new Map();
+      const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+      for (const [key, phrase] of Object.entries(table)) {
+        if (phrase.claims) this.phraseClaims.set(key, { ...phrase.claims });
+      }
+    }
+    return this.phraseClaims.get(phraseKey);
+  }
+
+  /**
+   * The turn the player is acting in, for dialogue-path ledger stamps:
+   * the character-model tick phase mirrors its (completed) turn into
+   * world state, so the live player action is one ahead.
+   */
+  private dialogueTurn(world: WorldModel): number {
+    return ((world.getStateValue(CHARACTER_TURN_KEY) as number | undefined) ?? 0) + 1;
+  }
+
+  /**
+   * The D12a witnessed-topic alias for (actor, act), when the story
+   * declares one (`define topic <actor> <act> as <alias>`); otherwise
+   * the deterministic derived name stands.
+   */
+  private witnessedAliasFor(actorIrId: string | undefined, act: string, derived: string): string {
+    if (!actorIrId) return derived;
+    const alias = (this.ir.witnessedTopics ?? []).find((w) => w.actor === actorIrId && w.act === act);
+    return alias?.alias ?? derived;
+  }
+
+  /** Phrase statements of a row body, top-level and inside select alternatives. */
+  private collectPhraseStatements(body: IRStatement[]): Array<Extract<IRStatement, { kind: 'phrase' }>> {
+    const out: Array<Extract<IRStatement, { kind: 'phrase' }>> = [];
+    for (const stmt of body) {
+      if (stmt.kind === 'phrase') out.push(stmt);
+      else if (stmt.kind === 'select-strategy') {
+        for (const alt of stmt.alternatives) out.push(...this.collectPhraseStatements(alt));
+      }
+    }
+    return out;
+  }
+
   /**
    * Runtime dispatch for one topic-table owner (ADR-239 D4/D5): normalized
    * whole-topic lookup against the declared rows — entity tier first (the
@@ -857,6 +927,15 @@ export class ChordRuntime {
    * catch-all clause when one is declared; with none, `{}` leaves the
    * action's unconditional unknown_topic/not_interested default standing.
    * The asked topic reaches `data` via the lifecycle seedData hook.
+   *
+   * Character-model owners (ADR-310/318 Phase 6) add three consultations:
+   * the confided-reveal arbitration gate (a refuse/evade verdict
+   * suppresses the row — the action's default reply stands as the
+   * evasion), the lie-ledger pin (a pinned claim forces the matching
+   * line and filters contradicting ones), and the mint rule on every
+   * delivered claims-tagged phrase. All three live HERE — the topic
+   * table is Chord's one dialogue path; the selector socket stays the
+   * TS-API surface.
    */
   private buildTopicArm(entity: IREntity, catchAll: ActionInterceptor | undefined): ActionInterceptor {
     const runtime = this;
@@ -886,6 +965,66 @@ export class ChordRuntime {
     // deliveries of that response, however it was reached.
     const occurrenceKeyOf = (rowIndex: number) => `${CHORD_OCCURRENCE_PREFIX}topic.${entity.id}.${rowIndex}`;
 
+    /** The owner's character-model trait, when it carries one (ADR-310 D7: none → no consultation). */
+    const speakerOf = (world: WorldModel): { worldId: string; trait: CharacterModelTrait } | null => {
+      const worldId = runtime.host.entityId(entity.id);
+      if (!worldId) return null;
+      const trait = world.getEntity(worldId)?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+      return trait ? { worldId, trait } : null;
+    };
+
+    /** The row's canonical topic candidates for held-knowledge lookups. */
+    const topicCandidatesOf = (row: IRTopicRow): string[] =>
+      row.filter.kind === 'text'
+        ? [normalizeTopic(row.filter.primary), ...row.filter.aliases.map(normalizeTopic)]
+        : [row.filter.id];
+
+    interface CharacterGate {
+      suppress: boolean;
+      confidedTopic?: string;
+      authorEvents: ISemanticEvent[];
+    }
+
+    /**
+     * The confided-reveal arbitration gate (ADR-318 — Phase 6). Runs AT
+     * MOST once per firing (memoized on the consultation's sharedData —
+     * the arbitration deposits conscience pressure, so re-running it
+     * would double-charge). Null = ungated: no character model, no row,
+     * or the topic is not held confided.
+     */
+    const characterGate = (world: WorldModel, actorId: string, data: InterceptorSharedData): CharacterGate | null => {
+      if ('chordCharacterGate' in data) return data.chordCharacterGate as CharacterGate | null;
+      const compute = (): CharacterGate | null => {
+        const row = rows[rowIndexFor(data)];
+        if (!row) return null;
+        const speaker = speakerOf(world);
+        if (!speaker) return null;
+        const confidedTopic = topicCandidatesOf(row).find((t) => speaker.trait.getFact(t)?.confided);
+        if (confidedTopic === undefined) return null;
+        const story = runtime.host.characterStoryData?.();
+        const state = world.getStateValue(CHORD_STATE_PREFIX + entity.id);
+        const room = world.getLocation(speaker.worldId);
+        const audiencePresent = room
+          ? world.getContents(room).filter((e) => e.has(TraitType.ACTOR) && e.id !== speaker.worldId).map((e) => e.id)
+          : [];
+        const arb = arbitrateConfidedReveal({
+          trait: speaker.trait,
+          npcId: speaker.worldId,
+          askerId: actorId,
+          topic: confidedTopic,
+          audiencePresent,
+          ...(typeof state === 'string' ? { activeStates: [state] } : {}),
+          ...(story?.temperamentDefs ? { temperamentDefs: story.temperamentDefs } : {}),
+          ...(story ? { isKindMember: story.isKindMember } : {}),
+        });
+        if (!arb) return null;
+        return { suppress: !arb.reveal, confidedTopic, authorEvents: arb.authorEvents };
+      };
+      const gate = compute();
+      data.chordCharacterGate = gate;
+      return gate;
+    };
+
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         const row = rows[rowIndexFor(data)];
@@ -899,6 +1038,10 @@ export class ChordRuntime {
         const index = rowIndexFor(data);
         const row = rows[index];
         if (!row) return catchAll?.postValidate?.(target, world, actorId, data) ?? null;
+        // A refuse/evade reveal verdict suppresses the row entirely — no
+        // occurrence consumed, no mutations, no phrase (the action's
+        // default reply stands as the evasion).
+        if (characterGate(world, actorId, data)?.suppress) return null;
         const bag = runtime.clauseBag(data, `topic.${entity.id}`);
         const ctx: ExecContext = { world, it: entity.id };
         const key = occurrenceKeyOf(index);
@@ -915,6 +1058,7 @@ export class ChordRuntime {
           catchAll?.postExecute?.(target, world, actorId, data);
           return;
         }
+        if (characterGate(world, actorId, data)?.suppress) return;
         const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`), 'mutations');
         runtime.execStatements(row.body, ctx, 'mutations');
       },
@@ -922,8 +1066,35 @@ export class ChordRuntime {
       postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const row = rows[rowIndexFor(data)];
         if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
+        const gate = characterGate(world, actorId, data);
+        const speaker = speakerOf(world);
+        const authorEmit: CapabilityEffect[] = (gate?.authorEvents ?? []).map((e) => ({
+          type: e.type,
+          payload: (e.data ?? {}) as Record<string, unknown>,
+        }));
+        if (gate?.suppress) {
+          // The verdict's evasion IS the action's default reply — no
+          // authored text is invented for it (ADR-310 D12), and the
+          // arbitration rides the author channel.
+          return authorEmit.length ? { emit: authorEmit } : {};
+        }
         const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`), 'reports');
-        const reports = runtime.execStatements(row.body, ctx, 'reports');
+        let reports = runtime.execStatements(row.body, ctx, 'reports');
+
+        // The lie-ledger pin (ADR-318 D9 / contracts.md §4): a delivered
+        // line may never contradict a claim pinned to this audience —
+        // the shared filter rule, one semantics with the TS dialogue
+        // extension. A row whose only passing line contradicts the pin
+        // delivers nothing (the default reply is the deflection); the
+        // maintained lie never evaporates because the truth line can
+        // never escape.
+        if (speaker) {
+          reports = reports.filter((event) => {
+            if (event.type !== 'chord.phrase') return true;
+            const claims = runtime.claimsFor(String((event.data as Record<string, unknown> | undefined)?.messageId));
+            return pinAllowsClaim(speaker.trait, actorId, claims);
+          });
+        }
 
         const result: InterceptorReportResult = {};
         const emit: CapabilityEffect[] = [];
@@ -939,6 +1110,40 @@ export class ChordRuntime {
             emit.push({ type: event.type, payload });
           }
         }
+
+        if (speaker && result.override) {
+          // The mint rule (D9): a delivered claims-tagged line contradicting
+          // the speaker's held belief mints a pinned ledger entry; every
+          // pinned delivery deposits conscience pressure.
+          const claims = runtime.claimsFor(result.override.messageId);
+          if (claims) {
+            for (const e of recordClaimDelivery(speaker.trait, speaker.worldId, actorId, claims, runtime.dialogueTurn(world))) {
+              emit.push({ type: e.type, payload: (e.data ?? {}) as Record<string, unknown> });
+            }
+          }
+          // A delivered confided topic is a betrayal committed (D4/D12a):
+          // the room's character-model witnesses learn the derived (or
+          // story-aliased) topic, so reputation travels by propagation.
+          if (gate?.confidedTopic !== undefined) {
+            const speakerEntity = world.getEntity(speaker.worldId);
+            const act = speakerEntity ? revealConfidedTopic(speakerEntity, speaker.trait, gate.confidedTopic) : undefined;
+            if (act) {
+              const aliased = {
+                ...act,
+                derivedTopic: runtime.witnessedAliasFor(entity.id, 'betray a confidence', act.derivedTopic),
+              };
+              const room = world.getLocation(speaker.worldId);
+              const occupants = room ? world.getContents(room) : [];
+              const learned = witnessActs([aliased], occupants, runtime.dialogueTurn(world));
+              emit.push({
+                type: 'character.author.act_witnessed',
+                payload: { act: 'betray a confidence', topic: aliased.derivedTopic, learned },
+              });
+            }
+          }
+        }
+
+        emit.push(...authorEmit);
         if (emit.length) result.emit = emit;
         return result;
       },

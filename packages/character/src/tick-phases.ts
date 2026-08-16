@@ -2,7 +2,7 @@
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → influence → propagation → goals. (Arbiter
+ * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
  * bookkeeping arrives with ADR-318's arbiter.) Ordering between
  * sub-steps is a contract, which is why this is one registration rather
  * than three (docs/work/adr-310/contracts.md §2).
@@ -27,8 +27,12 @@ import {
   CharacterModelTrait,
   RoomTrait,
   type IExitInfo,
+  type TemperamentDef,
 } from '@sharpee/world-model';
-import { nounPhraseFor, processLucidityDecay, CharacterMessages } from '@sharpee/stdlib';
+import type { IRCondition } from '@sharpee/chord';
+import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
+import { detectActs, witnessActs } from './act-detection/index.js';
+import type { CompiledStoryOracle } from './story-oracle.js';
 import {
   PropagationProfile,
   PropagationContext,
@@ -67,6 +71,12 @@ interface TickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The player action's events this turn (ADR-310 Phase 5) — the observe
+   * sub-step's input. Absent (older callers, unit harnesses) = nothing
+   * observed this turn.
+   */
+  actionEvents?: ISemanticEvent[];
 }
 
 /** Per-NPC character configuration for the tick phase. Authored data only. */
@@ -93,6 +103,12 @@ export interface CharacterPhaseConfig {
 export class CharacterPhaseRegistry {
   private readonly configs: Map<string, CharacterPhaseConfig> = new Map();
   private readonly goalManagers: Map<string, GoalManager> = new Map();
+  /** The loaded story's answer surface (ADR-310 Phase 5) — authored wiring, bound at load. */
+  private oracle?: CompiledStoryOracle;
+  /** Authored `define temperament` defs (ADR-318 D3) — read by the arbitration seams. */
+  private temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
+  /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
+  private witnessedAliases?: ReadonlyArray<{ actor: string; act: string; alias: string }>;
 
   /**
    * Register character configuration for an NPC.
@@ -123,6 +139,37 @@ export class CharacterPhaseRegistry {
   get hasConfigs(): boolean {
     return this.configs.size > 0;
   }
+
+  /** Bind the loaded story's oracle (loader, at load — last-wins, like every load-time registration). */
+  setOracle(oracle: CompiledStoryOracle): void {
+    this.oracle = oracle;
+  }
+
+  /** The bound story oracle, if any. */
+  getOracle(): CompiledStoryOracle | undefined {
+    return this.oracle;
+  }
+
+  /** Set the story's authored temperament definitions (loader, at load). */
+  setTemperamentDefs(defs: Readonly<Record<string, TemperamentDef>>): void {
+    this.temperamentDefs = defs;
+  }
+
+  /** Authored temperament definitions by name (ArbiterContext.temperamentDefs source). */
+  getTemperamentDefs(): Readonly<Record<string, TemperamentDef>> | undefined {
+    return this.temperamentDefs;
+  }
+
+  /** Set the story's `witnessed as` aliases (loader, at load — actors pre-resolved to world ids). */
+  setWitnessedAliases(aliases: ReadonlyArray<{ actor: string; act: string; alias: string }>): void {
+    this.witnessedAliases = aliases;
+  }
+
+  /** The D12a alias for a witnessed (actor, act), or the derived name unchanged. */
+  witnessedAliasFor(actorId: string, act: string, derived: string): string {
+    const alias = this.witnessedAliases?.find((w) => w.actor === actorId && w.act === act);
+    return alias?.alias ?? derived;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -151,14 +198,26 @@ function createEvent(
 export const CHARACTER_MODEL_PHASE_NAME = 'character-model';
 
 /**
+ * World-state key mirroring the last completed NPC turn (Phase 6). The
+ * dialogue surfaces mint ledger entries during PLAYER actions, where the
+ * engine's turn counter is unreachable by design (the selector binding's
+ * documented idiom is a closed-over turn source); the phase mirrors its
+ * turn here so ask-path bookkeeping stamps `mirror + 1` — the turn the
+ * player is acting in. Rides world state, so it saves and restores.
+ */
+export const CHARACTER_TURN_KEY = 'character.turn';
+
+/**
  * Create the character-model tick phase handler. Register it once:
  * `registerCharacterModelPhase(npcService, registry)`.
  *
- * Sub-step order (a contract, not a coincidence): decay runs first so the
- * turn's evaluation sees settled mood/lucidity; influence effects are
- * applied and expired next, so propagation and goal evaluation the same
- * turn see them; propagation moves knowledge before goals re-evaluate
- * activation conditions that may reference it.
+ * Sub-step order (a contract, not a coincidence — contracts.md §2): decay
+ * runs first so the turn's evaluation sees settled mood/lucidity;
+ * observation second, so the turn's remaining evaluation reacts to what
+ * the player just did; influence effects are applied and expired next, so
+ * propagation and goal evaluation the same turn see them; propagation
+ * moves knowledge before goals re-evaluate activation conditions that may
+ * reference it.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
@@ -167,8 +226,11 @@ export function createCharacterModelPhase(
   registry: CharacterPhaseRegistry,
 ): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
+    // Mirror the turn for the player-action dialogue surfaces (see key doc).
+    ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
     return [
       ...runDecaySubStep(npcs, ctx, registry),
+      ...runObserveSubStep(npcs, ctx, registry),
       ...runInfluenceSubStep(npcs, ctx, registry),
       ...runPropagationSubStep(npcs, ctx, registry),
       ...runGoalSubStep(npcs, ctx, registry),
@@ -245,6 +307,62 @@ function runDecaySubStep(
 
     // Lucidity window countdown (fold of the old NpcService.tick inline call)
     events.push(...processLucidityDecay(npc, world, turn));
+  }
+
+  return events;
+}
+
+// ---------------------------------------------------------------------------
+// Observe sub-step (ADR-141 observer, wired per ADR-310 Phase 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Forward the player action's events to co-located character-model NPCs
+ * through stdlib's `observeEvent` (perception filter, witnessed-fact
+ * recording, mood/threat/disposition transitions, lucidity triggers),
+ * and classify them through act detection (ADR-318 D4/D12a): a detected
+ * act's derived topic — story-aliased via `witnessed as` — lands as
+ * witnessed knowledge on the same co-located observers, so reputation
+ * travels by propagation. Room-scoped: the events happened where the
+ * player acted. NPCs without the trait are untouched (ADR-310 D7).
+ */
+function runObserveSubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const { world, turn, playerLocation, actionEvents } = ctx;
+  if (!actionEvents?.length) return events;
+
+  const observers = npcs.filter(
+    (npc) => npc.has(TraitType.CHARACTER_MODEL) && world.getLocation(npc.id) === playerLocation,
+  );
+  if (observers.length === 0) return events;
+
+  for (const event of actionEvents) {
+    for (const npc of observers) {
+      events.push(...observeEvent(npc, event, world, turn));
+    }
+    // Act detection at the taking/combat sites (the reveal site rides
+    // the dialogue path, where delivery is knowable).
+    const acts = detectActs(event, world).map((act) => ({
+      ...act,
+      derivedTopic: registry.witnessedAliasFor(
+        act.actorId,
+        (act.category ?? act.faceAct)!,
+        act.derivedTopic,
+      ),
+    }));
+    if (acts.length > 0) {
+      const learned = witnessActs(acts, observers, turn);
+      if (Object.keys(learned).length > 0) {
+        events.push(createEvent('character.author.act_witnessed', {
+          acts: acts.map((a) => ({ act: a.category ?? a.faceAct, actorId: a.actorId, topic: a.derivedTopic })),
+          learned,
+        }));
+      }
+    }
   }
 
   return events;
@@ -400,6 +518,21 @@ function runGoalSubStep(
 }
 
 /**
+ * The story oracle's condition evaluator pre-bound to one NPC — what goal
+ * activation and wait-for steps consult for compiled Chord conditions.
+ * Undefined when no oracle is bound (builder-authored stories).
+ */
+function boundCompiledEval(
+  registry: CharacterPhaseRegistry,
+  npcId: string,
+  world: WorldModel,
+): ((cond: IRCondition) => boolean) | undefined {
+  const oracle = registry.getOracle();
+  if (!oracle) return undefined;
+  return (cond) => oracle.evalCondition(cond, { self: npcId, world });
+}
+
+/**
  * Evaluate and execute the top active goal for a single NPC. All pursuit
  * state reads and writes go through the trait (ADR-310 D17).
  *
@@ -422,7 +555,8 @@ function executeNpcGoals(
   const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
   if (!trait) return;
 
-  const activeGoals = manager.evaluate(trait);
+  const evalCompiled = boundCompiledEval(registry, npc.id, world);
+  const activeGoals = manager.evaluate(trait, evalCompiled);
   const activeGoal = activeGoals.find(g => !g.state.paused && !g.state.interrupted);
   if (!activeGoal) return;
 
@@ -439,6 +573,7 @@ function executeNpcGoals(
     playerPresent: npcLocation === playerLocation,
     isInRoom: (entityId, roomId) => world.getLocation(entityId) === roomId,
     getEntityRoom: (entityId) => world.getLocation(entityId) || undefined,
+    ...(evalCompiled ? { evalCompiled } : {}),
   };
 
   const stepResult = evaluateGoalStep(activeGoal, stepContext);

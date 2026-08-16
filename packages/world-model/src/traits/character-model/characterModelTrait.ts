@@ -152,11 +152,21 @@ export type CharacterPredicate = (trait: CharacterModelTrait) => boolean;
 // ---------------------------------------------------------------------------
 
 /**
+ * Transient per-instance predicate registries (ADR-310 D17). A WeakMap
+ * keyed by instance — never an own field — so nothing about predicates
+ * ever reaches the serialized shape, and entries die with their
+ * instances. Holds registrations only (platform + load-time), never
+ * mutable runtime state.
+ */
+const PREDICATE_STORE = new WeakMap<CharacterModelTrait, Map<string, CharacterPredicate>>();
+
+/**
  * CharacterModelTrait — rich internal state for NPCs.
  *
  * All state is stored as plain properties so JSON serialization survives.
- * Predicate functions are registered at runtime and live in a transient map
- * that is rebuilt after deserialization by the builder or story setup code.
+ * Predicate functions live in a transient module-level store (never an
+ * own field), lazily rebuilt — platform predicates included — on first
+ * use after construction OR rehydration.
  */
 export class CharacterModelTrait implements ITrait {
   static readonly type = 'characterModel' as const;
@@ -216,9 +226,6 @@ export class CharacterModelTrait implements ITrait {
   // -- Perception --
   perceptionFilters?: PerceptionFilterConfig;
   perceivedEvents: Record<string, PerceivedEvent>;
-
-  // -- Predicates (transient, not serialized) --
-  private predicates: Map<string, CharacterPredicate> = new Map();
 
   constructor(data: ICharacterModelData = {}) {
     // Schema version — absent input means pre-versioning data; stamp current.
@@ -297,8 +304,11 @@ export class CharacterModelTrait implements ITrait {
     this.perceptionFilters = data.perceptionFilters;
     this.perceivedEvents = data.perceivedEvents ? { ...data.perceivedEvents } : {};
 
-    // Register platform predicates
-    this.registerPlatformPredicates();
+    // Predicates are NOT initialized here: they live in the transient
+    // module-level store, built lazily on first use — the rehydration path
+    // (Object.create + Object.assign, no constructor) gets identical
+    // platform predicates that way (ADR-310 D17: the serialized shape
+    // carries data only; a restore rebuilds everything transient).
   }
 
   // =========================================================================
@@ -741,13 +751,30 @@ export class CharacterModelTrait implements ITrait {
   // =========================================================================
 
   /**
+   * This instance's predicate registry — transient, never serialized.
+   * Lazily built (platform predicates included) on first use, so a
+   * rehydrated instance (Object.create path, no constructor) behaves
+   * identically to a constructed one. Functions cannot ride a save;
+   * anything here is platform- or load-time-registered by definition.
+   */
+  private predicateMap(): Map<string, CharacterPredicate> {
+    let map = PREDICATE_STORE.get(this);
+    if (!map) {
+      map = new Map();
+      PREDICATE_STORE.set(this, map);
+      this.registerPlatformPredicates();
+    }
+    return map;
+  }
+
+  /**
    * Register a named predicate function.
    *
    * @param name - Predicate name (e.g., 'trusts player', 'threatened')
    * @param fn - Function that evaluates against this trait's state
    */
   registerPredicate(name: string, fn: CharacterPredicate): void {
-    this.predicates.set(name, fn);
+    this.predicateMap().set(name, fn);
   }
 
   /**
@@ -765,7 +792,7 @@ export class CharacterModelTrait implements ITrait {
       return !this.evaluate(inner);
     }
 
-    const fn = this.predicates.get(predicate);
+    const fn = this.predicateMap().get(predicate);
     if (!fn) {
       throw new Error(`Unknown character predicate: '${predicate}'`);
     }
@@ -779,7 +806,7 @@ export class CharacterModelTrait implements ITrait {
    * @returns True if registered
    */
   hasPredicate(name: string): boolean {
-    return this.predicates.has(name);
+    return this.predicateMap().has(name);
   }
 
   // =========================================================================
