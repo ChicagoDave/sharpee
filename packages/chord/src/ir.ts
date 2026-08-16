@@ -460,8 +460,9 @@ export type IRGoalStep =
 /**
  * An `influence` block (ADR-310 D9), defined on the exerter. Effect axes
  * carry vocabulary words (`focus: 'clouded'`, mood and threat words);
- * `witnessed`/`resisted` are the author-written phrase keys (D12 — prose
- * about an event, never a readout of state).
+ * `witnessed`/`resisted`/`expired` are the author-written phrase keys
+ * (D12 — prose about an event, never a readout of state; `expired` is the
+ * opt-in release line, default silent — David's ruling 2026-08-16).
  */
 export interface IRInfluenceDef {
   /** Author-invented name — the join key `resists` refers to. */
@@ -471,6 +472,7 @@ export interface IRInfluenceDef {
   effect: Record<string, string>;
   witnessed?: string;
   resisted?: string;
+  expired?: string;
   span: Span;
 }
 

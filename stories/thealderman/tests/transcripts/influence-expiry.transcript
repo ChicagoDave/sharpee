@@ -1,0 +1,19 @@
+title: The menace lifts
+story: thealderman
+author: Sharpee Team
+description: Influence expiry release line (David's ruling 2026-08-16) —
+  `phrase X on expired` is the authored opt-in; separation from John's
+  while-present menace renders the release phrase in the room the player
+  left to, symmetric with the witnessed line on entry. Unauthored
+  influences stay silent on expiry (the default).
+
+---
+
+# Entering the Bar: the witnessed edge fires once
+> east
+[OK: contains "quieter around John Barber"]
+
+# Leaving: separation expires the player-target record and the authored
+# release line renders — before the ruling this transition was silent
+> west
+[OK: contains "attention lifts as you go"]

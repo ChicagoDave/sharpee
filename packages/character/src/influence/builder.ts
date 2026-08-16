@@ -43,6 +43,7 @@ export class InfluenceBuilder<TParent extends { compile(): unknown }> {
   private _duration: InfluenceDuration = 'while present';
   private _witnessed?: string;
   private _resisted?: string;
+  private _expired?: string;
   private _schedule?: InfluenceSchedule;
   private _onPlayerAction?: string;
   private _lingeringTurns?: number;
@@ -128,6 +129,18 @@ export class InfluenceBuilder<TParent extends { compile(): unknown }> {
   }
 
   /**
+   * Set the message ID rendered when the effect expires (separation or
+   * duration lapse). Absent = expiry stays silent.
+   *
+   * @param messageId - Message ID
+   * @returns this for chaining
+   */
+  expired(messageId: string): InfluenceBuilder<TParent> {
+    this._expired = messageId;
+    return this;
+  }
+
+  /**
    * Set scheduling conditions for passive influences.
    *
    * @param schedule - Schedule with predicate conditions
@@ -203,6 +216,7 @@ export class InfluenceBuilder<TParent extends { compile(): unknown }> {
 
     if (this._witnessed !== undefined) def.witnessed = this._witnessed;
     if (this._resisted !== undefined) def.resisted = this._resisted;
+    if (this._expired !== undefined) def.expired = this._expired;
     if (this._schedule !== undefined) def.schedule = { ...this._schedule };
     if (this._onPlayerAction !== undefined) def.onPlayerAction = this._onPlayerAction;
     if (this._lingeringTurns !== undefined) def.lingeringTurns = this._lingeringTurns;

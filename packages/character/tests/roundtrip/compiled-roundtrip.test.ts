@@ -34,6 +34,7 @@ const SOURCE =
   'define phrase colonel-says\n  He speaks.\nend phrase\n\n' +
   'define phrase menace-seen\n  He looms.\nend phrase\n\n' +
   'define phrase menace-resisted\n  The look slides off.\nend phrase\n\n' +
+  'define phrase menace-lifted\n  The pressure eases.\nend phrase\n\n' +
   'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
   'create the player\n\n  Me.\n\n' +
   'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
@@ -72,6 +73,7 @@ const SOURCE =
   '    makes threat threatened\n' +
   '    phrase menace-seen on witnessed\n' +
   '    phrase menace-resisted on resisted\n' +
+  '    phrase menace-lifted on expired\n' +
   '  end influence\n' +
   '\n' +
   '  resists seduction, except from a woman\n' +
@@ -217,6 +219,7 @@ describe('ADR-310 Acceptance 1 — round-trip per construct', () => {
         .duration('momentary')
         .witnessed('menace-seen')
         .resisted('menace-resisted')
+        .expired('menace-lifted')
         .done();
       return b;
     });

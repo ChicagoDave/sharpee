@@ -243,6 +243,48 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
       expect(second.some(e => e.type === 'character.influence.resisted')).toBe(false);
     });
 
+    it('expiry mints the authored release phrase as messageId; unauthored expiry stays textless', () => {
+      const duchess = createNpc(world, 'Duchess', new CharacterModelTrait());
+      world.moveEntity(duchess.id, room.id);
+      registry.register(duchess.id, {
+        influenceDefs: [{
+          name: 'hauteur',
+          mode: 'passive',
+          range: 'room',
+          effect: { mood: 'nervous' },
+          duration: 'while present',
+          witnessed: 'duchess-arrives',
+          expired: 'duchess-departs',
+        }],
+      });
+      const handler = createCharacterModelPhase(registry);
+      const tick = (turn: number) => handler([maid, cook, ginger, duchess], {
+        world, turn, random: {} as unknown as RandomService,
+        playerLocation: room.id, playerId: player.id,
+      });
+
+      tick(1);
+      const elsewhere = createRoom(world, 'Conservatory');
+      world.moveEntity(duchess.id, elsewhere.id);
+      world.moveEntity(ginger.id, elsewhere.id); // ginger's def authors no expired phrase
+      const after = tick(2);
+
+      const expired = after.filter(e => e.type === 'character.influence.expired');
+      const authored = expired.filter(e => (e.data as { messageId?: string }).messageId !== undefined);
+      const silent = expired.filter(e => (e.data as { messageId?: string }).messageId === undefined);
+
+      expect(authored.length).toBeGreaterThan(0);
+      expect(authored[0].data).toMatchObject({
+        influenceName: 'hauteur',
+        messageId: 'duchess-departs',
+        influencerId: duchess.id,
+        influencerName: 'Duchess',
+      });
+      // Ginger's seduction expiries carry no messageId — silence is the default.
+      expect(silent.length).toBeGreaterThan(0);
+      expect(silent.every(e => (e.data as { influenceName: string }).influenceName === 'seduction')).toBe(true);
+    });
+
     it('overlays effective mood and threat on targets while in force, reverting on separation', () => {
       const john = createNpc(world, 'John', new CharacterModelTrait());
       world.moveEntity(john.id, room.id);

@@ -686,10 +686,24 @@ function runInfluenceSubStep(
       const target = world.getEntity(targetId);
       const targetLoc = target ? world.getLocation(target.id) : undefined;
       if (targetLoc === playerLocation) {
+        // Opt-in release line (David's ruling 2026-08-16): the authored
+        // `expired` phrase key rides as messageId; absent = silent, and
+        // the payload stays byte-identical to the pre-ruling shape.
+        const influenceDef = registry
+          .getConfig(effect.influencerId)
+          ?.influenceDefs?.find(d => d.name === effect.influenceName);
+        const influencer = world.getEntity(effect.influencerId);
         events.push(createEvent('character.influence.expired', {
           influenceName: effect.influenceName,
           targetId,
           targetName: target?.name ?? targetId,
+          ...(influenceDef?.expired !== undefined
+            ? {
+                messageId: influenceDef.expired,
+                influencerId: effect.influencerId,
+                influencerName: influencer?.name ?? effect.influencerId,
+              }
+            : {}),
         }));
       }
     }

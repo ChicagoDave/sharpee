@@ -227,6 +227,7 @@ export function applyCompiledCharacter(
       .duration(inf.mode === 'active' ? 'momentary' : 'while present');
     if (inf.witnessed !== undefined) ib.witnessed(inf.witnessed);
     if (inf.resisted !== undefined) ib.resisted(inf.resisted);
+    if (inf.expired !== undefined) ib.expired(inf.expired);
     ib.done();
   }
   for (const r of data.resists) {

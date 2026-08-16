@@ -1,0 +1,52 @@
+title: Being broken is a state
+story: thealderman
+author: Sharpee Team
+description: ADR-318 seam 6 — breaking is weather; permanence is authored.
+  The confession outlet stamps `change it to confessed`, so after the
+  discharge drops Viola below breaking she stands by the confession
+  instead of re-lying: no deflect, no theatre alibi, no killer denial,
+  and the half-sister denial falls with the rest.
+
+---
+
+> south
+[OK: contains "Ballroom"]
+
+# Five maintained lies climb the conscience curve to breaking
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+# The crack: the confession delivers, discharges the curve, and stamps
+# the confessed state in the same outlet
+> ask viola about the truth
+[OK: contains "the cord was in my hands"]
+
+# Below breaking again — before seam 6 this deflected ("a role like any
+# other") and the lies below re-minted. Now the state holds.
+> ask viola about the truth
+[OK: contains "I will not take it back"]
+[OK: not contains "a role like any other"]
+
+> ask viola about the alibi
+[OK: contains "no use for the lie now"]
+[OK: not contains "McVicker's"]
+
+> ask viola about the killer
+[OK: contains "said in a courtroom"]
+[OK: not contains "Some accident"]
+
+> ask viola about the family
+[OK: contains "Same father, different luck"]
+[OK: not contains "friendly strangers"]

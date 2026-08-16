@@ -294,6 +294,7 @@ create Viola Wainright
   accusable with verdict guilty
   in the Ballroom
   mood composed
+  states: denying, confessed
   feels devoted to Viola Wainright
   feels dislikes toward Stephanie Bordeau
   feels wary of Catherine Shelby
@@ -311,12 +312,19 @@ create Viola Wainright
   A striking woman in her mid-thirties with dark eyes and an actress's poise. Every gesture seems rehearsed.
 
 
+## Seam 6 (ADR-318 amendment): breaking is weather; being broken is a
+## state. The platform forgets the crack — permanence is authored in the
+## confession outlet itself (`change it to confessed`, the D3 ratchet),
+## and the post-confession voice hangs off the `confessed` state.
+
 define topics for Viola Wainright
   about "stephanie", "stephanie bordeau":
     phrase viola-stephanie-fond
   about "the family", "the half sister", "half-sister", "the sister":
+    phrase viola-family-owns when it is confessed
     phrase viola-family-denies
   about "the alibi", "the theatre", "the rehearsal", "last night":
+    phrase viola-alibi-dropped when it is confessed
     phrase viola-alibi-rehearsal
   about "the inheritance", "the fortune":
     phrase viola-inheritance-cool
@@ -324,9 +332,12 @@ define topics for Viola Wainright
     change mood to fearful
     phrase viola-program-caught
   about "the killer", "the murder":
+    phrase viola-killer-confessed when it is confessed
     phrase viola-killer-denies
   about "the truth":
+    change it to confessed when it is breaking
     phrase viola-confesses when it is breaking
+    phrase viola-stands-by-it when it is confessed and it is not breaking
     phrase viola-truth-deflect
 end topics
 
@@ -359,6 +370,7 @@ create John Barber
     makes mood nervous
     makes threat wary
     phrase john-menace-noticed on witnessed
+    phrase john-menace-lifted on expired
   end influence
 
   A lean man in a perfectly tailored suit. He watches everything with flat, appraising eyes.
@@ -583,6 +595,10 @@ define phrase john-menace-noticed
   The room gets quieter around John Barber.
 end phrase
 
+define phrase john-menace-lifted
+  The weight of John Barber's attention lifts as you go.
+end phrase
+
 define phrase jack-bullies
   Jack leans in, too close.
 end phrase
@@ -687,6 +703,34 @@ end phrase
 define phrase viola-truth-deflect
   "The truth is a role like any other, detective. Everyone here is
   playing it a little differently." She smiles, and it almost holds.
+end phrase
+
+## Post-confession voice (seam 6): once `confessed` holds, these rows
+## select ahead of the lies. None carries a claims tag — they assert
+## nothing to the ledger, so the still-pinned killer lie has nothing to
+## gate and, crucially, no maintenance deposit ever rebuilds the curve.
+
+define phrase viola-stands-by-it
+  "I said it once, and it cost me everything I had saved up to say it."
+  Her voice is level, empty of theatre. "The ballroom. The cord. I will
+  not take it back."
+end phrase
+
+define phrase viola-alibi-dropped
+  "The theatre let us out at nine. You hold the program; I have no use
+  for the lie now." She looks at her gloves without putting them on.
+end phrase
+
+define phrase viola-killer-confessed
+  "You already know who, detective. I told you what happened in the
+  ballroom — don't ask me to say the word as well. It will be said in a
+  courtroom soon enough."
+end phrase
+
+define phrase viola-family-owns
+  "Half-sisters. Same father, different luck — the family money never
+  learned my name." A small, tired shrug. "That was the last thing I
+  had left to keep, and I find I don't want it."
 end phrase
 
 ## ------------------------------------------------------ conversation: John

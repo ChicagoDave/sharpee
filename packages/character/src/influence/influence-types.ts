@@ -103,6 +103,13 @@ export interface InfluenceDef {
   /** Message ID when the target resists. */
   resisted?: string;
 
+  /**
+   * Message ID when the effect expires (separation or duration lapse) with
+   * the expiring target at the player's location. Opt-in release line —
+   * absent means expiry stays silent (David's ruling 2026-08-16).
+   */
+  expired?: string;
+
   /** Optional scheduling conditions (for passive mode). */
   schedule?: InfluenceSchedule;
 

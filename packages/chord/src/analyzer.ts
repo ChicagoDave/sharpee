@@ -4322,6 +4322,7 @@ class Analyzer {
         const effect: Record<string, string> = {};
         let witnessed: string | undefined;
         let resisted: string | undefined;
+        let expired: string | undefined;
         for (const e of inf.effects) {
           if (e.kind === 'clouds-focus') {
             if (effect['focus'] !== undefined) {
@@ -4360,12 +4361,18 @@ class Analyzer {
                 continue;
               }
               witnessed = e.key;
-            } else {
+            } else if (e.on === 'resisted') {
               if (resisted !== undefined) {
                 this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has a resisted phrase.', e.span);
                 continue;
               }
               resisted = e.key;
+            } else {
+              if (expired !== undefined) {
+                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has an expired phrase.', e.span);
+                continue;
+              }
+              expired = e.key;
             }
           }
         }
@@ -4376,6 +4383,7 @@ class Analyzer {
           effect,
           ...(witnessed !== undefined ? { witnessed } : {}),
           ...(resisted !== undefined ? { resisted } : {}),
+          ...(expired !== undefined ? { expired } : {}),
           span: inf.span,
         });
       }

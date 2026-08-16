@@ -1825,8 +1825,8 @@ class Parser {
   /**
    * An `influence` block (ADR-310 D9): `influence <name>, <mode>, <range>`
    * with effect lines — `clouds focus`, `makes <axis> <word>`, and
-   * `phrase <key> on witnessed|resisted`. Slot classification is the
-   * analyzer's gate.
+   * `phrase <key> on witnessed|resisted|expired`. Slot classification is
+   * the analyzer's gate.
    */
   private parseInfluenceBlock(): InfluenceDecl | null {
     const headLine = this.lines[this.pos++];
@@ -1889,20 +1889,20 @@ class Parser {
         lc.next();
         const key = lc.next();
         if (!key || key.kind !== 'word' || !lc.matchWord('on')) {
-          this.diagnostics.error('parse.influence-phrase', 'Expected `phrase <key> on witnessed|resisted`.', lineSpan(line));
+          this.diagnostics.error('parse.influence-phrase', 'Expected `phrase <key> on witnessed|resisted|expired`.', lineSpan(line));
           continue;
         }
         const on = lc.next();
-        if (!on || on.kind !== 'word' || (on.text !== 'witnessed' && on.text !== 'resisted') || !lc.atEnd()) {
-          this.diagnostics.error('parse.influence-phrase', 'Expected `on witnessed` or `on resisted` after the phrase key.', lineSpan(line));
+        if (!on || on.kind !== 'word' || (on.text !== 'witnessed' && on.text !== 'resisted' && on.text !== 'expired') || !lc.atEnd()) {
+          this.diagnostics.error('parse.influence-phrase', 'Expected `on witnessed`, `on resisted`, or `on expired` after the phrase key.', lineSpan(line));
           continue;
         }
-        decl.effects.push({ kind: 'phrase', key: key.text, on: on.text as 'witnessed' | 'resisted', span: lineSpan(line) });
+        decl.effects.push({ kind: 'phrase', key: key.text, on: on.text as 'witnessed' | 'resisted' | 'expired', span: lineSpan(line) });
         continue;
       }
       this.diagnostics.error(
         'parse.influence-line',
-        `Unrecognized influence line: \`${line.raw.trim()}\` — expected \`clouds focus\`, \`makes <axis> <word>\`, or \`phrase <key> on witnessed|resisted\`.`,
+        `Unrecognized influence line: \`${line.raw.trim()}\` — expected \`clouds focus\`, \`makes <axis> <word>\`, or \`phrase <key> on witnessed|resisted|expired\`.`,
         lineSpan(line),
       );
     }

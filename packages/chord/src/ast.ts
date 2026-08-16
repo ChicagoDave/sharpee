@@ -699,7 +699,7 @@ export interface InfluenceDecl {
 export type InfluenceEffectDecl =
   | { kind: 'clouds-focus'; span: Span }
   | { kind: 'makes'; axis: string; value: string; span: Span }
-  | { kind: 'phrase'; key: string; on: 'witnessed' | 'resisted'; span: Span };
+  | { kind: 'phrase'; key: string; on: 'witnessed' | 'resisted' | 'expired'; span: Span };
 
 /** One `resists <influence>[, except from <ref>]` line (ADR-310 D9). */
 export interface ResistsDecl {

@@ -584,6 +584,7 @@ describe('D10 — spreads propagation lines', () => {
       'define phrase mustard-attacks-player\n  He lunges.\nend phrase\n\n' +
         'define phrase ginger-brushes-against\n  She brushes past.\nend phrase\n\n' +
         'define phrase ginger-brushes-against-no-effect\n  Nothing happens.\nend phrase\n\n' +
+        'define phrase ginger-moves-off\n  The air clears.\nend phrase\n\n' +
         'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
         'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
         'create the player\n\n  Me.\n\n' +
@@ -609,6 +610,7 @@ describe('D10 — spreads propagation lines', () => {
         '    makes mood confused\n' +
         '    phrase ginger-brushes-against on witnessed\n' +
         '    phrase ginger-brushes-against-no-effect on resisted\n' +
+        '    phrase ginger-moves-off on expired\n' +
         '  end influence\n' +
         '\n' +
         '  A woman.\n\n' +
@@ -641,6 +643,7 @@ describe('D10 — spreads propagation lines', () => {
         effect: { focus: 'clouded', mood: 'confused' },
         witnessed: 'ginger-brushes-against',
         resisted: 'ginger-brushes-against-no-effect',
+        expired: 'ginger-moves-off',
       },
     ]);
 
@@ -663,6 +666,21 @@ describe('D10 — spreads propagation lines', () => {
     expect(errors.filter((e) => e.code === 'analysis.unknown-influence-slot')).toHaveLength(1);
     expect(errors.filter((e) => e.code === 'analysis.unknown-influence-effect-word')).toHaveLength(1);
     expect(errors.filter((e) => e.code === 'analysis.unknown-influence')).toHaveLength(1);
+  });
+
+  it('a duplicate expired phrase arm errors like the witnessed/resisted duplicates', () => {
+    const errors = errorsOf(
+      'define phrase air-clears\n  The air clears.\nend phrase\n\n' +
+        'define phrase air-clears-again\n  Again.\nend phrase\n\n' +
+        'create Tobias\n  a person\n\n' +
+        '  influence menace, passive, proximity\n' +
+        '    makes mood nervous\n' +
+        '    phrase air-clears on expired\n' +
+        '    phrase air-clears-again on expired\n' +
+        '  end influence\n\n' +
+        '  A man.\n',
+    );
+    expect(errors.filter((e) => e.code === 'analysis.influence-effect-duplicate')).toHaveLength(1);
   });
 
   it('an unclosed goal block and an unknown step verb each error', () => {
