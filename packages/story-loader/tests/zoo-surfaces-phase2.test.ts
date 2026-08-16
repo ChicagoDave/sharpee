@@ -45,7 +45,8 @@ function boot(ir: StoryIR): Booted {
 function labSource(gate: string): string {
   return `story
   title: Z2
-  authors: N
+  authors:
+    N
   id: z2
   story-version: 0.0.1
 
@@ -158,7 +159,8 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
   it('`nothing` compiles to the explicit empty variant, and both room texts share one entry (Z1/Q6)', () => {
     const source = `story
   title: Z2
-  authors: N
+  authors:
+    N
   id: z2
   story-version: 0.0.1
 
@@ -193,7 +195,8 @@ end phrase
   it('a single-variant plain phrase compiles to a plain string entry, never a Choice', () => {
     const source = `story
   title: Z2
-  authors: N
+  authors:
+    N
   id: z2
   story-version: 0.0.1
 

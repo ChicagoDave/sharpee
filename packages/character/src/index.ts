@@ -95,6 +95,9 @@ export {
   recordClaimDelivery,
   type ClaimTag,
   createAuthorEvent,
+  // Conversation marker (ADR-310 D16 — goal-pursuit suppression)
+  markConversationTurn,
+  conversationSuppressesGoals,
 } from './conversation/index.js';
 
 // Information propagation (ADR-144)
@@ -227,4 +230,5 @@ export {
   hasExpired,
   isMomentaryExpired,
   turnsSince,
+  dialogueTurn,
 } from './character-clock.js';

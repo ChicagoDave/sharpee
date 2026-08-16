@@ -1,6 +1,7 @@
 story
   title: The Alderman
-  authors: David Cornelson
+  authors:
+    David Cornelson
   id: thealderman
   story-version: 0.2.0
   description: Six suspects, one hotel, one dead alderman.

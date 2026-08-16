@@ -32,7 +32,7 @@ describe('sharpee compose', () => {
     // gate failure — never a re-mint, never a reconcile.
     const dir = mkdtempSync(join(tmpdir(), 'compose-broken-config-'));
     const story =
-      'story\n  title: T\n  authors: A\n  id: t\n  story-version: 0.0.1\n\n' +
+      'story\n  title: T\n  authors:\n    A\n  id: t\n  story-version: 0.0.1\n\n' +
       'create the Den\n  a room\n\n  A small den.\n\n' +
       'create the player\n  starts in the Den\n\n  You.\n';
     const storyFile = join(dir, 't.story');

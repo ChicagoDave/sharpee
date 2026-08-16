@@ -25,7 +25,8 @@ function compileClean(source: string): StoryIR {
 
 const BASE = `story
   title: Backstop
-  authors: T
+  authors:
+    T
   id: backstop
   story-version: 0.0.1
 

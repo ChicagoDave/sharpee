@@ -1,6 +1,7 @@
 story
   title: Broken
-  authors: Nobody
+  authors:
+    Nobody
   id: broken-3
   story-version: 0.0.1
 

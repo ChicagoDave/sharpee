@@ -1,6 +1,7 @@
 story
   title: Arena
-  authors: Test
+  authors:
+    Test
   id: use-combat
   story-version: 0.0.1
   use combat

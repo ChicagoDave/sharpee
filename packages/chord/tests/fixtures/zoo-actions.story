@@ -1,6 +1,7 @@
 story
   title: Zoo Actions Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: zoo-actions
   story-version: 0.0.1
   description: design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.

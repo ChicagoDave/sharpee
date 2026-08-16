@@ -1,6 +1,7 @@
 story
   title: The Vigil
-  authors: DevArch
+  authors:
+    DevArch
   id: counter-demo
   story-version: 1.0.0
 

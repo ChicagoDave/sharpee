@@ -2502,6 +2502,14 @@ export interface ClientCapabilities {
     readonly transitions: boolean;
     readonly layers: boolean;
     readonly customFonts: boolean;
+    /**
+     * May this surface receive author-facing introspection channels (the
+     * `character` author channel, ADR-318 D11)? False on every player
+     * surface — the isolation ADR-310 D12 demands lives here, at the
+     * channel layer: an ungated author channel would reach every client's
+     * wire. Testing surfaces flip it via the declared-channels profile.
+     */
+    readonly authorChannels: boolean;
     readonly screenWidth?: number;
     readonly screenHeight?: number;
 }

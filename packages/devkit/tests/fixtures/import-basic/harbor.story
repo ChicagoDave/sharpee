@@ -1,6 +1,7 @@
 story
   title: Harbor
-  authors: Test
+  authors:
+    Test
   id: harbor
   story-version: 0.0.1
 

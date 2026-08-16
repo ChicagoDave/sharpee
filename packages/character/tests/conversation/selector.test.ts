@@ -212,6 +212,29 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
     expect(trait.ledger[0]?.audience).toBe(world.getPlayer()!.id);
   });
 
+  it('a handled delivery stamps the conversation marker on the trait (D16)', () => {
+    const { world, npc, trait } = makeWorldWithNpc();
+    trait.setFactBelief('the-killer', {
+      value: 'the-master', confidence: 'certain', source: 'witnessed',
+      turnLearned: 0, resistance: 'none',
+    });
+    trait.registerPredicate('protecting-self', () => true);
+    const dialogue = new CharacterModelDialogue();
+    dialogue.registerNpc(npc.id, stewardData(), trait, () => 7);
+    registerCharacterDialogue(world, dialogue);
+
+    expect(trait.activeConversation).toBeUndefined();
+    world.getDialogueSelector()!(npc, { type: 'ask', text: 'the crime' }, {
+      world, speakerId: world.getPlayer()!.id,
+    });
+
+    // The tick mirror is unset in this harness, so the dialogue turn is 1.
+    expect(trait.activeConversation).toEqual({
+      partnerId: world.getPlayer()!.id,
+      lastTurn: 1,
+    });
+  });
+
   it('returns undefined for unregistered NPCs (falls through to the default)', () => {
     const { world, npc } = makeWorldWithNpc();
     const selector = createCharacterDialogueSelector(new CharacterModelDialogue());

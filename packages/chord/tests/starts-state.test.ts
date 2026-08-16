@@ -14,7 +14,8 @@ import { compile, parse, CreateDecl } from '../src';
 
 const story = (safeLines: string, extra = '') => `story
   title: Starts
-  authors: T
+  authors:
+    T
   id: starts
   story-version: 0.0.1
 

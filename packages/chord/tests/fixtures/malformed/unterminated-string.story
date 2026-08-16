@@ -1,6 +1,7 @@
 story
   title: Unterminated
-  authors: Nobody
+  authors:
+    Nobody
   id: unterminated
   story-version: 0.0.1
 

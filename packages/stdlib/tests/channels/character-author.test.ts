@@ -19,6 +19,12 @@ function ev(type: string, actor: string, data: Record<string, unknown>): ISemant
 }
 
 describe('characterAuthorChannel (ADR-318 D11)', () => {
+  it('is gated behind the authorChannels capability (ADR-310 D12 / Acceptance 8)', () => {
+    // The isolation criterion lives HERE: a profile without the flag never
+    // produces the channel, so a published story's stream cannot carry it.
+    expect(characterAuthorChannel.gatedBy).toBe('authorChannels');
+  });
+
   it('is registered in the standard set under id "character"', () => {
     expect(STANDARD_CHANNELS.some(c => c.id === 'character')).toBe(true);
     expect(characterAuthorChannel.mode).toBe('append');

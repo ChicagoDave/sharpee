@@ -75,4 +75,4 @@
 - **Entry state**: Phases 1–6 done.
 - **Deliverable**: ADR-310 Acceptance 8 (D12 channel isolation, asserted at the channel layer in a built story — no client package changes expected per the ADR's own reading) and Acceptance 9 (Dungeo walkthrough chain + Fernhill transcripts byte-identical before/after); ADR-318 Acceptance 8 (cost regression — acceptance stories' character blocks stay within the 3–6-line target, no-layer characters compile byte-identically to today); polish of the "explain this NPC's turn" IDE surface whose first raw cut landed in Phase 2 (full IDE UI polish may extend into ADR-294's own surface work — flag rather than absorb here if it grows past this phase's budget); a `tsf build --npm` regression pass across every package this plan touched.
 - **Exit state**: both ADRs' Acceptance sections fully discharged, evidence inline per criterion; Dungeo/Fernhill regression confirmed byte-identical at pinned seed (single run — the run-twice convention is retired); `tsf build --npm` clean.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-15, session 0f32bb)

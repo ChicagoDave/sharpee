@@ -22,7 +22,8 @@ function load(text: string) {
 
 const STORY = `story
   title: Survive
-  authors: T
+  authors:
+    T
   id: survive
   story-version: 0.0.1
 
@@ -83,7 +84,8 @@ describe('counter loader lowering (ADR-264 P1)', () => {
 
 const DAEMON_STORY = (clause: string, decl: string) => `story
   title: Tick
-  authors: T
+  authors:
+    T
   id: tick
   story-version: 0.0.1
 ${clause}

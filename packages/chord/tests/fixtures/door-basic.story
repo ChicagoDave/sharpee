@@ -1,6 +1,7 @@
 story
   title: Door Basic
-  authors: Test
+  authors:
+    Test
   id: door-basic
   story-version: 0.0.1
 

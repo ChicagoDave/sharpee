@@ -1,6 +1,7 @@
 story
   title: Zoo Timeline Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: zoo-timeline
   story-version: 0.0.1
   description: design.md 3.3 + ownership package - story states, sequences, anchors, once clauses.

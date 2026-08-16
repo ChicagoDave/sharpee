@@ -1,6 +1,7 @@
 story
   title: Door Redundant
-  authors: Test
+  authors:
+    Test
   id: door-redundant
   story-version: 0.0.1
 

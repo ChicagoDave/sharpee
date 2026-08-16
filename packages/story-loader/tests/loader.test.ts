@@ -208,7 +208,8 @@ describe('coverage: container config, plural, non-wearable wears', () => {
   it('applies max items / max weight config to a container kind', () => {
     const ir = compileSource(`story
   title: Coverage
-  authors: Nobody
+  authors:
+    Nobody
   id: coverage
   story-version: 0.0.1
 
@@ -254,7 +255,8 @@ create the player
     // the IR directly — the loader's defensive backstop must still throw.
     const ir = compileSource(`story
   title: Coverage
-  authors: Nobody
+  authors:
+    Nobody
   id: coverage-2
   story-version: 0.0.1
 

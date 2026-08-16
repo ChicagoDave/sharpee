@@ -16,7 +16,8 @@ import { createStory } from '../src';
 
 const source = (headerBody: string, phrases = '') => `story
   title: The Folly
-  authors: T
+  authors:
+    T
   id: folly
   story-version: 0.0.1
 ${headerBody}

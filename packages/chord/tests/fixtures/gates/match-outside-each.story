@@ -1,6 +1,7 @@
 story
   title: Match Outside Each Gate
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: match-outside-each
   story-version: 0.0.1
 

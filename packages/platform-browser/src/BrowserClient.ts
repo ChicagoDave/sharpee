@@ -64,6 +64,8 @@ export const BROWSER_CAPABILITIES: ClientCapabilities = {
   transitions: true,
   layers: true,
   customFonts: true,
+  // Author introspection never reaches a player surface (ADR-310 D12).
+  authorChannels: false,
 };
 
 export class BrowserClient implements BrowserClientInterface {

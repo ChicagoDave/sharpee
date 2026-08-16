@@ -1,6 +1,7 @@
 story
   title: Gate: shadow state
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-shadow-state
   story-version: 0.0.1
 

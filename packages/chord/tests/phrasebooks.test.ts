@@ -18,7 +18,8 @@ const warningCodes = (source: string) =>
 /** Minimal valid story; `header` splices into the story header body, `mid` between the creates. */
 const story = (mid: string, header = '') => `story
   title: T
-  authors: A
+  authors:
+    A
   id: t
   story-version: 0.0.1
   states: evening, midnight
@@ -252,7 +253,7 @@ describe('import "<file>" (ADR-251)', () => {
   });
 
   it('a fragment with a story header raises analysis.import-fragment-story', () => {
-    const bad = 'story\n  title: Nope\n  authors: X\n  id: nope\n';
+    const bad = 'story\n  title: Nope\n  authors:\n    X\n  id: nope\n';
     expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-story');
   });
 

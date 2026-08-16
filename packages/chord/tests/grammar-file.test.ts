@@ -42,7 +42,7 @@ describe('the grammar header (ADR-269 D8)', () => {
 
   it('a story IR never carries the grammarFile marker', () => {
     const result = compile(
-      'story\n  title: T\n  authors: N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n',
+      'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n',
     );
     expect(result.ir!.grammarFile).toBeUndefined();
   });
@@ -60,8 +60,8 @@ describe('the grammar header (ADR-269 D8)', () => {
   });
 
   it('grammar and story headers are mutually exclusive, both orders', () => {
-    expect(codesOf('grammar "g"\n\nstory\n  title: T\n  authors: N\n')).toContain('parse.mixed-headers');
-    expect(codesOf('story\n  title: T\n  authors: N\n\ngrammar "g"\n')).toContain('parse.mixed-headers');
+    expect(codesOf('grammar "g"\n\nstory\n  title: T\n  authors:\n    N\n')).toContain('parse.mixed-headers');
+    expect(codesOf('story\n  title: T\n  authors:\n    N\n\ngrammar "g"\n')).toContain('parse.mixed-headers');
   });
 });
 

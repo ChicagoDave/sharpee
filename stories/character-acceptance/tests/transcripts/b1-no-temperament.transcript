@@ -1,0 +1,35 @@
+title: The threatened Witness (B1, no temperament)
+story: b1-no-temperament
+author: Sharpee Platform
+seed: 42
+description: ADR-318 Acceptance 1 legs 3-4 — delete only the temperament
+  and intensity is the default (D2): the Witness refuses under no fear
+  and complies under high fear (driven to cornered so the fixture pins
+  the contract, not the middle of the force curve).
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b1-no-temperament.story
+    stories/character-acceptance/tests/transcripts/b1-no-temperament.transcript
+
+---
+
+# Leg 4: no fear, the principle's duty feed refuses unopposed
+> ask witness about the secret
+[OK: not contains "buried"]
+[OK: contains "I don't know anything about that"]
+
+# Drive threat to cornered through the real observe path
+> attack witness
+[OK: contains "no effect"]
+
+> attack witness
+[OK: contains "no effect"]
+
+> attack witness
+[OK: contains "no effect"]
+
+> attack witness
+[OK: contains "no effect"]
+
+# Leg 3: high fear outburns the unordered duty feed — the secret comes out
+> ask witness about the secret
+[OK: contains "buried behind the mill"]

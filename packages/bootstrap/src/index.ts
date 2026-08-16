@@ -45,6 +45,7 @@ export const CLI_CAPABILITIES = {
   transitions: false,
   layers: false,
   customFonts: false,
+  authorChannels: false,
 } as const;
 
 /** A loaded, started, runnable game with text-output capture. */

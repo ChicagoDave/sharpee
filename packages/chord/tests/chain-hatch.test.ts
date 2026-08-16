@@ -10,7 +10,8 @@ import { STDLIB_CHAIN_NAMES } from '../src/catalog';
 
 const story = (tail: string) => `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 0.0.1
 

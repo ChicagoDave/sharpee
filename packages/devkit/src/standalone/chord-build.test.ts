@@ -190,7 +190,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
     try {
       writeFileSync(
         storyFile,
-        'story\n  title: Legacy\n  authors: T\n  id: legacy\n  story-version: 0.0.1\n  ifid: LEGACY-ADOPT-42\n\n' +
+        'story\n  title: Legacy\n  authors:\n    T\n  id: legacy\n  story-version: 0.0.1\n  ifid: LEGACY-ADOPT-42\n\n' +
           'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n',
       );
       trapExit();
@@ -206,7 +206,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
   it('the project-directory build entry (runBuildCommand) refuses a BROKEN config the same way', async () => {
     const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-cmd-broken-'));
     const storySource =
-      'story\n  title: C\n  authors: T\n  id: c\n  story-version: 0.0.1\n  ifid: CCCC-1\n\n' +
+      'story\n  title: C\n  authors:\n    T\n  id: c\n  story-version: 0.0.1\n  ifid: CCCC-1\n\n' +
       'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
     try {
       writeFileSync(join(brokenDir, 'package.json'), '{ "name": "c", "version": "0.0.1" }\n');
@@ -227,7 +227,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
   it('a BROKEN config refuses the build by name, rewriting neither file', async () => {
     const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-broken-'));
     const storySource =
-      'story\n  title: B\n  authors: T\n  id: b\n  story-version: 0.0.1\n  ifid: BBBB-1\n\n' +
+      'story\n  title: B\n  authors:\n    T\n  id: b\n  story-version: 0.0.1\n  ifid: BBBB-1\n\n' +
       'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
     const storyFile = join(brokenDir, 'b.story');
     try {

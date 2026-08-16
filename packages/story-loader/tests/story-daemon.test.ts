@@ -18,7 +18,8 @@ const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
 const STORY = `story
   title: Clockwork
-  authors: Test
+  authors:
+    Test
   id: clockwork
   story-version: 0.0.1
   states: calm, stormy

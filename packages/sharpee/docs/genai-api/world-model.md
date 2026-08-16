@@ -4978,7 +4978,7 @@ export declare class StoryInfoTrait implements ITrait {
  * shape changes add a versioned reader, never a hard break.
  *
  * Public interface: ICharacterModelData, CharacterModelTrait,
- *   CharacterPredicate, CHARACTER_MODEL_SCHEMA_VERSION.
+ *   CharacterPredicate, ActiveConversation, CHARACTER_MODEL_SCHEMA_VERSION.
  * Owner context: world-model / character-model trait
  */
 import { ITrait } from '../trait.js';
@@ -5028,6 +5028,12 @@ export interface ICharacterModelData {
     burdenedBy?: string[];
     /** The lie ledger: own claims and promises per audience (ADR-318 D9). */
     ledger?: LedgerEntry[];
+    /**
+     * Active conversation marker (ADR-310 D16 lifecycle rule): stamped on
+     * every dialogue delivery to this character; goal pursuit is suppressed
+     * while it is fresh. Decays by turn distance — never cleared in place.
+     */
+    activeConversation?: ActiveConversation;
     /** Lucidity window configuration. */
     lucidityConfig?: LucidityConfig;
     /** Current lucidity state name (e.g., 'lucid', 'hallucinating', baseline). */
@@ -5038,6 +5044,19 @@ export interface ICharacterModelData {
     perceptionFilters?: PerceptionFilterConfig;
     /** Hallucinated perceived events. */
     perceivedEvents?: Record<string, PerceivedEvent>;
+}
+/**
+ * A conversation in progress with this character (ADR-310 D16): the
+ * partner it is with and the turn dialogue last reached this character.
+ * Freshness is computed from turn distance by the character subsystem's
+ * clock seam — the marker itself is pure data and is never cleared,
+ * only superseded by a later stamp.
+ */
+export interface ActiveConversation {
+    /** The conversing actor (the player, on both dialogue surfaces). */
+    partnerId: string;
+    /** The turn dialogue last reached this character. */
+    lastTurn: number;
 }
 /** A predicate function that evaluates character state. */
 export type CharacterPredicate = (trait: CharacterModelTrait) => boolean;
@@ -5072,6 +5091,7 @@ export declare class CharacterModelTrait implements ITrait {
     pressure: PressureState;
     burdenedBy: string[];
     ledger: LedgerEntry[];
+    activeConversation?: ActiveConversation;
     lucidityConfig?: LucidityConfig;
     currentLucidityState: string;
     lucidityWindowTurns: number;

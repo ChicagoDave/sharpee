@@ -43,7 +43,8 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 // gate on the entity route and fired unconditionally on both trait routes.
 const GATES_STORY = `story
   title: Gates
-  authors: T
+  authors:
+    T
   id: gates
   story-version: 0.0.1
   states: calm-day, wild-day

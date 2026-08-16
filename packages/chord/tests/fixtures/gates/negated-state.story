@@ -1,6 +1,7 @@
 story
   title: Gate: negated state
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-negated-state
   story-version: 0.0.1
 

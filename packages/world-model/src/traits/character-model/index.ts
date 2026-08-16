@@ -1,2 +1,2 @@
-export { CharacterModelTrait, ICharacterModelData, CharacterPredicate } from './characterModelTrait.js';
+export { CharacterModelTrait, ICharacterModelData, CharacterPredicate, ActiveConversation } from './characterModelTrait.js';
 export * from './character-vocabulary.js';

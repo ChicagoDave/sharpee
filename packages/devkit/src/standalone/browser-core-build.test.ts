@@ -123,7 +123,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const storyFile = join(root, 'panel.story');
     writeFileSync(
       storyFile,
-      `story\n  title: Panel Proof\n  authors: T\n  id: panelproof\n  story-version: 0.0.1\n\ncreate the Hall\n  a room\n\n  A bare proving hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `story\n  title: Panel Proof\n  authors:\n    T\n  id: panelproof\n  story-version: 0.0.1\n\ncreate the Hall\n  a room\n\n  A bare proving hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
     );
     const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
     const outDir = buildBrowser(storyFile, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
@@ -144,7 +144,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const storyFile = join(root, 'ch.story');
     writeFileSync(
       storyFile,
-      `story\n  title: Ch\n  authors: T\n  id: ch\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the clock\n  in the Hall\n\n  A clock.\n\n  on every turn\n    emit tick with beat "steady"\n  end on\n\ncreate the player\n  starts in the Hall\n\n  You.\n\ndefine channel beat\n  mode replace\n  return beat from tick\nend channel\n`,
+      `story\n  title: Ch\n  authors:\n    T\n  id: ch\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the clock\n  in the Hall\n\n  A clock.\n\n  on every turn\n    emit tick with beat "steady"\n  end on\n\ncreate the player\n  starts in the Hall\n\n  You.\n\ndefine channel beat\n  mode replace\n  return beat from tick\nend channel\n`,
     );
     // A custom page that does NOT link engine.css and has no #beat element → two warnings.
     mkdirSync(join(root, 'browser'), { recursive: true });
@@ -166,7 +166,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
   it('rejects a story naming a client the build cannot produce (D1 rejection)', () => {
     const root = mkroot('core-badclient');
     const storyFile = join(root, 'x.story');
-    writeFileSync(storyFile, `story\n  title: X\n  authors: T\n  id: x\n  client: terminal\n\ncreate the Hall\n  a room\n\n  Hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`);
+    writeFileSync(storyFile, `story\n  title: X\n  authors:\n    T\n  id: x\n  client: terminal\n\ncreate the Hall\n  a room\n\n  Hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`);
     const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
     expect(() => buildBrowser(storyFile, env, { quiet: true })).toThrow(/unknown client 'terminal'/);
   });
@@ -176,7 +176,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const root = mkroot('core-badstory');
     const storyFile = join(root, 'bad.story');
     // References an entity that does not exist → analysis gate error.
-    writeFileSync(storyFile, `story\n  title: Bad\n  authors: T\n  id: bad\n\ncreate the player\n  starts in the Nowhere\n\n  You.\n`);
+    writeFileSync(storyFile, `story\n  title: Bad\n  authors:\n    T\n  id: bad\n\ncreate the player\n  starts in the Nowhere\n\n  You.\n`);
     const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
     expect(() => buildBrowser(storyFile, env, { quiet: true })).toThrow(/failed the load-time gates/);
     expect(existsSync(join(root, 'dist', 'web', 'bad', 'game.js'))).toBe(false);
@@ -198,7 +198,7 @@ describe('runBuildBrowserCommand dispatch (ADR-252 D1)', () => {
     }) as never);
 
     tmp = mkdtempSync(join(REPO_ROOT, '.tmp-hybrid-'));
-    writeFileSync(join(tmp, 'x.story'), `story\n  title: X\n  authors: T\n  id: x\n\ncreate the player\n  a room\n`);
+    writeFileSync(join(tmp, 'x.story'), `story\n  title: X\n  authors:\n    T\n  id: x\n\ncreate the player\n  a room\n`);
     mkdirSync(join(tmp, 'src'), { recursive: true });
     writeFileSync(join(tmp, 'src', 'index.ts'), 'export const story = {};\n');
 

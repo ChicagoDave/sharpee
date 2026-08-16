@@ -60,7 +60,7 @@ export interface StoryFields {
   storyVersion?: string;
   /** `ifid:` — Treaty of Babel identifier (ADR-074); minted by `sharpee init`. */
   ifid?: string;
-  /** `authors:` — one name per indented line (or a single inline name). */
+  /** `authors:` — required; one name per indented line (no inline form). */
   authors: string[];
   /** `testers:` — same shape as `authors:`. */
   testers: string[];

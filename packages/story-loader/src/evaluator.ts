@@ -124,6 +124,18 @@ export class Evaluator {
     this.rng = createSeededRandom(seed);
   }
 
+  /**
+   * Axes for a mood word — manifest or story-defined custom (ADR-310 D5).
+   * The one table both the predicate side and the `change mood` statement
+   * resolve through, so a custom mood means the same thing everywhere.
+   *
+   * @param word - The mood word to resolve
+   * @returns The valence/arousal axes, or undefined for an unknown word
+   */
+  moodAxesFor(word: string): { valence: number; arousal: number } | undefined {
+    return this.moodWordAxes[word];
+  }
+
   // ------------------------------------------------------------ conditions
 
   evalCondition(cond: IRCondition, ctx: EvalContext): boolean {

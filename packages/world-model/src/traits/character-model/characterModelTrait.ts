@@ -13,7 +13,7 @@
  * shape changes add a versioned reader, never a hard break.
  *
  * Public interface: ICharacterModelData, CharacterModelTrait,
- *   CharacterPredicate, CHARACTER_MODEL_SCHEMA_VERSION.
+ *   CharacterPredicate, ActiveConversation, CHARACTER_MODEL_SCHEMA_VERSION.
  * Owner context: world-model / character-model trait
  */
 
@@ -122,6 +122,13 @@ export interface ICharacterModelData {
   /** The lie ledger: own claims and promises per audience (ADR-318 D9). */
   ledger?: LedgerEntry[];
 
+  /**
+   * Active conversation marker (ADR-310 D16 lifecycle rule): stamped on
+   * every dialogue delivery to this character; goal pursuit is suppressed
+   * while it is fresh. Decays by turn distance — never cleared in place.
+   */
+  activeConversation?: ActiveConversation;
+
   /** Lucidity window configuration. */
   lucidityConfig?: LucidityConfig;
 
@@ -138,6 +145,25 @@ export interface ICharacterModelData {
   perceivedEvents?: Record<string, PerceivedEvent>;
 
   /** Custom story-defined predicates are registered at runtime, not serialized. */
+}
+
+// ---------------------------------------------------------------------------
+// Conversation marker (ADR-310 D16)
+// ---------------------------------------------------------------------------
+
+/**
+ * A conversation in progress with this character (ADR-310 D16): the
+ * partner it is with and the turn dialogue last reached this character.
+ * Freshness is computed from turn distance by the character subsystem's
+ * clock seam — the marker itself is pure data and is never cleared,
+ * only superseded by a later stamp.
+ */
+export interface ActiveConversation {
+  /** The conversing actor (the player, on both dialogue surfaces). */
+  partnerId: string;
+
+  /** The turn dialogue last reached this character. */
+  lastTurn: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -218,6 +244,9 @@ export class CharacterModelTrait implements ITrait {
   burdenedBy: string[];
   ledger: LedgerEntry[];
 
+  // -- Conversation marker (ADR-310 D16): goal pursuit suppression --
+  activeConversation?: ActiveConversation;
+
   // -- Lucidity --
   lucidityConfig?: LucidityConfig;
   currentLucidityState: string;
@@ -294,6 +323,9 @@ export class CharacterModelTrait implements ITrait {
     this.pressure = data.pressure ? { ...data.pressure } : { value: 0, band: 'clear' };
     this.burdenedBy = data.burdenedBy ? [...data.burdenedBy] : [];
     this.ledger = data.ledger ? data.ledger.map(e => ({ ...e })) : [];
+
+    // Conversation marker (ADR-310 D16)
+    this.activeConversation = data.activeConversation ? { ...data.activeConversation } : undefined;
 
     // Lucidity
     this.lucidityConfig = data.lucidityConfig;

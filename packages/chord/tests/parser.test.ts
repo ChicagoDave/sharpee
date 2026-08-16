@@ -266,7 +266,7 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.unknown-statement');
     expect(errors[0].message).toContain('frobnicate');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     const east = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create');
     expect(east?.onClauses[0].body).toMatchObject([{ kind: 'phrase', phraseKey: 'stumble' }]);
     expect(result.ast.declarations.some((d) => d.kind === 'define-phrases')).toBe(true);
@@ -285,12 +285,12 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     // 2026-07-11); positions that REQUIRE a string diagnose at parse time.
     const result = parse(fixture('malformed/unterminated-string.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.text-module' && e.span.line === 7)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.text-module' && e.span.line === 8)).toBe(true);
   });
 });
 
 describe('ownership-package removals — parse errors with fix-its (ratchet 2026-07-11)', () => {
-  const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+  const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
   function errorsOf(source: string) {
     return parse(source).diagnostics.filter((d) => d.severity === 'error');
@@ -323,7 +323,7 @@ describe('ownership-package removals — parse errors with fix-its (ratchet 2026
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.removed-if');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     expect(errors[0].message).toContain('must');
     expect(errors[0].message).toContain('select');
   });
@@ -351,7 +351,7 @@ describe('ownership-package removals — parse errors with fix-its (ratchet 2026
 });
 
 describe('define phrase — flush-left body text (OOM guard, 2026-07-19)', () => {
-  const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+  const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
   function errorsOf(source: string) {
     return parse(source).diagnostics.filter((d) => d.severity === 'error');
@@ -364,7 +364,7 @@ describe('define phrase — flush-left body text (OOM guard, 2026-07-19)', () =>
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.phrase-text-indent');
-    expect(errors[0].span.line).toBe(8);
+    expect(errors[0].span.line).toBe(9);
     const phrase = result.ast.declarations.find((d): d is DefinePhrase => d.kind === 'define-phrase');
     expect(phrase?.key).toBe('p');
     expect(result.ast.declarations.some((d) => d.kind === 'create')).toBe(true);

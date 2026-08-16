@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { parse } from '../src';
 
-const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
 function errorsOf(source: string) {
   return parse(source).diagnostics.filter((d) => d.severity === 'error');
@@ -20,7 +20,7 @@ describe('dotted labels are rejected (ADR-254)', () => {
     const dotted = errors.filter((e) => e.code === 'parse.dotted-key');
     expect(dotted).toHaveLength(1);
     expect(dotted[0].message).toContain('zoo-pa-closed');
-    expect(dotted[0].span.line).toBe(7);
+    expect(dotted[0].span.line).toBe(8);
   });
 
   it('a dotted blocked-exit key raises parse.dotted-key', () => {
@@ -71,7 +71,7 @@ describe('quoted strings keep their dots (ADR-254 D3 — no false positive)', ()
 
   it('a dotted quoted title and dotted prose do not raise parse.dotted-key', () => {
     const src =
-      'story\n  title: Dr. Who at 9 p.m.\n  authors: A. Author\n  id: t\n  story-version: 0.0.1\n\ncreate the Hall\n  a room\n\n  A quiet hall. The door is ajar.\n';
+      'story\n  title: Dr. Who at 9 p.m.\n  authors:\n    A. Author\n  id: t\n  story-version: 0.0.1\n\ncreate the Hall\n  a room\n\n  A quiet hall. The door is ajar.\n';
     expect(parse(src).diagnostics.some((d) => d.code === 'parse.dotted-key')).toBe(false);
   });
 });

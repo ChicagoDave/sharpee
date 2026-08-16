@@ -18,7 +18,8 @@ const errorCodes = (source: string) =>
 
 const story = (header: string, body: string) => `story
   title: Arena
-  authors: T
+  authors:
+    T
   id: arena
   story-version: 0.0.1
 ${header}
@@ -60,7 +61,8 @@ describe('`use <extension>` (ADR-215)', () => {
   it('`use` at the top level → parse.use-top-level with a header fix-it', () => {
     const result = compile(`story
   title: Arena
-  authors: T
+  authors:
+    T
   id: arena
   story-version: 0.0.1
 

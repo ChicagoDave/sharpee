@@ -82,7 +82,7 @@ function createAttackEvent(actorId: string, targetId: string): ISemanticEvent {
 function createGivingEvent(actorId: string): ISemanticEvent {
   return {
     id: `give_${Date.now()}`,
-    type: 'if.action.giving',
+    type: 'if.event.given',
     timestamp: Date.now(),
     entities: { actor: actorId },
   };

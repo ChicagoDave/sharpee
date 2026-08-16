@@ -42,7 +42,7 @@ function npcIn(world: WorldModel, name: string, at: IFEntity, withModel: boolean
 
 const ATTACK_EVENT: ISemanticEvent = {
   id: 'e1',
-  type: 'if.action.attacking',
+  type: 'if.event.attacked',
   timestamp: 0,
   entities: { actor: 'player' },
   data: {},
@@ -87,7 +87,7 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     runPhase([cook], [ATTACK_EVENT]);
 
     expect(trait.threatValue).toBeGreaterThan(threatBefore);
-    expect(trait.knowledge['if.action.attacking']).toMatchObject({ source: 'witnessed', turnLearned: 3 });
+    expect(trait.knowledge['if.event.attacked']).toMatchObject({ source: 'witnessed', turnLearned: 3 });
   });
 
   it('an NPC in another room observes nothing', () => {
@@ -97,7 +97,7 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     runPhase([ghost], [ATTACK_EVENT]);
 
     expect(trait.threatValue).toBe(0);
-    expect(trait.knowledge['if.action.attacking']).toBeUndefined();
+    expect(trait.knowledge['if.event.attacked']).toBeUndefined();
   });
 
   it('no actionEvents in the context observes nothing (older callers unchanged)', () => {
@@ -107,7 +107,7 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
     runPhase([cook]);
 
     expect(trait.threatValue).toBe(0);
-    expect(trait.knowledge['if.action.attacking']).toBeUndefined();
+    expect(trait.knowledge['if.event.attacked']).toBeUndefined();
   });
 
   it('every tick mirrors its turn into world state (the dialogue surfaces read it back)', () => {

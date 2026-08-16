@@ -186,7 +186,9 @@ export function reconcileHeader(
 // ---------------------------------------------------------------------------
 // Header-line mechanics — the devkit twin of the IDE's StoryHeaderIFID:
 // fields are `  key: value` lines directly under the top-level `story`
-// keyword; scanning stops at the first non-field line (`use`/`on` open
+// keyword; a deeper-indented non-blank line is a field's indented-list
+// continuation (the names under `authors:`) and belongs to the field above
+// it; scanning stops at the first line that is neither (`use`/`on` open
 // nested blocks, and an `ifid:` inside one is not a header field).
 // ---------------------------------------------------------------------------
 
@@ -197,14 +199,30 @@ function linesOf(source: string): string[] {
 
 const FIELD_PATTERN = /^(\s+)([a-z][a-z0-9-]*):\s?(.*?)\r?\n?$/;
 
+/**
+ * True when `line` continues the field above it: non-blank and indented
+ * deeper than the header's field indent (the chord parser's own rule for
+ * indented list values).
+ */
+function isFieldContinuation(line: string, fieldIndent: string | undefined): boolean {
+  if (fieldIndent === undefined) return false;
+  const match = /^(\s+)\S/.exec(line);
+  return match !== null && match[1].length > fieldIndent.length;
+}
+
 /** The header's current `ifid:` value, or undefined when the block has none. */
 function headerIfidOf(source: string): string | undefined {
   const lines = linesOf(source);
   const storyIndex = lines.findIndex((line) => /^story\s*$/.test(line.trimEnd()));
   if (storyIndex === -1) return undefined;
+  let fieldIndent: string | undefined;
   for (let index = storyIndex + 1; index < lines.length; index++) {
     const field = FIELD_PATTERN.exec(lines[index]);
-    if (!field) break;
+    if (!field || (fieldIndent !== undefined && field[1] !== fieldIndent)) {
+      if (isFieldContinuation(lines[index], fieldIndent)) continue;
+      break;
+    }
+    fieldIndent ??= field[1];
     if (field[2] === 'ifid') {
       const value = field[3].trim();
       return value === '' ? undefined : value;
@@ -230,10 +248,20 @@ function spliceHeaderIfid(source: string, ifid: string): string | undefined {
   let idIndent: string | undefined;
   let lastFieldIndex: number | undefined;
   let lastIndent = '  ';
+  let fieldIndent: string | undefined;
 
   for (let index = storyIndex + 1; index < lines.length; index++) {
     const field = FIELD_PATTERN.exec(lines[index]);
-    if (!field) break;
+    if (!field || (fieldIndent !== undefined && field[1] !== fieldIndent)) {
+      // An indented-list continuation extends the field above it — the
+      // insertion anchor must land after the whole value, never inside it.
+      if (isFieldContinuation(lines[index], fieldIndent)) {
+        lastFieldIndex = index;
+        continue;
+      }
+      break;
+    }
+    fieldIndent ??= field[1];
     if (field[2] === 'ifid') {
       if (field[3].trim() === ifid) return source;
       const newline = lines[index].endsWith('\n') ? '\n' : '';

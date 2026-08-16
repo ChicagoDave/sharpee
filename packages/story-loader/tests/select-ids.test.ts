@@ -22,7 +22,8 @@ import {
 
 const SOURCE = `story
   title: Select Ids
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: select-ids
   story-version: 0.0.1
 

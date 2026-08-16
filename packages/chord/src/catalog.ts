@@ -148,6 +148,10 @@ export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
   'transitions',
   'layers',
   'custom-fonts',
+  // ADR-310 D12 / ADR-298-era amendment 2026-08-15: the author-surface
+  // gate — lets a story gate its own introspection channels the same way
+  // the platform gates the `character` channel.
+  'author-channels',
 ]);
 
 /**

@@ -21,7 +21,8 @@ const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
 const STORY = `story
   title: Region Daemons
-  authors: Test
+  authors:
+    Test
   id: region-daemons
   story-version: 0.0.1
   states: calm, stormy

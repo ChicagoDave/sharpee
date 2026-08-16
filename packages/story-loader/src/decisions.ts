@@ -73,6 +73,8 @@ export interface RoutingDecision {
   matches?: string[];
   /** Statement `when` suffix — the condition's truth at this position. */
   when?: boolean;
+  /** D3 `change mood`/`change feeling` — the from→to record the reports pass replays. */
+  transition?: { type: string; actor: string; from: string; to: string; target?: string };
 }
 
 /** Routing for one clause body, keyed by statement identity. */

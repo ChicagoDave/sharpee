@@ -49,7 +49,7 @@ const KNOWN_PARTIAL_PAGES = new Set([
 
 // `use scoring` is part of the presupposed story configuration, like the
 // room and player: the petting example's `score` lines gate on it (ADR-261 D4).
-const HEADER = 'story\n  title: Docs\n  authors: T\n  id: docs\n  story-version: 0.0.1\n  use scoring\n\n';
+const HEADER = 'story\n  title: Docs\n  authors:\n    T\n  id: docs\n  story-version: 0.0.1\n  use scoring\n\n';
 
 // The scaffolding a fence legitimately omits: a room, the player, and a
 // generic creature for animal-referencing examples (the snake makes the

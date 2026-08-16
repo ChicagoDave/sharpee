@@ -30,6 +30,7 @@ export {
 // D9/D11) — one implementation for the TS dialogue extension and the
 // loader's topic dispatch.
 export { pinAllowsClaim, recordClaimDelivery, type ClaimTag } from './claims.js';
+export { markConversationTurn, conversationSuppressesGoals } from './conversation-marker.js';
 export { createAuthorEvent } from './author-events.js';
 
 export {

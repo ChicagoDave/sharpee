@@ -1042,6 +1042,7 @@ describe('CharacterModelTrait', () => {
         burdenedBy: ['secret'],
         ledger: [{ kind: 'claim', audience: 'player', factId: 'weapon.location', claimedValue: 'attic', turnMinted: 4, pinned: true }],
         told: { maid: ['murder'] },
+        activeConversation: { partnerId: 'player', lastTurn: 5 },
       });
       trait.registerPredicate('story-custom', () => true);
       entity.add(trait);
@@ -1059,6 +1060,7 @@ describe('CharacterModelTrait', () => {
       expect(rt.burdenedBy).toEqual(['secret']);
       expect(rt.ledger).toEqual(trait.ledger);
       expect(rt.told).toEqual({ maid: ['murder'] });
+      expect(rt.activeConversation).toEqual({ partnerId: 'player', lastTurn: 5 });
 
       // Platform predicates rebuild lazily on the rehydrated instance —
       // the old own-field Map came back as a plain object and threw here.

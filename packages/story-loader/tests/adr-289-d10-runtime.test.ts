@@ -17,7 +17,8 @@ import { ChordStory, CHORD_STATE_PREFIX, createStory, Evaluator } from '../src';
 
 const SOURCE = `story
   title: Feeding Time
-  authors: N
+  authors:
+    N
   id: d10
   story-version: 0.0.1
 

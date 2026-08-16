@@ -1,6 +1,7 @@
 story
   title: Orchestra
-  authors: Test
+  authors:
+    Test
   id: media-sugar
   story-version: 0.0.1
 

@@ -1,6 +1,7 @@
 story
   title: Composite Acceptance
-  authors: Test
+  authors:
+    Test
   id: composite-acceptance
   use combat
 

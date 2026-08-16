@@ -12,7 +12,7 @@ import { compile } from '../src';
 import { STDLIB_MANIFEST } from '../src/stdlib-manifest';
 
 const STORY =
-  'story\n  title: T\n  authors: N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n\n';
+  'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n\n';
 
 const errors = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error');
 

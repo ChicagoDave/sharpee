@@ -12,7 +12,7 @@ import { WorldModel } from '@sharpee/world-model';
 import { applyCompiledCharacter, type AppliedCharacter } from '../../src/index.js';
 
 const SOURCE =
-  'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n' +
+  'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n' +
   'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
   'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
   'create the Duke\n  a person\n\n  Him.\n\n' +

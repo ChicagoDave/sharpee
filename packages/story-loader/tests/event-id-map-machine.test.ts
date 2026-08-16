@@ -16,7 +16,8 @@ import { ChordStory, createStory } from '../src';
 
 const SOURCE = `story
   title: Chime
-  authors: Test
+  authors:
+    Test
   id: chime
   story-version: 0.0.1
   use state-machines

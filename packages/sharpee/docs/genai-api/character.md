@@ -978,6 +978,50 @@ export declare function pinAllowsClaim(trait: CharacterModelTrait, audienceId: s
 export declare function recordClaimDelivery(trait: CharacterModelTrait, npcId: string, audienceId: string, claims: ClaimTag, turn: number): ISemanticEvent[];
 ```
 
+### conversation/conversation-marker
+
+```typescript
+/**
+ * Conversation marker (ADR-310 D16 lifecycle rule)
+ *
+ * "A conversation in progress suppresses goal pursuit": every dialogue
+ * delivery stamps the marker on the speaker's trait (D17 — it rides the
+ * trait, so it saves and restores), and the goal sub-step skips step
+ * execution while the marker is fresh. Freshness is turn distance
+ * against the lifecycle's decay threshold — the marker is never cleared
+ * in place, only superseded or outgrown, so no per-turn mutation exists.
+ *
+ * Both dialogue surfaces stamp through here: the chord topic dispatch
+ * (story-loader's topic arm) and the TS-API selector socket — one
+ * semantics, the same pattern as the claim bookkeeping in claims.ts.
+ *
+ * Public interface: markConversationTurn, conversationSuppressesGoals.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { CharacterModelTrait } from '@sharpee/world-model';
+/**
+ * Stamp the conversation marker: dialogue reached this character from
+ * `partnerId` on `currentTurn`. Overwrites any earlier marker.
+ *
+ * @param trait - The speaker's character model trait (mutated)
+ * @param partnerId - The conversing actor (the player on both surfaces)
+ * @param currentTurn - The turn the dialogue happened in
+ */
+export declare function markConversationTurn(trait: CharacterModelTrait, partnerId: string, currentTurn: number): void;
+/**
+ * Whether a conversation in progress suppresses this character's goal
+ * pursuit (ADR-310 D16). True while the last dialogue delivery is within
+ * the suppression window; goal ACTIVATION is unaffected — D8's
+ * `active when` still re-evaluates every turn, the goal simply does not
+ * act.
+ *
+ * @param trait - The character model trait to consult
+ * @param currentTurn - The turn being evaluated
+ * @returns True if pursuit is suppressed this turn
+ */
+export declare function conversationSuppressesGoals(trait: CharacterModelTrait, currentTurn: number): boolean;
+```
+
 ### conversation/author-events
 
 ```typescript
@@ -3448,15 +3492,7 @@ export declare class CharacterPhaseRegistry {
 }
 /** The one tick-phase name this package registers (contracts.md §2 — frozen, platform-internal). */
 export declare const CHARACTER_MODEL_PHASE_NAME = "character-model";
-/**
- * World-state key mirroring the last completed NPC turn (Phase 6). The
- * dialogue surfaces mint ledger entries during PLAYER actions, where the
- * engine's turn counter is unreachable by design (the selector binding's
- * documented idiom is a closed-over turn source); the phase mirrors its
- * turn here so ask-path bookkeeping stamps `mirror + 1` — the turn the
- * player is acting in. Rides world state, so it saves and restores.
- */
-export declare const CHARACTER_TURN_KEY = "character.turn";
+export { CHARACTER_TURN_KEY } from './character-clock.js';
 /**
  * Create the character-model tick phase handler. Register it once:
  * `registerCharacterModelPhase(npcService, registry)`.
@@ -3483,7 +3519,6 @@ export declare function createCharacterModelPhase(registry: CharacterPhaseRegist
 export declare function registerCharacterModelPhase(service: {
     registerTickPhase(name: string, handler: (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[]): void;
 }, registry: CharacterPhaseRegistry): void;
-export {};
 ```
 
 ### story-oracle
@@ -3969,9 +4004,30 @@ export declare function arbitrateConfidedReveal(input: RevealArbitrationInput): 
  * helpers rather than raw `turn` math, so that ADR-316's elapsed-time
  * semantics — when un-deferred — changes exactly one seam.
  *
- * Public interface: expiryTurn, hasExpired, isMomentaryExpired, turnsSince.
+ * Public interface: expiryTurn, hasExpired, isMomentaryExpired, turnsSince,
+ *   CHARACTER_TURN_KEY, dialogueTurn.
  * Owner context: @sharpee/character
  */
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * World-state key mirroring the last completed NPC turn (Phase 6). The
+ * dialogue surfaces run during PLAYER actions, where the engine's turn
+ * counter is unreachable by design (the selector binding's documented
+ * idiom is a closed-over turn source); the character-model tick phase
+ * mirrors its turn here so dialogue-path bookkeeping stamps `mirror + 1`
+ * — the turn the player is acting in. Rides world state, so it saves
+ * and restores.
+ */
+export declare const CHARACTER_TURN_KEY = "character.turn";
+/**
+ * The turn the player is acting in, read from the tick phase's mirror —
+ * the one turn source for dialogue-path bookkeeping (ledger stamps,
+ * witnessed-act stamps, conversation markers).
+ *
+ * @param world - The live world holding the mirror
+ * @returns The current player turn (mirror + 1; 1 before any tick)
+ */
+export declare function dialogueTurn(world: WorldModel): number;
 /**
  * Compute the turn on which a lingering effect expires.
  *

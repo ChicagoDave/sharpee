@@ -1,6 +1,7 @@
 story
   title: The Gamekeeper
-  authors: Test
+  authors:
+    Test
   id: gamekeeper
   story-version: 0.0.1
 

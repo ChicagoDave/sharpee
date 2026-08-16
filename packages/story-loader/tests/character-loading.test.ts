@@ -19,7 +19,7 @@ import { CharacterModelTrait, IFEntity, NpcTrait, TraitType, WorldModel } from '
 import { ChordStory, createStory } from '../src';
 
 const SOURCE =
-  'story\n  title: T\n  authors: N\n  id: char-phase5\n  story-version: 0.0.1\n\n' +
+  'story\n  title: T\n  authors:\n    N\n  id: char-phase5\n  story-version: 0.0.1\n\n' +
   'define fact the killer\n  the Duke, nobody\nend fact\n\n' +
   'create the Parlor\n  a room\n\n  A parlor.\n\n' +
   'create the Cellar\n  a room\n\n  A cellar.\n\n' +
@@ -112,9 +112,9 @@ describe('Phase 5 — character blocks through the real loader', () => {
 
   it('the tick phase runs through the real NpcPlugin: observation mutates the trait', () => {
     const threatBefore = maidTrait().threatValue;
-    tick([{ id: 'e1', type: 'if.action.attacking', timestamp: 0, entities: { actor: player.id }, data: {} }]);
+    tick([{ id: 'e1', type: 'if.event.attacked', timestamp: 0, entities: { actor: player.id }, data: {} }]);
     expect(maidTrait().threatValue).toBeGreaterThan(threatBefore);
-    expect(maidTrait().knowledge['if.action.attacking']).toMatchObject({ source: 'witnessed' });
+    expect(maidTrait().knowledge['if.event.attacked']).toMatchObject({ source: 'witnessed' });
   });
 
   it('compiled goal conditions evaluate through the story oracle: knows-topic activates, wait-for gates on world state', () => {

@@ -34,6 +34,7 @@ import {
   CharacterModelTrait,
   Direction,
   type DirectionType,
+  type DispositionWord,
   IFEntity,
   type ITrait,
   type InterceptorReportResult,
@@ -48,9 +49,10 @@ import {
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import {
-  CHARACTER_TURN_KEY,
   arbitrateConfidedReveal,
   createAuthorEvent,
+  dialogueTurn,
+  markConversationTurn,
   pinAllowsClaim,
   recordClaimDelivery,
   revealConfidedTopic,
@@ -884,12 +886,11 @@ export class ChordRuntime {
   }
 
   /**
-   * The turn the player is acting in, for dialogue-path ledger stamps:
-   * the character-model tick phase mirrors its (completed) turn into
-   * world state, so the live player action is one ahead.
+   * The turn the player is acting in, for dialogue-path bookkeeping —
+   * delegates to the character clock seam's mirror read.
    */
   private dialogueTurn(world: WorldModel): number {
-    return ((world.getStateValue(CHARACTER_TURN_KEY) as number | undefined) ?? 0) + 1;
+    return dialogueTurn(world);
   }
 
   /**
@@ -1064,6 +1065,12 @@ export class ChordRuntime {
       },
 
       postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+        // Any ask/tell reaching a character-model owner is a conversation
+        // in progress (ADR-310 D16) — evasions and row-misses included —
+        // so the marker is stamped before the row is consulted.
+        const modeledSpeaker = speakerOf(world);
+        if (modeledSpeaker) markConversationTurn(modeledSpeaker.trait, actorId, runtime.dialogueTurn(world));
+
         const row = rows[rowIndexFor(data)];
         if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
         const gate = characterGate(world, actorId, data);
@@ -2022,6 +2029,29 @@ export class ChordRuntime {
           // The refusal partition is consumed by findRefusal (validate
           // phase); nothing to do in execute/report passes.
           break;
+        case 'change-mood':
+        case 'change-feeling': {
+          // ADR-310 D3 transitions: the clause owner's character model
+          // mutates in the mutations pass; the from→to record replays to
+          // the reports pass, which emits the author-channel transition
+          // row (D11) — never player prose (D12).
+          if (!holds) break;
+          const record = ledger.resolve(stmt, 'transition', () => this.execCharacterTransition(stmt, ctx));
+          if (phase !== 'mutations' && record && record.from !== record.to) {
+            events.push({
+              id: `chord-${record.type}-${this.eventSeq++}`,
+              type: record.type,
+              timestamp: Date.now(),
+              entities: { actor: record.actor },
+              data: {
+                from: record.from,
+                to: record.to,
+                ...(record.target !== undefined ? { target: record.target } : {}),
+              },
+            });
+          }
+          break;
+        }
         case 'select-on': {
           const decided = ledger.resolve(stmt, 'arm', () => this.decideSelectOn(stmt, ctx));
           const arm = stmt.arms.find((a) => a.value === decided);
@@ -2417,6 +2447,50 @@ export class ChordRuntime {
     const entity = this.ir.entities.find((e) => e.id === entityIrId);
     const def = entity?.counters.find((c) => c.name === counter);
     return def ? { lo: def.lo, hi: def.hi } : undefined;
+  }
+
+  /**
+   * ADR-310 D3 transition statements (`change mood to <word>`, `change
+   * feeling toward <target> to <word>`): mutate the clause owner's
+   * character model and return the from→to record the reports pass
+   * replays as the author-channel transition row.
+   *
+   * @param stmt - The transition statement
+   * @param ctx - The executing clause's context (`it` is the owner)
+   * @returns The transition record, for the reports pass to emit
+   * @throws LoadError when the owner carries no character model or the
+   *   mood word is unknown to the manifest + custom-mood table
+   */
+  private execCharacterTransition(
+    stmt: Extract<IRStatement, { kind: 'change-mood' } | { kind: 'change-feeling' }>,
+    ctx: ExecContext,
+  ): { type: string; actor: string; from: string; to: string; target?: string } {
+    const ownerWorldId = ctx.it !== undefined ? this.host.entityId(ctx.it) : undefined;
+    const owner = ownerWorldId !== undefined ? ctx.world.getEntity(ownerWorldId) : undefined;
+    const trait = owner?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (ownerWorldId === undefined || !trait) {
+      // A transition on a person without the model is an authoring error,
+      // not a silent no-op (the loader's loud-wiring rule).
+      throw new LoadError('`change mood`/`change feeling` targets a character-model person.', stmt.span);
+    }
+    if (stmt.kind === 'change-mood') {
+      const axes = this.evaluator.moodAxesFor(stmt.mood);
+      if (!axes) throw new LoadError(`Unknown mood \`${stmt.mood}\`.`, stmt.span);
+      const from = trait.getMood();
+      trait.moodValence = axes.valence;
+      trait.moodArousal = axes.arousal;
+      return { type: 'npc.character.mood_changed', actor: ownerWorldId, from, to: stmt.mood };
+    }
+    const targetWorldId = this.evaluator.entityValue(stmt.target, ctx);
+    const from = trait.getDispositionWord(targetWorldId);
+    trait.setDisposition(targetWorldId, stmt.disposition as DispositionWord);
+    return {
+      type: 'npc.character.disposition_changed',
+      actor: ownerWorldId,
+      from,
+      to: stmt.disposition,
+      target: targetWorldId,
+    };
   }
 
   private rawEvent(type: string, data: Record<string, unknown>): ISemanticEvent {

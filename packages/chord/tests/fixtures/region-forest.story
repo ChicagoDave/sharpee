@@ -1,6 +1,7 @@
 story
   title: Forest Weather
-  authors: Test
+  authors:
+    Test
   id: region-forest
   story-version: 0.0.1
 

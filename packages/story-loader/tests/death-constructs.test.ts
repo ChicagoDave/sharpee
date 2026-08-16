@@ -201,7 +201,8 @@ describe('`kill the player` statement', () => {
   it('`when <condition>` gates the kill (no death while the condition is false)', () => {
     const ir = compileSource(`story
   title: Kill When
-  authors: Fixture
+  authors:
+    Fixture
   id: kill-when
   story-version: 1.0.0
 

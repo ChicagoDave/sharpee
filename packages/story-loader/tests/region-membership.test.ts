@@ -95,7 +95,8 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
   it('is declaration-order independent: a child region declared before its parent still wires (pass-0 topo order)', () => {
     const { world, worldId } = load(`story
   title: Order
-  authors: T
+  authors:
+    T
   id: order
   story-version: 0.0.1
 

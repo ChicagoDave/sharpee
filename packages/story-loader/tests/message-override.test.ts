@@ -15,7 +15,7 @@ import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 function load(body: string) {
-  const source = `story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n${body}\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`;
+  const source = `story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n${body}\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`;
   const result = compile(source);
   expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   const story = createStory(result.ir);

@@ -14,10 +14,14 @@
 
 import {
   WorldModel,
+  TraitType,
+  CharacterModelTrait,
   type DialogueSelector,
   type DialogueSelectionResult,
 } from '@sharpee/world-model';
 import { CharacterModelDialogue } from './dialogue-extension.js';
+import { dialogueTurn } from '../character-clock.js';
+import { markConversationTurn } from './conversation-marker.js';
 
 /**
  * Build a DialogueSelector backed by a CharacterModelDialogue instance.
@@ -43,6 +47,12 @@ export function createCharacterDialogueSelector(
     })();
 
     if (!result.handled) return undefined;
+
+    // A handled delivery is a conversation in progress (ADR-310 D16):
+    // stamp the marker so goal pursuit is suppressed while it is fresh.
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (trait) markConversationTurn(trait, ctx.speakerId, dialogueTurn(ctx.world));
+
     return {
       handled: true,
       messageId: result.messageId,

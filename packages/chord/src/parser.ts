@@ -532,6 +532,10 @@ class Parser {
     }
 
     const fields: StoryFields = { authors: [], testers: [], themes: [] };
+    // Requiredness tracking (ADR-298 amendment 2026-08-15): distinguishes a
+    // missing `authors:` field from one whose form was rejected above, so a
+    // single mistake never earns two diagnostics.
+    let sawAuthors = false;
     const states: StateName[] = [];
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
@@ -769,17 +773,31 @@ class Parser {
         case 'authors':
         case 'testers': {
           const entries: string[] = [];
-          if (rest.length > 0) entries.push(rest);
+          if (key === 'authors') sawAuthors = true;
+          // `authors:` takes no inline value (ADR-298 amendment 2026-08-15):
+          // names live one per indented line. `testers:` keeps both forms.
+          const inlineRejected = key === 'authors' && rest.length > 0;
+          if (inlineRejected) {
+            this.diagnostics.error(
+              'parse.header-inline-list',
+              '`authors:` takes no inline name — list one name per line, indented under `authors:`.',
+              lineSpan(fieldLine),
+            );
+          } else if (rest.length > 0) {
+            entries.push(rest);
+          }
           while (this.pos < this.lines.length && this.lines[this.pos].indent > fieldLine.indent) {
             const entryLine = this.lines[this.pos++];
             span = mergeSpans(span, lineSpan(entryLine));
             const name = entryLine.raw.trim();
             if (name.length > 0) entries.push(name);
           }
-          if (entries.length === 0) {
+          if (entries.length === 0 && !inlineRejected) {
             this.diagnostics.error(
               'parse.header-list-empty',
-              `\`${key}:\` declares no names — list one name per indented line (or one name inline).`,
+              key === 'authors'
+                ? '`authors:` declares no names — list one name per indented line.'
+                : `\`${key}:\` declares no names — list one name per indented line (or one name inline).`,
               lineSpan(fieldLine),
             );
           }
@@ -837,6 +855,13 @@ class Parser {
 
     if (title.length === 0) {
       this.diagnostics.error('parse.story-title', 'The story block requires a `title:` field.', lineSpan(line));
+    }
+    if (!sawAuthors) {
+      this.diagnostics.error(
+        'parse.story-authors',
+        'The story block requires an `authors:` list — one name per line, indented under `authors:`.',
+        lineSpan(line),
+      );
     }
 
     return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };

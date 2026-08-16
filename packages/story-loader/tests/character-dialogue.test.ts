@@ -22,7 +22,7 @@ import { CharacterModelTrait, IFEntity, TraitType, WorldModel } from '@sharpee/w
 import { ChordStory, createStory } from '../src';
 
 const SOURCE =
-  'story\n  title: T\n  authors: N\n  id: char-dialogue\n  story-version: 0.0.1\n\n' +
+  'story\n  title: T\n  authors:\n    N\n  id: char-dialogue\n  story-version: 0.0.1\n\n' +
   'define fact the killer\n  Viola, nobody\nend fact\n\n' +
   'create the Parlor\n  a room\n\n  A parlor.\n\n' +
   'create the Study\n  a room\n\n  A study.\n\n' +
@@ -181,6 +181,22 @@ describe('the mint rule and the pin (ADR-318 D9) through the real ask path', () 
 
     // Mirror = 2 (last completed tick); the player acts in turn 3.
     expect(traitOf(l, 'maid').ledger[0]).toMatchObject({ factId: 'killer', turnMinted: 3 });
+  });
+
+  it('any ask reaching a modeled owner stamps the conversation marker — row hits and misses alike (D16)', () => {
+    const l = load();
+    const trait = traitOf(l, 'maid');
+    expect(trait.activeConversation).toBeUndefined();
+
+    // A row hit stamps it (mirror unset → the player acts in turn 1).
+    ask(l, 'the killer');
+    expect(trait.activeConversation).toEqual({ partnerId: l.player.id, lastTurn: 1 });
+
+    // A row MISS still stamps: the exchange is a conversation in
+    // progress even when the default not-interested reply stands.
+    trait.activeConversation = undefined;
+    ask(l, 'the weather in patagonia');
+    expect(trait.activeConversation).toEqual({ partnerId: l.player.id, lastTurn: 1 });
   });
 
   it('re-delivering the pinned lie maintains it: no duplicate mint, another pressure deposit', () => {

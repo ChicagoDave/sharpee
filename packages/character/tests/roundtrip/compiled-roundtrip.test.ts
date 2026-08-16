@@ -23,7 +23,7 @@ import {
   type AppliedCharacter,
 } from '../../src/index.js';
 
-const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const SOURCE =
   HEADER +

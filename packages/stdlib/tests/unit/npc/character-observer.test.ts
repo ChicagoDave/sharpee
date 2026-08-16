@@ -337,12 +337,38 @@ describe('observeEvent', () => {
 
   it('should adjust disposition toward event actor on giving', () => {
     const { npc, trait } = createNpcWithCharacter();
-    const event = createTestEvent('if.action.giving', 'player');
+    const event = createTestEvent('if.event.given', 'player');
 
     observeEvent(npc, event, world, 1);
 
     // Default rule: giving adds +10 disposition
     expect(trait.getDispositionValue('player')).toBe(10);
+  });
+
+  it('should lower disposition toward event actor on a witnessed take', () => {
+    const { npc, trait } = createNpcWithCharacter();
+    const event = createTestEvent('if.event.taken', 'player');
+
+    observeEvent(npc, event, world, 1);
+
+    // Default rule: a witnessed take costs -5 disposition — keyed to the
+    // event type the taking action actually emits (rekeyed 2026-08-15;
+    // the old `if.action.taking` key matched nothing on the wire).
+    expect(trait.getDispositionValue('player')).toBe(-5);
+  });
+
+  it('should raise threat and darken mood on a witnessed attack', () => {
+    const { npc, trait } = createNpcWithCharacter();
+    const before = { valence: trait.moodValence, arousal: trait.moodArousal };
+    const event = createTestEvent('if.event.attacked', 'player');
+
+    observeEvent(npc, event, world, 1);
+
+    // Default rule for the attacking action's real event type: +20 threat,
+    // valence down, arousal up — asserted on trait state.
+    expect(trait.threatValue).toBe(20);
+    expect(trait.moodValence).toBeLessThan(before.valence);
+    expect(trait.moodArousal).toBeGreaterThan(before.arousal);
   });
 
   it('should trigger lucidity state change on matching event', () => {

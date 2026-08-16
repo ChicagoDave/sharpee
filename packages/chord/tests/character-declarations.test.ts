@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
 function compileStory(body: string) {
   return compile(HEADER + body);

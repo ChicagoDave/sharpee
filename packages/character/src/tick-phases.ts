@@ -32,6 +32,8 @@ import {
 import type { IRCondition } from '@sharpee/chord';
 import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
 import { detectActs, witnessActs } from './act-detection/index.js';
+import { CHARACTER_TURN_KEY } from './character-clock.js';
+import { conversationSuppressesGoals } from './conversation/conversation-marker.js';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import {
   PropagationProfile,
@@ -197,15 +199,9 @@ function createEvent(
 /** The one tick-phase name this package registers (contracts.md §2 — frozen, platform-internal). */
 export const CHARACTER_MODEL_PHASE_NAME = 'character-model';
 
-/**
- * World-state key mirroring the last completed NPC turn (Phase 6). The
- * dialogue surfaces mint ledger entries during PLAYER actions, where the
- * engine's turn counter is unreachable by design (the selector binding's
- * documented idiom is a closed-over turn source); the phase mirrors its
- * turn here so ask-path bookkeeping stamps `mirror + 1` — the turn the
- * player is acting in. Rides world state, so it saves and restores.
- */
-export const CHARACTER_TURN_KEY = 'character.turn';
+// The turn mirror lives with the clock seam; re-exported here for the
+// phase's existing importers (the phase is its writer).
+export { CHARACTER_TURN_KEY } from './character-clock.js';
 
 /**
  * Create the character-model tick phase handler. Register it once:
@@ -511,7 +507,7 @@ function runGoalSubStep(
   const { world, playerLocation } = ctx;
 
   for (const npc of npcs) {
-    executeNpcGoals(npc, registry, world, playerLocation, events);
+    executeNpcGoals(npc, registry, world, playerLocation, ctx.turn, events);
   }
 
   return events;
@@ -540,6 +536,7 @@ function boundCompiledEval(
  * @param registry - Character phase registry for configs and goal managers
  * @param world - World model for location lookups and room graph
  * @param playerLocation - Player's current room ID
+ * @param currentTurn - The turn being evaluated (D16 suppression window)
  * @param events - Accumulator for witnessed events
  */
 function executeNpcGoals(
@@ -547,6 +544,7 @@ function executeNpcGoals(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   playerLocation: EntityId,
+  currentTurn: number,
   events: ISemanticEvent[],
 ): void {
   const manager = registry.getGoalManager(npc.id);
@@ -557,6 +555,11 @@ function executeNpcGoals(
 
   const evalCompiled = boundCompiledEval(registry, npc.id, world);
   const activeGoals = manager.evaluate(trait, evalCompiled);
+
+  // D16 lifecycle rule: a conversation in progress suppresses pursuit.
+  // Activation above still re-evaluated — the goal simply does not act.
+  if (conversationSuppressesGoals(trait, currentTurn)) return;
+
   const activeGoal = activeGoals.find(g => !g.state.paused && !g.state.interrupted);
   if (!activeGoal) return;
 

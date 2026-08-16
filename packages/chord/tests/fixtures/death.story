@@ -1,6 +1,7 @@
 story
   title: Death Constructs
-  authors: ADR-227 parity fixture
+  authors:
+    ADR-227 parity fixture
   id: death-constructs
   story-version: 1.0.0
   description: Exercises kill the player, the deadly exit, and the deadly room.

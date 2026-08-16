@@ -13,7 +13,8 @@ import { compile, IRStatement } from '../src';
 
 const story = (body: string, defines: string) => `story
   title: Estate
-  authors: T
+  authors:
+    T
   id: estate
   story-version: 0.0.1
 

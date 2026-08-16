@@ -13,7 +13,8 @@ import { compile } from '../src';
 
 const story = (body: string, header = '') => `story
   title: Domains
-  authors: T${header}
+  authors:
+    T${header}
 
 create the Vault
   a room

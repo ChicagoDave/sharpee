@@ -19,20 +19,22 @@ const errorsOf = (src: string, resolver?: Resolver) =>
 const byCode = (src: string, resolver?: Resolver) =>
   Object.fromEntries(errorsOf(src, resolver).map((d) => [d.code, d] as const));
 
-/** Minimal valid main story with `importLine` fixed at line 5. */
+/** Minimal valid main story with `importLine` fixed at line 7. */
 const mainWith = (importLine: string) =>
   [
     'story', //              1
     '  id: x', //            2
     '  title: X', //         3
-    '', //                   4
-    importLine, //          5
+    '  authors:', //         4
+    '    N', //              5
     '', //                   6
-    'create the player', //  7
-    '  a room', //           8
-    '', //                   9
-    '  You.', //            10
+    importLine, //          7
+    '', //                   8
+    'create the player', //  9
+    '  a room', //          10
     '', //                  11
+    '  You.', //            12
+    '', //                  13
   ].join('\n');
 
 describe('ADR-251 Acceptance — worked example', () => {
@@ -41,6 +43,8 @@ describe('ADR-251 Acceptance — worked example', () => {
       'story',
       '  id: harbor',
       '  title: Harbor',
+      '  authors:',
+      '    N',
       '',
       'create the Lighthouse',
       '  a room',
@@ -85,12 +89,12 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
   it('missing file → analysis.import-unresolved at the main-file import line', () => {
     const d = byCode(mainWith('import "gone"'), () => null)['analysis.import-unresolved'];
     expect(d).toBeDefined();
-    expect(d.span.line).toBe(5); //             the import line in the MAIN file
+    expect(d.span.line).toBe(7); //             the import line in the MAIN file
     expect(d.message.startsWith('[')).toBe(false); // not a fragment-prefixed diagnostic
   });
 
   it('fragment story header → analysis.import-fragment-story at the fragment span', () => {
-    const frag = 'story\n  title: Nope\n  authors: Z\n  id: nope\n';
+    const frag = 'story\n  title: Nope\n  authors:\n    Z\n  id: nope\n';
     const d = byCode(mainWith('import "frag"'), (n) => (n === 'frag.chord' ? frag : null))['analysis.import-fragment-story'];
     expect(d).toBeDefined();
     expect(d.message).toContain('[frag.chord]');
@@ -116,6 +120,6 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
   it('import without a file string → parse.import-form at the main-file import line', () => {
     const d = byCode(mainWith('import'))['parse.import-form'];
     expect(d).toBeDefined();
-    expect(d.span.line).toBe(5); //             the import line in the MAIN file
+    expect(d.span.line).toBe(7); //             the import line in the MAIN file
   });
 });

@@ -1,6 +1,7 @@
 story
   title: Removed When
-  authors: Nobody
+  authors:
+    Nobody
   id: removed-when
   story-version: 0.0.1
 

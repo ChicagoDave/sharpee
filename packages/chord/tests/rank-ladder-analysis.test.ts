@@ -13,7 +13,8 @@ import { compile, EXTENSION_MANIFESTS } from '../src';
 
 const story = (headerBody: string) => `story
   title: The Folly
-  authors: T
+  authors:
+    T
   id: folly
   story-version: 0.0.1
 ${headerBody}
@@ -134,7 +135,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
 
     expect(found.map((d) => d.code)).toEqual(['analysis.duplicate-rank-threshold']);
     // The span points at the SECOND rung — the one that could be moved.
-    expect(found[0].span.line).toBe(9);
+    expect(found[0].span.line).toBe(10);
   });
 
   it('duplicate kebab id → analysis.duplicate-rank-id with the span', () => {
@@ -146,7 +147,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
     ));
 
     expect(found.map((d) => d.code)).toEqual(['analysis.duplicate-rank-id']);
-    expect(found[0].span.line).toBe(9);
+    expect(found[0].span.line).toBe(10);
   });
 
   it('a rung above the declared ceiling → analysis.rank-above-max', () => {

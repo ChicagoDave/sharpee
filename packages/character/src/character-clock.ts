@@ -7,9 +7,35 @@
  * helpers rather than raw `turn` math, so that ADR-316's elapsed-time
  * semantics — when un-deferred — changes exactly one seam.
  *
- * Public interface: expiryTurn, hasExpired, isMomentaryExpired, turnsSince.
+ * Public interface: expiryTurn, hasExpired, isMomentaryExpired, turnsSince,
+ *   CHARACTER_TURN_KEY, dialogueTurn.
  * Owner context: @sharpee/character
  */
+
+import type { WorldModel } from '@sharpee/world-model';
+
+/**
+ * World-state key mirroring the last completed NPC turn (Phase 6). The
+ * dialogue surfaces run during PLAYER actions, where the engine's turn
+ * counter is unreachable by design (the selector binding's documented
+ * idiom is a closed-over turn source); the character-model tick phase
+ * mirrors its turn here so dialogue-path bookkeeping stamps `mirror + 1`
+ * — the turn the player is acting in. Rides world state, so it saves
+ * and restores.
+ */
+export const CHARACTER_TURN_KEY = 'character.turn';
+
+/**
+ * The turn the player is acting in, read from the tick phase's mirror —
+ * the one turn source for dialogue-path bookkeeping (ledger stamps,
+ * witnessed-act stamps, conversation markers).
+ *
+ * @param world - The live world holding the mirror
+ * @returns The current player turn (mirror + 1; 1 before any tick)
+ */
+export function dialogueTurn(world: WorldModel): number {
+  return ((world.getStateValue(CHARACTER_TURN_KEY) as number | undefined) ?? 0) + 1;
+}
 
 /**
  * Compute the turn on which a lingering effect expires.

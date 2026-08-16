@@ -8,7 +8,8 @@ import { compile } from '../src';
 
 const story = (headerBody: string, phrases = '') => `story
   title: Survive
-  authors: T
+  authors:
+    T
   id: survive
   story-version: 0.0.1
 ${headerBody}

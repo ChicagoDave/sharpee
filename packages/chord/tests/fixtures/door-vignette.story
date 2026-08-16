@@ -1,6 +1,7 @@
 story
   title: The Locked Study
-  authors: Test
+  authors:
+    Test
   id: locked-study
   story-version: 0.0.1
 

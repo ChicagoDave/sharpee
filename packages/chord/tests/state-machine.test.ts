@@ -19,7 +19,8 @@ const errorCodes = (source: string) =>
 
 const story = (machine: string, header = '  use state-machines\n') => `story
   title: Bridge
-  authors: T
+  authors:
+    T
   id: bridge
   story-version: 0.0.1
 ${header}

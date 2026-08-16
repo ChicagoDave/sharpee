@@ -202,7 +202,8 @@ async function runInBrowserClient(
     storyInfo: {
       title: story.config.title,
       description: story.config.description || '',
-      authors: story.config.authors.join(', '),
+      authors:
+        story.config.authors.join(', '),
       version: '1.0.0',
     },
   });

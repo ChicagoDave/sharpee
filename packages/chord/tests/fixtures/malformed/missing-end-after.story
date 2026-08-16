@@ -1,6 +1,7 @@
 story
   title: Broken After
-  authors: Nobody
+  authors:
+    Nobody
   id: broken-after
   story-version: 0.0.1
 

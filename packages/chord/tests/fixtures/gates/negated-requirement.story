@@ -1,6 +1,7 @@
 story
   title: Gate: negated requirement
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-negated-requirement
   story-version: 0.0.1
 

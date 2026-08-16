@@ -1,6 +1,7 @@
 story
   title: Determinism Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: ac5-random
   story-version: 1.0.0
   description: AC-5 gate fixture - both random forms, no other nondeterminism.

@@ -45,6 +45,10 @@ export const characterAuthorChannel: IOChannel<CharacterAuthorRow> = {
   contentType: 'json',
   mode: 'append',
   emit: 'sparse',
+  // ADR-310 D12 / Acceptance 8: author introspection never reaches a
+  // player surface — the channel layer gates it, so a published story's
+  // stream provably cannot carry it.
+  gatedBy: 'authorChannels',
   produce: (ctx) => {
     const rows: CharacterAuthorRow[] = [];
     for (const event of ctx.events) {

@@ -10,7 +10,8 @@ import { createStory } from '../src';
 
 const STORY = `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 0.0.1
 

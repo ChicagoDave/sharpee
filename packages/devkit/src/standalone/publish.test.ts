@@ -54,7 +54,7 @@ describe('checkPublishable', () => {
   it('reports the story id and IFID of a publishable story', () => {
     const file = writeStory(
       'orchard',
-      `story\n  title: Orchard\n  id: orchard\n  ifid: ${IFID}`,
+      `story\n  title: Orchard\n  authors:\n    T\n  id: orchard\n  ifid: ${IFID}`,
     );
 
     const target = checkPublishable(file);
@@ -68,7 +68,7 @@ describe('checkPublishable', () => {
   // reconciles but never MINTS; inventing identity at publish would silently
   // fork a story whose committed config went missing).
   it('REFUSES a story with no identity anywhere, minting nothing', () => {
-    const file = writeStory('orchard', 'story\n  title: Orchard\n  id: orchard');
+    const file = writeStory('orchard', 'story\n  title: Orchard\n  authors:\n    T\n  id: orchard');
 
     expect(() => checkPublishable(file)).toThrow(PublishError);
     try {
@@ -88,7 +88,7 @@ describe('checkPublishable', () => {
   it('ADOPTS a header-only legacy story into a new config, then publishes (ADR-309 D2)', () => {
     const file = writeStory(
       'orchard',
-      `story\n  title: Orchard\n  id: orchard\n  ifid: ${IFID}`,
+      `story\n  title: Orchard\n  authors:\n    T\n  id: orchard\n  ifid: ${IFID}`,
     );
 
     const target = checkPublishable(file);
@@ -101,7 +101,7 @@ describe('checkPublishable', () => {
   it('REFUSES a broken config by name — never re-mints over it (ADR-309 D5)', () => {
     const file = writeStory(
       'orchard',
-      `story\n  title: Orchard\n  id: orchard\n  ifid: ${IFID}`,
+      `story\n  title: Orchard\n  authors:\n    T\n  id: orchard\n  ifid: ${IFID}`,
     );
     fs.writeFileSync(path.join(tmp, 'orchard.config.json'), '{ not json');
 
@@ -115,7 +115,7 @@ describe('checkPublishable', () => {
   });
 
   it('REFUSES an empty ifid the same as a missing one', () => {
-    const file = writeStory('orchard', 'story\n  title: Orchard\n  id: orchard\n  ifid:');
+    const file = writeStory('orchard', 'story\n  title: Orchard\n  authors:\n    T\n  id: orchard\n  ifid:');
 
     // An `ifid:` with no value is a parse error before it is a publish
     // refusal — either way nothing is published and nothing is written.
@@ -126,7 +126,7 @@ describe('checkPublishable', () => {
   // REJECTS WHEN: the story does not compile.
   it('REFUSES a story that does not compile, naming the first error', () => {
     const file = path.join(tmp, 'broken.story');
-    fs.writeFileSync(file, 'story\n  title: Broken\n  id: broken\n  mood: purple\n');
+    fs.writeFileSync(file, 'story\n  title: Broken\n  authors:\n    T\n  id: broken\n  mood: purple\n');
 
     try {
       checkPublishable(file);
@@ -156,7 +156,7 @@ describe('checkPublishable', () => {
     );
     const file = writeStory(
       'harbor',
-      `story\n  title: Harbor\n  id: harbor\n  ifid: ${IFID}\n\nimport "extra"`,
+      `story\n  title: Harbor\n  authors:\n    T\n  id: harbor\n  ifid: ${IFID}\n\nimport "extra"`,
     );
 
     expect(checkPublishable(file).storyId).toBe('harbor');

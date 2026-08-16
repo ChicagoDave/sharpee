@@ -24,7 +24,8 @@ import { compile } from '../src/index.js';
 export const COMPOSITE_ACCEPTANCE_SOURCE = [
   'story',
   '  title: Composite Acceptance',
-  '  authors: Test',
+  '  authors:',
+  '    Test',
   '  id: composite-acceptance',
   '  use combat',
   '',
@@ -87,7 +88,8 @@ describe('ADR-276 Acceptance item 7 — alteration errors are collected', () => 
     const source = [
       'story',
       '  title: Alterations',
-      '  authors: Test',
+      '  authors:',
+      '    Test',
       '  id: alterations',
       '',
       'create the Lab',

@@ -12,8 +12,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 41,
             "endColumn": 47,
-            "endLine": 8,
-            "line": 8,
+            "endLine": 9,
+            "line": 9,
           },
           "value": {
             "kind": "ref",
@@ -23,8 +23,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 41,
                 "endColumn": 47,
-                "endLine": 8,
-                "line": 8,
+                "endLine": 9,
+                "line": 9,
               },
               "words": [
                 "hungry",
@@ -33,16 +33,16 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 41,
               "endColumn": 47,
-              "endLine": 8,
-              "line": 8,
+              "endLine": 9,
+              "line": 9,
             },
           },
         },
         "span": {
           "column": 35,
           "endColumn": 47,
-          "endLine": 8,
-          "line": 8,
+          "endLine": 9,
+          "line": 9,
         },
         "subject": {
           "kind": "ref",
@@ -52,8 +52,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 35,
               "endColumn": 37,
-              "endLine": 8,
-              "line": 8,
+              "endLine": 9,
+              "line": 9,
             },
             "words": [
               "it",
@@ -62,8 +62,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 35,
             "endColumn": 37,
-            "endLine": 8,
-            "line": 8,
+            "endLine": 9,
+            "line": 9,
           },
         },
       },
@@ -72,126 +72,6 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 47,
-        "endLine": 8,
-        "line": 8,
-      },
-    },
-    {
-      "condition": {
-        "kind": "and",
-        "operands": [
-          {
-            "kind": "predicate",
-            "predicate": {
-              "classifier": [
-                "treasure",
-              ],
-              "kind": "is-a",
-              "negated": false,
-              "span": {
-                "column": 42,
-                "endColumn": 50,
-                "endLine": 9,
-                "line": 9,
-              },
-            },
-            "span": {
-              "column": 34,
-              "endColumn": 50,
-              "endLine": 9,
-              "line": 9,
-            },
-            "subject": {
-              "kind": "ref",
-              "ref": {
-                "article": null,
-                "kind": "name",
-                "span": {
-                  "column": 34,
-                  "endColumn": 36,
-                  "endLine": 9,
-                  "line": 9,
-                },
-                "words": [
-                  "it",
-                ],
-              },
-              "span": {
-                "column": 34,
-                "endColumn": 36,
-                "endLine": 9,
-                "line": 9,
-              },
-            },
-          },
-          {
-            "kind": "predicate",
-            "predicate": {
-              "kind": "is-in",
-              "negated": true,
-              "place": {
-                "article": "the",
-                "kind": "name",
-                "span": {
-                  "column": 68,
-                  "endColumn": 83,
-                  "endLine": 9,
-                  "line": 9,
-                },
-                "words": [
-                  "Trophy",
-                  "Barn",
-                ],
-              },
-              "span": {
-                "column": 68,
-                "endColumn": 83,
-                "endLine": 9,
-                "line": 9,
-              },
-            },
-            "span": {
-              "column": 55,
-              "endColumn": 83,
-              "endLine": 9,
-              "line": 9,
-            },
-            "subject": {
-              "kind": "ref",
-              "ref": {
-                "article": null,
-                "kind": "name",
-                "span": {
-                  "column": 55,
-                  "endColumn": 57,
-                  "endLine": 9,
-                  "line": 9,
-                },
-                "words": [
-                  "it",
-                ],
-              },
-              "span": {
-                "column": 55,
-                "endColumn": 57,
-                "endLine": 9,
-                "line": 9,
-              },
-            },
-          },
-        ],
-        "span": {
-          "column": 34,
-          "endColumn": 83,
-          "endLine": 9,
-          "line": 9,
-        },
-      },
-      "kind": "define-condition",
-      "name": "stray-treasure",
-      "span": {
-        "column": 1,
-        "endColumn": 83,
         "endLine": 9,
         "line": 9,
       },
@@ -209,15 +89,15 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "kind": "is-a",
               "negated": false,
               "span": {
-                "column": 41,
-                "endColumn": 49,
+                "column": 42,
+                "endColumn": 50,
                 "endLine": 10,
                 "line": 10,
               },
             },
             "span": {
-              "column": 33,
-              "endColumn": 49,
+              "column": 34,
+              "endColumn": 50,
               "endLine": 10,
               "line": 10,
             },
@@ -227,8 +107,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "article": null,
                 "kind": "name",
                 "span": {
-                  "column": 33,
-                  "endColumn": 35,
+                  "column": 34,
+                  "endColumn": 36,
                   "endLine": 10,
                   "line": 10,
                 },
@@ -237,10 +117,130 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 ],
               },
               "span": {
-                "column": 33,
-                "endColumn": 35,
+                "column": 34,
+                "endColumn": 36,
                 "endLine": 10,
                 "line": 10,
+              },
+            },
+          },
+          {
+            "kind": "predicate",
+            "predicate": {
+              "kind": "is-in",
+              "negated": true,
+              "place": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 68,
+                  "endColumn": 83,
+                  "endLine": 10,
+                  "line": 10,
+                },
+                "words": [
+                  "Trophy",
+                  "Barn",
+                ],
+              },
+              "span": {
+                "column": 68,
+                "endColumn": 83,
+                "endLine": 10,
+                "line": 10,
+              },
+            },
+            "span": {
+              "column": 55,
+              "endColumn": 83,
+              "endLine": 10,
+              "line": 10,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 55,
+                  "endColumn": 57,
+                  "endLine": 10,
+                  "line": 10,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "span": {
+                "column": 55,
+                "endColumn": 57,
+                "endLine": 10,
+                "line": 10,
+              },
+            },
+          },
+        ],
+        "span": {
+          "column": 34,
+          "endColumn": 83,
+          "endLine": 10,
+          "line": 10,
+        },
+      },
+      "kind": "define-condition",
+      "name": "stray-treasure",
+      "span": {
+        "column": 1,
+        "endColumn": 83,
+        "endLine": 10,
+        "line": 10,
+      },
+    },
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "predicate": {
+              "classifier": [
+                "treasure",
+              ],
+              "kind": "is-a",
+              "negated": false,
+              "span": {
+                "column": 41,
+                "endColumn": 49,
+                "endLine": 11,
+                "line": 11,
+              },
+            },
+            "span": {
+              "column": 33,
+              "endColumn": 49,
+              "endLine": 11,
+              "line": 11,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 33,
+                  "endColumn": 35,
+                  "endLine": 11,
+                  "line": 11,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "span": {
+                "column": 33,
+                "endColumn": 35,
+                "endLine": 11,
+                "line": 11,
               },
             },
           },
@@ -251,8 +251,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 71,
                 "endColumn": 73,
-                "endLine": 10,
-                "line": 10,
+                "endLine": 11,
+                "line": 11,
               },
               "thing": {
                 "article": null,
@@ -260,8 +260,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 71,
                   "endColumn": 73,
-                  "endLine": 10,
-                  "line": 10,
+                  "endLine": 11,
+                  "line": 11,
                 },
                 "words": [
                   "it",
@@ -271,8 +271,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 54,
               "endColumn": 73,
-              "endLine": 10,
-              "line": 10,
+              "endLine": 11,
+              "line": 11,
             },
             "subject": {
               "kind": "ref",
@@ -282,8 +282,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 54,
                   "endColumn": 64,
-                  "endLine": 10,
-                  "line": 10,
+                  "endLine": 11,
+                  "line": 11,
                 },
                 "words": [
                   "player",
@@ -292,8 +292,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 54,
                 "endColumn": 64,
-                "endLine": 10,
-                "line": 10,
+                "endLine": 11,
+                "line": 11,
               },
             },
           },
@@ -301,8 +301,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 33,
           "endColumn": 73,
-          "endLine": 10,
-          "line": 10,
+          "endLine": 11,
+          "line": 11,
         },
       },
       "kind": "define-condition",
@@ -310,8 +310,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 73,
-        "endLine": 10,
-        "line": 10,
+        "endLine": 11,
+        "line": 11,
       },
     },
     {
@@ -330,8 +330,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 17,
                   "endColumn": 34,
-                  "endLine": 22,
-                  "line": 22,
+                  "endLine": 23,
+                  "line": 23,
                 },
               },
               "kind": "refuse-when",
@@ -339,8 +339,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 45,
-                "endLine": 22,
-                "line": 22,
+                "endLine": 23,
+                "line": 23,
               },
             },
             {
@@ -352,8 +352,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                     "span": {
                       "column": 14,
                       "endColumn": 23,
-                      "endLine": 24,
-                      "line": 24,
+                      "endLine": 25,
+                      "line": 25,
                     },
                     "words": [
                       "match",
@@ -363,8 +363,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 34,
-                    "endLine": 24,
-                    "line": 24,
+                    "endLine": 25,
+                    "line": 25,
                   },
                   "state": "spooked",
                   "stmtWhen": null,
@@ -375,8 +375,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 25,
-                "line": 23,
+                "endLine": 26,
+                "line": 24,
               },
             },
             {
@@ -387,8 +387,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 19,
-                "endLine": 26,
-                "line": 26,
+                "endLine": 27,
+                "line": 27,
               },
               "stmtWhen": null,
             },
@@ -400,8 +400,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 24,
               "endColumn": 41,
-              "endLine": 21,
-              "line": 21,
+              "endLine": 22,
+              "line": 22,
             },
           },
           "kind": "on-clause",
@@ -411,8 +411,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 27,
-            "line": 21,
+            "endLine": 28,
+            "line": 22,
           },
         },
       ],
@@ -423,8 +423,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 21,
-              "endLine": 17,
-              "line": 16,
+              "endLine": 18,
+              "line": 17,
             },
             "value": {
               "form": "prose",
@@ -433,8 +433,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 7,
                 "endColumn": 21,
-                "endLine": 17,
-                "line": 17,
+                "endLine": 18,
+                "line": 18,
               },
               "text": "Nothing stirs.",
             },
@@ -444,8 +444,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 27,
-              "endLine": 19,
-              "line": 18,
+              "endLine": 20,
+              "line": 19,
             },
             "value": {
               "form": "prose",
@@ -454,8 +454,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 7,
                 "endColumn": 27,
-                "endLine": 19,
-                "line": 19,
+                "endLine": 20,
+                "line": 20,
               },
               "text": "Everything scatters.",
             },
@@ -466,16 +466,16 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 27,
-          "endLine": 19,
-          "line": 15,
+          "endLine": 20,
+          "line": 16,
         },
       },
       "scores": [],
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 28,
-        "line": 12,
+        "endLine": 29,
+        "line": 13,
       },
       "states": [
         {
@@ -483,8 +483,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 11,
             "endColumn": 15,
-            "endLine": 13,
-            "line": 13,
+            "endLine": 14,
+            "line": 14,
           },
         },
         {
@@ -492,8 +492,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 17,
             "endColumn": 24,
-            "endLine": 13,
-            "line": 13,
+            "endLine": 14,
+            "line": 14,
           },
         },
       ],
@@ -510,8 +510,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 10,
                   "endColumn": 19,
-                  "endLine": 42,
-                  "line": 42,
+                  "endLine": 43,
+                  "line": 43,
                 },
                 "words": [
                   "match",
@@ -524,8 +524,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 23,
                   "endColumn": 38,
-                  "endLine": 42,
-                  "line": 42,
+                  "endLine": 43,
+                  "line": 43,
                 },
                 "words": [
                   "Trophy",
@@ -535,8 +535,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 38,
-                "endLine": 42,
-                "line": 42,
+                "endLine": 43,
+                "line": 43,
               },
               "stmtWhen": null,
             },
@@ -546,8 +546,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 43,
-            "line": 41,
+            "endLine": 44,
+            "line": 42,
           },
         },
         {
@@ -558,8 +558,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 44,
-            "line": 44,
+            "endLine": 45,
+            "line": 45,
           },
           "stmtWhen": {
             "condition": "stray-treasure",
@@ -567,8 +567,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 26,
               "endColumn": 44,
-              "endLine": 44,
-              "line": 44,
+              "endLine": 45,
+              "line": 45,
             },
           },
         },
@@ -590,8 +590,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 10,
-                "endLine": 32,
-                "line": 32,
+                "endLine": 33,
+                "line": 33,
               },
               "word": "tally",
             },
@@ -599,8 +599,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 5,
             "endColumn": 10,
-            "endLine": 32,
-            "line": 32,
+            "endLine": 33,
+            "line": 33,
           },
         },
       ],
@@ -611,8 +611,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 30,
-              "endLine": 37,
-              "line": 36,
+              "endLine": 38,
+              "line": 37,
             },
             "value": {
               "form": "prose",
@@ -621,8 +621,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 7,
                 "endColumn": 30,
-                "endLine": 37,
-                "line": 37,
+                "endLine": 38,
+                "line": 38,
               },
               "text": "Every treasure is home.",
             },
@@ -632,8 +632,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 31,
-              "endLine": 39,
-              "line": 38,
+              "endLine": 40,
+              "line": 39,
             },
             "value": {
               "form": "prose",
@@ -642,8 +642,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 7,
                 "endColumn": 31,
-                "endLine": 39,
-                "line": 39,
+                "endLine": 40,
+                "line": 40,
               },
               "text": "One more for the ledger.",
             },
@@ -654,8 +654,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 31,
-          "endLine": 39,
-          "line": 35,
+          "endLine": 40,
+          "line": 36,
         },
       },
       "refusals": [
@@ -666,8 +666,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 15,
               "endColumn": 32,
-              "endLine": 33,
-              "line": 33,
+              "endLine": 34,
+              "line": 34,
             },
           },
           "kind": "when",
@@ -676,8 +676,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 47,
-            "endLine": 33,
-            "line": 33,
+            "endLine": 34,
+            "line": 34,
           },
         },
       ],
@@ -686,8 +686,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 44,
-        "line": 30,
+        "endLine": 45,
+        "line": 31,
       },
     },
     {
@@ -700,8 +700,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 26,
               "endColumn": 43,
-              "endLine": 48,
-              "line": 48,
+              "endLine": 49,
+              "line": 49,
             },
           },
           "direction": "north",
@@ -710,8 +710,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 54,
-            "endLine": 48,
-            "line": 48,
+            "endLine": 49,
+            "line": 49,
           },
         },
       ],
@@ -727,8 +727,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 47,
-            "line": 47,
+            "endLine": 48,
+            "line": 48,
           },
           "words": [
             "room",
@@ -746,8 +746,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 44,
-          "endLine": 50,
-          "line": 50,
+          "endLine": 51,
+          "line": 51,
         },
         "text": "A barn with a ledger and strong opinions.",
       },
@@ -766,8 +766,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 8,
           "endColumn": 23,
-          "endLine": 46,
-          "line": 46,
+          "endLine": 47,
+          "line": 47,
         },
         "words": [
           "Trophy",
@@ -785,8 +785,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 50,
-        "line": 46,
+        "endLine": 51,
+        "line": 47,
       },
       "spreads": [],
       "startsStates": [],
@@ -823,8 +823,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 8,
           "endColumn": 18,
-          "endLine": 52,
-          "line": 52,
+          "endLine": 53,
+          "line": 53,
         },
         "words": [
           "player",
@@ -842,8 +842,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 13,
             "endColumn": 28,
-            "endLine": 53,
-            "line": 53,
+            "endLine": 54,
+            "line": 54,
           },
           "words": [
             "Trophy",
@@ -854,8 +854,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 28,
-          "endLine": 53,
-          "line": 53,
+          "endLine": 54,
+          "line": 54,
         },
       },
       "pronouns": [],
@@ -864,8 +864,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 28,
-        "endLine": 53,
-        "line": 52,
+        "endLine": 54,
+        "line": 53,
       },
       "spreads": [],
       "startsStates": [],
@@ -902,8 +902,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 8,
           "endColumn": 22,
-          "endLine": 55,
-          "line": 55,
+          "endLine": 56,
+          "line": 56,
         },
         "words": [
           "pygmy",
@@ -926,8 +926,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                     "span": {
                       "column": 14,
                       "endColumn": 23,
-                      "endLine": 61,
-                      "line": 61,
+                      "endLine": 62,
+                      "line": 62,
                     },
                     "words": [
                       "match",
@@ -937,8 +937,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 34,
-                    "endLine": 61,
-                    "line": 61,
+                    "endLine": 62,
+                    "line": 62,
                   },
                   "state": "content",
                   "stmtWhen": null,
@@ -954,16 +954,16 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                       "span": {
                         "column": 28,
                         "endColumn": 46,
-                        "endLine": 62,
-                        "line": 62,
+                        "endLine": 63,
+                        "line": 63,
                       },
                       "value": {
                         "kind": "match",
                         "span": {
                           "column": 37,
                           "endColumn": 46,
-                          "endLine": 62,
-                          "line": 62,
+                          "endLine": 63,
+                          "line": 63,
                         },
                       },
                     },
@@ -972,8 +972,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 46,
-                    "endLine": 62,
-                    "line": 62,
+                    "endLine": 63,
+                    "line": 63,
                   },
                   "stmtWhen": null,
                 },
@@ -985,8 +985,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 50,
-                    "endLine": 63,
-                    "line": 63,
+                    "endLine": 64,
+                    "line": 64,
                   },
                   "stmtWhen": {
                     "kind": "predicate",
@@ -996,8 +996,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                       "span": {
                         "column": 44,
                         "endColumn": 50,
-                        "endLine": 63,
-                        "line": 63,
+                        "endLine": 64,
+                        "line": 64,
                       },
                       "value": {
                         "kind": "ref",
@@ -1007,8 +1007,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                           "span": {
                             "column": 44,
                             "endColumn": 50,
-                            "endLine": 63,
-                            "line": 63,
+                            "endLine": 64,
+                            "line": 64,
                           },
                           "words": [
                             "hungry",
@@ -1017,24 +1017,24 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                         "span": {
                           "column": 44,
                           "endColumn": 50,
-                          "endLine": 63,
-                          "line": 63,
+                          "endLine": 64,
+                          "line": 64,
                         },
                       },
                     },
                     "span": {
                       "column": 31,
                       "endColumn": 50,
-                      "endLine": 63,
-                      "line": 63,
+                      "endLine": 64,
+                      "line": 64,
                     },
                     "subject": {
                       "kind": "match",
                       "span": {
                         "column": 31,
                         "endColumn": 40,
-                        "endLine": 63,
-                        "line": 63,
+                        "endLine": 64,
+                        "line": 64,
                       },
                     },
                   },
@@ -1048,8 +1048,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                         "span": {
                           "column": 14,
                           "endColumn": 23,
-                          "endLine": 65,
-                          "line": 65,
+                          "endLine": 66,
+                          "line": 66,
                         },
                         "words": [
                           "match",
@@ -1062,8 +1062,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                         "span": {
                           "column": 27,
                           "endColumn": 42,
-                          "endLine": 65,
-                          "line": 65,
+                          "endLine": 66,
+                          "line": 66,
                         },
                         "words": [
                           "Trophy",
@@ -1073,8 +1073,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                       "span": {
                         "column": 9,
                         "endColumn": 42,
-                        "endLine": 65,
-                        "line": 65,
+                        "endLine": 66,
+                        "line": 66,
                       },
                       "stmtWhen": null,
                     },
@@ -1084,8 +1084,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 15,
-                    "endLine": 66,
-                    "line": 64,
+                    "endLine": 67,
+                    "line": 65,
                   },
                 },
               ],
@@ -1094,8 +1094,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 67,
-                "line": 60,
+                "endLine": 68,
+                "line": 61,
               },
             },
           ],
@@ -1106,8 +1106,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 26,
               "endColumn": 42,
-              "endLine": 59,
-              "line": 59,
+              "endLine": 60,
+              "line": 60,
             },
           },
           "kind": "on-clause",
@@ -1117,8 +1117,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 68,
-            "line": 59,
+            "endLine": 69,
+            "line": 60,
           },
         },
       ],
@@ -1131,8 +1131,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 6,
             "endColumn": 21,
-            "endLine": 56,
-            "line": 56,
+            "endLine": 57,
+            "line": 57,
           },
           "words": [
             "Trophy",
@@ -1143,8 +1143,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 56,
-          "line": 56,
+          "endLine": 57,
+          "line": 57,
         },
       },
       "pronouns": [],
@@ -1153,8 +1153,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 59,
-        "line": 55,
+        "endLine": 60,
+        "line": 56,
       },
       "spreads": [],
       "startsStates": [],
@@ -1164,8 +1164,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 11,
             "endColumn": 17,
-            "endLine": 57,
-            "line": 57,
+            "endLine": 58,
+            "line": 58,
           },
         },
         {
@@ -1173,8 +1173,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 19,
             "endColumn": 26,
-            "endLine": 57,
-            "line": 57,
+            "endLine": 58,
+            "line": 58,
           },
         },
       ],
@@ -1192,8 +1192,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 13,
-        "endLine": 77,
-        "line": 70,
+        "endLine": 78,
+        "line": 71,
       },
       "steps": [
         {
@@ -1206,8 +1206,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 45,
-                "endLine": 72,
-                "line": 72,
+                "endLine": 73,
+                "line": 73,
               },
               "stmtWhen": {
                 "condition": "alarm-trigger",
@@ -1215,8 +1215,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 28,
                   "endColumn": 45,
-                  "endLine": 72,
-                  "line": 72,
+                  "endLine": 73,
+                  "line": 73,
                 },
               },
             },
@@ -1228,8 +1228,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 54,
-                "endLine": 73,
-                "line": 73,
+                "endLine": 74,
+                "line": 74,
               },
               "stmtWhen": {
                 "kind": "predicate",
@@ -1239,8 +1239,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 47,
                     "endColumn": 54,
-                    "endLine": 73,
-                    "line": 73,
+                    "endLine": 74,
+                    "line": 74,
                   },
                   "value": {
                     "kind": "ref",
@@ -1250,8 +1250,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                       "span": {
                         "column": 47,
                         "endColumn": 54,
-                        "endLine": 73,
-                        "line": 73,
+                        "endLine": 74,
+                        "line": 74,
                       },
                       "words": [
                         "spooked",
@@ -1260,16 +1260,16 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                     "span": {
                       "column": 47,
                       "endColumn": 54,
-                      "endLine": 73,
-                      "line": 73,
+                      "endLine": 74,
+                      "line": 74,
                     },
                   },
                 },
                 "span": {
                   "column": 28,
                   "endColumn": 54,
-                  "endLine": 73,
-                  "line": 73,
+                  "endLine": 74,
+                  "line": 74,
                 },
                 "subject": {
                   "kind": "ref",
@@ -1279,8 +1279,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                     "span": {
                       "column": 28,
                       "endColumn": 43,
-                      "endLine": 73,
-                      "line": 73,
+                      "endLine": 74,
+                      "line": 74,
                     },
                     "words": [
                       "no",
@@ -1291,8 +1291,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 28,
                     "endColumn": 43,
-                    "endLine": 73,
-                    "line": 73,
+                    "endLine": 74,
+                    "line": 74,
                   },
                 },
               },
@@ -1306,8 +1306,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                     "span": {
                       "column": 14,
                       "endColumn": 23,
-                      "endLine": 75,
-                      "line": 75,
+                      "endLine": 76,
+                      "line": 76,
                     },
                     "words": [
                       "match",
@@ -1317,8 +1317,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                   "span": {
                     "column": 7,
                     "endColumn": 34,
-                    "endLine": 75,
-                    "line": 75,
+                    "endLine": 76,
+                    "line": 76,
                   },
                   "state": "content",
                   "stmtWhen": null,
@@ -1329,8 +1329,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 76,
-                "line": 74,
+                "endLine": 77,
+                "line": 75,
               },
             },
           ],
@@ -1339,8 +1339,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 71,
-            "line": 71,
+            "endLine": 72,
+            "line": 72,
           },
           "state": null,
           "timing": "at-turn",
@@ -1355,8 +1355,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 47,
-            "endLine": 81,
-            "line": 80,
+            "endLine": 82,
+            "line": 81,
           },
           "value": {
             "form": "prose",
@@ -1365,8 +1365,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 47,
-              "endLine": 81,
-              "line": 81,
+              "endLine": 82,
+              "line": 82,
             },
             "text": "The doors are sealed while treasure walks.",
           },
@@ -1376,8 +1376,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 34,
-            "endLine": 83,
-            "line": 82,
+            "endLine": 84,
+            "line": 83,
           },
           "value": {
             "form": "prose",
@@ -1388,16 +1388,16 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
                 "span": {
                   "column": 25,
                   "endColumn": 33,
-                  "endLine": 83,
-                  "line": 83,
+                  "endLine": 84,
+                  "line": 84,
                 },
               },
             ],
             "span": {
               "column": 5,
               "endColumn": 34,
-              "endLine": 83,
-              "line": 83,
+              "endLine": 84,
+              "line": 84,
             },
             "text": "Chewing sounds from {animal}.",
           },
@@ -1407,8 +1407,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 19,
-            "endLine": 85,
-            "line": 84,
+            "endLine": 86,
+            "line": 85,
           },
           "value": {
             "form": "prose",
@@ -1417,8 +1417,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 19,
-              "endLine": 85,
-              "line": 85,
+              "endLine": 86,
+              "line": 86,
             },
             "text": "Still peckish.",
           },
@@ -1428,8 +1428,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 87,
-            "line": 86,
+            "endLine": 88,
+            "line": 87,
           },
           "value": {
             "form": "prose",
@@ -1438,8 +1438,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 32,
-              "endLine": 87,
-              "line": 87,
+              "endLine": 88,
+              "line": 88,
             },
             "text": "The keeper sweeps the yard.",
           },
@@ -1449,8 +1449,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 89,
-            "line": 88,
+            "endLine": 90,
+            "line": 89,
           },
           "value": {
             "form": "prose",
@@ -1459,8 +1459,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "span": {
               "column": 5,
               "endColumn": 27,
-              "endLine": 89,
-              "line": 89,
+              "endLine": 90,
+              "line": 90,
             },
             "text": "The sign hangs steady.",
           },
@@ -1471,8 +1471,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "span": {
         "column": 1,
         "endColumn": 27,
-        "endLine": 89,
-        "line": 79,
+        "endLine": 90,
+        "line": 80,
       },
     },
   ],
@@ -1487,8 +1487,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "span": {
           "column": 3,
           "endColumn": 113,
-          "endLine": 6,
-          "line": 6,
+          "endLine": 7,
+          "line": 7,
         },
         "value": "E1 any / E2 no / E3 each + the match binder (ratchet 2026-07-12) in every approved host position.",
       },
@@ -1504,7 +1504,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     "span": {
       "column": 1,
       "endColumn": 113,
-      "endLine": 6,
+      "endLine": 7,
       "line": 1,
     },
     "states": [],
@@ -1517,7 +1517,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
   "span": {
     "column": 1,
     "endColumn": 27,
-    "endLine": 89,
+    "endLine": 90,
     "line": 1,
   },
 }

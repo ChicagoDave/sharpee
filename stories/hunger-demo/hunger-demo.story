@@ -1,6 +1,7 @@
 story
   title: The Long Cold
-  authors: DevArch
+  authors:
+    DevArch
   id: hunger-demo
   story-version: 1.0.0
   use hunger

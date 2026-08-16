@@ -35,7 +35,8 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
 // entity-local phrase override.
 const RING_STORY = `story
   title: Ring
-  authors: T
+  authors:
+    T
   id: ring
   story-version: 0.0.1
 

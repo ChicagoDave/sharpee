@@ -18,7 +18,8 @@ import { createStory, SchedulerDaemon } from '../src';
 
 const SOURCE = `story
   title: Beds
-  authors: T
+  authors:
+    T
   id: beds
   story-version: 0.0.1
 

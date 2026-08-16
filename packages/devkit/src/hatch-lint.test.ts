@@ -67,7 +67,8 @@ function lintCaseStory(extraLines: string[] = []): string {
   return [
     'story',
     '  title: Lint Case',
-    '  authors: Test',
+    '  authors:',
+    '    Test',
     '  id: lint-case',
     '  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC',
     '',

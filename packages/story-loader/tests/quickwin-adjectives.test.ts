@@ -46,7 +46,8 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
 
 const storyWith = (body: string) => `story
   title: Quickwin
-  authors: T
+  authors:
+    T
   id: quickwin
   story-version: 0.0.1
 

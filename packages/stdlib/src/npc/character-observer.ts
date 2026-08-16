@@ -48,16 +48,19 @@ export interface StateTransitionRule {
  * violence increases threat, gifts improve disposition, etc.
  */
 export const DefaultStateTransitions: StateTransitionRule[] = [
-  // Violence
+  // Violence — `npc.*` types come from the NPC combat path;
+  // `if.event.*` are the stdlib actions' emitted types (the observe
+  // sub-step feeds player-action events, ADR-310 Phase 5/7). The old
+  // `if.action.attacking` key named an event no action emits — kept out.
   { eventType: 'npc.attacked', threatDelta: 30, moodValenceDelta: -0.3, moodArousalDelta: 0.3 },
-  { eventType: 'if.action.attacking', threatDelta: 20, moodValenceDelta: -0.2, moodArousalDelta: 0.2 },
+  { eventType: 'if.event.attacked', threatDelta: 20, moodValenceDelta: -0.2, moodArousalDelta: 0.2 },
   { eventType: 'npc.killed', threatDelta: 40, moodValenceDelta: -0.5, moodArousalDelta: 0.4 },
 
   // Kindness
-  { eventType: 'if.action.giving', dispositionDelta: 10, moodValenceDelta: 0.1 },
+  { eventType: 'if.event.given', dispositionDelta: 10, moodValenceDelta: 0.1 },
 
   // Theft
-  { eventType: 'if.action.taking', dispositionDelta: -5 },
+  { eventType: 'if.event.taken', dispositionDelta: -5 },
 
   // Speech
   { eventType: 'npc.spoke', moodArousalDelta: 0.05 },

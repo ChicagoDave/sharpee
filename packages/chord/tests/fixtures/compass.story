@@ -1,6 +1,7 @@
 story
   title: Compass
-  authors: Test
+  authors:
+    Test
   id: compass
   story-version: 0.0.1
 

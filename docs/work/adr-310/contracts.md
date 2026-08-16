@@ -147,7 +147,14 @@ npcService.registerTickPhase('character-model', handler); // NpcTickPhase, npc-s
   `observeEvent`; after decay so the turn evaluates from settled state,
   before influence so the rest of the turn reacts to what the player just
   did) → **influence** → **propagation** → **goals**
-  (activation re-evaluation, step execution, obligation-generated goals) →
+  (activation re-evaluation, step execution, obligation-generated goals;
+  Phase 7 amendment, 2026-08-15 — the D16 lifecycle rule: a conversation
+  in progress suppresses STEP execution while activation still
+  re-evaluates. Both dialogue surfaces stamp `trait.activeConversation`
+  via `markConversationTurn` — the chord topic arm for any ask reaching a
+  modeled owner, the selector socket on every handled delivery — and the
+  goal sub-step skips pursuit while the stamp is fresher than the
+  lifecycle's neutral decay threshold, read through the clock seam) →
   **bookkeeping** (pressure deposits/band transitions from the turn's
   arbitrations, pin maintenance, author-channel emission). One registration,
   not three: ordering between the sub-steps is a contract, and three separate
@@ -162,10 +169,14 @@ npcService.registerTickPhase('character-model', handler); // NpcTickPhase, npc-s
 ### 2.1 The clock seam
 
 All turn arithmetic in `@sharpee/character` (mood decay, influence
-expiry, propagation pacing, pressure curve) reads time through one module —
-`character-clock.ts`, wrapping `NpcTickContext.turn` — never scattered raw
-`ctx.turn` reads. ADR-316's elapsed-time semantics, when un-deferred, changes
-one seam.
+expiry, propagation pacing, pressure curve, conversation-marker freshness)
+reads time through one module — `character-clock.ts`, wrapping
+`NpcTickContext.turn` — never scattered raw `ctx.turn` reads. ADR-316's
+elapsed-time semantics, when un-deferred, changes one seam. The
+`CHARACTER_TURN_KEY` world-state mirror and its `dialogueTurn(world)` read
+(mirror + 1 — the turn the player is acting in) live here too (Phase 7
+relocation from tick-phases; the phase remains the mirror's writer and
+re-exports the key).
 
 ### 2.2 The story oracle (Phase 5 amendment, 2026-08-15)
 
