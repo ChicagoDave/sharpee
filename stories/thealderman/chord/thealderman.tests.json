@@ -1,0 +1,46 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Alderman"
+          },
+          {
+            "id": "info.description",
+            "is": "Six suspects, one hotel, one dead alderman."
+          }
+        ]
+      },
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Foyer",
+          "The hotel foyer. Marble floors, a cold fireplace with an iron poker on its hook, and the murmur of a hotel pretending nothing has happened. The ballroom doors stand south; the bar is east, the restaurant west, and the grand staircase climbs north."
+        ]
+      },
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ballroom",
+          "The ballroom, dressed for a reception that never happened. A music stand lies toppled by the stage, and near it a dark stain has soaked into the parquet. The tall stage curtain hangs crooked. The foyer is north."
+        ]
+      },
+      "command": "s",
+      "type": "turn"
+    },
+    {
+      "command": "ask viola about the killer",
+      "skip": true,
+      "type": "turn"
+    }
+  ],
+  "seed": 42,
+  "story": "thealderman",
+  "version": 1
+}
