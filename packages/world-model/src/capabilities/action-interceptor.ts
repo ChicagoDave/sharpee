@@ -211,9 +211,23 @@ export function applyInterceptorReportResult(
 
   if (result.emit) {
     for (const effect of result.emit) {
-      events.push(context.event(effect.type, effect.payload));
+      events.push(mintEffect(effect, context));
     }
   }
+}
+
+/**
+ * Re-mint one effect as a semantic event via the action context, honoring
+ * the effect's `actor` attribution override (D9): the context stamps the
+ * acting player as `entities.actor`, which is wrong for NPC-originated
+ * effects — `effect.actor` names the entity the event is about.
+ */
+function mintEffect(effect: CapabilityEffect, context: InterceptorEventContext): ISemanticEvent {
+  const event = context.event(effect.type, effect.payload);
+  if (effect.actor !== undefined) {
+    return { ...event, entities: { ...event.entities, actor: effect.actor } };
+  }
+  return event;
 }
 
 /**
@@ -273,7 +287,7 @@ export function applyInterceptorBlockedResult(
 
   if (result.emit) {
     for (const effect of result.emit) {
-      events.push(context.event(effect.type, effect.payload));
+      events.push(mintEffect(effect, context));
     }
   }
 }

@@ -284,6 +284,47 @@ describe('Universal Capability Dispatch', () => {
       expect(events[0].type).toBe('item.taken');
       expect(events[0].data.itemName).toBe('test item');
     });
+
+    it('honors effect.actor over the context-stamped actor (D9 attribution)', () => {
+      class AttributedTrait implements ITrait {
+        static readonly type = 'test.trait.attributed';
+        static readonly capabilities = ['if.action.talking'] as const;
+        readonly type = AttributedTrait.type;
+      }
+      const attributedBehavior: CapabilityBehavior = {
+        validate: () => ({ valid: true }),
+        execute: () => {},
+        report: () => [
+          { type: 'character.author.pin_held', payload: { factId: 'killer' }, actor: 'npc-maid' },
+          { type: 'game.message', payload: { messageId: 'plain' } }
+        ],
+        blocked: () => []
+      };
+      world.registerCapabilityBehavior(AttributedTrait.type, 'if.action.talking', attributedBehavior);
+
+      const entity = createMockEntity('maid', 'the maid', [new AttributedTrait()]);
+      const check = checkCapabilityDispatch(world, 'if.action.talking', entity);
+
+      const mockContext = {
+        world,
+        player: { id: 'player-1' },
+        command: { directObject: { entity } },
+        event: (type: string, payload: any) => ({
+          type,
+          data: payload,
+          entities: { actor: 'player-1', location: 'room-1' }
+        })
+      } as unknown as ActionContext;
+
+      const validation = executeCapabilityValidate(check, mockContext);
+      mockContext.validationResult = validation;
+      const events = executeCapabilityReport(mockContext);
+
+      expect(events).toHaveLength(2);
+      expect(events[0].entities.actor).toBe('npc-maid');
+      expect(events[0].entities.location).toBe('room-1');
+      expect(events[1].entities.actor).toBe('player-1');
+    });
   });
 
   describe('executeCapabilityBlocked', () => {

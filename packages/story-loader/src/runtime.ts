@@ -106,6 +106,18 @@ export class ChordBehaviorTrait implements ITrait {
  */
 const TOPIC_GERUNDS = ['asking', 'telling'] as const;
 
+/**
+ * Flatten a semantic event into the interceptor effect envelope,
+ * carrying its actor attribution through (D9): character-model events
+ * are minted with `entities.actor` = the NPC, and the envelope's
+ * re-mint would otherwise stamp the acting player over it.
+ */
+const toEffect = (e: ISemanticEvent): CapabilityEffect => ({
+  type: e.type,
+  payload: (e.data ?? {}) as Record<string, unknown>,
+  ...(e.entities?.actor !== undefined ? { actor: e.entities.actor } : {}),
+});
+
 /** Hooks the runtime needs from the story (implemented by ChordStory). */
 export interface RuntimeHost {
   entityId(irId: string): string | undefined;
@@ -817,7 +829,7 @@ export class ChordRuntime {
               params: (payload.params as Record<string, unknown>) ?? {},
             };
           } else {
-            emit.push({ type: event.type, payload });
+            emit.push(toEffect(event));
           }
         }
         if (emit.length) result.emit = emit;
@@ -1100,10 +1112,7 @@ export class ChordRuntime {
         if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
         const gate = characterGate(world, actorId, data);
         const speaker = speakerOf(world);
-        const authorEmit: CapabilityEffect[] = (gate?.authorEvents ?? []).map((e) => ({
-          type: e.type,
-          payload: (e.data ?? {}) as Record<string, unknown>,
-        }));
+        const authorEmit: CapabilityEffect[] = (gate?.authorEvents ?? []).map(toEffect);
         if (gate?.suppress) {
           // The verdict's evasion IS the action's default reply — no
           // authored text is invented for it (ADR-310 D12), and the
@@ -1147,7 +1156,7 @@ export class ChordRuntime {
               };
             }
           } else {
-            emit.push({ type: event.type, payload });
+            emit.push(toEffect(event));
           }
         }
 
@@ -1158,7 +1167,7 @@ export class ChordRuntime {
           const claims = runtime.claimsFor(result.override.messageId);
           if (claims) {
             for (const e of recordClaimDelivery(speaker.trait, speaker.worldId, actorId, claims, runtime.dialogueTurn(world))) {
-              emit.push({ type: e.type, payload: (e.data ?? {}) as Record<string, unknown> });
+              emit.push(toEffect(e));
             }
           }
           // A delivered confided topic is a betrayal committed (D4/D12a):
@@ -1178,6 +1187,7 @@ export class ChordRuntime {
               emit.push({
                 type: 'character.author.act_witnessed',
                 payload: { act: 'betray a confidence', topic: aliased.derivedTopic, learned },
+                actor: speaker.worldId,
               });
             }
           }
@@ -1195,6 +1205,7 @@ export class ChordRuntime {
                 band: speaker.trait.pressure.band,
                 ...(transition ? { transition } : {}),
               },
+              actor: speaker.worldId,
             });
           }
         }
@@ -1283,11 +1294,11 @@ export class ChordRuntime {
       report(entity, world, actorId, data): CapabilityEffect[] {
         if (data.chordSkip === true) return [];
         const events = runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data, 'reports'), 'reports');
-        return events.map((e) => ({ type: e.type, payload: (e.data ?? {}) as Record<string, unknown> }));
+        return events.map(toEffect);
       },
       blocked(entity, world, actorId, error, data): CapabilityEffect[] {
         const event = runtime.phraseEvent(error, ctxOf(entity, world, actorId, data));
-        return [{ type: event.type, payload: (event.data ?? {}) as Record<string, unknown> }];
+        return [toEffect(event)];
       },
     };
   }
@@ -1362,7 +1373,7 @@ export class ChordRuntime {
           if (clause.clauseKind === 'on' && event.type === 'chord.phrase' && !result.override) {
             result.override = { messageId: String(payload.messageId), params: (payload.params as Record<string, unknown>) ?? {} };
           } else {
-            emit.push({ type: event.type, payload });
+            emit.push(toEffect(event));
           }
         }
         if (emit.length) result.emit = emit;
@@ -1539,7 +1550,13 @@ export class ChordRuntime {
         const events: ISemanticEvent[] = [];
         if (entity && behavior) {
           const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
-          events.push(...effects.map((e) => context.event(e.type, e.payload)));
+          // The same D9 attribution override as the engine's
+          // effectsToEvents: context.event stamps the acting player,
+          // which is wrong for NPC-originated effects.
+          events.push(...effects.map((e) => {
+            const event = context.event(e.type, e.payload);
+            return e.actor !== undefined ? { ...event, entities: { ...event.entities, actor: e.actor } } : event;
+          }));
         }
         if (def.body.length) {
           events.push(...runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'reports'), 'reports'));
@@ -1550,6 +1567,11 @@ export class ChordRuntime {
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
+        // Known gap (D9 verification, 2026-08-16): this dispatcher never
+        // calls behavior.blocked() — a trait capability behavior bound to
+        // a custom Chord action gets only the authored otherwise/refusal
+        // rendering below. Pre-existing; wire behavior.blocked() here if
+        // a story ever needs its effects on this path.
         const key = result.error ?? def.otherwise ?? 'cant';
         // Platform default (Phase 8 #13): `'cant'` is the built-in fallback
         // key for an action with no authored `otherwise`/refusal — no story

@@ -212,6 +212,20 @@ describe('the mint rule and the pin (ADR-318 D9) through the real ask path', () 
     expect(trait.pressure.value).toBeGreaterThan(afterMint);
     expect(eventOfType(r, 'character.author.pin_held')).toBeDefined();
   });
+
+  it('author events reach the stream attributed to the NPC, not the player (D9)', () => {
+    const l = load();
+    const first = ask(l, 'the killer'); // mint
+    const maidId = entity(l, 'maid').id;
+    const mint = eventOfType(first, 'character.author.ledger_mint');
+    expect(mint).toBeDefined();
+    expect(mint!.entities.actor).toBe(maidId);
+
+    const second = ask(l, 'the killer'); // maintenance → pin_held
+    const pin = eventOfType(second, 'character.author.pin_held');
+    expect(pin).toBeDefined();
+    expect(pin!.entities.actor).toBe(maidId);
+  });
 });
 
 describe('the confided-reveal arbitration gate (ADR-318 D4/D12a) through the real ask path', () => {

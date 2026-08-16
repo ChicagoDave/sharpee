@@ -8928,11 +8928,23 @@ export interface CapabilityEffect {
     type: string;
     /** Event payload */
     payload: Record<string, any>;
+    /**
+     * Attribution override: the entity this event is ABOUT, when it is not
+     * the acting player. The re-mint sites (applyInterceptorReportResult /
+     * applyInterceptorBlockedResult, and the engine's capability-dispatch
+     * effectsToEvents) stamp the action context's entities onto every
+     * effect — actor = the player — which misattributes NPC-originated
+     * events (character-model author events flattened through this
+     * envelope lost their `entities.actor` before this field existed).
+     * When set, the re-minted event's `entities.actor` is this id; the
+     * context's target/location stamps are preserved.
+     */
+    actor?: string;
 }
 /**
  * Helper to create effects (mirrors event-processor's emit)
  */
-export declare function createEffect(type: string, payload: Record<string, any>): CapabilityEffect;
+export declare function createEffect(type: string, payload: Record<string, any>, actor?: string): CapabilityEffect;
 ```
 
 ### capabilities/capability-behavior

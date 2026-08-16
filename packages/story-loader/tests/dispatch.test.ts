@@ -101,6 +101,28 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     expect(world.getScore()).toBe(5);
   });
 
+  it('custom-action dispatch honors effect.actor attribution (D9)', () => {
+    // Last-wins re-registration (ADR-207): stand in an NPC-attributed
+    // behavior for the pettable trait on this test's own world.
+    world.registerCapabilityBehavior('chord.trait.pettable', 'chord.action.petting', {
+      validate: () => ({ valid: true }),
+      execute: () => {},
+      report: () => [
+        { type: 'character.author.pin_held', payload: { factId: 'x' }, actor: 'npc-goat' },
+        { type: 'game.message', payload: { messageId: 'plain' } },
+      ],
+      blocked: () => [],
+    });
+    const petting = actions.get('chord.action.petting')!;
+    const { validation, events } = run(petting, entity('pygmy-goats'));
+    expect(validation.valid).toBe(true);
+    const pin = events.find((e) => e.type === 'character.author.pin_held');
+    expect(pin, 'attributed effect re-minted').toBeDefined();
+    expect(pin!.entities.actor).toBe('npc-goat');
+    const plain = events.find((e) => e.type === 'game.message');
+    expect(plain!.entities.actor, 'no-actor effect keeps context stamping').toBeUndefined();
+  });
+
   it('pet the snake: refused with the glass-way phrase, nothing mutated', () => {
     const petting = actions.get('chord.action.petting')!;
     const { validation, events } = run(petting, entity('garden-snake'));
