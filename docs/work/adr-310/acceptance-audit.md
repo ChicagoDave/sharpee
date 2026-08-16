@@ -1,6 +1,7 @@
 # ADR-310 / ADR-318 Acceptance Audit (Phase 7)
 
-**Date**: 2026-08-15 (session 0f32bb). Carried from Phase 6: "AC-by-AC coverage audit
+**Date**: 2026-08-15 (session 0f32bb); refreshed 2026-08-16 (session a6c809 — final
+qualifier sweep). Carried from Phase 6: "AC-by-AC coverage audit
 (which acceptance criteria the transcripts/tests discharge vs. what closure still owes)."
 Evidence is cited to the file that asserts it; "unit" means package tests, "bundle"
 means a transcript through `dist/cli/sharpee.js`.
@@ -11,8 +12,8 @@ means a transcript through `dist/cli/sharpee.js`.
 |----|-------------------|--------|----------------|
 | 1 | Round-trip per construct (D2–D10, D14) | **DISCHARGED** | `character/tests/roundtrip/compiled-roundtrip.test.ts` (13 descriptive), `normative-roundtrip.test.ts` (8 normative), `thealderman-port.test.ts` — Phase 3/4 exit states |
 | 2 | Behavior end-to-end in a **purpose-built story**, bundle transcript: threat → panicked voice, no model word player-visible | **DISCHARGED** | Closed 2026-08-15 (session 0f32bb): `stories/character-acceptance/` — frozen mechanical fixture (one room, one Witness: confided secret, `never betrays a confidence`, `duty over fear`, panicked/calm phrasebook pair). `b1-witness.transcript` (8 steps via `dist/cli/sharpee.js`): calm voice → refusal-as-default-reply → attack → **panicked voice with 7 not-contains model-word assertions** → cornered → still refuses. Building it exposed and fixed TWO platform defects: (1) D3 `change mood`/`change feeling` compiled and silently dropped — `execCharacterTransition` added to the runtime statement switch (ledger-recorded from→to replayed as `npc.character.*` author rows; loud LoadError on a model-less owner); (2) `DefaultStateTransitions` keyed dead event names (`if.action.attacking/giving/taking`) — rekeyed to the real wire types (`if.event.attacked/given/taken`), making threat/mood/disposition observation live in play for the first time. Tests: `character-transitions.test.ts` (2, real attackingAction, trait-state assertions); suites stdlib 1616 / story-loader 497 / character 405; turbo 65/65; thealderman 53 + Dungeo 952 byte-stable post-change. |
-| 3 | Goals live; conversation **suspends pursuit** (D16 lifecycle rule) | **DISCHARGED (unit)** | Activation/step execution: `character/tests/goals/goals.test.ts`, `tick-phases/oracle-goals.test.ts`. Suspension implemented 2026-08-15 (session 0f32bb, David's go-ahead): `trait.activeConversation` marker (D17-serialized; rides the world-model rehydration test) stamped by both dialogue surfaces (`conversation-marker.ts`; chord topic arm in `story-loader/src/runtime.ts` postReport; selector socket in `selector.ts`); `executeNpcGoals` skips step execution while the marker is fresher than the lifecycle's neutral decay threshold, activation still re-evaluating. Tests: `conversation-marker.test.ts` (6), `conversation-suppression.test.ts` (3 — goalState step held while suppressed, resumes after the window), selector +1, `character-dialogue.test.ts` +1 (real ask path, row hits and misses). Suites 2026-08-15: character 405 passing, world-model 1479 passing, story-loader 495 passing. |
-| 4 | Influence resolves both ways, Margaret's except included | **DISCHARGED (unit)** | `character/tests/influence/influence.test.ts:93–205` (resisted vs applied, except conditional both directions). Verify the `resisted`/`witnessed` **phrase** firing leg when building the AC2 fixture (status is asserted; phrase selection rides the phrasebook). |
+| 3 | Goals live; conversation **suspends pursuit** (D16 lifecycle rule) | **DISCHARGED** | Bundle legs closed 2026-08-16 with the D6 movement build (sessions 55a70a/dc1312): `b3-seek-out.transcript` — the seek-out goal activates at breaking, stays suspended through continued asks (D16), holds through the 4-turn window after the player leaves, then the Steward walks to the Hall and the rendered confession line appears (`character.goal.step` LIVE per wiring-audit §2); `b3-seek-out-recycle.transcript` proves the re-edge cycle. Unit legs: activation/step execution `character/tests/goals/goals.test.ts`, `tick-phases/oracle-goals.test.ts`. Suspension implemented 2026-08-15 (session 0f32bb, David's go-ahead): `trait.activeConversation` marker (D17-serialized; rides the world-model rehydration test) stamped by both dialogue surfaces (`conversation-marker.ts`; chord topic arm in `story-loader/src/runtime.ts` postReport; selector socket in `selector.ts`); `executeNpcGoals` skips step execution while the marker is fresher than the lifecycle's neutral decay threshold, activation still re-evaluating. Tests: `conversation-marker.test.ts` (6), `conversation-suppression.test.ts` (3 — goalState step held while suppressed, resumes after the window), selector +1, `character-dialogue.test.ts` +1 (real ask path, row hits and misses). Suites 2026-08-15: character 405 passing, world-model 1479 passing, story-loader 495 passing. |
+| 4 | Influence resolves both ways, Margaret's except included | **DISCHARGED** | `character/tests/influence/influence.test.ts:93–205` (resisted vs applied, except conditional both directions). Phrase-firing leg closed 2026-08-16 by the D8 edge-minting fix (session 55a70a) + expired arm (dc1312): both authored phrase keys ride as `messageId` on the minted events (`tick-phases.ts:811` resisted, `:824` witnessed) and are asserted through the real tick — `character-model-phase.test.ts:203–244` (resisted edge mints once with `messageId: 'colonel-looms-unfazed'`, no re-mint while resistance holds; witnessed leg in the same describe). Rendered-in-play evidence: D8 live probe ("The room gets quieter…" once on entry, silence on wait, re-fires on re-entry) and `influence-expiry.transcript` renders an authored influence phrase through the bundle (thealderman suite). |
 | 5 | Propagation moves the claim **value**; B's dialogue reflects it with B's own confidence/source | **DISCHARGED** | Designing the composed test (2026-08-15, session 2aea28) found the composition unimplemented, not just unasserted: `transferFact` never read `factBeliefs` — the value did not travel (the criterion's named failure mode). Fixed same session with David's sign-off (G5a in `gap-closure-design.md`): the belief value rides the transfer at the receives-downgraded confidence, `source: 'told'`, never displacing a held belief. Tests: `propagation.test.ts` "310-AC5" describe (5 — value received with B's own confidence/source; honest repeat mints nothing; claiming against it mints a pinned lie; no displacement; token-only without a speaker belief). Mutation-verification clean, all five GREEN. Character 414 passing, per-package tsc clean (2026-08-15). |
 | 6 | Named diagnostics compile errors | **DISCHARGED** | Phase 3 exit (chord tests: unknown personality word, misspelled fact value, theory-of-mind, phrasebook tie `analysis.phrasebook-tie`) |
 | 7 | Save/restore (belief, mood, goal step) on trait state | **DISCHARGED** | `story-loader/tests/character-loading.test.ts` through the real `SaveRestoreService` (Phase 5) |
@@ -25,8 +26,8 @@ means a transcript through `dist/cli/sharpee.js`.
 |----|-------------------|--------|----------------|
 | 1 | B1 threatened Witness, 4 variants; **transcript test** | **DISCHARGED** | Unit legs: `arbiter.test.ts:43–107`. Transcript legs closed 2026-08-15 with the AC2 fixture: `b1-witness.transcript` (leg 1 — refuses even cornered), `b1-no-principle.transcript` (leg 2 — complies at once; variant file differs from the base by exactly the deleted principle line + id), `b1-no-temperament.transcript` (legs 3–4 — refuses under no fear, complies at cornered; the climb uses the real observe path, 4 witnessed attacks × 20 threat). 15 transcript steps, all passing via the bundle. |
 | 2 | B2 audience discriminator + `honor over duty` vs `duty over honor` orderings | **DISCHARGED** | Audience legs: `arbiter.test.ts:128–156` (empty room backs down, regiment refuses). Ordering-flip legs closed 2026-08-15 (session 2aea28): two `it`s in the same B2 describe — same demand/audience/0.7-baseline collision, `honor over duty` → refuse (brazen-out, obligation defeat deposited), `duty over honor` → comply (public confession, no deposit). Character 409 passing. |
-| 3 | B3 bands climb, strained voice at `burdened`, crack at `breaking`, seek-out goal only outside conversation; **band pinned via forcing** | **DISCHARGED (except the forcing clause — David's amendment ruling pending)** | Climb + crack: `conscience-breaking.transcript` (thealderman) and `b3-breaking-crack.transcript` (b3 fixture — deflect below the band at 0 AND at burdened, crack on the first ask after crossing 70). Strained voice: `b3-strained-voice.transcript` — the band-gated phrasebook takes the neutral topic exactly at the crossing deposit (negative control one deposit earlier), no model word. Seek-out ∘ D16: `b3-seek-out.transcript` — goal active at breaking stays suppressed through continued asks, holds through the 4-turn window after the player leaves, then the Steward seeks the player into the Hall and confesses there (required the D6 fix; probes 2026-08-15, transcripts 2026-08-16, 26 steps in 3 transcripts, all passing via the bundle at seed 42, first run). Forcing: the transcripts use deterministic deposits — the clause names the wrong mechanism (deposits are not random draws); amendment proposal in gap-closure-design.md G4, David's call. |
-| 4 | B4 witnessed face-act reaches a **third NPC via propagation**, derived topic + scene alias | **DISCHARGED (unit)** | Witnessing/minting on co-located observers with alias: `observe-substep.test.ts:127,152`; `act-detection.test.ts:177+` (witnessActs). Composed leg closed 2026-08-15 (session 2aea28): `tick-phases/face-act-propagation.test.ts` — observe → propagation → selection, third NPC two rooms from the act, same ASK flips from unknown-topic to the gated line; both legs (scene alias, derived name); assertions on received-fact trait state + told-record. |
+| 3 | B3 bands climb, strained voice at `burdened`, crack at `breaking`, seek-out goal only outside conversation; **band pinned via forcing** | **DISCHARGED** | Climb + crack: `conscience-breaking.transcript` (thealderman) and `b3-breaking-crack.transcript` (b3 fixture — deflect below the band at 0 AND at burdened, crack on the first ask after crossing 70). Strained voice: `b3-strained-voice.transcript` — the band-gated phrasebook takes the neutral topic exactly at the crossing deposit (negative control one deposit earlier), no model word. Seek-out ∘ D16: `b3-seek-out.transcript` — goal active at breaking stays suppressed through continued asks, holds through the 4-turn window after the player leaves, then the Steward seeks the player into the Hall and confesses there (required the D6 fix; probes 2026-08-15, transcripts 2026-08-16, 26 steps in 3 transcripts, all passing via the bundle at seed 42, first run). Forcing clause resolved 2026-08-16: the ADR-318 AC3 text was amended in the amendment batch (commit `9366a5e4`) to name the deterministic deposit ladder instead of `forces:` pinning — the transcripts' mechanism now matches the criterion as written. |
+| 4 | B4 witnessed face-act reaches a **third NPC via propagation**, derived topic + scene alias | **DISCHARGED (unit)** | Witnessing/minting on co-located observers with alias: `observe-substep.test.ts:127,152`; `act-detection.test.ts:177+` (witnessActs). Composed leg closed 2026-08-15 (session 2aea28): `tick-phases/face-act-propagation.test.ts` — observe → propagation → selection, third NPC two rooms from the act, same ASK flips from unknown-topic to the gated line; both legs (scene alias, derived name); assertions on received-fact trait state + told-record. Supporting bundle leg (2026-08-16, dc1312): `propagation-witnessed.transcript` pins propagation rendering in play with clean prose ("Catherine Shelby mentions something to Chelsea Sumner." — no model word), seed-independent at 7/42/99999. |
 | 5 | B7+B5 pinned lie survives disposition warmth + save/restore; honest disagreement mints nothing; caught-lying fires face-act | **DISCHARGED** | `conversation/selector.test.ts:74–145` (mint+deposit, honest no-mint, pin holds under drift, re-delivery no duplicate); restore-pinned-liar via real SaveRestoreService (Phase 5); `lie-and-pin.transcript` (bundle); caught-lying face-act vocabulary + reveal-site betrayal: `act-detection.test.ts:58,154`; wt-01 program confrontation (bundle). |
 | 6 | Paralysis → evasion + author-channel warning naming both | **DISCHARGED (unit)** | `arbiter.test.ts:158+` (verdict names both feeds); `arbiter/reveal.ts:92–95` emits `character.author.paralysis_warning`; author-channel projection `stdlib/tests/channels/character-author.test.ts`. |
 | 7 | Every diagnostic a compile error | **DISCHARGED** | Phase 4 exit (chord tests: unknown force/category/face-act/band, temperament tie, burdened-unheld, unknown claim value). |
@@ -34,14 +35,11 @@ means a transcript through `dist/cli/sharpee.js`.
 
 ## What closure owes (work list)
 
-1. **AC2 fixture story** (`stories/` — frozen mechanical fixture, never revised): discharges
-   310-AC2, the 318-AC1 transcript leg, and hosts the 310-AC4 phrase-firing verification.
-   Bundle transcripts included. Variant sources for 318-AC1's deletion legs.
-2. **310-AC8 channel isolation** — assertion at the channel layer in a built story.
-3. **310-AC9 regression** — capture Dungeo chain + Fernhill output on this branch vs main,
-   byte-compare (single run, pinned seed).
-4. **318-AC8 cost regression** — no-layer story IR byte-compare vs main; thealderman
-   character-block line counts within 3–6.
+1. ~~**AC2 fixture story**~~ — CLOSED 2026-08-15 (session 0f32bb): `stories/character-acceptance/`
+   frozen fixture + variant sources; see 310-AC2 and 318-AC1 rows.
+2. ~~**310-AC8 channel isolation**~~ — CLOSED 2026-08-15 (session 0f32bb); see 310-AC8 row.
+3. ~~**310-AC9 regression**~~ — CLOSED 2026-08-16 (session 2aea28); see 310-AC9 row.
+4. ~~**318-AC8 cost regression**~~ — CLOSED 2026-08-16 (session 2aea28); see 318-AC8 row.
 5. **Unit additions**: ~~318-AC2 ordering flip~~, ~~318-AC4 third-NPC composition~~,
    ~~310-AC5 composed test~~ — all CLOSED 2026-08-15 (session 2aea28). AC5 required the
    G5a platform fix first (belief value never transferred — the fifth real defect this
@@ -52,9 +50,26 @@ means a transcript through `dist/cli/sharpee.js`.
    318-AC3's seek-out transcript leg is now unblocked (item 7).
 7. ~~**318-AC3 remaining legs**~~ — CLOSED 2026-08-16 (session 2aea28): `b3-conscience`
    fixture story + 3 transcripts (strained voice, crack, seek-out∘D16 — the last
-   unblocked by the D6 fix). Only the forcing-clause wording remains, an ADR amendment
-   pending David's ruling, not a test gap.
+   unblocked by the D6 fix). The forcing-clause wording landed in the 2026-08-16
+   amendment batch (`9366a5e4`) — no residue.
 8. **IDE author-channel polish** (Phase 2 raw readout → Chord Writer panel; David's Phase 2
-   ownership ruling).
-9. **`tsf build --npm`** across chord, character, world-model, stdlib, plugin-npc,
-   story-loader, engine (whichever the branch touched).
+   ownership ruling). **The only remaining Phase 7 item.**
+9. ~~**`tsf build --npm`**~~ — RETIRED 2026-08-16 (David's ruling): tsf is for version
+   bumps only; npm-publish builds run in the GitHub CI workflow, never as a local
+   regression/acceptance leg. The plan's Phase 7 deliverable line is superseded by
+   this ruling.
+
+## Verdict (2026-08-16, session a6c809)
+
+All 9 ADR-310 criteria and all 8 ADR-318 criteria are **DISCHARGED**, evidence inline
+per row. No "(unit)" qualifier survives except 318-AC4/AC6, whose criteria name no
+transcript harness — their composed unit legs assert on real trait state through the
+real tick, satisfying the criteria as written. The acceptance sections of both ADRs
+owe nothing further; Phase 7's sole remaining deliverable is item 8 (IDE
+author-channel polish).
+
+Same-session confirmation run (2026-08-16, `dist/cli/sharpee.js`, seed as pinned per
+transcript): thealderman 75 passing in 9 transcripts; b1 fixture 15 passing
+(8 `b1-witness` + 1 `b1-no-principle` + 6 `b1-no-temperament`, each against its own
+variant story per the transcript headers); b3 fixture 63 passing in 5 transcripts —
+byte-consistent with the counts recorded by sessions 55a70a/dc1312.

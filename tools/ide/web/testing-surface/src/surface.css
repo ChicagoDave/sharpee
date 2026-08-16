@@ -21,6 +21,7 @@
   --ts-accent:   #1E66F5;
   --ts-assert:   #40A02B;
   --ts-fail:     #D20F39;
+  --ts-warn:     #DF8E1D;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -34,6 +35,7 @@
     --ts-accent:   #89B4FA;
     --ts-assert:   #A6E3A1;
     --ts-fail:     #F38BA8;
+    --ts-warn:     #F9E2AF;
   }
 }
 
@@ -174,6 +176,58 @@ body.ts-active .sharpee-window { display: none; }
 }
 .ts-assert-line:hover .ts-assert-delete { visibility: visible; }
 .ts-assert-delete:hover { color: var(--ts-fail); }
+
+/* "Explain this NPC's turn" (ADR-318 D11): the turn's character-model rows,
+   under the assertions behind the same rule-line idiom. Observation chrome —
+   never document content. */
+.ts-character {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ts-border);
+}
+.ts-npc-toggle { white-space: nowrap; }
+.ts-character-npc {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-accent);
+  padding: 3px 0 1px;
+}
+.ts-character-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+  padding: 1px 0 1px 10px;
+}
+.ts-character-line .ts-character-text {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.ts-character-line:hover .ts-character-text { color: var(--ts-fg); }
+.ts-character-line.ts-warn .ts-character-text { color: var(--ts-warn); font-weight: 700; }
+.ts-character-assert {
+  visibility: hidden;
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+  background: transparent;
+  border: 1px solid var(--ts-border);
+  border-radius: 4px;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.ts-character-line:hover .ts-character-assert { visibility: visible; }
+.ts-character-assert:hover { color: var(--ts-assert); border-color: var(--ts-assert); }
+.ts-character-raw {
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint);
+  padding: 1px 0 3px 20px;
+  overflow-wrap: anywhere;
+}
 
 /* The client's input bar rides in the surface's chrome — a dark story
    theme paints its prompt (and typed text) white, which vanishes on the

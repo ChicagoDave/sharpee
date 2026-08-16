@@ -52,6 +52,9 @@ export interface DigestEntityRef {
 /** One non-room, non-player entity and where it sits (the unseen slice). */
 export interface WorldDigestEntity {
   kind: 'npc' | 'item';
+  /** The entity's world id — the key author-channel rows (`npcId`) carry,
+   *  so the testing surface can resolve a row to this entity's name. */
+  id: string;
   name: string;
   token: string;
   location: DigestEntityRef;

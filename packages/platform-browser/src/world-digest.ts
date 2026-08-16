@@ -80,6 +80,7 @@ export function buildWorldDigest(world: WorldModel, engine: PluginHost): WorldDi
     const ref = digestEntityRef(entity);
     entities.push({
       kind: entity.has?.(TraitType.ACTOR) ? 'npc' : 'item',
+      id: entity.id,
       name: ref.name,
       token: ref.token,
       location: digestEntityRef(location),

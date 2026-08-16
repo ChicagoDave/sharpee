@@ -18,6 +18,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
+import type { ExplainGroup } from './character';
 import type { DeleteRef, SourceLine } from './compose';
 import type { TreeSessionModel } from './model';
 import type { RunColumnState, TranscriptRunResult } from './run';
@@ -51,6 +52,12 @@ export interface CardsDelegate {
   runColumn(): RunColumnState;
   /** The card's assertion lines (authored claims or live defaults). */
   assertionLines(ordinal: number): SourceLine[];
+  /** The turn's per-NPC explain groups (ADR-318 D11) — empty when the turn
+   *  had no character-model activity. */
+  characterExplain(ordinal: number): ExplainGroup[];
+  /** A panel line's ✓ — assert this character event as a channel claim on
+   *  the card (the claim's fragments pin the event; the run validates it). */
+  onAssertCharacter(ordinal: number, fragments: string[]): void;
   /** A line's ✕ — delete that assertion through its DeleteRef. */
   onRemoveAssertion(del: DeleteRef): void;
   /** The region a room belongs to (Story IR), or undefined — grouping
@@ -68,6 +75,11 @@ interface CardRow {
   asserts: HTMLElement;
   exactButton: HTMLButtonElement | null;
   branchButton: HTMLButtonElement | null;
+  /** The card's "explain this NPC's turn" section (ADR-318 D11). */
+  character: HTMLElement;
+  characterButton: HTMLButtonElement;
+  /** Panel open state — view ephemera, per card, never persisted. */
+  characterOpen: boolean;
 }
 
 /** One contiguous run of same-region cards on the active path. `region`
@@ -362,7 +374,13 @@ export class CardsView {
     const asserts = document.createElement('div');
     asserts.className = 'ts-asserts';
     asserts.style.display = 'none';
-    block.append(meta, proseHost, asserts);
+    // "Explain this NPC's turn" (ADR-318 D11): under the assertions, filled
+    // by render() while the toggle is open. Observation only — nothing here
+    // touches the document.
+    const character = document.createElement('div');
+    character.className = 'ts-character';
+    character.style.display = 'none';
+    block.append(meta, proseHost, asserts, character);
 
     // The action row: assertion gestures for THIS turn. The buttons write
     // into the card's assertion list in the document.
@@ -432,6 +450,21 @@ export class CardsView {
       this.delegate.onChannelPicker(ordinal, channelButton));
     actions.appendChild(channelButton);
 
+    // The NPC toggle: shown by render() only when the turn carried
+    // character-model rows (the author channel is sparse), with the count.
+    const characterButton = document.createElement('button');
+    characterButton.className = 'ts-npc-toggle';
+    characterButton.style.display = 'none';
+    characterButton.title =
+      "Explain this turn's character-model activity — forces, lies, conscience, transitions";
+    characterButton.addEventListener('click', () => {
+      const card = this.cards.get(ordinal);
+      if (!card) return;
+      card.characterOpen = !card.characterOpen;
+      this.renderCharacter(card, ordinal);
+    });
+    actions.appendChild(characterButton);
+
     let branchButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
       branchButton = document.createElement('button');
@@ -449,7 +482,10 @@ export class CardsView {
     column.append(block);
     row.append(column);
     this.host.appendChild(row);
-    this.cards.set(ordinal, { row, asserts, exactButton, branchButton });
+    this.cards.set(ordinal, {
+      row, asserts, exactButton, branchButton,
+      character, characterButton, characterOpen: false,
+    });
   }
 
   /** Re-fills one card's assertion list from the delegate's composed lines.
@@ -476,6 +512,66 @@ export class CardsView {
         row.appendChild(remove);
       }
       card.asserts.appendChild(row);
+    }
+  }
+
+  /**
+   * Re-fills one card's NPC panel (ADR-318 D11). The toggle shows only when
+   * the turn carried character rows; the panel body renders while open —
+   * per-NPC groups, one line per model event, the raw payload folding out
+   * on a line click. Rows never change after delivery, so rebuilding per
+   * render stays cheap and keeps one repaint path.
+   */
+  private renderCharacter(card: CardRow, ordinal: number): void {
+    const groups = this.delegate.characterExplain(ordinal);
+    const total = groups.reduce((n, group) => n + group.lines.length, 0);
+    card.characterButton.style.display = total === 0 ? 'none' : '';
+    card.characterButton.textContent = `NPC ×${total}`;
+    card.characterButton.classList.toggle('ts-active', card.characterOpen);
+    const open = card.characterOpen && total > 0;
+    card.character.style.display = open ? '' : 'none';
+    if (!open) return;
+
+    card.character.innerHTML = '';
+    for (const group of groups) {
+      const head = document.createElement('div');
+      head.className = 'ts-character-npc';
+      head.textContent = group.npcLabel;
+      card.character.appendChild(head);
+      for (const line of group.lines) {
+        const row = document.createElement('div');
+        row.className = `ts-character-line${line.tone === 'warn' ? ' ts-warn' : ''}`;
+        const text = document.createElement('span');
+        text.className = 'ts-character-text';
+        text.textContent = line.text;
+        text.title = 'Click for the raw payload';
+        let raw: HTMLElement | null = null;
+        text.addEventListener('click', () => {
+          if (raw) {
+            raw.remove();
+            raw = null;
+            return;
+          }
+          raw = document.createElement('div');
+          raw.className = 'ts-character-raw';
+          raw.textContent = line.raw;
+          row.after(raw);
+        });
+        row.appendChild(text);
+        if (line.fragments.length > 0) {
+          const assert = document.createElement('button');
+          assert.className = 'ts-character-assert';
+          assert.textContent = 'assert';
+          assert.title =
+            'Assert this event — a channel claim on `character` the test run validates';
+          assert.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.delegate.onAssertCharacter(ordinal, line.fragments);
+          });
+          row.appendChild(assert);
+        }
+        card.character.appendChild(row);
+      }
     }
   }
 
@@ -572,6 +668,7 @@ export class CardsView {
         this.model.claimsOf(ordinal)?.exact !== undefined,
       );
       this.renderAssertions(card, ordinal);
+      this.renderCharacter(card, ordinal);
     }
 
     this.renderBranchRows(points);
