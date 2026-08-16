@@ -140,4 +140,86 @@ describe('Phase 5 — compiled conditions through the story oracle', () => {
     registerGoal({ waitForCompiled: COMPILED_COND });
     expect(() => runPhase(registry, world, npc, room, player)).toThrow(/no story oracle is bound/);
   });
+
+  describe('discharge on outlet-goal completion (ADR-318 D8; seam-2 ruling)', () => {
+    function registerDischargeGoal() {
+      registry.register(npc.id, {
+        goalDefs: [{
+          id: 'confess',
+          activatesWhen: [],
+          activeWhenCompiled: COMPILED_COND,
+          discharges: true,
+          priority: 'high',
+          mode: 'sequential',
+          steps: [{ type: 'act', messageId: 'blurt' }],
+        }],
+      });
+    }
+
+    /** Oracle mirroring the real band gate: true iff the NPC is at breaking. */
+    function bandOracle(trait: CharacterModelTrait): CompiledStoryOracle {
+      return {
+        evalCondition: () => trait.pressure.band === 'breaking',
+        isKindMember: () => false,
+      };
+    }
+
+    it('completing the outlet drains the curve and emits pressure_drain', () => {
+      registerDischargeGoal();
+      const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      trait.setPressure(75, 'breaking');
+      registry.setOracle(bandOracle(trait));
+
+      const events = runPhase(registry, world, npc, room, player);
+
+      expect(trait.pressure).toEqual({ value: 0, band: 'clear' });
+      expect(trait.goalState['confess'].active).toBe(false);
+      const drain = events.find(e => e.type === 'character.author.pressure_drain');
+      expect(drain?.data).toMatchObject({
+        goalId: 'confess', value: 0, band: 'clear',
+        transition: { from: 'breaking', to: 'clear' },
+      });
+    });
+
+    it('after discharge the goal stays quiet; a genuine re-break re-edges, re-confesses, re-drains', () => {
+      registerDischargeGoal();
+      const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      trait.setPressure(75, 'breaking');
+      registry.setOracle(bandOracle(trait));
+
+      runPhase(registry, world, npc, room, player); // confess + drain
+
+      // Drained → the condition reads false → conditionHeld drops; no
+      // re-activation, no steps, no second drain on quiet ticks
+      const quiet = runPhase(registry, world, npc, room, player);
+      expect(trait.goalState['confess'].active).toBe(false);
+      expect(quiet.some(e => e.type === 'character.goal.step')).toBe(false);
+      expect(quiet.some(e => e.type === 'character.author.pressure_drain')).toBe(false);
+
+      // Breaking is weather: pressure rebuilt → rising edge → the outlet
+      // runs again and drains again
+      trait.setPressure(80, 'breaking');
+      const again = runPhase(registry, world, npc, room, player);
+      expect(again.some(e => e.type === 'character.goal.step')).toBe(true);
+      expect(again.some(e => e.type === 'character.author.pressure_drain')).toBe(true);
+      expect(trait.pressure).toEqual({ value: 0, band: 'clear' });
+    });
+
+    it('a non-discharging goal completing never drains', () => {
+      registry.register(npc.id, {
+        goalDefs: [{
+          id: 'errand', activatesWhen: [], activeWhenCompiled: COMPILED_COND,
+          priority: 'high', mode: 'sequential', steps: [{ type: 'act', messageId: 'speak' }],
+        }],
+      });
+      const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+      trait.setPressure(75, 'breaking');
+      registry.setOracle(bandOracle(trait));
+
+      const events = runPhase(registry, world, npc, room, player);
+
+      expect(trait.pressure).toEqual({ value: 75, band: 'breaking' });
+      expect(events.some(e => e.type === 'character.author.pressure_drain')).toBe(false);
+    });
+  });
 });

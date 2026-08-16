@@ -734,8 +734,13 @@ export class CharacterModelTrait implements ITrait {
   }
 
   /**
-   * Release ledger pins — on an authored break or a `breaking` discharge
-   * (ADR-318 D8/D9). With no filter, every pin releases.
+   * Release ledger pins (ADR-318 D9; seam-3 per-audience ruling
+   * 2026-08-16). Release is per (audience, fact): a pin dies when its own
+   * audience gets the truth — told or caught — or on an authored break,
+   * for which this method IS the surface (TS stories and event handlers;
+   * no Chord statement until a story needs one). Discharge drains the
+   * curve, never the ledger. With no filter, every pin releases — the
+   * whole-performance collapse an author invokes deliberately.
    *
    * @param filter - Optional audience and/or fact to narrow the release
    */

@@ -1,0 +1,59 @@
+title: The crack discharges — and the weather can turn again
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: ADR-318 D8 seam-2 ruling (2026-08-16) — delivering the
+  breaking-gated crack line IS the confession: the curve drains, so the
+  next ask gets the deflect again (no verbatim re-fire), and rebuilt
+  pressure cracks again (breaking is weather; the platform remembers
+  nothing).
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b3-conscience.story
+    stories/character-acceptance/tests/transcripts/b3-crack-discharge.transcript
+
+---
+
+# Five maintained lies climb to breaking (15..75)
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# The crack fires — and discharges
+> ask steward about the truth
+[OK: contains "Stop. Stop asking. I doctored them"]
+
+# Drained: the very next ask deflects again — no verbatim re-fire
+> ask steward about the truth
+[OK: contains "whatever the books say"]
+[OK: not contains "Stop asking"]
+
+# The performance resumes: the lie still delivers, and still costs
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# Rebuilt to breaking: the crack fires again — weather, not a one-shot
+> ask steward about the truth
+[OK: contains "Stop. Stop asking. I doctored them"]

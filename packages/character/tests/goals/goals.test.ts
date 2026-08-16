@@ -545,10 +545,11 @@ describe('Goal state — trait persistence', () => {
     expect(manager.isActive(trait, 'test')).toBe(false);
     expect(trait.goalState['test']).toEqual({
       active: false, currentStep: 0, paused: false, interrupted: false, prepared: false,
+      conditionHeld: true,
     });
   });
 
-  it('should reset pursuit state on completion so re-activation starts clean', () => {
+  it('does NOT re-activate a completed goal while its condition holds (edge-triggered)', () => {
     const manager = new GoalManager();
     manager.registerGoal({
       id: 'test',
@@ -565,11 +566,63 @@ describe('Goal state — trait persistence', () => {
     expect(manager.isActive(trait, 'test')).toBe(false);
     expect(trait.goalState['test']).toEqual({
       active: false, currentStep: 0, paused: false, interrupted: false, prepared: false,
+      conditionHeld: true,
     });
 
-    // Conditions still hold → re-activates at step 0
+    // Condition held continuously since activation → no rising edge → the
+    // completed goal stays inactive, however many turns pass.
+    manager.evaluate(trait);
+    manager.evaluate(trait);
+    expect(manager.isActive(trait, 'test')).toBe(false);
+    expect(trait.goalState['test'].conditionHeld).toBe(true);
+  });
+
+  it('re-activates at step 0 only after the condition drops and returns', () => {
+    const manager = new GoalManager();
+    manager.registerGoal({
+      id: 'test',
+      activatesWhen: ['threatened'],
+      priority: 'critical',
+      mode: 'sequential',
+      steps: [{ type: 'act', messageId: 'attack' }],
+    });
+
+    const trait = makeTrait({ threat: 'threatened' });
+    manager.evaluate(trait);
+    manager.advanceStep(trait, 'test'); // completes; condition still true
+
+    // Condition drops: the sample records false, still inactive
+    trait.setThreat('none');
+    manager.evaluate(trait);
+    expect(manager.isActive(trait, 'test')).toBe(false);
+    expect(trait.goalState['test'].conditionHeld).toBe(false);
+
+    // Condition returns: rising edge → fresh pursuit from step 0
+    trait.setThreat('threatened');
     manager.evaluate(trait);
     expect(manager.isActive(trait, 'test')).toBe(true);
     expect(trait.goalState['test'].currentStep).toBe(0);
+    expect(trait.goalState['test'].conditionHeld).toBe(true);
+  });
+
+  it('a goal with no activation condition runs exactly once', () => {
+    const manager = new GoalManager();
+    manager.registerGoal({
+      id: 'errand',
+      activatesWhen: [], // vacuously true every turn
+      priority: 'medium',
+      mode: 'sequential',
+      steps: [{ type: 'act', messageId: 'speak' }],
+    });
+
+    const trait = makeTrait({});
+    manager.evaluate(trait);
+    expect(manager.isActive(trait, 'errand')).toBe(true);
+
+    manager.advanceStep(trait, 'errand'); // completes
+
+    // An empty condition can never re-edge — the goal never re-runs
+    for (let i = 0; i < 5; i++) manager.evaluate(trait);
+    expect(manager.isActive(trait, 'errand')).toBe(false);
   });
 });

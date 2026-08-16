@@ -1,0 +1,37 @@
+title: The pin yields to the crack
+story: thealderman
+author: Sharpee Team
+description: ADR-318 D9 seam-4 contract (ruling 2026-08-16) — the pin
+  holds the maintained lie consistent only below breaking. A player who
+  heard the whereabouts lie FIRST (pinning the very fact the confession
+  claims) still gets the confession at breaking: the pin stops gating
+  through the crack. Before the fix this path deflected forever.
+
+---
+
+> south
+[OK: contains "Ballroom"]
+
+# The whereabouts lie is told first — minting the pin on the same fact
+# the confession will claim (whereabouts: theatre vs ballroom)
+> ask viola about the alibi
+[OK: contains "McVicker's"]
+
+# Four more maintained lies climb the curve to breaking (15..75)
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+> ask viola about the killer
+[OK: contains "Some accident"]
+
+# At breaking the pin no longer gates: the confession claims the pinned
+# fact's true value and still escapes
+> ask viola about the truth
+[OK: contains "the cord was in my hands"]
+[OK: not contains "a role like any other"]

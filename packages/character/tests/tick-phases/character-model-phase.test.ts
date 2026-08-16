@@ -134,8 +134,10 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
     expect(maidTrait.hasTold(cook.id, 'murder')).toBe(true);
 
     // Goal sub-step: single-step goal fired its witnessed act and completed
+    // (conditionHeld: the edge sample that activated it — seam-1 ruling)
     expect(cookTrait.goalState['greet']).toEqual({
       active: false, currentStep: 0, paused: false, interrupted: false, prepared: false,
+      conditionHeld: true,
     });
     expect(events.some(e => e.type === 'character.goal.step')).toBe(true);
   });

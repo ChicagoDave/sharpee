@@ -71,15 +71,19 @@ export function depositPressure(
 
 /**
  * Drain the curve on a discharge — confession ends the losing collisions
- * (D8). Resets value and band and releases every ledger pin (a `breaking`
- * discharge unpins; being broken is a state only an author writes).
+ * (D8). Resets value and band ONLY. The ledger is deliberately untouched
+ * (seam-3 per-audience ruling 2026-08-16): a pin releases when its own
+ * audience gets the truth — told (recordClaimDelivery's release branch)
+ * or caught (the caught-lying face-act, ruled-but-dormant) — or on an
+ * authored break (`trait.unpinLedger`). A global unpin here would
+ * silently evaporate maintained lies to absent audiences, which D9
+ * forbids. Being broken is a state only an author writes.
  *
- * @param trait - The character's trait (mutated: pressure reset, pins released)
+ * @param trait - The character's trait (mutated: pressure reset)
  * @returns The band transition if the drain crossed one, else undefined
  */
 export function drainPressure(trait: CharacterModelTrait): BandTransition | undefined {
   const from = trait.pressure.band;
   trait.setPressure(0, 'clear');
-  trait.unpinLedger();
   return from !== 'clear' ? { from, to: 'clear' } : undefined;
 }

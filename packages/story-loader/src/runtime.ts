@@ -20,7 +20,7 @@
  */
 import type { IRActionDef, IRCondition, IREmitField, IREmitValue, IREntity, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
-import { normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
+import { conditionRequiresSelfBreaking, normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
 import { PHRASEBOOK_DATA } from './phrasebook-data.js';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -52,6 +52,7 @@ import {
   arbitrateConfidedReveal,
   createAuthorEvent,
   dialogueTurn,
+  drainPressure,
   markConversationTurn,
   pinAllowsClaim,
   recordClaimDelivery,
@@ -942,6 +943,30 @@ export class ChordRuntime {
     const runtime = this;
     const rows = entity.topics ?? [];
 
+    // Seam-2 ruling (2026-08-16): a phrase line provably gated on the
+    // owner's OWN `breaking` band is the in-conversation crack — its
+    // delivery discharges (drains the curve; pins release per audience
+    // via the claims path, seam 3). The gate IS the marker. Computed once
+    // per row at build; keyed by phrase key = the delivered messageId.
+    const dischargeKeys: Set<string>[] = rows.map((row) => {
+      const keys = new Set<string>();
+      const walk = (stmts: IRStatement[]): void => {
+        for (const s of stmts) {
+          if (s.kind === 'phrase' && s.stmtWhen && conditionRequiresSelfBreaking(s.stmtWhen, entity.id)) {
+            keys.add(s.phraseKey);
+          } else if (s.kind === 'ordinal' || s.kind === 'each') {
+            walk(s.body);
+          } else if (s.kind === 'select-on') {
+            for (const arm of s.arms) walk(arm.body);
+          } else if (s.kind === 'select-strategy') {
+            for (const alt of s.alternatives) walk(alt);
+          }
+        }
+      };
+      walk(row.body);
+      return keys;
+    });
+
     /** Match once per firing; memoized on the consultation's sharedData. */
     const rowIndexFor = (data: InterceptorSharedData): number => {
       if (typeof data.chordTopicRow === 'number') return data.chordTopicRow;
@@ -1093,8 +1118,9 @@ export class ChordRuntime {
         // the shared filter rule, one semantics with the TS dialogue
         // extension. A row whose only passing line contradicts the pin
         // delivers nothing (the default reply is the deflection); the
-        // maintained lie never evaporates because the truth line can
-        // never escape.
+        // maintained lie never evaporates below `breaking`, where the
+        // pin stops gating and the truth can escape through the crack
+        // (seam-4 ruling 2026-08-16).
         if (speaker) {
           reports = reports.filter((event) => {
             if (event.type !== 'chord.phrase') return true;
@@ -1154,6 +1180,22 @@ export class ChordRuntime {
                 payload: { act: 'betray a confidence', topic: aliased.derivedTopic, learned },
               });
             }
+          }
+          // Seam-2 ruling (2026-08-16): delivering the breaking-gated
+          // crack line IS the confession — the curve drains to `clear`
+          // (curve only; the claims path above already released this
+          // audience's pin when the line told the truth, seam 3).
+          if (dischargeKeys[rowIndexFor(data)]?.has(result.override.messageId)) {
+            const transition = drainPressure(speaker.trait);
+            emit.push({
+              type: 'character.author.pressure_drain',
+              payload: {
+                npcId: speaker.worldId,
+                value: speaker.trait.pressure.value,
+                band: speaker.trait.pressure.band,
+                ...(transition ? { transition } : {}),
+              },
+            });
           }
         }
 

@@ -73,31 +73,38 @@ export class GoalManager {
    * @returns The current active goal queue (priority-sorted, interrupted last)
    */
   evaluate(trait: CharacterModelTrait, evalCompiled?: CompiledConditionEval): ActiveGoal[] {
-    // Check for new activations
+    // Check for new activations. Edge-triggered (seam-1 ruling 2026-08-16):
+    // a goal activates only on the false→true transition of its condition,
+    // sampled in `state.conditionHeld`. A completed goal whose condition
+    // held throughout (or is empty, hence vacuously true forever) does not
+    // re-run; it re-runs only after the condition drops and returns. An
+    // active goal keeps the sample that activated it — its pursuit spans
+    // any unobserved dips.
     for (const def of this.defs) {
       const state = trait.getGoalState(def.id);
       if (state.active) continue;
 
-      let shouldActivate = def.activatesWhen.every(pred =>
+      let held = def.activatesWhen.every(pred =>
         trait.evaluate(pred),
       );
-      if (shouldActivate && def.activeWhenCompiled !== undefined) {
+      if (held && def.activeWhenCompiled !== undefined) {
         if (!evalCompiled) {
           // ADR-310 Phase 5: refuse loudly — silent false would strand the goal.
           throw new Error(
             `Goal \`${def.id}\` carries a compiled activation condition but no story oracle is bound.`,
           );
         }
-        shouldActivate = evalCompiled(def.activeWhenCompiled);
+        held = evalCompiled(def.activeWhenCompiled);
       }
 
-      if (shouldActivate) {
+      if (held && state.conditionHeld !== true) {
         state.active = true;
         state.currentStep = 0;
         state.paused = false;
         state.interrupted = false;
         state.prepared = false;
       }
+      state.conditionHeld = held;
     }
 
     const activeGoals = this.getActiveGoals(trait);

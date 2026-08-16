@@ -26,6 +26,7 @@ import type {
 } from '@sharpee/world-model';
 import { MOOD_AXES, applyMoodModifier } from '@sharpee/world-model';
 import type { IRCharacter, IRGoalStep, IRMoodDef, IRWordDef, IRScopeRef, IRTemperamentDef } from '@sharpee/chord';
+import { conditionRequiresSelfBreaking } from '@sharpee/chord';
 import { CharacterBuilder } from './character-builder.js';
 import { applyCharacter, AppliedCharacter } from './apply.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
@@ -206,7 +207,13 @@ export function applyCompiledCharacter(
     gb.priority(g.priority as GoalPriority)
       .mode('sequential')
       .pursues(g.steps.map((s) => mapGoalStep(s, resolve)));
-    if (g.activeWhen !== null) gb.activeWhenCompiled(g.activeWhen);
+    if (g.activeWhen !== null) {
+      gb.activeWhenCompiled(g.activeWhen);
+      // Seam-2 ruling (2026-08-16): a goal provably gated on the owner's
+      // own `breaking` band is a conscience outlet — completing it
+      // discharges. The gate IS the marker; no authored surface.
+      if (conditionRequiresSelfBreaking(g.activeWhen)) gb.discharges();
+    }
     gb.done();
   }
   for (const inf of data.influences) {

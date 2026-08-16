@@ -5316,8 +5316,13 @@ export declare class CharacterModelTrait implements ITrait {
      */
     getActivePin(audience: string, factId: string): LedgerEntry | undefined;
     /**
-     * Release ledger pins — on an authored break or a `breaking` discharge
-     * (ADR-318 D8/D9). With no filter, every pin releases.
+     * Release ledger pins (ADR-318 D9; seam-3 per-audience ruling
+     * 2026-08-16). Release is per (audience, fact): a pin dies when its own
+     * audience gets the truth — told or caught — or on an authored break,
+     * for which this method IS the surface (TS stories and event handlers;
+     * no Chord statement until a story needs one). Discharge drains the
+     * curve, never the ledger. With no filter, every pin releases — the
+     * whole-performance collapse an author invokes deliberately.
      *
      * @param filter - Optional audience and/or fact to narrow the release
      */
@@ -5634,6 +5639,15 @@ export interface GoalRuntimeState {
     interrupted: boolean;
     /** Prepared-mode: preparatory steps complete, now opportunistic. */
     prepared?: boolean;
+    /**
+     * Last sampled truth of the goal's activation condition (seam-1 ruling
+     * 2026-08-16). Activation requires a rising edge — condition true now,
+     * not true at the previous sample — so a completed goal whose condition
+     * held throughout does not re-run; it re-runs only after the condition
+     * goes false and comes back. Absent = never sampled (a true first
+     * sample is an edge, preserving first-turn activation).
+     */
+    conditionHeld?: boolean;
 }
 /**
  * An influence effect currently in force. Serializable relocation of the

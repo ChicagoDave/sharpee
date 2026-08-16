@@ -431,6 +431,15 @@ export interface GoalRuntimeState {
   interrupted: boolean;
   /** Prepared-mode: preparatory steps complete, now opportunistic. */
   prepared?: boolean;
+  /**
+   * Last sampled truth of the goal's activation condition (seam-1 ruling
+   * 2026-08-16). Activation requires a rising edge — condition true now,
+   * not true at the previous sample — so a completed goal whose condition
+   * held throughout does not re-run; it re-runs only after the condition
+   * goes false and comes back. Absent = never sampled (a true first
+   * sample is an edge, preserving first-turn activation).
+   */
+  conditionHeld?: boolean;
 }
 
 // ---------------------------------------------------------------------------

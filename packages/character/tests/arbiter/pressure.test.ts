@@ -85,8 +85,8 @@ describe('depositPressure (D8: guilt is the ledger of defeats)', () => {
   });
 });
 
-describe('drainPressure (D8: discharge resets the curve; D9: it unpins)', () => {
-  it('resets value and band and releases every ledger pin', () => {
+describe('drainPressure (D8: discharge resets the curve — and ONLY the curve)', () => {
+  it('resets value and band; the ledger is untouched (seam-3 per-audience ruling)', () => {
     const trait = new CharacterModelTrait();
     trait.setPressure(80, 'breaking');
     trait.mintLedgerEntry({
@@ -97,9 +97,10 @@ describe('drainPressure (D8: discharge resets the curve; D9: it unpins)', () => 
     const transition = drainPressure(trait);
 
     expect(trait.pressure).toEqual({ value: 0, band: 'clear' });
-    expect(trait.ledger.every(e => !e.pinned)).toBe(true);
-    // The entry itself survives — the platform remembers the lie, not the strain
+    // Discharge drains the curve, never the ledger: the inspector never
+    // got the truth, so the maintained lie to them keeps its pin
     expect(trait.ledger).toHaveLength(1);
+    expect(trait.ledger[0].pinned).toBe(true);
     expect(transition).toEqual({ from: 'breaking', to: 'clear' });
   });
 

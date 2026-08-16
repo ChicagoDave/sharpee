@@ -935,11 +935,21 @@ export declare class TopicRegistry {
  *
  * - Pin rule: a pinned claim to an audience forbids delivering a line
  *   whose claim contradicts the pinned value — mood and disposition
- *   drift cannot evaporate a maintained lie.
+ *   drift cannot evaporate a maintained lie. The hold lasts exactly as
+ *   far as D9 says: at the speaker's own `breaking` band the pin stops
+ *   gating (seam-4 ruling 2026-08-16), so the truth can escape through
+ *   the crack whatever order the lies were told in. Gating suspension is
+ *   not release — the entry stays pinned (release is seam 3's question).
  * - Mint rule: delivering a line whose claim contradicts the speaker's
  *   own held belief mints a pinned ledger entry; honest assertion mints
  *   nothing (disagreement is not lying); every pinned delivery — mint or
- *   maintenance — is a duty defeat feeding conscience pressure.
+ *   maintenance of the pinned value — is a duty defeat feeding
+ *   conscience pressure. Honestly contradicting one's own pin (only
+ *   reachable at breaking) is neither: no mint, no maintenance, no cost —
+ *   it is the truth reaching the lie's audience, and it releases exactly
+ *   that pin (seam-3 ruling 2026-08-16: release is PER AUDIENCE — pins to
+ *   audiences who never got the truth keep holding; discharge drains the
+ *   curve, never the ledger).
  *
  * Public interface: pinAllowsClaim, recordClaimDelivery, ClaimTag.
  * Owner context: @sharpee/character / conversation
@@ -958,7 +968,10 @@ export interface ClaimTag {
  * @param trait - The speaker's trait
  * @param audienceId - Who the line would be delivered to
  * @param claims - The line's claim tag, if any
- * @returns False exactly when a pin to this audience holds a different value
+ * @returns False exactly when a pin to this audience holds a different
+ *   value AND the speaker is below `breaking` — at breaking the pin no
+ *   longer gates (ADR-318 D9: the hold lasts "until … conscience
+ *   breaking"; seam-4 ruling 2026-08-16)
  */
 export declare function pinAllowsClaim(trait: CharacterModelTrait, audienceId: string, claims: ClaimTag | undefined): boolean;
 /**
@@ -2477,6 +2490,14 @@ export interface GoalDef {
      * the Phase 5 loader wiring.
      */
     activeWhenCompiled?: IRCondition;
+    /**
+     * This goal is a conscience outlet (ADR-318 D8; seam-2 ruling
+     * 2026-08-16): its sequential completion discharges — drains the
+     * pressure curve to `clear`. Stamped by the loader when `active when`
+     * is provably self-breaking-gated (`conditionRequiresSelfBreaking`);
+     * TS-builder stories may set it directly.
+     */
+    discharges?: boolean;
     /** Predicate conditions that interrupt (suspend) this goal. */
     interruptedBy?: string[];
     /** Goal priority. */
@@ -2841,6 +2862,7 @@ export declare class GoalBuilder<TParent extends {
     private readonly _finalize;
     private readonly _activatesWhen;
     private _activeWhenCompiled?;
+    private _discharges?;
     private readonly _interruptedBy;
     private _priority;
     private _mode;
@@ -2872,6 +2894,13 @@ export declare class GoalBuilder<TParent extends {
      * @returns this for chaining
      */
     activeWhenCompiled(condition: IRCondition): GoalBuilder<TParent>;
+    /**
+     * Mark this goal a conscience outlet (ADR-318 D8; seam-2 ruling): its
+     * sequential completion drains the pressure curve.
+     *
+     * @returns this for chaining
+     */
+    discharges(): GoalBuilder<TParent>;
     /**
      * Set goal priority.
      *
@@ -3944,10 +3973,15 @@ export declare function pressureBandFor(value: number): PressureBand;
 export declare function depositPressure(trait: CharacterModelTrait, verdict: ArbiterVerdict): BandTransition | undefined;
 /**
  * Drain the curve on a discharge — confession ends the losing collisions
- * (D8). Resets value and band and releases every ledger pin (a `breaking`
- * discharge unpins; being broken is a state only an author writes).
+ * (D8). Resets value and band ONLY. The ledger is deliberately untouched
+ * (seam-3 per-audience ruling 2026-08-16): a pin releases when its own
+ * audience gets the truth — told (recordClaimDelivery's release branch)
+ * or caught (the caught-lying face-act, ruled-but-dormant) — or on an
+ * authored break (`trait.unpinLedger`). A global unpin here would
+ * silently evaporate maintained lies to absent audiences, which D9
+ * forbids. Being broken is a state only an author writes.
  *
- * @param trait - The character's trait (mutated: pressure reset, pins released)
+ * @param trait - The character's trait (mutated: pressure reset)
  * @returns The band transition if the drain crossed one, else undefined
  */
 export declare function drainPressure(trait: CharacterModelTrait): BandTransition | undefined;

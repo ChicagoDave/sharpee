@@ -111,6 +111,100 @@ describe('the lie ledger through the selector (ADR-318 D9)', () => {
     expect(result.messageId).not.toBe('steward-truth');
   });
 
+  it('the pin still gates below breaking — burdened is not the crack (seam 4)', () => {
+    dialogue.handleAsk('steward', 'the crime', 'player'); // mints the pin
+    trait.setPressure(45, 'burdened');
+    trait.registerPredicate('protecting-self', () => false);
+
+    const result = dialogue.handleAsk('steward', 'the crime', 'player');
+
+    expect(result.messageId).not.toBe('steward-truth');
+  });
+
+  it('at breaking the pin stops gating: the truth escapes through the crack (D9/seam 4)', () => {
+    dialogue.handleAsk('steward', 'the crime', 'player'); // mints the pin
+    expect(trait.ledger).toHaveLength(1);
+    trait.setPressure(75, 'breaking');
+    trait.registerPredicate('protecting-self', () => false);
+
+    const result = dialogue.handleAsk('steward', 'the crime', 'player');
+
+    expect(result.messageId).toBe('steward-truth');
+  });
+
+  it('the escaping truth is neither mint nor maintenance: no cost, and it releases the pin (seams 4+3)', () => {
+    dialogue.handleAsk('steward', 'the crime', 'player'); // mints the pin (deposit 15)
+    trait.setPressure(75, 'breaking');
+    trait.registerPredicate('protecting-self', () => false);
+
+    const result = dialogue.handleAsk('steward', 'the crime', 'player');
+
+    expect(result.messageId).toBe('steward-truth');
+    // Honest contradiction of the speaker's own pin: no second ledger
+    // entry, no pin_held, no pressure deposit — and the truth reaching
+    // this audience releases their pin (seam-3 per-audience ruling);
+    // the entry survives unpinned (the platform remembers the lie)
+    expect(trait.ledger).toHaveLength(1);
+    expect(trait.ledger[0].pinned).toBe(false);
+    expect(trait.pressure.value).toBe(75);
+    const types = (result.authorEvents ?? []).map(e => e.type);
+    expect(types).toEqual(['character.author.pin_released']);
+    expect(result.authorEvents![0].data).toMatchObject({
+      audience: 'player', factId: 'the-killer',
+      claimedValue: 'nobody', heldValue: 'the-master',
+    });
+  });
+
+  it('release is per audience: confessing to one audience leaves the other lie pinned (seam 3)', () => {
+    // The same lie maintained to two audiences: two pins
+    dialogue.handleAsk('steward', 'the crime', 'player');
+    dialogue.handleAsk('steward', 'the crime', 'ross');
+    expect(trait.ledger).toHaveLength(2);
+
+    // The crack: truth told to the player only
+    trait.setPressure(75, 'breaking');
+    trait.registerPredicate('protecting-self', () => false);
+    const result = dialogue.handleAsk('steward', 'the crime', 'player');
+    expect(result.messageId).toBe('steward-truth');
+
+    const playerPin = trait.ledger.find(e => e.audience === 'player')!;
+    const rossPin = trait.ledger.find(e => e.audience === 'ross')!;
+    expect(playerPin.pinned).toBe(false);
+    expect(rossPin.pinned).toBe(true);
+
+    // Below breaking again (a future discharge): the confessed audience
+    // keeps the truth; the unconfessed audience's pin still gates it
+    trait.setPressure(0, 'clear');
+    expect(dialogue.handleAsk('steward', 'the crime', 'player').messageId).toBe('steward-truth');
+    expect(dialogue.handleAsk('steward', 'the crime', 'ross').messageId).not.toBe('steward-truth');
+  });
+
+  it('a differently-valued lie at breaking still costs but mints no second entry (seam 4)', () => {
+    // Steward believes the-master did it; pinned lie says nobody. At
+    // breaking he lies differently: claims it was the-butler.
+    dialogue.handleAsk('steward', 'the crime', 'player'); // pin: nobody (deposit 15)
+    trait.setPressure(75, 'breaking');
+    const responses = stewardData();
+    responses.responses.set('asked about the crime', [
+      authored(candidate({
+        action: 'lie', messageId: 'steward-blames-butler',
+        claims: { factId: 'the-killer', value: 'the-butler' },
+      })),
+    ]);
+    const d = new CharacterModelDialogue();
+    d.registerNpc('steward', responses, trait, () => 6);
+
+    const result = d.handleAsk('steward', 'the crime', 'player');
+
+    expect(result.messageId).toBe('steward-blames-butler');
+    // Lying costs (one more 15-point duty defeat) — but the ledger
+    // lifecycle is unchanged while a pin exists (seam 3's question)
+    expect(trait.ledger).toHaveLength(1);
+    expect(trait.pressure.value).toBe(90);
+    const types = (result.authorEvents ?? []).map(e => e.type);
+    expect(types).toEqual(['character.author.pressure_deposit']);
+  });
+
   it('a lying delivery carries author-channel events (D11)', () => {
     const result = dialogue.handleAsk('steward', 'the crime', 'player');
 

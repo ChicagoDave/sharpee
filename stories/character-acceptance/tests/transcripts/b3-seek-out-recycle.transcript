@@ -1,0 +1,93 @@
+title: The confession goal discharges and can recycle
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Seams 1+2 composed (rulings 2026-08-16) — completing the
+  breaking-gated seek-out goal drains the curve; edge-triggered
+  activation keeps it quiet afterward (no re-blurt loop); a genuinely
+  rebuilt break re-edges the goal and the Steward seeks the player out
+  again. Note he confesses IN the Hall and stays there.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b3-conscience.story
+    stories/character-acceptance/tests/transcripts/b3-seek-out-recycle.transcript
+
+---
+
+# Five maintained lies climb to breaking; walk away; the conversation
+# window lapses and the confession goal fires in the Hall
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> north
+[OK: contains "Hall"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: contains "cannot carry it any longer"]
+
+# Discharged + edge-triggered: quiet, no re-blurt loop
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+# He followed the player to the Hall and stays — rebuild the pressure
+# right here with five more maintained lies
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# Walk away again; the re-break re-edges the goal — he seeks the player
+# out a second time (breaking is weather)
+> south
+[OK: contains "Parlor"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: contains "cannot carry it any longer"]

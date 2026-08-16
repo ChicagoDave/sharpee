@@ -52,6 +52,7 @@ import {
   evaluateGoalStep,
   SimpleRoomGraph,
 } from './goals/index.js';
+import { drainPressure } from './arbiter/pressure.js';
 import {
   InfluenceDef,
   ResistanceDef,
@@ -607,6 +608,21 @@ function executeNpcGoals(
 
   if (stepResult.status === 'completed' && applied) {
     manager.advanceStep(trait, activeGoal.def.id);
+
+    // Seam-2 ruling (2026-08-16): completing a breaking-gated outlet goal
+    // IS the confession — the curve drains (curve only; pins release per
+    // audience, seam 3). Edge-triggered activation (seam 1) then keeps
+    // the goal quiet until a genuine re-break re-edges it.
+    if (activeGoal.def.discharges && !manager.isActive(trait, activeGoal.def.id)) {
+      const transition = drainPressure(trait);
+      events.push(createEvent('character.author.pressure_drain', {
+        npcId: npc.id,
+        goalId: activeGoal.def.id,
+        value: trait.pressure.value,
+        band: trait.pressure.band,
+        ...(transition ? { transition } : {}),
+      }, npc.id));
+    }
   }
 }
 

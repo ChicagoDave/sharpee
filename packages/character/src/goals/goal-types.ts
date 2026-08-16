@@ -141,6 +141,15 @@ export interface GoalDef {
    */
   activeWhenCompiled?: IRCondition;
 
+  /**
+   * This goal is a conscience outlet (ADR-318 D8; seam-2 ruling
+   * 2026-08-16): its sequential completion discharges — drains the
+   * pressure curve to `clear`. Stamped by the loader when `active when`
+   * is provably self-breaking-gated (`conditionRequiresSelfBreaking`);
+   * TS-builder stories may set it directly.
+   */
+  discharges?: boolean;
+
   /** Predicate conditions that interrupt (suspend) this goal. */
   interruptedBy?: string[];
 
