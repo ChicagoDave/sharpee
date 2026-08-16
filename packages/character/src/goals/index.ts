@@ -25,6 +25,7 @@ export {
   type ActiveGoal,
   type MovementProfile,
   type StepResult,
+  type StepMutation,
   GOAL_PRIORITY_VALUES,
 } from './goal-types.js';
 

@@ -45,6 +45,13 @@ export interface TransferResult {
  * ('suspects') — the fold of the retired standalone belief map
  * (ADR-310 D14).
  *
+ * When the speaker holds a *valued belief* about the topic, the value
+ * travels too (ADR-310 D10/D14, AC5 — propagation moves a claim, not a
+ * token): the listener receives the speaker's held value at the same
+ * receives-downgraded confidence, `source: 'told'`. A belief the
+ * listener already holds is never displaced — belief revision is D14
+ * resistance territory, not the transfer's job.
+ *
  * @param transfer - The transfer to apply
  * @param speakerTrait - The speaker's CharacterModelTrait (told-record home)
  * @param listenerTrait - The listener's CharacterModelTrait
@@ -60,17 +67,25 @@ export function transferFact(
   receivesAs: ReceivesAs = 'as fact',
 ): TransferResult {
   const source = `told by ${transfer.speakerId}`;
+  const confidence = receivesAs === 'as fact' ? 'believes' : 'suspects';
 
   // Check if listener already knows this topic
   const alreadyKnew = listenerTrait.knows(transfer.topic);
 
   if (!alreadyKnew) {
-    listenerTrait.addFact(
-      transfer.topic,
-      'told',
-      receivesAs === 'as fact' ? 'believes' : 'suspects',
-      turn,
-    );
+    listenerTrait.addFact(transfer.topic, 'told', confidence, turn);
+  }
+
+  // The claim value rides the transfer when the speaker holds one
+  const heldBelief = speakerTrait.getFactBelief(transfer.topic);
+  if (heldBelief && !listenerTrait.hasFactBelief(transfer.topic)) {
+    listenerTrait.setFactBelief(transfer.topic, {
+      value: heldBelief.value,
+      confidence,
+      source: 'told',
+      turnLearned: turn,
+      resistance: 'none',
+    });
   }
 
   // Record on the speaker's told-record (even if the listener already knew,

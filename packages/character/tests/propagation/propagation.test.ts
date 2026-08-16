@@ -14,6 +14,9 @@ import {
 } from '../../src/propagation/propagation-evaluator';
 import { PropagationProfile } from '../../src/propagation/propagation-types';
 import { transferFact, applyTransfers } from '../../src/propagation/fact-transfer';
+import { CharacterModelDialogue } from '../../src/conversation/dialogue-extension';
+import type { ConversationData, AuthoredResponse } from '../../src/conversation/builder';
+import type { ResponseCandidate } from '../../src/conversation/response-types';
 import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
@@ -492,6 +495,146 @@ describe('Fact transfer — provenance', () => {
 
     // But still recorded on the speaker's told-record
     expect(speakerTrait.hasTold('cook', 'murder')).toBe(true);
+  });
+});
+
+// ===========================================================================
+// 310-AC5 — propagation moves a claim, not a token
+// ===========================================================================
+
+describe('310-AC5 — the claim value travels with the transfer', () => {
+  /** A saw it: thinks the killer is the Butler, certain. */
+  function makeSpeakerTrait(): CharacterModelTrait {
+    const trait = makeTrait({
+      knowledge: {
+        'the-killer': { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
+      },
+    });
+    trait.setFactBelief('the-killer', {
+      value: 'the-butler', confidence: 'certain', source: 'witnessed',
+      turnLearned: 0, resistance: 'none',
+    });
+    return trait;
+  }
+
+  /** B's topic table: one row per claimed value of `the-killer`. */
+  function listenerDialogue(
+    listenerTrait: CharacterModelTrait,
+    claimedValue: string,
+  ): CharacterModelDialogue {
+    const candidate: ResponseCandidate = {
+      action: 'tell', constraints: [], messageId: `colonel-says-${claimedValue}`,
+      claims: { factId: 'the-killer', value: claimedValue },
+    };
+    const responses = new Map<string, AuthoredResponse[]>();
+    responses.set('asked about the killer', [{ candidate } as AuthoredResponse]);
+    const dialogue = new CharacterModelDialogue();
+    dialogue.registerNpc('colonel', {
+      topics: [{ name: 'the killer', keywords: ['killer'] }],
+      responses,
+      initiatives: [],
+    } as unknown as ConversationData, listenerTrait, () => 7);
+    return dialogue;
+  }
+
+  /** The real pipeline: A's spreads line → evaluator → transfer, as belief. */
+  function propagateToListener(
+    speakerTrait: CharacterModelTrait,
+    listenerTrait: CharacterModelTrait,
+  ): void {
+    const speaker: RoomOccupant = {
+      id: 'maid',
+      trait: speakerTrait,
+      profile: { tendency: 'chatty', spreads: ['the-killer'], audience: 'anyone' },
+    };
+    const transfers = evaluatePropagation(makeContext({
+      speaker,
+      listeners: [{ id: 'colonel', trait: listenerTrait }],
+    }));
+    expect(transfers).toHaveLength(1);
+    applyTransfers(
+      transfers,
+      id => id === 'maid' ? speakerTrait : listenerTrait,
+      6,
+      () => 'as belief',
+    );
+  }
+
+  it('B receives the value with B\'s own confidence and source, not A\'s', () => {
+    const speakerTrait = makeSpeakerTrait();
+    const listenerTrait = makeTrait();
+
+    propagateToListener(speakerTrait, listenerTrait);
+
+    expect(listenerTrait.getFactBelief('the-killer')).toEqual({
+      value: 'the-butler', confidence: 'suspects', source: 'told',
+      turnLearned: 6, resistance: 'none',
+    });
+    // A's own belief is untouched
+    expect(speakerTrait.getFactBelief('the-killer')).toMatchObject({
+      confidence: 'certain', source: 'witnessed',
+    });
+  });
+
+  it('B\'s dialogue honestly repeats the received value: no mint', () => {
+    const speakerTrait = makeSpeakerTrait();
+    const listenerTrait = makeTrait();
+    propagateToListener(speakerTrait, listenerTrait);
+
+    const dialogue = listenerDialogue(listenerTrait, 'the-butler');
+    const result = dialogue.handleAsk('colonel', 'the killer', 'player');
+
+    expect(result.messageId).toBe('colonel-says-the-butler');
+    expect(listenerTrait.ledger).toHaveLength(0);
+    expect(listenerTrait.pressure.value).toBe(0);
+  });
+
+  it('B claiming against the received value mints a pinned lie — the value is live in B\'s dialogue', () => {
+    const speakerTrait = makeSpeakerTrait();
+    const listenerTrait = makeTrait();
+    propagateToListener(speakerTrait, listenerTrait);
+
+    const dialogue = listenerDialogue(listenerTrait, 'the-gardener');
+    const result = dialogue.handleAsk('colonel', 'the killer', 'player');
+
+    expect(result.messageId).toBe('colonel-says-the-gardener');
+    expect(listenerTrait.ledger).toHaveLength(1);
+    expect(listenerTrait.ledger[0]).toMatchObject({
+      kind: 'claim', audience: 'player', factId: 'the-killer',
+      claimedValue: 'the-gardener', pinned: true,
+    });
+  });
+
+  it('a belief the listener already holds is never displaced', () => {
+    const speakerTrait = makeSpeakerTrait();
+    const listenerTrait = makeTrait();
+    listenerTrait.setFactBelief('the-killer', {
+      value: 'the-gardener', confidence: 'certain', source: 'witnessed',
+      turnLearned: 2, resistance: 'none',
+    });
+
+    propagateToListener(speakerTrait, listenerTrait);
+
+    expect(listenerTrait.getFactBelief('the-killer')).toMatchObject({
+      value: 'the-gardener', confidence: 'certain', source: 'witnessed',
+    });
+  });
+
+  it('a speaker with no held belief transfers the token only', () => {
+    const speakerTrait = makeTrait({
+      knowledge: {
+        'the-killer': { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
+      },
+    });
+    const listenerTrait = makeTrait();
+
+    transferFact(
+      { speakerId: 'maid', listenerId: 'colonel', topic: 'the-killer', version: 'truth', coloring: 'neutral' },
+      speakerTrait, listenerTrait, 6,
+    );
+
+    expect(listenerTrait.knows('the-killer')).toBe(true);
+    expect(listenerTrait.hasFactBelief('the-killer')).toBe(false);
   });
 });
 

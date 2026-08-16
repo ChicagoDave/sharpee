@@ -1107,12 +1107,19 @@ export class ChordRuntime {
         const emit: CapabilityEffect[] = [];
         for (const event of reports) {
           const payload = (event.data ?? {}) as Record<string, unknown>;
-          if (event.type === 'chord.phrase' && !result.override) {
+          if (event.type === 'chord.phrase') {
             // A hit fully owns the response (D5) — override, never append.
-            result.override = {
-              messageId: String(payload.messageId),
-              params: (payload.params as Record<string, unknown>) ?? {},
-            };
+            // Exclusivity is compiler-enforced (`analysis.phrase-overlap`,
+            // D7 ruling 2026-08-16): at most the default and one matched
+            // conditional line reach this loop, and the conditional line
+            // wins. A surplus phrase (rogue IR that bypassed the compiler)
+            // is dropped, never emitted as extra prose.
+            if (!result.override) {
+              result.override = {
+                messageId: String(payload.messageId),
+                params: (payload.params as Record<string, unknown>) ?? {},
+              };
+            }
           } else {
             emit.push({ type: event.type, payload });
           }

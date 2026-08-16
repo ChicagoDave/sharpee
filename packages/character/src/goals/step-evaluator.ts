@@ -169,7 +169,16 @@ function evaluateSeek(
   return {
     status: 'in-progress',
     witnessed: ctx.playerPresent ? witnessed : undefined,
+    mutation: { kind: 'move', toRoom: nextRoom },
   };
+}
+
+/** Whether the NPC holds the item (its location is the NPC itself). */
+function holdsItem(item: string, ctx: GoalStepContext): boolean {
+  // Without an entity-room resolver the holding relation is unknowable;
+  // treat as held so pre-D6 callers (pure-evaluator tests) keep working.
+  if (!ctx.getEntityRoom) return true;
+  return ctx.getEntityRoom(item) === ctx.npcId;
 }
 
 /**
@@ -201,7 +210,10 @@ function evaluateAcquire(
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
-  return evaluateTargetInRoom(target, witnessed, ctx);
+  const result = evaluateTargetInRoom(target, witnessed, ctx);
+  if (result.status !== 'completed') return result;
+  // The item is in reach — completing the step IS taking it (D6).
+  return { ...result, mutation: { kind: 'take', itemId: target } };
 }
 
 function evaluateWaitFor(
@@ -226,22 +238,33 @@ function evaluateWaitFor(
 }
 
 function evaluateGive(
-  _item: string,
+  item: string,
   target: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
-  return evaluateTargetInRoom(target, witnessed, ctx);
+  // Giving an item the NPC does not hold is an authoring error — loud,
+  // not a silent hang (a preceding `acquire` step is how it gets held).
+  if (!holdsItem(item, ctx)) {
+    return { status: 'blocked', reason: `Not holding ${item}` };
+  }
+  const result = evaluateTargetInRoom(target, witnessed, ctx);
+  if (result.status !== 'completed') return result;
+  return { ...result, mutation: { kind: 'give', itemId: item, toId: target } };
 }
 
 function evaluateDrop(
-  _item: string,
+  item: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
+  if (!holdsItem(item, ctx)) {
+    return { status: 'blocked', reason: `Not holding ${item}` };
+  }
   return {
     status: 'completed',
     witnessed: ctx.playerPresent ? witnessed : undefined,
+    mutation: { kind: 'drop', itemId: item },
   };
 }
 

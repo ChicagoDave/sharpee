@@ -133,7 +133,16 @@ here for sign-off as a platform change; it is the one gap whose fix adds public 
 
 ---
 
-## G4. 318-AC3's remaining legs — strained voice, the forcing clause, seek-out
+## G4. 318-AC3's remaining legs — strained voice, the forcing clause, seek-out — legs CLOSED (2026-08-16, session 2aea28; forcing clause still David's call)
+
+> As-built: the legs live in a self-contained sibling fixture
+> (`b3-conscience.story` + 3 transcripts, 26 steps) rather than inside the
+> b1 base — extending the base would have broken the deletion variants'
+> documented literal-one-line-diff property. The seek-out leg required
+> the D6 fix (goal steps now act on the world — wiring-audit §3/§7); the
+> confession renders through the generic ADR-097 path with zero new
+> rendering code. The crack transcript deliberately does not pin the
+> absence of the trailing deflect line — that is open defect D7.
 
 **Finding.** `conscience-breaking.transcript` covers the monotonic climb and the breaking
 crack, but: no assertion that the strained phrasebook takes the voice at `burdened`; the
@@ -166,26 +175,64 @@ nothing and desyncs the ledger); padding turn counts (the criterion's own target
 
 ---
 
-## G5. Composition tests (310-AC5, 318-AC2, 318-AC4) — test-only, no platform change
+## G5. Composition tests (310-AC5, 318-AC2, 318-AC4) — ~~test-only~~ two of three test-only
 
-All three are criteria whose *pieces* are unit-proven but whose composition is asserted
-nowhere. The clean fix in each case is one test that runs the real pieces end to end in
-the character package — no new code paths:
+Two of the three were criteria whose *pieces* are unit-proven but whose composition was
+asserted nowhere; writing the third's test exposed a REAL platform gap (G5a below).
 
-- **310-AC5** (propagation moves a claim, not a token): A `thinks the killer is X,
-  certain`; run the propagation sub-step until transfer (receives `'as belief'`); then
-  drive B's dialogue selection and assert the selected response reflects the received
-  *value* with B's own downgraded confidence and source. Extends
-  `propagation.test.ts`'s harness with a selection step.
-- **318-AC2** (the ordering discriminator): same demand, audience present, temperament
-  `honor over duty` vs `duty over honor` → opposite verdicts (the brazen-out and the
-  confession). Two `it`s in `arbiter.test.ts`'s B2 describe — the machinery (named
-  orderings) exists; only the flip is unasserted.
-- **318-AC4** (witnessed face-act reaches a third NPC): A witnesses the face-act
-  (observe sub-step mints the aliased topic on A — already tested); A's `spreads`
-  carries it to C over propagation turns; C's dialogue gates on the topic under BOTH
-  the derived name and the scene alias. One test in the tick-phases suite composing
-  observe → propagation → selection.
+- **318-AC2** (the ordering discriminator) — **CLOSED (2026-08-15, session 2aea28)**:
+  same public demand to confess, audience present, duty (`answers honestly`) for vs
+  honor (`admits fault`) against, both at the 0.7 baseline — the declared temperament
+  ordering alone flips the verdict. Two `it`s in `arbiter.test.ts`'s B2 describe
+  (`honor over duty` → refuse/brazen-out with the obligation defeat deposited;
+  `duty over honor` → comply/public confession, no deposit).
+- **318-AC4** (witnessed face-act reaches a third NPC) — **CLOSED (2026-08-15, session
+  2aea28)**: `tests/tick-phases/face-act-propagation.test.ts` composes observe →
+  propagation → selection with all real pieces: thief steals from the player before the
+  Witness (kitchen), the third NPC two rooms away learns nothing; the Witness moves
+  next to it, propagation carries the topic (`source: 'told'`, told-record stamped);
+  the third NPC's gated topic flips the same ASK from unknown-topic to the authored
+  line. Both legs: scene alias declared (D12a) and derived topic name.
+  Suite: character 409 passing (2026-08-15).
+- **310-AC5** (propagation moves a claim, not a token) — **CLOSED (2026-08-15, session
+  2aea28, after the G5a fix below)**: `propagation.test.ts` "310-AC5" describe, 5 tests
+  through the real pipeline (spreads line → evaluator → `applyTransfers`, `'as belief'`)
+  then B's dialogue via `CharacterModelDialogue`: the value arrives at B's own
+  confidence/source (`suspects`/`told`, not A's `certain`/`witnessed`); honestly
+  repeating it mints nothing; claiming against it mints a pinned lie; a held belief is
+  never displaced; a beliefless speaker moves the token only. Mutation-verification
+  clean, all five GREEN. Character 414 passing.
+
+## G5a. 310-AC5's claim value never transfers — a REAL finding, CLOSED (2026-08-15, session 2aea28, David's sign-off)
+
+**Finding.** Designing the composed test surfaced that the composition is not merely
+unasserted — it is unimplemented. `transferFact` (propagation/fact-transfer.ts) moves
+only the valueless knowledge topic (`addFact(topic, 'told', …)`); the speaker's *valued
+belief* (`trait.factBeliefs` — `thinks the killer is the Butler`) is never read and
+never transferred. The only consumer of belief values anywhere is the claims mint rule
+(`conversation/claims.ts`). So after propagation, B holds the token (`knows`) but no
+value — B cannot honestly repeat the Butler version, and lying about it mints nothing
+because B holds no belief to contradict. This is precisely the "moves a token, not a
+claim" failure AC5 was written to catch. (Same class as the D16 and D3-transition
+finds: the unit suites pass because each piece is tested against its own inputs.)
+
+**Clean fix (landed — David's sign-off 2026-08-15; platform change in
+`packages/character`).** Extend `transferFact`: when the speaker holds a fact belief
+for the transferred topic, also set the listener's belief — the speaker's held *value*,
+confidence per `receives` (`'believes'` / `'suspects'`, the same downgrade the
+knowledge fact already gets), `source: 'told'`, the transfer turn, `resistance: 'none'`
+— and, mirroring the knowledge no-overwrite rule, never displace a belief the listener
+already holds (belief *revision* is D14 resistance territory, not the transfer's job).
+One function, no new seams; the `SpreadsVersion` type (`'truth' | 'lie'`) already
+anticipates the value leg. The AC5 test then asserts: B's belief is the received value
+at B's own confidence/source, and B's dialogue reflects it through the claims surface
+(claiming the received value mints nothing; claiming against it mints a pinned lie).
+
+**Rejected.** Asserting AC5 on the token transfer alone (that is the criterion's named
+failure mode, not its proof); a belief-value predicate surface for dialogue rows (new
+grammar, new evaluator cases — the claims surface already discriminates values); moving
+the value at the dialogue layer instead of the transfer (the belief would exist only
+when asked about — trait state is the model's memory, D17).
 
 ---
 

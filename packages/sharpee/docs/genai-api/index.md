@@ -38,7 +38,7 @@ Generated for Sharpee 5.0.1
 | [if-services.md](if-services.md) | @sharpee/if-services | Runtime service interfaces (perception). (1 files, ~101 lines) |
 | [event-processor.md](event-processor.md) | @sharpee/event-processor | Event sequencing and effect processing. (6 files, ~366 lines) |
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Basic combat extension — attack/defend mechanics. (5 files, ~283 lines) |
-| [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (45 files, ~4065 lines) |
+| [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (45 files, ~4093 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
 | [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (26 files, ~2744 lines) |
 | [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (18 files, ~1811 lines) |

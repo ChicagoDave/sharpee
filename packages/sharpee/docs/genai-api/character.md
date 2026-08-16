@@ -2193,6 +2193,13 @@ export interface TransferResult {
  * ('suspects') — the fold of the retired standalone belief map
  * (ADR-310 D14).
  *
+ * When the speaker holds a *valued belief* about the topic, the value
+ * travels too (ADR-310 D10/D14, AC5 — propagation moves a claim, not a
+ * token): the listener receives the speaker's held value at the same
+ * receives-downgraded confidence, `source: 'told'`. A belief the
+ * listener already holds is never displaced — belief revision is D14
+ * resistance territory, not the transfer's job.
+ *
  * @param transfer - The transfer to apply
  * @param speakerTrait - The speaker's CharacterModelTrait (told-record home)
  * @param listenerTrait - The listener's CharacterModelTrait
@@ -2511,13 +2518,34 @@ export interface MovementProfile {
     /** Passage/connection IDs the NPC can traverse, or 'all'. */
     access: string[] | 'all';
 }
+/**
+ * The world mutation a step calls for. The evaluator computes intent and
+ * stays pure; the tick phase — which owns the world handle — applies it
+ * (ADR-310 AC3: the NPC *executes* its steps, it does not merely track them).
+ */
+export type StepMutation = {
+    kind: 'move';
+    toRoom: string;
+} | {
+    kind: 'take';
+    itemId: string;
+} | {
+    kind: 'give';
+    itemId: string;
+    toId: string;
+} | {
+    kind: 'drop';
+    itemId: string;
+};
 /** Result of evaluating a single goal step. */
 export type StepResult = {
     status: 'completed';
     witnessed?: string;
+    mutation?: StepMutation;
 } | {
     status: 'in-progress';
     witnessed?: string;
+    mutation?: StepMutation;
 } | {
     status: 'waiting';
 } | {

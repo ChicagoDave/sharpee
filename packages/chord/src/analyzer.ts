@@ -69,6 +69,7 @@ import {
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
@@ -1550,7 +1551,80 @@ class Analyzer {
         this.checkPhaseOrder(row.body, { ended: null });
       }
 
+      const axes = this.phraseAxesFor(owner);
+      for (const row of rows) this.checkPhraseExclusivity(row, axes);
+
       owner.topics = rows;
+    }
+  }
+
+  /**
+   * Single-valued axis table for the overlap prover. Mood (platform +
+   * customs), band, and threat words are single-valued interior reads;
+   * the owner's declared `states:` words are a single current value per
+   * entity (`change it to <state>`). Words the evaluator can ALSO answer
+   * through another mechanism are excluded — platform state adjectives
+   * fall through `stateAdjectiveHolds`, and a state word that is also a
+   * mood word is reachable through both reads — the builder drops any
+   * cross-axis collision, and we pre-filter the platform adjectives.
+   */
+  private phraseAxesFor(owner: IREntity): SingleValuedAxes {
+    const platformAdjectives = new Set<string>([...STATE_ADJECTIVES, 'dark']);
+    return buildSingleValuedAxes({
+      mood: [...CHARACTER_MANIFEST.moods, ...this.customMoods.keys()],
+      band: CHARACTER_MANIFEST.pressureBands,
+      threat: CHARACTER_MANIFEST.threats,
+      'entity-state': owner.states.filter((s) => !platformAdjectives.has(s)),
+    });
+  }
+
+  /**
+   * The only-match rule for a topic arm (D7 ruling, 2026-08-16): at most
+   * one unconditional phrase line (the default, delivered only when no
+   * conditional line matches), and every pair of conditional lines must
+   * be PROVABLY exclusive — the compiler must hold a witness that no
+   * state satisfies both. No witness is an error demanding the author
+   * disambiguate (split on a state axis, or add a `not`). Deliberate
+   * multiplicity belongs at the phrase level (`or`-separated variants),
+   * never as two rows both in play.
+   */
+  private checkPhraseExclusivity(row: IRTopicRow, axes: SingleValuedAxes): void {
+    const phrases = row.body.filter(
+      (s): s is Extract<IRStatement, { kind: 'phrase' }> => s.kind === 'phrase',
+    );
+    const defaults = phrases.filter((p) => !p.stmtWhen);
+    for (let i = 1; i < defaults.length; i++) {
+      this.diagnostics.error(
+        'analysis.phrase-overlap',
+        `This row already has an unconditional response \`${defaults[0].phraseKey}\` (line ${defaults[0].span?.line}) — one default per row; give \`${defaults[i].phraseKey}\` a \`when\`.`,
+        defaults[i].span,
+      );
+    }
+    // The default is "when no conditional line matches" — order-free
+    // semantics, but the runtime resolves first-in-order, so the default
+    // must sit last or it would shadow a matched conditional line.
+    if (defaults.length === 1) {
+      const defaultIndex = phrases.indexOf(defaults[0]);
+      const shadowed = phrases.find((p, i) => i > defaultIndex && p.stmtWhen);
+      if (shadowed) {
+        this.diagnostics.error(
+          'analysis.phrase-overlap',
+          `The unconditional response \`${defaults[0].phraseKey}\` must be the row's last line — written here it would shadow \`${shadowed.phraseKey}\` even when its \`when\` matches.`,
+          defaults[0].span,
+        );
+      }
+    }
+    const conditional = phrases.filter((p) => p.stmtWhen);
+    for (let i = 0; i < conditional.length; i++) {
+      for (let j = i + 1; j < conditional.length; j++) {
+        if (!provablyDisjoint(conditional[i].stmtWhen!, conditional[j].stmtWhen!, axes)) {
+          this.diagnostics.error(
+            'analysis.phrase-overlap',
+            `\`${conditional[i].phraseKey}\` (line ${conditional[i].span?.line}) and \`${conditional[j].phraseKey}\` can both match the same state — response conditions must be provably exclusive. Split them on a state axis (mood, band, threat, story phase, \`feels\`) or add a \`not\`; for deliberate variety, use \`or\`-separated variants inside one phrase.`,
+            conditional[j].span,
+          );
+        }
+      }
     }
   }
 
@@ -3489,7 +3563,7 @@ class Analyzer {
         this.diagnostics.error('analysis.duplicate-witnessed-alias', `\`${decl.alias}\` already names a witnessed-act topic.`, decl.span);
         continue;
       }
-      const pairKey = `${actor} ${best.act}`;
+      const pairKey = `${actor}\u0000${best.act}`;
       if (seenPair.has(pairKey)) {
         this.diagnostics.error('analysis.witnessed-duplicate', `\`${decl.words.map((w) => w.word).join(' ')}\` already has an alias — one per witnessed act.`, decl.span);
         continue;

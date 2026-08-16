@@ -30,6 +30,9 @@ description: Maintaining the lie costs — every pinned delivery deposits
 > ask viola about the killer
 [OK: contains "Some accident"]
 
-# The band crosses into breaking — and the performance ends
+# The band crosses into breaking — and the performance ends. The
+# confession fully owns the response (D7 fixed 2026-08-16): the
+# truth-deflect line must not trail it.
 > ask viola about the truth
 [OK: contains "the cord was in my hands"]
+[OK: not contains "a role like any other"]

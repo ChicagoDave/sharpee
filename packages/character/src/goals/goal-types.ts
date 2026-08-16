@@ -206,9 +206,20 @@ export interface MovementProfile {
 // Step evaluation result
 // ---------------------------------------------------------------------------
 
+/**
+ * The world mutation a step calls for. The evaluator computes intent and
+ * stays pure; the tick phase — which owns the world handle — applies it
+ * (ADR-310 AC3: the NPC *executes* its steps, it does not merely track them).
+ */
+export type StepMutation =
+  | { kind: 'move'; toRoom: string }
+  | { kind: 'take'; itemId: string }
+  | { kind: 'give'; itemId: string; toId: string }
+  | { kind: 'drop'; itemId: string };
+
 /** Result of evaluating a single goal step. */
 export type StepResult =
-  | { status: 'completed'; witnessed?: string }
-  | { status: 'in-progress'; witnessed?: string }
+  | { status: 'completed'; witnessed?: string; mutation?: StepMutation }
+  | { status: 'in-progress'; witnessed?: string; mutation?: StepMutation }
   | { status: 'waiting' }
   | { status: 'blocked'; reason: string };

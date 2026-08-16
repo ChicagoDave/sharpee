@@ -48,6 +48,7 @@ import {
   MovementProfile,
   GoalManager,
   GoalStepContext,
+  StepResult,
   evaluateGoalStep,
   SimpleRoomGraph,
 } from './goals/index.js';
@@ -581,7 +582,13 @@ function executeNpcGoals(
 
   const stepResult = evaluateGoalStep(activeGoal, stepContext);
 
+  // D6: the evaluator computes intent; the phase applies it to the world.
+  // A step whose mutation failed neither advances nor announces itself —
+  // it retries next tick.
+  const applied = applyStepMutation(stepResult, npc.id, npcLocation, world);
+
   if (
+    applied &&
     (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
     stepResult.witnessed &&
     npcLocation === playerLocation
@@ -595,8 +602,34 @@ function executeNpcGoals(
     }, npc.id));
   }
 
-  if (stepResult.status === 'completed') {
+  if (stepResult.status === 'completed' && applied) {
     manager.advanceStep(trait, activeGoal.def.id);
+  }
+}
+
+/**
+ * Apply a goal step's world mutation (NPC movement, item transfer).
+ *
+ * @param result - The step evaluation result carrying the intent
+ * @param npcId - The acting NPC
+ * @param npcLocation - The NPC's current room (drop destination)
+ * @param world - The world to mutate
+ * @returns True when there was nothing to apply or the mutation succeeded
+ */
+function applyStepMutation(
+  result: StepResult,
+  npcId: EntityId,
+  npcLocation: EntityId,
+  world: WorldModel,
+): boolean {
+  if (result.status !== 'completed' && result.status !== 'in-progress') return true;
+  if (!result.mutation) return true;
+  const m = result.mutation;
+  switch (m.kind) {
+    case 'move': return world.moveEntity(npcId, m.toRoom);
+    case 'take': return world.moveEntity(m.itemId, npcId);
+    case 'give': return world.moveEntity(m.itemId, m.toId);
+    case 'drop': return world.moveEntity(m.itemId, npcLocation);
   }
 }
 

@@ -153,6 +153,58 @@ describe('arbitrate — B2: honor sees the room (D7)', () => {
     expect(verdict.winner).toBe('honor');
     expect(verdict.readings.find(r => r.force === 'honor')?.feed).toBe('face:backs-down');
   });
+
+  // 318-AC2's ordering discriminator: the same public demand to confess —
+  // duty (answers honestly) argues for, honor (admits fault, audience
+  // present) argues against, both at the 0.7 baseline — so the declared
+  // temperament ordering alone flips the verdict.
+  const PROUD: TemperamentDef = { name: 'proud', pairs: [['honor', 'duty']] };
+  const CONTRITE: TemperamentDef = { name: 'contrite', pairs: [['duty', 'honor']] };
+
+  function caughtLiarTrait(temperament: string): CharacterModelTrait {
+    return new CharacterModelTrait({
+      threat: 'safe',
+      obligations: [{ kind: 'answers honestly' }],
+      honor: { scope: 'the regiment', faceActs: ['admits fault'] },
+      temperaments: [{ name: temperament }],
+    });
+  }
+  const confession: ActCandidate = {
+    kind: 'dialogue',
+    act: 'comply',
+    topicId: 'the-lie',
+    audiencePresent: ['sergeant', 'corporal'],
+  };
+  const confessCtx: ArbiterContext = {
+    satisfies: ['answers honestly'],
+    complyFaceActs: ['admits fault'],
+  };
+
+  it('honor over duty: he brazens it out before the regiment', () => {
+    const verdict = arbitrate(caughtLiarTrait('proud'), confession, {
+      ...confessCtx, temperamentDefs: { proud: PROUD },
+    });
+
+    expect(verdict.act).toBe('refuse');
+    expect(verdict.winner).toBe('honor');
+    expect(verdict.temperamentApplied).toEqual({ name: 'proud', pair: ['honor', 'duty'] });
+    // The defeated compelling obligation deposits (D8)
+    expect(verdict.defeats).toEqual([
+      { force: 'duty', feed: 'obligation:answers-honestly' },
+    ]);
+  });
+
+  it('duty over honor: the same demand produces the public confession', () => {
+    const verdict = arbitrate(caughtLiarTrait('contrite'), confession, {
+      ...confessCtx, temperamentDefs: { contrite: CONTRITE },
+    });
+
+    expect(verdict.act).toBe('comply');
+    expect(verdict.winner).toBe('duty');
+    expect(verdict.temperamentApplied).toEqual({ name: 'contrite', pair: ['duty', 'honor'] });
+    // Losing honor is a face feed, not a principle/obligation — no deposit
+    expect(verdict.defeats).toEqual([]);
+  });
 });
 
 describe('arbitrate — D6: paralysis', () => {
