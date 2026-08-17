@@ -6,31 +6,42 @@
  * drive between-turn commentary and determine how aggressively the NPC
  * holds the player's focus.
  *
- * Public interface: ConversationIntent, ConversationStrength, ConversationContext,
+ * Public interface: ContinuationIntent, ConversationStrength, ConversationContext,
  *   ContinuationEntry, InitiativeTrigger, ConversationLifecycle.
  * Owner context: @sharpee/character / conversation
  */
+
+import type { SceneStrength } from '@sharpee/world-model';
+import type { InterruptionOutcome } from './scene-scoring.js';
 
 // ---------------------------------------------------------------------------
 // Vocabulary types
 // ---------------------------------------------------------------------------
 
-/** How the NPC feels about continuing the conversation. */
-export type ConversationIntent =
+/**
+ * How the NPC feels about continuing the conversation. Renamed from
+ * `ConversationIntent` (contracts.md §7) — that name now belongs solely to
+ * the world-model dialogue-selector socket's ask/tell/say/talk-to intent.
+ */
+export type ContinuationIntent =
   | 'eager'      // wants to keep talking, proactive
   | 'reluctant'  // relieved when player stops asking
   | 'hostile'    // antagonistic, will disengage quickly
   | 'confessing' // unburdening, wants to continue
   | 'neutral';   // default — waits patiently
 
-/** How aggressively the NPC holds the player's attention. */
-export type ConversationStrength =
-  | 'passive'    // yields on redirect or leave
-  | 'assertive'  // protests but yields
-  | 'blocking';  // prevents redirect and leaving
+/**
+ * How aggressively the NPC holds the player's attention. One declaration
+ * with the scene's grip vocabulary (contracts.md §7): world-model's
+ * `SceneStrength` is the shared lower-package union; this is its alias.
+ */
+export type ConversationStrength = SceneStrength;
 
-/** Result of attempting to redirect attention away from the current NPC. */
-export type RedirectResult = 'yields' | 'protests' | 'blocks';
+/**
+ * Result of attempting to redirect attention away from the current NPC.
+ * One declaration with the scene's `InterruptionOutcome` (contracts.md §7).
+ */
+export type RedirectResult = InterruptionOutcome;
 
 // ---------------------------------------------------------------------------
 // Default decay thresholds per intent
@@ -40,7 +51,7 @@ export type RedirectResult = 'yields' | 'protests' | 'blocks';
  * Default number of non-conversation turns before a conversation decays,
  * keyed by intent. Authors can override per conversation context.
  */
-export const DEFAULT_DECAY_THRESHOLDS: Record<ConversationIntent, number> = {
+export const DEFAULT_DECAY_THRESHOLDS: Record<ContinuationIntent, number> = {
   eager: 5,
   reluctant: 2,
   hostile: 3,
@@ -116,7 +127,7 @@ export interface ConversationContext {
   npcId: string;
 
   /** Current conversation intent. */
-  intent: ConversationIntent;
+  intent: ContinuationIntent;
 
   /** Current conversation strength. */
   strength: ConversationStrength;
@@ -173,7 +184,7 @@ export class ConversationLifecycle {
    */
   begin(
     npcId: string,
-    intent: ConversationIntent = 'neutral',
+    intent: ContinuationIntent = 'neutral',
     strength: ConversationStrength = 'passive',
   ): void {
     this.context = {
@@ -207,7 +218,7 @@ export class ConversationLifecycle {
    */
   setContext(
     label: string,
-    intent?: ConversationIntent,
+    intent?: ContinuationIntent,
     strength?: ConversationStrength,
     decayThreshold?: number,
   ): void {

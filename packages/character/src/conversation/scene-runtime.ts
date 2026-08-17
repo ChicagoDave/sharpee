@@ -1,0 +1,227 @@
+/**
+ * Scene runtime — open, close, floor, exchange, and decay (ADR-320 D4;
+ * adr-320 contracts.md §1)
+ *
+ * The one writer of the scene store: scenes open against per-pair memory
+ * (first-meeting vs return boundaries), moves stamp the floor clock,
+ * selector-issued directives mutate scene state (the selector computes,
+ * this runtime mutates — the arbiter discipline), closes fold the scene
+ * into both sides' conversation memory, and unattended scenes decay into
+ * a `silence` close (the ADR-142 attention-decay machinery wired live).
+ * All turn reads go through the character clock seam (D6).
+ *
+ * Public interface: OpenSceneOptions, openScene, closeScene,
+ *   recordSceneMove, applySceneDirectives, ageScenes.
+ * Owner context: @sharpee/character / conversation
+ */
+
+import type {
+  WorldModel,
+  ConversationSceneState,
+  SceneBoundaryKind,
+  SceneOpenedBy,
+  SceneStrength,
+  SceneDirective,
+  SceneWireEvent,
+} from '@sharpee/world-model';
+import { dialogueTurn } from '../character-clock.js';
+import { DEFAULT_DECAY_THRESHOLDS } from './lifecycle.js';
+import { readSceneStore, writeSceneStore, sceneWith } from './scene-store.js';
+import { type ConversationMemoryAccess, recordSceneClosed } from './conversation-memory.js';
+
+/** What a caller supplies to open a scene. */
+export interface OpenSceneOptions {
+  /** Everyone in the scene, PC included (at least two). */
+  participantIds: string[];
+
+  /** How the scene opened (selects boundary rows, seeds aboutness). */
+  openedBy: SceneOpenedBy;
+
+  /** Authored scene strength, if any (D10); absent = derived at read time. */
+  strength?: SceneStrength;
+}
+
+/**
+ * Open a scene (ADR-320 D4). Mints the id, seats the participants, and
+ * gives an addressing/initiating opener the floor (a witnessed-event
+ * opening leaves the floor contested). Enforces the store's invariants:
+ * at least two participants, none already in a live scene.
+ *
+ * @param world - The live world
+ * @param options - Participants, opener, optional strength
+ * @returns The opened scene and its wire events
+ * @throws Error when the participant invariants are violated
+ */
+export function openScene(
+  world: WorldModel,
+  options: OpenSceneOptions,
+): { scene: ConversationSceneState; wireEvents: SceneWireEvent[] } {
+  const { participantIds, openedBy, strength } = options;
+
+  if (participantIds.length < 2) {
+    throw new Error(`A scene needs at least two participants; got ${participantIds.length}.`);
+  }
+  for (const id of participantIds) {
+    const existing = sceneWith(world, id);
+    if (existing) {
+      throw new Error(`Participant \`${id}\` is already in scene \`${existing.id}\`.`);
+    }
+  }
+
+  const store = readSceneStore(world);
+  const turn = dialogueTurn(world);
+  const scene: ConversationSceneState = {
+    id: `scene-${store.nextSceneSeq}`,
+    participantIds: [...participantIds],
+    openedBy,
+    floorHolderId: openedBy.kind === 'witnessed-event' ? null : openedBy.openerId,
+    openExchange: null,
+    ...(strength !== undefined ? { strength } : {}),
+    openedTurn: turn,
+    lastMoveTurn: turn,
+  };
+
+  store.nextSceneSeq += 1;
+  store.scenes[scene.id] = scene;
+  writeSceneStore(world, store);
+
+  const wireEvents: SceneWireEvent[] = [
+    { kind: 'scene-opened', sceneId: scene.id, participantIds: scene.participantIds, openedBy },
+  ];
+  if (scene.floorHolderId !== null) {
+    wireEvents.push({ kind: 'floor-change', sceneId: scene.id, holderId: scene.floorHolderId });
+  }
+  return { scene, wireEvents };
+}
+
+/**
+ * Close a scene (ADR-320 D4/D6): removes it from the store and folds it
+ * into conversation memory — every ordered participant pair records a
+ * completed visit and the close turn (the access ignores unmodeled
+ * holders; no model, no change).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene to close
+ * @param boundary - Which boundary closed it (`exit` or `silence`)
+ * @param memory - The per-pair memory home
+ * @returns The scene-closed wire event, or none when the id is not live
+ */
+export function closeScene(
+  world: WorldModel,
+  sceneId: string,
+  boundary: SceneBoundaryKind,
+  memory: ConversationMemoryAccess,
+): SceneWireEvent[] {
+  const store = readSceneStore(world);
+  const scene = store.scenes[sceneId];
+  if (!scene) return [];
+
+  delete store.scenes[sceneId];
+  writeSceneStore(world, store);
+
+  const closedTurn = dialogueTurn(world);
+  for (const holderId of scene.participantIds) {
+    for (const partnerId of scene.participantIds) {
+      if (holderId !== partnerId) {
+        recordSceneClosed(memory, holderId, partnerId, closedTurn);
+      }
+    }
+  }
+
+  return [{ kind: 'scene-closed', sceneId, boundary }];
+}
+
+/**
+ * Stamp an on-floor move (utterance, act, or event — one vocabulary):
+ * resets the scene's silence clock.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the move landed in
+ */
+export function recordSceneMove(world: WorldModel, sceneId: string): void {
+  const store = readSceneStore(world);
+  const scene = store.scenes[sceneId];
+  if (!scene) return;
+  scene.lastMoveTurn = dialogueTurn(world);
+  writeSceneStore(world, store);
+}
+
+/**
+ * Apply a selection's scene directives (adr-320 contracts.md §4): the
+ * selector stays pure and this runtime performs the lifecycle it asked
+ * for. `open-exchange` replaces any open exchange (at most one — a chained
+ * `then asks` hands the moment over); `close-scene` folds memory like any
+ * close.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the directives target
+ * @param directives - The selection's directives, in order
+ * @param memory - The per-pair memory home (for `close-scene`)
+ * @returns Wire events the directives produced
+ */
+export function applySceneDirectives(
+  world: WorldModel,
+  sceneId: string,
+  directives: SceneDirective[],
+  memory: ConversationMemoryAccess,
+): SceneWireEvent[] {
+  const wireEvents: SceneWireEvent[] = [];
+
+  for (const directive of directives) {
+    const store = readSceneStore(world);
+    const scene = store.scenes[sceneId];
+    if (!scene) break; // a close-scene directive ends the walk
+
+    switch (directive.kind) {
+      case 'open-exchange':
+        scene.openExchange = directive.exchange;
+        scene.lastMoveTurn = dialogueTurn(world);
+        writeSceneStore(world, store);
+        break;
+
+      case 'close-exchange':
+        scene.openExchange = null;
+        writeSceneStore(world, store);
+        break;
+
+      case 'set-floor':
+        scene.floorHolderId = directive.holderId;
+        writeSceneStore(world, store);
+        wireEvents.push({ kind: 'floor-change', sceneId, holderId: directive.holderId });
+        break;
+
+      case 'close-scene':
+        wireEvents.push(...closeScene(world, sceneId, directive.boundary, memory));
+        break;
+    }
+  }
+
+  return wireEvents;
+}
+
+/**
+ * Decay unattended scenes (ADR-142's attention decay, wired live): a
+ * scene with no on-floor move for `threshold` turns closes on the
+ * `silence` boundary. The default threshold is the neutral continuation
+ * intent's decay (intent-aware thresholds arrive with dispatch wiring,
+ * which knows each scene's holder intent).
+ *
+ * @param world - The live world
+ * @param memory - The per-pair memory home
+ * @param threshold - Silent turns before a scene closes
+ * @returns The scene-closed wire events, oldest scene first
+ */
+export function ageScenes(
+  world: WorldModel,
+  memory: ConversationMemoryAccess,
+  threshold: number = DEFAULT_DECAY_THRESHOLDS.neutral,
+): SceneWireEvent[] {
+  const turn = dialogueTurn(world);
+  const wireEvents: SceneWireEvent[] = [];
+  for (const scene of Object.values(readSceneStore(world).scenes)) {
+    if (turn - scene.lastMoveTurn >= threshold) {
+      wireEvents.push(...closeScene(world, scene.id, 'silence', memory));
+    }
+  }
+  return wireEvents;
+}

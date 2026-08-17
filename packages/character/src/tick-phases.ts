@@ -229,8 +229,16 @@ export function createCharacterModelPhase(
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
     // Mirror the turn for the player-action dialogue surfaces (see key doc).
     ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
+    // A modeled PC gets interior upkeep — mood/lucidity decay — without
+    // joining NPC turn scheduling (adr-320 contracts.md §2.1): the
+    // observe/influence/propagation/goal sub-steps stay NPC-only.
+    const player = ctx.world.getEntity(ctx.playerId);
+    const decayTargets =
+      player?.has(TraitType.CHARACTER_MODEL) && !npcs.some((n) => n.id === ctx.playerId)
+        ? [...npcs, player]
+        : npcs;
     return [
-      ...runDecaySubStep(npcs, ctx, registry),
+      ...runDecaySubStep(decayTargets, ctx, registry),
       ...runObserveSubStep(npcs, ctx, registry),
       ...runInfluenceSubStep(npcs, ctx, registry),
       ...runPropagationSubStep(npcs, ctx, registry),

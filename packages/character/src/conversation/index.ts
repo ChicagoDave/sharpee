@@ -41,7 +41,7 @@ export {
 } from './constraint-evaluator.js';
 
 export {
-  type ConversationIntent,
+  type ContinuationIntent,
   type ConversationStrength,
   type RedirectResult,
   type ConversationContext,
@@ -82,16 +82,68 @@ export {
   CharacterModelDialogue,
 } from './dialogue-extension.js';
 
-// Floor/interruption scoring shapes (ADR-320 D7/D10; adr-320
-// contracts.md §5) — Phase 1 contracts, unconsumed until the Phase 5
-// scene runtime.
+// Floor/interruption scoring (ADR-320 D7/D10; adr-320 contracts.md §5) —
+// Phase 1 shapes plus the Phase 5 scoring runtime.
 export {
   type SceneOccasion,
   type FloorBid,
   type FloorDecision,
   type InterruptionChallenge,
   type InterruptionOutcome,
+  scoreFloor,
+  resolveInterruption,
+  sceneGrip,
+  strengthFromIntent,
 } from './scene-scoring.js';
+
+// The scene runtime (ADR-320 D4; Phase 5): store, lifecycle, memory,
+// manner delivery, and authored initiative.
+export {
+  CHARACTER_SCENES_KEY,
+  type SceneStoreState,
+  readSceneStore,
+  writeSceneStore,
+  liveScenes,
+  sceneOf,
+  sceneWith,
+} from './scene-store.js';
+
+export {
+  type OpenSceneOptions,
+  openScene,
+  closeScene,
+  recordSceneMove,
+  applySceneDirectives,
+  ageScenes,
+} from './scene-runtime.js';
+
+export {
+  type ConversationMemoryAccess,
+  createMapMemoryAccess,
+  emptyConversationMemory,
+  recordSceneClosed,
+  recordTopicDiscussed,
+  recordAsked,
+  wasDiscussed,
+  boundaryKindOnOpen,
+  recencyWordFor,
+  absenceWordFor,
+  askedWordFor,
+  RECENCY_WORDS,
+  ABSENCE_WORDS,
+  ASKED_WORDS,
+} from './conversation-memory.js';
+
+export {
+  type MannerSelection,
+  selectMannerBeat,
+  renderSilence,
+} from './manner.js';
+
+export {
+  type AuthoredInitiative,
+  authoredInitiativeFor,
+} from './initiative.js';
 
 // The dialogue-selector socket adapter (ADR-310 D15; contracts.md §5)
 export {

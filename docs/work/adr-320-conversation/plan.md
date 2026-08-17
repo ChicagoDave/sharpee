@@ -278,11 +278,33 @@ affordance.
   absence aging, and threading state all asserted on real scene/memory objects, not
   mocks. Acceptance 6 (interruption) passes against real scene state. No other package
   yet consumes this runtime (that is Phase 6's entry state).
-- **Status**: CURRENT (since 2026-08-17 — Phase 4 DONE; the `packages/character`
-  confirmation carries from Phase 1 per this phase's entry state, unless David
-  revokes it. Carries the approved renames (`ContinuationIntent`,
-  strength/redirect union collapses) and the modeled-PC tick coverage from
-  contracts §2.1.)
+- **Status**: DONE (2026-08-17, session 1b5886). Evidence: §7 renames landed
+  (`ContinuationIntent`; `ConversationStrength` = alias of world-model
+  `SceneStrength`; `RedirectResult` = alias of `InterruptionOutcome` — no
+  external consumer of the old lifecycle name existed, verified by repo grep).
+  Scene runtime landed in `src/conversation/`: `scene-store.ts` (world-state
+  key `character.scenes` per contracts §1.3, single-writer; scenes + manner
+  rotation cursors + id sequence, all inside the world save), `scene-runtime.ts`
+  (open/close/move/directives/ageScenes — ADR-142 attention decay wired live as
+  the `silence` boundary off `DEFAULT_DECAY_THRESHOLDS`, closes fold per-pair
+  memory), `conversation-memory.ts` (per-pair records behind the
+  `ConversationMemoryAccess` seam Phase 7 re-homes onto the trait; runtime-owned
+  word curves for recency/absence/asked), `manner.ts` (declaration-order row
+  match, beat rotation with no back-to-back repeats, cursor persisted for
+  save-identical replay; `renderSilence` — silence is a rendered delivery,
+  never a bare absence), `initiative.ts` (authored occasion matcher; lone
+  hold-tongue suppresses; goal-step never matches), and scoring in
+  `scene-scoring.ts` (`scoreFloor` forces-wins/suppresses-withdraws/highest
+  live motivation with deterministic tie-break, `resolveInterruption` with the
+  D8 world-act exemption, `sceneGrip` exchange-innermost, `strengthFromIntent`
+  — blocking never derived). Modeled-PC tick coverage per contracts §2.1
+  (decay sub-step only). Behavior Statements before tests; 46 new tests in 6
+  files, all asserting on store/memory/trait state; full character suite 491
+  passing, 40 files (run 2026-08-17 this session); mutation-verification agent
+  clean (every mutation traced to a state-asserting test). Repo-wide
+  `npx tsc --noEmit` clean; `tsf build --package character --all` clean
+  (local/esm/npm). Acceptance 6 passes against a live store-resident scene.
+  No other package consumes the runtime yet (Phase 6's entry state).
 
 ### Phase 6: `packages/stdlib` — dispatch integration and witnessed player claims
 - **Tier**: Large
@@ -294,6 +316,8 @@ affordance.
 - **Entry state**: Phase 5 done — the scene runtime is a fixed, tested unit this phase
   wires into dispatch. Platform-change discussion held and confirmed for
   `packages/stdlib` (mirrors ADR-310's own stdlib-integration gate).
+- **Status note**: next up (since 2026-08-17 — Phase 5 DONE); needs the
+  `packages/stdlib` platform-change confirmation before work starts.
 - **Deliverable**: ASK/TELL/SAY/TALK TO dispatch consults an open exchange before
   falling through to the topic table (D16 innermost-wins), registered through the
   capability-dispatch idiom (ADR-090) rather than an ad-hoc hook; the D15 socket's first
