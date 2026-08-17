@@ -15,7 +15,7 @@
  * rule). Every shape is platform-internal (contracts.md §7).
  *
  * Public interface: SceneWireEvent, AffordanceTopic, ResponseAffordance,
- * ExchangeAffordances.
+ * ExchangeAffordances, ThreadContinuability.
  * Owner context: world-model (per-world wiring surface)
  */
 
@@ -45,7 +45,15 @@ export type SceneWireEvent =
       interrupterId: EntityId;
       outcome: 'yields' | 'protests' | 'blocks';
     }
-  | { kind: 'rendered-silence'; sceneId: string; speakerId: EntityId; beats: string[] };
+  | { kind: 'rendered-silence'; sceneId: string; speakerId: EntityId; beats: string[] }
+  // -- ADR-320 D14 thread lifecycle (additive, Phase 10.2). `beatIndex` is
+  // the served beat's 0-based position; a park/resume carries the cursor
+  // (beats already served) so tooling can show where the thread stands.
+  | { kind: 'thread-opened'; sceneId: string; ownerId: EntityId; threadKey: string }
+  | { kind: 'thread-beat'; sceneId: string; ownerId: EntityId; threadKey: string; beatIndex: number }
+  | { kind: 'thread-parked'; sceneId: string; ownerId: EntityId; threadKey: string; beatCursor: number }
+  | { kind: 'thread-resumed'; sceneId: string; ownerId: EntityId; threadKey: string; beatCursor: number }
+  | { kind: 'thread-concluded'; sceneId: string; ownerId: EntityId; threadKey: string };
 
 /**
  * What input a verbal exchange row matches (ADR-320 D12): an entity
@@ -82,4 +90,23 @@ export interface ExchangeAffordances {
   sceneId: string;
   exchangeId: string;
   responses: ResponseAffordance[];
+}
+
+/**
+ * An active thread's continuability (ADR-320 D14, additive to the D12
+ * affordance surface): whether the owner has a next beat ready — the
+ * "Kemp has more to say" a chat client renders as a continue chip and
+ * the testing surface consumes for coverage. `continuable` is false
+ * while the next beat's hold-gate is unmet (the thread waits for its
+ * world) and the record disappears entirely when no thread is active
+ * (never stale, the exchange-affordances discipline).
+ */
+export interface ThreadContinuability {
+  sceneId: string;
+  ownerId: EntityId;
+  threadKey: string;
+  /** Beats already served (the cursor position the next beat would advance). */
+  beatCursor: number;
+  /** True when the next beat (or the conclusion) is ready to serve. */
+  continuable: boolean;
 }

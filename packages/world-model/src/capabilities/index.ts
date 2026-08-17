@@ -125,7 +125,8 @@ export type {
   SceneWireEvent,
   AffordanceTopic,
   ResponseAffordance,
-  ExchangeAffordances
+  ExchangeAffordances,
+  ThreadContinuability
 } from './scene-wire.js';
 
 // Interceptor helpers

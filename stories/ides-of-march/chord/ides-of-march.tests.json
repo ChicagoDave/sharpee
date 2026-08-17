@@ -1,0 +1,31 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Ides of March"
+          },
+          {
+            "id": "info.description",
+            "is": "The last three days before Julius Caesar opens the new\nGlobe. You are Henslowe's man, slipped in among the hired players.\nBring the clown to the Admiral's Men and the play-book across\nBankside, and let no one see your face beneath the face."
+          }
+        ]
+      },
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard",
+          "The yard of the Globe, open to the sky, ringed by three galleries of new timber. Empty of groundlings, it is a field of trodden hazelnut shells. The stage stands north; the way out to Bankside and the tavern is south."
+        ]
+      },
+      "type": "boot"
+    }
+  ],
+  "seed": 42,
+  "story": "ides-of-march",
+  "version": 1
+}

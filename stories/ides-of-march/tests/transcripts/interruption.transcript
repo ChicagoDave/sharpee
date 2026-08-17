@@ -1,0 +1,29 @@
+title: Interruption — what a conversation cannot ignore
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: The identity probe is a blocking exchange, but a world act
+  a scene cannot ignore is exempt from any grip — violence on the
+  boards breaks the probe, forces the tragedian's authored initiative
+  row, and the next same-key ask falls to the topic table.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/interruption.transcript
+
+---
+
+> north
+[OK: contains "Stage"]
+
+# The probe opens — a blocking grip.
+> talk to burbage
+[OK: contains "I do not know your face"]
+
+# A world act the scene cannot ignore: the witnessed harm breaks the
+# blocking grip AND forces Burbage's authored initiative row.
+> attack the hired man
+[OK: contains "NOT on these boards"]
+
+# The probe no longer grips: the same words now serve the table row.
+> ask burbage about norwich
+[OK: contains "So you said"]

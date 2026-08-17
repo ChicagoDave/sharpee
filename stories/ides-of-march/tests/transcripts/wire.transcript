@@ -1,0 +1,45 @@
+title: The wire — scene lifecycle and advertised responses
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Opening the poet's plain question puts its lifecycle on the
+  scene channel and its advertised responses — answers and the
+  inalienable silence — on the exchange-affordances channel; manner
+  coloring rides the utterances; answering closes the exchange and the
+  advertisement clears.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/wire.transcript
+channels: scene, exchange-affordances
+
+---
+
+> north
+[OK: contains "Stage"]
+
+> west
+[OK: contains "Tiring-House"]
+
+# First contact opens the scene on the wire.
+> talk to shakespeare
+[OK: contains "The new hired man"]
+[CHANNEL: scene, contains "scene-opened"]
+
+# The book row opens the plain question: lifecycle on the scene
+# channel, advertised responses on exchange-affordances — the authored
+# answers and the silence that is always available.
+> ask shakespeare about the book
+[OK: contains "So it is not carried"]
+[CHANNEL: scene, contains "character.exchange.opened"]
+[CHANNEL: scene, contains "the-plain-question"]
+[CHANNEL: exchange-affordances, contains "the-plain-question"]
+[CHANNEL: exchange-affordances, contains "a spy"]
+[CHANNEL: exchange-affordances, contains "henslowe"]
+[CHANNEL: exchange-affordances, contains "silence"]
+
+# The gripped answer serves with manner coloring on the utterance,
+# and the advertisement clears with the close — never stale choices.
+> ask shakespeare about a hired man
+[OK: contains "the most crowded parish in England"]
+[CHANNEL: scene, contains "utterance"]
+[CHANNEL: exchange-affordances, not contains "the-plain-question"]

@@ -1,0 +1,132 @@
+title: The errand, played to the win
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: The whole three-day arc through the built bundle: the
+  grievance threaded on day one, the cover story planted, the blow-up
+  witnessed on day two, the clown pressed too soon and courted after
+  cooling, the offer sworn, the book carried out of an empty
+  tiring-house on opening day, and both objectives standing at the
+  reckoning.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/walkthroughs/wt-01-the-errand.transcript
+
+---
+
+# ---- Day one: the yard, the clown, the grievance ----
+
+> talk to kemp
+[OK: contains "A new face among the hired men"]
+
+# The grievance, discussed — this is the thread the offer needs.
+> ask kemp about the grievance
+[OK: contains "SET DOWN"]
+
+> north
+[OK: contains "Stage"]
+
+# The clown's scene closes behind you while the run-through plays.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# The tragedian's probe, answered with the cover story.
+> talk to burbage
+[OK: contains "I do not know your face"]
+
+> ask burbage about norwich
+[OK: contains "the provinces keep better discipline"]
+
+# The claim proper, told and witnessed.
+> tell burbage about norwich
+[OK: contains "Norwich"]
+
+# The first night.
+> south
+[OK: contains "Yard"]
+
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "Night takes Bankside"]
+
+# ---- Day two: the blow-up, and a clown pressed too soon ----
+
+> look
+[OK: contains "Yard"]
+
+> wait
+[OK: contains "The Caesar jig is cut"]
+[OK: contains "poisonous bow"]
+
+> south
+[OK: contains "Tavern"]
+
+# Too soon: the boards have not cooled.
+> ask kemp about the rose
+[OK: contains "Not NOW, friend"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# After the cooling, and with the grievance behind it, the offer.
+> ask kemp about the rose
+[OK: contains "Say what you came to say"]
+
+> ask kemp about yes
+[OK: contains "Sworn"]
+
+# The second night.
+> east
+[OK: contains "The second night"]
+
+# ---- Opening day: an empty tiring-house, and the reckoning ----
+
+> north
+[OK: contains "Stage"]
+
+> west
+[OK: contains "Tiring-House"]
+
+> take the play-book
+[OK: contains "Taken"]
+
+> east
+[OK: contains "Stage"]
+
+> south
+[OK: contains "Yard"]
+
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "Henslowe pays in full"]

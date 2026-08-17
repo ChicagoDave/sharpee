@@ -11,19 +11,30 @@ wire schema; and a new theatre-company demonstration story whose player task is
 specified before mechanism is built. Nine packages change (`chord`, `character`,
 `world-model`, `stdlib`, `engine`, `story-loader`, `platform-browser`/`devkit`, the IDE
 testing surface) plus the demonstration story; `parser-en-us` and `lang-en-us` are
-deliberately untouched (ADR-320 Implementation).
+deliberately untouched (ADR-320 Implementation). **Amended 2026-08-17 (D14, session
+13a3e0)**: conversation threads — an author-scripted NPC-driven continuation carried
+beat by beat to a defined conclusion across as many sittings as it takes — add a tenth
+package to the change set: `parser-en-us` narrows once to recognize four
+continuation-prompt forms as thread-advance input (Phases 10.1–10.7); `lang-en-us`
+remains untouched.
 **Bounded contexts touched**: Chord Story Language (grammar/analyzer/manifest for the
-new constructs), Character subsystem (`@sharpee/character` scene runtime — floor,
-interruption, manner selection, conversation memory), stdlib NPC/dialogue dispatch
-(exchange overlay, D15 socket, witnessed-claim feed), World Model (scene/memory
-persistence shape), story-loader (load-time instantiation, evaluator coverage), engine
-(NPC↔NPC scene scheduling in the turn phase, save/restore), platform-browser/devkit +
-IDE testing surface (D12 wire schema and its consumption), and the Theatre Company
-demonstration story as its own content vehicle.
+new constructs, including the D14 `define conversation` block), Character subsystem
+(`@sharpee/character` scene runtime — floor, interruption, manner selection,
+conversation memory, and the D14 thread runtime), stdlib NPC/dialogue dispatch
+(exchange overlay, D15 socket, witnessed-claim feed, D14's thread dispatch precedence
+and transition enforcement), World Model (scene/memory persistence shape, D14's
+per-pair thread cursor/status), story-loader (load-time instantiation, evaluator
+coverage, D14's `is concluded` evaluator and beat serving), engine (NPC↔NPC scene
+scheduling in the turn phase, save/restore, D14's mid-beat save/restore), parser-en-us
+(D14's continuation-prompt recognition only), platform-browser/devkit + IDE testing
+surface (D12 wire schema and its consumption, extended additively for D14 thread
+lifecycle events), and the Theatre Company demonstration story as its own content
+vehicle (reworked onto threads in Phase 10.7).
 **Key domain language**: scene · exchange point · boundary block · manner block / beat ·
 floor · interruption (`passive`/`assertive`/`blocking`) · initiative (disposition-under-
 circumstance) · discussed-ness / subject-change (threading) · witnessed claim · wire
-affordance.
+affordance · **conversation thread · beat · conclusion · park / resume · on parting / on
+resuming / on refusing** (D14, FROZEN 2026-08-17).
 
 ## References consulted
 - `docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md` — the plan's own
@@ -65,9 +76,30 @@ affordance.
   capability-effect re-minting), and Testing Intelligence/IDE (`testing-surface`
   click-to-assert and `authorChannels` visibility flips) — every phase's Deliverable
   below is written to that bar, not to return values or "didn't throw."
-- `docs/context/session-20260816-2315-feat-ide-explain-npc-turn.md` (newest session) —
-  no open items or blockers carried into this plan; the session's sole recorded goal is
-  this plan itself.
+- `docs/context/session-20260816-2315-feat-ide-explain-npc-turn.md` (newest session at
+  plan creation) — no open items or blockers carried into this plan; the session's sole
+  recorded goal is this plan itself.
+- **2026-08-17 amendment (Phases 10.1–10.7, D14 conversation threads):**
+- `docs/work/adr-320-conversation/conversation-threads-design.md` — RESOLVED design and
+  FROZEN vocabulary (David, 2026-08-17): the `define conversation` construct, the
+  activation/switch/park/resume/conclude semantics, the strength-governed transition
+  table, the `is concluded` predicate, and the deliberate v1 exclusions (no branching
+  beat trees, no NPC↔NPC threads) are the authoritative spec every new phase's
+  Deliverable is written against.
+- `docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md` D14/AC14/the
+  "D14 amendment scope" paragraph — re-consulted for the amendment: D14 fixes the
+  construct and semantics, AC14 is the new phases' trace target, and the amendment scope
+  paragraph fixes which packages change (`chord`, `world-model`, `character`,
+  `story-loader`, `stdlib`, `parser-en-us`, `engine`, and the demonstration story) — the
+  same nine-minus-two Implementation discipline extended by exactly one narrowed
+  carve-out (`parser-en-us` gains the four continuation-prompt forms; `lang-en-us` stays
+  untouched).
+- `docs/context/session-20260817-1525-feat-adr-320-implementation.md` (newest session at
+  amendment time) — Open Items records the exact gap this amendment closes: Phase 10's
+  exit held open pending the threads discussion, `ContinuationEntry` verified type-only
+  (no authoring surface, no runtime consumer) before this amendment, and the Phase 10 →
+  DONE flip deferred until the story is reworked onto threads — the reason Phase 10.7
+  exists as the phase that finally closes it.
 
 ## Phases
 
@@ -562,7 +594,8 @@ affordance.
   Phase 2's construct-to-beat table needs content David hasn't yet supplied, this phase
   stops and asks rather than drafting placeholder prose that ships.
 - **Deliverable**: the theatre company story compiling and playing end-to-end via
-  `dist/cli/sharpee.js`, built with `./repokit build <theatre-story-slug>`; every
+  `dist/cli/sharpee.js` (Chord-only vehicle — no repokit build target; recorded
+  deviation 2026-08-17, matching the thealderman precedent); every
   construct from Phase 2's table exercised by at least one scene; transcript tests
   (`.transcript` files) covering the acceptance-relevant beats, chained where state
   persists across rehearsal days (D6). Story files carry no ADR references (David,
@@ -572,26 +605,261 @@ affordance.
   the bundle, exercising every construct above); the story is a new vehicle under
   `stories/` (or `branch-stories/` per its authoring shape), not an extension of
   thealderman or Reflections, and no platform work builds on Reflections' content
-  (ADR-320 D13).
+  (ADR-320 D13). **Amended 2026-08-17 (D14, session 13a3e0)**: this phase's original
+  scope (the story authored and green against Acceptance 1–13) is complete, but the
+  phase does not close on that alone — David identified during authoring that the
+  demonstration story needs author-scripted NPC-driven conversation threads (D14) to
+  properly exercise Kemp's defection and Shakespeare's suspicion, so the story must be
+  reworked onto threads before Acceptance 13 can be called discharged. This exit state
+  is held open until Phase 10.7 (below) reworks the story onto threads and its own exit
+  state closes; Phase 10 completes only then.
+- **Status**: CURRENT (since 2026-08-17, session 13a3e0)
+
+### Phase 10.1: Chord grammar — `define conversation` (threads)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Chord Story Language — the D14 thread construct: `define
+  conversation <key> for <name>[, <strength>]`, `about <topic-keys>`, `opens when
+  <condition>`, 1..n `beat:` / `beat, when <condition>:` rows, `on parting:` / `on
+  resuming:` / `on refusing:`, exactly-one required `conclusion:`, and the `when <key>
+  is concluded` predicate's IR lowering (evaluator wiring is Phase 10.4's).
+- **Entry state**: ADR-320 D14 accepted and the freeze list FROZEN (David, 2026-08-17,
+  `conversation-threads-design.md` §6–§7 — no further freeze steps needed; the header
+  strength words reuse the Phase 4 `passive`/`assertive`/`blocking` freeze and the
+  topic-key grammar reuses the existing topic-row grammar verbatim, so this phase adds
+  new block/row/predicate surface, not new base vocabulary). Platform-change discussion
+  held and confirmed for `packages/chord` before work starts (CLAUDE.md).
+- **Deliverable**: lexer/parser/analyzer support for the `define conversation` block and
+  its rows; gates — at least one `beat:`, exactly one `conclusion:`, `about` filter and
+  header-strength reuse validated against the frozen vocabulary, cross-owner `then asks`
+  rules consistent with the Phase 4 exchange grammar; new diagnostics per gate (missing
+  conclusion, zero beats, malformed `opens when`, unknown transition-row spelling) in the
+  no-ADR-refs idiom; `when <key> is concluded` lowered to a dedicated `IRCondition` kind
+  alongside Phase 3's recency/discussed/subject-changes kinds; compiled-story IR wire
+  shapes for the whole block, agreed with story-loader's manifest idiom since Phase 10.4
+  depends on it. `CHORD_LANGUAGE_VERSION` bump (next ordinary minor after 3.2.0) + surface
+  pin re-record (ADR-257 D5). Behavior Statements (rule 12) for new mutation-bearing
+  analyzer/IR functions before their tests.
+- **Exit state**: ADR-320 Acceptance 14's grammar/IR legs pass at the Chord-compile
+  level — a `define conversation` block with all its rows parses, its gates reject the
+  malformed forms named above, `is concluded` lowers correctly, and a story with no
+  `define conversation` blocks compiles byte-identically to today (D2 cost-leg
+  discipline extended to the new block). No runtime consumption yet — that is Phase
+  10.2's persistence shape and Phase 10.3's runtime.
+- **Status**: DONE (2026-08-17, session 13a3e0) — 16 new tests in
+  `adr-320-threads.test.ts` (IR shape, all named parse/analysis gates, `is concluded`
+  lowering + negation + unknown-key rejection + standalone rule, then-asks wiring in
+  beats, cost leg); chord suite 909 passing (4 golden IR snapshots moved on
+  `languageVersion` alone); `CHORD_LANGUAGE_VERSION` 3.3.0, `chord.ebnf` + pin
+  re-recorded; repo-wide `npx tsc --noEmit` clean. All run 2026-08-17.
+
+### Phase 10.2: `packages/world-model` — thread persistence and wire
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: World Model's persistence shape for the per-pair thread cursor and
+  status (ACTIVE/PARKED/CONCLUDED), riding `CharacterModelTrait` beside conversation
+  memory with a schema bump (ADR-310 D17 versioning, matching Phase 7's `conversationMemory`
+  v1→v2 precedent — a versioned reader, not a hard break), and the D12 wire additions for
+  thread lifecycle (`character.thread.opened/beat/parked/resumed/concluded`) plus an
+  active thread's continuability on the affordance surface (additive to the Phase 9
+  schema).
+- **Entry state**: Phase 10.1 done — the compiled IR shape for the thread block and the
+  `is concluded` predicate kind are fixed inputs this phase's persistence shape must be
+  able to represent. Platform-change discussion held and confirmed for
+  `packages/world-model`.
+- **Deliverable**: thread cursor/status state shape on `ICharacterModelData` (or its
+  agreed extension point) — key, per-pair owner/player identity, current beat index,
+  status, discharged-topics record for `conclusion`'s "topics record as discussed"
+  requirement; schema version field bumped and the old shape still readable (versioned
+  reader per the save-format-versioning convention); `scene-wire.ts` gains the five
+  thread lifecycle event shapes and the affordance-surface continuability flag. Tests
+  assert on real persisted/serialized trait state, not on type-checks alone.
+- **Exit state**: `packages/world-model` compiles clean with the new shapes present and
+  unconsumed by any runtime yet (Phase 10.3 consumes them); a trait carrying no thread
+  state serializes byte-identically to today; the schema version reader round-trips both
+  old and new shapes.
+- **Status**: DONE (2026-08-17, session 13a3e0) — `ConversationThreadState`/`Status`
+  beside conversation memory (schema v2→v3, absence-tolerant versioned reader per the
+  Phase 7 precedent); five `thread-*` SceneWireEvent kinds + `ThreadContinuability`
+  on the affordance surface; barrels updated. 3 new trait tests (round-trip,
+  deep-copy, pre-v3 read); world-model suite 1492 passing; repo-wide tsc clean.
+  Noted deviation: "serializes byte-identically" is not literal across a schema bump —
+  a no-thread trait now carries `conversationThreads: {}` + `schemaVersion: 3`,
+  exactly the shape delta the v2 bump made; old saves read unchanged (asserted).
+
+### Phase 10.3: `packages/character` — thread runtime
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Character subsystem — activation, switch, park, resume, and conclude
+  for the per-pair thread; beat advance through the existing open-floor initiative path
+  (disposition, interruption, and decay unchanged, per D14's "advance" clause); `opens
+  when` evaluated through the initiative/floor machinery Phase 5 already built;
+  strength-governed transition scoring (passive parks silently by default, assertive
+  protests once via `on parting` then parks, blocking refuses back into the thread); and
+  the GitHub issue #273 seize-runner fix — an ask-beat's `then asks` now opens its
+  exchange in a player scene instead of throwing or wedging the engine on the tick-side
+  seize path.
+- **Entry state**: Phases 10.1 and 10.2 done — the compiled thread IR and the persistence
+  shape are both fixed inputs this phase's runtime codes against. Platform-change
+  discussion held and confirmed for `packages/character` (carried from Phase 5 unless
+  David revokes it).
+- **Deliverable**: a thread runtime module in `src/conversation/` (mirroring `scene-
+  runtime.ts`'s shape) — activation on a matching ask or `opens when` occasion; at-most-
+  one-ACTIVE-per-pair enforcement; switch/park/resume transitions scored by the active
+  thread's strength per D14's table; beat advance consuming Phase 5's floor-selection
+  scoring on the owner's own turns; conclusion firing the `conclusion:` beat once,
+  stamping status CONCLUDED and the discharged-topics record. #273's fix: the seize-runner
+  path that previously threw on an NPC-opened `then asks` now opens the exchange
+  correctly against a live player scene. `ContinuationEntry` (lifecycle.ts) is
+  explicitly retired or absorbed in this phase — a supersession note pointing at the
+  thread runtime, so the codebase never carries a second, dead continuation concept
+  (plan-review advisory, 2026-08-17). Behavior Statements for every new mutation-
+  bearing function (activate, park, resume, advance, conclude) before tests; tests assert
+  on real thread-cursor/status state on the trait, not return values (project-profile's
+  `@sharpee/character` mutation signature).
+- **Exit state**: `packages/character` compiles clean; its test suite is green and graded
+  (rule 12/13) against D14's activation/switch/park/resume/conclude/beat-advance/`opens
+  when` semantics, asserted on real trait state; #273 closed with a state-asserting
+  regression test (an NPC-opened ask-beat opens its exchange without throwing). No other
+  package yet consumes this runtime, and `is concluded` is not yet queryable from Chord
+  rows (that is Phase 10.4's evaluator wiring).
+- **Status**: PENDING
+
+### Phase 10.4: `packages/story-loader` + `packages/stdlib` — registration, dispatch precedence, and evaluator
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: story-loader's load-time instantiation of `define conversation`
+  blocks and its evaluator coverage for `is concluded` (loud-fail-if-missed per the Phase
+  7 precedent); stdlib's dispatch precedence extending D16's innermost-wins to threads
+  (open exchange > active thread > parked-thread resume > topic table) and strength-
+  governed transition enforcement at the dispatch boundary (the authored `on refusing:`
+  row served first, the current beat re-served when absent, for a `blocking` thread's
+  off-topic refusal).
+- **Entry state**: Phases 10.1, 10.2, and 10.3 done — the compiled IR, the persistence
+  shape, and the tested thread runtime are all fixed inputs. Platform-change discussion
+  held and confirmed for `packages/story-loader` and `packages/stdlib` (mirrors Phases 7
+  and 6's own gates).
+- **Deliverable**: story-loader registers compiled `define conversation` blocks onto
+  entities at load (matching `registerCharacterScenes`'s idiom), serves beats through the
+  D15 selector (extending the Phase 7 production registrant rather than adding a second
+  one), and gains the `is concluded` evaluator case; stdlib's ASK/TELL/TALK dispatch
+  consults an active/parked thread before falling through to the topic table, registered
+  through the capability-dispatch idiom (ADR-090) alongside the Phase 6 exchange grip;
+  the affordance snapshot (Phase 10.2's continuability flag) is populated at thread-open/
+  beat time, mirroring Phase 9's exchange-affordance snapshot. Fully-qualified capability-
+  effect messageIds throughout. Tests assert on real dispatched/loaded state — a thread
+  actually advancing through dispatch, a blocking refusal actually re-serving the current
+  beat, `is concluded` actually reading true only after the conclusion beat fires.
+- **Exit state**: ADR-320 Acceptance 14's precedence, transition-enforcement, and
+  predicate legs pass against real dispatched/loaded state — the dispatch-precedence
+  table, the authored-first/repeat-second refusal rule, and `is concluded`'s false-
+  before/true-after behavior all hold on real trait/store state. The player-side
+  continuation-prompt input is not yet wired (Phase 10.5's), so beat advance is proven
+  here only via the owner's own floor turns.
+- **Status**: PENDING
+
+### Phase 10.5: `packages/parser-en-us` — continuation-prompt forms
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: the one narrowing of ADR-320's parser carve-out (D14 amendment to
+  Implementation) — recognizing the frozen continuation-prompt list ("tell me more",
+  "continue", "go on", "and?") as thread-advance input, routed to Phase 10.4's dispatch
+  precedence rather than any existing verb.
+- **Entry state**: Phase 10.4 done — the dispatch entry point a continuation prompt must
+  target (advance the pair's active thread) exists and is tested. Platform-change
+  discussion held and confirmed for `packages/parser-en-us` — the first ADR-320 phase to
+  touch this package, since the original Implementation section deliberately left it
+  untouched.
+- **Deliverable**: grammar patterns for the four frozen prompt forms (ADR-269's Chord-
+  generated grammar convention — `standard-en-us.story` if that is where the pattern
+  belongs, or the package's existing extension point for a small closed phrase set),
+  routed as thread-advance input at dispatch. No new player-facing text (lang-en-us stays
+  untouched per the Implementation carve-out — the four forms are recognized as input,
+  not rendered as output). Tests assert each of the four forms actually advances the
+  active thread's beat on real dispatched state, and that the forms are inert with no
+  active thread (fall through to the existing default path, never a crash).
+- **Exit state**: ADR-320 Acceptance 14's "beats advance on both paths" leg passes in
+  full — a player continuation prompt advances a real thread beat via the built bundle,
+  matching the owner's-own-floor-turn leg Phase 10.4 already proved.
+- **Status**: PENDING
+
+### Phase 10.6: `packages/engine` — mid-beat save/restore and wire consumption
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: mid-beat save/restore for thread state (D14's persistence clause —
+  survives a scene close, a day boundary, and a save/restore) through the real
+  `SaveRestoreService`; the scene channel and IDE testing surface consuming the D12 wire
+  additions from Phase 10.2 (thread lifecycle events and affordance continuability),
+  mirroring Phase 9's exchange-affordance consumption.
+- **Entry state**: Phases 10.2, 10.3, 10.4, and 10.5 done — the wire shapes, the runtime,
+  the dispatch precedence, and both beat-advance paths are all fixed, tested inputs.
+  Platform-change discussion held and confirmed for `packages/engine` and
+  `packages/platform-browser`/`packages/devkit`.
+- **Deliverable**: a thread parked mid-beat, saved, and restored resumes with `on
+  resuming:` rendering exactly as it would after a live gap — proven through the real
+  `SaveRestoreService`, not a stub (rule 13a: an Integration Reality Statement is
+  produced before this phase is declared complete, naming the real save/restore path as
+  the REAL-PATH TEST); the scene channel carries the five thread lifecycle events and the
+  testing-surface explain panel renders them (mirroring Phase 9's `scene.ts` projection);
+  channel isolation re-confirmed (no thread internals reach the player-facing build
+  beyond rendered prose).
+- **Exit state**: ADR-320 Acceptance 14's persistence leg passes against the real
+  save/restore path at the pinned seed (scene close, day boundary, and save/restore all
+  proven — asserted on deep-equal restored trait state and byte-identical continuation);
+  Acceptance 11's channel-isolation discipline holds for the new thread wire kinds.
+- **Status**: PENDING
+
+### Phase 10.7: Theatre Company demonstration story — rework onto threads
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: reworking `stories/ides-of-march` onto the D14 thread mechanism —
+  Kemp's defection as an NPC-opened, blocking-completion thread; Shakespeare's suspicion
+  as a passive thread parked and resumed across the three-day clock — closing the exit
+  Phase 10 held open.
+- **Entry state**: Phases 10.1–10.6 done (every D14 construct exists and is tested in
+  isolation) and the story as authored in Phase 10 (green against Acceptance 1–13) is the
+  base this phase reworks two threads into. Content authority for this story is granted
+  to Claude (David, 2026-08-17: "you have content control since this is test material" —
+  superseding Phase 10's original content-input clause); the fixed frame from Phase 2's
+  `theatre-story-task.md` still governs.
+- **Deliverable**: Kemp's defection reworked as a `define conversation ..., blocking`
+  thread (off-topic asks refused back into it until `conclusion`, `on refusing:`
+  authored); Shakespeare's suspicion reworked as a `define conversation ..., passive`
+  thread parked across days and resumed via `on resuming:`; transcripts covering the full
+  transition matrix (passive park/resume, blocking refusal with and without `on
+  refusing:` authored, the continuation-prompt forms, `is concluded` false-before/true-
+  after, a save/restore mid-beat); the `wt-01-the-errand` walkthrough (and any other
+  affected walkthroughs) updated to the reworked story, chained where state persists
+  across rehearsal days (D6). Story files carry no ADR references (David, 2026-08-16) —
+  requirements in plain story language only.
+- **Exit state**: ADR-320 Acceptance 14 passes end-to-end via `dist/cli/sharpee.js` at
+  the pinned seed against the reworked story; Acceptance 13 (the demonstration story
+  plays end-to-end, exercising every construct including D14) is now fully discharged;
+  Phase 10's held-open exit closes — Phase 10 is complete.
 - **Status**: PENDING
 
 ### Phase 11: Acceptance closure — full audit, regression, and ADR-142 supersession
 - **Tier**: Large
 - **Budget**: 400
 - **Domain focus**: the acceptance criteria not fully discharged by construction in
-  Phases 1–10, whole-platform regression, and closing out ADR-142's supersession stamp.
-- **Entry state**: Phases 1–10 done.
-- **Deliverable**: a full Acceptance 1–13 audit with evidence inline per criterion (dated,
-  re-run — not cited from memory); Dungeo walkthrough chain and any Fernhill transcripts
+  Phases 1–10 (including the D14 amendment's Phases 10.1–10.7), whole-platform
+  regression, and closing out ADR-142's supersession stamp.
+- **Entry state**: Phases 1–10 done, including 10.1–10.7 (Phase 10 itself closes only
+  once 10.7 does — see Phase 10's amended exit state).
+- **Deliverable**: a full Acceptance 1–14 audit with evidence inline per criterion (dated,
+  re-run — not cited from memory), Acceptance 14 (conversation threads) included
+  alongside the original 13; Dungeo walkthrough chain and any Fernhill transcripts
   confirmed byte-identical at the pinned seed (single run — the run-twice convention is
-  retired per ADR-293 Phase D); a story with no manner blocks and no scene constructs
-  confirmed to compile byte-identically to today (D2/D5's cost leg, Acceptance 3);
-  channel isolation re-confirmed at the channel layer in a built story; ADR-142's Status
-  line carries the supersession stamp (already written at ADR-320 acceptance — confirm it
-  still reads correctly against the shipped implementation, amend only if construction
-  diverged from what D4 promised).
-- **Exit state**: ADR-320's Acceptance section fully discharged, evidence inline per
-  criterion; whole-platform regression green; ADR-142 supersession confirmed accurate.
+  retired per ADR-293 Phase D); a story with no manner blocks, no scene constructs, and
+  no `define conversation` blocks confirmed to compile byte-identically to today (D2/D5's
+  cost leg, Acceptance 3, extended to D14's block); channel isolation re-confirmed at the
+  channel layer in a built story, including the thread wire kinds; ADR-142's Status line
+  carries the supersession stamp (already written at ADR-320 acceptance — confirm it
+  still reads correctly against the shipped implementation including D14, amend only if
+  construction diverged from what D4/D14 promised).
+- **Exit state**: ADR-320's Acceptance section (1–14) fully discharged, evidence inline
+  per criterion; whole-platform regression green; ADR-142 supersession confirmed
+  accurate.
 - **Status**: PENDING
 
 ## Notes for future phases
@@ -600,11 +868,18 @@ affordance.
   ADR-310/318 interior state (a new belief kind, a new force, a new predicate the
   character model itself must carry), that need is raised as an ADR-310/318 amendment —
   never smuggled into an ADR-320 phase as a side effect.
-- **Every implementation phase (3–9, 11) touches `packages/`** and therefore needs its
-  own platform-change discussion confirmation with David before work starts, per
-  CLAUDE.md — carried forward from an earlier phase's confirmation only where David has
-  not revoked it.
+- **Every implementation phase (3–9, 10.1–10.6, 11) touches `packages/`** and therefore
+  needs its own platform-change discussion confirmation with David before work starts,
+  per CLAUDE.md — carried forward from an earlier phase's confirmation only where David
+  has not revoked it. Phase 10.5 (`parser-en-us`) is a first touch for that package under
+  this plan, so its confirmation cannot be carried forward from an earlier phase.
 - **New vocabulary slices are compatibility surface the moment a story ships on them** —
   every new Chord word list (manner states, time words, threading words, strength
   markers) goes through a freeze review with David before Phase 3/4 closes on it, the
-  same discipline ADR-310/318 used.
+  same discipline ADR-310/318 used. The D14 amendment's word list is already FROZEN
+  (David, 2026-08-17, `conversation-threads-design.md` §7) — no further freeze step is
+  needed in Phases 10.1–10.7.
+- **D14's Phase 10.1–10.7 insertion (2026-08-17, session 13a3e0)**: these phases sit
+  between Phase 10 and Phase 11 and do not renumber Phases 1–10. Phase 10's own exit
+  state stays held open until Phase 10.7 closes it (see Phase 10's amended exit state
+  above); Phase 11's audit was widened to Acceptance 1–14.

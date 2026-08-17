@@ -1,0 +1,63 @@
+title: The cover story comes back
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: The player's Norwich story, told to Burbage on the first
+  day, travels through the company on Burbage's own tongue — and comes
+  back from the one man who knows every jig-maker between here and
+  Norwich, wearing its contradiction.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/claims-return.transcript
+
+---
+
+> north
+[OK: contains "Stage"]
+
+# The probe, answered with the cover story.
+> talk to burbage
+[OK: contains "I do not know your face"]
+
+> ask burbage about norwich
+[OK: contains "the provinces keep better discipline"]
+
+# The claim proper: told, witnessed, and Burbage's to spread.
+> tell burbage about norwich
+[OK: contains "Norwich"]
+
+# Two nights pass; the third day gathers the company on the stage.
+> south
+[OK: contains "Yard"]
+
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "Night takes Bankside"]
+
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "The second night"]
+
+> north
+[OK: contains "Stage"]
+
+# Give the company's own gossip time to make its rounds.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# The contradiction, from the man who would know.
+> ask kemp about norwich
+[OK: contains "I never once saw you among them"]

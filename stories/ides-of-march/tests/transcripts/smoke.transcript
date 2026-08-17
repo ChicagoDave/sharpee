@@ -1,0 +1,29 @@
+title: Smoke — the story compiles and the principals answer
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Compile-and-breathe check. The Yard opens the story, Kemp
+  answers a topic, the stage and tiring-house hold their people.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/smoke.transcript
+
+---
+
+> look
+[OK: contains "yard of the Globe"]
+
+> ask kemp about the jig
+[OK: contains "jig"]
+
+> north
+[OK: contains "stage"]
+
+> ask burbage about the play
+[OK: contains "verdict"]
+
+> west
+[OK: contains "tiring-house"]
+
+> ask shakespeare about the play
+[OK: contains "arguing"]

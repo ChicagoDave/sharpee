@@ -1,0 +1,143 @@
+title: Boundaries — twice in one hour, and after days
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Scene boundaries and absence words through the one clock
+  seam. A scene left to decay and reopened at once greets with the
+  again-so-soon row; the same pair reopened after a long absence greets
+  with the after-days row.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/boundaries.transcript
+
+---
+
+> talk to kemp
+[OK: contains "A new face among the hired men"]
+
+# Let the scene decay closed (silence threshold), then knock again
+# at once: the return boundary carries the again-so-soon word.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> talk to kemp
+[OK: contains "Twice in one hour"]
+
+# Now a long absence: north to the stage and let the days-scale
+# curve pass before returning to the clown.
+> north
+[OK: contains "Stage"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> south
+[OK: contains "Yard"]
+
+> talk to kemp
+[OK: contains "Still here?"]

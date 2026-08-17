@@ -7,6 +7,8 @@ export type {
   ExchangeState,
   SceneBoundaryKind,
   ConversationMemory,
+  ConversationThreadStatus,
+  ConversationThreadState,
 } from './conversation-scene.js';
 export {
   CHARACTER_SCENES_KEY,

@@ -1,0 +1,101 @@
+title: First day — meetings, the probe, the cover story
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: First-meeting greetings for all three principals; Burbage's
+  identity probe grips the reply over his own same-key topic row; after
+  the exchange closes the same words fall through to the table; the
+  cover story lands as a told claim; the play-book is guarded while the
+  poet sits over it; steering the talk to the book gets noticed. A
+  conversation holds one live scene at a time, so each principal gets
+  the previous scene's decay before the next knock.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/first-day.transcript
+
+---
+
+# The clown first: first-meeting boundary row.
+> talk to kemp
+[OK: contains "A new face among the hired men"]
+
+# His grievance, plainly asked — this threads the offer later.
+> ask kemp about the grievance
+[OK: contains "SET DOWN"]
+
+# Norwich before the story has traveled: the idle variant.
+> ask kemp about norwich
+[OK: contains "a town that knows how to laugh"]
+
+> north
+[OK: contains "Stage"]
+
+# Let the clown's scene close before knocking on the tragedian.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Burbage's first-meeting row opens the identity probe.
+> talk to burbage
+[OK: contains "I do not know your face"]
+
+# The gripped answer wins over his own norwich table row (the probe
+# holds the floor), and the exchange closes on the served row.
+> ask burbage about norwich
+[OK: contains "the provinces keep better discipline"]
+
+# The table serves normally after the exchange closed.
+> ask burbage about the house
+[OK: contains "worth a peg"]
+
+# Same words again: the table row now, not the exchange.
+> ask burbage about norwich
+[OK: contains "So you said"]
+
+# The claim proper: told to Burbage, witnessed, and his to spread.
+> tell burbage about norwich
+[OK: contains "Norwich"]
+
+> west
+[OK: contains "Tiring-House"]
+
+# The tragedian's scene decays before the poet's opens.
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> talk to shakespeare
+[OK: contains "The new hired man"]
+
+# Kemp not yet discussed with the poet: the quiet variant.
+> ask shakespeare about kemp
+[OK: contains "The yard loves him"]
+
+# The book is guarded while he sits over it.
+> take the play-book
+[OK: contains "a half-second before yours"]
+
+# Steering the talk from Kemp to the book gets marked as steering,
+# and the plain question opens on its heels.
+> ask shakespeare about the book
+[OK: contains "You steer"]
+
+# The gripped jest answer: he serves it and quits the scene.
+> ask shakespeare about a spy
+[OK: contains "given in jest"]

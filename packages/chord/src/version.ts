@@ -194,5 +194,12 @@
  * changes`, `on <act/event>` — with the `, when <condition>` refinement),
  * and the conversation-row statements `then asks|invites <exchange>`,
  * `deflect to <topic>`, `leave`, and `hold their tongue`.
+ *
+ * 3.3.0 — ADR-320 D14 amendment, 2026-08-17 (session 13a3e0): conversation
+ * threads, vocabulary frozen by owner the same day. Additive: `define
+ * conversation <key> for <entity>[, <strength>]` (the `about` topic filter,
+ * `opens when <condition>`, ordered `beat[, when <condition>]:` rows, the
+ * transition rows `on parting:` / `on resuming:` / `on refusing:`, exactly
+ * one `conclusion:`) and the `<thread> is concluded` predicate.
  */
-export const CHORD_LANGUAGE_VERSION = '3.2.0';
+export const CHORD_LANGUAGE_VERSION = '3.3.0';

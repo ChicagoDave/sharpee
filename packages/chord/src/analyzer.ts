@@ -126,6 +126,8 @@ import {
   IRExchange,
   IRExchangeRow,
   IRInitiativeRow,
+  IRConversation,
+  IRConversationBeat,
   IRTraitDef,
   IRValue,
   IRStoryFields,
@@ -295,6 +297,8 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `recency${p.negated ? '!' : ''}(${value(cond.subject)},${p.word})`;
         case 'was-discussed':
           return `was-discussed(${value(cond.subject)})`;
+        case 'concluded':
+          return `concluded${p.negated ? '!' : ''}(${value(cond.subject)})`;
       }
     }
   }
@@ -426,10 +430,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
-        // ADR-320: the subject is a TOPIC, visited above only for form's
-        // sake — a topic is never `it`.
+        // ADR-320: the subject is a TOPIC (or a D14 thread key), visited
+        // above only for form's sake — a topic is never `it`.
         case 'recency':
         case 'was-discussed':
+        case 'concluded':
           return false;
       }
     }
@@ -585,6 +590,20 @@ class Analyzer {
   private profiles = new Map<string, Record<string, string>>();
   /** Custom vocabulary (ADR-310 D5): `define mood` / `define personality` by word. */
   private customMoods = new Map<string, DefineMood>();
+
+  /** Declared `define conversation` keys (D14) — lazy, order-independent. */
+  private conversationKeysMemo: Set<string> | null = null;
+
+  /** Every declared thread key, normalized — the `is concluded` gate's universe. */
+  private get conversationKeys(): Set<string> {
+    if (!this.conversationKeysMemo) {
+      this.conversationKeysMemo = new Set();
+      for (const d of this.ast.declarations) {
+        if (d.kind === 'define-conversation' && d.name) this.conversationKeysMemo.add(normalizeTopic(d.name));
+      }
+    }
+    return this.conversationKeysMemo;
+  }
   private customPersonalities = new Map<string, DefinePersonality>();
 
   constructor(
@@ -894,6 +913,8 @@ class Analyzer {
         case 'define-exchange':
         case 'define-initiative':
           break; // applied onto owners after all entities are built (applyExchanges/applyInitiative)
+        case 'define-conversation':
+          break; // applied onto owners after all entities are built (applyConversations)
       }
     }
 
@@ -928,6 +949,7 @@ class Analyzer {
     this.applyGreetings(ir.entities);
     this.applyExchanges(ir.entities);
     this.applyInitiative(ir.entities);
+    this.applyConversations(ir.entities);
     this.checkConversationTargets(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
@@ -1986,6 +2008,105 @@ class Analyzer {
   }
 
   /**
+   * ADR-320 D14 (vocabulary frozen 2026-08-17): fold each `define
+   * conversation` block onto its owner entity's `conversations`. Gates: a
+   * duplicate (owner, key) pair, a non-person host. The parser already
+   * gated the block shape (at least one beat, exactly one conclusion,
+   * one-per-block rows); bodies lower through the same statement
+   * resolution as every conversation row, so `then asks` targets join
+   * `checkConversationTargets`'s walk.
+   */
+  private applyConversations(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → key → first span (duplicate gate). */
+    const seen = new Map<string, Map<string, Span>>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-conversation') continue;
+      if (decl.owner.words.length === 0 || !decl.name) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      let ownerSeen = seen.get(ownerId);
+      if (!ownerSeen) {
+        ownerSeen = new Map();
+        seen.set(ownerId, ownerSeen);
+      }
+      const first = ownerSeen.get(decl.name);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-conversation',
+          `\`${owner.name}\` already has a conversation \`${decl.name}\` at line ${first.line} — a thread lives in one place; merge the beats or rename one.`,
+          decl.span,
+        );
+        continue;
+      }
+      ownerSeen.set(decl.name, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.conversation-host',
+          `\`define conversation\` needs a person — \`${owner.name}\` is ${kind}, and a thread is a speaker's own subject (a block here could never open).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const keyOf = (part: string): string => `conversation.${ownerId}.${decl.name}.${part}`;
+      const lowerBody = (body: Statement[], part: string): IRStatement[] =>
+        body.map((s, j) => this.resolveStatement(s, scope, `${keyOf(part)}.${j}`));
+
+      // The `about` filter — the exchange-answer lowering: entity tier
+      // resolves to a world id; the text tier carries its spellings.
+      let filter: IRConversation['filter'];
+      if (decl.about) {
+        if (decl.about.kind === 'entity') {
+          const id = this.resolveEntityId(decl.about.ref);
+          if (id) filter = { kind: 'entity', id };
+          // an unresolved ref is already reported by resolveEntityId
+        } else {
+          filter = { kind: 'text', primary: decl.about.primary, aliases: decl.about.aliases };
+        }
+      }
+
+      const beats: IRConversationBeat[] = decl.beats.map((beat, i) => {
+        this.checkPhaseOrder(beat.body, { ended: null });
+        return {
+          condition: beat.condition ? this.resolveCondition(beat.condition, scope) : null,
+          body: lowerBody(beat.body, `beat-${i}`),
+          span: beat.span,
+        };
+      });
+
+      const conversation: IRConversation = {
+        name: decl.name,
+        ...(decl.strength ? { strength: decl.strength } : {}),
+        ...(filter ? { filter } : {}),
+        ...(decl.opensWhen ? { opensWhen: this.resolveCondition(decl.opensWhen, scope) } : {}),
+        beats,
+        ...(decl.onParting ? { onParting: lowerBody(decl.onParting, 'parting') } : {}),
+        ...(decl.onResuming ? { onResuming: lowerBody(decl.onResuming, 'resuming') } : {}),
+        ...(decl.onRefusing ? { onRefusing: lowerBody(decl.onRefusing, 'refusing') } : {}),
+        conclusion: lowerBody(decl.conclusion ?? [], 'conclusion'),
+        span: decl.span,
+      };
+      for (const body of [decl.onParting, decl.onResuming, decl.onRefusing, decl.conclusion]) {
+        if (body) this.checkPhaseOrder(body, { ended: null });
+      }
+
+      const axes = this.phraseAxesFor(owner);
+      for (const beat of conversation.beats) this.checkPhraseExclusivity(beat, axes);
+
+      (owner.conversations ??= []).push(conversation);
+    }
+  }
+
+  /**
    * ADR-320 D4/D8 target validation, after every conversation fold: a
    * `then asks`/`then invites` must name an exchange of the SAME owner
    * (a cross-owner open makes no sense — the exchange is the speaker's
@@ -2057,6 +2178,13 @@ class Analyzer {
       for (const row of e.greetings ?? []) visit(row.body);
       for (const x of e.exchanges ?? []) for (const row of x.rows) visit(row.body);
       for (const row of e.initiative ?? []) visit(row.body);
+      for (const t of e.conversations ?? []) {
+        for (const beat of t.beats) visit(beat.body);
+        visit(t.onParting ?? []);
+        visit(t.onResuming ?? []);
+        visit(t.onRefusing ?? []);
+        visit(t.conclusion);
+      }
     }
   }
 
@@ -3068,6 +3196,15 @@ class Analyzer {
         const owner = this.findEntitySilent(decl.owner);
         if (!owner) continue;
         for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+      } else if (decl.kind === 'define-conversation') {
+        // Thread bodies are entity-owned the same way (ADR-320 D14):
+        // beats, transition rows, and the conclusion alike.
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const beat of decl.beats) this.collectInlineTexts(beat.body, owner.id);
+        for (const body of [decl.onParting, decl.onResuming, decl.onRefusing, decl.conclusion]) {
+          if (body) this.collectInlineTexts(body, owner.id);
+        }
       } else if (decl.kind === 'define-manner') {
         const owner = this.findEntitySilent(decl.owner);
         if (!owner) continue;
@@ -6402,6 +6539,35 @@ class Analyzer {
             return cond.predicate.negated ? { kind: 'not', operand: node } : node;
           }
           return { kind: 'discussed', topic };
+        }
+        // ADR-320 D14: `<thread> is concluded` takes the SUBJECT as a
+        // thread key — intercept before entity resolution, and validate
+        // the key against the story's declared `define conversation`
+        // blocks (a typo here would otherwise be silently false forever).
+        if (cond.predicate.kind === 'concluded') {
+          const threadWords =
+            cond.subject.kind === 'ref' ? cond.subject.ref.words
+            : cond.subject.kind === 'bare' ? cond.subject.words
+            : null;
+          if (!threadWords || threadWords.length === 0) {
+            this.diagnostics.error(
+              'analysis.concluded-thread',
+              'Expected a thread key before `is concluded` — the subject is the `define conversation` key being tested.',
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const thread = normalizeTopic(threadWords.join(' '));
+          if (!this.conversationKeys.has(thread)) {
+            this.diagnostics.error(
+              'analysis.unknown-conversation',
+              `\`${thread}\` is not a declared conversation — \`is concluded\` tests a \`define conversation\` key${this.suggestText(thread, [...this.conversationKeys])}.`,
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const node: IRCondition = { kind: 'concluded', thread };
+          return cond.predicate.negated ? { kind: 'not', operand: node } : node;
         }
         const subject = this.resolveValue(cond.subject, scope);
         switch (cond.predicate.kind) {

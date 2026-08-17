@@ -758,6 +758,49 @@ occasion-head  = "on" "an" "open" "floor"                  (* the author-address
                | "on" WORD ;                               (* witnessed act/event — the
                                                               event-verb register *)
 
+define-conversation = "define" "conversation" WORD "for" name (* ADR-320 D14 (frozen
+                                                              2026-08-17): a conversation
+                                                              thread — an author-scripted
+                                                              subject carried beat by
+                                                              beat to a conclusion,
+                                                              across sittings. Person-
+                                                              kind owners (analysis.
+                                                              conversation-host); one
+                                                              definition per (owner, key)
+                                                              (analysis.duplicate-
+                                                              conversation); at least one
+                                                              beat (parse.conversation-
+                                                              no-beat); exactly one
+                                                              conclusion (parse.
+                                                              conversation-no-conclusion /
+                                                              parse.conversation-
+                                                              duplicate-row) *)
+                      [ "," strength-word ] NL             (* governs off-thread
+                                                              transitions: blocking =
+                                                              single-topic completion;
+                                                              unset = intent derives *)
+                      >>> { conversation-row }
+                      "end" "conversation" NL ;
+conversation-row = "about" topic-key NL                    (* the thread's topic filter —
+                                                              the topic-key grammar
+                                                              reused; at most one
+                                                              (parse.conversation-
+                                                              duplicate-row) *)
+                 | "opens" "when" condition NL             (* the NPC-opened entry gate;
+                                                              at most one *)
+                 | "beat" [ "," "when" condition ] ":"     (* 1..n ordered beats; the
+                                                              hold-gate composes like the
+                                                              initiative refinement *)
+                   ( statement | NL >>> { statement } )
+                 | "on" transition-word ":"                (* at most one of each *)
+                   ( statement | NL >>> { statement } )
+                 | "conclusion" ":"                        (* beat n — fires once; the
+                                                              thread is then CONCLUDED
+                                                              and `<key> is concluded`
+                                                              holds *)
+                   ( statement | NL >>> { statement } ) ;
+transition-word = "parting" | "resuming" | "refusing" ;    (* frozen 2026-08-17 *)
+
 define-pronouns = "define" "pronouns" WORD NL              (* ADR-242 D7 (ratchet H3):
                                                               a named pronoun set — five
                                                               named case rows, order
@@ -945,6 +988,11 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   when the word stands
                                                                   alone (end of condition
                                                                   or a connective) *)
+                              | "concluded"                    (* ADR-320 D14 (frozen
+                                                                  2026-08-17): the subject
+                                                                  is a THREAD KEY; same
+                                                                  standalone rule as the
+                                                                  recency words *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
              | ( "has" | "holds" | "wears" ) name

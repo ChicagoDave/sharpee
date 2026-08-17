@@ -15,7 +15,8 @@
  * never reach Chord (ADR-310 D6).
  *
  * Public interface: ConversationSceneState, SceneStrength, SceneOpenedBy,
- *   ExchangeState, SceneBoundaryKind, ConversationMemory.
+ *   ExchangeState, SceneBoundaryKind, ConversationMemory,
+ *   ConversationThreadStatus, ConversationThreadState.
  * Owner context: world-model / character-model trait
  */
 
@@ -160,4 +161,39 @@ export interface ConversationMemory {
 
   /** Per-topic ask counts with this partner (repetition words; runtime owns the counting). */
   askedCounts: Record<string, number>;
+}
+
+/**
+ * A conversation thread's per-pair status (ADR-320 D14): at most one
+ * ACTIVE thread per pair (the runtime's invariant, Phase 10.3); PARKED
+ * threads hold their cursor and resume; CONCLUDED is terminal — the
+ * `is concluded` predicate reads it, and a concluded thread never
+ * re-claims its topics.
+ */
+export type ConversationThreadStatus = 'active' | 'parked' | 'concluded';
+
+/**
+ * Per-pair state of one authored conversation thread (ADR-320 D14),
+ * held on the modeled owner's trait beside `conversationMemory`
+ * (`ICharacterModelData.conversationThreads`, schema v3) — keyed
+ * partnerId → thread key, so the state record carries no key of its
+ * own. The cursor is what makes "a conversation may or may not happen
+ * in one flow" the default truth: it survives parking, scene closes,
+ * day boundaries, and save/restore alike.
+ *
+ * Numbers here never reach Chord (ADR-310 D6): the author reads only
+ * `is concluded`; beats and turns are runtime bookkeeping.
+ */
+export interface ConversationThreadState {
+  /** Status — the at-most-one-ACTIVE-per-pair invariant is the runtime's. */
+  status: ConversationThreadStatus;
+
+  /**
+   * Beats already served (0 = nothing spoken yet). The conclusion is not
+   * counted here — it flips `status` to `concluded` when it fires.
+   */
+  beatCursor: number;
+
+  /** Turn of the last served beat (read/aged through the clock seam only). */
+  lastBeatTurn?: number;
 }

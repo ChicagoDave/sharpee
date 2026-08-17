@@ -327,6 +327,13 @@ export interface IREntity {
    */
   initiative?: IRInitiativeRow[];
   /**
+   * The entity's declared conversation threads (`define conversation
+   * <key> for …`, ADR-320 D14) — in declaration order; absent when none
+   * are declared. Beats are declarative and enumerable: the shape feeds
+   * D12's thread continuability wire data directly.
+   */
+  conversations?: IRConversation[];
+  /**
    * The declared character model (ADR-310) — present exactly when the
    * `create` block carries at least one character construct (D7: a person
    * with no character line compiles exactly as today, no model attached).
@@ -395,6 +402,54 @@ export interface IRExchangeRow {
     | { kind: 'answer'; filter: { kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] } }
     | { kind: 'act'; action: string }
     | { kind: 'silence' };
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One conversation thread (ADR-320 D14): an author-scripted subject the
+ * owner carries beat by beat to a defined conclusion, across sittings.
+ * The runtime owns the per-pair cursor/status; this shape is the whole
+ * authored surface — nothing here may hide behind a computed form (the
+ * D12 enumerability discipline).
+ */
+export interface IRConversation {
+  /** The thread key (single kebab word), unique per owner. */
+  name: string;
+  /**
+   * The header strength word (ADR-320 D10/D14) — governs off-thread
+   * transitions (blocking = single-topic completion); absent = the
+   * runtime derives strength from intent.
+   */
+  strength?: 'passive' | 'assertive' | 'blocking';
+  /**
+   * The `about` topic filter (topic-key tiers, the exchange-answer
+   * shape); absent when the thread engages only via `opens when`.
+   */
+  filter?: { kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] };
+  /** The lowered `opens when` condition; absent = never NPC-opened. */
+  opensWhen?: IRCondition;
+  /** Ordered beats, declaration order — beat n is `conclusion`, held separately. */
+  beats: IRConversationBeat[];
+  /** `on parting:` body; absent when unauthored (passive parks silently). */
+  onParting?: IRStatement[];
+  /** `on resuming:` body; absent when unauthored. */
+  onResuming?: IRStatement[];
+  /** `on refusing:` body; absent = a blocking refusal re-serves the current beat. */
+  onRefusing?: IRStatement[];
+  /** The `conclusion:` body — fires once; the thread is then CONCLUDED. */
+  conclusion: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One thread beat (ADR-320 D14): an optional hold-gate condition (the
+ * beat waits for its world) and a statement body served when the beat
+ * advances.
+ */
+export interface IRConversationBeat {
+  /** The `beat, when <condition>` hold-gate; null = always ready. */
+  condition: IRCondition | null;
   body: IRStatement[];
   span: Span;
 }
@@ -1469,4 +1524,10 @@ export type IRCondition =
    * `the subject changes` (ADR-320 D9) — the scene noticed a live thread
    * abandoned this turn; evaluation is the scene runtime's.
    */
-  | { kind: 'subject-changes' };
+  | { kind: 'subject-changes' }
+  /**
+   * `<thread> is concluded` (ADR-320 D14) — the named conversation
+   * thread's conclusion beat has fired between the evaluation context's
+   * owner and the conversation partner. Negation wraps in `not`.
+   */
+  | { kind: 'concluded'; thread: string };

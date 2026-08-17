@@ -738,6 +738,51 @@ describe('CharacterModelTrait', () => {
   // Serialization round-trip (ADR-310 D17)
   // =========================================================================
 
+  // =========================================================================
+  // Conversation-thread state (ADR-320 D14, schema v3)
+  // =========================================================================
+
+  describe('conversation-thread state (schema v3)', () => {
+    it('carries per-pair thread cursors through JSON and back, deep-copied', () => {
+      const source = {
+        conversationThreads: {
+          player: {
+            'the-defection': { status: 'parked' as const, beatCursor: 2, lastBeatTurn: 14 },
+            'the-jig': { status: 'concluded' as const, beatCursor: 3 },
+          },
+        },
+      };
+      const trait = new CharacterModelTrait(source);
+      // Deep copy: mutating the source literal never reaches the live trait.
+      source.conversationThreads.player['the-defection'].beatCursor = 99;
+      expect(trait.conversationThreads.player['the-defection'].beatCursor).toBe(2);
+
+      const restored = new CharacterModelTrait(
+        JSON.parse(JSON.stringify(trait)) as ICharacterModelData,
+      );
+      expect(restored.schemaVersion).toBe(CHARACTER_MODEL_SCHEMA_VERSION);
+      expect(restored.conversationThreads).toEqual({
+        player: {
+          'the-defection': { status: 'parked', beatCursor: 2, lastBeatTurn: 14 },
+          'the-jig': { status: 'concluded', beatCursor: 3 },
+        },
+      });
+    });
+
+    it('reads pre-v3 data (field absent) as an empty record and stamps the current version', () => {
+      const preV3 = { schemaVersion: 2, knowledge: { rumor: { source: 'told' as const, turnLearned: 1 } } };
+      const trait = new CharacterModelTrait(preV3 as ICharacterModelData);
+      expect(trait.conversationThreads).toEqual({});
+      expect(trait.schemaVersion).toBe(CHARACTER_MODEL_SCHEMA_VERSION);
+      // The v2 payload still reads — the versioned-reader discipline.
+      expect(trait.knowledge.rumor.turnLearned).toBe(1);
+    });
+
+    it('defaults to an empty record on a fresh trait', () => {
+      expect(new CharacterModelTrait().conversationThreads).toEqual({});
+    });
+  });
+
   describe('serialization round-trip', () => {
     it('should carry all mutable state through JSON and back', () => {
       const trait = new CharacterModelTrait({
@@ -1150,7 +1195,7 @@ describe('CharacterModelTrait', () => {
     it('constructs an empty record from v1 data (field absent) and stamps the current version', () => {
       const trait = new CharacterModelTrait({ schemaVersion: 1, mood: 'calm' });
       expect(trait.conversationMemory).toEqual({});
-      expect(trait.schemaVersion).toBe(2);
+      expect(trait.schemaVersion).toBe(CHARACTER_MODEL_SCHEMA_VERSION);
     });
 
     it('deep-copies v2 data so the source literal never aliases live records', () => {

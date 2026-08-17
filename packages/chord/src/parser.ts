@@ -76,6 +76,8 @@ import {
   DefineInitiative,
   InitiativeRow,
   InitiativeHead,
+  DefineConversation,
+  ConversationBeat,
   ThenOpenStmt,
   DeflectStmt,
   LeaveStmt,
@@ -275,7 +277,7 @@ const STATEMENT_OPENERS = new Set([
  * invites`, `deflect to`, `leave`) are legal. Greeting rows share the
  * `topics` keyword; `initiative` additionally hosts `hold their tongue`.
  */
-const CONVERSATION_BLOCKS = new Set(['topics', 'exchange', 'initiative']);
+const CONVERSATION_BLOCKS = new Set(['topics', 'exchange', 'initiative', 'conversation']);
 
 /**
  * True when a line reads as a statement/boundary rather than bare prose —
@@ -2850,6 +2852,9 @@ class Parser {
       case 'initiative':
         // ADR-320 D7 (frozen 2026-08-17) — authored occasion rows.
         return this.parseDefineInitiative();
+      case 'conversation':
+        // ADR-320 D14 (frozen 2026-08-17) — a conversation thread.
+        return this.parseDefineConversation();
       case 'topic':
         // ADR-318 D12a — a witnessed-act topic alias, one line.
         return this.parseDefineWitnessedTopic();
@@ -4752,6 +4757,278 @@ class Parser {
       return null;
     }
     return { kind: 'initiative-row', head, condition, body, span };
+  }
+
+  /**
+   * `define conversation <key> for <entity>[, <strength>] … end conversation`
+   * (ADR-320 D14) — a conversation thread: `about` filter, optional
+   * `opens when`, ordered `beat:` rows, the transition rows (`on parting:`,
+   * `on resuming:`, `on refusing:`), and exactly one `conclusion:`.
+   */
+  private parseDefineConversation(): DefineConversation {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define conversation
+    const name = this.readLabelKey(c);
+    if (!name) {
+      this.diagnostics.error('parse.conversation-name', 'Expected a thread key after `define conversation` — a single kebab-case word, the phrase-key form.', c.restSpan());
+    }
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.conversation-for', 'Expected `for <entity>` after the thread key.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, (t) => t.kind === 'comma');
+      if (owner.words.length === 0) {
+        this.diagnostics.error('parse.conversation-for', 'Expected `define conversation <key> for <entity>` — the owner name runs to the strength comma or the end of the line.', c.restSpan());
+      }
+    }
+    // The header strength comma-modifier (the exchange idiom, D10/D14) —
+    // governs off-thread transitions. Unset = intent derives it.
+    let strength: StrengthWord | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const w = c.next();
+      if (w && w.kind === 'word' && (w.text === 'passive' || w.text === 'assertive' || w.text === 'blocking')) {
+        strength = w.text as StrengthWord;
+      } else {
+        this.diagnostics.error('parse.conversation-strength', 'Expected a strength word after the comma — the vocabulary: `passive`, `assertive`, `blocking`.', w?.span ?? c.restSpan());
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.conversation-header', 'Unexpected words after the conversation header — the form is `define conversation <key> for <entity>[, <strength>]`.', c.restSpan());
+    }
+
+    const decl: DefineConversation = {
+      kind: 'define-conversation',
+      name: name ?? '',
+      owner,
+      strength,
+      about: null,
+      opensWhen: null,
+      beats: [],
+      onParting: null,
+      onResuming: null,
+      onRefusing: null,
+      conclusion: null,
+      span: lineSpan(headLine),
+    };
+    /** first-seen spans for the one-per-block rows (duplicate gates). */
+    const seenOnce = new Map<string, Span>();
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('conversation', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        this.checkConversationShape(decl);
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end conversation` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.parseConversationRow(line, decl, seenOnce);
+    }
+    this.diagnostics.error('parse.conversation-end', 'Expected `end conversation` to close the block.', decl.span);
+    this.checkConversationShape(decl);
+    return decl;
+  }
+
+  /** The block-shape gates: at least one beat, exactly one conclusion. */
+  private checkConversationShape(decl: DefineConversation): void {
+    if (decl.beats.length === 0) {
+      this.diagnostics.error('parse.conversation-no-beat', 'This `define conversation` block declares no beats — a thread is 1..n `beat:` rows carried to a `conclusion:`; add at least one beat, or remove the block.', decl.span);
+    }
+    if (decl.conclusion === null) {
+      this.diagnostics.error('parse.conversation-no-conclusion', 'This `define conversation` block has no `conclusion:` row — every thread ends somewhere; the conclusion is the beat that settles the subject.', decl.span);
+    }
+  }
+
+  /**
+   * One `define conversation` body row: `about <topic-keys>` (no colon),
+   * `opens when <condition>` (no colon), `beat[, when <condition>]:`,
+   * `on parting:` / `on resuming:` / `on refusing:`, or `conclusion:`.
+   * Mutates the decl in place; row-level errors skip the row.
+   */
+  private parseConversationRow(headLine: Line, decl: DefineConversation, seenOnce: Map<string, Span>): void {
+    const word = firstWord(headLine);
+    const dupGate = (key: string, label: string): boolean => {
+      const first = seenOnce.get(key);
+      if (first) {
+        this.diagnostics.error('parse.conversation-duplicate-row', `This block already has ${label} at line ${first.line} — one per thread; merge them.`, lineSpan(headLine));
+        return true;
+      }
+      seenOnce.set(key, lineSpan(headLine));
+      return false;
+    };
+
+    if (word === 'about') {
+      this.pos++;
+      if (dupGate('about', 'an `about` filter')) return;
+      const c = new Cursor(headLine.tokens, headLine);
+      c.next(); // about
+      const first = c.peek();
+      if (first && first.kind === 'string') {
+        c.next();
+        if (first.text.trim() === '') {
+          this.diagnostics.error('parse.conversation-about', 'A quoted topic key cannot be empty.', first.span);
+          return;
+        }
+        const aliases: string[] = [];
+        let span = first.span;
+        while (c.peek()?.kind === 'comma') {
+          c.next();
+          const alias = c.next();
+          if (!alias || alias.kind !== 'string' || alias.text.trim() === '') {
+            this.diagnostics.error('parse.conversation-about', 'Expected a quoted alias after the comma — aliases are declared quoted spellings: `about "the rose", "henslowe"`.', alias?.span ?? c.restSpan());
+            return;
+          }
+          aliases.push(alias.text);
+          span = mergeSpans(span, alias.span);
+        }
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.conversation-about', 'Unexpected trailing text in the `about` filter.', c.restSpan());
+          return;
+        }
+        decl.about = { kind: 'text', primary: first.text, aliases, span };
+      } else {
+        const ref = this.parseNameRef(c, () => false);
+        if (ref.words.length === 0 || !c.atEnd()) {
+          this.diagnostics.error('parse.conversation-about', 'Expected a quoted topic key (with optional quoted aliases) or an entity name after `about`.', c.restSpan());
+          return;
+        }
+        decl.about = { kind: 'entity', ref };
+      }
+      return;
+    }
+
+    if (word === 'opens') {
+      this.pos++;
+      if (dupGate('opens', 'an `opens when` entry')) return;
+      const c = new Cursor(headLine.tokens, headLine);
+      c.next(); // opens
+      if (!c.matchWord('when')) {
+        this.diagnostics.error('parse.conversation-opens', 'Expected `opens when <condition>` — the NPC-opened entry gate.', c.restSpan());
+        return;
+      }
+      decl.opensWhen = this.parseCondition(c, headLine);
+      if (!c.atEnd()) {
+        this.diagnostics.error('parse.conversation-opens', 'Expected the `opens when` condition to run to the end of the line.', c.restSpan());
+        decl.opensWhen = null;
+      }
+      return;
+    }
+
+    // Every remaining row form carries a colon: beat / transitions / conclusion.
+    const colonIdx = headLine.tokens.findIndex((tk) => tk.kind === 'colon');
+    if (colonIdx < 0) {
+      this.diagnostics.error(
+        'parse.conversation-row',
+        `Unrecognized line in \`define conversation\`: \`${headLine.raw.trim()}\` — expected \`about <topic-keys>\`, \`opens when <condition>\`, \`beat[, when <condition>]:\`, \`on parting:\`, \`on resuming:\`, \`on refusing:\`, \`conclusion:\`, or \`end conversation\`.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return;
+    }
+    const c = new Cursor(headLine.tokens.slice(0, colonIdx), headLine);
+
+    /** Parse the row body: one-line statement after the colon, or an indented body. */
+    const parseBody = (label: string): Statement[] | null => {
+      let body: Statement[];
+      if (colonIdx < headLine.tokens.length - 1) {
+        const rest: Line = { ...headLine, tokens: headLine.tokens.slice(colonIdx + 1) };
+        const stmt = this.parseStatement(rest, 'conversation');
+        if (!stmt) return null; // the statement error is already reported
+        body = [stmt];
+      } else {
+        this.pos++;
+        body = this.parseStatements(headLine.indent, 'conversation');
+      }
+      if (body.length === 0) {
+        this.diagnostics.error('parse.conversation-body', `Expected a body for ${label} — a one-line statement after the \`:\`, or an indented statement body.`, lineSpan(headLine));
+        return null;
+      }
+      return body;
+    };
+
+    if (word === 'beat') {
+      c.next();
+      let condition: ConditionNode | null = null;
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        if (!c.matchWord('when')) {
+          this.diagnostics.error('parse.conversation-beat', 'Expected `when <condition>` after the comma — the hold-gate composes like `beat, when Will Kemp is sworn:`.', c.restSpan());
+          this.pos++;
+          return;
+        }
+        condition = this.parseCondition(c, headLine);
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.conversation-beat', 'Expected the hold-gate condition to run to the `:`.', c.restSpan());
+          this.pos++;
+          return;
+        }
+      } else if (!c.atEnd()) {
+        this.diagnostics.error('parse.conversation-beat', 'Unexpected words after `beat` — gate with `, when <condition>` or end the head at the `:`.', c.restSpan());
+        this.pos++;
+        return;
+      }
+      const body = parseBody('the beat');
+      if (!body) return;
+      const span = body.length > 0 ? mergeSpans(lineSpan(headLine), body[body.length - 1].span) : lineSpan(headLine);
+      decl.beats.push({ kind: 'conversation-beat', condition, body, span });
+      return;
+    }
+
+    if (word === 'on') {
+      c.next();
+      const t = c.next();
+      const transition = t && t.kind === 'word' && (t.text === 'parting' || t.text === 'resuming' || t.text === 'refusing') ? t.text : null;
+      if (!transition || !c.atEnd()) {
+        this.diagnostics.error('parse.conversation-row', 'Expected a transition row — `on parting:`, `on resuming:`, or `on refusing:` (the frozen spellings).', lineSpan(headLine));
+        this.pos++;
+        return;
+      }
+      if (dupGate(transition, `an \`on ${transition}\` row`)) {
+        this.pos++;
+        return;
+      }
+      const body = parseBody(`the \`on ${transition}\` row`);
+      if (!body) return;
+      if (transition === 'parting') decl.onParting = body;
+      else if (transition === 'resuming') decl.onResuming = body;
+      else decl.onRefusing = body;
+      return;
+    }
+
+    if (word === 'conclusion') {
+      c.next();
+      if (!c.atEnd()) {
+        this.diagnostics.error('parse.conversation-row', 'Unexpected words after `conclusion` — the row is `conclusion:` alone; conditions belong on beats.', c.restSpan());
+        this.pos++;
+        return;
+      }
+      if (dupGate('conclusion', 'a `conclusion:` row')) {
+        this.pos++;
+        return;
+      }
+      const body = parseBody('the conclusion');
+      if (!body) return;
+      decl.conclusion = body;
+      return;
+    }
+
+    this.diagnostics.error(
+      'parse.conversation-row',
+      `Unrecognized line in \`define conversation\`: \`${headLine.raw.trim()}\` — expected \`about <topic-keys>\`, \`opens when <condition>\`, \`beat[, when <condition>]:\`, \`on parting:\`, \`on resuming:\`, \`on refusing:\`, \`conclusion:\`, or \`end conversation\`.`,
+      lineSpan(headLine),
+    );
+    this.pos++;
   }
 
   // ------------------------------------------------------------- on clause
@@ -6982,6 +7259,23 @@ class Parser {
             subject,
             predicate: { kind: 'recency', negated, word: rt.text as 'fresh' | 'recent' | 'stale', span: rt.span },
             span: mergeSpans(subject.span, rt.span),
+          };
+        }
+      }
+      // ADR-320 D14 (frozen 2026-08-17): `<thread> is concluded` — the
+      // thread's conclusion beat has fired. Same standalone rule as the
+      // recency words: the word stands alone, so an entity state that
+      // merely starts with `concluded` keeps its ordinary is-value parse.
+      // The subject is the THREAD KEY; the analyzer resolves it.
+      {
+        const ct = c.peek();
+        if (ct && ct.kind === 'word' && ct.text === 'concluded' && this.isBareConditionRef(c)) {
+          c.next();
+          return {
+            kind: 'predicate',
+            subject,
+            predicate: { kind: 'concluded', negated, span: ct.span },
+            span: mergeSpans(subject.span, ct.span),
           };
         }
       }

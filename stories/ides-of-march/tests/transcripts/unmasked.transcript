@@ -1,0 +1,21 @@
+title: Unmasked — the honest answer that ends the errand
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Answering the tragedian's probe with the truth loses the
+  disguise, the errand, and the story in one stroke.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/unmasked.transcript
+
+---
+
+> north
+[OK: contains "Stage"]
+
+> talk to burbage
+[OK: contains "I do not know your face"]
+
+> ask burbage about henslowe
+[OK: contains "in my HOUSE"]
+[OK: contains "does not pay for a burned man"]

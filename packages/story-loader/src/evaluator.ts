@@ -257,6 +257,16 @@ export class Evaluator {
         const count = trait?.conversationMemory?.[partnerId]?.askedCounts[ctx.conversationTopic] ?? 0;
         return askedWordFor(count) === cond.word;
       }
+      case 'concluded': {
+        // ADR-320 D14: the thread's conclusion beat has fired between the
+        // owner and the conversation partner. Reads the holder's trait
+        // thread state directly (the Phase 10.2 home, schema v3); pre-v3
+        // traits lack the field entirely — absent reads false, never a
+        // throw (a thread that never ran is simply not concluded).
+        const trait = this.characterTrait(this.conversationOwnerId(cond.kind, ctx), ctx);
+        const partnerId = this.conversationPartnerId(cond.kind, ctx);
+        return trait?.conversationThreads?.[partnerId]?.[cond.thread]?.status === 'concluded';
+      }
       case 'subject-changes': {
         // ADR-320 D9: the scene between owner and partner noticed a live
         // thread abandoned THIS turn (the scene runtime's noteTopicMove

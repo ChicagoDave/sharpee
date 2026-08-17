@@ -283,6 +283,8 @@ export type Declaration =
   // ADR-320 D4 exchange blocks / D7 initiative blocks (frozen 2026-08-17):
   | DefineExchange
   | DefineInitiative
+  // ADR-320 D14 conversation threads (frozen 2026-08-17):
+  | DefineConversation
   // ADR-310 D14 valued-belief fact declarations:
   | DefineFact
   | DefineTemperament
@@ -500,6 +502,54 @@ export type ExchangeHead =
   | { kind: 'answer'; filter: TopicRow['filter']; span: Span }
   | { kind: 'act'; action: string; span: Span }
   | { kind: 'silence'; span: Span };
+
+/**
+ * `define conversation <key> for <entity>[, <strength>] … end conversation`
+ * (ADR-320 D14, vocabulary frozen 2026-08-17) — a conversation thread: an
+ * author-scripted subject the owner carries beat by beat to a defined
+ * conclusion, across as many sittings as it takes. Person-kind owners;
+ * one definition per (owner, key); at least one beat; exactly one
+ * conclusion. The `about` filter reuses the topic-key grammar; header
+ * strength reuses the frozen `passive`/`assertive`/`blocking` words and
+ * governs off-thread transitions (blocking = single-topic completion).
+ */
+export interface DefineConversation {
+  kind: 'define-conversation';
+  /** Single kebab-case thread key (phrase-key form). */
+  name: string;
+  /** The owning entity — the character who carries the thread (person kind, analyzer gate). */
+  owner: NameRef;
+  /** Header comma-modifier; null = the runtime derives strength from intent. */
+  strength: StrengthWord | null;
+  /** The `about <topic-keys>` filter; null when the line is absent. */
+  about: TopicRow['filter'] | null;
+  /** The `opens when <condition>` NPC-opened entry; null when absent. */
+  opensWhen: ConditionNode | null;
+  /** Ordered `beat:` rows, declaration order. */
+  beats: ConversationBeat[];
+  /** `on parting:` body — rendered when the thread parks unconcluded; null when unauthored. */
+  onParting: Statement[] | null;
+  /** `on resuming:` body — rendered when the thread re-engages; null when unauthored. */
+  onResuming: Statement[] | null;
+  /** `on refusing:` body — a blocking thread's off-topic refusal; null when unauthored. */
+  onRefusing: Statement[] | null;
+  /** The `conclusion:` body — beat n, fires once; null only on a parse error (gated). */
+  conclusion: Statement[] | null;
+  span: Span;
+}
+
+/**
+ * One thread beat: an optional `, when <condition>` hold-gate before the
+ * colon (the initiative-row composition shape), then a one-line statement
+ * or an indented statement body (the topic-row idiom; `it` = the owner).
+ */
+export interface ConversationBeat {
+  kind: 'conversation-beat';
+  /** The `beat, when <condition>:` hold-gate; null = the beat is always ready. */
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
 
 /**
  * `define initiative for <entity> … end initiative` (ADR-320 D7,
@@ -2153,6 +2203,14 @@ export type Predicate =
    * and the conversation partner, across scenes, in any order.
    */
   | { kind: 'was-discussed'; span: Span }
+  /**
+   * `<thread> is concluded` (ADR-320 D14, frozen 2026-08-17) — the thread's
+   * conclusion beat has fired between the owner and the conversation
+   * partner. The subject is the THREAD KEY; the word stands alone (the
+   * recency standalone rule), so an entity state named `concluded` keeps
+   * its ordinary is-value parse.
+   */
+  | { kind: 'concluded'; negated: boolean; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed
