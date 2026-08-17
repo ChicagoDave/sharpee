@@ -3,7 +3,7 @@
  *
  * Verifies propagation evaluation (spreads whitelist / withholds blacklist,
  * audience, pace, schedule), fact transfer with provenance, the trait-based
- * told-record, and player-leverage gating.
+ * told-record, and hearsay onward-spread (ADR-320 D11).
  */
 
 import { describe, it, expect } from 'vitest';
@@ -364,11 +364,11 @@ describe('Propagation — already-told', () => {
 // Player leverage
 // ===========================================================================
 
-describe('Propagation — player leverage', () => {
-  it('should not propagate player-told facts when playerCanLeverage is false', () => {
+describe('Propagation — hearsay spreads (ADR-320 D11, ruling 2026-08-17)', () => {
+  it('told-sourced facts propagate onward — gossip chains and player claims travel', () => {
     const speaker = makeOccupant(
       'butler',
-      { tendency: 'chatty', audience: 'anyone', playerCanLeverage: false },
+      { tendency: 'chatty', audience: 'anyone' },
       {
         murder: { source: 'told', confidence: 'believes', turnLearned: 5 },
         weather: { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
@@ -381,15 +381,13 @@ describe('Propagation — player leverage', () => {
       listeners: [listener],
     }));
 
-    // Only 'weather' should propagate — 'murder' was told by player
-    expect(transfers).toHaveLength(1);
-    expect(transfers[0].topic).toBe('weather');
+    expect(transfers.map((t) => t.topic).sort()).toEqual(['murder', 'weather']);
   });
 
-  it('should propagate player-told facts when playerCanLeverage is true', () => {
+  it('the retired playerCanLeverage flag changes nothing (dead config)', () => {
     const speaker = makeOccupant(
       'maid',
-      { tendency: 'chatty', audience: 'anyone', playerCanLeverage: true },
+      { tendency: 'chatty', audience: 'anyone', playerCanLeverage: false },
       {
         murder: { source: 'told', confidence: 'believes', turnLearned: 5 },
       },
@@ -402,6 +400,7 @@ describe('Propagation — player leverage', () => {
     }));
 
     expect(transfers).toHaveLength(1);
+    expect(transfers[0].topic).toBe('murder');
   });
 });
 

@@ -889,6 +889,9 @@ export class ChordStory implements Story {
     if (this.appliedCharacters.length > 0) {
       registerCharacterScenes(world, createTraitMemoryAccess(world), {
         authoredFor: this.runtime.buildAuthoredInitiative(world),
+        // Phase 8: the initiative RUNNER — forcing row bodies execute
+        // through the loader (occurrence keys, pins, claims).
+        seizeInitiative: this.runtime.buildInitiativeSeizure(world),
       });
       world.registerDialogueSelector(this.runtime.buildDialogueRegistration());
     }

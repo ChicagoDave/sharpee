@@ -27,9 +27,12 @@ import {
   type FloorBid,
   type FloorDecision,
   type ForceReading,
+  type InitiativeSeizure,
+  type InterruptionOutcome,
+  type SceneWireEvent,
 } from '@sharpee/world-model';
-import { openScene, recordSceneMove, applySceneDirectives } from './scene-runtime.js';
-import { scoreFloor } from './scene-scoring.js';
+import { openScene, recordSceneMove, applySceneDirectives, closeScene } from './scene-runtime.js';
+import { scoreFloor, sceneGrip, resolveInterruption } from './scene-scoring.js';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
 
 /**
@@ -67,7 +70,22 @@ export interface SceneBindingOptions {
   authoredFor?: (
     participantId: string,
     occasion: SceneOccasion,
+    witnessedAction?: string,
   ) => 'forces' | 'suppresses' | undefined;
+
+  /**
+   * Run an authored initiative seizure (ADR-320 D7; Phase 8) — the loader
+   * binds compiled `define initiative` row BODIES here: a forcing row's
+   * body executes (occurrence keys, pins, claims — the serve-path rules)
+   * and the seizure's line comes back for the observability surface.
+   * Absent = authored occasions never run (builder-authored stories).
+   */
+  seizeInitiative?: (
+    participantId: string,
+    occasion: SceneOccasion,
+    witnessedAction?: string,
+    audienceId?: string,
+  ) => InitiativeSeizure | undefined;
 }
 
 // -- The speak-propensity curve (runtime-owned; D7) -------------------------
@@ -164,6 +182,54 @@ export function createSceneRuntimeBinding(
       }
       return scoreFloor(bids);
     },
+
+    resolveIntrusion: (
+      sceneId,
+      interrupterId,
+      worldAct,
+    ): { outcome: InterruptionOutcome; wireEvents: SceneWireEvent[] } => {
+      const scene = sceneOf(world, sceneId);
+      if (!scene) return { outcome: 'yields', wireEvents: [] };
+
+      // Grip: innermost authored strength wins; nothing authored derives
+      // `passive` (blocking is never derived — Phase 5's rule).
+      const outcome = resolveInterruption(
+        {
+          sceneId,
+          interrupterId,
+          bid: {
+            participantId: interrupterId,
+            occasion: { kind: 'open-floor', sceneId },
+            readings: [],
+          },
+          worldAct,
+        },
+        sceneGrip(scene),
+      );
+
+      const wireEvents: SceneWireEvent[] = [
+        { kind: 'interruption', sceneId, interrupterId, outcome },
+      ];
+      if (outcome !== 'blocks') {
+        // D10: the scene lets go — closed on the exit boundary, memory
+        // folded like any close. `protests` closes too (protest-then-yield);
+        // the outcome word on the wire carries the protest for rendering
+        // and authored reactions.
+        wireEvents.push(...closeScene(world, sceneId, 'exit', memory));
+      }
+      return { outcome, wireEvents };
+    },
+
+    ...(options.seizeInitiative
+      ? {
+          seizeInitiative: (
+            participantId: string,
+            occasion: SceneOccasion,
+            witnessedAction?: string,
+            audienceId?: string,
+          ) => options.seizeInitiative!(participantId, occasion, witnessedAction, audienceId),
+        }
+      : {}),
   };
 }
 

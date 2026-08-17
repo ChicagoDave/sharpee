@@ -274,6 +274,20 @@ export class ProsePipeline implements IProsePipeline {
     event: ISemanticEvent,
     context: HandlerContext,
   ): ITextBlock[] {
+    // Scene/exchange wire events (ADR-320 D12; AC11 isolation): their
+    // `messageId` is structured wire DATA for the channel layer, never a
+    // prose instruction — the player-facing render of a scene move is
+    // the sound path (Phase 8) or the consulting action's own report.
+    // Gated here so neither the domain-message path nor the generic
+    // fallback can render them. Other `character.*` events (propagation
+    // witnessed, goal steps, influence) keep rendering as before.
+    if (
+      event.type.startsWith('character.scene.') ||
+      event.type.startsWith('character.exchange.')
+    ) {
+      return [];
+    }
+
     const messageIdResult = tryProcessDomainEventMessage(event, context);
     if (messageIdResult) {
       return messageIdResult;

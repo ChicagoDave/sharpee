@@ -163,6 +163,7 @@ export function noteTopicMove(world: WorldModel, sceneId: string, topic: string)
   if (!scene || scene.currentTopic === topic) return;
   if (scene.currentTopic !== undefined) {
     scene.subjectChangedTurn = dialogueTurn(world);
+    scene.abandonedTopic = scene.currentTopic;
   }
   scene.currentTopic = topic;
   writeSceneStore(world, store);

@@ -113,7 +113,9 @@ export type {
   SceneRuntimeBinding,
   SceneOccasion,
   FloorBid,
-  FloorDecision
+  FloorDecision,
+  InterruptionOutcome,
+  InitiativeSeizure
 } from './scene-runtime-binding.js';
 
 // Scene wire schema (ADR-320 D12; adr-320 contracts.md §3) — the

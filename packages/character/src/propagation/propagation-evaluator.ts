@@ -181,7 +181,8 @@ function hasSharedAlliance(
 /**
  * Find facts the speaker is willing and able to share with a specific listener.
  * Filters by the spreads whitelist / withholds blacklist, already-told
- * (read from the speaker's trait, ADR-310 D17), and player-leverage.
+ * (read from the speaker's trait, ADR-310 D17). Hearsay spreads onward
+ * like any knowledge (ADR-320 D11; the old leverage gate is retired).
  */
 function findEligibleFacts(
   ctx: PropagationContext,
@@ -195,11 +196,15 @@ function findEligibleFacts(
   const spreadsSet = new Set(profile.spreads ?? []);
   const eligible: string[] = [];
 
+  // NOTE (ADR-320 D11, David's ruling 2026-08-17): hearsay spreads like
+  // any knowledge — the old leverage gate, which blocked every
+  // told-sourced fact (killing gossip chains after one hop and stranding
+  // player claims), is deleted. Selectivity is the authored surfaces:
+  // `spreads nothing`, topic whitelists, `withholds`, audiences.
   for (const topic of Object.keys(knowledge)) {
     if (speaker.trait.hasTold(listener.id, topic)) continue;
     if (!meetsAudienceRule(topic, profile, speaker.trait, listener)) continue;
     if (!meetsTopicFilter(topic, withholds, spreadsSet)) continue;
-    if (!meetsLeverageRule(topic, profile, knowledge)) continue;
 
     eligible.push(topic);
   }
@@ -245,28 +250,6 @@ function meetsTopicFilter(
 ): boolean {
   if (spreadsSet.size > 0) return spreadsSet.has(topic);
   return !withholds.has(topic);
-}
-
-/**
- * Check whether a topic passes the player-leverage filter.
- * When playerCanLeverage is false, facts sourced from the player are blocked.
- *
- * @param topic - The knowledge topic to check
- * @param profile - Speaker's propagation profile
- * @param knowledge - Speaker's knowledge map
- * @returns Whether the topic passes the leverage rule
- */
-function meetsLeverageRule(
-  topic: string,
-  profile: PropagationProfile,
-  knowledge: CharacterModelTrait['knowledge'],
-): boolean {
-  if (profile.playerCanLeverage) return true;
-  const fact = knowledge[topic];
-  if (fact && (fact.source === 'told' || fact.source as string === 'told by player')) {
-    return false;
-  }
-  return true;
 }
 
 /**

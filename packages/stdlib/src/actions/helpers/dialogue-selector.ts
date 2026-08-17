@@ -18,8 +18,14 @@
  *   are applied — with `leave` checked against real exit legality (D8)
  *   before the scene may close on an `exit` boundary.
  *
+ * - PC intrusion (D10, Phase 8): addressing an NPC seated in a scene the
+ *   player is NOT part of challenges that scene's grip first — `yields`/
+ *   `protests` close it (the address then proceeds normally), `blocks`
+ *   refuses the consult and the action's default response stands.
+ *
  * Public interface: consultDialogueSelector, exchangeGrips,
- *   runConversationScene, isExchangeGripped, markExchangeGripped.
+ *   runConversationScene, resolveSceneIntrusion, isExchangeGripped,
+ *   markExchangeGripped.
  * Owner context: stdlib / actions / helpers
  */
 
@@ -52,13 +58,19 @@ export function markExchangeGripped(context: ActionContext): void {
   (context.sharedData as GripSharedData).exchangeGripped = true;
 }
 
-/** The selection context, scene included (adr-320 contracts.md §4). */
+/**
+ * The selection context, scene included (adr-320 contracts.md §4). A
+ * scene the player is NOT part of never rides the context (Phase 8):
+ * a foreign exchange must not grip the player's firing — intrusion into
+ * a foreign scene is `resolveSceneIntrusion`'s job, not the selector's.
+ */
 function selectionContext(context: ActionContext, target: IFEntity): DialogueSelectionContext {
   const scene = sceneWith(context.world, target.id);
+  const shared = scene?.participantIds.includes(context.player.id) ? scene : undefined;
   return {
     world: context.world,
     speakerId: context.player.id,
-    ...(scene ? { scene } : {}),
+    ...(shared ? { scene: shared } : {}),
   };
 }
 
@@ -117,6 +129,44 @@ function toSceneEvent(context: ActionContext, wire: SceneWireEvent): ISemanticEv
 }
 
 /**
+ * Resolve the PC's intrusion into a foreign scene (ADR-320 D10; Phase 8):
+ * when the addressed NPC is seated in a scene the player is not part of,
+ * the scene's grip answers through the registered runtime — `yields` and
+ * `protests` close it (the interruption wire carries the protest for
+ * rendering and authored reactions), `blocks` refuses: the caller skips
+ * the selector consult and the action's default response stands, with
+ * `character.scene.intrusion_blocked` on the author channel.
+ *
+ * @param context - The action context
+ * @param target - The addressed NPC
+ * @returns Whether the address is blocked, plus the challenge's events
+ */
+export function resolveSceneIntrusion(
+  context: ActionContext,
+  target: IFEntity,
+): { blocks: boolean; events: ISemanticEvent[] } {
+  const runtime = context.world.getSceneRuntime();
+  if (!runtime || !target.has(TraitType.CHARACTER_MODEL)) {
+    return { blocks: false, events: [] };
+  }
+  const scene = sceneWith(context.world, target.id);
+  if (!scene || scene.participantIds.includes(context.player.id)) {
+    return { blocks: false, events: [] };
+  }
+
+  const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.player.id, false);
+  const events = wireEvents.map((w) => toSceneEvent(context, w));
+  if (outcome === 'blocks') {
+    events.push(context.event('character.scene.intrusion_blocked', {
+      sceneId: scene.id,
+      interrupterId: context.player.id,
+    }));
+    return { blocks: true, events };
+  }
+  return { blocks: false, events };
+}
+
+/**
  * Drive scene lifecycle for one conversational firing (ADR-320 D4/D8):
  * opens a scene on first address, stamps the move clock, and applies the
  * selection's directives through the world's registered scene runtime —
@@ -146,7 +196,8 @@ export function runConversationScene(
   if (!scene) {
     // First conversational contact opens the scene — only when neither
     // side is already seated (a participant is in at most one live scene;
-    // joining/intruding on a foreign scene is the Phase 8 interruption path).
+    // intruding on a foreign scene resolved via `resolveSceneIntrusion`
+    // before this runs).
     if (sceneWith(context.world, context.player.id)) return [];
     const opened = runtime.openScene(
       [context.player.id, target.id],
@@ -154,8 +205,14 @@ export function runConversationScene(
     );
     scene = opened.scene;
     events.push(...opened.wireEvents.map((w) => toSceneEvent(context, w)));
-  } else {
+  } else if (scene.participantIds.includes(context.player.id)) {
+    // The move clock stamps only for the player's own scene — a foreign
+    // scene's clock is not the player's to reset (Phase 8 fix).
     runtime.recordMove(scene.id);
+  } else {
+    // Foreign scene still live (a `blocks` outcome upstream): no scene
+    // bookkeeping for this firing.
+    return events;
   }
 
   for (const wire of selection?.wireEvents ?? []) {

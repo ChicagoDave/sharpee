@@ -1,4 +1,5 @@
 import { type EntityId, type RandomService, type ISemanticEvent } from '@sharpee/core';
+import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 
 /** Summary of the player action that just completed, passed to each plugin. */
@@ -42,4 +43,12 @@ export interface TurnPluginContext {
   actionResult?: TurnPluginActionResult;
   /** The semantic events the action emitted this turn. */
   actionEvents?: ISemanticEvent[];
+  /**
+   * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8).
+   * Sounds a plugin emits here are dispatched to every listener after the
+   * plugin tick — the same propagation path action-emitted sounds take.
+   * Optional and additive: absent on hosts without the sound subsystem,
+   * and a plugin that emits nothing never touches it.
+   */
+  emitSound?: (sound: ISound) => void;
 }

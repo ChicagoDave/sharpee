@@ -1212,6 +1212,12 @@ export class GameEngine {
             targetId: result.validatedCommand?.directObject?.entity?.id,
           },
           actionEvents: semanticEvents,
+          // ADR-320 Phase 8: NPC↔NPC scene moves emit conversation sounds
+          // from the tick; they land in the same per-turn buffer action
+          // sounds use and dispatch right after this loop.
+          emitSound: (sound) => {
+            this.soundBuffer.push(sound);
+          },
         };
         for (const plugin of this.pluginRegistry.getAll()) {
           const pluginEvents = plugin.onAfterAction(pluginContext);

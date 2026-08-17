@@ -112,6 +112,14 @@ export interface ConversationSceneState {
    * absent until a subject has ever changed.
    */
   subjectChangedTurn?: number;
+
+  /**
+   * The topic the last subject change abandoned (Phase 8): written by
+   * `noteTopicMove` alongside `subjectChangedTurn`, read by the
+   * subject-change occasion's `abandonedTopicId`. Absent until a subject
+   * has ever changed.
+   */
+  abandonedTopic?: string;
 }
 
 /**

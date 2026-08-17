@@ -1,0 +1,17 @@
+title: Voices next door (Phase 8, adjacent earshot)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Moving one room closer before the company speaks delivers
+  the line whole through the open passage - the eavesdropping surface at
+  full clarity, without entering the room.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p8-earshot-adjacent.transcript
+
+---
+
+# Adjacent through an open passage: the line comes through whole.
+> west
+[OK: contains "You hear:"]
+[OK: contains "Nell mentions something to Piers."]

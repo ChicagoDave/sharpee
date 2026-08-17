@@ -55,6 +55,7 @@ import {
   type SceneDirective,
   type SceneOccasion,
   type SceneWireEvent,
+  type InitiativeSeizure,
   sceneWith,
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
@@ -1395,18 +1396,108 @@ export class ChordRuntime {
    * The scene binding's authored-initiative hook (D7 most-specific-wins;
    * Phase 7 design §3): compiled `define initiative` rows answer an
    * occasion through `authoredInitiativeFor`, refinements bound to the
-   * loader's evaluator. Witnessed-act occasions arrive with Phase 8's
-   * scheduling — no committed action id reaches this hook yet.
+   * loader's evaluator. Witnessed-act occasions carry the committed
+   * action id from Phase 8's scheduling.
    */
-  buildAuthoredInitiative(world: WorldModel): (participantId: string, occasion: SceneOccasion) => 'forces' | 'suppresses' | undefined {
-    return (participantId, occasion) => {
+  buildAuthoredInitiative(world: WorldModel): (participantId: string, occasion: SceneOccasion, witnessedAction?: string) => 'forces' | 'suppresses' | undefined {
+    return (participantId, occasion, witnessedAction) => {
       const owner = this.irOwnerOf(participantId);
       const rows = owner?.initiative ?? [];
       if (rows.length === 0) return undefined;
-      const answer = authoredInitiativeFor(rows, occasion, (row) =>
-        this.evaluator.evalCondition(row.condition!, { world, it: owner!.id }),
+      const answer = authoredInitiativeFor(
+        rows,
+        occasion,
+        (row) => this.evaluator.evalCondition(row.condition!, { world, it: owner!.id }),
+        witnessedAction,
       );
       return answer?.authored;
+    };
+  }
+
+  /**
+   * The scene binding's initiative RUNNER (ADR-320 D7; Phase 8 design §5):
+   * a forcing `define initiative` row's body executes here — occurrence
+   * key advanced, pin rule enforced against the occasion's principal when
+   * known, first phrase becomes the seizure's spoken line (the serve-path
+   * delivery rules), claims recorded on delivery. Returns undefined when
+   * no forcing row answers — disposition alone never seizes a
+   * content-bearing occasion.
+   */
+  buildInitiativeSeizure(
+    world: WorldModel,
+  ): (
+    participantId: string,
+    occasion: SceneOccasion,
+    witnessedAction?: string,
+    audienceId?: string,
+  ) => InitiativeSeizure | undefined {
+    return (participantId, occasion, witnessedAction, audienceId) => {
+      const owner = this.irOwnerOf(participantId);
+      const rows = owner?.initiative ?? [];
+      if (!owner || rows.length === 0) return undefined;
+      const answer = authoredInitiativeFor(
+        rows,
+        occasion,
+        (row) => this.evaluator.evalCondition(row.condition!, { world, it: owner.id }),
+        witnessedAction,
+      );
+      if (!answer || answer.authored !== 'forces') return undefined;
+
+      const rowIndex = rows.indexOf(answer.row);
+      const key = `${CHORD_OCCURRENCE_PREFIX}initiative.${owner.id}.${rowIndex}`;
+      const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+      world.setStateValue(key, occurrence);
+
+      const reports = this.execStatements(
+        answer.row.body.filter((s) => s.kind !== 'hold-tongue'),
+        {
+          world,
+          it: owner.id,
+          occurrence,
+          ...(audienceId !== undefined ? { conversationPartnerId: audienceId } : {}),
+        },
+        'all',
+      );
+
+      // The delivery rules, one semantics (pin filter, first phrase wins,
+      // surplus rides the author channel, claims recorded on delivery).
+      const trait = world.getEntity(participantId)?.get(TraitType.CHARACTER_MODEL) as
+        | CharacterModelTrait
+        | undefined;
+      let filtered = reports;
+      if (trait && audienceId !== undefined) {
+        filtered = reports.filter((event) => {
+          if (event.type !== 'chord.phrase') return true;
+          const claims = this.claimsFor(String((event.data as Record<string, unknown> | undefined)?.messageId));
+          return pinAllowsClaim(trait, audienceId, claims);
+        });
+      }
+      let spoken: { messageId: string; params: Record<string, unknown> } | undefined;
+      const events: ISemanticEvent[] = [];
+      for (const event of filtered) {
+        const payload = (event.data ?? {}) as Record<string, unknown>;
+        if (event.type === 'chord.phrase' && !spoken) {
+          spoken = {
+            messageId: String(payload.messageId),
+            params: (payload.params as Record<string, unknown>) ?? {},
+          };
+        } else {
+          events.push(event);
+        }
+      }
+      if (trait && audienceId !== undefined && spoken) {
+        const claims = this.claimsFor(spoken.messageId);
+        if (claims) {
+          events.push(
+            ...recordClaimDelivery(trait, participantId, audienceId, claims, this.dialogueTurn(world)),
+          );
+        }
+      }
+
+      return {
+        events,
+        ...(spoken ? { spokenMessageId: spoken.messageId, spokenParams: spoken.params } : {}),
+      };
     };
   }
 

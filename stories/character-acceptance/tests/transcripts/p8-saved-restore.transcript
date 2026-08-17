@@ -1,0 +1,16 @@
+title: Restore mid-exchange (Phase 8, AC12 second half)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Restore the mid-exchange save through the platform engine;
+  the open exchange grips the same answer and serves the same line as
+  the uninterrupted run - scene state rides the save (ADR-310 D17).
+  Run after p8-save.transcript (it writes the save file).
+
+---
+
+$restore p8-mid-exchange
+
+# The restored exchange grips the answer exactly as the live run did.
+> ask nell about yes
+[OK: contains "Splendid!"]

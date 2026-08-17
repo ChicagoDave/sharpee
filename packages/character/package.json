@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/chord": "workspace:*"

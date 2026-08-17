@@ -441,6 +441,9 @@ affordance.
 - **Entry state**: Phases 5, 6, and 7 done — the scene runtime, its dispatch wiring, and
   its persistence shape are all fixed inputs. Platform-change discussion held and
   confirmed for `packages/engine`.
+- **Status note**: platform-change confirmation given by David 2026-08-17
+  ("start phase 8", session 48ac57); design doc to follow the Phase 6/7
+  confirm-before-implement pattern.
 - **Deliverable**: NPC↔NPC scenes scheduled in the NPC turn phase, driven by goal
   pursuit; scene text emitted to the wire only when the PC can observe it, effects
   (facts move, ledgers record) landing regardless of observation; a player claim planted
@@ -456,7 +459,44 @@ affordance.
   witnessed, effects always land), Acceptance 9 (player claims travel — full closure, the
   propagation/NPC↔NPC-scene leg), and Acceptance 12 (mid-scene save/restore) pass against
   the real engine/save-restore path.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 48ac57). Evidence: design confirmed
+  by David ("confirmed" — `phase8-engine-design.md`, earshot folded in at
+  David's direction: "we def need within hearshot to be factor");
+  mid-implementation ruling by David (option 1): ADR-144's told-source
+  leverage gate DELETED per ADR-320 D11 symmetry — hearsay spreads onward,
+  gossip chains work, `playerCanLeverage` stamped RETIRED (follow-on idea
+  filed: rumor degradation per hop, GH #272). Landed: scenes sub-step in
+  the character-model tick phase (open on transfer / goal-say, thread +
+  floor + D16 bookkeeping, exit/silence closes, witnessed-act +
+  subject-change + silence occasion seizures via the loader-bound runner,
+  world-act interruption); `SceneRuntimeBinding` gains `resolveIntrusion`
+  (applied close on yields/protests) + optional `seizeInitiative`;
+  `emitSound` threaded engine → plugins → NPC service → tick (additive);
+  observability rides ADR-172 spatial sound whole (kind `speech`,
+  volume from a runtime-owned coloring curve, per-tier degradation is the
+  shipped lang surface — lang-en-us untouched); PC intrusion at dispatch
+  (`resolveSceneIntrusion` in asking/telling/talking; foreign-scene
+  move-clock fix; foreign exchanges never grip); prose pipeline gates
+  `character.scene./exchange.` wire from prose (AC11 at the boundary —
+  also closed a latent Phase 6/7 double render of gripped serves);
+  `abandonedTopic` on the scene state (subject-change occasion payload).
+  Rule 13a: real-path save/restore proven twice — SaveRestoreService
+  round trip in `adr-320-phase8.test.ts` (scene + open exchange
+  deep-equal after restore, identical continuation) and the bundle
+  `$save`/`$restore` mid-exchange transcript chain. Mutation-verification ran; its two warnings (prose-gate untested;
+  TELL not exercised against a foreign scene) closed same session with
+  3 pipeline unit tests + 1 TELL intrusion test. Tests (all run
+  2026-08-17): character 540 passing (16-test scene-sub-step suite,
+  5 intrusion dispatch tests, hearsay rewrite), story-loader 531
+  (4-test Phase 8 real-path suite: AC9 travel chain, initiative runner,
+  AC12), stdlib 1624, world-model 1489, engine 632, bootstrap 43,
+  plugins 13; repo-wide `npx tsc --noEmit` clean; `./repokit build
+  dungeo` clean; Dungeo walkthrough chain 952 passing byte-identical;
+  character-acceptance all four story groups green incl. the NEW
+  `phase8-scenes.story` + six `p8-*` transcripts (earshot full/fragments
+  grading, effects-land-unobserved, intrusion-yields, save/restore
+  chain); thealderman 7 transcripts green; `pnpm test:scripts` 11
+  passing. AC8, AC9, AC12 pass against real dispatched/persisted state.
 
 ### Phase 9: D12 wire schema — `platform-browser`/`devkit` and the IDE testing surface
 - **Tier**: Medium

@@ -25,12 +25,15 @@ import type {
   SceneStrength,
   FloorBid,
   FloorDecision,
+  InterruptionOutcome,
 } from '@sharpee/world-model';
 import type { ContinuationIntent } from './lifecycle.js';
 
-// Occasion and floor shapes — declared in world-model's scene-runtime
-// binding (Phase 6 amendment), re-exported for this package's consumers.
+// Occasion, floor, and outcome shapes — declared in world-model's
+// scene-runtime binding (Phase 6/8 amendments), re-exported for this
+// package's consumers.
 export type { SceneOccasion, FloorBid, FloorDecision } from '@sharpee/world-model';
+export type { InterruptionOutcome } from '@sharpee/world-model';
 
 /**
  * An outsider — PC included — challenging a scene's grip (ADR-320 D10).
@@ -51,14 +54,10 @@ export interface InterruptionChallenge {
   worldAct: boolean;
 }
 
-/**
- * How the scene answers a challenge (ADR-320 D10): the conversation
- * lifecycle's `RedirectResult` words, reused — `passive` yields,
- * `assertive` protests then yields, `blocking` blocks (except world acts).
- * Phase 5 collapses `RedirectResult` to an alias of this union
- * (contracts.md §7).
- */
-export type InterruptionOutcome = 'yields' | 'protests' | 'blocks';
+// `InterruptionOutcome` moved to world-model's scene-runtime binding in
+// Phase 8 (stdlib consults intrusion across the package boundary); the
+// re-export above keeps this module the character-side name for it, the
+// same §7 idiom `RedirectResult` already rides.
 
 // ---------------------------------------------------------------------------
 // Scoring (Phase 5 runtime over the Phase 1 shapes)

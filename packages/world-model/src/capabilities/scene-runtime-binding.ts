@@ -17,10 +17,11 @@
  * author-facing compatibility surface; revisable at refactor cost.
  *
  * Public interface: `SceneRuntimeBinding`, `SceneOccasion`, `FloorBid`,
- *   `FloorDecision`.
+ *   `FloorDecision`, `InterruptionOutcome`, `InitiativeSeizure`.
  * Owner: world-model (per-world wiring surface).
  */
 
+import type { EntityId, ISemanticEvent } from '@sharpee/core';
 import type {
   ConversationSceneState,
   SceneOpenedBy,
@@ -79,11 +80,37 @@ export interface FloorDecision {
 }
 
 /**
+ * How a scene answers an interruption challenge (ADR-320 D10): `passive`
+ * yields, `assertive` protests then yields, `blocking` blocks — except
+ * world events and acts, which break any grip (D8's exemption). Declared
+ * here (Phase 8 amendment) because stdlib consults intrusion across the
+ * package boundary; `@sharpee/character` aliases it (the §7 idiom).
+ */
+export type InterruptionOutcome = 'yields' | 'protests' | 'blocks';
+
+/**
+ * What an authored initiative seizure produced (ADR-320 D7; Phase 8):
+ * the forcing row's body ran — its events ride the turn stream, and
+ * `spokenMessageId` carries the seizure's line when the body spoke one
+ * (the caller renders it through the observability surface).
+ */
+export interface InitiativeSeizure {
+  /** Events the row body produced (author channel and report events). */
+  events: ISemanticEvent[];
+
+  /** The spoken line's message id, when the body delivered a phrase. */
+  spokenMessageId?: string;
+
+  /** Params for the spoken line's template, when any. */
+  spokenParams?: Record<string, unknown>;
+}
+
+/**
  * The world's scene runtime (ADR-320 D4 — implemented by the character
  * subsystem over its scene store, consulted by stdlib's conversation
- * actions). The selector computes, this runtime mutates (the arbiter
- * discipline): every scene-state write the dispatch layer needs goes
- * through here.
+ * actions and the character-model tick phase). The selector computes,
+ * this runtime mutates (the arbiter discipline): every scene-state write
+ * the dispatch layer needs goes through here.
  */
 export interface SceneRuntimeBinding {
   /**
@@ -127,4 +154,43 @@ export interface SceneRuntimeBinding {
    * @returns The decision, losers' bids included
    */
   floorWinnerFor(sceneId: string, occasion: SceneOccasion): FloorDecision;
+
+  /**
+   * Resolve — and apply — an outsider's challenge to a live scene
+   * (ADR-320 D10; Phase 8): the scene's grip answers per the strength
+   * words, a world act breaks any grip (D8's exemption). On `yields` or
+   * `protests` the scene closes on the `exit` boundary (memory folded);
+   * on `blocks` nothing mutates. The caller routes what follows (opening
+   * the interrupter's own scene, rendering the refusal).
+   *
+   * @param sceneId - The challenged scene
+   * @param interrupterId - The would-be interrupter (the PC included)
+   * @param worldAct - True for world events and acts (breaks `blocking`)
+   * @returns The outcome word and the wire events the challenge produced
+   */
+  resolveIntrusion(
+    sceneId: string,
+    interrupterId: EntityId,
+    worldAct: boolean,
+  ): { outcome: InterruptionOutcome; wireEvents: SceneWireEvent[] };
+
+  /**
+   * Run an authored initiative seizure (ADR-320 D7; Phase 8): the
+   * registrar's row runner — the loader binds compiled `define initiative`
+   * row bodies here. Returns undefined when no forcing row answers the
+   * occasion (disposition alone never seizes a content-bearing occasion).
+   * Absent when the registrar bound no runner (builder-authored stories).
+   *
+   * @param participantId - The character whose rows answer
+   * @param occasion - The live occasion
+   * @param witnessedAction - For witnessed-event occasions, the committed action id
+   * @param audienceId - The occasion's principal (claims bookkeeping), when known
+   * @returns The seizure, or undefined when nothing forces
+   */
+  seizeInitiative?(
+    participantId: EntityId,
+    occasion: SceneOccasion,
+    witnessedAction?: string,
+    audienceId?: EntityId,
+  ): InitiativeSeizure | undefined;
 }

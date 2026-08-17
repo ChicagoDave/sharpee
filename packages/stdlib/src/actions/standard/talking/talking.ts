@@ -27,7 +27,8 @@ import {
   exchangeGrips,
   isExchangeGripped,
   markExchangeGripped,
-  runConversationScene
+  runConversationScene,
+  resolveSceneIntrusion
 } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
@@ -285,18 +286,29 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // params carry EntityInfo for the formatter chain (ADR-158)
     const target = context.command.directObject?.entity;
 
+    // ADR-320 D10 (Phase 8): addressing an NPC seated in a foreign scene
+    // challenges that scene first — `blocks` refuses the consult and the
+    // default response stands; `yields`/`protests` close it and the
+    // address proceeds.
+    const intrusion = target
+      ? resolveSceneIntrusion(context, target)
+      : { blocks: false, events: [] };
+
     // ADR-310 D15: character-modeled NPCs greet through the world's
     // dialogue selector; no selection falls through to the default.
     // Selector messageIds are fully-qualified — no action-id prefix.
-    const selection = target
+    const selection = target && !intrusion.blocks
       ? consultDialogueSelector(context, target, { type: 'talk-to' })
       : undefined;
 
     // ADR-320 D4: the address drives scene lifecycle (open on first
     // contact, move stamp, the selection's directives) — mutations run
     // through the world's registered scene runtime, never here.
-    const sceneEvents = target ? runConversationScene(context, target, selection) : [];
+    const sceneEvents = target && !intrusion.blocks
+      ? runConversationScene(context, target, selection)
+      : [];
 
+    events.push(...intrusion.events);
     events.push(context.event('if.event.talked', {
       messageId: selection?.messageId ?? `${context.action.id}.${sharedData.messageId || 'talked'}`,
       params: {

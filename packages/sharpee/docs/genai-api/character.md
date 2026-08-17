@@ -1969,9 +1969,10 @@ export declare class CharacterModelDialogue implements DialogueExtension {
  *   resolveInterruption, sceneGrip, strengthFromIntent.
  * Owner context: @sharpee/character / conversation
  */
-import type { ConversationSceneState, SceneStrength, FloorBid, FloorDecision } from '@sharpee/world-model';
+import type { ConversationSceneState, SceneStrength, FloorBid, FloorDecision, InterruptionOutcome } from '@sharpee/world-model';
 import type { ContinuationIntent } from './lifecycle.js';
 export type { SceneOccasion, FloorBid, FloorDecision } from '@sharpee/world-model';
+export type { InterruptionOutcome } from '@sharpee/world-model';
 /**
  * An outsider — PC included — challenging a scene's grip (ADR-320 D10).
  * `worldAct` marks world events and acts, which break even a `blocking`
@@ -1987,14 +1988,6 @@ export interface InterruptionChallenge {
     /** True for world events and acts — breaks even `blocking` (D8). */
     worldAct: boolean;
 }
-/**
- * How the scene answers a challenge (ADR-320 D10): the conversation
- * lifecycle's `RedirectResult` words, reused — `passive` yields,
- * `assertive` protests then yields, `blocking` blocks (except world acts).
- * Phase 5 collapses `RedirectResult` to an alias of this union
- * (contracts.md §7).
- */
-export type InterruptionOutcome = 'yields' | 'protests' | 'blocks';
 /**
  * Resolve a floor contest (ADR-320 D7/D10): an authored `forces` row wins
  * outright and an authored `suppresses` row withdraws its bid (D7
@@ -2428,7 +2421,7 @@ export declare function authoredInitiativeFor(rows: IRInitiativeRow[], occasion:
  *   createSceneRuntimeBinding, registerCharacterScenes.
  * Owner context: @sharpee/character / conversation
  */
-import { WorldModel, type SceneRuntimeBinding, type SceneOccasion } from '@sharpee/world-model';
+import { WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
 /**
  * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
@@ -2449,7 +2442,15 @@ export interface SceneBindingOptions {
      * most-specific-wins) — the loader binds compiled `define initiative`
      * rows here (Phase 7). Absent = disposition alone decides.
      */
-    authoredFor?: (participantId: string, occasion: SceneOccasion) => 'forces' | 'suppresses' | undefined;
+    authoredFor?: (participantId: string, occasion: SceneOccasion, witnessedAction?: string) => 'forces' | 'suppresses' | undefined;
+    /**
+     * Run an authored initiative seizure (ADR-320 D7; Phase 8) — the loader
+     * binds compiled `define initiative` row BODIES here: a forcing row's
+     * body executes (occurrence keys, pins, claims — the serve-path rules)
+     * and the seizure's line comes back for the observability surface.
+     * Absent = authored occasions never run (builder-authored stories).
+     */
+    seizeInitiative?: (participantId: string, occasion: SceneOccasion, witnessedAction?: string, audienceId?: string) => InitiativeSeizure | undefined;
 }
 /**
  * Build the world's scene runtime over the Phase 5 machinery.
@@ -2634,7 +2635,12 @@ export interface PropagationProfile {
     schedule?: PropagationSchedule;
     /** Tone of the telling (default: 'neutral'). */
     coloring?: PropagationColoring;
-    /** Whether the player can use this NPC as a messenger (default: false). */
+    /**
+     * RETIRED (ADR-320 D11, ruling 2026-08-17): hearsay spreads like any
+     * knowledge — the told-source gate this flag controlled is deleted, so
+     * the field is dead config kept only so existing profiles still parse.
+     * Selectivity lives in `tendency`/`spreads`/`withholds`/audiences.
+     */
     playerCanLeverage?: boolean;
     /** How the NPC treats received information (default: 'as fact'). */
     receives?: ReceivesAs;
@@ -4039,10 +4045,12 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
- * bookkeeping arrives with ADR-318's arbiter.) Ordering between
- * sub-steps is a contract, which is why this is one registration rather
- * than three (docs/work/archive/adr-310/contracts.md §2).
+ * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
+ * arbiter.) Ordering between sub-steps is a contract, which is why this
+ * is one registration rather than three (docs/work/archive/adr-310/
+ * contracts.md §2); scenes run last because they consume the propagation
+ * and goal sub-steps' same-turn output.
  *
  * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
  * below holds ONLY authored configuration, re-registered at load, and has
@@ -4056,6 +4064,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * Owner context: @sharpee/character
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import { PropagationProfile } from './propagation/index.js';
@@ -4075,6 +4084,13 @@ interface TickContext {
      * observed this turn.
      */
     actionEvents?: ISemanticEvent[];
+    /**
+     * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+     * the scenes sub-step emits conversation sounds here so eavesdropping
+     * rides spatial propagation. Absent (older callers, unit harnesses) =
+     * scenes run silently (mutations land, no sounds).
+     */
+    emitSound?: (sound: ISound) => void;
 }
 /** Per-NPC character configuration for the tick phase. Authored data only. */
 export interface CharacterPhaseConfig {
@@ -4153,7 +4169,9 @@ export { CHARACTER_TURN_KEY } from './character-clock.js';
  * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
  * see them; propagation
  * moves knowledge before goals re-evaluate activation conditions that may
- * reference it.
+ * reference it; scenes run last (ADR-320 Phase 8), consuming the
+ * transfers, say completions, moves, and detected acts the earlier
+ * sub-steps surfaced this turn.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function

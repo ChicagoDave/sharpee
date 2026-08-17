@@ -105,7 +105,12 @@ export interface PropagationProfile {
   /** Tone of the telling (default: 'neutral'). */
   coloring?: PropagationColoring;
 
-  /** Whether the player can use this NPC as a messenger (default: false). */
+  /**
+   * RETIRED (ADR-320 D11, ruling 2026-08-17): hearsay spreads like any
+   * knowledge — the told-source gate this flag controlled is deleted, so
+   * the field is dead config kept only so existing profiles still parse.
+   * Selectivity lives in `tendency`/`spreads`/`withholds`/audiences.
+   */
   playerCanLeverage?: boolean;
 
   /** How the NPC treats received information (default: 'as fact'). */

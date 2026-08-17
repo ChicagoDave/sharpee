@@ -1,0 +1,17 @@
+title: Voices through the walls (Phase 8, earshot grading)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: An NPC-to-NPC scene two rooms away reaches the player as
+  fragments; one room closer, the line comes through whole. The same
+  machinery, graded by the acoustic path.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p8-earshot.transcript
+
+---
+
+# Two rooms away: the gossip reaches the Stage as fragments only.
+> look
+[OK: contains "You catch fragments of speech."]
+[OK: not contains "Nell mentions"]

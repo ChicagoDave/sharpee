@@ -1,0 +1,27 @@
+title: Save mid-exchange (Phase 8, AC12 first half)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Open a scene and an exchange, save through the platform
+  engine mid-exchange, then answer - establishing the golden line the
+  restored run must reproduce.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p8-save.transcript
+    stories/character-acceptance/tests/transcripts/p8-saved-restore.transcript
+
+---
+
+> west
+[OK: contains "Corridor"]
+
+> west
+[OK: contains "Green Room"]
+
+> ask nell about the tour
+[OK: contains "A grand tour of the north"]
+
+$save p8-mid-exchange
+
+> ask nell about yes
+[OK: contains "Splendid!"]

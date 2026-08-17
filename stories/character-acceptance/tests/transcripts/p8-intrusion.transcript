@@ -1,0 +1,26 @@
+title: Walking in on a conversation (Phase 8, intrusion yields)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: The player walks in on the company mid-scene and addresses
+  Nell; the passive scene yields, and the address proceeds into her
+  topic table and exchange as if the floor were hers to give.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p8-intrusion.transcript
+
+---
+
+> west
+[OK: contains "You hear:"]
+
+> west
+[OK: contains "Nell"]
+
+# Addressing a seated NPC: the passive scene yields and the row serves.
+> ask nell about the tour
+[OK: contains "A grand tour of the north"]
+
+# The exchange the row opened grips the next answer.
+> ask nell about yes
+[OK: contains "Splendid!"]

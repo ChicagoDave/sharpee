@@ -40,7 +40,7 @@ import {
   type RandomService,
   type SeededRandom,
 } from '@sharpee/core';
-import { registerCharacterScenes, createMapMemoryAccess } from '../../src/conversation';
+import { registerCharacterScenes, createMapMemoryAccess, openScene } from '../../src/conversation';
 import type { ConversationMemoryAccess } from '../../src/conversation';
 import { CHARACTER_TURN_KEY } from '../../src/character-clock';
 
@@ -329,5 +329,104 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
     expect(events.map((e) => e.type)).toContain('character.scene.scene-closed');
     expect(memory.get(npc.id, player.id)).toMatchObject({ visits: 1 });
     expect(memory.get(player.id, npc.id)).toMatchObject({ visits: 1 });
+  });
+
+  // -- PC intrusion into a foreign scene (D10; Phase 8) ----------------------
+
+  describe('PC intrusion (Phase 8)', () => {
+    let kemp: IFEntity;
+
+    beforeEach(() => {
+      kemp = makeActor('Kemp', true);
+      world.moveEntity(kemp.id, room.id);
+    });
+
+    function seatForeignScene(strength?: 'passive' | 'assertive' | 'blocking') {
+      return openScene(world, {
+        participantIds: [npc.id, kemp.id],
+        openedBy: { kind: 'initiative', openerId: npc.id },
+        ...(strength ? { strength } : {}),
+      }).scene;
+    }
+
+    it('ASK at an NPC in a passive foreign scene yields — foreign scene closes, the player scene opens', () => {
+      seatForeignScene();
+
+      const { events } = runAction(askingAction, world, makeCommand(IFActions.ASKING, npc, 'the play'));
+
+      const scene = sceneWith(world, npc.id);
+      expect(scene).toBeDefined();
+      expect(scene!.participantIds).toContain(player.id);
+      expect(scene!.participantIds).not.toContain(kemp.id);
+      expect(sceneWith(world, kemp.id)).toBeUndefined();
+      const interruption = events.find((e) => e.type === 'character.scene.interruption');
+      expect(interruption).toBeDefined();
+      expect((interruption!.data as { outcome?: string }).outcome).toBe('yields');
+      // The foreign close folded the seated pair's memory.
+      expect(memory.get(npc.id, kemp.id)).toMatchObject({ visits: 1 });
+    });
+
+    it('an assertive foreign scene protests then yields — the protest rides the wire', () => {
+      seatForeignScene('assertive');
+
+      const { events } = runAction(talkingAction, world, makeCommand(IFActions.TALKING, npc));
+
+      const interruption = events.find((e) => e.type === 'character.scene.interruption');
+      expect((interruption!.data as { outcome?: string }).outcome).toBe('protests');
+      expect(sceneWith(world, npc.id)!.participantIds).toContain(player.id);
+    });
+
+    it('a blocking foreign scene blocks — nothing closes, nothing opens, the default response stands', () => {
+      const foreign = seatForeignScene('blocking');
+      const before = { ...foreign };
+
+      const { events } = runAction(askingAction, world, makeCommand(IFActions.ASKING, npc, 'the play'));
+
+      const still = sceneWith(world, npc.id)!;
+      expect(still.id).toBe(before.id);
+      expect(still.participantIds).not.toContain(player.id);
+      // The foreign scene's move clock is not the player's to stamp.
+      expect(still.lastMoveTurn).toBe(before.lastMoveTurn);
+      expect(events.find((e) => e.type === 'character.scene.intrusion_blocked')).toBeDefined();
+      const asked = events.find((e) => e.type === 'if.event.asked');
+      expect((asked!.data as { messageId?: string }).messageId).toBe('if.action.asking.unknown_topic');
+      expect(memory.get(npc.id, kemp.id) ?? undefined).toBeUndefined();
+    });
+
+    it('TELL at an NPC in a passive foreign scene yields the same way (all three verbs wired)', () => {
+      seatForeignScene();
+
+      const { events } = runAction(
+        tellingAction, world, makeCommand(IFActions.TELLING, npc, 'the news'),
+      );
+
+      const scene = sceneWith(world, npc.id);
+      expect(scene).toBeDefined();
+      expect(scene!.participantIds).toContain(player.id);
+      expect(sceneWith(world, kemp.id)).toBeUndefined();
+      const interruption = events.find((e) => e.type === 'character.scene.interruption');
+      expect((interruption!.data as { outcome?: string }).outcome).toBe('yields');
+      expect(memory.get(npc.id, kemp.id)).toMatchObject({ visits: 1 });
+    });
+
+    it('a foreign blocking exchange never grips the player`s firing', () => {
+      const foreign = seatForeignScene('blocking');
+      const store = readSceneStore(world);
+      store.scenes[foreign.id].openExchange = {
+        exchangeId: 'x-foreign', speakerId: npc.id, strength: 'blocking', openedTurn: 5,
+      };
+      world.setStateValue('character.scenes', store);
+      world.registerDialogueSelector({
+        select: () => undefined,
+        exchangeClaims: () => true, // would grip if the scene reached the probe
+      });
+
+      const context = createActionContext(
+        world, player, askingAction, makeCommand(IFActions.ASKING, npc, 'anything'), fixtureRandom(),
+      );
+      const validation = askingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      expect((context.sharedData as { exchangeGripped?: boolean }).exchangeGripped).toBeUndefined();
+    });
   });
 });

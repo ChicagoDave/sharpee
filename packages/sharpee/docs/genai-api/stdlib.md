@@ -3246,6 +3246,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { NpcBehavior } from './types.js';
 /**
@@ -3290,6 +3291,13 @@ export interface NpcTickContext {
      * (tests, bare harnesses) simply produce no observations.
      */
     actionEvents?: ISemanticEvent[];
+    /**
+     * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+     * NPC↔NPC scene moves emit conversation sounds through this seam so
+     * eavesdropping rides the spatial propagation path. Optional and
+     * additive: absent on callers without the sound subsystem.
+     */
+    emitSound?: (sound: ISound) => void;
 }
 /**
  * NPC Service interface
