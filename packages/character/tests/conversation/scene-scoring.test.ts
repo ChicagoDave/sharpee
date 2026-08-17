@@ -103,7 +103,7 @@ describe('sceneGrip', () => {
   it('the open exchange strength is innermost and wins', () => {
     const s = scene({
       strength: 'passive',
-      openExchange: { exchangeId: 'x', speakerId: 'npc-kemp', strength: 'blocking', openedTurn: 1 },
+      openExchange: { exchangeId: 'x', speakerId: 'npc-kemp', strength: 'blocking', openedTurn: 1, responses: [{ kind: 'silence' }] },
     });
     expect(sceneGrip(s)).toBe('blocking');
   });

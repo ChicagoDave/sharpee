@@ -19,6 +19,11 @@
  * Owner context: world-model / character-model trait
  */
 
+// Type-only in both directions with scene-wire.ts (which imports
+// SceneOpenedBy/SceneBoundaryKind from here) — erased at compile time,
+// so no runtime require cycle.
+import type { ResponseAffordance } from '../../capabilities/scene-wire.js';
+
 /**
  * Scene grip against interruption (ADR-320 D10): `passive` yields to any
  * motivated interjection, `assertive` protests then yields, `blocking`
@@ -65,6 +70,17 @@ export interface ExchangeState {
 
   /** Turn the exchange opened. */
   openedTurn: number;
+
+  /**
+   * The advertised response set (ADR-320 D12), snapshotted from the
+   * compiled exchange block when the exchange opens — exchange rows are
+   * declarative, so the loader enumerates them once and the state carries
+   * them. Persisted with the scene store, so a mid-exchange restore
+   * re-advertises correctly; the `exchange-affordances` channel is a pure
+   * projection of this field. Always ends with the `silence` affordance
+   * (D8, the inalienable move).
+   */
+  responses: ResponseAffordance[];
 }
 
 /**

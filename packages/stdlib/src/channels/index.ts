@@ -79,6 +79,14 @@ export {
   type CharacterAuthorRow,
 } from './character-author.js';
 
+// The scene wire channels (ADR-320 D12 — scene events and exchange
+// response affordances, author-gated per AC11)
+export {
+  sceneChannel,
+  exchangeAffordancesChannel,
+  type SceneChannelRow,
+} from './scene.js';
+
 export {
   // Channel objects
   imagePreloadChannel,

@@ -164,6 +164,22 @@ describe('GameEngine — channel:manifest emission', () => {
     expect(ids.has('character')).toBe(false);
   });
 
+  it('filters the scene wire channels out of a player profile\'s manifest (ADR-320 AC11)', () => {
+    // The isolation criterion at the channel layer: a player-facing build
+    // (authorChannels absent — the platform-browser player default) can
+    // provably carry no scene internals beyond rendered prose. The
+    // author-profile presence side rides the all-standard-channels test
+    // above, since both ids are in STANDARD_CHANNEL_IDS.
+    const { engine } = setupTestEngine();
+    engine.setStory(new StoryWithoutChannel());
+    const manifests = captureManifest(engine);
+
+    engine.start({ capabilities: { ...FULL_CAPABILITIES, authorChannels: false } });
+    const ids = new Set(manifests[0].channels.map((c) => c.id));
+    expect(ids.has('scene')).toBe(false);
+    expect(ids.has('exchange-affordances')).toBe(false);
+  });
+
   it('includes media channels when capabilities allow', () => {
     const { engine } = setupTestEngine();
     engine.setStory(new StoryWithoutChannel());

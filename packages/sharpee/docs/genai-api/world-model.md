@@ -5843,6 +5843,7 @@ export interface PerceivedEvent {
  *   ExchangeState, SceneBoundaryKind, ConversationMemory.
  * Owner context: world-model / character-model trait
  */
+import type { ResponseAffordance } from '../../capabilities/scene-wire.js';
 /**
  * Scene grip against interruption (ADR-320 D10): `passive` yields to any
  * motivated interjection, `assertive` protests then yields, `blocking`
@@ -5889,6 +5890,16 @@ export interface ExchangeState {
     strength?: SceneStrength;
     /** Turn the exchange opened. */
     openedTurn: number;
+    /**
+     * The advertised response set (ADR-320 D12), snapshotted from the
+     * compiled exchange block when the exchange opens — exchange rows are
+     * declarative, so the loader enumerates them once and the state carries
+     * them. Persisted with the scene store, so a mid-exchange restore
+     * re-advertises correctly; the `exchange-affordances` channel is a pure
+     * projection of this field. Always ends with the `silence` affordance
+     * (D8, the inalienable move).
+     */
+    responses: ResponseAffordance[];
 }
 /**
  * A live conversation scene (ADR-320 D4): the engine-visible construct
@@ -10494,7 +10505,8 @@ export interface SceneRuntimeBinding {
  * platform-browser/devkit without duplication (the co-located wire-type
  * rule). Every shape is platform-internal (contracts.md §7).
  *
- * Public interface: SceneWireEvent, ResponseAffordance, ExchangeAffordances.
+ * Public interface: SceneWireEvent, AffordanceTopic, ResponseAffordance,
+ * ExchangeAffordances.
  * Owner context: world-model (per-world wiring surface)
  */
 import type { EntityId } from '@sharpee/core';
@@ -10536,16 +10548,34 @@ export type SceneWireEvent = {
     beats: string[];
 };
 /**
+ * What input a verbal exchange row matches (ADR-320 D12): an entity
+ * reference, or a text phrase with its aliases. Mirrors the compiled
+ * Chord row's topic filter — the enumerable "what could the player say
+ * here?" is the filter itself, resolved topic text, not a message id
+ * (amended 2026-08-17, Phase 9: the Phase 1 sketch's `messageId` had no
+ * counterpart in the compiled row; the response body is statements,
+ * resolved only when spoken).
+ */
+export type AffordanceTopic = {
+    kind: 'entity';
+    id: string;
+} | {
+    kind: 'text';
+    primary: string;
+    aliases: string[];
+};
+/**
  * One advertised response on an open exchange (ADR-320 D12): a verbal row,
  * an act/event row, or silence — silence is always available (D8, the
- * inalienable move). A chat client renders these as reply choices; the
- * parser client may ignore them; the testing surface consumes them for
- * coverage and recording.
+ * inalienable move). A chat client renders these as reply choices (`topic`
+ * `primary` is the chip text); the parser client may ignore them; the
+ * testing surface consumes them for coverage and recording. `rowId` is
+ * minted as `<exchangeId>#<row-index>` at load time.
  */
 export type ResponseAffordance = {
     kind: 'verbal';
     rowId: string;
-    messageId: string;
+    topic: AffordanceTopic;
 } | {
     kind: 'act';
     rowId: string;

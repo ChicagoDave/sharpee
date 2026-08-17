@@ -518,7 +518,35 @@ affordance.
 - **Exit state**: ADR-320 Acceptance 11 (wire affordances and isolation) passes — an open
   exchange's advertised responses are structured wire data consumed by the testing
   surface, and the player-facing build carries no scene internals beyond rendered prose.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 045c55; platform-change discussion held and
+  confirmed — David: "proceed", contract amendment + world-model/story-loader widening:
+  "confirmed"). Evidence, all run 2026-08-17:
+  - Affordance schema amended (David-confirmed): `verbal` rows carry a `topic` filter
+    (entity | text primary+aliases), not a messageId; `AffordanceTopic` added to
+    `scene-wire.ts`. Affordances snapshotted onto `ExchangeState.responses` at open
+    time (persisted scene state — mid-exchange restore re-advertises; entity topic ids
+    resolved to world ids; exactly one silence per D8).
+  - stdlib `scene` (append/sparse) + `exchange-affordances` (replace/always) channels,
+    both `gatedBy: 'authorChannels'`; scene channel tests 9 passing; stdlib full 1633
+    passing, 27 skipped.
+  - Real-path: `adr-320-phase9.test.ts` 4 passing (live scene store snapshot, channel
+    open→advertise/close→clear, dispatch wire rows, SaveRestoreService round trip
+    re-advertising); story-loader full 535 passing; character full 540 passing;
+    world-model full 1489 passing, 10 skipped.
+  - AC11 at the channel layer: `channel-bootstrap.test.ts` player-profile manifest
+    excludes both ids (engine full 633 passing, 7 skipped).
+  - Testing surface: `scene.ts` explain/affordance projection, `ExplainLine.claimChannel`
+    click-to-assert (claims land on the line's own channel and persist through the
+    document round trip — model.test.ts D12 case); 85 passing; bundle rebuilt into IDE
+    Resources.
+  - Bundle real-path: `p9-wire.transcript` 4 commands passing (open → both channels
+    advertise; answer → advertisement clears); p8+p9 suite 19 passing; b-suite
+    per-story all passing; Dungeo walkthrough chain 952 passing in 17 transcripts at
+    the pinned seed.
+  - Mutation-verification: 1 warning (line→delegate→addChannel hop for non-character
+    channels untested) — closed same session (surface 85 passing).
+  - Chat-client ungating deliberately deferred: the stream ships author-gated; a
+    player-side rendering channel is a future client decision.
 
 ### Phase 10: Theatre Company demonstration story — authoring
 - **Tier**: Large

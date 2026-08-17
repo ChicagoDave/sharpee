@@ -123,6 +123,7 @@ export type {
 // response affordances, carried as channel data.
 export type {
   SceneWireEvent,
+  AffordanceTopic,
   ResponseAffordance,
   ExchangeAffordances
 } from './scene-wire.js';

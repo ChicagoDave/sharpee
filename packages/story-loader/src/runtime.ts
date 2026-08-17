@@ -52,6 +52,7 @@ import {
   type DialogueSelectionResult,
   type DialogueSelectorRegistration,
   type ExchangeState,
+  type ResponseAffordance,
   type SceneDirective,
   type SceneOccasion,
   type SceneWireEvent,
@@ -1008,6 +1009,37 @@ export class ChordRuntime {
     );
   }
 
+  /**
+   * The advertised response set of an exchange (ADR-320 D12), enumerated
+   * from the compiled rows at open time and snapshotted onto the
+   * `ExchangeState`. Entity topic filters advertise the resolved world
+   * entity id (what a consumer can act on), not the Chord-level id. Ends
+   * with exactly one `silence` affordance — the authored silence row when
+   * present, appended otherwise (D8, the inalienable move).
+   */
+  private exchangeResponses(exchangeId: string, exchange: IRExchange): ResponseAffordance[] {
+    const responses: ResponseAffordance[] = [];
+    let hasSilence = false;
+    exchange.rows.forEach((row, index) => {
+      const rowId = `${exchangeId}#${index}`;
+      if (row.head.kind === 'answer') {
+        const filter = row.head.filter;
+        const topic =
+          filter.kind === 'entity'
+            ? { kind: 'entity' as const, id: this.host.entityId(filter.id) ?? filter.id }
+            : { kind: 'text' as const, primary: filter.primary, aliases: [...filter.aliases] };
+        responses.push({ kind: 'verbal', rowId, topic });
+      } else if (row.head.kind === 'act') {
+        responses.push({ kind: 'act', rowId, actionId: row.head.action });
+      } else if (!hasSilence) {
+        responses.push({ kind: 'silence' });
+        hasSilence = true;
+      }
+    });
+    if (!hasSilence) responses.push({ kind: 'silence' });
+    return responses;
+  }
+
   /** The compiled exchange an open `ExchangeState` instantiates, when it is this owner's. */
   private openExchangeOf(
     owner: IREntity,
@@ -1189,6 +1221,7 @@ export class ChordRuntime {
               speakerId: npc.id,
               ...(target.strength ? { strength: target.strength } : {}),
               openedTurn: this.dialogueTurn(world),
+              responses: this.exchangeResponses(exchangeId, target),
             },
           });
           // The `asks`/`invites` word rides the author channel (Phase 9's feed).
@@ -1615,6 +1648,7 @@ export class ChordRuntime {
                 speakerId: npcWorldId,
                 ...(target.strength ? { strength: target.strength } : {}),
                 openedTurn: this.dialogueTurn(world),
+                responses: this.exchangeResponses(exchangeId, target),
               },
             },
           ]),

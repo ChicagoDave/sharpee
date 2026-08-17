@@ -32,6 +32,7 @@ import { PLAYER_DIED_EVENT } from '../death/index.js';
 import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
 import { characterAuthorChannel } from './character-author.js';
+import { sceneChannel, exchangeAffordancesChannel } from './scene.js';
 
 /**
  * Local copy of the `flattenContent` helper. stdlib intentionally does
@@ -653,6 +654,8 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   scoreNotifyChannel,
   lifecycleChannel,
   characterAuthorChannel,
+  sceneChannel,
+  exchangeAffordancesChannel,
 ];
 
 /**
@@ -681,6 +684,8 @@ export const STANDARD_CHANNEL_IDS = {
   SCORE_NOTIFY: 'score_notify',
   LIFECYCLE: 'lifecycle',
   CHARACTER: 'character',
+  SCENE: 'scene',
+  EXCHANGE_AFFORDANCES: 'exchange-affordances',
 } as const;
 
 export type StandardChannelId =

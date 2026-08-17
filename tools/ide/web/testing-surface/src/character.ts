@@ -41,10 +41,16 @@ export interface ExplainLine {
    * load-bearing fields, each a substring of the row's `JSON.stringify`
    * rendering (the exact text the runner's channel `contains` checks
    * against). Together they pin THIS event on THIS NPC in a channel claim
-   * on `character` — volatile fields (turn, curve values, audiences) are
-   * deliberately left out so the claim survives unrelated churn.
+   * on `claimChannel` — volatile fields (turn, curve values, audiences)
+   * are deliberately left out so the claim survives unrelated churn.
    */
   fragments: string[];
+  /**
+   * The channel the line's click-to-assert claim targets — `character`
+   * for interior rows here; the scene module's lines claim on `scene` /
+   * `exchange-affordances` (ADR-320 D12).
+   */
+  claimChannel: string;
 }
 
 /** One NPC's lines for the turn, in emission order. */
@@ -216,6 +222,7 @@ function lineOf(row: CharacterRow, who: Who): ExplainLine {
     tone: WARN_KINDS.has(row.kind) ? 'warn' : 'normal',
     raw: rawOf(row),
     fragments: fragmentsOf(row),
+    claimChannel: 'character',
   };
 }
 

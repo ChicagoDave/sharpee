@@ -157,7 +157,7 @@ describe('applySceneDirectives', () => {
     applySceneDirectives(world, sceneId, [
       {
         kind: 'open-exchange',
-        exchange: { exchangeId: 'the-offer', speakerId: 'npc-kemp', openedTurn: 7 },
+        exchange: { exchangeId: 'the-offer', speakerId: 'npc-kemp', openedTurn: 7, responses: [{ kind: 'silence' }] },
       },
     ], memory);
 
@@ -173,8 +173,8 @@ describe('applySceneDirectives', () => {
   it('a second open-exchange replaces the first (at most one open)', () => {
     const memory = createMapMemoryAccess();
     applySceneDirectives(world, sceneId, [
-      { kind: 'open-exchange', exchange: { exchangeId: 'first', speakerId: 'npc-kemp', openedTurn: 5 } },
-      { kind: 'open-exchange', exchange: { exchangeId: 'second', speakerId: 'npc-kemp', openedTurn: 5 } },
+      { kind: 'open-exchange', exchange: { exchangeId: 'first', speakerId: 'npc-kemp', openedTurn: 5, responses: [{ kind: 'silence' }] } },
+      { kind: 'open-exchange', exchange: { exchangeId: 'second', speakerId: 'npc-kemp', openedTurn: 5, responses: [{ kind: 'silence' }] } },
     ], memory);
 
     expect(sceneOf(world, sceneId)!.openExchange?.exchangeId).toBe('second');

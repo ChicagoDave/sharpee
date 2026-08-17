@@ -211,7 +211,7 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
         handled: true,
         messageId: 'burbage.answers',
         sceneDirectives: [
-          { kind: 'open-exchange', exchange: { exchangeId: 'x-will-you-come', speakerId: npc.id, openedTurn: 5 } },
+          { kind: 'open-exchange', exchange: { exchangeId: 'x-will-you-come', speakerId: npc.id, openedTurn: 5, responses: [{ kind: 'silence' }] } },
           { kind: 'set-floor', holderId: npc.id },
         ] as SceneDirective[],
       }),
@@ -232,7 +232,7 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
     runAction(talkingAction, world, makeCommand(IFActions.TALKING, npcEntity));
     const sceneId = sceneWith(world, npcEntity.id)!.id;
     world.getSceneRuntime()!.applyDirectives(sceneId, [
-      { kind: 'open-exchange', exchange: { exchangeId: 'x-will-you-come', speakerId: npcEntity.id, openedTurn: 5 } },
+      { kind: 'open-exchange', exchange: { exchangeId: 'x-will-you-come', speakerId: npcEntity.id, openedTurn: 5, responses: [{ kind: 'silence' }] } },
     ]);
   }
 
@@ -414,6 +414,7 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
       const store = readSceneStore(world);
       store.scenes[foreign.id].openExchange = {
         exchangeId: 'x-foreign', speakerId: npc.id, strength: 'blocking', openedTurn: 5,
+        responses: [{ kind: 'silence' }],
       };
       world.setStateValue('character.scenes', store);
       world.registerDialogueSelector({

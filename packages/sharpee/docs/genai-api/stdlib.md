@@ -4345,6 +4345,8 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly SCORE_NOTIFY: "score_notify";
     readonly LIFECYCLE: "lifecycle";
     readonly CHARACTER: "character";
+    readonly SCENE: "scene";
+    readonly EXCHANGE_AFFORDANCES: "exchange-affordances";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
 ```
@@ -4389,6 +4391,68 @@ export interface CharacterAuthorRow {
  * Sparse: turns with no character-model activity emit nothing.
  */
 export declare const characterAuthorChannel: IOChannel<CharacterAuthorRow>;
+```
+
+### channels/scene
+
+```typescript
+/**
+ * The `scene` and `exchange-affordances` author channels (ADR-320 D12).
+ *
+ * The presentation-agnostic conversation wire, carried as channel data
+ * under the ADR-163 discipline (data only, clients render):
+ *
+ *  - `scene` projects the turn's scene wire events — `character.scene.*`
+ *    (the `SceneWireEvent` kinds plus dispatch diagnostics like
+ *    `intrusion_blocked` / `exit_refused`) and `character.exchange.*` —
+ *    into per-turn rows, the same projection idiom as the `character`
+ *    channel.
+ *  - `exchange-affordances` projects every live scene's open exchange
+ *    advertised-response set (`ExchangeAffordances`) from the scene
+ *    store — pure state projection, so a mid-exchange restore
+ *    re-advertises correctly.
+ *
+ * Isolation is the point (ADR-320 AC11, the ADR-310 D12/AC8 discipline):
+ * both channels are gated by the `authorChannels` capability, so a
+ * published player-facing story stream provably cannot carry scene
+ * internals — the player sees rendered prose alone. A chat-style client
+ * that renders the stream itself is a future, deliberate ungating
+ * decision, not this channel's.
+ *
+ * Public interface: sceneChannel, SceneChannelRow,
+ * exchangeAffordancesChannel.
+ * Owner context: stdlib / channels
+ */
+import type { IOChannel } from '@sharpee/if-domain';
+import type { ExchangeAffordances } from '@sharpee/world-model';
+/** One scene-wire row: one `character.scene.*`/`character.exchange.*` event. */
+export interface SceneChannelRow {
+    /** Turn the event fired on. */
+    turn: number;
+    /** The event type, e.g. 'character.scene.utterance'. */
+    kind: string;
+    /** The event's payload, verbatim — a `SceneWireEvent` for wire kinds. */
+    data: Record<string, unknown>;
+}
+/**
+ * `scene` — append-mode scene wire stream (ADR-320 D12). Carries, per
+ * turn: scene opens/closes, utterances with manner beats, floor changes,
+ * interruptions, rendered silences (dispatch and NPC↔NPC alike), and
+ * exchange lifecycle diagnostics. Sparse: turns with no scene activity
+ * emit nothing.
+ */
+export declare const sceneChannel: IOChannel<SceneChannelRow>;
+/**
+ * `exchange-affordances` — replace-mode advertised-response sets (ADR-320
+ * D12): one `ExchangeAffordances` per live scene with an open exchange,
+ * in scene-store order; the empty array when no exchange is open. Emits
+ * every turn so a consumer never renders a closed exchange's stale
+ * choices. Reads the scene store (world state) rather than events — the
+ * affordances are state of the open exchange, snapshotted onto
+ * `ExchangeState.responses` at open time, so the projection survives
+ * save/restore.
+ */
+export declare const exchangeAffordancesChannel: IOChannel<ExchangeAffordances[]>;
 ```
 
 ### channels/media
