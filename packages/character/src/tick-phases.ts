@@ -31,7 +31,8 @@ import {
 } from '@sharpee/world-model';
 import type { IRCondition } from '@sharpee/chord';
 import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
-import { detectActs, witnessActs } from './act-detection/index.js';
+import { detectActs, witnessActs, witnessStatement } from './act-detection/index.js';
+import { normalizeTopic } from '@sharpee/chord';
 import { CHARACTER_TURN_KEY } from './character-clock.js';
 import { conversationSuppressesGoals } from './conversation/conversation-marker.js';
 import type { CompiledStoryOracle } from './story-oracle.js';
@@ -370,6 +371,27 @@ function runObserveSubStep(
           acts: acts.map((a) => ({ act: a.category ?? a.faceAct, actorId: a.actorId, topic: a.derivedTopic })),
           learned,
         }));
+      }
+    }
+
+    // The statement site (ADR-320 D11): the player's TELL lands as a
+    // witnessed claim in every co-located modeled hearer. Claims tags for
+    // authored lines ride the loader's dialogue path, not this event.
+    if (event.type === 'if.event.told') {
+      const speakerId = event.entities.actor;
+      const topicText = (event.data as { topic?: string } | undefined)?.topic;
+      if (speakerId && topicText) {
+        const statement = witnessStatement(
+          world, speakerId, normalizeTopic(topicText), observers, turn,
+        );
+        if (Object.keys(statement.learned).length > 0) {
+          events.push(createEvent('character.author.statement_witnessed', {
+            speakerId,
+            topic: normalizeTopic(topicText),
+            learned: statement.learned,
+          }));
+        }
+        events.push(...statement.authorEvents);
       }
     }
   }

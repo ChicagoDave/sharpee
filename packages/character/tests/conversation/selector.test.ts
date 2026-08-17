@@ -289,7 +289,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
     dialogue.registerNpc(npc.id, stewardData(), trait, () => 7);
     registerCharacterDialogue(world, dialogue);
 
-    const selector = world.getDialogueSelector()!;
+    const selector = world.getDialogueSelector()!.select;
     const selection = selector(npc, { type: 'ask', text: 'the crime' }, {
       world, speakerId: world.getPlayer()!.id,
     });
@@ -318,7 +318,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
     registerCharacterDialogue(world, dialogue);
 
     expect(trait.activeConversation).toBeUndefined();
-    world.getDialogueSelector()!(npc, { type: 'ask', text: 'the crime' }, {
+    world.getDialogueSelector()!.select(npc, { type: 'ask', text: 'the crime' }, {
       world, speakerId: world.getPlayer()!.id,
     });
 
@@ -346,7 +346,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
     dialogue.registerNpc(npc.id, stewardData(), trait, () => 1);
     registerCharacterDialogue(world, dialogue);
 
-    const selection = world.getDialogueSelector()!(npc, { type: 'talk-to' }, {
+    const selection = world.getDialogueSelector()!.select(npc, { type: 'talk-to' }, {
       world, speakerId: world.getPlayer()!.id,
     });
 

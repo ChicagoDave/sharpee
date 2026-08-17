@@ -99,11 +99,22 @@ export type {
 // Exchange-aware extension per ADR-320 (adr-320 contracts.md §4).
 export type {
   DialogueSelector,
+  DialogueSelectorRegistration,
   ConversationIntent,
   DialogueSelectionContext,
   DialogueSelectionResult,
   SceneDirective
 } from './dialogue-selector-binding.js';
+
+// Scene-runtime binding (ADR-320 D4/D7/D10; adr-320 contracts.md §4–§5) —
+// the scene half of conversation dispatch: stdlib drives scene lifecycle
+// through the binding the character subsystem registers per world.
+export type {
+  SceneRuntimeBinding,
+  SceneOccasion,
+  FloorBid,
+  FloorDecision
+} from './scene-runtime-binding.js';
 
 // Scene wire schema (ADR-320 D12; adr-320 contracts.md §3) — the
 // presentation-agnostic conversation wire: scene events and exchange

@@ -6,9 +6,10 @@
  * disposition-under-circumstance readings bid for the floor, an authored
  * row forces or suppresses the moment where written (D7 most-specific-
  * wins), and interruption resolves as strength-vs-motivation (D10) with
- * world acts breaking even `blocking` (D8's exemption). Phase 1 fixes the
- * input/output shapes only — the scoring functions themselves are Phase 5
- * runtime, and nothing here is consumed yet.
+ * world acts breaking even `blocking` (D8's exemption). The occasion and
+ * floor shapes are declared in `@sharpee/world-model`'s scene-runtime
+ * binding (Phase 6 amendment — stdlib names them across the package
+ * boundary) and re-exported here; the scoring functions stay HERE.
  *
  * Every shape is platform-internal (contracts.md §7) — NOT author-facing
  * compatibility surface; revisable at refactor cost.
@@ -19,58 +20,17 @@
  * Owner context: @sharpee/character / conversation
  */
 
-import type { ConversationSceneState, SceneStrength } from '@sharpee/world-model';
-import type { ForceReading } from '../arbiter/arbiter-types.js';
+import type {
+  ConversationSceneState,
+  SceneStrength,
+  FloorBid,
+  FloorDecision,
+} from '@sharpee/world-model';
 import type { ContinuationIntent } from './lifecycle.js';
 
-/**
- * An occasion a disposition can seize (ADR-320 D7): a witnessed event, a
- * goal step arriving, an open floor, a silence, or a noticed subject
- * change (D9's third exposure). Occasions are plumbing — never
- * author-facing; disposition-under-circumstance decides whether this
- * character seizes this one.
- */
-export type SceneOccasion =
-  | { kind: 'open-floor'; sceneId: string }
-  | { kind: 'witnessed-event'; eventId: string }
-  | { kind: 'goal-step'; goalId: string }
-  | { kind: 'silence'; sceneId: string }
-  | { kind: 'subject-change'; sceneId: string; abandonedTopicId: string };
-
-/**
- * One participant's bid for the floor (ADR-320 D7/D10): disposition-
- * under-circumstance expressed as arbiter force readings, whose feeds
- * carry author-channel attribution as everywhere in the character layer.
- */
-export interface FloorBid {
-  /** The bidding participant. */
-  participantId: string;
-
-  /** The occasion this bid answers. */
-  occasion: SceneOccasion;
-
-  /** Disposition-under-circumstance, as force readings (the ADR-318 idiom). */
-  readings: ForceReading[];
-
-  /**
-   * An authored row forcing or suppressing the moment always wins over
-   * disposition (D7 most-specific-wins). Absent = disposition decides.
-   */
-  authored?: 'forces' | 'suppresses';
-}
-
-/**
- * A resolved floor contest (ADR-320 D10): one winner — or none, when
- * nobody seizes the moment — with every bid retained so non-speakers'
- * manner can still react (one speaker, many tells).
- */
-export interface FloorDecision {
-  /** The floor winner, or null when nobody seizes the moment. */
-  winnerId: string | null;
-
-  /** Every bid considered, losers included (their manner beats still emit). */
-  bids: FloorBid[];
-}
+// Occasion and floor shapes — declared in world-model's scene-runtime
+// binding (Phase 6 amendment), re-exported for this package's consumers.
+export type { SceneOccasion, FloorBid, FloorDecision } from '@sharpee/world-model';
 
 /**
  * An outsider — PC included — challenging a scene's grip (ADR-320 D10).

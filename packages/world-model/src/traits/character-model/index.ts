@@ -8,3 +8,11 @@ export type {
   SceneBoundaryKind,
   ConversationMemory,
 } from './conversation-scene.js';
+export {
+  CHARACTER_SCENES_KEY,
+  readSceneStore,
+  liveScenes,
+  sceneOf,
+  sceneWith,
+  type SceneStoreState,
+} from './conversation-scene-store.js';

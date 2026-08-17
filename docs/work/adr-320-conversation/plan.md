@@ -316,8 +316,9 @@ affordance.
 - **Entry state**: Phase 5 done — the scene runtime is a fixed, tested unit this phase
   wires into dispatch. Platform-change discussion held and confirmed for
   `packages/stdlib` (mirrors ADR-310's own stdlib-integration gate).
-- **Status note**: next up (since 2026-08-17 — Phase 5 DONE); needs the
-  `packages/stdlib` platform-change confirmation before work starts.
+- **Status note**: platform-change confirmation given by David 2026-08-17
+  ("start phase 6"); design confirmed same day ("confirmed as proposed - go" —
+  `phase6-dispatch-design.md`, three Phase 1 contract amendments).
 - **Deliverable**: ASK/TELL/SAY/TALK TO dispatch consults an open exchange before
   falling through to the topic table (D16 innermost-wins), registered through the
   capability-dispatch idiom (ADR-090) rather than an ad-hoc hook; the D15 socket's first
@@ -338,7 +339,37 @@ affordance.
   behavior, joining Phase 5's silence-rendering with this phase's exit-legality
   consultation), and Acceptance 9 (player claims travel — the landing-in-a-ledger half;
   propagation/NPC↔NPC-scene travel is Phase 8's) pass against real dispatched state.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 755a11). Evidence: design confirmed by
+  David ("confirmed as proposed - go" — `phase6-dispatch-design.md`, all three
+  Phase 1 contract amendments as proposed: §1.3 read-side re-home, `close-scene`
+  `leaverId`, `{select, exchangeClaims}` registration + floor-shape re-home).
+  Landed: scene-store read side + `SceneRuntimeBinding`/floor shapes/`ForceReading`
+  declared in world-model (`conversation-scene-store.ts`,
+  `scene-runtime-binding.ts`; `registerSceneRuntime` on `WorldModel`); the D16
+  exchange grip as a PURE probe consulted in validate — a gripped firing skips
+  the interceptor phases so no table bookkeeping runs, probe-miss falls through
+  byte-identically (AC2 both legs, asserted against a real interceptor and real
+  store); ASK/TELL/TALK dispatch drives scene lifecycle through the registered
+  binding (open-on-address, move stamps, directive application) with
+  `close-scene`/`exit` checked against going's real exit-legality read points —
+  illegal exits drop the directive, scene stays live, `character.scene.exit_refused`
+  rides the author channel (AC7's exit leg); D11 statement site in act-detection
+  (`witnessStatement` + `if.event.told` observe wiring): hearers record
+  told/believes facts, claim values ride (tag first, else modeled speaker's held
+  value, never displacing a held belief), modeled speaker mints pinned ledger
+  entries per hearer audience with pressure deposits (AC9 landing half, asserted
+  on trait/ledger state); open-address floor as mechanism (`floorWinnerFor` —
+  speak-propensity curve over the closed personality words, fear/paranoia damp,
+  breaking compels, authored rows most-specific-win; no player input surface —
+  recorded decision, parser-en-us untouched per ADR-320). Tests: 22 new across
+  4 files (character real-path suite drives the REAL stdlib actions over the
+  REAL binding and store — rule 13a statement produced); character suite 513
+  passing 43 files, stdlib 1624 passing 115 files, world-model 1486 passing,
+  bootstrap 43 passing (all run 2026-08-17 this session); `./repokit build
+  dungeo` clean, `wt-01` walkthrough byte-identical to golden. The D15
+  selector's Chord-production registrant (serving compiled exchange rows)
+  arrives with Phase 7's loader instantiation per the confirmed design §7 —
+  the registration surface and its consumption are live now.
 
 ### Phase 7: `packages/world-model` + `packages/story-loader` — persistence and load-time instantiation
 - **Tier**: Medium

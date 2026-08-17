@@ -13,8 +13,9 @@
  * Every signature here is platform-internal (contracts.md §7) — NOT
  * author-facing compatibility surface; revisable at refactor cost.
  *
- * Public interface: `DialogueSelector`, `ConversationIntent`,
- *   `DialogueSelectionContext`, `DialogueSelectionResult`, `SceneDirective`.
+ * Public interface: `DialogueSelector`, `DialogueSelectorRegistration`,
+ *   `ConversationIntent`, `DialogueSelectionContext`,
+ *   `DialogueSelectionResult`, `SceneDirective`.
  * Owner: world-model (per-world wiring surface).
  */
 
@@ -71,7 +72,17 @@ export type SceneDirective =
   | { kind: 'open-exchange'; exchange: ExchangeState }
   | { kind: 'close-exchange' }
   | { kind: 'set-floor'; holderId: EntityId | null }
-  | { kind: 'close-scene'; boundary: SceneBoundaryKind };
+  | {
+      kind: 'close-scene';
+      boundary: SceneBoundaryKind;
+      /**
+       * Who is leaving, for an `exit` boundary (ADR-320 D8): the dispatch
+       * layer checks the leaver's exit legality against the world before
+       * applying — a restrained, cornered, or blocked NPC cannot take it.
+       * Absent = a mutual/narrative close, never legality-checked.
+       */
+      leaverId?: EntityId;
+    };
 
 /**
  * A selector's answer: the message the action's report phase should emit
@@ -121,3 +132,29 @@ export type DialogueSelector = (
   intent: ConversationIntent,
   ctx: DialogueSelectionContext
 ) => DialogueSelectionResult | undefined;
+
+/**
+ * The registered selector surface (ADR-320 D16; adr-320 contracts.md §4
+ * as amended for Phase 6): the mutating report-time selection plus an
+ * optional PURE probe the conversation actions consult during validation.
+ * When the addressed NPC's open exchange claims the input, the firing is
+ * exchange-gripped — the innermost active context wins outright, so the
+ * remaining interceptor phases (the topic table's dispatch path) are
+ * skipped and no table bookkeeping runs. The probe must not mutate:
+ * validation can be re-entered, and only `select` runs in the mutating
+ * report phase.
+ */
+export interface DialogueSelectorRegistration {
+  /** The report-time selection (may mutate trait state by design). */
+  select: DialogueSelector;
+
+  /**
+   * Pure (D16): does the addressed NPC's open exchange claim this input?
+   * Absent = no exchange overlay (every firing takes today's path).
+   */
+  exchangeClaims?: (
+    npc: IFEntity,
+    intent: ConversationIntent,
+    ctx: DialogueSelectionContext
+  ) => boolean;
+}

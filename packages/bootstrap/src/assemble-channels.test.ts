@@ -135,18 +135,20 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
         hermit.add(new CharacterModelTrait({}));
         world.moveEntity(hermit.id, room.id);
 
-        world.registerDialogueSelector((npc: any, intent: any) => ({
-          handled: true,
-          messageId: 'character.conversation.hermit-answers',
-          authorEvents: [{
-            id: 'a1', type: 'character.author.ledger_mint', timestamp: 0,
-            entities: { actor: npc.id },
-            data: {
-              audience: 'player', factId: 'the-killer',
-              claimedValue: 'nobody', topic: intent.text,
-            },
-          }],
-        }));
+        world.registerDialogueSelector({
+          select: (npc: any, intent: any) => ({
+            handled: true,
+            messageId: 'character.conversation.hermit-answers',
+            authorEvents: [{
+              id: 'a1', type: 'character.author.ledger_mint', timestamp: 0,
+              entities: { actor: npc.id },
+              data: {
+                audience: 'player', factId: 'the-killer',
+                claimedValue: 'nobody', topic: intent.text,
+              },
+            }],
+          }),
+        });
       },
     };
   }

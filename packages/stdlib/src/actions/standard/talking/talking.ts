@@ -22,7 +22,13 @@ import { TalkedEventData } from './talking-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
-import { consultDialogueSelector } from '../../helpers/dialogue-selector.js';
+import {
+  consultDialogueSelector,
+  exchangeGrips,
+  isExchangeGripped,
+  markExchangeGripped,
+  runConversationScene
+} from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -156,9 +162,17 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
+    // ADR-320 D16: an open exchange claiming this input grips the firing —
+    // the innermost active context wins outright, so the interceptor
+    // phases (the topic table's dispatch path) are skipped for it and no
+    // table bookkeeping runs. The probe is pure; selection happens in report.
+    if (exchangeGrips(context, target, { type: 'talk-to' })) {
+      markExchangeGripped(context);
+    } else {
+      // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+      const postVeto = runPostValidate(context, state);
+      if (postVeto) return postVeto;
+    }
 
     return { valid: true };
   },
@@ -234,7 +248,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
 
     const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
+    if (state && !isExchangeGripped(context)) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -278,6 +292,11 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       ? consultDialogueSelector(context, target, { type: 'talk-to' })
       : undefined;
 
+    // ADR-320 D4: the address drives scene lifecycle (open on first
+    // contact, move stamp, the selection's directives) — mutations run
+    // through the world's registered scene runtime, never here.
+    const sceneEvents = target ? runConversationScene(context, target, selection) : [];
+
     events.push(context.event('if.event.talked', {
       messageId: selection?.messageId ?? `${context.action.id}.${sharedData.messageId || 'talked'}`,
       params: {
@@ -288,9 +307,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     }));
     // Author-channel events from the selection (ADR-318 D11)
     events.push(...(selection?.authorEvents ?? []));
+    events.push(...sceneEvents);
 
     const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.talked');
+    if (state && !isExchangeGripped(context)) runPostReport(context, state, events, 'if.event.talked');
 
     return events;
   },

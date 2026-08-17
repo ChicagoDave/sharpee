@@ -105,6 +105,10 @@ export {
   renderSilence,
   type AuthoredInitiative,
   authoredInitiativeFor,
+  // The world's scene runtime binding (ADR-320 D4/D7/D10; Phase 6)
+  type SceneBindingOptions,
+  createSceneRuntimeBinding,
+  registerCharacterScenes,
   // ACL
   buildResponseIntent,
   selectMoodVariant,
@@ -237,6 +241,7 @@ export { type CompiledConditionEval } from './goals/goal-activation.js';
 // Act detection over the event stream (ADR-318 D4/D7/D12a)
 export {
   detectActs,
+  witnessStatement,
   revealConfidedTopic,
   witnessActs,
   derivedTopicFor,

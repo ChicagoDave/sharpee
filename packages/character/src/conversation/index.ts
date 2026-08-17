@@ -145,6 +145,14 @@ export {
   authoredInitiativeFor,
 } from './initiative.js';
 
+// The world's scene runtime (ADR-320 D4/D7/D10; Phase 6): the binding
+// stdlib's conversation actions drive across the package boundary.
+export {
+  type SceneBindingOptions,
+  createSceneRuntimeBinding,
+  registerCharacterScenes,
+} from './scene-binding.js';
+
 // The dialogue-selector socket adapter (ADR-310 D15; contracts.md §5)
 export {
   createCharacterDialogueSelector,

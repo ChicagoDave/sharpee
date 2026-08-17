@@ -21,7 +21,13 @@ import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
-import { consultDialogueSelector } from '../../helpers/dialogue-selector.js';
+import {
+  consultDialogueSelector,
+  exchangeGrips,
+  isExchangeGripped,
+  markExchangeGripped,
+  runConversationScene
+} from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -56,6 +62,15 @@ export const tellingLifecycle: ActionLifecycleDescriptor = {
   ]
 };
 
+/** The TELL intent for the selection surface (ADR-231 D4's first-class topic). */
+function tellIntent(context: ActionContext) {
+  return {
+    type: 'tell' as const,
+    text: context.command.topic?.text,
+    topicEntityId: context.command.topic?.entity
+  };
+}
+
 export const tellingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TELLING,
   requiredMessages: ['no_target', 'not_visible', 'too_far', 'not_actor', 'not_interested'],
@@ -86,16 +101,24 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'not_actor', params: { target: nounPhraseFor(target) } };
     }
 
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
+    // ADR-320 D16: an open exchange claiming this input grips the firing —
+    // the innermost active context wins outright, so the interceptor
+    // phases (the topic table's dispatch path) are skipped for it and no
+    // table bookkeeping runs. The probe is pure; selection happens in report.
+    if (exchangeGrips(context, target, tellIntent(context))) {
+      markExchangeGripped(context);
+    } else {
+      const postVeto = runPostValidate(context, state);
+      if (postVeto) return postVeto;
+    }
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    // No world mutation — asking is pure conversation surface.
+    // No world mutation — telling is pure conversation surface.
     const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
+    if (state && !isExchangeGripped(context)) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -129,11 +152,12 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
 
     // ADR-310 D15: character-modeled NPCs answer through the world's
     // dialogue selector; no selection falls through to the default.
-    const selection = consultDialogueSelector(context, target, {
-      type: 'tell',
-      text: topic,
-      topicEntityId: context.command.topic?.entity
-    });
+    const selection = consultDialogueSelector(context, target, tellIntent(context));
+
+    // ADR-320 D4: the address drives scene lifecycle (open on first
+    // contact, move stamp, the selection's directives) — mutations run
+    // through the world's registered scene runtime, never here.
+    const sceneEvents = runConversationScene(context, target, selection);
 
     const events: ISemanticEvent[] = [
       context.event('if.event.told', {
@@ -146,11 +170,12 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
       }),
       // Author-channel events from the selection (ADR-318 D11) — no
       // message ID, projected by the `character` channel, never prose.
-      ...(selection?.authorEvents ?? [])
+      ...(selection?.authorEvents ?? []),
+      ...sceneEvents
     ];
 
     const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.told');
+    if (state && !isExchangeGripped(context)) runPostReport(context, state, events, 'if.event.told');
     return events;
   }
 };
