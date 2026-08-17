@@ -69,6 +69,17 @@ import {
   GreetingHead,
   AbsenceWord,
   RepetitionWord,
+  DefineExchange,
+  ExchangeRow,
+  ExchangeHead,
+  StrengthWord,
+  DefineInitiative,
+  InitiativeRow,
+  InitiativeHead,
+  ThenOpenStmt,
+  DeflectStmt,
+  LeaveStmt,
+  HoldTongueStmt,
   DefineTrait,
   DirectionEntry,
   EachStmt,
@@ -254,7 +265,17 @@ const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
+  // ADR-320 conversation-row statements (frozen 2026-08-17):
+  'then', 'deflect', 'leave', 'hold',
 ]);
+
+/**
+ * Host block keywords whose statement bodies are conversation rows — the
+ * only positions where the ADR-320 agency statements (`then asks`/`then
+ * invites`, `deflect to`, `leave`) are legal. Greeting rows share the
+ * `topics` keyword; `initiative` additionally hosts `hold their tongue`.
+ */
+const CONVERSATION_BLOCKS = new Set(['topics', 'exchange', 'initiative']);
 
 /**
  * True when a line reads as a statement/boundary rather than bare prose —
@@ -2823,6 +2844,12 @@ class Parser {
       case 'greetings':
         // ADR-320 D4 (spelling frozen 2026-08-17) — the scene boundary block.
         return this.parseDefineGreetings();
+      case 'exchange':
+        // ADR-320 D4 (frozen 2026-08-17) — a named exchange point.
+        return this.parseDefineExchange();
+      case 'initiative':
+        // ADR-320 D7 (frozen 2026-08-17) — authored occasion rows.
+        return this.parseDefineInitiative();
       case 'topic':
         // ADR-318 D12a — a witnessed-act topic alias, one line.
         return this.parseDefineWitnessedTopic();
@@ -4413,6 +4440,320 @@ class Parser {
     return { kind: 'greeting-row', head, body, span };
   }
 
+  /**
+   * `define exchange <key> for <entity>[, <strength>] … end exchange`
+   * (ADR-320 D4). The block holds response rows only — the opening line
+   * lives in the calling row's `then asks`/`then invites` statement.
+   */
+  private parseDefineExchange(): DefineExchange {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define exchange
+    const name = this.readLabelKey(c);
+    if (!name) {
+      this.diagnostics.error('parse.exchange-name', 'Expected an exchange key after `define exchange` — a single kebab-case word, the phrase-key form.', c.restSpan());
+    }
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.exchange-for', 'Expected `for <entity>` after the exchange key.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, (t) => t.kind === 'comma');
+      if (owner.words.length === 0) {
+        this.diagnostics.error('parse.exchange-for', 'Expected `define exchange <key> for <entity>` — the owner name runs to the strength comma or the end of the line.', c.restSpan());
+      }
+    }
+    // ADR-320 D10: the header strength comma-modifier (the
+    // `define phrase <key>, <strategy>` idiom). Unset = intent derives it.
+    let strength: StrengthWord | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const w = c.next();
+      if (w && w.kind === 'word' && (w.text === 'passive' || w.text === 'assertive' || w.text === 'blocking')) {
+        strength = w.text as StrengthWord;
+      } else {
+        this.diagnostics.error('parse.exchange-strength', 'Expected a strength word after the comma — the vocabulary: `passive`, `assertive`, `blocking`.', w?.span ?? c.restSpan());
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.exchange-header', 'Unexpected words after the exchange header — the form is `define exchange <key> for <entity>[, <strength>]`.', c.restSpan());
+    }
+
+    const decl: DefineExchange = { kind: 'define-exchange', name: name ?? '', owner, strength, rows: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('exchange', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.exchange-empty', 'This `define exchange` block declares no rows — add `answer …:`, `on <act/event>:`, or `on silence:` rows, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end exchange` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      const row = this.parseExchangeRow(line);
+      if (row) {
+        decl.rows.push(row);
+        decl.span = mergeSpans(decl.span, row.span);
+      }
+    }
+    this.diagnostics.error('parse.exchange-end', 'Expected `end exchange` to close the block.', decl.span);
+    if (decl.rows.length === 0) {
+      this.diagnostics.error('parse.exchange-empty', 'This `define exchange` block declares no rows — add `answer …:`, `on <act/event>:`, or `on silence:` rows, or remove the block.', decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * One exchange response row. Heads: `answer <topic-key>:` (the topic-key
+   * grammar reused whole — quoted free-text with comma aliases, or the
+   * entity tier), `on <act/event>:` (one word, the event-verb register),
+   * `on silence:`. The body is the topic-row idiom.
+   */
+  private parseExchangeRow(headLine: Line): ExchangeRow | null {
+    const c = new Cursor(headLine.tokens, headLine);
+    let head: ExchangeHead | null = null;
+    const headStart = c.peek()?.span ?? lineSpan(headLine);
+
+    if (c.isWord('answer')) {
+      c.next();
+      const first = c.peek();
+      if (first && first.kind === 'string') {
+        c.next();
+        if (first.text.trim() === '') {
+          this.diagnostics.error('parse.exchange-answer', 'A quoted answer cannot be empty.', first.span);
+          this.pos++;
+          return null;
+        }
+        const aliases: string[] = [];
+        let span = first.span;
+        while (c.peek()?.kind === 'comma') {
+          c.next();
+          const alias = c.next();
+          if (!alias || alias.kind !== 'string' || alias.text.trim() === '') {
+            this.diagnostics.error(
+              'parse.exchange-alias',
+              'Expected a quoted alias after the comma — aliases are declared quoted spellings: `answer "yes", "aye": …`.',
+              alias?.span ?? c.restSpan(),
+            );
+            this.pos++;
+            return null;
+          }
+          aliases.push(alias.text);
+          span = mergeSpans(span, alias.span);
+        }
+        head = { kind: 'answer', filter: { kind: 'text', primary: first.text, aliases, span }, span: headStart };
+      } else {
+        const ref = this.parseNameRef(c, () => false);
+        if (ref.words.length === 0) {
+          this.diagnostics.error('parse.exchange-answer', 'Expected an entity name or a quoted answer after `answer`.', c.restSpan());
+          this.pos++;
+          return null;
+        }
+        head = { kind: 'answer', filter: { kind: 'entity', ref }, span: headStart };
+      }
+    } else if (c.isWord('on')) {
+      c.next();
+      if (c.isWord('silence')) {
+        c.next();
+        head = { kind: 'silence', span: headStart };
+      } else {
+        const act = c.next();
+        if (!act || act.kind !== 'word') {
+          this.diagnostics.error('parse.exchange-act', 'Expected an act/event word after `on` (e.g. `on leaving:`), or `on silence:`.', c.restSpan());
+          this.pos++;
+          return null;
+        }
+        head = { kind: 'act', action: act.text, span: headStart };
+      }
+    } else {
+      this.diagnostics.error(
+        'parse.exchange-row',
+        `Unrecognized line in \`define exchange\`: \`${headLine.raw.trim()}\` — expected an \`answer …:\` row, an \`on <act/event>:\` row, \`on silence:\`, or \`end exchange\`.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return null;
+    }
+
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.exchange-colon', 'Expected `:` after the response head.', colon?.span ?? c.restSpan());
+      this.pos++;
+      return null;
+    }
+
+    let body: Statement[];
+    let span = lineSpan(headLine);
+    if (!c.atEnd()) {
+      const rest: Line = { ...headLine, tokens: headLine.tokens.slice(c.i) };
+      const stmt = this.parseStatement(rest, 'exchange');
+      if (!stmt) return null; // the statement error is already reported
+      body = [stmt];
+    } else {
+      this.pos++;
+      body = this.parseStatements(headLine.indent, 'exchange');
+      if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
+    }
+    if (body.length === 0) {
+      this.diagnostics.error('parse.exchange-response', 'Expected a response — a one-line statement after the `:`, or an indented statement body.', lineSpan(headLine));
+      return null;
+    }
+    return { kind: 'exchange-row', head, body, span };
+  }
+
+  /**
+   * `define initiative for <entity> … end initiative` (ADR-320 D7) —
+   * authored occasion rows that force or suppress a seizure.
+   */
+  private parseDefineInitiative(): DefineInitiative {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define initiative
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.initiative-for', 'Expected `for <entity>` after `define initiative`.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.initiative-for', 'Expected `define initiative for <entity>` — the owner name runs to the end of the line.', c.restSpan());
+      }
+    }
+
+    const decl: DefineInitiative = { kind: 'define-initiative', owner, rows: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('initiative', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.initiative-empty', 'This `define initiative` block declares no rows — add occasion rows (`on an open floor:`, `on silence:`, …), or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end initiative` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      const row = this.parseInitiativeRow(line);
+      if (row) {
+        decl.rows.push(row);
+        decl.span = mergeSpans(decl.span, row.span);
+      }
+    }
+    this.diagnostics.error('parse.initiative-end', 'Expected `end initiative` to close the block.', decl.span);
+    if (decl.rows.length === 0) {
+      this.diagnostics.error('parse.initiative-empty', 'This `define initiative` block declares no rows — add occasion rows (`on an open floor:`, `on silence:`, …), or remove the block.', decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * One initiative row. Frozen occasion heads: `on an open floor`,
+   * `on silence`, `when the subject changes`, `on <act/event>` — each
+   * optionally refined by `, when <condition>` before the colon (the
+   * greetings-row composition shape).
+   */
+  private parseInitiativeRow(headLine: Line): InitiativeRow | null {
+    // The optional `, when <condition>` runs to the `:` — slice at the
+    // first colon before parsing, the condition-before-colon idiom.
+    const colonIdx = headLine.tokens.findIndex((tk) => tk.kind === 'colon');
+    if (colonIdx < 0) {
+      this.diagnostics.error(
+        'parse.initiative-row',
+        `Unrecognized line in \`define initiative\`: \`${headLine.raw.trim()}\` — expected an occasion row (\`on an open floor[, when <condition>]:\`, \`on silence:\`, \`when the subject changes:\`, \`on <act/event>:\`) or \`end initiative\`.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return null;
+    }
+    const c = new Cursor(headLine.tokens.slice(0, colonIdx), headLine);
+    let head: InitiativeHead | null = null;
+    const headStart = c.peek()?.span ?? lineSpan(headLine);
+
+    if (c.isWord('on') && c.isWord('an', 1) && c.isWord('open', 2) && c.isWord('floor', 3)) {
+      c.next(); c.next(); c.next(); c.next();
+      head = { kind: 'open-floor', span: headStart };
+    } else if (c.isWord('on') && c.isWord('silence', 1)) {
+      c.next();
+      c.next();
+      head = { kind: 'silence', span: headStart };
+    } else if (c.isWord('when') && c.isWord('the', 1) && c.isWord('subject', 2) && c.isWord('changes', 3)) {
+      c.next(); c.next(); c.next(); c.next();
+      head = { kind: 'subject-change', span: headStart };
+    } else if (c.isWord('on')) {
+      c.next();
+      const act = c.next();
+      if (!act || act.kind !== 'word') {
+        this.diagnostics.error('parse.initiative-row', 'Expected an occasion after `on` — `an open floor`, `silence`, or an act/event word.', c.restSpan());
+        this.pos++;
+        return null;
+      }
+      head = { kind: 'act', action: act.text, span: headStart };
+    } else {
+      this.diagnostics.error(
+        'parse.initiative-row',
+        `Unrecognized occasion head: \`${headLine.raw.trim()}\` — the vocabulary: \`on an open floor\`, \`on silence\`, \`when the subject changes\`, \`on <act/event>\`.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return null;
+    }
+
+    // `, when <condition>` refinement (composes like `on return, after days`).
+    let condition: ConditionNode | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('when')) {
+        this.diagnostics.error('parse.initiative-when', 'Expected `when <condition>` after the comma — the refinement composes like `on an open floor, when morale is low:`.', c.restSpan());
+        this.pos++;
+        return null;
+      }
+      condition = this.parseCondition(c, headLine);
+      if (!c.atEnd()) {
+        this.diagnostics.error('parse.initiative-when', 'Expected the condition to run to the `:`.', c.restSpan());
+        this.pos++;
+        return null;
+      }
+    } else if (!c.atEnd()) {
+      this.diagnostics.error('parse.initiative-row', 'Unexpected words after the occasion head — refine with `, when <condition>` or end the head at the `:`.', c.restSpan());
+      this.pos++;
+      return null;
+    }
+
+    let body: Statement[];
+    let span = lineSpan(headLine);
+    if (colonIdx < headLine.tokens.length - 1) {
+      const rest: Line = { ...headLine, tokens: headLine.tokens.slice(colonIdx + 1) };
+      const stmt = this.parseStatement(rest, 'initiative');
+      if (!stmt) return null; // the statement error is already reported
+      body = [stmt];
+    } else {
+      this.pos++;
+      body = this.parseStatements(headLine.indent, 'initiative');
+      if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
+    }
+    if (body.length === 0) {
+      this.diagnostics.error('parse.initiative-response', 'Expected a row body — a one-line statement after the `:`, or an indented statement body.', lineSpan(headLine));
+      return null;
+    }
+    return { kind: 'initiative-row', head, condition, body, span };
+  }
+
   // ------------------------------------------------------------- on clause
 
   /**
@@ -5931,6 +6272,95 @@ class Parser {
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'kill', phraseKey, stmtWhen, span: lineSpan(line) } as KillStmt;
+      }
+      case 'then': {
+        // ADR-320 D4/D8: `then asks|invites <exchange-key>` — open the
+        // owner's named exchange. Conversation rows only.
+        this.pos++;
+        c.next();
+        if (!CONVERSATION_BLOCKS.has(blockKeyword)) {
+          this.diagnostics.error('parse.then-context', '`then asks`/`then invites` belongs to conversation rows — topic, greetings, exchange, and initiative bodies only.', lineSpan(line));
+          return null;
+        }
+        let thenWord: 'asks' | 'invites' | null = null;
+        if (c.matchWord('asks')) thenWord = 'asks';
+        else if (c.matchWord('invites')) thenWord = 'invites';
+        if (!thenWord) {
+          this.diagnostics.error('parse.then-word', 'Expected `asks` or `invites` after `then`.', c.restSpan());
+          return null;
+        }
+        const exchange = this.readLabelKey(c);
+        if (!exchange || !c.atEnd()) {
+          this.diagnostics.error('parse.then-exchange', `Expected an exchange key after \`then ${thenWord}\` — a single kebab-case word naming a \`define exchange\` of the same owner.`, c.restSpan());
+          return null;
+        }
+        return { kind: 'then-open', word: thenWord, exchange, span: lineSpan(line) } as ThenOpenStmt;
+      }
+      case 'deflect': {
+        // ADR-320 D8: `deflect to <topic>` — redirect to a row of the
+        // owner's own topic table. Conversation rows only.
+        this.pos++;
+        c.next();
+        if (!CONVERSATION_BLOCKS.has(blockKeyword)) {
+          this.diagnostics.error('parse.deflect-context', '`deflect to` belongs to conversation rows — topic, greetings, exchange, and initiative bodies only.', lineSpan(line));
+          return null;
+        }
+        if (!c.matchWord('to')) {
+          this.diagnostics.error('parse.deflect-to', 'Expected `to <topic>` after `deflect`.', c.restSpan());
+          return null;
+        }
+        const first = c.peek();
+        let target: DeflectStmt['target'];
+        if (first && first.kind === 'string') {
+          c.next();
+          if (first.text.trim() === '') {
+            this.diagnostics.error('parse.deflect-target', 'A quoted deflect target cannot be empty.', first.span);
+            return null;
+          }
+          target = { kind: 'text', text: first.text, span: first.span };
+        } else {
+          const ref = this.parseNameRef(c, () => false);
+          if (ref.words.length === 0) {
+            this.diagnostics.error('parse.deflect-target', 'Expected an entity name or a quoted topic after `deflect to`.', c.restSpan());
+            return null;
+          }
+          target = { kind: 'entity', ref };
+        }
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.deflect-target', 'Unexpected words after the deflect target — the form is `deflect to <topic>`.', c.restSpan());
+          return null;
+        }
+        return { kind: 'deflect', target, span: lineSpan(line) } as DeflectStmt;
+      }
+      case 'leave': {
+        // ADR-320 D8: `leave` — the owner exits the scene (a movement
+        // move; world legality is dispatch's). Conversation rows only.
+        this.pos++;
+        c.next();
+        if (!CONVERSATION_BLOCKS.has(blockKeyword)) {
+          this.diagnostics.error('parse.leave-context', '`leave` belongs to conversation rows — topic, greetings, exchange, and initiative bodies only.', lineSpan(line));
+          return null;
+        }
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.leave', '`leave` stands alone — the owner exits the scene; there is nothing to add.', c.restSpan());
+          return null;
+        }
+        return { kind: 'leave', span: lineSpan(line) } as LeaveStmt;
+      }
+      case 'hold': {
+        // ADR-320 D7: `hold their tongue` — suppress the seizure.
+        // Initiative rows only.
+        this.pos++;
+        c.next();
+        if (blockKeyword !== 'initiative') {
+          this.diagnostics.error('parse.hold-tongue-context', '`hold their tongue` belongs to initiative rows only — it suppresses the seizure an initiative row would otherwise force.', lineSpan(line));
+          return null;
+        }
+        if (!c.matchWord('their') || !c.matchWord('tongue') || !c.atEnd()) {
+          this.diagnostics.error('parse.hold-tongue', 'Expected `hold their tongue` — the suppression statement, exactly three words.', c.restSpan());
+          return null;
+        }
+        return { kind: 'hold-tongue', span: lineSpan(line) } as HoldTongueStmt;
       }
       case 'if':
         // Removed — given 4 amended (ratchet 2026-07-11).

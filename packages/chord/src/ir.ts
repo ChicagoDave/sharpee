@@ -314,6 +314,19 @@ export interface IREntity {
    */
   greetings?: IRGreetingRow[];
   /**
+   * The entity's declared exchange points (`define exchange <key> for …`,
+   * ADR-320 D4) — in declaration order; absent when none are declared.
+   * Rows are declarative and therefore enumerable: this shape feeds
+   * D12's response-affordance wire data directly.
+   */
+  exchanges?: IRExchange[];
+  /**
+   * The entity's declared initiative rows (`define initiative for …`,
+   * ADR-320 D7) — occasion rows in declaration order; absent when no
+   * block is declared.
+   */
+  initiative?: IRInitiativeRow[];
+  /**
    * The declared character model (ADR-310) — present exactly when the
    * `create` block carries at least one character construct (D7: a person
    * with no character line compiles exactly as today, no model attached).
@@ -348,6 +361,58 @@ export interface IRGreetingRow {
     | { kind: 'return'; absence: 'again-so-soon' | 'after-a-while' | 'after-days' | null }
     | { kind: 'asked'; word: 'once' | 'again' | 'many-times' }
     | { kind: 'leaving' };
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One named exchange point (ADR-320 D4): the response set that overlays
+ * the owner's topic table while the exchange is open. The opening line
+ * lives in the calling row's statements (`then-open`), not here.
+ */
+export interface IRExchange {
+  /** The exchange key (single kebab word), unique per owner. */
+  name: string;
+  /**
+   * The header strength word (ADR-320 D10) — matches `@sharpee/character`'s
+   * `ConversationStrength` union exactly; absent = the runtime derives
+   * strength from intent.
+   */
+  strength?: 'passive' | 'assertive' | 'blocking';
+  rows: IRExchangeRow[];
+  span: Span;
+}
+
+/**
+ * One exchange response row (ADR-320 D4/D12): what the responder says
+ * (`answer`, the topic-key tiers), does (`act`, the event-verb register),
+ * or withholds (`silence` — rendered like any response, D8). Input
+ * matching no row falls through to the topic table (D16) — fallthrough
+ * is the platform's, never authored.
+ */
+export interface IRExchangeRow {
+  head:
+    | { kind: 'answer'; filter: { kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] } }
+    | { kind: 'act'; action: string }
+    | { kind: 'silence' };
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One initiative row (ADR-320 D7): an authored occasion that forces the
+ * seizure when it fires — or suppresses it when the body is the lone
+ * `hold-tongue` statement. The occasion kinds mirror the scene runtime's
+ * `SceneOccasion` (goal-step deliberately unsurfaced).
+ */
+export interface IRInitiativeRow {
+  occasion:
+    | { kind: 'open-floor' }
+    | { kind: 'silence' }
+    | { kind: 'subject-change' }
+    | { kind: 'act'; action: string };
+  /** The `, when <condition>` refinement; null = the occasion alone. */
+  condition: IRCondition | null;
   body: IRStatement[];
   span: Span;
 }
@@ -1252,7 +1317,30 @@ export type IRStatement =
    * body once per matching world entity in creation order, `the match`
    * bound to that entity; empty set = no-op.
    */
-  | { kind: 'each'; condition: string; body: IRStatement[]; span: Span };
+  | { kind: 'each'; condition: string; body: IRStatement[]; span: Span }
+  /**
+   * `then asks|invites <exchange-key>` (ADR-320 D4/D8): open the owner's
+   * named exchange. The word is data — the wire may render an invitation
+   * differently from a question. Conversation bodies only.
+   */
+  | { kind: 'then-open'; word: 'asks' | 'invites'; exchange: string; span: Span }
+  /**
+   * `deflect to <topic>` (ADR-320 D8): the owner redirects to a row of
+   * their own topic table — resolved entity id, or the normalized quoted
+   * text (empty primary = the entity reference failed to resolve and the
+   * miss is already reported).
+   */
+  | { kind: 'deflect'; target: { kind: 'entity'; id: string } | { kind: 'text'; primary: string }; span: Span }
+  /**
+   * `leave` (ADR-320 D8): the owner exits the scene — a movement move,
+   * world-legality consulted at dispatch, never conversation-only physics.
+   */
+  | { kind: 'leave'; span: Span }
+  /**
+   * `hold their tongue` (ADR-320 D7): suppress the seizure the enclosing
+   * initiative row would otherwise force. Always a row's only statement.
+   */
+  | { kind: 'hold-tongue'; span: Span };
 
 export interface IRSelectArm {
   value: string;

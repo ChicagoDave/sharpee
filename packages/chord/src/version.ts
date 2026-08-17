@@ -185,5 +185,14 @@
  * fresh|recent|stale`), `<topic> was discussed`, `the subject changes`, and
  * `asked once|again|many times`. Chord 3.0.0 shipped with platform 5.0.x, so
  * this is the first ordinary minor after the freeze, per the rule above.
+ *
+ * 3.2.0 — ADR-320 Phase 4, 2026-08-17 (session a53a28): the second
+ * conversation grammar slice, vocabulary frozen by owner the same day.
+ * Additive: `define exchange` (answer/act/silence response rows, the header
+ * strength comma-modifier `passive|assertive|blocking`), `define initiative`
+ * (occasion rows — `on an open floor`, `on silence`, `when the subject
+ * changes`, `on <act/event>` — with the `, when <condition>` refinement),
+ * and the conversation-row statements `then asks|invites <exchange>`,
+ * `deflect to <topic>`, `leave`, and `hold their tongue`.
  */
-export const CHORD_LANGUAGE_VERSION = '3.1.0';
+export const CHORD_LANGUAGE_VERSION = '3.2.0';

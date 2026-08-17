@@ -19,6 +19,11 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
+  // 3.2.0 — ADR-320 Phase 4, 2026-08-17 (session a53a28): the second
+  // conversation grammar slice, vocabulary frozen by owner the same day.
+  // Additive minor (`define exchange` with answer/act/silence rows and the
+  // strength comma-modifier, `define initiative` with the four occasion
+  // heads, `then asks|invites`, `deflect to`, `leave`, `hold their tongue`).
   // 3.1.0 — ADR-320 Phase 3, 2026-08-17 (session 8e2f49): the conversation
   // grammar slice, vocabulary frozen by owner the same day. Additive minor
   // (`define manner`, `define greetings`, recency/discussed/subject-changes/
@@ -45,8 +50,8 @@ const PINNED = {
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '3.1.0',
-  ebnfSha256: '44db95b802b8fde9f2ede6f386ad953c0d5231174f93d87ff48b7b140f91924b',
+  languageVersion: '3.2.0',
+  ebnfSha256: '379d0d5750056637ba8fcad9d1d1279d1e958cb419122f4db32c4267a62d0542',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

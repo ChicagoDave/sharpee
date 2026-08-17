@@ -212,6 +212,17 @@ export class Evaluator {
         }
         return false;
       }
+      case 'recency':
+      case 'discussed':
+      case 'asked':
+      case 'subject-changes':
+        // ADR-320: these conversation predicates compile (Chord 3.1.0+) but
+        // their runtime reads land with the scene runtime and its evaluator
+        // wiring (plan Phases 5/7). Loud failure until wired — a story using
+        // them must never get a silent `false` (the ADR-310 Phase 5 precedent).
+        throw new LoadError(
+          `Conversation predicate \`${cond.kind}\` is not wired into the evaluator yet.`,
+        );
     }
   }
 

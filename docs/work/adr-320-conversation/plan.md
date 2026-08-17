@@ -224,10 +224,28 @@ affordance.
   authored-row-forces leg), Acceptance 6 (interruption vocabulary present in the grammar,
   full behavior lands in Phase 5), and Acceptance 7 (world-bounded exit; silence renders
   — the grammar/IR half; full behavior lands in Phase 6) pass at the Chord-compile level.
-- **Status**: CURRENT (since 2026-08-17 — Phase 3 DONE; the `packages/chord`
-  confirmation carries per this phase's entry state. Opens with the Phase 4
-  vocabulary freeze review — exchange words, strength markers, initiative rows —
-  before implementation.)
+- **Status**: DONE (2026-08-17, session a53a28). Evidence: vocabulary frozen by
+  David ("all section 6 decisions are confirmed as stated", 2026-08-17 —
+  `vocabulary-freeze-phase4.md` FROZEN, all six decisions as recommended: named
+  `define exchange` block holding responses only, `answer`/`on`/`on silence`
+  row heads, BOTH `then asks` and `then invites` with the word as wire data,
+  `deflect to`/`leave`, header comma-modifier strength, `define initiative`
+  with `hold their tongue`). Grammar/IR landed: `define exchange` (answer/act/
+  silence rows, topic-table duplicate+collision rules reused, header strength
+  matching the shipped `ConversationStrength` union verbatim), `define
+  initiative` (four occasion heads mapped from the Phase 1 `SceneOccasion`
+  kinds, `, when <condition>` refinement, `hold their tongue` suppression with
+  the alone-gate), the four conversation-row statements parse-gated to
+  conversation contexts, `analysis.then-target` (same-owner exchange) and
+  `analysis.deflect-target` (owner's-own-table) validation walking nested
+  bodies. Tests: `tests/adr-320-phase4.test.ts` — 23 tests derived from
+  Behavior Statements, all asserting on emitted IR/diagnostic codes; full
+  chord suite 893 passing, 61 files (run 2026-08-17). Cost leg: golden IR
+  snapshots diff ONLY in the deliberate `languageVersion` stamp (4 lines,
+  verified via git diff). Surface pin moved together per ADR-257 D5:
+  `chord.ebnf` updated, `CHORD_LANGUAGE_VERSION` 3.1.0 → 3.2.0, pin hash
+  re-recorded. Repo-wide `npx tsc --noEmit` clean. Acceptance 2/5/6/7 hold at
+  the Chord-compile level (full behavior lands Phases 5–6 per the exit state).
 
 ### Phase 5: `@sharpee/character` — the scene runtime
 - **Tier**: Large
@@ -260,7 +278,11 @@ affordance.
   absence aging, and threading state all asserted on real scene/memory objects, not
   mocks. Acceptance 6 (interruption) passes against real scene state. No other package
   yet consumes this runtime (that is Phase 6's entry state).
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-17 — Phase 4 DONE; the `packages/character`
+  confirmation carries from Phase 1 per this phase's entry state, unless David
+  revokes it. Carries the approved renames (`ContinuationIntent`,
+  strength/redirect union collapses) and the modeled-PC tick coverage from
+  contracts §2.1.)
 
 ### Phase 6: `packages/stdlib` — dispatch integration and witnessed player claims
 - **Tier**: Large

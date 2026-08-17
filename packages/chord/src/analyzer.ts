@@ -123,6 +123,9 @@ import {
   IRTopicRow,
   IRMannerRow,
   IRGreetingRow,
+  IRExchange,
+  IRExchangeRow,
+  IRInitiativeRow,
   IRTraitDef,
   IRValue,
   IRStoryFields,
@@ -888,6 +891,9 @@ class Analyzer {
         case 'define-manner':
         case 'define-greetings':
           break; // applied onto owners after all entities are built (applyManner/applyGreetings)
+        case 'define-exchange':
+        case 'define-initiative':
+          break; // applied onto owners after all entities are built (applyExchanges/applyInitiative)
       }
     }
 
@@ -920,6 +926,9 @@ class Analyzer {
     this.applyTopics(ir.entities);
     this.applyManner(ir.entities);
     this.applyGreetings(ir.entities);
+    this.applyExchanges(ir.entities);
+    this.applyInitiative(ir.entities);
+    this.checkConversationTargets(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkCompositionLegality(ir);
@@ -1736,6 +1745,322 @@ class Analyzer {
   }
 
   /**
+   * ADR-320 D4/D10 (vocabulary frozen 2026-08-17): fold each `define
+   * exchange` block onto its owner entity's `exchanges` list. Gates: a
+   * second exchange with the same key for the same owner, a non-person
+   * host, a duplicate response row (an answer answers in one place —
+   * aliases included, plus the quoted-vs-entity-tier collision, the
+   * topic-table rules), a duplicate act row, a second `on silence` row.
+   * Bodies lower exactly as topic-row bodies do, occurrence-keyed on the
+   * exchange name and IR row index.
+   */
+  private applyExchanges(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → exchange key → first block's span (duplicate gate). */
+    const seen = new Map<string, Map<string, Span>>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-exchange') continue;
+      if (decl.owner.words.length === 0 || decl.name === '') continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      let ownerSeen = seen.get(ownerId);
+      if (!ownerSeen) {
+        ownerSeen = new Map();
+        seen.set(ownerId, ownerSeen);
+      }
+      const first = ownerSeen.get(decl.name);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-exchange',
+          `\`${owner.name}\` already has an exchange \`${decl.name}\` at line ${first.line} — an exchange lives in one place; merge the rows or rename one.`,
+          decl.span,
+        );
+        continue;
+      }
+      ownerSeen.set(decl.name, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.exchange-host',
+          `\`define exchange\` needs a person — \`${owner.name}\` is ${kind}, and an exchange is a speaker's own moment (a block here could never open).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      // Entity-tier answer refs resolve once, up front — the cross-tier
+      // collision gate must see every entity-tier row's names (the
+      // topic-table discipline).
+      const resolvedRefs = decl.rows.map((row) =>
+        row.head.kind === 'answer' && row.head.filter.kind === 'entity'
+          ? this.resolveEntityId(row.head.filter.ref)
+          : null,
+      );
+      /** normalized name/aka of entity-tier answer entities → display name. */
+      const entityTierNames = new Map<string, string>();
+      for (const id of resolvedRefs) {
+        if (!id) continue;
+        const rowSym = this.byId.get(id);
+        if (!rowSym) continue;
+        entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
+        for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRExchangeRow[] = [];
+      const seenEntities = new Map<string, Span>();
+      const seenTexts = new Map<string, Span>();
+      const seenActs = new Map<string, Span>();
+      let seenSilence: Span | null = null;
+
+      for (let i = 0; i < decl.rows.length; i++) {
+        const row = decl.rows[i];
+        let head: IRExchangeRow['head'] | null = null;
+        if (row.head.kind === 'answer') {
+          if (row.head.filter.kind === 'entity') {
+            const id = resolvedRefs[i];
+            if (!id) continue; // unresolved — already reported
+            const dup = seenEntities.get(id);
+            if (dup) {
+              this.diagnostics.error(
+                'analysis.duplicate-answer',
+                `\`${this.byId.get(id)?.nameLower ?? id}\` is already an answer of this exchange (line ${dup.line}) — an answer answers in one place; merge the rows.`,
+                row.span,
+              );
+              continue;
+            }
+            seenEntities.set(id, row.span);
+            head = { kind: 'answer', filter: { kind: 'entity', id } };
+          } else {
+            const texts = [row.head.filter.primary, ...row.head.filter.aliases];
+            let rejected = false;
+            for (const text of texts) {
+              const norm = normalizeTopic(text);
+              const dup = seenTexts.get(norm);
+              if (dup) {
+                this.diagnostics.error(
+                  'analysis.duplicate-answer',
+                  `"${text}" is already declared in this exchange (line ${dup.line}) — aliases included, an answer answers in one place.`,
+                  row.head.filter.span,
+                );
+                rejected = true;
+                continue;
+              }
+              seenTexts.set(norm, row.span);
+              const collidesWith = entityTierNames.get(norm);
+              if (collidesWith) {
+                this.diagnostics.error(
+                  'analysis.answer-entity-collision',
+                  `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier answer of this exchange, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
+                  row.head.filter.span,
+                );
+                rejected = true;
+              }
+            }
+            if (rejected) continue;
+            head = { kind: 'answer', filter: { kind: 'text', primary: row.head.filter.primary, aliases: row.head.filter.aliases } };
+          }
+        } else if (row.head.kind === 'act') {
+          const dup = seenActs.get(row.head.action);
+          if (dup) {
+            this.diagnostics.error(
+              'analysis.duplicate-answer',
+              `\`on ${row.head.action}\` is already a row of this exchange (line ${dup.line}) — a response answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenActs.set(row.head.action, row.span);
+          head = { kind: 'act', action: row.head.action };
+        } else {
+          if (seenSilence) {
+            this.diagnostics.error(
+              'analysis.duplicate-answer',
+              `\`on silence\` is already a row of this exchange (line ${seenSilence.line}) — a response answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenSilence = row.span;
+          head = { kind: 'silence' };
+        }
+
+        rows.push({
+          head,
+          body: row.body.map((s, j) =>
+            this.resolveStatement(s, scope, `exchange.${ownerId}.${decl.name}.row-${rows.length}.${j}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+
+      const axes = this.phraseAxesFor(owner);
+      for (const row of rows) this.checkPhraseExclusivity(row, axes);
+
+      (owner.exchanges ??= []).push({
+        name: decl.name,
+        ...(decl.strength ? { strength: decl.strength } : {}),
+        rows,
+        span: decl.span,
+      });
+    }
+  }
+
+  /**
+   * ADR-320 D7 (vocabulary frozen 2026-08-17): fold each `define
+   * initiative` block onto its owner entity's `initiative` rows. Gates: a
+   * second block for the same owner, a non-person host, and a `hold
+   * their tongue` sharing a row body with other statements (a suppression
+   * cannot also speak). Rows are NOT required to be mutually exclusive —
+   * most-specific-wins selection is the scene runtime's.
+   */
+  private applyInitiative(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-initiative') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-initiative-block',
+          `\`${owner.name}\` already has a \`define initiative\` block at line ${first.line} — a character's initiative lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.initiative-host',
+          `\`define initiative\` needs a person — \`${owner.name}\` is ${kind}, and initiative is a character's own seizure of a moment (a block here could never fire).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRInitiativeRow[] = [];
+      for (const row of decl.rows) {
+        // A suppression cannot also speak: `hold their tongue` is the
+        // row's only statement, or an error.
+        if (row.body.some((s) => s.kind === 'hold-tongue') && row.body.length > 1) {
+          this.diagnostics.error(
+            'analysis.hold-tongue-alone',
+            '`hold their tongue` must be the row\'s only statement — a suppression cannot also speak; split the row if both behaviors are wanted under different conditions.',
+            row.span,
+          );
+          continue;
+        }
+        const occasion: IRInitiativeRow['occasion'] =
+          row.head.kind === 'act' ? { kind: 'act', action: row.head.action } : { kind: row.head.kind };
+        rows.push({
+          occasion,
+          condition: row.condition ? this.resolveCondition(row.condition, scope) : null,
+          body: row.body.map((s, j) =>
+            this.resolveStatement(s, scope, `initiative.${ownerId}.row-${rows.length}.${j}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+      owner.initiative = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D4/D8 target validation, after every conversation fold: a
+   * `then asks`/`then invites` must name an exchange of the SAME owner
+   * (a cross-owner open makes no sense — the exchange is the speaker's
+   * own moment), and a `deflect to` must name a row of the owner's OWN
+   * topic table. Walks every conversation body recursively (select
+   * arms, ordinal and each bodies included). An empty deflect text
+   * primary is the resolveStatement marker for an entity reference that
+   * already failed to resolve — skipped, the miss is reported.
+   */
+  private checkConversationTargets(entities: IREntity[]): void {
+    for (const e of entities) {
+      const exchangeNames = new Set((e.exchanges ?? []).map((x) => x.name));
+      const topicEntityIds = new Set<string>();
+      const topicTexts = new Set<string>();
+      for (const row of e.topics) {
+        if (row.filter.kind === 'entity') topicEntityIds.add(row.filter.id);
+        else {
+          topicTexts.add(normalizeTopic(row.filter.primary));
+          for (const alias of row.filter.aliases) topicTexts.add(normalizeTopic(alias));
+        }
+      }
+
+      const visit = (stmts: IRStatement[]): void => {
+        for (const stmt of stmts) {
+          switch (stmt.kind) {
+            case 'then-open':
+              if (!exchangeNames.has(stmt.exchange)) {
+                this.diagnostics.error(
+                  'analysis.then-target',
+                  `\`${stmt.exchange}\` is not an exchange of \`${e.name}\` — \`then ${stmt.word}\` opens one of the speaker's own \`define exchange\` blocks${this.suggestText(stmt.exchange, [...exchangeNames])}.`,
+                  stmt.span,
+                );
+              }
+              break;
+            case 'deflect':
+              if (stmt.target.kind === 'entity') {
+                if (!topicEntityIds.has(stmt.target.id)) {
+                  this.diagnostics.error(
+                    'analysis.deflect-target',
+                    `\`${this.byId.get(stmt.target.id)?.nameLower ?? stmt.target.id}\` is not a topic of \`${e.name}\`'s table — \`deflect to\` redirects to a row of the owner's own \`define topics\` block.`,
+                    stmt.span,
+                  );
+                }
+              } else if (stmt.target.primary !== '' && !topicTexts.has(normalizeTopic(stmt.target.primary))) {
+                this.diagnostics.error(
+                  'analysis.deflect-target',
+                  `"${stmt.target.primary}" is not a topic of \`${e.name}\`'s table — \`deflect to\` redirects to a row of the owner's own \`define topics\` block.`,
+                  stmt.span,
+                );
+              }
+              break;
+            case 'select-on':
+              for (const arm of stmt.arms) visit(arm.body);
+              break;
+            case 'select-strategy':
+              for (const alt of stmt.alternatives) visit(alt);
+              break;
+            case 'ordinal':
+            case 'each':
+              visit(stmt.body);
+              break;
+            default:
+              break;
+          }
+        }
+      };
+
+      for (const row of e.topics) visit(row.body);
+      for (const row of e.greetings ?? []) visit(row.body);
+      for (const x of e.exchanges ?? []) for (const row of x.rows) visit(row.body);
+      for (const row of e.initiative ?? []) visit(row.body);
+    }
+  }
+
+  /**
    * Single-valued axis table for the overlap prover. Mood (platform +
    * customs), band, and threat words are single-valued interior reads;
    * the owner's declared `states:` words are a single current value per
@@ -1765,7 +2090,7 @@ class Analyzer {
    * multiplicity belongs at the phrase level (`or`-separated variants),
    * never as two rows both in play.
    */
-  private checkPhraseExclusivity(row: IRTopicRow, axes: SingleValuedAxes): void {
+  private checkPhraseExclusivity(row: Pick<IRTopicRow, 'body'>, axes: SingleValuedAxes): void {
     const phrases = row.body.filter(
       (s): s is Extract<IRStatement, { kind: 'phrase' }> => s.kind === 'phrase',
     );
@@ -2734,6 +3059,12 @@ class Analyzer {
     // same keys for the IR rows.
     for (const decl of this.ast.declarations) {
       if (decl.kind === 'define-greetings') {
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+      } else if (decl.kind === 'define-exchange' || decl.kind === 'define-initiative') {
+        // Exchange and initiative row bodies are entity-owned the same
+        // way (ADR-320 D4/D7): inline phrases register owner-scoped.
         const owner = this.findEntitySilent(decl.owner);
         if (!owner) continue;
         for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
@@ -5379,6 +5710,27 @@ class Analyzer {
       }
       case 'media':
         return this.lowerMediaStatement(stmt, scope);
+      case 'then-open':
+        // ADR-320 D4/D8: the word is data (a chat client may render an
+        // invitation differently); same-owner existence is
+        // checkConversationTargets' gate, after every exchange has folded.
+        return { kind: 'then-open', word: stmt.word, exchange: stmt.exchange, span: stmt.span };
+      case 'deflect': {
+        // ADR-320 D8: entity tier resolves here; membership in the
+        // owner's own topic table is checkConversationTargets' gate. An
+        // unresolved entity lowers to the empty-text marker — the miss is
+        // already reported, and the target check skips it.
+        if (stmt.target.kind === 'entity') {
+          const id = this.resolveEntityId(stmt.target.ref);
+          if (!id) return { kind: 'deflect', target: { kind: 'text', primary: '' }, span: stmt.span };
+          return { kind: 'deflect', target: { kind: 'entity', id }, span: stmt.span };
+        }
+        return { kind: 'deflect', target: { kind: 'text', primary: stmt.target.text }, span: stmt.span };
+      }
+      case 'leave':
+        return { kind: 'leave', span: stmt.span };
+      case 'hold-tongue':
+        return { kind: 'hold-tongue', span: stmt.span };
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);

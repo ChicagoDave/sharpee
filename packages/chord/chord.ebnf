@@ -203,6 +203,7 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
              | define-manner | define-greetings            (* ADR-320, frozen 2026-08-17 *)
+             | define-exchange | define-initiative         (* ADR-320, frozen 2026-08-17 *)
              | define-pronouns                             (* ADR-242 *)
              | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
              | override-message | override-messages       (* ADR-255 *)
@@ -681,6 +682,82 @@ absence-words  = "again" "so" "soon"
                | "after" "days" ;                          (* frozen 2026-08-17 *)
 repetition-words = "once" | "again" | "many" "times" ;     (* frozen 2026-08-17 *)
 
+define-exchange = "define" "exchange" WORD "for" name      (* ADR-320 D4 (frozen
+                                                              2026-08-17): a named
+                                                              exchange point — the
+                                                              response set overlaying the
+                                                              owner's topic table while
+                                                              open. Responses only: the
+                                                              opening line lives in the
+                                                              calling row's `then asks`.
+                                                              Person-kind owners
+                                                              (analysis.exchange-host);
+                                                              one definition per
+                                                              (owner, key) (analysis.
+                                                              duplicate-exchange); at
+                                                              least one row (parse.
+                                                              exchange-empty). No
+                                                              `otherwise` row — a miss
+                                                              falls through to the topic
+                                                              table (D16) *)
+                  [ "," strength-word ] NL                 (* D10: unset = the runtime
+                                                              derives strength from
+                                                              intent *)
+                  >>> { exchange-row }
+                  "end" "exchange" NL ;
+exchange-row   = exchange-head ":" ( statement             (* one-line response *)
+                                   | NL >>> { statement } ) ;
+exchange-head  = "answer" topic-key                        (* what the responder says —
+                                                              the topic-key grammar
+                                                              reused whole; duplicates
+                                                              and cross-tier collisions
+                                                              gate (analysis.duplicate-
+                                                              answer / analysis.answer-
+                                                              entity-collision) *)
+               | "on" "silence"                            (* the responder says nothing
+                                                              — rendered like any
+                                                              response (D8) *)
+               | "on" WORD ;                               (* what the responder does —
+                                                              an act/event word from the
+                                                              existing event-verb
+                                                              register *)
+strength-word  = "passive" | "assertive" | "blocking" ;    (* frozen 2026-08-17; spelled
+                                                              exactly as @sharpee/
+                                                              character's
+                                                              ConversationStrength *)
+
+define-initiative = "define" "initiative" "for" name NL    (* ADR-320 D7 (frozen
+                                                              2026-08-17): authored
+                                                              occasion rows that force —
+                                                              or, via `hold their
+                                                              tongue`, suppress — a
+                                                              seizure. Person-kind owners
+                                                              (analysis.initiative-host);
+                                                              one block per entity
+                                                              (analysis.duplicate-
+                                                              initiative-block); at least
+                                                              one row (parse.initiative-
+                                                              empty). Rows need not be
+                                                              mutually exclusive —
+                                                              most-specific-wins is the
+                                                              scene runtime's *)
+                    >>> { initiative-row }
+                    "end" "initiative" NL ;
+initiative-row = occasion-head [ "," "when" condition ]    (* refinement composes like
+                                                              `on return, after days` *)
+                 ":" ( statement | NL >>> { statement } ) ;
+occasion-head  = "on" "an" "open" "floor"                  (* the author-addressable
+                                                              SceneOccasion kinds;
+                                                              goal-step is deliberately
+                                                              unsurfaced — the goal
+                                                              machinery owns it *)
+               | "on" "silence"
+               | "when" "the" "subject" "changes"          (* the Phase 3 threading
+                                                              condition reused as a
+                                                              head *)
+               | "on" WORD ;                               (* witnessed act/event — the
+                                                              event-verb register *)
+
 define-pronouns = "define" "pronouns" WORD NL              (* ADR-242 D7 (ratchet H3):
                                                               a named pronoun set — five
                                                               named case rows, order
@@ -747,6 +824,30 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               counter mutation, clamped *)
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
+             | "then" ( "asks" | "invites" ) WORD NL       (* ADR-320 D4/D8 (frozen
+                                                              2026-08-17): open the named
+                                                              exchange — same-owner
+                                                              (analysis.then-target); the
+                                                              word is carried as wire
+                                                              data. Conversation rows
+                                                              only (parse.then-context) *)
+             | "deflect" "to" ( name | STRING ) NL         (* ADR-320 D8: redirect to a
+                                                              row of the owner's OWN
+                                                              topic table (analysis.
+                                                              deflect-target); the
+                                                              topic-key tiers. Conversation
+                                                              rows only *)
+             | "leave" NL                                  (* ADR-320 D8: exit the scene
+                                                              — a movement move, world
+                                                              legality consulted at
+                                                              dispatch. Conversation rows
+                                                              only *)
+             | "hold" "their" "tongue" NL                  (* ADR-320 D7: suppress the
+                                                              seizure — initiative rows
+                                                              only (parse.hold-tongue-
+                                                              context), and the row's
+                                                              only statement (analysis.
+                                                              hold-tongue-alone) *)
              | select-on | select-strategy | ordinal-block | each-block ;
 stmt-when    = "when" condition ;                          (* statement-final suffix, D7:
                                                               legal on phrase, emit, change,

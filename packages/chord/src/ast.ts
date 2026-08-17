@@ -280,6 +280,9 @@ export type Declaration =
   // ADR-320 D5 manner blocks / D4 boundary blocks (frozen 2026-08-17):
   | DefineManner
   | DefineGreetings
+  // ADR-320 D4 exchange blocks / D7 initiative blocks (frozen 2026-08-17):
+  | DefineExchange
+  | DefineInitiative
   // ADR-310 D14 valued-belief fact declarations:
   | DefineFact
   | DefineTemperament
@@ -443,6 +446,104 @@ export type GreetingHead =
   | { kind: 'return'; absence: AbsenceWord | null; span: Span }
   | { kind: 'asked'; word: RepetitionWord; span: Span }
   | { kind: 'leaving'; span: Span };
+
+/**
+ * The frozen strength words (ADR-320 D10) — spelled exactly as
+ * `@sharpee/character`'s `ConversationStrength` union, so the Chord
+ * surface and the runtime skeleton never need a mapping table.
+ */
+export type StrengthWord = 'passive' | 'assertive' | 'blocking';
+
+/**
+ * `define exchange <key> for <entity>[, <strength>] … end exchange`
+ * (ADR-320 D4, vocabulary frozen 2026-08-17) — a named exchange point:
+ * the response set that overlays the owner's topic table while open. The
+ * block holds responses only — the opening line lives in the calling row
+ * (`then asks <key>`), so one exchange can be opened with different
+ * openings. Person-kind owners; one definition per (owner, key); at
+ * least one row. Input matching no row falls through to the topic table
+ * (D16 innermost-wins) — there is no `otherwise` row to author.
+ */
+export interface DefineExchange {
+  kind: 'define-exchange';
+  /** Single kebab-case exchange key (phrase-key form). */
+  name: string;
+  /** The owning entity — the character who asked (person kind, analyzer gate). */
+  owner: NameRef;
+  /** Header comma-modifier; null = the runtime derives strength from intent. */
+  strength: StrengthWord | null;
+  rows: ExchangeRow[];
+  span: Span;
+}
+
+/**
+ * One exchange response row: a head selecting what the responder says
+ * (`answer …`), does (`on <act/event>`), or withholds (`on silence`),
+ * then a one-line statement or an indented statement body (the topic-row
+ * idiom; `it` = the owner).
+ */
+export interface ExchangeRow {
+  kind: 'exchange-row';
+  head: ExchangeHead;
+  body: Statement[];
+  span: Span;
+}
+
+/**
+ * An exchange row head (frozen spellings): `answer` reuses the topic-key
+ * grammar whole (quoted free-text with comma aliases, or the entity
+ * tier); `on` carries an act/event word from the existing event-verb
+ * register; `on silence` is fixed — silence is something that happens,
+ * not something said (D8 renders it like any response).
+ */
+export type ExchangeHead =
+  | { kind: 'answer'; filter: TopicRow['filter']; span: Span }
+  | { kind: 'act'; action: string; span: Span }
+  | { kind: 'silence'; span: Span };
+
+/**
+ * `define initiative for <entity> … end initiative` (ADR-320 D7,
+ * vocabulary frozen 2026-08-17) — authored occasion rows that force or
+ * suppress a seizure. A row firing forces the moment
+ * (most-specific-wins over disposition); a `hold their tongue` body
+ * suppresses it. Rows need NOT be mutually exclusive — selection is the
+ * scene runtime's. Person-kind owners; one block per entity; at least
+ * one row.
+ */
+export interface DefineInitiative {
+  kind: 'define-initiative';
+  owner: NameRef;
+  rows: InitiativeRow[];
+  span: Span;
+}
+
+/**
+ * One initiative row: an occasion head, an optional condition refinement
+ * after a comma (`on an open floor, when morale is low:`), then a
+ * one-line statement or an indented statement body.
+ */
+export interface InitiativeRow {
+  kind: 'initiative-row';
+  head: InitiativeHead;
+  /** The `, when <condition>` refinement; null = the occasion alone. */
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
+
+/**
+ * An initiative occasion head (frozen spellings) — the author-addressable
+ * `SceneOccasion` kinds: `on an open floor`, `on silence`, `when the
+ * subject changes` (the Phase 3 threading condition reused as a head),
+ * and `on <act/event>` (witnessed event, the event-verb register). The
+ * goal-step occasion is deliberately not surfaced — goal steps force
+ * moments through the goal machinery itself.
+ */
+export type InitiativeHead =
+  | { kind: 'open-floor'; span: Span }
+  | { kind: 'silence'; span: Span }
+  | { kind: 'subject-change'; span: Span }
+  | { kind: 'act'; action: string; span: Span };
 
 /**
  * The construct a channel `return`s (ADR-253 D1). The channel's value is
@@ -1595,7 +1696,66 @@ export type Statement =
   | SelectOnStmt
   | SelectStrategyStmt
   | OrdinalBlock
-  | EachStmt;
+  | EachStmt
+  // ADR-320 D4/D7/D8 conversation-row statements (frozen 2026-08-17):
+  | ThenOpenStmt
+  | DeflectStmt
+  | LeaveStmt
+  | HoldTongueStmt;
+
+/**
+ * `then asks <exchange-key>` / `then invites <exchange-key>` (ADR-320
+ * D4/D8) — open the named exchange, which must belong to the same owner
+ * (analyzer gate). One mechanism; the word is carried as data to the
+ * wire — a chat client may render an invitation differently from a
+ * question. Conversation bodies only (topic / greetings / exchange /
+ * initiative rows — parse gate). A fired exchange row closes its
+ * exchange unless it chains via one of these.
+ */
+export interface ThenOpenStmt {
+  kind: 'then-open';
+  word: 'asks' | 'invites';
+  /** The target exchange key (single kebab word). */
+  exchange: string;
+  span: Span;
+}
+
+/**
+ * `deflect to <topic>` (ADR-320 D8) — the owner redirects to a row of
+ * their OWN topic table (analyzer gate). The target is the topic-key
+ * grammar: an entity name or a quoted free-text topic. Conversation
+ * bodies only (parse gate).
+ */
+export interface DeflectStmt {
+  kind: 'deflect';
+  target:
+    | { kind: 'entity'; ref: NameRef }
+    | { kind: 'text'; text: string; span: Span };
+  span: Span;
+}
+
+/**
+ * `leave` (ADR-320 D8) — the owner exits the scene. Leaving is movement
+ * and obeys the world: legality is consulted against the world model at
+ * dispatch (Phase 6), never a conversation-only physics. Conversation
+ * bodies only (parse gate).
+ */
+export interface LeaveStmt {
+  kind: 'leave';
+  span: Span;
+}
+
+/**
+ * `hold their tongue` (ADR-320 D7) — suppress the seizure this
+ * initiative row would otherwise force. Initiative rows only (parse
+ * gate), and the row's only statement (analyzer gate — a suppression
+ * cannot also speak). Distinct from D8's rendered silence, which is a
+ * response.
+ */
+export interface HoldTongueStmt {
+  kind: 'hold-tongue';
+  span: Span;
+}
 
 /**
  * `each <condition-name> … end each` — body-position iteration block

@@ -720,7 +720,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
-  "languageVersion": "3.1.0",
+  "languageVersion": "3.2.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
