@@ -31,12 +31,23 @@
           "The ballroom, dressed for a reception that never happened. A music stand lies toppled by the stage, and near it a dark stain has soaked into the parquet. The tall stage curtain hangs crooked. The foyer is north."
         ]
       },
-      "command": "s",
+      "command": "south",
       "type": "turn"
     },
     {
+      "assertions": {
+        "channels": [
+          {
+            "contains": [
+              "\"kind\":\"character.author.pressure_deposit\"",
+              "\"npcId\":\"a05\"",
+              "\"feed\":\"pin:killer\""
+            ],
+            "id": "character"
+          }
+        ]
+      },
       "command": "ask viola about the killer",
-      "skip": true,
       "type": "turn"
     }
   ],

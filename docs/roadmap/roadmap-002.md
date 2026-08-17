@@ -6,7 +6,7 @@
 **Target date**: TBD
 **Target Sharpee version**: TBD
 **Target Chord version**: TBD
-**Traces to**: ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in [`docs/work/adr-310/prior-art.md`](../work/adr-310/prior-art.md) · consumed by [003](./roadmap-003.md)
+**Traces to**: ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in [`docs/work/archive/adr-310/prior-art.md`](../work/archive/adr-310/prior-art.md) · consumed by [003](./roadmap-003.md)
 
 ---
 

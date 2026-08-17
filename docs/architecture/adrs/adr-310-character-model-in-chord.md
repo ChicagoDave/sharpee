@@ -20,7 +20,7 @@ D12, D14 and D15)
 **Builds on**: ADR-141 (character model), ADR-142 (conversation), ADR-144
 (information propagation), ADR-145 (goal pursuit), ADR-146 (influence),
 ADR-210 (Chord), ADR-222 (Chord as elegance oracle), ADR-239 (topic tables)
-**Prior art review**: `docs/work/adr-310/prior-art.md` — Short's IF Theory Reader
+**Prior art review**: `docs/work/archive/adr-310/prior-art.md` — Short's IF Theory Reader
 chapter, Ryan & Mateas on *Talk of the Town*, McCoy et al. on Comme il Faut,
 Eve on TADS 3 conversation, and Versu via Short's own account. D14–D16 below are
 its findings folded in.
@@ -1015,7 +1015,7 @@ unreferenced — and that ADR-141's vocabulary was already shaped like Chord.
 
 Amended session 4e8fc1 (2026-08-14), adding D14–D16 and resolving Open Questions
 2, 4 and 7. The amendment came out of a prior-art review
-(`docs/work/adr-310/prior-art.md`) of the systems this ADR had named but not
+(`docs/work/archive/adr-310/prior-art.md`) of the systems this ADR had named but not
 cited. Three of the six live open questions turned out to have answers already in
 the literature: one was a missing field rather than a missing subsystem, one was a
 category error, and one had a twenty-year-old shipped answer in TADS 3. D12 was

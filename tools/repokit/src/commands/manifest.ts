@@ -235,7 +235,7 @@ export function generateCharacterManifestModule(root: string): { source: string;
   lines.push(' * (descriptive) and ADR-318 D3-D9 (normative) constructs against at');
   lines.push(' * compile time. Data only — chord stays');
   lines.push(' * platform-FREE. These word lists are frozen author-facing compatibility');
-  lines.push(' * surface (freeze review: David, 2026-08-15 — docs/work/adr-310/');
+  lines.push(' * surface (freeze review: David, 2026-08-15 — docs/work/archive/adr-310/');
   lines.push(' * contracts.md §6): removing a word breaks stories, additions stay possible.');
   lines.push(' *');
   lines.push(' * Public interface: CHARACTER_MANIFEST, CharacterManifest.');

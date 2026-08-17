@@ -511,6 +511,22 @@ export class CardsView {
         remove.addEventListener('click', () => this.delegate.onRemoveAssertion(del));
         row.appendChild(remove);
       }
+      // A policy [SKIP] on a turn that carried character-model rows: say
+      // where the turn's assertable meaning lives, and take the author
+      // there (David 2026-08-16 — the bare tag read as "nothing to assert").
+      if (line.kind === 'skip' && line.text === '[SKIP]'
+          && this.delegate.characterExplain(ordinal).length > 0) {
+        const hint = document.createElement('button');
+        hint.className = 'ts-skip-npc-hint';
+        hint.textContent = 'assert from the NPC panel →';
+        hint.title = 'The auto-assertion policy had nothing to read this turn — '
+          + "assert one of the NPC panel's character events instead";
+        hint.addEventListener('click', () => {
+          card.characterOpen = true;
+          this.renderCharacter(card, ordinal);
+        });
+        row.appendChild(hint);
+      }
       card.asserts.appendChild(row);
     }
   }

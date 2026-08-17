@@ -589,6 +589,17 @@
           remove.addEventListener("click", () => this.delegate.onRemoveAssertion(del));
           row.appendChild(remove);
         }
+        if (line.kind === "skip" && line.text === "[SKIP]" && this.delegate.characterExplain(ordinal).length > 0) {
+          const hint = document.createElement("button");
+          hint.className = "ts-skip-npc-hint";
+          hint.textContent = "assert from the NPC panel \u2192";
+          hint.title = "The auto-assertion policy had nothing to read this turn \u2014 assert one of the NPC panel's character events instead";
+          hint.addEventListener("click", () => {
+            card.characterOpen = true;
+            this.renderCharacter(card, ordinal);
+          });
+          row.appendChild(hint);
+        }
         card.asserts.appendChild(row);
       }
     }

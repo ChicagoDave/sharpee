@@ -176,6 +176,18 @@ body.ts-active .sharpee-window { display: none; }
 }
 .ts-assert-line:hover .ts-assert-delete { visibility: visible; }
 .ts-assert-delete:hover { color: var(--ts-fail); }
+/* The [SKIP] hint on character-bearing turns — always visible (it exists
+   for discoverability), link-toned toward the assert green on hover. */
+.ts-skip-npc-hint {
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+  background: transparent;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ts-skip-npc-hint:hover { color: var(--ts-assert); }
 
 /* "Explain this NPC's turn" (ADR-318 D11): the turn's character-model rows,
    under the assertions behind the same rule-line idiom. Observation chrome —

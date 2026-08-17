@@ -285,7 +285,7 @@ was level-triggered and silent on post-completion reactivation. In practice ever
 completed goal whose condition still held reactivated on the next evaluation tick —
 and a goal with an empty `activatesWhen` reactivated unconditionally, since an empty
 condition is vacuously true. Live probes (2026-08-16, wiring-audit D12,
-`docs/work/adr-310/wiring-audit.md`): thealderman's Chelsea re-asked Catherine every
+`docs/work/archive/adr-310/wiring-audit.md`): thealderman's Chelsea re-asked Catherine every
 3rd turn forever; the b3-conscience Steward re-blurted his confession every 3rd turn.
 The `GoalRuntimeState.active` doc comment already *claimed* edge semantics the code
 did not have.
