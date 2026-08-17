@@ -1733,6 +1733,36 @@ export declare class TraceAction extends MetaAction {
 }
 ```
 
+### actions/helpers/exit-legality
+
+```typescript
+/**
+ * Exit legality for conversational leaving (ADR-320 D8).
+ *
+ * "Leaving is movement, obeys the world": a scene's `leave` outcome is
+ * checked against the same read points the going action uses — the
+ * ADR-240 `exit.blocked.*` evaluator first, the stamped
+ * `RoomTrait.blockedExits` map as fallback, and door lock state — never a
+ * private conversation-only physics. A restrained, cornered, or blocked
+ * NPC cannot take the exit; silence remains the inalienable move.
+ *
+ * Public interface: hasTraversableExit.
+ * Owner context: stdlib / actions / helpers
+ */
+import { WorldModel } from '@sharpee/world-model';
+/**
+ * Whether the room offers at least one exit an actor could take right
+ * now: an exit (static or computed) whose direction is not blocked (live
+ * evaluator first, trait map fallback — going's read order) and whose
+ * door, if any, is not locked (a closed unlocked door can be opened).
+ *
+ * @param world - The live world
+ * @param roomId - The room the would-be leaver is in
+ * @returns True when some exit is traversable
+ */
+export declare function hasTraversableExit(world: WorldModel, roomId: string): boolean;
+```
+
 ### events/action-events
 
 ```typescript

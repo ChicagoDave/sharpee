@@ -5,9 +5,9 @@
  * A conversation is a scene: participants, a contested floor, at most one
  * open exchange, and lifecycle boundaries the platform recognizes. Per-pair
  * conversation memory (visits, discussed topics, repetition counts) rides
- * the modeled holder's trait; the live scene's home is settled at Phase 7
- * (contracts.md §1.3 — flagged for review). Phase 1 declares shapes only:
- * nothing here is consumed, serialized, or wired yet.
+ * the modeled holder's trait (`ICharacterModelData.conversationMemory`,
+ * Phase 7); live scenes ride the `character.scenes` world-state key
+ * (contracts.md §1.3, APPROVED), written only by the scene runtime.
  *
  * Every shape is platform-internal (contracts.md §7) — NOT author-facing
  * compatibility surface; revisable at refactor cost. Turn fields are read
@@ -97,14 +97,29 @@ export interface ConversationSceneState {
 
   /** Turn of the last on-floor move (utterance, act, or event — one vocabulary). */
   lastMoveTurn: number;
+
+  /**
+   * The thread the scene is currently on — a normalized topic (ADR-320
+   * D9; Phase 7 design §6). Written only by the scene runtime's
+   * `noteTopicMove`; absent until a topic move lands.
+   */
+  currentTopic?: string;
+
+  /**
+   * Turn a live thread was abandoned (`the subject changes`, D9): stamped
+   * when a topic move differs from `currentTopic`. The evaluator's
+   * `subject-changes` and Phase 8's subject-change occasion read it;
+   * absent until a subject has ever changed.
+   */
+  subjectChangedTurn?: number;
 }
 
 /**
  * Per-pair conversation memory (ADR-320 D4/D6/D9), held on the modeled
  * character's trait keyed by partner id — each side holds its own view
- * (the disposition precedent); NPC↔PC pairs live only on the NPC side.
- * Phase 7 threads `conversationMemory` into `ICharacterModelData` with a
- * schema-version bump; until then this shape is unconsumed.
+ * (the disposition precedent — a modeled PC holds its own view too,
+ * contracts §2.1). Home: `ICharacterModelData.conversationMemory`
+ * (Phase 7, schema v2).
  *
  * Numbers here never reach Chord: repetition, recency, and absence all
  * surface as words, with the runtime owning every curve (ADR-310 D6).

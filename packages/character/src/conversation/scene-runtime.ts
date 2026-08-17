@@ -147,6 +147,28 @@ export function recordSceneMove(world: WorldModel, sceneId: string): void {
 }
 
 /**
+ * Stamp a topic move onto the scene's thread (ADR-320 D9; Phase 7 design
+ * §6): a topic differing from the live thread abandons it —
+ * `subjectChangedTurn` stamps the abandoning turn (the evaluator's
+ * `subject-changes` and Phase 8's subject-change occasion read it) and
+ * the new topic becomes the thread. The same topic again is not a change.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the topic move landed in
+ * @param topic - The normalized topic of the move
+ */
+export function noteTopicMove(world: WorldModel, sceneId: string, topic: string): void {
+  const store = readSceneStore(world);
+  const scene = store.scenes[sceneId];
+  if (!scene || scene.currentTopic === topic) return;
+  if (scene.currentTopic !== undefined) {
+    scene.subjectChangedTurn = dialogueTurn(world);
+  }
+  scene.currentTopic = topic;
+  writeSceneStore(world, store);
+}
+
+/**
  * Apply a selection's scene directives (adr-320 contracts.md §4): the
  * selector stays pure and this runtime performs the lifecycle it asked
  * for. `open-exchange` replaces any open exchange (at most one — a chained

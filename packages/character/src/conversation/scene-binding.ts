@@ -12,8 +12,8 @@
  * arrive through the registrar's `authoredFor` callback (the loader's,
  * Phase 7) and always beat disposition (D7 most-specific-wins).
  *
- * Public interface: SceneBindingOptions, createSceneRuntimeBinding,
- *   registerCharacterScenes.
+ * Public interface: SceneBindingOptions, createTraitMemoryAccess,
+ *   createSceneRuntimeBinding, registerCharacterScenes.
  * Owner context: @sharpee/character / conversation
  */
 
@@ -31,6 +31,31 @@ import {
 import { openScene, recordSceneMove, applySceneDirectives } from './scene-runtime.js';
 import { scoreFloor } from './scene-scoring.js';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
+
+/**
+ * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
+ * records live on the holder's `CharacterModelTrait.conversationMemory`,
+ * so they ride the world snapshot with the rest of the model (D17). An
+ * unmodeled holder reads blank and ignores writes (ADR-310 D7: no model,
+ * no change). Pre-v2 rehydrated traits may lack the field — reads
+ * tolerate it, and the first write creates it.
+ *
+ * @param world - The world whose entities hold the memory
+ * @returns The trait-backed access
+ */
+export function createTraitMemoryAccess(world: WorldModel): ConversationMemoryAccess {
+  const traitOf = (holderId: string): CharacterModelTrait | undefined =>
+    world.getEntity(holderId)?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+  return {
+    get: (holderId, partnerId) => traitOf(holderId)?.conversationMemory?.[partnerId],
+    set: (holderId, partnerId, memory) => {
+      const trait = traitOf(holderId);
+      if (!trait) return;
+      if (!trait.conversationMemory) trait.conversationMemory = {};
+      trait.conversationMemory[partnerId] = memory;
+    },
+  };
+}
 
 /** Registrar-supplied hooks for the binding. */
 export interface SceneBindingOptions {

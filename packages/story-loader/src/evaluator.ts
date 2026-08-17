@@ -36,6 +36,8 @@ import {
   type Mood,
   type MoodModifier,
 } from '@sharpee/world-model';
+import { sceneWith } from '@sharpee/world-model';
+import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { LoadError } from './errors.js';
 import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 
@@ -54,6 +56,18 @@ export interface EvalContext {
    * context, so the innermost binding naturally wins; `it` is untouched.
    */
   match?: string;
+  /**
+   * The conversation frame (ADR-320 Phase 7 design §6): WORLD entity id
+   * of the owner's conversation partner, set by the dialogue dispatch
+   * paths (the topic arm and the exchange registrant). Pair-dependent
+   * predicates (`discussed`, `asked`, `subject-changes`) require it.
+   */
+  conversationPartnerId?: string;
+  /**
+   * The canonical topic of the row being served (entity rows: the IR id;
+   * text rows: the normalized primary), for `asked`'s per-topic count.
+   */
+  conversationTopic?: string;
 }
 
 /** Resolves IR ids to world ids (implemented by ChordStory). */
@@ -212,18 +226,80 @@ export class Evaluator {
         }
         return false;
       }
-      case 'recency':
-      case 'discussed':
-      case 'asked':
-      case 'subject-changes':
-        // ADR-320: these conversation predicates compile (Chord 3.1.0+) but
-        // their runtime reads land with the scene runtime and its evaluator
-        // wiring (plan Phases 5/7). Loud failure until wired — a story using
-        // them must never get a silent `false` (the ADR-310 Phase 5 precedent).
-        throw new LoadError(
-          `Conversation predicate \`${cond.kind}\` is not wired into the evaluator yet.`,
-        );
+      case 'recency': {
+        // ADR-320 D6: recency over the holder's ledger turn stamps — the
+        // holder is the context's owner (`it`), the runtime owns the curve
+        // (recencyWordFor, clock-seam turns). No trait or no fact: the
+        // predicate simply does not hold (the feels/knows-topic precedent).
+        const trait = this.characterTrait(this.conversationOwnerId(cond.kind, ctx), ctx);
+        const fact = trait?.getFact(cond.topic);
+        if (!fact) return false;
+        return recencyWordFor(dialogueTurn(ctx.world), fact.turnLearned) === cond.word;
+      }
+      case 'discussed': {
+        // ADR-320 D9: per-pair discussed-ness between the owner and the
+        // conversation partner, across scenes, any order. Reads the
+        // holder's trait memory directly (the Phase 7 home).
+        const trait = this.characterTrait(this.conversationOwnerId(cond.kind, ctx), ctx);
+        const partnerId = this.conversationPartnerId(cond.kind, ctx);
+        return trait?.conversationMemory?.[partnerId]?.discussedTopics.includes(cond.topic) ?? false;
+      }
+      case 'asked': {
+        // ADR-320 D4: the current topic's per-pair ask count read as a
+        // word; topic and pair come from the conversation frame.
+        const trait = this.characterTrait(this.conversationOwnerId(cond.kind, ctx), ctx);
+        const partnerId = this.conversationPartnerId(cond.kind, ctx);
+        if (ctx.conversationTopic === undefined) {
+          throw new LoadError(
+            '`asked` needs the conversation frame\'s current topic — it holds only inside dialogue dispatch.',
+          );
+        }
+        const count = trait?.conversationMemory?.[partnerId]?.askedCounts[ctx.conversationTopic] ?? 0;
+        return askedWordFor(count) === cond.word;
+      }
+      case 'subject-changes': {
+        // ADR-320 D9: the scene between owner and partner noticed a live
+        // thread abandoned THIS turn (the scene runtime's noteTopicMove
+        // stamp). No live scene between the pair: false, not an error.
+        const ownerWorldId = this.ids.entityId(this.requireIt(cond.kind, ctx));
+        if (ownerWorldId === undefined) return false;
+        const partnerId = this.conversationPartnerId(cond.kind, ctx);
+        const scene = sceneWith(ctx.world, ownerWorldId);
+        if (!scene || !scene.participantIds.includes(partnerId)) return false;
+        return scene.subjectChangedTurn === dialogueTurn(ctx.world);
+      }
     }
+  }
+
+  /** The conversation owner's WORLD id — `it` resolved (ADR-320 predicates). */
+  private conversationOwnerId(kind: string, ctx: EvalContext): string {
+    const worldId = this.ids.entityId(this.requireIt(kind, ctx));
+    if (worldId === undefined) {
+      throw new LoadError(`\`${kind}\`: the owner \`${ctx.it}\` was never built into the world.`);
+    }
+    return worldId;
+  }
+
+  /** The context's `it`, required (ADR-320 predicates are owner-scoped). */
+  private requireIt(kind: string, ctx: EvalContext): string {
+    if (ctx.it === undefined) {
+      throw new LoadError(`\`${kind}\` needs an owner (\`it\`) in scope — it holds only inside an entity's own rows.`);
+    }
+    return ctx.it;
+  }
+
+  /**
+   * The conversation partner from the frame, required (ADR-320
+   * pair-dependent predicates hold only inside dialogue dispatch — the
+   * analyzer parse-gates them there; arriving without a frame is rogue IR).
+   */
+  private conversationPartnerId(kind: string, ctx: EvalContext): string {
+    if (ctx.conversationPartnerId === undefined) {
+      throw new LoadError(
+        `\`${kind}\` needs a conversation partner — it holds only inside dialogue dispatch.`,
+      );
+    }
+    return ctx.conversationPartnerId;
   }
 
   private evalPredicate(

@@ -58,9 +58,11 @@ import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlug
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import {
   applyCompiledCharacter,
+  createTraitMemoryAccess,
   temperamentDefsFrom,
   CharacterPhaseRegistry,
   registerCharacterModelPhase,
+  registerCharacterScenes,
   type AppliedCharacter,
   type CompiledStoryOracle,
 } from '@sharpee/character';
@@ -860,6 +862,35 @@ export class ChordStory implements Story {
       }
       registry.setOracle(this.storyOracle());
       this.characterRegistry = registry;
+    }
+
+    // ADR-320 Phase 7: conversation blocks need a modeled owner — scenes
+    // exist only for character-modeled NPCs (ADR-310 D7), so a block on an
+    // unmodeled entity would be silently inert. Loud failure instead
+    // (defensive backstop against rogue IR; the analyzer should gate this).
+    for (const irEntity of this.ir.entities) {
+      const conversationBlocks =
+        (irEntity.exchanges ?? []).length > 0 ||
+        (irEntity.greetings ?? []).length > 0 ||
+        (irEntity.manner ?? []).length > 0 ||
+        (irEntity.initiative ?? []).length > 0;
+      if (conversationBlocks && irEntity.character === undefined) {
+        throw new LoadError(
+          `\`${irEntity.name}\` declares conversation blocks but no character model — scenes need a modeled owner.`,
+          irEntity.span,
+        );
+      }
+    }
+
+    // ADR-320 Phase 7: with modeled characters present, register the
+    // scene runtime (trait-backed memory, authored initiative) and the
+    // D15 dialogue registrant serving compiled exchange/greeting rows.
+    // Per-world and last-wins-idempotent like every binding (ADR-207/208).
+    if (this.appliedCharacters.length > 0) {
+      registerCharacterScenes(world, createTraitMemoryAccess(world), {
+        authoredFor: this.runtime.buildAuthoredInitiative(world),
+      });
+      world.registerDialogueSelector(this.runtime.buildDialogueRegistration());
     }
   }
 

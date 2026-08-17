@@ -113,6 +113,7 @@ export {
   openScene,
   closeScene,
   recordSceneMove,
+  noteTopicMove,
   applySceneDirectives,
   ageScenes,
 } from './scene-runtime.js';
@@ -149,6 +150,7 @@ export {
 // stdlib's conversation actions drive across the package boundary.
 export {
   type SceneBindingOptions,
+  createTraitMemoryAccess,
   createSceneRuntimeBinding,
   registerCharacterScenes,
 } from './scene-binding.js';

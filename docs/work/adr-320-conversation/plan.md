@@ -384,6 +384,9 @@ affordance.
   and the runtime shapes it must instantiate into (Phase 5) are both fixed. Platform-
   change discussion held and confirmed for `packages/world-model` and
   `packages/story-loader`.
+- **Status note**: platform-change confirmation given by David 2026-08-17
+  ("start phase 7", session 844192); design doc
+  `phase7-persistence-design.md` written same day, awaiting confirmation.
 - **Deliverable**: `CharacterModelTrait` (or its agreed extension point) carries scene/
   conversation-memory state with a version field; story-loader instantiates compiled
   scene/exchange/manner/boundary blocks onto entities at load; the evaluator gains cases
@@ -392,7 +395,41 @@ affordance.
 - **Exit state**: a story compiled with the new constructs loads without evaluator gaps;
   `packages/world-model` and `packages/story-loader` compile clean; no save/restore round
   trip yet (that is Phase 8's).
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 844192). Evidence: design confirmed by
+  David ("confirmed as proposed - go" — `phase7-persistence-design.md`, §8
+  amendment included: `ConversationSceneState` gains `currentTopic`/
+  `subjectChangedTurn`, written only by the new `noteTopicMove`). Landed:
+  `conversationMemory` on `ICharacterModelData` with schema v2 (v1 reads as
+  empty — versioned reader, no hard break) + `createTraitMemoryAccess` as the
+  production memory home; loader registers `registerCharacterScenes` (trait
+  memory, authored-initiative hook over compiled `define initiative` rows) and
+  the D15 production registrant at `applyCharacterBlocks`, with a LoadError
+  gate for conversation blocks on unmodeled owners; the registrant serves
+  exchange answer rows (grip, own occurrence namespace, pin/mint reuse,
+  close-on-serve) and greeting rows (first-time / absence-refined return /
+  repetition / bare return off pair memory; content rows win scene-opening
+  asks), translating `then-open`/`deflect`/`leave` into directives with real
+  exit legality (illegal leave = rendered silence, nothing mutated); the topic
+  arm extracts the same statements (then-asks/leave via the registered runtime,
+  deflect chains depth-guarded under the target's occurrence key) and stamps
+  thread + asked counts in postValidate so `asked`/`subject changes` hold on
+  the firing they describe; evaluator implements recency/discussed/asked/
+  subject-changes (loud LoadError outside the conversation frame) and
+  `execStatements` loud-fails the four conversation statement kinds (closed a
+  silent fallthrough). The plan's "vocabulary modules" line was discharged by
+  the Phase 3 freeze (closed grammar; `voice` open-as-data) — no module to
+  add. Chord has no modeled-PC surface (`analysis.character-line-player`), so
+  contracts §2.1 symmetry is asserted at the character-package level. Tests:
+  20-test real-path loader suite (compile → load → real asking/talking →
+  store/trait/occurrence assertions), 6 character seam tests, 3 world-model
+  schema tests, loud-leg rewrite of `conversation-predicates-not-wired`;
+  mutation-verification ran and its one warning (deflect runtime path
+  untested) was closed with two state-asserting tests same session. Evidence
+  (all run 2026-08-17): story-loader 527 passing, character 519, world-model
+  1489, stdlib 1624, bootstrap 43; repo-wide `npx tsc --noEmit` clean;
+  `./repokit build dungeo` clean; full Dungeo walkthrough chain 952 passing;
+  character-acceptance (14 transcripts over 3 story files), thealderman (7
+  transcripts), and `pnpm test:scripts` (11) green via the bundle.
 
 ### Phase 8: `packages/engine` — NPC↔NPC scene scheduling and save/restore
 - **Tier**: Large

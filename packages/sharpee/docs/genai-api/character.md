@@ -2141,6 +2141,18 @@ export declare function closeScene(world: WorldModel, sceneId: string, boundary:
  */
 export declare function recordSceneMove(world: WorldModel, sceneId: string): void;
 /**
+ * Stamp a topic move onto the scene's thread (ADR-320 D9; Phase 7 design
+ * §6): a topic differing from the live thread abandons it —
+ * `subjectChangedTurn` stamps the abandoning turn (the evaluator's
+ * `subject-changes` and Phase 8's subject-change occasion read it) and
+ * the new topic becomes the thread. The same topic again is not a change.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the topic move landed in
+ * @param topic - The normalized topic of the move
+ */
+export declare function noteTopicMove(world: WorldModel, sceneId: string, topic: string): void;
+/**
  * Apply a selection's scene directives (adr-320 contracts.md §4): the
  * selector stays pure and this runtime performs the lifecycle it asked
  * for. `open-exchange` replaces any open exchange (at most one — a chained
@@ -2412,12 +2424,24 @@ export declare function authoredInitiativeFor(rows: IRInitiativeRow[], occasion:
  * arrive through the registrar's `authoredFor` callback (the loader's,
  * Phase 7) and always beat disposition (D7 most-specific-wins).
  *
- * Public interface: SceneBindingOptions, createSceneRuntimeBinding,
- *   registerCharacterScenes.
+ * Public interface: SceneBindingOptions, createTraitMemoryAccess,
+ *   createSceneRuntimeBinding, registerCharacterScenes.
  * Owner context: @sharpee/character / conversation
  */
 import { WorldModel, type SceneRuntimeBinding, type SceneOccasion } from '@sharpee/world-model';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
+/**
+ * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
+ * records live on the holder's `CharacterModelTrait.conversationMemory`,
+ * so they ride the world snapshot with the rest of the model (D17). An
+ * unmodeled holder reads blank and ignores writes (ADR-310 D7: no model,
+ * no change). Pre-v2 rehydrated traits may lack the field — reads
+ * tolerate it, and the first write creates it.
+ *
+ * @param world - The world whose entities hold the memory
+ * @returns The trait-backed access
+ */
+export declare function createTraitMemoryAccess(world: WorldModel): ConversationMemoryAccess;
 /** Registrar-supplied hooks for the binding. */
 export interface SceneBindingOptions {
     /**
