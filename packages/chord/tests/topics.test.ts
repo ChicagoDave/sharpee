@@ -15,7 +15,8 @@ const errorCodes = (source: string) =>
 /** A person (with states + aka), a room, a thing (with aka), phrase keys. */
 const story = (body: string) => `story
   title: Topics
-  authors: T
+  authors:
+    T
   id: topics
   story-version: 0.0.1
 

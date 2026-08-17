@@ -22,7 +22,8 @@ import { createStory, SchedulerDaemon } from '../src';
 
 const SOURCE = `story
   title: Record Channel
-  authors: T
+  authors:
+    T
   id: record-channel
   ifid: 6E12F1B0-4A5B-4C8D-9E11-0A2B3C4D5E6F
   story-version: 0.0.1

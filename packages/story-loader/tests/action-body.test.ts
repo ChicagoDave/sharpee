@@ -17,7 +17,8 @@ import { ChordStory, createStory } from '../src';
 
 const SOURCE = `story
   title: Action Body
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: action-body
   story-version: 0.0.1
   use scoring

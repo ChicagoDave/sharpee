@@ -12,7 +12,8 @@ import type { StoryHeader } from '../src/ast';
 
 const story = (headerBody: string) => `story
   title: The Folly
-  authors: T
+  authors:
+    T
   id: folly
   story-version: 0.0.1
 ${headerBody}
@@ -68,7 +69,7 @@ describe('`use scoring` rank ladder (ADR-261 D2)', () => {
 
   it('the body does not swallow the following header field', () => {
     const h = header(
-      'story\n  title: The Folly\n  authors: T\n' +
+      'story\n  title: The Folly\n  authors:\n    T\n' +
       '  use scoring\n' +
       '    rank "Curious Visitor" at 0\n' +
       '  id: folly\n' +
@@ -133,7 +134,7 @@ describe('rung placement and shape errors', () => {
 
   it('a rung at the top level → parse.rank-outside-scoring with a header fix-it', () => {
     const codes = errorCodes(
-      'story\n  title: The Folly\n  authors: T\n' +
+      'story\n  title: The Folly\n  authors:\n    T\n' +
       '  id: folly\n' +
       '\n' +
       'rank "Stray" at 40\n'

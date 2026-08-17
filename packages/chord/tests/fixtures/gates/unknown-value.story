@@ -1,6 +1,7 @@
 story
   title: Gate 2
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-2
   story-version: 0.0.1
 

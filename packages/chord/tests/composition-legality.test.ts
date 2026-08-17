@@ -13,7 +13,8 @@ import { compile } from '../src';
 
 const story = (body: string) => `story
   title: Legality
-  authors: T
+  authors:
+    T
   id: legality
   story-version: 0.0.1
 
@@ -61,7 +62,8 @@ describe('census 11 — dark applies to rooms only (analysis.dark-rooms-only)', 
 describe('census 12 — worn items must be wearable (analysis.worn-not-wearable)', () => {
   const wornStory = (cloakTraits: string) => `story
   title: Worn
-  authors: T
+  authors:
+    T
   id: worn
   story-version: 0.0.1
 
@@ -135,7 +137,8 @@ describe('census 14 — conditional composition legality (analysis.conditional-c
   it('accepts conditional dark on a room', () => {
     const src = `story
   title: Cond
-  authors: T
+  authors:
+    T
   id: cond
   story-version: 0.0.1
 

@@ -40,7 +40,8 @@ const PRODDING_ACTION = `define action prodding
 
 const storyWith = (body: string) => `story
   title: Gate
-  authors: T
+  authors:
+    T
   id: gate
   story-version: 0.0.1
 

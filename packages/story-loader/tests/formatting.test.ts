@@ -17,7 +17,8 @@ function compileSource(source: string): StoryIR {
 
 const FMT_STORY = `story
   title: Format
-  authors: Nobody
+  authors:
+    Nobody
   id: format
   story-version: 0.0.1
 

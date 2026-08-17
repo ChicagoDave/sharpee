@@ -33,7 +33,8 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
 
 const storyWith = (body: string) => `story
   title: Cut
-  authors: T
+  authors:
+    T
   id: cut
   story-version: 0.0.1
 
@@ -126,7 +127,8 @@ end phrase`);
   it('diggable rides the same machinery, and `carries` lands start inventory (ADR-230 Phase 6)', () => {
     const source = `story
   title: Dig
-  authors: T
+  authors:
+    T
   id: dig
   story-version: 0.0.1
 

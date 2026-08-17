@@ -14,7 +14,8 @@ import { runTestCommand } from './test.js';
 
 const STORY = `story
   title: Mini
-  authors: T
+  authors:
+    T
   id: mini
   story-version: 0.0.1
 

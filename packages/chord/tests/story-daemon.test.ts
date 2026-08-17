@@ -15,7 +15,8 @@ const errorCodes = (source: string) =>
 
 const story = (headerBody: string) => `story
   title: Clockwork
-  authors: T
+  authors:
+    T
   id: clockwork
   story-version: 0.0.1
 ${headerBody}

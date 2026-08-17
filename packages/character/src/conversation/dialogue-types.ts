@@ -9,6 +9,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
+import { type ISemanticEvent } from '@sharpee/core';
 import { ResponseIntent } from './response-types.js';
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,12 @@ export interface DialogueResult {
 
   /** The structured response intent (for systems that need it). */
   responseIntent?: ResponseIntent;
+
+  /**
+   * Author-channel events this selection produced (ADR-318 D11 — ledger
+   * mints, pressure deposits, band transitions). Never player prose.
+   */
+  authorEvents?: ISemanticEvent[];
 }
 
 // ---------------------------------------------------------------------------

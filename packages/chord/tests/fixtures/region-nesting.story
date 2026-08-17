@@ -1,6 +1,7 @@
 story
   title: Region Nesting
-  authors: Test
+  authors:
+    Test
   id: region-nesting
   story-version: 0.0.1
 

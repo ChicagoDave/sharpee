@@ -137,6 +137,7 @@ export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
   transitions: false,
   layers: false,
   customFonts: false,
+  authorChannels: false,
 };
 
 /**

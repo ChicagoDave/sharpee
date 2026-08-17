@@ -642,9 +642,14 @@ certain` (`character-vocabulary.ts:258`). D14's own syntax puts a confidence
 word in the sentence, so `thinks the killer is the Butler, believes, told` is
 legal under the current vocabulary and unreadable in exactly the way
 `cognitive-profile stable with lucidity stable` was (D5). The D11a pass owns the
-confidence word list too: rename the value so the word appears in exactly one
-role — `convinced` is the working candidate, David to confirm — in the same
-normalization that settles `_beliefs`.
+confidence word list too. **Resolved 2026-08-15 (David, session ce1209): the
+confidence word keeps the name `believes`** — uncertainty is not an absolute,
+and `believes` is the accurate word for the step below `certain`; the
+candidate rename `convinced` would blur into certainty. The collision
+resolves from the other side instead: the builder *method* `believes()` is
+removed when `_beliefs` folds into the valued construct, and the Chord
+construct is spelled `thinks`, so the word survives in exactly one role — the
+confidence value.
 
 Declaring the fact's possible values makes the value set closed and therefore
 checkable — a misspelled suspect is a compile error, in the same shape as D2's

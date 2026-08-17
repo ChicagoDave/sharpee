@@ -23,10 +23,9 @@ describe('CharacterBuilder.propagation()', () => {
     expect(compiled.propagationProfile!.pace).toBeUndefined();
   });
 
-  test('compiles selective profile with full options', () => {
+  test('compiles whitelist-narrowed profile with full options', () => {
     const compiled = new CharacterBuilder('cook')
       .propagation({
-        tendency: 'selective',
         audience: 'trusted',
         excludes: ['colonel'],
         spreads: ['murder', 'weapon'],
@@ -39,7 +38,7 @@ describe('CharacterBuilder.propagation()', () => {
       .compile();
 
     const profile = compiled.propagationProfile!;
-    expect(profile.tendency).toBe('selective');
+    expect(profile.tendency).toBe('chatty');
     expect(profile.audience).toBe('trusted');
     expect(profile.excludes).toEqual(['colonel']);
     expect(profile.spreads).toEqual(['murder', 'weapon']);

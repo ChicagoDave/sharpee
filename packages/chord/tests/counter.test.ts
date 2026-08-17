@@ -8,7 +8,8 @@ import { compile } from '../src';
 
 const story = (body: string) => `story
   title: Survive
-  authors: T
+  authors:
+    T
   id: survive
   story-version: 0.0.1
 
@@ -65,7 +66,8 @@ describe('define counter — story-global (ADR-264 D1)', () => {
 const withClause = (clause: string, decls = 'define counter madness between 0 and 100') =>
   `story
   title: S
-  authors: T
+  authors:
+    T
   id: s
   story-version: 0.0.1
 ${clause}

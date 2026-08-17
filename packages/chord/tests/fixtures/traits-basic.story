@@ -1,6 +1,7 @@
 story
   title: Trait Declarations Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: traits-basic
   story-version: 0.0.1
   description: design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding, hatches.

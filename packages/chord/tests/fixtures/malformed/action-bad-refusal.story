@@ -1,6 +1,7 @@
 story
   title: Bad Action
-  authors: Nobody
+  authors:
+    Nobody
   id: bad-action
   story-version: 0.0.1
 

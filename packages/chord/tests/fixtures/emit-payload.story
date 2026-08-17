@@ -1,6 +1,7 @@
 story
   title: Chimes
-  authors: Test
+  authors:
+    Test
   id: emit-payload
   story-version: 0.0.1
 

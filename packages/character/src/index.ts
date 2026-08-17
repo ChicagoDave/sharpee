@@ -31,6 +31,7 @@ export {
 } from './vocabulary-extension.js';
 
 export { applyCharacter, type AppliedCharacter } from './apply.js';
+export { applyCompiledCharacter, temperamentDefsFrom, type CompiledCharacterContext } from './apply-compiled.js';
 
 // Conversation system (ADR-142)
 export {
@@ -86,6 +87,17 @@ export {
   // Conversation message IDs
   ConversationMessages,
   type ConversationMessageId,
+  // The dialogue-selector socket adapter (ADR-310 D15)
+  createCharacterDialogueSelector,
+  registerCharacterDialogue,
+  // Shared claim-delivery bookkeeping (ADR-318 D9/D11 — Phase 6)
+  pinAllowsClaim,
+  recordClaimDelivery,
+  type ClaimTag,
+  createAuthorEvent,
+  // Conversation marker (ADR-310 D16 — goal-pursuit suppression)
+  markConversationTurn,
+  conversationSuppressesGoals,
 } from './conversation/index.js';
 
 // Information propagation (ADR-144)
@@ -101,7 +113,6 @@ export {
   type RoomOccupant,
   type PropagationContext,
   type TransferResult,
-  AlreadyToldRecord,
   evaluatePropagation,
   transferFact,
   applyTransfers,
@@ -129,7 +140,6 @@ export {
   type ActiveGoal,
   type MovementProfile,
   type StepResult,
-  type ActiveGoalState,
   type GoalStepContext,
   type RoomConnection,
   type RoomGraph,
@@ -150,13 +160,17 @@ export {
   type InfluenceSchedule,
   type InfluenceDef,
   type ResistanceDef,
-  type ActiveInfluenceEffect,
   type InfluenceResult,
+  type InfluenceTargetOutcome,
+  type PassiveInfluenceExertion,
   type InfluenceRoomEntity,
   checkResistance,
   evaluatePassiveInfluences,
   evaluateActiveInfluence,
-  InfluenceTracker,
+  trackInfluence,
+  isUnderInfluence,
+  expireInfluencesForTurn,
+  expireInfluencesBySeparation,
   type PcInfluenceResult,
   evaluatePcInfluence,
   InfluenceBuilder,
@@ -165,11 +179,58 @@ export {
   type InfluenceMessageId,
 } from './influence/index.js';
 
-// NPC tick phase handlers (ADR-142/144/145/146)
+// The character-model NPC tick phase (ADR-310 D15 — one registration,
+// ordered sub-steps; the per-subsystem factories folded into it)
 export {
   type CharacterPhaseConfig,
   CharacterPhaseRegistry,
-  createPropagationPhase,
-  createGoalPhase,
-  createInfluencePhase,
+  createCharacterModelPhase,
+  registerCharacterModelPhase,
+  CHARACTER_MODEL_PHASE_NAME,
+  CHARACTER_TURN_KEY,
 } from './tick-phases.js';
+
+// The compiled-story oracle (ADR-310/318 Phase 5 — the loader binds it)
+export { type CompiledStoryOracle } from './story-oracle.js';
+export { type CompiledConditionEval } from './goals/goal-activation.js';
+
+// Act detection over the event stream (ADR-318 D4/D7/D12a)
+export {
+  detectActs,
+  revealConfidedTopic,
+  witnessActs,
+  derivedTopicFor,
+  type DetectedAct,
+} from './act-detection/index.js';
+
+// The force arbiter and conscience bookkeeping (ADR-318 D1–D3, D6, D8)
+export {
+  arbitrate,
+  computeStancedReadings,
+  depositPressure,
+  drainPressure,
+  pressureBandFor,
+  scopeMatches,
+  exceptLifts,
+  arbitrateConfidedReveal,
+  PRINCIPLE_DUTY_INTENSITY,
+  HONOR_INTENSITY,
+  type ArbiterAct,
+  type ActCandidate,
+  type ForceReading,
+  type ArbiterVerdict,
+  type ArbiterContext,
+  type BandTransition,
+  type KindMembership,
+  type RevealArbitrationInput,
+  type RevealArbitration,
+} from './arbiter/index.js';
+
+// The character clock seam (temporal amendment 2026-08-15)
+export {
+  expiryTurn,
+  hasExpired,
+  isMomentaryExpired,
+  turnsSince,
+  dialogueTurn,
+} from './character-clock.js';

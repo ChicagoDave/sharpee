@@ -14,7 +14,8 @@ import { createStory, PHRASEBOOK_DATA } from '../src';
 
 const SOURCE = `story
   title: Voices
-  authors: T
+  authors:
+    T
   id: voices
   story-version: 0.0.1
   states: evening, midnight

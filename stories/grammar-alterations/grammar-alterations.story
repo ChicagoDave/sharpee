@@ -4,7 +4,8 @@
 
 story
   title: Grammar Alterations
-  authors: Sharpee
+  authors:
+    Sharpee
   id: grammar-alterations
   story-version: 0.0.1
 

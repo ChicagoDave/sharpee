@@ -41,7 +41,8 @@ The opening of ''Cloak of Darkness'' in Chord:
 <pre>
 story
   title: Cloak of Darkness
-  authors: Roger Firth (Sharpee implementation)
+  authors:
+    Roger Firth (Sharpee implementation)
   id: cloak-of-darkness
   story-version: 1.0.0
   description: A basic IF demonstration - hang up your cloak!

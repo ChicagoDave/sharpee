@@ -234,17 +234,6 @@ describe('observeEvent', () => {
     expect(events).toEqual([]);
   });
 
-  it('should add witnessed fact to knowledge', () => {
-    const { npc, trait } = createNpcWithCharacter();
-    const event = createTestEvent('npc.attacked', 'player');
-
-    observeEvent(npc, event, world, 5);
-
-    expect(trait.knows('npc.attacked')).toBe(true);
-    expect(trait.getFact('npc.attacked')?.source).toBe('witnessed');
-    expect(trait.getFact('npc.attacked')?.turnLearned).toBe(5);
-  });
-
   it('should increase threat when violence event observed', () => {
     const { npc, trait } = createNpcWithCharacter({ threat: 'safe' });
     const event = createTestEvent('npc.attacked', 'player');
@@ -324,20 +313,22 @@ describe('observeEvent', () => {
     expect(threatEvent?.data).toHaveProperty('from', 'safe');
   });
 
-  it('should emit fact learned event', () => {
-    const { npc } = createNpcWithCharacter();
+  it('does not mint raw event types as knowledge topics (ADR-310 D10)', () => {
+    const { npc, trait } = createNpcWithCharacter();
     const event = createTestEvent('npc.attacked', 'player');
 
     const events = observeEvent(npc, event, world, 1);
 
-    const factEvent = events.find(e => e.type === CharacterMessages.FACT_LEARNED);
-    expect(factEvent).toBeDefined();
-    expect(factEvent?.data).toHaveProperty('topic', 'npc.attacked');
+    // Knowledge stays free of platform wire vocabulary — derived-act
+    // topics and authored `knows` are the only topic factories.
+    expect(trait.knows('npc.attacked')).toBe(false);
+    expect(Object.keys(trait.knowledge)).toHaveLength(0);
+    expect(events.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(false);
   });
 
   it('should adjust disposition toward event actor on giving', () => {
     const { npc, trait } = createNpcWithCharacter();
-    const event = createTestEvent('if.action.giving', 'player');
+    const event = createTestEvent('if.event.given', 'player');
 
     observeEvent(npc, event, world, 1);
 
@@ -345,12 +336,38 @@ describe('observeEvent', () => {
     expect(trait.getDispositionValue('player')).toBe(10);
   });
 
+  it('should lower disposition toward event actor on a witnessed take', () => {
+    const { npc, trait } = createNpcWithCharacter();
+    const event = createTestEvent('if.event.taken', 'player');
+
+    observeEvent(npc, event, world, 1);
+
+    // Default rule: a witnessed take costs -5 disposition — keyed to the
+    // event type the taking action actually emits (rekeyed 2026-08-15;
+    // the old `if.action.taking` key matched nothing on the wire).
+    expect(trait.getDispositionValue('player')).toBe(-5);
+  });
+
+  it('should raise threat and darken mood on a witnessed attack', () => {
+    const { npc, trait } = createNpcWithCharacter();
+    const before = { valence: trait.moodValence, arousal: trait.moodArousal };
+    const event = createTestEvent('if.event.attacked', 'player');
+
+    observeEvent(npc, event, world, 1);
+
+    // Default rule for the attacking action's real event type: +20 threat,
+    // valence down, arousal up — asserted on trait state.
+    expect(trait.threatValue).toBe(20);
+    expect(trait.moodValence).toBeLessThan(before.valence);
+    expect(trait.moodArousal).toBeGreaterThan(before.arousal);
+  });
+
   it('should trigger lucidity state change on matching event', () => {
     const { npc, trait } = createNpcWithCharacter({
       lucidityConfig: {
         baseline: 'fragmented',
         triggers: {
-          'npc.attacked': { target: 'dissociative', transition: 'immediate' },
+          'npc.attacked': { target: 'elsewhere', transition: 'immediate' },
         },
         decay: 'gradual',
         decayRate: 'fast',
@@ -361,11 +378,11 @@ describe('observeEvent', () => {
     const event = createTestEvent('npc.attacked', 'player');
     const events = observeEvent(npc, event, world, 1);
 
-    expect(trait.currentLucidityState).toBe('dissociative');
+    expect(trait.currentLucidityState).toBe('elsewhere');
     const lucidityEvent = events.find(e => e.type === CharacterMessages.LUCIDITY_SHIFT);
     expect(lucidityEvent).toBeDefined();
     expect(lucidityEvent?.data).toHaveProperty('from', 'fragmented');
-    expect(lucidityEvent?.data).toHaveProperty('to', 'dissociative');
+    expect(lucidityEvent?.data).toHaveProperty('to', 'elsewhere');
   });
 
   it('should accept custom state transition rules', () => {
@@ -550,13 +567,13 @@ describe('multi-turn observation scenario', () => {
       lucidityConfig: {
         baseline: 'fragmented',
         triggers: {
-          'npc.attacked': { target: 'dissociative', transition: 'immediate' },
+          'npc.attacked': { target: 'elsewhere', transition: 'immediate' },
         },
         decay: 'gradual',
         decayRate: 'fast',
       },
       perceivedEvents: {
-        'shadow-figure': { when: 'dissociative', as: 'witnessed', content: 'shadow-figure' },
+        'shadow-figure': { when: 'elsewhere', as: 'witnessed', content: 'shadow-figure' },
       },
     });
     trait.enterLucidityState('fragmented');
@@ -569,14 +586,14 @@ describe('multi-turn observation scenario', () => {
     // Verify: threat increased, mood shifted, lucidity changed to dissociative
     expect(trait.threatValue).toBeGreaterThan(0);
     expect(trait.getMood()).not.toBe('calm');
-    expect(trait.currentLucidityState).toBe('dissociative');
+    expect(trait.currentLucidityState).toBe('elsewhere');
 
     // Shadow hallucination should have been injected (dissociative matches)
     expect(trait.knows('shadow-figure')).toBe(true);
     expect(trait.getFact('shadow-figure')?.source).toBe('hallucinated');
 
     // Turn 2: Lucidity decay
-    trait.enterLucidityState('dissociative', 1); // set window for decay test
+    trait.enterLucidityState('elsewhere', 1); // set window for decay test
     const decayEvents = processLucidityDecay(npc, world, 2);
 
     // Verify: baseline restored after window expires

@@ -16,7 +16,7 @@ import { AuthorModel, IFEntity, TraitType, WorldModel } from '@sharpee/world-mod
 import type { ReadableTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, Evaluator } from '../src';
 
-const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const ROOMS = `create the Hall
   a room

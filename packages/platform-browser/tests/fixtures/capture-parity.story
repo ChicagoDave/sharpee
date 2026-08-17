@@ -22,7 +22,8 @@
 
 story
   title: Capture Parity
-  authors: Sharpee Tests
+  authors:
+    Sharpee Tests
   id: capture-parity
   story-version: 1.0.0
 

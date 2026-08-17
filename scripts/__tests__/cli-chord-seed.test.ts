@@ -26,7 +26,8 @@ const BUNDLE = join(REPO_ROOT, 'dist', 'cli', 'sharpee.js');
 
 const STORY = `story
   title: Chance Probe
-  authors: Tests
+  authors:
+    Tests
   id: chance-probe
   story-version: 1.0.0
 

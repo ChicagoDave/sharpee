@@ -9,6 +9,7 @@
  */
 
 export {
+  PROPAGATION_AUDIENCES,
   type PropagationTendency,
   type PropagationAudience,
   type PropagationPace,
@@ -19,7 +20,6 @@ export {
   type PropagationSchedule,
   type PropagationProfile,
   type PropagationTransfer,
-  AlreadyToldRecord,
 } from './propagation-types.js';
 
 export {

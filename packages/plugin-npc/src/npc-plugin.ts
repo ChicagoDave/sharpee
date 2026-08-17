@@ -49,7 +49,9 @@ export class NpcPlugin implements TurnPlugin {
       turn: ctx.turn,
       random: ctx.random,
       playerLocation: ctx.playerLocation,
-      playerId: ctx.playerId
+      playerId: ctx.playerId,
+      // ADR-310 Phase 5: observation input for character-model NPCs.
+      ...(ctx.actionEvents ? { actionEvents: ctx.actionEvents } : {})
     });
 
     const move = ctx.actionEvents?.find((e) => e.type === 'if.event.actor_moved');

@@ -16,7 +16,8 @@ import type { IRDataChannelDef } from '../src/ir';
 /** A story whose clock emits `estate-clock` with `hour`, `chime` and `extra`. */
 const story = (channelBody: string) => `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 0.0.1
 

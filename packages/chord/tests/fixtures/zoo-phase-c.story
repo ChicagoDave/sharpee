@@ -1,6 +1,7 @@
 story
   title: Friendly Zoo
-  authors: Sharpee Team
+  authors:
+    Sharpee Team
   id: friendly-zoo
   story-version: 0.0.2-phase-c-sketch
   description: PHASE C SKETCH (givens 8+9 ownership package) — review artifact, does not compile under Phase B grammar.

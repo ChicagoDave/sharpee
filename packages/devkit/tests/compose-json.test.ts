@@ -32,7 +32,8 @@ function storySource(extraLines: string[] = []): string {
   return [
     'story',
     '  title: Json Case',
-    '  authors: Test',
+    '  authors:',
+    '    Test',
     '  id: json-case',
     '',
     'create the Lab',
@@ -216,7 +217,7 @@ describe('compose --json — piped stdout integrity (the real IDE transport)', (
       'Hazel', 'Iris', 'Jasper', 'Kestrel', 'Larch', 'Maple', 'Nettle', 'Onyx', 'Pine'];
     const second = ['Hall', 'Gallery', 'Cellar', 'Attic', 'Study', 'Parlor', 'Vault',
       'Landing', 'Passage', 'Alcove', 'Rotunda', 'Annex', 'Loggia', 'Solar', 'Undercroft', 'Gatehouse'];
-    const lines = ['story', '  title: Big Pipe', '  authors: Test', '  id: big-pipe', ''];
+    const lines = ['story', '  title: Big Pipe', '  authors:', '    Test', '  id: big-pipe', ''];
     for (const a of first) {
       for (const b of second) {
         lines.push(`create the ${a} ${b}`, '  a room', '',

@@ -17,7 +17,8 @@ const errorCodes = (source: string) =>
 
 const story = (body: string) => `story
   title: Regions
-  authors: T
+  authors:
+    T
   id: regions
   story-version: 0.0.1
 

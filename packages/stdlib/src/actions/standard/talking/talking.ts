@@ -22,6 +22,7 @@ import { TalkedEventData } from './talking-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { consultDialogueSelector } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -269,11 +270,24 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // Emit talked event with messageId for text rendering
     // params carry EntityInfo for the formatter chain (ADR-158)
     const target = context.command.directObject?.entity;
+
+    // ADR-310 D15: character-modeled NPCs greet through the world's
+    // dialogue selector; no selection falls through to the default.
+    // Selector messageIds are fully-qualified — no action-id prefix.
+    const selection = target
+      ? consultDialogueSelector(context, target, { type: 'talk-to' })
+      : undefined;
+
     events.push(context.event('if.event.talked', {
-      messageId: `${context.action.id}.${sharedData.messageId || 'talked'}`,
-      params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
+      messageId: selection?.messageId ?? `${context.action.id}.${sharedData.messageId || 'talked'}`,
+      params: {
+        target: target ? nounPhraseFor(target) : { name: sharedData.targetName },
+        ...selection?.params
+      },
       ...sharedData.eventData
     }));
+    // Author-channel events from the selection (ADR-318 D11)
+    events.push(...(selection?.authorEvents ?? []));
 
     const state = getLifecycleState(context);
     if (state) runPostReport(context, state, events, 'if.event.talked');

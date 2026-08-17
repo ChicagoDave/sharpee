@@ -1,6 +1,7 @@
 story
   title: Bad Trait
-  authors: Nobody
+  authors:
+    Nobody
   id: bad-trait
   story-version: 0.0.1
 

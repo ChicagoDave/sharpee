@@ -50,8 +50,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 34,
-            "endLine": 24,
-            "line": 24,
+            "endLine": 25,
+            "line": 25,
           },
         },
       ],
@@ -59,8 +59,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 27,
-        "line": 19,
+        "endLine": 28,
+        "line": 20,
       },
     },
     {
@@ -97,8 +97,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 35,
-            "endLine": 37,
-            "line": 37,
+            "endLine": 38,
+            "line": 38,
           },
         },
       ],
@@ -106,8 +106,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 40,
-        "line": 33,
+        "endLine": 41,
+        "line": 34,
       },
     },
   ],
@@ -138,8 +138,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 10,
-            "line": 10,
+            "endLine": 11,
+            "line": 11,
           },
         },
       ],
@@ -149,8 +149,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 1,
         "endColumn": 48,
-        "endLine": 12,
-        "line": 9,
+        "endLine": 13,
+        "line": 10,
       },
       "startsStates": [],
       "states": [],
@@ -182,15 +182,15 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
         "span": {
           "column": 3,
           "endColumn": 28,
-          "endLine": 15,
-          "line": 15,
+          "endLine": 16,
+          "line": 16,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 7,
-        "endLine": 17,
-        "line": 14,
+        "endLine": 18,
+        "line": 15,
       },
       "startsStates": [],
       "states": [],
@@ -231,8 +231,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 14,
-                "endLine": 109,
-                "line": 109,
+                "endLine": 110,
+                "line": 110,
               },
               "stmtWhen": null,
             },
@@ -247,8 +247,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 110,
-            "line": 108,
+            "endLine": 111,
+            "line": 109,
           },
         },
       ],
@@ -258,15 +258,15 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 101,
-          "line": 101,
+          "endLine": 102,
+          "line": 102,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 19,
-        "endLine": 108,
-        "line": 98,
+        "endLine": 109,
+        "line": 99,
       },
       "startsStates": [],
       "states": [
@@ -283,8 +283,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 100,
-            "line": 100,
+            "endLine": 101,
+            "line": 101,
           },
         },
         {
@@ -300,8 +300,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 102,
-            "line": 102,
+            "endLine": 103,
+            "line": 103,
           },
         },
         {
@@ -317,8 +317,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 41,
-            "endLine": 103,
-            "line": 103,
+            "endLine": 104,
+            "line": 104,
           },
         },
       ],
@@ -349,15 +349,15 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 114,
-          "line": 114,
+          "endLine": 115,
+          "line": 115,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 32,
-        "endLine": 116,
-        "line": 112,
+        "endLine": 117,
+        "line": 113,
       },
       "startsStates": [],
       "states": [],
@@ -391,15 +391,15 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 120,
-          "line": 120,
+          "endLine": 121,
+          "line": 121,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 123,
-        "line": 118,
+        "endLine": 124,
+        "line": 119,
       },
       "startsStates": [],
       "states": [],
@@ -419,8 +419,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 121,
-            "line": 121,
+            "endLine": 122,
+            "line": 122,
           },
         },
       ],
@@ -461,8 +461,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 74,
-            "endLine": 85,
-            "line": 84,
+            "endLine": 86,
+            "line": 85,
           },
           "strategy": null,
           "variants": [
@@ -479,8 +479,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 81,
-            "endLine": 31,
-            "line": 30,
+            "endLine": 32,
+            "line": 31,
           },
           "strategy": null,
           "variants": [
@@ -497,8 +497,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 59,
-            "endLine": 87,
-            "line": 86,
+            "endLine": 88,
+            "line": 87,
           },
           "strategy": null,
           "variants": [
@@ -514,8 +514,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 17,
-            "endLine": 42,
-            "line": 41,
+            "endLine": 43,
+            "line": 42,
           },
           "strategy": null,
           "variants": [
@@ -529,8 +529,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 123,
-            "line": 123,
+            "endLine": 124,
+            "line": 124,
           },
           "strategy": null,
           "variants": [
@@ -544,8 +544,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 90,
-            "endLine": 59,
-            "line": 58,
+            "endLine": 60,
+            "line": 59,
           },
           "strategy": null,
           "variants": [
@@ -559,8 +559,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 116,
-            "line": 116,
+            "endLine": 117,
+            "line": 117,
           },
           "strategy": null,
           "variants": [
@@ -574,8 +574,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 55,
-            "endLine": 83,
-            "line": 82,
+            "endLine": 84,
+            "line": 83,
           },
           "strategy": null,
           "variants": [
@@ -591,8 +591,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 66,
-            "endLine": 44,
-            "line": 43,
+            "endLine": 45,
+            "line": 44,
           },
           "strategy": null,
           "variants": [
@@ -609,8 +609,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 87,
-            "endLine": 53,
-            "line": 52,
+            "endLine": 54,
+            "line": 53,
           },
           "strategy": null,
           "variants": [
@@ -624,8 +624,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 89,
-            "endLine": 57,
-            "line": 56,
+            "endLine": 58,
+            "line": 57,
           },
           "strategy": null,
           "variants": [
@@ -639,8 +639,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 78,
-            "endLine": 55,
-            "line": 54,
+            "endLine": 56,
+            "line": 55,
           },
           "strategy": null,
           "variants": [
@@ -654,8 +654,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 5,
             "endColumn": 16,
-            "endLine": 29,
-            "line": 28,
+            "endLine": 30,
+            "line": 29,
           },
           "strategy": null,
           "variants": [
@@ -669,8 +669,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 48,
-            "endLine": 12,
-            "line": 12,
+            "endLine": 13,
+            "line": 13,
           },
           "strategy": null,
           "variants": [
@@ -684,8 +684,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 7,
-            "endLine": 17,
-            "line": 17,
+            "endLine": 18,
+            "line": 18,
           },
           "strategy": null,
           "variants": [
@@ -699,8 +699,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 78,
-            "endLine": 106,
-            "line": 105,
+            "endLine": 107,
+            "line": 106,
           },
           "strategy": null,
           "variants": [
@@ -721,8 +721,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 3,
         "endColumn": 23,
-        "endLine": 49,
-        "line": 49,
+        "endLine": 50,
+        "line": 50,
       },
       "worth": 5,
     },
@@ -731,8 +731,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 3,
         "endColumn": 21,
-        "endLine": 104,
-        "line": 104,
+        "endLine": 105,
+        "line": 105,
       },
       "worth": 10,
     },
@@ -787,8 +787,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 41,
-                "endLine": 62,
-                "line": 62,
+                "endLine": 63,
+                "line": 63,
               },
             },
             {
@@ -797,8 +797,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 63,
-                "line": 63,
+                "endLine": 64,
+                "line": 64,
               },
               "stmtWhen": null,
             },
@@ -811,8 +811,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 17,
-                "endLine": 64,
-                "line": 64,
+                "endLine": 65,
+                "line": 65,
               },
               "stmtWhen": null,
             },
@@ -827,8 +827,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                       "span": {
                         "column": 9,
                         "endColumn": 25,
-                        "endLine": 67,
-                        "line": 67,
+                        "endLine": 68,
+                        "line": 68,
                       },
                       "stmtWhen": null,
                     },
@@ -836,8 +836,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                   "span": {
                     "column": 7,
                     "endColumn": 17,
-                    "endLine": 66,
-                    "line": 66,
+                    "endLine": 67,
+                    "line": 67,
                   },
                   "value": "goats",
                 },
@@ -850,8 +850,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                       "span": {
                         "column": 9,
                         "endColumn": 27,
-                        "endLine": 69,
-                        "line": 69,
+                        "endLine": 70,
+                        "line": 70,
                       },
                       "stmtWhen": null,
                     },
@@ -859,8 +859,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                   "span": {
                     "column": 7,
                     "endColumn": 19,
-                    "endLine": 68,
-                    "line": 68,
+                    "endLine": 69,
+                    "line": 69,
                   },
                   "value": "rabbits",
                 },
@@ -873,8 +873,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                       "span": {
                         "column": 9,
                         "endColumn": 26,
-                        "endLine": 71,
-                        "line": 71,
+                        "endLine": 72,
+                        "line": 72,
                       },
                       "stmtWhen": null,
                     },
@@ -882,8 +882,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
                   "span": {
                     "column": 7,
                     "endColumn": 18,
-                    "endLine": 70,
-                    "line": 70,
+                    "endLine": 71,
+                    "line": 71,
                   },
                   "value": "parrot",
                 },
@@ -892,8 +892,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 72,
-                "line": 65,
+                "endLine": 73,
+                "line": 66,
               },
               "subject": {
                 "base": {
@@ -914,8 +914,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 73,
-            "line": 61,
+            "endLine": 74,
+            "line": 62,
           },
         },
       ],
@@ -925,8 +925,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 23,
-            "endLine": 49,
-            "line": 49,
+            "endLine": 50,
+            "line": 50,
           },
           "worth": 5,
         },
@@ -934,8 +934,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 74,
-        "line": 46,
+        "endLine": 75,
+        "line": 47,
       },
       "states": [],
       "statesReversible": false,
@@ -978,8 +978,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 42,
-                "endLine": 90,
-                "line": 90,
+                "endLine": 91,
+                "line": 91,
               },
             },
             {
@@ -1000,8 +1000,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 35,
-                "endLine": 91,
-                "line": 91,
+                "endLine": 92,
+                "line": 92,
               },
             },
             {
@@ -1012,8 +1012,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 92,
-                "line": 92,
+                "endLine": 93,
+                "line": 93,
               },
               "state": "content",
               "stmtWhen": null,
@@ -1024,8 +1024,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 93,
-                "line": 93,
+                "endLine": 94,
+                "line": 94,
               },
               "stmtWhen": null,
             },
@@ -1036,8 +1036,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 94,
-                "line": 94,
+                "endLine": 95,
+                "line": 95,
               },
               "stmtWhen": null,
             },
@@ -1052,8 +1052,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 95,
-            "line": 89,
+            "endLine": 96,
+            "line": 90,
           },
         },
       ],
@@ -1061,8 +1061,8 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 96,
-        "line": 76,
+        "endLine": 97,
+        "line": 77,
       },
       "states": [
         "hungry",

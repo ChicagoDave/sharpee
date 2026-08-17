@@ -24,7 +24,8 @@ function compileSource(source: string): StoryIR {
 
 const STORY = `story
   title: Locks
-  authors: T
+  authors:
+    T
   id: locks
   story-version: 0.0.1
 

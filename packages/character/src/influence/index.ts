@@ -9,6 +9,8 @@
  */
 
 export {
+  INFLUENCE_MODES,
+  INFLUENCE_RANGES,
   type InfluenceMode,
   type InfluenceRange,
   type InfluenceDuration,
@@ -16,8 +18,9 @@ export {
   type InfluenceSchedule,
   type InfluenceDef,
   type ResistanceDef,
-  type ActiveInfluenceEffect,
   type InfluenceResult,
+  type InfluenceTargetOutcome,
+  type PassiveInfluenceExertion,
 } from './influence-types.js';
 
 export {
@@ -27,7 +30,12 @@ export {
   evaluateActiveInfluence,
 } from './influence-evaluator.js';
 
-export { InfluenceTracker } from './influence-duration.js';
+export {
+  trackInfluence,
+  isUnderInfluence,
+  expireInfluencesForTurn,
+  expireInfluencesBySeparation,
+} from './influence-duration.js';
 
 export {
   type PcInfluenceResult,

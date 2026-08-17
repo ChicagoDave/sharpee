@@ -1,0 +1,57 @@
+title: The threatened Witness (B1, full)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: ADR-310 Acceptance 2 + ADR-318 Acceptance 1 leg 1 through
+  the bundle. Threatening the Witness flips the next conversational
+  response to the panicked voice with no model word player-visible; the
+  confided secret stays refused even cornered (duty over fear).
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/character-acceptance.story
+    stories/character-acceptance/tests/transcripts/b1-witness.transcript
+
+---
+
+# The calm voice, before any threat
+> ask witness about the weather
+[OK: contains "Cold for the season"]
+
+# The confided secret arbitrates to refusal; the action's default reply
+# IS the evasion (ADR-310 D12) — no authored reveal text escapes
+> ask witness about the secret
+[OK: not contains "buried"]
+[OK: not contains "mill"]
+[OK: contains "I don't know anything about that"]
+
+# Threaten the Witness (threat rises through the real observe path;
+# the authored transition sets the panicked mood)
+> attack witness
+[OK: contains "no effect"]
+
+# ADR-310 AC2: the next conversational response comes from the panicked
+# voice — and carries no model vocabulary
+> ask witness about the weather
+[OK: contains "cannot talk about the weather"]
+[OK: not contains "Cold for the season"]
+[OK: not contains "panicked"]
+[OK: not contains "mood"]
+[OK: not contains "threat"]
+[OK: not contains "duty"]
+[OK: not contains "fear"]
+[OK: not contains "principle"]
+[OK: not contains "temperament"]
+
+# Climb to cornered — three more witnessed attacks
+> attack witness
+[OK: contains "no effect"]
+
+> attack witness
+[OK: contains "no effect"]
+
+> attack witness
+[OK: contains "no effect"]
+
+# ADR-318 AC1 leg 1: principle + temperament refuses even cornered
+> ask witness about the secret
+[OK: not contains "buried"]
+[OK: contains "I don't know anything about that"]

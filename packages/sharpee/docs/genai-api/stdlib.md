@@ -3177,20 +3177,20 @@ export type NpcMessageId = (typeof NpcMessages)[keyof typeof NpcMessages];
 
 ```typescript
 /**
- * Character model message IDs (ADR-141)
+ * Character model state-change event types (ADR-141; ADR-318 D11)
  *
- * Semantic message IDs for character state change events.
- * Actual text is provided by the language layer.
+ * AUTHOR-CHANNEL ONLY (ADR-310 D12, retired as player surface in the
+ * ADR-310/318 Phase 2 integration): these event types are projected by
+ * the `character` channel for authoring tools and have no language-layer
+ * rendering — no ID here may ever gain a player-facing prose path.
  *
  * Public interface: CharacterMessages const, CharacterMessageId type.
  * Owner context: stdlib / npc
  */
 /**
- * Message IDs for character model state change events.
- *
- * These are emitted as observable behavior events when an NPC's
- * cognitive or emotional state changes. Silent by default — authors
- * opt in per NPC to surface them to the player.
+ * Event types for character model state changes, emitted when an NPC's
+ * cognitive or emotional state changes and consumed by the `character`
+ * author channel ("explain this NPC's turn").
  */
 export declare const CharacterMessages: {
     readonly LUCIDITY_SHIFT: "npc.character.lucidity_shift";
@@ -3253,6 +3253,13 @@ export interface NpcTickContext {
     random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
+    /**
+     * The player action's events this turn (ADR-310 Phase 5) — input for
+     * observation-driven tick phases (the character model's observe
+     * sub-step). Optional and additive: callers without action events
+     * (tests, bare harnesses) simply produce no observations.
+     */
+    actionEvents?: ISemanticEvent[];
 }
 /**
  * NPC Service interface
@@ -3436,11 +3443,15 @@ export declare function injectHallucinations(trait: CharacterModelTrait, npcId: 
  *
  * 1. Checks for CharacterModelTrait (returns early if absent — opt-in).
  * 2. Filters event through cognitive profile perception mode.
- * 3. Adds witnessed fact to knowledge.
- * 4. Applies default state transition rules.
- * 5. Checks lucidity triggers.
- * 6. Injects hallucinated facts (augmented perception).
- * 7. Emits observable behavior events for state changes.
+ * 3. Applies default state transition rules.
+ * 4. Checks lucidity triggers.
+ * 5. Injects hallucinated facts (augmented perception).
+ * 6. Emits observable behavior events for state changes.
+ *
+ * Knowledge topics are NOT minted here (ADR-310 D10): raw event types are
+ * platform wire vocabulary, not author-facing topics. Witnessed events
+ * become knowledge only through act detection's derived topics
+ * (@sharpee/character, D12a) and authored `knows` declarations.
  *
  * @param npc - The NPC entity
  * @param event - The observed event
@@ -4295,8 +4306,51 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly ENDGAME: "endgame";
     readonly SCORE_NOTIFY: "score_notify";
     readonly LIFECYCLE: "lifecycle";
+    readonly CHARACTER: "character";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
+```
+
+### channels/character-author
+
+```typescript
+/**
+ * The `character` author channel (ADR-318 D11; ADR-310 D12).
+ *
+ * The character model's introspection surface: projects the turn's
+ * character-model events — arbiter bookkeeping (`character.author.*`)
+ * and trait state transitions (`npc.character.*`) — into structured
+ * per-NPC rows for authoring tools ("explain this NPC's turn"). Systemic
+ * behavior that cannot be traced is indistinguishable from a bug.
+ *
+ * Isolation is the point (ADR-310 D12): these rows are raw model data,
+ * never rendered as player prose — no row carries a message ID with a
+ * player-facing rendering path. Clients that don't understand the
+ * channel ignore it (additive channels don't bump the wire version).
+ *
+ * Public interface: characterAuthorChannel, CharacterAuthorRow.
+ * Owner context: stdlib / channels
+ */
+import type { IOChannel } from '@sharpee/if-domain';
+/** One author-channel row: one character-model event, attributed to its NPC. */
+export interface CharacterAuthorRow {
+    /** Turn the event fired on. */
+    turn: number;
+    /** The event type, e.g. 'character.author.ledger_mint'. */
+    kind: string;
+    /** The NPC the event is about (the event's actor). */
+    npcId?: string;
+    /** The event's payload, verbatim. */
+    data: Record<string, unknown>;
+}
+/**
+ * `character` — append-mode author-channel rows (ADR-318 D11). Carries,
+ * per NPC turn: ledger mints and pins, pressure deposits and band
+ * transitions, paralysis warnings (from `character.author.*`), and
+ * mood/threat/lucidity/knowledge transitions (from `npc.character.*`).
+ * Sparse: turns with no character-model activity emit nothing.
+ */
+export declare const characterAuthorChannel: IOChannel<CharacterAuthorRow>;
 ```
 
 ### channels/media

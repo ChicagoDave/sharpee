@@ -15,7 +15,8 @@ import { captureGrammarEngine } from './helpers/grammar-harness';
 
 const STORY_HEAD = `story
   title: Alterations
-  authors: T
+  authors:
+    T
   id: alterations
   story-version: 0.0.1
 

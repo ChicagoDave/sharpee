@@ -168,7 +168,8 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
 describe('§5.4 phase routing: decisions snapshot before mutations', () => {
   const BOX_STORY = `story
   title: Box
-  authors: Nobody
+  authors:
+    Nobody
   id: box
   story-version: 0.0.1
 
@@ -295,7 +296,8 @@ describe('select stopping (occurrence-ordered alternatives, sticks on last — Z
   it('advances through alternatives per firing and sticks on the last', () => {
     const ir = compileSource(`story
   title: Ordered
-  authors: Nobody
+  authors:
+    Nobody
   id: ordered
   story-version: 0.0.1
 
@@ -351,7 +353,8 @@ describe('compile-time rejections', () => {
   it('refuse inside an `after` clause is a parse error (reactions cannot refuse, D3)', () => {
     const result = compile(`story
   title: Bad
-  authors: Nobody
+  authors:
+    Nobody
   id: bad
   story-version: 0.0.1
 

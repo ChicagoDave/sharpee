@@ -73,7 +73,8 @@ describe('death.story fixture (ADR-227 constructs)', () => {
 describe('kill-statement grammar', () => {
   const wrap = (stmt: string) => `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 1.0.0
 
@@ -115,7 +116,8 @@ define phrases en-US
 describe('deadly-exit and deadly-room grammar errors', () => {
   const room = (lines: string) => `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 1.0.0
 

@@ -1,6 +1,7 @@
 story
   title: Zoo Watch
-  authors: Test
+  authors:
+    Test
   id: npc-behaviors
   story-version: 0.0.1
   use combat

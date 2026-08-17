@@ -54,6 +54,7 @@ const FULL_CAPABILITIES: ClientCapabilities = {
   transitions: true,
   layers: true,
   customFonts: true,
+  authorChannels: true,
 };
 
 function captureManifest(engine: GameEngine) {
@@ -151,6 +152,16 @@ describe('GameEngine — channel:manifest emission', () => {
     for (const id of Object.values(STANDARD_CHANNEL_IDS)) {
       expect(ids.has(id), `standard channel ${id} should appear`).toBe(true);
     }
+  });
+
+  it('filters the character author channel out of a player profile\'s manifest (ADR-310 D12 / Acceptance 8)', () => {
+    const { engine } = setupTestEngine();
+    engine.setStory(new StoryWithoutChannel());
+    const manifests = captureManifest(engine);
+
+    engine.start({ capabilities: { ...FULL_CAPABILITIES, authorChannels: false } });
+    const ids = new Set(manifests[0].channels.map((c) => c.id));
+    expect(ids.has('character')).toBe(false);
   });
 
   it('includes media channels when capabilities allow', () => {

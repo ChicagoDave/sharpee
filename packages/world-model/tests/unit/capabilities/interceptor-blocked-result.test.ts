@@ -131,6 +131,31 @@ describe('applyInterceptorBlockedResult', () => {
     });
   });
 
+  describe('actor attribution (D9)', () => {
+    it('effect.actor overrides the context-stamped actor on emitted effects', () => {
+      const stampingContext = {
+        event: (type: string, data: Record<string, any>): ISemanticEvent => ({
+          ...makeEvent(type, data),
+          entities: { actor: 'player-1' }
+        })
+      };
+      const events: ISemanticEvent[] = [
+        makeEvent('if.event.take_blocked', { messageId: 'standard.blocked' })
+      ];
+      const result: InterceptorBlockedResult = {
+        emit: [
+          createEffect('character.author.arbitration', { verdict: 'refuse' }, 'npc-witness'),
+          createEffect('game.message', { messageId: 'plain' })
+        ]
+      };
+
+      applyInterceptorBlockedResult(events, 'if.event.take_blocked', result, stampingContext);
+
+      expect(events[1].entities.actor).toBe('npc-witness');
+      expect(events[2].entities.actor).toBe('player-1');
+    });
+  });
+
   describe('combined override + emit and empty result', () => {
     it('applies override to the blocked event AND appends emit effects', () => {
       const events: ISemanticEvent[] = [

@@ -1,7 +1,7 @@
 /**
  * Integration test story fragment (Phase 7)
  *
- * Constructs 3 NPCs (maid: chatty propagator; cook: selective;
+ * Constructs 3 NPCs (maid: chatty propagator; cook: whitelist-narrowed (spreads);
  * colonel: ruthless killer with intimidation) using all four ADR
  * builder APIs and verifies the full pipeline:
  * - Conversation builder (ADR-142)
@@ -16,7 +16,8 @@
 import { ConversationBuilder } from '../../src/conversation/builder';
 import { applyCharacter } from '../../src/apply';
 import { CharacterPhaseRegistry } from '../../src/tick-phases';
-import { CharacterModelTrait, IFEntity, EntityType } from '@sharpee/world-model';
+import { trackInfluence, isUnderInfluence } from '../../src/influence';
+import { CharacterModelTrait, ICharacterModelData, IFEntity, EntityType } from '@sharpee/world-model';
 
 /** Create a minimal entity for testing. */
 function createStubEntity(id: string, _name: string): IFEntity {
@@ -54,9 +55,8 @@ describe('Integration: 3-NPC mystery fragment', () => {
     .personality('cautious', 'loyal')
     .mood('calm')
     .threat('safe')
-    // Propagation — selective, only shares murder topic
+    // Propagation — whitelist-narrowed: spreads IS the narrowing (ADR-310 D10)
     .propagation({
-      tendency: 'selective',
       spreads: ['murder'],
       audience: 'trusted',
       pace: 'gradual',
@@ -111,7 +111,7 @@ describe('Integration: 3-NPC mystery fragment', () => {
 
     // Cook
     expect(cookCompiled.propagationProfile).toBeDefined();
-    expect(cookCompiled.propagationProfile!.tendency).toBe('selective');
+    expect(cookCompiled.propagationProfile!.tendency).toBe('chatty');
     expect(cookCompiled.propagationProfile!.receives).toBe('as belief');
 
     // Colonel
@@ -150,6 +150,7 @@ describe('Integration: 3-NPC mystery fragment', () => {
     registry.register('maid', {
       propagationProfile: maidApplied.propagationProfile,
       movementProfile: maidApplied.movementProfile,
+      baselineMood: maidApplied.baselineMood,
     });
     registry.register('cook', {
       propagationProfile: cookApplied.propagationProfile,
@@ -164,7 +165,13 @@ describe('Integration: 3-NPC mystery fragment', () => {
 
     // Verify configs stored
     expect(registry.getConfig('maid')?.propagationProfile?.tendency).toBe('chatty');
-    expect(registry.getConfig('cook')?.propagationProfile?.tendency).toBe('selective');
+    // The applyCharacter → registry.register consumer path carries the
+    // mood-decay baseline (the maid's authored 'anxious' axes, ADR-310 D6)
+    expect(registry.getConfig('maid')?.baselineMood).toEqual({
+      valence: maidApplied.trait.moodValence,
+      arousal: maidApplied.trait.moodArousal,
+    });
+    expect(registry.getConfig('cook')?.propagationProfile?.tendency).toBe('chatty');
     expect(registry.getConfig('colonel')?.influenceDefs).toHaveLength(1);
 
     // Goal manager created for colonel
@@ -172,35 +179,31 @@ describe('Integration: 3-NPC mystery fragment', () => {
     expect(registry.getGoalManager('maid')).toBeUndefined();
   });
 
-  test('registry save/restore preserves mutable state', () => {
+  test('mutable state rides traits, not the registry (ADR-310 D17)', () => {
     const registry = new CharacterPhaseRegistry();
     registry.register('colonel', {
       goalDefs: colonelCompiled.goalDefs,
       influenceDefs: colonelCompiled.influenceDefs,
     });
 
-    // Simulate some game state
-    registry.alreadyToldRecord.record('maid', 'cook', 'murder');
-    registry.influenceTracker.track(
-      'intimidation', 'colonel', 'gardener',
+    // Simulate some game state — on the traits that own it
+    const maidTrait = new CharacterModelTrait();
+    maidTrait.recordTold('cook', 'murder');
+    const gardenerTrait = new CharacterModelTrait();
+    trackInfluence(gardenerTrait, 'intimidation', 'colonel',
       { propagation: 'mute', mood: 'fearful' },
-      { duration: 'lingering', turn: 10, lingeringTurns: 3 },
-    );
+      { duration: 'lingering', turn: 10, lingeringTurns: 3 });
 
-    // Save
-    const saved = registry.toJSON();
+    // Save/restore is a trait round-trip; the registry has no state path
+    const restoredMaid = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(maidTrait)) as ICharacterModelData);
+    const restoredGardener = new CharacterModelTrait(
+      JSON.parse(JSON.stringify(gardenerTrait)) as ICharacterModelData);
 
-    // Restore into fresh registry
-    const registry2 = new CharacterPhaseRegistry();
-    registry2.register('colonel', {
-      goalDefs: colonelCompiled.goalDefs,
-      influenceDefs: colonelCompiled.influenceDefs,
-    });
-    registry2.restoreState(saved);
-
-    // Verify state restored
-    expect(registry2.alreadyToldRecord.hasTold('maid', 'cook', 'murder')).toBe(true);
-    expect(registry2.influenceTracker.isUnderInfluence('gardener', 'intimidation')).toBe(true);
+    expect(restoredMaid.hasTold('cook', 'murder')).toBe(true);
+    expect(isUnderInfluence(restoredGardener, 'intimidation')).toBe(true);
+    expect(restoredGardener.influencesInForce[0].expiresAtTurn).toBe(13);
+    expect((registry as any).toJSON).toBeUndefined();
   });
 
   test('full builder API — all four ADRs on one character', () => {

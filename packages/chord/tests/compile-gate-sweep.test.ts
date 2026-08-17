@@ -26,7 +26,8 @@ const errorCodes = (source: string) =>
 describe('plain mirror of a door exit (#6, analysis.door-plain-mirror)', () => {
   const base = `story
   title: Doors
-  authors: T
+  authors:
+    T
   id: doors
   story-version: 0.0.1
 
@@ -95,7 +96,8 @@ describe('inline phrase prose in every body context (#14)', () => {
   it('accepts inline prose in a story-header `on every turn` clause body', () => {
     const source = `story
   title: Wind
-  authors: T
+  authors:
+    T
   id: wind
   story-version: 0.0.1
   on every turn
@@ -119,7 +121,8 @@ create the player
   it('accepts inline prose in `define machine` state bodies', () => {
     const source = `story
   title: Bridge
-  authors: T
+  authors:
+    T
   id: bridge
   story-version: 0.0.1
   states: calm, stormy
@@ -168,7 +171,8 @@ end machine
 describe('misordered refuse (#15c, parse.refuse-order)', () => {
   const withAction = (refusalLine: string) => `story
   title: Pets
-  authors: T
+  authors:
+    T
   id: pets
   story-version: 0.0.1
   states: calm, raining
@@ -219,7 +223,8 @@ end phrase
 describe('conditional deadly exit (#15d, analysis.deadly-while-unsupported)', () => {
   const withDeadly = (line: string) => `story
   title: Cliff
-  authors: T
+  authors:
+    T
   id: cliff
   story-version: 0.0.1
   states: calm, stormy

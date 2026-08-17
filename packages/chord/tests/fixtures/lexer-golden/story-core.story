@@ -5,7 +5,8 @@
 
 story
   title: Story Core
-  authors: Lexer Golden
+  authors:
+    Lexer Golden
   id: lexer-golden-core
   story-version: 2.0.0
 

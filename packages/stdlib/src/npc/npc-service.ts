@@ -5,7 +5,7 @@
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType, getOppositeDirection } from '@sharpee/world-model';
 import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
   NpcBehavior,
@@ -13,7 +13,6 @@ import {
   NpcAction,
 } from './types.js';
 import { NpcMessages } from './npc-messages.js';
-import { processLucidityDecay } from './lucidity-decay.js';
 import { nounPhraseFor } from '../utils/index.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
@@ -76,6 +75,13 @@ export interface NpcTickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The player action's events this turn (ADR-310 Phase 5) — input for
+   * observation-driven tick phases (the character model's observe
+   * sub-step). Optional and additive: callers without action events
+   * (tests, bare harnesses) simply produce no observations.
+   */
+  actionEvents?: ISemanticEvent[];
 }
 
 /**
@@ -225,13 +231,9 @@ export class NpcService implements INpcService {
       const actions = behavior.onTurn(npcContext);
       const actionEvents = this.executeActions(npc, actions, world, random, playerLocation);
       events.push(...actionEvents);
-
-      // Process lucidity decay for NPCs with character model (ADR-141)
-      if (npc.has(TraitType.CHARACTER_MODEL)) {
-        const decayEvents = processLucidityDecay(npc, world, turn);
-        events.push(...decayEvents);
-      }
     }
+    // Lucidity decay is no longer inlined here: it is the decay sub-step of
+    // the registered 'character-model' tick phase (contracts.md §2, ADR-310 D15).
 
     // Registered tick phases (ADR-142/144/145/146)
     for (const phase of this.tickPhases) {
@@ -739,6 +741,10 @@ export class NpcService implements INpcService {
     const target = world.getEntity(targetId);
     if (!target) return [];
 
+    // Captured before the move: act detection (ADR-318 D4) classifies a
+    // take out of another actor's possession as a steal-candidate.
+    const from = world.getLocation(targetId);
+
     // Move item to NPC's inventory
     world.moveEntity(targetId, npc.id);
 
@@ -748,6 +754,7 @@ export class NpcService implements INpcService {
         {
           npc: npc.id,
           target: targetId,
+          from,
         },
         npc.id
       ),

@@ -1,0 +1,49 @@
+title: The in-conversation crack fires at breaking
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: ADR-318 Acceptance 3, crack leg. The bands climb
+  monotonically under maintained lies (15/delivery: burdened at 30,
+  breaking at 70); the breaking-gated row does not fire below the band
+  and fires in conversation the first ask after crossing it.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b3-conscience.story
+    stories/character-acceptance/tests/transcripts/b3-breaking-crack.transcript
+
+---
+
+# Below every band, the truth is deflected
+> ask steward about the truth
+[OK: contains "whatever the books say"]
+[OK: not contains "Stop asking"]
+
+# Two maintained lies climb to burdened (15, 30)
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# Burdened is not breaking: the crack still does not fire
+> ask steward about the truth
+[OK: contains "whatever the books say"]
+[OK: not contains "Stop asking"]
+
+# Three more maintained lies cross into breaking (45, 60, 75)
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# The in-conversation crack fully owns the response (D7 fixed
+# 2026-08-16: a hit overrides, never appends — the deflect must not
+# trail the crack) — and no model word in the player line
+> ask steward about the truth
+[OK: contains "Stop. Stop asking. I doctored them"]
+[OK: not contains "whatever the books say"]
+[OK: not contains "breaking"]
+[OK: not contains "band"]

@@ -183,12 +183,23 @@ export function checkCapabilityDispatchMulti(
 
 /**
  * Convert capability effects to semantic events.
+ *
+ * Honors the effect's `actor` attribution override (D9): the action
+ * context stamps the acting player as `entities.actor`, which is wrong
+ * for NPC-originated effects — `effect.actor` names the entity the
+ * event is about; target/location stamps are preserved.
  */
 function effectsToEvents(
   effects: CapabilityEffect[],
   context: ActionContext
 ): ISemanticEvent[] {
-  return effects.map(effect => context.event(effect.type, effect.payload));
+  return effects.map(effect => {
+    const event = context.event(effect.type, effect.payload);
+    if (effect.actor !== undefined) {
+      return { ...event, entities: { ...event.entities, actor: effect.actor } };
+    }
+    return event;
+  });
 }
 
 /**

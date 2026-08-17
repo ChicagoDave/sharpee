@@ -54,7 +54,8 @@ function enterRoom(story: ChordStory, world: WorldModel, playerId: string, roomI
 
 const MARCH_STORY = `story
   title: March
-  authors: T
+  authors:
+    T
   id: march
   story-version: 0.0.1
   states: dawn, noon, dusk
@@ -124,7 +125,8 @@ describe('D4 forward-march at runtime (non-reversible sets)', () => {
 
 const REVERSIBLE_STORY = `story
   title: Tide
-  authors: T
+  authors:
+    T
   id: tide
   story-version: 0.0.1
 
@@ -161,7 +163,8 @@ describe('D4 reversible sets', () => {
 
 const SEQUENCE_CHANGE_STORY = `story
   title: Ripening
-  authors: T
+  authors:
+    T
   id: ripening
   story-version: 0.0.1
 
@@ -208,7 +211,8 @@ describe('named-entity `change` from sequence-step scope (CP6)', () => {
 
 const PRESENCE_STORY = `story
   title: Presence
-  authors: T
+  authors:
+    T
   id: presence
   story-version: 0.0.1
 
@@ -327,7 +331,8 @@ describe('decision-10 presence gate (performances need an audience)', () => {
 
 const MUSTS_STORY = `story
   title: Musts
-  authors: T
+  authors:
+    T
   id: musts
   story-version: 0.0.1
 
@@ -475,7 +480,8 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
 
 const GATE_STORY = `story
   title: Gatehouse
-  authors: T
+  authors:
+    T
   id: gatehouse
   story-version: 0.0.1
 

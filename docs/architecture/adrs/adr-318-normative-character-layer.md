@@ -234,10 +234,27 @@ over duty pays for it every scene, mechanically.
   with a professional code) is expressible.
 - **Pre-story guilt is initial state**: `burdened by <topic>` (the topic
   must be held — compile check). States declarable, curves not.
-- Runtime weave, no surface: confession ends the losing collisions and
-  pressure drains; belief resistance `reinterprets` is the natural
-  rationalization channel — the flexible bleed pressure by changing their
-  mind about what happened; the rigid can only break.
+- **Discharge contract** (amended 2026-08-16, session 55a70a — the seam-2/5
+  ruling): discharge is *delivery through a `breaking`-gated outlet on
+  self*. **The gate is the marker** — there is no authored discharge
+  keyword. A phrase whose selection condition provably requires the
+  speaker's own `breaking` (the conservative `conditionRequiresSelfBreaking`
+  walker in chord: an `and` needs one self-breaking operand, an `or` needs
+  all of them; negation and other entities' bands prove nothing; a gate on
+  *another* entity's breaking never discharges the owner) drains the curve
+  when delivered. A goal whose `active when` is provably self-breaking is
+  stamped `discharges` at compile (`.discharges()` on the TS builder) and
+  drains on completion. Band-gated phrasebooks that are not
+  self-breaking-gated are the non-discharging color channel. **Discharge
+  drains the curve only — it never touches the lie ledger** (D9 owns pin
+  release; a global unpin here would evaporate lies still maintained to
+  absent audiences). Discharge emits `character.author.pressure_drain` on
+  the D11 channel. With ADR-145's edge-triggered activation (amended the
+  same day), discharge → re-climb → re-break re-fires each outlet once per
+  cycle — the recurring confessor needs no extra machinery.
+- Belief resistance `reinterprets` is the natural rationalization channel —
+  the flexible bleed pressure by changing their mind about what happened;
+  the rigid can only break.
 - **`breaking` does not terminate** (David's ruling 2026-08-15, resolving
   Open Question 4): discharge resets the curve, which can run again. The
   platform keeps no memory of having broken — *breaking is weather; being
@@ -264,10 +281,33 @@ define topics for the Steward
   held belief mints a ledger entry `(speaker, audience, subject, facet) →
   claimed value`. Honest assertion mints nothing — disagreement is not
   lying (exp-05's B5 boundary).
-- **The pin**: a minted claim holds the selector consistent to that
-  audience until an authored break or conscience `breaking`. Mood and
+- **The pin — gating** (amended 2026-08-16, session 55a70a: band-aware, the
+  seam-4 ruling): a minted claim holds the selector consistent to that
+  audience while the speaker is below `breaking`. At the speaker's own
+  `breaking` the pin **stops gating** — the truth can escape — but
+  suspension is not release: the entry stays pinned, and if the band drops
+  back without the truth having been told, the pin gates again. Mood and
   disposition drift cannot silently evaporate a maintained lie — that
   bookkeeping is the model's, not the author's.
+- **Maintenance accounting** (same amendment): maintenance is restating the
+  *pinned* value (`pin_held` plus the duty deposit, unchanged). The
+  honestly-contradicting truth delivered at `breaking` is neither mint nor
+  maintenance — no cost, no deposit, and the delivery itself leaves the pin
+  untouched (release is the next bullet's job). A *differently-valued lie*
+  at `breaking` still costs via the lie check but mints nothing while a pin
+  exists.
+- **Release** (amended 2026-08-16, session 55a70a: per-audience, the seam-3
+  ruling): a pin is released **per (audience, fact)** — a lie dies for an
+  audience exactly when that audience gets the truth. Three release paths:
+  (1) **truth-told** — delivering the honestly-contradicting truth to an
+  audience releases that audience's pin and emits
+  `character.author.pin_released`; the ledger entry survives unpinned —
+  history, not obligation. (2) **caught lying** — ruled but dormant; rides
+  the face-act confrontation detection when it is built. (3) **authored
+  break** — the trait's `unpinLedger` method, a TS surface; no Chord
+  statement until a story needs one. **Discharge (D8) never releases
+  pins**: draining the curve for one confession must not evaporate lies
+  still maintained to absent audiences.
 - **Both reserved words unlock**: *caught lying* (face-act — the lie's
   audience demonstrably acquires the true value and confronts) and *break a
   promise* — **a promise is a ledger entry whose subject is the speaker's
@@ -403,8 +443,13 @@ parentheses.
 3. **B3**: repeated questioning climbs the bands monotonically with the
    strained phrasebook taking the voice at `burdened`; the in-conversation
    crack fires at `breaking`; the seek-out confession goal fires only
-   outside conversation. Band pinned via forcing, not turn counts. (chord,
-   character, stdlib; ADR-293 harness)
+   outside conversation. Band pinned via the deterministic deposit ladder,
+   not turn counts: deposits are fixed-size (sensitivity-scaled), each
+   climbing turn is a meaningful maintained lie, and the crossing turn is
+   arithmetic — ADR-293 `forces:` pins random point outcomes and has
+   nothing to pin here. (chord, character, stdlib) *(Amended 2026-08-16 —
+   the original "band pinned via forcing" named the wrong mechanism;
+   conscience bands are deterministic deposits, not random draws.)*
 4. **B4**: witnessed face-act reaches a third NPC's dialogue via
    propagation, gated under both a derived topic name and a scene alias
    (D12a); the player transcript contains no model concept. (character,
@@ -454,3 +499,15 @@ session at David's direction, after the session's re-framing of the
 character model as layers of dialogue and the ruling that the Versu-depth /
 authoring-ease balance is the design brief. Companion to ADR-310, which
 carries the descriptive layers this ADR's normative layer arbitrates over.
+
+Amended session 55a70a (2026-08-16), folding in the D11 seam rulings landed
+the previous day (session f123de, David's per-seam go-aheads; evidence:
+`docs/work/adr-310/wiring-audit.md` D11/D12): the D8 discharge contract
+(gate-is-marker, self-only, both outlets, curve-only drain); the D9 pin
+split into band-aware gating (seam 4), maintenance accounting, and
+per-audience release (seam 3 — truth-told live, caught-lying dormant,
+authored break as a trait method, discharge never unpins); and the AC3
+parenthetical corrected from ADR-293 forcing to the deterministic deposit
+ladder (the G4 finding in `docs/work/adr-310/gap-closure-design.md`). The
+companion activation contract — edge-triggered goals — landed as an ADR-145
+amendment the same session.

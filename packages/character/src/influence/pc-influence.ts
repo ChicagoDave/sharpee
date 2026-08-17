@@ -9,8 +9,8 @@
  * Owner context: @sharpee/character / influence
  */
 
-import { InfluenceTracker } from './influence-duration.js';
-import { ActiveInfluenceEffect, InfluenceDef } from './influence-types.js';
+import { InfluenceInForce } from '@sharpee/world-model';
+import { InfluenceDef } from './influence-types.js';
 
 // ---------------------------------------------------------------------------
 // PC influence result
@@ -25,7 +25,7 @@ export type PcInfluenceResult =
       status: 'intercepted';
       influenceName: string;
       influencerId: string;
-      effect: ActiveInfluenceEffect;
+      effect: InfluenceInForce;
       onPlayerAction?: string;
       clearConversationContext: boolean;
     };
@@ -42,17 +42,20 @@ export type PcInfluenceResult =
  * - The effect includes `focus: 'clouded'` — clears conversation context
  * - The influence has an `onPlayerAction` message — fires narrative message
  *
+ * Player-targeted effects ride the exerters' traits with `target` set
+ * (ADR-310 D17 home rule); the caller collects them from the room's NPCs.
+ *
  * @param playerId - The player entity ID
- * @param tracker - The influence tracker with active effects
+ * @param effects - Effect records to consider (any target)
  * @param influenceDefs - Map of influencer ID to their influence definitions
  * @returns PC influence result
  */
 export function evaluatePcInfluence(
   playerId: string,
-  tracker: InfluenceTracker,
+  effects: InfluenceInForce[],
   influenceDefs: Map<string, InfluenceDef[]>,
 ): PcInfluenceResult {
-  const pcEffects = tracker.getEffectsOn(playerId);
+  const pcEffects = effects.filter(e => e.target === playerId);
   if (pcEffects.length === 0) {
     return { status: 'clear' };
   }

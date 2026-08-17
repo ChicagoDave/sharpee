@@ -1,6 +1,7 @@
 story
   title: Removed Every
-  authors: Nobody
+  authors:
+    Nobody
   id: removed-every
   story-version: 0.0.1
 

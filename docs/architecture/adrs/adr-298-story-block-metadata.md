@@ -75,6 +75,19 @@ info channel, beside the widened `authors` list (Consequences below) and
 plumbed in the same commit. Clients choose whether/where to show credits
 (About/info surfaces); the wire carries the names, data-only.
 
+**D1-A2 — Amendment (David, 2026-08-15): `authors:` is required, and its
+only form is the line-break indented list.** The single-inline-name
+shorthand (`authors: Solo Author`) is removed: an inline value is
+`parse.header-inline-list`, a story block with no `authors:` field is
+`parse.story-authors` (the `parse.story-title` precedent), and one mistake
+earns one diagnostic — the inline rejection suppresses the empty-list and
+required-field errors for that block. `testers:` keeps both forms and stays
+optional. Swept the same day across every fixture, test source, story, and
+the devkit `story.story.template`; devkit's `story-config` header splicer
+(and, still owed, the IDE's Swift `StoryHeaderIFID` twin) learned that a
+deeper-indented non-blank line is a field's list continuation, not the end
+of the header.
+
 ### D2 — Generated metadata stays out of the story block (ruling 1)
 
 `story-build:`, `chord-version:`, `sharpee-version:` are NOT story-block

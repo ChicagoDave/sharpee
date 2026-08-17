@@ -19,6 +19,9 @@
  */
 export type InfluenceMode = 'passive' | 'active';
 
+/** All influence modes, for vocabulary export and iteration (ADR-310 D9). */
+export const INFLUENCE_MODES: readonly InfluenceMode[] = ['passive', 'active'];
+
 /**
  * Who the influence affects.
  * - proximity: target must be in the same room
@@ -26,6 +29,9 @@ export type InfluenceMode = 'passive' | 'active';
  * - room: affects all entities in the room (aura)
  */
 export type InfluenceRange = 'proximity' | 'targeted' | 'room';
+
+/** All influence ranges, for vocabulary export and iteration (ADR-310 D9). */
+export const INFLUENCE_RANGES: readonly InfluenceRange[] = ['proximity', 'targeted', 'room'];
 
 /**
  * How long the effect lasts.
@@ -97,6 +103,13 @@ export interface InfluenceDef {
   /** Message ID when the target resists. */
   resisted?: string;
 
+  /**
+   * Message ID when the effect expires (separation or duration lapse) with
+   * the expiring target at the player's location. Opt-in release line —
+   * absent means expiry stays silent (David's ruling 2026-08-16).
+   */
+  expired?: string;
+
   /** Optional scheduling conditions (for passive mode). */
   schedule?: InfluenceSchedule;
 
@@ -126,36 +139,10 @@ export interface ResistanceDef {
   except?: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Active influence effect tracking
-// ---------------------------------------------------------------------------
-
-/** Runtime tracking of an applied influence effect. */
-export interface ActiveInfluenceEffect {
-  /** The influence name. */
-  influenceName: string;
-
-  /** The influencer's entity ID. */
-  influencerId: string;
-
-  /** The target's entity ID. */
-  targetId: string;
-
-  /** The applied effect mutations. */
-  effect: InfluenceEffect;
-
-  /** Duration type. */
-  duration: InfluenceDuration;
-
-  /** Turn when the effect was applied. */
-  appliedAtTurn: number;
-
-  /** For lingering: turn when the effect expires. */
-  expiresAtTurn?: number;
-
-  /** For lingering: predicate condition that clears the effect. */
-  clearCondition?: string;
-}
+// The ActiveInfluenceEffect service-side record is retired (ADR-310 D17):
+// effects in force are now `InfluenceInForce` records from
+// @sharpee/world-model, riding the target's trait (or the exerter's, for
+// targets with no character model — the player).
 
 // ---------------------------------------------------------------------------
 // Evaluation results
@@ -177,6 +164,37 @@ export type InfluenceResult =
       influencerId: string;
       targetId: string;
       resisted?: string;
+    }
+  | {
+      status: 'skipped';
+      reason: string;
+    };
+
+/** One target's outcome within a passive exertion. */
+export interface InfluenceTargetOutcome {
+  /** The target entity id. */
+  targetId: string;
+
+  /** Whether the influence took hold on this target or was resisted. */
+  status: 'applied' | 'resisted';
+}
+
+/**
+ * Result of one passive influence exertion in a room (ADR-310 D8).
+ *
+ * The exertion is one fact — its `witnessed` phrase, effect, and message
+ * ids exist exactly once here — while per-target outcomes nest inside.
+ * This shape is what makes duplicate witnessed events unrepresentable.
+ */
+export type PassiveInfluenceExertion =
+  | {
+      status: 'exerted';
+      influenceName: string;
+      influencerId: string;
+      effect: InfluenceEffect;
+      witnessed?: string;
+      resisted?: string;
+      targets: InfluenceTargetOutcome[];
     }
   | {
       status: 'skipped';

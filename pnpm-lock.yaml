@@ -246,6 +246,9 @@ importers:
 
   packages/character:
     dependencies:
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
@@ -1057,6 +1060,9 @@ importers:
 
   packages/story-loader:
     dependencies:
+      '@sharpee/character':
+        specifier: workspace:*
+        version: link:../character
       '@sharpee/chord':
         specifier: workspace:*
         version: link:../chord

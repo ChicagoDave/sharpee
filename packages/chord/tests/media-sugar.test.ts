@@ -17,7 +17,8 @@ const errorCodes = (source: string) =>
 
 const story = (body: string, defines: string) => `story
   title: Orchestra
-  authors: T
+  authors:
+    T
   id: orchestra
   story-version: 0.0.1
 

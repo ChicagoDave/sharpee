@@ -4,7 +4,8 @@
 
 story
   title: Alterations And Counters
-  authors: Lexer Golden
+  authors:
+    Lexer Golden
   id: lexer-golden-alterations
   story-version: 1.0.0
   use combat

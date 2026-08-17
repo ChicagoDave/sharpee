@@ -19,6 +19,15 @@
  * freshness gate: regenerate and diff against the committed module, exit 1 on
  * drift; `repokit verify` and the platform build both run it.
  *
+ * Second module (ADR-310 Phase 3): `packages/chord/src/character-manifest.ts`
+ * — the descriptive character vocabulary (personality, intensities, moods,
+ * dispositions, threats, confidences, fact sources, resistance modes,
+ * cognitive dimensions) from world-model's built
+ * `character-vocabulary.js`, plus the profile presets from character's built
+ * `cognitive-presets.js`. Same generate-and-gate lifecycle as the stdlib
+ * module; the vocabulary itself is frozen author surface (contracts.md §6),
+ * so the gate catches any platform-side list change the language didn't take.
+ *
  * Public interface: ManifestCommand, runManifestStep, checkManifestModule.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
@@ -29,6 +38,19 @@ import { Command } from './command';
 import { compileStandardGrammarRules, readStdlibActionIds } from './grammar';
 
 const MODULE_PATH = 'packages/chord/src/stdlib-manifest.ts';
+const CHARACTER_MODULE_PATH = 'packages/chord/src/character-manifest.ts';
+
+/**
+ * Chord (kebab-case) dimension spelling ↔ the CognitiveProfile camelCase
+ * field, in declaration order — the preset emitter's key translation.
+ */
+const DIMENSION_FIELDS: ReadonlyArray<[string, string]> = [
+  ['perception', 'perception'],
+  ['belief-formation', 'beliefFormation'],
+  ['coherence', 'coherence'],
+  ['lucidity', 'lucidity'],
+  ['self-model', 'selfModel'],
+];
 
 /** Produce the generated module's TS text from the stdlib sources of truth. */
 export function generateManifestModule(root: string): { source: string; actionIds: number; shapedActions: number } {
@@ -137,52 +159,178 @@ export function generateManifestModule(root: string): { source: string; actionId
 }
 
 /**
- * Generate and write the manifest module (runs before chord compiles in the
- * platform build). The grammar-shape slice needs a chord dist (any prior
+ * Produce the generated character-manifest module's TS text from the
+ * world-model vocabulary and character preset sources of truth (both read
+ * from built dists — the values live in runtime consts, not regexable
+ * source; the setting-schema precedent above). ADR-310 Phase 3.
+ */
+export function generateCharacterManifestModule(root: string): { source: string; words: number; presets: number } {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const vocab = require(join(root, 'packages/world-model/dist/traits/character-model/character-vocabulary.js')) as {
+    PERSONALITY_TRAITS: readonly string[];
+    INTENSITY_WORDS: readonly string[];
+    MOODS: readonly string[];
+    MOOD_MODIFIERS: readonly string[];
+    DISPOSITION_WORDS: readonly string[];
+    THREAT_LEVELS: readonly string[];
+    CONFIDENCE_WORDS: readonly string[];
+    FACT_SOURCES: readonly string[];
+    RESISTANCE_MODES: readonly string[];
+    COGNITIVE_DIMENSIONS: Readonly<Record<string, readonly string[]>>;
+    FORCES: readonly string[];
+    ACT_CATEGORIES: readonly string[];
+    OBLIGATION_WORDS: readonly string[];
+    FACE_ACTS: readonly string[];
+    PRESSURE_BANDS: readonly string[];
+  };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { COGNITIVE_PRESETS } = require(join(root, 'packages/character/dist/cognitive-presets.js')) as {
+    COGNITIVE_PRESETS: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { PROPAGATION_AUDIENCES } = require(join(root, 'packages/character/dist/propagation/propagation-types.js')) as {
+    PROPAGATION_AUDIENCES: readonly string[];
+  };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { GOAL_PRIORITIES } = require(join(root, 'packages/character/dist/goals/goal-types.js')) as {
+    GOAL_PRIORITIES: readonly string[];
+  };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { INFLUENCE_MODES, INFLUENCE_RANGES } = require(join(root, 'packages/character/dist/influence/influence-types.js')) as {
+    INFLUENCE_MODES: readonly string[];
+    INFLUENCE_RANGES: readonly string[];
+  };
+
+  const wordLists: Array<[key: string, doc: string, words: readonly string[]]> = [
+    ['personality', 'Personality adjectives (ADR-310 D2) — includes ADR-318 D8 conscience sensitivity.', vocab.PERSONALITY_TRAITS],
+    ['intensities', 'Intensity modifiers a personality adjective may carry (`very honest`).', vocab.INTENSITY_WORDS],
+    ['moods', 'Platform mood words (`mood nervous`, ADR-310 D3).', vocab.MOODS],
+    ['moodModifiers', 'Custom-mood nudge words (`define mood … like <mood>, but <modifier>`, ADR-310 D5).', vocab.MOOD_MODIFIERS],
+    ['dispositions', 'Disposition words (`feels wary of …`, ADR-310 D3) — some are two words.', vocab.DISPOSITION_WORDS],
+    ['threats', 'Threat words (runtime state; predicate vocabulary, never declared).', vocab.THREAT_LEVELS],
+    ['confidences', 'Confidence words in ascending order (`knows`/`thinks` comma slot, ADR-310 D14).', vocab.CONFIDENCE_WORDS],
+    ['factSources', 'Fact sources (`knows the murder, witnessed`, ADR-310 D3).', vocab.FACT_SOURCES],
+    ['resistanceModes', 'Belief resistance modes (ADR-310 D14 fold).', vocab.RESISTANCE_MODES],
+    ['audiences', 'Propagation audiences (`spreads … to <audience>`, ADR-310 D10).', PROPAGATION_AUDIENCES],
+    ['goalPriorities', 'Goal priorities (`goal <name>, <priority>`, ADR-310 D8).', GOAL_PRIORITIES],
+    ['influenceModes', 'Influence modes (the `influence` header, ADR-310 D9).', INFLUENCE_MODES],
+    ['influenceRanges', 'Influence ranges (the `influence` header, ADR-310 D9).', INFLUENCE_RANGES],
+    ['forces', 'The five arbiter forces (`<force> over <force>` temperament pairs, ADR-318 D1/D3).', vocab.FORCES],
+    ['actCategories', 'Act categories principle lines gate (`never <category>`, ADR-318 D4) — some are multi-word.', vocab.ACT_CATEGORIES],
+    ['obligationWords', 'Obligation words (`protects <scope>` / `answers honestly`, ADR-318 D4/D5).', vocab.OBLIGATION_WORDS],
+    ['faceActs', 'Face-acts — the closed honor vocabulary (`honor before <scope>` / `define honor`, ADR-318 D7).', vocab.FACE_ACTS],
+    ['pressureBands', 'Conscience pressure bands in monotonic order (predicate vocabulary, ADR-318 D8).', vocab.PRESSURE_BANDS],
+  ];
+  const words = wordLists.reduce((n, [, , list]) => n + list.length, 0);
+
+  const lines: string[] = [];
+  lines.push('/**');
+  lines.push(' * character-manifest.ts — GENERATED by `repokit manifest` (ADR-310 Phase 3).');
+  lines.push(' * DO NOT EDIT — edit the world-model character-vocabulary / character');
+  lines.push(' * cognitive-presets sources and regenerate; the freshness gate');
+  lines.push(' * (`repokit manifest --check`, run by `repokit verify` and the platform');
+  lines.push(' * build) fails the build on drift.');
+  lines.push(' *');
+  lines.push(' * The character vocabulary the analyzer gates ADR-310 D2-D5/D14');
+  lines.push(' * (descriptive) and ADR-318 D3-D9 (normative) constructs against at');
+  lines.push(' * compile time. Data only — chord stays');
+  lines.push(' * platform-FREE. These word lists are frozen author-facing compatibility');
+  lines.push(' * surface (freeze review: David, 2026-08-15 — docs/work/adr-310/');
+  lines.push(' * contracts.md §6): removing a word breaks stories, additions stay possible.');
+  lines.push(' *');
+  lines.push(' * Public interface: CHARACTER_MANIFEST, CharacterManifest.');
+  lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
+  lines.push(' */');
+  lines.push('');
+  lines.push('export interface CharacterManifest {');
+  for (const [key, doc] of wordLists) {
+    lines.push(`  /** ${doc} */`);
+    lines.push(`  ${key}: readonly string[];`);
+  }
+  lines.push('  /** The five cognitive dimensions (kebab spelling) and their closed value sets (ADR-310 D4). */');
+  lines.push('  cognitiveDimensions: Readonly<Record<string, readonly string[]>>;');
+  lines.push('  /** Profile presets (ADR-310 D5 behavioral names) — preset name → dimension (kebab) → value. */');
+  lines.push('  profilePresets: Readonly<Record<string, Readonly<Record<string, string>>>>;');
+  lines.push('}');
+  lines.push('');
+  lines.push('export const CHARACTER_MANIFEST: CharacterManifest = {');
+  for (const [key, , list] of wordLists) {
+    lines.push(`  ${key}: [${list.map((w) => JSON.stringify(w)).join(', ')}],`);
+  }
+  lines.push('  cognitiveDimensions: {');
+  for (const [dimension] of DIMENSION_FIELDS) {
+    const values = vocab.COGNITIVE_DIMENSIONS[dimension] ?? [];
+    lines.push(`    ${JSON.stringify(dimension)}: [${values.map((v) => JSON.stringify(v)).join(', ')}],`);
+  }
+  lines.push('  },');
+  lines.push('  profilePresets: {');
+  for (const [preset, profile] of Object.entries(COGNITIVE_PRESETS)) {
+    const entries = DIMENSION_FIELDS.map(([kebab, field]) => `${JSON.stringify(kebab)}: ${JSON.stringify(profile[field])}`);
+    lines.push(`    ${JSON.stringify(preset)}: { ${entries.join(', ')} },`);
+  }
+  lines.push('  },');
+  lines.push('};');
+  lines.push('');
+  return { source: lines.join('\n'), words, presets: Object.keys(COGNITIVE_PRESETS).length };
+}
+
+/**
+ * Generate and write both manifest modules (runs before chord compiles in
+ * the platform build). The grammar-shape slice needs a chord dist (any prior
  * build's) to compile the grammar source; on a COLD build with no dist yet,
- * the committed module stands in — the verify gate still proves freshness
+ * the committed modules stand in — the verify gate still proves freshness
  * once a dist exists.
  */
 export function runManifestStep(root: string, quiet = false): void {
-  const needsDist = ['packages/chord/dist/index.js', 'packages/story-loader/dist/setting-schema.js'];
+  const needsDist = [
+    'packages/chord/dist/index.js',
+    'packages/story-loader/dist/setting-schema.js',
+    'packages/world-model/dist/traits/character-model/character-vocabulary.js',
+    'packages/character/dist/cognitive-presets.js',
+  ];
   const missing = needsDist.find((p) => !existsSync(join(root, p)));
   if (missing) {
-    if (existsSync(join(root, MODULE_PATH))) {
-      if (!quiet) console.log(`manifest: cold build (${missing} not built yet) — using the committed module`);
+    if (existsSync(join(root, MODULE_PATH)) && existsSync(join(root, CHARACTER_MODULE_PATH))) {
+      if (!quiet) console.log(`manifest: cold build (${missing} not built yet) — using the committed modules`);
       return;
     }
     throw new Error(
-      `manifest: ${missing} not built and no committed stdlib-manifest.ts — build the platform once, then run \`repokit manifest\``,
+      `manifest: ${missing} not built and no committed manifest module — build the platform once, then run \`repokit manifest\``,
     );
   }
   const { source, actionIds, shapedActions } = generateManifestModule(root);
   writeFileSync(join(root, MODULE_PATH), source);
-  if (!quiet)
+  const character = generateCharacterManifestModule(root);
+  writeFileSync(join(root, CHARACTER_MODULE_PATH), character.source);
+  if (!quiet) {
     console.log(`manifest: ${MODULE_PATH} regenerated — ${actionIds} action ids, ${shapedActions} shaped actions`);
+    console.log(`manifest: ${CHARACTER_MODULE_PATH} regenerated — ${character.words} vocabulary words, ${character.presets} presets`);
+  }
 }
 
-/** The freshness gate: regenerated text must match the committed module byte-for-byte. */
+/** The freshness gate: both regenerated modules must match the committed files byte-for-byte. */
 export function checkManifestModule(root: string): boolean {
-  const path = join(root, MODULE_PATH);
-  if (!existsSync(path)) return false;
-  const { source } = generateManifestModule(root);
-  return source === readFileSync(path, 'utf8');
+  const stdlibPath = join(root, MODULE_PATH);
+  const characterPath = join(root, CHARACTER_MODULE_PATH);
+  if (!existsSync(stdlibPath) || !existsSync(characterPath)) return false;
+  if (generateManifestModule(root).source !== readFileSync(stdlibPath, 'utf8')) return false;
+  return generateCharacterManifestModule(root).source === readFileSync(characterPath, 'utf8');
 }
 
 export class ManifestCommand implements Command {
   readonly name = 'manifest';
-  readonly summary = 'Regenerate the chord stdlib manifest from stdlib source (--check: freshness gate)';
+  readonly summary = 'Regenerate the chord stdlib + character manifests from platform source (--check: freshness gate)';
 
   run(args: string[]): number {
     const root = findRepoRoot();
     if (args.includes('--check')) {
       if (checkManifestModule(root)) {
-        console.log('manifest --check: committed module matches the stdlib source');
+        console.log('manifest --check: committed modules match the platform sources');
         return 0;
       }
       console.error(
-        'manifest --check: STALE — packages/chord/src/stdlib-manifest.ts does not match ' +
-          'the stdlib action surface. Run `repokit manifest` and commit the result.',
+        'manifest --check: STALE — packages/chord/src/stdlib-manifest.ts or ' +
+          'character-manifest.ts does not match the platform sources. Run `repokit manifest` and commit the result.',
       );
       return 1;
     }

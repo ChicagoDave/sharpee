@@ -1,6 +1,7 @@
 story
   title: Gate: duplicate clause
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-duplicate-clause
   story-version: 0.0.1
 

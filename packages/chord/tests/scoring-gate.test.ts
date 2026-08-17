@@ -13,7 +13,8 @@ import { compile } from '../src';
 
 const story = (headerBody: string, body = '') => `story
   title: The Folly
-  authors: T
+  authors:
+    T
   id: folly
   story-version: 0.0.1
 ${headerBody}
@@ -36,7 +37,7 @@ describe('the `use scoring` gate (ADR-261 D4)', () => {
     const found = errors(story('  score lamp worth 20\n'));
 
     expect(found.map((d) => d.code)).toEqual(['analysis.scoring-needs-use']);
-    expect(found[0].span.line).toBe(6);
+    expect(found[0].span.line).toBe(7);
   });
 
   it('a bare `award` → analysis.scoring-needs-use with its span', () => {

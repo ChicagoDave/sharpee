@@ -184,6 +184,40 @@ describe('applyInterceptorReportResult', () => {
     });
   });
 
+  describe('actor attribution (D9)', () => {
+    // A context that stamps like the real ones do: actor = the player.
+    const stampingContext = {
+      event: (type: string, data: Record<string, any>): ISemanticEvent => ({
+        ...makeEvent(type, data),
+        entities: { actor: 'player-1', location: 'room-1' }
+      })
+    };
+
+    it('effect.actor overrides the context-stamped actor; other stamps survive', () => {
+      const events: ISemanticEvent[] = [];
+      const result: InterceptorReportResult = {
+        emit: [createEffect('character.author.pin_held', { factId: 'killer' }, 'npc-maid')]
+      };
+
+      applyInterceptorReportResult(events, 'if.event.asked', result, stampingContext);
+
+      expect(events).toHaveLength(1);
+      expect(events[0].entities.actor).toBe('npc-maid');
+      expect(events[0].entities.location).toBe('room-1');
+    });
+
+    it('effects without actor keep the context stamping unchanged', () => {
+      const events: ISemanticEvent[] = [];
+      const result: InterceptorReportResult = {
+        emit: [createEffect('game.message', { messageId: 'plain' })]
+      };
+
+      applyInterceptorReportResult(events, 'if.event.asked', result, stampingContext);
+
+      expect(events[0].entities.actor).toBe('player-1');
+    });
+  });
+
   describe('empty result', () => {
     it('is a no-op when both override and emit are absent', () => {
       const events: ISemanticEvent[] = [

@@ -57,7 +57,8 @@ describe('payloaded emit (ADR-216)', () => {
   it('`when` still rides after a payload; an emit without `with` has no payload field', () => {
     const gated = compile(`story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 0.0.1
   states: calm, stormy

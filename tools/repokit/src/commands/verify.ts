@@ -43,10 +43,11 @@ export class VerifyCommand implements Command {
       );
       return 1;
     }
-    // ADR-276 D2: a stale stdlib manifest is a build error, never silent drift.
+    // ADR-276 D2 / ADR-310 Phase 3: a stale generated manifest is a build
+    // error, never silent drift.
     if (!checkManifestModule(root)) {
       console.error(
-        'verify: chord/src/stdlib-manifest.ts is STALE against the stdlib action surface — run `repokit manifest` and commit.',
+        'verify: chord/src/stdlib-manifest.ts or character-manifest.ts is STALE against the platform sources — run `repokit manifest` and commit.',
       );
       return 1;
     }

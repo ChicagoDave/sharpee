@@ -1,0 +1,64 @@
+title: The confession goal seeks the player out — only outside conversation
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: ADR-318 Acceptance 3, seek-out leg composed with ADR-310 D16.
+  The confession goal activates at breaking but a conversation in
+  progress suppresses pursuit: while the player keeps asking, the
+  Steward does not move or confess. After the player leaves and the
+  conversation window (4 turns) lapses, he seeks the player out and the
+  confession fires where the player is.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b3-conscience.story
+    stories/character-acceptance/tests/transcripts/b3-seek-out.transcript
+
+---
+
+# Five maintained lies climb to breaking (15..75); the goal is active
+# from the crossing — but every ask keeps the conversation fresh, so
+# pursuit stays suppressed: no confession, no movement
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+[OK: not contains "cannot carry it"]
+
+# Still in conversation at breaking: another ask, still suppressed
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+[OK: not contains "cannot carry it"]
+
+# The player walks away; the conversation window starts lapsing
+> north
+[OK: contains "Hall"]
+
+# Inside the window the Steward holds — quiet turns, no confession
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+> wait
+[OK: not contains "cannot carry it"]
+
+# The window lapses: he has sought the player out — the confession
+# fires in the HALL, where the player is, not where the lies were told
+> wait
+[OK: contains "cannot carry it any longer"]
+
+> look
+[OK: contains "Steward"]

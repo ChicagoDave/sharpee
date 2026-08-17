@@ -1,6 +1,7 @@
 story
   title: Each Package Compile Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: each-package-compile
   story-version: 0.0.1
   description: E1 any / E2 no / E3 each + the match + must-be-any compiling to IR (each package P3).

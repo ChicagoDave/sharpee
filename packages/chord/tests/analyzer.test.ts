@@ -196,7 +196,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.missing-phrase');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     expect(errors[0].message).toContain('nonexistent-key');
     expect(result.ok).toBe(false);
   });
@@ -206,7 +206,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unknown-value');
-    expect(errors[0].span.line).toBe(12);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('did you mean `intact`?');
   });
 
@@ -215,7 +215,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.undeclared-state');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     expect(errors[0].message).toContain('smashed');
     expect(errors[0].message).toContain('message');
   });
@@ -225,7 +225,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     expect(errors[0].message).toContain('brass hook');
     expect(errors[0].message).toContain('iron hook');
     expect(errors[0].message).toContain('rename');
@@ -236,7 +236,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
-    expect(errors[0].span.line).toBe(12);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('move the check above');
   });
 

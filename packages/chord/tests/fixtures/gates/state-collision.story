@@ -1,6 +1,7 @@
 story
   title: Gate: state collision
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-state-collision
   story-version: 0.0.1
 

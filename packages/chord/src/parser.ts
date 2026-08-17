@@ -20,6 +20,7 @@
  * - Every AST node carries a Span.
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
+import { CHARACTER_MANIFEST } from './character-manifest.js';
 import {
   ActionPattern,
   ActionRefusal,
@@ -28,6 +29,8 @@ import {
   DeadlyExitDecl,
   KillStmt,
   ChangeStmt,
+  ChangeMoodStmt,
+  ChangeFeelingStmt,
   CompositionItem,
   ConditionNode,
   ConfigSetting,
@@ -76,6 +79,29 @@ import {
   PhraseEntry,
   PhraseOverride,
   PhraseStmt,
+  DefineFact,
+  DefineTemperament,
+  DefineCode,
+  DefineHonor,
+  DefineWitnessedTopic,
+  ClaimsTagDecl,
+  TemperamentDecl,
+  ForcePairDecl,
+  NeverDecl,
+  ObligationLineDecl,
+  ExceptClauseDecl,
+  ScopeRefDecl,
+  HonorLineDecl,
+  DefineMood,
+  DefinePersonality,
+  DefineProfile,
+  FeelsDecl,
+  GoalDecl,
+  InfluenceDecl,
+  KnowsDecl,
+  ResistsDecl,
+  SpreadsDecl,
+  ThinksDecl,
   Placement,
   Predicate,
   RefuseStmt,
@@ -131,7 +157,8 @@ const ORDINALS: Record<string, number> = {
   sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
 };
 /** Words that terminate a noun phrase in condition/statement positions. */
-const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
+// `feels`/`knows` joined for the ADR-310 D13 interior-state predicates.
+const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 /**
@@ -505,6 +532,10 @@ class Parser {
     }
 
     const fields: StoryFields = { authors: [], testers: [], themes: [] };
+    // Requiredness tracking (ADR-298 amendment 2026-08-15): distinguishes a
+    // missing `authors:` field from one whose form was rejected above, so a
+    // single mistake never earns two diagnostics.
+    let sawAuthors = false;
     const states: StateName[] = [];
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
@@ -742,17 +773,31 @@ class Parser {
         case 'authors':
         case 'testers': {
           const entries: string[] = [];
-          if (rest.length > 0) entries.push(rest);
+          if (key === 'authors') sawAuthors = true;
+          // `authors:` takes no inline value (ADR-298 amendment 2026-08-15):
+          // names live one per indented line. `testers:` keeps both forms.
+          const inlineRejected = key === 'authors' && rest.length > 0;
+          if (inlineRejected) {
+            this.diagnostics.error(
+              'parse.header-inline-list',
+              '`authors:` takes no inline name — list one name per line, indented under `authors:`.',
+              lineSpan(fieldLine),
+            );
+          } else if (rest.length > 0) {
+            entries.push(rest);
+          }
           while (this.pos < this.lines.length && this.lines[this.pos].indent > fieldLine.indent) {
             const entryLine = this.lines[this.pos++];
             span = mergeSpans(span, lineSpan(entryLine));
             const name = entryLine.raw.trim();
             if (name.length > 0) entries.push(name);
           }
-          if (entries.length === 0) {
+          if (entries.length === 0 && !inlineRejected) {
             this.diagnostics.error(
               'parse.header-list-empty',
-              `\`${key}:\` declares no names — list one name per indented line (or one name inline).`,
+              key === 'authors'
+                ? '`authors:` declares no names — list one name per indented line.'
+                : `\`${key}:\` declares no names — list one name per indented line (or one name inline).`,
               lineSpan(fieldLine),
             );
           }
@@ -810,6 +855,13 @@ class Parser {
 
     if (title.length === 0) {
       this.diagnostics.error('parse.story-title', 'The story block requires a `title:` field.', lineSpan(line));
+    }
+    if (!sawAuthors) {
+      this.diagnostics.error(
+        'parse.story-authors',
+        'The story block requires an `authors:` list — one name per line, indented under `authors:`.',
+        lineSpan(line),
+      );
     }
 
     return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
@@ -1102,6 +1154,20 @@ class Parser {
       initialDescription: null,
       phraseOverrides: [],
       onClauses: [],
+      moods: [],
+      feels: [],
+      knows: [],
+      thinks: [],
+      spreads: [],
+      goals: [],
+      influences: [],
+      resists: [],
+      temperaments: [],
+      nevers: [],
+      obligations: [],
+      codes: [],
+      honors: [],
+      burdens: [],
       span: lineSpan(headLine),
     };
 
@@ -1128,6 +1194,117 @@ class Parser {
           this.diagnostics.error('parse.pronouns-word', 'Expected one pronoun-set word after `pronouns` (e.g. `pronouns she`).', lineSpan(line));
         } else {
           decl.pronouns.push({ word: wordTok.text.toLowerCase(), span: lineSpan(line) });
+        }
+      } else if (word === 'mood') {
+        // ADR-310 D3: `mood <word>` — one word; resolution and the
+        // person-only gate are the analyzer's (the pronouns idiom).
+        this.pos++;
+        cur.matchWord('mood');
+        const moodTok = cur.next();
+        if (!moodTok || moodTok.kind !== 'word' || !cur.atEnd()) {
+          this.diagnostics.error('parse.mood-word', 'Expected one mood word after `mood` (e.g. `mood nervous`).', lineSpan(line));
+        } else {
+          decl.moods.push({ word: moodTok.text.toLowerCase(), span: lineSpan(line) });
+        }
+      } else if (word === 'feels') {
+        // ADR-310 D3: `feels <disposition> [toward] <entity>`.
+        this.pos++;
+        cur.matchWord('feels');
+        const f = this.parseFeelsTail(cur, line);
+        if (f) decl.feels.push(f);
+      } else if (word === 'knows') {
+        // ADR-310 D3: `knows <topic>, <source>[, <slot>]…`.
+        this.pos++;
+        cur.matchWord('knows');
+        const k = this.parseKnowsTail(cur, line);
+        if (k) decl.knows.push(k);
+      } else if (word === 'thinks') {
+        // ADR-310 D14: `thinks <fact> is <value>[, <slot>]…`.
+        this.pos++;
+        cur.matchWord('thinks');
+        const t = this.parseThinksTail(cur, line);
+        if (t) decl.thinks.push(t);
+      } else if (word === 'spreads') {
+        // ADR-310 D10: `spreads nothing` / `spreads [<topics>] [chatty] to
+        // <audience>[, except <entities>]`.
+        this.pos++;
+        cur.matchWord('spreads');
+        const s = this.parseSpreadsTail(cur, line);
+        if (s) decl.spreads.push(s);
+      } else if (word === 'goal') {
+        // ADR-310 D8: a named, prioritized step block.
+        const g = this.parseGoalBlock();
+        if (g) decl.goals.push(g);
+      } else if (word === 'influence') {
+        // ADR-310 D9: an author-invented influence with effect lines.
+        const inf = this.parseInfluenceBlock();
+        if (inf) decl.influences.push(inf);
+      } else if (word === 'resists') {
+        // ADR-310 D9: resistance is one line on the target.
+        this.pos++;
+        cur.matchWord('resists');
+        const r = this.parseResistsTail(cur, line);
+        if (r) decl.resists.push(r);
+      } else if (word === 'temperament') {
+        // ADR-318 D3/D7: `temperament <name> [with <pairs>] [while <state>]`
+        // or an inline anonymous ordering `temperament <force> over <force>`.
+        this.pos++;
+        cur.matchWord('temperament');
+        const t = this.parseTemperamentTail(cur, line);
+        if (t) decl.temperaments.push(t);
+      } else if (word === 'never') {
+        // ADR-318 D4: a principle line — raw words to the comma; the
+        // category longest-match and trailing scope are the analyzer's.
+        this.pos++;
+        cur.matchWord('never');
+        const n = this.parseNeverTail(cur, line);
+        if (n) decl.nevers.push(n);
+      } else if (word === 'protects') {
+        // ADR-318 D4/D5: a scoped obligation — compiles to a standing goal.
+        this.pos++;
+        cur.matchWord('protects');
+        const o = this.parseProtectsTail(cur, line);
+        if (o) decl.obligations.push(o);
+      } else if (word === 'answers') {
+        // ADR-318 D4: `answers honestly` — the obligation dual of `lie`.
+        this.pos++;
+        cur.matchWord('answers');
+        if (!cur.matchWord('honestly') || !cur.atEnd()) {
+          this.diagnostics.error('parse.answers-honestly', 'Expected `answers honestly` — the one `answers` obligation.', cur.restSpan());
+        } else {
+          decl.obligations.push({ kind: 'answers-honestly', scope: null, span: lineSpan(line) });
+        }
+      } else if (word === 'honor') {
+        // ADR-318 D7: `honor [<name>] before <scope>[, except <entities>]`.
+        this.pos++;
+        cur.matchWord('honor');
+        const h = this.parseHonorTail(cur, line);
+        if (h) decl.honors.push(h);
+      } else if (word === 'burdened') {
+        // ADR-318 D8: `burdened by <topic>` — pre-story guilt is initial
+        // state; the held-topic check is the analyzer's.
+        this.pos++;
+        cur.matchWord('burdened');
+        if (!cur.matchWord('by')) {
+          this.diagnostics.error('parse.burdened-by', 'Expected `burdened by <topic>` (e.g. `burdened by the accident`).', cur.restSpan());
+        } else {
+          const topic = this.parseNameRef(cur, () => false);
+          if (topic.words.length === 0 || !cur.atEnd()) {
+            this.diagnostics.error('parse.burdened-by', 'Expected one topic after `burdened by` — the topic runs to the end of the line.', cur.restSpan());
+          } else {
+            decl.burdens.push({ topic, span: lineSpan(line) });
+          }
+        }
+      } else if (word === 'code' && line.tokens[1]?.kind === 'word') {
+        // ADR-318 D4: a named principle bundle reference — unions with the
+        // block's bare `never`/obligation lines.
+        this.pos++;
+        cur.matchWord('code');
+        const nameTok = cur.next();
+        if (!nameTok || nameTok.kind !== 'word' || !cur.atEnd()) {
+          this.diagnostics.error('parse.code-ref', 'Expected one code name after `code` (e.g. `code servants-code`).', cur.restSpan());
+        } else {
+          decl.codes.push({ name: nameTok.text.toLowerCase(), span: lineSpan(line) });
         }
       } else if (word === 'states' && (line.tokens[1]?.kind === 'colon' || line.tokens[1]?.kind === 'comma')) {
         this.pos++;
@@ -1305,6 +1482,700 @@ class Parser {
     }
 
     return decl;
+  }
+
+  /**
+   * Tail of a `feels` line (ADR-310 D3): `<disposition> [toward] <entity>`.
+   * The disposition is longest-matched against the character manifest —
+   * two-word dispositions (`devoted to Greta`) followed by a bare proper
+   * name are structurally ambiguous, so this is a real vocabulary branch
+   * (the `starts <state>` precedent), not hint text. An unmatched word
+   * falls back to structural collection (until `toward` or the target's
+   * article) so the analyzer still names the vocabulary on a miss.
+   */
+  private parseFeelsTail(c: Cursor, line: Line): FeelsDecl | null {
+    const dispositionWords: string[] = [];
+    let sawToward = false;
+    const w1 = c.peek();
+    const w2 = c.peek(1);
+    const two = w1?.kind === 'word' && w2?.kind === 'word' ? `${w1.text.toLowerCase()} ${w2.text.toLowerCase()}` : null;
+    if (two !== null && CHARACTER_MANIFEST.dispositions.includes(two)) {
+      c.next();
+      c.next();
+      dispositionWords.push(...two.split(' '));
+    } else if (w1?.kind === 'word' && CHARACTER_MANIFEST.dispositions.includes(w1.text.toLowerCase())) {
+      c.next();
+      dispositionWords.push(w1.text.toLowerCase());
+    } else {
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || t.text === 'toward' || ARTICLES.has(t.text)) break;
+        dispositionWords.push(c.next()!.text.toLowerCase());
+      }
+    }
+    if (c.isWord('toward')) {
+      sawToward = true;
+      c.next();
+    }
+    if (dispositionWords.length === 0) {
+      this.diagnostics.error(
+        'parse.feels-disposition',
+        'Expected a disposition word after `feels` (e.g. `feels wary of the player`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    const target = this.parseNameRef(c, () => false);
+    if (target.words.length === 0) {
+      this.diagnostics.error(
+        'parse.feels-target',
+        sawToward
+          ? 'Expected an entity name after `toward`.'
+          : 'Expected an entity after the disposition — a bare name needs `toward` (`feels neutral toward Tobias`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.feels-trailing', `Unexpected trailing text in the \`feels\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return { disposition: dispositionWords.join(' '), target, span: lineSpan(line) };
+  }
+
+  /**
+   * Tail of a `knows` line (ADR-310 D3): the topic name, then raw one-word
+   * comma slots. Slot classification (source / confidence) is the
+   * analyzer's gate, so slot order stays free.
+   */
+  private parseKnowsTail(c: Cursor, line: Line): KnowsDecl | null {
+    const topic = this.parseNameRef(c, () => false);
+    if (topic.words.length === 0) {
+      this.diagnostics.error(
+        'parse.knows-topic',
+        'Expected a topic after `knows` (e.g. `knows the murder, witnessed`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    const slots = this.parseWordSlots(c, 'knows', ', witnessed');
+    if (slots === null) return null;
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.knows-trailing', `Unexpected trailing text in the \`knows\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return { topic, slots, span: lineSpan(line) };
+  }
+
+  /**
+   * Tail of a `thinks` line (ADR-310 D14): `<fact> is <value>[, <slot>]…`.
+   * Fact and value are raw name refs — resolution against `define fact`
+   * declarations and the closed value set is the analyzer's gate.
+   */
+  private parseThinksTail(c: Cursor, line: Line): ThinksDecl | null {
+    const fact = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'is');
+    if (fact.words.length === 0 || !c.matchWord('is')) {
+      this.diagnostics.error(
+        'parse.thinks-fact',
+        'Expected `thinks <fact> is <value>` (e.g. `thinks the killer is the Butler`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    const value = this.parseNameRef(c, () => false);
+    if (value.words.length === 0) {
+      this.diagnostics.error('parse.thinks-value', 'Expected a value after `is` (one of the fact\'s declared values).', c.restSpan());
+      return null;
+    }
+    const slots = this.parseWordSlots(c, 'thinks', ', suspects, told');
+    if (slots === null) return null;
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.thinks-trailing', `Unexpected trailing text in the \`thinks\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return { fact, value, slots, span: lineSpan(line) };
+  }
+
+  /**
+   * Tail of a `spreads` line (ADR-310 D10). Topic refs collect until the
+   * `chatty` keyword or `to`; `chatty` is optional flavor (the form implies
+   * it); the audience word is raw (analyzer-resolved); `, except` closes
+   * with an entity list.
+   */
+  private parseSpreadsTail(c: Cursor, line: Line): SpreadsDecl | null {
+    if (c.isWord('nothing')) {
+      c.next();
+      if (!c.atEnd()) {
+        this.diagnostics.error('parse.spreads-trailing', `\`spreads nothing\` takes no tail — got \`${c.peek()!.text}\`.`, c.restSpan());
+        return null;
+      }
+      return { mode: 'nothing', span: lineSpan(line) };
+    }
+    const topics: NameRef[] = [];
+    // `mute` stops topic collection too — it is never a topic, only the
+    // retired spelling the tendency check below turns into a fix-it.
+    const stop = (t: Token) => t.kind === 'word' && (t.text === 'chatty' || t.text === 'mute' || t.text === 'to' || t.text === 'and');
+    for (;;) {
+      const ref = this.parseNameRef(c, stop);
+      if (ref.words.length > 0) topics.push(ref);
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        continue;
+      }
+      if (c.isWord('and')) {
+        c.next();
+        continue;
+      }
+      break;
+    }
+    if (!c.matchWord('chatty') && c.isWord('mute')) {
+      this.diagnostics.error('parse.spreads-tendency', '`mute` is spelled `spreads nothing`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('to')) {
+      this.diagnostics.error('parse.spreads-to', 'Expected `to <audience>` in the `spreads` line (e.g. `spreads the murder to anyone`).', c.restSpan());
+      return null;
+    }
+    const audienceTok = c.next();
+    if (!audienceTok || audienceTok.kind !== 'word') {
+      this.diagnostics.error('parse.spreads-audience', 'Expected an audience word after `to` (trusted, anyone, allied).', c.restSpan());
+      return null;
+    }
+    const except: NameRef[] = [];
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('except')) {
+        this.diagnostics.error('parse.spreads-except', 'Expected `except <entities>` after the comma.', c.restSpan());
+        return null;
+      }
+      except.push(...this.parseNameRefList(c, line));
+      if (except.length === 0) {
+        this.diagnostics.error('parse.spreads-except', 'Expected at least one entity after `except`.', c.restSpan());
+        return null;
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.spreads-trailing', `Unexpected trailing text in the \`spreads\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return {
+      mode: 'spreads',
+      topics,
+      audience: { word: audienceTok.text.toLowerCase(), span: audienceTok.span },
+      except,
+      span: lineSpan(line),
+    };
+  }
+
+  /**
+   * A `goal` block (ADR-310 D8): `goal <name>, <priority>`, an optional
+   * `active when` line, and ordered step lines — one verb per line, the
+   * same reading order as the sequence it compiles to.
+   */
+  private parseGoalBlock(): GoalDecl | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('goal');
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error(
+        'parse.goal-name',
+        'Expected a goal name after `goal` (e.g. `goal eliminate-player, critical`).',
+        lineSpan(headLine),
+      );
+      this.skipCharacterBlock('goal', headLine.indent);
+      return null;
+    }
+    let priority: { word: string; span: Span } | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const p = c.next();
+      if (p && p.kind === 'word') priority = { word: p.text.toLowerCase(), span: p.span };
+    }
+    if (!priority || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.goal-priority',
+        'Expected `, <priority>` on the goal header (critical, high, medium, low).',
+        lineSpan(headLine),
+      );
+      priority = null;
+    }
+    const decl: GoalDecl = {
+      kind: 'goal',
+      name: nameTok.text.toLowerCase(),
+      priority,
+      activeWhen: null,
+      steps: [],
+      span: lineSpan(headLine),
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('goal', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent <= headLine.indent) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      this.parseGoalBodyLine(lc, line, decl);
+    }
+    this.diagnostics.error('parse.goal-end', 'Expected `end goal` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** One goal body line — `active when`, or one of the eight step verbs. */
+  private parseGoalBodyLine(lc: Cursor, line: Line, decl: GoalDecl): void {
+    const word = firstWord(line);
+    const stepError = (message: string): void => {
+      this.diagnostics.error('parse.goal-step', message, lineSpan(line));
+    };
+    if (word === 'active' && lc.isWord('when', 1)) {
+      lc.next();
+      lc.next();
+      if (decl.activeWhen) {
+        this.diagnostics.error('parse.goal-active-duplicate', 'This goal already has an `active when` line.', lineSpan(line));
+        return;
+      }
+      decl.activeWhen = this.parseCondition(lc, line);
+      return;
+    }
+    if (word === 'seek') {
+      lc.next();
+      const target = this.parseNameRef(lc, (t) => t.kind === 'word' && t.text === 'in');
+      if (target.words.length === 0) return stepError('Expected a target after `seek` (e.g. `seek the knife in the Kitchen`).');
+      let inRef: NameRef | null = null;
+      if (lc.matchWord('in')) {
+        inRef = this.parseNameRef(lc, () => false);
+        if (inRef.words.length === 0) return stepError('Expected a place after `in`.');
+      }
+      decl.steps.push({ kind: 'seek', target, in: inRef, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'acquire') {
+      lc.next();
+      const target = this.parseNameRef(lc, () => false);
+      if (target.words.length === 0) return stepError('Expected a target after `acquire`.');
+      decl.steps.push({ kind: 'acquire', target, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'wait' && lc.isWord('for', 1)) {
+      lc.next();
+      lc.next();
+      decl.steps.push({ kind: 'wait-for', condition: this.parseCondition(lc, line), span: lineSpan(line) });
+      return;
+    }
+    if (word === 'move' && lc.isWord('to', 1)) {
+      lc.next();
+      lc.next();
+      const target = this.parseNameRef(lc, () => false);
+      if (target.words.length === 0) return stepError('Expected a place after `move to`.');
+      decl.steps.push({ kind: 'move-to', target, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'act') {
+      lc.next();
+      const key = lc.next();
+      if (!key || key.kind !== 'word' || !lc.atEnd()) return stepError('Expected one phrase key after `act` (e.g. `act mustard-attacks-player`).');
+      decl.steps.push({ kind: 'act', phraseKey: key.text, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'say') {
+      lc.next();
+      const key = lc.next();
+      if (!key || key.kind !== 'word') return stepError('Expected a phrase key after `say`.');
+      let target: NameRef | null = null;
+      if (lc.matchWord('to')) {
+        target = this.parseNameRef(lc, () => false);
+        if (target.words.length === 0) return stepError('Expected an entity after `to`.');
+      }
+      if (!lc.atEnd()) return stepError(`Unexpected trailing text in the \`say\` step: \`${lc.peek()!.text}\`.`);
+      decl.steps.push({ kind: 'say', phraseKey: key.text, target, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'give') {
+      lc.next();
+      const item = this.parseNameRef(lc, (t) => t.kind === 'word' && t.text === 'to');
+      if (item.words.length === 0 || !lc.matchWord('to')) return stepError('Expected `give <item> to <entity>`.');
+      const target = this.parseNameRef(lc, () => false);
+      if (target.words.length === 0) return stepError('Expected an entity after `to`.');
+      decl.steps.push({ kind: 'give', item, target, span: lineSpan(line) });
+      return;
+    }
+    if (word === 'drop') {
+      lc.next();
+      const item = this.parseNameRef(lc, (t) => t.kind === 'word' && t.text === 'in');
+      if (item.words.length === 0) return stepError('Expected an item after `drop`.');
+      let inRef: NameRef | null = null;
+      if (lc.matchWord('in')) {
+        inRef = this.parseNameRef(lc, () => false);
+        if (inRef.words.length === 0) return stepError('Expected a place after `in`.');
+      }
+      decl.steps.push({ kind: 'drop', item, in: inRef, span: lineSpan(line) });
+      return;
+    }
+    stepError(
+      `Unrecognized goal line: \`${line.raw.trim()}\` — expected \`active when\`, seek, acquire, wait for, move to, act, say, give, or drop.`,
+    );
+  }
+
+  /**
+   * An `influence` block (ADR-310 D9): `influence <name>, <mode>, <range>`
+   * with effect lines — `clouds focus`, `makes <axis> <word>`, and
+   * `phrase <key> on witnessed|resisted|expired`. Slot classification is
+   * the analyzer's gate.
+   */
+  private parseInfluenceBlock(): InfluenceDecl | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('influence');
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error(
+        'parse.influence-name',
+        'Expected an influence name after `influence` (e.g. `influence seduction, passive, proximity`).',
+        lineSpan(headLine),
+      );
+      this.skipCharacterBlock('influence', headLine.indent);
+      return null;
+    }
+    const slots = this.parseWordSlots(c, 'influence', ', passive, proximity') ?? [];
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.influence-header', `Unexpected trailing text in the \`influence\` header: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    const decl: InfluenceDecl = {
+      kind: 'influence',
+      name: nameTok.text.toLowerCase(),
+      slots,
+      effects: [],
+      span: lineSpan(headLine),
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('influence', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent <= headLine.indent) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      if (word === 'clouds' && lc.isWord('focus', 1)) {
+        decl.effects.push({ kind: 'clouds-focus', span: lineSpan(line) });
+        continue;
+      }
+      if (word === 'makes') {
+        lc.next();
+        const axis = lc.next();
+        const value = lc.next();
+        if (!axis || axis.kind !== 'word' || !value || value.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.influence-effect', 'Expected `makes <axis> <word>` (e.g. `makes mood distracted`).', lineSpan(line));
+          continue;
+        }
+        decl.effects.push({ kind: 'makes', axis: axis.text.toLowerCase(), value: value.text.toLowerCase(), span: lineSpan(line) });
+        continue;
+      }
+      if (word === 'phrase') {
+        lc.next();
+        const key = lc.next();
+        if (!key || key.kind !== 'word' || !lc.matchWord('on')) {
+          this.diagnostics.error('parse.influence-phrase', 'Expected `phrase <key> on witnessed|resisted|expired`.', lineSpan(line));
+          continue;
+        }
+        const on = lc.next();
+        if (!on || on.kind !== 'word' || (on.text !== 'witnessed' && on.text !== 'resisted' && on.text !== 'expired') || !lc.atEnd()) {
+          this.diagnostics.error('parse.influence-phrase', 'Expected `on witnessed`, `on resisted`, or `on expired` after the phrase key.', lineSpan(line));
+          continue;
+        }
+        decl.effects.push({ kind: 'phrase', key: key.text, on: on.text as 'witnessed' | 'resisted' | 'expired', span: lineSpan(line) });
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.influence-line',
+        `Unrecognized influence line: \`${line.raw.trim()}\` — expected \`clouds focus\`, \`makes <axis> <word>\`, or \`phrase <key> on witnessed|resisted|expired\`.`,
+        lineSpan(line),
+      );
+    }
+    this.diagnostics.error('parse.influence-end', 'Expected `end influence` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** Tail of a `resists` line (ADR-310 D9): `<influence>[, except from <ref>]`. */
+  private parseResistsTail(c: Cursor, line: Line): ResistsDecl | null {
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.resists-name', 'Expected an influence name after `resists` (e.g. `resists seduction`).', c.restSpan());
+      return null;
+    }
+    let exceptFrom: NameRef | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('except') || !c.matchWord('from')) {
+        this.diagnostics.error(
+          'parse.resists-except',
+          'Expected `except from <someone>` after the comma (e.g. `resists seduction, except from a woman`).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      exceptFrom = this.parseNameRef(c, () => false);
+      if (exceptFrom.words.length === 0) {
+        this.diagnostics.error('parse.resists-except', 'Expected a name or classifier after `except from`.', c.restSpan());
+        return null;
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.resists-trailing', `Unexpected trailing text in the \`resists\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return { influence: nameTok.text.toLowerCase(), exceptFrom, span: lineSpan(line) };
+  }
+
+  /**
+   * The tail of a `temperament` create-line (ADR-318 D3/D7). Structural
+   * dispatch (one-token lookahead, the `starts` precedent): `temperament X
+   * over …` is an inline anonymous ordering; anything else is a name, with
+   * optional `with <pair> [and <pair>]…` overrides. Both forms take an
+   * optional trailing `while <state>` binding.
+   */
+  private parseTemperamentTail(c: Cursor, line: Line): TemperamentDecl | null {
+    let name: string | null = null;
+    const pairs: ForcePairDecl[] = [];
+    if (c.isWord('over', 1)) {
+      const p = this.parseForcePair(c, line);
+      if (!p) return null;
+      pairs.push(p);
+      while (c.matchWord('and')) {
+        const q = this.parseForcePair(c, line);
+        if (!q) return null;
+        pairs.push(q);
+      }
+    } else {
+      const nameTok = c.next();
+      if (!nameTok || nameTok.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.temperament-line',
+          'Expected a temperament name or `<force> over <force>` after `temperament` (e.g. `temperament steadfast`, `temperament honor over fear`).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      name = nameTok.text.toLowerCase();
+      if (c.matchWord('with')) {
+        do {
+          const q = this.parseForcePair(c, line);
+          if (!q) return null;
+          pairs.push(q);
+        } while (c.matchWord('and'));
+      }
+    }
+    let whileState: { word: string; span: Span } | null = null;
+    if (c.matchWord('while')) {
+      const st = c.next();
+      if (!st || st.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.temperament-while',
+          'Expected one state word after `while` (e.g. `temperament steadfast while resolute`).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      whileState = { word: st.text.toLowerCase(), span: st.span };
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error(
+        'parse.temperament-line',
+        `Unexpected \`${c.peek()!.text}\` in the \`temperament\` line — expected \`and <force> over <force>\`, \`while <state>\`, or end of line.`,
+        c.restSpan(),
+      );
+      return null;
+    }
+    return { name, pairs, while: whileState, span: lineSpan(line) };
+  }
+
+  /** One `<force> over <force>` pair — structure only; force words resolve in the analyzer. */
+  private parseForcePair(c: Cursor, line: Line): ForcePairDecl | null {
+    const first = c.next();
+    const over = c.next();
+    const second = c.next();
+    if (
+      !first || first.kind !== 'word' ||
+      !over || over.kind !== 'word' || over.text !== 'over' ||
+      !second || second.kind !== 'word'
+    ) {
+      this.diagnostics.error(
+        'parse.temperament-pair',
+        'Expected `<force> over <force>` (e.g. `duty over fear`).',
+        (first ?? over ?? second)?.span ?? lineSpan(line),
+      );
+      return null;
+    }
+    return {
+      first: { word: first.text.toLowerCase(), span: first.span },
+      second: { word: second.text.toLowerCase(), span: second.span },
+      span: mergeSpans(first.span, second.span),
+    };
+  }
+
+  /**
+   * The tail of a `never` principle line (ADR-318 D4). Pre-comma words are
+   * collected raw (the parser stays vocabulary-free — category and scope
+   * split in the analyzer); the comma slot is `except [to protect] <scope>`.
+   */
+  private parseNeverTail(c: Cursor, line: Line): NeverDecl | null {
+    const words: Array<{ word: string; span: Span }> = [];
+    while (c.peek()?.kind === 'word') {
+      const t = c.next()!;
+      words.push({ word: t.text.toLowerCase(), span: t.span });
+    }
+    if (words.length === 0) {
+      this.diagnostics.error('parse.never-category', 'Expected an act category after `never` (e.g. `never lies`).', c.restSpan());
+      return null;
+    }
+    let except: ExceptClauseDecl | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const exceptTok = c.matchWord('except');
+      if (!exceptTok) {
+        this.diagnostics.error(
+          'parse.never-except',
+          'Expected `except [to protect] <scope>` after the comma (e.g. `never lies, except to protect the children`).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      let protect = false;
+      if (c.isWord('to') && c.isWord('protect', 1)) {
+        c.next();
+        c.next();
+        protect = true;
+      }
+      const scope = this.parseScopeRef(c, 'never-except');
+      if (!scope) return null;
+      const scopeSpan = scope.kind === 'anyone' ? scope.span : scope.ref.span;
+      except = { protect, scope, span: mergeSpans(exceptTok.span, scopeSpan) };
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.never-trailing', `Unexpected trailing text in the \`never\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+      return null;
+    }
+    return { words, except, span: lineSpan(line) };
+  }
+
+  /** The tail of a `protects` obligation line (ADR-318 D4/D5): one scope, nothing after. */
+  private parseProtectsTail(c: Cursor, line: Line): ObligationLineDecl | null {
+    const scope = this.parseScopeRef(c, 'protects');
+    if (!scope) return null;
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.protects-trailing', `Unexpected trailing text in the \`protects\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+      return null;
+    }
+    return { kind: 'protects', scope, span: lineSpan(line) };
+  }
+
+  /**
+   * The tail of an `honor` line (ADR-318 D7). Structural dispatch: a word
+   * before `before` is a `define honor` bundle name; the scope reuses the
+   * D9/D10 grammar and `except` lists entities (the spreads idiom).
+   */
+  private parseHonorTail(c: Cursor, line: Line): HonorLineDecl | null {
+    let name: string | null = null;
+    if (!c.isWord('before')) {
+      const nameTok = c.next();
+      if (!nameTok || nameTok.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.honor-line',
+          'Expected `honor before <scope>` or `honor <name> before <scope>` (e.g. `honor before the regiment`).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      name = nameTok.text.toLowerCase();
+    }
+    if (!c.matchWord('before')) {
+      this.diagnostics.error('parse.honor-before', 'Expected `before <scope>` in the `honor` line (e.g. `honor before the regiment`).', c.restSpan());
+      return null;
+    }
+    const scope = this.parseScopeRef(c, 'honor');
+    if (!scope) return null;
+    const except: NameRef[] = [];
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('except')) {
+        this.diagnostics.error('parse.honor-except', 'Expected `except <entities>` after the comma (e.g. `honor before anyone, except the Duke`).', c.restSpan());
+        return null;
+      }
+      except.push(...this.parseNameRefList(c, line));
+      if (except.length === 0) {
+        this.diagnostics.error('parse.honor-except', 'Expected at least one entity after `except`.', c.restSpan());
+        return null;
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.honor-line', `Unexpected trailing text in the \`honor\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+      return null;
+    }
+    return { name, scope, except, span: lineSpan(line) };
+  }
+
+  /** One scope reference (ADR-310 D9/D10 grammar): `anyone`, a kind, or an entity. */
+  private parseScopeRef(c: Cursor, context: string): ScopeRefDecl | null {
+    if (c.isWord('anyone')) {
+      const t = c.next()!;
+      return { kind: 'anyone', span: t.span };
+    }
+    const ref = this.parseNameRef(c, () => false);
+    if (ref.words.length === 0) {
+      this.diagnostics.error(
+        `parse.${context}-scope`,
+        'Expected a scope — `anyone`, a kind (`a servant`), or an entity (`the children`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    return { kind: 'ref', ref };
+  }
+
+  /** Error recovery for a character block with an unusable header: skip to `end <word>` or dedent. */
+  private skipCharacterBlock(endWord: string, headIndent: number): void {
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const lc = new Cursor(line.tokens, line);
+      if (firstWord(line) === 'end' && lc.isWord(endWord, 1)) {
+        this.pos++;
+        return;
+      }
+      if (line.indent <= headIndent && !looksLikeComment(line)) return;
+      this.pos++;
+    }
+  }
+
+  /** Raw one-word comma slots shared by `knows` and `thinks` lines. */
+  private parseWordSlots(c: Cursor, construct: string, example: string): Array<{ word: string; span: Span }> | null {
+    const slots: Array<{ word: string; span: Span }> = [];
+    while (c.peek()?.kind === 'comma') {
+      c.next();
+      const slot = c.next();
+      if (!slot || slot.kind !== 'word') {
+        this.diagnostics.error(
+          `parse.${construct}-slot`,
+          `Expected a word after the comma in a \`${construct}\` line (e.g. \`${example}\`).`,
+          c.restSpan(),
+        );
+        return null;
+      }
+      slots.push({ word: slot.text.toLowerCase(), span: slot.span });
+    }
+    return slots;
   }
 
   private finishPlacement(relation: Placement['relation'], c: Cursor, line: Line): Placement {
@@ -1913,9 +2784,33 @@ class Parser {
       case 'channel':
         // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
         return this.parseDefineChannel();
+      case 'fact':
+        // ADR-310 D14 — a closed value set for valued beliefs.
+        return this.parseDefineFact();
+      case 'temperament':
+        // ADR-318 D3 — a named force ordering.
+        return this.parseDefineTemperament();
+      case 'code':
+        // ADR-318 D4 — a named principle bundle.
+        return this.parseDefineCode();
+      case 'honor':
+        // ADR-318 D7 — a named selective face-act bundle.
+        return this.parseDefineHonor();
+      case 'profile':
+        // ADR-310 D4 — a named cognitive profile.
+        return this.parseDefineProfile();
+      case 'mood':
+        // ADR-310 D5 (Option 2) — a custom mood anchored at a platform mood.
+        return this.parseDefineMood();
+      case 'personality':
+        // ADR-310 D5 — a custom personality adjective.
+        return this.parseDefinePersonality();
       case 'topics':
         // ADR-239 D3 (as amended) — the ask/tell topic table block.
         return this.parseDefineTopics();
+      case 'topic':
+        // ADR-318 D12a — a witnessed-act topic alias, one line.
+        return this.parseDefineWitnessedTopic();
       case 'pronouns':
         // ADR-242 D7 (ruled Q-1) — named pronoun set, five named rows.
         return this.parseDefinePronouns();
@@ -1975,10 +2870,11 @@ class Parser {
     c: Cursor,
     headLine: Line,
     endWord: string,
-  ): { strategy: string | null; verbatim: boolean; condition: ConditionNode | null; variants: TextValue[]; span: Span } {
+  ): { strategy: string | null; verbatim: boolean; claims: ClaimsTagDecl | null; condition: ConditionNode | null; variants: TextValue[]; span: Span } {
     let strategy: string | null = null;
     let verbatim = false;
-    if (c.peek()?.kind === 'comma') {
+    let claims: ClaimsTagDecl | null = null;
+    while (c.peek()?.kind === 'comma') {
       c.next();
       const s = c.next();
       if (s && s.kind === 'word' && STRATEGIES.has(s.text)) {
@@ -1992,8 +2888,30 @@ class Parser {
         );
       } else if (s && s.kind === 'word' && s.text === 'verbatim') {
         verbatim = true; // grammar log 2026-07-10: whitespace-preserving text
+      } else if (s && s.kind === 'word' && s.text === 'claims' && endWord === 'phrase') {
+        // ADR-318 D9: `claims <fact> is <value>` — the lie-ledger tag on a
+        // story phrase (never on an ACL override). Fact and value resolve
+        // against `define fact` in the analyzer.
+        if (claims !== null) {
+          this.diagnostics.error('parse.phrase-claims', 'This phrase already carries a `claims` tag — one assertion per line (ADR-318 D9).', s.span);
+        }
+        const fact = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'is');
+        if (fact.words.length === 0 || !c.matchWord('is')) {
+          this.diagnostics.error('parse.phrase-claims', 'Expected `claims <fact> is <value>` (e.g. `claims the killer is nobody`).', c.restSpan());
+        } else {
+          const value = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'while');
+          if (value.words.length === 0) {
+            this.diagnostics.error('parse.phrase-claims', 'Expected a value after `is` (e.g. `claims the killer is nobody`).', c.restSpan());
+          } else {
+            claims = { fact, value, span: mergeSpans(s.span, value.span) };
+          }
+        }
       } else {
-        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, stopping, sticky, first-time) or `verbatim` after the comma.', s?.span ?? c.restSpan());
+        this.diagnostics.error(
+          'parse.phrase-strategy',
+          `Expected a strategy (randomly, cycling, stopping, sticky, first-time)${endWord === 'phrase' ? ', `verbatim`, or `claims <fact> is <value>`' : ' or `verbatim`'} after the comma.`,
+          s?.span ?? c.restSpan(),
+        );
       }
     }
 
@@ -2059,7 +2977,7 @@ class Parser {
       span = mergeSpans(span, variant.span);
     }
 
-    return { strategy, verbatim, condition, variants, span };
+    return { strategy, verbatim, claims, condition, variants, span };
   }
 
   /**
@@ -3629,6 +4547,413 @@ class Parser {
    * duplicates, and standard-word shadowing are the analyzer's gates
    * (the parseDefineChannel split: parser collects, analyzer validates).
    */
+  /**
+   * `define fact <name> … end fact` (ADR-310 D14). Body lines list the
+   * closed value set — comma-separated entity names or bare words
+   * (`the Colonel, the Butler, nobody`), additive across lines. Value
+   * resolution (entity vs literal word) is the analyzer's gate.
+   */
+  private parseDefineFact(): DefineFact | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define fact
+    const name = this.parseNameRef(c, () => false);
+    if (name.words.length === 0 || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.fact-name',
+        'Expected a fact name after `define fact` (e.g. `define fact the killer`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    const decl: DefineFact = { kind: 'define-fact', name, values: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('fact', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const values = this.parseNameRefList(lc, line);
+      if (values.length === 0) {
+        this.diagnostics.error(
+          'parse.fact-values',
+          `Expected fact values on this line (e.g. \`the Colonel, the Butler, nobody\`).`,
+          lineSpan(line),
+        );
+      }
+      decl.values.push(...values);
+    }
+    this.diagnostics.error('parse.fact-end', 'Expected `end fact` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define temperament <name> … end temperament` (ADR-318 D3). Body lines
+   * are `<force> over <force>` pairs, one per line; force resolution and
+   * pair-conflict checks are the analyzer's.
+   */
+  private parseDefineTemperament(): DefineTemperament | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define temperament
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.temperament-name',
+        'Expected one temperament name after `define temperament` (e.g. `define temperament steadfast`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    const decl: DefineTemperament = { kind: 'define-temperament', name: nameTok.text.toLowerCase(), pairs: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('temperament', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.pairs.length === 0) {
+          this.diagnostics.error(
+            'parse.temperament-empty',
+            'This `define temperament` block declares no orderings — add `<force> over <force>` lines, or remove the block.',
+            decl.span,
+          );
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const pair = this.parseForcePair(lc, line);
+      if (pair) {
+        if (!lc.atEnd()) {
+          this.diagnostics.error(
+            'parse.temperament-pair',
+            `Unexpected \`${lc.peek()!.text}\` — one \`<force> over <force>\` ordering per line.`,
+            lc.restSpan(),
+          );
+        } else {
+          decl.pairs.push(pair);
+        }
+      }
+    }
+    this.diagnostics.error('parse.temperament-end', 'Expected `end temperament` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define code <name> … end code` (ADR-318 D4). Body lines are `never …`
+   * and obligation lines; anything else is refused by name.
+   */
+  private parseDefineCode(): DefineCode | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define code
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.code-name',
+        'Expected one code name after `define code` (e.g. `define code servants-code`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    const decl: DefineCode = { kind: 'define-code', name: nameTok.text.toLowerCase(), nevers: [], obligations: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('code', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.nevers.length === 0 && decl.obligations.length === 0) {
+          this.diagnostics.error(
+            'parse.code-empty',
+            'This `define code` block declares no lines — add `never …` / `protects …` / `answers honestly` lines, or remove the block.',
+            decl.span,
+          );
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      if (word === 'never') {
+        lc.next();
+        const n = this.parseNeverTail(lc, line);
+        if (n) decl.nevers.push(n);
+      } else if (word === 'protects') {
+        lc.next();
+        const o = this.parseProtectsTail(lc, line);
+        if (o) decl.obligations.push(o);
+      } else if (word === 'answers') {
+        lc.next();
+        if (!lc.matchWord('honestly') || !lc.atEnd()) {
+          this.diagnostics.error('parse.answers-honestly', 'Expected `answers honestly` — the one `answers` obligation.', lc.restSpan());
+        } else {
+          decl.obligations.push({ kind: 'answers-honestly', scope: null, span: lineSpan(line) });
+        }
+      } else {
+        this.diagnostics.error(
+          'parse.code-line',
+          `Unrecognized line in \`define code\`: \`${line.raw.trim()}\` — expected \`never …\`, \`protects …\`, or \`answers honestly\`.`,
+          lineSpan(line),
+        );
+      }
+    }
+    this.diagnostics.error('parse.code-end', 'Expected `end code` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define topic <actor> <act> as <alias>` (ADR-318 D12a) — one line, no
+   * body. Words before `as` are raw; the actor/act split is the analyzer's.
+   */
+  private parseDefineWitnessedTopic(): DefineWitnessedTopic | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define topic
+    const words: Array<{ word: string; span: Span }> = [];
+    while (c.peek()?.kind === 'word' && !(c.isWord('as') && words.length > 0)) {
+      const t = c.next()!;
+      words.push({ word: t.text.toLowerCase(), span: t.span });
+    }
+    const asTok = c.matchWord('as');
+    const aliasTok = c.next();
+    if (words.length < 2 || !asTok || !aliasTok || aliasTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.topic-alias',
+        'Expected `define topic <actor> <act> as <alias>` (e.g. `define topic the Colonel backs down as the-colonels-shame`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    return { kind: 'define-witnessed-topic', words, alias: aliasTok.text.toLowerCase(), span: lineSpan(headLine) };
+  }
+
+  /**
+   * `define honor <name> … end honor` (ADR-318 D7). Body lines are one
+   * face-act each, raw words — resolution is the analyzer's.
+   */
+  private parseDefineHonor(): DefineHonor | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define honor
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.honor-name',
+        'Expected one bundle name after `define honor` (e.g. `define honor soldiers-honor`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    const decl: DefineHonor = { kind: 'define-honor', name: nameTok.text.toLowerCase(), faceActs: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('honor', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.faceActs.length === 0) {
+          this.diagnostics.error(
+            'parse.honor-empty',
+            'This `define honor` block declares no face-acts — add one per line (e.g. `backs down`), or remove the block.',
+            decl.span,
+          );
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const words: Array<{ word: string; span: Span }> = [];
+      while (lc.peek()?.kind === 'word') {
+        const t = lc.next()!;
+        words.push({ word: t.text.toLowerCase(), span: t.span });
+      }
+      if (words.length === 0 || !lc.atEnd()) {
+        this.diagnostics.error(
+          'parse.honor-face-act',
+          `Expected one face-act per line (e.g. \`backs down\`), got \`${line.raw.trim()}\`.`,
+          lineSpan(line),
+        );
+        continue;
+      }
+      decl.faceActs.push({ words, span: lineSpan(line) });
+    }
+    this.diagnostics.error('parse.honor-end', 'Expected `end honor` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define profile <name> … end profile` (ADR-310 D4). Body rows are
+   * `<dimension> <value>` — two words; dimension/value resolution and
+   * compile-time completion (unstated dimensions from `clear-headed`) are
+   * the analyzer's.
+   */
+  private parseDefineProfile(): DefineProfile | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define profile
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.profile-name',
+        'Expected a profile name after `define profile` (e.g. `define profile hollowed`).',
+        lineSpan(headLine),
+      );
+      return null;
+    }
+    const decl: DefineProfile = {
+      kind: 'define-profile',
+      name: nameTok.text.toLowerCase(),
+      rows: [],
+      span: lineSpan(headLine),
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('profile', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const dimTok = lc.next();
+      const valueTok = lc.next();
+      if (!dimTok || dimTok.kind !== 'word' || !valueTok || valueTok.kind !== 'word' || !lc.atEnd()) {
+        this.diagnostics.error(
+          'parse.profile-row',
+          `Expected \`<dimension> <value>\` (e.g. \`coherence drifting\`), got \`${line.raw.trim()}\`.`,
+          lineSpan(line),
+        );
+        continue;
+      }
+      decl.rows.push({ dimension: dimTok.text.toLowerCase(), value: valueTok.text.toLowerCase(), span: lineSpan(line) });
+    }
+    this.diagnostics.error('parse.profile-end', 'Expected `end profile` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define mood <name> like <mood>[, but <modifier>]` (ADR-310 D5,
+   * Option 2). One line, no body. Word resolution (platform anchor, closed
+   * modifier set) is the analyzer's gate.
+   */
+  private parseDefineMood(): DefineMood | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define mood
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error(
+        'parse.define-mood-name',
+        'Expected a mood name after `define mood` (e.g. `define mood haunted like grieving`).',
+        lineSpan(line),
+      );
+      return null;
+    }
+    if (!c.matchWord('like')) {
+      this.diagnostics.error(
+        'parse.define-mood-like',
+        'Expected `like <mood>` — a custom mood anchors at a platform mood (e.g. `define mood haunted like grieving, but restless`).',
+        c.restSpan(),
+      );
+      return null;
+    }
+    const likeTok = c.next();
+    if (!likeTok || likeTok.kind !== 'word') {
+      this.diagnostics.error('parse.define-mood-like', 'Expected a platform mood word after `like`.', c.restSpan());
+      return null;
+    }
+    let but: { word: string; span: Span } | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const butTok = c.matchWord('but') ? c.next() : null;
+      if (!butTok || butTok.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.define-mood-but',
+          'Expected `but <modifier>` after the comma (restless, stiller, darker, brighter).',
+          c.restSpan(),
+        );
+        return null;
+      }
+      but = { word: butTok.text.toLowerCase(), span: butTok.span };
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.define-mood-trailing', `Unexpected trailing text in the \`define mood\` line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return {
+      kind: 'define-mood',
+      name: nameTok.text.toLowerCase(),
+      like: { word: likeTok.text.toLowerCase(), span: likeTok.span },
+      but,
+      span: lineSpan(line),
+    };
+  }
+
+  /** `define personality <name>` (ADR-310 D5) — one line, no body. */
+  private parseDefinePersonality(): DefinePersonality | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define personality
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error(
+        'parse.define-personality',
+        'Expected one adjective after `define personality` (e.g. `define personality watchful`).',
+        lineSpan(line),
+      );
+      return null;
+    }
+    return { kind: 'define-personality', name: nameTok.text.toLowerCase(), span: lineSpan(line) };
+  }
+
   private parseDefinePronouns(): DefinePronouns | null {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
@@ -4191,6 +5516,49 @@ class Parser {
       case 'change': {
         this.pos++;
         c.next();
+        // ADR-310 D3: `change mood to <word>` and `change feeling toward
+        // <entity> to <disposition>` — the same verb Chord uses for states,
+        // extended to the two mutable character axes. The subject is the
+        // clause's `it`; word resolution is the analyzer's gate.
+        if (c.isWord('mood') && c.isWord('to', 1)) {
+          c.next();
+          c.next();
+          const moodTok = c.next();
+          if (!moodTok || moodTok.kind !== 'word') {
+            this.diagnostics.error('parse.change-mood', 'Expected a mood word after `change mood to`.', c.restSpan());
+            return null;
+          }
+          const stmtWhen = this.parseStatementWhen(c, line);
+          return { kind: 'change-mood', mood: moodTok.text.toLowerCase(), stmtWhen, span: lineSpan(line) } as ChangeMoodStmt;
+        }
+        if (c.isWord('feeling')) {
+          c.next();
+          if (!c.matchWord('toward')) {
+            this.diagnostics.error('parse.change-feeling', 'Expected `toward <entity>` in the `change feeling` statement.', c.restSpan());
+            return null;
+          }
+          const target = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
+          if (target.words.length === 0 || !c.matchWord('to')) {
+            this.diagnostics.error('parse.change-feeling', 'Expected `change feeling toward <entity> to <disposition>`.', c.restSpan());
+            return null;
+          }
+          const dispositionWords: string[] = [];
+          while (!c.atEnd() && c.peek()!.kind === 'word' && c.peek()!.text !== 'when') {
+            dispositionWords.push(c.next()!.text.toLowerCase());
+          }
+          if (dispositionWords.length === 0) {
+            this.diagnostics.error('parse.change-feeling', 'Expected a disposition word after `to` (e.g. `to wary of`).', c.restSpan());
+            return null;
+          }
+          const stmtWhen = this.parseStatementWhen(c, line);
+          return {
+            kind: 'change-feeling',
+            target,
+            disposition: dispositionWords.join(' '),
+            stmtWhen,
+            span: lineSpan(line),
+          } as ChangeFeelingStmt;
+        }
         const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
         if (!c.matchWord('to')) {
           this.diagnostics.error('parse.change-to', 'Expected `to <state>` in the `change` statement.', c.restSpan());
@@ -4888,6 +6256,63 @@ class Parser {
       };
     }
 
+    if (t.text === 'feels') {
+      // ADR-310 D13: `<subject> feels <disposition> toward <entity>` — the
+      // same longest-match rule as the create-block `feels` line (two-word
+      // dispositions before a bare proper-name target need the vocabulary).
+      c.next();
+      const dispositionWords: string[] = [];
+      const w1 = c.peek();
+      const w2 = c.peek(1);
+      const two = w1?.kind === 'word' && w2?.kind === 'word' ? `${w1.text.toLowerCase()} ${w2.text.toLowerCase()}` : null;
+      if (two !== null && CHARACTER_MANIFEST.dispositions.includes(two)) {
+        c.next();
+        c.next();
+        dispositionWords.push(...two.split(' '));
+      } else if (w1?.kind === 'word' && CHARACTER_MANIFEST.dispositions.includes(w1.text.toLowerCase())) {
+        c.next();
+        dispositionWords.push(w1.text.toLowerCase());
+      } else {
+        while (!c.atEnd()) {
+          const tok = c.peek()!;
+          if (tok.kind !== 'word' || tok.text === 'toward' || ARTICLES.has(tok.text)) break;
+          dispositionWords.push(c.next()!.text.toLowerCase());
+        }
+      }
+      c.matchWord('toward');
+      const target = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+      if (dispositionWords.length === 0 || target.words.length === 0) {
+        this.diagnostics.error(
+          'parse.feels-predicate',
+          'Expected `feels <disposition> toward <entity>` (e.g. `it feels trusts toward the player`).',
+          c.restSpan(),
+        );
+        return { kind: 'condition-ref', name: 'feels', span: t.span };
+      }
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'feels', disposition: dispositionWords.join(' '), target, span: mergeSpans(t.span, target.span) },
+        span: mergeSpans(subject.span, target.span),
+      };
+    }
+
+    if (t.text === 'knows') {
+      // ADR-310 D13: `<subject> knows <topic>` — a held-topic test.
+      c.next();
+      const topic = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+      if (topic.words.length === 0) {
+        this.diagnostics.error('parse.knows-predicate', 'Expected a topic after `knows` (e.g. `it knows the murder`).', c.restSpan());
+        return { kind: 'condition-ref', name: 'knows', span: t.span };
+      }
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'knows', topic, span: mergeSpans(t.span, topic.span) },
+        span: mergeSpans(subject.span, topic.span),
+      };
+    }
+
     if (t.text === 'can') {
       // `can see <thing>` / `can reach <thing>` (design.md §2.7, Phase B).
       c.next();
@@ -4905,7 +6330,7 @@ class Parser {
       };
     }
 
-    this.diagnostics.error('parse.predicate', `Unknown predicate \`${t.text}\` — expected is, is a, is in, has, holds, wears, or can see/reach.`, t.span);
+    this.diagnostics.error('parse.predicate', `Unknown predicate \`${t.text}\` — expected is, is a, is in, has, holds, wears, feels, knows, or can see/reach.`, t.span);
     c.next();
     return { kind: 'condition-ref', name: t.text, span: t.span };
   }

@@ -1,6 +1,7 @@
 story
   title: Nautical
-  authors: Sharpee Tests
+  authors:
+    Sharpee Tests
   id: nautical
   story-version: 0.0.1
 

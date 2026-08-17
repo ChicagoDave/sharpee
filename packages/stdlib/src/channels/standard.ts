@@ -31,6 +31,7 @@ import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
 import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
+import { characterAuthorChannel } from './character-author.js';
 
 /**
  * Local copy of the `flattenContent` helper. stdlib intentionally does
@@ -651,6 +652,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   endgameChannel,
   scoreNotifyChannel,
   lifecycleChannel,
+  characterAuthorChannel,
 ];
 
 /**
@@ -678,6 +680,7 @@ export const STANDARD_CHANNEL_IDS = {
   ENDGAME: 'endgame',
   SCORE_NOTIFY: 'score_notify',
   LIFECYCLE: 'lifecycle',
+  CHARACTER: 'character',
 } as const;
 
 export type StandardChannelId =

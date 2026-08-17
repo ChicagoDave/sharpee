@@ -1,6 +1,7 @@
 story
   title: Bad Sequence
-  authors: Nobody
+  authors:
+    Nobody
   id: bad-seq
   story-version: 0.0.1
 

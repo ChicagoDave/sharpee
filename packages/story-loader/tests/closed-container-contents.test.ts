@@ -13,7 +13,8 @@ import { createStory } from '../src';
 
 const SOURCE = `story
   title: Closed Box
-  authors: T
+  authors:
+    T
   id: closed-box
   story-version: 0.0.1
 

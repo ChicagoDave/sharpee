@@ -60,7 +60,7 @@ export interface StoryFields {
   storyVersion?: string;
   /** `ifid:` — Treaty of Babel identifier (ADR-074); minted by `sharpee init`. */
   ifid?: string;
-  /** `authors:` — one name per indented line (or a single inline name). */
+  /** `authors:` — required; one name per indented line (no inline form). */
   authors: string[];
   /** `testers:` — same shape as `authors:`. */
   testers: string[];
@@ -277,6 +277,17 @@ export type Declaration =
   | DefineChannel
   // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
   | DefineTopics
+  // ADR-310 D14 valued-belief fact declarations:
+  | DefineFact
+  | DefineTemperament
+  | DefineCode
+  | DefineHonor
+  | DefineWitnessedTopic
+  // ADR-310 D4 named cognitive profiles:
+  | DefineProfile
+  // ADR-310 D5 custom vocabulary (Option 2, David 2026-08-15):
+  | DefineMood
+  | DefinePersonality
   // ADR-242 person identity (ruled Q-1, David 2026-07-19):
   | DefinePronouns
   // ADR-245/250 phrasebooks (David 2026-07-21):
@@ -535,6 +546,318 @@ export interface CreateDecl {
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
   phraseOverrides: PhraseOverride[];
   onClauses: OnClause[];
+  /**
+   * `mood <word>` lines (ADR-310 D3) — collected in order so the analyzer
+   * can reject duplicates with the second line's span (the pronouns idiom).
+   * Person-only; word resolution is the analyzer's gate.
+   */
+  moods: MoodDecl[];
+  /** `feels <disposition> [toward] <entity>` lines (ADR-310 D3). */
+  feels: FeelsDecl[];
+  /** `knows <topic>, <source>[, …]` lines (ADR-310 D3). */
+  knows: KnowsDecl[];
+  /** `thinks <fact> is <value>[, …]` lines (ADR-310 D14). */
+  thinks: ThinksDecl[];
+  /** `spreads …` propagation lines (ADR-310 D10) — at most one is legal (analyzer gate). */
+  spreads: SpreadsDecl[];
+  /** `goal <name>, <priority> … end goal` blocks (ADR-310 D8). */
+  goals: GoalDecl[];
+  /** `influence <name>, <mode>, <range> … end influence` blocks (ADR-310 D9). */
+  influences: InfluenceDecl[];
+  /** `resists <influence>[, except from <ref>]` lines (ADR-310 D9). */
+  resists: ResistsDecl[];
+  /** `temperament …` binding lines (ADR-318 D3/D7). */
+  temperaments: TemperamentDecl[];
+  /** `never <category> [scope][, except …]` principle lines (ADR-318 D4). */
+  nevers: NeverDecl[];
+  /** `protects <scope>` / `answers honestly` obligation lines (ADR-318 D4/D5). */
+  obligations: ObligationLineDecl[];
+  /** `code <name>` bundle references (ADR-318 D4) — union with the bare lines. */
+  codes: Array<{ name: string; span: Span }>;
+  /** `honor [<name>] before <scope>[, except …]` lines (ADR-318 D7) — at most one is legal (analyzer gate). */
+  honors: HonorLineDecl[];
+  /** `burdened by <topic>` pre-story conscience seeds (ADR-318 D8) — the topic must be held (analyzer gate). */
+  burdens: Array<{ topic: NameRef; span: Span }>;
+  span: Span;
+}
+
+/**
+ * One `honor` line (ADR-318 D7): the full face-act bundle (`honor before
+ * the regiment`) or a named selective bundle (`honor soldiers-honor before
+ * anyone`). Audience scope reuses the D9/D10 grammar; `except` lists
+ * entities (the spreads idiom).
+ */
+export interface HonorLineDecl {
+  /** The `define honor` bundle name; null = the full platform bundle. */
+  name: string | null;
+  scope: ScopeRefDecl;
+  except: NameRef[];
+  span: Span;
+}
+
+/**
+ * One `never …` principle line (ADR-318 D4). Pre-comma words are raw —
+ * the category longest-match (third-person surface against the manifest's
+ * infinitives) and the trailing scope are the analyzer's gates, so the
+ * parser stays vocabulary-free.
+ */
+export interface NeverDecl {
+  words: Array<{ word: string; span: Span }>;
+  except: ExceptClauseDecl | null;
+  span: Span;
+}
+
+/**
+ * `, except [to protect] <scope>` (ADR-318 D4/D6 — exp-02's collision
+ * carve-out). With `to protect`, the principle yields to the obligation
+ * protecting that scope; without, the act's object in scope is exempt.
+ */
+export interface ExceptClauseDecl {
+  protect: boolean;
+  scope: ScopeRefDecl;
+  span: Span;
+}
+
+/** A scope reference (ADR-310 D9/D10 grammar): `anyone`, a classifier, or an entity. */
+export type ScopeRefDecl =
+  | { kind: 'anyone'; span: Span }
+  | { kind: 'ref'; ref: NameRef };
+
+/** One obligation line (ADR-318 D4/D5): `protects <scope>` or `answers honestly`. */
+export interface ObligationLineDecl {
+  kind: 'protects' | 'answers-honestly';
+  /** Present for `protects`; null for `answers honestly`. */
+  scope: ScopeRefDecl | null;
+  span: Span;
+}
+
+/**
+ * One `temperament` line on a create block (ADR-318 D3/D7): a named
+ * reference with optional pair overrides (`temperament steadfast with
+ * desire over fear while resolute`) or an inline anonymous ordering
+ * (`temperament honor over fear`). Word resolution, the override fold,
+ * and the same-state tie are the analyzer's gates.
+ */
+export interface TemperamentDecl {
+  /** The referenced `define temperament` name; null for an inline ordering. */
+  name: string | null;
+  /** Inline pairs, or `with` override pairs on a named reference. */
+  pairs: ForcePairDecl[];
+  /** `while <state>` binding; null = unconditional. */
+  while: { word: string; span: Span } | null;
+  span: Span;
+}
+
+/** One `<force> over <force>` ordering pair (ADR-318 D3) — force words resolve in the analyzer. */
+export interface ForcePairDecl {
+  first: { word: string; span: Span };
+  second: { word: string; span: Span };
+  span: Span;
+}
+
+/**
+ * A `goal` block (ADR-310 D8): named, prioritized, activation-conditioned,
+ * with an ordered step body — one verb per line, the same reading order as
+ * the sequence it compiles to.
+ */
+export interface GoalDecl {
+  kind: 'goal';
+  name: string;
+  /** Priority word from the header's comma slot; null when missing (parse error already reported). */
+  priority: { word: string; span: Span } | null;
+  /** `active when <condition>`; null = always active. */
+  activeWhen: ConditionNode | null;
+  steps: GoalStepDecl[];
+  span: Span;
+}
+
+/** One goal step line (ADR-310 D8) — verbs per ADR-145's step types. */
+export type GoalStepDecl =
+  | { kind: 'seek'; target: NameRef; in: NameRef | null; span: Span }
+  | { kind: 'acquire'; target: NameRef; span: Span }
+  | { kind: 'wait-for'; condition: ConditionNode; span: Span }
+  | { kind: 'move-to'; target: NameRef; span: Span }
+  | { kind: 'act'; phraseKey: string; span: Span }
+  | { kind: 'say'; phraseKey: string; target: NameRef | null; span: Span }
+  | { kind: 'give'; item: NameRef; target: NameRef; span: Span }
+  | { kind: 'drop'; item: NameRef; in: NameRef | null; span: Span };
+
+/**
+ * An `influence` block (ADR-310 D9): author-invented name, mode and range
+ * on the header, effect lines in the body. Header slot words classify
+ * order-free (mode vs range are disjoint vocabularies — analyzer gate).
+ */
+export interface InfluenceDecl {
+  kind: 'influence';
+  name: string;
+  slots: Array<{ word: string; span: Span }>;
+  effects: InfluenceEffectDecl[];
+  span: Span;
+}
+
+/** One influence body line (ADR-310 D9). */
+export type InfluenceEffectDecl =
+  | { kind: 'clouds-focus'; span: Span }
+  | { kind: 'makes'; axis: string; value: string; span: Span }
+  | { kind: 'phrase'; key: string; on: 'witnessed' | 'resisted' | 'expired'; span: Span };
+
+/** One `resists <influence>[, except from <ref>]` line (ADR-310 D9). */
+export interface ResistsDecl {
+  influence: string;
+  /** `except from a woman` / `except from the Duke` — article decides classifier vs entity (analyzer). */
+  exceptFrom: NameRef | null;
+  span: Span;
+}
+
+/**
+ * One `spreads` line (ADR-310 D10). `spreads nothing` is `mute` said in
+ * English; the spreads form implies the chatty tendency, and its topic
+ * list (possibly empty = everything held) is the whitelist — listing IS
+ * selectivity, so `selective` never appears as a word.
+ */
+export type SpreadsDecl =
+  | { mode: 'nothing'; span: Span }
+  | {
+      mode: 'spreads';
+      topics: NameRef[];
+      audience: { word: string; span: Span };
+      except: NameRef[];
+      span: Span;
+    };
+
+/** One `mood <word>` line (ADR-310 D3). */
+export interface MoodDecl {
+  word: string;
+  span: Span;
+}
+
+/** One `feels <disposition> [toward] <entity>` line (ADR-310 D3). */
+export interface FeelsDecl {
+  /** The matched disposition word, as spelled in the vocabulary (`wary of`). */
+  disposition: string;
+  target: NameRef;
+  span: Span;
+}
+
+/**
+ * One `knows <topic>, <source>[, <slot>]…` line (ADR-310 D3). Comma slots
+ * are collected raw — classification (source / confidence / future
+ * markers) is the analyzer's gate, so slot order stays free.
+ */
+export interface KnowsDecl {
+  topic: NameRef;
+  slots: Array<{ word: string; span: Span }>;
+  span: Span;
+}
+
+/**
+ * One `thinks <fact> is <value>[, <slot>]…` line (ADR-310 D14) — a valued
+ * belief against a `define fact` value set. Slots classify like `knows`.
+ */
+export interface ThinksDecl {
+  fact: NameRef;
+  value: NameRef;
+  slots: Array<{ word: string; span: Span }>;
+  span: Span;
+}
+
+/**
+ * `define fact <name> … end fact` (ADR-310 D14): the closed value set that
+ * makes valued belief checkable. Body lines list values — entity names or
+ * bare words (`nobody`) — additive across lines.
+ */
+export interface DefineFact {
+  kind: 'define-fact';
+  name: NameRef;
+  values: NameRef[];
+  span: Span;
+}
+
+/**
+ * `define mood <name> like <mood>[, but <modifier>]` (ADR-310 D5 — Option
+ * 2, David 2026-08-15): a custom mood anchored at a platform mood's
+ * coordinates, optionally nudged one axis by a closed modifier word.
+ * Numbers never appear; word resolution is the analyzer's gate.
+ */
+export interface DefineMood {
+  kind: 'define-mood';
+  name: string;
+  like: { word: string; span: Span };
+  but: { word: string; span: Span } | null;
+  span: Span;
+}
+
+/**
+ * `define personality <name>` (ADR-310 D5): a custom personality
+ * adjective — one line, no body; intensity words compose as usual.
+ */
+export interface DefinePersonality {
+  kind: 'define-personality';
+  name: string;
+  span: Span;
+}
+
+/**
+ * `define code <name> … end code` (ADR-318 D4): a named principle bundle.
+ * Body lines are `never …` and obligation lines; `code <name>` on a create
+ * block unions the bundle with the block's bare lines. Codes flatten at
+ * compile time — they never reach the wire.
+ */
+export interface DefineCode {
+  kind: 'define-code';
+  name: string;
+  nevers: NeverDecl[];
+  obligations: ObligationLineDecl[];
+  span: Span;
+}
+
+/**
+ * `define topic <actor> <act> as <alias>` (ADR-318 D12a): names a
+ * mechanically-minted witnessed-act topic. One line, no body. Words before
+ * `as` are raw — the actor/act split (longest act-surface suffix) is the
+ * analyzer's gate.
+ */
+export interface DefineWitnessedTopic {
+  kind: 'define-witnessed-topic';
+  words: Array<{ word: string; span: Span }>;
+  alias: string;
+  span: Span;
+}
+
+/**
+ * `define honor <name> … end honor` (ADR-318 D7): a named selective
+ * face-act bundle — one face-act per body line, raw words (resolution is
+ * the analyzer's gate). The ladder rung above `honor before <scope>`.
+ */
+export interface DefineHonor {
+  kind: 'define-honor';
+  name: string;
+  faceActs: Array<{ words: Array<{ word: string; span: Span }>; span: Span }>;
+  span: Span;
+}
+
+/**
+ * `define temperament <name> … end temperament` (ADR-318 D3): a named
+ * force ordering. Body lines are `<force> over <force>` pairs; force
+ * resolution is the analyzer's gate.
+ */
+export interface DefineTemperament {
+  kind: 'define-temperament';
+  name: string;
+  pairs: ForcePairDecl[];
+  span: Span;
+}
+
+/**
+ * `define profile <name> … end profile` (ADR-310 D4): a named cognitive
+ * profile. Body rows are `<dimension> <value>`; unstated dimensions
+ * inherit from `clear-headed` at compile time (a profile is always
+ * complete). Word resolution is the analyzer's gate.
+ */
+export interface DefineProfile {
+  kind: 'define-profile';
+  name: string;
+  rows: Array<{ dimension: string; value: string; span: Span }>;
   span: Span;
 }
 
@@ -705,7 +1028,18 @@ export interface DefineCondition {
   span: Span;
 }
 
-/** `define phrase <key>[, <strategy>|, verbatim] [while <condition>] … end phrase`. */
+/**
+ * `, claims <fact> is <value>` on a `define phrase` header (ADR-318 D9):
+ * the lie-ledger tag — what this line asserts, in checkable words. Fact
+ * and value resolve against `define fact` in the analyzer.
+ */
+export interface ClaimsTagDecl {
+  fact: NameRef;
+  value: NameRef;
+  span: Span;
+}
+
+/** `define phrase <key>[, <strategy>|, verbatim][, claims <fact> is <value>] [while <condition>] … end phrase`. */
 export interface DefinePhrase {
   kind: 'define-phrase';
   key: string;
@@ -713,6 +1047,8 @@ export interface DefinePhrase {
   strategy: string | null;
   /** Whitespace-preserving text (grammar log 2026-07-10); excludes strategies. */
   verbatim: boolean;
+  /** The ADR-318 D9 lie-ledger tag; null for a line that asserts nothing. */
+  claims: ClaimsTagDecl | null;
   /**
    * Trailing `while <condition>` header gate (Z2/CP1'): a presence condition
    * compiles to ADR-209 `mentions`; anything else registers on the ADR-211
@@ -1168,6 +1504,8 @@ export type Statement =
   | MediaStmt
   | SetStmt
   | ChangeStmt
+  | ChangeMoodStmt
+  | ChangeFeelingStmt
   | MoveStmt
   | RemoveStmt
   | AwardStmt
@@ -1287,6 +1625,30 @@ export interface ChangeStmt {
   kind: 'change';
   entity: NameRef;
   state: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `change mood to <word> [when <cond>]` (ADR-310 D3) — the clause's `it`
+ * takes the mood. Word resolution is the analyzer's gate.
+ */
+export interface ChangeMoodStmt {
+  kind: 'change-mood';
+  mood: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `change feeling toward <entity> to <disposition> [when <cond>]`
+ * (ADR-310 D3) — the clause's `it` feels differently about the target.
+ * Disposition-word resolution is the analyzer's gate.
+ */
+export interface ChangeFeelingStmt {
+  kind: 'change-feeling';
+  target: NameRef;
+  disposition: string;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -1511,6 +1873,10 @@ export type Predicate =
   | { kind: 'wears'; thing: NameRef; span: Span }
   /** `can see <thing>` / `can reach <thing>` (design.md §2.7; Phase B). */
   | { kind: 'can'; ability: string; thing: NameRef; span: Span }
+  /** `<subject> feels <disposition> toward <entity>` (ADR-310 D13) — interior-state predicate. */
+  | { kind: 'feels'; disposition: string; target: NameRef; span: Span }
+  /** `<subject> knows <topic>` (ADR-310 D13) — held-topic predicate. */
+  | { kind: 'knows'; topic: NameRef; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed

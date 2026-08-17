@@ -15,6 +15,7 @@ import {
   StepResult,
   MovementProfile,
 } from './goal-types.js';
+import type { CompiledConditionEval } from './goal-activation.js';
 import { findNextRoom, RoomGraph } from './pathfinding.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +53,13 @@ export interface GoalStepContext {
    * Used for seek steps targeting entities.
    */
   getEntityRoom?: (entityId: string) => string | undefined;
+
+  /**
+   * Compiled-condition evaluator (the story oracle, pre-bound to this
+   * NPC). Required whenever a wait-for step carries `conditionCompiled`;
+   * evaluating such a step without it throws (wiring defect, not a state).
+   */
+  evalCompiled?: CompiledConditionEval;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,17 +89,17 @@ export function evaluateGoalStep(
   }
 
   // Prepared mode with all prep steps done — switch to opportunistic
-  if (goal.def.mode === 'prepared' && goal.prepared) {
+  if (goal.def.mode === 'prepared' && goal.state.prepared) {
     return evaluateOpportunistic(goal, ctx);
   }
 
   // Sequential/prepared mode — execute current step
   const steps = goal.def.steps;
-  if (!steps || goal.currentStep >= steps.length) {
+  if (!steps || goal.state.currentStep >= steps.length) {
     return { status: 'completed' };
   }
 
-  const step = steps[goal.currentStep];
+  const step = steps[goal.state.currentStep];
   return evaluateStep(step, ctx);
 }
 
@@ -111,7 +119,7 @@ function evaluateStep(step: GoalStep, ctx: GoalStepContext): StepResult {
       return evaluateAcquire(step.target, step.witnessed, ctx);
 
     case 'waitFor':
-      return evaluateWaitFor(step.conditions, ctx);
+      return evaluateWaitFor(step, ctx);
 
     case 'act':
     case 'say':
@@ -161,7 +169,16 @@ function evaluateSeek(
   return {
     status: 'in-progress',
     witnessed: ctx.playerPresent ? witnessed : undefined,
+    mutation: { kind: 'move', toRoom: nextRoom },
   };
+}
+
+/** Whether the NPC holds the item (its location is the NPC itself). */
+function holdsItem(item: string, ctx: GoalStepContext): boolean {
+  // Without an entity-room resolver the holding relation is unknowable;
+  // treat as held so pre-D6 callers (pure-evaluator tests) keep working.
+  if (!ctx.getEntityRoom) return true;
+  return ctx.getEntityRoom(item) === ctx.npcId;
 }
 
 /**
@@ -193,14 +210,25 @@ function evaluateAcquire(
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
-  return evaluateTargetInRoom(target, witnessed, ctx);
+  const result = evaluateTargetInRoom(target, witnessed, ctx);
+  if (result.status !== 'completed') return result;
+  // The item is in reach — completing the step IS taking it (D6).
+  return { ...result, mutation: { kind: 'take', itemId: target } };
 }
 
 function evaluateWaitFor(
-  conditions: string[],
+  step: Extract<GoalStep, { type: 'waitFor' }>,
   ctx: GoalStepContext,
 ): StepResult {
-  const allMet = conditions.every(cond => ctx.trait.evaluate(cond));
+  let allMet = step.conditions.every(cond => ctx.trait.evaluate(cond));
+
+  if (allMet && step.conditionCompiled !== undefined) {
+    if (!ctx.evalCompiled) {
+      // ADR-310 Phase 5: refuse loudly — silent 'waiting' would hang the goal forever.
+      throw new Error('A wait-for step carries a compiled condition but no story oracle is bound.');
+    }
+    allMet = ctx.evalCompiled(step.conditionCompiled);
+  }
 
   if (allMet) {
     return { status: 'completed' };
@@ -210,22 +238,33 @@ function evaluateWaitFor(
 }
 
 function evaluateGive(
-  _item: string,
+  item: string,
   target: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
-  return evaluateTargetInRoom(target, witnessed, ctx);
+  // Giving an item the NPC does not hold is an authoring error — loud,
+  // not a silent hang (a preceding `acquire` step is how it gets held).
+  if (!holdsItem(item, ctx)) {
+    return { status: 'blocked', reason: `Not holding ${item}` };
+  }
+  const result = evaluateTargetInRoom(target, witnessed, ctx);
+  if (result.status !== 'completed') return result;
+  return { ...result, mutation: { kind: 'give', itemId: item, toId: target } };
 }
 
 function evaluateDrop(
-  _item: string,
+  item: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
+  if (!holdsItem(item, ctx)) {
+    return { status: 'blocked', reason: `Not holding ${item}` };
+  }
   return {
     status: 'completed',
     witnessed: ctx.playerPresent ? witnessed : undefined,
+    mutation: { kind: 'drop', itemId: item },
   };
 }
 

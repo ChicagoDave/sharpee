@@ -73,6 +73,12 @@ export {
   type LifecyclePayload,
 } from './standard.js';
 
+// The character author channel (ADR-318 D11 — "explain this NPC's turn")
+export {
+  characterAuthorChannel,
+  type CharacterAuthorRow,
+} from './character-author.js';
+
 export {
   // Channel objects
   imagePreloadChannel,

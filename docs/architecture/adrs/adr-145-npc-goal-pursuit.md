@@ -47,8 +47,18 @@ npc.character('colonel-mustard')
     ])
 ```
 
-**Activation rules:**
-- Conditions are evaluated each NPC turn against current character state
+**Activation rules (edge-triggered — amended 2026-08-16, see Amendment below):**
+- Conditions are sampled each NPC turn against current character state, but a goal
+  **activates only on a rising edge**: the condition holds this tick and did not hold
+  at the previous sample. The runtime keeps the last sample per goal
+  (`GoalRuntimeState.conditionHeld`); "never sampled" counts as not-held, so a
+  condition already true at story start activates the goal exactly once, on its first
+  evaluation.
+- An **empty activation condition is vacuously true and can never re-edge**: the goal
+  runs exactly once, ever.
+- While a goal is active it keeps the sample that activated it, and completing while
+  the condition has held continuously is **not** a new edge. A completed goal
+  re-activates only after its condition goes false and becomes true again.
 - Once activated, the goal enters the NPC's active goal queue (priority-sorted)
 - Goals can be deactivated if conditions change (e.g., NPC calms down, threat drops)
 - Multiple goals can be active simultaneously — highest priority executes first
@@ -267,6 +277,29 @@ npc.character('colonel-mustard')
 ## Open Questions
 
 All original open questions have been resolved.
+
+## Amendment — Activation is edge-triggered (2026-08-16)
+
+**Context.** The original activation rule ("conditions are evaluated each NPC turn")
+was level-triggered and silent on post-completion reactivation. In practice every
+completed goal whose condition still held reactivated on the next evaluation tick —
+and a goal with an empty `activatesWhen` reactivated unconditionally, since an empty
+condition is vacuously true. Live probes (2026-08-16, wiring-audit D12,
+`docs/work/adr-310/wiring-audit.md`): thealderman's Chelsea re-asked Catherine every
+3rd turn forever; the b3-conscience Steward re-blurted his confession every 3rd turn.
+The `GoalRuntimeState.active` doc comment already *claimed* edge semantics the code
+did not have.
+
+**Change.** Activation is edge-triggered (David's ruling, 2026-08-16, session
+f123de; folded into the Activation rules above). Rejected alternatives:
+level-triggered (the status quo — loops), and a one-shot latch (forbids legitimate
+re-runs, e.g. fleeing again on a fresh threat). Edge-triggering composes with
+ADR-318 D8's discharge contract: a conscience goal gated `active when it is
+breaking` discharges on completion, the band drains below `breaking`, and a later
+re-break is a genuine new edge — re-confession falls out with no extra machinery.
+Implementation: `packages/character/src/goals/goal-activation.ts` (edge detection in
+`GoalManager.evaluate`) and the world-model's character vocabulary
+(`GoalRuntimeState.conditionHeld`, riding the existing goalState save path).
 
 ## References
 

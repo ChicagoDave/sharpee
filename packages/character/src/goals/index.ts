@@ -9,6 +9,7 @@
  */
 
 export {
+  GOAL_PRIORITIES,
   type GoalPriority,
   type PursuitMode,
   type GoalStep,
@@ -24,13 +25,11 @@ export {
   type ActiveGoal,
   type MovementProfile,
   type StepResult,
+  type StepMutation,
   GOAL_PRIORITY_VALUES,
 } from './goal-types.js';
 
-export {
-  type ActiveGoalState,
-  GoalManager,
-} from './goal-activation.js';
+export { GoalManager } from './goal-activation.js';
 
 export {
   type GoalStepContext,

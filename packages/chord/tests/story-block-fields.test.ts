@@ -59,10 +59,26 @@ describe('fielded story block (AC-1)', () => {
     });
   });
 
-  it('accepts a single inline author', () => {
-    const result = parse('story\n  title: T\n  authors: Solo Author\n');
+  it('accepts a single indented author', () => {
+    const result = parse('story\n  title: T\n  authors:\n    Solo Author\n');
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ast.header?.fields.authors).toEqual(['Solo Author']);
+  });
+
+  it('rejects the inline form — names live one per indented line', () => {
+    const result = parse('story\n  title: T\n  authors: Solo Author\n');
+    const error = result.diagnostics.find((d) => d.code === 'parse.header-inline-list');
+    expect(error).toBeDefined();
+    expect(error?.message).toContain('indented');
+    // One mistake, one diagnostic: neither the empty-list nor the
+    // required-field error piles on top of the inline rejection.
+    expect(result.diagnostics.some((d) => d.code === 'parse.header-list-empty')).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === 'parse.story-authors')).toBe(false);
+  });
+
+  it('requires an authors: list', () => {
+    const result = parse('story\n  title: T\n');
+    expect(result.diagnostics.some((d) => d.code === 'parse.story-authors')).toBe(true);
   });
 });
 
@@ -70,7 +86,8 @@ describe('client-config keys (ADR-252 D3 × ADR-298 amendment, GH #221)', () => 
   const CONFIGURED = [
     'story',
     '  title: T',
-    '  authors: N',
+    '  authors:',
+    '    N',
     '  id: fernhill',
     '  client: browser',
     '  theme: parchment',
@@ -106,14 +123,14 @@ describe('client-config keys (ADR-252 D3 × ADR-298 amendment, GH #221)', () => 
   });
 
   it('omitted client-config keys stay absent (themes empty)', () => {
-    const { ir } = compile('story\n  title: T\n  authors: N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
     expect(ir?.meta.fields.client).toBeUndefined();
     expect(ir?.meta.fields.themes).toEqual([]);
   });
 });
 
 describe('publish-source (ADR-284 — the first boolean header field)', () => {
-  const withValue = (value: string) => `story\n  title: T\n  authors: N\n  publish-source: ${value}\n`;
+  const withValue = (value: string) => `story\n  title: T\n  authors:\n    N\n  publish-source: ${value}\n`;
 
   it('reads yes/true as true and no/false as false, case-insensitively', () => {
     for (const word of ['yes', 'true', 'YES', 'True']) {
@@ -134,7 +151,7 @@ describe('publish-source (ADR-284 — the first boolean header field)', () => {
   });
 
   it('stays absent when the field is omitted — the build owns the default', () => {
-    const { ir } = compile('story\n  title: T\n  authors: N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
     expect(ir?.meta.fields.publishSource).toBeUndefined();
   });
 
@@ -149,14 +166,14 @@ describe('publish-source (ADR-284 — the first boolean header field)', () => {
   });
 
   it('is named in the closed-schema error, so a misspelling can find it', () => {
-    const result = parse('story\n  title: T\n  authors: N\n  publish_source: yes\n');
+    const result = parse('story\n  title: T\n  authors:\n    N\n  publish_source: yes\n');
     const error = result.diagnostics.find((d) => d.code === 'parse.header-unknown-field');
     expect(error?.message).toContain('publish-source');
   });
 });
 
 describe('auto-assertion (Phase 6e, #253 — the transcript auto-assertion policy)', () => {
-  const withValue = (value: string) => `story\n  title: T\n  authors: N\n  auto-assertion: ${value}\n`;
+  const withValue = (value: string) => `story\n  title: T\n  authors:\n    N\n  auto-assertion: ${value}\n`;
 
   it('reads each closed-set value, case-insensitively', () => {
     for (const value of ['all-emitted-text', 'room-description', 'room-name-and-description', 'All-Emitted-Text']) {
@@ -172,7 +189,7 @@ describe('auto-assertion (Phase 6e, #253 — the transcript auto-assertion polic
   });
 
   it('stays absent when the field is omitted — "let me decide" is the runner default', () => {
-    const { ir } = compile('story\n  title: T\n  authors: N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
     expect(ir?.meta.fields.autoAssertion).toBeUndefined();
   });
 
@@ -186,7 +203,7 @@ describe('auto-assertion (Phase 6e, #253 — the transcript auto-assertion polic
   });
 
   it('is named in the closed-schema error, so a misspelling can find it', () => {
-    const result = parse('story\n  title: T\n  authors: N\n  auto_assertion: all-emitted-text\n');
+    const result = parse('story\n  title: T\n  authors:\n    N\n  auto_assertion: all-emitted-text\n');
     const error = result.diagnostics.find((d) => d.code === 'parse.header-unknown-field');
     expect(error?.message).toContain('auto-assertion');
   });
@@ -261,6 +278,8 @@ describe('bare phrase references (AC-4, compile-time half)', () => {
     const source = [
       'story',
       '  title: T',
+      '  authors:',
+      '    N',
       '  prologue: opening-crawl',
       '',
       'define phrase opening-crawl',
@@ -288,14 +307,14 @@ describe('an absent ifid: is not the compiler’s business (ADR-309)', () => {
   // build — so a story without the line is a state the tool repairs, not one
   // the compiler reports. What must hold is that it compiles CLEANLY.
   it('compiles with no diagnostic at all when ifid: is absent', () => {
-    const { diagnostics } = compile('story\n  title: T\n');
+    const { diagnostics } = compile('story\n  title: T\n  authors:\n    N\n');
     expect(diagnostics.map((d) => d.code)).not.toContain('analysis.missing-ifid');
     expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
 
   it('still carries the value through to the IR when it is present', () => {
     const { ir, diagnostics } = compile(
-      'story\n  title: T\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n',
+      'story\n  title: T\n  authors:\n    N\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n',
     );
     expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(ir.meta.fields.ifid).toBe('12345678-ABCD-ABCD-ABCD-123456789ABC');

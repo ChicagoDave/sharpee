@@ -1,0 +1,145 @@
+# ADR-310/318 Wiring Audit — every seam, producer to consumer
+
+**Date**: 2026-08-15 (session 2aea28, David: "Proceed with audit"). Prompted by the
+defect pattern of the closure pass: every find was a producer/consumer seam never
+exercised together — unit suites synthesized their own inputs, so a piece could pass
+while its consumer listened to a different name or didn't exist. This audit enumerates
+the seams of the ADR-310/318 surface and records, per seam: producer, consumer, render
+path, composed proof. Evidence is file:line or a dated bundle probe.
+
+**Re-audit 2026-08-16 (session dc1312, David: "do the seam audit")**: every §2/§4/§5/§6
+row re-verified against code after the D6–D12 fixes landed. Two rows upgraded to LIVE
+(goal.step, propagation.witnessed — the latter with a new pinned transcript), one §6
+orphan resolved (drainPressure), the rest re-confirmed at current line numbers. Rows
+carry their re-audit evidence inline.
+
+**Classification**:
+- **LIVE** — producer and consumer verified, composed proof exists (test or probe).
+- **LIVE-UNPROVEN** — wiring verified by reading, no composed test/probe yet.
+- **INERT** — producer runs, effect never applied/consumed. A defect.
+- **UNREACHABLE** — consumer exists, no reachable producer path.
+- **ORPHAN** — exported/serialized surface with no caller/producer at all.
+- **BUILDER-ONLY** — live for the TS builder path; chord has no authoring surface
+  (known authoring gaps, flagged in the thealderman story header).
+
+## 1. The turn plumbing (the spine — verified live)
+
+`NpcPlugin.onAfterAction` (plugin-npc/src/npc-plugin.ts:46) → `npcService.tick`
+(stdlib/src/npc/npc-service.ts:205) → registered tick phases incl.
+`createCharacterModelPhase` (registered at story-loader/src/loader.ts:977) → returned
+events join the turn's events → prose pipeline renders ANY event whose
+`data.messageId` resolves (ADR-097 domain-message path,
+engine/src/prose-pipeline/handlers/domain-message.ts:47-53), and chord phrase keys ARE
+registered with the language provider (`addMessage`, story-loader/src/loader.ts:899).
+
+**Live probe** (2026-08-15, bundle, thealderman): entering the Bar renders John's
+`john-menace-noticed` via `character.influence.applied` + messageId — the whole chain
+works. (It also exposed D8 below: the phrase re-fires every turn.)
+
+## 2. Event seams
+
+| Event type | Producer | Consumer / render | Status |
+|---|---|---|---|
+| `character.author.arbitration`, `.ledger_mint`, `.pin_held`, `.pressure_deposit`, `.paralysis_warning` — plus, since the seam fixes, `.pin_released` (claims.ts:119) and `.pressure_drain` (tick-phases.ts:618 goal leg; story-loader/runtime.ts:1201 row leg) | arbiter/reveal.ts, conversation/claims.ts | `character` channel selector (`AUTHOR_PREFIXES`, stdlib/src/channels/character-author.ts:34), gated `authorChannels` — prefix projection covers the two new events with no selector change (re-verified 2026-08-16) | **LIVE** (channel tests + assemble-channels, G3 evidence) |
+| `npc.character.mood_changed`, `.threat_changed`, `.disposition_changed`, `.fact_learned`, `.lucidity_shift`, `.lucidity_baseline_restored`, `.hallucination_onset` | character-observer.ts, lucidity-decay.ts, tick-phases.ts:297, runtime.ts:2482/2488 | same channel selector (`npc.character.` prefix) — author-channel-only by design (Phase 2) | **LIVE** |
+| `character.author.act_witnessed` | tick-phases observe sub-step; runtime.ts:1146 | channel selector | **LIVE** (observe tests, b1 fixture) |
+| `character.propagation.witnessed` | tick-phases recordTransfer (:494 post-D8 renumbering) | data.messageId `…witnessed.<coloring>` → lang-en-us/src/npc/propagation.ts | **LIVE** (upgraded 2026-08-16, dc1312): probe — thealderman `west; wait` renders "Catherine Shelby mentions something to Chelsea Sumner." (Chelsea brought there by her post-D6 goal — the probe is D6 evidence too); timing seed-independent (7/42/99999); pinned in `propagation-witnessed.transcript` (thealderman 73 in 8). Cosmetic note, not a defect: two facts transferring the same turn render the same generic line twice back-to-back — per-transfer render, honest but repetitive |
+| `character.propagation.eavesdropped` | **nobody** — recordTransfer hardcodes `'present'` (tick-phases.ts:488, re-verified 2026-08-16), so the `'concealed'` visibility arm never runs | lang mapping exists (propagation.ts:31) | **UNREACHABLE** (whole `PlayerPresence` concealed/absent surface of visibility.ts is dead at the call site) — stands after re-audit |
+| `character.influence.applied` / `.resisted` | tick-phases.ts (shaped exertions post-D8), carry authored phrase key as messageId | ADR-097 render | **LIVE** — D8 fixed: edge-minted once per transition, overlay applies effects, separation expires (post-fix probe: one line on entry, silence on wait, re-fires on re-entry) |
+| `character.influence.expired` | tick-phases.ts expiry loop — authored `expired` phrase key rides as messageId (+ influencerId/Name); unauthored payload byte-identical to before | ADR-097 render when authored; silent otherwise | **RULED + LIVE 2026-08-16 (dc1312, David: "authored opt-in arm")**: `phrase <key> on expired` — third arm of the influence block, symmetric with witnessed/resisted, default silent. Chord grammar (parser/analyzer/IR) + `.expired()` TS builder + apply-compiled + emission. Tests: chord 854 (+compile/dup-diagnostic), character 439 (+real-tick authored-vs-silent), thealderman `influence-expiry.transcript` (John's menace lifts on leaving the Bar) — 75 in 9; b1 15, b3 all, Dungeo chain 952 |
+| `character.goal.step` | tick-phases.ts (act/say witnessed) | ADR-097 render | **LIVE** (upgraded 2026-08-16, dc1312): D6 built the movement half, so seek-led sequences now reach their act/say steps; `b3-seek-out.transcript` asserts the rendered confession text in the Hall ("cannot carry it any longer"), `b3-seek-out-recycle` proves the re-edge cycle |
+
+## 3. The goal execution layer — the big finding (D6, expanded)
+
+*(Historical record of the find — FIXED, see D6 in §7; re-audit 2026-08-16 confirmed
+seek/acquire/give/drop all mutate via `applyStepMutation` and the §2 goal.step row is
+now LIVE end-to-end.)*
+
+**No goal step type mutates the world.** The layer is a trait-state machine emitting
+messages; its world half was never built:
+
+| Step | Evaluator (goals/step-evaluator.ts) | What's missing |
+|---|---|---|
+| `seek` / `moveTo` | :139-173 computes `findNextRoom(...)` then returns `{status:'in-progress'}` **discarding it**; `StepResult` (goal-types.ts:212) has no movement field; `executeNpcGoals` (tick-phases.ts:542-601) never calls `world.moveEntity` | NPC never moves; step never completes; later steps unreachable |
+| `acquire` | :199-205 completes when the item is co-located | never takes the item |
+| `give` | :228-235 completes when target co-located; `_item` explicitly unused | never transfers the item |
+| `drop` | :237-246 completes unconditionally | never drops anything |
+| `act` / `say` | :124-129 emit witnessed messageId | render chain live (§1) but unreached behind seek-led sequences |
+
+**Bundle proof** (2026-08-15, b3-conscience fixture): Steward at `breaking`, goal
+active, D16 window elapsed, six quiet turns — never arrives (`look` shows empty Hall).
+**Consequence**: thealderman's `destroy-evidence` (John) and `seek-truth` (Chelsea)
+goals have never executed observably; no transcript asserts them. 310-AC3's "Goals
+live" was discharged on `goalState` assertions — the observable half was untested.
+
+## 4. IR → runtime constructs (chord side)
+
+| Construct | Consumed at | Status |
+|---|---|---|
+| `IREntity.character` descriptive + normative blocks (personality, mood, knows, thinks, profile, spreads, temperament, principles, honor, burdened, goals, influences, resists) | apply-compiled.ts via applyCharacterBlocks (loader.ts:842 area) | **LIVE** (13+8 round-trip tests; fixtures) |
+| `StoryIR.customMoods` / `customPersonalities` | loader.ts:827-828 | **LIVE** |
+| `StoryIR.temperaments` | loader.ts:849-850 → registry | **LIVE** (arbiter tests, b1) |
+| `StoryIR.witnessedTopics` | loader.ts:852-855 → registry; runtime.ts:903 | **LIVE** (b1/AC4) |
+| `StoryIR.facts` (closed value sets) | compile-time claims checking (chord) | **LIVE** (compile diagnostics) |
+| `IRPhrase.claims` | runtime.ts claimsFor → pin/mint (:1101, :1125) | **LIVE** (transcripts) |
+| `IRPhrase.specificity` | **nowhere** — no `.specificity` consumer in story-loader (re-grepped 2026-08-16); D7's only-match rework kept selection compiler-enforced, still no runtime reader | **ORPHAN wire field** (behavior still matches D16 because the compiler rejects same-specificity ties; the marker itself is unread) — stands after re-audit |
+| `change mood` / `change feeling` transitions | execCharacterTransition (fixed 2026-08-15, was the D3 find) | **LIVE** |
+| propagation pace/coloring/withholds/excludes/overrides/schedule/playerCanLeverage; goal modes opportunistic/prepared; interruptedBy; per-step witnessed phrases; influence schedules/lingering/disposition/propagation effects; non-`from` resist-excepts | builder path only — no chord grammar | **BUILDER-ONLY** (known, flagged in thealderman header since Phase 3/4) |
+
+## 5. Registry fields (CharacterPhaseRegistry)
+
+propagationProfile (tick-phases.ts:385,423) ✓ · movementProfile (:568) ✓ · goalDefs
+(goal managers) ✓ · influenceDefs (influence sub-step) ✓ · resistanceDefs (:629) ✓ ·
+baselineMood (decay) ✓ · witnessedAliases (observe + runtime.ts:903) ✓ ·
+temperamentDefs (arbitration gate) ✓ · oracle (goal conditions, :526-528) ✓ — **all
+LIVE**.
+
+## 6. Orphans and dormant surfaces
+
+| Surface | Evidence | Status |
+|---|---|---|
+| `drainPressure` | ~~zero callers~~ **RESOLVED by the seam-2/5 fix (re-audited 2026-08-16)**: two live callers — story-loader/runtime.ts:1199 (discharge-marked row delivery) and character/tick-phases.ts:617 (discharging goal completion); curve-only by the seam-3 ruling (its old global `unpinLedger()` removed) | **LIVE** (b3-crack-discharge, b3-seek-out-recycle transcripts) |
+| Ledger `kind: 'promise'` | serialized on the trait (characterModelTrait.ts:122); `break a promise` in the act vocabulary; **no minting producer anywhere** (re-verified 2026-08-16) | **ORPHAN** — now RULED-dormant: seam 3's R3 (caught-lying release) rides the future face-act confrontation detection work; promise minting waits with it |
+| Dialogue-selector socket (D15) | registerCharacterDialogue — production registrants: none (chord path uses topic dispatch; thealderman-ts archived) | **authoring surface, by design** — for TS-builder stories |
+| `PlayerPresence` 'absent'/'concealed' arms | see eavesdropped row, §2 | **UNREACHABLE** — stands after re-audit (the one remaining dead code path of the surface) |
+
+## 7. Known defects — consolidated list (D-numbered across the closure pass)
+
+Fixed earlier this pass: D1 ungated character channel (G3) · D2 dead observer rule
+keys · D3 `change mood/feeling` compiled-but-dropped · D4 story-config splicer ·
+D5 belief values not transferring (G5a).
+
+Open, found by this audit and the b3 fixture:
+
+| # | Defect | Evidence | Proposed fix (all need sign-off; platform) |
+|---|---|---|---|
+| **D6** | Goal steps never mutate the world (movement, take, give, drop) | §3 | **FIXED 2026-08-15 (session 2aea28, David: "Just do D6")**: `StepResult.mutation` intent (goal-types.ts) applied by `applyStepMutation` in `executeNpcGoals` (evaluator stays pure); give/drop of an unheld item blocks loudly; failed application neither advances nor announces. 7 tests on `world.getLocation` through the real tick; mutation-verification GREEN. Bundle proof: b3 Steward at breaking seeks the player into the Hall and confesses via the existing ADR-097 render path. Regression: character 421, b1 fixtures 15, thealderman 53, Dungeo chain 952 — all passing. Residual note: `holdsItem` is permissive when a caller omits `getEntityRoom` (deliberate shim for pure-evaluator tests); thealderman's John/Chelsea goals now genuinely execute, so thealderman is intentionally NOT byte-identical to its pre-D6 output (its transcript assertions all still pass) |
+| **D7** | Topic arm delivers surplus phrases — first `chord.phrase` becomes the override, later ones are emitted as extra text (runtime.ts:1106-1118, contradicting its own D5 comment) | b3 probe: crack + deflect both printed; thealderman's confession double-delivers the same way | **FIXED 2026-08-16 (David's ruling: only-match, compiler-enforced — not first-match)**: (1) `analysis.phrase-overlap` pass — within a topic arm, conditional lines must be PROVABLY pairwise exclusive (witness table in `chord/src/condition-disjoint.ts`: single-valued axes mood/band/threat/owner-states, `feels` words, story phases, negation flips, disjoint numeric ranges, and/or composition; conservative — no witness = error demanding disambiguation); at most one unconditional default, required last (it would shadow a matched conditional in the first-in-order runtime); deliberate variety = `or`-variants inside one phrase (already shipped). (2) Runtime drops surplus `chord.phrase` events after the override (rogue-IR backstop). 12 new chord tests (per-axis clean + ambiguity errors); chord 848, story-loader 497, tsc clean; crack transcripts pinned with not-contains on the fallback lines. Also fixed en route: the raw NUL in `analyzer.ts:3492` (now the \u0000 escape) — grep was binary-classifying the file, the exact ADR-289 hazard |
+| **D8** | Passive `while present` influence re-applies and re-fires its witnessed phrase every turn, 2× per turn | probe §1 ("The room gets quieter…" ×2 per wait) | **FIXED 2026-08-16 (David's go-ahead after assessment; design: shaped results + edge minting + overlay, not post-hoc dedupe).** Assessment found FOUR defects under the one-liner: (1) re-fire — `trackInfluence`'s dedupe boolean was discarded and the event emitted unconditionally; (2) the ×2 was per-target fan-out (Ross + player in the Bar), not a double tick; (3) the effect was INERT — nothing applied `makes mood/threat` to any state and nothing read `influencesInForce` at runtime; (4) `while present` never expired (`expireInfluencesOnDeparture` had no caller). Fix: `evaluatePassiveInfluences` returns one exertion per (influencer, influence) with per-target outcomes nested — duplicate witnessed events unrepresentable; `character.influence.applied` minted ONE per exertion only on the transition into force (`trackInfluence`'s boolean is the edge detector; resisted per-target on its own edge; applied↔resisted flip updates in place and counts as a transition); effects overlay via `getEffectiveMood()` (mask, latest-applied wins) / `getEffectiveThreatValue()` (floor, max(base, effect)) consulted by the mood/threat platform predicates — base state untouched, expiry = instant unmask; `expireInfluencesBySeparation` (location-aware, both homing directions) runs with turn-expiry BEFORE evaluation so re-entry and momentary recurrence re-transition the turn they recur. `InfluenceInForce` gains optional `status` (absent = applied). Live probe post-fix: enter Bar → one line; wait/wait → silence; leave + re-enter → one line. Tests: influence.test.ts reshaped + flip/separation, phase-integration "edge minting and overlay" describe (5, through the real tick on real trait state — incl. the resisted per-target edge, added after mutation-verification flagged that path as unexercised end-to-end), world-model overlay describe (4). Suites: character 428, world-model 1483; bundle rebuilt — thealderman 53, b1 15, b3 26, Dungeo chain 952, all passing (Fernhill authors no influences; zero records → effective ≡ base) |
+| **D9** | Interceptor effect envelope re-mints events as `context.event(type, payload)` — actor attribution lost, `npcId: undefined` in chord-path author rows | engine/src/capability-dispatch-helper.ts:187-192 | **FIXED 2026-08-16 (session 55a70a, David: "go" on the optional-`actor` option).** Full mechanism confirmed by reading: `createAuthorEvent` mints `entities.actor = npcId` (character/conversation/author-events.ts:34), the story-loader flatten dropped `entities`, and all three re-mint sites stamped the action context's entities — stdlib's context sets `actor = player.id` (enhanced-context.ts:394), so live chord-path author rows were attributed to the PLAYER (the unit harness's `entities: {}` stub is where `undefined` was observed). Fix: `CapabilityEffect.actor?` (world-model types.ts; `createEffect` third param); re-mint sites (`applyInterceptorReportResult`/`applyInterceptorBlockedResult` via shared `mintEffect`, engine `effectsToEvents`) override `entities.actor` when set, keeping target/location stamps; story-loader `toEffect` helper carries `entities.actor` through EVERY flatten site (topic arm, entity clauses, trait interceptors, custom-verb behaviors, blocked phrases), and the locally-built `act_witnessed`/`pressure_drain` effects set `actor: speaker.worldId`. Effects without `actor` are byte-identical to before. Mutation-verification caught a FOURTH re-mint site the first pass missed: `buildDispatchAction.report()` (story-loader's own custom-`define action` dispatcher consuming trait capability behaviors) — fixed with the same override. Rode along: comment in `buildDispatchAction.blocked()` documenting the pre-existing gap that this dispatcher never calls `behavior.blocked()` (authored otherwise/refusal rendering only). Tests: world-model +3 (override wins / location survives / no-actor unchanged, both apply helpers), engine +1 (through executeCapabilityReport), story-loader +2 (real ask path: `ledger_mint` + `pin_held` carry the maid's world id; custom-action dispatch with a re-registered attributed behavior). Suites 2026-08-16: world-model 1486, engine 629, story-loader 499, tsc clean; bundle rebuilt — thealderman 60, b1 15, b3 63, Dungeo chain 952, all passing |
+| **D10** | Observer's generic witness rule mints RAW EVENT TYPES as knowledge topics (`if.event.attacked`) — platform vocabulary leaks into the knowledge map and can propagate NPC-to-NPC | stdlib/src/npc/character-observer.ts (`const factTopic = event.type`) | **FIXED 2026-08-16 (David: "go, include the yourself naming fix").** Assessment probe (thealderman, 5 ordinary commands): each Bar NPC minted 8 "facts", 7 of them raw wire types incl. `if.event.room.description` and `if.event.list.contents`; 12 of 13 fact_learned author rows were junk; propagation leak latent only because every thealderman suspect authors an explicit `spreads` list (no-spreads chatty profile shares everything not withheld — D10's own rule); zero legitimate consumers repo-wide. Fix: DELETED observeEvent step 2 (raw mint + FACT_LEARNED emission) — detectActs/witnessActs (D12a) is the one topic factory for witnessed events; state transitions/lucidity match on `event.type` directly, untouched. Rode along per David: player-actor derived topics use the stable token `the player` (actorNameOf player check), not the self-referential display name — `yourself harmed` read as a fact about the listener once propagated. FACT_LEARNED constant retained (prefix-projected channel, future emitters). 4 pinning tests rewritten to assert absence + derived topic, 1 obsolete test removed (rule 14), +1 player-naming assertion. Post-fix probe: same 5 commands → exactly ONE topic, `the player harmed`. Suites: stdlib 1618, character 428, story-loader 497; bundle rebuilt — thealderman 53, b1 15, b3 26, Dungeo chain all passing |
+| **D11** | The breaking crack has no pressure/pin consequence — `drainPressure` uncalled (§6), so a confessed NPC stays at `breaking` with pins held forever | §6 | **Decomposed into seams (David, 2026-08-16: "you're conflating multiple seams — assess separately").** Probes mapped four defects to four seams: crack re-fires forever → seam 2 (pressure discharge trigger, unruled); goal confession loop → seam 1 (D12 below, FIXED); pin gags the confession order-dependently → seam 4 (pin *gating* vs band, unruled — distinct from seam 3 pin *release*, whose two D9 paths are both unimplemented); re-lie after confession → seam 6 (story authoring, ruled by-design "breaking is weather"). Seam 5 (does `when it is breaking` carry discharge semantics in Chord) only entailed if seam 2 picks delivery-marking. **Seam 4 FIXED 2026-08-16 (David: "seam 4 next")**: `pinAllowsClaim` band-aware — at the speaker's own `breaking` the pin stops gating (D9's "holds until … conscience breaking" implemented as written; gating suspension is NOT release — the entry stays pinned, release stays seam 3's question); `recordClaimDelivery` maintenance reclassified — maintenance = restating the PINNED value (`pin_held` + deposit unchanged), the honestly-contradicting truth at breaking is neither mint nor maintenance (no cost, no events, pin untouched), a differently-valued lie at breaking still costs via `isLie` but mints nothing while a pin exists. One shared function, both dialogue surfaces. Tests: +4 selector (burdened still gates / truth escapes at breaking / escape uncharged + pin untouched / different lie costs without minting); new `pin-vs-crack.transcript` pins the alibi-first path through gameplay (pre-fix: deflected forever). Suites: character 434, story-loader 497; bundle — thealderman 60, b1 15, b3 26, Dungeo chain 952, all passing. **Seam 3 RULED + FIXED 2026-08-16 (David: "per-audience, go")**: pin release is PER (audience, fact) — a lie dies for an audience exactly when that audience gets the truth. Assessment first established the ledger had ZERO release paths (both D9 routes unbuilt; caught-lying is vocabulary only — no confrontation detection anywhere) and demonstrated the suspension-only hazard live (post-drain, the already-witnessed confession re-gagged to `no-matching-response`). Landed: R1 truth-told release — `recordClaimDelivery`'s honest-contradiction branch calls `unpinLedger({audience, factId})` + emits `character.author.pin_released` (entry survives unpinned); `drainPressure` loses its global `unpinLedger()` — discharge drains the curve, NEVER the ledger (global unpin would silently evaporate maintained lies to absent audiences, the exact D9 violation); R4 authored break = the trait's `unpinLedger` method (TS surface; no Chord statement until a story needs one); R3 caught-lying release ruled-but-dormant, rides the face-act detection work. Tests: seam-4 escape test now asserts release + `pin_released` payload; new two-audience test (confess to player → ross's pin holds, and below breaking the player keeps the truth while ross's pin still gates it); drain test rewritten curve-only. Suites: character 435, world-model 1483, story-loader 497; bundle — thealderman 60, b1 15, b3 26, Dungeo chain 952, all passing. **Seams 2+5 RULED + FIXED 2026-08-16 (David: "seam 2 as recommended, go") — D11 CLOSED**: discharge = delivery through a breaking-gated outlet ON SELF; the gate IS the marker (seam 5 resolved with it: no authored discharge surface; band-gated phrasebooks are the non-discharging color channel; a gate on ANOTHER entity's breaking never discharges the owner). Landed: `conditionRequiresSelfBreaking` (chord/condition-discharge.ts — conservative walker: `and` needs one operand, `or` all, negation/other arms prove nothing; `it` or the owner named outright). Row leg: loader walks row bodies (incl. ordinal/each/select nesting) at interceptor build, keys by phrase key; delivering a marked override calls the now-curve-only `drainPressure` + emits `character.author.pressure_drain`. Goal leg: `GoalDef.discharges` stamped by apply-compiled when `active when` is provably self-breaking (TS builder `.discharges()`); sequential completion drains + emits (with goalId). Composition proven live: crack → deflect next ask → 5 lies rebuild → crack again; seek-out confesses in the Hall, quiet after (edge), 5 more lies re-break → seeks out and confesses AGAIN (2 confessions, one per cycle). Tests: chord 853 (+5 walker), character 438 (+3 oracle-goals discharge describe incl. re-edge recycle and non-discharging control), story-loader 497; new transcripts b3-crack-discharge + b3-seek-out-recycle — b3 63, thealderman 60, b1 15, Dungeo chain 952, all passing. En route: chord dist-esm staleness after the new export (memory-documented trap) — rebuilt both targets. **Seam 6 CLOSED 2026-08-16 (session dc1312, story-level as ruled)**: thealderman authors permanence exactly as the ADR-318 amendment prescribes — `states: denying, confessed` on Viola, `change it to confessed when it is breaking` in the confession outlet itself, and four post-confession rows gated `when it is confessed` (truth stands-by with `and it is not breaking` for ladder exclusivity; alibi/killer/family drop their lies). The gated rows carry NO claims tags — they assert nothing to the ledger, so the still-pinned killer lie has nothing to gate and no maintenance deposit ever rebuilds the curve (permanence is structural, not lucky). Compile gate earned its keep twice en route: comments are illegal inside blocks, and the phrase-overlap check forced the provably-exclusive stands-by condition. Evidence: new `confession-permanence.transcript` (break → confess → re-ask truth/alibi/killer/family below breaking, each asserting the old lie ABSENT) — thealderman suite 71 passing in 7 transcripts via `dist/cli/sharpee.js`, 2026-08-16. D11 has no remaining open items |
+| **D12** | Completed goals reactivate whenever their activation condition still holds — or unconditionally when `activatesWhen` is empty (vacuously true): Chelsea re-asked Catherine every 3rd turn forever in the shipping story; the b3 Steward re-blurted his confession every 3rd turn; John's `destroy-evidence` (`active when it is not calm`) has the same shape. ADR-145 silent on post-completion reactivation; the `GoalRuntimeState.active` doc comment already *claimed* edge-triggered | live probes 2026-08-16 (Chelsea: 3 deliveries in 8 waits; Steward: 3 in 10) | **FIXED 2026-08-16 (David's ruling: edge-triggered).** `GoalRuntimeState.conditionHeld` samples the full activation condition (`activatesWhen` ∧ `activeWhenCompiled`) each tick for inactive goals; activation requires a rising edge (`held && conditionHeld !== true`; absent = never sampled, so first-turn activation of always-true goals happens exactly once). Active goals keep the sample that activated them; completion with the condition continuously held is not a new edge. Rides the existing goalState save path. Tests: obsolete level-triggered pin rewritten + 2 new (drop-and-return re-edge at step 0; empty-condition goal runs exactly once), phase-integration shape pin updated. Suites: character 430, world-model 1483; bundle rebuilt — thealderman 53, b1 15, b3 26, Dungeo chain 952, all passing. Post-fix probes: Chelsea approaches Catherine exactly once; Steward confesses exactly once then holds (band still `breaking` — a future seam-2 drain makes re-break → re-edge → re-confess fall out for free) |
+
+## 8. What is genuinely proven working (for scope fairness)
+
+Arbitration (B1/B2 + orderings), voices (mood- and band-gated phrasebooks, exact-turn
+flips), claims/pin/mint/deposits (unit + transcripts), band gates and the crack row,
+conversation-marker suppression (unit), author channel + isolation, save/restore
+through the real service, propagation of topics AND values (post-G5a), act detection
+with aliases, the observe path, custom vocabulary, temperaments, the full compile
+surface with its diagnostics.
+
+## 9. Recommended fix order
+
+D6 (goals act on the world — unblocks 318-AC3's seek-out leg and makes ADR-145 real) →
+D7 (one-line-class filter, needs the first-match ruling) → D8 (influence idempotency)
+→ D10 (topic vocabulary) → D9 (attribution) → D11 (crack semantics — needs David's
+design ruling, possibly an ADR amendment alongside the AC3 forcing clause).
+
+**All discharged (re-audit 2026-08-16, dc1312)**: D6–D12 fixed, D11's six seams closed
+(seam 6 story-level). What the audit still carries, none of it a defect: eavesdropped
+`PlayerPresence` arms UNREACHABLE (dormant feature surface), `IRPhrase.specificity`
+ORPHAN wire field, promise-kind ledger entries RULED-dormant with seam-3 R3. The
+`influence.expired` ruling landed same-session (authored opt-in `on expired` arm — see
+§2), leaving those three as the audit's complete residue.

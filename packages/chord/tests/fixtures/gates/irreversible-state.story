@@ -1,6 +1,7 @@
 story
   title: Gate: irreversible state
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-irreversible-state
   story-version: 0.0.1
 

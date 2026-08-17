@@ -42,7 +42,8 @@ function compileSource(source: string): StoryIR {
 
 const STORY = `story
   title: Door Actions
-  authors: T
+  authors:
+    T
   id: door-actions
   story-version: 0.0.1
 

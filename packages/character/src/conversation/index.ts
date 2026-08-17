@@ -26,6 +26,13 @@ export {
   TopicRegistry,
 } from './topic-registry.js';
 
+// Shared claim-delivery bookkeeping and author-event constructor (ADR-318
+// D9/D11) — one implementation for the TS dialogue extension and the
+// loader's topic dispatch.
+export { pinAllowsClaim, recordClaimDelivery, type ClaimTag } from './claims.js';
+export { markConversationTurn, conversationSuppressesGoals } from './conversation-marker.js';
+export { createAuthorEvent } from './author-events.js';
+
 export {
   type Contradiction,
   type ConstraintEvaluatorState,
@@ -74,6 +81,12 @@ export {
 export {
   CharacterModelDialogue,
 } from './dialogue-extension.js';
+
+// The dialogue-selector socket adapter (ADR-310 D15; contracts.md §5)
+export {
+  createCharacterDialogueSelector,
+  registerCharacterDialogue,
+} from './selector.js';
 
 export {
   ConversationMessages,

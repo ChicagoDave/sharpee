@@ -146,7 +146,7 @@ describe('must be any <name> (membership, David 2026-07-12 — P3)', () => {
 
 describe('each host positions (parse-time, never top-level)', () => {
   it('rejects a top-level each block with parse.each-top-level', () => {
-    const result = parse('story\n  title: T\n  authors: A\n\neach stray-treasure\n  phrase tidy\nend each\n');
+    const result = parse('story\n  title: T\n  authors:\n    A\n\neach stray-treasure\n  phrase tidy\nend each\n');
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'parse.each-top-level')).toBe(true);
   });

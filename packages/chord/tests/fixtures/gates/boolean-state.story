@@ -1,6 +1,7 @@
 story
   title: Gate: boolean state
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-boolean-state
   story-version: 0.0.1
 

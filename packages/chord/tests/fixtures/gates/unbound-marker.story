@@ -1,6 +1,7 @@
 story
   title: Gate 6
-  authors: Nobody
+  authors:
+    Nobody
   id: gate-6
   story-version: 0.0.1
 

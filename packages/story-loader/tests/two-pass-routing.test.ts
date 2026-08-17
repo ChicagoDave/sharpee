@@ -36,7 +36,8 @@ import { counterKey } from '../src/state-keys';
 
 const SOURCE = `story
   title: Two-Pass Routing Harness
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: two-pass-routing
   story-version: 0.0.1
 

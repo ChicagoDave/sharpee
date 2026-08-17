@@ -1,19 +1,19 @@
 /**
- * Character model message IDs (ADR-141)
+ * Character model state-change event types (ADR-141; ADR-318 D11)
  *
- * Semantic message IDs for character state change events.
- * Actual text is provided by the language layer.
+ * AUTHOR-CHANNEL ONLY (ADR-310 D12, retired as player surface in the
+ * ADR-310/318 Phase 2 integration): these event types are projected by
+ * the `character` channel for authoring tools and have no language-layer
+ * rendering — no ID here may ever gain a player-facing prose path.
  *
  * Public interface: CharacterMessages const, CharacterMessageId type.
  * Owner context: stdlib / npc
  */
 
 /**
- * Message IDs for character model state change events.
- *
- * These are emitted as observable behavior events when an NPC's
- * cognitive or emotional state changes. Silent by default — authors
- * opt in per NPC to surface them to the player.
+ * Event types for character model state changes, emitted when an NPC's
+ * cognitive or emotional state changes and consumed by the `character`
+ * author channel ("explain this NPC's turn").
  */
 export const CharacterMessages = {
   // Lucidity transitions

@@ -19,6 +19,7 @@
  * - Diagnostics gate the load (atomic): callers must check hasErrors().
  */
 import {
+  CompositionItem,
   ConditionNode,
   CreateDecl,
   CounterDecl,
@@ -33,6 +34,19 @@ import {
   DefinePhrases,
   OverrideMessage,
   OverrideMessages,
+  DefineFact,
+  DefineTemperament,
+  DefineCode,
+  ForcePairDecl,
+  NeverDecl,
+  ObligationLineDecl,
+  ScopeRefDecl,
+  DefineHonor,
+  ClaimsTagDecl,
+  DefineWitnessedTopic,
+  DefineMood,
+  DefinePersonality,
+  DefineProfile,
   DefinePronouns,
   DefineTrait,
   EmitField,
@@ -54,6 +68,8 @@ import {
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
@@ -86,6 +102,24 @@ import {
   IRGrammarRemoval,
   IRScoreDef,
   IRStatement,
+  IRFactDef,
+  IRFeelsEntry,
+  IRGoalDef,
+  IRGoalStep,
+  IRInfluenceDef,
+  IRKnowsEntry,
+  IRPersonalityEntry,
+  IRPhrasebook,
+  IRResistsEntry,
+  IRSpreads,
+  IRTemperamentDef,
+  IRTemperamentBinding,
+  IRPrincipleEntry,
+  IRObligationEntry,
+  IRScopeRef,
+  IRHonorDecl,
+  IRWitnessedTopicDef,
+  IRThinksEntry,
   IRTopicRow,
   IRTraitDef,
   IRValue,
@@ -242,6 +276,10 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `${p.kind}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
         case 'can':
           return `can-${p.ability}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
+        case 'feels':
+          return `feels(${value(cond.subject)},${p.disposition},${p.target.words.join(' ').toLowerCase()})`;
+        case 'knows':
+          return `knows(${value(cond.subject)},${p.topic.words.join(' ').toLowerCase()})`;
         case 'is-any':
           return `is-any(${value(cond.subject)},${p.condition})`;
       }
@@ -359,6 +397,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'wears':
         case 'can':
           return nameIsIt(p.thing);
+        case 'feels':
+          // D13: the target can be `it` (`the Colonel feels wary of it`).
+          return nameIsIt(p.target);
+        case 'knows':
+          return nameIsIt(p.topic);
         case 'is-a':
         // `is here` has no object node — the subject was already visited above.
         case 'is-here':
@@ -416,12 +459,19 @@ const UNIQUE_NAMESPACES = [
   'ambient bed',
   'asset',
   'channel',
+  'code',
   'counter',
   'entity',
+  'fact',
+  'honor bundle',
   'image layer',
   'machine',
+  'mood',
+  'personality adjective',
   'phrasebook',
+  'profile',
   'pronoun set',
+  'temperament',
   'trait',
 ] as const;
 
@@ -492,6 +542,28 @@ class Analyzer {
    * precedent: an errored duplicate never emits a second entry).
    */
   private pronounSetDecls = new Map<string, DefinePronouns>();
+  /** `define fact` declarations in order (ADR-310 D14), and their built defs by id. */
+  private factDecls: DefineFact[] = [];
+  private factDefs: IRFactDef[] = [];
+  private factById = new Map<string, IRFactDef>();
+  /** `define temperament` defs plus per-entity synthesized inline/override defs (ADR-318 D3), in declaration order. */
+  private temperamentDefs = new Map<string, IRTemperamentDef>();
+  private codeDecls: DefineCode[] = [];
+  /** `define code` bundles resolved to IR entries (ADR-318 D4) — flattened into entities, never on the wire. */
+  private codes = new Map<string, { principles: IRPrincipleEntry[]; obligations: IRObligationEntry[] }>();
+  /** `define honor` selective face-act bundles (ADR-318 D7) — inlined into entities, never on the wire. */
+  private honorDefs = new Map<string, string[]>();
+  /** `claims` tags awaiting the fact table (ADR-318 D9) — resolveClaims stamps each phrase after buildFacts. */
+  private pendingClaims: Array<{ claims: ClaimsTagDecl; phrase: IRPhrase }> = [];
+  private witnessedTopicDecls: DefineWitnessedTopic[] = [];
+  /** Resolved `define topic … as …` aliases (ADR-318 D12a). */
+  private witnessedTopics: IRWitnessedTopicDef[] = [];
+  /** `define profile` declarations (ADR-310 D4) and their completed dimension maps. */
+  private profileDecls: DefineProfile[] = [];
+  private profiles = new Map<string, Record<string, string>>();
+  /** Custom vocabulary (ADR-310 D5): `define mood` / `define personality` by word. */
+  private customMoods = new Map<string, DefineMood>();
+  private customPersonalities = new Map<string, DefinePersonality>();
 
   constructor(
     private readonly ast: StoryFile,
@@ -598,6 +670,17 @@ class Analyzer {
     // Built once (it emits diagnostics), spread in only when present so the
     // optional `hunger` field never appears as `undefined` on a story without it.
     const hungerDef = this.buildHunger();
+    // ADR-310 D14/D4: fact-value sets and named profiles build before
+    // entities — `thinks` lines and `cognitive-profile` lines resolve
+    // against them.
+    this.buildFacts();
+    this.buildProfiles();
+    // ADR-318 D4: code bundles resolve once, before entities flatten them.
+    this.buildCodes();
+    // ADR-318 D9: claims tags check against the built fact table.
+    this.resolveClaims();
+    // ADR-318 D12a: witnessed-act aliases resolve against the entity table.
+    this.buildWitnessedTopics();
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -641,6 +724,24 @@ class Analyzer {
       channels: [],
       pronounSets: [],
       hasHatches: false,
+      // Additive and optional — absent when the story declares no facts.
+      ...(this.factDefs.length > 0 ? { facts: this.factDefs } : {}),
+      // ADR-318 D12a witnessed-act aliases — additive and optional.
+      ...(this.witnessedTopics.length > 0 ? { witnessedTopics: this.witnessedTopics } : {}),
+      // ADR-310 D5 custom vocabulary — additive and optional.
+      ...(this.customMoods.size > 0
+        ? {
+            customMoods: [...this.customMoods.values()].map((m) => ({
+              name: m.name,
+              like: m.like.word,
+              ...(m.but ? { but: m.but.word } : {}),
+              span: m.span,
+            })),
+          }
+        : {}),
+      ...(this.customPersonalities.size > 0
+        ? { customPersonalities: [...this.customPersonalities.values()].map((p) => ({ name: p.name, span: p.span })) }
+        : {}),
     };
 
     for (const decl of this.ast.declarations) {
@@ -754,6 +855,15 @@ class Analyzer {
         case 'define-phrasebook':
         case 'import':
           break; // collected/diagnosed in pass 1; conditions resolve below
+        case 'define-fact':
+        case 'define-temperament':
+        case 'define-code':
+        case 'define-honor':
+        case 'define-witnessed-topic':
+        case 'define-profile':
+        case 'define-mood':
+        case 'define-personality':
+          break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
       }
@@ -768,6 +878,7 @@ class Analyzer {
       ...(b.entries ? { entries: b.entries } : {}),
       span: b.span,
     }));
+    this.stampPhrasebookSpecificity(ir.phrasebooks);
 
     // ADR-241 D3/D4: the implied `main` ambient bed — used by an ambient
     // statement without a declaration — joins the channel manifest so the
@@ -788,6 +899,10 @@ class Analyzer {
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkCompositionLegality(ir);
+    this.checkInfluenceReferences(ir);
+    // ADR-318 D3: after entities — inline/override bindings synthesize defs
+    // during entity build. Additive and optional, the facts idiom.
+    if (this.temperamentDefs.size > 0) ir.temperaments = [...this.temperamentDefs.values()];
     this.checkAlterationTargets(ir);
     this.checkMarkers();
     this.checkDescriptionMarkers();
@@ -1436,7 +1551,80 @@ class Analyzer {
         this.checkPhaseOrder(row.body, { ended: null });
       }
 
+      const axes = this.phraseAxesFor(owner);
+      for (const row of rows) this.checkPhraseExclusivity(row, axes);
+
       owner.topics = rows;
+    }
+  }
+
+  /**
+   * Single-valued axis table for the overlap prover. Mood (platform +
+   * customs), band, and threat words are single-valued interior reads;
+   * the owner's declared `states:` words are a single current value per
+   * entity (`change it to <state>`). Words the evaluator can ALSO answer
+   * through another mechanism are excluded — platform state adjectives
+   * fall through `stateAdjectiveHolds`, and a state word that is also a
+   * mood word is reachable through both reads — the builder drops any
+   * cross-axis collision, and we pre-filter the platform adjectives.
+   */
+  private phraseAxesFor(owner: IREntity): SingleValuedAxes {
+    const platformAdjectives = new Set<string>([...STATE_ADJECTIVES, 'dark']);
+    return buildSingleValuedAxes({
+      mood: [...CHARACTER_MANIFEST.moods, ...this.customMoods.keys()],
+      band: CHARACTER_MANIFEST.pressureBands,
+      threat: CHARACTER_MANIFEST.threats,
+      'entity-state': owner.states.filter((s) => !platformAdjectives.has(s)),
+    });
+  }
+
+  /**
+   * The only-match rule for a topic arm (D7 ruling, 2026-08-16): at most
+   * one unconditional phrase line (the default, delivered only when no
+   * conditional line matches), and every pair of conditional lines must
+   * be PROVABLY exclusive — the compiler must hold a witness that no
+   * state satisfies both. No witness is an error demanding the author
+   * disambiguate (split on a state axis, or add a `not`). Deliberate
+   * multiplicity belongs at the phrase level (`or`-separated variants),
+   * never as two rows both in play.
+   */
+  private checkPhraseExclusivity(row: IRTopicRow, axes: SingleValuedAxes): void {
+    const phrases = row.body.filter(
+      (s): s is Extract<IRStatement, { kind: 'phrase' }> => s.kind === 'phrase',
+    );
+    const defaults = phrases.filter((p) => !p.stmtWhen);
+    for (let i = 1; i < defaults.length; i++) {
+      this.diagnostics.error(
+        'analysis.phrase-overlap',
+        `This row already has an unconditional response \`${defaults[0].phraseKey}\` (line ${defaults[0].span?.line}) — one default per row; give \`${defaults[i].phraseKey}\` a \`when\`.`,
+        defaults[i].span,
+      );
+    }
+    // The default is "when no conditional line matches" — order-free
+    // semantics, but the runtime resolves first-in-order, so the default
+    // must sit last or it would shadow a matched conditional line.
+    if (defaults.length === 1) {
+      const defaultIndex = phrases.indexOf(defaults[0]);
+      const shadowed = phrases.find((p, i) => i > defaultIndex && p.stmtWhen);
+      if (shadowed) {
+        this.diagnostics.error(
+          'analysis.phrase-overlap',
+          `The unconditional response \`${defaults[0].phraseKey}\` must be the row's last line — written here it would shadow \`${shadowed.phraseKey}\` even when its \`when\` matches.`,
+          defaults[0].span,
+        );
+      }
+    }
+    const conditional = phrases.filter((p) => p.stmtWhen);
+    for (let i = 0; i < conditional.length; i++) {
+      for (let j = i + 1; j < conditional.length; j++) {
+        if (!provablyDisjoint(conditional[i].stmtWhen!, conditional[j].stmtWhen!, axes)) {
+          this.diagnostics.error(
+            'analysis.phrase-overlap',
+            `\`${conditional[i].phraseKey}\` (line ${conditional[i].span?.line}) and \`${conditional[j].phraseKey}\` can both match the same state — response conditions must be provably exclusive. Split them on a state axis (mood, band, threat, story phase, \`feels\`) or add a \`not\`; for deliberate variety, use \`or\`-separated variants inside one phrase.`,
+            conditional[j].span,
+          );
+        }
+      }
     }
   }
 
@@ -2067,6 +2255,122 @@ class Analyzer {
           this.pronounSetDecls.set(decl.name, decl);
         }
       }
+      else if (decl.kind === 'define-fact') {
+        // ADR-310 D14: fact names are unique; the value sets build after
+        // symbol collection (values may name entities).
+        this.registerUnique('fact', decl.name.words.join('-').toLowerCase(), decl.span, 'analysis.duplicate-fact');
+        this.factDecls.push(decl);
+      }
+      else if (decl.kind === 'define-temperament') {
+        // ADR-318 D3: temperament names are unique; force words resolve
+        // here — the vocabulary is closed, no entity resolution needed.
+        if (this.registerUnique('temperament', decl.name, decl.span, 'analysis.duplicate-temperament')) {
+          const pairs = this.resolveForcePairs(decl.pairs, decl.name);
+          this.temperamentDefs.set(decl.name, { name: decl.name, pairs, span: decl.span });
+        }
+      }
+      else if (decl.kind === 'define-code') {
+        // ADR-318 D4: code names are unique; the lines resolve after
+        // symbol collection (scopes may name entities) — buildCodes.
+        this.registerUnique('code', decl.name, decl.span, 'analysis.duplicate-code');
+        this.codeDecls.push(decl);
+      }
+      else if (decl.kind === 'define-witnessed-topic') {
+        // ADR-318 D12a: resolution needs the entity table — buildWitnessedTopics.
+        this.witnessedTopicDecls.push(decl);
+      }
+      else if (decl.kind === 'define-honor') {
+        // ADR-318 D7: honor bundle names are unique; face-acts resolve
+        // here — the vocabulary is closed, no entity resolution needed.
+        if (this.registerUnique('honor bundle', decl.name, decl.span, 'analysis.duplicate-honor')) {
+          const acts: string[] = [];
+          for (const line of decl.faceActs) {
+            const surface = line.words.map((w) => w.word).join(' ');
+            if (!CHARACTER_MANIFEST.faceActs.includes(surface)) {
+              this.diagnostics.error(
+                'analysis.unknown-face-act',
+                `\`${surface}\` is not a face-act — the vocabulary: ${CHARACTER_MANIFEST.faceActs.join(', ')}${this.suggestText(surface, [...CHARACTER_MANIFEST.faceActs])}.`,
+                line.span,
+              );
+              continue;
+            }
+            if (acts.includes(surface)) {
+              this.diagnostics.error('analysis.face-act-duplicate', `\`${decl.name}\` already lists \`${surface}\`.`, line.span);
+              continue;
+            }
+            acts.push(surface);
+          }
+          this.honorDefs.set(decl.name, acts);
+        }
+      }
+      else if (decl.kind === 'define-mood') {
+        // ADR-310 D5 (Option 2): a custom mood joins the same compile-time
+        // vocabulary checks as platform words. The anchor must be a
+        // PLATFORM mood — chained custom anchors would make placement a
+        // scavenger hunt.
+        if (CHARACTER_MANIFEST.moods.includes(decl.name)) {
+          this.diagnostics.error(
+            'analysis.mood-shadows-platform',
+            `\`${decl.name}\` is a platform mood — \`define mood\` names a new word; pick another name.`,
+            decl.span,
+          );
+        } else if (this.registerUnique('mood', decl.name, decl.span, 'analysis.duplicate-mood-word')) {
+          if (!CHARACTER_MANIFEST.moods.includes(decl.like.word)) {
+            this.diagnostics.error(
+              'analysis.unknown-mood-word',
+              `\`${decl.like.word}\` is not a platform mood — the anchor must be one of: ${CHARACTER_MANIFEST.moods.join(', ')}.`,
+              decl.like.span,
+            );
+          } else if (decl.but && !CHARACTER_MANIFEST.moodModifiers.includes(decl.but.word)) {
+            this.diagnostics.error(
+              'analysis.unknown-mood-modifier',
+              `\`${decl.but.word}\` is not a mood modifier — ${CHARACTER_MANIFEST.moodModifiers.join(', ')}.`,
+              decl.but.span,
+            );
+          } else {
+            this.customMoods.set(decl.name, decl);
+          }
+        }
+      }
+      else if (decl.kind === 'define-personality') {
+        // ADR-310 D5: a custom personality adjective. Platform personality
+        // words, intensity words, and trait vocabulary all shadow it dead,
+        // so each is refused by name.
+        if (CHARACTER_MANIFEST.personality.includes(decl.name)) {
+          this.diagnostics.error(
+            'analysis.personality-shadows-platform',
+            `\`${decl.name}\` is a platform personality word — \`define personality\` names a new word; pick another name.`,
+            decl.span,
+          );
+        } else if (CHARACTER_MANIFEST.intensities.includes(decl.name)) {
+          this.diagnostics.error(
+            'analysis.personality-shadows-platform',
+            `\`${decl.name}\` is an intensity word — it cannot also be a personality adjective.`,
+            decl.span,
+          );
+        } else if (TRAIT_ADJECTIVES.has(decl.name) || manifestForAdjective(decl.name)) {
+          this.diagnostics.error(
+            'analysis.personality-shadows-trait',
+            `\`${decl.name}\` is a trait adjective — it would compose as the trait, never as personality; pick another name.`,
+            decl.span,
+          );
+        } else if (this.registerUnique('personality adjective', decl.name, decl.span, 'analysis.duplicate-personality-word')) {
+          this.customPersonalities.set(decl.name, decl);
+        }
+      }
+      else if (decl.kind === 'define-profile') {
+        // ADR-310 D4/D5: story profiles share a namespace with the eight
+        // platform presets (the pronoun-set-shadows precedent).
+        if (CHARACTER_MANIFEST.profilePresets[decl.name]) {
+          this.diagnostics.error(
+            'analysis.profile-shadows-preset',
+            `\`${decl.name}\` is a platform profile preset — \`define profile\` names a new profile; pick another name.`,
+            decl.span,
+          );
+        } else if (this.registerUnique('profile', decl.name, decl.span, 'analysis.duplicate-profile')) {
+          this.profileDecls.push(decl);
+        }
+      }
       else if (decl.kind === 'define-trait') {
         // ADR-289 D5: one of the two constructs the hand-rolled gates missed
         // — a second `define trait guard` used to compile, the later block
@@ -2657,12 +2961,16 @@ class Analyzer {
   }
 
   private collectPhraseDecl(decl: DefinePhrase): void {
-    this.registerPhrase(DEFAULT_LOCALE, decl.key, {
+    const phrase: IRPhrase = {
       strategy: (decl.strategy as IRPhrase['strategy']) ?? null,
       ...(decl.verbatim ? { verbatim: true } : {}),
       variants: decl.variants.map((v) => this.variantOf(v)),
       span: decl.span,
-    });
+    };
+    this.registerPhrase(DEFAULT_LOCALE, decl.key, phrase);
+    // ADR-318 D9: the claims tag resolves after the fact table builds
+    // (values may name entities) — resolveClaims stamps the phrase.
+    if (decl.claims) this.pendingClaims.push({ claims: decl.claims, phrase });
   }
 
   /** ADR-255: `override message <alias>` — full phrase body under an ACL alias. */
@@ -2847,14 +3155,750 @@ class Analyzer {
 
   // ------------------------------------------------------------- entities
 
+  /**
+   * ADR-310 D2: route a bare composition that reads as a personality
+   * adjective into character data. Returns true when the composition was
+   * consumed — as a personality entry or as its own diagnostic. Platform,
+   * extension, and story-defined trait names keep their trait reading (an
+   * author's `define trait honest` shadows the personality word); an
+   * intensity-led pair (`very …`) is always a personality attempt, so its
+   * unknown second word gets the D2 vocabulary diagnostic rather than the
+   * generic unknown-trait error.
+   */
+  private routeCharacterComposition(
+    comp: CompositionItem,
+    isPerson: boolean,
+    isPlayer: boolean,
+    entityName: string,
+    out: IRPersonalityEntry[],
+  ): boolean {
+    const words = comp.words.map((w) => w.toLowerCase());
+    const name = words.join(' ');
+    if (TRAIT_ADJECTIVES.has(name) || manifestForAdjective(name) || this.traitNames.has(name)) return false;
+
+    let trait: string;
+    let intensity: string | undefined;
+    if (words.length === 1 && this.isPersonalityWord(words[0])) {
+      trait = words[0];
+    } else if (words.length === 2 && CHARACTER_MANIFEST.intensities.includes(words[0])) {
+      if (!this.isPersonalityWord(words[1])) {
+        this.diagnostics.error(
+          'analysis.unknown-personality-word',
+          `\`${words[1]}\` is not a personality word — the vocabulary: ${this.personalityVocabulary().join(', ')}.`,
+          comp.span,
+        );
+        return true;
+      }
+      intensity = words[0];
+      trait = words[1];
+    } else {
+      return false;
+    }
+
+    if (!isPerson) {
+      this.diagnostics.error(
+        'analysis.personality-person-only',
+        `\`${name}\` is a personality adjective — it composes only on a person (\`a person, ${name}\`); \`${entityName}\` is not a person.`,
+        comp.span,
+      );
+      return true;
+    }
+    // The player carries no character model — the model drives NPC turns
+    // (ADR-310; the direct parallel of the player-behavior gate below).
+    if (isPlayer) {
+      this.diagnostics.error(
+        'analysis.personality-player',
+        `The player carries no character model — personality adjectives shape how an NPC behaves, and the player's behavior is the player's.`,
+        comp.span,
+      );
+      return true;
+    }
+    if (comp.config.length > 0) {
+      this.diagnostics.error(
+        'analysis.personality-config',
+        `A personality adjective takes no \`with\` fields — intensity is part of the word itself (\`very ${trait}\`).`,
+        comp.span,
+      );
+      return true;
+    }
+    if (comp.condition) {
+      this.diagnostics.error(
+        'analysis.personality-conditional',
+        `Personality is fixed at creation — \`${trait} while …\` is not supported (the transient thing is mood: \`change mood to …\`).`,
+        comp.span,
+      );
+      return true;
+    }
+    if (out.some((e) => e.trait === trait)) {
+      this.diagnostics.error(
+        'analysis.personality-duplicate',
+        `\`${trait}\` is declared twice on this person.`,
+        comp.span,
+      );
+      return true;
+    }
+    out.push({ trait, ...(intensity !== undefined ? { intensity } : {}), span: comp.span });
+    return true;
+  }
+
+  /**
+   * ADR-310 D16: stamp each phrasebook whose `while` gates on an entity's
+   * interior state as character-scoped (the loader's specificity
+   * arbitration reads the stamp — character-scoped beats story-scoped by
+   * total override), and refuse the same-specificity tie: two
+   * character-scoped books gating the same speaker can be active together,
+   * which is exactly the silent wrong-voice pick D16 spends an error on.
+   * Two `is`-predicates on the same subject with different mood (or
+   * threat) words are provably exclusive — one mood at a time — and pass.
+   */
+  private stampPhrasebookSpecificity(books: IRPhrasebook[]): void {
+    const subjectsOf = new Map<IRPhrasebook, Set<string>>();
+    for (const book of books) {
+      if (!book.condition) continue;
+      const subjects = new Set<string>();
+      this.collectInteriorSubjects(book.condition, subjects);
+      if (subjects.size > 0) {
+        book.specificity = 'character';
+        subjectsOf.set(book, subjects);
+      }
+    }
+    const stamped = books.filter((b) => subjectsOf.has(b));
+    for (let i = 0; i < stamped.length; i++) {
+      for (let j = i + 1; j < stamped.length; j++) {
+        const shared = [...subjectsOf.get(stamped[i])!].filter((s) => subjectsOf.get(stamped[j])!.has(s));
+        if (shared.length === 0) continue;
+        if (this.exclusiveInteriorPair(stamped[i].condition!, stamped[j].condition!)) continue;
+        this.diagnostics.error(
+          'analysis.phrasebook-tie',
+          `Phrasebooks \`${stamped[i].name}\` and \`${stamped[j].name}\` both gate on \`${shared[0]}\`'s interior state and could be active together — a same-specificity tie is ambiguous. Tighten one \`while\` so only one voice can hold.`,
+          stamped[j].span,
+        );
+      }
+    }
+  }
+
+  /** Collect the entity ids whose interior state a condition reads (D16 classification). */
+  private collectInteriorSubjects(cond: IRCondition, out: Set<string>): void {
+    const subjectId = (v: IRValue): string | null =>
+      v.kind === 'entity' ? v.id : v.kind === 'player' ? 'player' : null;
+    switch (cond.kind) {
+      case 'and':
+      case 'or':
+        for (const o of cond.operands) this.collectInteriorSubjects(o, out);
+        return;
+      case 'not':
+        this.collectInteriorSubjects(cond.operand, out);
+        return;
+      case 'feels':
+      case 'knows-topic': {
+        const id = subjectId(cond.subject);
+        if (id !== null) out.add(id);
+        return;
+      }
+      case 'predicate': {
+        if (cond.pred !== 'is' || cond.object.kind !== 'symbol') return;
+        const word = cond.object.name;
+        if (!this.isMoodWord(word) && !CHARACTER_MANIFEST.threats.includes(word) && !CHARACTER_MANIFEST.pressureBands.includes(word)) return;
+        const id = subjectId(cond.subject);
+        if (id === null) return;
+        // The entity's OWN declared state wins the word (resolveIsObject) —
+        // a state test is not an interior-state gate.
+        if (this.byId.get(id)?.states.includes(word)) return;
+        out.add(id);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  /**
+   * True when two conditions are single bare `is`-predicates on the same
+   * subject with different words of the SAME interior axis — one mood (or
+   * threat) at a time, so both books can never be active together.
+   */
+  private exclusiveInteriorPair(a: IRCondition, b: IRCondition): boolean {
+    const simple = (c: IRCondition) =>
+      c.kind === 'predicate' && c.pred === 'is' && !c.negated && c.object.kind === 'symbol' ? c : null;
+    const pa = simple(a);
+    const pb = simple(b);
+    if (!pa || !pb) return false;
+    if (JSON.stringify(pa.subject) !== JSON.stringify(pb.subject)) return false;
+    const axisOf = (w: string): string | null =>
+      this.isMoodWord(w) ? 'mood' : CHARACTER_MANIFEST.threats.includes(w) ? 'threat' : CHARACTER_MANIFEST.pressureBands.includes(w) ? 'band' : null;
+    const wa = (pa.object as { kind: 'symbol'; name: string }).name;
+    const wb = (pb.object as { kind: 'symbol'; name: string }).name;
+    const axisA = axisOf(wa);
+    return axisA !== null && axisA === axisOf(wb) && wa !== wb;
+  }
+
+  /**
+   * ADR-310 D9: a `resists` naming an influence nobody defines is a dead
+   * line — refused, never a silent no-op. Runs after every entity is built
+   * because the influencer may be declared after the resister.
+   */
+  private checkInfluenceReferences(ir: StoryIR): void {
+    const names = new Set<string>();
+    for (const e of ir.entities) for (const inf of e.character?.influences ?? []) names.add(inf.name);
+    for (const e of ir.entities) {
+      for (const r of e.character?.resists ?? []) {
+        if (!names.has(r.influence)) {
+          this.diagnostics.error(
+            'analysis.unknown-influence',
+            `No entity defines an influence named \`${r.influence}\`${this.suggestText(r.influence, [...names])}.`,
+            r.span,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * ADR-318 D3: resolve `<force> over <force>` pairs against the closed
+   * force vocabulary. A pair repeated in either order is refused — the
+   * reverse would silently contradict the first, and D6 owns collisions
+   * (principles resolve by `except` or paralysis, never by list order).
+   */
+  private resolveForcePairs(pairs: ForcePairDecl[], owner: string): Array<[string, string]> {
+    const out: Array<[string, string]> = [];
+    for (const p of pairs) {
+      let ok = true;
+      for (const side of [p.first, p.second]) {
+        if (!CHARACTER_MANIFEST.forces.includes(side.word)) {
+          this.diagnostics.error(
+            'analysis.unknown-force',
+            `\`${side.word}\` is not a force — ${CHARACTER_MANIFEST.forces.join(', ')}${this.suggestText(side.word, [...CHARACTER_MANIFEST.forces])}.`,
+            side.span,
+          );
+          ok = false;
+        }
+      }
+      if (!ok) continue;
+      if (p.first.word === p.second.word) {
+        this.diagnostics.error(
+          'analysis.temperament-self-pair',
+          `\`${p.first.word} over ${p.second.word}\` orders a force against itself.`,
+          p.span,
+        );
+        continue;
+      }
+      const dup = out.find(([a, b]) => (a === p.first.word && b === p.second.word) || (a === p.second.word && b === p.first.word));
+      if (dup) {
+        this.diagnostics.error(
+          'analysis.temperament-pair-duplicate',
+          dup[0] === p.first.word
+            ? `\`${owner}\` already orders \`${dup[0]} over ${dup[1]}\`.`
+            : `\`${owner}\` already orders \`${dup[0]} over ${dup[1]}\` — the reverse contradicts it.`,
+          p.span,
+        );
+        continue;
+      }
+      out.push([p.first.word, p.second.word]);
+    }
+    return out;
+  }
+
+  /** Third-person surface of an act-category verb (`lie` → `lies`, `trespass` → `trespasses`). */
+  private inflect3sg(verb: string): string {
+    return /(?:s|x|z|ch|sh)$/.test(verb) ? `${verb}es` : `${verb}s`;
+  }
+
+  /** The written surface of a manifest act category (`break a promise` → `breaks a promise`). */
+  private categorySurface(category: string): string {
+    const [verb, ...rest] = category.split(' ');
+    return [this.inflect3sg(verb), ...rest].join(' ');
+  }
+
+  /**
+   * ADR-318 D4: resolve one `never` line — longest-match the third-person
+   * surface against the manifest's categories, the remainder is the scope
+   * (legal only on `harms`/`abandons`), the comma slot the except clause.
+   */
+  private resolveNeverLine(n: NeverDecl): IRPrincipleEntry | null {
+    let match: { category: string; length: number } | null = null;
+    for (const category of CHARACTER_MANIFEST.actCategories) {
+      const surface = this.categorySurface(category).split(' ');
+      if (surface.length > n.words.length) continue;
+      if (surface.every((w, i) => n.words[i].word === w)) {
+        if (!match || surface.length > match.length) match = { category, length: surface.length };
+      }
+    }
+    if (!match) {
+      const vocab = CHARACTER_MANIFEST.actCategories.map((cat) => this.categorySurface(cat));
+      this.diagnostics.error(
+        'analysis.unknown-act-category',
+        `\`${n.words.map((w) => w.word).join(' ')}\` is not an act category — the vocabulary: ${vocab.join(', ')}${this.suggestText(n.words[0].word, vocab)}.`,
+        n.words[0].span,
+      );
+      return null;
+    }
+    const rest = n.words.slice(match.length);
+    let scope: IRScopeRef | undefined;
+    if (rest.length > 0) {
+      if (match.category !== 'harm' && match.category !== 'abandon') {
+        this.diagnostics.error(
+          'analysis.principle-scope',
+          `\`${this.categorySurface(match.category)}\` takes no scope — only \`harms\` and \`abandons\` are scoped (ADR-318 D4).`,
+          rest[0].span,
+        );
+        return null;
+      }
+      const resolved = this.resolveRawScope(rest);
+      if (resolved === null) return null;
+      scope = resolved;
+    }
+    let except: IRPrincipleEntry['except'];
+    if (n.except) {
+      const s = this.resolveScopeRefDecl(n.except.scope);
+      if (s === null) return null;
+      except = { kind: n.except.protect ? 'protect' : 'object', scope: s };
+    }
+    return { category: match.category, ...(scope ? { scope } : {}), ...(except ? { except } : {}), span: n.span };
+  }
+
+  /** Resolve one obligation line (ADR-318 D4/D5). */
+  private resolveObligationLine(o: ObligationLineDecl): IRObligationEntry | null {
+    if (o.kind === 'answers-honestly') return { kind: 'answers honestly', span: o.span };
+    const scope = o.scope ? this.resolveScopeRefDecl(o.scope) : null;
+    if (scope === null) return null;
+    return { kind: 'protects', scope, span: o.span };
+  }
+
+  /** A parsed scope ref (ADR-310 D9/D10 grammar) — classifier by article, entity otherwise. */
+  private resolveScopeRefDecl(s: ScopeRefDecl): IRScopeRef | null {
+    if (s.kind === 'anyone') return { kind: 'anyone' };
+    if (s.ref.article === 'a' || s.ref.article === 'an') {
+      return { kind: 'classifier', value: s.ref.words.join(' ').toLowerCase() };
+    }
+    const id = this.resolveEntityId(s.ref);
+    return id === null ? null : { kind: 'entity', value: id };
+  }
+
+  /** A scope from the raw tail words of a `never` line (same grammar as {@link resolveScopeRefDecl}). */
+  private resolveRawScope(words: Array<{ word: string; span: Span }>): IRScopeRef | null {
+    if (words.length === 1 && words[0].word === 'anyone') return { kind: 'anyone' };
+    const first = words[0].word;
+    if (first === 'a' || first === 'an') {
+      if (words.length === 1) {
+        this.diagnostics.error('analysis.principle-scope', 'Expected a kind after the article (e.g. `a servant`).', words[0].span);
+        return null;
+      }
+      return { kind: 'classifier', value: words.slice(1).map((w) => w.word).join(' ') };
+    }
+    const article = first === 'the' ? 'the' : null;
+    const nameWords = article ? words.slice(1) : words;
+    if (nameWords.length === 0) {
+      this.diagnostics.error('analysis.principle-scope', 'Expected a scope — `anyone`, a kind (`a servant`), or an entity (`the children`).', words[0].span);
+      return null;
+    }
+    const ref: NameRef = { kind: 'name', article, words: nameWords.map((w) => w.word), span: words[0].span };
+    const id = this.resolveEntityId(ref);
+    return id === null ? null : { kind: 'entity', value: id };
+  }
+
+  /**
+   * ADR-318 D4: resolve `define code` bundles after symbol collection
+   * (scopes may name entities), once — the flatten into each `code <name>`
+   * entity copies the resolved entries.
+   */
+  private buildCodes(): void {
+    for (const decl of this.codeDecls) {
+      const principles: IRPrincipleEntry[] = [];
+      const obligations: IRObligationEntry[] = [];
+      for (const n of decl.nevers) {
+        const p = this.resolveNeverLine(n);
+        if (p) principles.push(p);
+      }
+      for (const o of decl.obligations) {
+        const r = this.resolveObligationLine(o);
+        if (r) obligations.push(r);
+      }
+      this.codes.set(decl.name, { principles, obligations });
+    }
+  }
+
+  /**
+   * ADR-318 D12a: resolve `define topic <actor> <act> as <alias>` lines.
+   * The act is the longest word-suffix matching a detectable-act surface —
+   * a face-act as spelled or an act category's third-person form; the
+   * prefix must resolve to an entity. The namespace (actors × acts) is
+   * closed, so total coverage is checkable here.
+   */
+  private buildWitnessedTopics(): void {
+    const surfaces: Array<{ surface: string[]; act: string }> = [
+      ...CHARACTER_MANIFEST.faceActs.map((f) => ({ surface: f.split(' '), act: f })),
+      ...CHARACTER_MANIFEST.actCategories.map((cat) => ({ surface: this.categorySurface(cat).split(' '), act: cat })),
+    ];
+    const seenAlias = new Set<string>();
+    const seenPair = new Set<string>();
+    for (const decl of this.witnessedTopicDecls) {
+      let best: { surface: string[]; act: string } | null = null;
+      for (const s of surfaces) {
+        if (s.surface.length >= decl.words.length) continue; // the actor needs at least one word
+        const tail = decl.words.slice(decl.words.length - s.surface.length);
+        if (s.surface.every((w, i) => tail[i].word === w)) {
+          if (!best || s.surface.length > best.surface.length) best = s;
+        }
+      }
+      if (!best) {
+        this.diagnostics.error(
+          'analysis.unknown-witnessed-act',
+          `\`${decl.words.map((w) => w.word).join(' ')}\` ends in no detectable act — the vocabulary: ${surfaces.map((s) => s.surface.join(' ')).join(', ')}.`,
+          decl.span,
+        );
+        continue;
+      }
+      const actorWords = decl.words.slice(0, decl.words.length - best.surface.length);
+      const first = actorWords[0].word;
+      const article = first === 'the' || first === 'a' || first === 'an' ? first : null;
+      const nameWords = article ? actorWords.slice(1) : actorWords;
+      if (nameWords.length === 0) {
+        this.diagnostics.error('analysis.unknown-witnessed-act', 'Expected an actor before the act (e.g. `define topic the Colonel backs down as …`).', decl.span);
+        continue;
+      }
+      const ref: NameRef = { kind: 'name', article, words: nameWords.map((w) => w.word), span: actorWords[0].span };
+      const actor = this.resolveEntityId(ref);
+      if (actor === null) continue; // resolveEntityId already reported
+      if (seenAlias.has(decl.alias)) {
+        this.diagnostics.error('analysis.duplicate-witnessed-alias', `\`${decl.alias}\` already names a witnessed-act topic.`, decl.span);
+        continue;
+      }
+      const pairKey = `${actor}\u0000${best.act}`;
+      if (seenPair.has(pairKey)) {
+        this.diagnostics.error('analysis.witnessed-duplicate', `\`${decl.words.map((w) => w.word).join(' ')}\` already has an alias — one per witnessed act.`, decl.span);
+        continue;
+      }
+      seenAlias.add(decl.alias);
+      seenPair.add(pairKey);
+      this.witnessedTopics.push({ actor, act: best.act, alias: decl.alias, span: decl.span });
+    }
+  }
+
+  /**
+   * ADR-318 D9: resolve every `claims` tag against the built fact table —
+   * a value outside the fact's declared set is the misspelled-assertion
+   * error the tag exists to make impossible at runtime.
+   */
+  private resolveClaims(): void {
+    for (const { claims, phrase } of this.pendingClaims) {
+      const factId = claims.fact.words.join('-').toLowerCase();
+      const fact = this.factById.get(factId);
+      if (!fact) {
+        this.diagnostics.error(
+          'analysis.unknown-fact',
+          `No \`define fact\` named \`${claims.fact.words.join(' ')}\`${this.suggestText(factId, [...this.factById.keys()])}.`,
+          claims.fact.span,
+        );
+        continue;
+      }
+      const value = this.canonicalFactValue(claims.value);
+      if (value === null) continue; // canonicalFactValue already reported
+      if (!fact.values.includes(value)) {
+        this.diagnostics.error(
+          'analysis.unknown-claim-value',
+          `\`${claims.value.words.join(' ')}\` is not a declared value of \`${fact.name}\` — the set: ${fact.values.join(', ')}.`,
+          claims.value.span,
+        );
+        continue;
+      }
+      phrase.claims = { factId, value };
+    }
+  }
+
+  /**
+   * ADR-310 D14: build the closed fact-value sets before entities compile.
+   * Values canonicalize to entity IDs when they name an entity; a bare
+   * unmatched word stays a literal (`nobody`); an article-led or
+   * multi-word value naming no entity is the standard unknown-entity error.
+   */
+  private buildFacts(): void {
+    for (const decl of this.factDecls) {
+      const id = decl.name.words.join('-').toLowerCase();
+      const values: string[] = [];
+      for (const v of decl.values) {
+        const canonical = this.canonicalFactValue(v);
+        if (canonical === null) continue;
+        if (values.includes(canonical)) {
+          this.diagnostics.error(
+            'analysis.fact-value-duplicate',
+            `\`${v.words.join(' ')}\` appears twice in \`${decl.name.words.join(' ')}\`'s value set.`,
+            v.span,
+          );
+          continue;
+        }
+        values.push(canonical);
+      }
+      if (values.length === 0) {
+        this.diagnostics.error(
+          'analysis.fact-empty',
+          `\`define fact ${decl.name.words.join(' ')}\` declares no values — the closed value set is what makes \`thinks\` checkable.`,
+          decl.span,
+        );
+      }
+      const def: IRFactDef = {
+        id,
+        name: decl.name.words.join(' '),
+        article: decl.name.article,
+        values,
+        span: decl.span,
+      };
+      this.factDefs.push(def);
+      this.factById.set(id, def);
+    }
+  }
+
+  /** ADR-310 D5: platform mood words plus this story's `define mood` words. */
+  private isMoodWord(word: string): boolean {
+    return CHARACTER_MANIFEST.moods.includes(word) || this.customMoods.has(word);
+  }
+
+  /** The full mood vocabulary for messages and suggestions. */
+  private moodVocabulary(): string[] {
+    return [...CHARACTER_MANIFEST.moods, ...this.customMoods.keys()];
+  }
+
+  /** ADR-310 D5: platform personality words plus this story's `define personality` words. */
+  private isPersonalityWord(word: string): boolean {
+    return CHARACTER_MANIFEST.personality.includes(word) || this.customPersonalities.has(word);
+  }
+
+  /** The full personality vocabulary for messages and suggestions. */
+  private personalityVocabulary(): string[] {
+    return [...CHARACTER_MANIFEST.personality, ...this.customPersonalities.keys()];
+  }
+
+  /**
+   * ADR-310 D4: complete each `define profile` at compile time — declared
+   * rows overlay `clear-headed`, so a profile is never partial on the wire
+   * and an author never writes five lines to change one.
+   */
+  private buildProfiles(): void {
+    for (const decl of this.profileDecls) {
+      const dims: Record<string, string> = { ...CHARACTER_MANIFEST.profilePresets['clear-headed'] };
+      const seen = new Set<string>();
+      for (const row of decl.rows) {
+        const values = CHARACTER_MANIFEST.cognitiveDimensions[row.dimension];
+        if (!values) {
+          this.diagnostics.error(
+            'analysis.unknown-dimension',
+            `\`${row.dimension}\` is not a cognitive dimension — ${Object.keys(CHARACTER_MANIFEST.cognitiveDimensions).join(', ')}.`,
+            row.span,
+          );
+          continue;
+        }
+        if (seen.has(row.dimension)) {
+          this.diagnostics.error('analysis.profile-row-duplicate', `This profile already sets \`${row.dimension}\`.`, row.span);
+          continue;
+        }
+        seen.add(row.dimension);
+        if (!values.includes(row.value)) {
+          this.diagnostics.error(
+            'analysis.unknown-dimension-value',
+            `\`${row.value}\` is not a \`${row.dimension}\` value — ${values.join(', ')}.`,
+            row.span,
+          );
+          continue;
+        }
+        dims[row.dimension] = row.value;
+      }
+      this.profiles.set(decl.name, dims);
+    }
+  }
+
+  /**
+   * ADR-310 D4: route a `cognitive-profile <name> [with <dimension>
+   * <value> and …]` composition into character data. The named base (a
+   * story profile or a platform preset) is completed with the overrides at
+   * compile time. Returns the completed dimension map, or null when the
+   * line was consumed by a diagnostic instead.
+   */
+  private routeProfileComposition(
+    comp: CompositionItem,
+    isPerson: boolean,
+    isPlayer: boolean,
+    entityName: string,
+    isDuplicate: boolean,
+  ): Record<string, string> | null {
+    if (!isPerson || isPlayer) {
+      this.diagnostics.error(
+        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
+        isPlayer
+          ? `The player carries no character model — \`cognitive-profile\` shapes how an NPC perceives and believes.`
+          : `\`cognitive-profile\` composes only on a person — \`${entityName}\` is not a person.`,
+        comp.span,
+      );
+      return null;
+    }
+    if (isDuplicate) {
+      this.diagnostics.error('analysis.profile-duplicate', 'This block already has a `cognitive-profile` line.', comp.span);
+      return null;
+    }
+    if (comp.condition) {
+      this.diagnostics.error(
+        'analysis.profile-conditional',
+        '`cognitive-profile while …` is not supported — fluctuation is the runtime\'s (the `lucidity` dimension), not a condition.',
+        comp.span,
+      );
+      return null;
+    }
+    const name = comp.words[1]?.toLowerCase();
+    const known = [...Object.keys(CHARACTER_MANIFEST.profilePresets), ...this.profiles.keys()];
+    if (name === undefined || comp.words.length > 2) {
+      this.diagnostics.error(
+        'analysis.profile-missing-name',
+        `Expected one profile name after \`cognitive-profile\` — a preset (${Object.keys(CHARACTER_MANIFEST.profilePresets).join(', ')}) or a \`define profile\` name.`,
+        comp.span,
+      );
+      return null;
+    }
+    const base = this.profiles.get(name) ?? CHARACTER_MANIFEST.profilePresets[name];
+    if (!base) {
+      this.diagnostics.error(
+        'analysis.unknown-profile',
+        `\`${name}\` is not a profile — the presets: ${Object.keys(CHARACTER_MANIFEST.profilePresets).join(', ')}, plus any \`define profile\` name${this.suggestText(name, known)}.`,
+        comp.span,
+      );
+      return null;
+    }
+    const dims: Record<string, string> = { ...base };
+    const seen = new Set<string>();
+    for (const cfg of comp.config) {
+      const dimension = cfg.key.join(' ').toLowerCase();
+      const values = CHARACTER_MANIFEST.cognitiveDimensions[dimension];
+      if (!values) {
+        this.diagnostics.error(
+          'analysis.unknown-dimension',
+          `\`${dimension || cfg.value}\` is not a cognitive dimension — ${Object.keys(CHARACTER_MANIFEST.cognitiveDimensions).join(', ')}.`,
+          cfg.span,
+        );
+        continue;
+      }
+      if (seen.has(dimension)) {
+        this.diagnostics.error('analysis.profile-row-duplicate', `This line already sets \`${dimension}\`.`, cfg.span);
+        continue;
+      }
+      seen.add(dimension);
+      if (cfg.valueKind !== 'word' || !values.includes(cfg.value.toLowerCase())) {
+        this.diagnostics.error(
+          'analysis.unknown-dimension-value',
+          `\`${cfg.value}\` is not a \`${dimension}\` value — ${values.join(', ')}.`,
+          cfg.span,
+        );
+        continue;
+      }
+      dims[dimension] = cfg.value.toLowerCase();
+    }
+    return dims;
+  }
+
+  /**
+   * Canonicalize a fact value or `thinks` value (ADR-310 D14): the resolved
+   * entity ID when the name matches an entity; a bare unmatched single word
+   * stays the literal word; an article-led or multi-word miss reports the
+   * standard unknown-entity error and returns null.
+   */
+  private canonicalFactValue(v: NameRef): string | null {
+    const lower = v.words.join(' ').toLowerCase();
+    const exact = this.entities.filter((e) => e.nameLower === lower);
+    if (exact.length === 1) return exact[0].id;
+    if (v.article === null && v.words.length === 1) return lower;
+    return this.resolveEntityId(v);
+  }
+
+  /**
+   * Classify `knows`/`thinks` comma slots (order-free): a source word, a
+   * confidence word, at most one of each. Reports per-slot diagnostics;
+   * `ok: false` means the line should not emit.
+   */
+  private classifyKnowledgeSlots(
+    slots: Array<{ word: string; span: Span }>,
+    construct: 'knows' | 'thinks',
+  ): { source?: string; confidence?: string; confided?: boolean; ok: boolean } {
+    let source: string | undefined;
+    let confidence: string | undefined;
+    let confided: boolean | undefined;
+    let ok = true;
+    for (const slot of slots) {
+      if (CHARACTER_MANIFEST.factSources.includes(slot.word)) {
+        if (source !== undefined) {
+          this.diagnostics.error(`analysis.${construct}-slot-duplicate`, `This \`${construct}\` line already has a source (\`${source}\`).`, slot.span);
+          ok = false;
+        } else {
+          source = slot.word;
+        }
+      } else if (CHARACTER_MANIFEST.confidences.includes(slot.word)) {
+        if (confidence !== undefined) {
+          this.diagnostics.error(`analysis.${construct}-slot-duplicate`, `This \`${construct}\` line already has a confidence (\`${confidence}\`).`, slot.span);
+          ok = false;
+        } else {
+          confidence = slot.word;
+        }
+      } else if (slot.word === 'confided' && construct === 'knows') {
+        // ADR-318 D4: the received-in-confidence marker — what `never
+        // betrays a confidence` binds on. `knows` lines only.
+        if (confided !== undefined) {
+          this.diagnostics.error(`analysis.${construct}-slot-duplicate`, `This \`${construct}\` line is already marked \`confided\`.`, slot.span);
+          ok = false;
+        } else {
+          confided = true;
+        }
+      } else {
+        this.diagnostics.error(
+          `analysis.unknown-${construct}-slot`,
+          `\`${slot.word}\` is not a \`${construct}\` slot — a source (${CHARACTER_MANIFEST.factSources.join(', ')}), a confidence (${CHARACTER_MANIFEST.confidences.join(', ')})${construct === 'knows' ? ', or `confided`' : ''}.`,
+          slot.span,
+        );
+        ok = false;
+      }
+    }
+    return { source, confidence, ...(confided !== undefined ? { confided } : {}), ok };
+  }
+
+  /**
+   * ADR-310 D14's scope line: one level of belief, no theory of mind. A
+   * topic or fact reference containing a mental verb is the attempt this
+   * diagnostic exists to refuse — loudly, never an unimplemented feature
+   * failing quietly.
+   */
+  private checkTheoryOfMind(ref: NameRef, construct: 'knows' | 'thinks'): boolean {
+    const mental = ['thinks', 'believes', 'knows'];
+    if (!ref.words.some((w) => mental.includes(w.toLowerCase()))) return false;
+    this.diagnostics.error(
+      'analysis.theory-of-mind',
+      `One level of belief — a character cannot hold a model of another character's beliefs (\`${construct} ${ref.words.join(' ')} …\`).`,
+      ref.span,
+    );
+    return true;
+  }
+
   private buildEntity(decl: CreateDecl): IREntity {
     const sym = this.byId.get(decl.name.words.join('-').toLowerCase());
     const id = sym?.id ?? decl.name.words.join('-').toLowerCase();
     const isPlayer = decl.name.words.length === 1 && decl.name.words[0].toLowerCase() === 'player';
+    const isPerson = decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
 
     const kinds = [];
     const traits = [];
+    const personality: IRPersonalityEntry[] = [];
+    let profile: Record<string, string> | undefined;
+    let sawProfileLine = false;
     for (const comp of decl.compositions) {
+      // ADR-310 D4: `cognitive-profile <name> [with …]` rides the
+      // composition grammar and compiles into character data.
+      if (!comp.article && comp.words[0]?.toLowerCase() === 'cognitive-profile') {
+        const built = this.routeProfileComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), sawProfileLine);
+        sawProfileLine = true;
+        if (built) profile = built;
+        continue;
+      }
+      // ADR-310 D2: a bare composition that reads as a personality
+      // adjective (`very honest`, `cowardly`) compiles into character data.
+      // Consumed words never reach trait composition, so they never enter
+      // parser vocabulary (the D2 no-parser-vocabulary rule) and never hit
+      // the census-15 unknown-trait gate.
+      if (!comp.article && this.routeCharacterComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), personality)) {
+        continue;
+      }
       const built = {
         name: comp.words.join(' ').toLowerCase(),
         config: comp.config.map((c) => ({
@@ -2947,7 +3991,6 @@ class Analyzer {
     // person-only and unconditional (identity is not turn state). Both
     // gates are analyzer diagnostics so the author reads the specific
     // reason, not the loader's generic conditional-composition error.
-    const isPerson = kinds.some((k) => k.name === 'person');
     for (const comp of decl.compositions) {
       if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
       if (!isPerson) {
@@ -2992,6 +4035,527 @@ class Analyzer {
           `\`${word}\` is not a pronoun set — the standard sets are ${[...PRONOUN_WORDS].map((w) => `\`${w}\``).join(', ')}, plus any \`define pronouns\` set${this.suggestText(word, known)}.`,
           decl.pronouns[0].span,
         );
+      }
+    }
+
+    // ADR-310 D3/D14: `mood` / `feels` / `knows` / `thinks` declaration
+    // lines — the same person-only/never-the-player gates as personality
+    // adjectives. Words resolve against the character manifest; targets
+    // like any entity ref; `thinks` against the fact table.
+    let mood: string | undefined;
+    const feels: IRFeelsEntry[] = [];
+    const knows: IRKnowsEntry[] = [];
+    const thinks: IRThinksEntry[] = [];
+    let spreads: IRSpreads | undefined;
+    const goals: IRGoalDef[] = [];
+    const influences: IRInfluenceDef[] = [];
+    const resists: IRResistsEntry[] = [];
+    const temperaments: IRTemperamentBinding[] = [];
+    const principles: IRPrincipleEntry[] = [];
+    const obligations: IRObligationEntry[] = [];
+    let honor: IRHonorDecl | undefined;
+    const burdenedBy: string[] = [];
+    const firstCharacterLine =
+      decl.moods[0] ??
+      decl.feels[0] ??
+      decl.knows[0] ??
+      decl.thinks[0] ??
+      decl.spreads[0] ??
+      decl.goals[0] ??
+      decl.influences[0] ??
+      decl.resists[0] ??
+      decl.temperaments[0] ??
+      decl.nevers[0] ??
+      decl.obligations[0] ??
+      decl.codes[0] ??
+      decl.honors[0] ??
+      decl.burdens[0];
+    if (firstCharacterLine && (!isPerson || isPlayer)) {
+      this.diagnostics.error(
+        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
+        isPlayer
+          ? `The player carries no character model — character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) shape how an NPC behaves.`
+          : `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
+        firstCharacterLine.span,
+      );
+    } else if (firstCharacterLine) {
+      if (decl.moods.length > 0) {
+        const word = decl.moods[0].word;
+        if (!this.isMoodWord(word)) {
+          this.diagnostics.error(
+            'analysis.unknown-mood-word',
+            `\`${word}\` is not a mood word — the vocabulary: ${this.moodVocabulary().join(', ')}${this.suggestText(word, this.moodVocabulary())}.`,
+            decl.moods[0].span,
+          );
+        } else {
+          mood = word;
+        }
+        for (const extra of decl.moods.slice(1)) {
+          this.diagnostics.error('analysis.mood-duplicate', 'This `create` block already has a `mood` line.', extra.span);
+        }
+      }
+      for (const f of decl.feels) {
+        if (!CHARACTER_MANIFEST.dispositions.includes(f.disposition)) {
+          this.diagnostics.error(
+            'analysis.unknown-disposition-word',
+            `\`${f.disposition}\` is not a disposition word — the vocabulary: ${CHARACTER_MANIFEST.dispositions.join(', ')}.`,
+            f.span,
+          );
+          continue;
+        }
+        const target = this.resolveEntityId(f.target);
+        if (target === null) continue; // resolveEntityId already reported
+        if (feels.some((e) => e.target === target)) {
+          this.diagnostics.error(
+            'analysis.feels-duplicate',
+            `This block already declares a feeling toward \`${f.target.words.join(' ')}\`.`,
+            f.span,
+          );
+          continue;
+        }
+        feels.push({ disposition: f.disposition, target, span: f.span });
+      }
+      for (const k of decl.knows) {
+        if (this.checkTheoryOfMind(k.topic, 'knows')) continue;
+        const topic = normalizeTopic(k.topic.words.join(' '));
+        const { source, confidence, confided, ok } = this.classifyKnowledgeSlots(k.slots, 'knows');
+        if (!ok) continue;
+        if (source === undefined) {
+          this.diagnostics.error(
+            'analysis.knows-missing-source',
+            `\`knows ${k.topic.words.join(' ')}\` needs a source — ${CHARACTER_MANIFEST.factSources.join(', ')} (e.g. \`knows the murder, witnessed\`).`,
+            k.span,
+          );
+          continue;
+        }
+        if (knows.some((e) => e.topic === topic)) {
+          this.diagnostics.error('analysis.knows-duplicate', `This block already declares \`knows ${topic}\`.`, k.span);
+          continue;
+        }
+        knows.push({
+          topic,
+          source,
+          ...(confidence !== undefined ? { confidence } : {}),
+          ...(confided !== undefined ? { confided } : {}),
+          span: k.span,
+        });
+      }
+      for (const t of decl.thinks) {
+        if (this.checkTheoryOfMind(t.fact, 'thinks')) continue;
+        const factId = t.fact.words.join('-').toLowerCase();
+        const fact = this.factById.get(factId);
+        if (!fact) {
+          this.diagnostics.error(
+            'analysis.unknown-fact',
+            `No \`define fact\` named \`${t.fact.words.join(' ')}\`${this.suggestText(factId, [...this.factById.keys()])}.`,
+            t.fact.span,
+          );
+          continue;
+        }
+        const value = this.canonicalFactValue(t.value);
+        if (value === null) continue; // canonicalFactValue already reported
+        if (!fact.values.includes(value)) {
+          this.diagnostics.error(
+            'analysis.unknown-fact-value',
+            `\`${t.value.words.join(' ')}\` is not a declared value of \`${fact.name}\` — the set: ${fact.values.join(', ')}.`,
+            t.value.span,
+          );
+          continue;
+        }
+        const { source, confidence, ok } = this.classifyKnowledgeSlots(t.slots, 'thinks');
+        if (!ok) continue;
+        if (thinks.some((e) => e.factId === factId)) {
+          this.diagnostics.error('analysis.thinks-duplicate', `This block already declares a belief about \`${fact.name}\`.`, t.span);
+          continue;
+        }
+        thinks.push({
+          factId,
+          value,
+          ...(confidence !== undefined ? { confidence } : {}),
+          ...(source !== undefined ? { source } : {}),
+          span: t.span,
+        });
+      }
+      // ADR-310 D10: at most one `spreads` line; the audience resolves
+      // against the manifest; topics normalize like `knows` topics.
+      for (const extra of decl.spreads.slice(1)) {
+        this.diagnostics.error('analysis.spreads-duplicate', 'This block already has a `spreads` line.', extra.span);
+      }
+      const s = decl.spreads[0];
+      if (s?.mode === 'nothing') {
+        spreads = { kind: 'nothing', span: s.span };
+      } else if (s) {
+        if (!CHARACTER_MANIFEST.audiences.includes(s.audience.word)) {
+          this.diagnostics.error(
+            'analysis.unknown-audience',
+            `\`${s.audience.word}\` is not an audience — ${CHARACTER_MANIFEST.audiences.join(', ')}.`,
+            s.audience.span,
+          );
+        } else {
+          const topics: string[] = [];
+          for (const t of s.topics) {
+            const topic = normalizeTopic(t.words.join(' '));
+            if (topics.includes(topic)) {
+              this.diagnostics.error('analysis.spreads-topic-duplicate', `\`${topic}\` is already in this \`spreads\` list.`, t.span);
+              continue;
+            }
+            topics.push(topic);
+          }
+          const except = s.except.map((e) => this.resolveEntityId(e)).filter((id): id is string => id !== null);
+          spreads = { kind: 'spreads', topics, to: s.audience.word, except, span: s.span };
+        }
+      }
+      // ADR-310 D8: goal blocks. Conditions resolve with `it` = the owner
+      // (the on-clause scope); step refs resolve like any entity ref;
+      // act/say keys are phrase keys.
+      for (const g of decl.goals) {
+        if (g.priority === null) continue; // header already errored at parse
+        if (!CHARACTER_MANIFEST.goalPriorities.includes(g.priority.word)) {
+          this.diagnostics.error(
+            'analysis.unknown-priority',
+            `\`${g.priority.word}\` is not a goal priority — ${CHARACTER_MANIFEST.goalPriorities.join(', ')}.`,
+            g.priority.span,
+          );
+          continue;
+        }
+        if (goals.some((e) => e.id === g.name)) {
+          this.diagnostics.error('analysis.goal-duplicate', `This block already has a goal named \`${g.name}\`.`, g.span);
+          continue;
+        }
+        const scope = entityScope(sym ?? null);
+        const steps: IRGoalStep[] = [];
+        for (const step of g.steps) {
+          switch (step.kind) {
+            case 'seek': {
+              const target = this.resolveEntityId(step.target);
+              if (target === null) break;
+              const inId = step.in ? this.resolveEntityId(step.in) : null;
+              if (step.in && inId === null) break;
+              steps.push({ kind: 'seek', target, ...(inId !== null ? { in: inId } : {}), span: step.span });
+              break;
+            }
+            case 'acquire': {
+              const target = this.resolveEntityId(step.target);
+              if (target !== null) steps.push({ kind: 'acquire', target, span: step.span });
+              break;
+            }
+            case 'wait-for':
+              steps.push({ kind: 'wait-for', condition: this.resolveCondition(step.condition, scope), span: step.span });
+              break;
+            case 'move-to': {
+              const target = this.resolveEntityId(step.target);
+              if (target !== null) steps.push({ kind: 'move-to', target, span: step.span });
+              break;
+            }
+            case 'act':
+              this.requirePhrase(step.phraseKey, step.span, null);
+              steps.push({ kind: 'act', phraseKey: step.phraseKey, span: step.span });
+              break;
+            case 'say': {
+              this.requirePhrase(step.phraseKey, step.span, null);
+              const target = step.target ? this.resolveEntityId(step.target) : null;
+              if (step.target && target === null) break;
+              steps.push({ kind: 'say', phraseKey: step.phraseKey, ...(target !== null ? { target } : {}), span: step.span });
+              break;
+            }
+            case 'give': {
+              const item = this.resolveEntityId(step.item);
+              const target = this.resolveEntityId(step.target);
+              if (item !== null && target !== null) steps.push({ kind: 'give', item, target, span: step.span });
+              break;
+            }
+            case 'drop': {
+              const item = this.resolveEntityId(step.item);
+              if (item === null) break;
+              const inId = step.in ? this.resolveEntityId(step.in) : null;
+              if (step.in && inId === null) break;
+              steps.push({ kind: 'drop', item, ...(inId !== null ? { in: inId } : {}), span: step.span });
+              break;
+            }
+          }
+        }
+        goals.push({
+          id: g.name,
+          priority: g.priority.word,
+          activeWhen: g.activeWhen ? this.resolveCondition(g.activeWhen, scope) : null,
+          steps,
+          span: g.span,
+        });
+      }
+      // ADR-310 D9: influence blocks — header slots classify order-free
+      // (mode and range are disjoint vocabularies); effect axes carry
+      // vocabulary words; phrase hooks are author-written prose keys.
+      for (const inf of decl.influences) {
+        if (influences.some((e) => e.name === inf.name)) {
+          this.diagnostics.error('analysis.influence-duplicate', `This block already defines an influence named \`${inf.name}\`.`, inf.span);
+          continue;
+        }
+        let mode: string | undefined;
+        let range: string | undefined;
+        let slotError = false;
+        for (const slot of inf.slots) {
+          if (CHARACTER_MANIFEST.influenceModes.includes(slot.word)) {
+            if (mode !== undefined) slotError = true;
+            mode = slot.word;
+          } else if (CHARACTER_MANIFEST.influenceRanges.includes(slot.word)) {
+            if (range !== undefined) slotError = true;
+            range = slot.word;
+          } else {
+            this.diagnostics.error(
+              'analysis.unknown-influence-slot',
+              `\`${slot.word}\` is not an influence mode (${CHARACTER_MANIFEST.influenceModes.join(', ')}) or range (${CHARACTER_MANIFEST.influenceRanges.join(', ')}).`,
+              slot.span,
+            );
+            slotError = true;
+          }
+        }
+        if (mode === undefined || range === undefined || slotError) {
+          if (!slotError) {
+            this.diagnostics.error(
+              'analysis.influence-missing-mode-range',
+              `An influence header needs a mode (${CHARACTER_MANIFEST.influenceModes.join(', ')}) and a range (${CHARACTER_MANIFEST.influenceRanges.join(', ')}).`,
+              inf.span,
+            );
+          }
+          continue;
+        }
+        const effect: Record<string, string> = {};
+        let witnessed: string | undefined;
+        let resisted: string | undefined;
+        let expired: string | undefined;
+        for (const e of inf.effects) {
+          if (e.kind === 'clouds-focus') {
+            if (effect['focus'] !== undefined) {
+              this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already clouds focus.', e.span);
+              continue;
+            }
+            effect['focus'] = 'clouded';
+          } else if (e.kind === 'makes') {
+            const vocab = e.axis === 'mood' ? this.moodVocabulary() : e.axis === 'threat' ? [...CHARACTER_MANIFEST.threats] : null;
+            if (vocab === null) {
+              this.diagnostics.error(
+                'analysis.unknown-influence-axis',
+                `\`makes ${e.axis}\` is not an influence effect — \`makes mood <word>\`, \`makes threat <word>\`, or \`clouds focus\`.`,
+                e.span,
+              );
+              continue;
+            }
+            if (!vocab.includes(e.value)) {
+              this.diagnostics.error(
+                'analysis.unknown-influence-effect-word',
+                `\`${e.value}\` is not a ${e.axis} word — the vocabulary: ${vocab.join(', ')}.`,
+                e.span,
+              );
+              continue;
+            }
+            if (effect[e.axis] !== undefined) {
+              this.diagnostics.error('analysis.influence-effect-duplicate', `This influence already sets ${e.axis}.`, e.span);
+              continue;
+            }
+            effect[e.axis] = e.value;
+          } else {
+            this.requirePhrase(e.key, e.span, null);
+            if (e.on === 'witnessed') {
+              if (witnessed !== undefined) {
+                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has a witnessed phrase.', e.span);
+                continue;
+              }
+              witnessed = e.key;
+            } else if (e.on === 'resisted') {
+              if (resisted !== undefined) {
+                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has a resisted phrase.', e.span);
+                continue;
+              }
+              resisted = e.key;
+            } else {
+              if (expired !== undefined) {
+                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has an expired phrase.', e.span);
+                continue;
+              }
+              expired = e.key;
+            }
+          }
+        }
+        influences.push({
+          name: inf.name,
+          mode,
+          range,
+          effect,
+          ...(witnessed !== undefined ? { witnessed } : {}),
+          ...(resisted !== undefined ? { resisted } : {}),
+          ...(expired !== undefined ? { expired } : {}),
+          span: inf.span,
+        });
+      }
+      // ADR-310 D9: resistance is one line on the target; the influence
+      // name joins across entities (checked post-build, when every
+      // influence exists — checkInfluenceReferences).
+      for (const r of decl.resists) {
+        if (resists.some((e) => e.influence === r.influence)) {
+          this.diagnostics.error('analysis.resists-duplicate', `This block already resists \`${r.influence}\`.`, r.span);
+          continue;
+        }
+        let exceptFrom: IRResistsEntry['exceptFrom'];
+        if (r.exceptFrom) {
+          if (r.exceptFrom.article === 'a' || r.exceptFrom.article === 'an') {
+            exceptFrom = { kind: 'classifier', value: r.exceptFrom.words.join(' ').toLowerCase() };
+          } else {
+            const id = this.resolveEntityId(r.exceptFrom);
+            if (id === null) continue;
+            exceptFrom = { kind: 'entity', value: id };
+          }
+        }
+        resists.push({ influence: r.influence, ...(exceptFrom !== undefined ? { exceptFrom } : {}), span: r.span });
+      }
+      // ADR-318 D3/D7: temperament bindings. Named defs resolve; inline
+      // orderings and `with` overrides synthesize defs (`@` in the name —
+      // unreachable from author kebab words, so no collision with `define
+      // temperament` names). At most one binding live per state (the tie
+      // gate D3 names, same shape as D16's phrasebook tie).
+      let synthesized = 0;
+      for (const t of decl.temperaments) {
+        let defName: string;
+        if (t.name !== null) {
+          const base = this.temperamentDefs.get(t.name);
+          if (!base) {
+            this.diagnostics.error(
+              'analysis.unknown-temperament',
+              `No \`define temperament\` named \`${t.name}\`${this.suggestText(t.name, [...this.temperamentDefs.keys()].filter((n) => !n.includes('@')))}.`,
+              t.span,
+            );
+            continue;
+          }
+          if (t.pairs.length === 0) {
+            defName = t.name;
+          } else {
+            // `with` overrides fold as in ADR-310 D4: an override replaces
+            // any base pair over the same two forces, and adds otherwise.
+            const overrides = this.resolveForcePairs(t.pairs, `this \`${t.name}\` override`);
+            const folded = base.pairs.filter(([a, b]) => !overrides.some(([c, d]) => (a === c && b === d) || (a === d && b === c)));
+            folded.push(...overrides);
+            defName = `${id}@temperament-${++synthesized}`;
+            this.temperamentDefs.set(defName, { name: defName, pairs: folded, span: t.span });
+          }
+        } else {
+          const pairs = this.resolveForcePairs(t.pairs, 'this temperament');
+          if (pairs.length === 0) continue; // every pair errored above
+          defName = `${id}@temperament-${++synthesized}`;
+          this.temperamentDefs.set(defName, { name: defName, pairs, span: t.span });
+        }
+        if (t.while) {
+          const states = this.byId.get(id)?.states ?? [];
+          if (!states.includes(t.while.word)) {
+            this.diagnostics.error(
+              'analysis.temperament-unknown-state',
+              `\`${t.while.word}\` is not a declared state of \`${decl.name.words.join(' ')}\` — a temperament binds to a word from the entity's \`states:\` line.`,
+              t.while.span,
+            );
+            continue;
+          }
+        }
+        const clash = temperaments.find((e) => (e.while ?? null) === (t.while?.word ?? null));
+        if (clash) {
+          this.diagnostics.error(
+            'analysis.temperament-tie',
+            t.while
+              ? `Two temperaments bound to \`${t.while.word}\` — at most one may be live per state; give each its own state.`
+              : `This block already has an unconditional \`temperament\` line — at most one may be live; bind one to a state with \`while <state>\`.`,
+            t.span,
+          );
+          continue;
+        }
+        temperaments.push({ name: defName, ...(t.while ? { while: t.while.word } : {}), span: t.span });
+      }
+      // ADR-318 D4/D5: principles and obligations — `code` bundles flatten
+      // first (in reference order), then the bare lines union in. An exact
+      // duplicate (category + scope + except) is dead weight, refused.
+      const principleKey = (p: IRPrincipleEntry) =>
+        JSON.stringify({ category: p.category, scope: p.scope ?? null, except: p.except ?? null });
+      const obligationKey = (o: IRObligationEntry) => JSON.stringify({ kind: o.kind, scope: o.scope ?? null });
+      const addPrinciple = (p: IRPrincipleEntry, span: Span): void => {
+        if (principles.some((e) => principleKey(e) === principleKey(p))) {
+          this.diagnostics.error(
+            'analysis.principle-duplicate',
+            `This block already holds \`never ${this.categorySurface(p.category)}\`${p.scope || p.except ? ' with the same scope' : ''}.`,
+            span,
+          );
+          return;
+        }
+        principles.push({ ...p, span });
+      };
+      const addObligation = (o: IRObligationEntry, span: Span): void => {
+        if (obligations.some((e) => obligationKey(e) === obligationKey(o))) {
+          this.diagnostics.error('analysis.obligation-duplicate', `This block already holds \`${o.kind}\` with the same scope.`, span);
+          return;
+        }
+        obligations.push({ ...o, span });
+      };
+      for (const ref of decl.codes) {
+        const bundle = this.codes.get(ref.name);
+        if (!bundle) {
+          this.diagnostics.error(
+            'analysis.unknown-code',
+            `No \`define code\` named \`${ref.name}\`${this.suggestText(ref.name, [...this.codes.keys()])}.`,
+            ref.span,
+          );
+          continue;
+        }
+        for (const p of bundle.principles) addPrinciple(p, ref.span);
+        for (const o of bundle.obligations) addObligation(o, ref.span);
+      }
+      for (const n of decl.nevers) {
+        const p = this.resolveNeverLine(n);
+        if (p) addPrinciple(p, n.span);
+      }
+      for (const o of decl.obligations) {
+        const r = this.resolveObligationLine(o);
+        if (r) addObligation(r, o.span);
+      }
+      // ADR-318 D7: at most one honor declaration; the full platform
+      // bundle for `honor before`, the named bundle's subset otherwise.
+      for (const h of decl.honors) {
+        if (honor !== undefined) {
+          this.diagnostics.error('analysis.honor-duplicate', 'This block already has an `honor` line.', h.span);
+          continue;
+        }
+        let faceActs: string[];
+        if (h.name !== null) {
+          const bundle = this.honorDefs.get(h.name);
+          if (!bundle) {
+            this.diagnostics.error(
+              'analysis.unknown-honor',
+              `No \`define honor\` named \`${h.name}\`${this.suggestText(h.name, [...this.honorDefs.keys()])}.`,
+              h.span,
+            );
+            continue;
+          }
+          faceActs = [...bundle];
+        } else {
+          faceActs = [...CHARACTER_MANIFEST.faceActs];
+        }
+        const scope = this.resolveScopeRefDecl(h.scope);
+        if (scope === null) continue;
+        const except = h.except.map((e) => this.resolveEntityId(e)).filter((eid): eid is string => eid !== null);
+        honor = { scope, except, faceActs, span: h.span };
+      }
+      // ADR-318 D8: `burdened by` seeds — the topic must be HELD (a
+      // compile check: pre-story guilt over something the character does
+      // not know is unexpressable, refused rather than silently inert).
+      for (const b of decl.burdens) {
+        const topic = normalizeTopic(b.topic.words.join(' '));
+        if (!knows.some((k) => k.topic === topic)) {
+          this.diagnostics.error(
+            'analysis.burdened-unheld',
+            `\`burdened by ${b.topic.words.join(' ')}\` needs the topic held — add \`knows ${b.topic.words.join(' ')}, <source>\` to this block.`,
+            b.span,
+          );
+          continue;
+        }
+        if (burdenedBy.includes(topic)) {
+          this.diagnostics.error('analysis.burdened-duplicate', `This block is already \`burdened by ${topic}\`.`, b.span);
+          continue;
+        }
+        burdenedBy.push(topic);
       }
     }
 
@@ -3092,6 +4656,43 @@ class Analyzer {
       isPlayer,
       kinds,
       traits,
+      // ADR-310 D7: present exactly when the block declared at least one
+      // character construct — a person with none compiles exactly as today.
+      ...(personality.length > 0 ||
+      mood !== undefined ||
+      feels.length > 0 ||
+      knows.length > 0 ||
+      thinks.length > 0 ||
+      profile !== undefined ||
+      spreads !== undefined ||
+      goals.length > 0 ||
+      influences.length > 0 ||
+      resists.length > 0 ||
+      temperaments.length > 0 ||
+      principles.length > 0 ||
+      obligations.length > 0 ||
+      honor !== undefined ||
+      burdenedBy.length > 0
+        ? {
+            character: {
+              personality,
+              ...(mood !== undefined ? { mood } : {}),
+              feels,
+              knows,
+              thinks,
+              ...(profile !== undefined ? { profile } : {}),
+              ...(spreads !== undefined ? { spreads } : {}),
+              goals,
+              influences,
+              resists,
+              temperaments,
+              principles,
+              obligations,
+              ...(honor !== undefined ? { honor } : {}),
+              burdenedBy,
+            },
+          }
+        : {}),
       startsStates,
       placement: decl.placement
         ? {
@@ -3248,6 +4849,8 @@ class Analyzer {
       switch (stmt.kind) {
         case 'set':
         case 'change':
+        case 'change-mood':
+        case 'change-feeling':
         case 'move':
         case 'remove':
         case 'award':
@@ -3423,6 +5026,39 @@ class Analyzer {
           this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
+      case 'change-mood': {
+        // ADR-310 D3: the mood word resolves against the character
+        // manifest (plus this story's `define mood` words) here; whether
+        // the bound `it` actually carries a character model is the
+        // loader's gate (the binding is dynamic).
+        if (!this.isMoodWord(stmt.mood)) {
+          this.diagnostics.error(
+            'analysis.unknown-mood-word',
+            `\`${stmt.mood}\` is not a mood word — the vocabulary: ${this.moodVocabulary().join(', ')}${this.suggestText(stmt.mood, this.moodVocabulary())}.`,
+            stmt.span,
+          );
+        }
+        return { kind: 'change-mood', mood: stmt.mood, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
+      case 'change-feeling': {
+        // ADR-310 D3: same split — disposition word compile-gated here,
+        // the has-model check is the loader's.
+        if (!CHARACTER_MANIFEST.dispositions.includes(stmt.disposition)) {
+          this.diagnostics.error(
+            'analysis.unknown-disposition-word',
+            `\`${stmt.disposition}\` is not a disposition word — the vocabulary: ${CHARACTER_MANIFEST.dispositions.join(', ')}.`,
+            stmt.span,
+          );
+        }
+        const target = this.resolveEntityValue(stmt.target, scope);
+        return {
+          kind: 'change-feeling',
+          target,
+          disposition: stmt.disposition,
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
       }
       case 'remove': {
         // Z6 (ADR-213 Q3): entity references resolve as `move`'s do; the
@@ -4256,6 +5892,27 @@ class Analyzer {
               subject,
               object: this.resolveEntityValue(cond.predicate.thing, scope),
             };
+          case 'feels': {
+            // ADR-310 D13: interior-state predicate — the word gate is the
+            // same vocabulary the `feels` declaration line uses.
+            if (!CHARACTER_MANIFEST.dispositions.includes(cond.predicate.disposition)) {
+              this.diagnostics.error(
+                'analysis.unknown-disposition-word',
+                `\`${cond.predicate.disposition}\` is not a disposition word — the vocabulary: ${CHARACTER_MANIFEST.dispositions.join(', ')}.`,
+                cond.predicate.span,
+              );
+            }
+            return {
+              kind: 'feels',
+              subject,
+              disposition: cond.predicate.disposition,
+              target: this.resolveEntityValue(cond.predicate.target, scope),
+            };
+          }
+          case 'knows':
+            // ADR-310 D13: held-topic predicate; topics normalize exactly
+            // as the `knows` declaration line's do.
+            return { kind: 'knows-topic', subject, topic: normalizeTopic(cond.predicate.topic.words.join(' ')) };
           case 'is-any':
             // `<subject> must be any <name>` membership (David, 2026-07-12
             // — P3): the subject satisfies the named open condition (its
@@ -4352,9 +6009,16 @@ class Analyzer {
       if (TRAIT_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
       // State adjectives (ratchet D1): read live from world trait state.
       if (STATE_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
+      // ADR-310 D13 / ADR-318 D8: mood, threat, and pressure-band words
+      // gate on interior state (`while the Colonel is panicked`, `active
+      // when it is breaking`). An entity's OWN declared state wins the
+      // word on collision — checked above.
+      if (this.isMoodWord(word) || CHARACTER_MANIFEST.threats.includes(word) || CHARACTER_MANIFEST.pressureBands.includes(word)) {
+        return { kind: 'symbol', name: word };
+      }
       const exactEntity = this.entities.find((e) => e.nameLower === word.toLowerCase() || e.aka.includes(word.toLowerCase()));
       if (exactEntity) return { kind: 'entity', id: exactEntity.id };
-      const valid = [...validStates, ...TRAIT_ADJECTIVES, ...STATE_ADJECTIVES];
+      const valid = [...validStates, ...TRAIT_ADJECTIVES, ...STATE_ADJECTIVES, ...this.moodVocabulary(), ...CHARACTER_MANIFEST.threats, ...CHARACTER_MANIFEST.pressureBands];
       this.diagnostics.error(
         'analysis.unknown-value',
         `\`${word}\` is not a state${subjectEntity ? ` of ${subjectEntity.nameLower}` : ''} or a known trait${this.suggestText(word, valid)}.`,

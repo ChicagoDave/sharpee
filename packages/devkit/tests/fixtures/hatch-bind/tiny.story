@@ -1,6 +1,7 @@
 story
   title: Hatch Bind Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: hatch-bind
   story-version: 0.0.1
 

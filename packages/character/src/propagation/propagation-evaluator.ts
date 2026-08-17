@@ -14,7 +14,6 @@ import { CharacterModelTrait } from '@sharpee/world-model';
 import {
   PropagationProfile,
   PropagationTransfer,
-  AlreadyToldRecord,
   PropagationColoring,
   SpreadsVersion,
 } from './propagation-types.js';
@@ -46,9 +45,6 @@ export interface PropagationContext {
   /** Whether the player is present in the room. */
   playerPresent: boolean;
 
-  /** The already-told record (shared across all NPCs). */
-  alreadyTold: AlreadyToldRecord;
-
   /** Current turn number. */
   turn: number;
 
@@ -67,7 +63,7 @@ export interface PropagationContext {
  * 1. Mute check — skip entirely
  * 2. Schedule condition check — skip if not met
  * 3. Find eligible listeners (audience + exclusions)
- * 4. Find eligible facts (tendency whitelist/blacklist + already-told)
+ * 4. Find eligible facts (spreads whitelist / withholds blacklist + already-told)
  * 5. Apply pace (eager = all, gradual = one, reluctant = wait)
  * 6. Return transfer objects
  *
@@ -184,13 +180,14 @@ function hasSharedAlliance(
 
 /**
  * Find facts the speaker is willing and able to share with a specific listener.
- * Filters by tendency (chatty/selective), already-told, and player-leverage.
+ * Filters by the spreads whitelist / withholds blacklist, already-told
+ * (read from the speaker's trait, ADR-310 D17), and player-leverage.
  */
 function findEligibleFacts(
   ctx: PropagationContext,
   listener: RoomOccupant,
 ): string[] {
-  const { speaker, alreadyTold } = ctx;
+  const { speaker } = ctx;
   const profile = speaker.profile!;
   const knowledge = speaker.trait.knowledge;
 
@@ -199,9 +196,9 @@ function findEligibleFacts(
   const eligible: string[] = [];
 
   for (const topic of Object.keys(knowledge)) {
-    if (alreadyTold.hasTold(speaker.id, listener.id, topic)) continue;
+    if (speaker.trait.hasTold(listener.id, topic)) continue;
     if (!meetsAudienceRule(topic, profile, speaker.trait, listener)) continue;
-    if (!meetsTendencyFilter(topic, profile, withholds, spreadsSet)) continue;
+    if (!meetsTopicFilter(topic, withholds, spreadsSet)) continue;
     if (!meetsLeverageRule(topic, profile, knowledge)) continue;
 
     eligible.push(topic);
@@ -232,32 +229,22 @@ function meetsAudienceRule(
 }
 
 /**
- * Check whether a topic passes the speaker's tendency filter.
- * Chatty speakers share everything except withheld topics; selective
- * speakers share only explicitly listed topics.
+ * Check whether a topic passes the speaker's topic filter (ADR-310 D10:
+ * a non-empty spreads list IS selectivity — only listed topics travel;
+ * otherwise everything not withheld travels).
  *
  * @param topic - The knowledge topic to check
- * @param profile - Speaker's propagation profile
  * @param withholds - Pre-computed set of withheld topics
  * @param spreadsSet - Pre-computed set of explicitly shared topics
- * @returns Whether the topic passes the tendency filter
+ * @returns Whether the topic passes the filter
  */
-function meetsTendencyFilter(
+function meetsTopicFilter(
   topic: string,
-  profile: PropagationProfile,
   withholds: Set<string>,
   spreadsSet: Set<string>,
 ): boolean {
-  switch (profile.tendency) {
-    case 'chatty':
-      return !withholds.has(topic);
-
-    case 'selective':
-      return spreadsSet.has(topic);
-
-    default:
-      return true;
-  }
+  if (spreadsSet.size > 0) return spreadsSet.has(topic);
+  return !withholds.has(topic);
 }
 
 /**

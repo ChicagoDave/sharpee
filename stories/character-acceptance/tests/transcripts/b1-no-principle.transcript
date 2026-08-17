@@ -1,0 +1,15 @@
+title: The threatened Witness (B1, no principle)
+story: b1-no-principle
+author: Sharpee Platform
+seed: 42
+description: ADR-318 Acceptance 1 leg 2 — delete the principle line and
+  the Witness complies at once (nothing feeds duty), no threat needed.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b1-no-principle.story
+    stories/character-acceptance/tests/transcripts/b1-no-principle.transcript
+
+---
+
+# No principle, no duty feed: the confided secret comes out unthreatened
+> ask witness about the secret
+[OK: contains "buried behind the mill"]

@@ -10,6 +10,7 @@
  * Owner context: @sharpee/character / goals
  */
 
+import type { IRCondition } from '@sharpee/chord';
 import {
   GoalPriority,
   PursuitMode,
@@ -42,6 +43,8 @@ export class GoalBuilder<TParent extends { compile(): unknown }> {
   private readonly _parent: TParent;
   private readonly _finalize: (def: GoalDef) => void;
   private readonly _activatesWhen: string[] = [];
+  private _activeWhenCompiled?: IRCondition;
+  private _discharges?: boolean;
   private readonly _interruptedBy: string[] = [];
   private _priority: GoalPriority = 'medium';
   private _mode: PursuitMode = 'sequential';
@@ -72,6 +75,29 @@ export class GoalBuilder<TParent extends { compile(): unknown }> {
    */
   activatesWhen(...predicates: string[]): GoalBuilder<TParent> {
     this._activatesWhen.push(...predicates);
+    return this;
+  }
+
+  /**
+   * Set the compiled-story activation condition (ADR-310 Phase 3) — the
+   * structured IRCondition a Chord `active when` line carries.
+   *
+   * @param condition - The compiled condition
+   * @returns this for chaining
+   */
+  activeWhenCompiled(condition: IRCondition): GoalBuilder<TParent> {
+    this._activeWhenCompiled = condition;
+    return this;
+  }
+
+  /**
+   * Mark this goal a conscience outlet (ADR-318 D8; seam-2 ruling): its
+   * sequential completion drains the pressure curve.
+   *
+   * @returns this for chaining
+   */
+  discharges(): GoalBuilder<TParent> {
+    this._discharges = true;
     return this;
   }
 
@@ -193,6 +219,8 @@ export class GoalBuilder<TParent extends { compile(): unknown }> {
       mode: this._mode,
     };
 
+    if (this._activeWhenCompiled !== undefined) def.activeWhenCompiled = this._activeWhenCompiled;
+    if (this._discharges) def.discharges = true;
     if (this._steps.length > 0) def.steps = [...this._steps];
     if (this._interruptedBy.length > 0) def.interruptedBy = [...this._interruptedBy];
     if (this._actsWhen.length > 0) def.actsWhen = [...this._actsWhen];

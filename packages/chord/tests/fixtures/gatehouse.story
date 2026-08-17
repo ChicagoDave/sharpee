@@ -1,6 +1,7 @@
 story
   title: The Gatehouse
-  authors: Test
+  authors:
+    Test
   id: gatehouse
   story-version: 0.0.1
   use combat

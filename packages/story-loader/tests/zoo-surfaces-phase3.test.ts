@@ -64,7 +64,8 @@ function enterRoom(booted: Booted, roomIrId: string): ISemanticEvent[] {
 describe('Z3 present: ADR-212 slot entries', () => {
   const SOURCE = `story
   title: P3
-  authors: N
+  authors:
+    N
   id: p3
   story-version: 0.0.1
   states: open, after-hours
@@ -162,7 +163,8 @@ create the player
 describe('Z3 entered/exited: witnessed-only on the move statement', () => {
   const SOURCE = `story
   title: P3
-  authors: N
+  authors:
+    N
   id: p3
   story-version: 0.0.1
 
@@ -246,7 +248,8 @@ create the player
 describe('Z3 disappeared + Z6 remove: the ADR-213 observer path', () => {
   const REMOVE_SOURCE = `story
   title: P3
-  authors: N
+  authors:
+    N
   id: p3
   story-version: 0.0.1
 
@@ -337,7 +340,8 @@ create the player
 describe('Z3b detail: trait fields and the loader-owned provider', () => {
   const SOURCE = `story
   title: P3
-  authors: N
+  authors:
+    N
   id: p3
   story-version: 0.0.1
 

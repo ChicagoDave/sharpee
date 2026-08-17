@@ -2,11 +2,13 @@
  * Telling action (ADR-230 Phase 6, sketch ruling 4) — minimal interceptable
  * TELL :recipient ABOUT :topic.
  *
- * TELL is a core IF verb players constantly try, but there is no platform
- * conversation system yet: this action validates the social preconditions
- * and reports a helpful default ("X doesn't seem interested") that
- * per-entity interceptors (or a future conversation extension) override.
- * No world mutation, ever.
+ * TELL is a core IF verb players constantly try. This action validates the
+ * social preconditions and reports a helpful default ("X doesn't seem
+ * interested") that per-entity interceptors override — or, for
+ * character-modeled NPCs, the world's dialogue selector answers (ADR-310
+ * D15). The stdlib layer itself never mutates world state; the character
+ * package's selector callback may mutate the NPC's trait (ledger, pressure)
+ * in the report path by design (contracts.md §4).
  *
  * Four-phase pattern; interceptor consultation through the shared
  * lifecycle engine (ADR-228) via `tellingLifecycle`.
@@ -19,6 +21,7 @@ import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { consultDialogueSelector } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -124,15 +127,26 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
     // entity-first resolution; interceptors key on topicEntityId).
     const topic = context.command.topic?.text;
 
+    // ADR-310 D15: character-modeled NPCs answer through the world's
+    // dialogue selector; no selection falls through to the default.
+    const selection = consultDialogueSelector(context, target, {
+      type: 'tell',
+      text: topic,
+      topicEntityId: context.command.topic?.entity
+    });
+
     const events: ISemanticEvent[] = [
       context.event('if.event.told', {
-        messageId: `${context.action.id}.not_interested`,
-        params: { target: nounPhraseFor(target), topic },
+        messageId: selection?.messageId ?? `${context.action.id}.not_interested`,
+        params: { target: nounPhraseFor(target), topic, ...selection?.params },
         targetId: target.id,
         targetName: target.name,
         topic,
         topicEntityId: context.command.topic?.entity
-      })
+      }),
+      // Author-channel events from the selection (ADR-318 D11) — no
+      // message ID, projected by the `character` channel, never prose.
+      ...(selection?.authorEvents ?? [])
     ];
 
     const state = getLifecycleState(context);

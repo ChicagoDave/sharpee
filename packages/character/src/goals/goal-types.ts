@@ -8,12 +8,18 @@
  * Owner context: @sharpee/character / goals
  */
 
+import type { GoalRuntimeState } from '@sharpee/world-model';
+import type { IRCondition } from '@sharpee/chord';
+
 // ---------------------------------------------------------------------------
 // Priority
 // ---------------------------------------------------------------------------
 
 /** Goal priority levels. */
 export type GoalPriority = 'critical' | 'high' | 'medium' | 'low';
+
+/** All goal priorities, for vocabulary export and iteration (ADR-310 D8). */
+export const GOAL_PRIORITIES: readonly GoalPriority[] = ['critical', 'high', 'medium', 'low'];
 
 /** Maps priority words to numeric values for sorting. */
 export const GOAL_PRIORITY_VALUES: Record<GoalPriority, number> = {
@@ -62,6 +68,13 @@ export interface AcquireStep extends StepBase {
 export interface WaitForStep extends StepBase {
   type: 'waitFor';
   conditions: string[];
+  /**
+   * Compiled-story condition (ADR-310 Phase 3): a Chord `wait for` step
+   * carries its structured IRCondition here; `conditions` strings are the
+   * TS-builder surface. The step evaluator learns this form with the
+   * Phase 5 loader wiring.
+   */
+  conditionCompiled?: IRCondition;
 }
 
 /** Go to a specific location. */
@@ -119,6 +132,23 @@ export interface GoalDef {
 
   /** Predicate conditions that activate this goal. */
   activatesWhen: string[];
+  /**
+   * Compiled-story activation condition (ADR-310 Phase 3): a Chord
+   * `active when` line carries its structured IRCondition here;
+   * `activatesWhen` strings are the TS-builder surface. Absent BOTH ways
+   * means always active. The activation evaluator learns this form with
+   * the Phase 5 loader wiring.
+   */
+  activeWhenCompiled?: IRCondition;
+
+  /**
+   * This goal is a conscience outlet (ADR-318 D8; seam-2 ruling
+   * 2026-08-16): its sequential completion discharges — drains the
+   * pressure curve to `clear`. Stamped by the loader when `active when`
+   * is provably self-breaking-gated (`conditionRequiresSelfBreaking`);
+   * TS-builder stories may set it directly.
+   */
+  discharges?: boolean;
 
   /** Predicate conditions that interrupt (suspend) this goal. */
   interruptedBy?: string[];
@@ -152,25 +182,17 @@ export interface GoalDef {
 // Active goal state
 // ---------------------------------------------------------------------------
 
-/** Runtime state of an active goal. */
+/**
+ * An active goal: the authored definition paired with its live pursuit
+ * state on the NPC's trait (ADR-310 D17 — mutations to `state` persist
+ * through save/restore because the state object IS trait state).
+ */
 export interface ActiveGoal {
   /** The goal definition. */
   def: GoalDef;
 
-  /** Current step index (for sequential/prepared modes). */
-  currentStep: number;
-
-  /** Whether the goal is paused (preempted by higher priority). */
-  paused: boolean;
-
-  /** Whether the goal is interrupted (conditions met). */
-  interrupted: boolean;
-
-  /**
-   * Whether the preparatory steps are complete (for prepared mode).
-   * When true, the goal switches to opportunistic behavior.
-   */
-  prepared: boolean;
+  /** Live reference to the goal's runtime state on the trait. */
+  state: GoalRuntimeState;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,9 +215,20 @@ export interface MovementProfile {
 // Step evaluation result
 // ---------------------------------------------------------------------------
 
+/**
+ * The world mutation a step calls for. The evaluator computes intent and
+ * stays pure; the tick phase — which owns the world handle — applies it
+ * (ADR-310 AC3: the NPC *executes* its steps, it does not merely track them).
+ */
+export type StepMutation =
+  | { kind: 'move'; toRoom: string }
+  | { kind: 'take'; itemId: string }
+  | { kind: 'give'; itemId: string; toId: string }
+  | { kind: 'drop'; itemId: string };
+
 /** Result of evaluating a single goal step. */
 export type StepResult =
-  | { status: 'completed'; witnessed?: string }
-  | { status: 'in-progress'; witnessed?: string }
+  | { status: 'completed'; witnessed?: string; mutation?: StepMutation }
+  | { status: 'in-progress'; witnessed?: string; mutation?: StepMutation }
   | { status: 'waiting' }
   | { status: 'blocked'; reason: string };

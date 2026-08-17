@@ -1,6 +1,7 @@
 story
   title: Each Iteration Fixture
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: each-iteration
   story-version: 0.0.1
   description: E1/E2/E3 + must-be-any end-to-end through story-loader (each package P4).

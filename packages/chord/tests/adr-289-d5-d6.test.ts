@@ -16,7 +16,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const WORLD = `create the Hall
   a room
@@ -50,8 +50,8 @@ describe('D5 — one duplicate-name gate, citing the first span (Acceptance 14)'
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.duplicate-action');
     expect(errors[0].message).toContain('petting');
-    // The first declaration opens at line 7 of the assembled source.
-    expect(errors[0].message).toContain('line 7');
+    // The first declaration opens at line 8 of the assembled source.
+    expect(errors[0].message).toContain('line 8');
     expect(errors[0].span.line).toBeGreaterThan(7);
   });
 
@@ -65,7 +65,7 @@ end trait
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.duplicate-trait');
     expect(errors[0].message).toContain('guard');
-    expect(errors[0].message).toContain('line 7');
+    expect(errors[0].message).toContain('line 8');
   });
 
   it('the pre-existing namespaces keep their codes and gain the first-span citation', () => {
@@ -74,7 +74,7 @@ end trait
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.duplicate-counter');
-    expect(errors[0].message).toContain('line 7');
+    expect(errors[0].message).toContain('line 8');
   });
 
   it('an entity redeclared under the same name still errors, once', () => {

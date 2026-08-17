@@ -15,7 +15,8 @@ import { createStory } from '../src';
 
 const SOURCE = `story
   title: Nightfall
-  authors: T
+  authors:
+    T
   id: nightfall
   story-version: 0.0.1
   states: day, night

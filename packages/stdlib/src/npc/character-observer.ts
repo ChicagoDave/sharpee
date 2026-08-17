@@ -48,16 +48,19 @@ export interface StateTransitionRule {
  * violence increases threat, gifts improve disposition, etc.
  */
 export const DefaultStateTransitions: StateTransitionRule[] = [
-  // Violence
+  // Violence — `npc.*` types come from the NPC combat path;
+  // `if.event.*` are the stdlib actions' emitted types (the observe
+  // sub-step feeds player-action events, ADR-310 Phase 5/7). The old
+  // `if.action.attacking` key named an event no action emits — kept out.
   { eventType: 'npc.attacked', threatDelta: 30, moodValenceDelta: -0.3, moodArousalDelta: 0.3 },
-  { eventType: 'if.action.attacking', threatDelta: 20, moodValenceDelta: -0.2, moodArousalDelta: 0.2 },
+  { eventType: 'if.event.attacked', threatDelta: 20, moodValenceDelta: -0.2, moodArousalDelta: 0.2 },
   { eventType: 'npc.killed', threatDelta: 40, moodValenceDelta: -0.5, moodArousalDelta: 0.4 },
 
   // Kindness
-  { eventType: 'if.action.giving', dispositionDelta: 10, moodValenceDelta: 0.1 },
+  { eventType: 'if.event.given', dispositionDelta: 10, moodValenceDelta: 0.1 },
 
   // Theft
-  { eventType: 'if.action.taking', dispositionDelta: -5 },
+  { eventType: 'if.event.taken', dispositionDelta: -5 },
 
   // Speech
   { eventType: 'npc.spoke', moodArousalDelta: 0.05 },
@@ -178,11 +181,15 @@ export function injectHallucinations(
  *
  * 1. Checks for CharacterModelTrait (returns early if absent — opt-in).
  * 2. Filters event through cognitive profile perception mode.
- * 3. Adds witnessed fact to knowledge.
- * 4. Applies default state transition rules.
- * 5. Checks lucidity triggers.
- * 6. Injects hallucinated facts (augmented perception).
- * 7. Emits observable behavior events for state changes.
+ * 3. Applies default state transition rules.
+ * 4. Checks lucidity triggers.
+ * 5. Injects hallucinated facts (augmented perception).
+ * 6. Emits observable behavior events for state changes.
+ *
+ * Knowledge topics are NOT minted here (ADR-310 D10): raw event types are
+ * platform wire vocabulary, not author-facing topics. Witnessed events
+ * become knowledge only through act detection's derived topics
+ * (@sharpee/character, D12a) and authored `knows` declarations.
  *
  * @param npc - The NPC entity
  * @param event - The observed event
@@ -209,18 +216,7 @@ export function observeEvent(
 
   const amplify = perception === 'amplify' ? 2.0 : 1.0;
 
-  // 2. Add witnessed fact
-  const factTopic = event.type;
-  if (!trait.knows(factTopic)) {
-    trait.addFact(factTopic, 'witnessed', 'certain', turn);
-    emittedEvents.push(createCharacterEvent(
-      CharacterMessages.FACT_LEARNED,
-      npc.id,
-      { topic: factTopic, source: 'witnessed' },
-    ));
-  }
-
-  // 3. Apply state transition rules
+  // 2. Apply state transition rules
   const previousMood = trait.getMood();
   const previousThreat = trait.getThreat();
 
@@ -261,7 +257,7 @@ export function observeEvent(
     ));
   }
 
-  // 4. Check lucidity triggers
+  // 3. Check lucidity triggers
   if (trait.lucidityConfig) {
     const previousState = trait.currentLucidityState;
     for (const [triggerName, trigger] of Object.entries(trait.lucidityConfig.triggers)) {
@@ -287,7 +283,7 @@ export function observeEvent(
     }
   }
 
-  // 5. Inject hallucinations (augmented perception)
+  // 4. Inject hallucinations (augmented perception)
   const hallucinationEvents = injectHallucinations(trait, npc.id, turn);
   emittedEvents.push(...hallucinationEvents);
 

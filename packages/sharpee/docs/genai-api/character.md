@@ -17,7 +17,7 @@ NPC/character authoring — builders, applyCharacter, character model.
  * Public interface: CharacterBuilder, TriggerBuilder.
  * Owner context: @sharpee/character
  */
-import { type PersonalityExpr, type DispositionWord, type Mood, type ThreatLevel, type CognitiveProfile, type ConfidenceWord, type LucidityConfig, type PerceptionFilterConfig, type PerceivedEvent, type CharacterPredicate, type ICharacterModelData } from '@sharpee/world-model';
+import { type PersonalityExpr, type DispositionWord, type Mood, type ThreatLevel, type CognitiveProfile, type ConfidenceWord, type FactSource, type ResistanceMode, type LucidityConfig, type PerceptionFilterConfig, type PerceivedEvent, type CharacterPredicate, type ICharacterModelData, type ActCategory, type FaceAct } from '@sharpee/world-model';
 import { CognitivePresetName } from './cognitive-presets.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
 import { PropagationProfile } from './propagation/propagation-types.js';
@@ -132,7 +132,7 @@ export declare class CharacterBuilder {
     private _threat;
     private _cognitiveProfile;
     private _knowledge;
-    private _beliefs;
+    private _factBeliefs;
     private _goals;
     private _lucidityConfig?;
     private _perceptionFilters?;
@@ -148,6 +148,11 @@ export declare class CharacterBuilder {
     private readonly _influenceDefs;
     private readonly _resistanceDefs;
     private _activeInfluenceBuilder?;
+    private readonly _temperaments;
+    private readonly _principles;
+    private readonly _obligations;
+    private _honor?;
+    private readonly _burdenedBy;
     /**
      * Create a new character builder.
      *
@@ -203,26 +208,38 @@ export declare class CharacterBuilder {
      */
     cognitiveProfile(profile: CognitivePresetName | string | Partial<CognitiveProfile>): CharacterBuilder;
     /**
-     * Declare that the NPC knows about a topic.
+     * Declare that the NPC knows about a topic (valueless — ADR-310 D14).
      *
      * @param topic - What the NPC knows about
-     * @param opts - Optional: how they know and how confident
+     * @param opts - Optional: how they know (`source` names any FactSource —
+     *   Chord parity for `knows the murder, told`; the `witnessed` boolean
+     *   is the older shorthand), how confident, and how resistant to
+     *   counter-evidence (the fold of the retired belief map)
      * @returns this for chaining
      */
     knows(topic: string, opts?: {
         witnessed?: boolean;
+        source?: FactSource;
         confidence?: ConfidenceWord;
+        resistance?: ResistanceMode;
+        confided?: boolean;
     }): CharacterBuilder;
     /**
-     * Declare a belief the NPC holds (may differ from facts).
+     * Declare what this NPC thinks a declared fact's value is — Chord parity
+     * for `thinks the killer is the Butler, suspects, told`. Replaces the
+     * retired `believes()` method (its firmness/resistance fields fold in
+     * here and into `knows()`).
      *
-     * @param topic - What the belief is about
-     * @param opts - Strength and resistance
+     * @param factId - The fact declaration's id
+     * @param value - The value this NPC thinks is true (checked against the
+     *   fact's closed value set at compile/load time, not here)
+     * @param opts - Confidence, source, and resistance
      * @returns this for chaining
      */
-    believes(topic: string, opts?: {
-        strength?: ConfidenceWord;
-        resistance?: 'none' | 'reinterprets' | 'ignores';
+    thinks(factId: string, value: string, opts?: {
+        confidence?: ConfidenceWord;
+        source?: FactSource;
+        resistance?: ResistanceMode;
     }): CharacterBuilder;
     /**
      * Define a goal with a fluent builder chain.
@@ -320,6 +337,72 @@ export declare class CharacterBuilder {
     resistsInfluence(influenceName: string, opts?: {
         except: string[];
     }): CharacterBuilder;
+    /**
+     * Bind a named temperament — a force ordering (ADR-318 D3). Static when
+     * `while` is absent; state-bound otherwise. Never directly mutated: the
+     * entity-state ratchet is the only lever.
+     *
+     * @param name - The temperament definition's name (defs are story data,
+     *   registered with the arbiter at load)
+     * @param opts - `while`: the entity state that makes this binding live
+     * @returns this for chaining
+     */
+    temperament(name: string, opts?: {
+        while?: string;
+    }): CharacterBuilder;
+    /**
+     * Declare a principle — `never <category>` (ADR-318 D4). Feeds duty at a
+     * strong fixed baseline; a temperament is what makes it unconditional.
+     *
+     * @param category - An act category the runtime can detect
+     * @param opts - `scope`: canonical scope string (`anyone` / `a <kind>` /
+     *   entity id — `harm`/`abandon` only); `except`: canonical carve-out
+     *   (`to protect <scope>` yields to that obligation; a bare scope exempts
+     *   the act's object)
+     * @returns this for chaining
+     */
+    never(category: ActCategory, opts?: {
+        scope?: string;
+        except?: string;
+    }): CharacterBuilder;
+    /**
+     * Declare the `protects <scope>` obligation (ADR-318 D5) — compiles to a
+     * standing goal with a duty feed at load; recorded on the trait so the
+     * author channel can attribute it.
+     *
+     * @param scope - Canonical scope string (`anyone` / `a <kind>` / entity id)
+     * @returns this for chaining
+     */
+    protects(scope: string): CharacterBuilder;
+    /**
+     * Declare the `answers honestly` obligation (ADR-318 D4) — the dual of
+     * `lie`: evasion satisfies `never lies` but violates this.
+     *
+     * @returns this for chaining
+     */
+    answersHonestly(): CharacterBuilder;
+    /**
+     * Declare honor before an audience (ADR-318 D7). Binds on audience
+     * PRESENCE — honor sees the room, never anticipated reputation.
+     *
+     * @param scope - Canonical audience scope string
+     * @param opts - `faceActs`: a selective bundle (default: the full
+     *   platform six); `except`: audience carve-out entity ids
+     * @returns this for chaining
+     */
+    honor(scope: string, opts?: {
+        faceActs?: FaceAct[];
+        except?: string[];
+    }): CharacterBuilder;
+    /**
+     * Seed pre-story conscience pressure (ADR-318 D8) — `burdened by` a held
+     * topic. States are declarable; curves are runtime-owned.
+     *
+     * @param topic - A topic this character `knows` (checked at compile/load,
+     *   not here)
+     * @returns this for chaining
+     */
+    burdenedBy(topic: string): CharacterBuilder;
     /** @internal Finalize any pending influence builder. */
     private _finalizePendingInfluenceBuilder;
     /**
@@ -357,24 +440,29 @@ export interface CompiledCharacter {
 
 ```typescript
 /**
- * Named cognitive profile presets (ADR-141)
+ * Named cognitive profile presets (ADR-141, renamed per ADR-310 D5)
  *
- * Documented example profiles for common cognitive conditions.
- * These are starting points for authors, not platform-level constants.
- * Authors override any dimension via the builder's cognitiveProfile() method.
+ * Documented example profiles named for the behavior they produce, not a
+ * diagnosis. These are starting points for authors, not platform-level
+ * constants. Authors override any dimension via the builder's
+ * cognitiveProfile() method, or ignore all eight and compose from
+ * dimensions.
  *
  * Public interface: COGNITIVE_PRESETS, CognitivePresetName.
  * Owner context: @sharpee/character
  */
 import { type CognitiveProfile } from '@sharpee/world-model';
-/** Names of built-in cognitive presets. */
-export type CognitivePresetName = 'stable' | 'schizophrenic' | 'ptsd' | 'dementia' | 'dissociative' | 'tbi' | 'obsessive' | 'intoxicated';
+/**
+ * Names of built-in cognitive presets (ADR-310 D5 behavioral names — the
+ * clinical names they replaced are gone; dimension values are unchanged).
+ */
+export type CognitivePresetName = 'clear-headed' | 'fixated' | 'elsewhere' | 'loosened' | 'fogged' | 'braced' | 'unmoored' | 'unquiet';
 /**
  * Named cognitive profile presets.
  *
- * Each maps to the five-dimensional profile from ADR-141's condition table.
- * Authors select a preset as a starting point, then override individual
- * dimensions as needed for their character.
+ * Each maps to the five-dimensional profile from ADR-141's table, under the
+ * ADR-310 D5 behavioral names. A preset says what the character *does* —
+ * never implies the five dimensions model a real condition.
  */
 export declare const COGNITIVE_PRESETS: Record<CognitivePresetName, CognitiveProfile>;
 /**
@@ -505,6 +593,15 @@ export interface AppliedCharacter {
     influenceDefs?: InfluenceDef[];
     /** Resistance definitions (ADR-146), if defined. */
     resistanceDefs?: ResistanceDef[];
+    /**
+     * The authored starting mood as valence-arousal axes — the mood-decay
+     * baseline for the tick phase (ADR-310 D6). Always present: the builder
+     * defaults the starting mood when the author does not set one.
+     */
+    baselineMood: {
+        valence: number;
+        arousal: number;
+    };
 }
 /**
  * Apply a compiled character to an entity.
@@ -518,6 +615,67 @@ export interface AppliedCharacter {
  * @returns The trait and compiled behavior configuration
  */
 export declare function applyCharacter(entity: IFEntity, compiled: CompiledCharacter): AppliedCharacter;
+```
+
+### apply-compiled
+
+```typescript
+/**
+ * Apply COMPILED-STORY character data to an entity (ADR-310 Phase 3).
+ *
+ * The one seam between the Chord compiler's wire shape (IRCharacter,
+ * words never numbers) and the character model: the story-loader calls
+ * this at load (Phase 5), and the AC1 round-trip tests call it directly.
+ * It drives the normalized CharacterBuilder, so the produced trait is the
+ * builder's own output for the same declaration — ADR-310 Acceptance 1 by
+ * construction, with word-mapping and completion defects still caught.
+ *
+ * Public interface: applyCompiledCharacter, CompiledCharacterContext.
+ * Owner context: @sharpee/character
+ */
+import type { IFEntity, TemperamentDef } from '@sharpee/world-model';
+import type { IRCharacter, IRMoodDef, IRWordDef, IRTemperamentDef } from '@sharpee/chord';
+import { AppliedCharacter } from './apply.js';
+/**
+ * Story-level context for compiled character application: the custom
+ * vocabulary the story's `define mood` / `define personality` lines
+ * declared (StoryIR.customMoods / customPersonalities), plus the loader's
+ * IR→world entity-id mapping.
+ */
+export interface CompiledCharacterContext {
+    customMoods?: readonly IRMoodDef[];
+    customPersonalities?: readonly IRWordDef[];
+    /**
+     * Maps a wire entity ref (IR id) to the built world entity id. The
+     * LOADER owns the mapping (it is the only party holding both id
+     * spaces); this seam owns the walk over every ref-bearing field.
+     * Absent = identity (direct seam callers, AC1 round-trip tests).
+     * Implementations should throw on an unresolvable id — an unresolved
+     * ref here is rogue IR, not a story state.
+     */
+    resolveEntityId?: (irId: string) => string;
+}
+/**
+ * Map compiled `define temperament` defs (plus the compiler's synthesized
+ * inline/override defs) to the arbiter's registry shape — the loader hands
+ * the result to ArbiterContext.temperamentDefs at load (ADR-318 D3).
+ *
+ * @param defs - StoryIR.temperaments
+ * @returns name → TemperamentDef record
+ */
+export declare function temperamentDefsFrom(defs: readonly IRTemperamentDef[]): Record<string, TemperamentDef>;
+/**
+ * Apply compiled-story character data to an entity: builds the
+ * CharacterModelTrait via the normalized builder and attaches it,
+ * returning the same shape applyCharacter returns (trait, service
+ * configs, mood-decay baseline).
+ *
+ * @param entity - The NPC entity to apply the character model to
+ * @param data - The entity's compiled character block (IREntity.character)
+ * @param ctx - Story-level custom vocabulary, if any
+ * @returns The trait and compiled behavior configuration
+ */
+export declare function applyCompiledCharacter(entity: IFEntity, data: IRCharacter, ctx?: CompiledCharacterContext): AppliedCharacter;
 ```
 
 ### conversation/response-types
@@ -564,6 +722,16 @@ export interface ResponseCandidate {
      * Keys are state dimensions; values are target values.
      */
     stateMutations?: Record<string, unknown>;
+    /**
+     * What this line asserts (ADR-318 D9: `claims <fact> is <value>`).
+     * Prose is opaque — this one tag is the bridge. Lines that assert
+     * nothing carry nothing. Compile-checked against the fact's value set
+     * by the Chord compiler; the runtime trusts it.
+     */
+    claims?: {
+        factId: string;
+        value: string;
+    };
 }
 /**
  * The structured output of constraint evaluation, consumed by the ACL
@@ -754,6 +922,143 @@ export declare class TopicRegistry {
      */
     private scoreKeywordMatch;
 }
+```
+
+### conversation/claims
+
+```typescript
+/**
+ * Claim delivery bookkeeping (ADR-318 D9 / contracts.md §4)
+ *
+ * The lie ledger's two rules, shared by every dialogue surface (the TS
+ * dialogue extension and the loader's topic dispatch):
+ *
+ * - Pin rule: a pinned claim to an audience forbids delivering a line
+ *   whose claim contradicts the pinned value — mood and disposition
+ *   drift cannot evaporate a maintained lie. The hold lasts exactly as
+ *   far as D9 says: at the speaker's own `breaking` band the pin stops
+ *   gating (seam-4 ruling 2026-08-16), so the truth can escape through
+ *   the crack whatever order the lies were told in. Gating suspension is
+ *   not release — the entry stays pinned (release is seam 3's question).
+ * - Mint rule: delivering a line whose claim contradicts the speaker's
+ *   own held belief mints a pinned ledger entry; honest assertion mints
+ *   nothing (disagreement is not lying); every pinned delivery — mint or
+ *   maintenance of the pinned value — is a duty defeat feeding
+ *   conscience pressure. Honestly contradicting one's own pin (only
+ *   reachable at breaking) is neither: no mint, no maintenance, no cost —
+ *   it is the truth reaching the lie's audience, and it releases exactly
+ *   that pin (seam-3 ruling 2026-08-16: release is PER AUDIENCE — pins to
+ *   audiences who never got the truth keep holding; discharge drains the
+ *   curve, never the ledger).
+ *
+ * Public interface: pinAllowsClaim, recordClaimDelivery, ClaimTag.
+ * Owner context: @sharpee/character / conversation
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { CharacterModelTrait } from '@sharpee/world-model';
+/** What a response line asserts: `(factId, value)` (ADR-318 D9). */
+export interface ClaimTag {
+    factId: string;
+    value: string;
+}
+/**
+ * Whether an active pin permits delivering a line with this claim tag.
+ * Lines that claim nothing are always allowed.
+ *
+ * @param trait - The speaker's trait
+ * @param audienceId - Who the line would be delivered to
+ * @param claims - The line's claim tag, if any
+ * @returns False exactly when a pin to this audience holds a different
+ *   value AND the speaker is below `breaking` — at breaking the pin no
+ *   longer gates (ADR-318 D9: the hold lasts "until … conscience
+ *   breaking"; seam-4 ruling 2026-08-16)
+ */
+export declare function pinAllowsClaim(trait: CharacterModelTrait, audienceId: string, claims: ClaimTag | undefined): boolean;
+/**
+ * Ledger bookkeeping for a delivered claim (ADR-318 D9).
+ *
+ * Mint rule as documented above. Re-delivering an already-pinned claim
+ * mints no duplicate, but every pinned selection deposits pressure —
+ * maintaining a lie costs by construction.
+ *
+ * @param trait - The speaker's trait (mutated: ledger, pressure)
+ * @param npcId - The speaker's entity id (author-channel attribution)
+ * @param audienceId - Who the claim was delivered to
+ * @param claims - The line's claim tag
+ * @param turn - Current turn number
+ * @returns Author-channel events for the mint/maintenance/deposit (ADR-318 D11)
+ */
+export declare function recordClaimDelivery(trait: CharacterModelTrait, npcId: string, audienceId: string, claims: ClaimTag, turn: number): ISemanticEvent[];
+```
+
+### conversation/conversation-marker
+
+```typescript
+/**
+ * Conversation marker (ADR-310 D16 lifecycle rule)
+ *
+ * "A conversation in progress suppresses goal pursuit": every dialogue
+ * delivery stamps the marker on the speaker's trait (D17 — it rides the
+ * trait, so it saves and restores), and the goal sub-step skips step
+ * execution while the marker is fresh. Freshness is turn distance
+ * against the lifecycle's decay threshold — the marker is never cleared
+ * in place, only superseded or outgrown, so no per-turn mutation exists.
+ *
+ * Both dialogue surfaces stamp through here: the chord topic dispatch
+ * (story-loader's topic arm) and the TS-API selector socket — one
+ * semantics, the same pattern as the claim bookkeeping in claims.ts.
+ *
+ * Public interface: markConversationTurn, conversationSuppressesGoals.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { CharacterModelTrait } from '@sharpee/world-model';
+/**
+ * Stamp the conversation marker: dialogue reached this character from
+ * `partnerId` on `currentTurn`. Overwrites any earlier marker.
+ *
+ * @param trait - The speaker's character model trait (mutated)
+ * @param partnerId - The conversing actor (the player on both surfaces)
+ * @param currentTurn - The turn the dialogue happened in
+ */
+export declare function markConversationTurn(trait: CharacterModelTrait, partnerId: string, currentTurn: number): void;
+/**
+ * Whether a conversation in progress suppresses this character's goal
+ * pursuit (ADR-310 D16). True while the last dialogue delivery is within
+ * the suppression window; goal ACTIVATION is unaffected — D8's
+ * `active when` still re-evaluates every turn, the goal simply does not
+ * act.
+ *
+ * @param trait - The character model trait to consult
+ * @param currentTurn - The turn being evaluated
+ * @returns True if pursuit is suppressed this turn
+ */
+export declare function conversationSuppressesGoals(trait: CharacterModelTrait, currentTurn: number): boolean;
+```
+
+### conversation/author-events
+
+```typescript
+/**
+ * Author-channel event helper (ADR-318 D11)
+ *
+ * One constructor for `character.author.*` events shared by every
+ * dialogue surface (the TS dialogue extension and the loader's topic
+ * dispatch). Author events carry no message ID and never render as
+ * player prose (ADR-310 D12).
+ *
+ * Public interface: createAuthorEvent.
+ * Owner context: @sharpee/character / conversation
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+/**
+ * Build an author-channel event.
+ *
+ * @param type - Event type (`character.author.*`)
+ * @param npcId - The NPC the event attributes to
+ * @param data - Event payload (diagnostic data, never prose)
+ * @returns The semantic event
+ */
+export declare function createAuthorEvent(type: string, npcId: string, data: Record<string, unknown>): ISemanticEvent;
 ```
 
 ### conversation/constraint-evaluator
@@ -1202,6 +1507,7 @@ export declare function applyCognitiveColoring(intent: ResponseIntent, profile: 
  * Public interface: DialogueExtension, DialogueResult.
  * Owner context: @sharpee/character / conversation
  */
+import { type ISemanticEvent } from '@sharpee/core';
 import { ResponseIntent } from './response-types.js';
 /**
  * The result of a dialogue extension handling a conversation action.
@@ -1216,6 +1522,11 @@ export interface DialogueResult {
     params?: Record<string, unknown>;
     /** The structured response intent (for systems that need it). */
     responseIntent?: ResponseIntent;
+    /**
+     * Author-channel events this selection produced (ADR-318 D11 — ledger
+     * mints, pressure deposits, band transitions). Never player prose.
+     */
+    authorEvents?: ISemanticEvent[];
 }
 /**
  * Interface for dialogue extensions (ADR-102).
@@ -1564,18 +1875,26 @@ export declare class CharacterModelDialogue implements DialogueExtension {
     /**
      * Handle ASK [npc] ABOUT [text].
      * Resolves topic, evaluates constraints, records response, builds intent.
+     *
+     * @param npcId - The NPC entity ID
+     * @param aboutText - The raw text after "about"
+     * @param audienceId - Who is asking — the lie ledger's audience (ADR-318 D9)
      */
-    handleAsk(npcId: string, aboutText: string): DialogueResult;
+    handleAsk(npcId: string, aboutText: string, audienceId?: string): DialogueResult;
     /**
      * Handle TELL [npc] ABOUT [text].
      * Confrontation path — the player presents information.
+     *
+     * @param npcId - The NPC entity ID
+     * @param aboutText - The raw text after "about"
+     * @param audienceId - Who is telling — the lie ledger's audience (ADR-318 D9)
      */
-    handleTell(npcId: string, aboutText: string): DialogueResult;
+    handleTell(npcId: string, aboutText: string, audienceId?: string): DialogueResult;
     /**
      * Handle SAY [text] or SAY [text] TO [npc].
      * Routes free speech through topic resolution.
      */
-    handleSay(npcId: string | undefined, spokenText: string): DialogueResult;
+    handleSay(npcId: string | undefined, spokenText: string, audienceId?: string): DialogueResult;
     /**
      * Handle TALK TO [npc].
      * Initiates conversation lifecycle.
@@ -1585,12 +1904,18 @@ export declare class CharacterModelDialogue implements DialogueExtension {
      * Select the best response for a topic and record it in the evaluator.
      *
      * Evaluates constraints across all authored responses, picks the best
-     * match, and records the interaction.
+     * match, and records the interaction. The lie ledger is consulted
+     * before scoring (ADR-318 D9 / contracts.md §4): a pinned claim to this
+     * audience filters out contradicting lines — mood and disposition drift
+     * cannot evaporate a maintained lie — and the selection's own claim
+     * mints or maintains ledger entries afterward.
      *
      * @param npc - NPC conversation state
      * @param npcId - The NPC entity ID
      * @param topicName - The resolved topic name
      * @param authoredResponses - Authored responses for this trigger
+     * @param audienceId - The ledger audience (the conversing player); no
+     *   audience → no pin filtering, no minting
      * @returns The selected candidate and its authored response, or null
      */
     private selectAndRecordResponse;
@@ -1605,6 +1930,41 @@ export declare class CharacterModelDialogue implements DialogueExtension {
     /** Apply state mutations to the NPC's character model trait. */
     private applyStateMutations;
 }
+```
+
+### conversation/selector
+
+```typescript
+/**
+ * The character dialogue selector (ADR-310 D15; contracts.md §5)
+ *
+ * Adapts CharacterModelDialogue to the world's dialogue-selector socket:
+ * stdlib's ASK/TELL/SAY/TALK TO consult the registered selector for NPCs
+ * carrying CharacterModelTrait, and an unhandled result falls through to
+ * the action's default (ADR-310 D7: no model, no change). The selection
+ * context's speaker becomes the lie ledger's audience (ADR-318 D9).
+ *
+ * Public interface: createCharacterDialogueSelector,
+ *   registerCharacterDialogue.
+ * Owner context: @sharpee/character / conversation
+ */
+import { WorldModel, type DialogueSelector } from '@sharpee/world-model';
+import { CharacterModelDialogue } from './dialogue-extension.js';
+/**
+ * Build a DialogueSelector backed by a CharacterModelDialogue instance.
+ *
+ * @param dialogue - The conversation system holding registered NPCs
+ * @returns The selector to register on the world
+ */
+export declare function createCharacterDialogueSelector(dialogue: CharacterModelDialogue): DialogueSelector;
+/**
+ * Register the character dialogue selector on a world (idempotent
+ * last-wins, per-world; re-register on every story load).
+ *
+ * @param world - The world whose conversation actions should consult it
+ * @param dialogue - The conversation system holding registered NPCs
+ */
+export declare function registerCharacterDialogue(world: WorldModel, dialogue: CharacterModelDialogue): void;
 ```
 
 ### conversation/conversation-messages
@@ -1680,10 +2040,16 @@ export type ConversationMessageId = (typeof ConversationMessages)[keyof typeof C
  * Public interface: All exported types.
  * Owner context: @sharpee/character / propagation
  */
-/** How freely the NPC shares information. */
-export type PropagationTendency = 'chatty' | 'selective' | 'mute';
+/**
+ * How freely the NPC shares information. `selective` is retired (ADR-310
+ * D10): listing what an NPC spreads IS selectivity — a non-empty `spreads`
+ * list narrows a chatty speaker to exactly those topics.
+ */
+export type PropagationTendency = 'chatty' | 'mute';
 /** Who the NPC shares with. */
 export type PropagationAudience = 'trusted' | 'anyone' | 'allied';
+/** All propagation audiences, for vocabulary export and iteration (ADR-310 D10). */
+export declare const PROPAGATION_AUDIENCES: readonly PropagationAudience[];
 /** How quickly the NPC shares when conditions are met. */
 export type PropagationPace = 'eager' | 'gradual' | 'reluctant';
 /** Tone of the telling — hint to the language layer for variant selection. */
@@ -1717,9 +2083,9 @@ export interface PropagationProfile {
     audience?: PropagationAudience;
     /** NPC IDs explicitly excluded from sharing. */
     excludes?: string[];
-    /** Topics the chatty NPC withholds (blacklist for chatty tendency). */
+    /** Topics the chatty NPC withholds (blacklist). */
     withholds?: string[];
-    /** Topics the selective NPC will share (whitelist for selective tendency). */
+    /** Topics the NPC will share — a non-empty list is a whitelist (ADR-310 D10). */
     spreads?: string[];
     /** Per-fact overrides. */
     overrides?: Record<string, FactOverride>;
@@ -1749,26 +2115,6 @@ export interface PropagationTransfer {
     /** Per-fact witnessed message override, if any. */
     witnessedOverride?: string;
 }
-/**
- * Tracks which facts an NPC has already told to each listener.
- * Prevents repeated sharing of the same fact to the same NPC.
- */
-export declare class AlreadyToldRecord {
-    /** speakerId → listenerId → Set of topic names */
-    private readonly records;
-    /**
-     * Check if a speaker has already told a listener about a topic.
-     */
-    hasTold(speakerId: string, listenerId: string, topic: string): boolean;
-    /**
-     * Record that a speaker told a listener about a topic.
-     */
-    record(speakerId: string, listenerId: string, topic: string): void;
-    /** Export for serialization. */
-    toJSON(): Record<string, Record<string, string[]>>;
-    /** Restore from serialized data. */
-    static fromJSON(data: Record<string, Record<string, string[]>>): AlreadyToldRecord;
-}
 ```
 
 ### propagation/propagation-evaluator
@@ -1786,7 +2132,7 @@ export declare class AlreadyToldRecord {
  * Owner context: @sharpee/character / propagation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { PropagationProfile, PropagationTransfer, AlreadyToldRecord } from './propagation-types.js';
+import { PropagationProfile, PropagationTransfer } from './propagation-types.js';
 /** Information about an NPC in the room for propagation evaluation. */
 export interface RoomOccupant {
     /** Entity ID. */
@@ -1804,8 +2150,6 @@ export interface PropagationContext {
     listeners: RoomOccupant[];
     /** Whether the player is present in the room. */
     playerPresent: boolean;
-    /** The already-told record (shared across all NPCs). */
-    alreadyTold: AlreadyToldRecord;
     /** Current turn number. */
     turn: number;
     /** Number of turns the speaker has been in this room with listeners. */
@@ -1818,7 +2162,7 @@ export interface PropagationContext {
  * 1. Mute check — skip entirely
  * 2. Schedule condition check — skip if not met
  * 3. Find eligible listeners (audience + exclusions)
- * 4. Find eligible facts (tendency whitelist/blacklist + already-told)
+ * 4. Find eligible facts (spreads whitelist / withholds blacklist + already-told)
  * 5. Apply pace (eager = all, gradual = one, reluctant = wait)
  * 6. Return transfer objects
  *
@@ -1832,17 +2176,18 @@ export declare function evaluatePropagation(ctx: PropagationContext): Propagatio
 
 ```typescript
 /**
- * Fact transfer and provenance tracking (ADR-144)
+ * Fact transfer and provenance tracking (ADR-144, ADR-310 D14/D17)
  *
  * Applies propagation transfers by creating facts in the listener's
- * knowledge base with full provenance chain. Records transfers in
- * the already-told record.
+ * knowledge base with provenance, and recording the transfer on the
+ * speaker's trait told-record (the AlreadyToldRecord service is retired —
+ * ADR-310 D17).
  *
- * Public interface: transferFact, TransferResult.
+ * Public interface: transferFact, applyTransfers, TransferResult.
  * Owner context: @sharpee/character / propagation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { PropagationTransfer, AlreadyToldRecord, ReceivesAs } from './propagation-types.js';
+import { PropagationTransfer, ReceivesAs } from './propagation-types.js';
 /** The result of applying a fact transfer. */
 export interface TransferResult {
     /** The transfer that was applied. */
@@ -1855,28 +2200,38 @@ export interface TransferResult {
 /**
  * Apply a single propagation transfer.
  *
- * Creates a fact in the listener's knowledge with provenance,
- * records the transfer in the already-told record.
+ * Creates a fact in the listener's knowledge with provenance, and records
+ * the transfer on the speaker's told-record. A skeptical listener
+ * (`receives: 'as belief'`) holds the fact at lower confidence
+ * ('suspects') — the fold of the retired standalone belief map
+ * (ADR-310 D14).
+ *
+ * When the speaker holds a *valued belief* about the topic, the value
+ * travels too (ADR-310 D10/D14, AC5 — propagation moves a claim, not a
+ * token): the listener receives the speaker's held value at the same
+ * receives-downgraded confidence, `source: 'told'`. A belief the
+ * listener already holds is never displaced — belief revision is D14
+ * resistance territory, not the transfer's job.
  *
  * @param transfer - The transfer to apply
+ * @param speakerTrait - The speaker's CharacterModelTrait (told-record home)
  * @param listenerTrait - The listener's CharacterModelTrait
- * @param alreadyTold - The shared already-told record
  * @param turn - Current turn number
  * @param receivesAs - How the listener treats received info (default: 'as fact')
  * @returns The transfer result
  */
-export declare function transferFact(transfer: PropagationTransfer, listenerTrait: CharacterModelTrait, alreadyTold: AlreadyToldRecord, turn: number, receivesAs?: ReceivesAs): TransferResult;
+export declare function transferFact(transfer: PropagationTransfer, speakerTrait: CharacterModelTrait, listenerTrait: CharacterModelTrait, turn: number, receivesAs?: ReceivesAs): TransferResult;
 /**
  * Apply multiple propagation transfers in sequence.
  *
  * @param transfers - The transfers to apply
- * @param getListenerTrait - Function to get a listener's CharacterModelTrait by ID
- * @param alreadyTold - The shared already-told record
+ * @param getTrait - Function to get an entity's CharacterModelTrait by ID
+ *   (used for both speakers and listeners)
  * @param turn - Current turn number
  * @param getReceivesAs - Function to get how a listener receives info
  * @returns Array of transfer results
  */
-export declare function applyTransfers(transfers: PropagationTransfer[], getListenerTrait: (id: string) => CharacterModelTrait | undefined, alreadyTold: AlreadyToldRecord, turn: number, getReceivesAs?: (listenerId: string) => ReceivesAs): TransferResult[];
+export declare function applyTransfers(transfers: PropagationTransfer[], getTrait: (id: string) => CharacterModelTrait | undefined, turn: number, getReceivesAs?: (listenerId: string) => ReceivesAs): TransferResult[];
 ```
 
 ### propagation/visibility
@@ -1966,15 +2321,19 @@ import { PropagationTendency, PropagationAudience, PropagationPace, PropagationC
  * All fields map directly to PropagationProfile.
  */
 export interface PropagationOptions {
-    /** How freely the NPC shares information. */
-    tendency: PropagationTendency;
+    /**
+     * How freely the NPC shares information (default: 'chatty'). A non-empty
+     * `spreads` list narrows sharing to exactly those topics (ADR-310 D10 —
+     * the retired `selective` keyword, said by listing).
+     */
+    tendency?: PropagationTendency;
     /** Who the NPC shares with (default: 'trusted'). */
     audience?: PropagationAudience;
     /** NPC IDs explicitly excluded from sharing. */
     excludes?: string[];
-    /** Topics the chatty NPC withholds (blacklist for chatty tendency). */
+    /** Topics the chatty NPC withholds (blacklist). */
     withholds?: string[];
-    /** Topics the selective NPC will share (whitelist for selective tendency). */
+    /** Topics the NPC will share — a non-empty list is a whitelist (ADR-310 D10). */
     spreads?: string[];
     /** Per-fact overrides. */
     overrides?: Record<string, FactOverride>;
@@ -2044,8 +2403,12 @@ export type PropagationMessageId = (typeof PropagationMessages)[keyof typeof Pro
  * Public interface: All exported types.
  * Owner context: @sharpee/character / goals
  */
+import type { GoalRuntimeState } from '@sharpee/world-model';
+import type { IRCondition } from '@sharpee/chord';
 /** Goal priority levels. */
 export type GoalPriority = 'critical' | 'high' | 'medium' | 'low';
+/** All goal priorities, for vocabulary export and iteration (ADR-310 D8). */
+export declare const GOAL_PRIORITIES: readonly GoalPriority[];
 /** Maps priority words to numeric values for sorting. */
 export declare const GOAL_PRIORITY_VALUES: Record<GoalPriority, number>;
 /**
@@ -2075,6 +2438,13 @@ export interface AcquireStep extends StepBase {
 export interface WaitForStep extends StepBase {
     type: 'waitFor';
     conditions: string[];
+    /**
+     * Compiled-story condition (ADR-310 Phase 3): a Chord `wait for` step
+     * carries its structured IRCondition here; `conditions` strings are the
+     * TS-builder surface. The step evaluator learns this form with the
+     * Phase 5 loader wiring.
+     */
+    conditionCompiled?: IRCondition;
 }
 /** Go to a specific location. */
 export interface MoveToStep extends StepBase {
@@ -2112,6 +2482,22 @@ export interface GoalDef {
     id: string;
     /** Predicate conditions that activate this goal. */
     activatesWhen: string[];
+    /**
+     * Compiled-story activation condition (ADR-310 Phase 3): a Chord
+     * `active when` line carries its structured IRCondition here;
+     * `activatesWhen` strings are the TS-builder surface. Absent BOTH ways
+     * means always active. The activation evaluator learns this form with
+     * the Phase 5 loader wiring.
+     */
+    activeWhenCompiled?: IRCondition;
+    /**
+     * This goal is a conscience outlet (ADR-318 D8; seam-2 ruling
+     * 2026-08-16): its sequential completion discharges — drains the
+     * pressure curve to `clear`. Stamped by the loader when `active when`
+     * is provably self-breaking-gated (`conditionRequiresSelfBreaking`);
+     * TS-builder stories may set it directly.
+     */
+    discharges?: boolean;
     /** Predicate conditions that interrupt (suspend) this goal. */
     interruptedBy?: string[];
     /** Goal priority. */
@@ -2132,21 +2518,16 @@ export interface GoalDef {
     /** Whether the goal resumes from where it left off after interruption clears. */
     resumeOnClear?: boolean;
 }
-/** Runtime state of an active goal. */
+/**
+ * An active goal: the authored definition paired with its live pursuit
+ * state on the NPC's trait (ADR-310 D17 — mutations to `state` persist
+ * through save/restore because the state object IS trait state).
+ */
 export interface ActiveGoal {
     /** The goal definition. */
     def: GoalDef;
-    /** Current step index (for sequential/prepared modes). */
-    currentStep: number;
-    /** Whether the goal is paused (preempted by higher priority). */
-    paused: boolean;
-    /** Whether the goal is interrupted (conditions met). */
-    interrupted: boolean;
-    /**
-     * Whether the preparatory steps are complete (for prepared mode).
-     * When true, the goal switches to opportunistic behavior.
-     */
-    prepared: boolean;
+    /** Live reference to the goal's runtime state on the trait. */
+    state: GoalRuntimeState;
 }
 /**
  * NPC movement profile — defines map knowledge and access.
@@ -2158,13 +2539,34 @@ export interface MovementProfile {
     /** Passage/connection IDs the NPC can traverse, or 'all'. */
     access: string[] | 'all';
 }
+/**
+ * The world mutation a step calls for. The evaluator computes intent and
+ * stays pure; the tick phase — which owns the world handle — applies it
+ * (ADR-310 AC3: the NPC *executes* its steps, it does not merely track them).
+ */
+export type StepMutation = {
+    kind: 'move';
+    toRoom: string;
+} | {
+    kind: 'take';
+    itemId: string;
+} | {
+    kind: 'give';
+    itemId: string;
+    toId: string;
+} | {
+    kind: 'drop';
+    itemId: string;
+};
 /** Result of evaluating a single goal step. */
 export type StepResult = {
     status: 'completed';
     witnessed?: string;
+    mutation?: StepMutation;
 } | {
     status: 'in-progress';
     witnessed?: string;
+    mutation?: StepMutation;
 } | {
     status: 'waiting';
 } | {
@@ -2178,26 +2580,30 @@ export {};
 
 ```typescript
 /**
- * Goal activation and lifecycle (ADR-145)
+ * Goal activation and lifecycle (ADR-145, relocated per ADR-310 D17)
  *
- * Evaluates goal activation conditions against character state,
- * manages the active goal queue (priority-sorted), and handles
- * interruption/resumption.
+ * Evaluates goal activation conditions against character state and manages
+ * the active goal queue. Holds ONLY authored goal definitions — all mutable
+ * pursuit state (active flag, current step, paused/interrupted/prepared)
+ * lives on the NPC's CharacterModelTrait (`trait.goalState`), so it rides
+ * the world-model save path.
  *
  * Public interface: GoalManager.
  * Owner context: @sharpee/character / goals
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
+import type { IRCondition } from '@sharpee/chord';
 import { GoalDef, ActiveGoal } from './goal-types.js';
+/** Pre-bound compiled-condition evaluator (the story oracle, closed over one NPC). */
+export type CompiledConditionEval = (cond: IRCondition) => boolean;
 /**
- * Manages goal activation, deactivation, interruption, and the
- * active goal queue for a single NPC.
+ * Manages goal activation, deactivation, and interruption for a single NPC.
+ * Stateless between turns by construction (ADR-310 D17): definitions are
+ * authored and re-registered at load; every mutation goes to the trait.
  */
 export declare class GoalManager {
     /** All authored goal definitions for this NPC. */
     private readonly defs;
-    /** Currently active goals, sorted by priority (highest first). */
-    private activeGoals;
     /**
      * Register a goal definition.
      *
@@ -2211,48 +2617,57 @@ export declare class GoalManager {
      */
     registerGoals(defs: GoalDef[]): void;
     /**
-     * Evaluate all goal activation and interruption conditions.
-     * Activates new goals, interrupts active ones, resumes cleared ones.
+     * Evaluate all goal activation and interruption conditions against the
+     * trait, mutating `trait.goalState` in place. Activates new goals,
+     * interrupts active ones, resumes cleared ones.
      *
      * @param trait - The NPC's CharacterModelTrait
-     * @returns The current active goal queue (priority-sorted)
+     * @param evalCompiled - Compiled-condition evaluator for `activeWhenCompiled`
+     *   defs (required whenever any def carries one; throws otherwise — an
+     *   unbound oracle under a compiled story is a wiring defect, not a state)
+     * @returns The current active goal queue (priority-sorted, interrupted last)
      */
-    evaluate(trait: CharacterModelTrait): ActiveGoal[];
+    evaluate(trait: CharacterModelTrait, evalCompiled?: CompiledConditionEval): ActiveGoal[];
     /**
-     * Get the highest-priority non-interrupted active goal.
+     * Get the highest-priority non-interrupted, non-paused active goal.
      *
+     * @param trait - The NPC's CharacterModelTrait
      * @returns The top goal, or undefined
      */
-    getTopGoal(): ActiveGoal | undefined;
+    getTopGoal(trait: CharacterModelTrait): ActiveGoal | undefined;
     /**
      * Check if a goal is currently active.
      *
+     * @param trait - The NPC's CharacterModelTrait
      * @param goalId - The goal ID
-     * @returns True if the goal is in the active queue
+     * @returns True if the goal is active
      */
-    isActive(goalId: string): boolean;
+    isActive(trait: CharacterModelTrait, goalId: string): boolean;
     /**
-     * Get all active goals.
+     * Get all active goals in registration order (unsorted view).
      *
-     * @returns The active goal queue
+     * @param trait - The NPC's CharacterModelTrait
+     * @returns Active goals paired with their live trait state
      */
-    getActiveGoals(): readonly ActiveGoal[];
+    getActiveGoals(trait: CharacterModelTrait): ActiveGoal[];
     /**
-     * Advance the current step of a goal (after step completion).
+     * Advance the current step of a goal (after step completion). A completed
+     * sequential goal deactivates; a completed prepared goal switches to
+     * opportunistic behavior.
      *
+     * @param trait - The NPC's CharacterModelTrait
      * @param goalId - The goal ID
      */
-    advanceStep(goalId: string): void;
+    advanceStep(trait: CharacterModelTrait, goalId: string): void;
     /**
-     * Complete a goal and remove it from the active queue.
+     * Complete a goal and deactivate it.
      *
+     * @param trait - The NPC's CharacterModelTrait
      * @param goalId - The goal ID
      */
-    complete(goalId: string): void;
-    /** Export active goals for save/restore. */
-    toJSON(): ActiveGoalState[];
-    /** Restore active goals from serialized state. */
-    restoreState(states: ActiveGoalState[]): void;
+    complete(trait: CharacterModelTrait, goalId: string): void;
+    /** Active goals in priority order (interrupted last) without re-evaluating conditions. */
+    private evaluateOrder;
     /**
      * Evaluate interruption and resumption conditions for all active goals.
      *
@@ -2264,16 +2679,8 @@ export declare class GoalManager {
      * @param trait - The NPC's CharacterModelTrait
      */
     private evaluateInterruptions;
-    private activate;
+    /** Deactivate a goal, resetting its pursuit state for a possible future re-activation. */
     private deactivate;
-}
-/** Serialized active goal state. */
-export interface ActiveGoalState {
-    defId: string;
-    currentStep: number;
-    paused: boolean;
-    interrupted: boolean;
-    prepared: boolean;
 }
 ```
 
@@ -2291,6 +2698,7 @@ export interface ActiveGoalState {
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
 import { ActiveGoal, StepResult, MovementProfile } from './goal-types.js';
+import type { CompiledConditionEval } from './goal-activation.js';
 import { RoomGraph } from './pathfinding.js';
 /** Context needed to evaluate a goal step. */
 export interface GoalStepContext {
@@ -2316,6 +2724,12 @@ export interface GoalStepContext {
      * Used for seek steps targeting entities.
      */
     getEntityRoom?: (entityId: string) => string | undefined;
+    /**
+     * Compiled-condition evaluator (the story oracle, pre-bound to this
+     * NPC). Required whenever a wait-for step carries `conditionCompiled`;
+     * evaluating such a step without it throws (wiring defect, not a state).
+     */
+    evalCompiled?: CompiledConditionEval;
 }
 /**
  * Evaluate a single goal step for an NPC.
@@ -2418,6 +2832,7 @@ export declare function findNextRoom(currentRoom: string, targetRoom: string, gr
  * Public interface: GoalBuilder.
  * Owner context: @sharpee/character / goals
  */
+import type { IRCondition } from '@sharpee/chord';
 import { GoalPriority, PursuitMode, GoalStep, GoalDef } from './goal-types.js';
 /**
  * Fluent builder for a single goal definition.
@@ -2446,6 +2861,8 @@ export declare class GoalBuilder<TParent extends {
     private readonly _parent;
     private readonly _finalize;
     private readonly _activatesWhen;
+    private _activeWhenCompiled?;
+    private _discharges?;
     private readonly _interruptedBy;
     private _priority;
     private _mode;
@@ -2469,6 +2886,21 @@ export declare class GoalBuilder<TParent extends {
      * @returns this for chaining
      */
     activatesWhen(...predicates: string[]): GoalBuilder<TParent>;
+    /**
+     * Set the compiled-story activation condition (ADR-310 Phase 3) — the
+     * structured IRCondition a Chord `active when` line carries.
+     *
+     * @param condition - The compiled condition
+     * @returns this for chaining
+     */
+    activeWhenCompiled(condition: IRCondition): GoalBuilder<TParent>;
+    /**
+     * Mark this goal a conscience outlet (ADR-318 D8; seam-2 ruling): its
+     * sequential completion drains the pressure curve.
+     *
+     * @returns this for chaining
+     */
+    discharges(): GoalBuilder<TParent>;
     /**
      * Set goal priority.
      *
@@ -2563,6 +2995,8 @@ export declare class GoalBuilder<TParent extends {
  * - active: deliberately as part of NPC behavior or goal pursuit
  */
 export type InfluenceMode = 'passive' | 'active';
+/** All influence modes, for vocabulary export and iteration (ADR-310 D9). */
+export declare const INFLUENCE_MODES: readonly InfluenceMode[];
 /**
  * Who the influence affects.
  * - proximity: target must be in the same room
@@ -2570,6 +3004,8 @@ export type InfluenceMode = 'passive' | 'active';
  * - room: affects all entities in the room (aura)
  */
 export type InfluenceRange = 'proximity' | 'targeted' | 'room';
+/** All influence ranges, for vocabulary export and iteration (ADR-310 D9). */
+export declare const INFLUENCE_RANGES: readonly InfluenceRange[];
 /**
  * How long the effect lasts.
  * - 'while present': clears when influencer leaves the room (default for passive)
@@ -2633,25 +3069,6 @@ export interface ResistanceDef {
      */
     except?: string[];
 }
-/** Runtime tracking of an applied influence effect. */
-export interface ActiveInfluenceEffect {
-    /** The influence name. */
-    influenceName: string;
-    /** The influencer's entity ID. */
-    influencerId: string;
-    /** The target's entity ID. */
-    targetId: string;
-    /** The applied effect mutations. */
-    effect: InfluenceEffect;
-    /** Duration type. */
-    duration: InfluenceDuration;
-    /** Turn when the effect was applied. */
-    appliedAtTurn: number;
-    /** For lingering: turn when the effect expires. */
-    expiresAtTurn?: number;
-    /** For lingering: predicate condition that clears the effect. */
-    clearCondition?: string;
-}
 /** Result of evaluating one influence against one target. */
 export type InfluenceResult = {
     status: 'applied';
@@ -2666,6 +3083,32 @@ export type InfluenceResult = {
     influencerId: string;
     targetId: string;
     resisted?: string;
+} | {
+    status: 'skipped';
+    reason: string;
+};
+/** One target's outcome within a passive exertion. */
+export interface InfluenceTargetOutcome {
+    /** The target entity id. */
+    targetId: string;
+    /** Whether the influence took hold on this target or was resisted. */
+    status: 'applied' | 'resisted';
+}
+/**
+ * Result of one passive influence exertion in a room (ADR-310 D8).
+ *
+ * The exertion is one fact — its `witnessed` phrase, effect, and message
+ * ids exist exactly once here — while per-target outcomes nest inside.
+ * This shape is what makes duplicate witnessed events unrepresentable.
+ */
+export type PassiveInfluenceExertion = {
+    status: 'exerted';
+    influenceName: string;
+    influencerId: string;
+    effect: InfluenceEffect;
+    witnessed?: string;
+    resisted?: string;
+    targets: InfluenceTargetOutcome[];
 } | {
     status: 'skipped';
     reason: string;
@@ -2689,7 +3132,7 @@ export type InfluenceResult = {
  *   checkResistance.
  * Owner context: @sharpee/character / influence
  */
-import { InfluenceDef, ResistanceDef, InfluenceResult } from './influence-types.js';
+import { InfluenceDef, ResistanceDef, InfluenceResult, PassiveInfluenceExertion } from './influence-types.js';
 /** An entity in a room with its influence and resistance data. */
 export interface InfluenceRoomEntity {
     /** Entity ID. */
@@ -2712,14 +3155,14 @@ export declare function checkResistance(target: InfluenceRoomEntity, influenceNa
 /**
  * Evaluate all passive influences for entities in a room.
  *
- * For each entity with passive influences, checks range, schedule,
- * and each potential target's resistance. Returns results describing
- * which effects were applied and which were resisted.
+ * Returns one exertion per (influencer, influence) — the exertion-level
+ * facts (effect, witnessed/resisted message ids) appear exactly once,
+ * with per-target applied/resisted outcomes nested inside (ADR-310 D8).
  *
  * @param entities - All entities in the room
- * @returns Array of influence results
+ * @returns Array of exertion results
  */
-export declare function evaluatePassiveInfluences(entities: InfluenceRoomEntity[]): InfluenceResult[];
+export declare function evaluatePassiveInfluences(entities: InfluenceRoomEntity[]): PassiveInfluenceExertion[];
 /**
  * Evaluate a single active influence against a specific target.
  *
@@ -2735,86 +3178,83 @@ export declare function evaluateActiveInfluence(influencer: InfluenceRoomEntity,
 
 ```typescript
 /**
- * Influence duration tracking (ADR-146 layer 3)
+ * Influence duration handling (ADR-146 layer 3, relocated per ADR-310 D17)
  *
- * Tracks active influence effects and manages their expiration:
- * 'while present' clears when influencer leaves room,
+ * Trait-based functions that record and expire influence effects:
+ * 'while present' clears when the influencer leaves the room,
  * 'momentary' clears after one turn,
  * 'lingering' clears after authored turns or when a condition is met.
  *
- * Public interface: InfluenceTracker.
+ * The InfluenceTracker service class is retired — effects in force ride
+ * the trait (`trait.influencesInForce`) so they serialize with the world.
+ * All turn arithmetic goes through the character-clock seam.
+ *
+ * Public interface: trackInfluence, isUnderInfluence,
+ *   expireInfluencesForTurn, expireInfluencesBySeparation.
  * Owner context: @sharpee/character / influence
  */
-import { ActiveInfluenceEffect, InfluenceEffect, InfluenceDuration } from './influence-types.js';
+import { CharacterModelTrait, InfluenceInForce } from '@sharpee/world-model';
+import { InfluenceEffect, InfluenceDuration } from './influence-types.js';
 /**
- * Tracks and manages active influence effects across turns.
+ * Record an influence exertion outcome on the trait that homes it (the
+ * target's trait normally; the exerter's trait with an explicit `target`
+ * for targets with no character model). The record set is level-state:
+ * an identical outcome already in force is never double-tracked, and the
+ * return value is the edge detector callers mint events from (ADR-310
+ * D8 — events mark transitions, records mark levels). A record whose
+ * status differs (resistance lapsing or re-establishing) is updated in
+ * place and reports as a transition.
  *
- * The tracker maintains a list of currently active effects and
- * provides methods to add, query, and expire them.
+ * @param homeTrait - The trait the record rides
+ * @param influenceName - The influence name
+ * @param influencerId - The influencer entity ID
+ * @param effect - The applied effect mutations
+ * @param options - Status, duration, timing, clear condition, explicit target
+ * @returns True when the outcome newly transitioned into force
  */
-export declare class InfluenceTracker {
-    private effects;
-    /**
-     * Record a new active influence effect.
-     *
-     * @param influenceName - The influence name
-     * @param influencerId - The influencer entity ID
-     * @param targetId - The target entity ID
-     * @param effect - The applied effect mutations
-     * @param options - Duration, timing, and clear condition options
-     */
-    track(influenceName: string, influencerId: string, targetId: string, effect: InfluenceEffect, options: {
-        duration: InfluenceDuration;
-        turn: number;
-        lingeringTurns?: number;
-        clearCondition?: string;
-    }): void;
-    /**
-     * Get all active effects on a specific target.
-     *
-     * @param targetId - The target entity ID
-     * @returns Active effects affecting this target
-     */
-    getEffectsOn(targetId: string): ActiveInfluenceEffect[];
-    /**
-     * Get all active effects from a specific influencer.
-     *
-     * @param influencerId - The influencer entity ID
-     * @returns Active effects from this influencer
-     */
-    getEffectsFrom(influencerId: string): ActiveInfluenceEffect[];
-    /**
-     * Check if a target is under a specific influence.
-     *
-     * @param targetId - The target entity ID
-     * @param influenceName - The influence name
-     * @returns true if the target is currently under this influence
-     */
-    isUnderInfluence(targetId: string, influenceName: string): boolean;
-    /**
-     * Expire 'while present' effects when the influencer leaves a room.
-     *
-     * @param influencerId - The influencer who left
-     * @param roomEntityIds - Entity IDs still in the room (targets to clear)
-     * @returns Effects that were cleared
-     */
-    expireOnDeparture(influencerId: string, roomEntityIds?: string[]): ActiveInfluenceEffect[];
-    /**
-     * Expire 'momentary' effects and check lingering expiration.
-     * Call once per turn.
-     *
-     * @param currentTurn - The current turn number
-     * @param evaluatePredicate - Function to evaluate clear conditions (targetId, predicate) => boolean
-     * @returns Effects that were cleared
-     */
-    expireTurn(currentTurn: number, evaluatePredicate?: (targetId: string, predicate: string) => boolean): ActiveInfluenceEffect[];
-    /** Get the count of active effects. */
-    get count(): number;
-    /** Export for serialization. */
-    toJSON(): ActiveInfluenceEffect[];
-    /** Restore from serialized data. */
-    static fromJSON(data: ActiveInfluenceEffect[]): InfluenceTracker;
-}
+export declare function trackInfluence(homeTrait: CharacterModelTrait, influenceName: string, influencerId: string, effect: InfluenceEffect, options: {
+    duration: InfluenceDuration;
+    turn: number;
+    /** Absent means 'applied' (matching InfluenceInForce deserialization). */
+    status?: 'applied' | 'resisted';
+    lingeringTurns?: number;
+    clearCondition?: string;
+    /** Set only when the record rides the exerter's trait (player target). */
+    target?: string;
+}): boolean;
+/**
+ * Check if a trait's owner is under a specific influence. Resisted
+ * records exist only as flip-transition state and do not count.
+ *
+ * @param trait - The trait to check (effects homed here)
+ * @param influenceName - The influence name
+ * @returns True if an applied effect with this name is in force
+ */
+export declare function isUnderInfluence(trait: CharacterModelTrait, influenceName: string): boolean;
+/**
+ * Expire 'momentary' and 'lingering' effects homed on a trait.
+ * Call once per turn per trait.
+ *
+ * @param trait - The trait whose effects to expire
+ * @param currentTurn - The current turn number
+ * @param evaluateClearCondition - Evaluates a lingering clear condition
+ *   against the effect's TARGET (the trait owner unless `target` is set)
+ * @returns Effects that were removed
+ */
+export declare function expireInfluencesForTurn(trait: CharacterModelTrait, currentTurn: number, evaluateClearCondition?: (effect: InfluenceInForce, predicate: string) => boolean): InfluenceInForce[];
+/**
+ * Expire 'while present' effects whose influencer and target no longer
+ * share a room, homed on a trait. Run once per turn per trait, BEFORE
+ * evaluation, so a re-entry re-transitions (and re-fires its witnessed
+ * phrase) the same turn the parties reunite (ADR-310 D8).
+ *
+ * @param trait - The trait whose effects to expire
+ * @param ownerId - The trait owner's entity id (the target unless the
+ *   record carries an explicit `target`)
+ * @param getLocation - Resolves an entity's current room (undefined = gone)
+ * @returns Effects that were removed
+ */
+export declare function expireInfluencesBySeparation(trait: CharacterModelTrait, ownerId: string, getLocation: (entityId: string) => string | undefined): InfluenceInForce[];
 ```
 
 ### influence/pc-influence
@@ -2830,8 +3270,8 @@ export declare class InfluenceTracker {
  * Public interface: evaluatePcInfluence, PcInfluenceResult.
  * Owner context: @sharpee/character / influence
  */
-import { InfluenceTracker } from './influence-duration.js';
-import { ActiveInfluenceEffect, InfluenceDef } from './influence-types.js';
+import { InfluenceInForce } from '@sharpee/world-model';
+import { InfluenceDef } from './influence-types.js';
 /** Result of checking PC influence before a player action. */
 export type PcInfluenceResult = {
     status: 'clear';
@@ -2839,7 +3279,7 @@ export type PcInfluenceResult = {
     status: 'intercepted';
     influenceName: string;
     influencerId: string;
-    effect: ActiveInfluenceEffect;
+    effect: InfluenceInForce;
     onPlayerAction?: string;
     clearConversationContext: boolean;
 };
@@ -2851,12 +3291,15 @@ export type PcInfluenceResult = {
  * - The effect includes `focus: 'clouded'` — clears conversation context
  * - The influence has an `onPlayerAction` message — fires narrative message
  *
+ * Player-targeted effects ride the exerters' traits with `target` set
+ * (ADR-310 D17 home rule); the caller collects them from the room's NPCs.
+ *
  * @param playerId - The player entity ID
- * @param tracker - The influence tracker with active effects
+ * @param effects - Effect records to consider (any target)
  * @param influenceDefs - Map of influencer ID to their influence definitions
  * @returns PC influence result
  */
-export declare function evaluatePcInfluence(playerId: string, tracker: InfluenceTracker, influenceDefs: Map<string, InfluenceDef[]>): PcInfluenceResult;
+export declare function evaluatePcInfluence(playerId: string, effects: InfluenceInForce[], influenceDefs: Map<string, InfluenceDef[]>): PcInfluenceResult;
 ```
 
 ### influence/builder
@@ -3039,21 +3482,31 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
 
 ```typescript
 /**
- * NPC tick phase implementations (ADR-144, 145, 146)
+ * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
- * Factory functions that create tick phase handlers for propagation,
- * goal pursuit, and influence evaluation. Register these with
- * NpcService.registerTickPhase() during story initialization.
+ * One tick-phase registration — `'character-model'` — running ordered
+ * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
+ * bookkeeping arrives with ADR-318's arbiter.) Ordering between
+ * sub-steps is a contract, which is why this is one registration rather
+ * than three (docs/work/adr-310/contracts.md §2).
  *
- * Public interface: createPropagationPhase, createGoalPhase,
- *   createInfluencePhase, CharacterPhaseConfig.
+ * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
+ * below holds ONLY authored configuration, re-registered at load, and has
+ * no serialization path of its own.
+ *
+ * The registration signature is platform-internal — not author-facing
+ * compatibility surface; revisable by ADR-317/R3 at refactor cost.
+ *
+ * Public interface: createCharacterModelPhase, registerCharacterModelPhase,
+ *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME.
  * Owner context: @sharpee/character
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { PropagationProfile, AlreadyToldRecord } from './propagation/index.js';
+import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
+import type { CompiledStoryOracle } from './story-oracle.js';
+import { PropagationProfile } from './propagation/index.js';
 import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
-import { InfluenceDef, ResistanceDef, InfluenceTracker } from './influence/index.js';
+import { InfluenceDef, ResistanceDef } from './influence/index.js';
 /** Tick context — mirrors NpcTickContext from stdlib. */
 interface TickContext {
     world: WorldModel;
@@ -3062,21 +3515,45 @@ interface TickContext {
     random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
+    /**
+     * The player action's events this turn (ADR-310 Phase 5) — the observe
+     * sub-step's input. Absent (older callers, unit harnesses) = nothing
+     * observed this turn.
+     */
+    actionEvents?: ISemanticEvent[];
 }
-/** Per-NPC character configuration for tick phases. */
+/** Per-NPC character configuration for the tick phase. Authored data only. */
 export interface CharacterPhaseConfig {
     propagationProfile?: PropagationProfile;
     goalDefs?: GoalDef[];
     movementProfile?: MovementProfile;
     influenceDefs?: InfluenceDef[];
     resistanceDefs?: ResistanceDef[];
+    /**
+     * Authored starting mood as valence-arousal axes — the mood-decay
+     * baseline (ADR-310 D6: the author declares a starting state; the
+     * runtime owns the curve). Absent → no mood decay for this NPC.
+     */
+    baselineMood?: {
+        valence: number;
+        arousal: number;
+    };
 }
-/** Manages per-NPC configs and shared state for tick phases. */
+/**
+ * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
+ * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
+ * the old toJSON/restoreState side path is deleted; everything it carried
+ * now rides CharacterModelTrait).
+ */
 export declare class CharacterPhaseRegistry {
     private readonly configs;
     private readonly goalManagers;
-    readonly influenceTracker: InfluenceTracker;
-    readonly alreadyToldRecord: AlreadyToldRecord;
+    /** The loaded story's answer surface (ADR-310 Phase 5) — authored wiring, bound at load. */
+    private oracle?;
+    /** Authored `define temperament` defs (ADR-318 D3) — read by the arbitration seams. */
+    private temperamentDefs?;
+    /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
+    private witnessedAliases?;
     /**
      * Register character configuration for an NPC.
      *
@@ -3090,45 +3567,599 @@ export declare class CharacterPhaseRegistry {
     getGoalManager(entityId: string): GoalManager | undefined;
     /** Check if any NPCs have been registered. */
     get hasConfigs(): boolean;
+    /** Bind the loaded story's oracle (loader, at load — last-wins, like every load-time registration). */
+    setOracle(oracle: CompiledStoryOracle): void;
+    /** The bound story oracle, if any. */
+    getOracle(): CompiledStoryOracle | undefined;
+    /** Set the story's authored temperament definitions (loader, at load). */
+    setTemperamentDefs(defs: Readonly<Record<string, TemperamentDef>>): void;
+    /** Authored temperament definitions by name (ArbiterContext.temperamentDefs source). */
+    getTemperamentDefs(): Readonly<Record<string, TemperamentDef>> | undefined;
+    /** Set the story's `witnessed as` aliases (loader, at load — actors pre-resolved to world ids). */
+    setWitnessedAliases(aliases: ReadonlyArray<{
+        actor: string;
+        act: string;
+        alias: string;
+    }>): void;
+    /** The D12a alias for a witnessed (actor, act), or the derived name unchanged. */
+    witnessedAliasFor(actorId: string, act: string, derived: string): string;
+}
+/** The one tick-phase name this package registers (contracts.md §2 — frozen, platform-internal). */
+export declare const CHARACTER_MODEL_PHASE_NAME = "character-model";
+export { CHARACTER_TURN_KEY } from './character-clock.js';
+/**
+ * Create the character-model tick phase handler. Register it once:
+ * `registerCharacterModelPhase(npcService, registry)`.
+ *
+ * Sub-step order (a contract, not a coincidence — contracts.md §2): decay
+ * runs first so the turn's evaluation sees settled mood/lucidity;
+ * observation second, so the turn's remaining evaluation reacts to what
+ * the player just did; influence effects are expired then applied next
+ * (expiry first so a recurring influence re-transitions the turn it
+ * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
+ * see them; propagation
+ * moves knowledge before goals re-evaluate activation conditions that may
+ * reference it.
+ *
+ * @param registry - The character phase registry (authored configs)
+ * @returns Tick phase handler function
+ */
+export declare function createCharacterModelPhase(registry: CharacterPhaseRegistry): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[];
+/**
+ * Register the character-model phase on an NPC service under its contract
+ * name (ADR-310 D15 — one registration, ordered sub-steps inside).
+ *
+ * @param service - Anything with stdlib's `registerTickPhase` socket
+ * @param registry - The character phase registry (authored configs)
+ */
+export declare function registerCharacterModelPhase(service: {
+    registerTickPhase(name: string, handler: (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[]): void;
+}, registry: CharacterPhaseRegistry): void;
+```
+
+### story-oracle
+
+```typescript
+/**
+ * The compiled-story oracle (ADR-310/318 Phase 5)
+ *
+ * The character runtime's ONE injected seam for asking the loaded story a
+ * question trait state cannot answer: evaluating a compiled Chord
+ * condition (goal `active when`, `wait for`), and — a reserved slot for
+ * the Phase 6 arbitration seam — kind membership for classifier scopes
+ * (`a merchant`), which only the story's IR knows.
+ *
+ * The story-loader binds an implementation at load and the registry
+ * carries it (authored wiring, never serialized — ADR-310 D17).
+ * Builder-authored stories carry no compiled conditions and need no
+ * oracle. The signature is platform-internal (contracts.md §7).
+ *
+ * Public interface: CompiledStoryOracle.
+ * Owner context: @sharpee/character
+ */
+import type { IRCondition } from '@sharpee/chord';
+import type { WorldModel } from '@sharpee/world-model';
+/** The loaded story's answer surface for the character runtime. */
+export interface CompiledStoryOracle {
     /**
-     * Export serializable state for save/restore.
-     * Configs are authored (re-registered on load), so only mutable state is saved.
+     * Evaluate a compiled Chord condition for an NPC.
+     *
+     * @param cond - The compiled condition (refs in IR terms — the oracle
+     *   owns the translation, mirroring the loader's evaluator)
+     * @param opts - self: the asking NPC's WORLD entity id (bound to `it`);
+     *   world: the live world model
+     * @returns Whether the condition holds this turn
      */
-    toJSON(): {
-        goalStates: Record<string, ReturnType<GoalManager['toJSON']>>;
-        influenceEffects: ReturnType<InfluenceTracker['toJSON']>;
-        alreadyTold: ReturnType<AlreadyToldRecord['toJSON']>;
-    };
+    evalCondition(cond: IRCondition, opts: {
+        self: string;
+        world: WorldModel;
+    }): boolean;
     /**
-     * Restore mutable state from saved data.
-     * Call after re-registering all NPC configs.
+     * Reserved for the Phase 6 arbitration seam: does the entity belong to
+     * the story kind named by a classifier scope (`a <kind>`)?
+     *
+     * @param entityId - WORLD entity id
+     * @param kind - The classifier's kind noun as written in Chord
+     * @returns Whether the entity is one of the story's `<kind>`s
      */
-    restoreState(saved: {
-        goalStates?: Record<string, ReturnType<GoalManager['toJSON']>>;
-        influenceEffects?: ReturnType<InfluenceTracker['toJSON']>;
-        alreadyTold?: ReturnType<AlreadyToldRecord['toJSON']>;
-    }): void;
+    isKindMember(entityId: string, kind: string): boolean;
+}
+```
+
+### act-detection/act-detection
+
+```typescript
+/**
+ * Act detection over the event stream (ADR-318 D4/D7/D12a)
+ *
+ * The runtime half of "a category the runtime cannot detect cannot be a
+ * word": classifies semantic events at the three named stdlib sites into
+ * act categories and face-acts, derives each witnessed act's deterministic
+ * topic name (D12a — actor × act), and records witnessed acts as observer
+ * knowledge so reputation travels by propagation (D7).
+ *
+ * Sites (ADR-318 Implementation):
+ * - taking → steal-candidate: `if.event.taken` / `npc.took` where the item
+ *   came out of another actor's possession
+ * - combat → harm: `if.event.attacked` / `npc.attacked`
+ * - reveal → topic delivery: `revealConfidedTopic` — called from the
+ *   dialogue path, where delivery is knowable (prose is opaque; events are
+ *   not tagged with what a line asserts)
+ *
+ * Public interface: detectActs, revealConfidedTopic, witnessActs,
+ *   derivedTopicFor, DetectedAct.
+ * Owner context: @sharpee/character / act-detection
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, CharacterModelTrait, type IFEntity, type ActCategory, type FaceAct } from '@sharpee/world-model';
+/** A classified act, ready for arbitration input, minting, and the author channel. */
+export interface DetectedAct {
+    /** Exactly one of `category` / `faceAct` is set. */
+    category?: ActCategory;
+    faceAct?: FaceAct;
+    actorId: string;
+    targetId?: string;
+    /** D12a derived deterministic topic name, e.g. 'the Steward stole'. */
+    derivedTopic: string;
 }
 /**
- * Create a propagation tick phase handler.
+ * The deterministic platform-derived topic name for an act (D12a): the
+ * actor and the act. The namespace is compile-checkable — actors ×
+ * detectable acts is a closed set. Scene aliases (`witnessed as`) rename
+ * at the Chord layer; pass the alias map at that integration.
  *
- * @param registry - The character phase registry
- * @returns Tick phase handler function
+ * @param actorName - The acting entity's display name
+ * @param act - The category or face-act performed
+ * @returns The derived topic string, e.g. 'the Colonel backed down'
  */
-export declare function createPropagationPhase(registry: CharacterPhaseRegistry): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[];
+export declare function derivedTopicFor(actorName: string, act: ActCategory | FaceAct): string;
 /**
- * Create a goal pursuit tick phase handler.
+ * Classify one semantic event at the taking and combat sites. Pure —
+ * reads world state, mutates nothing. The reveal site cannot be detected
+ * from events (prose is opaque) and lives in `revealConfidedTopic`.
  *
- * @param registry - The character phase registry
- * @returns Tick phase handler function
+ * @param event - A dispatched semantic event
+ * @param world - The live world, for prior-holder and name lookups
+ * @returns Zero or more classified acts
  */
-export declare function createGoalPhase(registry: CharacterPhaseRegistry): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[];
+export declare function detectActs(event: ISemanticEvent, world: WorldModel): DetectedAct[];
 /**
- * Create an influence evaluation tick phase handler.
+ * The reveal site (topic delivery): classify a speaker delivering a topic.
+ * Called from the dialogue path, which alone knows what was delivered.
+ * Pure — the caller owns any bookkeeping.
  *
- * @param registry - The character phase registry
- * @returns Tick phase handler function
+ * @param speaker - The NPC delivering the topic
+ * @param speakerTrait - The speaker's trait (holds the confided marker)
+ * @param topic - The topic being delivered
+ * @returns The betray-a-confidence act when the topic is marked confided
  */
-export declare function createInfluencePhase(registry: CharacterPhaseRegistry): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[];
-export {};
+export declare function revealConfidedTopic(speaker: IFEntity, speakerTrait: CharacterModelTrait, topic: string): DetectedAct | undefined;
+/**
+ * Record witnessed acts as observer knowledge under their derived topic
+ * names (D12a: coverage is total with zero authoring cost; D7: reputation
+ * travels from here by `spreads`).
+ *
+ * @param acts - Acts detected this turn
+ * @param observers - Entities that witnessed them (co-located, minus the actor)
+ * @param turn - Current turn number
+ * @returns Topic names actually learned, per observer id
+ */
+export declare function witnessActs(acts: readonly DetectedAct[], observers: readonly IFEntity[], turn: number): Record<string, string[]>;
+```
+
+### arbiter/arbiter-types
+
+```typescript
+/**
+ * Arbiter types (ADR-318 D1–D3; contracts.md §3)
+ *
+ * The shapes the force arbiter computes over: candidates, force readings,
+ * verdicts, and the platform-internal context callers assemble. Every
+ * signature here is platform-internal — NOT author-facing compatibility
+ * surface (contracts.md §7); revisable at refactor cost.
+ *
+ * Public interface: ActCandidate, ForceReading, ArbiterVerdict,
+ *   ArbiterContext, ArbiterAct.
+ * Owner context: @sharpee/character / arbiter
+ */
+import type { Force, ActCategory, ObligationWord, FaceAct, TemperamentDef } from '@sharpee/world-model';
+/** The act an arbitration decides: a dialogue act or a goal's execution. */
+export type ArbiterAct = 'comply' | 'refuse' | 'evade' | {
+    goalId: string;
+};
+/**
+ * The act under consideration (contracts.md §3). `audiencePresent` is who
+ * is in the room — honor sees the room, not the future (ADR-318 D7).
+ */
+export interface ActCandidate {
+    kind: 'dialogue' | 'goal';
+    act: ArbiterAct;
+    topicId?: string;
+    audiencePresent: string[];
+}
+/** One force's live pressure on the candidate (contracts.md §3). */
+export interface ForceReading {
+    force: Force;
+    /** Runtime-owned 0..1 scale; feed formulas per ADR-318 D1's table. */
+    intensity: number;
+    /** True when the feed is off-baseline. */
+    live: boolean;
+    /** Author-channel attribution, e.g. 'principle:never-lie'. */
+    feed: string;
+}
+/** The arbitration result (contracts.md §3). The arbiter is pure — it computes; bookkeeping mutates. */
+export interface ArbiterVerdict {
+    winner: Force;
+    /** Possibly rewritten: paralysis → 'evade' (ADR-318 D6). */
+    act: ArbiterAct;
+    readings: ForceReading[];
+    /** Absent = D2's intensity default decided (no declared ordering applied). */
+    temperamentApplied?: {
+        name: string;
+        pair: [Force, Force];
+    };
+    /** Live principle/obligation feeds on the losing side → pressure deposits (ADR-318 D8). */
+    defeats: Array<{
+        force: Force;
+        feed: string;
+    }>;
+    /** Two unexcepted duty feeds in live collision (ADR-318 D6). */
+    paralysis?: {
+        principles: [string, string];
+    };
+}
+/**
+ * What the caller (dialogue selector, goal sub-step, act detection)
+ * assembles for an arbitration. The arbiter never classifies acts itself —
+ * act detection owns which categories an act commits; the arbiter owns
+ * which force wins.
+ */
+export interface ArbiterContext {
+    /** Active entity states, for temperament `while` bindings (ADR-318 D3). */
+    activeStates?: readonly string[];
+    /** Authored `define temperament` definitions by name (story-level data). */
+    temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
+    /**
+     * Act categories COMPLYING would commit (already scope-filtered by act
+     * detection). A matching unexcepted principle sets duty against the act.
+     */
+    commits?: readonly ActCategory[];
+    /**
+     * Act categories REFUSING would commit (e.g. `break a promise` when the
+     * refusal violates a promised act). A matching unexcepted principle sets
+     * duty FOR the act — and both sides live is D6 paralysis.
+     */
+    refusalCommits?: readonly ActCategory[];
+    /** Obligations complying satisfies and refusing would violate (e.g. 'answers honestly'). */
+    satisfies?: readonly ObligationWord[];
+    /** Face-acts complying would perform before the declared audience (D7). */
+    complyFaceActs?: readonly FaceAct[];
+    /** Face-acts refusing would perform before the declared audience (D7). */
+    refuseFaceActs?: readonly FaceAct[];
+    /** The entity the act addresses — the love feed's disposition target. */
+    audienceId?: string;
+    /** The desire feed, when an active goal bears on this act (ADR-310 D8). */
+    desire?: {
+        intensity: number;
+        stance: 'for' | 'against';
+        feed: string;
+    };
+    /**
+     * The act's OBJECT for principle scope/except matching (ADR-318 D4 —
+     * the asker at the dialogue site, the act target at detection sites).
+     * Absent = unknown: scoped principles stay in force, excepts never lift.
+     */
+    actObjectId?: string;
+    /** Kind membership for classifier scopes (`a <kind>`) — the story oracle's slot. */
+    isKindMember?: (entityId: string, kind: string) => boolean;
+}
+/** A reading plus which side of the candidate act it pushes (internal). */
+export interface StancedReading extends ForceReading {
+    stance: 'for' | 'against';
+}
+```
+
+### arbiter/arbiter
+
+```typescript
+/**
+ * The force arbiter (ADR-318 D1–D3, D6; contracts.md §3)
+ *
+ * Decides which force wins when live forces disagree on an act. Pure —
+ * it computes a verdict; the tick's bookkeeping (pressure.ts) mutates.
+ *
+ * The rules, in order:
+ * - D2 default: no declared ordering between the colliding forces →
+ *   whichever feed currently burns hotter wins. The declaration is the
+ *   deviation.
+ * - D3 temperament: the live binding's pair lines override intensity for
+ *   exactly the pairs they name.
+ * - D6 paralysis: two unexcepted duty feeds in live collision (one
+ *   forbidding the act, one compelling it) → evasion, plus a verdict
+ *   field the author channel turns into a warning naming both.
+ *
+ * Public interface: arbitrate.
+ * Owner context: @sharpee/character / arbiter
+ */
+import { CharacterModelTrait } from '@sharpee/world-model';
+import type { ActCandidate, ArbiterContext, ArbiterVerdict } from './arbiter-types.js';
+/**
+ * Arbitrate a candidate act against the character's live forces.
+ *
+ * @param trait - The arbitrating character's trait
+ * @param candidate - The act under consideration
+ * @param ctx - Caller-assembled classification and story data
+ * @returns The verdict: winner, resulting act, readings, defeats, paralysis
+ */
+export declare function arbitrate(trait: CharacterModelTrait, candidate: ActCandidate, ctx: ArbiterContext): ArbiterVerdict;
+```
+
+### arbiter/force-feeds
+
+```typescript
+/**
+ * Force feeds (ADR-318 D1) — how each of the five forces reads its
+ * intensity off the trait and the arbitration context.
+ *
+ * All formulas are runtime-owned (rule 4: the runtime boils the pot).
+ * Intensities are 0..1. A force is live when its feed is off-baseline.
+ *
+ * Public interface: computeStancedReadings, PRINCIPLE_DUTY_INTENSITY.
+ * Owner context: @sharpee/character / arbiter
+ */
+import { CharacterModelTrait } from '@sharpee/world-model';
+import type { ActCandidate, ArbiterContext, StancedReading } from './arbiter-types.js';
+/**
+ * Principles and obligations burn at a strong fixed baseline (ADR-318 D4:
+ * "a principle is a strong habit until character makes it a commitment").
+ * Threat must reach 'cornered' (0.8) to outburn one on intensity alone.
+ */
+export declare const PRINCIPLE_DUTY_INTENSITY = 0.7;
+/** Honor binds at the same strong baseline when declared audience is present (D7). */
+export declare const HONOR_INTENSITY = 0.7;
+/**
+ * Compute every force reading for a candidate, each with the side of the
+ * act it pushes. Pure — reads trait state, mutates nothing.
+ *
+ * @param trait - The arbitrating character's trait
+ * @param candidate - The act under consideration
+ * @param ctx - Caller-assembled classification and story data
+ * @returns Readings in force order: fear, desire, duty, honor, love
+ */
+export declare function computeStancedReadings(trait: CharacterModelTrait, candidate: ActCandidate, ctx: ArbiterContext): StancedReading[];
+```
+
+### arbiter/pressure
+
+```typescript
+/**
+ * Conscience pressure bookkeeping (ADR-318 D8) — the deposit/drain half
+ * the pure arbiter never touches.
+ *
+ * Guilt is the ledger of the arbiter's defeats: every live principle that
+ * loses an arbitration deposits pressure. The curve and its rates are
+ * runtime-owned (rule 4); the bands move monotonically upward under
+ * deposits (D11: ordering, not scheduling, is the testable fact).
+ *
+ * Public interface: depositPressure, drainPressure, pressureBandFor,
+ *   BandTransition.
+ * Owner context: @sharpee/character / arbiter
+ */
+import { CharacterModelTrait, type PressureBand } from '@sharpee/world-model';
+import type { ArbiterVerdict } from './arbiter-types.js';
+/** A band change produced by a deposit or drain — author-channel material (D11). */
+export interface BandTransition {
+    from: PressureBand;
+    to: PressureBand;
+}
+/**
+ * The band a curve value falls in. Monotonic in value — deposits can only
+ * hold or climb the band, never lower it (D11's ordering contract).
+ *
+ * @param value - Curve value, 0..100
+ * @returns The band word
+ */
+export declare function pressureBandFor(value: number): PressureBand;
+/**
+ * Deposit pressure for a verdict's defeats onto the trait (D8). No
+ * defeats → no mutation. Sensitivity is personality: `remorseful` doubles
+ * each deposit, `untroubled` quarters it (runtime-owned scaling of the
+ * existing adjective machinery).
+ *
+ * @param trait - The character's trait (mutated: pressure value + band)
+ * @param verdict - The arbitration whose defeats deposit
+ * @returns The band transition if the deposit crossed one, else undefined
+ */
+export declare function depositPressure(trait: CharacterModelTrait, verdict: ArbiterVerdict): BandTransition | undefined;
+/**
+ * Drain the curve on a discharge — confession ends the losing collisions
+ * (D8). Resets value and band ONLY. The ledger is deliberately untouched
+ * (seam-3 per-audience ruling 2026-08-16): a pin releases when its own
+ * audience gets the truth — told (recordClaimDelivery's release branch)
+ * or caught (the caught-lying face-act, ruled-but-dormant) — or on an
+ * authored break (`trait.unpinLedger`). A global unpin here would
+ * silently evaporate maintained lies to absent audiences, which D9
+ * forbids. Being broken is a state only an author writes.
+ *
+ * @param trait - The character's trait (mutated: pressure reset)
+ * @returns The band transition if the drain crossed one, else undefined
+ */
+export declare function drainPressure(trait: CharacterModelTrait): BandTransition | undefined;
+```
+
+### arbiter/scope
+
+```typescript
+/**
+ * Scope-string interpretation (ADR-318 D4/D7 — Phase 6)
+ *
+ * The runtime half of the canonical trait-side scope idiom
+ * (`anyone` / `a <kind>` / world-entity-id) that apply-compiled writes:
+ * matching an act's object or audience against a declared scope, and
+ * deciding whether a principle's `except` lifts it. Kind membership is
+ * story knowledge, so it arrives as a callback (the story oracle's
+ * `isKindMember` slot).
+ *
+ * Public interface: scopeMatches, exceptLifts, KindMembership.
+ * Owner context: @sharpee/character / arbiter
+ */
+/** Kind membership for classifier scopes — the story oracle's reserved slot. */
+export type KindMembership = (entityId: string, kind: string) => boolean;
+/**
+ * Whether an entity falls within a canonical scope string.
+ *
+ * @param scope - `anyone` | `a <kind>` | a world entity id
+ * @param entityId - The entity being matched (act object, audience member)
+ * @param isKindMember - Kind membership oracle; without one, classifier
+ *   scopes match nothing (conservative: the principle stays in force)
+ * @returns Whether the entity is in scope
+ */
+export declare function scopeMatches(scope: string, entityId: string, isKindMember?: KindMembership): boolean;
+/**
+ * Whether a principle's `except` lifts it for this act.
+ *
+ * The object carve-out (a bare scope) lifts when the act's object is in
+ * scope (exp-02: `never steals, except the Duke` — stealing from the
+ * Duke is allowed). The collision carve-out (`to protect <scope>`)
+ * yields to the obligation protecting that scope — arbiter-internal
+ * semantics deferred with the goal-site arbitration (Phase 6 follow-up);
+ * until then it conservatively does NOT lift, so the principle stays in
+ * force (thealderman declares none).
+ *
+ * @param except - The canonical except string from the trait
+ * @param objectId - The act's object (the asker at the dialogue site);
+ *   absent means the object is unknown — nothing lifts
+ * @param isKindMember - Kind membership oracle
+ * @returns Whether the principle is lifted for this act
+ */
+export declare function exceptLifts(except: string, objectId: string | undefined, isKindMember?: KindMembership): boolean;
+```
+
+### arbiter/reveal
+
+```typescript
+/**
+ * Confided-topic reveal arbitration (ADR-318 — the reveal site)
+ *
+ * The assembled arbitration for the dialogue reveal gate: asked about a
+ * topic held `confided`, complying commits `betray a confidence` and
+ * satisfies `answers honestly`; the arbiter weighs principles, honor
+ * (the room is the audience), temperament, fear, and disposition, and
+ * the verdict's bookkeeping (pressure deposits, paralysis warning,
+ * author-channel attribution) happens here so every dialogue surface
+ * shares one implementation.
+ *
+ * Public interface: arbitrateConfidedReveal, RevealArbitration.
+ * Owner context: @sharpee/character / arbiter
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { CharacterModelTrait, type TemperamentDef } from '@sharpee/world-model';
+import type { ArbiterVerdict } from './arbiter-types.js';
+import type { KindMembership } from './scope.js';
+/** What the reveal gate needs from the asking site. */
+export interface RevealArbitrationInput {
+    /** The asked NPC's trait. */
+    trait: CharacterModelTrait;
+    /** The asked NPC's entity id (author-channel attribution). */
+    npcId: string;
+    /** The conversing actor (the ledger audience and the act's object). */
+    askerId: string;
+    /** The canonical topic string being asked about. */
+    topic: string;
+    /** Entity ids present in the room — honor sees the room (D7). */
+    audiencePresent: readonly string[];
+    /** The NPC's active entity states, for temperament `while` bindings. */
+    activeStates?: readonly string[];
+    /** Authored temperament definitions (CharacterPhaseRegistry). */
+    temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
+    /** Kind membership for classifier scopes (the story oracle's slot). */
+    isKindMember?: KindMembership;
+}
+/** The gate's outcome: the verdict, the reveal decision, and its author events. */
+export interface RevealArbitration {
+    verdict: ArbiterVerdict;
+    /** True exactly when the verdict's act is `comply` — the row may deliver. */
+    reveal: boolean;
+    /** Arbitration + deposit + paralysis events (ADR-318 D11). */
+    authorEvents: ISemanticEvent[];
+}
+/**
+ * Arbitrate revealing a confided topic, with bookkeeping.
+ *
+ * @param input - The asking site's context
+ * @returns The arbitration, or null when the topic is not held confided
+ *   (no gate — the row proceeds untouched)
+ */
+export declare function arbitrateConfidedReveal(input: RevealArbitrationInput): RevealArbitration | null;
+```
+
+### character-clock
+
+```typescript
+/**
+ * Character clock seam (ADR-310 implementation plan, temporal amendment
+ * 2026-08-15)
+ *
+ * The ONE place @sharpee/character does turn arithmetic. Every duration,
+ * expiry, and elapsed-time comparison in this package goes through these
+ * helpers rather than raw `turn` math, so that ADR-316's elapsed-time
+ * semantics — when un-deferred — changes exactly one seam.
+ *
+ * Public interface: expiryTurn, hasExpired, isMomentaryExpired, turnsSince,
+ *   CHARACTER_TURN_KEY, dialogueTurn.
+ * Owner context: @sharpee/character
+ */
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * World-state key mirroring the last completed NPC turn (Phase 6). The
+ * dialogue surfaces run during PLAYER actions, where the engine's turn
+ * counter is unreachable by design (the selector binding's documented
+ * idiom is a closed-over turn source); the character-model tick phase
+ * mirrors its turn here so dialogue-path bookkeeping stamps `mirror + 1`
+ * — the turn the player is acting in. Rides world state, so it saves
+ * and restores.
+ */
+export declare const CHARACTER_TURN_KEY = "character.turn";
+/**
+ * The turn the player is acting in, read from the tick phase's mirror —
+ * the one turn source for dialogue-path bookkeeping (ledger stamps,
+ * witnessed-act stamps, conversation markers).
+ *
+ * @param world - The live world holding the mirror
+ * @returns The current player turn (mirror + 1; 1 before any tick)
+ */
+export declare function dialogueTurn(world: WorldModel): number;
+/**
+ * Compute the turn on which a lingering effect expires.
+ *
+ * @param appliedAtTurn - The turn the effect was applied
+ * @param lingeringTurns - How many turns it lasts
+ * @returns The expiry turn
+ */
+export declare function expiryTurn(appliedAtTurn: number, lingeringTurns: number): number;
+/**
+ * Check whether an expiry turn has been reached.
+ *
+ * @param currentTurn - The current turn number
+ * @param expiresAtTurn - The expiry turn, if any
+ * @returns True if set and reached
+ */
+export declare function hasExpired(currentTurn: number, expiresAtTurn: number | undefined): boolean;
+/**
+ * Check whether a momentary effect (one-turn lifetime) has expired.
+ * Applied on turn N, gone on turn N+1.
+ *
+ * @param currentTurn - The current turn number
+ * @param appliedAtTurn - The turn the effect was applied
+ * @returns True if at least one turn has passed
+ */
+export declare function isMomentaryExpired(currentTurn: number, appliedAtTurn: number): boolean;
+/**
+ * Turns elapsed since a recorded turn.
+ *
+ * @param currentTurn - The current turn number
+ * @param sinceTurn - The earlier turn
+ * @returns Elapsed turns (never negative)
+ */
+export declare function turnsSince(currentTurn: number, sinceTurn: number): number;
 ```

@@ -1,6 +1,7 @@
 story
   title: Quantifier Closed-Condition Gate
-  authors: Sharpee Platform
+  authors:
+    Sharpee Platform
   id: quantifier-closed
   story-version: 0.0.1
 

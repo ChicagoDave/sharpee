@@ -1,6 +1,7 @@
 story
   title: Topic Basic
-  authors: T
+  authors:
+    T
   id: topic-basic
   story-version: 0.0.1
 

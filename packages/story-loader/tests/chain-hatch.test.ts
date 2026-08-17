@@ -14,7 +14,8 @@ import { CHORD_CHAIN_MAP, resolveChain } from '../src/chain-map';
 
 const CHAIN_STORY = `story
   title: T
-  authors: T
+  authors:
+    T
   id: t
   story-version: 0.0.1
 

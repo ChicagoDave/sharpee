@@ -29,9 +29,9 @@ afterEach(() => {
 });
 
 const HEADER_WITH = (ifid: string) =>
-  `story\n  title: Harbor\n  authors: T\n  id: harbor\n  story-version: 0.1.0\n  ifid: ${ifid}\n\ncreate the Quay\n  a room\n\n  Salt air.\n`;
+  `story\n  title: Harbor\n  authors:\n    T\n  id: harbor\n  story-version: 0.1.0\n  ifid: ${ifid}\n\ncreate the Quay\n  a room\n\n  Salt air.\n`;
 const HEADER_WITHOUT =
-  'story\n  title: Harbor\n  authors: T\n  id: harbor\n  story-version: 0.1.0\n\ncreate the Quay\n  a room\n\n  Salt air.\n';
+  'story\n  title: Harbor\n  authors:\n    T\n  id: harbor\n  story-version: 0.1.0\n\ncreate the Quay\n  a room\n\n  Salt air.\n';
 
 function project(source: string): string {
   dir = mkdtempSync(join(tmpdir(), 'devkit-story-config-'));

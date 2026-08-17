@@ -82,7 +82,7 @@ function createAttackEvent(actorId: string, targetId: string): ISemanticEvent {
 function createGivingEvent(actorId: string): ISemanticEvent {
   return {
     id: `give_${Date.now()}`,
-    type: 'if.action.giving',
+    type: 'if.event.given',
     timestamp: Date.now(),
     entities: { actor: actorId },
   };
@@ -113,7 +113,7 @@ describe('ADR-141 end-to-end integration', () => {
       .likes('player')
       .mood('nervous')
       .threat('safe')
-      .cognitiveProfile('ptsd')
+      .cognitiveProfile('braced')
       .filters({ misses: ['quiet actions'], amplifies: ['attacked'] })
       .lucidity({
         baseline: 'drifting',
@@ -178,10 +178,11 @@ describe('ADR-141 end-to-end integration', () => {
     // Lucidity trigger fired (npc.attacked → flashback, immediate)
     expect(trait.currentLucidityState).toBe('flashback');
 
-    // Observable events were emitted
+    // Observable events were emitted — but no raw-type knowledge minted (D10)
     expect(observeEvents.some(e => e.type === CharacterMessages.THREAT_CHANGED)).toBe(true);
     expect(observeEvents.some(e => e.type === CharacterMessages.LUCIDITY_SHIFT)).toBe(true);
-    expect(observeEvents.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(true);
+    expect(observeEvents.some(e => e.type === CharacterMessages.FACT_LEARNED)).toBe(false);
+    expect(trait.knows(attackEvent.type)).toBe(false);
 
     // ----- Layer 2: Lucidity decay over turns -----
     enterLucidityWindow(trait, 'flashback'); // 'fast' = 2 turns
@@ -210,10 +211,10 @@ describe('ADR-141 end-to-end integration', () => {
     expect(trait.getDispositionValue('player')).toBe(40);
   });
 
-  it('should handle NPC with schizophrenic profile and hallucinations', () => {
+  it('should handle NPC with unquiet profile and hallucinations', () => {
     const compiled = new CharacterBuilder('eleanor')
       .personality('very curious', 'honest', 'slightly paranoid')
-      .cognitiveProfile('schizophrenic')
+      .cognitiveProfile('unquiet')
       .likes('player')
       .mood('anxious')
       .knows('murder', { witnessed: true })
@@ -234,8 +235,8 @@ describe('ADR-141 end-to-end integration', () => {
     world.moveEntity(eleanor.id, room.id);
     const { trait } = applyCharacter(eleanor, compiled);
 
-    // Verify schizophrenic profile
-    expect(trait.cognitiveProfile).toEqual(COGNITIVE_PRESETS.schizophrenic);
+    // Verify unquiet profile
+    expect(trait.cognitiveProfile).toEqual(COGNITIVE_PRESETS.unquiet);
     expect(trait.evaluate('fragmented')).toBe(true);
     expect(trait.evaluate('belief resistant')).toBe(true);
 
@@ -256,10 +257,10 @@ describe('ADR-141 end-to-end integration', () => {
     expect(events.some(e => e.type === CharacterMessages.HALLUCINATION_ONSET)).toBe(true);
   });
 
-  it('should skip filtered events for PTSD character', () => {
+  it('should skip filtered events for braced character', () => {
     const compiled = new CharacterBuilder('james')
       .personality('honest', 'very stubborn')
-      .cognitiveProfile('ptsd')
+      .cognitiveProfile('braced')
       .filters({
         misses: ['quiet'],
         amplifies: ['sudden', 'loud'],

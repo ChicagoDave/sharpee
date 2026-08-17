@@ -1,0 +1,38 @@
+title: The strained voice takes over at burdened
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: ADR-318 Acceptance 3, strained-voice leg. Each maintained lie
+  deposits conscience pressure (15/delivery); the band-gated phrasebook
+  takes the neutral topic exactly at the deposit that crosses into
+  burdened (30) — one ask early it has not.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/b3-conscience.story
+    stories/character-acceptance/tests/transcripts/b3-strained-voice.transcript
+
+---
+
+# The even voice, before any pressure
+> ask steward about the weather
+[OK: contains "Mild enough"]
+
+# First maintained lie — the mint (pressure 15, still clear)
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# One deposit short of the band: the voice has NOT flipped
+> ask steward about the weather
+[OK: contains "Mild enough"]
+[OK: not contains "It is fine"]
+
+# Second lie — the deposit that crosses into burdened (30)
+> ask steward about the ledger
+[OK: contains "balance to the penny"]
+
+# The strained voice owns the neutral topic exactly now — no model word
+> ask steward about the weather
+[OK: contains "It is fine"]
+[OK: not contains "Mild enough"]
+[OK: not contains "burdened"]
+[OK: not contains "pressure"]
+[OK: not contains "conscience"]

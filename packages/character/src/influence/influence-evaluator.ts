@@ -17,6 +17,8 @@ import {
   InfluenceDef,
   ResistanceDef,
   InfluenceResult,
+  InfluenceTargetOutcome,
+  PassiveInfluenceExertion,
 } from './influence-types.js';
 
 // ---------------------------------------------------------------------------
@@ -96,17 +98,17 @@ function checkSchedule(
 /**
  * Evaluate all passive influences for entities in a room.
  *
- * For each entity with passive influences, checks range, schedule,
- * and each potential target's resistance. Returns results describing
- * which effects were applied and which were resisted.
+ * Returns one exertion per (influencer, influence) — the exertion-level
+ * facts (effect, witnessed/resisted message ids) appear exactly once,
+ * with per-target applied/resisted outcomes nested inside (ADR-310 D8).
  *
  * @param entities - All entities in the room
- * @returns Array of influence results
+ * @returns Array of exertion results
  */
 export function evaluatePassiveInfluences(
   entities: InfluenceRoomEntity[],
-): InfluenceResult[] {
-  const results: InfluenceResult[] = [];
+): PassiveInfluenceExertion[] {
+  const results: PassiveInfluenceExertion[] = [];
 
   for (const influencer of entities) {
     for (const influence of influencer.influences) {
@@ -124,53 +126,24 @@ export function evaluatePassiveInfluences(
       // Determine targets based on range
       const targets = getTargets(influence, influencer, entities);
 
-      for (const target of targets) {
-        results.push(evaluateInfluenceOnTarget(influence, influencer, target));
-      }
+      const outcomes: InfluenceTargetOutcome[] = targets.map(target => ({
+        targetId: target.id,
+        status: checkResistance(target, influence.name) ? 'resisted' : 'applied',
+      }));
+
+      results.push({
+        status: 'exerted',
+        influenceName: influence.name,
+        influencerId: influencer.id,
+        effect: { ...influence.effect },
+        ...(influence.witnessed !== undefined ? { witnessed: influence.witnessed } : {}),
+        ...(influence.resisted !== undefined ? { resisted: influence.resisted } : {}),
+        targets: outcomes,
+      });
     }
   }
 
   return results;
-}
-
-// ---------------------------------------------------------------------------
-// Single-target evaluation helper
-// ---------------------------------------------------------------------------
-
-/**
- * Evaluate a single influence against a single target entity.
- *
- * Checks resistance and returns either an 'applied' or 'resisted' result.
- * Used by both passive and active influence evaluation paths.
- *
- * @param influence - The influence being exerted
- * @param influencer - The entity exerting the influence
- * @param target - The target entity
- * @returns An InfluenceResult describing the outcome
- */
-function evaluateInfluenceOnTarget(
-  influence: InfluenceDef,
-  influencer: InfluenceRoomEntity,
-  target: InfluenceRoomEntity,
-): InfluenceResult {
-  if (checkResistance(target, influence.name)) {
-    return {
-      status: 'resisted',
-      influenceName: influence.name,
-      influencerId: influencer.id,
-      targetId: target.id,
-      resisted: influence.resisted,
-    };
-  }
-
-  return {
-    status: 'applied',
-    influenceName: influence.name,
-    influencerId: influencer.id,
-    targetId: target.id,
-    effect: { ...influence.effect },
-    witnessed: influence.witnessed,
-  };
 }
 
 // ---------------------------------------------------------------------------

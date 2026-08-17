@@ -14,7 +14,8 @@ import { createStory, LoadError } from '../src';
 
 const SOURCE = `story
   title: Pairs
-  authors: T
+  authors:
+    T
   id: pairs
   story-version: 0.0.1
   use scoring

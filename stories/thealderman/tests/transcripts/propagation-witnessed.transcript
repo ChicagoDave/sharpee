@@ -1,0 +1,21 @@
+title: Witnessed propagation renders
+story: thealderman
+author: Sharpee Team
+description: ADR-144 witnessed-propagation render leg (wiring-audit §2) —
+  the player standing in the room sees the NPC-to-NPC transfer line.
+  Chelsea's seek-truth goal (post-D6, goals move the world) brings her
+  to Catherine in the Restaurant; Catherine's open spreads list then
+  transfers to her, and the neutral-coloring witnessed message reaches
+  the player through the ADR-097 messageId path. Timing verified
+  seed-independent (seeds 7, 42, 99999) before pinning.
+
+---
+
+> west
+[OK: contains "Restaurant"]
+[OK: contains "Catherine Shelby"]
+
+# Chelsea has arrived (goal movement); the first co-located tick
+# transfers Catherine's spread facts and the player witnesses it
+> wait
+[OK: contains "mentions something to Chelsea Sumner"]

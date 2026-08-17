@@ -1,6 +1,7 @@
 story
   title: The Folly at Fernhill
-  authors: The Sharpee Project
+  authors:
+    The Sharpee Project
   id: fernhill
   ifid: 8221EC69-3D96-4F60-A057-99D1FE72000F
   story-version: 0.3.0

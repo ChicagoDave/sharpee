@@ -20,6 +20,7 @@ describe('CharacterBuilder.influence() — fluent API', () => {
         .duration('while present')
         .witnessed('ginger-brushes-against-{target}')
         .resisted('ginger-brushes-against-{target}-no-effect')
+        .expired('ginger-moves-off')
         .done()
       .compile();
 
@@ -34,6 +35,7 @@ describe('CharacterBuilder.influence() — fluent API', () => {
     expect(def.duration).toBe('while present');
     expect(def.witnessed).toBe('ginger-brushes-against-{target}');
     expect(def.resisted).toBe('ginger-brushes-against-{target}-no-effect');
+    expect(def.expired).toBe('ginger-moves-off');
   });
 
   test('compiles active intimidation influence', () => {

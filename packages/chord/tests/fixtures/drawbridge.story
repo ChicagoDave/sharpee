@@ -1,6 +1,7 @@
 story
   title: Bridge
-  authors: Test
+  authors:
+    Test
   id: drawbridge
   story-version: 0.0.1
   states: calm, stormy
