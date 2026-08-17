@@ -1,6 +1,6 @@
 # Session Summary: 2026-08-17 - feat/adr-320-implementation
 
-## Status: In Progress (Phase 10 story green; D14 threads amendment accepted + frozen; Phases 10.1–10.2 DONE; next: Phase 10.3 character thread runtime, awaiting David's go)
+## Status: COMPLETE — committed and pushed (c56fed83 on origin/feat/adr-320-implementation). Phase 10 story green; D14 threads amendment accepted + frozen; Phases 10.1–10.2 DONE. Next: Phase 10.3 (packages/character thread runtime + #273 fix + ContinuationEntry retirement), awaiting David's confirmation.
 
 ## Goals
 - ADR-320 Phase 10: Theatre Company demonstration story — authoring
@@ -68,18 +68,33 @@
   wire kinds + ThreadContinuability; barrels. world-model 1492 passing;
   repo-wide tsc clean.
 
+## Finalize / Commit
+- `commit-remote`'s test gate caught a real break: story-loader's
+  `evalCondition` switch (packages/story-loader/src/evaluator.ts:155)
+  was non-exhaustive against chord's new `concluded` IRCondition kind —
+  the loud-fail evaluator gate working as designed. The earlier
+  repo-wide tsc pass had been clean only because it ran against
+  chord's stale dist. David approved the fix; the `concluded` case
+  landed as the real D14 per-pair trait read mirroring the existing
+  `discussed` case — this is Phase 10.4's evaluator-case deliverable
+  arriving early, worth carrying into the Phase 10.4 session's context.
+  Verified after the fix: story-loader build 21/21, story-loader suite
+  535 passing, repo-wide `turbo test:ci` 65/65.
+- Committed and pushed as c56fed83 (265f7d5a..c56fed83) to
+  origin/feat/adr-320-implementation: 40 files, +3430/−49.
+  Session-end cleanup done (event log archived, session state
+  retired). `tools/ide/SharpeeIDE/Resources/docs-tab/docs-index.json`
+  deliberately excluded (parallel IDE session artifact) and left
+  untouched on disk.
+
 ## Open Items
-- Work uncommitted (awaiting David's word).
-- Phase 10 exit held open: David identified the missing surface —
-  author-scripted NPC-driven conversation threads (1..n beats to a
-  clear conclusion, multi-sitting, transition management / single-topic
-  enforcement). ContinuationEntry verified type-only (no authoring, no
-  runtime consumer). Amendment design drafted for discussion:
-  docs/work/adr-320-conversation/conversation-threads-design.md
-  (construct sketch, semantics, strength-governed transitions,
-  conclusion predicate, scope, 5 open questions).
-- Phase 10 → DONE flip deferred until the threads discussion resolves
-  (the story will need reworking onto threads if confirmed).
+- Phase 10's exit stays held open until Phase 10.7 reworks the story
+  onto threads (per the amended plan); the D14 design itself is RESOLVED
+  and its vocabulary FROZEN (David, "frozen go") — no open questions
+  remain in conversation-threads-design.md.
+- Next action: Phase 10.3 (packages/character thread runtime, #273
+  seize-runner fix, ContinuationEntry retirement) — needs David's
+  platform confirmation at phase start.
 
 ## Files Modified
 - stories/ides-of-march/chord/ides-of-march.story (new, ~640 lines)
@@ -87,6 +102,18 @@
 - stories/ides-of-march/walkthroughs/wt-01-the-errand.transcript (new)
 - docs/work/adr-320-conversation/phase10-story-traceability.md (new)
 - docs/work/adr-320-conversation/plan.md (Phase 10 → CURRENT)
+- packages/story-loader/src/evaluator.ts (evalCondition `concluded`
+  case — real D14 per-pair trait read, mirrors `discussed`)
+- packages/chord/{src/ast,parser,ir,analyzer,version}.ts, chord.ebnf,
+  tests/adr-320-threads.test.ts (new), language-version.test.ts,
+  4 golden snapshots (Phase 10.1)
+- packages/world-model/src/traits/character-model/{conversation-scene,
+  characterModelTrait,index}.ts, src/capabilities/{scene-wire,index}.ts,
+  tests/unit/traits/character-model.test.ts (Phase 10.2)
+- docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md
+  (D14, AC14, amendment scope, Session note)
+- docs/work/adr-320-conversation/conversation-threads-design.md (new,
+  RESOLVED + FROZEN)
 
 ## Notes
 - Session started: 2026-08-17 15:25 (session 13a3e0)
