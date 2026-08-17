@@ -138,6 +138,16 @@ function atomsDisjoint(a: IRCondition, b: IRCondition, axes: SingleValuedAxes): 
     return a.state !== b.state;
   }
 
+  // A topic's recency reads as exactly one word at a time (ADR-320 D6).
+  if (a.kind === 'recency' && b.kind === 'recency') {
+    return a.topic === b.topic && a.word !== b.word;
+  }
+
+  // The current topic's ask count reads as exactly one word (ADR-320 D4).
+  if (a.kind === 'asked' && b.kind === 'asked') {
+    return a.word !== b.word;
+  }
+
   if (a.kind === 'compare' && b.kind === 'compare') {
     return comparesDisjoint(a, b);
   }

@@ -277,6 +277,9 @@ export type Declaration =
   | DefineChannel
   // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
   | DefineTopics
+  // ADR-320 D5 manner blocks / D4 boundary blocks (frozen 2026-08-17):
+  | DefineManner
+  | DefineGreetings
   // ADR-310 D14 valued-belief fact declarations:
   | DefineFact
   | DefineTemperament
@@ -365,6 +368,81 @@ export interface TopicRow {
   body: Statement[];
   span: Span;
 }
+
+/**
+ * `define manner for <entity> … end manner` (ADR-320 D5, vocabulary frozen
+ * 2026-08-17) — the character's declared delivery layer: state-conditioned
+ * rows of ambient beats and voice markers that color any phrase the
+ * character delivers which lacks a more specific authored variant. One
+ * block per entity (analyzer error); at least one row (parse error).
+ */
+export interface DefineManner {
+  kind: 'define-manner';
+  /** The owning entity (`for Viola Wainright`) — person kind (analyzer gate). */
+  owner: NameRef;
+  rows: MannerRow[];
+  span: Span;
+}
+
+/**
+ * One `when <condition>:` manner row: an indented body of `beat "<prose>"`
+ * and `voice <word>` lines. Beats rotate at runtime without back-to-back
+ * repeats; `voice` is one word, open vocabulary (frozen decision §5.5).
+ */
+export interface MannerRow {
+  kind: 'manner-row';
+  condition: ConditionNode;
+  lines: MannerLine[];
+  span: Span;
+}
+
+/** One line of a manner row body. */
+export type MannerLine =
+  | { kind: 'beat'; text: string; span: Span }
+  | { kind: 'voice'; word: string; span: Span };
+
+/**
+ * `define greetings for <entity> … end greetings` (ADR-320 D4, spelling
+ * frozen 2026-08-17) — the scene boundary block: rows selected by the
+ * boundary moment (first meeting, return, exit) refined by the frozen
+ * absence words (`again so soon` / `after a while` / `after days`) and
+ * repetition words (`asked once/again/many times` — scene visits in this
+ * context). One block per entity; at least one row.
+ */
+export interface DefineGreetings {
+  kind: 'define-greetings';
+  /** The owning entity — person kind (analyzer gate). */
+  owner: NameRef;
+  rows: GreetingRow[];
+  span: Span;
+}
+
+/**
+ * One boundary row: a head selecting the moment, then a one-line statement
+ * or an indented statement body (the topic-row body idiom; `it` = owner).
+ */
+export interface GreetingRow {
+  kind: 'greeting-row';
+  head: GreetingHead;
+  body: Statement[];
+  span: Span;
+}
+
+/** The frozen absence words, kebab-normalized. */
+export type AbsenceWord = 'again-so-soon' | 'after-a-while' | 'after-days';
+
+/** The frozen repetition words, kebab-normalized. */
+export type RepetitionWord = 'once' | 'again' | 'many-times';
+
+/**
+ * A greeting row head (frozen spellings): `first time`, `on return`
+ * (optionally `, <absence-word>`), `asked <repetition-word>`, `on leaving`.
+ */
+export type GreetingHead =
+  | { kind: 'first-time'; span: Span }
+  | { kind: 'return'; absence: AbsenceWord | null; span: Span }
+  | { kind: 'asked'; word: RepetitionWord; span: Span }
+  | { kind: 'leaving'; span: Span };
 
 /**
  * The construct a channel `return`s (ADR-253 D1). The channel's value is
@@ -1773,7 +1851,32 @@ export type ConditionNode =
   | NamedConditionRef
   | AnyOfNode
   | NoneOfNode
-  | ClientHasNode;
+  | ClientHasNode
+  | SubjectChangesNode
+  | AskedNode;
+
+/**
+ * `the subject changes` (ADR-320 D9, frozen 2026-08-17) — true when the
+ * scene noticed a live thread abandoned this turn. Available to manner
+ * rows, response rows, and (Phase 4) initiative occasions; evaluation is
+ * the scene runtime's.
+ */
+export interface SubjectChangesNode {
+  kind: 'subject-changes';
+  span: Span;
+}
+
+/**
+ * `asked once` / `asked again` / `asked many times` (ADR-320 D4, frozen
+ * 2026-08-17) — the repetition words. In a topic-row body the counter is
+ * the current topic's per-pair ask count; the runtime owns the counting
+ * and the word curve (never numbers).
+ */
+export interface AskedNode {
+  kind: 'asked';
+  word: RepetitionWord;
+  span: Span;
+}
 
 /**
  * `client has <capability>` (ADR-216) — reads the live negotiated client
@@ -1877,6 +1980,19 @@ export type Predicate =
   | { kind: 'feels'; disposition: string; target: NameRef; span: Span }
   /** `<subject> knows <topic>` (ADR-310 D13) — held-topic predicate. */
   | { kind: 'knows'; topic: NameRef; span: Span }
+  /**
+   * `<topic> is fresh|recent|stale` (ADR-320 D6, frozen 2026-08-17) — the
+   * recency words over the ledger's turn stamps. The subject is the TOPIC;
+   * the holder is the enclosing context's owner. Runtime owns the aging
+   * curve; the word is all the author conditions on.
+   */
+  | { kind: 'recency'; negated: boolean; word: 'fresh' | 'recent' | 'stale'; span: Span }
+  /**
+   * `<topic> was discussed` (ADR-320 D9, frozen 2026-08-17) — the per-pair
+   * discussed-ness predicate: the topic has been covered between the owner
+   * and the conversation partner, across scenes, in any order.
+   */
+  | { kind: 'was-discussed'; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed

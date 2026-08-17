@@ -96,12 +96,23 @@ export type {
 
 // Dialogue-selector binding (ADR-310 D15; contracts.md §5) — the
 // conversation-action socket, consulted for character-modeled NPCs.
+// Exchange-aware extension per ADR-320 (adr-320 contracts.md §4).
 export type {
   DialogueSelector,
   ConversationIntent,
   DialogueSelectionContext,
-  DialogueSelectionResult
+  DialogueSelectionResult,
+  SceneDirective
 } from './dialogue-selector-binding.js';
+
+// Scene wire schema (ADR-320 D12; adr-320 contracts.md §3) — the
+// presentation-agnostic conversation wire: scene events and exchange
+// response affordances, carried as channel data.
+export type {
+  SceneWireEvent,
+  ResponseAffordance,
+  ExchangeAffordances
+} from './scene-wire.js';
 
 // Interceptor helpers
 export {

@@ -1,0 +1,124 @@
+/**
+ * Conversation scene and memory state shapes (ADR-320 D4/D6/D9/D10;
+ * adr-320 contracts.md §1–§2)
+ *
+ * A conversation is a scene: participants, a contested floor, at most one
+ * open exchange, and lifecycle boundaries the platform recognizes. Per-pair
+ * conversation memory (visits, discussed topics, repetition counts) rides
+ * the modeled holder's trait; the live scene's home is settled at Phase 7
+ * (contracts.md §1.3 — flagged for review). Phase 1 declares shapes only:
+ * nothing here is consumed, serialized, or wired yet.
+ *
+ * Every shape is platform-internal (contracts.md §7) — NOT author-facing
+ * compatibility surface; revisable at refactor cost. Turn fields are read
+ * and aged only through the character subsystem's clock seam — numbers
+ * never reach Chord (ADR-310 D6).
+ *
+ * Public interface: ConversationSceneState, SceneStrength, SceneOpenedBy,
+ *   ExchangeState, SceneBoundaryKind, ConversationMemory.
+ * Owner context: world-model / character-model trait
+ */
+
+/**
+ * Scene grip against interruption (ADR-320 D10): `passive` yields to any
+ * motivated interjection, `assertive` protests then yields, `blocking`
+ * holds against everything except world events and acts (D8's exemption).
+ * Word-for-word the conversation lifecycle's `ConversationStrength`
+ * (@sharpee/character); Phase 5 collapses that union to an alias of this
+ * one (contracts.md §7).
+ */
+export type SceneStrength = 'passive' | 'assertive' | 'blocking';
+
+/**
+ * How a scene opened (ADR-320 D4): a participant addressing someone, an
+ * NPC's own initiative (D7), or any witnessed world event — a PC act,
+ * another character's act, or a story event. Selects boundary rows and
+ * seeds what the conversation is about.
+ */
+export type SceneOpenedBy =
+  | { kind: 'address'; openerId: string }
+  | { kind: 'initiative'; openerId: string }
+  | { kind: 'witnessed-event'; eventId: string };
+
+/**
+ * The boundary moments the platform recognizes (ADR-320 D4). The Chord
+ * boundary words that compile onto these kinds are Phase 3 vocabulary,
+ * frozen separately.
+ */
+export type SceneBoundaryKind = 'first-meeting' | 'return' | 'exit' | 'silence';
+
+/**
+ * An open exchange point (ADR-320 D4): a named moment where a speaker's
+ * line defines what the next responses mean. While open, its responses
+ * overlay the topic table under the innermost-active-context-wins rule
+ * (ADR-310 D16); the topic table is the floor's default when none is open.
+ */
+export interface ExchangeState {
+  /** The compiled exchange block this instantiates (Chord IR id, Phases 3–4). */
+  exchangeId: string;
+
+  /** Who opened it (whose line defined what the next responses mean). */
+  speakerId: string;
+
+  /** Strength marker authored on the exchange, if any (D10). */
+  strength?: SceneStrength;
+
+  /** Turn the exchange opened. */
+  openedTurn: number;
+}
+
+/**
+ * A live conversation scene (ADR-320 D4): the engine-visible construct
+ * NPC↔NPC scheduling, save/restore, and the author channel all see.
+ * Mutated only by the scene runtime (@sharpee/character, Phase 5) — this
+ * module is pure data.
+ */
+export interface ConversationSceneState {
+  /** Stable id, unique within a save (runtime mints; format runtime-owned). */
+  id: string;
+
+  /** Everyone in the scene, PC included. Order is not meaningful. */
+  participantIds: string[];
+
+  /** How the scene opened — selects boundary rows, seeds what it is about. */
+  openedBy: SceneOpenedBy;
+
+  /** Current floor holder, or null while the floor is contested/open. */
+  floorHolderId: string | null;
+
+  /** The one open exchange, or null when the topic table is the default. */
+  openExchange: ExchangeState | null;
+
+  /** Scene grip against interruption (D10); absent = derived from intent at runtime. */
+  strength?: SceneStrength;
+
+  /** Turn the scene opened (read/aged through the clock seam only). */
+  openedTurn: number;
+
+  /** Turn of the last on-floor move (utterance, act, or event — one vocabulary). */
+  lastMoveTurn: number;
+}
+
+/**
+ * Per-pair conversation memory (ADR-320 D4/D6/D9), held on the modeled
+ * character's trait keyed by partner id — each side holds its own view
+ * (the disposition precedent); NPC↔PC pairs live only on the NPC side.
+ * Phase 7 threads `conversationMemory` into `ICharacterModelData` with a
+ * schema-version bump; until then this shape is unconsumed.
+ *
+ * Numbers here never reach Chord: repetition, recency, and absence all
+ * surface as words, with the runtime owning every curve (ADR-310 D6).
+ */
+export interface ConversationMemory {
+  /** Completed scenes with this partner (drives asked-once/again/many words). */
+  visits: number;
+
+  /** Turn the last scene with this partner closed (absence words age off this). */
+  lastSceneClosedTurn?: number;
+
+  /** Topics covered with this partner, across scenes, any order (D9 `was discussed`). */
+  discussedTopics: string[];
+
+  /** Per-topic ask counts with this partner (repetition words; runtime owns the counting). */
+  askedCounts: Record<string, number>;
+}

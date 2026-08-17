@@ -103,7 +103,17 @@ affordance.
 - **Exit state**: `packages/character` and `packages/world-model` compile clean under
   `tsc` with the new types present and unconsumed; no runtime behavior differs from
   today; `contracts.md` is the fixed reference every later phase's Entry state cites.
-- **Status**: CURRENT (since 2026-08-16)
+- **Status**: DONE (2026-08-16, session 8e2f49, branch
+  `feat/adr-320-implementation`). Evidence: `contracts.md` written and
+  **APPROVED** by David 2026-08-16 — §1.3 scene home ruled (world-state key
+  `character.scenes` over per-trait mirroring), §7 `ContinuationIntent` rename
+  approved for Phase 5, and §2.1 folded in from the same review (the PC may
+  carry `CharacterModelTrait`; no state-bearing PlayerTrait). Types declared
+  and unconsumed in `world-model` (`conversation-scene.ts`, `scene-wire.ts`,
+  D15 socket extension in `dialogue-selector-binding.ts`) and `character`
+  (`conversation/scene-scoring.ts`); leaf barrels updated; repo-wide
+  `npx tsc --noEmit` clean (run 2026-08-16 this session, exit 0, no output).
+  No runtime behavior change — types only.
 
 ### Phase 2: Theatre Company demonstration story — the player task, specified before mechanism
 - **Tier**: Medium
@@ -122,7 +132,11 @@ affordance.
   task (what they are trying to accomplish and how "winning" is recognized), the
   locations and the rehearsal-to-performance timeline (D6's clock structure), and which
   of D4–D12's constructs each story beat is meant to exercise per the Acceptance
-  criteria (1–13) they trace to.
+  criteria (1–13) they trace to. **Story artifacts stay plain** (David, 2026-08-16):
+  the story's own files — Chord source, transcripts, in-story requirement notes —
+  state requirements in straightforward story language and never cite ADRs or
+  D/AC numbers; the construct-to-beat traceability table lives in this work
+  directory's design doc and the Phase 11 audit, not in the story.
 - **Deliverable**: a `theatre-story-task.md` design document in this work directory:
   premise and cast (David's answers, recorded verbatim where given), the player's task
   stated as a City-of-Secrets-style one-paragraph goal, the location/timeline map, and a
@@ -134,7 +148,14 @@ affordance.
 - **Exit state**: the design document exists, is confirmed by David as complete enough
   to author against, and is the fixed reference Phase 10 (story authoring) and Phase 11
   (acceptance closure) cite for what the demonstration story must exercise.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-16, session 8e2f49). Evidence:
+  `theatre-story-task.md` CONFIRMED by David ("confirmed - close Phase 2") —
+  cast (Shakespeare, Burbage, Kemp; sketches confirmed), *Julius Caesar* at the
+  1599 Globe, Kemp's departure as the crisis, player = Henslowe's agent in
+  disguise with both objectives (poach Kemp + steal the play-book), 3-day
+  clock, 4-location set, and the full construct-to-beat table tracing AC1–13.
+  All content David's, gathered by interview this session; story files will
+  carry plain requirements only (no ADR references, David's standing ruling).
 
 ### Phase 3: Chord grammar — scene, boundary, manner, and time/threading constructs
 - **Tier**: Large
@@ -161,7 +182,22 @@ affordance.
   (manner fallback, including the byte-identical-with-no-manner-blocks cost leg) and
   Acceptance 4 (time words) and Acceptance 10 (threading words) pass at the Chord-compile
   level — Chord source in, IR out, matching the Phase 1 contract for each construct.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 8e2f49). Evidence: vocabulary frozen by David
+  ("frozen as proposed - go", 2026-08-17 — `vocabulary-freeze-phase3.md` FROZEN, all
+  five decisions as recommended). Grammar/IR landed: `define manner` + `define
+  greetings` blocks (parser, analyzer folds with duplicate/host gates, deterministic
+  beat phrase-key minting), recency/discussed/subject-changes/asked lowered to
+  dedicated `IRCondition` kinds, disjointness axes added (recency, asked). Tests:
+  `tests/adr-320-phase3.test.ts` — 16 tests derived from Behavior Statements, all
+  asserting on emitted IR/diagnostic codes; full chord suite 870 passing, 60 files
+  (run 2026-08-17). Cost leg: golden IR snapshots diff ONLY in the deliberate
+  `languageVersion` stamp (4 lines, verified via git diff). Surface pin moved
+  together per ADR-257 D5: `chord.ebnf` updated, `CHORD_LANGUAGE_VERSION` 3.0.0 →
+  3.1.0 (first ordinary minor after the freeze; 3.0.0 shipped with platform 5.0.x),
+  pin hash re-recorded. Repo-wide `npx tsc --noEmit` clean. Note: the frozen
+  time/threading word lists are closed grammar (parser-owned, like `at least`), not
+  manifest-gated open vocabularies — the manifest pipeline stays for open lists
+  (moods, personalities); `voice` is open and carried as data.
 
 ### Phase 4: Chord grammar — exchange, initiative, agency, and multi-party constructs
 - **Tier**: Large
@@ -188,7 +224,10 @@ affordance.
   authored-row-forces leg), Acceptance 6 (interruption vocabulary present in the grammar,
   full behavior lands in Phase 5), and Acceptance 7 (world-bounded exit; silence renders
   — the grammar/IR half; full behavior lands in Phase 6) pass at the Chord-compile level.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-17 — Phase 3 DONE; the `packages/chord`
+  confirmation carries per this phase's entry state. Opens with the Phase 4
+  vocabulary freeze review — exchange words, strength markers, initiative rows —
+  before implementation.)
 
 ### Phase 5: `@sharpee/character` — the scene runtime
 - **Tier**: Large
@@ -344,7 +383,9 @@ affordance.
   `dist/cli/sharpee.js`, built with `./repokit build <theatre-story-slug>`; every
   construct from Phase 2's table exercised by at least one scene; transcript tests
   (`.transcript` files) covering the acceptance-relevant beats, chained where state
-  persists across rehearsal days (D6).
+  persists across rehearsal days (D6). Story files carry no ADR references (David,
+  2026-08-16) — requirements in plain story language only; traceability lives in the
+  work-directory docs.
 - **Exit state**: ADR-320 Acceptance 13 (the demonstration story plays end-to-end via
   the bundle, exercising every construct above); the story is a new vehicle under
   `stories/` (or `branch-stories/` per its authoring shape), not an extension of

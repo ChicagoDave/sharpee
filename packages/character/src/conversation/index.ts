@@ -82,6 +82,17 @@ export {
   CharacterModelDialogue,
 } from './dialogue-extension.js';
 
+// Floor/interruption scoring shapes (ADR-320 D7/D10; adr-320
+// contracts.md §5) — Phase 1 contracts, unconsumed until the Phase 5
+// scene runtime.
+export {
+  type SceneOccasion,
+  type FloorBid,
+  type FloorDecision,
+  type InterruptionChallenge,
+  type InterruptionOutcome,
+} from './scene-scoring.js';
+
 // The dialogue-selector socket adapter (ADR-310 D15; contracts.md §5)
 export {
   createCharacterDialogueSelector,

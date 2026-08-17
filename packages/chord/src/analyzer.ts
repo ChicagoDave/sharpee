@@ -121,6 +121,8 @@ import {
   IRWitnessedTopicDef,
   IRThinksEntry,
   IRTopicRow,
+  IRMannerRow,
+  IRGreetingRow,
   IRTraitDef,
   IRValue,
   IRStoryFields,
@@ -257,6 +259,10 @@ function conditionFingerprint(cond: ConditionNode): string {
     case 'any-of':
     case 'none-of':
       return `${cond.kind}:${cond.condition}`;
+    case 'subject-changes':
+      return 'subject-changes';
+    case 'asked':
+      return `asked:${cond.word}`;
     case 'predicate': {
       const p = cond.predicate;
       switch (p.kind) {
@@ -282,6 +288,10 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `knows(${value(cond.subject)},${p.topic.words.join(' ').toLowerCase()})`;
         case 'is-any':
           return `is-any(${value(cond.subject)},${p.condition})`;
+        case 'recency':
+          return `recency${p.negated ? '!' : ''}(${value(cond.subject)},${p.word})`;
+        case 'was-discussed':
+          return `was-discussed(${value(cond.subject)})`;
       }
     }
   }
@@ -382,6 +392,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
     case 'none-of':
       // Quantifiers test the world, not the clause owner — no `it` here.
       return false;
+    case 'subject-changes':
+    case 'asked':
+      // ADR-320 scene reads — the owner comes from the evaluation context,
+      // never from an `it` in the condition text.
+      return false;
     case 'predicate': {
       if (visitValue(cond.subject)) return true;
       const p = cond.predicate;
@@ -408,6 +423,10 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
+        // ADR-320: the subject is a TOPIC, visited above only for form's
+        // sake — a topic is never `it`.
+        case 'recency':
+        case 'was-discussed':
           return false;
       }
     }
@@ -866,6 +885,9 @@ class Analyzer {
           break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
+        case 'define-manner':
+        case 'define-greetings':
+          break; // applied onto owners after all entities are built (applyManner/applyGreetings)
       }
     }
 
@@ -896,6 +918,8 @@ class Analyzer {
     ir.hasHatches = ir.hatches.length > 0;
 
     this.applyTopics(ir.entities);
+    this.applyManner(ir.entities);
+    this.applyGreetings(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkCompositionLegality(ir);
@@ -1555,6 +1579,159 @@ class Analyzer {
       for (const row of rows) this.checkPhraseExclusivity(row, axes);
 
       owner.topics = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D5 (vocabulary frozen 2026-08-17): fold each `define manner`
+   * block onto its owner entity's `manner` rows. Gates: a second block for
+   * the same owner, a non-person host, more than one `voice` word in a
+   * row. Rows are NOT required to be mutually exclusive — several may be
+   * live at once (the ADR's own example conditions one row on mood and
+   * one on band); selection layering is the scene runtime's. Beat phrase
+   * keys re-derive pass 1's deterministic minting
+   * (`<owner>.manner-<row>-<line>`), so the two cannot drift.
+   */
+  private applyManner(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-manner') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-manner-block',
+          `\`${owner.name}\` already has a \`define manner\` block at line ${first.line} — a character's manner lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.manner-host',
+          `\`define manner\` needs a person — \`${owner.name}\` is ${kind}, and manner colors a character's delivery (a block here could never fire).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRMannerRow[] = [];
+      decl.rows.forEach((row, r) => {
+        const beatKeys: string[] = [];
+        let voice: string | undefined;
+        row.lines.forEach((mline, b) => {
+          if (mline.kind === 'beat') {
+            beatKeys.push(`${ownerId}.manner-${r}-${b}`);
+          } else if (voice !== undefined) {
+            this.diagnostics.error(
+              'analysis.manner-voice-duplicate',
+              'This manner row already sets `voice` — one voice word per row.',
+              mline.span,
+            );
+          } else {
+            voice = mline.word;
+          }
+        });
+        rows.push({
+          condition: this.resolveCondition(row.condition, scope),
+          beatKeys,
+          ...(voice !== undefined ? { voice } : {}),
+          span: row.span,
+        });
+      });
+      owner.manner = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D4 (spelling frozen 2026-08-17): fold each `define greetings`
+   * block onto its owner entity's `greetings` rows. Gates: a second block
+   * for the same owner, a non-person host, and a duplicate boundary head
+   * (a boundary answers in one place). Bodies lower exactly as topic-row
+   * bodies do, occurrence-keyed on the IR row index.
+   */
+  private applyGreetings(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-greetings') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-greetings-block',
+          `\`${owner.name}\` already has a \`define greetings\` block at line ${first.line} — the boundary rows live in one place; merge them.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.greetings-host',
+          `\`define greetings\` needs a person — \`${owner.name}\` is ${kind}, and only people hold conversation boundaries (a block here could never be reached).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRGreetingRow[] = [];
+      const seenHeads = new Map<string, Span>();
+      for (const row of decl.rows) {
+        const headKey =
+          row.head.kind === 'return' ? `return:${row.head.absence ?? 'plain'}`
+          : row.head.kind === 'asked' ? `asked:${row.head.word}`
+          : row.head.kind;
+        const dup = seenHeads.get(headKey);
+        if (dup) {
+          this.diagnostics.error(
+            'analysis.duplicate-greeting',
+            `This boundary is already declared in this block (line ${dup.line}) — a boundary answers in one place; merge the rows.`,
+            row.span,
+          );
+          continue;
+        }
+        seenHeads.set(headKey, row.span);
+
+        const head: IRGreetingRow['head'] =
+          row.head.kind === 'first-time' ? { kind: 'first-time' }
+          : row.head.kind === 'return' ? { kind: 'return', absence: row.head.absence }
+          : row.head.kind === 'asked' ? { kind: 'asked', word: row.head.word }
+          : { kind: 'leaving' };
+        rows.push({
+          head,
+          body: row.body.map((s, i) =>
+            this.resolveStatement(s, scope, `greeting.${ownerId}.row-${rows.length}.${i}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+      owner.greetings = rows;
     }
   }
 
@@ -2548,6 +2725,32 @@ class Analyzer {
       const owner = this.findEntitySilent(decl.owner);
       if (!owner) continue;
       for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+    }
+
+    // Greeting-row bodies are entity-owned the same way (ADR-320 D4), and
+    // manner beats mint owner-scoped phrase keys deterministically from
+    // declaration order (`manner-<row>-<beat>`) so compiles stay
+    // byte-identical (ADR-320 D5); pass 2 (applyManner) re-derives the
+    // same keys for the IR rows.
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-greetings') {
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+      } else if (decl.kind === 'define-manner') {
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        decl.rows.forEach((row, r) => {
+          row.lines.forEach((mline, b) => {
+            if (mline.kind !== 'beat') return;
+            this.registerPhrase(DEFAULT_LOCALE, `${owner.id}.manner-${r}-${b}`, {
+              strategy: null,
+              variants: [{ text: mline.text, markers: [] }],
+              span: mline.span,
+            });
+          });
+        });
+      }
     }
   }
 
@@ -5816,7 +6019,38 @@ class Analyzer {
         // names are load errors — never a guess.
         this.requireOpenCondition(cond.condition, cond.span, cond.kind === 'any-of' ? 'any' : 'no');
         return { kind: cond.kind, condition: cond.condition };
+      case 'subject-changes':
+        // ADR-320 D9: the scene's thread-abandonment notice — no operands;
+        // evaluation is the scene runtime's.
+        return { kind: 'subject-changes' };
+      case 'asked':
+        // ADR-320 D4: repetition word over the enclosing row's topic —
+        // words are the parser's closed set; the runtime owns the counting.
+        return { kind: 'asked', word: cond.word };
       case 'predicate': {
+        // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
+        // topic, not an entity — intercept before entity resolution, and
+        // normalize exactly as `knows` topics do.
+        if (cond.predicate.kind === 'recency' || cond.predicate.kind === 'was-discussed') {
+          const topicWords =
+            cond.subject.kind === 'ref' ? cond.subject.ref.words
+            : cond.subject.kind === 'bare' ? cond.subject.words
+            : null;
+          if (!topicWords || topicWords.length === 0) {
+            this.diagnostics.error(
+              cond.predicate.kind === 'recency' ? 'analysis.recency-topic' : 'analysis.discussed-topic',
+              `Expected a topic name before \`${cond.predicate.kind === 'recency' ? `is ${cond.predicate.word}` : 'was discussed'}\` — the subject is the topic being tested.`,
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const topic = normalizeTopic(topicWords.join(' '));
+          if (cond.predicate.kind === 'recency') {
+            const node: IRCondition = { kind: 'recency', topic, word: cond.predicate.word };
+            return cond.predicate.negated ? { kind: 'not', operand: node } : node;
+          }
+          return { kind: 'discussed', topic };
+        }
         const subject = this.resolveValue(cond.subject, scope);
         switch (cond.predicate.kind) {
           case 'is': {

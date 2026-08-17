@@ -65,6 +65,12 @@ export {
   DEFAULT_DECAY_THRESHOLDS,
   BETWEEN_TURN_DEFAULTS,
   ConversationLifecycle,
+  // Floor/interruption scoring shapes (ADR-320 D7/D10; adr-320 contracts.md §5)
+  type SceneOccasion,
+  type FloorBid,
+  type FloorDecision,
+  type InterruptionChallenge,
+  type InterruptionOutcome,
   // ACL
   buildResponseIntent,
   selectMoodVariant,

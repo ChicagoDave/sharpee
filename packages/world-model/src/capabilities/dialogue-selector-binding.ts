@@ -14,13 +14,19 @@
  * author-facing compatibility surface; revisable at refactor cost.
  *
  * Public interface: `DialogueSelector`, `ConversationIntent`,
- *   `DialogueSelectionContext`, `DialogueSelectionResult`.
+ *   `DialogueSelectionContext`, `DialogueSelectionResult`, `SceneDirective`.
  * Owner: world-model (per-world wiring surface).
  */
 
 import type { EntityId, ISemanticEvent } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { WorldModel } from '../world/WorldModel.js';
+import type {
+  ConversationSceneState,
+  ExchangeState,
+  SceneBoundaryKind,
+} from '../traits/character-model/conversation-scene.js';
+import type { SceneWireEvent } from './scene-wire.js';
 
 /**
  * What the player is doing conversationally (the four D15 verbs).
@@ -45,7 +51,27 @@ export interface DialogueSelectionContext {
   world: WorldModel;
   /** The conversing actor (the player). */
   speakerId: EntityId;
+  /**
+   * The scene the addressed NPC is in, if any (ADR-320 D4; adr-320
+   * contracts.md §4). An exchange-aware selector reads the open exchange
+   * off it for the overlay-before-table rule (ADR-310 D16 innermost-wins).
+   * Absent until the Phase 6 dispatch integration wires it — existing
+   * registrants and the zero-registrant default are unaffected.
+   */
+  scene?: ConversationSceneState;
 }
+
+/**
+ * A scene lifecycle change the selection asks the scene runtime to
+ * perform (ADR-320 D4; adr-320 contracts.md §4). The directive shape
+ * keeps the selector pure (the arbiter discipline: it computes, the
+ * runtime mutates) — a selector never writes scene state itself.
+ */
+export type SceneDirective =
+  | { kind: 'open-exchange'; exchange: ExchangeState }
+  | { kind: 'close-exchange' }
+  | { kind: 'set-floor'; holderId: EntityId | null }
+  | { kind: 'close-scene'; boundary: SceneBoundaryKind };
 
 /**
  * A selector's answer: the message the action's report phase should emit
@@ -66,6 +92,18 @@ export interface DialogueSelectionResult {
    * never render as player prose (ADR-310 D12).
    */
   authorEvents?: ISemanticEvent[];
+  /**
+   * Scene lifecycle the selection asks the runtime to perform (ADR-320
+   * D4; adr-320 contracts.md §4). Absent from every pre-scene selector —
+   * the consulting action ignores the field until Phase 6 wires it.
+   */
+  sceneDirectives?: SceneDirective[];
+  /**
+   * D12 wire events this selection produced, for the channel layer
+   * (ADR-320 D12; adr-320 contracts.md §3). Author-channel visibility
+   * only — never player prose (ADR-310 D12).
+   */
+  wireEvents?: SceneWireEvent[];
 }
 
 /**

@@ -301,11 +301,54 @@ export interface IREntity {
    */
   topics: IRTopicRow[];
   /**
+   * The entity's declared manner block (`define manner for …`, ADR-320
+   * D5) — state-conditioned delivery rows in declaration order; absent
+   * when no block is declared (a story with no manner blocks compiles
+   * byte-identically to one before the construct existed).
+   */
+  manner?: IRMannerRow[];
+  /**
+   * The entity's declared boundary block (`define greetings for …`,
+   * ADR-320 D4) — scene boundary rows in declaration order; absent when
+   * no block is declared.
+   */
+  greetings?: IRGreetingRow[];
+  /**
    * The declared character model (ADR-310) — present exactly when the
    * `create` block carries at least one character construct (D7: a person
    * with no character line compiles exactly as today, no model attached).
    */
   character?: IRCharacter;
+  span: Span;
+}
+
+/**
+ * One manner row (ADR-320 D5): a lowered condition, the row's beat phrase
+ * keys (minted into the phrase table at compile — deterministic from
+ * declaration order, so compiles stay byte-identical), and the optional
+ * voice word (open vocabulary, carried as data).
+ */
+export interface IRMannerRow {
+  condition: IRCondition;
+  /** Owner-scoped phrase keys, one per `beat` line, in declaration order. */
+  beatKeys: string[];
+  /** The row's `voice` word, if declared. */
+  voice?: string;
+  span: Span;
+}
+
+/**
+ * One greeting (boundary) row (ADR-320 D4): the boundary selector and a
+ * statement body, the topic-row idiom. Absence and repetition words are
+ * kebab-normalized frozen vocabulary.
+ */
+export interface IRGreetingRow {
+  head:
+    | { kind: 'first-time' }
+    | { kind: 'return'; absence: 'again-so-soon' | 'after-a-while' | 'after-days' | null }
+    | { kind: 'asked'; word: 'once' | 'again' | 'many-times' }
+    | { kind: 'leaving' };
+  body: IRStatement[];
   span: Span;
 }
 
@@ -1314,4 +1357,28 @@ export type IRCondition =
    */
   | { kind: 'feels'; subject: IRValue; disposition: string; target: IRValue }
   /** `<subject> knows <topic>` (ADR-310 D13) — the subject holds the topic. */
-  | { kind: 'knows-topic'; subject: IRValue; topic: string };
+  | { kind: 'knows-topic'; subject: IRValue; topic: string }
+  /**
+   * `<topic> is fresh|recent|stale` (ADR-320 D6) — recency over the
+   * holder's ledger turn stamps; the holder is the evaluation context's
+   * owner (`it`). The runtime owns the aging curve. Negation wraps in
+   * `not`, as everywhere.
+   */
+  | { kind: 'recency'; topic: string; word: 'fresh' | 'recent' | 'stale' }
+  /**
+   * `<topic> was discussed` (ADR-320 D9) — per-pair discussed-ness between
+   * the evaluation context's owner and the conversation partner, across
+   * scenes, any order.
+   */
+  | { kind: 'discussed'; topic: string }
+  /**
+   * `asked once|again|many times` (ADR-320 D4) — the current topic's
+   * per-pair ask count read as a word; topic and pair come from the
+   * evaluation context. The runtime owns the counting.
+   */
+  | { kind: 'asked'; word: 'once' | 'again' | 'many-times' }
+  /**
+   * `the subject changes` (ADR-320 D9) — the scene noticed a live thread
+   * abandoned this turn; evaluation is the scene runtime's.
+   */
+  | { kind: 'subject-changes' };

@@ -61,6 +61,14 @@ import {
   MachineTransition,
   DefineText,
   DefineTopics,
+  DefineManner,
+  MannerRow,
+  MannerLine,
+  DefineGreetings,
+  GreetingRow,
+  GreetingHead,
+  AbsenceWord,
+  RepetitionWord,
   DefineTrait,
   DirectionEntry,
   EachStmt,
@@ -157,8 +165,9 @@ const ORDINALS: Record<string, number> = {
   sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
 };
 /** Words that terminate a noun phrase in condition/statement positions. */
-// `feels`/`knows` joined for the ADR-310 D13 interior-state predicates.
-const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'and', 'or', 'then', 'to', 'while', 'with']);
+// `feels`/`knows` joined for the ADR-310 D13 interior-state predicates;
+// `was` joined for the ADR-320 D9 `was discussed` predicate (frozen 2026-08-17).
+const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'was', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 /**
@@ -2808,6 +2817,12 @@ class Parser {
       case 'topics':
         // ADR-239 D3 (as amended) — the ask/tell topic table block.
         return this.parseDefineTopics();
+      case 'manner':
+        // ADR-320 D5 (frozen 2026-08-17) — the delivery layer block.
+        return this.parseDefineManner();
+      case 'greetings':
+        // ADR-320 D4 (spelling frozen 2026-08-17) — the scene boundary block.
+        return this.parseDefineGreetings();
       case 'topic':
         // ADR-318 D12a — a witnessed-act topic alias, one line.
         return this.parseDefineWitnessedTopic();
@@ -4128,6 +4143,274 @@ class Parser {
       return null;
     }
     return { kind: 'topic-row', filter, body, span };
+  }
+
+  /**
+   * `define manner for <entity> … end manner` (ADR-320 D5). Rows are
+   * `when <condition>:` heads over indented `beat "<prose>"` / `voice
+   * <word>` lines — no statements, no prose paragraphs: manner is delivery
+   * texture, not response content.
+   */
+  private parseDefineManner(): DefineManner {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define manner
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.manner-for', 'Expected `for <entity>` after `define manner`.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.manner-for', 'Expected `define manner for <entity>` — the owner name runs to the end of the line.', c.restSpan());
+      }
+    }
+
+    const decl: DefineManner = { kind: 'define-manner', owner, rows: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('manner', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.manner-empty', 'This `define manner` block declares no rows — add `when <condition>:` rows with `beat`/`voice` lines, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end manner` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      if (word === 'when') {
+        const row = this.parseMannerRow(line);
+        if (row) {
+          decl.rows.push(row);
+          decl.span = mergeSpans(decl.span, row.span);
+        }
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.manner-row',
+        `Unrecognized line in \`define manner\`: \`${line.raw.trim()}\` — expected a \`when <condition>:\` row or \`end manner\`.`,
+        lineSpan(line),
+      );
+      this.pos++;
+    }
+    this.diagnostics.error('parse.manner-end', 'Expected `end manner` to close the block.', decl.span);
+    if (decl.rows.length === 0) {
+      this.diagnostics.error('parse.manner-empty', 'This `define manner` block declares no rows — add `when <condition>:` rows with `beat`/`voice` lines, or remove the block.', decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * One `when <condition>:` manner row over an indented body of
+   * `beat "<prose>"` and `voice <word>` lines.
+   */
+  private parseMannerRow(headLine: Line): MannerRow | null {
+    // The condition runs `when` … `:` — slice at the colon before parsing,
+    // the standing idiom for condition-before-colon sites (the bare-word
+    // and standalone-word checks must see end-of-tokens, not the colon).
+    const colonIdx = headLine.tokens.findIndex((tk) => tk.kind === 'colon');
+    if (colonIdx < 0 || colonIdx !== headLine.tokens.length - 1) {
+      this.diagnostics.error('parse.manner-row', 'Expected `when <condition>:` with the row body on indented `beat`/`voice` lines.', lineSpan(headLine));
+      this.pos++;
+      return null;
+    }
+    const condTokens = headLine.tokens.slice(1, colonIdx); // drop the leading `when`
+    const cc = new Cursor(condTokens, headLine);
+    const condition = this.parseCondition(cc, headLine);
+    if (!cc.atEnd()) {
+      this.diagnostics.error('parse.manner-row', 'Expected `when <condition>:` — the condition runs to the `:`.', cc.restSpan());
+      this.pos++;
+      return null;
+    }
+    this.pos++;
+
+    const lines: MannerLine[] = [];
+    let span = lineSpan(headLine);
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent <= headLine.indent) break;
+      const lc = new Cursor(line.tokens, line);
+      const word = firstWord(line);
+      if (word === 'beat') {
+        lc.next();
+        const text = lc.next();
+        if (!text || text.kind !== 'string' || !lc.atEnd() || text.text.trim() === '') {
+          this.diagnostics.error('parse.manner-beat', 'Expected one quoted prose line after `beat` (e.g. `beat "She glances at the door."`).', lineSpan(line));
+        } else {
+          lines.push({ kind: 'beat', text: text.text, span: lineSpan(line) });
+        }
+      } else if (word === 'voice') {
+        lc.next();
+        const w = lc.next();
+        if (!w || w.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.manner-voice', 'Expected one word after `voice` (e.g. `voice flat`).', lineSpan(line));
+        } else {
+          lines.push({ kind: 'voice', word: w.text.toLowerCase(), span: lineSpan(line) });
+        }
+      } else {
+        this.diagnostics.error('parse.manner-line', `Unrecognized manner line: \`${line.raw.trim()}\` — a manner row body holds \`beat "<prose>"\` and \`voice <word>\` lines only.`, lineSpan(line));
+      }
+      span = mergeSpans(span, lineSpan(line));
+      this.pos++;
+    }
+    if (lines.length === 0) {
+      this.diagnostics.error('parse.manner-row-empty', 'This manner row has no body — add at least one `beat "<prose>"` or `voice <word>` line.', span);
+      return null;
+    }
+    return { kind: 'manner-row', condition, lines, span };
+  }
+
+  /**
+   * `define greetings for <entity> … end greetings` (ADR-320 D4). Row
+   * heads are the frozen boundary spellings; bodies are statements, the
+   * topic-row idiom (`it` = the owner).
+   */
+  private parseDefineGreetings(): DefineGreetings {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define greetings
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.greetings-for', 'Expected `for <entity>` after `define greetings`.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.greetings-for', 'Expected `define greetings for <entity>` — the owner name runs to the end of the line.', c.restSpan());
+      }
+    }
+
+    const decl: DefineGreetings = { kind: 'define-greetings', owner, rows: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('greetings', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.greetings-empty', 'This `define greetings` block declares no rows — add boundary rows (`first time:`, `on return:`, …), or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end greetings` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      const row = this.parseGreetingRow(line);
+      if (row) {
+        decl.rows.push(row);
+        decl.span = mergeSpans(decl.span, row.span);
+      }
+    }
+    this.diagnostics.error('parse.greetings-end', 'Expected `end greetings` to close the block.', decl.span);
+    if (decl.rows.length === 0) {
+      this.diagnostics.error('parse.greetings-empty', 'This `define greetings` block declares no rows — add boundary rows (`first time:`, `on return:`, …), or remove the block.', decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * One boundary row. Frozen heads: `first time:`, `on return[, <absence
+   * words>]:`, `asked once|again|many times:`, `on leaving:`. The body is
+   * a one-line statement after the colon or an indented statement body.
+   */
+  private parseGreetingRow(headLine: Line): GreetingRow | null {
+    const c = new Cursor(headLine.tokens, headLine);
+    let head: GreetingHead | null = null;
+    const headStart = c.peek()?.span ?? lineSpan(headLine);
+
+    if (c.isWord('first') && c.isWord('time', 1)) {
+      c.next();
+      c.next();
+      head = { kind: 'first-time', span: headStart };
+    } else if (c.isWord('on') && c.isWord('return', 1)) {
+      c.next();
+      c.next();
+      let absence: AbsenceWord | null = null;
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        if (c.isWord('again') && c.isWord('so', 1) && c.isWord('soon', 2)) {
+          c.next(); c.next(); c.next();
+          absence = 'again-so-soon';
+        } else if (c.isWord('after') && c.isWord('a', 1) && c.isWord('while', 2)) {
+          c.next(); c.next(); c.next();
+          absence = 'after-a-while';
+        } else if (c.isWord('after') && c.isWord('days', 1)) {
+          c.next(); c.next();
+          absence = 'after-days';
+        } else {
+          this.diagnostics.error('parse.greetings-absence', 'Expected an absence word after `on return,` — the vocabulary: `again so soon`, `after a while`, `after days`.', c.restSpan());
+          this.pos++;
+          return null;
+        }
+      }
+      head = { kind: 'return', absence, span: headStart };
+    } else if (c.isWord('asked')) {
+      c.next();
+      let word: RepetitionWord | null = null;
+      if (c.isWord('once')) { c.next(); word = 'once'; }
+      else if (c.isWord('again')) { c.next(); word = 'again'; }
+      else if (c.isWord('many') && c.isWord('times', 1)) { c.next(); c.next(); word = 'many-times'; }
+      if (!word) {
+        this.diagnostics.error('parse.greetings-asked', 'Expected a repetition word after `asked` — the vocabulary: `once`, `again`, `many times`.', c.restSpan());
+        this.pos++;
+        return null;
+      }
+      head = { kind: 'asked', word, span: headStart };
+    } else if (c.isWord('on') && c.isWord('leaving', 1)) {
+      c.next();
+      c.next();
+      head = { kind: 'leaving', span: headStart };
+    } else {
+      this.diagnostics.error(
+        'parse.greetings-row',
+        `Unrecognized line in \`define greetings\`: \`${headLine.raw.trim()}\` — expected \`first time:\`, \`on return[, <absence word>]:\`, \`asked <once|again|many times>:\`, \`on leaving:\`, or \`end greetings\`.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return null;
+    }
+
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.greetings-colon', 'Expected `:` after the boundary head.', colon?.span ?? c.restSpan());
+      this.pos++;
+      return null;
+    }
+
+    let body: Statement[];
+    let span = lineSpan(headLine);
+    if (!c.atEnd()) {
+      const rest: Line = { ...headLine, tokens: headLine.tokens.slice(c.i) };
+      const stmt = this.parseStatement(rest, 'topics');
+      if (!stmt) return null; // the statement error is already reported
+      body = [stmt];
+    } else {
+      this.pos++;
+      body = this.parseStatements(headLine.indent, 'topics');
+      if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
+    }
+    if (body.length === 0) {
+      this.diagnostics.error('parse.greetings-response', 'Expected a response — a one-line statement after the `:`, or an indented statement body.', lineSpan(headLine));
+      return null;
+    }
+    return { kind: 'greeting-row', head, body, span };
   }
 
   // ------------------------------------------------------------- on clause
@@ -6143,6 +6426,37 @@ class Parser {
       }
     }
 
+    // `the subject changes` (ADR-320 D9, frozen 2026-08-17) — the scene's
+    // thread-abandonment notice. All three words required, so an entity
+    // that merely starts with `subject` keeps its ordinary predicate parse.
+    if (t.kind === 'word' && t.text === 'the' && c.isWord('subject', 1) && c.isWord('changes', 2)) {
+      c.next();
+      const s = c.next()!;
+      const ch = c.next()!;
+      return { kind: 'subject-changes', span: mergeSpans(t.span, ch.span ?? s.span) };
+    }
+
+    // `asked once|again|many times` (ADR-320 D4, frozen 2026-08-17) — the
+    // repetition words; the counted topic is the enclosing row's.
+    if (t.kind === 'word' && t.text === 'asked') {
+      if (c.isWord('once', 1)) {
+        c.next();
+        const w = c.next()!;
+        return { kind: 'asked', word: 'once', span: mergeSpans(t.span, w.span) };
+      }
+      if (c.isWord('again', 1)) {
+        c.next();
+        const w = c.next()!;
+        return { kind: 'asked', word: 'again', span: mergeSpans(t.span, w.span) };
+      }
+      if (c.isWord('many', 1) && c.isWord('times', 2)) {
+        c.next();
+        c.next();
+        const w = c.next()!;
+        return { kind: 'asked', word: 'many-times', span: mergeSpans(t.span, w.span) };
+      }
+    }
+
     // Bare single word (before a connective or end of condition): a named
     // condition reference, e.g. `while in-darkness`.
     if (t.kind === 'word' && !ARTICLES.has(t.text) && this.isBareConditionRef(c)) {
@@ -6220,6 +6534,27 @@ class Parser {
           span: mergeSpans(subject.span, hereTok.span),
         };
       }
+      // ADR-320 D6 recency words (frozen 2026-08-17): `<topic> is fresh|
+      // recent|stale`, the word standing alone (end of condition or a
+      // connective) so an entity state that merely starts with one of
+      // these words keeps its ordinary is-value parse. The subject is the
+      // TOPIC; the analyzer resolves it and gates the word.
+      {
+        const rt = c.peek();
+        if (
+          rt && rt.kind === 'word' &&
+          (rt.text === 'fresh' || rt.text === 'recent' || rt.text === 'stale') &&
+          this.isBareConditionRef(c)
+        ) {
+          c.next();
+          return {
+            kind: 'predicate',
+            subject,
+            predicate: { kind: 'recency', negated, word: rt.text as 'fresh' | 'recent' | 'stale', span: rt.span },
+            span: mergeSpans(subject.span, rt.span),
+          };
+        }
+      }
       // ADR-264 D3 word comparisons: `is at least|at most|more than|less than <n>`.
       let cmpOp: 'gte' | 'gt' | 'lte' | 'lt' | null = null;
       if (c.isWord('at') && c.isWord('least', 1)) { c.next(); c.next(); cmpOp = 'gte'; }
@@ -6294,6 +6629,19 @@ class Parser {
         subject,
         predicate: { kind: 'feels', disposition: dispositionWords.join(' '), target, span: mergeSpans(t.span, target.span) },
         span: mergeSpans(subject.span, target.span),
+      };
+    }
+
+    if (t.text === 'was' && c.isWord('discussed', 1)) {
+      // ADR-320 D9 (frozen 2026-08-17): `<topic> was discussed` — the
+      // per-pair discussed-ness predicate; the subject is the topic.
+      c.next();
+      const d = c.next()!;
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'was-discussed', span: mergeSpans(t.span, d.span) },
+        span: mergeSpans(subject.span, d.span),
       };
     }
 
