@@ -68,7 +68,8 @@ interface RealGame {
 
 const STORY = `story
   title: Mini
-  authors: T
+  authors:
+    T
   id: mini
   story-version: 0.0.1
   description: A small square test story.

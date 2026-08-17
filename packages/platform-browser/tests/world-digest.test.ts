@@ -55,8 +55,10 @@ describe('buildWorldDigest', () => {
     );
     const digest = buildWorldDigest(world, {});
     expect(digest.entities).toEqual([
-      { kind: 'npc', name: 'gardener', token: 'gardener', location: { name: 'cellar', token: 'cellar' } },
-      { kind: 'item', name: 'lamp', token: 'lamp', location: { name: 'cellar', token: 'cellar' } },
+      // `id` is the world id author-channel rows carry (`npcId`) — the
+      // testing surface's NPC panel resolves rows to names through it.
+      { kind: 'npc', id: 'n1', name: 'gardener', token: 'gardener', location: { name: 'cellar', token: 'cellar' } },
+      { kind: 'item', id: 'i1', name: 'lamp', token: 'lamp', location: { name: 'cellar', token: 'cellar' } },
     ]);
   });
 
@@ -78,6 +80,7 @@ describe('buildWorldDigest', () => {
     // is a single whitespace-free token ('heavy old thing' is disqualified).
     expect(aliased).toEqual({
       kind: 'item',
+      id: 'i9',
       name: 'tarnished silver ring',
       token: 'ring',
       location: { name: 'cellar', token: 'cellar' },

@@ -17,6 +17,7 @@ import {
   type TreeDocument,
 } from '@sharpee/branch-tester/tree-document';
 import { MAIN_LINE, TreeSessionModel } from '../src/model';
+import { explainGroups } from '../src/character';
 
 /** A fresh model with the standard opening: boot look in the Den. */
 function bootedModel(): TreeSessionModel {
@@ -113,6 +114,37 @@ describe('assertion authoring — claims live in the card', () => {
     // Deleting one is plain removal — no narrowing machinery, no defaults.
     model.removeContains(77, 0);
     expect(model.claimsOf(77)).toEqual({ contains: ['Roses everywhere.'] });
+  });
+
+  it('click-to-assert character fragments persist through the document round trip (ADR-318 D11)', () => {
+    const model = bootedModel();
+    const n = play(model, 'ask viola about the killer');
+    // The exact rows the panel derives fragments from (main.ts assert delegate
+    // passes them to addChannel verbatim as `{ id: 'character', contains }`).
+    const [group] = explainGroups([{
+      turn: 3,
+      kind: 'character.author.ledger_mint',
+      npcId: 'a05',
+      data: { audience: 'a02', factId: 'killer', claimedValue: 'nobody', heldValue: 'viola-wainright' },
+    }], () => 'Viola Wainright');
+    const fragments = group.lines[0].fragments;
+    expect(model.addChannel(n, { id: 'character', contains: [...fragments] })).toBe(true);
+
+    const text = model.serialize();
+    const read = deserializeTreeDocument(text);
+    expect(read.status).toBe('ok');
+    if (read.status !== 'ok') return;
+    const card = read.document.cards.find((c) => c.command === 'ask viola about the killer');
+    expect(card?.assertions?.channels).toEqual([{
+      id: 'character',
+      contains: [
+        '"kind":"character.author.ledger_mint"',
+        '"npcId":"a05"',
+        '"factId":"killer"',
+        '"claimedValue":"nobody"',
+      ],
+    }]);
+    expect(JSON.stringify(read.document)).toBe(JSON.stringify(JSON.parse(text)));
   });
 
   it('a recorded skip persists as the explicit [SKIP] demotion', () => {

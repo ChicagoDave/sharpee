@@ -1,6 +1,13 @@
 # ADR-142: Conversation System
 
-## Status: DRAFT
+## Status: SUPERSEDED by ADR-320 (2026-08-16)
+
+ADR-320 (conversation and complex dialogue) absorbs this ADR: its two principles —
+conversation as a projection of character state; no procedural generation, no
+surprises the author didn't plan for — are reaffirmed as ADR-320 D3, and its
+conversation-lifecycle implementation (`@sharpee/character`'s
+`conversation/lifecycle.ts`) becomes the scene skeleton in ADR-320 D4. The pre-Chord
+mechanism sketches below are replaced by ADR-320 D4–D13.
 
 ## Date: 2026-04-03
 

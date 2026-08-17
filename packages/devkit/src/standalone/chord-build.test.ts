@@ -139,6 +139,16 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     for (const chrome of ['menu-bar', 'status-line', 'THEME_LINKS', 'menu-title']) {
       expect(testing, `testing page must not carry ${chrome}`).not.toContain(chrome);
     }
+    // ADR-318 D11 / ADR-310 D12: the TESTING page (and only it) flips the
+    // author-channels capability, and the built entry actually reads the
+    // global into `clientCapabilities` — presence on one side alone would
+    // prove nothing. The player page must never carry the flip (Acceptance 8).
+    expect(testing).toContain('__SHARPEE_AUTHOR_CHANNELS__ = true');
+    expect(game).toContain('__SHARPEE_AUTHOR_CHANNELS__');
+    expect(game).toMatch(/authorChannels:\s*(!0|true)/);
+    const playerPage = readFileSync(join(outDir, 'index.html'), 'utf-8');
+    expect(playerPage, 'player page must never flip author channels')
+      .not.toContain('__SHARPEE_AUTHOR_CHANNELS__');
 
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.

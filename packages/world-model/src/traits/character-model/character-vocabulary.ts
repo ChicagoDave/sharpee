@@ -8,7 +8,7 @@
  * implementation details managed by CharacterModelTrait.
  *
  * The word lists here are frozen author-facing compatibility surface
- * (freeze review: David, 2026-08-15 — docs/work/adr-310/contracts.md §6).
+ * (freeze review: David, 2026-08-15 — docs/work/archive/adr-310/contracts.md §6).
  * Removing a word breaks stories; additions stay possible.
  *
  * Public interface: All exported types and maps.

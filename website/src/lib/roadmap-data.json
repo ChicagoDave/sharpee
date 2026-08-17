@@ -21,7 +21,7 @@
       "targetDate": "TBD",
       "targetSharpee": "TBD",
       "targetChord": "TBD",
-      "tracesTo": "ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in docs/work/adr-310/prior-art.md · consumed by 003",
+      "tracesTo": "ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in docs/work/archive/adr-310/prior-art.md · consumed by 003",
       "summary": "Giving Chord authors a way to write characters — words the author writes, numbers the runtime owns. @sharpee/character was designed and built across four days in April 2026 (ADRs 141–146) and works, but an audit found it shipping with zero consumers. ADR-310 is the response: what the Chord surface over it should be."
     },
     {

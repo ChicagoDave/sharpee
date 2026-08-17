@@ -14,7 +14,7 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
+import { BrowserClient, BROWSER_CAPABILITIES, ThemeManager } from '@sharpee/platform-browser';
 import { createStory } from '@sharpee/story-loader';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
 // The story's TypeScript hatches (ADR-259 D1/D2), generated beside this file
@@ -123,8 +123,19 @@ async function start(): Promise<void> {
 
   if (!client) {
     const author = story.config.author;
+    // Author channels (ADR-318 D11 / ADR-310 D12): the IDE's testing page
+    // sets this global before any client script runs, flipping the
+    // `authorChannels` capability so the `character` channel's per-NPC rows
+    // ride the turn feed. A published page never defines it — player
+    // profiles keep authorChannels false and the channel layer never
+    // produces the rows (Acceptance 8).
+    const authorChannels = (globalThis as { __SHARPEE_AUTHOR_CHANNELS__?: unknown })
+      .__SHARPEE_AUTHOR_CHANNELS__ === true;
     client = new BrowserClient({
       storagePrefix: '{{STORAGE_PREFIX}}-',
+      ...(authorChannels
+        ? { clientCapabilities: { ...BROWSER_CAPABILITIES, authorChannels: true } }
+        : {}),
       // ADR-248: RESTART reboots by re-running this entry's boot path.
       reboot: () => start(),
       defaultTheme: '{{DEFAULT_THEME}}',

@@ -79,6 +79,12 @@
     </div>
   </dialog>
 
+  <!-- Author channels (ADR-318 D11 / ADR-310 D12): this page is the IDE's
+       testing surface — an authoring context, excluded from publish by name —
+       so it flips the `authorChannels` capability before the client boots.
+       The player page (index.html) never sets this global, so the channel
+       layer keeps author rows off every player wire (ADR-310 Acceptance 8). -->
+  <script>window.__SHARPEE_AUTHOR_CHANNELS__ = true;</script>
   <script src="game.js"></script>
 </body>
 </html>

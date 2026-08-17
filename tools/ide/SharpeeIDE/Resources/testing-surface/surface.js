@@ -72,10 +72,10 @@
     return `${JSON.stringify(sortKeysDeep(document2), null, 2)}
 `;
   }
-  function deserializeTreeDocument(text) {
+  function deserializeTreeDocument(text2) {
     let parsed;
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(text2);
     } catch (error) {
       return {
         status: "malformed",
@@ -251,8 +251,8 @@
   }
 
   // tools/ide/web/testing-surface/src/cards.ts
-  function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function escapeHtml(text2) {
+    return text2.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   }
   function groupByRegion(ordinals, roomOf2, regionOf) {
     const HOLE = /* @__PURE__ */ Symbol("no room");
@@ -329,8 +329,8 @@
     }
     /** A one-line notice above the cards (the refused-document message, AC-4).
      *  Pass undefined to clear. */
-    setNotice(text) {
-      if (text === void 0) {
+    setNotice(text2) {
+      if (text2 === void 0) {
         this.notice?.remove();
         this.notice = null;
         return;
@@ -340,7 +340,7 @@
         this.notice.className = "ts-notice";
         this.host.before(this.notice);
       }
-      this.notice.textContent = text;
+      this.notice.textContent = text2;
     }
     /**
      * The client keeps a document-level click handler that refocuses its
@@ -379,8 +379,8 @@
       let pending = null;
       document.addEventListener("selectionchange", () => {
         const selection = window.getSelection();
-        const text = selection ? selection.toString().trim() : "";
-        if (!text || !selection || selection.rangeCount === 0) {
+        const text2 = selection ? selection.toString().trim() : "";
+        if (!text2 || !selection || selection.rangeCount === 0) {
           button.style.display = "none";
           pending = null;
           return;
@@ -398,7 +398,7 @@
         button.style.left = `${Math.max(8, rect.left)}px`;
         button.style.top = `${rect.bottom + 6}px`;
         button.style.display = "block";
-        pending = { ordinal, text };
+        pending = { ordinal, text: text2 };
       });
       button.addEventListener("mousedown", (event) => {
         event.preventDefault();
@@ -476,7 +476,10 @@
       const asserts = document.createElement("div");
       asserts.className = "ts-asserts";
       asserts.style.display = "none";
-      block.append(meta, proseHost, asserts);
+      const character = document.createElement("div");
+      character.className = "ts-character";
+      character.style.display = "none";
+      block.append(meta, proseHost, asserts, character);
       const actions = document.createElement("div");
       actions.className = "ts-actions";
       const promptText = (placeholder, commit) => {
@@ -500,7 +503,7 @@
       notButton.title = "Text that must NOT appear in this turn";
       notButton.addEventListener("click", () => promptText(
         "text that must NOT appear\u2026",
-        (text) => this.delegate.onNotContains(ordinal, text)
+        (text2) => this.delegate.onNotContains(ordinal, text2)
       ));
       actions.appendChild(notButton);
       let exactButton = null;
@@ -526,6 +529,17 @@
       channelButton.title = ordinal === 0 ? "Assert on a channel the boot captured (prologue, banner, \u2026)" : "Assert on a channel this turn captured";
       channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
       actions.appendChild(channelButton);
+      const characterButton = document.createElement("button");
+      characterButton.className = "ts-npc-toggle";
+      characterButton.style.display = "none";
+      characterButton.title = "Explain this turn's character-model activity \u2014 forces, lies, conscience, transitions";
+      characterButton.addEventListener("click", () => {
+        const card = this.cards.get(ordinal);
+        if (!card) return;
+        card.characterOpen = !card.characterOpen;
+        this.renderCharacter(card, ordinal);
+      });
+      actions.appendChild(characterButton);
       let branchButton = null;
       if (ordinal > 0) {
         branchButton = document.createElement("button");
@@ -542,7 +556,15 @@
       column.append(block);
       row.append(column);
       this.host.appendChild(row);
-      this.cards.set(ordinal, { row, asserts, exactButton, branchButton });
+      this.cards.set(ordinal, {
+        row,
+        asserts,
+        exactButton,
+        branchButton,
+        character,
+        characterButton,
+        characterOpen: false
+      });
     }
     /** Re-fills one card's assertion list from the delegate's composed lines.
      *  Literal block lines (Exact's whole-turn text) render dimmed and are
@@ -554,10 +576,10 @@
       for (const line of lines) {
         const row = document.createElement("div");
         row.className = `ts-assert-line ts-assert-${line.kind}`;
-        const text = document.createElement("span");
-        text.className = "ts-assert-text";
-        text.textContent = line.text;
-        row.appendChild(text);
+        const text2 = document.createElement("span");
+        text2.className = "ts-assert-text";
+        text2.textContent = line.text;
+        row.appendChild(text2);
         if (line.del) {
           const del = line.del;
           const remove = document.createElement("button");
@@ -567,7 +589,75 @@
           remove.addEventListener("click", () => this.delegate.onRemoveAssertion(del));
           row.appendChild(remove);
         }
+        if (line.kind === "skip" && line.text === "[SKIP]" && this.delegate.characterExplain(ordinal).length > 0) {
+          const hint = document.createElement("button");
+          hint.className = "ts-skip-npc-hint";
+          hint.textContent = "assert from the NPC panel \u2192";
+          hint.title = "The auto-assertion policy had nothing to read this turn \u2014 assert one of the NPC panel's character events instead";
+          hint.addEventListener("click", () => {
+            card.characterOpen = true;
+            this.renderCharacter(card, ordinal);
+          });
+          row.appendChild(hint);
+        }
         card.asserts.appendChild(row);
+      }
+    }
+    /**
+     * Re-fills one card's NPC panel (ADR-318 D11). The toggle shows only when
+     * the turn carried character rows; the panel body renders while open —
+     * per-NPC groups, one line per model event, the raw payload folding out
+     * on a line click. Rows never change after delivery, so rebuilding per
+     * render stays cheap and keeps one repaint path.
+     */
+    renderCharacter(card, ordinal) {
+      const groups = this.delegate.characterExplain(ordinal);
+      const total = groups.reduce((n, group) => n + group.lines.length, 0);
+      card.characterButton.style.display = total === 0 ? "none" : "";
+      card.characterButton.textContent = `NPC \xD7${total}`;
+      card.characterButton.classList.toggle("ts-active", card.characterOpen);
+      const open = card.characterOpen && total > 0;
+      card.character.style.display = open ? "" : "none";
+      if (!open) return;
+      card.character.innerHTML = "";
+      for (const group of groups) {
+        const head = document.createElement("div");
+        head.className = "ts-character-npc";
+        head.textContent = group.npcLabel;
+        card.character.appendChild(head);
+        for (const line of group.lines) {
+          const row = document.createElement("div");
+          row.className = `ts-character-line${line.tone === "warn" ? " ts-warn" : ""}`;
+          const text2 = document.createElement("span");
+          text2.className = "ts-character-text";
+          text2.textContent = line.text;
+          text2.title = "Click for the raw payload";
+          let raw = null;
+          text2.addEventListener("click", () => {
+            if (raw) {
+              raw.remove();
+              raw = null;
+              return;
+            }
+            raw = document.createElement("div");
+            raw.className = "ts-character-raw";
+            raw.textContent = line.raw;
+            row.after(raw);
+          });
+          row.appendChild(text2);
+          if (line.fragments.length > 0) {
+            const assert = document.createElement("button");
+            assert.className = "ts-character-assert";
+            assert.textContent = "assert";
+            assert.title = "Assert this event \u2014 a channel claim on `character` the test run validates";
+            assert.addEventListener("click", (event) => {
+              event.stopPropagation();
+              this.delegate.onAssertCharacter(ordinal, line.fragments);
+            });
+            row.appendChild(assert);
+          }
+          card.character.appendChild(row);
+        }
       }
     }
     /** Dead session (restart replay): every card, chip, and header row goes. */
@@ -649,6 +739,7 @@
           this.model.claimsOf(ordinal)?.exact !== void 0
         );
         this.renderAssertions(card, ordinal);
+        this.renderCharacter(card, ordinal);
       }
       this.renderBranchRows(points);
       this.renderRunColumn();
@@ -854,8 +945,134 @@
     }
   };
 
+  // tools/ide/web/testing-surface/src/character.ts
+  function characterRowsOf(channelValues) {
+    const rows = [];
+    for (const value of channelValues?.["character"] ?? []) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        if (entry === null || typeof entry !== "object") continue;
+        const row = entry;
+        if (typeof row.kind !== "string") continue;
+        rows.push({
+          turn: typeof row.turn === "number" ? row.turn : 0,
+          kind: row.kind,
+          ...typeof row.npcId === "string" ? { npcId: row.npcId } : {},
+          data: row.data && typeof row.data === "object" ? row.data : {}
+        });
+      }
+    }
+    return rows;
+  }
+  var text = (value) => typeof value === "string" || typeof value === "number" ? String(value) : "?";
+  function arrow(data) {
+    return typeof data.from === "string" && typeof data.to === "string" ? `${data.from} \u2192 ${data.to}` : "";
+  }
+  function pressureTail(data) {
+    const transition = data.transition;
+    const band = transition && typeof transition === "object" ? `${text(transition.from)} \u2192 ${text(transition.to)}` : text(data.band);
+    return `${text(data.value)} (${band})`;
+  }
+  var DESCRIBERS = {
+    "character.author.arbitration": (d) => {
+      const readings = Array.isArray(d.readings) ? d.readings.map((r) => {
+        const reading = r;
+        return `${text(reading.force)} ${text(reading.intensity ?? reading.value)}`;
+      }).join(", ") : "";
+      const defeats = Array.isArray(d.defeats) && d.defeats.length > 0 ? ` \xB7 defeated: ${d.defeats.map((def) => text(def.feed)).join(", ")}` : "";
+      const temperament = d.temperamentApplied ? ` \xB7 temperament: ${text(d.temperamentApplied)}` : "";
+      return `arbitration (${text(d.site)} \xB7 ${text(d.topic)}) \u2014 ${text(d.winner)} wins, ${text(d.act)}` + (readings ? ` \xB7 forces: ${readings}` : "") + defeats + temperament;
+    },
+    "character.author.ledger_mint": (d, who) => `lie minted \u2014 claims ${text(d.factId)} is ${text(d.claimedValue)} (holds ${text(d.heldValue)}) to ${who(d.audience)}`,
+    "character.author.pin_held": (d, who) => `pin held \u2014 maintains ${text(d.factId)} is ${text(d.claimedValue)} to ${who(d.audience)}`,
+    "character.author.pin_released": (d, who) => `pin released \u2014 ${who(d.audience)} got the truth about ${text(d.factId)} (was claiming ${text(d.claimedValue)})`,
+    "character.author.pressure_deposit": (d) => `conscience deposit (${text(d.feed)}) \u2014 ${pressureTail(d)}`,
+    "character.author.pressure_drain": (d) => `conscience discharge${d.goalId !== void 0 ? ` (goal ${text(d.goalId)})` : ""} \u2014 ${pressureTail(d)}`,
+    "character.author.paralysis_warning": (d) => {
+      const principles = Array.isArray(d.principles) ? d.principles.map((p) => `"${text(p)}"`).join(" vs ") : "?";
+      return `PARALYSIS on ${text(d.topic)} \u2014 colliding principles: ${principles}`;
+    },
+    "character.author.act_witnessed": (d, who) => {
+      if (Array.isArray(d.acts)) {
+        const acts = d.acts.map((a) => {
+          const act = a;
+          return `${who(act.actorId)} ${text(act.act)} (${text(act.topic)})`;
+        }).join("; ");
+        return `witnessed \u2014 ${acts}`;
+      }
+      return `witnessed \u2014 ${text(d.act)} (${text(d.topic)})`;
+    },
+    "npc.character.mood_changed": (d) => `mood ${arrow(d) || text(d.to)}`,
+    "npc.character.threat_changed": (d) => `threat ${arrow(d) || text(d.to)}`,
+    "npc.character.disposition_changed": (d, who) => `disposition${d.toward !== void 0 ? ` toward ${who(d.toward)}` : ""} ${arrow(d) || text(d.to)}`,
+    "npc.character.fact_learned": (d) => `learned \u2014 ${text(d.topic ?? d.factId)}`,
+    "npc.character.lucidity_shift": (d) => `lucidity ${arrow(d) || text(d.to)}`,
+    "npc.character.lucidity_baseline_restored": () => "lucidity restored to baseline",
+    "npc.character.hallucination_onset": () => "hallucination onset"
+  };
+  var WARN_KINDS = /* @__PURE__ */ new Set(["character.author.paralysis_warning"]);
+  function frag(key, value) {
+    return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? [`${JSON.stringify(key)}:${JSON.stringify(value)}`] : [];
+  }
+  var FRAGMENT_FIELDS = {
+    "character.author.arbitration": ["winner", "act", "topic"],
+    "character.author.ledger_mint": ["factId", "claimedValue"],
+    "character.author.pin_held": ["factId", "claimedValue"],
+    "character.author.pin_released": ["factId"],
+    "character.author.pressure_deposit": ["feed"],
+    "character.author.pressure_drain": ["goalId"],
+    "character.author.paralysis_warning": ["topic"],
+    "character.author.act_witnessed": ["act", "topic"],
+    "npc.character.mood_changed": ["to"],
+    "npc.character.threat_changed": ["to"],
+    "npc.character.disposition_changed": ["toward", "to"],
+    "npc.character.fact_learned": ["topic", "factId"],
+    "npc.character.lucidity_shift": ["to"]
+  };
+  function fragmentsOf(row) {
+    return [
+      ...frag("kind", row.kind),
+      ...row.npcId !== void 0 ? frag("npcId", row.npcId) : [],
+      ...(FRAGMENT_FIELDS[row.kind] ?? []).flatMap((field) => frag(field, row.data[field]))
+    ];
+  }
+  function rawOf(row) {
+    try {
+      return JSON.stringify(row.data);
+    } catch {
+      return "{}";
+    }
+  }
+  function lineOf(row, who) {
+    const describe = DESCRIBERS[row.kind];
+    const tail = row.kind.replace(/^character\.author\.|^npc\.character\./, "");
+    return {
+      text: describe ? describe(row.data, who) : `${tail} ${rawOf(row)}`,
+      tone: WARN_KINDS.has(row.kind) ? "warn" : "normal",
+      raw: rawOf(row),
+      fragments: fragmentsOf(row)
+    };
+  }
+  function explainGroups(rows, nameOf) {
+    const who = (value) => {
+      const id = text(value);
+      return nameOf(id) ?? "the player";
+    };
+    const groups = /* @__PURE__ */ new Map();
+    for (const row of rows) {
+      const key = row.npcId ?? "";
+      let group = groups.get(key);
+      if (!group) {
+        const npcLabel = row.npcId === void 0 ? "story" : nameOf(row.npcId) ?? row.npcId;
+        group = { npcLabel, lines: [] };
+        groups.set(key, group);
+      }
+      group.lines.push(lineOf(row, who));
+    }
+    return [...groups.values()];
+  }
+
   // tools/ide/web/testing-surface/src/compose.ts
-  var quoted = (text) => `"${text}"`;
+  var quoted = (text2) => `"${text2}"`;
   function channelLineText(claim) {
     if (claim.is !== void 0) return `channel ${claim.id} is ${quoted(claim.is)}`;
     const fragments = (claim.contains ?? []).map(quoted).join(", ");
@@ -922,7 +1139,7 @@
         kind: "assertion",
         del: { kind: "exact", ordinal }
       });
-      lines.push(...claims.exact.map((text) => ({ text, kind: "block" })));
+      lines.push(...claims.exact.map((text2) => ({ text: text2, kind: "block" })));
       lines.push(...nonProseLines(ordinal, claims));
       return lines;
     }
@@ -1513,18 +1730,18 @@
       if (a.channels !== void 0 && a.channels.length === 0) delete a.channels;
       if (Object.keys(a).length === 0) delete card.assertions;
     }
-    addContains(ordinal, text) {
+    addContains(ordinal, text2) {
       this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
-      (a.contains ??= []).push(text);
+      (a.contains ??= []).push(text2);
       return true;
     }
-    addNotContains(ordinal, text) {
+    addNotContains(ordinal, text2) {
       this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
-      (a.notContains ??= []).push(text);
+      (a.notContains ??= []).push(text2);
       return true;
     }
     /** Set (or clear) the exact literal block — the turn's whole output as
@@ -1826,8 +2043,8 @@
     const base = file.split("/").at(-1) ?? file;
     return base.replace(/\.transcript$/, "");
   }
-  function foldRunLine(state, text) {
-    const trimmed = text.trim();
+  function foldRunLine(state, text2) {
+    const trimmed = text2.trim();
     if (!trimmed) return;
     let parsed;
     try {
@@ -1990,6 +2207,17 @@
   function assertionLinesFor(ordinal) {
     return cardAssertionLines({ model }, ordinal);
   }
+  function characterExplainFor(ordinal) {
+    const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
+    if (!source) return [];
+    const rows = characterRowsOf(capturesOf(source));
+    if (rows.length === 0) return [];
+    const names = /* @__PURE__ */ new Map();
+    for (const entity of source.world?.entities ?? []) {
+      if (entity.id !== void 0) names.set(entity.id, entity.name);
+    }
+    return explainGroups(rows, (id) => names.get(id));
+  }
   function removeAssertion(del) {
     switch (del.kind) {
       case "contains":
@@ -2035,13 +2263,13 @@
     onDeleteBranch(lineId) {
       void performDeleteBranch(lineId);
     },
-    onAddContains(ordinal, text) {
+    onAddContains(ordinal, text2) {
       pushUndo();
-      if (model.addContains(ordinal, text)) update();
+      if (model.addContains(ordinal, text2)) update();
     },
-    onNotContains(ordinal, text) {
+    onNotContains(ordinal, text2) {
       pushUndo();
-      if (model.addNotContains(ordinal, text)) update();
+      if (model.addNotContains(ordinal, text2)) update();
     },
     onToggleExact(ordinal) {
       pushUndo();
@@ -2105,6 +2333,11 @@
     },
     runColumn: () => runState,
     assertionLines: assertionLinesFor,
+    characterExplain: characterExplainFor,
+    onAssertCharacter(ordinal, fragments) {
+      pushUndo();
+      if (model.addChannel(ordinal, { id: "character", contains: [...fragments] })) update();
+    },
     onRemoveAssertion(del) {
       pushUndo();
       removeAssertion(del);
@@ -2122,8 +2355,8 @@
     }
   });
   var runState = createRunState();
-  function deliverRunLine(text) {
-    foldRunLine(runState, text);
+  function deliverRunLine(text2) {
+    foldRunLine(runState, text2);
     cards.render();
   }
   function deliverRunExit(ok, note) {
@@ -2138,10 +2371,10 @@
   }
   function update() {
     if (!driverBusy) {
-      const text = model.serialize();
-      if (text !== lastDocumentText) {
-        lastDocumentText = text;
-        if (!documentWriteLocked) postToBridge({ document: { text } });
+      const text2 = model.serialize();
+      if (text2 !== lastDocumentText) {
+        lastDocumentText = text2;
+        if (!documentWriteLocked) postToBridge({ document: { text: text2 } });
         if (!runState.inFlight) resetRun(runState);
       }
       cards.render();

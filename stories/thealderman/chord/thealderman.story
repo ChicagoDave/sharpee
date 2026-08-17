@@ -3,6 +3,7 @@ story
   authors:
     David Cornelson
   id: thealderman
+  ifid: 0A04F181-78BF-477D-852D-4DE0BDF8C034
   story-version: 0.2.0
   description: Six suspects, one hotel, one dead alderman.
 

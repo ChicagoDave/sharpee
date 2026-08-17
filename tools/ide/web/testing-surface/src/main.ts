@@ -35,6 +35,7 @@ import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
+import { characterRowsOf, explainGroups, type ExplainGroup } from './character';
 import {
   cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
   type DeleteRef, type TurnSource,
@@ -46,6 +47,9 @@ import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './ru
 /** One world-digest entity as the feed carries it. */
 interface DigestEntity {
   kind: 'npc' | 'item';
+  /** The entity's world id (present since the author-channel panel; older
+   *  builds' records may lack it — name resolution degrades to the id). */
+  id?: string;
   name: string;
   token: string;
   location: { name: string; token: string };
@@ -171,6 +175,27 @@ function turnSource(ordinal: number): TurnSource | undefined {
 /** The card's assertion lines — the document's claims, verbatim. */
 function assertionLinesFor(ordinal: number) {
   return cardAssertionLines({ model }, ordinal);
+}
+
+/**
+ * The turn's "explain this NPC's turn" groups (ADR-318 D11): the `character`
+ * capture's rows grouped per NPC, ids resolved to names through the turn's
+ * own world digest. The opening (ordinal 0) reads the boot record, exactly
+ * as the channel picker does. Empty when the turn had no character-model
+ * activity — the channel is sparse by design.
+ */
+function characterExplainFor(ordinal: number): ExplainGroup[] {
+  const source = ordinal === 0 && bootRecordOrdinal !== undefined
+    ? records.get(bootRecordOrdinal)
+    : records.get(ordinal);
+  if (!source) return [];
+  const rows = characterRowsOf(capturesOf(source));
+  if (rows.length === 0) return [];
+  const names = new Map<string, string>();
+  for (const entity of source.world?.entities ?? []) {
+    if (entity.id !== undefined) names.set(entity.id, entity.name);
+  }
+  return explainGroups(rows, (id) => names.get(id));
 }
 
 /** Maps a rendered line's DeleteRef onto the model mutator it names —
@@ -306,6 +331,16 @@ const cards = new CardsView(model, {
   },
   runColumn: () => runState,
   assertionLines: assertionLinesFor,
+  characterExplain: characterExplainFor,
+  onAssertCharacter(ordinal, fragments) {
+    // The claim's contains fragments are substrings of the row's JSON as
+    // the runner's channel `contains` flattens it — referencing `character`
+    // also puts it in the run's capture set (D15), flipping the author-
+    // channels gate in the CLI exactly as the testing page does at record
+    // time. addChannel lifts a policy [SKIP]: asserting IS the meaning.
+    pushUndo();
+    if (model.addChannel(ordinal, { id: 'character', contains: [...fragments] })) update();
+  },
   onRemoveAssertion(del) {
     pushUndo();
     removeAssertion(del);

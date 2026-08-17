@@ -5,7 +5,7 @@
  * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
  * bookkeeping arrives with ADR-318's arbiter.) Ordering between
  * sub-steps is a contract, which is why this is one registration rather
- * than three (docs/work/adr-310/contracts.md §2).
+ * than three (docs/work/archive/adr-310/contracts.md §2).
  *
  * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
  * below holds ONLY authored configuration, re-registered at load, and has

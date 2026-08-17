@@ -9,7 +9,7 @@
  * (descriptive) and ADR-318 D3-D9 (normative) constructs against at
  * compile time. Data only — chord stays
  * platform-FREE. These word lists are frozen author-facing compatibility
- * surface (freeze review: David, 2026-08-15 — docs/work/adr-310/
+ * surface (freeze review: David, 2026-08-15 — docs/work/archive/adr-310/
  * contracts.md §6): removing a word breaks stories, additions stay possible.
  *
  * Public interface: CHARACTER_MANIFEST, CharacterManifest.

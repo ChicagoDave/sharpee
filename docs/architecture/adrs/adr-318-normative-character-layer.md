@@ -7,14 +7,14 @@ deferral) and the post-interview `adr-review` returned one finding, accepted
 as implementation-plan work rather than ADR text: TypeScript-level contracts
 (arbiter API, trait field shapes, selector-pin hook, tick-phase signature)
 are first deliverables of the implementation plan. Written from the
-five-experiment series at `docs/work/adr-310/experiments/`, this ADR's
+five-experiment series at `docs/work/archive/adr-310/experiments/`, this ADR's
 evidence base, cited per decision. Acceptance authorizes no implementation
 by itself — the work is planned separately.)
 **Date**: 2026-08-15 (session 00aaa0)
 **Builds on**: ADR-310 (character model in Chord — this is its companion),
 ADR-141 (character model), ADR-145 (goals), ADR-146 (influence), ADR-239
 (topic tables), ADR-163 (channels), ADR-293/294 (testing intelligence)
-**Evidence**: `docs/work/adr-310/experiments/method.md` and exp-01 through
+**Evidence**: `docs/work/archive/adr-310/experiments/method.md` and exp-01 through
 exp-05 — each decision below names the experiment and finding it rests on.
 
 ---
@@ -494,7 +494,7 @@ parentheses.
 ## Session
 
 Session 00aaa0 (2026-08-15). Produced from the frontier-experiment series
-(`docs/work/adr-310/experiments/`, method + exp-01 through exp-05) run this
+(`docs/work/archive/adr-310/experiments/`, method + exp-01 through exp-05) run this
 session at David's direction, after the session's re-framing of the
 character model as layers of dialogue and the ruling that the Versu-depth /
 authoring-ease balance is the design brief. Companion to ADR-310, which
@@ -502,12 +502,12 @@ carries the descriptive layers this ADR's normative layer arbitrates over.
 
 Amended session 55a70a (2026-08-16), folding in the D11 seam rulings landed
 the previous day (session f123de, David's per-seam go-aheads; evidence:
-`docs/work/adr-310/wiring-audit.md` D11/D12): the D8 discharge contract
+`docs/work/archive/adr-310/wiring-audit.md` D11/D12): the D8 discharge contract
 (gate-is-marker, self-only, both outlets, curve-only drain); the D9 pin
 split into band-aware gating (seam 4), maintenance accounting, and
 per-audience release (seam 3 — truth-told live, caught-lying dormant,
 authored break as a trait method, discharge never unpins); and the AC3
 parenthetical corrected from ADR-293 forcing to the deterministic deposit
-ladder (the G4 finding in `docs/work/adr-310/gap-closure-design.md`). The
+ladder (the G4 finding in `docs/work/archive/adr-310/gap-closure-design.md`). The
 companion activation contract — edge-triggered goals — landed as an ADR-145
 amendment the same session.
