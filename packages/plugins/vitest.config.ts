@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { workspaceAliases } from '../../vitest.shared'
 
 export default defineConfig({
   test: {
@@ -8,13 +8,5 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
   },
-  resolve: {
-    // Resolve workspace packages to SOURCE (the local build target skips the
-    // ESM output these packages' `exports.import` entries point at).
-    alias: {
-      '@sharpee/core': path.resolve(__dirname, '../core/src/index.ts'),
-      '@sharpee/if-domain': path.resolve(__dirname, '../if-domain/src/index.ts'),
-      '@sharpee/world-model': path.resolve(__dirname, '../world-model/src/index.ts'),
-    }
-  }
+  resolve: { alias: workspaceAliases() },
 })

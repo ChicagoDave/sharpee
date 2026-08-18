@@ -45,13 +45,20 @@ export interface BuildOptions {
   noVersion?: boolean;
   /** Skip genai-api generation. */
   noGenai?: boolean;
-  /** Run the ESM build pass (needed for browser/story-bundle targets; false for the CLI bundle). */
-  esm?: boolean;
+  /**
+   * Skip the ESM build pass (dist-esm/). Off by default: 30 packages declare an
+   * `import`/`module` entry pointing at dist-esm/, and `tsf validate --publish`
+   * fails any package whose declared entry does not exist. 25 of them happen to
+   * emit it from their own `tsc -p tsconfig.esm.json` build script; the rest —
+   * @sharpee/character among them — rely on tsf's config-driven `esm` target,
+   * which nothing else in the pipeline runs.
+   */
+  noEsm?: boolean;
   /** Run the bundle step at the end (default true — the full build.sh pipeline). */
   bundle?: boolean;
-  /** Also build the browser client (dist/web/<story>/). Implies --esm; requires a story. */
+  /** Also build the browser client (dist/web/<story>/). Requires a story. */
   browser?: boolean;
-  /** Also build the story-agnostic playground bundle (ADR-191). Implies --esm; no story. */
+  /** Also build the story-agnostic playground bundle (ADR-191). No story. */
   playground?: boolean;
   quiet?: boolean;
 }
@@ -151,28 +158,31 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
     if (!existsSync(distIndex)) {
       throw new Error(`build of ${pkg} produced no dist/index.js (silent no-op?) at ${distIndex}`);
     }
+  }
+
+  if (!opts.noEsm) {
+    // One whole-tree call, not a per-package loop gated on tsconfig.esm.json.
+    // That gate was the defect: tsf drives the esm target from ts-forge.config.json,
+    // so a package needs no tsconfig.esm.json of its own — and 4 (character,
+    // devkit, helpers, queries) have none. @sharpee/character still declares
+    // "module" + exports["."].import pointing at dist-esm/, so skipping it left a
+    // package promising entry points nothing built: `tsf validate --publish` fails
+    // it, which is what broke the 5.1.0 npm publish dry run (run 32123519207).
+    // tsf drives it so esmExtensions post-processing runs (build.sh comment 555-557).
+    run(tsfBin(root), ['build', '--target', 'esm']);
+
     // Dual-package hygiene: the package root is CJS ("main": dist), so dist-esm
     // needs its own {"type":"module"} marker or Node reparses every file in it,
     // spraying MODULE_TYPELESS_PACKAGE_JSON warnings onto stderr (which the
     // AC-13 CLI real-path test rightly treats as failure noise).
-    const esmDir = join(root, 'packages', dir, 'dist-esm');
-    if (existsSync(esmDir)) {
+    // Must run AFTER the esm pass, not inside the CJS loop above: on a cold
+    // checkout dist-esm/ does not exist while that loop runs, so stubbing there
+    // silently skipped every freshly-created dist-esm.
+    for (const [, dir] of PLATFORM_PACKAGES) {
+      const esmDir = join(root, 'packages', dir, 'dist-esm');
+      if (!existsSync(esmDir)) continue;
       const esmStub = join(esmDir, 'package.json');
       if (!existsSync(esmStub)) writeFileSync(esmStub, '{"type":"module"}\n');
-    }
-  }
-
-  if (opts.esm) {
-    let esmSkip = Boolean(opts.skipTo);
-    for (const [pkg, dir] of PLATFORM_PACKAGES) {
-      if (esmSkip) {
-        if (dir === opts.skipTo) esmSkip = false;
-        else continue;
-      }
-      if (existsSync(join(root, 'packages', dir, 'tsconfig.esm.json'))) {
-        // tsf drives the esm target so esmExtensions post-processing runs (build.sh comment 555-557).
-        run(tsfBin(root), ['build', '--condition', 'esm', '--filter', pkg]);
-      }
     }
   }
 }
@@ -209,7 +219,7 @@ export function buildStory(root: string, story: string, opts: BuildOptions): voi
     cwd: root,
     stdio: opts.quiet ? 'ignore' : 'inherit',
   });
-  if (opts.esm && existsSync(join(resolved.dir, 'tsconfig.esm.json'))) {
+  if (!opts.noEsm && existsSync(join(resolved.dir, 'tsconfig.esm.json'))) {
     execFileSync(tsfBin(root), ['build', '--condition', 'esm', '--filter', resolved.pkg], {
       cwd: root,
       stdio: opts.quiet ? 'ignore' : 'inherit',
@@ -222,9 +232,9 @@ export function runBuild(opts: BuildOptions = {}): void {
   const root = opts.root ?? findRepoRoot();
   const log = (m: string) => !opts.quiet && console.log(m);
 
-  // Client targets (browser/playground) need the ESM build pass (build.sh runs it when a client is requested).
-  const effective: BuildOptions =
-    opts.browser || opts.playground ? { ...opts, esm: true } : opts;
+  // The ESM pass is on by default (see BuildOptions.noEsm), so client targets no
+  // longer have to ask for it — they used to be the only thing that turned it on.
+  const effective: BuildOptions = opts;
   if (effective.browser && !effective.story) throw new Error('--browser requires a story');
 
   log('=== devkit build ===');
@@ -257,7 +267,7 @@ function parseBuildArgs(args: string[]): BuildOptions {
     else if (a === '--no-version') opts.noVersion = true;
     else if (a === '--no-genai') opts.noGenai = true;
     else if (a === '--no-bundle') opts.bundle = false;
-    else if (a === '--esm') opts.esm = true;
+    else if (a === '--no-esm') opts.noEsm = true;
     else if (a === '--browser') opts.browser = true;
     else if (a === '--playground') opts.playground = true;
     else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
