@@ -84,10 +84,21 @@ enum StoryHeaderPublishSource {
         // never lands inside a nested `use`/`on` block.
         var lastFieldIndex: Int?
         var indent = "  "
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { break }
             lastFieldIndex = index
             indent = field.indent
+            index += 1
+            // Step over a list-valued field's items (`authors:` and its
+            // authors), or the scan stops mid-header and the insert lands
+            // inside the list, emptying it.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                lastFieldIndex = index
+                index += 1
+            }
         }
         let insertAfter = lastFieldIndex ?? storyIndex
         // A header whose last line lacks a newline would splice the new field
@@ -121,9 +132,18 @@ enum StoryHeaderPublishSource {
     private static func locate(in source: String) -> Found? {
         let lines = StoryHeaderLines.split(source)
         guard let storyIndex = lines.firstIndex(where: { StoryHeaderLines.isStoryKeyword($0) }) else { return nil }
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { return nil }
             if field.key == key { return Found(index: index, field: field) }
+            index += 1
+            // Step over a list-valued field's items, or the search ends on the
+            // first one and never sees a field that follows the list.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                index += 1
+            }
         }
         return nil
     }

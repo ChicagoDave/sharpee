@@ -1,7 +1,8 @@
 # Session Plan: Implement ADR-320 (conversation and complex dialogue)
 
 **Created**: 2026-08-16
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-08-18, session ade288 — all phases 1–11 incl. 10.1–10.7
+DONE with evidence; acceptance audit in `acceptance-audit.md`)
 **Overall scope**: Land ADR-320 — the conversational surface that reads the ADR-310/318
 character interior instead of merely gating it. Two levels (scene, exchange point);
 manner-shaped delivery; time-as-words; disposition-driven initiative; world-bounded
@@ -613,7 +614,10 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
   reworked onto threads before Acceptance 13 can be called discharged. This exit state
   is held open until Phase 10.7 (below) reworks the story onto threads and its own exit
   state closes; Phase 10 completes only then.
-- **Status**: CURRENT (since 2026-08-17, session 13a3e0)
+- **Status**: DONE (2026-08-17, session b71e04) — held-open exit closed by Phase 10.7
+  (story reworked onto threads; Acceptance 13 discharged). Evidence in the Phase
+  10.5–10.7 entries below; ides 204 unit steps + 34-step walkthrough, all baselines
+  green, all run 2026-08-17.
 
 ### Phase 10.1: Chord grammar — `define conversation` (threads)
 - **Tier**: Large
@@ -949,7 +953,20 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
 - **Exit state**: ADR-320's Acceptance section (1–14) fully discharged, evidence inline
   per criterion; whole-platform regression green; ADR-142 supersession confirmed
   accurate.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-18, session ade288) — full AC 1–14 audit written to
+  `acceptance-audit.md`, every row's evidence re-run this session: ides 212 unit
+  steps in 18 transcripts (incl. new `thread-wire` — thread lifecycle +
+  continuability asserted on the wire in the built story) + wt-01 34; thealderman
+  75; Dungeo chain 952; character-acceptance b1 15 / b3 63 / p8-p9 19 / p10 21;
+  Fernhill 9 cards / 18 assertions; unit suites chord 909, world-model 1492,
+  character 563, story-loader 561, stdlib 1633, engine 633, parser-en-us 324,
+  bootstrap 43, testing-surface 89, test:scripts 11; turbo test:ci 65/65;
+  repo-wide tsc clean. Cost leg measured against a cold-start branch-point
+  (`3d68bb96`) worktree build: cloak.story and fernhill.story IR diffs are exactly
+  the `languageVersion` line (3.0.0→3.3.0), zero other lines. ADR-142 supersession
+  confirmed; replacement range widened D4–D13 → D4–D14 (NPC-continuation sketch →
+  D14 threads). All run 2026-08-18. ADR-320's acceptance section owes nothing
+  further; the plan is complete.
 
 ## Notes for future phases
 

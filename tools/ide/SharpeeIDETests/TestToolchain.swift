@@ -144,7 +144,8 @@ enum TestToolchain {
     static let cleanStory = """
     story
       title: Probe
-      authors: Tests
+      authors:
+        Tests
       id: probe
       story-version: 1.0.0
       ifid: 5A2E4B77-1C3D-4E5F-8A9B-0C1D2E3F4A5B
@@ -171,7 +172,8 @@ enum TestToolchain {
     static let hatchStory = """
     story
       title: HatchProbe
-      authors: Tests
+      authors:
+        Tests
       id: hatch-probe
       story-version: 1.0.0
       ifid: 7B3F5C88-2D4E-4F60-9BAC-1D2E3F405B6C

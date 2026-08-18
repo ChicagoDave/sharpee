@@ -25,6 +25,17 @@ final class SyntaxHighlighter {
         "state", "states", "counter", "counters", "channel", "channels",
         "score", "scores", "rank", "ranks", "sequence", "machine",
         "topics", "pronouns", "trait", "traits",
+        // The ADR-320 conversation surface (Chord 3.1.0–3.3.0): the block
+        // nouns that follow `define`, plus the two row openers.
+        //
+        // `beat` and `conclusion` open rows rather than blocks, and `beat` in
+        // particular collides with ordinary prose ("a half-beat too quick").
+        // Colored anyway, on the same tradeoff already accepted for `state`
+        // and `score`: token-level highlighting cannot tell a row opener from
+        // the same word mid-sentence, and the structural read is worth more
+        // than the occasional colored prose word.
+        "manner", "greetings", "exchange", "initiative", "conversation",
+        "beat", "conclusion",
     ]
 
     /// Property keys — a `name:` field rather than a structural keyword.

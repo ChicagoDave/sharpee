@@ -33,7 +33,21 @@ enum ChordVersionCheck {
     /// `ChordLexerGoldenTests` green against it satisfies the honesty condition
     /// above; the frozen platform constant is `CHORD_LANGUAGE_VERSION = '3.0.0'`
     /// (packages/chord/src/version.ts).
-    static let supportedLanguageVersion = "3.0.0"
+    ///
+    /// 3.3.0 (ADR-320, 2026-08-18): the conversation surface, which landed as
+    /// three additive minors — 3.1.0 manner/greetings/time words, 3.2.0
+    /// exchanges/initiative, 3.3.0 conversation threads. Here the honesty
+    /// condition above is met by a NEW corpus file rather than a migrated one:
+    /// `conversation-surface.story` exercises all three slices, its constructs
+    /// lifted from the shipping syntax in `stories/ides-of-march` and
+    /// `stories/character-acceptance` and gate-clean under `sharpee compose
+    /// --check` at 3.3.0. The golden was regenerated over it with zero
+    /// deletions to the three existing streams, and `ChordLexerGoldenTests` is
+    /// green with `ChordLexer.swift` untouched — the token layer absorbed the
+    /// entire conversation grammar, exactly as it did at 2.2.0. Only
+    /// `SyntaxHighlighter`'s display-only keyword set moved, gaining the five
+    /// block nouns and the two row openers.
+    static let supportedLanguageVersion = "3.3.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

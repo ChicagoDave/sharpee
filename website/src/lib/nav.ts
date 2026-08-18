@@ -53,11 +53,11 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Chord',
-    // The Chord LANGUAGE version (`CHORD_LANGUAGE_VERSION`), currently frozen
-    // at 3.0.0. Not a package version, and not tied to one — each section shows
+    // The Chord LANGUAGE version (`CHORD_LANGUAGE_VERSION`), currently 3.3.0.
+    // Not a package version, and not tied to one — each section shows
     // the version of the thing it documents, which is why this, Sharpee's, and
     // Chord Writer's move independently.
-    version: '3.0.0',
+    version: '3.3.0',
     groups: [
       {
         title: 'Getting Started',
@@ -329,7 +329,7 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Sharpee',
-    version: '5.0.1',
+    version: '5.1.0',
     groups: [
       { title: 'Platform', items: [{ title: 'What is Sharpee?', href: '/sharpee' }, { title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },

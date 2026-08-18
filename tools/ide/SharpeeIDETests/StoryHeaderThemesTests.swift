@@ -69,6 +69,46 @@ final class StoryHeaderThemesTests: XCTestCase {
         """)
     }
 
+    /// A list-valued field (`authors:` with one indented name per line) must
+    /// survive the insert whole. The scan reads a list item as a non-field, so
+    /// before the list-aware step-over it stopped on the first author and the
+    /// insert landed between `authors:` and its authors — leaving an empty list
+    /// the compiler rejects (`parse.header-list-empty`), which corrupted the
+    /// author's story on a theme toggle.
+    func testInsertingLandsAfterAListValuedFieldNotInsideIt() {
+        let source = """
+        story
+          title: Probe
+          authors:
+            Ada
+            Grace
+          id: probe
+
+        create the Lab
+          a room
+        """
+        XCTAssertEqual(applied(["paper", "system-6"], to: source), """
+        story
+          title: Probe
+          authors:
+            Ada
+            Grace
+          id: probe
+          themes: paper, system-6
+
+        create the Lab
+          a room
+        """)
+    }
+
+    /// The same list, last in the header — the insert goes after the final
+    /// item, not between the key and its first value.
+    func testInsertingAfterATrailingListKeepsTheListIntact() {
+        let source = "story\n  title: Probe\n  authors:\n    Ada\n"
+        XCTAssertEqual(applied(["paper"], to: source),
+                       "story\n  title: Probe\n  authors:\n    Ada\n  themes: paper\n")
+    }
+
     func testInsertingIntoAHeaderWithoutTrailingNewlineSuppliesTheBreak() {
         let bare = "story\n  id: probe"
         XCTAssertEqual(applied(["paper"], to: bare), "story\n  id: probe\n  themes: paper\n")

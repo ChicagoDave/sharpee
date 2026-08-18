@@ -1111,7 +1111,13 @@
     },
     "character.scene.intrusion_blocked": (d, who) => `${who(d.intruderId)} intrudes \u2014 the scene holds`,
     "character.scene.exit_refused": (d, who) => `${who(d.leaverId)} cannot leave \u2014 no traversable exit`,
-    "character.exchange.opened": (d) => `exchange opened \u2014 ${text2(d.exchangeId)} (${text2(d.word)})`
+    "character.exchange.opened": (d) => `exchange opened \u2014 ${text2(d.exchangeId)} (${text2(d.word)})`,
+    // Conversation-thread lifecycle (ADR-320 D14, Phase 10.6).
+    "character.scene.thread-opened": (d, who) => `thread opened \u2014 ${text2(d.threadKey)} (${who(d.ownerId)})`,
+    "character.scene.thread-beat": (d, who) => `${who(d.ownerId)} carries ${text2(d.threadKey)} \u2014 beat ${text2(d.beatIndex)}`,
+    "character.scene.thread-parked": (d) => `thread parked \u2014 ${text2(d.threadKey)} at beat ${text2(d.beatCursor)}`,
+    "character.scene.thread-resumed": (d) => `thread resumed \u2014 ${text2(d.threadKey)} at beat ${text2(d.beatCursor)}`,
+    "character.scene.thread-concluded": (d, who) => `thread concluded \u2014 ${text2(d.threadKey)} (${who(d.ownerId)})`
   };
   var FRAGMENT_FIELDS2 = {
     "character.scene.scene-closed": ["boundary"],
@@ -1121,7 +1127,12 @@
     "character.scene.rendered-silence": ["speakerId"],
     "character.scene.intrusion_blocked": ["intruderId"],
     "character.scene.exit_refused": ["leaverId"],
-    "character.exchange.opened": ["exchangeId", "word"]
+    "character.exchange.opened": ["exchangeId", "word"],
+    "character.scene.thread-opened": ["threadKey"],
+    "character.scene.thread-beat": ["threadKey", "beatIndex"],
+    "character.scene.thread-parked": ["threadKey", "beatCursor"],
+    "character.scene.thread-resumed": ["threadKey", "beatCursor"],
+    "character.scene.thread-concluded": ["threadKey"]
   };
   function frag2(key, value) {
     return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? [`${JSON.stringify(key)}:${JSON.stringify(value)}`] : [];
@@ -1208,6 +1219,34 @@
           });
         }
         groups.push({ npcLabel: `responses \u2014 ${advertised.exchangeId}`, lines });
+      }
+    }
+    return groups;
+  }
+  function threadAffordanceGroupsOf(channelValues, nameOf) {
+    const who = (value) => {
+      const id = text2(value);
+      return nameOf(id) ?? "the player";
+    };
+    const groups = [];
+    for (const value of channelValues?.["thread-affordances"] ?? []) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        if (entry === null || typeof entry !== "object") continue;
+        const advertised = entry;
+        if (typeof advertised.threadKey !== "string") continue;
+        const owner = who(advertised.ownerId);
+        const cursor = text2(advertised.beatCursor);
+        const line = {
+          text: advertised.continuable === true ? `${owner} has more to say \u2014 beat ${cursor} served, next ready` : `${owner} holds \u2014 beat ${cursor} served, next beat waits on its gate`,
+          tone: "normal",
+          raw: rawOf2(advertised),
+          fragments: [
+            ...frag2("threadKey", advertised.threadKey),
+            ...frag2("continuable", advertised.continuable)
+          ],
+          claimChannel: "thread-affordances"
+        };
+        groups.push({ npcLabel: `thread \u2014 ${advertised.threadKey}`, lines: [line] });
       }
     }
     return groups;
@@ -2361,7 +2400,8 @@
     return [
       ...explainGroups(characterRowsOf(captures), nameOf),
       ...sceneExplainGroups(sceneRowsOf(captures), nameOf),
-      ...affordanceGroupsOf(captures, nameOf)
+      ...affordanceGroupsOf(captures, nameOf),
+      ...threadAffordanceGroupsOf(captures, nameOf)
     ];
   }
   function removeAssertion(del) {

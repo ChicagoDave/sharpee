@@ -26,7 +26,8 @@ final class TestRunnerTests: XCTestCase {
     private static let story = """
     story
       title: Mini
-      authors: T
+      authors:
+        T
       id: mini
       story-version: 0.0.1
       ifid: CF7091CC-6182-43A4-8FE0-516273849FA0

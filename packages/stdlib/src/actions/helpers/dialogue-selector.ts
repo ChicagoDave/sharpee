@@ -1,7 +1,7 @@
 /**
  * Shared helpers for the conversation actions' dialogue dispatch
  * (ADR-310 D15; ADR-320 D4/D8/D16; adr-320 contracts.md §4 and the
- * Phase 6 design, docs/work/adr-320-conversation/phase6-dispatch-design.md).
+ * Phase 6 design, docs/work/archive/adr-320-conversation/phase6-dispatch-design.md).
  *
  * ASK/TELL/SAY/TALK TO consult the registered selection surface when the
  * addressed NPC carries a `CharacterModelTrait`; an unhandled or absent

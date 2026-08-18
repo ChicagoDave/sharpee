@@ -56,4 +56,20 @@ enum StoryHeaderLines {
         let value = rest[rest.index(after: colon)...].trimmingCharacters(in: .whitespacesAndNewlines)
         return Field(indent: indent, key: key, value: value)
     }
+
+    /// True when `line` is an item of a list-valued field opened at `indent` —
+    /// a non-blank line indented deeper that carries no `key:` of its own.
+    ///
+    /// A field with an empty value (`authors:`) opens a list whose items sit on
+    /// their own deeper-indented lines. Those items have no colon, so
+    /// `field(in:)` reads them as non-fields and a scan that stops at the first
+    /// nil stops in the MIDDLE of the header. Every header walk must step over
+    /// them with this, or it will both miss fields that follow a list and, if
+    /// it writes, split the list from its items.
+    static func isListItem(_ line: String, under indent: String) -> Bool {
+        guard field(in: line) == nil else { return false }
+        let itemIndent = line.prefix { $0 == " " || $0 == "\t" }
+        return !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && itemIndent.count > indent.count
+    }
 }
