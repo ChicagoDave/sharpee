@@ -800,7 +800,26 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
 - **Exit state**: ADR-320 Acceptance 14's "beats advance on both paths" leg passes in
   full — a player continuation prompt advances a real thread beat via the built bundle,
   matching the owner's-own-floor-turn leg Phase 10.4 already proved.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session b71e04) — "tell me more"/"continue"/"go on" in
+  the Chord standard grammar (`define action talking` literals, regenerated via
+  `./repokit grammar`); "and?" platform-side beside `?` (whitespace-only tokenization
+  keeps it one token). Routing: a targetless talking firing resolves its partner via
+  `resolveImplicitThreadPartner` (dialogue-selector helper over the pure `threadClaims`
+  probe — claims exactly when the pair's active thread has a ready beat), then rides
+  Phase 10.4's talk-to dispatch unchanged; no claimant falls to the existing
+  `no_target` path, and lang-en-us is untouched. Evidence (all run 2026-08-17):
+  13 parser tests (four forms → `if.action.talking` with no direct object +
+  no-widening pins); 5 real-path dispatch tests (targetless advance on real trait
+  cursor, conclusion past last beat, inert no-thread/held-gate/open-exchange, and a
+  second thread-bearing NPC co-located — the second pair cannot activate while the
+  player is seated, so the resolver's claimant is unique; mutation-verification's
+  one observation, closed by pinning);
+  bundle proof `stories/character-acceptance` p10-threads fixture, 9-step transcript
+  passing via `dist/cli/sharpee.js` at seed 42 (all four forms advance, conclusion
+  gates a topic row, inert before activation and after conclusion). Suites:
+  parser-en-us 324, stdlib 1633, story-loader 554 passing; repo-wide tsc clean;
+  baselines byte-clean — ides 132 unit + 34 walkthrough, thealderman 75, Dungeo
+  chain, character-acceptance p8/p9. Mutation verification clean (2026-08-17).
 
 ### Phase 10.6: `packages/engine` — mid-beat save/restore and wire consumption
 - **Tier**: Medium
@@ -826,7 +845,32 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
   save/restore path at the pinned seed (scene close, day boundary, and save/restore all
   proven — asserted on deep-equal restored trait state and byte-identical continuation);
   Acceptance 11's channel-isolation discipline holds for the new thread wire kinds.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session b71e04) — the five `thread-*` wire kinds
+  already rode the `scene` channel's prefix projection; the new piece is the
+  `thread-affordances` channel (stdlib, replace/always, gatedBy authorChannels — pure
+  projection of the Phase 10.4 continuability snapshot, so a mid-beat restore
+  re-advertises) plus testing-surface consumption (five thread describers with
+  click-to-assert threadKey fragments; `threadAffordanceGroupsOf` "more to say" /
+  "holds on its gate" lines claiming on `thread-affordances`). One platform fix the
+  acceptance transcript surfaced: a dispatch-path resume now stamps the pair's thread
+  cycle key, so the same-cycle tick stands down — resume and next beat no longer
+  bunch into one turn (aligning dispatch with `readyThreadMove`'s one-move-per-turn).
+  Integration Reality Statement produced (rule 13a): SaveRestoreService, the bundle's
+  `$save`/`$restore`, trait/scene-store serialization, manifest, and tick all OWNED
+  with real-path tests; the only stubs are testing-surface capture fixtures backed by
+  real-path channel tests. Evidence (all run 2026-08-17): story-loader +6 tests
+  (channel advertise/clear/re-advertise + held-gate false + conclusion clears; real
+  SaveRestoreService round trips — ACTIVE mid-beat and PARKED, deep-equal trait
+  state, byte-identical continuation, `on resuming:` identical to a live gap; resume
+  cycle-stamp), suite 560 passing; engine AC11 exclusion extended
+  (`thread-affordances` absent from player profile, present via STANDARD_CHANNEL_IDS
+  sweep), 633 passing; stdlib 1633; testing-surface 89; repo-wide tsc clean. Bundle
+  proof at seed 42: p10-save + p10-saved-restore ($save/$restore through the platform
+  engine, restored run serves the golden lines through conclusion) and
+  p10-park-across-day (passive park, Archive day turn quiet-day→next-day, resume with
+  `on resuming:`, cursor held) — 21 steps across the 4 p10 transcripts passing.
+  Baselines green: ides 132 unit + 34 walkthrough, thealderman, Dungeo chain,
+  character-acceptance p8/p9 (incl. the p8 save/restore pair).
 
 ### Phase 10.7: Theatre Company demonstration story — rework onto threads
 - **Tier**: Large
@@ -855,7 +899,33 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
   the pinned seed against the reworked story; Acceptance 13 (the demonstration story
   plays end-to-end, exercising every construct including D14) is now fully discharged;
   Phase 10's held-open exit closes — Phase 10 is complete.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session b71e04) — three threads authored: Kemp's
+  defection (`the-defection`, blocking, NPC-opened via `opens when` once the grievance
+  is aired and the blow-up has cooled — the beat-1 gate carries the exact complement
+  of the table's too-raw refusal window via negated recency; `on refusing:` authored;
+  `then asks the-offer` on beat 3; gated conclusion reads Kemp's sworn state);
+  Shakespeare's suspicion (`the-suspicion`, passive — beat 1 carries the old book
+  row's body including the plain question, parks with `on parting` rendered per D14's
+  table, resumes across scene close/night/room); Burbage's drilling (`the-drilling`,
+  blocking with NO `on refusing:` — repeat-second, day-3 gated, NPC-opened). Topic
+  tables gained humorous/irrelevant rows (ale, bears, weather ×2) per David's
+  direction; `is concluded` gates post-settlement table rows on both principals.
+  Transition-turn note: D14's "on parting renders if authored" is the live behavior
+  (the 10.4 wire-only framing was the deviation). Two platform fixes surfaced by the
+  rework (story-loader): the tick-path surplus-phrase leak (multi-alternative bodies
+  rendered the losing phrase; surplus now re-typed `character.author.phrase_surplus`
+  with no top-level messageId — ADR-097 renders by that field) with a unit test, and
+  the earlier resume cycle-stamp carried forward. Evidence (all run 2026-08-17):
+  ides unit suite 204 steps across 17 transcripts passing at seed 42 — the full
+  transition matrix (passive park with rendered parting/resume same-sitting and
+  across the day, blocking refusal authored-first and repeat-second, all four
+  continuation-prompt forms in-story, `is concluded` false-before/true-after on
+  both threads, mid-thread $save/$restore golden pair, cornered split into
+  legal-exit + locked-door halves); wt-01 walkthrough reworked (Kemp self-opens,
+  prompts advance, sworn + finished-WELL conclusion) 34 steps passing; story-loader
+  561, stdlib 1633, engine 633, character 563 passing; repo-wide tsc clean;
+  baselines green (thealderman, Dungeo chain, character-acceptance p8/p9/p10).
+  AC13 discharged; Phase 10's held-open exit closes — Phase 10 is complete.
 
 ### Phase 11: Acceptance closure — full audit, regression, and ADR-142 supersession
 - **Tier**: Large

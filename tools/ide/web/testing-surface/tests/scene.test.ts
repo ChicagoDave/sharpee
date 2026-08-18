@@ -10,7 +10,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf, type SceneRow } from '../src/scene';
+import {
+  affordanceGroupsOf,
+  sceneExplainGroups,
+  sceneRowsOf,
+  threadAffordanceGroupsOf,
+  type SceneRow,
+} from '../src/scene';
 
 const row = (kind: string, data: Record<string, unknown>): SceneRow => ({ turn: 4, kind, data });
 
@@ -139,5 +145,73 @@ describe('affordanceGroupsOf', () => {
     expect(affordanceGroupsOf(undefined, names)).toEqual([]);
     expect(affordanceGroupsOf({ 'exchange-affordances': ['noise', [null, { exchangeId: 7 }]] }, names))
       .toEqual([]);
+  });
+});
+
+describe('thread lifecycle rows (ADR-320 D14, Phase 10.6)', () => {
+  it('renders the five thread kinds with digest names and pins threadKey', () => {
+    const groups = sceneExplainGroups(
+      [
+        row('character.scene.thread-opened', { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection' }),
+        row('character.scene.thread-beat', { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection', beatIndex: 2 }),
+        row('character.scene.thread-parked', { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection', beatCursor: 2 }),
+        row('character.scene.thread-resumed', { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection', beatCursor: 2 }),
+        row('character.scene.thread-concluded', { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection' }),
+      ],
+      names,
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].lines.map((l) => l.text)).toEqual([
+      'thread opened — the-defection (Aemilia)',
+      'Aemilia carries the-defection — beat 2',
+      'thread parked — the-defection at beat 2',
+      'thread resumed — the-defection at beat 2',
+      'thread concluded — the-defection (Aemilia)',
+    ]);
+    for (const line of groups[0].lines) {
+      expect(line.claimChannel).toBe('scene');
+      expect(line.fragments).toContain('"threadKey":"the-defection"');
+    }
+    expect(groups[0].lines[1].fragments).toContain('"beatIndex":2');
+  });
+});
+
+describe('threadAffordanceGroupsOf', () => {
+  const capture = {
+    'thread-affordances': [
+      [
+        { sceneId: 's1', ownerId: 'a1', threadKey: 'the-defection', beatCursor: 1, continuable: true },
+        { sceneId: 's2', ownerId: 'b1', threadKey: 'the-wager', beatCursor: 2, continuable: false },
+      ],
+    ],
+  };
+
+  it('projects one group per active thread, stating the continuability', () => {
+    const groups = threadAffordanceGroupsOf(capture, names);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].npcLabel).toBe('thread — the-defection');
+    expect(groups[0].lines[0].text).toBe('Aemilia has more to say — beat 1 served, next ready');
+    expect(groups[1].npcLabel).toBe('thread — the-wager');
+    expect(groups[1].lines[0].text).toBe('Bram holds — beat 2 served, next beat waits on its gate');
+  });
+
+  it('each line asserts into a claim on thread-affordances pinning the thread', () => {
+    const [first, second] = threadAffordanceGroupsOf(capture, names);
+    expect(first.lines[0].claimChannel).toBe('thread-affordances');
+    expect(first.lines[0].fragments).toEqual([
+      '"threadKey":"the-defection"',
+      '"continuable":true',
+    ]);
+    expect(second.lines[0].fragments).toEqual([
+      '"threadKey":"the-wager"',
+      '"continuable":false',
+    ]);
+  });
+
+  it('yields nothing when the channel is absent or malformed', () => {
+    expect(threadAffordanceGroupsOf(undefined, names)).toEqual([]);
+    expect(
+      threadAffordanceGroupsOf({ 'thread-affordances': ['noise', [null, { threadKey: 7 }]] }, names),
+    ).toEqual([]);
   });
 });

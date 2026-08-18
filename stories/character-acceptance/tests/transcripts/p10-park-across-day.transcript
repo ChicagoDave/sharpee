@@ -1,0 +1,36 @@
+title: A parked thread survives the day boundary (Phase 10.6)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Park the thread mid-beat with an off-thread ask, cross the
+  day boundary in the Archive (scene close AND story-state turn), and
+  resume - the resuming line renders and the next beat picks up at the
+  held cursor.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/p10-threads.story
+    stories/character-acceptance/tests/transcripts/p10-park-across-day.transcript
+
+---
+
+# Open the thread: beat 1.
+> ask prompter about the shortfall
+[OK: contains "It began with a missing shilling."]
+
+# The off-thread ask parks the thread (passive default) and serves its topic.
+> ask prompter about the ledger
+[OK: contains "The ledger keeps its own counsel."]
+
+# Cross the day boundary - the story state turns in the Archive.
+> north
+[OK: contains "morning finds you among the shelves"]
+
+> south
+[OK: contains "Counting Room"]
+
+# The parked thread resumes across the closed scene and the turned day.
+> ask prompter about the shortfall
+[OK: contains "As I was saying about the shortfall."]
+
+# The cursor held: the next prompt serves beat 2, not beat 1 again.
+> continue
+[OK: contains "Then a missing pound, and nobody blinked."]

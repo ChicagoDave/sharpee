@@ -23,9 +23,17 @@
  *   `protests` close it (the address then proceeds normally), `blocks`
  *   refuses the consult and the action's default response stands.
  *
- * Public interface: consultDialogueSelector, exchangeGrips,
- *   runConversationScene, resolveSceneIntrusion, isExchangeGripped,
- *   markExchangeGripped.
+ * - Continuation prompts (D14, Phase 10.5): a targetless talking firing
+ *   ("tell me more" / "continue" / "go on" / "and?") resolves its
+ *   conversation partner implicitly through the same pure thread probe —
+ *   `resolveImplicitThreadPartner` names the co-located NPC whose thread
+ *   claims a `talk-to` intent; none claiming leaves the action's default
+ *   no-target path standing.
+ *
+ * Public interface: consultDialogueSelector, exchangeGrips, threadGrips,
+ *   resolveImplicitThreadPartner, runConversationScene,
+ *   resolveSceneIntrusion, isExchangeGripped, markExchangeGripped,
+ *   isThreadGripped, markThreadGripped.
  * Owner context: stdlib / actions / helpers
  */
 
@@ -139,6 +147,33 @@ export function threadGrips(
   // exchange-gripped, never thread-gripped (D14's precedence table).
   if (ctx.scene?.openExchange && registration.exchangeClaims?.(target, intent, ctx)) return false;
   return registration.threadClaims(target, intent, ctx);
+}
+
+/**
+ * Resolve the implicit conversation partner for a targetless continuation
+ * prompt (ADR-320 D14 frozen list: "tell me more" / "continue" / "go on" /
+ * "and?"). The partner is the co-located actor whose conversation thread
+ * claims a `talk-to` intent through the PURE thread probe — true exactly
+ * when the pair's active thread has a ready beat, so a held beat or an
+ * absent thread resolves nothing and the caller's default no-target path
+ * stands. The scan is deterministic (containment order, first claimant
+ * wins) — in practice at most one NPC can claim: a player holds at most
+ * one live scene, and a second pair's activation is refused while the
+ * player is seated in another pair's scene, so two simultaneous
+ * claimants would require a multi-party scene with two active
+ * player-pair threads, which no current path produces.
+ *
+ * @param context - The action context (provides world and player)
+ * @returns The implicit partner, or `undefined` when no thread claims one
+ */
+export function resolveImplicitThreadPartner(context: ActionContext): IFEntity | undefined {
+  const location = context.world.getLocation(context.player.id);
+  if (!location) return undefined;
+  for (const entity of context.world.getContents(location)) {
+    if (entity.id === context.player.id || !entity.has(TraitType.ACTOR)) continue;
+    if (threadGrips(context, entity, { type: 'talk-to' })) return entity;
+  }
+  return undefined;
 }
 
 /**

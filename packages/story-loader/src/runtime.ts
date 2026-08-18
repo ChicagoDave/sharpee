@@ -1604,6 +1604,21 @@ export class ChordRuntime {
           messageId: String(payload.messageId),
           params: (payload.params as Record<string, unknown>) ?? {},
         };
+      } else if (event.type === 'chord.phrase') {
+        // Surplus phrases ride the author channel, never the player
+        // stream (the delivery rule, one semantics with the dispatch
+        // path): re-typed under the `character.author.` prefix, with the
+        // id carried as `surplusMessageId` — a top-level `data.messageId`
+        // would re-enter prose through the ADR-097 domain-message
+        // handler, which renders by that field regardless of type.
+        events.push({
+          ...event,
+          type: 'character.author.phrase_surplus',
+          data: {
+            surplusMessageId: String(payload.messageId),
+            params: (payload.params as Record<string, unknown>) ?? {},
+          },
+        });
       } else {
         events.push(event);
       }
@@ -1874,6 +1889,13 @@ export class ChordRuntime {
         if (!ensured) return undefined;
         const resumeWire = resumeThread(world, ensured.scene.id, npc.id, actorId, thread.name);
         if (thread.onResuming) {
+          // The resume IS this cycle's thread move (the tick path's own
+          // one-move-per-turn rule): stamp the pair's cycle key so the
+          // same-cycle owner floor turn stands down and the next beat
+          // waits for the next engagement — never `on resuming` and the
+          // beat bunched into one turn. The no-`on resuming` branch
+          // advances instead, and `serveThreadAdvance` stamps there.
+          world.setStateValue(this.threadCycleKey(owner.id, actorId), this.dialogueTurn(world));
           const res = this.serveConversationBody({
             world, owner, npc, actorId, scene: ensured.scene, memory,
             body: thread.onResuming,

@@ -1,0 +1,44 @@
+title: Cornered behind a locked door — silence remains
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: The jest answer to the poet's plain question walks him out
+  of the scene — but behind a locked tiring-house door the world
+  refuses the exit: the row is withheld whole and the default evasion
+  stands, because silence is the one move that can never be taken
+  away. The door is locked BEFORE the question opens, since the
+  question is asked once.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/cornered-locked.transcript
+
+---
+
+> north
+[OK: contains "Stage"]
+
+> west
+[OK: contains "Tiring-House"]
+
+# Turn the key on the only door out of this room first.
+> take the key
+[OK: contains "Taken"]
+
+> close the door
+[OK: contains "close"]
+
+> lock the door with the key
+[OK: contains "lock"]
+
+> talk to shakespeare
+[OK: contains "The new hired man"]
+
+# The book talk opens, question on its heels.
+> ask shakespeare about the book
+[OK: contains "So it is not carried"]
+
+# The answer that would walk him out is refused whole by the world —
+# the default evasion stands in its place.
+> ask shakespeare about a spy
+[OK: contains "I don't know anything about that"]
+[OK: not contains "given in jest"]

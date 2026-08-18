@@ -175,7 +175,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
         "if.action.switching_on": ["turn on :device", "switch on :device", "flip on :device", "turn :device on", "activate :device", "start :device", "power on :device"],
         "if.action.taking": ["take :item", "get :item", "grab :item", "acquire :item", "collect :item", "pick up :item", "take up :item"],
         "if.action.taking_off": ["remove :item", "doff :item", "unequip :item", "take off :item", "take :item off"],
-        "if.action.talking": ["talk to|with :target", "speak to|with :target", "chat with :target", "converse with :target"],
+        "if.action.talking": ["talk to|with :target", "speak to|with :target", "chat with :target", "converse with :target", "tell me more", "continue", "go on"],
         "if.action.telling": ["tell :recipient about :topic", "inform :recipient about :topic"],
         "if.action.throwing": ["throw :item at :target", "throw :item", "toss :item", "hurl :item", "throw :item to :recipient", "toss :item at :target", "toss :item to :recipient", "hurl :item at :target", "hurl :item to :recipient"],
         "if.action.touching": ["touch :target", "rub :target", "feel :target", "pat :target", "stroke :target", "poke :target", "prod :target"],

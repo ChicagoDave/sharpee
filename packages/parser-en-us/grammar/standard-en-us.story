@@ -352,12 +352,21 @@ define action asking
     inquire of the recipient about the topic
   the topic is a topic
 
+## The last three talking lines are the lexable continuation prompts (ADR-320
+## D14, frozen list): targetless thread-advance input — stdlib's talking
+## action resolves the conversation partner implicitly. The fourth frozen
+## form, `and?`, is punctuation Chord cannot lex; it lives platform-side in
+## src/platform-grammar.ts beside `?`.
+
 define action talking
   grammar
     talk to or with the target
     speak to or with the target
     chat with the target
     converse with the target
+    tell me more
+    continue
+    go on
 
 ## ORDER IS LOAD-BEARING (ADR-268 D3): exiting's `go out` must precede the
 ## going block below — the only duplicate pattern with different actions in

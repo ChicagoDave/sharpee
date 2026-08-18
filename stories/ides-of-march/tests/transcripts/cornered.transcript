@@ -1,12 +1,12 @@
-title: Cornered — the exit obeys the world, silence remains
+title: Cornered — the exit obeys the world, the thread survives it
 story: ides-of-march
 author: Sharpee Platform
 seed: 42
 description: The poet's jest answer ends with him quitting the scene —
-  legal while the tiring-house door can be opened. Behind a locked
-  door the world refuses the exit: the row is withheld whole and the
-  default evasion stands, because silence is the one move that can
-  never be taken away.
+  legal while the tiring-house door can be opened. His walking out
+  parks the book conversation where it stood; the next ask picks it
+  back up. The locked-door half of the old scenario lives in
+  cornered-locked.transcript, which needs the question still unasked.
   Run: node dist/cli/sharpee.js --test
     --story stories/ides-of-march/chord/ides-of-march.story
     stories/ides-of-march/tests/transcripts/cornered.transcript
@@ -30,25 +30,10 @@ description: The poet's jest answer ends with him quitting the scene —
 > ask shakespeare about a spy
 [OK: contains "given in jest"]
 
-# Now turn the key on the only door out of this room.
-> take the key
-[OK: contains "Taken"]
-
-> close the door
-[OK: contains "close"]
-
-> lock the door with the key
-[OK: contains "lock"]
-
-# Re-open the talk and re-open the question behind a locked door.
+# His exit closed the scene, and the close parked the book talk where
+# it stood — the next ask picks it up, not the beginning.
 > talk to shakespeare
-[OK: contains "acknowledges you with the pen"]
+[OK: contains "You wear a path"]
 
 > ask shakespeare about the book
-[OK: contains "So it is not carried"]
-
-# The same answer that walked him out is now refused whole by the
-# world — the default evasion stands in its place.
-> ask shakespeare about a spy
-[OK: contains "I don't know anything about that"]
-[OK: not contains "given in jest"]
+[OK: contains "You always come back to it"]

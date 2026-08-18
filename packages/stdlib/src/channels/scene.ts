@@ -13,6 +13,10 @@
  *    advertised-response set (`ExchangeAffordances`) from the scene
  *    store — pure state projection, so a mid-exchange restore
  *    re-advertises correctly.
+ *  - `thread-affordances` projects every live scene's active-thread
+ *    continuability (`ThreadContinuability`, ADR-320 D14 — "Kemp has
+ *    more to say") from the same store under the same pure-projection
+ *    discipline, so a mid-beat restore re-advertises correctly.
  *
  * Isolation is the point (ADR-320 AC11, the ADR-310 D12/AC8 discipline):
  * both channels are gated by the `authorChannels` capability, so a
@@ -22,7 +26,7 @@
  * decision, not this channel's.
  *
  * Public interface: sceneChannel, SceneChannelRow,
- * exchangeAffordancesChannel.
+ * exchangeAffordancesChannel, threadAffordancesChannel.
  * Owner context: stdlib / channels
  */
 
@@ -31,6 +35,7 @@ import type {
   ConversationSceneState,
   ExchangeAffordances,
   SceneStoreState,
+  ThreadContinuability,
 } from '@sharpee/world-model';
 import { CHARACTER_SCENES_KEY } from '@sharpee/world-model';
 import { asWorld } from './world-helpers.js';
@@ -110,6 +115,38 @@ export const exchangeAffordancesChannel: IOChannel<ExchangeAffordances[]> = {
         exchangeId: exchange.exchangeId,
         responses: exchange.responses,
       });
+    }
+    return advertised;
+  },
+};
+
+/**
+ * `thread-affordances` — replace-mode active-thread continuability
+ * (ADR-320 D14, additive to the D12 affordance surface): one
+ * `ThreadContinuability` per live scene with an active thread, in
+ * scene-store order; the empty array when none. Emits every turn so a
+ * consumer never renders a parked or concluded thread's stale "more to
+ * say". Reads the scene store — the snapshot is stamped at
+ * open/beat/resume and cleared at park/conclude
+ * (`stampThreadContinuability`), so the projection survives
+ * save/restore exactly as `exchange-affordances` does.
+ */
+export const threadAffordancesChannel: IOChannel<ThreadContinuability[]> = {
+  id: 'thread-affordances',
+  contentType: 'json',
+  mode: 'replace',
+  emit: 'always',
+  // Same AC11 gate as `scene` — thread state is a scene internal until a
+  // client deliberately opts in to rendering it (a "continue" chip).
+  gatedBy: 'authorChannels',
+  produce: (ctx) => {
+    const world = asWorld(ctx);
+    if (!world || typeof world.getStateValue !== 'function') return undefined;
+    const store = world.getStateValue(CHARACTER_SCENES_KEY) as SceneStoreState | undefined;
+    const scenes: ConversationSceneState[] = store ? Object.values(store.scenes) : [];
+    const advertised: ThreadContinuability[] = [];
+    for (const scene of scenes) {
+      if (scene.threadContinuability) advertised.push(scene.threadContinuability);
     }
     return advertised;
   },

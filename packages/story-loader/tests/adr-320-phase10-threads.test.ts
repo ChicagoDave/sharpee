@@ -10,8 +10,21 @@
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR, normalizeTopic } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { ISound } from '@sharpee/if-domain';
-import { askingAction, talkingAction, tellingAction } from '@sharpee/stdlib';
+import { createSemanticEventSource } from '@sharpee/core';
+import type { ChannelProduceContext, ISound } from '@sharpee/if-domain';
+import {
+  askingAction,
+  talkingAction,
+  tellingAction,
+  threadAffordancesChannel,
+} from '@sharpee/stdlib';
+import {
+  SaveRestoreService,
+  PluginRegistry,
+  type GameContext,
+  type ISaveRestoreStateProvider,
+  type Story,
+} from '@sharpee/engine';
 import {
   CharacterModelTrait,
   IFEntity,
@@ -62,7 +75,7 @@ function storySource(thread: string, extra = ''): string {
 }
 
 /** The default two-beat thread; `strength` is the header comma-modifier. */
-function threadBlock(opts: { strength?: string; opensWhen?: string; beatTwoWhen?: string; beatOneExtra?: string; omitRefusing?: boolean } = {}): string {
+function threadBlock(opts: { strength?: string; opensWhen?: string; beatTwoWhen?: string; beatOneExtra?: string; omitRefusing?: boolean; gatedConclusion?: boolean } = {}): string {
   return (
     `define conversation the-defection for Kemp${opts.strength ? `, ${opts.strength}` : ''}\n` +
     '  about "the rose"\n' +
@@ -78,7 +91,9 @@ function threadBlock(opts: { strength?: string; opensWhen?: string; beatTwoWhen?
     '    phrase resuming-line\n' +
     (opts.omitRefusing ? '' : '  on refusing:\n    phrase refusing-line\n') +
     '  conclusion:\n' +
-    '    phrase conclusion-line\n' +
+    (opts.gatedConclusion
+      ? '    phrase conclusion-line when it is cheerful\n    phrase parting-line\n'
+      : '    phrase conclusion-line\n') +
     'end conversation\n'
   );
 }
@@ -336,6 +351,50 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     expect(l.sounds.length).toBe(before);
   });
 
+  it('a gated tick delivery speaks the winning phrase only; the surplus rides the author channel', () => {
+    // The delivery rule, one semantics with the dispatch path: first
+    // passing phrase wins, surplus alternatives never render as a second
+    // spoken line (caught live on a gated conclusion body).
+    const l = load(storySource(threadBlock({ gatedConclusion: true })));
+    ask(l, 'the rose'); // beat 1 (dispatch, stamps the cycle)
+    tick(l, 1); // stands down
+    tick(l, 2); // beat 2
+    const conclusionEvents = tick(l, 3); // the conclusion — Kemp is cheerful, so BOTH phrases pass
+    expect(threadState(l)).toMatchObject({ status: 'concluded' });
+
+    // The winner is the spoken line; the loser never reaches the sounds.
+    expect(l.sounds.some((s) => s.content?.messageId === 'conclusion-line')).toBe(true);
+    expect(l.sounds.some((s) => s.content?.messageId === 'parting-line')).toBe(false);
+
+    // The surplus rides the author channel, re-typed with no top-level
+    // messageId (a bare `data.messageId` re-enters prose via ADR-097).
+    const surplus = conclusionEvents.filter((e) => e.type === 'character.author.phrase_surplus');
+    expect(surplus).toHaveLength(1);
+    expect(surplus[0].data).toMatchObject({ surplusMessageId: 'parting-line' });
+    expect((surplus[0].data as { messageId?: string }).messageId).toBeUndefined();
+    expect(conclusionEvents.some((e) => e.type === 'chord.phrase')).toBe(false);
+  });
+
+  it("a dispatch resume is the cycle's move: the same-cycle tick stands down", () => {
+    const l = load(storySource(threadBlock()));
+    ask(l, 'the rose'); // activate, beat 1
+    ask(l, 'the weather'); // passive park
+    expect(threadState(l)).toMatchObject({ status: 'parked', beatCursor: 1 });
+
+    // The resume serves `on resuming:` and stamps the cycle — the beat
+    // waits for the next engagement, never bunched into the resume turn.
+    expect(messageId(ask(l, 'the rose'))).toBe('resuming-line');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+
+    tick(l, 1); // same cycle: the owner stands down
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(false);
+
+    tick(l, 2); // next cycle: the owner serves beat 2
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
+    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(true);
+  });
+
   it('an `opens when` thread opens its own scene and speaks beat 1 unprompted', () => {
     const l = load(storySource(threadBlock({ opensWhen: 'it is cheerful' })));
 
@@ -433,6 +492,107 @@ describe('AC14 — the grip holds for TELL and TALK TO (the asking wiring, mirro
   });
 });
 
+describe('AC14 — continuation prompts (Phase 10.5: the targetless advance)', () => {
+  // A continuation prompt ("tell me more" / "continue" / "go on" / "and?")
+  // parses to a talking firing with NO direct object; the action resolves
+  // the partner implicitly through the thread probe.
+  const prompt = (l: Loaded) => run(l, talkingAction, {});
+
+  it('advances the active thread one beat and serves the conclusion past the last', () => {
+    const l = load(storySource(threadBlock()));
+    ask(l, 'the rose');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+
+    const advanced = prompt(l);
+    expect(advanced.validation.valid).toBe(true);
+    expect(messageId(advanced)).toBe('beat-two');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
+
+    const concluded = prompt(l);
+    expect(messageId(concluded)).toBe('conclusion-line');
+    expect(concluded.events.some((e) => e.type === 'character.scene.thread-concluded')).toBe(true);
+    expect(threadState(l)).toMatchObject({ status: 'concluded' });
+  });
+
+  it('is inert with no active thread: the default no-target path, no thread state touched', () => {
+    const l = load(storySource(threadBlock()));
+
+    const idle = prompt(l);
+    expect(idle.validation).toMatchObject({ valid: false, error: 'no_target' });
+    expect(threadState(l)).toBeUndefined();
+  });
+
+  it('does not advance a held beat (unmet `beat, when` gate)', () => {
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    ask(l, 'the rose');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+
+    const held = prompt(l);
+    expect(held.validation).toMatchObject({ valid: false, error: 'no_target' });
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+  });
+
+  it('resolves the single claimant with a second thread-bearing NPC co-located', () => {
+    // A second pair cannot activate while the player is seated in the
+    // first pair's scene (ensureThreadScene refuses), so the prompt has
+    // exactly one claimant — the doc'd containment-order scan stays
+    // latent until some path produces a multi-party two-thread scene.
+    const l = load(
+      storySource(
+        threadBlock(),
+        'create Wat\n  a person, proper\n  in the Hall\n  mood calm\n  spreads nothing\n\n  The bookkeeper.\n\n' +
+          'define topics for Wat\n  about "the dice":\n    phrase dice-line\nend topics\n\n' +
+          'define conversation the-wager for Wat\n' +
+          '  about "the dice"\n' +
+          '  beat:\n    phrase wager-one\n' +
+          '  conclusion:\n    phrase wager-done\n' +
+          'end conversation\n\n' +
+          'define phrase dice-line\n  "Loaded, every pair."\nend phrase\n' +
+          'define phrase wager-one\n  "About that wager."\nend phrase\n' +
+          'define phrase wager-done\n  "Paid in full."\nend phrase\n',
+      ),
+    );
+    const watThread = () =>
+      traitOf(l, 'wat').conversationThreads?.[l.player.id]?.['the-wager'];
+
+    ask(l, 'the rose');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+
+    // The on-filter ask to Wat serves his TABLE row — his thread never
+    // activates while the player is seated with Kemp.
+    const wat = run(l, askingAction, {
+      directObject: { entity: entity(l, 'wat') },
+      topic: { text: 'the dice' },
+    });
+    expect(messageId(wat)).toBe('dice-line');
+    expect(watThread()).toBeUndefined();
+
+    // The targetless prompt has exactly one claimant: Kemp advances.
+    const advanced = prompt(l);
+    expect(messageId(advanced)).toBe('beat-two');
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
+    expect(watThread()).toBeUndefined();
+  });
+
+  it('does not advance past an open exchange (innermost wins on this path too)', () => {
+    const l = load(
+      storySource(
+        threadBlock({ beatOneExtra: 'then asks the-offer' }),
+        'define exchange the-offer for Kemp\n  answer "aye":\n    phrase offer-aye\nend exchange\n\n' +
+          'define phrase offer-aye\n  "Good."\nend phrase\n',
+      ),
+    );
+    ask(l, 'the rose');
+    expect(sceneWith(l.world, entity(l, 'kemp').id)?.openExchange).toMatchObject({
+      exchangeId: 'kemp.the-offer',
+    });
+
+    const held = prompt(l);
+    expect(held.validation).toMatchObject({ valid: false, error: 'no_target' });
+    expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
+  });
+});
+
 describe('AC14 — precedence: an open exchange holds the thread (innermost wins)', () => {
   it('a `then asks` beat waits for its exchange; the answered exchange releases the advance', () => {
     const l = load(
@@ -458,5 +618,138 @@ describe('AC14 — precedence: an open exchange holds the thread (innermost wins
     expect(sceneWith(l.world, entity(l, 'kemp').id)?.openExchange).toBeNull();
     expect(messageId(ask(l, 'the rose'))).toBe('beat-two');
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
+  });
+});
+
+describe('AC14 (D12 leg, Phase 10.6) — the thread-affordances channel projects the live store', () => {
+  const channelCtx = (l: Loaded, events: ISemanticEvent[] = [], turn = 5): ChannelProduceContext =>
+    ({ world: l.world, events, blocks: [], turn, prevValue: undefined }) as ChannelProduceContext;
+
+  it('advertises the active thread, clears on park, re-advertises on resume', () => {
+    const l = load(storySource(threadBlock()));
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([]);
+
+    ask(l, 'the rose');
+    const scene = sceneWith(l.world, entity(l, 'kemp').id)!;
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([
+      {
+        sceneId: scene.id,
+        ownerId: entity(l, 'kemp').id,
+        threadKey: 'the-defection',
+        beatCursor: 1,
+        continuable: true,
+      },
+    ]);
+
+    // The passive park clears the advertisement — never a stale "more to say".
+    ask(l, 'the weather');
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([]);
+
+    // The resume re-advertises from the held cursor.
+    ask(l, 'the rose');
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([
+      expect.objectContaining({ threadKey: 'the-defection', beatCursor: 1, continuable: true }),
+    ]);
+  });
+
+  it('advertises continuable: false while the next beat holds on its gate', () => {
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    ask(l, 'the rose');
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([
+      expect.objectContaining({ threadKey: 'the-defection', beatCursor: 1, continuable: false }),
+    ]);
+  });
+
+  it('clears at the conclusion', () => {
+    const l = load(storySource(threadBlock()));
+    ask(l, 'the rose');
+    ask(l, 'the rose');
+    ask(l, 'the rose'); // conclusion
+    expect(threadState(l)).toMatchObject({ status: 'concluded' });
+    expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([]);
+  });
+});
+
+describe('AC14 (persistence leg, Phase 10.6) — the real SaveRestoreService round trip', () => {
+  const channelCtx = (l: Loaded): ChannelProduceContext =>
+    ({ world: l.world, events: [], blocks: [], turn: 5, prevValue: undefined }) as ChannelProduceContext;
+
+  function providerFor(l: Loaded): ISaveRestoreStateProvider {
+    return {
+      getWorld: () => l.world,
+      getContext: () =>
+        ({
+          currentTurn: 6,
+          player: l.player,
+          history: [],
+          metadata: { started: new Date() },
+        }) as unknown as GameContext,
+      getStory: () => l.story as unknown as Story,
+      getEventSource: () => createSemanticEventSource(),
+      getPluginRegistry: () => new PluginRegistry(),
+      getParser: () => undefined,
+    };
+  }
+
+  it('a mid-beat ACTIVE thread restores deep-equal and continues byte-identically', () => {
+    const service = new SaveRestoreService();
+
+    // Live control: the uninterrupted run's next serve is beat-two.
+    const control = load(storySource(threadBlock()));
+    ask(control, 'the rose');
+    expect(messageId(ask(control, 'the rose'))).toBe('beat-two');
+
+    // Save mid-beat (active, cursor 1), restore into a fresh world.
+    const l1 = load(storySource(threadBlock()));
+    ask(l1, 'the rose');
+    const saveData = service.createSaveData(providerFor(l1));
+    const l2 = load(storySource(threadBlock()));
+    service.loadSaveData(saveData, providerFor(l2));
+
+    // Deep-equal restored trait state — the exact D14 persistence shape.
+    expect(traitOf(l2, 'kemp').conversationThreads).toEqual(
+      traitOf(l1, 'kemp').conversationThreads,
+    );
+    expect(threadState(l2)).toMatchObject({ status: 'active', beatCursor: 1 });
+
+    // The restored store re-advertises continuability identically.
+    expect(threadAffordancesChannel.produce(channelCtx(l2))).toEqual(
+      threadAffordancesChannel.produce(channelCtx(l1)),
+    );
+
+    // Byte-identical continuation: the restored run serves what the live
+    // control served, and the cursor lands in the same place.
+    expect(messageId(ask(l2, 'the rose'))).toBe('beat-two');
+    expect(threadState(l2)).toMatchObject({ status: 'active', beatCursor: 2 });
+  });
+
+  it('a PARKED thread restores and resumes with `on resuming:` exactly as after a live gap', () => {
+    const service = new SaveRestoreService();
+
+    // Live control: park (passive off-thread ask), then resume.
+    const control = load(storySource(threadBlock()));
+    ask(control, 'the rose');
+    ask(control, 'the weather'); // passive park; the topic serves
+    expect(threadState(control)).toMatchObject({ status: 'parked', beatCursor: 1 });
+    expect(messageId(ask(control, 'the rose'))).toBe('resuming-line');
+
+    // Park, save, restore, resume.
+    const l1 = load(storySource(threadBlock()));
+    ask(l1, 'the rose');
+    ask(l1, 'the weather');
+    const saveData = service.createSaveData(providerFor(l1));
+    const l2 = load(storySource(threadBlock()));
+    service.loadSaveData(saveData, providerFor(l2));
+
+    expect(traitOf(l2, 'kemp').conversationThreads).toEqual(
+      traitOf(l1, 'kemp').conversationThreads,
+    );
+    expect(threadState(l2)).toMatchObject({ status: 'parked', beatCursor: 1 });
+
+    // `on resuming:` renders exactly as it did across the live gap, and
+    // the thread picks up at the held cursor.
+    expect(messageId(ask(l2, 'the rose'))).toBe('resuming-line');
+    expect(threadState(l2)).toMatchObject({ status: 'active', beatCursor: 1 });
+    expect(messageId(ask(l2, 'the rose'))).toBe('beat-two');
   });
 });

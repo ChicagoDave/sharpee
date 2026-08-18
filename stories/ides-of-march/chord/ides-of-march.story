@@ -255,9 +255,19 @@ define topics for Will Kemp
   about "the rose", "the admirals men", "henslowe", "the offer":
     refuse when the-blow-up is fresh: kemp-too-raw
     refuse when the-blow-up is recent: kemp-too-raw
-    phrase kemp-hears-the-rose when the grievance was discussed
+    phrase kemp-rose-settled when the-defection is concluded
     phrase kemp-brushes-off
-    then asks the-offer
+  about "the ale", "the drink", "the pot":
+    phrase kemp-on-ale
+      "Small ale for small hours." He drinks like a man toasting a
+      full house anyway. "I have danced from London to Norwich on
+      worse, friend, and been grateful to the barrel."
+  about "the bear", "the bears", "the bear-baiting":
+    phrase kemp-on-bears
+      "The bear-garden!" He laughs at last, and means it. "My one
+      true rival on this bank. A bear needs no poet, no book, and no
+      REHEARSAL, and the yard loves him anyway. There is a lesson in
+      that bear, and none of us will learn it."
 end topics
 
 define greetings for Will Kemp
@@ -299,6 +309,30 @@ define initiative for Will Kemp
   on an open floor, when it is stung:
     hold their tongue
 end initiative
+
+## The defection is a conversation Kemp himself carries to its end once
+## the storm has cooled: he opens it, he holds it against every other
+## subject until it is settled, and settled is a fact the whole story
+## can read afterward.
+
+define conversation the-defection for Will Kemp, blocking
+  about "the rose", "the admirals men", "henslowe", "the offer"
+  opens when the grievance was discussed and the-blow-up is stale
+  beat, when the grievance was discussed and the-blow-up is not fresh and the-blow-up is not recent:
+    phrase kemp-hears-the-rose
+  beat:
+    phrase kemp-names-his-price
+  beat:
+    phrase kemp-bids-the-question
+    then asks the-offer
+  on refusing:
+    phrase kemp-holds-the-thread
+  on resuming:
+    phrase kemp-takes-it-up
+  conclusion:
+    phrase kemp-concluded-sworn when Will Kemp is sworn
+    phrase kemp-concluded-cooled
+end conversation
 
 define exchange the-offer for Will Kemp
   answer "yes", "aye", "sworn":
@@ -388,7 +422,30 @@ define topics for Richard Burbage
     phrase burbage-on-the-quarrel
       "There is no quarrel." The door of his face closes. "There is a
       play, and there are those in it."
+  about "the weather":
+    phrase burbage-on-the-weather
+      "The heavens are painted, hired man." He points one finger
+      straight up at the stage roof. "Those are the only heavens
+      whose weather concerns this company. Attend to them."
 end topics
+
+## On opening morning Burbage drills every hired man in his business,
+## the false one included, and will not be moved off the subject until
+## he is done: interrupt him and he simply says it again, word for
+## word, until it is heard.
+
+define conversation the-drilling for Richard Burbage, blocking
+  about "my part", "the part", "my cue", "the entrance", "my business"
+  opens when third-day
+  beat, when third-day:
+    phrase burbage-drills-the-entrance
+  beat:
+    phrase burbage-drills-the-cue
+  on resuming:
+    phrase burbage-drills-again
+  conclusion:
+    phrase burbage-drills-done
+end conversation
 
 define greetings for Richard Burbage
   first time:
@@ -498,6 +555,27 @@ define topics for William Shakespeare
       "Kemp is Kemp." The pen does not stop. "The yard loves him.
       That is not a small thing, whatever the wits say."
   about "the book", "the play-book", "the papers":
+    phrase shakespeare-book-settled when the-suspicion is concluded
+    phrase shakespeare-on-the-book
+  about "the grievance", "the quarrel":
+    phrase shakespeare-on-the-quarrel
+      "Men outgrow one another. It is nobody's villainy, and it
+      plays like everyone's." He almost smiles. "I may use that."
+  about "the weather":
+    phrase shakespeare-on-the-weather
+      "It rains on the just and the unjust, and worst on the
+      thatch." He does not look up. "You did not cross the yard to
+      ask me of weather, but I note that you wish me to think so."
+end topics
+
+## The poet's suspicion is a conversation he is content to let drift
+## and always returns to: every talk of the book picks up where the
+## last one left off, across days if it must, until he has read the
+## hired man to the end.
+
+define conversation the-suspicion for William Shakespeare, passive
+  about "the book", "the play-book", "the papers"
+  beat:
     phrase shakespeare-marks-the-turn when the subject changes
       "You steer," Shakespeare says mildly, marking how the talk has
       bent toward the company's papers, the way a pilot marks a
@@ -508,11 +586,17 @@ define topics for William Shakespeare
       fair, and cued, it need only be carried." He looks at you for
       slightly too long. "So it is not carried."
     then asks the-plain-question
-  about "the grievance", "the quarrel":
-    phrase shakespeare-on-the-quarrel
-      "Men outgrow one another. It is nobody's villainy, and it
-      plays like everyone's." He almost smiles. "I may use that."
-end topics
+  beat:
+    phrase shakespeare-reads-you
+  beat:
+    phrase shakespeare-names-the-cost
+  on parting:
+    phrase shakespeare-lets-it-lie
+  on resuming:
+    phrase shakespeare-takes-it-up
+  conclusion:
+    phrase shakespeare-shuts-the-book
+end conversation
 
 define greetings for William Shakespeare
   first time:
@@ -651,10 +735,61 @@ define phrase kemp-too-raw
 end phrase
 
 define phrase kemp-hears-the-rose
-  Kemp does not answer at once. He looks south, over the tavern roof,
-  toward where the Rose sits across Bankside with its old boards and
-  its faithful yard. "Say what you came to say, then," he says, low.
-  "All of it, plainly."
+  Kemp turns the pot once in his hands and looks south, over the
+  tavern roof, toward where the Rose sits across Bankside with its
+  old boards and its faithful yard. "The Rose," he says, low, as if
+  the word had been sitting between you this whole while. "Say what
+  you came to say, then. All of it, plainly. And understand me,
+  friend — once begun, this is the only talk I have in me until it
+  is finished."
+end phrase
+
+define phrase kemp-names-his-price
+  "Hear my price before you name Philip's." He counts it off on his
+  fingers, showman even now. "The jig restored, every afternoon, at
+  MY length. My name on the bills, big as the play's. And no poet's
+  set-down-for-them in my scenes — the yard writes my lines with me,
+  fresh, every house." He leans back. "Cheap, for what walks out of
+  this company when I do."
+end phrase
+
+define phrase kemp-bids-the-question
+  "Well. You know what I am owed and you know what I am worth, which
+  puts you ahead of this company on both counts." He sets the pot
+  down and gives you the whole of his attention, a thing crowds pay
+  for. "So ask it. Ask me the question Philip sent across the river
+  in your mouth."
+end phrase
+
+define phrase kemp-holds-the-thread
+  "No, friend." The word comes down flat as a trapdoor. "You opened
+  the Rose with me, and the Rose we finish. THIS first; the rest of
+  the world after."
+end phrase
+
+define phrase kemp-takes-it-up
+  "Where were we." It is not a question; Kemp has never once lost
+  his place. "Aye — the Rose, and what is owed to Kemp."
+end phrase
+
+define phrase kemp-concluded-sworn
+  "Done, then, and done plainly." He claps his hands once, the sound
+  of a house letting go its breath. "Tell Philip: the clown comes to
+  the Rose, jigs and all, and the Globe may bury its Caesar with
+  full honours. This talk is finished, friend — and finished WELL."
+end phrase
+
+define phrase kemp-concluded-cooled
+  "Then it is finished." He says it lightly, and the lightness is
+  the armour. "The Rose was asked, and the Rose was answered, and
+  Kemp keeps his own counsel from here. We shall not speak of it
+  again."
+end phrase
+
+define phrase kemp-rose-settled
+  "That matter is settled, friend." He waves it away with a
+  flourish, the showman's full stop. "Ask the tavern; they will
+  ballad it soon enough."
 end phrase
 
 define phrase kemp-brushes-off
@@ -662,6 +797,77 @@ define phrase kemp-brushes-off
   "Henslowe's old barn. Why would Kemp look south, friend? Kemp is of
   the Globe." The line arrives a half-beat too quick, like a cue
   snatched early.
+end phrase
+
+## ------------------------------------------------- suspicion-thread phrases
+
+define phrase shakespeare-reads-you
+  "I have been watching what you look at." The pen keeps moving; it
+  is you it writes. "Kemp, when the talk is of Kemp. The door, when
+  the talk is of doors. And the property table, hired man, whenever
+  the talk is of anything else. A man's eyes keep his true accounts."
+end phrase
+
+define phrase shakespeare-names-the-cost
+  "Understand what the book is." He lays his hand flat on the pages,
+  lighter than Burbage would, heavier than it looks. "Two years of
+  my nights, the company's whole season, and the only fair copy in
+  the world. The man who carries it across the river carries every
+  supper this house will eat next winter. I want you to know the
+  weight of it — whoever you are — before your hands do."
+end phrase
+
+define phrase shakespeare-lets-it-lie
+  Shakespeare lets the subject go the way a fisherman pays out
+  line — without hurry, and without letting go of the end.
+end phrase
+
+define phrase shakespeare-takes-it-up
+  "The book, then. Again." The pen rests. "You always come back to
+  it, and so I shall always come back to you. Where were we."
+end phrase
+
+define phrase shakespeare-shuts-the-book
+  "There. Now we have read each other to the end." He looks at you
+  fully for the first time, and it is like being quoted. "I know
+  what you are, or near enough, and you know the book's weight, and
+  each of us knows the other knows. That is where this talk ends —
+  whatever you do next, do it knowing it is watched."
+end phrase
+
+define phrase shakespeare-book-settled
+  "We have finished with the book, you and I." The pen does not
+  pause. "Everything after this is not talk; it is testimony."
+end phrase
+
+## -------------------------------------------------- drilling-thread phrases
+
+define phrase burbage-drills-the-entrance
+  Burbage plants you on your mark with two fingers on your shoulder,
+  as if setting a property in its place. "Attend. You enter with the
+  second citizens, stage left, spear UP — this is a forum, not a
+  hedgerow. You stand where I set you and you look at Caesar. Not at
+  the house. Caesar."
+end phrase
+
+define phrase burbage-drills-the-cue
+  "Your cue is 'Peace, ho! Caesar speaks.'" He gives the line its
+  full weight, and the boards give it back. "Not before, on pain of
+  my attention. Not after, on pain of the same. The house opens
+  TODAY, and today every man in it is exactly where the play says he
+  is."
+end phrase
+
+define phrase burbage-drills-again
+  "As I was saying — and I say it once more because it was not
+  finished." Burbage picks the drill up exactly where it stopped, a
+  man who has never in his life lost a cue.
+end phrase
+
+define phrase burbage-drills-done
+  "Good." One nod, the full wage of Burbage's approval. "Be where
+  the play says. Do what the play says. Tonight the house learns
+  what we are — see it does not learn it from your mistakes."
 end phrase
 
 ## ----------------------------------------------------------- ending phrases

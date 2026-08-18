@@ -4347,6 +4347,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly CHARACTER: "character";
     readonly SCENE: "scene";
     readonly EXCHANGE_AFFORDANCES: "exchange-affordances";
+    readonly THREAD_AFFORDANCES: "thread-affordances";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
 ```
@@ -4411,6 +4412,10 @@ export declare const characterAuthorChannel: IOChannel<CharacterAuthorRow>;
  *    advertised-response set (`ExchangeAffordances`) from the scene
  *    store — pure state projection, so a mid-exchange restore
  *    re-advertises correctly.
+ *  - `thread-affordances` projects every live scene's active-thread
+ *    continuability (`ThreadContinuability`, ADR-320 D14 — "Kemp has
+ *    more to say") from the same store under the same pure-projection
+ *    discipline, so a mid-beat restore re-advertises correctly.
  *
  * Isolation is the point (ADR-320 AC11, the ADR-310 D12/AC8 discipline):
  * both channels are gated by the `authorChannels` capability, so a
@@ -4420,11 +4425,11 @@ export declare const characterAuthorChannel: IOChannel<CharacterAuthorRow>;
  * decision, not this channel's.
  *
  * Public interface: sceneChannel, SceneChannelRow,
- * exchangeAffordancesChannel.
+ * exchangeAffordancesChannel, threadAffordancesChannel.
  * Owner context: stdlib / channels
  */
 import type { IOChannel } from '@sharpee/if-domain';
-import type { ExchangeAffordances } from '@sharpee/world-model';
+import type { ExchangeAffordances, ThreadContinuability } from '@sharpee/world-model';
 /** One scene-wire row: one `character.scene.*`/`character.exchange.*` event. */
 export interface SceneChannelRow {
     /** Turn the event fired on. */
@@ -4453,6 +4458,18 @@ export declare const sceneChannel: IOChannel<SceneChannelRow>;
  * save/restore.
  */
 export declare const exchangeAffordancesChannel: IOChannel<ExchangeAffordances[]>;
+/**
+ * `thread-affordances` — replace-mode active-thread continuability
+ * (ADR-320 D14, additive to the D12 affordance surface): one
+ * `ThreadContinuability` per live scene with an active thread, in
+ * scene-store order; the empty array when none. Emits every turn so a
+ * consumer never renders a parked or concluded thread's stale "more to
+ * say". Reads the scene store — the snapshot is stamped at
+ * open/beat/resume and cleared at park/conclude
+ * (`stampThreadContinuability`), so the projection survives
+ * save/restore exactly as `exchange-affordances` does.
+ */
+export declare const threadAffordancesChannel: IOChannel<ThreadContinuability[]>;
 ```
 
 ### channels/media

@@ -1,0 +1,35 @@
+title: Save mid-thread (persistence first half)
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Open the poet's book talk, advance it two beats, save
+  through the platform engine mid-thread, then continue - establishing
+  the golden line the restored run must reproduce.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/thread-save.transcript
+    stories/ides-of-march/tests/transcripts/thread-restore.transcript
+
+---
+
+> north
+[OK: contains "Stage"]
+
+> west
+[OK: contains "Tiring-House"]
+
+> talk to shakespeare
+[OK: contains "The new hired man"]
+
+> ask shakespeare about the book
+[OK: contains "So it is not carried"]
+
+> ask shakespeare about a hired man
+[OK: contains "the most crowded parish in England"]
+[OK: contains "watching what you look at"]
+
+$save ides-mid-thread
+
+# The uninterrupted run's next step - the golden line.
+> ask shakespeare about the book
+[OK: contains "the weight of it"]

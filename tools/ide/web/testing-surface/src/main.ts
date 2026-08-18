@@ -36,7 +36,7 @@ import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
 import { characterRowsOf, explainGroups, type ExplainGroup } from './character';
-import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf } from './scene';
+import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf, threadAffordanceGroupsOf } from './scene';
 import {
   cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
   type DeleteRef, type TurnSource,
@@ -203,6 +203,7 @@ function characterExplainFor(ordinal: number): ExplainGroup[] {
     ...explainGroups(characterRowsOf(captures), nameOf),
     ...sceneExplainGroups(sceneRowsOf(captures), nameOf),
     ...affordanceGroupsOf(captures, nameOf),
+    ...threadAffordanceGroupsOf(captures, nameOf),
   ];
 }
 

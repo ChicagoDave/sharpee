@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
+import { type IFEntity, TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { TalkedEventData } from './talking-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -29,6 +29,7 @@ import {
   isThreadGripped,
   markExchangeGripped,
   markThreadGripped,
+  resolveImplicitThreadPartner,
   threadGrips,
   runConversationScene,
   resolveSceneIntrusion
@@ -61,7 +62,7 @@ export const talkingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.TALKING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => talkTarget(ctx)
     }
   ]
 };
@@ -73,10 +74,21 @@ interface TalkingSharedData {
   targetName?: string;
   messageId?: string;
   eventData?: TalkedEventData;
+  /** The partner a targetless continuation prompt resolved to (ADR-320 D14). */
+  implicitTarget?: IFEntity;
 }
 
 function getTalkingSharedData(context: ActionContext): TalkingSharedData {
   return context.sharedData as TalkingSharedData;
+}
+
+/**
+ * The person this firing talks to: the parsed direct object, or — for a
+ * targetless continuation prompt ("tell me more" / "continue" / "go on" /
+ * "and?", ADR-320 D14) — the partner validation resolved implicitly.
+ */
+function talkTarget(context: ActionContext): IFEntity | undefined {
+  return context.command.directObject?.entity ?? getTalkingSharedData(context).implicitTarget;
 }
 
 export const talkingAction: Action & { metadata: ActionMetadata } = {
@@ -104,8 +116,17 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
-    const target = context.command.directObject?.entity;
-    
+    let target = context.command.directObject?.entity;
+
+    // A targetless firing is a continuation prompt (ADR-320 D14): the
+    // partner is the co-located NPC whose thread claims a talk-to intent.
+    // No claimant leaves the default no-target path standing (the frozen
+    // forms are inert without an active, ready thread).
+    if (!target) {
+      target = resolveImplicitThreadPartner(context);
+      if (target) getTalkingSharedData(context).implicitTarget = target;
+    }
+
     // Must have someone to talk to
     if (!target) {
       return {
@@ -189,7 +210,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // Talking has NO world mutations - it's a social interaction
     // Analyze conversation state and store in sharedData for report phase
-    const target = context.command.directObject?.entity!;
+    const target = talkTarget(context)!;
     const sharedData = getTalkingSharedData(context);
 
     // Build event data
@@ -261,7 +282,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    const target = context.command.directObject?.entity;
+    const target = talkTarget(context);
 
     const messageId = blockedMessageId(context, result);
 
@@ -292,7 +313,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit talked event with messageId for text rendering
     // params carry EntityInfo for the formatter chain (ADR-158)
-    const target = context.command.directObject?.entity;
+    const target = talkTarget(context);
 
     // ADR-320 D10 (Phase 8): addressing an NPC seated in a foreign scene
     // challenges that scene first — `blocks` refuses the consult and the

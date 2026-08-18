@@ -169,7 +169,7 @@ describe('GameEngine — channel:manifest emission', () => {
     // (authorChannels absent — the platform-browser player default) can
     // provably carry no scene internals beyond rendered prose. The
     // author-profile presence side rides the all-standard-channels test
-    // above, since both ids are in STANDARD_CHANNEL_IDS.
+    // above, since all three ids are in STANDARD_CHANNEL_IDS.
     const { engine } = setupTestEngine();
     engine.setStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
@@ -178,6 +178,8 @@ describe('GameEngine — channel:manifest emission', () => {
     const ids = new Set(manifests[0].channels.map((c) => c.id));
     expect(ids.has('scene')).toBe(false);
     expect(ids.has('exchange-affordances')).toBe(false);
+    // The D14 thread wire (Phase 10.6) holds the same discipline.
+    expect(ids.has('thread-affordances')).toBe(false);
   });
 
   it('includes media channels when capabilities allow', () => {

@@ -3,10 +3,11 @@ story: ides-of-march
 author: Sharpee Platform
 seed: 42
 description: The whole three-day arc through the built bundle: the
-  grievance threaded on day one, the cover story planted, the blow-up
-  witnessed on day two, the clown pressed too soon and courted after
-  cooling, the offer sworn, the book carried out of an empty
-  tiring-house on opening day, and both objectives standing at the
+  grievance aired on day one, the cover story planted, the blow-up
+  witnessed on day two, the clown pressed too soon and — cooled —
+  opening the defection talk himself and carrying it to the sworn
+  conclusion, the book carried out of an empty tiring-house on opening
+  day past Burbage's drilling, and both objectives standing at the
   reckoning.
   Run: node dist/cli/sharpee.js --test
     --story stories/ides-of-march/chord/ides-of-march.story
@@ -91,18 +92,20 @@ description: The whole three-day arc through the built bundle: the
 > wait
 [OK: contains "Time passes"]
 
+# Cooled, and with the grievance behind it, Kemp opens the talk
+# himself — and will finish it before any other subject.
 > wait
-[OK: contains "Time passes"]
+[OK: contains "once begun, this is the only talk I have in me"]
 
-> wait
-[OK: contains "Time passes"]
+> tell me more
+[OK: contains "Hear my price"]
 
-# After the cooling, and with the grievance behind it, the offer.
-> ask kemp about the rose
-[OK: contains "Say what you came to say"]
+> go on
+[OK: contains "Ask me the question Philip sent"]
 
 > ask kemp about yes
 [OK: contains "Sworn"]
+[OK: contains "finished WELL"]
 
 # The second night.
 > east

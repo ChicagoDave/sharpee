@@ -1,0 +1,56 @@
+title: The drilling — Burbage says it again until it is heard
+story: ides-of-march
+author: Sharpee Platform
+seed: 42
+description: Opening morning, Burbage drills the hired man in his
+  business and will not be moved off it. With no refusal line
+  authored, an off-subject ask simply gets the current instruction
+  again, word for word; the prompts advance it; done is done.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/ides-of-march/chord/ides-of-march.story
+    stories/ides-of-march/tests/transcripts/threads-drilling.transcript
+
+---
+
+# Two quick nights: the drilling belongs to opening morning.
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "Night takes Bankside"]
+
+> look
+[OK: contains "Yard"]
+
+> south
+[OK: contains "Tavern"]
+
+> east
+[OK: contains "The second night"]
+
+> look
+[OK: contains "Yard"]
+
+# ---- Opening day ----
+
+> north
+[OK: contains "Stage"]
+
+# The idle question serves — and Burbage opens the drill on its heels.
+> ask burbage about the weather
+[OK: contains "The heavens are painted"]
+[OK: contains "spear UP"]
+
+# Off the subject mid-drill, with no refusal line authored: the
+# current instruction again, word for word.
+> ask burbage about the weather
+[OK: contains "spear UP"]
+[OK: not contains "The heavens are painted"]
+
+# The prompt advances to the dismissal.
+> tell me more
+[OK: contains "see it does not learn it from your mistakes"]
+
+# Done is done: the drill never re-engages, and nothing crashes.
+> ask burbage about my part
+[OK: contains "I don't know anything about that"]

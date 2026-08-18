@@ -18,7 +18,8 @@
  * advertised responses.
  *
  * Public interface: sceneRowsOf(channelValues), sceneExplainGroups(rows,
- * nameOf), affordanceGroupsOf(channelValues, nameOf); type SceneRow.
+ * nameOf), affordanceGroupsOf(channelValues, nameOf),
+ * threadAffordanceGroupsOf(channelValues, nameOf); type SceneRow.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -101,6 +102,17 @@ const DESCRIBERS: Record<string, (data: Record<string, unknown>, who: Who) => st
     `${who(d.leaverId)} cannot leave — no traversable exit`,
   'character.exchange.opened': (d) =>
     `exchange opened — ${text(d.exchangeId)} (${text(d.word)})`,
+  // Conversation-thread lifecycle (ADR-320 D14, Phase 10.6).
+  'character.scene.thread-opened': (d, who) =>
+    `thread opened — ${text(d.threadKey)} (${who(d.ownerId)})`,
+  'character.scene.thread-beat': (d, who) =>
+    `${who(d.ownerId)} carries ${text(d.threadKey)} — beat ${text(d.beatIndex)}`,
+  'character.scene.thread-parked': (d) =>
+    `thread parked — ${text(d.threadKey)} at beat ${text(d.beatCursor)}`,
+  'character.scene.thread-resumed': (d) =>
+    `thread resumed — ${text(d.threadKey)} at beat ${text(d.beatCursor)}`,
+  'character.scene.thread-concluded': (d, who) =>
+    `thread concluded — ${text(d.threadKey)} (${who(d.ownerId)})`,
 };
 
 /** The data fields that identify each kind for click-to-assert. Volatile
@@ -115,6 +127,11 @@ const FRAGMENT_FIELDS: Record<string, string[]> = {
   'character.scene.intrusion_blocked': ['intruderId'],
   'character.scene.exit_refused': ['leaverId'],
   'character.exchange.opened': ['exchangeId', 'word'],
+  'character.scene.thread-opened': ['threadKey'],
+  'character.scene.thread-beat': ['threadKey', 'beatIndex'],
+  'character.scene.thread-parked': ['threadKey', 'beatCursor'],
+  'character.scene.thread-resumed': ['threadKey', 'beatCursor'],
+  'character.scene.thread-concluded': ['threadKey'],
 };
 
 /** One `"key":"value"` fragment — a substring of the row's JSON rendering.
@@ -254,6 +271,58 @@ export function affordanceGroupsOf(
         });
       }
       groups.push({ npcLabel: `responses — ${advertised.exchangeId}`, lines });
+    }
+  }
+  return groups;
+}
+
+/** The `thread-affordances` capture shape (stdlib's wire, loosely held). */
+interface CapturedContinuability {
+  sceneId?: unknown;
+  ownerId?: unknown;
+  threadKey?: unknown;
+  beatCursor?: unknown;
+  continuable?: unknown;
+}
+
+/**
+ * Projects the turn's `thread-affordances` capture — "does the owner have
+ * more to say?" (ADR-320 D14) — into one group per active thread, one
+ * line stating the continuability, each line asserting into a channel
+ * claim on `thread-affordances`.
+ *
+ * @param channelValues the turn's per-channel capture values.
+ * @param nameOf resolves a world id to a display name (the world digest).
+ */
+export function threadAffordanceGroupsOf(
+  channelValues: Record<string, unknown[]> | undefined,
+  nameOf: (id: string) => string | undefined,
+): ExplainGroup[] {
+  const who: Who = (value) => {
+    const id = text(value);
+    return nameOf(id) ?? 'the player';
+  };
+  const groups: ExplainGroup[] = [];
+  for (const value of channelValues?.['thread-affordances'] ?? []) {
+    for (const entry of Array.isArray(value) ? value : [value]) {
+      if (entry === null || typeof entry !== 'object') continue;
+      const advertised = entry as CapturedContinuability;
+      if (typeof advertised.threadKey !== 'string') continue;
+      const owner = who(advertised.ownerId);
+      const cursor = text(advertised.beatCursor);
+      const line: ExplainLine = {
+        text: advertised.continuable === true
+          ? `${owner} has more to say — beat ${cursor} served, next ready`
+          : `${owner} holds — beat ${cursor} served, next beat waits on its gate`,
+        tone: 'normal',
+        raw: rawOf(advertised as Record<string, unknown>),
+        fragments: [
+          ...frag('threadKey', advertised.threadKey),
+          ...frag('continuable', advertised.continuable),
+        ],
+        claimChannel: 'thread-affordances',
+      };
+      groups.push({ npcLabel: `thread — ${advertised.threadKey}`, lines: [line] });
     }
   }
   return groups;
