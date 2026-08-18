@@ -3,11 +3,14 @@
  * Derived from the stampVersions Behavior Statement. The byte-for-byte parity with
  * build.sh's full build is covered by scripts/parity-cli-bundle.sh.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+
+vi.mock('node:child_process', () => ({ execFileSync: vi.fn() }));
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stampVersions } from './build';
+import { stampVersions, buildPlatform } from './build';
 import { findRepoRoot, resolveStoryDir, resolveStory, detectMode } from '../repo';
 
 describe('stampVersions', () => {
@@ -147,5 +150,40 @@ describe('resolveStory (path or name)', () => {
 
   it('returns null when nothing resolves', () => {
     expect(resolveStory(root, 'ghost')).toBeNull();
+  });
+});
+
+/**
+ * Derived from the buildPlatform ESM-pass Behavior Statement. skipTo names a
+ * package absent from PLATFORM_PACKAGES, so the CJS loop skips every entry and
+ * the ESM pass is the only observable call.
+ */
+describe('buildPlatform ESM pass', () => {
+  const calls: Array<{ cmd: string; args: string[] }> = [];
+
+  beforeEach(() => {
+    calls.length = 0;
+    vi.mocked(execFileSync).mockImplementation(((cmd: string, args: string[]) => {
+      calls.push({ cmd, args });
+      return Buffer.from('');
+    }) as never);
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
+  it('runs a whole-tree esm build by default — not a per-package filter', () => {
+    buildPlatform('/nonexistent-root', { skipTo: '__no_such_package__', quiet: true });
+    const esm = calls.filter((c) => c.args.includes('esm'));
+    expect(esm).toHaveLength(1);
+    expect(esm[0].args).toEqual(['build', '--target', 'esm']);
+    // The old per-package form is what skipped character/devkit/helpers/queries,
+    // none of which have a tsconfig.esm.json.
+    expect(esm[0].args).not.toContain('--filter');
+    expect(esm[0].args).not.toContain('--condition');
+  });
+
+  it('skips the esm pass entirely when noEsm is set', () => {
+    buildPlatform('/nonexistent-root', { skipTo: '__no_such_package__', noEsm: true, quiet: true });
+    expect(calls.filter((c) => c.args.includes('esm'))).toHaveLength(0);
   });
 });

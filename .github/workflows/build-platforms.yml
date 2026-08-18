@@ -44,12 +44,13 @@ jobs:
     # bundle against the dungeo walkthrough, and without a compiled story dist the
     # bundle falls back to loading stories/dungeo/src/index.ts as ESM source,
     # which dies on its directory imports (ERR_UNSUPPORTED_DIR_IMPORT).
-    # No ESM pass here, deliberately: dist-esm/ is for the browser/playground
-    # client bundles, which this job does not build. Tests no longer read it —
-    # every vitest config resolves @sharpee/* to workspace src via
-    # vitest.shared.ts. Before that, transcript-tester resolved through the
-    # `import` export condition into a dist-esm/ CI had never built, which is
-    # what took main red for 3 days (GH #276/#277).
+    # repokit runs the whole-tree ESM pass by default now (--no-esm opts out), so
+    # dist-esm/ exists here without a separate step. It is NOT what makes the
+    # tests pass — every vitest config resolves @sharpee/* to workspace src via
+    # vitest.shared.ts, so nothing under test reads build output. dist-esm/ is
+    # built because 30 packages declare an `import`/`module` entry pointing at it,
+    # and a package that advertises an entry point it never emits fails
+    # `tsf validate --publish` (GH #276/#277, and the 5.1.0 publish dry run).
     - name: Build platform packages + dungeo (repokit)
       run: ./repokit build dungeo --no-genai
 
