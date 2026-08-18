@@ -298,6 +298,27 @@ IDE Chord 3.3.0 alignment (Phases 1–4):
   regeneration, not a hand edit)
 - docs/work/archive/ide-chord-330-alignment/ (plan, archived; all 4 phases DONE)
 
+## GH #264 — web player banner/room seam (checked, fixed)
+David asked me to check it; it is still live and is NOT fixed by the header
+reflow above — different layer entirely (CSS in the web player, not the
+compiler). Verified the issue's own diagnosis before touching anything:
+`createBannerChannelRenderer` emits `<p class="sharpee-banner-*">` into the
+main slot and the room description lands as a plain `<p>` in that same slot,
+so they are adjacent siblings and the prescribed sibling selector matches;
+`:last-of-type` genuinely cannot work, since which piece ends the banner
+varies with what the story declares (tail / credit / subtitle).
+- Applied David's prescribed rule verbatim to
+  `packages/platform-browser/styles/base.css`, commented with why it keys on
+  the following paragraph rather than the last banner piece.
+- Added the spacing assertion the issue flagged as "a separate addition if
+  wanted" — the existing test pins class-name drift and would have watched
+  this rule be deleted. platform-browser 143 passing (+1).
+- **Proved the new test can fail**: its regex finds no match in
+  `git show HEAD`'s copy of base.css and matches the fixed copy, so it is a
+  real assertion rather than one that cannot fail.
+- CSS-only, so per the issue's own note it rides the next platform build
+  rather than triggering an installer rebuild.
+
 ## Files Modified — second batch (after commit 57d60757)
 
 Chord character + conversation docs:
