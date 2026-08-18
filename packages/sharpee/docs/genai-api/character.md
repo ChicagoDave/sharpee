@@ -4340,6 +4340,22 @@ export interface CharacterPhaseConfig {
         valence: number;
         arousal: number;
     };
+    /**
+     * Topics this character's own TURN-TRIGGERED rules are gated on knowing
+     * (`on every turn … while it knows <topic>`). When such a topic arrives by
+     * propagation, that rule fires this same turn and narrates the arrival in
+     * the author's words — so the platform must NOT also describe it with the
+     * generic witnessed summary, or one moment gets told twice: the author's
+     * staged confrontation, plus "X mentions something to Y."
+     *
+     * Only turn-triggered clauses count. A topic row gated `when it knows
+     * <topic>` is a RESPONSE gate — it fires if the player asks, later or
+     * never — so it says nothing about who narrates this arrival and must not
+     * suppress anything.
+     *
+     * Derived from the compiled story at load; authors declare nothing.
+     */
+    arrivalNarratedTopics?: ReadonlySet<string>;
 }
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled

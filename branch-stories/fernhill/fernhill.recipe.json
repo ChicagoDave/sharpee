@@ -1,0 +1,54 @@
+{
+  "story": "branch-stories/fernhill/fernhill.story",
+  "id": "fernhill",
+  "title": "The Folly at Fernhill",
+  "seed": 42,
+  "spine": [
+    "north",
+    "ask tobias about the folly",
+    "north",
+    "east",
+    "turn stopcock",
+    "push plunger",
+    "switch on boiler",
+    "west",
+    "north",
+    "east",
+    "take shears",
+    "take sherry",
+    "west",
+    "give sherry to kettle",
+    "south",
+    "west",
+    "prune vine",
+    "take locket",
+    "north",
+    "open folly door",
+    "north",
+    "cut fuse with shears",
+    "open deed box with locket",
+    "take deed",
+    "south",
+    "south",
+    "east",
+    "south",
+    "south"
+  ],
+  "branches": [
+    {
+      "after": 3,
+      "commands": ["examine boiler", "open crate"],
+      "note": "the boiler's own instructions, and the crate that needs a tool"
+    },
+    {
+      "after": 9,
+      "commands": ["north"],
+      "note": "the pantry door, closed"
+    },
+    {
+      "after": 20,
+      "commands": ["open deed box with locket", "take deed"],
+      "note": "taking the deed without cutting the fuse first — the cache goes up"
+    }
+  ]
+}

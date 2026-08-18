@@ -1,0 +1,206 @@
+The Ides of March — walkthrough
+===============================
+
+A complete playthrough to the winning ending, with every response the
+game gives. Generated from a real run at seed 42; regenerate with
+scripts/make-story-artifacts.mjs rather than editing by hand.
+
+SPOILERS: this is the whole story, start to finish.
+
+------------------------------------------------------------------------
+
+The Ides of March
+Story v0.1.0
+The last three days before Julius Caesar opens the new Globe. You are Henslowe's man, slipped in among the hired players. Bring the clown to the Admiral's Men and the play-book across Bankside, and let no one see your face beneath the face.
+By Sharpee Platform
+
+Yard
+The yard of the Globe, open to the sky, ringed by three galleries of new timber. Empty of groundlings, it is a field of trodden hazelnut shells. The stage stands north; the way out to Bankside and the tavern is south.
+
+You can see Will Kemp here.
+
+> talk to kemp
+
+The clown looks you over the way he looks over a crowd: all at once, and none of it missed. "A new face among the hired men. Well, the house eats faces. Kemp." He does not bow; the name is the bow.
+
+> ask kemp about the grievance
+
+The mirth drops off him like a mask coming down. "Set down for them, is what I am to speak now. SET DOWN. Seven years I filled this company's purse out of my own legs, and the new house has no room in it for Kemp." He looks at the unfinished galleries. "Well. Rooms can be found elsewhere."
+
+> north
+
+Stage
+The stage of the new Globe, raw oak still pale from the saw. Two pillars painted like marble hold up the heavens, and the house's first play is chalked on the plot-board: JULIUS CAESAR. The tiring-house door stands west; the yard is south, over the lip of the boards.
+
+You can see a property sword, Richard Burbage, and a first hired man here.
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> talk to burbage
+
+The tragedian stops mid-thought and turns the whole of his attention on you, which is like standing where the light falls. "I do not know your face."
+
+> ask burbage about norwich
+
+"Norwich." He turns the word over once, finds it ordinary, and hands it back. "Well, the provinces keep better discipline than the town. See you bring it with you." The full weight of his attention releases you, mostly.
+
+> tell burbage about norwich
+
+"So you said." The word goes into whatever ledger Burbage keeps behind his eyes. "Norwich men are punctual, at least. Be that."
+
+> south
+
+Yard
+The yard of the Globe, open to the sky, ringed by three galleries of new timber. Empty of groundlings, it is a field of trodden hazelnut shells. The stage stands north; the way out to Bankside and the tavern is south.
+
+You can see Will Kemp here.
+
+> south
+
+Tavern
+A Bankside tavern, low-beamed and dim, conveniently deaf. Men from every playhouse drink here and pretend not to know one another. The Globe is back north; your lodging is east.
+
+You can see a pot of ale here.
+
+> east
+
+Your Lodging
+A rented room over a chandler's shop: a pallet, a candle, and a loose board under which a man might keep what is not his. The tavern is west.
+
+Night takes Bankside. You lie on the pallet composing your report to Henslowe in your head, and the house's first day of rehearsal turns over into its second. Morning finds you back at the Globe, in the yard, with two days left.
+
+> look
+
+Yard
+The yard of the Globe, open to the sky, ringed by three galleries of new timber. Empty of groundlings, it is a field of trodden hazelnut shells. The stage stands north; the way out to Bankside and the tavern is south.
+
+You can see Will Kemp here.
+
+> wait
+
+Time passes...
+
+Burbage plants himself in front of Kemp, courteous as a headsman. "The Caesar jig is cut, Will. And the clowning within the play besides. Speak what is set down, or the house will manage its laughter without thee." The words are quiet; every wall hears them. Kemp stands very still for a man built of motion. Then he makes the company a low, perfect, poisonous bow, and walks out toward Bankside.
+
+You hear: "Richard Burbage mentions something to Will Kemp."
+
+> south
+
+Tavern
+A Bankside tavern, low-beamed and dim, conveniently deaf. Men from every playhouse drink here and pretend not to know one another. The Globe is back north; your lodging is east.
+
+You can see a pot of ale and Will Kemp here.
+
+> ask kemp about the rose
+
+Kemp's head comes round before the sentence is done. "Not NOW, friend." The voice is dead level, which from Kemp is shouting. "Ask me of roses and Henslowes some other hour, when the boards have cooled."
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+> wait
+
+Time passes...
+
+You hear: "Kemp turns the pot once in his hands and looks south, over the tavern roof, toward where the Rose sits across Bankside with its old boards and its faithful yard. "The Rose," he says, low, as if the word had been sitting between you this whole while. "Say what you came to say, then. All of it, plainly. And understand me, friend — once begun, this is the only talk I have in me until it is finished.""
+
+> tell me more
+
+"Hear my price before you name Philip's." He counts it off on his fingers, showman even now. "The jig restored, every afternoon, at MY length. My name on the bills, big as the play's. And no poet's set-down-for-them in my scenes — the yard writes my lines with me, fresh, every house." He leans back. "Cheap, for what walks out of this company when I do."
+
+> go on
+
+"Well. You know what I am owed and you know what I am worth, which puts you ahead of this company on both counts." He sets the pot down and gives you the whole of his attention, a thing crowds pay for. "So ask it. Ask me the question Philip sent across the river in your mouth."
+
+> ask kemp about yes
+
+"Yes, he says. Plain as a bell." Kemp leans in, and the yard drops out of his voice entirely. "You are no more a Norwich man than I am a Roman, and only Henslowe's own would carry this errand. GOOD. A lie in the offer would have insulted me; a liar bearing it means the silver is real." He puts out his hand. "Tell Philip the clown is his. Sworn."
+
+Kemp takes your hand before the word is done. "Sworn, then. The Rose will have jigs again, and the Globe may keep its Romans."
+
+You hear: ""Done, then, and done plainly." He claps his hands once, the sound of a house letting go its breath. "Tell Philip: the clown comes to the Rose, jigs and all, and the Globe may bury its Caesar with full honours. This talk is finished, friend — and finished WELL.""
+
+> east
+
+Your Lodging
+A rented room over a chandler's shop: a pallet, a candle, and a loose board under which a man might keep what is not his. The tavern is west.
+
+The second night. Across the river the city sleeps easy; on this bank, nobody does. Morning comes cold and clear: the last day of rehearsal. Tomorrow, Caesar opens the Globe, and everything not carried across Bankside by then stays here for good.
+
+> north
+
+Stage
+The stage of the new Globe, raw oak still pale from the saw. Two pillars painted like marble hold up the heavens, and the house's first play is chalked on the plot-board: JULIUS CAESAR. The tiring-house door stands west; the yard is south, over the lip of the boards.
+
+You can see a property sword, a first hired man, Richard Burbage, William Shakespeare, and Will Kemp here.
+
+> west
+
+Tiring-House
+The tiring-house, behind the stage: racks of robes and armour, a property table, and the company's papers. Everything the play is made of lives in this room. The door east gives onto the stage.
+
+You can see a tiring-house key, a play-book, and a boy player here.
+
+> take the play-book
+
+Taken.
+
+> east
+
+Stage
+The stage of the new Globe, raw oak still pale from the saw. Two pillars painted like marble hold up the heavens, and the house's first play is chalked on the plot-board: JULIUS CAESAR. The tiring-house door stands west; the yard is south, over the lip of the boards.
+
+You can see a property sword, a first hired man, Richard Burbage, William Shakespeare, and Will Kemp here.
+
+You hear: "Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. "Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.""
+
+> south
+
+Yard
+The yard of the Globe, open to the sky, ringed by three galleries of new timber. Empty of groundlings, it is a field of trodden hazelnut shells. The stage stands north; the way out to Bankside and the tavern is south.
+
+> south
+
+Tavern
+A Bankside tavern, low-beamed and dim, conveniently deaf. Men from every playhouse drink here and pretend not to know one another. The Globe is back north; your lodging is east.
+
+You can see a pot of ale here.
+
+> east
+
+Your Lodging
+A rented room over a chandler's shop: a pallet, a candle, and a loose board under which a man might keep what is not his. The tavern is west.
+
+You lie down over the loose board with the play-book beneath it and the clown's handshake still warm in your palm. Tomorrow Caesar opens the Globe to a house with no jig at the end of it; within the month, the Rose will play a Caesar of its own, and Kemp will dance till the galleries shake. Henslowe pays in full, for once, and asks no questions, which from Henslowe is a knighthood. Nobody at the Globe ever learns your name; you were a hired man, and the house eats faces.
+

@@ -3,7 +3,7 @@
 ## words, the recency and threading predicates, exchanges with their
 ## answer/act/silence heads and strength modifier, initiative occasions, and
 ## conversation threads with gated beats, transition rows, and a conclusion.
-## Spellings lifted from the shipping syntax in stories/ides-of-march and
+## Spellings lifted from the shipping syntax in branch-stories/ides-of-march and
 ## stories/character-acceptance. Edit only alongside the golden file.
 
 story

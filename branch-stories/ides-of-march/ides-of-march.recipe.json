@@ -1,0 +1,65 @@
+{
+  "story": "branch-stories/ides-of-march/ides-of-march.story",
+  "id": "ides-of-march",
+  "title": "The Ides of March",
+  "seed": 42,
+  "spine": [
+    "talk to kemp",
+    "ask kemp about the grievance",
+    "north",
+    "wait",
+    "wait",
+    "wait",
+    "wait",
+    "talk to burbage",
+    "ask burbage about norwich",
+    "tell burbage about norwich",
+    "south",
+    "south",
+    "east",
+    "look",
+    "wait",
+    "south",
+    "ask kemp about the rose",
+    "wait",
+    "wait",
+    "wait",
+    "wait",
+    "wait",
+    "wait",
+    "tell me more",
+    "go on",
+    "ask kemp about yes",
+    "east",
+    "north",
+    "west",
+    "take the play-book",
+    "east",
+    "south",
+    "south",
+    "east"
+  ],
+  "branches": [
+    {
+      "after": 0,
+      "commands": [
+        "ask kemp about the ale"
+      ],
+      "note": "the clown on small ale \u2014 an off-errand topic"
+    },
+    {
+      "after": 7,
+      "commands": [
+        "ask burbage about henslowe"
+      ],
+      "note": "naming Henslowe to Burbage instead of Norwich"
+    },
+    {
+      "after": 24,
+      "commands": [
+        "ask kemp about no"
+      ],
+      "note": "refusing the offer \u2014 the thread cools instead of swearing"
+    }
+  ]
+}

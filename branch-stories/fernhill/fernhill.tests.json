@@ -1,18 +1,7 @@
 {
   "cards": [
     {
-      "assertions": {
-        "channels": [
-          {
-            "id": "info.title",
-            "is": "The Folly at Fernhill"
-          },
-          {
-            "id": "info.description",
-            "is": "One cold winter night to find the deed that keeps Fernhill in the family."
-          }
-        ]
-      },
+      "assertions": {},
       "type": "opening"
     },
     {
@@ -27,8 +16,7 @@
     {
       "assertions": {
         "contains": [
-          "Gravel Drive",
-          "The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south."
+          "Gravel Drive"
         ]
       },
       "command": "north",
@@ -37,10 +25,29 @@
     {
       "assertions": {
         "contains": [
-          "Fountain Court",
-          "A paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhouse glimmers palely to the west; a squat brick shed hunches to the east; the front door of the house is north."
+          "The lantern stops swinging. \"Twenty years I've not opened that door, and her ladyship neither.\" He looks up the dark hill for a long moment. \"Go on then, if you must. The door's only warped, not cursed. Shoulder it.\""
         ]
       },
+      "command": "ask tobias about the folly",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "north",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Boiler Shed"
+        ]
+      },
+      "command": "east",
+      "type": "turn",
       "branches": [
         {
           "branch": 1,
@@ -48,39 +55,65 @@
             {
               "assertions": {
                 "contains": [
-                  "Greenhouse",
-                  "Glass panes furred with frost on both sides. Staging benches run the length of the house, and a door in the north wall — glass too — leads up toward the folly, if it would open."
+                  "A cast-iron estate boiler, cold now, its dial at rest. Pipes run from its flank toward the greenhouse. A stopcock and a primer plunger stand ready on its flank, and a small brass plate reads: FILL. PRIME. LIGHT. IN THAT ORDER."
                 ]
               },
-              "command": "west",
+              "command": "examine boiler",
               "type": "turn"
-            }
-          ]
-        },
-        {
-          "branch": 2,
-          "cards": [
+            },
             {
               "assertions": {
                 "contains": [
-                  "Boiler Shed",
-                  "Brick, low, and bitter with old coal dust. The estate's boiler sits cold as a tomb against the back wall, its pipes running off through the earth toward the greenhouse."
+                  "You need something to open the nailed crate with."
                 ]
               },
-              "command": "east",
+              "command": "open crate",
               "type": "turn"
             }
           ]
         }
-      ],
-      "command": "north",
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You crank the stopcock a hard quarter-turn."
+        ]
+      },
+      "command": "turn stopcock",
       "type": "turn"
     },
     {
       "assertions": {
         "contains": [
-          "Entrance Hall",
-          "The heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock standing silent against the stairs. Doors lead west to the study and east to the kitchen; a colder passage runs north."
+          "You push the primer plunger."
+        ]
+      },
+      "command": "push plunger",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The boiler hums to life."
+        ]
+      },
+      "command": "switch on boiler",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "west",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
         ]
       },
       "command": "north",
@@ -89,8 +122,202 @@
     {
       "assertions": {
         "contains": [
-          "Kitchen",
-          "Copper pans hang in ranks over the cold range. The pantry door stands in the north wall."
+          "Kitchen"
+        ]
+      },
+      "command": "east",
+      "type": "turn",
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "The pantry door is closed."
+                ]
+              },
+              "command": "north",
+              "type": "turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take shears",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take sherry",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "west",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mrs Kettle turns the bottle to read the label, and something in her shoulders comes down an inch. \"Her ladyship's oloroso. Well.\" She steps away from the study door. \"Five minutes, mind.\""
+        ]
+      },
+      "command": "give sherry to kettle",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Greenhouse"
+        ]
+      },
+      "command": "west",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the dead growth off in three clean cuts, and the vine answers the warmth almost while you watch: a single heavy fruit swells, splits — and something small and silver slides out into the leaf mould. Verity's own way of banking."
+        ]
+      },
+      "command": "prune vine",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take locket",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly Hill"
+        ]
+      },
+      "command": "north",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the folly door."
+        ]
+      },
+      "command": "open folly door",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly"
+        ]
+      },
+      "command": "north",
+      "type": "turn",
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "You open the deed box."
+                ]
+              },
+              "command": "open deed box with locket",
+              "type": "turn"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "You take the deed from the deed box."
+                ]
+              },
+              "command": "take deed",
+              "type": "turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shears bite through the waxed cord. The spark train staggers, gutters, and dies a hand's breadth from the cache."
+        ]
+      },
+      "command": "cut fuse with shears",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the deed box."
+        ]
+      },
+      "command": "open deed box with locket",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the deed from the deed box.",
+          "Somewhere below, a door you have never opened settles on its hinges, as if it had been waiting to be yours."
+        ]
+      },
+      "command": "take deed",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly Hill"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Greenhouse"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
         ]
       },
       "command": "east",
@@ -99,11 +326,20 @@
     {
       "assertions": {
         "contains": [
-          "a garden shears: Taken.",
-          "a sherry bottle: Taken."
+          "Gravel Drive"
         ]
       },
-      "command": "take all",
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Iron Gates",
+          "You come down the drive with the deed of Fernhill inside your coat, and the iron gates, for the first time tonight, look like they are holding the world out rather than you in. At dawn the hammer will fall on nothing: the proof came out of the fire after all."
+        ]
+      },
+      "command": "south",
       "type": "turn"
     }
   ],

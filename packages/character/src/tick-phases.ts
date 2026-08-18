@@ -124,6 +124,23 @@ export interface CharacterPhaseConfig {
    * runtime owns the curve). Absent → no mood decay for this NPC.
    */
   baselineMood?: { valence: number; arousal: number };
+
+  /**
+   * Topics this character's own TURN-TRIGGERED rules are gated on knowing
+   * (`on every turn … while it knows <topic>`). When such a topic arrives by
+   * propagation, that rule fires this same turn and narrates the arrival in
+   * the author's words — so the platform must NOT also describe it with the
+   * generic witnessed summary, or one moment gets told twice: the author's
+   * staged confrontation, plus "X mentions something to Y."
+   *
+   * Only turn-triggered clauses count. A topic row gated `when it knows
+   * <topic>` is a RESPONSE gate — it fires if the player asks, later or
+   * never — so it says nothing about who narrates this arrival and must not
+   * suppress anything.
+   *
+   * Derived from the compiled story at load; authors declare nothing.
+   */
+  arrivalNarratedTopics?: ReadonlySet<string>;
 }
 
 /**
@@ -614,6 +631,16 @@ function recordTransfer(
 
   const result = transferFact(transfer, speakerTrait, listenerTrait, turn, receivesAs);
 
+  // The story narrates this arrival itself when the listener has a
+  // turn-triggered rule gated on knowing this topic: that rule fires on the
+  // same tick the fact lands, in the author's own words. The platform's
+  // generic summary would describe the identical moment a second time —
+  // Kemp's staged blow-up, immediately followed by "Richard Burbage mentions
+  // something to Will Kemp." The transfer still happens; only the platform's
+  // narration of it stands down.
+  const authorNarratesArrival =
+    listenerConfig?.arrivalNarratedTopics?.has(transfer.topic) ?? false;
+
   // ADR-320 Phase 8 (D10 — "propagation made visible"): a wrappable
   // pair's transfer becomes a scene move; its observable surface is the
   // sound path ONLY, so the legacy same-room event does not mint. Ambient
@@ -627,7 +654,7 @@ function recordTransfer(
       topic: transfer.topic,
       roomId,
       coloring: transfer.coloring,
-      ...(!result.alreadyKnew && visibility.messageId
+      ...(!result.alreadyKnew && !authorNarratesArrival && visibility.messageId
         ? {
             soundMessageId: visibility.messageId,
             soundParams: {
@@ -643,7 +670,7 @@ function recordTransfer(
     return;
   }
 
-  if (roomId === playerLocation && !result.alreadyKnew) {
+  if (roomId === playerLocation && !result.alreadyKnew && !authorNarratesArrival) {
     const visibility = getVisibilityResult(transfer, 'present');
     if (visibility.messageId) {
       events.push(createEvent('character.propagation.witnessed', {

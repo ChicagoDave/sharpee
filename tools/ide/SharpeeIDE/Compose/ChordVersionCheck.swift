@@ -39,7 +39,7 @@ enum ChordVersionCheck {
     /// exchanges/initiative, 3.3.0 conversation threads. Here the honesty
     /// condition above is met by a NEW corpus file rather than a migrated one:
     /// `conversation-surface.story` exercises all three slices, its constructs
-    /// lifted from the shipping syntax in `stories/ides-of-march` and
+    /// lifted from the shipping syntax in `branch-stories/ides-of-march` and
     /// `stories/character-acceptance` and gate-clean under `sharpee compose
     /// --check` at 3.3.0. The golden was regenerated over it with zero
     /// deletions to the three existing streams, and `ChordLexerGoldenTests` is

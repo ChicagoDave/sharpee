@@ -273,6 +273,20 @@ function checkAudienceForListener(
 
 /**
  * Apply pace to limit how many facts are shared per turn.
+ *
+ * The default is `eager` — every eligible fact at once. That was briefly
+ * changed to `gradual` while chasing a doubled line (Burbage passing Kemp both
+ * `the-blow-up` and `norwich` printed "Richard Burbage mentions something to
+ * Will Kemp." twice, since the witnessed message names no topic). `gradual`
+ * hid the duplicate but was the wrong layer, and it cost the story a beat:
+ * with one fact per turn, a pair who meet ONCE — Kemp storms off straight
+ * after the blow-up — can never exchange the second fact, so `norwich` never
+ * reached Kemp and his "you are no more a Norwich man than I am a Roman"
+ * recognition became unreachable.
+ *
+ * The real cause was that the platform narrated an arrival the STORY already
+ * dramatizes (`arrivalNarratedTopics`, see `recordTransfer`). With that fixed,
+ * `eager` prints one line rather than two AND the payoff survives.
  */
 function applyPace(
   eligibleFacts: string[],

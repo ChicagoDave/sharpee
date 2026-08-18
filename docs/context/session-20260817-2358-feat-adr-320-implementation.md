@@ -319,6 +319,130 @@ varies with what the story declares (tail / credit / subtitle).
 - CSS-only, so per the issue's own note it rides the next platform build
   rather than triggering an installer rebuild.
 
+## Full card sets + old-school walkthroughs for both sample zips
+David: "let's finish the full card sets and oldschool walkthroughs for the
+Fernhill and Ides zip files."
+- **Generator promoted out of scratch** to `scripts/make-story-artifacts.mjs`
+  (recipe-driven, matching `playground-examples-check.mjs`'s precedent).
+  Everything is captured from a real `--exec` run of the shipped bundle, so an
+  assertion that is not in the real transcript cannot appear; regenerating is
+  the fix for drift. Regeneration is **byte-identical run to run** (verified).
+- **Fernhill's winning path did not exist anywhere** — no walkthrough, no
+  solution doc. Derived it by playing: ask Tobias about the folly (shakes him,
+  which is what unwarps the folly door) → boiler FILL/PRIME/LIGHT → sherry to
+  Mrs Kettle → shears → prune the vine for the locket → cut the fuse with the
+  shears → open the deed box with the locket → carry the deed to the gates.
+  26 moves to the winning ending.
+- **Card sets** (were: Fernhill 9 cards/18 assertions, Ides a 2-card stub):
+  Fernhill **35 cards / 38 assertions / 73 commands** across 4 lines; Ides
+  **38 cards / 45 assertions / 75 commands**. Both include real `branches`
+  (Fernhill: the boiler's own instructions, the closed pantry, and taking the
+  deed WITHOUT cutting the fuse — the cache goes up; Ides: an off-errand
+  topic, naming Henslowe to Burbage, refusing the offer so the thread cools).
+- **Walkthroughs**: `branch-stories/fernhill/WALKTHROUGH.txt` (237 lines) and
+  `stories/ides-of-march/WALKTHROUGH.txt` (208), each the complete prose to
+  the winning ending. Both endings print once — the #274 fix holding.
+- **Three generator bugs found by running the output back through the real
+  runner**, each of which would have shipped silently: the boot card asserted
+  the first command's room rather than the starting room; ambient `on every
+  turn` lines were being asserted, which shift with turn position; and the
+  first fix over-corrected, stripping room headings (they recur legitimately
+  when you revisit). Final rule: a line is ambient if it recurs AND never
+  leads a turn's output, judged across every run rather than per-run.
+- **A live bug in the SHIPPED download, caught by round-trip testing the zip
+  itself**: the published `the-folly-at-fernhill.zip` carried a stale
+  `fernhill.story` with the old inline `authors:` form, so **the sample story
+  on the download page did not compile with a current Chord Writer**. Third
+  instance tonight of the same `authors:` drift. Rebuilt from current repo
+  sources; both zips now verified from a clean extract.
+- **Ides zip is new** (20 KB) with its own README pitched as the conversation
+  sample, plus a download-page section beside Fernhill's linking to the new
+  Characters & Conversation docs.
+
+## Ides moved to the tree harness (David's ruling)
+**Correction I got wrong first**: asked why Fernhill sits in `branch-stories/`
+and Ides in `stories/`, I explained ADR-302 D16 (the directory IS the harness
+assignment) but then recommended KEEPING Ides' 212 v1 transcripts and treating
+its tree document as a mere sample artifact. David: "we're never building v1
+tests for Chord again" — v1 is the legacy/TS world; Chord stories are v2. Ides
+and Fernhill are the only Chord stories that matter; cloak stays as it is.
+- `stories/ides-of-march` → `branch-stories/ides-of-march`, flattened out of
+  `chord/` to mirror Fernhill exactly (story, config, tests.json, recipe,
+  WALKTHROUGH at the root).
+- **The invariant asserted itself mid-move, which settled the question**: the
+  bundle routes harness BY DIRECTORY (`scripts/bundle-entry.js` — anything
+  under `branch-stories/` goes to the branch tester, and mixed paths are a hard
+  error). The branch tester has no transcript parser at all — ADR-307 deleted
+  it — so the 19 `.transcript` files were unrunnable the moment they moved
+  (`branchTester.parseTranscriptFile is not a function`). There was never a
+  version where they could follow.
+- **19 `.transcript` files deleted** on David's explicit authorization ("we
+  never needed them") — 18 unit + wt-01. Their coverage now lives in the
+  38-card tree; the gap versus the old 212 is the thread transition matrix,
+  the save/restore golden pairs, and the wire assertions, which would be
+  redone as tree branches if wanted.
+- Live references repointed: the recipe, the lexer-golden corpus provenance
+  comment, and `ChordVersionCheck.swift`'s 3.3.0 history entry. Archived plans
+  and session summaries deliberately left pointing at the old path — records of
+  where the file was at the time, matching what commit `18d65ab3` did.
+- Ides zip rebuilt from the new home. Verified after: ides tree 38 cards/45
+  assertions, fernhill tree 35/38, Dungeo chain 952, thealderman 75,
+  chord 913, transcript-tester 278, branch-tester 86, story-loader 562,
+  repo-wide tsc clean.
+- **Open**: the ADR-320 acceptance audit cites those transcripts as its
+  evidence. The audit is archived history so it has not been rewritten, but a
+  line recording that the evidence was re-homed to the tree harness would keep
+  it honest.
+
+## Doubled "mentions something" line — root cause and internal fix
+David saw the earshot line printed twice on the Ides blow-up turn, rejected a
+render-layer coalesce as a hack, and asked for the root cause; then, when the
+first fix implied a new author surface, ruled that out too: "this is something
+the author shouldn't fiddle with — we need an internal answer."
+
+**First diagnosis (right symptom, wrong layer).** `applyPace` defaulted to
+`eager` ("all eligible facts at once") and Chord has no `pace` surface, so
+Burbage passed Kemp both `the-blow-up` and `norwich` in one tick. The witnessed
+message names speaker and listener but deliberately NOT the topic (that
+withholding is the point of the neutral coloring), so two real transfers
+rendered as two identical sentences. Changing the default to `gradual` removed
+the duplicate — **and broke two tests plus a story beat**: with one fact per
+turn, a pair who meet ONCE can never exchange the second fact, so `norwich`
+never reached Kemp and his "no more a Norwich man than I am a Roman"
+recognition became unreachable. **Reverted.**
+
+**Root cause (the internal answer).** The platform was narrating an arrival the
+STORY already dramatizes. Kemp's rule is `on every turn while second-day and it
+knows the-blow-up, once` — it fires on the tick the fact lands and narrates
+that exact moment in the author's words, so the platform's generic summary
+described it a second time.
+- `story-loader` derives, per entity, the topics its own **turn-triggered**
+  (`binding: 'every-turn'`) clauses are gated on knowing — walking the
+  condition tree through and/or/not for `knows-topic` — and puts the set on the
+  character config as `arrivalNarratedTopics`. Authors declare nothing.
+- `recordTransfer` (character) declines to mint the witnessed observable, on
+  both the scene-wrapped and legacy paths, when the arriving topic is in that
+  set. The transfer still happens; only the narration stands down.
+- **The precise part**: only turn-triggered clauses count. A topic row gated
+  `when it knows <topic>` is a RESPONSE gate — fires if the player asks, later
+  or never — so it says nothing about who narrates the arrival. Pinned by test.
+- Verified discrimination, not blanket suppression: Ides now emits **1**
+  generic line across the whole walkthrough (down from 2 — the blow-up is
+  authored, `norwich` is not), while thealderman still emits **4**, because
+  none of its transfers are authored-narrated.
+- **The payoff also proves the pace revert was right**: with `eager` restored
+  AND this fix, the duplicate is gone *and* "Plain as a bell" is back.
+- Tests: `packages/character/tests/tick-phases/arrival-narration.test.ts` — 4
+  cases including two controls that would catch over-suppression (no rule →
+  still narrated; rule on a DIFFERENT topic → still narrated) and one asserting
+  the fact still lands. `applyPace`'s doc records the whole finding so the
+  `gradual` detour is not re-attempted.
+- Ides artifacts + zip regenerated (output changed by one line).
+- **Evidence (2026-08-18)**: character 567, story-loader 562, chord 913, stdlib
+  1633, engine 633, world-model 1492; ides tree 38 cards/45 assertions,
+  fernhill tree 35/38, thealderman 75 (both previously-red tests green again),
+  Dungeo chain 952; repo-wide tsc clean.
+
 ## Files Modified — second batch (after commit 57d60757)
 
 Chord character + conversation docs:
@@ -347,8 +471,50 @@ Build artifacts (regenerated, not hand-edited):
   fragments — 15 new, plus the two cross-linked pages and chord-writer.html)
 - packages/sharpee/docs/genai-api/index.md, stories/dungeo/src/version.ts
 
+## Files Modified — third batch (after commit 2022237e)
+
+Sample-story artifacts + generator:
+- scripts/make-story-artifacts.mjs (new — recipe-driven, generates the tree
+  document and the walkthrough from a real bundle run)
+- branch-stories/fernhill/fernhill.recipe.json, fernhill.tests.json (9 cards →
+  35), WALKTHROUGH.txt (new, 237 lines)
+- branch-stories/ides-of-march/ides-of-march.recipe.json, .tests.json (2-card
+  stub → 38), WALKTHROUGH.txt (new, 208 lines)
+- website/public/downloads/the-folly-at-fernhill.zip (rebuilt from current
+  sources — the published copy carried a stale story that no longer compiled),
+  the-ides-of-march.zip (new)
+- website/src/app/chord-writer/download/content.mdx (Ides section + walkthrough
+  rows)
+
+Ides moved to the tree harness (v2), transcripts retired:
+- stories/ides-of-march/ → branch-stories/ides-of-march/, flattened out of
+  chord/ to match Fernhill
+- 19 `.transcript` files DELETED on David's authorization (18 unit + wt-01) —
+  unrunnable under the branch harness, which has no transcript parser
+- packages/chord/tests/fixtures/lexer-golden/conversation-surface.story,
+  tools/ide/SharpeeIDE/Compose/ChordVersionCheck.swift (provenance paths
+  repointed); lexer-golden.json regenerated
+
+Propagation double-narration (root-cause fix):
+- packages/character/src/tick-phases.ts (`arrivalNarratedTopics` on the config;
+  suppression on both emit paths)
+- packages/story-loader/src/loader.ts (`arrivalNarratedTopicsOf` derives the
+  set from turn-triggered clauses in the compiled IR)
+- packages/character/src/propagation/propagation-evaluator.ts (doc only —
+  `eager` default RESTORED after the `gradual` detour proved to be the wrong
+  layer; the finding is recorded there)
+- packages/character/tests/tick-phases/arrival-narration.test.ts (new, 4 cases)
+
+Build artifacts (regenerated): packages/sharpee/docs/genai-api/*,
+stories/dungeo/src/version.ts
+
 ## Notes
 - Session started: 2026-08-17 23:58 (session ade288); work ran 2026-08-18.
+- Three finalizes: 57d60757 (ADR-320 closure + version bump + IDE header fix),
+  4922d7e3 (author docs + prose fixes + #274), 2022237e (#264), then this
+  third batch. `.active-session` was retired by the first finalize's cleanup,
+  so the finalize gate's date-glob check does not resolve — the summary was
+  verified by name and size (480 lines) instead.
 - Two finalizes this session: commit 57d60757 (ADR-320 closure, version bump,
   IDE header fix), then this second batch. `.active-session` was retired by
   the first finalize's session-end cleanup, which is why the finalize gate's
