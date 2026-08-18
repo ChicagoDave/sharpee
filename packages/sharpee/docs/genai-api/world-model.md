@@ -4983,8 +4983,17 @@ export declare class StoryInfoTrait implements ITrait {
  */
 import { ITrait } from '../trait.js';
 import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, ValuedBelief, ResistanceMode, Goal, GoalRuntimeState, InfluenceInForce, TemperamentBinding, PrincipleDecl, ObligationDecl, HonorDecl, PressureState, PressureBand, LedgerEntry, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary.js';
-/** Current serialized shape version (ADR-310 D17 format discipline). */
-export declare const CHARACTER_MODEL_SCHEMA_VERSION = 1;
+import { ConversationMemory, ConversationThreadState } from './conversation-scene.js';
+/**
+ * Current serialized shape version (ADR-310 D17 format discipline).
+ * v2 (ADR-320 Phase 7): `conversationMemory` added — v1 data (field
+ * absent) reads as an empty record; every reader tolerates the absence,
+ * so no migration pass exists or is needed.
+ * v3 (ADR-320 D14, Phase 10.2): `conversationThreads` added — the same
+ * discipline: pre-v3 data (field absent) reads as an empty record, every
+ * reader tolerates the absence, no migration pass.
+ */
+export declare const CHARACTER_MODEL_SCHEMA_VERSION = 3;
 /** Serializable data for constructing a CharacterModelTrait. */
 export interface ICharacterModelData {
     /** Serialized shape version. Absent means pre-versioning data (treated as current). */
@@ -5028,6 +5037,18 @@ export interface ICharacterModelData {
     burdenedBy?: string[];
     /** The lie ledger: own claims and promises per audience (ADR-318 D9). */
     ledger?: LedgerEntry[];
+    /**
+     * Per-pair conversation memory (ADR-320 D4/D6/D9; adr-320 contracts §2):
+     * partnerId → this holder's own view of the pair's history. Absent on
+     * pre-v2 data — readers treat absence as an empty record.
+     */
+    conversationMemory?: Record<string, ConversationMemory>;
+    /**
+     * Per-pair conversation-thread state (ADR-320 D14; schema v3):
+     * partnerId → thread key → this owner's cursor/status for that thread.
+     * Absent on pre-v3 data — readers treat absence as an empty record.
+     */
+    conversationThreads?: Record<string, Record<string, ConversationThreadState>>;
     /**
      * Active conversation marker (ADR-310 D16 lifecycle rule): stamped on
      * every dialogue delivery to this character; goal pursuit is suppressed
@@ -5091,6 +5112,8 @@ export declare class CharacterModelTrait implements ITrait {
     pressure: PressureState;
     burdenedBy: string[];
     ledger: LedgerEntry[];
+    conversationMemory: Record<string, ConversationMemory>;
+    conversationThreads: Record<string, Record<string, ConversationThreadState>>;
     activeConversation?: ActiveConversation;
     lucidityConfig?: LucidityConfig;
     currentLucidityState: string;
@@ -5425,7 +5448,7 @@ export declare class CharacterModelTrait implements ITrait {
  * implementation details managed by CharacterModelTrait.
  *
  * The word lists here are frozen author-facing compatibility surface
- * (freeze review: David, 2026-08-15 — docs/work/adr-310/contracts.md §6).
+ * (freeze review: David, 2026-08-15 — docs/work/archive/adr-310/contracts.md §6).
  * Removing a word breaks stories; additions stay possible.
  *
  * Public interface: All exported types and maps.
@@ -5688,6 +5711,21 @@ export type Force = 'fear' | 'desire' | 'duty' | 'honor' | 'love';
 /** All forces, for runtime validation and iteration. */
 export declare const FORCES: readonly Force[];
 /**
+ * One force's live pressure on a candidate act (ADR-318 D1; adr-318
+ * contracts.md §3). Declared here — beside `Force` — so the scene-runtime
+ * binding's floor shapes (ADR-320 D7/D10) and the arbiter share one
+ * declaration; `@sharpee/character`'s arbiter re-exports it unchanged.
+ */
+export interface ForceReading {
+    force: Force;
+    /** Runtime-owned 0..1 scale; feed formulas per ADR-318 D1's table. */
+    intensity: number;
+    /** True when the feed is off-baseline. */
+    live: boolean;
+    /** Author-channel attribution, e.g. 'principle:never-lie'. */
+    feed: string;
+}
+/**
  * Act categories the runtime can detect (ADR-318 D4). A category the
  * runtime cannot detect cannot be a word. Scope is marked on data
  * (PrincipleDecl.scope), never on the act.
@@ -5790,6 +5828,271 @@ export interface PerceivedEvent {
     as: FactSource;
     content: string;
 }
+```
+
+### traits/character-model/conversation-scene
+
+```typescript
+/**
+ * Conversation scene and memory state shapes (ADR-320 D4/D6/D9/D10;
+ * adr-320 contracts.md §1–§2)
+ *
+ * A conversation is a scene: participants, a contested floor, at most one
+ * open exchange, and lifecycle boundaries the platform recognizes. Per-pair
+ * conversation memory (visits, discussed topics, repetition counts) rides
+ * the modeled holder's trait (`ICharacterModelData.conversationMemory`,
+ * Phase 7); live scenes ride the `character.scenes` world-state key
+ * (contracts.md §1.3, APPROVED), written only by the scene runtime.
+ *
+ * Every shape is platform-internal (contracts.md §7) — NOT author-facing
+ * compatibility surface; revisable at refactor cost. Turn fields are read
+ * and aged only through the character subsystem's clock seam — numbers
+ * never reach Chord (ADR-310 D6).
+ *
+ * Public interface: ConversationSceneState, SceneStrength, SceneOpenedBy,
+ *   ExchangeState, SceneBoundaryKind, ConversationMemory,
+ *   ConversationThreadStatus, ConversationThreadState.
+ * Owner context: world-model / character-model trait
+ */
+import type { ResponseAffordance, ThreadContinuability } from '../../capabilities/scene-wire.js';
+/**
+ * Scene grip against interruption (ADR-320 D10): `passive` yields to any
+ * motivated interjection, `assertive` protests then yields, `blocking`
+ * holds against everything except world events and acts (D8's exemption).
+ * Word-for-word the conversation lifecycle's `ConversationStrength`
+ * (@sharpee/character); Phase 5 collapses that union to an alias of this
+ * one (contracts.md §7).
+ */
+export type SceneStrength = 'passive' | 'assertive' | 'blocking';
+/**
+ * How a scene opened (ADR-320 D4): a participant addressing someone, an
+ * NPC's own initiative (D7), or any witnessed world event — a PC act,
+ * another character's act, or a story event. Selects boundary rows and
+ * seeds what the conversation is about.
+ */
+export type SceneOpenedBy = {
+    kind: 'address';
+    openerId: string;
+} | {
+    kind: 'initiative';
+    openerId: string;
+} | {
+    kind: 'witnessed-event';
+    eventId: string;
+};
+/**
+ * The boundary moments the platform recognizes (ADR-320 D4). The Chord
+ * boundary words that compile onto these kinds are Phase 3 vocabulary,
+ * frozen separately.
+ */
+export type SceneBoundaryKind = 'first-meeting' | 'return' | 'exit' | 'silence';
+/**
+ * An open exchange point (ADR-320 D4): a named moment where a speaker's
+ * line defines what the next responses mean. While open, its responses
+ * overlay the topic table under the innermost-active-context-wins rule
+ * (ADR-310 D16); the topic table is the floor's default when none is open.
+ */
+export interface ExchangeState {
+    /** The compiled exchange block this instantiates (Chord IR id, Phases 3–4). */
+    exchangeId: string;
+    /** Who opened it (whose line defined what the next responses mean). */
+    speakerId: string;
+    /** Strength marker authored on the exchange, if any (D10). */
+    strength?: SceneStrength;
+    /** Turn the exchange opened. */
+    openedTurn: number;
+    /**
+     * The advertised response set (ADR-320 D12), snapshotted from the
+     * compiled exchange block when the exchange opens — exchange rows are
+     * declarative, so the loader enumerates them once and the state carries
+     * them. Persisted with the scene store, so a mid-exchange restore
+     * re-advertises correctly; the `exchange-affordances` channel is a pure
+     * projection of this field. Always ends with the `silence` affordance
+     * (D8, the inalienable move).
+     */
+    responses: ResponseAffordance[];
+}
+/**
+ * A live conversation scene (ADR-320 D4): the engine-visible construct
+ * NPC↔NPC scheduling, save/restore, and the author channel all see.
+ * Mutated only by the scene runtime (@sharpee/character, Phase 5) — this
+ * module is pure data.
+ */
+export interface ConversationSceneState {
+    /** Stable id, unique within a save (runtime mints; format runtime-owned). */
+    id: string;
+    /** Everyone in the scene, PC included. Order is not meaningful. */
+    participantIds: string[];
+    /** How the scene opened — selects boundary rows, seeds what it is about. */
+    openedBy: SceneOpenedBy;
+    /** Current floor holder, or null while the floor is contested/open. */
+    floorHolderId: string | null;
+    /** The one open exchange, or null when the topic table is the default. */
+    openExchange: ExchangeState | null;
+    /** Scene grip against interruption (D10); absent = derived from intent at runtime. */
+    strength?: SceneStrength;
+    /** Turn the scene opened (read/aged through the clock seam only). */
+    openedTurn: number;
+    /** Turn of the last on-floor move (utterance, act, or event — one vocabulary). */
+    lastMoveTurn: number;
+    /**
+     * The thread the scene is currently on — a normalized topic (ADR-320
+     * D9; Phase 7 design §6). Written only by the scene runtime's
+     * `noteTopicMove`; absent until a topic move lands.
+     */
+    currentTopic?: string;
+    /**
+     * Turn a live thread was abandoned (`the subject changes`, D9): stamped
+     * when a topic move differs from `currentTopic`. The evaluator's
+     * `subject-changes` and Phase 8's subject-change occasion read it;
+     * absent until a subject has ever changed.
+     */
+    subjectChangedTurn?: number;
+    /**
+     * The topic the last subject change abandoned (Phase 8): written by
+     * `noteTopicMove` alongside `subjectChangedTurn`, read by the
+     * subject-change occasion's `abandonedTopicId`. Absent until a subject
+     * has ever changed.
+     */
+    abandonedTopic?: string;
+    /**
+     * The pair's active-thread continuability snapshot (ADR-320 D14, the
+     * D12 affordance surface): stamped at thread open/beat/resume time and
+     * cleared when no thread is active (park/conclude) — the
+     * `ExchangeState.responses` discipline, so a mid-thread restore
+     * re-advertises correctly and the channel projection (Phase 10.6) is
+     * pure state. Written only by the scene runtime's
+     * `stampThreadContinuability`.
+     */
+    threadContinuability?: ThreadContinuability;
+}
+/**
+ * Per-pair conversation memory (ADR-320 D4/D6/D9), held on the modeled
+ * character's trait keyed by partner id — each side holds its own view
+ * (the disposition precedent — a modeled PC holds its own view too,
+ * contracts §2.1). Home: `ICharacterModelData.conversationMemory`
+ * (Phase 7, schema v2).
+ *
+ * Numbers here never reach Chord: repetition, recency, and absence all
+ * surface as words, with the runtime owning every curve (ADR-310 D6).
+ */
+export interface ConversationMemory {
+    /** Completed scenes with this partner (drives asked-once/again/many words). */
+    visits: number;
+    /** Turn the last scene with this partner closed (absence words age off this). */
+    lastSceneClosedTurn?: number;
+    /** Topics covered with this partner, across scenes, any order (D9 `was discussed`). */
+    discussedTopics: string[];
+    /** Per-topic ask counts with this partner (repetition words; runtime owns the counting). */
+    askedCounts: Record<string, number>;
+}
+/**
+ * A conversation thread's per-pair status (ADR-320 D14): at most one
+ * ACTIVE thread per pair (the runtime's invariant, Phase 10.3); PARKED
+ * threads hold their cursor and resume; CONCLUDED is terminal — the
+ * `is concluded` predicate reads it, and a concluded thread never
+ * re-claims its topics.
+ */
+export type ConversationThreadStatus = 'active' | 'parked' | 'concluded';
+/**
+ * Per-pair state of one authored conversation thread (ADR-320 D14),
+ * held on the modeled owner's trait beside `conversationMemory`
+ * (`ICharacterModelData.conversationThreads`, schema v3) — keyed
+ * partnerId → thread key, so the state record carries no key of its
+ * own. The cursor is what makes "a conversation may or may not happen
+ * in one flow" the default truth: it survives parking, scene closes,
+ * day boundaries, and save/restore alike.
+ *
+ * Numbers here never reach Chord (ADR-310 D6): the author reads only
+ * `is concluded`; beats and turns are runtime bookkeeping.
+ */
+export interface ConversationThreadState {
+    /** Status — the at-most-one-ACTIVE-per-pair invariant is the runtime's. */
+    status: ConversationThreadStatus;
+    /**
+     * Beats already served (0 = nothing spoken yet). The conclusion is not
+     * counted here — it flips `status` to `concluded` when it fires.
+     */
+    beatCursor: number;
+    /** Turn of the last served beat (read/aged through the clock seam only). */
+    lastBeatTurn?: number;
+}
+```
+
+### traits/character-model/conversation-scene-store
+
+```typescript
+/**
+ * Scene store — shape and read side (ADR-320 D4; adr-320 contracts.md
+ * §1.3 as amended for Phase 6)
+ *
+ * Live scenes ride the world-state key `character.scenes` (the
+ * `CHARACTER_TURN_KEY` idiom), serialized with the ordinary world save so
+ * mid-scene save/restore is the ordinary world round trip (D17 — state
+ * inside the save format, never beside it). The store shape and the pure
+ * reads live HERE so stdlib's dispatch and the character runtime share
+ * one declaration (the co-located wire-type rule); the write side
+ * (`writeSceneStore`) lives in `@sharpee/character`'s scene runtime,
+ * which remains the store's single writer.
+ *
+ * Invariants (enforced by the scene runtime, the single writer):
+ * - a participant is in at most one live scene;
+ * - every live scene has at least two participants;
+ * - scene ids are minted by the runtime and unique within a save.
+ *
+ * Public interface: CHARACTER_SCENES_KEY, SceneStoreState, readSceneStore,
+ *   liveScenes, sceneOf, sceneWith.
+ * Owner context: world-model / character-model trait
+ */
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { ConversationSceneState } from './conversation-scene.js';
+/** World-state key holding every live scene (adr-320 contracts.md §1.3). */
+export declare const CHARACTER_SCENES_KEY = "character.scenes";
+/** The stored shape under `character.scenes` — plain JSON-safe data. */
+export interface SceneStoreState {
+    /** Monotonic scene-id sequence (ids stay unique across a save's lifetime). */
+    nextSceneSeq: number;
+    /** Live scenes by id. Closed scenes are removed (memory keeps their trace). */
+    scenes: Record<string, ConversationSceneState>;
+    /**
+     * Manner beat rotation cursors (ADR-320 D5), keyed
+     * `<ownerId>:<rowIndex>` → last emitted beat index. Rides the store so
+     * no-back-to-back-repeat survives save/restore byte-identically.
+     */
+    mannerRotation: Record<string, number>;
+}
+/**
+ * Read the scene store from world state (a fresh empty store when the key
+ * has never been written).
+ *
+ * @param world - The live world
+ * @returns The current store state
+ */
+export declare function readSceneStore(world: WorldModel): SceneStoreState;
+/**
+ * Every live scene, in stable (insertion) order.
+ *
+ * @param world - The live world
+ * @returns The live scenes
+ */
+export declare function liveScenes(world: WorldModel): ConversationSceneState[];
+/**
+ * A live scene by id.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene id
+ * @returns The scene, or undefined when closed or never opened
+ */
+export declare function sceneOf(world: WorldModel, sceneId: string): ConversationSceneState | undefined;
+/**
+ * The live scene a participant is in, if any (at most one — the store's
+ * participation invariant).
+ *
+ * @param world - The live world
+ * @param participantId - The participant entity id
+ * @returns The scene, or undefined when the participant is in none
+ */
+export declare function sceneWith(world: WorldModel, participantId: string): ConversationSceneState | undefined;
 ```
 
 ### traits/concealment/concealmentTrait
@@ -7259,7 +7562,8 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { DialogueSelector } from '../capabilities/dialogue-selector-binding.js';
+import type { DialogueSelectorRegistration } from '../capabilities/dialogue-selector-binding.js';
+import type { SceneRuntimeBinding } from '../capabilities/scene-runtime-binding.js';
 import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
@@ -7677,6 +7981,13 @@ export declare class WorldModel implements IWorldModel {
      */
     private dialogueSelector?;
     /**
+     * ADR-320 D4: the per-world scene runtime the conversation actions
+     * drive (open on address, record moves, apply directives, resolve the
+     * floor). Registered by the character subsystem; same lifecycle as the
+     * binding maps above: never serialized, re-registered on story load.
+     */
+    private sceneRuntime?;
+    /**
      * ADR-240: the per-world evaluator registry — named world-evaluators
      * consulted at point of use (live derived state; no cached derivations).
      * Lives and dies with this WorldModel instance, like the binding maps.
@@ -7711,19 +8022,34 @@ export declare class WorldModel implements IWorldModel {
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
     registerExitResolver(traitType: string, resolver: ExitResolver): void;
     /**
-     * Register the world's dialogue selector (ADR-310 D15). Idempotent
-     * last-wins, scoped to this instance; re-register on every story load.
+     * Register the world's dialogue selector (ADR-310 D15; probe extension
+     * per ADR-320 D16). Idempotent last-wins, scoped to this instance;
+     * re-register on every story load.
      *
-     * @param selector - The selector the conversation actions consult
+     * @param registration - The selection surface the conversation actions consult
      */
-    registerDialogueSelector(selector: DialogueSelector): void;
+    registerDialogueSelector(registration: DialogueSelectorRegistration): void;
     /**
      * The registered dialogue selector, or `undefined` when no character
      * subsystem wired one (the actions then keep their default behavior).
      *
-     * @returns The selector, or `undefined`
+     * @returns The registration, or `undefined`
      */
-    getDialogueSelector(): DialogueSelector | undefined;
+    getDialogueSelector(): DialogueSelectorRegistration | undefined;
+    /**
+     * Register the world's scene runtime (ADR-320 D4). Idempotent
+     * last-wins, scoped to this instance; re-register on every story load.
+     *
+     * @param binding - The scene runtime the conversation actions drive
+     */
+    registerSceneRuntime(binding: SceneRuntimeBinding): void;
+    /**
+     * The registered scene runtime, or `undefined` when no character
+     * subsystem wired one (dispatch then never opens or mutates scenes).
+     *
+     * @returns The binding, or `undefined`
+     */
+    getSceneRuntime(): SceneRuntimeBinding | undefined;
     getExitResolver(traitType: string): ExitResolver | undefined;
     getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
     private generateId;
@@ -9896,13 +10222,16 @@ export type ExitResolver = (room: IFEntity, trait: ITrait, direction: DirectionT
  * Every signature here is platform-internal (contracts.md §7) — NOT
  * author-facing compatibility surface; revisable at refactor cost.
  *
- * Public interface: `DialogueSelector`, `ConversationIntent`,
- *   `DialogueSelectionContext`, `DialogueSelectionResult`.
+ * Public interface: `DialogueSelector`, `DialogueSelectorRegistration`,
+ *   `ConversationIntent`, `DialogueSelectionContext`,
+ *   `DialogueSelectionResult`, `SceneDirective`.
  * Owner: world-model (per-world wiring surface).
  */
 import type { EntityId, ISemanticEvent } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { WorldModel } from '../world/WorldModel.js';
+import type { ConversationSceneState, ExchangeState, SceneBoundaryKind } from '../traits/character-model/conversation-scene.js';
+import type { SceneWireEvent } from './scene-wire.js';
 /**
  * What the player is doing conversationally (the four D15 verbs).
  * `text` is the raw topic/speech text (ADR-231 D4's first-class topic);
@@ -9925,7 +10254,40 @@ export interface DialogueSelectionContext {
     world: WorldModel;
     /** The conversing actor (the player). */
     speakerId: EntityId;
+    /**
+     * The scene the addressed NPC is in, if any (ADR-320 D4; adr-320
+     * contracts.md §4). An exchange-aware selector reads the open exchange
+     * off it for the overlay-before-table rule (ADR-310 D16 innermost-wins).
+     * Absent until the Phase 6 dispatch integration wires it — existing
+     * registrants and the zero-registrant default are unaffected.
+     */
+    scene?: ConversationSceneState;
 }
+/**
+ * A scene lifecycle change the selection asks the scene runtime to
+ * perform (ADR-320 D4; adr-320 contracts.md §4). The directive shape
+ * keeps the selector pure (the arbiter discipline: it computes, the
+ * runtime mutates) — a selector never writes scene state itself.
+ */
+export type SceneDirective = {
+    kind: 'open-exchange';
+    exchange: ExchangeState;
+} | {
+    kind: 'close-exchange';
+} | {
+    kind: 'set-floor';
+    holderId: EntityId | null;
+} | {
+    kind: 'close-scene';
+    boundary: SceneBoundaryKind;
+    /**
+     * Who is leaving, for an `exit` boundary (ADR-320 D8): the dispatch
+     * layer checks the leaver's exit legality against the world before
+     * applying — a restrained, cornered, or blocked NPC cannot take it.
+     * Absent = a mutual/narrative close, never legality-checked.
+     */
+    leaverId?: EntityId;
+};
 /**
  * A selector's answer: the message the action's report phase should emit
  * in place of its default. `handled: false` (or an `undefined` return)
@@ -9945,6 +10307,18 @@ export interface DialogueSelectionResult {
      * never render as player prose (ADR-310 D12).
      */
     authorEvents?: ISemanticEvent[];
+    /**
+     * Scene lifecycle the selection asks the runtime to perform (ADR-320
+     * D4; adr-320 contracts.md §4). Absent from every pre-scene selector —
+     * the consulting action ignores the field until Phase 6 wires it.
+     */
+    sceneDirectives?: SceneDirective[];
+    /**
+     * D12 wire events this selection produced, for the channel layer
+     * (ADR-320 D12; adr-320 contracts.md §3). Author-channel visibility
+     * only — never player prose (ADR-310 D12).
+     */
+    wireEvents?: SceneWireEvent[];
 }
 /**
  * The world's dialogue selector (ADR-310 D15 — built by the character
@@ -9957,6 +10331,414 @@ export interface DialogueSelectionResult {
  * @returns The selection, or `undefined` to fall through to the default
  */
 export type DialogueSelector = (npc: IFEntity, intent: ConversationIntent, ctx: DialogueSelectionContext) => DialogueSelectionResult | undefined;
+/**
+ * The registered selector surface (ADR-320 D16; adr-320 contracts.md §4
+ * as amended for Phase 6): the mutating report-time selection plus an
+ * optional PURE probe the conversation actions consult during validation.
+ * When the addressed NPC's open exchange claims the input, the firing is
+ * exchange-gripped — the innermost active context wins outright, so the
+ * remaining interceptor phases (the topic table's dispatch path) are
+ * skipped and no table bookkeeping runs. The probe must not mutate:
+ * validation can be re-entered, and only `select` runs in the mutating
+ * report phase.
+ */
+export interface DialogueSelectorRegistration {
+    /** The report-time selection (may mutate trait state by design). */
+    select: DialogueSelector;
+    /**
+     * Pure (D16): does the addressed NPC's open exchange claim this input?
+     * Absent = no exchange overlay (every firing takes today's path).
+     */
+    exchangeClaims?: (npc: IFEntity, intent: ConversationIntent, ctx: DialogueSelectionContext) => boolean;
+    /**
+     * Pure (ADR-320 D14): does a conversation thread claim this input?
+     * True when the pair's ACTIVE thread will serve it (an on-filter
+     * advance, a blocking off-topic refusal, or an assertive protest with
+     * an authored `on parting` row), or when no thread is active and a
+     * parked thread resumes / an unopened thread activates on the matching
+     * filter. The dispatch precedence extends D16's innermost-wins: open
+     * exchange > active thread > parked-thread resume > topic table.
+     * Absent = no threads declared (every firing takes today's path).
+     */
+    threadClaims?: (npc: IFEntity, intent: ConversationIntent, ctx: DialogueSelectionContext) => boolean;
+}
+```
+
+### capabilities/scene-runtime-binding
+
+```typescript
+/**
+ * Scene-runtime binding types (ADR-320 D4/D7/D10; adr-320 contracts.md
+ * §4–§5 as amended for Phase 6)
+ *
+ * The scene half of the conversation dispatch integration: stdlib's
+ * conversation actions drive scene lifecycle — open on first address,
+ * stamp moves, apply a selection's directives, resolve an open floor —
+ * through a binding the character subsystem registers per world, because
+ * the runtime that owns the mutations lives above stdlib in the package
+ * graph. Same ownership model as capability behaviors (ADR-207), action
+ * interceptors (ADR-208), exit resolvers (ADR-295), and the dialogue
+ * selector (ADR-310 D15): scoped to one running `WorldModel`, idempotent
+ * last-wins, never serialized — registrars re-register on every story
+ * load.
+ *
+ * Every signature here is platform-internal (contracts.md §7) — NOT
+ * author-facing compatibility surface; revisable at refactor cost.
+ *
+ * Public interface: `SceneRuntimeBinding`, `SceneOccasion`, `FloorBid`,
+ *   `FloorDecision`, `InterruptionOutcome`, `InitiativeSeizure`.
+ * Owner: world-model (per-world wiring surface).
+ */
+import type { EntityId, ISemanticEvent } from '@sharpee/core';
+import type { ConversationSceneState, ExchangeState, SceneOpenedBy } from '../traits/character-model/conversation-scene.js';
+import type { ForceReading } from '../traits/character-model/character-vocabulary.js';
+import type { SceneDirective } from './dialogue-selector-binding.js';
+import type { SceneWireEvent } from './scene-wire.js';
+/**
+ * An occasion a disposition can seize (ADR-320 D7): a witnessed event, a
+ * goal step arriving, an open floor, a silence, or a noticed subject
+ * change (D9's third exposure). Occasions are plumbing — never
+ * author-facing; disposition-under-circumstance decides whether this
+ * character seizes this one.
+ */
+export type SceneOccasion = {
+    kind: 'open-floor';
+    sceneId: string;
+} | {
+    kind: 'witnessed-event';
+    eventId: string;
+} | {
+    kind: 'goal-step';
+    goalId: string;
+} | {
+    kind: 'silence';
+    sceneId: string;
+} | {
+    kind: 'subject-change';
+    sceneId: string;
+    abandonedTopicId: string;
+};
+/**
+ * One participant's bid for the floor (ADR-320 D7/D10): disposition-
+ * under-circumstance expressed as arbiter force readings, whose feeds
+ * carry author-channel attribution as everywhere in the character layer.
+ */
+export interface FloorBid {
+    /** The bidding participant. */
+    participantId: string;
+    /** The occasion this bid answers. */
+    occasion: SceneOccasion;
+    /** Disposition-under-circumstance, as force readings (the ADR-318 idiom). */
+    readings: ForceReading[];
+    /**
+     * An authored row forcing or suppressing the moment always wins over
+     * disposition (D7 most-specific-wins). Absent = disposition decides.
+     */
+    authored?: 'forces' | 'suppresses';
+}
+/**
+ * A resolved floor contest (ADR-320 D10): one winner — or none, when
+ * nobody seizes the moment — with every bid retained so non-speakers'
+ * manner can still react (one speaker, many tells).
+ */
+export interface FloorDecision {
+    /** The floor winner, or null when nobody seizes the moment. */
+    winnerId: string | null;
+    /** Every bid considered, losers included (their manner beats still emit). */
+    bids: FloorBid[];
+}
+/**
+ * How a scene answers an interruption challenge (ADR-320 D10): `passive`
+ * yields, `assertive` protests then yields, `blocking` blocks — except
+ * world events and acts, which break any grip (D8's exemption). Declared
+ * here (Phase 8 amendment) because stdlib consults intrusion across the
+ * package boundary; `@sharpee/character` aliases it (the §7 idiom).
+ */
+export type InterruptionOutcome = 'yields' | 'protests' | 'blocks';
+/**
+ * What an authored initiative seizure produced (ADR-320 D7; Phase 8):
+ * the forcing row's body ran — its events ride the turn stream, and
+ * `spokenMessageId` carries the seizure's line when the body spoke one
+ * (the caller renders it through the observability surface).
+ */
+export interface InitiativeSeizure {
+    /** Events the row body produced (author channel and report events). */
+    events: ISemanticEvent[];
+    /** The spoken line's message id, when the body delivered a phrase. */
+    spokenMessageId?: string;
+    /** Params for the spoken line's template, when any. */
+    spokenParams?: Record<string, unknown>;
+    /**
+     * The exchange a row's `then asks`/`then invites` would open (#273; ADR-320
+     * Phase 10.3): built by the seize runner, applied by the tick caller — and
+     * only against a scene that includes the player, because an exchange
+     * targets the player. An NPC↔NPC seizure drops it (no-op), never throws.
+     */
+    openExchange?: ExchangeState;
+    /** The opening word (`asks`/`invites`) for the author channel, when `openExchange` is set. */
+    openWord?: string;
+}
+/**
+ * The world's scene runtime (ADR-320 D4 — implemented by the character
+ * subsystem over its scene store, consulted by stdlib's conversation
+ * actions and the character-model tick phase). The selector computes,
+ * this runtime mutates (the arbiter discipline): every scene-state write
+ * the dispatch layer needs goes through here.
+ */
+export interface SceneRuntimeBinding {
+    /**
+     * Open a scene for a conversational address (openedBy `address`), the
+     * opener holding the floor.
+     *
+     * @param participantIds - Everyone in the scene, PC included (at least two)
+     * @param openedBy - How the scene opened
+     * @returns The opened scene and its wire events
+     */
+    openScene(participantIds: string[], openedBy: SceneOpenedBy): {
+        scene: ConversationSceneState;
+        wireEvents: SceneWireEvent[];
+    };
+    /**
+     * Stamp an on-floor move (utterance, act, or event — one vocabulary):
+     * resets the scene's silence-decay clock.
+     *
+     * @param sceneId - The scene the move landed in
+     */
+    recordMove(sceneId: string): void;
+    /**
+     * Apply a selection's scene directives, in order (the selector stays
+     * pure; this runtime performs the lifecycle it asked for).
+     *
+     * @param sceneId - The scene the directives target
+     * @param directives - The selection's directives
+     * @returns Wire events the directives produced
+     */
+    applyDirectives(sceneId: string, directives: SceneDirective[]): SceneWireEvent[];
+    /**
+     * Resolve an open floor (ADR-320 D10): bids built from each scene
+     * participant's disposition-under-circumstance and scored by the Phase 5
+     * floor scoring. Pure — routing the winner is the caller's.
+     *
+     * @param sceneId - The scene whose floor is open
+     * @param occasion - The occasion seeking a speaker
+     * @returns The decision, losers' bids included
+     */
+    floorWinnerFor(sceneId: string, occasion: SceneOccasion): FloorDecision;
+    /**
+     * Resolve — and apply — an outsider's challenge to a live scene
+     * (ADR-320 D10; Phase 8): the scene's grip answers per the strength
+     * words, a world act breaks any grip (D8's exemption). On `yields` or
+     * `protests` the scene closes on the `exit` boundary (memory folded);
+     * on `blocks` nothing mutates. The caller routes what follows (opening
+     * the interrupter's own scene, rendering the refusal).
+     *
+     * @param sceneId - The challenged scene
+     * @param interrupterId - The would-be interrupter (the PC included)
+     * @param worldAct - True for world events and acts (breaks `blocking`)
+     * @returns The outcome word and the wire events the challenge produced
+     */
+    resolveIntrusion(sceneId: string, interrupterId: EntityId, worldAct: boolean): {
+        outcome: InterruptionOutcome;
+        wireEvents: SceneWireEvent[];
+    };
+    /**
+     * Run an authored initiative seizure (ADR-320 D7; Phase 8): the
+     * registrar's row runner — the loader binds compiled `define initiative`
+     * row bodies here. Returns undefined when no forcing row answers the
+     * occasion (disposition alone never seizes a content-bearing occasion).
+     * Absent when the registrar bound no runner (builder-authored stories).
+     *
+     * @param participantId - The character whose rows answer
+     * @param occasion - The live occasion
+     * @param witnessedAction - For witnessed-event occasions, the committed action id
+     * @param audienceId - The occasion's principal (claims bookkeeping), when known
+     * @returns The seizure, or undefined when nothing forces
+     */
+    seizeInitiative?(participantId: EntityId, occasion: SceneOccasion, witnessedAction?: string, audienceId?: EntityId): InitiativeSeizure | undefined;
+    /**
+     * Take one thread floor turn (ADR-320 D14; Phase 10.4): the registrar's
+     * thread runner — the loader binds compiled `define conversation`
+     * blocks here. The owner's ready thread move (an `opens when` open, a
+     * parked resume, or the active thread's next beat) executes against the
+     * pair's live scene and the spoken line comes back for the
+     * observability surface. Returns undefined when no thread claims the
+     * moment, when the thread already advanced this turn cycle (one beat
+     * per turn across both paths), or when the next beat is held. Absent
+     * when the registrar bound no runner (no threads declared).
+     *
+     * @param ownerId - The thread owner (world id)
+     * @param partnerId - The conversation partner (world id — the player)
+     * @param sceneId - The pair's live scene
+     * @returns The served turn, or undefined when nothing claims it
+     */
+    threadTurn?(ownerId: EntityId, partnerId: EntityId, sceneId: string): InitiativeSeizure | undefined;
+    /**
+     * Pure probe for `threadTurn` (ADR-320 D14): would the owner take a
+     * thread floor turn toward this partner right now? Consulted by the
+     * tick BEFORE opening a scene for an `opens when` thread — the probe
+     * must not mutate. Absent alongside `threadTurn`.
+     *
+     * @param ownerId - The thread owner (world id)
+     * @param partnerId - The conversation partner (world id)
+     * @returns True when a thread move is ready
+     */
+    threadTurnReady?(ownerId: EntityId, partnerId: EntityId): boolean;
+}
+```
+
+### capabilities/scene-wire
+
+```typescript
+/**
+ * Scene wire schema (ADR-320 D12; adr-320 contracts.md §3)
+ *
+ * The presentation-agnostic conversation wire: a scene emits structured
+ * events — speaker, addressee, phrase, manner beats, floor changes,
+ * interruptions, rendered silences — and an open exchange advertises its
+ * available responses as data. Carried as channel data under the ADR-163
+ * discipline (data only, clients render); parser prose and chat bubbles
+ * are two renderings of one stream. Scene internals reach the author
+ * channel only — the player-facing build sees rendered prose alone
+ * (ADR-320 AC11, the ADR-310 D12/AC8 isolation).
+ *
+ * Runtime-free data shapes, importable by character, stdlib, and
+ * platform-browser/devkit without duplication (the co-located wire-type
+ * rule). Every shape is platform-internal (contracts.md §7).
+ *
+ * Public interface: SceneWireEvent, AffordanceTopic, ResponseAffordance,
+ * ExchangeAffordances, ThreadContinuability.
+ * Owner context: world-model (per-world wiring surface)
+ */
+import type { EntityId } from '@sharpee/core';
+import type { SceneOpenedBy, SceneBoundaryKind } from '../traits/character-model/conversation-scene.js';
+/**
+ * One structured scene event on the wire (ADR-320 D12). `beats` carry
+ * manner beat message ids (D5) — authored text, resolved by the language
+ * layer, never platform-generated prose (ADR-310 D12).
+ */
+export type SceneWireEvent = {
+    kind: 'scene-opened';
+    sceneId: string;
+    participantIds: EntityId[];
+    openedBy: SceneOpenedBy;
+} | {
+    kind: 'scene-closed';
+    sceneId: string;
+    boundary: SceneBoundaryKind;
+} | {
+    kind: 'utterance';
+    sceneId: string;
+    speakerId: EntityId;
+    addresseeId?: EntityId;
+    messageId: string;
+    beats: string[];
+} | {
+    kind: 'floor-change';
+    sceneId: string;
+    holderId: EntityId | null;
+} | {
+    kind: 'interruption';
+    sceneId: string;
+    interrupterId: EntityId;
+    outcome: 'yields' | 'protests' | 'blocks';
+} | {
+    kind: 'rendered-silence';
+    sceneId: string;
+    speakerId: EntityId;
+    beats: string[];
+} | {
+    kind: 'thread-opened';
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+} | {
+    kind: 'thread-beat';
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+    beatIndex: number;
+} | {
+    kind: 'thread-parked';
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+    beatCursor: number;
+} | {
+    kind: 'thread-resumed';
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+    beatCursor: number;
+} | {
+    kind: 'thread-concluded';
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+};
+/**
+ * What input a verbal exchange row matches (ADR-320 D12): an entity
+ * reference, or a text phrase with its aliases. Mirrors the compiled
+ * Chord row's topic filter — the enumerable "what could the player say
+ * here?" is the filter itself, resolved topic text, not a message id
+ * (amended 2026-08-17, Phase 9: the Phase 1 sketch's `messageId` had no
+ * counterpart in the compiled row; the response body is statements,
+ * resolved only when spoken).
+ */
+export type AffordanceTopic = {
+    kind: 'entity';
+    id: string;
+} | {
+    kind: 'text';
+    primary: string;
+    aliases: string[];
+};
+/**
+ * One advertised response on an open exchange (ADR-320 D12): a verbal row,
+ * an act/event row, or silence — silence is always available (D8, the
+ * inalienable move). A chat client renders these as reply choices (`topic`
+ * `primary` is the chip text); the parser client may ignore them; the
+ * testing surface consumes them for coverage and recording. `rowId` is
+ * minted as `<exchangeId>#<row-index>` at load time.
+ */
+export type ResponseAffordance = {
+    kind: 'verbal';
+    rowId: string;
+    topic: AffordanceTopic;
+} | {
+    kind: 'act';
+    rowId: string;
+    actionId: string;
+} | {
+    kind: 'silence';
+};
+/**
+ * The full advertised-response set of an open exchange (ADR-320 D12) —
+ * part of the wire schema from first release; exchange rows are
+ * declarative and therefore enumerable.
+ */
+export interface ExchangeAffordances {
+    sceneId: string;
+    exchangeId: string;
+    responses: ResponseAffordance[];
+}
+/**
+ * An active thread's continuability (ADR-320 D14, additive to the D12
+ * affordance surface): whether the owner has a next beat ready — the
+ * "Kemp has more to say" a chat client renders as a continue chip and
+ * the testing surface consumes for coverage. `continuable` is false
+ * while the next beat's hold-gate is unmet (the thread waits for its
+ * world) and the record disappears entirely when no thread is active
+ * (never stale, the exchange-affordances discipline).
+ */
+export interface ThreadContinuability {
+    sceneId: string;
+    ownerId: EntityId;
+    threadKey: string;
+    /** Beats already served (the cursor position the next beat would advance). */
+    beatCursor: number;
+    /** True when the next beat (or the conclusion) is ready to serve. */
+    continuable: boolean;
+}
 ```
 
 ### capabilities/interceptor-helpers

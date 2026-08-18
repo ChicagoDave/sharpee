@@ -1223,28 +1223,40 @@ export {};
  * drive between-turn commentary and determine how aggressively the NPC
  * holds the player's focus.
  *
- * Public interface: ConversationIntent, ConversationStrength, ConversationContext,
- *   ContinuationEntry, InitiativeTrigger, ConversationLifecycle.
+ * Superseded surface: the skeleton's continuation scheduling
+ * (`ContinuationEntry`, `scheduleAfter`, `getContinuationMessage`) was
+ * retired in ADR-320 Phase 10.3 — authored multi-beat continuation is the
+ * conversation-thread construct (`define conversation`, ADR-320 D14),
+ * whose runtime lives in `thread-runtime.ts`.
+ *
+ * Public interface: ContinuationIntent, ConversationStrength, ConversationContext,
+ *   InitiativeTrigger, ConversationLifecycle.
  * Owner context: @sharpee/character / conversation
  */
-/** How the NPC feels about continuing the conversation. */
-export type ConversationIntent = 'eager' | 'reluctant' | 'hostile' | 'confessing' | 'neutral';
-/** How aggressively the NPC holds the player's attention. */
-export type ConversationStrength = 'passive' | 'assertive' | 'blocking';
-/** Result of attempting to redirect attention away from the current NPC. */
-export type RedirectResult = 'yields' | 'protests' | 'blocks';
+import type { SceneStrength } from '@sharpee/world-model';
+import type { InterruptionOutcome } from './scene-scoring.js';
+/**
+ * How the NPC feels about continuing the conversation. Renamed from
+ * `ConversationIntent` (contracts.md §7) — that name now belongs solely to
+ * the world-model dialogue-selector socket's ask/tell/say/talk-to intent.
+ */
+export type ContinuationIntent = 'eager' | 'reluctant' | 'hostile' | 'confessing' | 'neutral';
+/**
+ * How aggressively the NPC holds the player's attention. One declaration
+ * with the scene's grip vocabulary (contracts.md §7): world-model's
+ * `SceneStrength` is the shared lower-package union; this is its alias.
+ */
+export type ConversationStrength = SceneStrength;
+/**
+ * Result of attempting to redirect attention away from the current NPC.
+ * One declaration with the scene's `InterruptionOutcome` (contracts.md §7).
+ */
+export type RedirectResult = InterruptionOutcome;
 /**
  * Default number of non-conversation turns before a conversation decays,
  * keyed by intent. Authors can override per conversation context.
  */
-export declare const DEFAULT_DECAY_THRESHOLDS: Record<ConversationIntent, number>;
-/** A scheduled NPC continuation message within a conversation context. */
-export interface ContinuationEntry {
-    /** Turns after context was set before this continuation fires. */
-    afterTurns: number;
-    /** Message ID for the continuation. */
-    messageId: string;
-}
+export declare const DEFAULT_DECAY_THRESHOLDS: Record<ContinuationIntent, number>;
 /** An NPC initiative trigger — the NPC starts a conversation proactively. */
 export interface InitiativeTrigger {
     /** Predicate conditions that must all be satisfied. */
@@ -1263,7 +1275,7 @@ export interface ConversationContext {
     /** Entity ID of the NPC in this conversation. */
     npcId: string;
     /** Current conversation intent. */
-    intent: ConversationIntent;
+    intent: ContinuationIntent;
     /** Current conversation strength. */
     strength: ConversationStrength;
     /** Decay threshold (non-conversation turns before conversation ends). */
@@ -1272,8 +1284,6 @@ export interface ConversationContext {
     nonConversationTurns: number;
     /** Optional context label (e.g., 'confessing', 'caught'). */
     contextLabel?: string;
-    /** Scheduled continuation messages within this context. */
-    continuations: ContinuationEntry[];
     /** Author-overridden between-turn messages. Keyed by turn number. */
     betweenTurnOverrides: Map<number, string>;
     /** Author-overridden leave-attempt message. */
@@ -1300,7 +1310,7 @@ export declare class ConversationLifecycle {
      * @param intent - The NPC's conversation intent
      * @param strength - The NPC's conversation strength
      */
-    begin(npcId: string, intent?: ConversationIntent, strength?: ConversationStrength): void;
+    begin(npcId: string, intent?: ContinuationIntent, strength?: ConversationStrength): void;
     /**
      * End the current conversation.
      * No-op if no conversation is active.
@@ -1316,7 +1326,7 @@ export declare class ConversationLifecycle {
      * @param strength - New strength (or keep current)
      * @param decayThreshold - New decay threshold (or derive from intent)
      */
-    setContext(label: string, intent?: ConversationIntent, strength?: ConversationStrength, decayThreshold?: number): void;
+    setContext(label: string, intent?: ContinuationIntent, strength?: ConversationStrength, decayThreshold?: number): void;
     /** Whether a conversation is currently active. */
     isActive(): boolean;
     /** Whether the active conversation is blocking. */
@@ -1384,20 +1394,6 @@ export declare class ConversationLifecycle {
      * @returns The redirect result based on current conversation strength
      */
     private resolveStrengthCheck;
-    /**
-     * Schedule a continuation message for N turns after context was set.
-     *
-     * @param afterTurns - Number of turns after context was set
-     * @param messageId - The message ID
-     */
-    scheduleAfter(afterTurns: number, messageId: string): void;
-    /**
-     * Get the continuation message for the current turn count, if any.
-     * Continuations fire based on non-conversation turns elapsed.
-     *
-     * @returns Message ID if a continuation is scheduled for this turn, or undefined
-     */
-    getContinuationMessage(): string | undefined;
     /**
      * Register an initiative trigger for an NPC.
      * The NPC will initiate conversation when conditions are met.
@@ -1593,7 +1589,7 @@ import { type Mood, type DispositionWord } from '@sharpee/world-model';
 import { CharacterBuilder } from '../character-builder.js';
 import { TopicDef } from './topic-registry.js';
 import { ResponseCandidate } from './response-types.js';
-import { ConversationIntent, ConversationStrength, InitiativeTrigger } from './lifecycle.js';
+import { ContinuationIntent, ConversationStrength, InitiativeTrigger } from './lifecycle.js';
 /** State mutations triggered by a response. */
 export interface ResponseStateMutation {
     threat?: number;
@@ -1603,7 +1599,7 @@ export interface ResponseStateMutation {
 /** Context settings attached to a response. */
 export interface ResponseContextSettings {
     label: string;
-    intent?: ConversationIntent;
+    intent?: ContinuationIntent;
     strength?: ConversationStrength;
     decayThreshold?: number;
 }
@@ -1723,7 +1719,7 @@ export declare class ResponseChainBuilder {
      * @returns this for chaining
      */
     setsContext(label: string, opts?: {
-        intent?: ConversationIntent;
+        intent?: ContinuationIntent;
         strength?: ConversationStrength;
         decayThreshold?: number;
     }): ResponseChainBuilder;
@@ -1932,6 +1928,782 @@ export declare class CharacterModelDialogue implements DialogueExtension {
 }
 ```
 
+### conversation/scene-scoring
+
+```typescript
+/**
+ * Floor and interruption scoring shapes (ADR-320 D7/D10; adr-320
+ * contracts.md §5)
+ *
+ * The forces-feed-arbitration idiom (ADR-318), pointed at "do I speak?":
+ * disposition-under-circumstance readings bid for the floor, an authored
+ * row forces or suppresses the moment where written (D7 most-specific-
+ * wins), and interruption resolves as strength-vs-motivation (D10) with
+ * world acts breaking even `blocking` (D8's exemption). The occasion and
+ * floor shapes are declared in `@sharpee/world-model`'s scene-runtime
+ * binding (Phase 6 amendment — stdlib names them across the package
+ * boundary) and re-exported here; the scoring functions stay HERE.
+ *
+ * Every shape is platform-internal (contracts.md §7) — NOT author-facing
+ * compatibility surface; revisable at refactor cost.
+ *
+ * Public interface: SceneOccasion, FloorBid, FloorDecision,
+ *   InterruptionChallenge, InterruptionOutcome, scoreFloor,
+ *   resolveInterruption, sceneGrip, strengthFromIntent.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { ConversationSceneState, SceneStrength, FloorBid, FloorDecision, InterruptionOutcome } from '@sharpee/world-model';
+import type { ContinuationIntent } from './lifecycle.js';
+export type { SceneOccasion, FloorBid, FloorDecision } from '@sharpee/world-model';
+export type { InterruptionOutcome } from '@sharpee/world-model';
+/**
+ * An outsider — PC included — challenging a scene's grip (ADR-320 D10).
+ * `worldAct` marks world events and acts, which break even a `blocking`
+ * scene (D8's exemption: a gunshot interrupts anything).
+ */
+export interface InterruptionChallenge {
+    /** The scene being challenged. */
+    sceneId: string;
+    /** The would-be interrupter. */
+    interrupterId: string;
+    /** The interrupter's motivation, as a floor bid. */
+    bid: FloorBid;
+    /** True for world events and acts — breaks even `blocking` (D8). */
+    worldAct: boolean;
+}
+/**
+ * Resolve a floor contest (ADR-320 D7/D10): an authored `forces` row wins
+ * outright and an authored `suppresses` row withdraws its bid (D7
+ * most-specific-wins — authored rows beat disposition both ways);
+ * otherwise the most motivated live bid seizes the moment, and nobody
+ * does when no bid carries live motivation. Every bid — losers and
+ * suppressed included — is retained on the decision so non-speakers'
+ * manner can still react (one speaker, many tells).
+ *
+ * @param bids - Every participant's bid for the occasion
+ * @returns The decision: winner (or null) plus all bids considered
+ */
+export declare function scoreFloor(bids: FloorBid[]): FloorDecision;
+/**
+ * The scene's effective grip against interruption (ADR-320 D10): the open
+ * exchange's authored strength is the innermost word and wins, then the
+ * scene's own, then the caller-derived fallback (absent markers derive
+ * from intent at runtime — `strengthFromIntent`).
+ *
+ * @param scene - The challenged scene
+ * @param fallback - The intent-derived strength when nothing is authored
+ * @returns The effective strength
+ */
+export declare function sceneGrip(scene: ConversationSceneState, fallback?: SceneStrength): SceneStrength;
+/**
+ * Resolve an interruption challenge (ADR-320 D10): a world event or act
+ * breaks any grip — even `blocking` (D8's exemption); otherwise the
+ * grip answers — `passive` yields, `assertive` protests then yields,
+ * `blocking` blocks. The caller closes or re-floors the scene on
+ * `yields`/`protests`; on `blocks` the scene holds.
+ *
+ * @param challenge - The challenge (interrupter, bid, world-act flag)
+ * @param strength - The scene's effective grip (see `sceneGrip`)
+ * @returns The outcome word
+ */
+export declare function resolveInterruption(challenge: InterruptionChallenge, strength: SceneStrength): InterruptionOutcome;
+/**
+ * Derive a scene's grip from its holder's continuation intent when no
+ * strength is authored (contracts.md §1.1 — "absent = derived from intent
+ * at runtime"). Runtime-owned mapping: the intents that want the
+ * conversation to continue (`eager`, `confessing`) protest interruption;
+ * the rest let it go. `blocking` is never derived — only authored.
+ *
+ * @param intent - The holder's continuation intent
+ * @returns The derived strength
+ */
+export declare function strengthFromIntent(intent: ContinuationIntent): SceneStrength;
+```
+
+### conversation/scene-store
+
+```typescript
+/**
+ * Scene store — write side (ADR-320 D4; adr-320 contracts.md §1.3 as
+ * amended for Phase 6)
+ *
+ * The store shape and the pure reads live in `@sharpee/world-model`
+ * (`conversation-scene-store.ts`) so stdlib's dispatch and this runtime
+ * share one declaration; they are re-exported here so the runtime's
+ * internal call sites keep one import home. The write stays HERE: the
+ * scene runtime is the store's single writer — every other consumer
+ * reads.
+ *
+ * Public interface: CHARACTER_SCENES_KEY, SceneStoreState, readSceneStore,
+ *   writeSceneStore, liveScenes, sceneOf, sceneWith.
+ * Owner context: @sharpee/character / conversation
+ */
+import { type WorldModel, type SceneStoreState } from '@sharpee/world-model';
+export { CHARACTER_SCENES_KEY, readSceneStore, liveScenes, sceneOf, sceneWith, type SceneStoreState, } from '@sharpee/world-model';
+/**
+ * Write the scene store back to world state. Scene-runtime-only — every
+ * other consumer reads.
+ *
+ * @param world - The live world
+ * @param state - The store state to persist
+ */
+export declare function writeSceneStore(world: WorldModel, state: SceneStoreState): void;
+```
+
+### conversation/scene-runtime
+
+```typescript
+/**
+ * Scene runtime — open, close, floor, exchange, and decay (ADR-320 D4;
+ * adr-320 contracts.md §1)
+ *
+ * The one writer of the scene store: scenes open against per-pair memory
+ * (first-meeting vs return boundaries), moves stamp the floor clock,
+ * selector-issued directives mutate scene state (the selector computes,
+ * this runtime mutates — the arbiter discipline), closes fold the scene
+ * into both sides' conversation memory, and unattended scenes decay into
+ * a `silence` close (the ADR-142 attention-decay machinery wired live).
+ * All turn reads go through the character clock seam (D6).
+ *
+ * Public interface: OpenSceneOptions, openScene, closeScene,
+ *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
+ *   ageScenes.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { WorldModel, ConversationSceneState, SceneBoundaryKind, SceneOpenedBy, SceneStrength, SceneDirective, SceneWireEvent, ThreadContinuability } from '@sharpee/world-model';
+import { type ConversationMemoryAccess } from './conversation-memory.js';
+/** What a caller supplies to open a scene. */
+export interface OpenSceneOptions {
+    /** Everyone in the scene, PC included (at least two). */
+    participantIds: string[];
+    /** How the scene opened (selects boundary rows, seeds aboutness). */
+    openedBy: SceneOpenedBy;
+    /** Authored scene strength, if any (D10); absent = derived at read time. */
+    strength?: SceneStrength;
+}
+/**
+ * Open a scene (ADR-320 D4). Mints the id, seats the participants, and
+ * gives an addressing/initiating opener the floor (a witnessed-event
+ * opening leaves the floor contested). Enforces the store's invariants:
+ * at least two participants, none already in a live scene.
+ *
+ * @param world - The live world
+ * @param options - Participants, opener, optional strength
+ * @returns The opened scene and its wire events
+ * @throws Error when the participant invariants are violated
+ */
+export declare function openScene(world: WorldModel, options: OpenSceneOptions): {
+    scene: ConversationSceneState;
+    wireEvents: SceneWireEvent[];
+};
+/**
+ * Close a scene (ADR-320 D4/D6): removes it from the store and folds it
+ * into conversation memory — every ordered participant pair records a
+ * completed visit and the close turn (the access ignores unmodeled
+ * holders; no model, no change).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene to close
+ * @param boundary - Which boundary closed it (`exit` or `silence`)
+ * @param memory - The per-pair memory home
+ * @returns The scene-closed wire event, or none when the id is not live
+ */
+export declare function closeScene(world: WorldModel, sceneId: string, boundary: SceneBoundaryKind, memory: ConversationMemoryAccess): SceneWireEvent[];
+/**
+ * Stamp an on-floor move (utterance, act, or event — one vocabulary):
+ * resets the scene's silence clock.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the move landed in
+ */
+export declare function recordSceneMove(world: WorldModel, sceneId: string): void;
+/**
+ * Stamp a topic move onto the scene's thread (ADR-320 D9; Phase 7 design
+ * §6): a topic differing from the live thread abandons it —
+ * `subjectChangedTurn` stamps the abandoning turn (the evaluator's
+ * `subject-changes` and Phase 8's subject-change occasion read it) and
+ * the new topic becomes the thread. The same topic again is not a change.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the topic move landed in
+ * @param topic - The normalized topic of the move
+ */
+export declare function noteTopicMove(world: WorldModel, sceneId: string, topic: string): void;
+/**
+ * Stamp — or clear — a scene's active-thread continuability snapshot
+ * (ADR-320 D14; the D12 affordance surface). Written HERE because the
+ * scene runtime is the store's single writer; callers (the thread
+ * dispatch and the thread floor turn, Phase 10.4) compute the record via
+ * `threadContinuabilityFor` after each thread mutation. `undefined`
+ * clears it — the record disappears when no thread is active, the
+ * exchange-affordances never-stale discipline.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the affordance describes
+ * @param continuability - The fresh record, or undefined to clear
+ */
+export declare function stampThreadContinuability(world: WorldModel, sceneId: string, continuability: ThreadContinuability | undefined): void;
+/**
+ * Apply a selection's scene directives (adr-320 contracts.md §4): the
+ * selector stays pure and this runtime performs the lifecycle it asked
+ * for. `open-exchange` replaces any open exchange (at most one — a chained
+ * `then asks` hands the moment over); `close-scene` folds memory like any
+ * close.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the directives target
+ * @param directives - The selection's directives, in order
+ * @param memory - The per-pair memory home (for `close-scene`)
+ * @returns Wire events the directives produced
+ */
+export declare function applySceneDirectives(world: WorldModel, sceneId: string, directives: SceneDirective[], memory: ConversationMemoryAccess): SceneWireEvent[];
+/**
+ * Decay unattended scenes (ADR-142's attention decay, wired live): a
+ * scene with no on-floor move for `threshold` turns closes on the
+ * `silence` boundary. The default threshold is the neutral continuation
+ * intent's decay (intent-aware thresholds arrive with dispatch wiring,
+ * which knows each scene's holder intent).
+ *
+ * @param world - The live world
+ * @param memory - The per-pair memory home
+ * @param threshold - Silent turns before a scene closes
+ * @returns The scene-closed wire events, oldest scene first
+ */
+export declare function ageScenes(world: WorldModel, memory: ConversationMemoryAccess, threshold?: number): SceneWireEvent[];
+```
+
+### conversation/conversation-memory
+
+```typescript
+/**
+ * Conversation memory — per-pair tracking and the word curves (ADR-320
+ * D4/D6/D9; adr-320 contracts.md §2)
+ *
+ * Each modeled character holds its own per-partner view (the disposition
+ * precedent): completed-scene visits, last-close turn, discussed topics,
+ * and per-topic ask counts. Numbers never reach Chord — recency, absence,
+ * and repetition all surface as the frozen words, with this module owning
+ * every curve, reading time only through the character clock seam (D6).
+ *
+ * Storage home: `ICharacterModelData` gains the field in Phase 7. Until
+ * then callers supply a `ConversationMemoryAccess` — the runtime mutates
+ * through it, tests back it with a Map, and Phase 7 plugs the trait in
+ * without touching this module.
+ *
+ * Public interface: ConversationMemoryAccess, createMapMemoryAccess,
+ *   emptyConversationMemory, recordSceneClosed, recordTopicDiscussed,
+ *   recordAsked, wasDiscussed, boundaryKindOnOpen, recencyWordFor,
+ *   absenceWordFor, askedWordFor, RECENCY_WORDS, ABSENCE_WORDS, ASKED_WORDS.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { ConversationMemory } from '@sharpee/world-model';
+/**
+ * Where a holder's per-partner memory lives. `get` returns undefined for
+ * a pair with no history yet — and implementations for unmodeled holders
+ * simply ignore `set` (no model, no change; ADR-310 D7).
+ */
+export interface ConversationMemoryAccess {
+    /** The holder's memory of a partner, or undefined when blank. */
+    get(holderId: string, partnerId: string): ConversationMemory | undefined;
+    /** Persist the holder's memory of a partner. */
+    set(holderId: string, partnerId: string, memory: ConversationMemory): void;
+}
+/**
+ * A Map-backed access — the Phase 5 test double and any caller that has
+ * not yet re-homed memory onto the trait (Phase 7).
+ *
+ * @returns A fresh, empty access
+ */
+export declare function createMapMemoryAccess(): ConversationMemoryAccess;
+/** A blank per-pair memory (no visits, nothing discussed). */
+export declare function emptyConversationMemory(): ConversationMemory;
+/**
+ * Record a completed scene between holder and partner: increments the
+ * visit count and stamps the close turn (absence words age off it).
+ *
+ * @param access - The memory home
+ * @param holderId - The remembering side
+ * @param partnerId - The partner
+ * @param closedTurn - The turn the scene closed (clock-seam sourced)
+ */
+export declare function recordSceneClosed(access: ConversationMemoryAccess, holderId: string, partnerId: string, closedTurn: number): void;
+/**
+ * Record a topic as discussed between holder and partner (D9 — the
+ * `was discussed` predicate's ground truth, tracked across scenes).
+ *
+ * @param access - The memory home
+ * @param holderId - The remembering side
+ * @param partnerId - The partner
+ * @param topic - The normalized topic key
+ */
+export declare function recordTopicDiscussed(access: ConversationMemoryAccess, holderId: string, partnerId: string, topic: string): void;
+/**
+ * Record one asking of a topic (repetition words read the count).
+ *
+ * @param access - The memory home
+ * @param holderId - The remembering side
+ * @param partnerId - The asker
+ * @param topic - The normalized topic key
+ */
+export declare function recordAsked(access: ConversationMemoryAccess, holderId: string, partnerId: string, topic: string): void;
+/**
+ * Whether holder and partner have discussed a topic (D9 `was discussed`).
+ *
+ * @param access - The memory home
+ * @param holderId - The remembering side
+ * @param partnerId - The partner
+ * @param topic - The normalized topic key
+ * @returns True when the topic is in the pair's discussed set
+ */
+export declare function wasDiscussed(access: ConversationMemoryAccess, holderId: string, partnerId: string, topic: string): boolean;
+/**
+ * Which opening boundary a new scene with this partner presents (D4):
+ * `first-meeting` when the pair has no completed scene, `return` after.
+ *
+ * @param access - The memory home
+ * @param holderId - The remembering side
+ * @param partnerId - The partner
+ * @returns The opening boundary kind
+ */
+export declare function boundaryKindOnOpen(access: ConversationMemoryAccess, holderId: string, partnerId: string): 'first-meeting' | 'return';
+/** The frozen recency scale (Phase 3 freeze §3). */
+export declare const RECENCY_WORDS: readonly ["fresh", "recent", "stale"];
+/** The frozen absence words on `return` boundaries (Phase 3 freeze). */
+export declare const ABSENCE_WORDS: readonly ["again-so-soon", "after-a-while", "after-days"];
+/** The frozen repetition words (Phase 3/4 freeze). */
+export declare const ASKED_WORDS: readonly ["once", "again", "many-times"];
+/**
+ * The recency word for something learned/last-touched at `sinceTurn`,
+ * read at `currentTurn` (D6 — the runtime's curve, revisable freely).
+ *
+ * @param currentTurn - The turn the read happens on (clock-seam sourced)
+ * @param sinceTurn - The turn the thing was learned or last touched
+ * @returns The recency word
+ */
+export declare function recencyWordFor(currentTurn: number, sinceTurn: number): (typeof RECENCY_WORDS)[number];
+/**
+ * The absence word a `return` boundary presents, from the last close turn.
+ * Undefined when the pair has never closed a scene (no absence to name).
+ *
+ * @param currentTurn - The turn the read happens on (clock-seam sourced)
+ * @param lastSceneClosedTurn - The pair's last close turn, if any
+ * @returns The absence word, or undefined with no history
+ */
+export declare function absenceWordFor(currentTurn: number, lastSceneClosedTurn: number | undefined): (typeof ABSENCE_WORDS)[number] | undefined;
+/**
+ * The repetition word for a topic's ask count (1 → `once`, 2 → `again`,
+ * 3+ → `many-times`). Undefined for a never-asked topic.
+ *
+ * @param count - The pair's ask count for the topic
+ * @returns The repetition word, or undefined when never asked
+ */
+export declare function askedWordFor(count: number): (typeof ASKED_WORDS)[number] | undefined;
+```
+
+### conversation/manner
+
+```typescript
+/**
+ * Manner beat selection (ADR-320 D5)
+ *
+ * A `define manner` block's rows are condition-gated beat sets. Selection
+ * picks the first row whose condition holds (declaration order — the
+ * analyzer already proved overlap rules at compile), then rotates through
+ * that row's beats without back-to-back repeats. The rotation cursor
+ * rides the scene store, so delivery replays byte-identically across
+ * save/restore at the pinned seed. Silence is a manner-colored rendered
+ * response like any other delivery (D8) — `renderSilence` builds its wire
+ * event from the same selection path.
+ *
+ * Public interface: MannerSelection, selectMannerBeat, renderSilence.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { WorldModel, SceneWireEvent } from '@sharpee/world-model';
+import type { IRMannerRow } from '@sharpee/chord';
+/** A selected delivery coloring: the beat to emit and the row's voice. */
+export interface MannerSelection {
+    /** The beat phrase key to emit. */
+    beatKey: string;
+    /** The matched row's `voice` word, if declared (open vocabulary, data). */
+    voice?: string;
+    /** Index of the matched row (callers correlate with authored order). */
+    rowIndex: number;
+}
+/**
+ * Select the delivery beat for a speaker (ADR-320 D5): first matching row
+ * in declaration order, then beat rotation within the row — the cursor
+ * advances one beat per delivery and a row with two or more beats never
+ * repeats back-to-back. Mutates the rotation cursor in the scene store.
+ *
+ * @param world - The live world (rotation cursor home)
+ * @param ownerId - The speaking entity (cursor scope)
+ * @param rows - The owner's compiled manner rows, declaration order
+ * @param evalCondition - Row-condition evaluator (the loader's, bound by the caller)
+ * @returns The selection, or undefined when no row matches (no manner coloring)
+ */
+export declare function selectMannerBeat(world: WorldModel, ownerId: string, rows: IRMannerRow[], evalCondition: (row: IRMannerRow) => boolean): MannerSelection | undefined;
+/**
+ * Render a silence (ADR-320 D8): a withheld reply is a delivery like any
+ * other — manner-colored through the same selection path, emitted as a
+ * `rendered-silence` wire event, never a bare absence.
+ *
+ * @param world - The live world (rotation cursor home)
+ * @param sceneId - The scene the silence lands in
+ * @param speakerId - The character staying silent
+ * @param rows - The speaker's compiled manner rows, declaration order
+ * @param evalCondition - Row-condition evaluator (the loader's, bound by the caller)
+ * @returns The rendered-silence wire event (beats empty when no row matches)
+ */
+export declare function renderSilence(world: WorldModel, sceneId: string, speakerId: string, rows: IRMannerRow[], evalCondition: (row: IRMannerRow) => boolean): SceneWireEvent;
+```
+
+### conversation/initiative
+
+```typescript
+/**
+ * Authored initiative (ADR-320 D7)
+ *
+ * `define initiative` rows force or suppress a seizure at their occasion —
+ * most-specific-wins: an authored row always beats disposition scoring, in
+ * either direction. This module matches a character's compiled rows
+ * against a live occasion; the caller feeds the answer into `scoreFloor`
+ * as the bid's `authored` field and runs a forcing row's body. A row whose
+ * body is the lone `hold their tongue` statement suppresses (the analyzer
+ * guarantees the alone-gate at compile).
+ *
+ * Public interface: AuthoredInitiative, authoredInitiativeFor.
+ * Owner context: @sharpee/character / conversation
+ */
+import type { IRInitiativeRow } from '@sharpee/chord';
+import type { SceneOccasion } from './scene-scoring.js';
+/** An authored row's answer to an occasion. */
+export interface AuthoredInitiative {
+    /** Suppress when the body is the lone hold-tongue statement; else force. */
+    authored: 'forces' | 'suppresses';
+    /** The matching row (a forcing row's body is the seizure's script). */
+    row: IRInitiativeRow;
+}
+/**
+ * The authored answer to an occasion, if any (ADR-320 D7): the first row
+ * in declaration order whose occasion head matches and whose `, when`
+ * refinement holds. `goal-step` occasions never match — the goal surface
+ * is deliberately unsurfaced in initiative authoring (Phase 4 freeze).
+ *
+ * @param rows - The character's compiled initiative rows, declaration order
+ * @param occasion - The live occasion
+ * @param evalCondition - Refinement evaluator (the loader's, bound by the caller)
+ * @param witnessedAction - For witnessed-event occasions, the committed action id
+ * @returns The authored answer, or undefined when disposition decides
+ */
+export declare function authoredInitiativeFor(rows: IRInitiativeRow[], occasion: SceneOccasion, evalCondition: (row: IRInitiativeRow) => boolean, witnessedAction?: string): AuthoredInitiative | undefined;
+```
+
+### conversation/thread-runtime
+
+```typescript
+/**
+ * Conversation-thread runtime — open, resume, park, advance, conclude
+ * (ADR-320 D14; Phase 10.3)
+ *
+ * The one writer of per-pair thread state: an author-scripted subject the
+ * owner carries beat by beat to a defined conclusion, across as many
+ * sittings as it takes. State lives on the owner's trait
+ * (`CharacterModelTrait.conversationThreads`, schema v3 — Phase 10.2's
+ * home), so it rides the world snapshot, survives scene closes and day
+ * boundaries, and restores mid-beat. The compiled `define conversation`
+ * shape (`IRConversation`, Phase 10.1) is this runtime's fixed input;
+ * serving a beat's statement body is the loader's (Phase 10.4) — this
+ * module owns cursor/status mutations, the D14 transition table, and the
+ * wire events. All turn reads go through the character clock seam (D6).
+ *
+ * Public interface: threadStateFor, activeThreadFor, ThreadTransition,
+ *   resolveThreadTransition, openThread, resumeThread, parkThread,
+ *   ThreadAdvance, advanceThreadBeat, concludeThread, ThreadMove,
+ *   readyThreadMove, threadContinuabilityFor.
+ * Owner context: @sharpee/character / conversation
+ */
+import { type WorldModel, type ConversationThreadState, type SceneStrength, type SceneWireEvent, type ThreadContinuability } from '@sharpee/world-model';
+import { type IRCondition, type IRConversation, type IRStatement } from '@sharpee/chord';
+import { type ConversationMemoryAccess } from './conversation-memory.js';
+/** A hold-gate/`opens when` evaluator, bound by the caller (the loader's). */
+export type ThreadConditionEval = (condition: IRCondition) => boolean;
+/**
+ * The owner's state for one thread with one partner, or undefined when the
+ * thread has never engaged (pre-v3 rehydrated traits lack the field — the
+ * absence reads the same).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread's owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The per-pair state, or undefined
+ */
+export declare function threadStateFor(world: WorldModel, ownerId: string, partnerId: string, threadKey: string): ConversationThreadState | undefined;
+/**
+ * The pair's one ACTIVE thread, or undefined (the at-most-one-ACTIVE
+ * invariant's read side).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @returns The active thread's key and state, or undefined
+ */
+export declare function activeThreadFor(world: WorldModel, ownerId: string, partnerId: string): {
+    threadKey: string;
+    state: ConversationThreadState;
+} | undefined;
+/**
+ * How an ACTIVE thread answers an off-thread ask (ADR-320 D14): `parks`
+ * silently by default (`on parting` renders if authored), `protests-then-
+ * parks` renders `on parting` as one authored beat of resistance then
+ * yields, `refuses` turns the ask back into the thread (the authored
+ * `on refusing:` row first, the current beat re-served otherwise).
+ */
+export type ThreadTransition = 'parks' | 'protests-then-parks' | 'refuses';
+/**
+ * The strength-governed transition answer (ADR-320 D14's table). Pure —
+ * the caller parks/serves/refuses accordingly.
+ *
+ * @param strength - The ACTIVE thread's effective strength
+ * @returns The transition word
+ */
+export declare function resolveThreadTransition(strength: SceneStrength): ThreadTransition;
+/**
+ * Open a thread fresh (ADR-320 D14): first engagement of the pair — a
+ * matching ask or an `opens when` occasion. Writes `active`/cursor 0.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the opening lands in (wire attribution)
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-opened wire event (empty for an unmodeled owner)
+ * @throws Error when the pair already has state for this thread, or
+ *   another thread is ACTIVE for the pair
+ */
+export declare function openThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Resume a parked thread (ADR-320 D14): re-engagement at the held cursor
+ * — same scene, the next day, or after a restore alike. The caller serves
+ * the authored `on resuming:` row alongside.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the resumption lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-resumed wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not PARKED, or another thread is
+ *   ACTIVE for the pair
+ */
+export declare function resumeThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Park the ACTIVE thread (ADR-320 D14): the subject switched away, the
+ * scene closed, or the player left — the cursor holds. The caller serves
+ * the authored `on parting:` row alongside (silently absent for a passive
+ * thread with none authored).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the parking lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-parked wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not ACTIVE
+ */
+export declare function parkThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Park every ACTIVE thread between the scene's participants (ADR-320
+ * D14's persistence clause): a scene close never resets a thread — it
+ * parks it, cursor held, so the next engagement is a resume (`on
+ * resuming` renders whether the gap is three turns, a day boundary, or a
+ * restore). Called by `closeScene` for every ordered participant pair;
+ * unmodeled holders read blank and nothing changes.
+ *
+ * @param world - The live world
+ * @param sceneId - The closing scene (wire attribution)
+ * @param participantIds - The scene's participants
+ * @returns The thread-parked wire events, holder order
+ */
+export declare function parkActiveThreadsOnClose(world: WorldModel, sceneId: string, participantIds: string[]): SceneWireEvent[];
+/**
+ * Conclude the ACTIVE thread (ADR-320 D14): status CONCLUDED — terminal —
+ * and every `about` topic candidate recorded discussed on BOTH sides'
+ * conversation memory (the "topics record as discussed" clause; the
+ * `is concluded` evaluator reads the status straight off the trait).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the conclusion lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param thread - The compiled thread (key and `about` filter)
+ * @param memory - The per-pair conversation-memory home
+ * @returns The thread-concluded wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not ACTIVE (conclusion fires once)
+ */
+export declare function concludeThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, thread: IRConversation, memory: ConversationMemoryAccess): SceneWireEvent[];
+/** What one advance served: a numbered beat, or the conclusion. */
+export interface ThreadAdvance {
+    /** `beat` while beats remain; `conclusion` on the final advance. */
+    kind: 'beat' | 'conclusion';
+    /** The statement body to serve (the loader executes it — Phase 10.4). */
+    body: IRStatement[];
+    /** Wire events the advance produced. */
+    wireEvents: SceneWireEvent[];
+}
+/**
+ * Advance the ACTIVE thread one beat (ADR-320 D14's advance clause —
+ * fired on the owner's own floor turns AND on player continuation
+ * prompts; both paths land here). A held beat advances on neither: an
+ * open exchange in the pair's scene holds (a `then asks` beat waits for
+ * its exchange to close), and an unmet `beat, when` hold-gate waits for
+ * the world. Past the last beat, the advance serves the conclusion
+ * (`concludeThread`).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the advance lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param thread - The compiled thread
+ * @param evalCondition - Hold-gate evaluator (the loader's, bound by the caller)
+ * @param memory - The per-pair conversation-memory home (conclusion's record)
+ * @returns The served advance, or undefined when the beat is held
+ * @throws Error when the thread is not ACTIVE for the pair
+ */
+export declare function advanceThreadBeat(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, thread: IRConversation, evalCondition: ThreadConditionEval, memory: ConversationMemoryAccess): ThreadAdvance | undefined;
+/**
+ * The thread move an owner would make with the floor (ADR-320 D14): what
+ * dispatch (Phase 10.4) turns into a forcing floor answer — threads claim
+ * the owner's floor turns the way authored initiative rows claim their
+ * occasions (D7 most-specific-wins), so disposition, interruption, and
+ * decay stay unchanged around them.
+ */
+export type ThreadMove = {
+    kind: 'advance';
+    thread: IRConversation;
+} | {
+    kind: 'resume';
+    thread: IRConversation;
+} | {
+    kind: 'open';
+    thread: IRConversation;
+};
+/**
+ * The pair's ready thread move, if any: the ACTIVE thread's next advance
+ * when it is not held; otherwise the first declared thread whose `opens
+ * when` holds — unopened opens fresh, parked resumes (a concluded thread
+ * never re-engages).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param conversations - The owner's compiled threads, declaration order
+ * @param evalCondition - Hold-gate/`opens when` evaluator (the loader's)
+ * @returns The ready move, or undefined when no thread claims the moment
+ */
+export declare function readyThreadMove(world: WorldModel, ownerId: string, partnerId: string, conversations: IRConversation[], evalCondition: ThreadConditionEval): ThreadMove | undefined;
+/**
+ * The pair's thread continuability (ADR-320 D14, the D12 affordance
+ * surface): present exactly while a thread is ACTIVE; `continuable` is
+ * false while the next beat is held (unmet gate or open exchange).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the affordance describes
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param conversations - The owner's compiled threads
+ * @param evalCondition - Hold-gate evaluator (the loader's)
+ * @returns The continuability record, or undefined when no thread is active
+ */
+export declare function threadContinuabilityFor(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, conversations: IRConversation[], evalCondition: ThreadConditionEval): ThreadContinuability | undefined;
+```
+
+### conversation/scene-binding
+
+```typescript
+/**
+ * The world's scene runtime (ADR-320 D4/D7/D10; Phase 6 design §1 seam B)
+ *
+ * Implements `SceneRuntimeBinding` over the Phase 5 scene runtime and
+ * registers it per world (idempotent last-wins; re-register on every
+ * story load) so stdlib's conversation actions can drive scene lifecycle
+ * across the package boundary. Floor bids are built here from
+ * disposition-under-circumstance (D7): a runtime-owned propensity curve
+ * over the closed personality words, damped by fear and paranoia,
+ * compelled by the `breaking` pressure band — numbers never reach Chord,
+ * and every threshold is revisable freely. Authored initiative rows
+ * arrive through the registrar's `authoredFor` callback (the loader's,
+ * Phase 7) and always beat disposition (D7 most-specific-wins).
+ *
+ * Public interface: SceneBindingOptions, createTraitMemoryAccess,
+ *   createSceneRuntimeBinding, registerCharacterScenes.
+ * Owner context: @sharpee/character / conversation
+ */
+import { WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
+import type { ConversationMemoryAccess } from './conversation-memory.js';
+/**
+ * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
+ * records live on the holder's `CharacterModelTrait.conversationMemory`,
+ * so they ride the world snapshot with the rest of the model (D17). An
+ * unmodeled holder reads blank and ignores writes (ADR-310 D7: no model,
+ * no change). Pre-v2 rehydrated traits may lack the field — reads
+ * tolerate it, and the first write creates it.
+ *
+ * @param world - The world whose entities hold the memory
+ * @returns The trait-backed access
+ */
+export declare function createTraitMemoryAccess(world: WorldModel): ConversationMemoryAccess;
+/** Registrar-supplied hooks for the binding. */
+export interface SceneBindingOptions {
+    /**
+     * The authored-initiative answer for a participant at an occasion (D7
+     * most-specific-wins) — the loader binds compiled `define initiative`
+     * rows here (Phase 7). Absent = disposition alone decides.
+     */
+    authoredFor?: (participantId: string, occasion: SceneOccasion, witnessedAction?: string) => 'forces' | 'suppresses' | undefined;
+    /**
+     * Run an authored initiative seizure (ADR-320 D7; Phase 8) — the loader
+     * binds compiled `define initiative` row BODIES here: a forcing row's
+     * body executes (occurrence keys, pins, claims — the serve-path rules)
+     * and the seizure's line comes back for the observability surface.
+     * Absent = authored occasions never run (builder-authored stories).
+     */
+    seizeInitiative?: (participantId: string, occasion: SceneOccasion, witnessedAction?: string, audienceId?: string) => InitiativeSeizure | undefined;
+    /**
+     * Take one thread floor turn (ADR-320 D14; Phase 10.4) — the loader
+     * binds compiled `define conversation` blocks here: the owner's ready
+     * thread move executes against the pair's live scene and the spoken
+     * line comes back for the observability surface. Absent = no threads
+     * declared (the tick's thread step no-ops, the D2 cost leg).
+     */
+    threadTurn?: (ownerId: string, partnerId: string, sceneId: string) => InitiativeSeizure | undefined;
+    /**
+     * Pure probe for `threadTurn`: would the owner take a thread floor
+     * turn toward this partner right now? Consulted before opening a scene
+     * for an `opens when` thread — must not mutate.
+     */
+    threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
+}
+/**
+ * Build the world's scene runtime over the Phase 5 machinery.
+ *
+ * @param world - The world the binding serves (closed over, like the selector)
+ * @param memory - The per-pair conversation-memory home
+ * @param options - Registrar hooks (authored initiative)
+ * @returns The binding to register
+ */
+export declare function createSceneRuntimeBinding(world: WorldModel, memory: ConversationMemoryAccess, options?: SceneBindingOptions): SceneRuntimeBinding;
+/**
+ * Register the scene runtime on a world (idempotent last-wins, per-world;
+ * re-register on every story load).
+ *
+ * @param world - The world whose conversation actions should drive it
+ * @param memory - The per-pair conversation-memory home
+ * @param options - Registrar hooks (authored initiative)
+ */
+export declare function registerCharacterScenes(world: WorldModel, memory: ConversationMemoryAccess, options?: SceneBindingOptions): void;
+```
+
 ### conversation/selector
 
 ```typescript
@@ -2095,7 +2867,12 @@ export interface PropagationProfile {
     schedule?: PropagationSchedule;
     /** Tone of the telling (default: 'neutral'). */
     coloring?: PropagationColoring;
-    /** Whether the player can use this NPC as a messenger (default: false). */
+    /**
+     * RETIRED (ADR-320 D11, ruling 2026-08-17): hearsay spreads like any
+     * knowledge — the told-source gate this flag controlled is deleted, so
+     * the field is dead config kept only so existing profiles still parse.
+     * Selectivity lives in `tendency`/`spreads`/`withholds`/audiences.
+     */
     playerCanLeverage?: boolean;
     /** How the NPC treats received information (default: 'as fact'). */
     receives?: ReceivesAs;
@@ -3050,6 +3827,12 @@ export interface InfluenceDef {
     witnessed?: string;
     /** Message ID when the target resists. */
     resisted?: string;
+    /**
+     * Message ID when the effect expires (separation or duration lapse) with
+     * the expiring target at the player's location. Opt-in release line —
+     * absent means expiry stays silent (David's ruling 2026-08-16).
+     */
+    expired?: string;
     /** Optional scheduling conditions (for passive mode). */
     schedule?: InfluenceSchedule;
     /** Message ID when PC tries to act while under this influence. */
@@ -3343,6 +4126,7 @@ export declare class InfluenceBuilder<TParent extends {
     private _duration;
     private _witnessed?;
     private _resisted?;
+    private _expired?;
     private _schedule?;
     private _onPlayerAction?;
     private _lingeringTurns?;
@@ -3397,6 +4181,14 @@ export declare class InfluenceBuilder<TParent extends {
      * @returns this for chaining
      */
     resisted(messageId: string): InfluenceBuilder<TParent>;
+    /**
+     * Set the message ID rendered when the effect expires (separation or
+     * duration lapse). Absent = expiry stays silent.
+     *
+     * @param messageId - Message ID
+     * @returns this for chaining
+     */
+    expired(messageId: string): InfluenceBuilder<TParent>;
     /**
      * Set scheduling conditions for passive influences.
      *
@@ -3485,10 +4277,12 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
- * bookkeeping arrives with ADR-318's arbiter.) Ordering between
- * sub-steps is a contract, which is why this is one registration rather
- * than three (docs/work/adr-310/contracts.md §2).
+ * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
+ * arbiter.) Ordering between sub-steps is a contract, which is why this
+ * is one registration rather than three (docs/work/archive/adr-310/
+ * contracts.md §2); scenes run last because they consume the propagation
+ * and goal sub-steps' same-turn output.
  *
  * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
  * below holds ONLY authored configuration, re-registered at load, and has
@@ -3502,6 +4296,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * Owner context: @sharpee/character
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import { PropagationProfile } from './propagation/index.js';
@@ -3521,6 +4316,13 @@ interface TickContext {
      * observed this turn.
      */
     actionEvents?: ISemanticEvent[];
+    /**
+     * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+     * the scenes sub-step emits conversation sounds here so eavesdropping
+     * rides spatial propagation. Absent (older callers, unit harnesses) =
+     * scenes run silently (mutations land, no sounds).
+     */
+    emitSound?: (sound: ISound) => void;
 }
 /** Per-NPC character configuration for the tick phase. Authored data only. */
 export interface CharacterPhaseConfig {
@@ -3538,6 +4340,22 @@ export interface CharacterPhaseConfig {
         valence: number;
         arousal: number;
     };
+    /**
+     * Topics this character's own TURN-TRIGGERED rules are gated on knowing
+     * (`on every turn … while it knows <topic>`). When such a topic arrives by
+     * propagation, that rule fires this same turn and narrates the arrival in
+     * the author's words — so the platform must NOT also describe it with the
+     * generic witnessed summary, or one moment gets told twice: the author's
+     * staged confrontation, plus "X mentions something to Y."
+     *
+     * Only turn-triggered clauses count. A topic row gated `when it knows
+     * <topic>` is a RESPONSE gate — it fires if the player asks, later or
+     * never — so it says nothing about who narrates this arrival and must not
+     * suppress anything.
+     *
+     * Derived from the compiled story at load; authors declare nothing.
+     */
+    arrivalNarratedTopics?: ReadonlySet<string>;
 }
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
@@ -3599,7 +4417,9 @@ export { CHARACTER_TURN_KEY } from './character-clock.js';
  * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
  * see them; propagation
  * moves knowledge before goals re-evaluate activation conditions that may
- * reference it.
+ * reference it; scenes run last (ADR-320 Phase 8), consuming the
+ * transfers, say completions, moves, and detected acts the earlier
+ * sub-steps surfaced this turn.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
@@ -3678,20 +4498,26 @@ export interface CompiledStoryOracle {
  * topic name (D12a — actor × act), and records witnessed acts as observer
  * knowledge so reputation travels by propagation (D7).
  *
- * Sites (ADR-318 Implementation):
+ * Sites (ADR-318 Implementation; statement site per ADR-320 D11):
  * - taking → steal-candidate: `if.event.taken` / `npc.took` where the item
  *   came out of another actor's possession
  * - combat → harm: `if.event.attacked` / `npc.attacked`
  * - reveal → topic delivery: `revealConfidedTopic` — called from the
  *   dialogue path, where delivery is knowable (prose is opaque; events are
  *   not tagged with what a line asserts)
+ * - statement → witnessed claim: `witnessStatement` over `if.event.told`
+ *   (ADR-320 D11 — the player's utterances are witnessed claims): every
+ *   co-located modeled hearer records the statement under the fact-
+ *   transfer rules, and a modeled speaker's claims-tagged statement mints
+ *   on the speaker's own ledger — both sides can lie, one discipline
  *
  * Public interface: detectActs, revealConfidedTopic, witnessActs,
- *   derivedTopicFor, DetectedAct.
+ *   witnessStatement, derivedTopicFor, DetectedAct.
  * Owner context: @sharpee/character / act-detection
  */
 import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel, CharacterModelTrait, type IFEntity, type ActCategory, type FaceAct } from '@sharpee/world-model';
+import { type ClaimTag } from '../conversation/claims.js';
 /** A classified act, ready for arbitration input, minting, and the author channel. */
 export interface DetectedAct {
     /** Exactly one of `category` / `faceAct` is set. */
@@ -3735,6 +4561,30 @@ export declare function detectActs(event: ISemanticEvent, world: WorldModel): De
  */
 export declare function revealConfidedTopic(speaker: IFEntity, speakerTrait: CharacterModelTrait, topic: string): DetectedAct | undefined;
 /**
+ * The statement site (ADR-320 D11): a speaker's TELL/SAY lands in every
+ * modeled hearer under the fact-transfer rules — the hearer records the
+ * topic (`told`), a valued claim rides when one is asserted (the explicit
+ * claim tag first, else the modeled speaker's own held value), and a
+ * belief the hearer already holds is never displaced (belief revision is
+ * D14 resistance territory). A modeled speaker's claims-tagged statement
+ * additionally runs the lie-ledger mint rule per hearer-audience
+ * (`recordClaimDelivery`) — the both-sides-can-lie symmetry — and every
+ * hearer is recorded on the speaker's told-record.
+ *
+ * @param world - The live world (speaker trait lookup)
+ * @param speakerId - The speaking actor (the player at the stdlib site)
+ * @param topic - The normalized topic key the statement is about
+ * @param hearers - Who heard it (co-located; the speaker is skipped)
+ * @param turn - Current turn number
+ * @param claims - The statement's claim tag, when an authored line asserts one
+ * @returns Topics learned per hearer id, plus author-channel events from
+ *   any ledger bookkeeping
+ */
+export declare function witnessStatement(world: WorldModel, speakerId: string, topic: string, hearers: readonly IFEntity[], turn: number, claims?: ClaimTag): {
+    learned: Record<string, string[]>;
+    authorEvents: ISemanticEvent[];
+};
+/**
  * Record witnessed acts as observer knowledge under their derived topic
  * names (D12a: coverage is total with zero authoring cost; D7: reputation
  * travels from here by `spreads`).
@@ -3762,7 +4612,8 @@ export declare function witnessActs(acts: readonly DetectedAct[], observers: rea
  *   ArbiterContext, ArbiterAct.
  * Owner context: @sharpee/character / arbiter
  */
-import type { Force, ActCategory, ObligationWord, FaceAct, TemperamentDef } from '@sharpee/world-model';
+import type { Force, ActCategory, ObligationWord, FaceAct, TemperamentDef, ForceReading } from '@sharpee/world-model';
+export type { ForceReading } from '@sharpee/world-model';
 /** The act an arbitration decides: a dialogue act or a goal's execution. */
 export type ArbiterAct = 'comply' | 'refuse' | 'evade' | {
     goalId: string;
@@ -3776,16 +4627,6 @@ export interface ActCandidate {
     act: ArbiterAct;
     topicId?: string;
     audiencePresent: string[];
-}
-/** One force's live pressure on the candidate (contracts.md §3). */
-export interface ForceReading {
-    force: Force;
-    /** Runtime-owned 0..1 scale; feed formulas per ADR-318 D1's table. */
-    intensity: number;
-    /** True when the feed is off-baseline. */
-    live: boolean;
-    /** Author-channel attribution, e.g. 'principle:never-lie'. */
-    feed: string;
 }
 /** The arbitration result (contracts.md §3). The arbiter is pure — it computes; bookkeeping mutates. */
 export interface ArbiterVerdict {

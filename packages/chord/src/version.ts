@@ -177,5 +177,29 @@
  * `chord.ebnf` and its recorded hash move. **The next additive construct after
  * a 3.x publish takes an ordinary minor by D2** — the freeze is a
  * nothing-published exception, not a standing suspension of the rule.
+ *
+ * 3.1.0 — ADR-320 Phase 3, 2026-08-17 (session 8e2f49): the conversation
+ * grammar slice, vocabulary frozen by owner the same day. Additive: `define
+ * manner` (beat/voice rows), `define greetings` (boundary rows with the
+ * absence and repetition words), the recency predicate (`<topic> is
+ * fresh|recent|stale`), `<topic> was discussed`, `the subject changes`, and
+ * `asked once|again|many times`. Chord 3.0.0 shipped with platform 5.0.x, so
+ * this is the first ordinary minor after the freeze, per the rule above.
+ *
+ * 3.2.0 — ADR-320 Phase 4, 2026-08-17 (session a53a28): the second
+ * conversation grammar slice, vocabulary frozen by owner the same day.
+ * Additive: `define exchange` (answer/act/silence response rows, the header
+ * strength comma-modifier `passive|assertive|blocking`), `define initiative`
+ * (occasion rows — `on an open floor`, `on silence`, `when the subject
+ * changes`, `on <act/event>` — with the `, when <condition>` refinement),
+ * and the conversation-row statements `then asks|invites <exchange>`,
+ * `deflect to <topic>`, `leave`, and `hold their tongue`.
+ *
+ * 3.3.0 — ADR-320 D14 amendment, 2026-08-17 (session 13a3e0): conversation
+ * threads, vocabulary frozen by owner the same day. Additive: `define
+ * conversation <key> for <entity>[, <strength>]` (the `about` topic filter,
+ * `opens when <condition>`, ordered `beat[, when <condition>]:` rows, the
+ * transition rows `on parting:` / `on resuming:` / `on refusing:`, exactly
+ * one `conclusion:`) and the `<thread> is concluded` predicate.
  */
-export const CHORD_LANGUAGE_VERSION = '3.0.0';
+export const CHORD_LANGUAGE_VERSION = '3.3.0';

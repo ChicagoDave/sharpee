@@ -18,6 +18,7 @@ import {
 } from '@sharpee/branch-tester/tree-document';
 import { MAIN_LINE, TreeSessionModel } from '../src/model';
 import { explainGroups } from '../src/character';
+import { affordanceGroupsOf, sceneExplainGroups } from '../src/scene';
 
 /** A fresh model with the standard opening: boot look in the Den. */
 function bootedModel(): TreeSessionModel {
@@ -145,6 +146,52 @@ describe('assertion authoring — claims live in the card', () => {
       ],
     }]);
     expect(JSON.stringify(read.document)).toBe(JSON.stringify(JSON.parse(text)));
+  });
+
+  it('click-to-assert scene and affordance lines claim on their OWN channels through the round trip (ADR-320 D12)', () => {
+    const model = bootedModel();
+    const n = play(model, 'ask nell about the tour');
+    // The exact lines the panel derives — the assert delegate passes each
+    // line's fragments to addChannel under the line's claimChannel, so a
+    // scene line and an affordance line land as two claims on two ids.
+    const [sceneGroup] = sceneExplainGroups([{
+      turn: 4,
+      kind: 'character.exchange.opened',
+      data: { exchangeId: 'nell.the-offer', word: 'asks' },
+    }], () => undefined);
+    const [affordanceGroup] = affordanceGroupsOf({
+      'exchange-affordances': [[{
+        sceneId: 'scene-1',
+        exchangeId: 'nell.the-offer',
+        responses: [{ kind: 'verbal', rowId: 'nell.the-offer#0', topic: { kind: 'text', primary: 'yes', aliases: [] } }],
+      }]],
+    }, () => undefined);
+    for (const line of [sceneGroup.lines[0], affordanceGroup.lines[0]]) {
+      expect(model.addChannel(n, { id: line.claimChannel, contains: [...line.fragments] })).toBe(true);
+    }
+
+    const read = deserializeTreeDocument(model.serialize());
+    expect(read.status).toBe('ok');
+    if (read.status !== 'ok') return;
+    const card = read.document.cards.find((c) => c.command === 'ask nell about the tour');
+    expect(card?.assertions?.channels).toEqual([
+      {
+        id: 'scene',
+        contains: [
+          '"kind":"character.exchange.opened"',
+          '"exchangeId":"nell.the-offer"',
+          '"word":"asks"',
+        ],
+      },
+      {
+        id: 'exchange-affordances',
+        contains: [
+          '"exchangeId":"nell.the-offer"',
+          '"kind":"verbal"',
+          '"primary":"yes"',
+        ],
+      },
+    ]);
   });
 
   it('a recorded skip persists as the explicit [SKIP] demotion', () => {

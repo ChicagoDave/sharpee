@@ -17,7 +17,12 @@ import type {
   ObligationWord,
   FaceAct,
   TemperamentDef,
+  ForceReading,
 } from '@sharpee/world-model';
+
+// Declared in world-model beside `Force` since the Phase 6 amendment (the
+// scene-runtime binding's floor shapes name it); re-exported unchanged.
+export type { ForceReading } from '@sharpee/world-model';
 
 /** The act an arbitration decides: a dialogue act or a goal's execution. */
 export type ArbiterAct = 'comply' | 'refuse' | 'evade' | { goalId: string };
@@ -31,17 +36,6 @@ export interface ActCandidate {
   act: ArbiterAct;
   topicId?: string;
   audiencePresent: string[];
-}
-
-/** One force's live pressure on the candidate (contracts.md §3). */
-export interface ForceReading {
-  force: Force;
-  /** Runtime-owned 0..1 scale; feed formulas per ADR-318 D1's table. */
-  intensity: number;
-  /** True when the feed is off-baseline. */
-  live: boolean;
-  /** Author-channel attribution, e.g. 'principle:never-lie'. */
-  feed: string;
 }
 
 /** The arbitration result (contracts.md §3). The arbiter is pure — it computes; bookkeeping mutates. */

@@ -1,0 +1,36 @@
+title: Scene wire and exchange affordances (Phase 9)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: The conversation wire as channel data — opening an exchange
+  puts its lifecycle on the scene channel and its advertised responses
+  (both answers and the inalienable silence) on the exchange-affordances
+  channel; answering closes the exchange and the advertisement clears.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p9-wire.transcript
+channels: scene, exchange-affordances
+
+---
+
+> west
+[OK: contains "You hear:"]
+
+> west
+[OK: contains "Nell"]
+
+# Serving the row opens the exchange: the lifecycle rides the scene
+# channel, and the advertised responses ride exchange-affordances.
+> ask nell about the tour
+[OK: contains "A grand tour of the north"]
+[CHANNEL: scene, contains "character.exchange.opened"]
+[CHANNEL: scene, contains "nell.the-offer"]
+[CHANNEL: exchange-affordances, contains "nell.the-offer"]
+[CHANNEL: exchange-affordances, contains "yes"]
+[CHANNEL: exchange-affordances, contains "silence"]
+
+# The gripped answer serves and closes the exchange — the advertisement
+# clears with it (never stale choices).
+> ask nell about yes
+[OK: contains "Splendid!"]
+[CHANNEL: exchange-affordances, not contains "nell.the-offer"]

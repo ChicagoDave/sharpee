@@ -7,16 +7,21 @@
  * topic name (D12a — actor × act), and records witnessed acts as observer
  * knowledge so reputation travels by propagation (D7).
  *
- * Sites (ADR-318 Implementation):
+ * Sites (ADR-318 Implementation; statement site per ADR-320 D11):
  * - taking → steal-candidate: `if.event.taken` / `npc.took` where the item
  *   came out of another actor's possession
  * - combat → harm: `if.event.attacked` / `npc.attacked`
  * - reveal → topic delivery: `revealConfidedTopic` — called from the
  *   dialogue path, where delivery is knowable (prose is opaque; events are
  *   not tagged with what a line asserts)
+ * - statement → witnessed claim: `witnessStatement` over `if.event.told`
+ *   (ADR-320 D11 — the player's utterances are witnessed claims): every
+ *   co-located modeled hearer records the statement under the fact-
+ *   transfer rules, and a modeled speaker's claims-tagged statement mints
+ *   on the speaker's own ledger — both sides can lie, one discipline
  *
  * Public interface: detectActs, revealConfidedTopic, witnessActs,
- *   derivedTopicFor, DetectedAct.
+ *   witnessStatement, derivedTopicFor, DetectedAct.
  * Owner context: @sharpee/character / act-detection
  */
 
@@ -29,6 +34,7 @@ import {
   type ActCategory,
   type FaceAct,
 } from '@sharpee/world-model';
+import { recordClaimDelivery, type ClaimTag } from '../conversation/claims.js';
 
 /** A classified act, ready for arbitration input, minting, and the author channel. */
 export interface DetectedAct {
@@ -163,6 +169,74 @@ export function revealConfidedTopic(
     actorId: speaker.id,
     derivedTopic: derivedTopicFor(speaker.name, 'betray a confidence'),
   };
+}
+
+/**
+ * The statement site (ADR-320 D11): a speaker's TELL/SAY lands in every
+ * modeled hearer under the fact-transfer rules — the hearer records the
+ * topic (`told`), a valued claim rides when one is asserted (the explicit
+ * claim tag first, else the modeled speaker's own held value), and a
+ * belief the hearer already holds is never displaced (belief revision is
+ * D14 resistance territory). A modeled speaker's claims-tagged statement
+ * additionally runs the lie-ledger mint rule per hearer-audience
+ * (`recordClaimDelivery`) — the both-sides-can-lie symmetry — and every
+ * hearer is recorded on the speaker's told-record.
+ *
+ * @param world - The live world (speaker trait lookup)
+ * @param speakerId - The speaking actor (the player at the stdlib site)
+ * @param topic - The normalized topic key the statement is about
+ * @param hearers - Who heard it (co-located; the speaker is skipped)
+ * @param turn - Current turn number
+ * @param claims - The statement's claim tag, when an authored line asserts one
+ * @returns Topics learned per hearer id, plus author-channel events from
+ *   any ledger bookkeeping
+ */
+export function witnessStatement(
+  world: WorldModel,
+  speakerId: string,
+  topic: string,
+  hearers: readonly IFEntity[],
+  turn: number,
+  claims?: ClaimTag,
+): { learned: Record<string, string[]>; authorEvents: ISemanticEvent[] } {
+  const learned: Record<string, string[]> = {};
+  const authorEvents: ISemanticEvent[] = [];
+  const speakerTrait = world
+    .getEntity(speakerId)
+    ?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+
+  // The asserted value: an explicit claim tag first; else a modeled
+  // speaker's held value rides, as in propagation's transfer.
+  const claimFactId = claims?.factId ?? topic;
+  const claimValue = claims?.value ?? speakerTrait?.getFactBelief(topic)?.value;
+
+  for (const hearer of hearers) {
+    if (hearer.id === speakerId) continue;
+    const trait = hearer.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+    if (!trait) continue;
+
+    if (!trait.knows(topic)) {
+      trait.addFact(topic, 'told', 'believes', turn);
+      (learned[hearer.id] ??= []).push(topic);
+    }
+    if (claimValue !== undefined && !trait.hasFactBelief(claimFactId)) {
+      trait.setFactBelief(claimFactId, {
+        value: claimValue,
+        confidence: 'believes',
+        source: 'told',
+        turnLearned: turn,
+        resistance: 'none',
+      });
+    }
+    if (speakerTrait) {
+      speakerTrait.recordTold(hearer.id, topic);
+      if (claims) {
+        authorEvents.push(...recordClaimDelivery(speakerTrait, speakerId, hearer.id, claims, turn));
+      }
+    }
+  }
+
+  return { learned, authorEvents };
 }
 
 /**

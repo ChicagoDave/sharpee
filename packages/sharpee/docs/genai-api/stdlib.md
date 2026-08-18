@@ -1733,6 +1733,36 @@ export declare class TraceAction extends MetaAction {
 }
 ```
 
+### actions/helpers/exit-legality
+
+```typescript
+/**
+ * Exit legality for conversational leaving (ADR-320 D8).
+ *
+ * "Leaving is movement, obeys the world": a scene's `leave` outcome is
+ * checked against the same read points the going action uses — the
+ * ADR-240 `exit.blocked.*` evaluator first, the stamped
+ * `RoomTrait.blockedExits` map as fallback, and door lock state — never a
+ * private conversation-only physics. A restrained, cornered, or blocked
+ * NPC cannot take the exit; silence remains the inalienable move.
+ *
+ * Public interface: hasTraversableExit.
+ * Owner context: stdlib / actions / helpers
+ */
+import { WorldModel } from '@sharpee/world-model';
+/**
+ * Whether the room offers at least one exit an actor could take right
+ * now: an exit (static or computed) whose direction is not blocked (live
+ * evaluator first, trait map fallback — going's read order) and whose
+ * door, if any, is not locked (a closed unlocked door can be opened).
+ *
+ * @param world - The live world
+ * @param roomId - The room the would-be leaver is in
+ * @returns True when some exit is traversable
+ */
+export declare function hasTraversableExit(world: WorldModel, roomId: string): boolean;
+```
+
 ### events/action-events
 
 ```typescript
@@ -3216,6 +3246,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { NpcBehavior } from './types.js';
 /**
@@ -3260,6 +3291,13 @@ export interface NpcTickContext {
      * (tests, bare harnesses) simply produce no observations.
      */
     actionEvents?: ISemanticEvent[];
+    /**
+     * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+     * NPC↔NPC scene moves emit conversation sounds through this seam so
+     * eavesdropping rides the spatial propagation path. Optional and
+     * additive: absent on callers without the sound subsystem.
+     */
+    emitSound?: (sound: ISound) => void;
 }
 /**
  * NPC Service interface
@@ -4307,6 +4345,9 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly SCORE_NOTIFY: "score_notify";
     readonly LIFECYCLE: "lifecycle";
     readonly CHARACTER: "character";
+    readonly SCENE: "scene";
+    readonly EXCHANGE_AFFORDANCES: "exchange-affordances";
+    readonly THREAD_AFFORDANCES: "thread-affordances";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
 ```
@@ -4351,6 +4392,84 @@ export interface CharacterAuthorRow {
  * Sparse: turns with no character-model activity emit nothing.
  */
 export declare const characterAuthorChannel: IOChannel<CharacterAuthorRow>;
+```
+
+### channels/scene
+
+```typescript
+/**
+ * The `scene` and `exchange-affordances` author channels (ADR-320 D12).
+ *
+ * The presentation-agnostic conversation wire, carried as channel data
+ * under the ADR-163 discipline (data only, clients render):
+ *
+ *  - `scene` projects the turn's scene wire events — `character.scene.*`
+ *    (the `SceneWireEvent` kinds plus dispatch diagnostics like
+ *    `intrusion_blocked` / `exit_refused`) and `character.exchange.*` —
+ *    into per-turn rows, the same projection idiom as the `character`
+ *    channel.
+ *  - `exchange-affordances` projects every live scene's open exchange
+ *    advertised-response set (`ExchangeAffordances`) from the scene
+ *    store — pure state projection, so a mid-exchange restore
+ *    re-advertises correctly.
+ *  - `thread-affordances` projects every live scene's active-thread
+ *    continuability (`ThreadContinuability`, ADR-320 D14 — "Kemp has
+ *    more to say") from the same store under the same pure-projection
+ *    discipline, so a mid-beat restore re-advertises correctly.
+ *
+ * Isolation is the point (ADR-320 AC11, the ADR-310 D12/AC8 discipline):
+ * both channels are gated by the `authorChannels` capability, so a
+ * published player-facing story stream provably cannot carry scene
+ * internals — the player sees rendered prose alone. A chat-style client
+ * that renders the stream itself is a future, deliberate ungating
+ * decision, not this channel's.
+ *
+ * Public interface: sceneChannel, SceneChannelRow,
+ * exchangeAffordancesChannel, threadAffordancesChannel.
+ * Owner context: stdlib / channels
+ */
+import type { IOChannel } from '@sharpee/if-domain';
+import type { ExchangeAffordances, ThreadContinuability } from '@sharpee/world-model';
+/** One scene-wire row: one `character.scene.*`/`character.exchange.*` event. */
+export interface SceneChannelRow {
+    /** Turn the event fired on. */
+    turn: number;
+    /** The event type, e.g. 'character.scene.utterance'. */
+    kind: string;
+    /** The event's payload, verbatim — a `SceneWireEvent` for wire kinds. */
+    data: Record<string, unknown>;
+}
+/**
+ * `scene` — append-mode scene wire stream (ADR-320 D12). Carries, per
+ * turn: scene opens/closes, utterances with manner beats, floor changes,
+ * interruptions, rendered silences (dispatch and NPC↔NPC alike), and
+ * exchange lifecycle diagnostics. Sparse: turns with no scene activity
+ * emit nothing.
+ */
+export declare const sceneChannel: IOChannel<SceneChannelRow>;
+/**
+ * `exchange-affordances` — replace-mode advertised-response sets (ADR-320
+ * D12): one `ExchangeAffordances` per live scene with an open exchange,
+ * in scene-store order; the empty array when no exchange is open. Emits
+ * every turn so a consumer never renders a closed exchange's stale
+ * choices. Reads the scene store (world state) rather than events — the
+ * affordances are state of the open exchange, snapshotted onto
+ * `ExchangeState.responses` at open time, so the projection survives
+ * save/restore.
+ */
+export declare const exchangeAffordancesChannel: IOChannel<ExchangeAffordances[]>;
+/**
+ * `thread-affordances` — replace-mode active-thread continuability
+ * (ADR-320 D14, additive to the D12 affordance surface): one
+ * `ThreadContinuability` per live scene with an active thread, in
+ * scene-store order; the empty array when none. Emits every turn so a
+ * consumer never renders a parked or concluded thread's stale "more to
+ * say". Reads the scene store — the snapshot is stamped at
+ * open/beat/resume and cleared at park/conclude
+ * (`stampThreadContinuability`), so the projection survives
+ * save/restore exactly as `exchange-affordances` does.
+ */
+export declare const threadAffordancesChannel: IOChannel<ThreadContinuability[]>;
 ```
 
 ### channels/media

@@ -57,7 +57,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
       seen.push({ npc: npc.id, intent, ctx });
       return { handled: true, messageId: 'character.conversation.hermit-answers', params: { flavor: 'gruff' } };
     };
-    world.registerDialogueSelector(selector);
+    world.registerDialogueSelector({ select: selector });
 
     const asked = runAsk(world, hermit, 'the weather');
 
@@ -75,10 +75,10 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
   test('ASK: unmodeled NPC never reaches the selector — default unchanged (D7)', () => {
     const { world, hermit } = setupPersonWorld(false);
     let consulted = false;
-    world.registerDialogueSelector(() => {
+    world.registerDialogueSelector({ select: () => {
       consulted = true;
       return { handled: true, messageId: 'never.this' };
-    });
+    } });
 
     const asked = runAsk(world, hermit, 'the weather');
 
@@ -94,7 +94,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
 
   test('ASK: an unhandled selection falls through to the default', () => {
     const { world, hermit } = setupPersonWorld(true);
-    world.registerDialogueSelector(() => ({ handled: false }));
+    world.registerDialogueSelector({ select: () => ({ handled: false }) });
 
     const asked = runAsk(world, hermit, 'the weather');
 
@@ -104,10 +104,10 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
   test('TELL consults with a tell intent', () => {
     const { world, hermit } = setupPersonWorld(true);
     const intents: ConversationIntent[] = [];
-    world.registerDialogueSelector((_npc, intent) => {
+    world.registerDialogueSelector({ select: (_npc, intent) => {
       intents.push(intent);
       return { handled: true, messageId: 'character.conversation.hermit-listens' };
-    });
+    } });
 
     const command = createCommand(IFActions.TELLING, { entity: hermit, preposition: 'about' });
     command.topic = { text: 'the murder' };
@@ -122,11 +122,11 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
 
   test('TALK TO consults with a talk-to intent and emits the unprefixed selection', () => {
     const { world, hermit } = setupPersonWorld(true);
-    world.registerDialogueSelector((_npc, intent) =>
+    world.registerDialogueSelector({ select: (_npc, intent) =>
       intent.type === 'talk-to'
         ? { handled: true, messageId: 'character.conversation.greeting' }
         : undefined,
-    );
+    });
 
     const command = createCommand(IFActions.TALKING, { entity: hermit });
     const context = createRealTestContext(talkingAction, world, command);
@@ -139,7 +139,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
 
   test('ASK appends the selection\'s author-channel events to its report (ADR-318 D11)', () => {
     const { world, hermit } = setupPersonWorld(true);
-    world.registerDialogueSelector(() => ({
+    world.registerDialogueSelector({ select: () => ({
       handled: true,
       messageId: 'character.conversation.hermit-answers',
       authorEvents: [{
@@ -147,7 +147,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
         entities: { actor: hermit.id },
         data: { audience: 'player', factId: 'the-killer', claimedValue: 'nobody' },
       }],
-    }));
+    }) });
 
     const command = createCommand(IFActions.ASKING, { entity: hermit, preposition: 'about' });
     command.topic = { text: 'the crime' };
@@ -165,8 +165,8 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
     const world = new WorldModel();
     const first: DialogueSelector = () => ({ handled: true, messageId: 'first' });
     const second: DialogueSelector = () => ({ handled: true, messageId: 'second' });
-    world.registerDialogueSelector(first);
-    world.registerDialogueSelector(second);
-    expect(world.getDialogueSelector()).toBe(second);
+    world.registerDialogueSelector({ select: first });
+    world.registerDialogueSelector({ select: second });
+    expect(world.getDialogueSelector()!.select).toBe(second);
   });
 });

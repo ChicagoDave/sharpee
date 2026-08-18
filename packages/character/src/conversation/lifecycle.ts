@@ -6,31 +6,48 @@
  * drive between-turn commentary and determine how aggressively the NPC
  * holds the player's focus.
  *
- * Public interface: ConversationIntent, ConversationStrength, ConversationContext,
- *   ContinuationEntry, InitiativeTrigger, ConversationLifecycle.
+ * Superseded surface: the skeleton's continuation scheduling
+ * (`ContinuationEntry`, `scheduleAfter`, `getContinuationMessage`) was
+ * retired in ADR-320 Phase 10.3 — authored multi-beat continuation is the
+ * conversation-thread construct (`define conversation`, ADR-320 D14),
+ * whose runtime lives in `thread-runtime.ts`.
+ *
+ * Public interface: ContinuationIntent, ConversationStrength, ConversationContext,
+ *   InitiativeTrigger, ConversationLifecycle.
  * Owner context: @sharpee/character / conversation
  */
+
+import type { SceneStrength } from '@sharpee/world-model';
+import type { InterruptionOutcome } from './scene-scoring.js';
 
 // ---------------------------------------------------------------------------
 // Vocabulary types
 // ---------------------------------------------------------------------------
 
-/** How the NPC feels about continuing the conversation. */
-export type ConversationIntent =
+/**
+ * How the NPC feels about continuing the conversation. Renamed from
+ * `ConversationIntent` (contracts.md §7) — that name now belongs solely to
+ * the world-model dialogue-selector socket's ask/tell/say/talk-to intent.
+ */
+export type ContinuationIntent =
   | 'eager'      // wants to keep talking, proactive
   | 'reluctant'  // relieved when player stops asking
   | 'hostile'    // antagonistic, will disengage quickly
   | 'confessing' // unburdening, wants to continue
   | 'neutral';   // default — waits patiently
 
-/** How aggressively the NPC holds the player's attention. */
-export type ConversationStrength =
-  | 'passive'    // yields on redirect or leave
-  | 'assertive'  // protests but yields
-  | 'blocking';  // prevents redirect and leaving
+/**
+ * How aggressively the NPC holds the player's attention. One declaration
+ * with the scene's grip vocabulary (contracts.md §7): world-model's
+ * `SceneStrength` is the shared lower-package union; this is its alias.
+ */
+export type ConversationStrength = SceneStrength;
 
-/** Result of attempting to redirect attention away from the current NPC. */
-export type RedirectResult = 'yields' | 'protests' | 'blocks';
+/**
+ * Result of attempting to redirect attention away from the current NPC.
+ * One declaration with the scene's `InterruptionOutcome` (contracts.md §7).
+ */
+export type RedirectResult = InterruptionOutcome;
 
 // ---------------------------------------------------------------------------
 // Default decay thresholds per intent
@@ -40,7 +57,7 @@ export type RedirectResult = 'yields' | 'protests' | 'blocks';
  * Default number of non-conversation turns before a conversation decays,
  * keyed by intent. Authors can override per conversation context.
  */
-export const DEFAULT_DECAY_THRESHOLDS: Record<ConversationIntent, number> = {
+export const DEFAULT_DECAY_THRESHOLDS: Record<ContinuationIntent, number> = {
   eager: 5,
   reluctant: 2,
   hostile: 3,
@@ -51,15 +68,6 @@ export const DEFAULT_DECAY_THRESHOLDS: Record<ConversationIntent, number> = {
 // ---------------------------------------------------------------------------
 // Continuation and initiative
 // ---------------------------------------------------------------------------
-
-/** A scheduled NPC continuation message within a conversation context. */
-export interface ContinuationEntry {
-  /** Turns after context was set before this continuation fires. */
-  afterTurns: number;
-
-  /** Message ID for the continuation. */
-  messageId: string;
-}
 
 /** An NPC initiative trigger — the NPC starts a conversation proactively. */
 export interface InitiativeTrigger {
@@ -116,7 +124,7 @@ export interface ConversationContext {
   npcId: string;
 
   /** Current conversation intent. */
-  intent: ConversationIntent;
+  intent: ContinuationIntent;
 
   /** Current conversation strength. */
   strength: ConversationStrength;
@@ -129,9 +137,6 @@ export interface ConversationContext {
 
   /** Optional context label (e.g., 'confessing', 'caught'). */
   contextLabel?: string;
-
-  /** Scheduled continuation messages within this context. */
-  continuations: ContinuationEntry[];
 
   /** Author-overridden between-turn messages. Keyed by turn number. */
   betweenTurnOverrides: Map<number, string>;
@@ -173,7 +178,7 @@ export class ConversationLifecycle {
    */
   begin(
     npcId: string,
-    intent: ConversationIntent = 'neutral',
+    intent: ContinuationIntent = 'neutral',
     strength: ConversationStrength = 'passive',
   ): void {
     this.context = {
@@ -182,7 +187,6 @@ export class ConversationLifecycle {
       strength,
       decayThreshold: DEFAULT_DECAY_THRESHOLDS[intent],
       nonConversationTurns: 0,
-      continuations: [],
       betweenTurnOverrides: new Map(),
     };
   }
@@ -207,7 +211,7 @@ export class ConversationLifecycle {
    */
   setContext(
     label: string,
-    intent?: ConversationIntent,
+    intent?: ContinuationIntent,
     strength?: ConversationStrength,
     decayThreshold?: number,
   ): void {
@@ -379,35 +383,6 @@ export class ConversationLifecycle {
       case 'blocking':
         return 'blocks';
     }
-  }
-
-  // =========================================================================
-  // NPC continuation scheduling
-  // =========================================================================
-
-  /**
-   * Schedule a continuation message for N turns after context was set.
-   *
-   * @param afterTurns - Number of turns after context was set
-   * @param messageId - The message ID
-   */
-  scheduleAfter(afterTurns: number, messageId: string): void {
-    if (!this.context) return;
-    this.context.continuations.push({ afterTurns, messageId });
-  }
-
-  /**
-   * Get the continuation message for the current turn count, if any.
-   * Continuations fire based on non-conversation turns elapsed.
-   *
-   * @returns Message ID if a continuation is scheduled for this turn, or undefined
-   */
-  getContinuationMessage(): string | undefined {
-    if (!this.context) return undefined;
-
-    const turns = this.context.nonConversationTurns;
-    const entry = this.context.continuations.find(c => c.afterTurns === turns);
-    return entry?.messageId;
   }
 
   // =========================================================================

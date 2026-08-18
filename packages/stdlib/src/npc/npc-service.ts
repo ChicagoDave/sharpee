@@ -5,6 +5,7 @@
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType, getOppositeDirection } from '@sharpee/world-model';
 import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
@@ -82,6 +83,13 @@ export interface NpcTickContext {
    * (tests, bare harnesses) simply produce no observations.
    */
   actionEvents?: ISemanticEvent[];
+  /**
+   * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+   * NPC↔NPC scene moves emit conversation sounds through this seam so
+   * eavesdropping rides the spatial propagation path. Optional and
+   * additive: absent on callers without the sound subsystem.
+   */
+  emitSound?: (sound: ISound) => void;
 }
 
 /**

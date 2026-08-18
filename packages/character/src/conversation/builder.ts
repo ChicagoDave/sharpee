@@ -18,7 +18,7 @@ import {
   ResponseCandidate,
 } from './response-types.js';
 import {
-  ConversationIntent,
+  ContinuationIntent,
   ConversationStrength,
   InitiativeTrigger,
 } from './lifecycle.js';
@@ -37,7 +37,7 @@ export interface ResponseStateMutation {
 /** Context settings attached to a response. */
 export interface ResponseContextSettings {
   label: string;
-  intent?: ConversationIntent;
+  intent?: ContinuationIntent;
   strength?: ConversationStrength;
   decayThreshold?: number;
 }
@@ -260,7 +260,7 @@ export class ResponseChainBuilder {
    */
   setsContext(
     label: string,
-    opts?: { intent?: ConversationIntent; strength?: ConversationStrength; decayThreshold?: number },
+    opts?: { intent?: ContinuationIntent; strength?: ConversationStrength; decayThreshold?: number },
   ): ResponseChainBuilder {
     this.pendingContextSettings = {
       label,

@@ -72,10 +72,10 @@
     return `${JSON.stringify(sortKeysDeep(document2), null, 2)}
 `;
   }
-  function deserializeTreeDocument(text2) {
+  function deserializeTreeDocument(text3) {
     let parsed;
     try {
-      parsed = JSON.parse(text2);
+      parsed = JSON.parse(text3);
     } catch (error) {
       return {
         status: "malformed",
@@ -251,8 +251,8 @@
   }
 
   // tools/ide/web/testing-surface/src/cards.ts
-  function escapeHtml(text2) {
-    return text2.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function escapeHtml(text3) {
+    return text3.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   }
   function groupByRegion(ordinals, roomOf2, regionOf) {
     const HOLE = /* @__PURE__ */ Symbol("no room");
@@ -329,8 +329,8 @@
     }
     /** A one-line notice above the cards (the refused-document message, AC-4).
      *  Pass undefined to clear. */
-    setNotice(text2) {
-      if (text2 === void 0) {
+    setNotice(text3) {
+      if (text3 === void 0) {
         this.notice?.remove();
         this.notice = null;
         return;
@@ -340,7 +340,7 @@
         this.notice.className = "ts-notice";
         this.host.before(this.notice);
       }
-      this.notice.textContent = text2;
+      this.notice.textContent = text3;
     }
     /**
      * The client keeps a document-level click handler that refocuses its
@@ -379,8 +379,8 @@
       let pending = null;
       document.addEventListener("selectionchange", () => {
         const selection = window.getSelection();
-        const text2 = selection ? selection.toString().trim() : "";
-        if (!text2 || !selection || selection.rangeCount === 0) {
+        const text3 = selection ? selection.toString().trim() : "";
+        if (!text3 || !selection || selection.rangeCount === 0) {
           button.style.display = "none";
           pending = null;
           return;
@@ -398,7 +398,7 @@
         button.style.left = `${Math.max(8, rect.left)}px`;
         button.style.top = `${rect.bottom + 6}px`;
         button.style.display = "block";
-        pending = { ordinal, text: text2 };
+        pending = { ordinal, text: text3 };
       });
       button.addEventListener("mousedown", (event) => {
         event.preventDefault();
@@ -503,7 +503,7 @@
       notButton.title = "Text that must NOT appear in this turn";
       notButton.addEventListener("click", () => promptText(
         "text that must NOT appear\u2026",
-        (text2) => this.delegate.onNotContains(ordinal, text2)
+        (text3) => this.delegate.onNotContains(ordinal, text3)
       ));
       actions.appendChild(notButton);
       let exactButton = null;
@@ -532,7 +532,7 @@
       const characterButton = document.createElement("button");
       characterButton.className = "ts-npc-toggle";
       characterButton.style.display = "none";
-      characterButton.title = "Explain this turn's character-model activity \u2014 forces, lies, conscience, transitions";
+      characterButton.title = "Explain this turn's character-model activity \u2014 forces, lies, conscience, transitions, conversation scenes, and open-exchange responses";
       characterButton.addEventListener("click", () => {
         const card = this.cards.get(ordinal);
         if (!card) return;
@@ -576,10 +576,10 @@
       for (const line of lines) {
         const row = document.createElement("div");
         row.className = `ts-assert-line ts-assert-${line.kind}`;
-        const text2 = document.createElement("span");
-        text2.className = "ts-assert-text";
-        text2.textContent = line.text;
-        row.appendChild(text2);
+        const text3 = document.createElement("span");
+        text3.className = "ts-assert-text";
+        text3.textContent = line.text;
+        row.appendChild(text3);
         if (line.del) {
           const del = line.del;
           const remove = document.createElement("button");
@@ -628,12 +628,12 @@
         for (const line of group.lines) {
           const row = document.createElement("div");
           row.className = `ts-character-line${line.tone === "warn" ? " ts-warn" : ""}`;
-          const text2 = document.createElement("span");
-          text2.className = "ts-character-text";
-          text2.textContent = line.text;
-          text2.title = "Click for the raw payload";
+          const text3 = document.createElement("span");
+          text3.className = "ts-character-text";
+          text3.textContent = line.text;
+          text3.title = "Click for the raw payload";
           let raw = null;
-          text2.addEventListener("click", () => {
+          text3.addEventListener("click", () => {
             if (raw) {
               raw.remove();
               raw = null;
@@ -644,15 +644,15 @@
             raw.textContent = line.raw;
             row.after(raw);
           });
-          row.appendChild(text2);
+          row.appendChild(text3);
           if (line.fragments.length > 0) {
             const assert = document.createElement("button");
             assert.className = "ts-character-assert";
             assert.textContent = "assert";
-            assert.title = "Assert this event \u2014 a channel claim on `character` the test run validates";
+            assert.title = `Assert this event \u2014 a channel claim on \`${line.claimChannel}\` the test run validates`;
             assert.addEventListener("click", (event) => {
               event.stopPropagation();
-              this.delegate.onAssertCharacter(ordinal, line.fragments);
+              this.delegate.onAssertCharacter(ordinal, line.fragments, line.claimChannel);
             });
             row.appendChild(assert);
           }
@@ -1049,7 +1049,8 @@
       text: describe ? describe(row.data, who) : `${tail} ${rawOf(row)}`,
       tone: WARN_KINDS.has(row.kind) ? "warn" : "normal",
       raw: rawOf(row),
-      fragments: fragmentsOf(row)
+      fragments: fragmentsOf(row),
+      claimChannel: "character"
     };
   }
   function explainGroups(rows, nameOf) {
@@ -1071,8 +1072,188 @@
     return [...groups.values()];
   }
 
+  // tools/ide/web/testing-surface/src/scene.ts
+  function sceneRowsOf(channelValues) {
+    const rows = [];
+    for (const value of channelValues?.["scene"] ?? []) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        if (entry === null || typeof entry !== "object") continue;
+        const row = entry;
+        if (typeof row.kind !== "string") continue;
+        rows.push({
+          turn: typeof row.turn === "number" ? row.turn : 0,
+          kind: row.kind,
+          data: row.data && typeof row.data === "object" ? row.data : {}
+        });
+      }
+    }
+    return rows;
+  }
+  var text2 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : "?";
+  var DESCRIBERS2 = {
+    "character.scene.scene-opened": (d, who) => {
+      const parties = Array.isArray(d.participantIds) ? d.participantIds.map(who).join(", ") : "?";
+      const opened = d.openedBy;
+      const how = opened && typeof opened === "object" ? opened.kind === "witnessed-event" ? `on ${text2(opened.eventId)}` : `${text2(opened.kind)} by ${who(opened.openerId)}` : "";
+      return `scene opened \u2014 ${parties}${how ? ` (${how})` : ""}`;
+    },
+    "character.scene.scene-closed": (d) => `scene closed \u2014 ${text2(d.boundary)} boundary`,
+    "character.scene.utterance": (d, who) => {
+      const to = d.addresseeId !== void 0 ? ` to ${who(d.addresseeId)}` : "";
+      const beats = Array.isArray(d.beats) && d.beats.length > 0 ? ` \xB7 beats: ${d.beats.map(text2).join(", ")}` : "";
+      return `${who(d.speakerId)} speaks${to} \u2014 ${text2(d.messageId)}${beats}`;
+    },
+    "character.scene.floor-change": (d, who) => d.holderId === null ? "floor open" : `floor to ${who(d.holderId)}`,
+    "character.scene.interruption": (d, who) => `${who(d.interrupterId)} interrupts \u2014 scene ${text2(d.outcome)}`,
+    "character.scene.rendered-silence": (d, who) => {
+      const beats = Array.isArray(d.beats) && d.beats.length > 0 ? ` \xB7 beats: ${d.beats.map(text2).join(", ")}` : "";
+      return `${who(d.speakerId)} says nothing${beats}`;
+    },
+    "character.scene.intrusion_blocked": (d, who) => `${who(d.intruderId)} intrudes \u2014 the scene holds`,
+    "character.scene.exit_refused": (d, who) => `${who(d.leaverId)} cannot leave \u2014 no traversable exit`,
+    "character.exchange.opened": (d) => `exchange opened \u2014 ${text2(d.exchangeId)} (${text2(d.word)})`,
+    // Conversation-thread lifecycle (ADR-320 D14, Phase 10.6).
+    "character.scene.thread-opened": (d, who) => `thread opened \u2014 ${text2(d.threadKey)} (${who(d.ownerId)})`,
+    "character.scene.thread-beat": (d, who) => `${who(d.ownerId)} carries ${text2(d.threadKey)} \u2014 beat ${text2(d.beatIndex)}`,
+    "character.scene.thread-parked": (d) => `thread parked \u2014 ${text2(d.threadKey)} at beat ${text2(d.beatCursor)}`,
+    "character.scene.thread-resumed": (d) => `thread resumed \u2014 ${text2(d.threadKey)} at beat ${text2(d.beatCursor)}`,
+    "character.scene.thread-concluded": (d, who) => `thread concluded \u2014 ${text2(d.threadKey)} (${who(d.ownerId)})`
+  };
+  var FRAGMENT_FIELDS2 = {
+    "character.scene.scene-closed": ["boundary"],
+    "character.scene.utterance": ["speakerId", "messageId"],
+    "character.scene.floor-change": ["holderId"],
+    "character.scene.interruption": ["interrupterId", "outcome"],
+    "character.scene.rendered-silence": ["speakerId"],
+    "character.scene.intrusion_blocked": ["intruderId"],
+    "character.scene.exit_refused": ["leaverId"],
+    "character.exchange.opened": ["exchangeId", "word"],
+    "character.scene.thread-opened": ["threadKey"],
+    "character.scene.thread-beat": ["threadKey", "beatIndex"],
+    "character.scene.thread-parked": ["threadKey", "beatCursor"],
+    "character.scene.thread-resumed": ["threadKey", "beatCursor"],
+    "character.scene.thread-concluded": ["threadKey"]
+  };
+  function frag2(key, value) {
+    return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? [`${JSON.stringify(key)}:${JSON.stringify(value)}`] : [];
+  }
+  function rawOf2(data) {
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return "{}";
+    }
+  }
+  function lineOf2(row, who) {
+    const describe = DESCRIBERS2[row.kind];
+    const tail = row.kind.replace(/^character\.scene\.|^character\.exchange\./, "");
+    return {
+      text: describe ? describe(row.data, who) : `${tail} ${rawOf2(row.data)}`,
+      tone: "normal",
+      raw: rawOf2(row.data),
+      fragments: [
+        ...frag2("kind", row.kind),
+        ...(FRAGMENT_FIELDS2[row.kind] ?? []).flatMap((field) => frag2(field, row.data[field]))
+      ],
+      claimChannel: "scene"
+    };
+  }
+  function sceneExplainGroups(rows, nameOf) {
+    const who = (value) => {
+      const id = text2(value);
+      return nameOf(id) ?? "the player";
+    };
+    const groups = /* @__PURE__ */ new Map();
+    for (const row of rows) {
+      const key = typeof row.data.sceneId === "string" ? row.data.sceneId : "scene";
+      let group = groups.get(key);
+      if (!group) {
+        group = { npcLabel: key, lines: [] };
+        groups.set(key, group);
+      }
+      group.lines.push(lineOf2(row, who));
+    }
+    return [...groups.values()];
+  }
+  function responseText(response, who) {
+    if (response.kind === "verbal") {
+      const topic = response.topic;
+      if (topic?.kind === "entity") return `say: ${who(topic.id)}`;
+      const aliases = Array.isArray(topic?.aliases) && topic.aliases.length > 0 ? ` (${topic.aliases.map(text2).join(", ")})` : "";
+      return `say: "${text2(topic?.primary)}"${aliases}`;
+    }
+    if (response.kind === "act") return `act: ${text2(response.actionId)}`;
+    if (response.kind === "silence") return "silence";
+    return `${text2(response.kind)} ${rawOf2(response)}`;
+  }
+  function responseFragments(exchangeId, response) {
+    const topic = response.topic;
+    return [
+      ...frag2("exchangeId", exchangeId),
+      ...frag2("kind", response.kind),
+      ...response.kind === "verbal" && topic ? [...frag2("primary", topic.primary), ...frag2("id", topic.id)] : [],
+      ...frag2("actionId", response.actionId)
+    ];
+  }
+  function affordanceGroupsOf(channelValues, nameOf) {
+    const who = (value) => {
+      const id = text2(value);
+      return nameOf(id) ?? "the player";
+    };
+    const groups = [];
+    for (const value of channelValues?.["exchange-affordances"] ?? []) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        if (entry === null || typeof entry !== "object") continue;
+        const advertised = entry;
+        if (typeof advertised.exchangeId !== "string" || !Array.isArray(advertised.responses)) continue;
+        const lines = [];
+        for (const raw of advertised.responses) {
+          if (raw === null || typeof raw !== "object") continue;
+          const response = raw;
+          lines.push({
+            text: responseText(response, who),
+            tone: "normal",
+            raw: rawOf2(response),
+            fragments: responseFragments(advertised.exchangeId, response),
+            claimChannel: "exchange-affordances"
+          });
+        }
+        groups.push({ npcLabel: `responses \u2014 ${advertised.exchangeId}`, lines });
+      }
+    }
+    return groups;
+  }
+  function threadAffordanceGroupsOf(channelValues, nameOf) {
+    const who = (value) => {
+      const id = text2(value);
+      return nameOf(id) ?? "the player";
+    };
+    const groups = [];
+    for (const value of channelValues?.["thread-affordances"] ?? []) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        if (entry === null || typeof entry !== "object") continue;
+        const advertised = entry;
+        if (typeof advertised.threadKey !== "string") continue;
+        const owner = who(advertised.ownerId);
+        const cursor = text2(advertised.beatCursor);
+        const line = {
+          text: advertised.continuable === true ? `${owner} has more to say \u2014 beat ${cursor} served, next ready` : `${owner} holds \u2014 beat ${cursor} served, next beat waits on its gate`,
+          tone: "normal",
+          raw: rawOf2(advertised),
+          fragments: [
+            ...frag2("threadKey", advertised.threadKey),
+            ...frag2("continuable", advertised.continuable)
+          ],
+          claimChannel: "thread-affordances"
+        };
+        groups.push({ npcLabel: `thread \u2014 ${advertised.threadKey}`, lines: [line] });
+      }
+    }
+    return groups;
+  }
+
   // tools/ide/web/testing-surface/src/compose.ts
-  var quoted = (text2) => `"${text2}"`;
+  var quoted = (text3) => `"${text3}"`;
   function channelLineText(claim) {
     if (claim.is !== void 0) return `channel ${claim.id} is ${quoted(claim.is)}`;
     const fragments = (claim.contains ?? []).map(quoted).join(", ");
@@ -1139,7 +1320,7 @@
         kind: "assertion",
         del: { kind: "exact", ordinal }
       });
-      lines.push(...claims.exact.map((text2) => ({ text: text2, kind: "block" })));
+      lines.push(...claims.exact.map((text3) => ({ text: text3, kind: "block" })));
       lines.push(...nonProseLines(ordinal, claims));
       return lines;
     }
@@ -1730,18 +1911,18 @@
       if (a.channels !== void 0 && a.channels.length === 0) delete a.channels;
       if (Object.keys(a).length === 0) delete card.assertions;
     }
-    addContains(ordinal, text2) {
+    addContains(ordinal, text3) {
       this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
-      (a.contains ??= []).push(text2);
+      (a.contains ??= []).push(text3);
       return true;
     }
-    addNotContains(ordinal, text2) {
+    addNotContains(ordinal, text3) {
       this.liftSkip(ordinal);
       const a = this.mutable(ordinal);
       if (a === void 0) return false;
-      (a.notContains ??= []).push(text2);
+      (a.notContains ??= []).push(text3);
       return true;
     }
     /** Set (or clear) the exact literal block — the turn's whole output as
@@ -2043,8 +2224,8 @@
     const base = file.split("/").at(-1) ?? file;
     return base.replace(/\.transcript$/, "");
   }
-  function foldRunLine(state, text2) {
-    const trimmed = text2.trim();
+  function foldRunLine(state, text3) {
+    const trimmed = text3.trim();
     if (!trimmed) return;
     let parsed;
     try {
@@ -2210,13 +2391,18 @@
   function characterExplainFor(ordinal) {
     const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
     if (!source) return [];
-    const rows = characterRowsOf(capturesOf(source));
-    if (rows.length === 0) return [];
+    const captures = capturesOf(source);
     const names = /* @__PURE__ */ new Map();
     for (const entity of source.world?.entities ?? []) {
       if (entity.id !== void 0) names.set(entity.id, entity.name);
     }
-    return explainGroups(rows, (id) => names.get(id));
+    const nameOf = (id) => names.get(id);
+    return [
+      ...explainGroups(characterRowsOf(captures), nameOf),
+      ...sceneExplainGroups(sceneRowsOf(captures), nameOf),
+      ...affordanceGroupsOf(captures, nameOf),
+      ...threadAffordanceGroupsOf(captures, nameOf)
+    ];
   }
   function removeAssertion(del) {
     switch (del.kind) {
@@ -2263,13 +2449,13 @@
     onDeleteBranch(lineId) {
       void performDeleteBranch(lineId);
     },
-    onAddContains(ordinal, text2) {
+    onAddContains(ordinal, text3) {
       pushUndo();
-      if (model.addContains(ordinal, text2)) update();
+      if (model.addContains(ordinal, text3)) update();
     },
-    onNotContains(ordinal, text2) {
+    onNotContains(ordinal, text3) {
       pushUndo();
-      if (model.addNotContains(ordinal, text2)) update();
+      if (model.addNotContains(ordinal, text3)) update();
     },
     onToggleExact(ordinal) {
       pushUndo();
@@ -2334,9 +2520,9 @@
     runColumn: () => runState,
     assertionLines: assertionLinesFor,
     characterExplain: characterExplainFor,
-    onAssertCharacter(ordinal, fragments) {
+    onAssertCharacter(ordinal, fragments, channel) {
       pushUndo();
-      if (model.addChannel(ordinal, { id: "character", contains: [...fragments] })) update();
+      if (model.addChannel(ordinal, { id: channel, contains: [...fragments] })) update();
     },
     onRemoveAssertion(del) {
       pushUndo();
@@ -2355,8 +2541,8 @@
     }
   });
   var runState = createRunState();
-  function deliverRunLine(text2) {
-    foldRunLine(runState, text2);
+  function deliverRunLine(text3) {
+    foldRunLine(runState, text3);
     cards.render();
   }
   function deliverRunExit(ok, note) {
@@ -2371,10 +2557,10 @@
   }
   function update() {
     if (!driverBusy) {
-      const text2 = model.serialize();
-      if (text2 !== lastDocumentText) {
-        lastDocumentText = text2;
-        if (!documentWriteLocked) postToBridge({ document: { text: text2 } });
+      const text3 = model.serialize();
+      if (text3 !== lastDocumentText) {
+        lastDocumentText = text3;
+        if (!documentWriteLocked) postToBridge({ document: { text: text3 } });
         if (!runState.inFlight) resetRun(runState);
       }
       cards.render();

@@ -301,11 +301,174 @@ export interface IREntity {
    */
   topics: IRTopicRow[];
   /**
+   * The entity's declared manner block (`define manner for …`, ADR-320
+   * D5) — state-conditioned delivery rows in declaration order; absent
+   * when no block is declared (a story with no manner blocks compiles
+   * byte-identically to one before the construct existed).
+   */
+  manner?: IRMannerRow[];
+  /**
+   * The entity's declared boundary block (`define greetings for …`,
+   * ADR-320 D4) — scene boundary rows in declaration order; absent when
+   * no block is declared.
+   */
+  greetings?: IRGreetingRow[];
+  /**
+   * The entity's declared exchange points (`define exchange <key> for …`,
+   * ADR-320 D4) — in declaration order; absent when none are declared.
+   * Rows are declarative and therefore enumerable: this shape feeds
+   * D12's response-affordance wire data directly.
+   */
+  exchanges?: IRExchange[];
+  /**
+   * The entity's declared initiative rows (`define initiative for …`,
+   * ADR-320 D7) — occasion rows in declaration order; absent when no
+   * block is declared.
+   */
+  initiative?: IRInitiativeRow[];
+  /**
+   * The entity's declared conversation threads (`define conversation
+   * <key> for …`, ADR-320 D14) — in declaration order; absent when none
+   * are declared. Beats are declarative and enumerable: the shape feeds
+   * D12's thread continuability wire data directly.
+   */
+  conversations?: IRConversation[];
+  /**
    * The declared character model (ADR-310) — present exactly when the
    * `create` block carries at least one character construct (D7: a person
    * with no character line compiles exactly as today, no model attached).
    */
   character?: IRCharacter;
+  span: Span;
+}
+
+/**
+ * One manner row (ADR-320 D5): a lowered condition, the row's beat phrase
+ * keys (minted into the phrase table at compile — deterministic from
+ * declaration order, so compiles stay byte-identical), and the optional
+ * voice word (open vocabulary, carried as data).
+ */
+export interface IRMannerRow {
+  condition: IRCondition;
+  /** Owner-scoped phrase keys, one per `beat` line, in declaration order. */
+  beatKeys: string[];
+  /** The row's `voice` word, if declared. */
+  voice?: string;
+  span: Span;
+}
+
+/**
+ * One greeting (boundary) row (ADR-320 D4): the boundary selector and a
+ * statement body, the topic-row idiom. Absence and repetition words are
+ * kebab-normalized frozen vocabulary.
+ */
+export interface IRGreetingRow {
+  head:
+    | { kind: 'first-time' }
+    | { kind: 'return'; absence: 'again-so-soon' | 'after-a-while' | 'after-days' | null }
+    | { kind: 'asked'; word: 'once' | 'again' | 'many-times' }
+    | { kind: 'leaving' };
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One named exchange point (ADR-320 D4): the response set that overlays
+ * the owner's topic table while the exchange is open. The opening line
+ * lives in the calling row's statements (`then-open`), not here.
+ */
+export interface IRExchange {
+  /** The exchange key (single kebab word), unique per owner. */
+  name: string;
+  /**
+   * The header strength word (ADR-320 D10) — matches `@sharpee/character`'s
+   * `ConversationStrength` union exactly; absent = the runtime derives
+   * strength from intent.
+   */
+  strength?: 'passive' | 'assertive' | 'blocking';
+  rows: IRExchangeRow[];
+  span: Span;
+}
+
+/**
+ * One exchange response row (ADR-320 D4/D12): what the responder says
+ * (`answer`, the topic-key tiers), does (`act`, the event-verb register),
+ * or withholds (`silence` — rendered like any response, D8). Input
+ * matching no row falls through to the topic table (D16) — fallthrough
+ * is the platform's, never authored.
+ */
+export interface IRExchangeRow {
+  head:
+    | { kind: 'answer'; filter: { kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] } }
+    | { kind: 'act'; action: string }
+    | { kind: 'silence' };
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One conversation thread (ADR-320 D14): an author-scripted subject the
+ * owner carries beat by beat to a defined conclusion, across sittings.
+ * The runtime owns the per-pair cursor/status; this shape is the whole
+ * authored surface — nothing here may hide behind a computed form (the
+ * D12 enumerability discipline).
+ */
+export interface IRConversation {
+  /** The thread key (single kebab word), unique per owner. */
+  name: string;
+  /**
+   * The header strength word (ADR-320 D10/D14) — governs off-thread
+   * transitions (blocking = single-topic completion); absent = the
+   * runtime derives strength from intent.
+   */
+  strength?: 'passive' | 'assertive' | 'blocking';
+  /**
+   * The `about` topic filter (topic-key tiers, the exchange-answer
+   * shape); absent when the thread engages only via `opens when`.
+   */
+  filter?: { kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] };
+  /** The lowered `opens when` condition; absent = never NPC-opened. */
+  opensWhen?: IRCondition;
+  /** Ordered beats, declaration order — beat n is `conclusion`, held separately. */
+  beats: IRConversationBeat[];
+  /** `on parting:` body; absent when unauthored (passive parks silently). */
+  onParting?: IRStatement[];
+  /** `on resuming:` body; absent when unauthored. */
+  onResuming?: IRStatement[];
+  /** `on refusing:` body; absent = a blocking refusal re-serves the current beat. */
+  onRefusing?: IRStatement[];
+  /** The `conclusion:` body — fires once; the thread is then CONCLUDED. */
+  conclusion: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One thread beat (ADR-320 D14): an optional hold-gate condition (the
+ * beat waits for its world) and a statement body served when the beat
+ * advances.
+ */
+export interface IRConversationBeat {
+  /** The `beat, when <condition>` hold-gate; null = always ready. */
+  condition: IRCondition | null;
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * One initiative row (ADR-320 D7): an authored occasion that forces the
+ * seizure when it fires — or suppresses it when the body is the lone
+ * `hold-tongue` statement. The occasion kinds mirror the scene runtime's
+ * `SceneOccasion` (goal-step deliberately unsurfaced).
+ */
+export interface IRInitiativeRow {
+  occasion:
+    | { kind: 'open-floor' }
+    | { kind: 'silence' }
+    | { kind: 'subject-change' }
+    | { kind: 'act'; action: string };
+  /** The `, when <condition>` refinement; null = the occasion alone. */
+  condition: IRCondition | null;
+  body: IRStatement[];
   span: Span;
 }
 
@@ -1209,7 +1372,30 @@ export type IRStatement =
    * body once per matching world entity in creation order, `the match`
    * bound to that entity; empty set = no-op.
    */
-  | { kind: 'each'; condition: string; body: IRStatement[]; span: Span };
+  | { kind: 'each'; condition: string; body: IRStatement[]; span: Span }
+  /**
+   * `then asks|invites <exchange-key>` (ADR-320 D4/D8): open the owner's
+   * named exchange. The word is data — the wire may render an invitation
+   * differently from a question. Conversation bodies only.
+   */
+  | { kind: 'then-open'; word: 'asks' | 'invites'; exchange: string; span: Span }
+  /**
+   * `deflect to <topic>` (ADR-320 D8): the owner redirects to a row of
+   * their own topic table — resolved entity id, or the normalized quoted
+   * text (empty primary = the entity reference failed to resolve and the
+   * miss is already reported).
+   */
+  | { kind: 'deflect'; target: { kind: 'entity'; id: string } | { kind: 'text'; primary: string }; span: Span }
+  /**
+   * `leave` (ADR-320 D8): the owner exits the scene — a movement move,
+   * world-legality consulted at dispatch, never conversation-only physics.
+   */
+  | { kind: 'leave'; span: Span }
+  /**
+   * `hold their tongue` (ADR-320 D7): suppress the seizure the enclosing
+   * initiative row would otherwise force. Always a row's only statement.
+   */
+  | { kind: 'hold-tongue'; span: Span };
 
 export interface IRSelectArm {
   value: string;
@@ -1314,4 +1500,34 @@ export type IRCondition =
    */
   | { kind: 'feels'; subject: IRValue; disposition: string; target: IRValue }
   /** `<subject> knows <topic>` (ADR-310 D13) — the subject holds the topic. */
-  | { kind: 'knows-topic'; subject: IRValue; topic: string };
+  | { kind: 'knows-topic'; subject: IRValue; topic: string }
+  /**
+   * `<topic> is fresh|recent|stale` (ADR-320 D6) — recency over the
+   * holder's ledger turn stamps; the holder is the evaluation context's
+   * owner (`it`). The runtime owns the aging curve. Negation wraps in
+   * `not`, as everywhere.
+   */
+  | { kind: 'recency'; topic: string; word: 'fresh' | 'recent' | 'stale' }
+  /**
+   * `<topic> was discussed` (ADR-320 D9) — per-pair discussed-ness between
+   * the evaluation context's owner and the conversation partner, across
+   * scenes, any order.
+   */
+  | { kind: 'discussed'; topic: string }
+  /**
+   * `asked once|again|many times` (ADR-320 D4) — the current topic's
+   * per-pair ask count read as a word; topic and pair come from the
+   * evaluation context. The runtime owns the counting.
+   */
+  | { kind: 'asked'; word: 'once' | 'again' | 'many-times' }
+  /**
+   * `the subject changes` (ADR-320 D9) — the scene noticed a live thread
+   * abandoned this turn; evaluation is the scene runtime's.
+   */
+  | { kind: 'subject-changes' }
+  /**
+   * `<thread> is concluded` (ADR-320 D14) — the named conversation
+   * thread's conclusion beat has fired between the evaluation context's
+   * owner and the conversation partner. Negation wraps in `not`.
+   */
+  | { kind: 'concluded'; thread: string };

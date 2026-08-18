@@ -1,0 +1,17 @@
+<p><strong>Personality</strong> is a list of adjectives on the create line, each optionally graded by an intensity: <code>slightly</code>, <code>somewhat</code>, <code>very</code>, or <code>extremely</code>. The built-in vocabulary is fourteen words — <code>honest</code>, <code>loyal</code>, <code>cowardly</code>, <code>paranoid</code>, <code>cruel</code>, <code>cunning</code>, <code>curious</code>, <code>stubborn</code>, <code>generous</code>, <code>vain</code>, <code>devout</code>, <code>impulsive</code>, <code>remorseful</code>, <code>untroubled</code>. A word outside that list is a compile error (<code>analysis.trait-not-declared</code>), not a silent no-op, so a typo is caught at build time; where a story genuinely wants another word, it declares one with <code>define personality &lt;word&gt;</code> first.</p>
+<p><strong>Temperament</strong> is how a person resolves a conflict between two motivations, written as <code>&lt;force&gt; over &lt;force&gt;</code>. The five forces are <code>fear</code>, <code>desire</code>, <code>duty</code>, <code>honor</code>, and <code>love</code>. Read it as a tiebreak, not a mood: <code>duty over fear</code> means that when duty and fear both pull, duty wins — which is what decides whether a frightened person still does the thing they promised. A temperament used by several people can be named once in a <code>define temperament</code> block and referenced by that name; a person who needs only one ordering writes it inline.</p>
+<p>Personality colors how a line is delivered; temperament decides what a person actually does under pressure. Neither generates behavior on its own — both are read by the conversation layers and by <a href="/chord/guide/characters-and-conversation/conscience">Conscience</a>.</p>
+<pre><code class="language-chord">define personality defensive
+
+define temperament professional
+  duty over fear
+  duty over desire
+end temperament
+
+create Jonas Reed
+  a person, proper, very impulsive, defensive, slightly honest
+  temperament professional
+
+create Marta Kell
+  a person, proper, stubborn
+  temperament duty over fear</code></pre>

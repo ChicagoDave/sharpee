@@ -168,4 +168,15 @@ describe('info / ifid renderers', () => {
     }
     expect(base).toMatch(/p\.sharpee-banner-title\s*\{[^}]*font-weight:\s*bold/);
   });
+
+  // GH #264: the flush rule that stacks the banner pieces also welded the
+  // first room description to whichever piece ended the banner. The gap has
+  // to key on the first NON-banner paragraph after any banner piece —
+  // `:last-of-type` cannot, because which piece ends the banner varies with
+  // what the story declares (tail / credit / subtitle).
+  it('base.css separates the banner from the first non-banner paragraph', () => {
+    const base = readFileSync(resolve(__dirname, '../../styles/base.css'), 'utf8');
+    const rule = /p\[class\*=['"]sharpee-banner-['"]\]\s*\+\s*p:not\(\[class\*=['"]sharpee-banner-['"]\]\)\s*\{[^}]*margin-top:\s*1em/;
+    expect(base, 'no sibling rule gives the post-banner paragraph its gap').toMatch(rule);
+  });
 });

@@ -73,5 +73,7 @@ export function registerCharacterDialogue(
   world: WorldModel,
   dialogue: CharacterModelDialogue,
 ): void {
-  world.registerDialogueSelector(createCharacterDialogueSelector(dialogue));
+  // No exchange probe on this legacy surface: CharacterModelDialogue
+  // predates exchanges, so every firing takes the table/default path.
+  world.registerDialogueSelector({ select: createCharacterDialogueSelector(dialogue) });
 }

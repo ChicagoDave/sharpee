@@ -492,6 +492,22 @@ export type Force = 'fear' | 'desire' | 'duty' | 'honor' | 'love';
 export const FORCES: readonly Force[] = ['fear', 'desire', 'duty', 'honor', 'love'];
 
 /**
+ * One force's live pressure on a candidate act (ADR-318 D1; adr-318
+ * contracts.md §3). Declared here — beside `Force` — so the scene-runtime
+ * binding's floor shapes (ADR-320 D7/D10) and the arbiter share one
+ * declaration; `@sharpee/character`'s arbiter re-exports it unchanged.
+ */
+export interface ForceReading {
+  force: Force;
+  /** Runtime-owned 0..1 scale; feed formulas per ADR-318 D1's table. */
+  intensity: number;
+  /** True when the feed is off-baseline. */
+  live: boolean;
+  /** Author-channel attribution, e.g. 'principle:never-lie'. */
+  feed: string;
+}
+
+/**
  * Act categories the runtime can detect (ADR-318 D4). A category the
  * runtime cannot detect cannot be a word. Scope is marked on data
  * (PrincipleDecl.scope), never on the act.

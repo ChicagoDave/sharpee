@@ -1,0 +1,22 @@
+title: Restore mid-beat (Phase 10.6, persistence second half)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Restore the mid-beat save through the platform engine; the
+  thread continues from the held cursor and serves the same line as the
+  uninterrupted run - thread state rides the save.
+  Run after p10-save.transcript (it writes the save file).
+
+---
+
+$restore p10-mid-beat
+
+# The restored thread serves exactly what the live run served.
+> continue
+[OK: contains "By Michaelmas the drawer was bare."]
+
+> go on
+[OK: contains "And the master's seal was on every receipt."]
+
+> and?
+[OK: contains "So now you know where the money went."]

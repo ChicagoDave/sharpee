@@ -2,10 +2,12 @@
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals. (Arbiter
- * bookkeeping arrives with ADR-318's arbiter.) Ordering between
- * sub-steps is a contract, which is why this is one registration rather
- * than three (docs/work/archive/adr-310/contracts.md §2).
+ * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
+ * arbiter.) Ordering between sub-steps is a contract, which is why this
+ * is one registration rather than three (docs/work/archive/adr-310/
+ * contracts.md §2); scenes run last because they consume the propagation
+ * and goal sub-steps' same-turn output.
  *
  * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
  * below holds ONLY authored configuration, re-registered at load, and has
@@ -20,6 +22,7 @@
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import type { ISound, VolumeTier } from '@sharpee/if-domain';
 import {
   IFEntity,
   WorldModel,
@@ -28,12 +31,29 @@ import {
   RoomTrait,
   type IExitInfo,
   type TemperamentDef,
+  type SceneWireEvent,
+  type ConversationSceneState,
+  type SceneOccasion,
+  type InitiativeSeizure,
 } from '@sharpee/world-model';
 import type { IRCondition } from '@sharpee/chord';
 import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
-import { detectActs, witnessActs } from './act-detection/index.js';
-import { CHARACTER_TURN_KEY } from './character-clock.js';
-import { conversationSuppressesGoals } from './conversation/conversation-marker.js';
+import { detectActs, witnessActs, witnessStatement } from './act-detection/index.js';
+import { normalizeTopic } from '@sharpee/chord';
+import { CHARACTER_TURN_KEY, dialogueTurn } from './character-clock.js';
+import { conversationSuppressesGoals, markConversationTurn } from './conversation/conversation-marker.js';
+import { readSceneStore, sceneWith } from './conversation/scene-store.js';
+import {
+  openScene,
+  recordSceneMove,
+  noteTopicMove,
+  applySceneDirectives,
+  ageScenes,
+} from './conversation/scene-runtime.js';
+import { createTraitMemoryAccess } from './conversation/scene-binding.js';
+import { recordTopicDiscussed } from './conversation/conversation-memory.js';
+import { DEFAULT_DECAY_THRESHOLDS } from './conversation/lifecycle.js';
+import type { PropagationColoring } from './propagation/propagation-types.js';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import {
   PropagationProfile,
@@ -82,6 +102,13 @@ interface TickContext {
    * observed this turn.
    */
   actionEvents?: ISemanticEvent[];
+  /**
+   * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
+   * the scenes sub-step emits conversation sounds here so eavesdropping
+   * rides spatial propagation. Absent (older callers, unit harnesses) =
+   * scenes run silently (mutations land, no sounds).
+   */
+  emitSound?: (sound: ISound) => void;
 }
 
 /** Per-NPC character configuration for the tick phase. Authored data only. */
@@ -97,6 +124,23 @@ export interface CharacterPhaseConfig {
    * runtime owns the curve). Absent → no mood decay for this NPC.
    */
   baselineMood?: { valence: number; arousal: number };
+
+  /**
+   * Topics this character's own TURN-TRIGGERED rules are gated on knowing
+   * (`on every turn … while it knows <topic>`). When such a topic arrives by
+   * propagation, that rule fires this same turn and narrates the arrival in
+   * the author's words — so the platform must NOT also describe it with the
+   * generic witnessed summary, or one moment gets told twice: the author's
+   * staged confrontation, plus "X mentions something to Y."
+   *
+   * Only turn-triggered clauses count. A topic row gated `when it knows
+   * <topic>` is a RESPONSE gate — it fires if the player asks, later or
+   * never — so it says nothing about who narrates this arrival and must not
+   * suppress anything.
+   *
+   * Derived from the compiled story at load; authors declare nothing.
+   */
+  arrivalNarratedTopics?: ReadonlySet<string>;
 }
 
 /**
@@ -196,6 +240,59 @@ function createEvent(
 }
 
 // ---------------------------------------------------------------------------
+// The tick surface (ADR-320 Phase 8) — what earlier sub-steps hand the
+// scenes sub-step, inside one phase invocation. Closure-internal: never a
+// contract, never serialized.
+// ---------------------------------------------------------------------------
+
+/** One turn's scene-relevant happenings, accumulated across sub-steps. */
+interface SceneTickSurface {
+  /** Acts detected from this turn's player-action events (observe sub-step). */
+  acts: Array<{ actorId: string; action: string; eventId: string; roomId: string }>;
+
+  /** Applied NPC↔NPC transfers eligible for scene wrapping (propagation). */
+  transfers: Array<{
+    speakerId: string;
+    listenerId: string;
+    topic: string;
+    roomId: string;
+    coloring: PropagationColoring;
+    /** The delivery's observable line (absent when the listener already knew). */
+    soundMessageId?: string;
+    /** Params the observable line's template binds (names, as the legacy event carried). */
+    soundParams?: Record<string, unknown>;
+  }>;
+
+  /** Completed goal `say` steps addressed to a co-located wrappable partner. */
+  says: Array<{ npcId: string; targetId: string; messageId: string; roomId: string }>;
+
+  /** NPCs whose goal step moved them this turn (exit-close detection). */
+  movedNpcIds: Set<string>;
+}
+
+/** A fresh, empty surface for one phase invocation. */
+function emptySceneTickSurface(): SceneTickSurface {
+  return { acts: [], transfers: [], says: [], movedNpcIds: new Set() };
+}
+
+/**
+ * Whether a pair's exchange gets scene bookkeeping (ADR-320 D10; Phase 8
+ * design §3.1): a scene runtime is registered, both parties are modeled,
+ * and the pair is unseated or already co-seated — a participant is in at
+ * most one live scene, so a party seated elsewhere leaves the exchange
+ * ambient (effects land, no scene).
+ */
+function sceneWrappable(world: WorldModel, aId: string, bId: string): boolean {
+  if (!world.getSceneRuntime()) return false;
+  const aModeled = world.getEntity(aId)?.has(TraitType.CHARACTER_MODEL) ?? false;
+  const bModeled = world.getEntity(bId)?.has(TraitType.CHARACTER_MODEL) ?? false;
+  if (!aModeled || !bModeled) return false;
+  const sa = sceneWith(world, aId);
+  const sb = sceneWith(world, bId);
+  return (!sa && !sb) || (sa !== undefined && sb !== undefined && sa.id === sb.id);
+}
+
+// ---------------------------------------------------------------------------
 // The character-model phase (single registration, ordered sub-steps)
 // ---------------------------------------------------------------------------
 
@@ -218,7 +315,9 @@ export { CHARACTER_TURN_KEY } from './character-clock.js';
  * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
  * see them; propagation
  * moves knowledge before goals re-evaluate activation conditions that may
- * reference it.
+ * reference it; scenes run last (ADR-320 Phase 8), consuming the
+ * transfers, say completions, moves, and detected acts the earlier
+ * sub-steps surfaced this turn.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
@@ -229,12 +328,25 @@ export function createCharacterModelPhase(
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
     // Mirror the turn for the player-action dialogue surfaces (see key doc).
     ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
+    // A modeled PC gets interior upkeep — mood/lucidity decay — without
+    // joining NPC turn scheduling (adr-320 contracts.md §2.1): the
+    // observe/influence/propagation/goal sub-steps stay NPC-only.
+    const player = ctx.world.getEntity(ctx.playerId);
+    const decayTargets =
+      player?.has(TraitType.CHARACTER_MODEL) && !npcs.some((n) => n.id === ctx.playerId)
+        ? [...npcs, player]
+        : npcs;
+    // Scenes run LAST (ADR-320 Phase 8): they consume the propagation
+    // sub-step's applied transfers and the goal sub-step's completions
+    // from the same turn, accumulated on the surface below.
+    const surface = emptySceneTickSurface();
     return [
-      ...runDecaySubStep(npcs, ctx, registry),
-      ...runObserveSubStep(npcs, ctx, registry),
+      ...runDecaySubStep(decayTargets, ctx, registry),
+      ...runObserveSubStep(npcs, ctx, registry, surface),
       ...runInfluenceSubStep(npcs, ctx, registry),
-      ...runPropagationSubStep(npcs, ctx, registry),
-      ...runGoalSubStep(npcs, ctx, registry),
+      ...runPropagationSubStep(npcs, ctx, registry, surface),
+      ...runGoalSubStep(npcs, ctx, registry, surface),
+      ...runSceneSubStep(npcs, ctx, registry, surface),
     ];
   };
 }
@@ -331,6 +443,7 @@ function runObserveSubStep(
   npcs: IFEntity[],
   ctx: TickContext,
   registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
   const { world, turn, playerLocation, actionEvents } = ctx;
@@ -363,6 +476,37 @@ function runObserveSubStep(
           learned,
         }));
       }
+      // Phase 8: acts feed the scenes sub-step — the world-act
+      // interruption (D8's exemption) and witnessed-event occasions (D7).
+      for (const act of acts) {
+        surface.acts.push({
+          actorId: act.actorId,
+          action: (act.category ?? act.faceAct)!,
+          eventId: event.id,
+          roomId: playerLocation,
+        });
+      }
+    }
+
+    // The statement site (ADR-320 D11): the player's TELL lands as a
+    // witnessed claim in every co-located modeled hearer. Claims tags for
+    // authored lines ride the loader's dialogue path, not this event.
+    if (event.type === 'if.event.told') {
+      const speakerId = event.entities.actor;
+      const topicText = (event.data as { topic?: string } | undefined)?.topic;
+      if (speakerId && topicText) {
+        const statement = witnessStatement(
+          world, speakerId, normalizeTopic(topicText), observers, turn,
+        );
+        if (Object.keys(statement.learned).length > 0) {
+          events.push(createEvent('character.author.statement_witnessed', {
+            speakerId,
+            topic: normalizeTopic(topicText),
+            learned: statement.learned,
+          }));
+        }
+        events.push(...statement.authorEvents);
+      }
     }
   }
 
@@ -377,6 +521,7 @@ function runPropagationSubStep(
   npcs: IFEntity[],
   ctx: TickContext,
   registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
   const { world, turn, playerLocation } = ctx;
@@ -396,7 +541,7 @@ function runPropagationSubStep(
 
   for (const [roomId, roomNpcList] of roomNpcs) {
     if (roomNpcList.length < 2) continue;
-    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events);
+    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events, surface);
   }
 
   return events;
@@ -421,6 +566,7 @@ function handleRoomPropagation(
   turn: number,
   playerLocation: EntityId,
   events: ISemanticEvent[],
+  surface: SceneTickSurface,
 ): void {
   for (const speaker of roomNpcList) {
     const config = registry.getConfig(speaker.id)!;
@@ -445,7 +591,7 @@ function handleRoomPropagation(
     const transfers = evaluatePropagation(propContext);
 
     for (const transfer of transfers) {
-      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, playerLocation, events);
+      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, playerLocation, events, surface);
     }
   }
 }
@@ -473,6 +619,7 @@ function recordTransfer(
   turn: number,
   playerLocation: EntityId,
   events: ISemanticEvent[],
+  surface: SceneTickSurface,
 ): void {
   const listenerEntity = world.getEntity(transfer.listenerId);
   if (!listenerEntity) return;
@@ -484,7 +631,46 @@ function recordTransfer(
 
   const result = transferFact(transfer, speakerTrait, listenerTrait, turn, receivesAs);
 
-  if (roomId === playerLocation && !result.alreadyKnew) {
+  // The story narrates this arrival itself when the listener has a
+  // turn-triggered rule gated on knowing this topic: that rule fires on the
+  // same tick the fact lands, in the author's own words. The platform's
+  // generic summary would describe the identical moment a second time —
+  // Kemp's staged blow-up, immediately followed by "Richard Burbage mentions
+  // something to Will Kemp." The transfer still happens; only the platform's
+  // narration of it stands down.
+  const authorNarratesArrival =
+    listenerConfig?.arrivalNarratedTopics?.has(transfer.topic) ?? false;
+
+  // ADR-320 Phase 8 (D10 — "propagation made visible"): a wrappable
+  // pair's transfer becomes a scene move; its observable surface is the
+  // sound path ONLY, so the legacy same-room event does not mint. Ambient
+  // transfers (no runtime, unmodeled party, party seated elsewhere) keep
+  // today's path byte-identically.
+  if (sceneWrappable(world, speaker.id, transfer.listenerId)) {
+    const visibility = getVisibilityResult(transfer, 'present');
+    surface.transfers.push({
+      speakerId: speaker.id,
+      listenerId: transfer.listenerId,
+      topic: transfer.topic,
+      roomId,
+      coloring: transfer.coloring,
+      ...(!result.alreadyKnew && !authorNarratesArrival && visibility.messageId
+        ? {
+            soundMessageId: visibility.messageId,
+            soundParams: {
+              speakerId: speaker.id,
+              listenerId: transfer.listenerId,
+              topic: transfer.topic,
+              speakerName: speaker.name,
+              listenerName: listenerEntity.name,
+            },
+          }
+        : {}),
+    });
+    return;
+  }
+
+  if (roomId === playerLocation && !result.alreadyKnew && !authorNarratesArrival) {
     const visibility = getVisibilityResult(transfer, 'present');
     if (visibility.messageId) {
       events.push(createEvent('character.propagation.witnessed', {
@@ -507,12 +693,13 @@ function runGoalSubStep(
   npcs: IFEntity[],
   ctx: TickContext,
   registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
   const { world, playerLocation } = ctx;
 
   for (const npc of npcs) {
-    executeNpcGoals(npc, registry, world, playerLocation, ctx.turn, events);
+    executeNpcGoals(npc, registry, world, playerLocation, ctx.turn, events, surface);
   }
 
   return events;
@@ -551,6 +738,7 @@ function executeNpcGoals(
   playerLocation: EntityId,
   currentTurn: number,
   events: ISemanticEvent[],
+  surface: SceneTickSurface,
 ): void {
   const manager = registry.getGoalManager(npc.id);
   if (!manager) return;
@@ -584,6 +772,15 @@ function executeNpcGoals(
     ...(evalCompiled ? { evalCompiled } : {}),
   };
 
+  // The step definition under evaluation, for the Phase 8 say surfacing
+  // (opportunistic evaluation has no step to read).
+  const inSequentialLeg =
+    activeGoal.def.mode !== 'opportunistic' &&
+    !(activeGoal.def.mode === 'prepared' && activeGoal.state.prepared);
+  const stepDef = inSequentialLeg
+    ? activeGoal.def.steps?.[activeGoal.state.currentStep]
+    : undefined;
+
   const stepResult = evaluateGoalStep(activeGoal, stepContext);
 
   // D6: the evaluator computes intent; the phase applies it to the world.
@@ -591,7 +788,33 @@ function executeNpcGoals(
   // it retries next tick.
   const applied = applyStepMutation(stepResult, npc.id, npcLocation, world);
 
+  // Phase 8 surfacing: applied moves feed exit-close detection; a
+  // completed `say` at a co-located wrappable partner becomes a scene
+  // opening move — its observable surface is the sound path, so the
+  // legacy witnessed mint below is suppressed for exactly that firing.
   if (
+    applied &&
+    (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
+    stepResult.mutation?.kind === 'move'
+  ) {
+    surface.movedNpcIds.add(npc.id);
+  }
+  let sceneWrappedSay = false;
+  if (stepDef?.type === 'say' && stepDef.target && stepResult.status === 'completed' && applied) {
+    const targetId = stepDef.target;
+    if (world.getLocation(targetId) === npcLocation && sceneWrappable(world, npc.id, targetId)) {
+      sceneWrappedSay = true;
+      surface.says.push({
+        npcId: npc.id,
+        targetId,
+        messageId: stepDef.messageId,
+        roomId: npcLocation,
+      });
+    }
+  }
+
+  if (
+    !sceneWrappedSay &&
     applied &&
     (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
     stepResult.witnessed &&
@@ -827,6 +1050,310 @@ function handleInfluenceResults(
       }, exertion.influencerId));
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Scenes sub-step (ADR-320 D10; Phase 8 — NPC↔NPC scenes as propagation
+// made visible, one machinery with two faces)
+// ---------------------------------------------------------------------------
+
+/** The runtime-owned coloring→volume curve (Phase 8 design §3a). */
+function volumeFromColoring(coloring?: PropagationColoring): VolumeTier {
+  if (coloring === 'conspiratorial' || coloring === 'fearful') return 'whisper';
+  if (coloring === 'dramatic') return 'raised';
+  return 'normal';
+}
+
+/** The authored coloring of a speaker's profile, when any. */
+function coloringOf(registry: CharacterPhaseRegistry, npcId: string): PropagationColoring | undefined {
+  return registry.getConfig(npcId)?.propagationProfile?.coloring;
+}
+
+/**
+ * Drive NPC↔NPC scene lifecycle for one turn (ADR-320 D10; Phase 8):
+ * world acts break live scenes (D8's exemption), authored occasions
+ * seize their moments (D7), goal `say` completions and propagation
+ * transfers open and continue scenes, a participant moved away closes on
+ * `exit`, and unattended scenes decay on `silence`. Observable text
+ * rides the sound pipeline only (§3a); every mutation lands regardless.
+ */
+function runSceneSubStep(
+  npcs: IFEntity[],
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
+): ISemanticEvent[] {
+  const { world } = ctx;
+  const runtime = world.getSceneRuntime();
+  if (!runtime) return [];
+
+  // All scene clock reads go through the seam (D6): scene stamps are on
+  // the dialogue-turn scale (mirror + 1), never raw ctx.turn.
+  const clockTurn = dialogueTurn(world);
+  const memory = createTraitMemoryAccess(world);
+  const events: ISemanticEvent[] = [];
+
+  const pushWire = (wire: SceneWireEvent[]): void => {
+    for (const w of wire) {
+      events.push(createEvent(`character.scene.${w.kind}`, { ...w }));
+    }
+  };
+
+  /**
+   * Stamp one on-floor move: the silence clock, the D16 marker on every
+   * modeled participant (partner = the speaker; the speaker's partner is
+   * the addressee or the first other seat), and — when a line was spoken —
+   * the utterance wire event plus the conversation sound (§3a).
+   */
+  const speak = (
+    sceneId: string,
+    speakerId: string,
+    addresseeId: string | undefined,
+    messageId: string | undefined,
+    coloring: PropagationColoring | undefined,
+    params?: Record<string, unknown>,
+  ): void => {
+    recordSceneMove(world, sceneId);
+    const scene = readSceneStore(world).scenes[sceneId];
+    if (scene) {
+      for (const pid of scene.participantIds) {
+        const trait = world.getEntity(pid)?.get(TraitType.CHARACTER_MODEL) as
+          | CharacterModelTrait
+          | undefined;
+        if (!trait) continue;
+        const partner =
+          pid === speakerId
+            ? (addresseeId ?? scene.participantIds.find((o) => o !== pid) ?? pid)
+            : speakerId;
+        markConversationTurn(trait, partner, clockTurn);
+      }
+    }
+    if (messageId) {
+      pushWire([
+        {
+          kind: 'utterance',
+          sceneId,
+          speakerId,
+          ...(addresseeId !== undefined ? { addresseeId } : {}),
+          messageId,
+          beats: [],
+        },
+      ]);
+      // Kind `speech` — the shipped ADR-172 content-bearing family:
+      // full/muffled embed the line, fragments/presence degrade it, and
+      // lang-en-us already carries the per-tier defaults (untouched).
+      ctx.emitSound?.({
+        sourceLocation: world.getLocation(speakerId) ?? '',
+        sourceEntity: speakerId,
+        kind: 'speech',
+        volumeTier: volumeFromColoring(coloring),
+        content: { messageId, ...(params ? { params } : {}) },
+      });
+    }
+  };
+
+  /**
+   * The live scene a pair's move lands in: their co-seated scene, or a
+   * fresh one when both are unseated (opened by the initiator). A party
+   * seated elsewhere gets no scene bookkeeping — the one-live-scene
+   * invariant (state may have shifted since the wrappable check).
+   */
+  const ensureScene = (
+    openerId: string,
+    otherId: string,
+  ): ConversationSceneState | undefined => {
+    const so = sceneWith(world, openerId);
+    const st = sceneWith(world, otherId);
+    if (so && st && so.id === st.id) return so;
+    if (so || st) return undefined;
+    const opened = openScene(world, {
+      participantIds: [openerId, otherId],
+      openedBy: { kind: 'initiative', openerId },
+    });
+    pushWire(opened.wireEvents);
+    return opened.scene;
+  };
+
+  /**
+   * Open a seizure's `then asks` exchange (#273; ADR-320 Phase 10.3):
+   * only against a scene that includes the player — an exchange targets
+   * the player, so an NPC↔NPC seizure drops the open silently (the row's
+   * phrase already spoke; the same occasion stays servable in player
+   * scenes, where the open is meaningful). Never a throw, never a wedge.
+   */
+  const applySeizedExchange = (scene: ConversationSceneState, seizure: InitiativeSeizure): void => {
+    if (!seizure.openExchange || !scene.participantIds.includes(ctx.playerId)) return;
+    pushWire(
+      applySceneDirectives(
+        world,
+        scene.id,
+        [{ kind: 'open-exchange', exchange: seizure.openExchange }],
+        memory,
+      ),
+    );
+    events.push(
+      createEvent('character.exchange.opened', {
+        exchangeId: seizure.openExchange.exchangeId,
+        word: seizure.openWord,
+      }),
+    );
+  };
+
+  // 1) World acts break live scenes in their room — any grip, `blocking`
+  // included (D8's exemption). Resolved and applied through the binding
+  // so the interruption wire and memory folds match the dispatch path.
+  for (const act of surface.acts) {
+    for (const scene of Object.values(readSceneStore(world).scenes)) {
+      const inRoom = scene.participantIds.some((p) => world.getLocation(p) === act.roomId);
+      if (!inRoom) continue;
+      pushWire(runtime.resolveIntrusion(scene.id, act.actorId, true).wireEvents);
+    }
+  }
+
+  // 2) Witnessed-event occasions (D7): the first co-located modeled NPC
+  // (id order — deterministic) whose authored row forces the moment
+  // seizes it; disposition alone never seizes a content-bearing occasion
+  // (design §3.6). The seizure addresses the act's actor — the PC
+  // included: this is the NPC-initiates-with-the-player surface.
+  if (runtime.seizeInitiative) {
+    for (const act of surface.acts) {
+      const candidates = npcs
+        .filter(
+          (n) =>
+            n.id !== act.actorId &&
+            n.has(TraitType.CHARACTER_MODEL) &&
+            world.getLocation(n.id) === act.roomId,
+        )
+        .sort((a, b) => (a.id < b.id ? -1 : 1));
+      for (const npc of candidates) {
+        const seizure = runtime.seizeInitiative(
+          npc.id,
+          { kind: 'witnessed-event', eventId: act.eventId },
+          act.action,
+          act.actorId,
+        );
+        if (!seizure) continue;
+        events.push(...seizure.events);
+        const scene = ensureScene(npc.id, act.actorId);
+        if (scene && seizure.spokenMessageId) {
+          speak(scene.id, npc.id, act.actorId, seizure.spokenMessageId, coloringOf(registry, npc.id), seizure.spokenParams);
+        }
+        if (scene) applySeizedExchange(scene, seizure);
+        break; // one seizure per act — the moment is taken
+      }
+    }
+  }
+
+  // 3) Goal `say` completions open (or continue) a scene with the
+  // addressed partner — the "seek out, then speak" driver (seek-out is
+  // shipped); the say line is the opening move.
+  for (const say of surface.says) {
+    const scene = ensureScene(say.npcId, say.targetId);
+    if (!scene) continue;
+    speak(scene.id, say.npcId, say.targetId, say.messageId, coloringOf(registry, say.npcId));
+  }
+
+  // 4) Applied transfers are the scene's moves (D10 — one machinery):
+  // thread and floor bookkeeping, discussed-pair recording on both
+  // sides, and the observable line through the sound path only.
+  for (const t of surface.transfers) {
+    const scene = ensureScene(t.speakerId, t.listenerId);
+    if (!scene) continue;
+    noteTopicMove(world, scene.id, t.topic);
+    const live = readSceneStore(world).scenes[scene.id];
+    if (live && live.floorHolderId !== t.speakerId) {
+      pushWire(
+        applySceneDirectives(world, scene.id, [{ kind: 'set-floor', holderId: t.speakerId }], memory),
+      );
+    }
+    recordTopicDiscussed(memory, t.speakerId, t.listenerId, t.topic);
+    recordTopicDiscussed(memory, t.listenerId, t.speakerId, t.topic);
+    speak(scene.id, t.speakerId, t.listenerId, t.soundMessageId, t.coloring, t.soundParams);
+  }
+
+  // 4a) Thread floor turns (ADR-320 D14; Phase 10.4): a modeled NPC with
+  // a ready thread move toward the co-located player takes the floor —
+  // the owner's-own-turn half of D14's advance clause (the dispatch path
+  // is the other half). An `opens when` thread opens the scene itself;
+  // the pure probe runs first so no scene is minted for nothing. Threads
+  // are owner↔player only (D14 v1), so only pairs with the player are
+  // consulted; an open exchange holds the thread (a `then asks` beat
+  // waits for its exchange to close).
+  if (runtime.threadTurn && runtime.threadTurnReady) {
+    const candidates = npcs
+      .filter(
+        (n) =>
+          n.has(TraitType.CHARACTER_MODEL) &&
+          world.getLocation(n.id) === world.getLocation(ctx.playerId),
+      )
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    for (const npc of candidates) {
+      if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
+      const scene = ensureScene(npc.id, ctx.playerId);
+      if (!scene || scene.openExchange) continue;
+      const turn = runtime.threadTurn(npc.id, ctx.playerId, scene.id);
+      if (!turn) continue;
+      events.push(...turn.events);
+      if (turn.spokenMessageId) {
+        speak(scene.id, npc.id, ctx.playerId, turn.spokenMessageId, coloringOf(registry, npc.id), turn.spokenParams);
+      }
+      applySeizedExchange(scene, turn);
+    }
+  }
+
+  // 5) Subject-change occasions (D9's third exposure): a thread abandoned
+  // this turn is a moment a disposition can seize — authored rows only,
+  // first modeled participant in id order.
+  if (runtime.seizeInitiative) {
+    for (const scene of Object.values(readSceneStore(world).scenes)) {
+      if (scene.subjectChangedTurn !== clockTurn) continue;
+      seizeSceneOccasion(scene, {
+        kind: 'subject-change',
+        sceneId: scene.id,
+        abandonedTopicId: scene.abandonedTopic ?? '',
+      });
+    }
+
+    // 6) Silence occasions: one turn before decay would close the scene,
+    // an authored row may keep it alive — the seizure is a move.
+    for (const scene of Object.values(readSceneStore(world).scenes)) {
+      if (clockTurn - scene.lastMoveTurn !== DEFAULT_DECAY_THRESHOLDS.neutral - 1) continue;
+      seizeSceneOccasion(scene, { kind: 'silence', sceneId: scene.id });
+    }
+  }
+
+  function seizeSceneOccasion(scene: ConversationSceneState, occasion: SceneOccasion): void {
+    for (const pid of [...scene.participantIds].sort()) {
+      if (!world.getEntity(pid)?.has(TraitType.CHARACTER_MODEL)) continue;
+      const seizure = runtime!.seizeInitiative!(pid, occasion);
+      if (!seizure) continue;
+      events.push(...seizure.events);
+      if (seizure.spokenMessageId) {
+        speak(scene.id, pid, undefined, seizure.spokenMessageId, coloringOf(registry, pid), seizure.spokenParams);
+      }
+      applySeizedExchange(scene, seizure);
+      break;
+    }
+  }
+
+  // 7) A participant whose goal moved it away this turn closes the scene
+  // on `exit` — legality held by construction (the world accepted the
+  // move in the goal sub-step).
+  for (const scene of Object.values(readSceneStore(world).scenes)) {
+    const mover = [...scene.participantIds].filter((p) => surface.movedNpcIds.has(p)).sort()[0];
+    if (!mover) continue;
+    const rooms = new Set(scene.participantIds.map((p) => world.getLocation(p)));
+    if (rooms.size <= 1) continue;
+    pushWire(
+      applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId: mover }], memory),
+    );
+  }
+
+  // 8) Unattended scenes decay into a `silence` close (Phase 5's
+  // machinery, wired to its runtime caller here).
+  pushWire(ageScenes(world, memory));
+
+  return events;
 }
 
 // ---------------------------------------------------------------------------

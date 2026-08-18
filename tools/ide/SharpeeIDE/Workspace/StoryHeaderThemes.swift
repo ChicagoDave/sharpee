@@ -83,10 +83,26 @@ enum StoryHeaderThemes {
         // never lands inside a nested `use`/`on` block.
         var lastFieldIndex: Int?
         var indent = "  "
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { break }
             lastFieldIndex = index
             indent = field.indent
+            index += 1
+
+            // A field with no inline value opens a LIST (`authors:` followed by
+            // one indented name per line). Its items carry no colon, so
+            // `field(in:)` reads them as non-fields and the scan would stop on
+            // the first one — landing this insert between `authors:` and its
+            // authors, which empties the list and makes the header uncompilable
+            // (`parse.header-list-empty`). Step over the items so the insert
+            // lands after the whole list.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                lastFieldIndex = index
+                index += 1
+            }
         }
         let insertAfter = lastFieldIndex ?? storyIndex
         // A header whose last line lacks a newline would splice the new field
@@ -126,9 +142,18 @@ enum StoryHeaderThemes {
     private static func locate(in source: String) -> Found? {
         let lines = StoryHeaderLines.split(source)
         guard let storyIndex = lines.firstIndex(where: { StoryHeaderLines.isStoryKeyword($0) }) else { return nil }
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { return nil }
             if field.key == key { return Found(index: index, field: field) }
+            index += 1
+            // Step over a list-valued field's items, or the search ends on the
+            // first one and never sees a `themes:` line written after the list.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                index += 1
+            }
         }
         return nil
     }

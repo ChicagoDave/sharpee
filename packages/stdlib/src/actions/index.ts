@@ -30,3 +30,7 @@ export * from './author/index.js';
 
 // Helper functions
 export { createEvent } from '@sharpee/core';
+
+// Exit legality (ADR-320 D8) — going's read points as one probe; the Chord
+// loader's dialogue registrant pre-checks `leave` outcomes against it.
+export { hasTraversableExit } from './helpers/exit-legality.js';

@@ -3,7 +3,8 @@
  *
  * Verifies conversation begin/end, decay by intent threshold,
  * attention management (redirect/leave with strength), between-turn
- * commentary, NPC continuation scheduling, and serialization.
+ * commentary, and serialization. (Continuation scheduling retired —
+ * ADR-320 Phase 10.3; threads supersede it, see thread-runtime.ts.)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -319,36 +320,6 @@ describe('ConversationLifecycle — leave-attempt message', () => {
 });
 
 // ===========================================================================
-// NPC continuation scheduling
-// ===========================================================================
-
-describe('ConversationLifecycle — continuation scheduling', () => {
-  it('should schedule and retrieve continuation messages', () => {
-    const lifecycle = new ConversationLifecycle();
-    lifecycle.begin('margaret', 'confessing', 'assertive');
-
-    lifecycle.scheduleAfter(1, 'confession-part-2');
-    lifecycle.scheduleAfter(2, 'confession-part-3');
-
-    lifecycle.recordNonConversationTurn(); // 1
-    expect(lifecycle.getContinuationMessage()).toBe('confession-part-2');
-
-    lifecycle.recordNonConversationTurn(); // 2
-    expect(lifecycle.getContinuationMessage()).toBe('confession-part-3');
-  });
-
-  it('should return undefined when no continuation is scheduled for this turn', () => {
-    const lifecycle = new ConversationLifecycle();
-    lifecycle.begin('margaret', 'confessing', 'assertive');
-
-    lifecycle.scheduleAfter(3, 'confession-part-2');
-
-    lifecycle.recordNonConversationTurn(); // 1
-    expect(lifecycle.getContinuationMessage()).toBeUndefined();
-  });
-});
-
-// ===========================================================================
 // NPC initiative triggers
 // ===========================================================================
 
@@ -390,7 +361,6 @@ describe('ConversationLifecycle — serialization', () => {
     lifecycle.setContext('caught', 'eager', 'assertive');
     lifecycle.setBetweenTurnOverride(1, 'margaret-override');
     lifecycle.setOnLeaveAttemptMessage('margaret-blocks');
-    lifecycle.scheduleAfter(2, 'continuation-msg');
     lifecycle.registerInitiative('butler', ['suspicious'], 'butler-approaches');
     lifecycle.recordNonConversationTurn();
 
@@ -406,7 +376,6 @@ describe('ConversationLifecycle — serialization', () => {
     expect(ctx.contextLabel).toBe('caught');
     expect(ctx.nonConversationTurns).toBe(1);
     expect(ctx.onLeaveAttemptMessage).toBe('margaret-blocks');
-    expect(ctx.continuations).toHaveLength(1);
 
     // Check between-turn override survived
     restored.recordNonConversationTurn(); // now at turn 2 — no override

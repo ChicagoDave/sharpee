@@ -435,3 +435,55 @@ describe('createProsePipeline factory', () => {
     ).toThrow();
   });
 });
+
+describe('scene/exchange wire isolation (ADR-320 D12/AC11, Phase 8)', () => {
+  // The wire events carry a `messageId` as structured channel DATA; the
+  // pipeline must never render them as prose — neither the domain-message
+  // path nor the generic fallback (the Phase 6/7 double-render this gate
+  // closed). The registered template proves the gate, not a missing id.
+  const MESSAGES = { 'nell-offer-yes': 'Splendid!' };
+
+  it('renders nothing for character.scene.* events even when their messageId resolves', () => {
+    const blocks = makePipeline(MESSAGES).processTurn([
+      makeEvent('character.scene.utterance', {
+        kind: 'utterance',
+        sceneId: 'scene-1',
+        speakerId: 'a01',
+        addresseeId: 'a02',
+        messageId: 'nell-offer-yes',
+        beats: [],
+      }),
+      makeEvent('character.scene.scene-opened', {
+        kind: 'scene-opened',
+        sceneId: 'scene-1',
+        participantIds: ['a01', 'a02'],
+        openedBy: { kind: 'initiative', openerId: 'a01' },
+      }),
+    ]);
+    expect(blocks).toEqual([]);
+  });
+
+  it('renders nothing for character.exchange.* events', () => {
+    const blocks = makePipeline(MESSAGES).processTurn([
+      makeEvent('character.exchange.opened', {
+        exchangeId: 'nell.the-offer',
+        word: 'asks',
+        messageId: 'nell-offer-yes',
+      }),
+    ]);
+    expect(blocks).toEqual([]);
+  });
+
+  it('other character.* events keep rendering (the gate is scene/exchange-scoped)', () => {
+    const blocks = makePipeline({
+      'character.propagation.witnessed.neutral': 'Nell mentions something to Piers.',
+    }).processTurn([
+      makeEvent('character.propagation.witnessed', {
+        messageId: 'character.propagation.witnessed.neutral',
+        speakerName: 'Nell',
+        listenerName: 'Piers',
+      }),
+    ]);
+    expect(blocks.length).toBeGreaterThan(0);
+  });
+});

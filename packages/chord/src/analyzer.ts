@@ -121,6 +121,13 @@ import {
   IRWitnessedTopicDef,
   IRThinksEntry,
   IRTopicRow,
+  IRMannerRow,
+  IRGreetingRow,
+  IRExchange,
+  IRExchangeRow,
+  IRInitiativeRow,
+  IRConversation,
+  IRConversationBeat,
   IRTraitDef,
   IRValue,
   IRStoryFields,
@@ -257,6 +264,10 @@ function conditionFingerprint(cond: ConditionNode): string {
     case 'any-of':
     case 'none-of':
       return `${cond.kind}:${cond.condition}`;
+    case 'subject-changes':
+      return 'subject-changes';
+    case 'asked':
+      return `asked:${cond.word}`;
     case 'predicate': {
       const p = cond.predicate;
       switch (p.kind) {
@@ -282,6 +293,12 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `knows(${value(cond.subject)},${p.topic.words.join(' ').toLowerCase()})`;
         case 'is-any':
           return `is-any(${value(cond.subject)},${p.condition})`;
+        case 'recency':
+          return `recency${p.negated ? '!' : ''}(${value(cond.subject)},${p.word})`;
+        case 'was-discussed':
+          return `was-discussed(${value(cond.subject)})`;
+        case 'concluded':
+          return `concluded${p.negated ? '!' : ''}(${value(cond.subject)})`;
       }
     }
   }
@@ -382,6 +399,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
     case 'none-of':
       // Quantifiers test the world, not the clause owner — no `it` here.
       return false;
+    case 'subject-changes':
+    case 'asked':
+      // ADR-320 scene reads — the owner comes from the evaluation context,
+      // never from an `it` in the condition text.
+      return false;
     case 'predicate': {
       if (visitValue(cond.subject)) return true;
       const p = cond.predicate;
@@ -408,6 +430,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
+        // ADR-320: the subject is a TOPIC (or a D14 thread key), visited
+        // above only for form's sake — a topic is never `it`.
+        case 'recency':
+        case 'was-discussed':
+        case 'concluded':
           return false;
       }
     }
@@ -563,6 +590,20 @@ class Analyzer {
   private profiles = new Map<string, Record<string, string>>();
   /** Custom vocabulary (ADR-310 D5): `define mood` / `define personality` by word. */
   private customMoods = new Map<string, DefineMood>();
+
+  /** Declared `define conversation` keys (D14) — lazy, order-independent. */
+  private conversationKeysMemo: Set<string> | null = null;
+
+  /** Every declared thread key, normalized — the `is concluded` gate's universe. */
+  private get conversationKeys(): Set<string> {
+    if (!this.conversationKeysMemo) {
+      this.conversationKeysMemo = new Set();
+      for (const d of this.ast.declarations) {
+        if (d.kind === 'define-conversation' && d.name) this.conversationKeysMemo.add(normalizeTopic(d.name));
+      }
+    }
+    return this.conversationKeysMemo;
+  }
   private customPersonalities = new Map<string, DefinePersonality>();
 
   constructor(
@@ -866,6 +907,14 @@ class Analyzer {
           break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
+        case 'define-manner':
+        case 'define-greetings':
+          break; // applied onto owners after all entities are built (applyManner/applyGreetings)
+        case 'define-exchange':
+        case 'define-initiative':
+          break; // applied onto owners after all entities are built (applyExchanges/applyInitiative)
+        case 'define-conversation':
+          break; // applied onto owners after all entities are built (applyConversations)
       }
     }
 
@@ -896,6 +945,12 @@ class Analyzer {
     ir.hasHatches = ir.hatches.length > 0;
 
     this.applyTopics(ir.entities);
+    this.applyManner(ir.entities);
+    this.applyGreetings(ir.entities);
+    this.applyExchanges(ir.entities);
+    this.applyInitiative(ir.entities);
+    this.applyConversations(ir.entities);
+    this.checkConversationTargets(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkCompositionLegality(ir);
@@ -1559,6 +1614,581 @@ class Analyzer {
   }
 
   /**
+   * ADR-320 D5 (vocabulary frozen 2026-08-17): fold each `define manner`
+   * block onto its owner entity's `manner` rows. Gates: a second block for
+   * the same owner, a non-person host, more than one `voice` word in a
+   * row. Rows are NOT required to be mutually exclusive — several may be
+   * live at once (the ADR's own example conditions one row on mood and
+   * one on band); selection layering is the scene runtime's. Beat phrase
+   * keys re-derive pass 1's deterministic minting
+   * (`<owner>.manner-<row>-<line>`), so the two cannot drift.
+   */
+  private applyManner(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-manner') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-manner-block',
+          `\`${owner.name}\` already has a \`define manner\` block at line ${first.line} — a character's manner lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.manner-host',
+          `\`define manner\` needs a person — \`${owner.name}\` is ${kind}, and manner colors a character's delivery (a block here could never fire).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRMannerRow[] = [];
+      decl.rows.forEach((row, r) => {
+        const beatKeys: string[] = [];
+        let voice: string | undefined;
+        row.lines.forEach((mline, b) => {
+          if (mline.kind === 'beat') {
+            beatKeys.push(`${ownerId}.manner-${r}-${b}`);
+          } else if (voice !== undefined) {
+            this.diagnostics.error(
+              'analysis.manner-voice-duplicate',
+              'This manner row already sets `voice` — one voice word per row.',
+              mline.span,
+            );
+          } else {
+            voice = mline.word;
+          }
+        });
+        rows.push({
+          condition: this.resolveCondition(row.condition, scope),
+          beatKeys,
+          ...(voice !== undefined ? { voice } : {}),
+          span: row.span,
+        });
+      });
+      owner.manner = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D4 (spelling frozen 2026-08-17): fold each `define greetings`
+   * block onto its owner entity's `greetings` rows. Gates: a second block
+   * for the same owner, a non-person host, and a duplicate boundary head
+   * (a boundary answers in one place). Bodies lower exactly as topic-row
+   * bodies do, occurrence-keyed on the IR row index.
+   */
+  private applyGreetings(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-greetings') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-greetings-block',
+          `\`${owner.name}\` already has a \`define greetings\` block at line ${first.line} — the boundary rows live in one place; merge them.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.greetings-host',
+          `\`define greetings\` needs a person — \`${owner.name}\` is ${kind}, and only people hold conversation boundaries (a block here could never be reached).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRGreetingRow[] = [];
+      const seenHeads = new Map<string, Span>();
+      for (const row of decl.rows) {
+        const headKey =
+          row.head.kind === 'return' ? `return:${row.head.absence ?? 'plain'}`
+          : row.head.kind === 'asked' ? `asked:${row.head.word}`
+          : row.head.kind;
+        const dup = seenHeads.get(headKey);
+        if (dup) {
+          this.diagnostics.error(
+            'analysis.duplicate-greeting',
+            `This boundary is already declared in this block (line ${dup.line}) — a boundary answers in one place; merge the rows.`,
+            row.span,
+          );
+          continue;
+        }
+        seenHeads.set(headKey, row.span);
+
+        const head: IRGreetingRow['head'] =
+          row.head.kind === 'first-time' ? { kind: 'first-time' }
+          : row.head.kind === 'return' ? { kind: 'return', absence: row.head.absence }
+          : row.head.kind === 'asked' ? { kind: 'asked', word: row.head.word }
+          : { kind: 'leaving' };
+        rows.push({
+          head,
+          body: row.body.map((s, i) =>
+            this.resolveStatement(s, scope, `greeting.${ownerId}.row-${rows.length}.${i}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+      owner.greetings = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D4/D10 (vocabulary frozen 2026-08-17): fold each `define
+   * exchange` block onto its owner entity's `exchanges` list. Gates: a
+   * second exchange with the same key for the same owner, a non-person
+   * host, a duplicate response row (an answer answers in one place —
+   * aliases included, plus the quoted-vs-entity-tier collision, the
+   * topic-table rules), a duplicate act row, a second `on silence` row.
+   * Bodies lower exactly as topic-row bodies do, occurrence-keyed on the
+   * exchange name and IR row index.
+   */
+  private applyExchanges(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → exchange key → first block's span (duplicate gate). */
+    const seen = new Map<string, Map<string, Span>>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-exchange') continue;
+      if (decl.owner.words.length === 0 || decl.name === '') continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      let ownerSeen = seen.get(ownerId);
+      if (!ownerSeen) {
+        ownerSeen = new Map();
+        seen.set(ownerId, ownerSeen);
+      }
+      const first = ownerSeen.get(decl.name);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-exchange',
+          `\`${owner.name}\` already has an exchange \`${decl.name}\` at line ${first.line} — an exchange lives in one place; merge the rows or rename one.`,
+          decl.span,
+        );
+        continue;
+      }
+      ownerSeen.set(decl.name, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.exchange-host',
+          `\`define exchange\` needs a person — \`${owner.name}\` is ${kind}, and an exchange is a speaker's own moment (a block here could never open).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      // Entity-tier answer refs resolve once, up front — the cross-tier
+      // collision gate must see every entity-tier row's names (the
+      // topic-table discipline).
+      const resolvedRefs = decl.rows.map((row) =>
+        row.head.kind === 'answer' && row.head.filter.kind === 'entity'
+          ? this.resolveEntityId(row.head.filter.ref)
+          : null,
+      );
+      /** normalized name/aka of entity-tier answer entities → display name. */
+      const entityTierNames = new Map<string, string>();
+      for (const id of resolvedRefs) {
+        if (!id) continue;
+        const rowSym = this.byId.get(id);
+        if (!rowSym) continue;
+        entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
+        for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRExchangeRow[] = [];
+      const seenEntities = new Map<string, Span>();
+      const seenTexts = new Map<string, Span>();
+      const seenActs = new Map<string, Span>();
+      let seenSilence: Span | null = null;
+
+      for (let i = 0; i < decl.rows.length; i++) {
+        const row = decl.rows[i];
+        let head: IRExchangeRow['head'] | null = null;
+        if (row.head.kind === 'answer') {
+          if (row.head.filter.kind === 'entity') {
+            const id = resolvedRefs[i];
+            if (!id) continue; // unresolved — already reported
+            const dup = seenEntities.get(id);
+            if (dup) {
+              this.diagnostics.error(
+                'analysis.duplicate-answer',
+                `\`${this.byId.get(id)?.nameLower ?? id}\` is already an answer of this exchange (line ${dup.line}) — an answer answers in one place; merge the rows.`,
+                row.span,
+              );
+              continue;
+            }
+            seenEntities.set(id, row.span);
+            head = { kind: 'answer', filter: { kind: 'entity', id } };
+          } else {
+            const texts = [row.head.filter.primary, ...row.head.filter.aliases];
+            let rejected = false;
+            for (const text of texts) {
+              const norm = normalizeTopic(text);
+              const dup = seenTexts.get(norm);
+              if (dup) {
+                this.diagnostics.error(
+                  'analysis.duplicate-answer',
+                  `"${text}" is already declared in this exchange (line ${dup.line}) — aliases included, an answer answers in one place.`,
+                  row.head.filter.span,
+                );
+                rejected = true;
+                continue;
+              }
+              seenTexts.set(norm, row.span);
+              const collidesWith = entityTierNames.get(norm);
+              if (collidesWith) {
+                this.diagnostics.error(
+                  'analysis.answer-entity-collision',
+                  `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier answer of this exchange, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
+                  row.head.filter.span,
+                );
+                rejected = true;
+              }
+            }
+            if (rejected) continue;
+            head = { kind: 'answer', filter: { kind: 'text', primary: row.head.filter.primary, aliases: row.head.filter.aliases } };
+          }
+        } else if (row.head.kind === 'act') {
+          const dup = seenActs.get(row.head.action);
+          if (dup) {
+            this.diagnostics.error(
+              'analysis.duplicate-answer',
+              `\`on ${row.head.action}\` is already a row of this exchange (line ${dup.line}) — a response answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenActs.set(row.head.action, row.span);
+          head = { kind: 'act', action: row.head.action };
+        } else {
+          if (seenSilence) {
+            this.diagnostics.error(
+              'analysis.duplicate-answer',
+              `\`on silence\` is already a row of this exchange (line ${seenSilence.line}) — a response answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenSilence = row.span;
+          head = { kind: 'silence' };
+        }
+
+        rows.push({
+          head,
+          body: row.body.map((s, j) =>
+            this.resolveStatement(s, scope, `exchange.${ownerId}.${decl.name}.row-${rows.length}.${j}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+
+      const axes = this.phraseAxesFor(owner);
+      for (const row of rows) this.checkPhraseExclusivity(row, axes);
+
+      (owner.exchanges ??= []).push({
+        name: decl.name,
+        ...(decl.strength ? { strength: decl.strength } : {}),
+        rows,
+        span: decl.span,
+      });
+    }
+  }
+
+  /**
+   * ADR-320 D7 (vocabulary frozen 2026-08-17): fold each `define
+   * initiative` block onto its owner entity's `initiative` rows. Gates: a
+   * second block for the same owner, a non-person host, and a `hold
+   * their tongue` sharing a row body with other statements (a suppression
+   * cannot also speak). Rows are NOT required to be mutually exclusive —
+   * most-specific-wins selection is the scene runtime's.
+   */
+  private applyInitiative(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-initiative') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-initiative-block',
+          `\`${owner.name}\` already has a \`define initiative\` block at line ${first.line} — a character's initiative lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.initiative-host',
+          `\`define initiative\` needs a person — \`${owner.name}\` is ${kind}, and initiative is a character's own seizure of a moment (a block here could never fire).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRInitiativeRow[] = [];
+      for (const row of decl.rows) {
+        // A suppression cannot also speak: `hold their tongue` is the
+        // row's only statement, or an error.
+        if (row.body.some((s) => s.kind === 'hold-tongue') && row.body.length > 1) {
+          this.diagnostics.error(
+            'analysis.hold-tongue-alone',
+            '`hold their tongue` must be the row\'s only statement — a suppression cannot also speak; split the row if both behaviors are wanted under different conditions.',
+            row.span,
+          );
+          continue;
+        }
+        const occasion: IRInitiativeRow['occasion'] =
+          row.head.kind === 'act' ? { kind: 'act', action: row.head.action } : { kind: row.head.kind };
+        rows.push({
+          occasion,
+          condition: row.condition ? this.resolveCondition(row.condition, scope) : null,
+          body: row.body.map((s, j) =>
+            this.resolveStatement(s, scope, `initiative.${ownerId}.row-${rows.length}.${j}`),
+          ),
+          span: row.span,
+        });
+        this.checkPhaseOrder(row.body, { ended: null });
+      }
+      owner.initiative = rows;
+    }
+  }
+
+  /**
+   * ADR-320 D14 (vocabulary frozen 2026-08-17): fold each `define
+   * conversation` block onto its owner entity's `conversations`. Gates: a
+   * duplicate (owner, key) pair, a non-person host. The parser already
+   * gated the block shape (at least one beat, exactly one conclusion,
+   * one-per-block rows); bodies lower through the same statement
+   * resolution as every conversation row, so `then asks` targets join
+   * `checkConversationTargets`'s walk.
+   */
+  private applyConversations(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → key → first span (duplicate gate). */
+    const seen = new Map<string, Map<string, Span>>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-conversation') continue;
+      if (decl.owner.words.length === 0 || !decl.name) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      let ownerSeen = seen.get(ownerId);
+      if (!ownerSeen) {
+        ownerSeen = new Map();
+        seen.set(ownerId, ownerSeen);
+      }
+      const first = ownerSeen.get(decl.name);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-conversation',
+          `\`${owner.name}\` already has a conversation \`${decl.name}\` at line ${first.line} — a thread lives in one place; merge the beats or rename one.`,
+          decl.span,
+        );
+        continue;
+      }
+      ownerSeen.set(decl.name, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.conversation-host',
+          `\`define conversation\` needs a person — \`${owner.name}\` is ${kind}, and a thread is a speaker's own subject (a block here could never open).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      const scope = entityScope(sym);
+      const keyOf = (part: string): string => `conversation.${ownerId}.${decl.name}.${part}`;
+      const lowerBody = (body: Statement[], part: string): IRStatement[] =>
+        body.map((s, j) => this.resolveStatement(s, scope, `${keyOf(part)}.${j}`));
+
+      // The `about` filter — the exchange-answer lowering: entity tier
+      // resolves to a world id; the text tier carries its spellings.
+      let filter: IRConversation['filter'];
+      if (decl.about) {
+        if (decl.about.kind === 'entity') {
+          const id = this.resolveEntityId(decl.about.ref);
+          if (id) filter = { kind: 'entity', id };
+          // an unresolved ref is already reported by resolveEntityId
+        } else {
+          filter = { kind: 'text', primary: decl.about.primary, aliases: decl.about.aliases };
+        }
+      }
+
+      const beats: IRConversationBeat[] = decl.beats.map((beat, i) => {
+        this.checkPhaseOrder(beat.body, { ended: null });
+        return {
+          condition: beat.condition ? this.resolveCondition(beat.condition, scope) : null,
+          body: lowerBody(beat.body, `beat-${i}`),
+          span: beat.span,
+        };
+      });
+
+      const conversation: IRConversation = {
+        name: decl.name,
+        ...(decl.strength ? { strength: decl.strength } : {}),
+        ...(filter ? { filter } : {}),
+        ...(decl.opensWhen ? { opensWhen: this.resolveCondition(decl.opensWhen, scope) } : {}),
+        beats,
+        ...(decl.onParting ? { onParting: lowerBody(decl.onParting, 'parting') } : {}),
+        ...(decl.onResuming ? { onResuming: lowerBody(decl.onResuming, 'resuming') } : {}),
+        ...(decl.onRefusing ? { onRefusing: lowerBody(decl.onRefusing, 'refusing') } : {}),
+        conclusion: lowerBody(decl.conclusion ?? [], 'conclusion'),
+        span: decl.span,
+      };
+      for (const body of [decl.onParting, decl.onResuming, decl.onRefusing, decl.conclusion]) {
+        if (body) this.checkPhaseOrder(body, { ended: null });
+      }
+
+      const axes = this.phraseAxesFor(owner);
+      for (const beat of conversation.beats) this.checkPhraseExclusivity(beat, axes);
+
+      (owner.conversations ??= []).push(conversation);
+    }
+  }
+
+  /**
+   * ADR-320 D4/D8 target validation, after every conversation fold: a
+   * `then asks`/`then invites` must name an exchange of the SAME owner
+   * (a cross-owner open makes no sense — the exchange is the speaker's
+   * own moment), and a `deflect to` must name a row of the owner's OWN
+   * topic table. Walks every conversation body recursively (select
+   * arms, ordinal and each bodies included). An empty deflect text
+   * primary is the resolveStatement marker for an entity reference that
+   * already failed to resolve — skipped, the miss is reported.
+   */
+  private checkConversationTargets(entities: IREntity[]): void {
+    for (const e of entities) {
+      const exchangeNames = new Set((e.exchanges ?? []).map((x) => x.name));
+      const topicEntityIds = new Set<string>();
+      const topicTexts = new Set<string>();
+      for (const row of e.topics) {
+        if (row.filter.kind === 'entity') topicEntityIds.add(row.filter.id);
+        else {
+          topicTexts.add(normalizeTopic(row.filter.primary));
+          for (const alias of row.filter.aliases) topicTexts.add(normalizeTopic(alias));
+        }
+      }
+
+      const visit = (stmts: IRStatement[]): void => {
+        for (const stmt of stmts) {
+          switch (stmt.kind) {
+            case 'then-open':
+              if (!exchangeNames.has(stmt.exchange)) {
+                this.diagnostics.error(
+                  'analysis.then-target',
+                  `\`${stmt.exchange}\` is not an exchange of \`${e.name}\` — \`then ${stmt.word}\` opens one of the speaker's own \`define exchange\` blocks${this.suggestText(stmt.exchange, [...exchangeNames])}.`,
+                  stmt.span,
+                );
+              }
+              break;
+            case 'deflect':
+              if (stmt.target.kind === 'entity') {
+                if (!topicEntityIds.has(stmt.target.id)) {
+                  this.diagnostics.error(
+                    'analysis.deflect-target',
+                    `\`${this.byId.get(stmt.target.id)?.nameLower ?? stmt.target.id}\` is not a topic of \`${e.name}\`'s table — \`deflect to\` redirects to a row of the owner's own \`define topics\` block.`,
+                    stmt.span,
+                  );
+                }
+              } else if (stmt.target.primary !== '' && !topicTexts.has(normalizeTopic(stmt.target.primary))) {
+                this.diagnostics.error(
+                  'analysis.deflect-target',
+                  `"${stmt.target.primary}" is not a topic of \`${e.name}\`'s table — \`deflect to\` redirects to a row of the owner's own \`define topics\` block.`,
+                  stmt.span,
+                );
+              }
+              break;
+            case 'select-on':
+              for (const arm of stmt.arms) visit(arm.body);
+              break;
+            case 'select-strategy':
+              for (const alt of stmt.alternatives) visit(alt);
+              break;
+            case 'ordinal':
+            case 'each':
+              visit(stmt.body);
+              break;
+            default:
+              break;
+          }
+        }
+      };
+
+      for (const row of e.topics) visit(row.body);
+      for (const row of e.greetings ?? []) visit(row.body);
+      for (const x of e.exchanges ?? []) for (const row of x.rows) visit(row.body);
+      for (const row of e.initiative ?? []) visit(row.body);
+      for (const t of e.conversations ?? []) {
+        for (const beat of t.beats) visit(beat.body);
+        visit(t.onParting ?? []);
+        visit(t.onResuming ?? []);
+        visit(t.onRefusing ?? []);
+        visit(t.conclusion);
+      }
+    }
+  }
+
+  /**
    * Single-valued axis table for the overlap prover. Mood (platform +
    * customs), band, and threat words are single-valued interior reads;
    * the owner's declared `states:` words are a single current value per
@@ -1588,7 +2218,7 @@ class Analyzer {
    * multiplicity belongs at the phrase level (`or`-separated variants),
    * never as two rows both in play.
    */
-  private checkPhraseExclusivity(row: IRTopicRow, axes: SingleValuedAxes): void {
+  private checkPhraseExclusivity(row: Pick<IRTopicRow, 'body'>, axes: SingleValuedAxes): void {
     const phrases = row.body.filter(
       (s): s is Extract<IRStatement, { kind: 'phrase' }> => s.kind === 'phrase',
     );
@@ -2548,6 +3178,47 @@ class Analyzer {
       const owner = this.findEntitySilent(decl.owner);
       if (!owner) continue;
       for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+    }
+
+    // Greeting-row bodies are entity-owned the same way (ADR-320 D4), and
+    // manner beats mint owner-scoped phrase keys deterministically from
+    // declaration order (`manner-<row>-<beat>`) so compiles stay
+    // byte-identical (ADR-320 D5); pass 2 (applyManner) re-derives the
+    // same keys for the IR rows.
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-greetings') {
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+      } else if (decl.kind === 'define-exchange' || decl.kind === 'define-initiative') {
+        // Exchange and initiative row bodies are entity-owned the same
+        // way (ADR-320 D4/D7): inline phrases register owner-scoped.
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+      } else if (decl.kind === 'define-conversation') {
+        // Thread bodies are entity-owned the same way (ADR-320 D14):
+        // beats, transition rows, and the conclusion alike.
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        for (const beat of decl.beats) this.collectInlineTexts(beat.body, owner.id);
+        for (const body of [decl.onParting, decl.onResuming, decl.onRefusing, decl.conclusion]) {
+          if (body) this.collectInlineTexts(body, owner.id);
+        }
+      } else if (decl.kind === 'define-manner') {
+        const owner = this.findEntitySilent(decl.owner);
+        if (!owner) continue;
+        decl.rows.forEach((row, r) => {
+          row.lines.forEach((mline, b) => {
+            if (mline.kind !== 'beat') return;
+            this.registerPhrase(DEFAULT_LOCALE, `${owner.id}.manner-${r}-${b}`, {
+              strategy: null,
+              variants: [{ text: mline.text, markers: [] }],
+              span: mline.span,
+            });
+          });
+        });
+      }
     }
   }
 
@@ -5176,6 +5847,27 @@ class Analyzer {
       }
       case 'media':
         return this.lowerMediaStatement(stmt, scope);
+      case 'then-open':
+        // ADR-320 D4/D8: the word is data (a chat client may render an
+        // invitation differently); same-owner existence is
+        // checkConversationTargets' gate, after every exchange has folded.
+        return { kind: 'then-open', word: stmt.word, exchange: stmt.exchange, span: stmt.span };
+      case 'deflect': {
+        // ADR-320 D8: entity tier resolves here; membership in the
+        // owner's own topic table is checkConversationTargets' gate. An
+        // unresolved entity lowers to the empty-text marker — the miss is
+        // already reported, and the target check skips it.
+        if (stmt.target.kind === 'entity') {
+          const id = this.resolveEntityId(stmt.target.ref);
+          if (!id) return { kind: 'deflect', target: { kind: 'text', primary: '' }, span: stmt.span };
+          return { kind: 'deflect', target: { kind: 'entity', id }, span: stmt.span };
+        }
+        return { kind: 'deflect', target: { kind: 'text', primary: stmt.target.text }, span: stmt.span };
+      }
+      case 'leave':
+        return { kind: 'leave', span: stmt.span };
+      case 'hold-tongue':
+        return { kind: 'hold-tongue', span: stmt.span };
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);
@@ -5816,7 +6508,67 @@ class Analyzer {
         // names are load errors — never a guess.
         this.requireOpenCondition(cond.condition, cond.span, cond.kind === 'any-of' ? 'any' : 'no');
         return { kind: cond.kind, condition: cond.condition };
+      case 'subject-changes':
+        // ADR-320 D9: the scene's thread-abandonment notice — no operands;
+        // evaluation is the scene runtime's.
+        return { kind: 'subject-changes' };
+      case 'asked':
+        // ADR-320 D4: repetition word over the enclosing row's topic —
+        // words are the parser's closed set; the runtime owns the counting.
+        return { kind: 'asked', word: cond.word };
       case 'predicate': {
+        // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
+        // topic, not an entity — intercept before entity resolution, and
+        // normalize exactly as `knows` topics do.
+        if (cond.predicate.kind === 'recency' || cond.predicate.kind === 'was-discussed') {
+          const topicWords =
+            cond.subject.kind === 'ref' ? cond.subject.ref.words
+            : cond.subject.kind === 'bare' ? cond.subject.words
+            : null;
+          if (!topicWords || topicWords.length === 0) {
+            this.diagnostics.error(
+              cond.predicate.kind === 'recency' ? 'analysis.recency-topic' : 'analysis.discussed-topic',
+              `Expected a topic name before \`${cond.predicate.kind === 'recency' ? `is ${cond.predicate.word}` : 'was discussed'}\` — the subject is the topic being tested.`,
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const topic = normalizeTopic(topicWords.join(' '));
+          if (cond.predicate.kind === 'recency') {
+            const node: IRCondition = { kind: 'recency', topic, word: cond.predicate.word };
+            return cond.predicate.negated ? { kind: 'not', operand: node } : node;
+          }
+          return { kind: 'discussed', topic };
+        }
+        // ADR-320 D14: `<thread> is concluded` takes the SUBJECT as a
+        // thread key — intercept before entity resolution, and validate
+        // the key against the story's declared `define conversation`
+        // blocks (a typo here would otherwise be silently false forever).
+        if (cond.predicate.kind === 'concluded') {
+          const threadWords =
+            cond.subject.kind === 'ref' ? cond.subject.ref.words
+            : cond.subject.kind === 'bare' ? cond.subject.words
+            : null;
+          if (!threadWords || threadWords.length === 0) {
+            this.diagnostics.error(
+              'analysis.concluded-thread',
+              'Expected a thread key before `is concluded` — the subject is the `define conversation` key being tested.',
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const thread = normalizeTopic(threadWords.join(' '));
+          if (!this.conversationKeys.has(thread)) {
+            this.diagnostics.error(
+              'analysis.unknown-conversation',
+              `\`${thread}\` is not a declared conversation — \`is concluded\` tests a \`define conversation\` key${this.suggestText(thread, [...this.conversationKeys])}.`,
+              cond.predicate.span,
+            );
+            return { kind: 'condition', name: '' };
+          }
+          const node: IRCondition = { kind: 'concluded', thread };
+          return cond.predicate.negated ? { kind: 'not', operand: node } : node;
+        }
         const subject = this.resolveValue(cond.subject, scope);
         switch (cond.predicate.kind) {
           case 'is': {

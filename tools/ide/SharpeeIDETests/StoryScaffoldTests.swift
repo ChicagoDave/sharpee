@@ -23,7 +23,8 @@ final class StoryScaffoldTests: XCTestCase {
         try Self.write("story.story.template", """
         story
           title: {{STORY_TITLE}}
-          authors: {{AUTHOR}}
+          authors:
+            {{AUTHOR}}
           id: {{STORY_ID}}
           story-version: 0.1.0
           ifid: {{IFID}}
@@ -63,7 +64,10 @@ final class StoryScaffoldTests: XCTestCase {
         let story = try String(contentsOf: dir.appendingPathComponent("the-lost-key.story"),
                                encoding: .utf8)
         XCTAssertTrue(story.contains("title: The Lost Key"))
-        XCTAssertTrue(story.contains("authors: Ada"))
+        // The list form the real template ships (packages/devkit/templates/
+        // story-chord/story.story.template) — an inline `authors: Ada` is
+        // rejected by the compiler as `parse.header-inline-list`.
+        XCTAssertTrue(story.contains("authors:\n    Ada"))
         XCTAssertTrue(story.contains("id: the-lost-key"))
         XCTAssertTrue(story.contains("description: An adventure"))
         XCTAssertNotNil(story.range(of: #"ifid: [0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}"#,

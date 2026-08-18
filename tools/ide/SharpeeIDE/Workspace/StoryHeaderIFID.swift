@@ -85,7 +85,8 @@ enum StoryHeaderIFID {
         var idIndent: String?
         var lastFieldIndex: Int?
         var lastIndent = "  "
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { break }
             if field.key == "id", idIndex == nil {
                 idIndex = index
@@ -93,6 +94,16 @@ enum StoryHeaderIFID {
             }
             lastFieldIndex = index
             lastIndent = field.indent
+            index += 1
+            // Step over a list-valued field's items (`authors:` and its
+            // authors), or the scan stops mid-header and the insert lands
+            // inside the list, emptying it.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                lastFieldIndex = index
+                index += 1
+            }
         }
         let insertAfter = idIndex ?? lastFieldIndex ?? storyIndex
         let indent = idIndent ?? lastIndent
@@ -125,9 +136,18 @@ enum StoryHeaderIFID {
     private static func locate(in source: String) -> Found? {
         let lines = StoryHeaderLines.split(source)
         guard let storyIndex = lines.firstIndex(where: { StoryHeaderLines.isStoryKeyword($0) }) else { return nil }
-        for index in (storyIndex + 1)..<lines.count {
+        var index = storyIndex + 1
+        while index < lines.count {
             guard let field = StoryHeaderLines.field(in: lines[index]) else { return nil }
             if field.key == "ifid" { return Found(index: index, field: field) }
+            index += 1
+            // Step over a list-valued field's items, or the search ends on the
+            // first one and never sees an `ifid:` that follows the list.
+            guard field.value.isEmpty else { continue }
+            while index < lines.count,
+                  StoryHeaderLines.isListItem(lines[index], under: field.indent) {
+                index += 1
+            }
         }
         return nil
     }

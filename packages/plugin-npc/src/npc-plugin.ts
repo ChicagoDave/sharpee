@@ -51,7 +51,10 @@ export class NpcPlugin implements TurnPlugin {
       playerLocation: ctx.playerLocation,
       playerId: ctx.playerId,
       // ADR-310 Phase 5: observation input for character-model NPCs.
-      ...(ctx.actionEvents ? { actionEvents: ctx.actionEvents } : {})
+      ...(ctx.actionEvents ? { actionEvents: ctx.actionEvents } : {}),
+      // ADR-320 Phase 8: scene moves emit conversation sounds through the
+      // engine's per-turn buffer (eavesdropping via spatial propagation).
+      ...(ctx.emitSound ? { emitSound: ctx.emitSound } : {})
     });
 
     const move = ctx.actionEvents?.find((e) => e.type === 'if.event.actor_moved');

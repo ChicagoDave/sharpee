@@ -1,0 +1,11 @@
+<p><strong>Feelings</strong> point at a target: <code>feels &lt;disposition&gt; &lt;target&gt;</code>, where the disposition and its preposition are one unit — <code>despises</code>, <code>hates</code>, <code>dislikes toward</code>, <code>wary of</code>, <code>neutral</code>, <code>likes</code>, <code>trusts toward</code>, <code>devoted to</code>. A block declares at most one feeling per target; a second line naming the same person is <code>analysis.feels-duplicate</code>, on the grounds that two simultaneous readings of one relationship is an authoring mistake rather than nuance.</p>
+<p><strong>Knowledge</strong> is <code>knows &lt;topic&gt;, &lt;source&gt;, &lt;confidence&gt;</code>. The source says how they came by it — <code>witnessed</code>, <code>told</code>, <code>inferred</code>, <code>assumed</code>, <code>hallucinated</code> — and the confidence says how firmly they hold it: <code>uncertain</code>, <code>suspects</code>, <code>believes</code>, <code>certain</code>. The pair is the point. Something witnessed and certain behaves differently from the same fact inferred and suspected, and rows can read either half.</p>
+<p><code>thinks &lt;fact&gt; is &lt;value&gt;, &lt;confidence&gt;, &lt;source&gt;</code> records a belief about a declared fact's value, which is how one person can be wrong about something the story knows. <code>spreads &lt;topic&gt; to &lt;audience&gt;</code> lets knowledge travel on its own — <code>trusted</code>, <code>allied</code>, or <code>anyone</code> — so a secret told to the wrong person arrives elsewhere without the author scripting the journey.</p>
+<pre><code class="language-chord">create Jonas Reed
+  a person, proper
+  feels devoted to Marta Kell
+  feels dislikes toward the Vault
+  knows the-ledger-burning, witnessed, certain
+  knows the-rumour, inferred, suspects
+  thinks the ledger is forged, certain, witnessed
+  spreads the-ledger-burning to trusted</code></pre>

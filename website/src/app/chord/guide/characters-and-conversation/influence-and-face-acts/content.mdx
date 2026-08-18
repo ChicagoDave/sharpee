@@ -1,0 +1,35 @@
+**Influence** is a standing effect one person has on the people around
+them, declared as `influence <name>, <mode>, <range>` … `end influence`.
+The mode is `passive` or `active`; the range is `proximity` (whoever is
+near), `room`, or `targeted`. Inside, `makes mood <word>` and `makes
+threat <level>` say what the influence does to someone who does not
+resist — threat levels run `safe`, `uneasy`, `wary`, `threatened`,
+`cornered`, `desperate`.
+
+Influence can be resisted, and both outcomes are authorable: `phrase
+<key> on witnessed` fires when it lands, `phrase <key> on resisted` when
+someone shrugs it off. Whether a given person resists is read from their
+own model, so the same intimidating presence genuinely plays differently
+across a room — which is the reason to reach for influence rather than
+writing the reaction into each topic row by hand.
+
+A **face-act** is a moment where a person is seen losing face: `backs
+down`, `shows fear`, `admits fault`, `pleads`, `accepts insult`, `caught
+lying`. These are observable events rather than declarations — when one
+happens in front of others, the witnesses record it, and it travels the
+same way any other knowledge does (see [Feelings &
+knowledge](/chord/guide/characters-and-conversation/feelings-and-knowledge)).
+That is what lets a character be treated differently later because of
+something they did in public.
+
+```chord
+create Jonas Reed
+  a person, proper
+
+  influence intimidation, active, proximity
+    makes mood fearful
+    makes threat wary
+    phrase jonas-looms on witnessed
+    phrase jonas-looms-resisted on resisted
+  end influence
+```

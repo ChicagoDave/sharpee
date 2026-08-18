@@ -1,0 +1,16 @@
+<p>An <strong>exchange</strong> is a question the other person asks <em>you</em>. <code>define exchange &lt;key&gt; for &lt;person&gt;</code> lists the replies that are available while it is open, and it is opened from a row with <code>then asks &lt;key&gt;</code> (or <code>then invites &lt;key&gt;</code>, which offers rather than presses).</p>
+<p>Rows come in three kinds. <code>answer &quot;yes&quot;, &quot;aye&quot;:</code> matches what the player says, with aliases; <code>answer the &lt;entity&gt;:</code> matches naming a thing rather than a phrase. An act row such as <code>on leaving:</code> fires when the player does something instead of replying. <code>on silence:</code> fires when they say nothing at all — and silence is always available, so an exchange can never trap a player who simply will not answer.</p>
+<p>The header takes an optional strength: <code>passive</code>, <code>assertive</code>, or <code>blocking</code>. A blocking exchange holds the floor — other subjects are refused until it resolves — while a passive one lets the conversation drift. Reach for <code>blocking</code> only when the character genuinely would not let a question go, because it takes the conversation away from the player until it is answered.</p>
+<p>Row bodies are ordinary statements, so an answer can change state, and <code>leave</code> ends the scene as part of the reply.</p>
+<pre><code class="language-chord">define exchange the-offer for Will Kemp, blocking
+  answer &quot;yes&quot;, &quot;aye&quot;, &quot;sworn&quot;:
+    phrase kemp-sworn
+    change Will Kemp to sworn
+  answer the Tiring-House:
+    phrase kemp-looks-around
+  on leaving:
+    phrase kemp-calls-after
+    leave
+  on silence:
+    phrase kemp-offer-silence
+end exchange</code></pre>

@@ -1,0 +1,25 @@
+title: Save mid-beat (Phase 10.6, persistence first half)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: Open the thread, advance one beat, save through the
+  platform engine mid-beat, then continue - establishing the golden
+  line the restored run must reproduce.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/p10-threads.story
+    stories/character-acceptance/tests/transcripts/p10-save.transcript
+    stories/character-acceptance/tests/transcripts/p10-saved-restore.transcript
+
+---
+
+> ask prompter about the shortfall
+[OK: contains "It began with a missing shilling."]
+
+> tell me more
+[OK: contains "Then a missing pound, and nobody blinked."]
+
+$save p10-mid-beat
+
+# The uninterrupted run's next beat - the golden line.
+> continue
+[OK: contains "By Michaelmas the drawer was bare."]

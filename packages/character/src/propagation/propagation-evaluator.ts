@@ -181,7 +181,8 @@ function hasSharedAlliance(
 /**
  * Find facts the speaker is willing and able to share with a specific listener.
  * Filters by the spreads whitelist / withholds blacklist, already-told
- * (read from the speaker's trait, ADR-310 D17), and player-leverage.
+ * (read from the speaker's trait, ADR-310 D17). Hearsay spreads onward
+ * like any knowledge (ADR-320 D11; the old leverage gate is retired).
  */
 function findEligibleFacts(
   ctx: PropagationContext,
@@ -195,11 +196,15 @@ function findEligibleFacts(
   const spreadsSet = new Set(profile.spreads ?? []);
   const eligible: string[] = [];
 
+  // NOTE (ADR-320 D11, David's ruling 2026-08-17): hearsay spreads like
+  // any knowledge — the old leverage gate, which blocked every
+  // told-sourced fact (killing gossip chains after one hop and stranding
+  // player claims), is deleted. Selectivity is the authored surfaces:
+  // `spreads nothing`, topic whitelists, `withholds`, audiences.
   for (const topic of Object.keys(knowledge)) {
     if (speaker.trait.hasTold(listener.id, topic)) continue;
     if (!meetsAudienceRule(topic, profile, speaker.trait, listener)) continue;
     if (!meetsTopicFilter(topic, withholds, spreadsSet)) continue;
-    if (!meetsLeverageRule(topic, profile, knowledge)) continue;
 
     eligible.push(topic);
   }
@@ -248,28 +253,6 @@ function meetsTopicFilter(
 }
 
 /**
- * Check whether a topic passes the player-leverage filter.
- * When playerCanLeverage is false, facts sourced from the player are blocked.
- *
- * @param topic - The knowledge topic to check
- * @param profile - Speaker's propagation profile
- * @param knowledge - Speaker's knowledge map
- * @returns Whether the topic passes the leverage rule
- */
-function meetsLeverageRule(
-  topic: string,
-  profile: PropagationProfile,
-  knowledge: CharacterModelTrait['knowledge'],
-): boolean {
-  if (profile.playerCanLeverage) return true;
-  const fact = knowledge[topic];
-  if (fact && (fact.source === 'told' || fact.source as string === 'told by player')) {
-    return false;
-  }
-  return true;
-}
-
-/**
  * Check if a listener matches a specific audience type for a per-fact override.
  */
 function checkAudienceForListener(
@@ -290,6 +273,20 @@ function checkAudienceForListener(
 
 /**
  * Apply pace to limit how many facts are shared per turn.
+ *
+ * The default is `eager` — every eligible fact at once. That was briefly
+ * changed to `gradual` while chasing a doubled line (Burbage passing Kemp both
+ * `the-blow-up` and `norwich` printed "Richard Burbage mentions something to
+ * Will Kemp." twice, since the witnessed message names no topic). `gradual`
+ * hid the duplicate but was the wrong layer, and it cost the story a beat:
+ * with one fact per turn, a pair who meet ONCE — Kemp storms off straight
+ * after the blow-up — can never exchange the second fact, so `norwich` never
+ * reached Kemp and his "you are no more a Norwich man than I am a Roman"
+ * recognition became unreachable.
+ *
+ * The real cause was that the platform narrated an arrival the STORY already
+ * dramatizes (`arrivalNarratedTopics`, see `recordTransfer`). With that fixed,
+ * `eager` prints one line rather than two AND the payoff survives.
  */
 function applyPace(
   eligibleFacts: string[],

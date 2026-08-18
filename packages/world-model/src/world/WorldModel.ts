@@ -46,7 +46,8 @@ import type {
 } from '../capabilities/interceptor-binding.js';
 import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { DialogueSelector } from '../capabilities/dialogue-selector-binding.js';
+import type { DialogueSelectorRegistration } from '../capabilities/dialogue-selector-binding.js';
+import type { SceneRuntimeBinding } from '../capabilities/scene-runtime-binding.js';
 import {
   type WorldState,
   type WorldConfig,
@@ -597,7 +598,15 @@ export class WorldModel implements IWorldModel {
    * concrete-class surface only (not on IWorldModel); same lifecycle as
    * the binding maps above: never serialized, re-registered on story load.
    */
-  private dialogueSelector?: DialogueSelector;
+  private dialogueSelector?: DialogueSelectorRegistration;
+
+  /**
+   * ADR-320 D4: the per-world scene runtime the conversation actions
+   * drive (open on address, record moves, apply directives, resolve the
+   * floor). Registered by the character subsystem; same lifecycle as the
+   * binding maps above: never serialized, re-registered on story load.
+   */
+  private sceneRuntime?: SceneRuntimeBinding;
 
   /**
    * ADR-240: the per-world evaluator registry — named world-evaluators
@@ -894,23 +903,44 @@ export class WorldModel implements IWorldModel {
   }
 
   /**
-   * Register the world's dialogue selector (ADR-310 D15). Idempotent
-   * last-wins, scoped to this instance; re-register on every story load.
+   * Register the world's dialogue selector (ADR-310 D15; probe extension
+   * per ADR-320 D16). Idempotent last-wins, scoped to this instance;
+   * re-register on every story load.
    *
-   * @param selector - The selector the conversation actions consult
+   * @param registration - The selection surface the conversation actions consult
    */
-  registerDialogueSelector(selector: DialogueSelector): void {
-    this.dialogueSelector = selector;
+  registerDialogueSelector(registration: DialogueSelectorRegistration): void {
+    this.dialogueSelector = registration;
   }
 
   /**
    * The registered dialogue selector, or `undefined` when no character
    * subsystem wired one (the actions then keep their default behavior).
    *
-   * @returns The selector, or `undefined`
+   * @returns The registration, or `undefined`
    */
-  getDialogueSelector(): DialogueSelector | undefined {
+  getDialogueSelector(): DialogueSelectorRegistration | undefined {
     return this.dialogueSelector;
+  }
+
+  /**
+   * Register the world's scene runtime (ADR-320 D4). Idempotent
+   * last-wins, scoped to this instance; re-register on every story load.
+   *
+   * @param binding - The scene runtime the conversation actions drive
+   */
+  registerSceneRuntime(binding: SceneRuntimeBinding): void {
+    this.sceneRuntime = binding;
+  }
+
+  /**
+   * The registered scene runtime, or `undefined` when no character
+   * subsystem wired one (dispatch then never opens or mutates scenes).
+   *
+   * @returns The binding, or `undefined`
+   */
+  getSceneRuntime(): SceneRuntimeBinding | undefined {
+    return this.sceneRuntime;
   }
 
   getExitResolver(traitType: string): ExitResolver | undefined {

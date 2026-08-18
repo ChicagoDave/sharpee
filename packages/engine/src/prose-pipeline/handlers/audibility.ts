@@ -61,6 +61,15 @@ export function handleAudibilityHeard(
   if (!data || typeof data !== 'object') return [];
   if (!data.kind || !data.audibilityTier) return [];
 
+  // Listener filtering (ADR-320 Phase 8): now that stories may opt NPCs
+  // into ListenerTrait, only the player's own deliveries render as prose —
+  // the filter this header's note always scheduled. Events without a
+  // target (older emitters, unit fixtures) keep rendering.
+  const playerId = context.world?.getPlayer()?.id;
+  if (playerId && event.entities?.target && event.entities.target !== playerId) {
+    return [];
+  }
+
   // Defense-in-depth: the dispatcher already filters `silent`, but
   // never render it if one slips through.
   if ((data.audibilityTier as string) === 'silent') return [];

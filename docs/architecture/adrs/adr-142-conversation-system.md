@@ -7,7 +7,8 @@ conversation as a projection of character state; no procedural generation, no
 surprises the author didn't plan for — are reaffirmed as ADR-320 D3, and its
 conversation-lifecycle implementation (`@sharpee/character`'s
 `conversation/lifecycle.ts`) becomes the scene skeleton in ADR-320 D4. The pre-Chord
-mechanism sketches below are replaced by ADR-320 D4–D13.
+mechanism sketches below are replaced by ADR-320 D4–D14 (the NPC-continuation flow —
+an NPC continuing unprompted across turns — by D14's conversation threads).
 
 ## Date: 2026-04-03
 

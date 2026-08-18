@@ -1,0 +1,12 @@
+<p>A <a href="/chord/guide/characters-and-conversation/conversation-threads">thread</a> advances on the character's own turns, but the player can also ask for the next beat directly. Four inputs do it: <strong>tell me more</strong>, <strong>continue</strong>, <strong>go on</strong>, and <strong>and?</strong> — the frozen set, all equivalent.</p>
+<p>These need no authoring. Any story with a thread gets them, and they resolve their target implicitly: the prompt finds the co-located person whose active thread has a beat ready, so the player does not have to name who they are prompting. Nothing is guessed beyond that — if no thread is ready, the prompt is inert and falls to the ordinary &quot;talk to whom?&quot; response rather than inventing a reply.</p>
+<p>A prompt is refused in exactly the cases a beat is not available: before the thread's <code>opens when</code> holds, while a beat's own <code>when</code> gate is waiting, while an <a href="/chord/guide/characters-and-conversation/exchanges">exchange</a> holds the floor, and after the conclusion has fired. That last one matters — a concluded thread never re-claims its topics, so pressing &quot;go on&quot; at a settled matter does not restart it.</p>
+<p>Worth knowing when authoring: because the player can pull beats through at their own pace, a thread's beats should each stand on their own as a reply. Write them as things the character would say next, not as fragments that only parse in sequence.</p>
+<pre><code>&gt; ask shakespeare about the book
+The pen stops. &quot;The book stays in this room.&quot;
+
+&gt; tell me more
+He watches what you look at.
+
+&gt; go on
+&quot;You always come back to it.&quot;</code></pre>

@@ -202,6 +202,8 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
+             | define-manner | define-greetings            (* ADR-320, frozen 2026-08-17 *)
+             | define-exchange | define-initiative         (* ADR-320, frozen 2026-08-17 *)
              | define-pronouns                             (* ADR-242 *)
              | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
              | override-message | override-messages       (* ADR-255 *)
@@ -630,6 +632,175 @@ topic-key      = name                                      (* entity tier — ma
                                                               topic / analysis.topic-
                                                               entity-collision) *)
 
+define-manner  = "define" "manner" "for" name NL           (* ADR-320 D5 (frozen
+                                                              2026-08-17): the delivery
+                                                              layer — beats and voice
+                                                              color any phrase lacking a
+                                                              more specific authored
+                                                              variant. One block per
+                                                              person (analysis.duplicate-
+                                                              manner-block /
+                                                              analysis.manner-host); at
+                                                              least one row
+                                                              (parse.manner-empty).
+                                                              Rows need NOT be mutually
+                                                              exclusive — layering is the
+                                                              scene runtime's *)
+                 >>> { manner-row }
+                 "end" "manner" NL ;
+manner-row     = "when" condition ":" NL
+                 >>> { "beat" STRING NL
+                     | "voice" WORD NL } ;                 (* beats rotate at runtime,
+                                                              never back-to-back; voice
+                                                              is ONE word, open
+                                                              vocabulary, at most one
+                                                              per row (analysis.manner-
+                                                              voice-duplicate) *)
+
+define-greetings = "define" "greetings" "for" name NL      (* ADR-320 D4 (spelling frozen
+                                                              2026-08-17): scene boundary
+                                                              rows. Person-kind owners
+                                                              (analysis.greetings-host);
+                                                              one block per entity; a
+                                                              boundary answers in one
+                                                              place (analysis.duplicate-
+                                                              greeting) *)
+                   >>> { greeting-row }
+                   "end" "greetings" NL ;
+greeting-row   = greeting-head ":" ( statement            (* one-line response *)
+                                   | NL >>> { statement } ) ;
+greeting-head  = "first" "time"
+               | "on" "return" [ "," absence-words ]      (* absence ages off the pair's
+                                                              last scene close, through
+                                                              the character clock seam *)
+               | "asked" repetition-words                 (* scene visits in this
+                                                              context; runtime owns the
+                                                              counting *)
+               | "on" "leaving" ;
+absence-words  = "again" "so" "soon"
+               | "after" "a" "while"
+               | "after" "days" ;                          (* frozen 2026-08-17 *)
+repetition-words = "once" | "again" | "many" "times" ;     (* frozen 2026-08-17 *)
+
+define-exchange = "define" "exchange" WORD "for" name      (* ADR-320 D4 (frozen
+                                                              2026-08-17): a named
+                                                              exchange point — the
+                                                              response set overlaying the
+                                                              owner's topic table while
+                                                              open. Responses only: the
+                                                              opening line lives in the
+                                                              calling row's `then asks`.
+                                                              Person-kind owners
+                                                              (analysis.exchange-host);
+                                                              one definition per
+                                                              (owner, key) (analysis.
+                                                              duplicate-exchange); at
+                                                              least one row (parse.
+                                                              exchange-empty). No
+                                                              `otherwise` row — a miss
+                                                              falls through to the topic
+                                                              table (D16) *)
+                  [ "," strength-word ] NL                 (* D10: unset = the runtime
+                                                              derives strength from
+                                                              intent *)
+                  >>> { exchange-row }
+                  "end" "exchange" NL ;
+exchange-row   = exchange-head ":" ( statement             (* one-line response *)
+                                   | NL >>> { statement } ) ;
+exchange-head  = "answer" topic-key                        (* what the responder says —
+                                                              the topic-key grammar
+                                                              reused whole; duplicates
+                                                              and cross-tier collisions
+                                                              gate (analysis.duplicate-
+                                                              answer / analysis.answer-
+                                                              entity-collision) *)
+               | "on" "silence"                            (* the responder says nothing
+                                                              — rendered like any
+                                                              response (D8) *)
+               | "on" WORD ;                               (* what the responder does —
+                                                              an act/event word from the
+                                                              existing event-verb
+                                                              register *)
+strength-word  = "passive" | "assertive" | "blocking" ;    (* frozen 2026-08-17; spelled
+                                                              exactly as @sharpee/
+                                                              character's
+                                                              ConversationStrength *)
+
+define-initiative = "define" "initiative" "for" name NL    (* ADR-320 D7 (frozen
+                                                              2026-08-17): authored
+                                                              occasion rows that force —
+                                                              or, via `hold their
+                                                              tongue`, suppress — a
+                                                              seizure. Person-kind owners
+                                                              (analysis.initiative-host);
+                                                              one block per entity
+                                                              (analysis.duplicate-
+                                                              initiative-block); at least
+                                                              one row (parse.initiative-
+                                                              empty). Rows need not be
+                                                              mutually exclusive —
+                                                              most-specific-wins is the
+                                                              scene runtime's *)
+                    >>> { initiative-row }
+                    "end" "initiative" NL ;
+initiative-row = occasion-head [ "," "when" condition ]    (* refinement composes like
+                                                              `on return, after days` *)
+                 ":" ( statement | NL >>> { statement } ) ;
+occasion-head  = "on" "an" "open" "floor"                  (* the author-addressable
+                                                              SceneOccasion kinds;
+                                                              goal-step is deliberately
+                                                              unsurfaced — the goal
+                                                              machinery owns it *)
+               | "on" "silence"
+               | "when" "the" "subject" "changes"          (* the Phase 3 threading
+                                                              condition reused as a
+                                                              head *)
+               | "on" WORD ;                               (* witnessed act/event — the
+                                                              event-verb register *)
+
+define-conversation = "define" "conversation" WORD "for" name (* ADR-320 D14 (frozen
+                                                              2026-08-17): a conversation
+                                                              thread — an author-scripted
+                                                              subject carried beat by
+                                                              beat to a conclusion,
+                                                              across sittings. Person-
+                                                              kind owners (analysis.
+                                                              conversation-host); one
+                                                              definition per (owner, key)
+                                                              (analysis.duplicate-
+                                                              conversation); at least one
+                                                              beat (parse.conversation-
+                                                              no-beat); exactly one
+                                                              conclusion (parse.
+                                                              conversation-no-conclusion /
+                                                              parse.conversation-
+                                                              duplicate-row) *)
+                      [ "," strength-word ] NL             (* governs off-thread
+                                                              transitions: blocking =
+                                                              single-topic completion;
+                                                              unset = intent derives *)
+                      >>> { conversation-row }
+                      "end" "conversation" NL ;
+conversation-row = "about" topic-key NL                    (* the thread's topic filter —
+                                                              the topic-key grammar
+                                                              reused; at most one
+                                                              (parse.conversation-
+                                                              duplicate-row) *)
+                 | "opens" "when" condition NL             (* the NPC-opened entry gate;
+                                                              at most one *)
+                 | "beat" [ "," "when" condition ] ":"     (* 1..n ordered beats; the
+                                                              hold-gate composes like the
+                                                              initiative refinement *)
+                   ( statement | NL >>> { statement } )
+                 | "on" transition-word ":"                (* at most one of each *)
+                   ( statement | NL >>> { statement } )
+                 | "conclusion" ":"                        (* beat n — fires once; the
+                                                              thread is then CONCLUDED
+                                                              and `<key> is concluded`
+                                                              holds *)
+                   ( statement | NL >>> { statement } ) ;
+transition-word = "parting" | "resuming" | "refusing" ;    (* frozen 2026-08-17 *)
+
 define-pronouns = "define" "pronouns" WORD NL              (* ADR-242 D7 (ratchet H3):
                                                               a named pronoun set — five
                                                               named case rows, order
@@ -696,6 +867,30 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               counter mutation, clamped *)
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
+             | "then" ( "asks" | "invites" ) WORD NL       (* ADR-320 D4/D8 (frozen
+                                                              2026-08-17): open the named
+                                                              exchange — same-owner
+                                                              (analysis.then-target); the
+                                                              word is carried as wire
+                                                              data. Conversation rows
+                                                              only (parse.then-context) *)
+             | "deflect" "to" ( name | STRING ) NL         (* ADR-320 D8: redirect to a
+                                                              row of the owner's OWN
+                                                              topic table (analysis.
+                                                              deflect-target); the
+                                                              topic-key tiers. Conversation
+                                                              rows only *)
+             | "leave" NL                                  (* ADR-320 D8: exit the scene
+                                                              — a movement move, world
+                                                              legality consulted at
+                                                              dispatch. Conversation rows
+                                                              only *)
+             | "hold" "their" "tongue" NL                  (* ADR-320 D7: suppress the
+                                                              seizure — initiative rows
+                                                              only (parse.hold-tongue-
+                                                              context), and the row's
+                                                              only statement (analysis.
+                                                              hold-tongue-alone) *)
              | select-on | select-strategy | ordinal-block | each-block ;
 stmt-when    = "when" condition ;                          (* statement-final suffix, D7:
                                                               legal on phrase, emit, change,
@@ -769,6 +964,14 @@ unary        = "not" unary
                                                               position; closed flag set *)
              | ( "any" | "no" ) WORD                       (* E1/E2 quantifiers: only when
                                                               the WORD stands alone *)
+             | "the" "subject" "changes"                   (* ADR-320 D9 (frozen
+                                                              2026-08-17): the scene
+                                                              noticed a live thread
+                                                              abandoned; all three words
+                                                              required *)
+             | "asked" repetition-words                    (* ADR-320 D4: the enclosing
+                                                              row's per-pair ask count
+                                                              read as a word *)
              | WORD                                        (* bare => named-condition or
                                                               state ref, only when a
                                                               connective or end-of-condition
@@ -779,11 +982,26 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                               | "here"                         (* Z4 deictic: subject shares
                                                                   the player's location;
                                                                   entity subjects only *)
+                              | recency-word                   (* ADR-320 D6 (frozen
+                                                                  2026-08-17): the subject
+                                                                  is a TOPIC; triggers only
+                                                                  when the word stands
+                                                                  alone (end of condition
+                                                                  or a connective) *)
+                              | "concluded"                    (* ADR-320 D14 (frozen
+                                                                  2026-08-17): the subject
+                                                                  is a THREAD KEY; same
+                                                                  standalone rule as the
+                                                                  recency words *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
              | ( "has" | "holds" | "wears" ) name
+             | "was" "discussed"                              (* ADR-320 D9: the subject
+                                                                  is a TOPIC; per-pair
+                                                                  discussed-ness *)
              | "can" ( "see" | "reach" ) name
              | compare-op NUMBER ;                            (* ADR-264 D3 symbolic form *)
+recency-word = "fresh" | "recent" | "stale" ;                 (* frozen 2026-08-17 *)
 word-compare = "at" "least" | "more" "than" | "at" "most" | "less" "than" ;
 compare-op   = ">=" | ">" | "<=" | "<" ;                      (* ADR-264: lexed as one token *)
 counter-ref  = WORD | "its" WORD | name "'s" WORD ;           (* ADR-264: a counter, story-global
@@ -798,6 +1016,6 @@ value-expr   = NUMBER | STRING
 name         = [ ARTICLE ] WORD { WORD } ;
 ARTICLE      = "the" | "a" | "an" ;
 
-(* Noun phrases stop at: is has holds wears can and or then to while with.
+(* Noun phrases stop at: is has holds wears can feels knows was and or then to while with.
    State adjectives (open, closed, locked, unlocked, on, off, worn, lit) are
    the plain `is <value>` predicate — a closed analyzer catalog, not syntax. *)

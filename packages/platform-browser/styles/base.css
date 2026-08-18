@@ -242,6 +242,17 @@ ul, ol, menu {
   margin-top: 0;
 }
 
+/* The gap AFTER the banner (GH #264). The flush rule above deliberately keeps
+   the banner pieces stacked, which also left the first room description
+   welded to whichever piece ended the banner. Which piece that is varies —
+   `tail` when the story defines one, otherwise `credit`, otherwise
+   `subtitle` — so `:last-of-type` cannot catch it reliably. Keying on the
+   first NON-banner paragraph that follows any banner piece does not need to
+   know which one ended it. */
+.sharpee-prose-pane p[class*='sharpee-banner-'] + p:not([class*='sharpee-banner-']) {
+  margin-top: 1em;
+}
+
 /* ----- Pre-banner prologue (ADR-298 D3) ----- */
 /* The prologue region sits OUTSIDE the prose pane (before `main`), so it gets
    only the universal reset — no margins at all. That left its paragraphs

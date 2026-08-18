@@ -19,6 +19,21 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
+  // 3.3.0 — ADR-320 D14 amendment, 2026-08-17 (session 13a3e0): conversation
+  // threads, vocabulary frozen by owner the same day. Additive minor
+  // (`define conversation` with the `about` filter, `opens when`, beat rows,
+  // the `on parting|resuming|refusing` transition rows, `conclusion:`, and
+  // the `<thread> is concluded` predicate).
+  // 3.2.0 — ADR-320 Phase 4, 2026-08-17 (session a53a28): the second
+  // conversation grammar slice, vocabulary frozen by owner the same day.
+  // Additive minor (`define exchange` with answer/act/silence rows and the
+  // strength comma-modifier, `define initiative` with the four occasion
+  // heads, `then asks|invites`, `deflect to`, `leave`, `hold their tongue`).
+  // 3.1.0 — ADR-320 Phase 3, 2026-08-17 (session 8e2f49): the conversation
+  // grammar slice, vocabulary frozen by owner the same day. Additive minor
+  // (`define manner`, `define greetings`, recency/discussed/subject-changes/
+  // asked predicates) — the first ordinary minor after the 3.0.0 freeze,
+  // per the freeze note below (Chord 3.0.0 shipped with platform 5.0.x).
   // 3.0.0 — ADR-298, 2026-08-03: the fielded story block. Breaking header
   // grammar (positional `story "Title" by "Author"` removed; closed
   // per-field schema; bare phrase references in prologue:/description:) —
@@ -40,8 +55,8 @@ const PINNED = {
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '3.0.0',
-  ebnfSha256: 'c88bb89fb44bb5b40b41537dd12e40742bd9bc8a2f8ec6a20b620b33a1738ab4',
+  languageVersion: '3.3.0',
+  ebnfSha256: 'ad0219207b6ccff3870abdf6b080467e52ccc7f90043f7f4365dc81c170b3715',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

@@ -53,11 +53,11 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Chord',
-    // The Chord LANGUAGE version (`CHORD_LANGUAGE_VERSION`), currently frozen
-    // at 3.0.0. Not a package version, and not tied to one — each section shows
+    // The Chord LANGUAGE version (`CHORD_LANGUAGE_VERSION`), currently 3.3.0.
+    // Not a package version, and not tied to one — each section shows
     // the version of the thing it documents, which is why this, Sharpee's, and
     // Chord Writer's move independently.
-    version: '3.0.0',
+    version: '3.3.0',
     groups: [
       {
         title: 'Getting Started',
@@ -102,6 +102,26 @@ export const NAV: NavSection[] = [
           { title: 'The statements', href: '/chord/guide/behavior/the-statements' },
           { title: 'The when suffix', href: '/chord/guide/behavior/the-when-suffix' },
           { title: 'Topic tables', href: '/chord/guide/behavior/topic-tables' },
+        ],
+      },
+      {
+        title: 'Characters & Conversation',
+        items: [
+          { title: 'Overview', href: '/chord/guide/characters-and-conversation' },
+          { title: 'Personality & temperament', href: '/chord/guide/characters-and-conversation/personality-and-temperament' },
+          { title: 'Principles', href: '/chord/guide/characters-and-conversation/principles' },
+          { title: 'Mood', href: '/chord/guide/characters-and-conversation/mood' },
+          { title: 'Feelings & knowledge', href: '/chord/guide/characters-and-conversation/feelings-and-knowledge' },
+          { title: 'Goals', href: '/chord/guide/characters-and-conversation/goals' },
+          { title: 'Influence & face-acts', href: '/chord/guide/characters-and-conversation/influence-and-face-acts' },
+          { title: 'Conscience', href: '/chord/guide/characters-and-conversation/conscience' },
+          { title: 'Manner', href: '/chord/guide/characters-and-conversation/manner' },
+          { title: 'Greetings', href: '/chord/guide/characters-and-conversation/greetings' },
+          { title: 'Topic recency', href: '/chord/guide/characters-and-conversation/topic-recency' },
+          { title: 'Exchanges', href: '/chord/guide/characters-and-conversation/exchanges' },
+          { title: 'Initiative', href: '/chord/guide/characters-and-conversation/initiative' },
+          { title: 'Conversation threads', href: '/chord/guide/characters-and-conversation/conversation-threads' },
+          { title: 'Continuation prompts', href: '/chord/guide/characters-and-conversation/continuation-prompts' },
         ],
       },
       {
@@ -329,7 +349,7 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Sharpee',
-    version: '5.0.1',
+    version: '5.1.0',
     groups: [
       { title: 'Platform', items: [{ title: 'What is Sharpee?', href: '/sharpee' }, { title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },

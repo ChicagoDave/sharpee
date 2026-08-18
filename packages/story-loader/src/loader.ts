@@ -34,6 +34,47 @@ import {
   type StoryIR,
 } from '@sharpee/chord';
 import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
+import type { IROnClause } from '@sharpee/chord';
+
+/**
+ * Topics an entity's own TURN-TRIGGERED clauses are gated on knowing.
+ *
+ * A rule like `on every turn while second-day and it knows the-blow-up, once`
+ * fires on the tick the fact ARRIVES and narrates that arrival in the author's
+ * words. The propagation layer reads this set and stays silent for those
+ * topics rather than adding its generic "X mentions something to Y." summary
+ * on top of the staged scene (a moment told twice).
+ *
+ * Only `every-turn` clauses count. A topic row gated `when it knows <topic>`
+ * is a RESPONSE gate — it fires if the player asks, later or never — so it
+ * says nothing about who narrates the arrival and must not suppress anything.
+ * Authors declare none of this; it is read off the compiled story.
+ */
+function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<string> {
+  const topics = new Set<string>();
+  const walk = (condition: IRCondition | null): void => {
+    if (!condition) return;
+    switch (condition.kind) {
+      case 'knows-topic':
+        topics.add(condition.topic);
+        return;
+      case 'and':
+      case 'or':
+        for (const operand of condition.operands) walk(operand);
+        return;
+      case 'not':
+        walk(condition.operand);
+        return;
+      default:
+        return;
+    }
+  };
+  for (const clause of onClauses) {
+    if (clause.binding !== 'every-turn') continue;
+    walk(clause.condition);
+  }
+  return topics;
+}
 import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
@@ -58,9 +99,11 @@ import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlug
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import {
   applyCompiledCharacter,
+  createTraitMemoryAccess,
   temperamentDefsFrom,
   CharacterPhaseRegistry,
   registerCharacterModelPhase,
+  registerCharacterScenes,
   type AppliedCharacter,
   type CompiledStoryOracle,
 } from '@sharpee/character';
@@ -775,7 +818,11 @@ export class ChordStory implements Story {
    * Applied compiled-character results awaiting engine-ready registration
    * (tick-phase configs, mood-decay baselines), by WORLD entity id.
    */
-  private readonly appliedCharacters: Array<{ worldId: string; applied: AppliedCharacter }> = [];
+  private readonly appliedCharacters: Array<{
+    worldId: string;
+    applied: AppliedCharacter;
+    arrivalNarratedTopics: ReadonlySet<string>;
+  }> = [];
 
   /**
    * The character-phase registry, built at load (authored configs, the
@@ -828,7 +875,11 @@ export class ChordStory implements Story {
         ...(this.ir.customPersonalities?.length ? { customPersonalities: this.ir.customPersonalities } : {}),
         resolveEntityId: (irId) => this.requireWorldId(irId, irEntity),
       });
-      this.appliedCharacters.push({ worldId, applied });
+      this.appliedCharacters.push({
+        worldId,
+        applied,
+        arrivalNarratedTopics: arrivalNarratedTopicsOf(irEntity.onClauses),
+      });
     }
 
     // Build the phase registry NOW (authored data only, D17): the topic
@@ -836,8 +887,9 @@ export class ChordStory implements Story {
     // actions, which precede engine-ready registration of the tick phase.
     if (this.appliedCharacters.length > 0) {
       const registry = new CharacterPhaseRegistry();
-      for (const { worldId, applied } of this.appliedCharacters) {
+      for (const { worldId, applied, arrivalNarratedTopics } of this.appliedCharacters) {
         registry.register(worldId, {
+          ...(arrivalNarratedTopics.size > 0 ? { arrivalNarratedTopics } : {}),
           ...(applied.propagationProfile ? { propagationProfile: applied.propagationProfile } : {}),
           ...(applied.goalDefs ? { goalDefs: applied.goalDefs } : {}),
           ...(applied.movementProfile ? { movementProfile: applied.movementProfile } : {}),
@@ -860,6 +912,48 @@ export class ChordStory implements Story {
       }
       registry.setOracle(this.storyOracle());
       this.characterRegistry = registry;
+    }
+
+    // ADR-320 Phase 7: conversation blocks need a modeled owner — scenes
+    // exist only for character-modeled NPCs (ADR-310 D7), so a block on an
+    // unmodeled entity would be silently inert. Loud failure instead
+    // (defensive backstop against rogue IR; the analyzer should gate this).
+    for (const irEntity of this.ir.entities) {
+      const conversationBlocks =
+        (irEntity.exchanges ?? []).length > 0 ||
+        (irEntity.greetings ?? []).length > 0 ||
+        (irEntity.manner ?? []).length > 0 ||
+        (irEntity.initiative ?? []).length > 0;
+      if (conversationBlocks && irEntity.character === undefined) {
+        throw new LoadError(
+          `\`${irEntity.name}\` declares conversation blocks but no character model — scenes need a modeled owner.`,
+          irEntity.span,
+        );
+      }
+    }
+
+    // ADR-320 Phase 7: with modeled characters present, register the
+    // scene runtime (trait-backed memory, authored initiative) and the
+    // D15 dialogue registrant serving compiled exchange/greeting rows.
+    // Per-world and last-wins-idempotent like every binding (ADR-207/208).
+    if (this.appliedCharacters.length > 0) {
+      // Phase 10.4 (D14): the thread hooks register only when a `define
+      // conversation` block exists — no threads, no tick-side thread
+      // step, byte-identical behavior (the D2 cost leg).
+      const hasThreads = this.ir.entities.some((e) => (e.conversations ?? []).length > 0);
+      registerCharacterScenes(world, createTraitMemoryAccess(world), {
+        authoredFor: this.runtime.buildAuthoredInitiative(world),
+        // Phase 8: the initiative RUNNER — forcing row bodies execute
+        // through the loader (occurrence keys, pins, claims).
+        seizeInitiative: this.runtime.buildInitiativeSeizure(world),
+        ...(hasThreads
+          ? {
+              threadTurn: this.runtime.buildThreadTurn(world),
+              threadTurnReady: this.runtime.buildThreadTurnReady(world),
+            }
+          : {}),
+      });
+      world.registerDialogueSelector(this.runtime.buildDialogueRegistration());
     }
   }
 
@@ -1534,6 +1628,14 @@ export class ChordStory implements Story {
   /**
    * End the story: set the if-domain ending flag and build the blessed
    * ending event (Prerequisite 3). The caller (rule evaluator) emits it.
+   *
+   * The phrase key rides as `endingMessageId`, NOT as a top-level
+   * `messageId`: the engine's ADR-097 domain-message handler renders any
+   * event carrying `data.messageId`, and the `win`/`lose` statement already
+   * emits the phrase itself through the ordinary chord phrase path (as
+   * `kill` does). Carrying it as `messageId` here printed every story's
+   * final paragraph twice (GH #274). Clients that want to identify the
+   * ending still get the key — it just no longer renders itself.
    */
   triggerEnding(world: WorldModel, ending: StoryEndingKind, messageId?: string): ISemanticEvent {
     world.setStateValue(STORY_ENDING_FLAG, ending);
@@ -1542,7 +1644,7 @@ export class ChordStory implements Story {
       type: ending === 'victory' ? StoryEndingEvents.VICTORY : StoryEndingEvents.DEFEAT,
       timestamp: Date.now(),
       entities: {},
-      data: { ending, ...(messageId ? { messageId } : {}) },
+      data: { ending, ...(messageId ? { endingMessageId: messageId } : {}) },
     };
   }
 

@@ -52,12 +52,15 @@ export interface CardsDelegate {
   runColumn(): RunColumnState;
   /** The card's assertion lines (authored claims or live defaults). */
   assertionLines(ordinal: number): SourceLine[];
-  /** The turn's per-NPC explain groups (ADR-318 D11) — empty when the turn
-   *  had no character-model activity. */
+  /** The turn's explain groups — per-NPC character rows (ADR-318 D11)
+   *  plus scene wire and exchange affordances (ADR-320 D12); empty when
+   *  the turn had no character-model or scene activity. */
   characterExplain(ordinal: number): ExplainGroup[];
-  /** A panel line's ✓ — assert this character event as a channel claim on
-   *  the card (the claim's fragments pin the event; the run validates it). */
-  onAssertCharacter(ordinal: number, fragments: string[]): void;
+  /** A panel line's ✓ — assert this event as a channel claim on the card
+   *  (the claim's fragments pin the event on the line's own channel —
+   *  `character`, `scene`, or `exchange-affordances`; the run validates
+   *  it). */
+  onAssertCharacter(ordinal: number, fragments: string[], channel: string): void;
   /** A line's ✕ — delete that assertion through its DeleteRef. */
   onRemoveAssertion(del: DeleteRef): void;
   /** The region a room belongs to (Story IR), or undefined — grouping
@@ -456,7 +459,8 @@ export class CardsView {
     characterButton.className = 'ts-npc-toggle';
     characterButton.style.display = 'none';
     characterButton.title =
-      "Explain this turn's character-model activity — forces, lies, conscience, transitions";
+      "Explain this turn's character-model activity — forces, lies, conscience, "
+      + 'transitions, conversation scenes, and open-exchange responses';
     characterButton.addEventListener('click', () => {
       const card = this.cards.get(ordinal);
       if (!card) return;
@@ -579,10 +583,10 @@ export class CardsView {
           assert.className = 'ts-character-assert';
           assert.textContent = 'assert';
           assert.title =
-            'Assert this event — a channel claim on `character` the test run validates';
+            `Assert this event — a channel claim on \`${line.claimChannel}\` the test run validates`;
           assert.addEventListener('click', (event) => {
             event.stopPropagation();
-            this.delegate.onAssertCharacter(ordinal, line.fragments);
+            this.delegate.onAssertCharacter(ordinal, line.fragments, line.claimChannel);
           });
           row.appendChild(assert);
         }

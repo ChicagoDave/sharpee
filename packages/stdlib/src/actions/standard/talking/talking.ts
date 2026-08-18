@@ -16,13 +16,24 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
+import { type IFEntity, TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { TalkedEventData } from './talking-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
-import { consultDialogueSelector } from '../../helpers/dialogue-selector.js';
+import {
+  consultDialogueSelector,
+  exchangeGrips,
+  isExchangeGripped,
+  isThreadGripped,
+  markExchangeGripped,
+  markThreadGripped,
+  resolveImplicitThreadPartner,
+  threadGrips,
+  runConversationScene,
+  resolveSceneIntrusion
+} from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -51,7 +62,7 @@ export const talkingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.TALKING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => talkTarget(ctx)
     }
   ]
 };
@@ -63,10 +74,21 @@ interface TalkingSharedData {
   targetName?: string;
   messageId?: string;
   eventData?: TalkedEventData;
+  /** The partner a targetless continuation prompt resolved to (ADR-320 D14). */
+  implicitTarget?: IFEntity;
 }
 
 function getTalkingSharedData(context: ActionContext): TalkingSharedData {
   return context.sharedData as TalkingSharedData;
+}
+
+/**
+ * The person this firing talks to: the parsed direct object, or — for a
+ * targetless continuation prompt ("tell me more" / "continue" / "go on" /
+ * "and?", ADR-320 D14) — the partner validation resolved implicitly.
+ */
+function talkTarget(context: ActionContext): IFEntity | undefined {
+  return context.command.directObject?.entity ?? getTalkingSharedData(context).implicitTarget;
 }
 
 export const talkingAction: Action & { metadata: ActionMetadata } = {
@@ -94,8 +116,17 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
-    const target = context.command.directObject?.entity;
-    
+    let target = context.command.directObject?.entity;
+
+    // A targetless firing is a continuation prompt (ADR-320 D14): the
+    // partner is the co-located NPC whose thread claims a talk-to intent.
+    // No claimant leaves the default no-target path standing (the frozen
+    // forms are inert without an active, ready thread).
+    if (!target) {
+      target = resolveImplicitThreadPartner(context);
+      if (target) getTalkingSharedData(context).implicitTarget = target;
+    }
+
     // Must have someone to talk to
     if (!target) {
       return {
@@ -156,9 +187,22 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
+    // ADR-320 D16: an open exchange claiming this input grips the firing —
+    // the innermost active context wins outright, so the interceptor
+    // phases (the topic table's dispatch path) are skipped for it and no
+    // table bookkeeping runs. The probe is pure; selection happens in report.
+    if (exchangeGrips(context, target, { type: 'talk-to' })) {
+      markExchangeGripped(context);
+    } else if (threadGrips(context, target, { type: 'talk-to' })) {
+      // ADR-320 D14: a conversation thread claiming the input grips the
+      // firing the same way — the precedence extends innermost-wins:
+      // open exchange > active thread > parked resume > topic table.
+      markThreadGripped(context);
+    } else {
+      // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+      const postVeto = runPostValidate(context, state);
+      if (postVeto) return postVeto;
+    }
 
     return { valid: true };
   },
@@ -166,7 +210,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // Talking has NO world mutations - it's a social interaction
     // Analyze conversation state and store in sharedData for report phase
-    const target = context.command.directObject?.entity!;
+    const target = talkTarget(context)!;
     const sharedData = getTalkingSharedData(context);
 
     // Build event data
@@ -234,11 +278,11 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
 
     const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
+    if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    const target = context.command.directObject?.entity;
+    const target = talkTarget(context);
 
     const messageId = blockedMessageId(context, result);
 
@@ -269,15 +313,31 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit talked event with messageId for text rendering
     // params carry EntityInfo for the formatter chain (ADR-158)
-    const target = context.command.directObject?.entity;
+    const target = talkTarget(context);
+
+    // ADR-320 D10 (Phase 8): addressing an NPC seated in a foreign scene
+    // challenges that scene first — `blocks` refuses the consult and the
+    // default response stands; `yields`/`protests` close it and the
+    // address proceeds.
+    const intrusion = target
+      ? resolveSceneIntrusion(context, target)
+      : { blocks: false, events: [] };
 
     // ADR-310 D15: character-modeled NPCs greet through the world's
     // dialogue selector; no selection falls through to the default.
     // Selector messageIds are fully-qualified — no action-id prefix.
-    const selection = target
+    const selection = target && !intrusion.blocks
       ? consultDialogueSelector(context, target, { type: 'talk-to' })
       : undefined;
 
+    // ADR-320 D4: the address drives scene lifecycle (open on first
+    // contact, move stamp, the selection's directives) — mutations run
+    // through the world's registered scene runtime, never here.
+    const sceneEvents = target && !intrusion.blocks
+      ? runConversationScene(context, target, selection)
+      : [];
+
+    events.push(...intrusion.events);
     events.push(context.event('if.event.talked', {
       messageId: selection?.messageId ?? `${context.action.id}.${sharedData.messageId || 'talked'}`,
       params: {
@@ -288,9 +348,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     }));
     // Author-channel events from the selection (ADR-318 D11)
     events.push(...(selection?.authorEvents ?? []));
+    events.push(...sceneEvents);
 
     const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.talked');
+    if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostReport(context, state, events, 'if.event.talked');
 
     return events;
   },

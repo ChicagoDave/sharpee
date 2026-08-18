@@ -287,6 +287,49 @@ Settled ground this ADR builds on and does not re-open:
   competition entry — it is not a platform fixture, and no platform work builds on
   its content.
 
+- **D14 — Conversation threads: authored continuations to a conclusion.** (Amendment,
+  2026-08-17 — David: NPC-driven continuation is the most important conversational
+  surface and needs depth; requirements stated in session 13a3e0, design in
+  `docs/work/adr-320-conversation/conversation-threads-design.md`.) A **thread** is an
+  author-scripted conversation about one subject that the NPC carries forward beat by
+  beat to a defined conclusion — across as many sittings as it takes.
+  - **Construct**: `define conversation <key> for <name>[, <strength>]` — an `about`
+    topic filter (topic-key grammar reused), an optional `opens when <condition>`
+    (the NPC opens the thread himself when it holds and he can take the floor), 1..n
+    ordered `beat:` rows (conversation-row bodies; `beat, when <condition>` holds
+    position until true; a beat's `then asks` holds until its exchange closes), the
+    transition rows `on parting:` / `on resuming:`, an `on refusing:` row for the
+    blocking case, and a required `conclusion:` row.
+  - **Advance**: one beat per turn the owner holds the floor while the thread is
+    active (through the existing initiative/floor path — disposition, interruption,
+    and decay unchanged), AND on a player continuation prompt ("tell me more" /
+    "continue" / "go on" / "and?" — the frozen prompt list). Either side can move
+    the conversation; neither must.
+  - **Transitions** (a conversation may not happen in one flow): per pair, at most
+    one ACTIVE thread; others are PARKED with their cursors held or CONCLUDED. An
+    off-thread ask while a thread is active is governed by the active thread's
+    strength — the frozen `passive`/`assertive`/`blocking` words: passive parks
+    (rendering `on parting` if authored), assertive protests via `on parting` then
+    parks, **blocking enforces single-topic completion** — the ask is refused back
+    into the thread, serving the authored `on refusing:` row when present and
+    re-serving the current beat otherwise. World acts remain exempt (D8).
+  - **Conclusion is state**: the `conclusion` beat fires once; the thread stops
+    claiming its topics; the predicate **`when <key> is concluded`** becomes true for
+    rows, greetings, manner, goals, and endings; the thread's topics record as
+    discussed.
+  - **Persistence**: the per-pair cursor and status live beside conversation memory
+    on the trait, ride save/restore, and survive scene closes — `on resuming` renders
+    at the next engagement whether the gap was three turns, a day boundary, or a
+    restore.
+  - **Wire**: thread lifecycle joins the scene channel
+    (`character.thread.opened/beat/parked/resumed/concluded`) and an active thread's
+    continuability joins the affordance surface (D12, additive).
+  - **Dispatch precedence extends D16's innermost-wins**: open exchange > active
+    thread > parked-thread resume > topic table.
+  - Deliberately not in v1: branching beat trees (conditions, exchanges, and deflects
+    are the branching surface) and NPC↔NPC threads (D10's one-machinery discipline
+    stands).
+
 ## Implementation
 
 Packages that change (the ADR-310 idiom — named here, contracted at planning time):
@@ -321,6 +364,20 @@ Packages that change (the ADR-310 idiom — named here, contracted at planning t
   parsing already exist; exchanges reinterpret meaning, not syntax — any new
   player-facing verb would be its own discussion) and `lang-en-us` (no platform
   player-facing text: every rendered word is authored, per ADR-310 D12).
+  **Amended by D14 (2026-08-17)**: the parser carve-out narrows once — `parser-en-us`
+  gains the continuation-prompt forms ("tell me more" / "continue" / "go on" /
+  "and?") as thread-advance input, the discussion D14 is; everything else about the
+  carve-out stands, and `lang-en-us` remains untouched.
+
+**D14 amendment scope (2026-08-17)**: `chord` (the `define conversation` block, rows,
+gates, `is concluded` predicate; version bump + pin), `world-model` (per-pair thread
+cursor/status beside conversation memory; thread wire kinds), `character` (thread
+runtime: activation, switch/park/resume, beat advance on the floor path, `opens when`
+through initiative; the #273 seize-runner fix lands here), `story-loader`
+(registration, beat serving through the D15 selector, evaluator, affordance
+snapshot), `stdlib` (dispatch precedence, strength-governed transition enforcement),
+`parser-en-us` (prompt forms, above), `engine` (mid-beat save/restore proof), and the
+demonstration story reworked onto threads.
 
 **TS-level contracts are the implementation plan's first deliverable**, before any
 phase codes against them — the scene and conversation-memory state shapes, the wire
@@ -403,6 +460,16 @@ involved.
 13. **The demonstration story.** The theatre story (D13) plays end-to-end via
     `dist/cli/sharpee.js`, exercising every construct above; its player task is
     specified before mechanism work begins (Consequences).
+14. **Conversation threads (D14).** A thread's beats advance on both paths (the
+    owner's floor turns and the player's continuation prompts); a `blocking` thread
+    refuses off-topic asks through its authored `on refusing:` row (current beat
+    re-served when absent) until `conclusion` fires; `passive`/`assertive` threads
+    park with their transition rows and resume — including across a scene close, a
+    day boundary, and a save/restore — via `on resuming:`; `when <key> is concluded`
+    is false before the conclusion beat and true after, asserted on persisted state;
+    thread lifecycle and continuability ride the D12 wire. Rejection legs: an
+    `opens when` thread never opens while its condition is false or the floor is
+    denied; a concluded thread never re-claims its topics.
 
 ## Session
 
@@ -410,4 +477,11 @@ Direction stated by David, 2026-08-16, session 02073f, immediately after ADR-310
 acceptance closed: research the conversational side the character features were built
 for, starting from the merged prior art, as an ADR rather than a plan. Drafted same
 session; no implementation authorized.
+
+**D14 amendment**: 2026-08-17, session 13a3e0, during Phase 10 — the demonstration
+story exposed that the continuation surface (ContinuationEntry) was types with no
+authoring construct and no runtime consumer. Requirements stated by David; the five
+design questions (block spelling, transition-row words, conclusion predicate,
+blocking-refusal shape, advance paths) resolved by David the same session; design
+record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 

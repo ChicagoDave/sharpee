@@ -1,0 +1,27 @@
+title: The rumor moves whether you hear it or not (Phase 8)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: The scene the player only caught as fragments still moved
+  the fact - Piers answers from knowledge he could only have received in
+  that overheard conversation.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/phase8-scenes.story
+    stories/character-acceptance/tests/transcripts/p8-effects-land.transcript
+
+---
+
+# The scene happens far away; the player catches fragments at best.
+> look
+[OK: contains "You catch fragments of speech."]
+
+> west
+[OK: contains "Corridor"]
+
+> west
+[OK: contains "Green Room"]
+
+# The effect landed regardless: Piers now holds the rumor.
+> ask piers about the rumor
+[OK: contains "Everyone backstage has it by now."]
+[OK: not contains "First I've heard"]

@@ -1,0 +1,44 @@
+A **thread** is a conversation a character carries across turns, scenes,
+and days until it reaches its end. `define conversation <key> for
+<person>` holds an ordered list of `beat:` rows and exactly one
+`conclusion:`. Each beat is one move; the thread remembers where it got
+to, and picks up there next time.
+
+`about "…", "…"` names the topics the thread claims while it is active,
+and `opens when <condition>` gates it from starting at all — so a thread
+can wait for a grievance to be aired, or for a night to pass. A beat can
+carry its own gate too (`beat, when <condition>:`), which holds that step
+until its moment comes rather than skipping it.
+
+The transition rows say what happens at the edges. `on parting:` is the
+line when the talk drifts away and the thread parks; `on resuming:` is
+how it is picked back up; `on refusing:` is what a **blocking** thread
+says when you try to talk about something else. Strength works as it does
+for [exchanges](/chord/guide/characters-and-conversation/exchanges): a
+`passive` thread parks politely and waits, a `blocking` one keeps
+steering back. Omit `on refusing:` on a blocking thread and it simply
+re-serves its current beat — the character says it again, word for word,
+which reads as someone who will not be deflected.
+
+`<key> is concluded` is a condition any row can read, false before the
+conclusion fires and true after, and it persists across save and restore
+— so the rest of the story can know the matter was settled.
+
+```chord
+define conversation the-defection for Will Kemp, blocking
+  about "the rose", "the offer", "henslowe"
+  opens when the grievance was discussed and the-blow-up is stale
+  beat, when the-blow-up is not fresh and the-blow-up is not recent:
+    phrase kemp-hears-the-rose
+  beat:
+    phrase kemp-names-his-price
+    then asks the-offer
+  on refusing:
+    phrase kemp-holds-the-thread
+  on resuming:
+    phrase kemp-takes-it-up
+  conclusion:
+    phrase kemp-concluded-sworn when Will Kemp is sworn
+    phrase kemp-concluded-cooled
+end conversation
+```

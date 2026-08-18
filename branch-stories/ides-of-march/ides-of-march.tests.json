@@ -1,0 +1,380 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The clown looks you over the way he looks over a crowd: all at once, and none of it missed. \"A new face among the hired men. Well, the house eats faces. Kemp.\" He does not bow; the name is the bow."
+        ]
+      },
+      "command": "talk to kemp",
+      "type": "turn",
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "\"Small ale for small hours.\" He drinks like a man toasting a full house anyway. \"I have danced from London to Norwich on worse, friend, and been grateful to the barrel.\""
+                ]
+              },
+              "command": "ask kemp about the ale",
+              "type": "turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The mirth drops off him like a mask coming down. \"Set down for them, is what I am to speak now. SET DOWN. Seven years I filled this company's purse out of my own legs, and the new house has no room in it for Kemp.\" He looks at the unfinished galleries. \"Well. Rooms can be found elsewhere.\""
+        ]
+      },
+      "command": "ask kemp about the grievance",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage"
+        ]
+      },
+      "command": "north",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tragedian stops mid-thought and turns the whole of his attention on you, which is like standing where the light falls. \"I do not know your face.\""
+        ]
+      },
+      "command": "talk to burbage",
+      "type": "turn",
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "The stage goes very quiet. \"Henslowe's man. In my tiring-house, in my company, in my HOUSE.\" He does not raise his voice; the house raises it for him. Two hired men take your arms, and Bankside takes you back the way it takes all spoiled goods.",
+                  "Bankside is not wide, but it has never seemed wider than it does from the wrong side of the Globe's doors, with the company's eyes on your back and Henslowe's silver still sewn in your coat. The Admiral's Men will hear of it by supper. Henslowe does not pay for a burned man."
+                ]
+              },
+              "command": "ask burbage about henslowe",
+              "type": "turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Norwich.\" He turns the word over once, finds it ordinary, and hands it back. \"Well, the provinces keep better discipline than the town. See you bring it with you.\" The full weight of his attention releases you, mostly."
+        ]
+      },
+      "command": "ask burbage about norwich",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"So you said.\" The word goes into whatever ledger Burbage keeps behind his eyes. \"Norwich men are punctual, at least. Be that.\""
+        ]
+      },
+      "command": "tell burbage about norwich",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging"
+        ]
+      },
+      "command": "east",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "look",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kemp's head comes round before the sentence is done. \"Not NOW, friend.\" The voice is dead level, which from Kemp is shouting. \"Ask me of roses and Henslowes some other hour, when the boards have cooled.\""
+        ]
+      },
+      "command": "ask kemp about the rose",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Hear my price before you name Philip's.\" He counts it off on his fingers, showman even now. \"The jig restored, every afternoon, at MY length. My name on the bills, big as the play's. And no poet's set-down-for-them in my scenes — the yard writes my lines with me, fresh, every house.\" He leans back. \"Cheap, for what walks out of this company when I do.\""
+        ]
+      },
+      "command": "tell me more",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Well. You know what I am owed and you know what I am worth, which puts you ahead of this company on both counts.\" He sets the pot down and gives you the whole of his attention, a thing crowds pay for. \"So ask it. Ask me the question Philip sent across the river in your mouth.\""
+        ]
+      },
+      "command": "go on",
+      "type": "turn",
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "\"No.\" He straightens, and the warmth goes out like a snuffed wick. \"Then we have been two men passing an evening, and nothing said.\"",
+                  "You hear: \"\"Then it is finished.\" He says it lightly, and the lightness is the armour. \"The Rose was asked, and the Rose was answered, and Kemp keeps his own counsel from here. We shall not speak of it again.\"\""
+                ]
+              },
+              "command": "ask kemp about no",
+              "type": "turn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Yes, he says. Plain as a bell.\" Kemp leans in, and the yard drops out of his voice entirely. \"You are no more a Norwich man than I am a Roman, and only Henslowe's own would carry this errand. GOOD. A lie in the offer would have insulted me; a liar bearing it means the silver is real.\" He puts out his hand. \"Tell Philip the clown is his. Sworn.\"",
+          "You hear: \"\"Done, then, and done plainly.\" He claps his hands once, the sound of a house letting go its breath. \"Tell Philip: the clown comes to the Rose, jigs and all, and the Globe may bury its Caesar with full honours. This talk is finished, friend — and finished WELL.\"\""
+        ]
+      },
+      "command": "ask kemp about yes",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging",
+          "The second night. Across the river the city sleeps easy; on this bank, nobody does. Morning comes cold and clear: the last day of rehearsal. Tomorrow, Caesar opens the Globe, and everything not carried across Bankside by then stays here for good."
+        ]
+      },
+      "command": "east",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage"
+        ]
+      },
+      "command": "north",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tiring-House",
+          "The tiring-house, behind the stage: racks of robes and armour, a property table, and the company's papers. Everything the play is made of lives in this room. The door east gives onto the stage."
+        ]
+      },
+      "command": "west",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take the play-book",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage",
+          "You hear: \"Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. \"Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.\"\""
+        ]
+      },
+      "command": "east",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging",
+          "You lie down over the loose board with the play-book beneath it and the clown's handshake still warm in your palm. Tomorrow Caesar opens the Globe to a house with no jig at the end of it; within the month, the Rose will play a Caesar of its own, and Kemp will dance till the galleries shake. Henslowe pays in full, for once, and asks no questions, which from Henslowe is a knighthood. Nobody at the Globe ever learns your name; you were a hired man, and the house eats faces."
+        ]
+      },
+      "command": "east",
+      "type": "turn"
+    }
+  ],
+  "seed": 42,
+  "story": "ides-of-march",
+  "version": 1
+}

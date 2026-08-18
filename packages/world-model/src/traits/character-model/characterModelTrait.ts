@@ -52,9 +52,18 @@ import {
   PerceptionFilterConfig,
   PerceivedEvent,
 } from './character-vocabulary.js';
+import { ConversationMemory, ConversationThreadState } from './conversation-scene.js';
 
-/** Current serialized shape version (ADR-310 D17 format discipline). */
-export const CHARACTER_MODEL_SCHEMA_VERSION = 1;
+/**
+ * Current serialized shape version (ADR-310 D17 format discipline).
+ * v2 (ADR-320 Phase 7): `conversationMemory` added — v1 data (field
+ * absent) reads as an empty record; every reader tolerates the absence,
+ * so no migration pass exists or is needed.
+ * v3 (ADR-320 D14, Phase 10.2): `conversationThreads` added — the same
+ * discipline: pre-v3 data (field absent) reads as an empty record, every
+ * reader tolerates the absence, no migration pass.
+ */
+export const CHARACTER_MODEL_SCHEMA_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 // Data interface
@@ -121,6 +130,20 @@ export interface ICharacterModelData {
 
   /** The lie ledger: own claims and promises per audience (ADR-318 D9). */
   ledger?: LedgerEntry[];
+
+  /**
+   * Per-pair conversation memory (ADR-320 D4/D6/D9; adr-320 contracts §2):
+   * partnerId → this holder's own view of the pair's history. Absent on
+   * pre-v2 data — readers treat absence as an empty record.
+   */
+  conversationMemory?: Record<string, ConversationMemory>;
+
+  /**
+   * Per-pair conversation-thread state (ADR-320 D14; schema v3):
+   * partnerId → thread key → this owner's cursor/status for that thread.
+   * Absent on pre-v3 data — readers treat absence as an empty record.
+   */
+  conversationThreads?: Record<string, Record<string, ConversationThreadState>>;
 
   /**
    * Active conversation marker (ADR-310 D16 lifecycle rule): stamped on
@@ -244,6 +267,16 @@ export class CharacterModelTrait implements ITrait {
   burdenedBy: string[];
   ledger: LedgerEntry[];
 
+  // -- Per-pair conversation memory (ADR-320 Phase 7): partnerId → view --
+  // Rehydrated pre-v2 instances may lack the property entirely (the restore
+  // path is Object.assign, no constructor) — readers tolerate undefined.
+  conversationMemory: Record<string, ConversationMemory>;
+
+  // -- Per-pair thread cursors (ADR-320 D14, schema v3): partnerId → key → state --
+  // The same rehydration tolerance as conversationMemory: pre-v3 instances
+  // may lack the property entirely — readers tolerate undefined.
+  conversationThreads: Record<string, Record<string, ConversationThreadState>>;
+
   // -- Conversation marker (ADR-310 D16): goal pursuit suppression --
   activeConversation?: ActiveConversation;
 
@@ -323,6 +356,28 @@ export class CharacterModelTrait implements ITrait {
     this.pressure = data.pressure ? { ...data.pressure } : { value: 0, band: 'clear' };
     this.burdenedBy = data.burdenedBy ? [...data.burdenedBy] : [];
     this.ledger = data.ledger ? data.ledger.map(e => ({ ...e })) : [];
+
+    // Per-pair conversation memory (ADR-320 Phase 7) — deep-copied so a
+    // shared data literal never aliases live per-pair records.
+    this.conversationMemory = data.conversationMemory
+      ? Object.fromEntries(
+          Object.entries(data.conversationMemory).map(([partnerId, m]) => [
+            partnerId,
+            { ...m, discussedTopics: [...m.discussedTopics], askedCounts: { ...m.askedCounts } },
+          ]),
+        )
+      : {};
+
+    // Per-pair thread cursors (ADR-320 D14, schema v3) — deep-copied so a
+    // shared data literal never aliases live per-pair records.
+    this.conversationThreads = data.conversationThreads
+      ? Object.fromEntries(
+          Object.entries(data.conversationThreads).map(([partnerId, threads]) => [
+            partnerId,
+            Object.fromEntries(Object.entries(threads).map(([key, t]) => [key, { ...t }])),
+          ]),
+        )
+      : {};
 
     // Conversation marker (ADR-310 D16)
     this.activeConversation = data.activeConversation ? { ...data.activeConversation } : undefined;

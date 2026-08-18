@@ -29,7 +29,7 @@ To confirm, open a story and look at the status bar: it names the app's version
 first and the toolchain it resolved second.
 
 ```text
-Chord Writer 1.2.0 · Sharpee 5.0.1 / Chord 3.0.0
+Chord Writer 1.2.0 · Sharpee 5.1.0 / Chord 3.3.0
 ```
 
 <Callout title="Already have the CLI installed?">
@@ -80,6 +80,7 @@ Inside the folder:
 | `fernhill.config.json` | The story's identity. The tool maintains it; keep it in version control and never edit it by hand. |
 | `assets/` | Audio and images the story plays. |
 | `browser/index.html` | A custom page for the browser build. |
+| `WALKTHROUGH.txt` | The complete solution, with every response the game gives. Total spoilers. |
 
 ### From the terminal instead
 
@@ -96,6 +97,40 @@ sharpee test           # replay the recorded tests
 
 Same toolchain either way — the app drives these commands for you, and reports
 the version it resolved in its status bar.
+
+## The Ides of March
+
+The second sample, and a different half of the language. Where Fernhill shows
+the world — rooms, things, puzzles, a night running out — this one shows
+people. Three days before Julius Caesar opens the new Globe, you are
+Henslowe's man among the hired players, sent to carry off a clown and a
+play-book without anyone seeing your face.
+
+Every character in it carries a personality, a temperament, moods that move
+during a scene, things they know and will or will not repeat, and
+conversations they steer back to whether you want them to or not. It is the
+worked example for
+[Characters & Conversation](/chord/guide/characters-and-conversation).
+
+**[Download The Ides of March (.zip, 20 KB)](/downloads/the-ides-of-march.zip)**
+
+Open it exactly as you open Fernhill: unzip, move the folder somewhere you
+keep your work, then **Open…** it in Chord Writer and press **⌘B**.
+
+Inside the folder:
+
+| File | What it is |
+| --- | --- |
+| `ides-of-march.story` | The whole story. The only file you write. |
+| `ides-of-march.tests.json` | Its tests, recorded by playing in the Testing tab. |
+| `ides-of-march.config.json` | The story's identity. The tool maintains it; keep it in version control and never edit it by hand. |
+| `WALKTHROUGH.txt` | The complete solution, with every response the game gives. Total spoilers. |
+
+Two conversations are worth reading in the source before you play. Kemp's
+defection is a **blocking** thread — he will keep steering back to it until it
+is settled — and Shakespeare's suspicion is a **passive** one, which he lets
+drift and always returns to. When someone has more to say, `tell me more` and
+`go on` pull the next beat.
 
 ## Next
 

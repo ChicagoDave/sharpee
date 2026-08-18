@@ -224,6 +224,9 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("speak to|with :target").mapsTo("if.action.talking").build();
   grammar.define("chat with :target").mapsTo("if.action.talking").build();
   grammar.define("converse with :target").mapsTo("if.action.talking").build();
+  grammar.define("tell me more").mapsTo("if.action.talking").build();
+  grammar.define("continue").mapsTo("if.action.talking").build();
+  grammar.define("go on").mapsTo("if.action.talking").build();
   grammar.define("go out").mapsTo("if.action.exiting").build();
   grammar.define("exit").mapsTo("if.action.exiting").build();
   grammar.define("get out").mapsTo("if.action.exiting").build();

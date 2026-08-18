@@ -1,0 +1,47 @@
+title: Continuation prompts advance a thread (Phase 10.5)
+story: character-acceptance
+author: Sharpee Platform
+seed: 42
+description: The four frozen continuation-prompt forms each advance the
+  active thread exactly one beat through the built bundle; past the last
+  beat the conclusion serves and gates the ledger topic. A prompt with
+  no active thread falls to the default no-target response.
+  Run: node dist/cli/sharpee.js --test
+    --story stories/character-acceptance/chord/p10-threads.story
+    stories/character-acceptance/tests/transcripts/p10-continuation-prompts.transcript
+
+---
+
+# Inert before any thread is active: the default no-target path.
+> continue
+[OK: contains "Talk to whom?"]
+
+# Before the conclusion, the ledger topic serves its ungated line.
+> ask prompter about the ledger
+[OK: contains "The ledger keeps its own counsel."]
+
+# The matching ask opens the thread and serves beat 1.
+> ask prompter about the shortfall
+[OK: contains "It began with a missing shilling."]
+
+# Each frozen prompt form advances exactly one beat.
+> tell me more
+[OK: contains "Then a missing pound, and nobody blinked."]
+
+> continue
+[OK: contains "By Michaelmas the drawer was bare."]
+
+> go on
+[OK: contains "And the master's seal was on every receipt."]
+
+# Past the last beat, the conclusion serves.
+> and?
+[OK: contains "So now you know where the money went."]
+
+# Conclusion is state: the gated ledger line now serves.
+> ask prompter about the ledger
+[OK: contains "Now that you know the whole of it, read the ledger yourself."]
+
+# A concluded thread never re-engages: prompts are inert again.
+> go on
+[OK: contains "Talk to whom?"]

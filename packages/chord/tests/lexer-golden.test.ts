@@ -3,7 +3,9 @@
  * pins `lexer.ts` for the Swift `ChordLexer` port.
  *
  * The corpus (`tests/fixtures/lexer-golden/*.story`) covers the shipped
- * Chord 2.0.0 surface the D7 amendment names; the golden file
+ * Chord 2.0.0 surface the D7 amendment names, plus the 3.1.0–3.3.0
+ * conversation surface (ADR-320: manner, greetings, exchanges, initiative,
+ * conversation threads) in `conversation-surface.story`; the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately
@@ -75,6 +77,37 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'remove from action': /^remove from action /m,
       'counter comparison (symbolic)': />=|<=|< \d|> \d/,
       'counter comparison (word)': /\bis at least\b/,
+      // The ADR-320 conversation surface (Chord 3.1.0–3.3.0). Without these
+      // the corpus file could be gutted or dropped with this suite still
+      // green — the fixture-set drift this guard exists to catch.
+      'define manner': /^define manner for /m,
+      'manner beat row': /^ {4}beat "/m,
+      'manner voice row': /^ {4}voice \w+$/m,
+      'define greetings': /^define greetings for /m,
+      'greetings absence words': /^ {2}on return, (again so soon|after days):$/m,
+      'greetings repetition words': /^ {2}asked (once|again|many times):$/m,
+      'recency predicate': /\bis (fresh|recent|stale)\b/,
+      'threading: was discussed': /\bwas discussed\b/,
+      'threading: subject changes': /\bthe subject changes\b/,
+      'define exchange': /^define exchange /m,
+      'exchange strength modifier': /^define exchange [\w-]+ for .+, (passive|assertive|blocking)$/m,
+      'exchange answer head': /^ {2}answer "/m,
+      'exchange act head': /^ {2}on leaving:$/m,
+      'exchange silence head': /^ {2}on silence:$/m,
+      'define initiative': /^define initiative for /m,
+      'initiative occasion refinement': /^ {2}on an open floor, when /m,
+      'then asks / then invites': /^ {4}then (asks|invites) /m,
+      'deflect to': /^ {4}deflect to /m,
+      'hold their tongue': /^ {4}hold their tongue$/m,
+      leave: /^ {4}leave$/m,
+      'define conversation': /^define conversation [\w-]+ for /m,
+      'conversation about filter': /^ {2}about "/m,
+      'conversation opens when': /^ {2}opens when /m,
+      'conversation beat (plain)': /^ {2}beat:$/m,
+      'conversation beat (gated)': /^ {2}beat, when /m,
+      'conversation transition rows': /^ {2}on (parting|resuming|refusing):$/m,
+      'conversation conclusion': /^ {2}conclusion:$/m,
+      'is concluded predicate': /\bis concluded\b/,
     };
     for (const [construct, pattern] of Object.entries(constructs)) {
       expect(pattern.test(all), `corpus no longer exercises: ${construct}`).toBe(true);
