@@ -1,6 +1,17 @@
 # Session Plan: Live Derived State (ADR-240 implementation)
 
 **Created**: 2026-07-18
+**Plan Status**: DONE (disposed 2026-08-18, session ade288 — done but unmarked).
+All three phases shipped 2026-07-18 in session 80ff54 with dated evidence; see
+`## Status tracking` and `## WORKSTREAM COMPLETE` below. Only the per-phase
+`Status` lines in `## Phases` were ever left stale, which is what kept the
+pre-session audit flagging this plan for a month. The closing commit says
+"ADR-240 live derived state SHIPPED (evaluator registry; recompute deleted)",
+and Phase 3 records that `.current-plan` was already returned to the tutorial
+plan. **Note carried forward**: AC-1..AC-6 satisfaction was FLAGGED to David
+rather than self-ruled, and that confirmation was never given — the work is
+done; the sign-off is the only thing outstanding, and it is not a reason to
+keep the plan live.
 **Overall scope**: Implement ADR-240 — replace the story-loader's cache-and-invalidate derived-property mechanism (`ChordRuntime.recomputeDerived`, stamped into `RoomTrait.blockedExits`/`requiresLight`, invalidated off an eleven-event `chainEvent` trigger list) with point-of-use evaluation through one generic per-world evaluator registry. This closes the staleness bug class found live during the Fernhill tutorial's Kettle guard beat: a Chord `change` statement outside the enumerated trigger list left a blocked exit stale forever. This is a **platform workstream** (`packages/world-model`, `packages/stdlib`, `packages/story-loader`) — a detour discovered by, and blocking, `docs/work/chord-tutorial-story/plan.md`'s Phase 4 (NPCs & conversation, CURRENT — the Kettle guard beat). The umbrella above both is `docs/work/chord-go-live/plan.md` (ADR-233); this workstream does not touch the umbrella directly.
 **Bounded contexts touched**: `packages/world-model` (the registry itself — forced by dependency direction, ADR-240 D6; `VisibilityBehavior`'s darkness read points), `packages/stdlib` (`going`'s blocked-exit read points), `packages/story-loader` (registration replaces stamping; the deleted recompute mechanism). Chord and the IR do not change — the surface's existing promise ("the refusal applies only WHILE the condition holds") is finally kept structurally, not altered.
 **Key domain language**: evaluator registry (`world.registerEvaluator`/`world.evaluate`, D6 — the one generic per-world seam, idempotent last-wins per the ADR-207/208 binding-map convention), key builder (each read point's module owns and exports its own key-string constructor — `exit.blocked.<roomId>.<direction>`, `exit.message.<roomId>.<direction>`, `dark.<roomId>`), point-of-use evaluation (D1 — no cache, no invalidation list, ever), derived vs. static (a `dark while`/`is blocked while` condition is derived and lives only in the registry; a bare `dark`/unconditional block is a plain trait fact, stamped once as today).
@@ -36,7 +47,7 @@
   - `going` (or its `-data.ts` sibling, per the package's 4-file action convention) exports `exitBlockedKey(roomId, direction)` / `exitMessageKey(roomId, direction)` key builders (`exit.blocked.<roomId>.<direction>` / `exit.message.<roomId>.<direction>`). Both `resolveExitEntities()` (`going.ts:109-120`) and `validate()`'s blocked check (`going.ts:245-252`) consult `exitBlockedKey` first; `undefined` falls through to `RoomBehavior.isExitBlocked`/`getBlockedMessage` unchanged (the TS-story path, D2's explicit "leaving TS stories untouched"). A registry `true` result resolves its message via `exitMessageKey` before falling back to `RoomBehavior.getBlockedMessage`; the event shape (`GoingMessages.MOVEMENT_BLOCKED`, `params: { direction, message }`) does not change.
 - **Test gate (rule 13a, mutation-verification convention)**: `packages/world-model` unit tests assert directly on `WorldModel`'s registry state (idempotent overwrite on re-registration with the same key; `evaluate()` returns `undefined` for an unregistered key, not a thrown error or `false`) and on `VisibilityBehavior`'s three call sites (a registered `dark.<roomId>` evaluator returning `true`/`false` overrides a room's stamped `requiresLight` in both directions; an unregistered room's stamped fact is used unchanged). `packages/stdlib` `going` tests assert the same shape for both call sites (a registered `exit.blocked.*` evaluator blocks/unblocks a room with NO `RoomTrait.blockedExits` entry at all — proving the registry path is truly independent of the trait map — and its message comes from `exit.message.*` when registered). Existing `world-model`/`stdlib` suites stay green unchanged (this phase adds a consult-first branch that is a no-op until Phase 2 registers anything — the regression gate for "nothing changed yet" is the existing suite passing byte-for-byte).
 - **Exit state**: The registry exists on `WorldModel`/`AuthorModel`; both `VisibilityBehavior` and `going` consult it first and fall through correctly; zero existing story behavior has changed (nothing registers yet). `pnpm --filter '@sharpee/world-model' test` and `pnpm --filter '@sharpee/stdlib' test` green.
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-18, session 80ff54 — see `## Status tracking`)
 
 ### Phase 2: story-loader cutover — registration replaces stamping, recompute mechanism deleted (D2's write side, D4, AC-1, AC-2, AC-3, AC-4, AC-5)
 - **Tier**: Large
@@ -66,7 +77,7 @@
   - **Flag to David rather than silently editing**: ADR-240's D7 acceptance criteria (AC-1..AC-6) are satisfied — surface for confirmation and add the amendment note to `docs/architecture/adrs/adr-240-live-derived-state.md` only after David confirms, mirroring the G1/G2/G3 closure convention used throughout the go-live workstreams (never unilaterally mark a gate closed).
   - Record the unblock in `docs/work/chord-tutorial-story/plan.md`'s Phase 4 status note (entry-state dependency cleared — the platform detour that blocked the Kettle guard beat is resolved) without touching that plan's own phase content or status value; that plan's Phase 4 remains CURRENT and is that workstream's own work to execute next.
 - **Exit state**: David confirms ADR-240 AC-1..AC-6 satisfied. `docs/context/.current-plan` is repointed to `docs/work/chord-tutorial-story/plan.md` (per this workstream's origin — a detour discovered by, and returning control to, that plan's Phase 4). The `chord-go-live` umbrella is untouched by this workstream; it is two levels above and out of scope here.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-18, session 80ff54 — see `## Status tracking`)
 
 ## Dependency summary
 - Phase 1 has no dependency beyond ADR-240's acceptance (already true) and is purely additive — it can be built and regression-tested in complete isolation from Phase 2, with zero behavior change to any existing story.

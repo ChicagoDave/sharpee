@@ -508,6 +508,45 @@ Propagation double-narration (root-cause fix):
 Build artifacts (regenerated): packages/sharpee/docs/genai-api/*,
 stories/dungeo/src/version.ts
 
+## Housekeeping closed out (David: "fix the audit note and dispose of the stale plans", "run the prune script")
+- **ADR-320 acceptance audit amended**: every row citing an `ides-of-march`
+  `.transcript` now cites a deleted file. Added an amendment recording that the
+  evidence was **re-homed, not lost** — the runs happened on the dates recorded
+  against the files as they then stood, which is what an audit is; coverage now
+  lives in the 38-card tree. It also names the honest gap: the thread
+  transition matrix, the save/restore golden pairs and the `[CHANNEL:]` wire
+  assertions have no tree equivalent yet, so nobody should read the tree as a
+  superset of the retired 212 steps.
+- **`live-derived-state` disposed DONE and archived** — done but unmarked. The
+  file already carried `## WORKSTREAM COMPLETE (2026-07-18, session 80ff54)`
+  and a status block with all three phases DONE; only the per-phase `Status`
+  lines in `## Phases` were stale, which is what kept the audit flagging it for
+  a month. Carried forward: AC-1..AC-6 was FLAGGED to David rather than
+  self-ruled and never confirmed — the work shipped, only the sign-off is out.
+- **`adr-280-chord-writer-project-model` Phase 3 AMENDED, plan closed,
+  archived**. Its deliverable seeded `walkthroughs/*.transcript` and
+  `tests/transcripts/*.transcript` into `sharpee init` — v1 artifacts, which
+  tonight's ruling makes wrong for a Chord scaffold: the branch tester cannot
+  parse them, so `sharpee test` on a fresh scaffold would fail by
+  construction. The amendment names the replacement (one `<story-id>.tests.json`
+  tree, generator + worked examples cited), notes the real-path test needs
+  rewriting with it, and preserves the one piece that survives (dropping
+  `package.json` from the default Chord path in `init.ts`). Phases 3 and 4 are
+  marked **CLOSED, not DONE** — the header states explicitly that nothing
+  claims unimplemented work shipped.
+- **Reference correction found on the way out**: `adr-282-play-to-test`'s plan
+  asserted that saved tests must land at `walkthroughs/` and
+  `tests/transcripts/` for the IDE sidebar to discover them — the same v1
+  assumption. Repointed to the archive path AND corrected, so a future ADR-282
+  session does not build Chord test-saving onto the retired harness.
+- **`prune-devarch-runtime.sh --apply`**: 7 files removed, 20 of 27 session ids
+  retained (the script's designed retention). `git status docs/context/` clean
+  afterward — everything removed was untracked scratch; all 8 session summaries
+  untouched. 21 runtime files remain by design; `--keep 5` would go further if
+  David wants the directory leaner. Note the archival path itself is NOT broken
+  for new sessions — `ade288`'s own log archived correctly on session end; this
+  was historical residue nothing ever swept.
+
 ## Notes
 - Session started: 2026-08-17 23:58 (session ade288); work ran 2026-08-18.
 - Three finalizes: 57d60757 (ADR-320 closure + version bump + IDE header fix),

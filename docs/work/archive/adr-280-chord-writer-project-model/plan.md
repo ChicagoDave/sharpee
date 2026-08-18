@@ -1,5 +1,15 @@
 # Session Plan: Implement ADR-280 — Chord Writer project model (typed artifacts, default home, devkit-owned scaffolding)
 
+**Plan Status**: DONE (2026-08-18, session ade288 — David's instruction "amend
+phase 3, mark the plan completed"). Phases 1 and 2 SHIPPED (default project
+home, typed-artifact sidebar — both closed 2026-07-28 with verified evidence).
+Phases 3 and 4 are CLOSED WITHOUT BEING IMPLEMENTED: Phase 3 never cleared its
+three entry gates and its seeded-test deliverable was superseded by the
+tree-harness ruling (amendment recorded in the phase itself); Phase 4 depended
+on it. **Nothing here claims unimplemented work shipped** — the plan is closed
+because its live work is finished and its remainder needs re-planning, not
+because phases 3-4 were completed.
+
 **Created**: 2026-07-28
 **Overall scope**: Default New Story to `~/Documents/Chord/<name>/`, turn the Chord Writer sidebar from a raw file list into a typed-artifact view (Story/Walkthroughs/Transcript Tests/Assets/Web Template/Other), make `sharpee init` (devkit) the single owner of "what a project is" so the IDE calls it instead of scaffolding independently in Swift, and open the story in the editor the moment New Story finishes. D1-D4 of ADR-280. Work spans `packages/devkit/` (platform change — needs discussion first, per CLAUDE.md) and `tools/ide/` (Swift/Xcode).
 **Bounded contexts touched**: N/A — infrastructure/tooling (authoring-tool UI and CLI scaffolding, no engine/domain behavior change). Per session-planner's DDD-applicability check, this is framed in plain technical terms.
@@ -95,7 +105,35 @@
 - **REAL-PATH TEST (rule 13a)**: run the real `sharpee init <name>` (via the built devkit CLI, not a stubbed writer) into a real temp directory, and assert no `package.json` lands on disk for the default path. Then run the real `sharpee test` **twice, correctly scoped** per ADR-277 D3's bare-run semantics — a bare `sharpee test` (which scans `tests/` only) against the seeded transcript test, and `sharpee test --chain` (or explicit file args) against the seeded `walkthroughs/wt-01-*` — and assert both pass. This is the literal wording of ADR-280 Acceptance 3 ("the seeded walkthrough and transcript test pass under `sharpee test` unmodified") and must not be satisfied by asserting the template strings look right, nor by only exercising one of the two scan modes.
 - **Acceptance criteria covered**: AC3 (seeded content passes `sharpee test` unmodified — real-path tested above). Partial AC1/AC2 groundwork (the artifact set and the CLI-owns-scaffolding shape exist; AC1/AC2's full "New Story creates this and opens it" and "a test pins the IDE invokes the CLI" close in Phase 4).
 - **Xcode/macOS prerequisite**: none — this is Node/TypeScript, buildable and testable under pnpm/vitest on either Linux or macOS.
-- **Status**: CURRENT — but **not startable**: all three entry-state gates above are still open (platform-change discussion, Q-2 seed content from David, and the ADR-286 Web Template seed ruling). Phases 1 and 2 are DONE, so this is the next phase in sequence, not the next phase that can begin.
+- **AMENDED 2026-08-18 (session ade288, David's instruction).** The deliverable
+  above is **superseded in its seeded-test half** and must not be built as
+  written. It specifies seeding `walkthroughs/wt-01-<name>.transcript` and
+  `tests/transcripts/*.transcript` into the scaffold — v1 transcript-harness
+  artifacts. David ruled the same day that **Chord stories never get v1 tests**
+  ("we're never building v1 tests for Chord again"): v1 is the legacy/TS world,
+  and Chord stories test on the tree harness (ADR-302 D16 / ADR-307), where the
+  at-rest form is a single `<story-id>.tests.json` document. A scaffold that
+  seeded transcripts would hand every new Chord author artifacts the branch
+  tester cannot even parse — it has no transcript parser — so `sharpee test`
+  against a fresh scaffold would fail by construction.
+  - **What a future scaffold phase must seed instead**: one
+    `<story-id>.tests.json` tree document. `scripts/make-story-artifacts.mjs`
+    (added 2026-08-18) generates exactly this shape from a real bundle run, and
+    `branch-stories/fernhill` / `branch-stories/ides-of-march` are the worked
+    examples.
+  - **The REAL-PATH TEST above changes with it**: "a bare `sharpee test` … and
+    `sharpee test --chain` against the seeded walkthrough" describes two v1 scan
+    modes that do not apply. The tree equivalent is a single
+    `sharpee test <dir>` run over the seeded document.
+  - **What survives unchanged and is still worth doing**: dropping
+    `package.json` from the default Chord path in `init.ts` — the ADR-258 D2
+    divergence this phase found. That is independent of the harness question.
+- **Status**: CLOSED — amended, not implemented (2026-08-18, session ade288).
+  Never started: all three entry-state gates stayed open for three weeks
+  (platform-change approval, Q-2 seed content, the ADR-286 Web Template
+  ruling), and its seeded-test deliverable is now superseded as above. Closed
+  out with the correction recorded rather than carried as a live phase; the
+  scaffold work is re-planned fresh when David wants it.
 
 ### Phase 4: New Story wiring — devkit-owned scaffolding, open-on-create (D3-D4, IDE half)
 - **Tier**: Large
@@ -111,7 +149,12 @@
 - **REAL-PATH TEST (rule 13a)**: drive the actual New Story path — either the built app's real menu action end-to-end, or the underlying invocation function directly — against the real resolved toolchain (workspace shim, since this is the in-repo dev build), with the target root injected via Phase 1's `StoryHome` override so no test run writes into the real developer's `~/Documents/Chord/`. Assert real files land on disk with real seeded content, and that the story document is really open in the editor's document list afterward — not a mocked subprocess result. Separately, real-path test both rejection paths: a real pre-existing target directory (collision — Phase 1's test, re-run against the CLI-backed path) and a real induced scaffold failure (e.g., a read-only target directory), asserting no project gets opened in either case.
 - **Acceptance criteria covered**: AC1 (fresh-install New Story creates the full set and opens the story), AC2 (a test pins that the IDE invokes the CLI, not a parallel Swift scaffold — provable now that `StoryScaffold.swift` no longer exists as an alternate path), AC6 (second case here; first case re-verified against the new source of truth). Standing suite-green gate applies.
 - **Xcode/macOS prerequisite**: compiling and running `SharpeeIDETests` for this phase requires Xcode on macOS — same caveat as Phases 1 and 2; a Linux session can write the Swift source but cannot execute or close this phase.
-- **Status**: PENDING
+- **Status**: CLOSED — not started (2026-08-18, session ade288). Its entry state
+  requires Phase 3 done, which never happened. The IDE half is still real work
+  worth doing — `StoryScaffold.swift` remains, so the IDE still scaffolds by a
+  parallel Swift path rather than calling the CLI, which is the "one owner of
+  what a project is" gap ADR-280 exists to close — but it re-plans alongside a
+  corrected Phase 3 rather than surviving as an orphaned phase here.
 
 ## Deferred, not phased here
 

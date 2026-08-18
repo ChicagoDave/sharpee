@@ -66,6 +66,33 @@ D4/D14 promised was found — the two reaffirmed principles (conversation as a
 projection of character state; no procedural generation) hold: threads are authored
 beats gated by authored conditions, selected by character state.
 
+## Amendment — the evidence was re-homed, not lost (2026-08-18, session ade288)
+
+**Every row above that cites an `ides-of-march` `.transcript` cites a file that
+no longer exists.** Later the same day, David ruled that Chord stories do not
+get v1 transcript tests ("we're never building v1 tests for Chord again"), and
+Ides moved from `stories/` to `branch-stories/` — the tree-harness side, per
+ADR-302 D16, where the directory *is* the harness assignment. Its 19
+`.transcript` files were deleted with his authorization. They could not have
+followed: the bundle routes harness by directory, and the branch tester has no
+transcript parser at all (ADR-307 deleted it), so they were unrunnable the
+moment they moved.
+
+**This does not reopen any criterion.** Every run recorded above happened, on
+the date recorded, against the files as they then stood — that is what an
+audit is. What changed afterward is where Ides' coverage lives, not whether
+these criteria were discharged.
+
+Coverage now sits in `branch-stories/ides-of-march/ides-of-march.tests.json` —
+a recorded tree of **38 cards / 45 assertions across 75 commands**, generated
+from a real bundle run by `scripts/make-story-artifacts.mjs` and re-runnable
+with `sharpee test branch-stories/ides-of-march`. It covers the full winning
+arc plus three branches. It does **not** yet cover everything the retired 212
+transcript steps did: the thread transition matrix, the mid-thread and
+mid-exchange save/restore golden pairs, and the `[CHANNEL:]` wire assertions
+have no tree equivalent yet. Anyone re-verifying AC 10–14 from scratch should
+read that as the honest gap rather than assuming the tree is a superset.
+
 ## Verdict (2026-08-18, session ade288)
 
 All 14 ADR-320 acceptance criteria are **DISCHARGED**, evidence re-run this session
