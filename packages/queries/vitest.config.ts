@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
+import { workspaceAliases } from '../../vitest.shared'
 
 export default defineConfig({
   test: {
@@ -8,11 +9,5 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
   },
-  resolve: {
-    alias: {
-      '@sharpee/world-model': resolve(__dirname, '../world-model/src'),
-      '@sharpee/core': resolve(__dirname, '../core/src'),
-      '@sharpee/if-domain': resolve(__dirname, '../if-domain/src'),
-    }
-  }
+  resolve: { alias: workspaceAliases() },
 })

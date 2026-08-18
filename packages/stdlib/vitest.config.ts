@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { workspaceAliases } from '../../vitest.shared'
 
 export default defineConfig({
   test: {
@@ -51,14 +51,5 @@ export default defineConfig({
     },
     testTimeout: 10000
   },
-  resolve: {
-    alias: {
-      '@sharpee/world-model': path.resolve(__dirname, '../world-model/src/index.ts'),
-      '@sharpee/core': path.resolve(__dirname, '../core/src/index.ts'),
-      '@sharpee/if-domain': path.resolve(__dirname, '../if-domain/src/index.ts'),
-      '@sharpee/if-services': path.resolve(__dirname, '../if-services/src/index.ts'),
-      '@sharpee/parser-en-us': path.resolve(__dirname, '../parser-en-us/src/index.ts'),
-      '@sharpee/lang-en-us': path.resolve(__dirname, '../lang-en-us/src/index.ts')
-    }
-  }
+  resolve: { alias: workspaceAliases() },
 })

@@ -44,18 +44,14 @@ jobs:
     # bundle against the dungeo walkthrough, and without a compiled story dist the
     # bundle falls back to loading stories/dungeo/src/index.ts as ESM source,
     # which dies on its directory imports (ERR_UNSUPPORTED_DIR_IMPORT).
+    # No ESM pass here, deliberately: dist-esm/ is for the browser/playground
+    # client bundles, which this job does not build. Tests no longer read it —
+    # every vitest config resolves @sharpee/* to workspace src via
+    # vitest.shared.ts. Before that, transcript-tester resolved through the
+    # `import` export condition into a dist-esm/ CI had never built, which is
+    # what took main red for 3 days (GH #276/#277).
     - name: Build platform packages + dungeo (repokit)
       run: ./repokit build dungeo --no-genai
-
-    # repokit builds the `local` target only (CJS -> dist/). 27 workspace packages
-    # also declare an ESM export condition pointing at dist-esm/, and vitest
-    # resolves through it — so any suite whose module graph reaches a workspace
-    # package via that condition dies on "Failed to resolve entry for package".
-    # Latent until @sharpee/character entered stdlib's graph (ADR-310/318, PR #270),
-    # which is when transcript-tester's barrel-importing suites started failing and
-    # main went red. ~30s.
-    - name: Build ESM target (dist-esm/) for the test runner
-      run: pnpm exec tsf build --target esm
 
     - name: Typecheck
       run: pnpm --filter '@sharpee/sharpee' exec tsc --noEmit

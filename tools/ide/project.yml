@@ -169,9 +169,22 @@ targets:
         # 1.1.0 was built and notarized but never published; it carried the wrong
         # LSMinimumSystemVersion and was superseded before release. Nothing polls
         # a 1.1.0 feed and no 1.1.0 artifact was ever uploaded.
+        #
+        # 1.3.0 — 7 commits since 1.2.0 (4272028f..), led by a data-loss fix:
+        # every story-header reader/writer was blind to list-valued fields, so
+        # toggling a theme corrupted the author's own story header on any real
+        # story (all use `authors:` lists) and StoryHeaderIFID.read returned nil.
+        # Also: the Chord language pin moves 3.0.0 -> 3.3.0, retiring the "IDE is
+        # behind the installed Chord" warning; the docs-tab bundle is regenerated
+        # at 3.3.0 with the 15 new character/conversation pages; and the
+        # explain-NPC-turn panel lands with its click-to-assert round trip.
+        #
+        # A minor, not a patch: the pin move and the explain panel are new
+        # capability, not repair — and an author on 1.2.0 cannot open a 3.3.0
+        # story without the warning this clears.
         # package.sh reads this line for the DMG filenames.
-        CFBundleShortVersionString: "1.2.0"
-        CFBundleVersion: "4"
+        CFBundleShortVersionString: "1.3.0"
+        CFBundleVersion: "5"
         # 11.0, matching MACOSX_DEPLOYMENT_TARGET above — NOT 26.0, which this
         # key carried from the first IDE commit (2f6df711) through 1.0.0 and
         # 1.0.1. Every binary in the bundle is minos 11.0 (verified 2026-08-15
