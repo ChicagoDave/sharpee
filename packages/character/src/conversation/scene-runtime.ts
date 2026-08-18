@@ -11,7 +11,8 @@
  * All turn reads go through the character clock seam (D6).
  *
  * Public interface: OpenSceneOptions, openScene, closeScene,
- *   recordSceneMove, applySceneDirectives, ageScenes.
+ *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
+ *   ageScenes.
  * Owner context: @sharpee/character / conversation
  */
 
@@ -23,11 +24,13 @@ import type {
   SceneStrength,
   SceneDirective,
   SceneWireEvent,
+  ThreadContinuability,
 } from '@sharpee/world-model';
 import { dialogueTurn } from '../character-clock.js';
 import { DEFAULT_DECAY_THRESHOLDS } from './lifecycle.js';
 import { readSceneStore, writeSceneStore, sceneWith } from './scene-store.js';
 import { type ConversationMemoryAccess, recordSceneClosed } from './conversation-memory.js';
+import { parkActiveThreadsOnClose } from './thread-runtime.js';
 
 /** What a caller supplies to open a scene. */
 export interface OpenSceneOptions {
@@ -128,7 +131,11 @@ export function closeScene(
     }
   }
 
-  return [{ kind: 'scene-closed', sceneId, boundary }];
+  // A close never resets a thread — it parks it, cursor held, so the
+  // next engagement resumes via `on resuming` (ADR-320 D14 persistence).
+  const threadWire = parkActiveThreadsOnClose(world, sceneId, scene.participantIds);
+
+  return [...threadWire, { kind: 'scene-closed', sceneId, boundary }];
 }
 
 /**
@@ -166,6 +173,32 @@ export function noteTopicMove(world: WorldModel, sceneId: string, topic: string)
     scene.abandonedTopic = scene.currentTopic;
   }
   scene.currentTopic = topic;
+  writeSceneStore(world, store);
+}
+
+/**
+ * Stamp — or clear — a scene's active-thread continuability snapshot
+ * (ADR-320 D14; the D12 affordance surface). Written HERE because the
+ * scene runtime is the store's single writer; callers (the thread
+ * dispatch and the thread floor turn, Phase 10.4) compute the record via
+ * `threadContinuabilityFor` after each thread mutation. `undefined`
+ * clears it — the record disappears when no thread is active, the
+ * exchange-affordances never-stale discipline.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the affordance describes
+ * @param continuability - The fresh record, or undefined to clear
+ */
+export function stampThreadContinuability(
+  world: WorldModel,
+  sceneId: string,
+  continuability: ThreadContinuability | undefined,
+): void {
+  const store = readSceneStore(world);
+  const scene = store.scenes[sceneId];
+  if (!scene) return;
+  if (continuability === undefined) delete scene.threadContinuability;
+  else scene.threadContinuability = continuability;
   writeSceneStore(world, store);
 }
 

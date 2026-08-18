@@ -86,6 +86,26 @@ export interface SceneBindingOptions {
     witnessedAction?: string,
     audienceId?: string,
   ) => InitiativeSeizure | undefined;
+
+  /**
+   * Take one thread floor turn (ADR-320 D14; Phase 10.4) — the loader
+   * binds compiled `define conversation` blocks here: the owner's ready
+   * thread move executes against the pair's live scene and the spoken
+   * line comes back for the observability surface. Absent = no threads
+   * declared (the tick's thread step no-ops, the D2 cost leg).
+   */
+  threadTurn?: (
+    ownerId: string,
+    partnerId: string,
+    sceneId: string,
+  ) => InitiativeSeizure | undefined;
+
+  /**
+   * Pure probe for `threadTurn`: would the owner take a thread floor
+   * turn toward this partner right now? Consulted before opening a scene
+   * for an `opens when` thread — must not mutate.
+   */
+  threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
 }
 
 // -- The speak-propensity curve (runtime-owned; D7) -------------------------
@@ -228,6 +248,20 @@ export function createSceneRuntimeBinding(
             witnessedAction?: string,
             audienceId?: string,
           ) => options.seizeInitiative!(participantId, occasion, witnessedAction, audienceId),
+        }
+      : {}),
+
+    ...(options.threadTurn
+      ? {
+          threadTurn: (ownerId: string, partnerId: string, sceneId: string) =>
+            options.threadTurn!(ownerId, partnerId, sceneId),
+        }
+      : {}),
+
+    ...(options.threadTurnReady
+      ? {
+          threadTurnReady: (ownerId: string, partnerId: string) =>
+            options.threadTurnReady!(ownerId, partnerId),
         }
       : {}),
   };

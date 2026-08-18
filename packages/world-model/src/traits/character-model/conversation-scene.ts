@@ -23,7 +23,7 @@
 // Type-only in both directions with scene-wire.ts (which imports
 // SceneOpenedBy/SceneBoundaryKind from here) — erased at compile time,
 // so no runtime require cycle.
-import type { ResponseAffordance } from '../../capabilities/scene-wire.js';
+import type { ResponseAffordance, ThreadContinuability } from '../../capabilities/scene-wire.js';
 
 /**
  * Scene grip against interruption (ADR-320 D10): `passive` yields to any
@@ -137,6 +137,17 @@ export interface ConversationSceneState {
    * has ever changed.
    */
   abandonedTopic?: string;
+
+  /**
+   * The pair's active-thread continuability snapshot (ADR-320 D14, the
+   * D12 affordance surface): stamped at thread open/beat/resume time and
+   * cleared when no thread is active (park/conclude) — the
+   * `ExchangeState.responses` discipline, so a mid-thread restore
+   * re-advertises correctly and the channel projection (Phase 10.6) is
+   * pure state. Written only by the scene runtime's
+   * `stampThreadContinuability`.
+   */
+  threadContinuability?: ThreadContinuability;
 }
 
 /**

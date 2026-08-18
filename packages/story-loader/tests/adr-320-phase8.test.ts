@@ -291,6 +291,49 @@ describe('Phase 8 initiative runner — a forcing `on <act>` row seizes a witnes
   });
 });
 
+describe('#273 — an initiative-row `then asks` opens its exchange in a player scene (Phase 10.3)', () => {
+  const SOURCE_273 =
+    SOURCE.replace(
+      'define initiative for Bram\n  on harm:\n    phrase bram-condemns\nend initiative\n\n',
+      'define initiative for Bram\n  on harm:\n    phrase bram-condemns\n    then asks bram-question\nend initiative\n\n' +
+        'define exchange bram-question for Bram\n  answer "yes":\n    phrase bram-yes\nend exchange\n\n',
+    ) + 'define phrase bram-yes\n  "Good."\nend phrase\n';
+
+  it('the seizure serves and the exchange opens on real scene state — no throw, no wedge', () => {
+    const l = load(SOURCE_273);
+    // Bram must witness the act — seat him in the Hall.
+    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+
+    const attack: ISemanticEvent = {
+      id: 'evt-attack',
+      type: 'if.event.attacked',
+      timestamp: 0,
+      entities: { actor: l.player.id },
+      data: { target: entity(l, 'aemilia').id },
+    };
+    const events = tick(l, 1, [attack]);
+
+    const scene = sceneWith(l.world, entity(l, 'bram').id);
+    expect(scene).toBeDefined();
+    expect(scene!.participantIds).toContain(l.player.id);
+    expect(scene!.openExchange).toMatchObject({
+      exchangeId: 'bram.bram-question',
+      speakerId: entity(l, 'bram').id,
+    });
+    // The advertised response set snapshots (D12) — the authored answer
+    // plus the inalienable silence affordance.
+    expect(scene!.openExchange!.responses.length).toBeGreaterThanOrEqual(2);
+
+    const opened = events.find((e) => e.type === 'character.exchange.opened');
+    expect(opened).toBeDefined();
+    expect(opened!.data).toMatchObject({ exchangeId: 'bram.bram-question', word: 'asks' });
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+
+    // The engine is not wedged — the next turn ticks clean.
+    expect(() => tick(l, 2)).not.toThrow();
+  });
+});
+
 describe('AC12 — mid-scene save/restore through the real SaveRestoreService', () => {
   function providerFor(l: Loaded): ISaveRestoreStateProvider {
     return {

@@ -25,7 +25,10 @@ import {
   consultDialogueSelector,
   exchangeGrips,
   isExchangeGripped,
+  isThreadGripped,
   markExchangeGripped,
+  markThreadGripped,
+  threadGrips,
   runConversationScene,
   resolveSceneIntrusion
 } from '../../helpers/dialogue-selector.js';
@@ -108,6 +111,11 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
     // table bookkeeping runs. The probe is pure; selection happens in report.
     if (exchangeGrips(context, target, askIntent(context))) {
       markExchangeGripped(context);
+    } else if (threadGrips(context, target, askIntent(context))) {
+      // ADR-320 D14: a conversation thread claiming the input grips the
+      // firing the same way — the precedence extends innermost-wins:
+      // open exchange > active thread > parked resume > topic table.
+      markThreadGripped(context);
     } else {
       const postVeto = runPostValidate(context, state);
       if (postVeto) return postVeto;
@@ -119,7 +127,7 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // No world mutation — asking is pure conversation surface.
     const state = getLifecycleState(context);
-    if (state && !isExchangeGripped(context)) runPostExecute(context, state);
+    if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -185,7 +193,7 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
     ];
 
     const state = getLifecycleState(context);
-    if (state && !isExchangeGripped(context)) runPostReport(context, state, events, 'if.event.asked');
+    if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostReport(context, state, events, 'if.event.asked');
     return events;
   }
 };

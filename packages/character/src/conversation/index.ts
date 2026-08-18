@@ -45,7 +45,6 @@ export {
   type ConversationStrength,
   type RedirectResult,
   type ConversationContext,
-  type ContinuationEntry,
   type InitiativeTrigger,
   type ConversationLifecycleState,
   DEFAULT_DECAY_THRESHOLDS,
@@ -115,6 +114,7 @@ export {
   recordSceneMove,
   noteTopicMove,
   applySceneDirectives,
+  stampThreadContinuability,
   ageScenes,
 } from './scene-runtime.js';
 
@@ -145,6 +145,26 @@ export {
   type AuthoredInitiative,
   authoredInitiativeFor,
 } from './initiative.js';
+
+// Conversation-thread runtime (ADR-320 D14; Phase 10.3): per-pair
+// open/resume/park/advance/conclude over the trait's thread state.
+export {
+  type ThreadConditionEval,
+  type ThreadTransition,
+  type ThreadAdvance,
+  type ThreadMove,
+  threadStateFor,
+  activeThreadFor,
+  resolveThreadTransition,
+  openThread,
+  resumeThread,
+  parkThread,
+  advanceThreadBeat,
+  concludeThread,
+  parkActiveThreadsOnClose,
+  readyThreadMove,
+  threadContinuabilityFor,
+} from './thread-runtime.js';
 
 // The world's scene runtime (ADR-320 D4/D7/D10; Phase 6): the binding
 // stdlib's conversation actions drive across the package boundary.

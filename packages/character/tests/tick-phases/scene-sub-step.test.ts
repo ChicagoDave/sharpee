@@ -475,4 +475,68 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       expect(Object.values(readSceneStore(world).scenes)).toHaveLength(0);
     });
   });
+
+  describe('seized then-asks exchange (#273; ADR-320 Phase 10.3)', () => {
+    const seizedExchange = () => ({
+      exchangeId: 'alice.the-question',
+      speakerId: alice.id,
+      openedTurn: 1,
+      responses: [],
+    });
+
+    it('an NPC-opened ask-beat opens its exchange against a player scene — no throw', () => {
+      registerCharacterScenes(world, createTraitMemoryAccess(world), {
+        seizeInitiative: (pid, occasion) =>
+          occasion.kind === 'witnessed-event'
+            ? {
+                events: [],
+                spokenMessageId: 'alice-demands',
+                openExchange: seizedExchange(),
+                openWord: 'asks',
+              }
+            : undefined,
+      });
+
+      const events = tick(1, { actionEvents: [attackEvent()] });
+
+      // The scene opened with the actor (the player) and carries the open
+      // exchange on real store state — the wedge case now serves.
+      const scenes = Object.values(readSceneStore(world).scenes);
+      expect(scenes).toHaveLength(1);
+      expect(scenes[0].participantIds).toContain(player.id);
+      expect(scenes[0].openExchange).toMatchObject({ exchangeId: 'alice.the-question' });
+      const opened = events.find((e) => e.type === 'character.exchange.opened');
+      expect(opened).toBeDefined();
+      expect(opened!.data).toMatchObject({ exchangeId: 'alice.the-question', word: 'asks' });
+    });
+
+    it('an NPC↔NPC seizure drops the open silently — an exchange targets the player', () => {
+      openScene(world, {
+        participantIds: [alice.id, bert.id],
+        openedBy: { kind: 'initiative', openerId: alice.id },
+      });
+      registerCharacterScenes(world, createTraitMemoryAccess(world), {
+        seizeInitiative: (pid, occasion) =>
+          occasion.kind === 'silence'
+            ? {
+                events: [],
+                spokenMessageId: 'alice-fills-the-silence',
+                openExchange: seizedExchange(),
+                openWord: 'asks',
+              }
+            : undefined,
+      });
+
+      tick(1);
+      tick(2);
+      const events = tick(3); // silence occasion fires one turn before decay
+
+      const scene = Object.values(readSceneStore(world).scenes)[0];
+      expect(scene).toBeDefined();
+      expect(scene.openExchange).toBeNull();
+      expect(events.find((e) => e.type === 'character.exchange.opened')).toBeUndefined();
+      // The seizure itself still served (the phrase spoke).
+      expect(sounds.some((s) => s.content?.messageId === 'alice-fills-the-silence')).toBe(true);
+    });
+  });
 });

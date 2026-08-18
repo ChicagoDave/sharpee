@@ -24,6 +24,7 @@
 import type { EntityId, ISemanticEvent } from '@sharpee/core';
 import type {
   ConversationSceneState,
+  ExchangeState,
   SceneOpenedBy,
 } from '../traits/character-model/conversation-scene.js';
 import type { ForceReading } from '../traits/character-model/character-vocabulary.js';
@@ -103,6 +104,17 @@ export interface InitiativeSeizure {
 
   /** Params for the spoken line's template, when any. */
   spokenParams?: Record<string, unknown>;
+
+  /**
+   * The exchange a row's `then asks`/`then invites` would open (#273; ADR-320
+   * Phase 10.3): built by the seize runner, applied by the tick caller — and
+   * only against a scene that includes the player, because an exchange
+   * targets the player. An NPC↔NPC seizure drops it (no-op), never throws.
+   */
+  openExchange?: ExchangeState;
+
+  /** The opening word (`asks`/`invites`) for the author channel, when `openExchange` is set. */
+  openWord?: string;
 }
 
 /**
@@ -193,4 +205,38 @@ export interface SceneRuntimeBinding {
     witnessedAction?: string,
     audienceId?: EntityId,
   ): InitiativeSeizure | undefined;
+
+  /**
+   * Take one thread floor turn (ADR-320 D14; Phase 10.4): the registrar's
+   * thread runner — the loader binds compiled `define conversation`
+   * blocks here. The owner's ready thread move (an `opens when` open, a
+   * parked resume, or the active thread's next beat) executes against the
+   * pair's live scene and the spoken line comes back for the
+   * observability surface. Returns undefined when no thread claims the
+   * moment, when the thread already advanced this turn cycle (one beat
+   * per turn across both paths), or when the next beat is held. Absent
+   * when the registrar bound no runner (no threads declared).
+   *
+   * @param ownerId - The thread owner (world id)
+   * @param partnerId - The conversation partner (world id — the player)
+   * @param sceneId - The pair's live scene
+   * @returns The served turn, or undefined when nothing claims it
+   */
+  threadTurn?(
+    ownerId: EntityId,
+    partnerId: EntityId,
+    sceneId: string,
+  ): InitiativeSeizure | undefined;
+
+  /**
+   * Pure probe for `threadTurn` (ADR-320 D14): would the owner take a
+   * thread floor turn toward this partner right now? Consulted by the
+   * tick BEFORE opening a scene for an `opens when` thread — the probe
+   * must not mutate. Absent alongside `threadTurn`.
+   *
+   * @param ownerId - The thread owner (world id)
+   * @param partnerId - The conversation partner (world id)
+   * @returns True when a thread move is ready
+   */
+  threadTurnReady?(ownerId: EntityId, partnerId: EntityId): boolean;
 }

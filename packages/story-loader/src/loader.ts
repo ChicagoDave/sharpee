@@ -887,11 +887,21 @@ export class ChordStory implements Story {
     // D15 dialogue registrant serving compiled exchange/greeting rows.
     // Per-world and last-wins-idempotent like every binding (ADR-207/208).
     if (this.appliedCharacters.length > 0) {
+      // Phase 10.4 (D14): the thread hooks register only when a `define
+      // conversation` block exists — no threads, no tick-side thread
+      // step, byte-identical behavior (the D2 cost leg).
+      const hasThreads = this.ir.entities.some((e) => (e.conversations ?? []).length > 0);
       registerCharacterScenes(world, createTraitMemoryAccess(world), {
         authoredFor: this.runtime.buildAuthoredInitiative(world),
         // Phase 8: the initiative RUNNER — forcing row bodies execute
         // through the loader (occurrence keys, pins, claims).
         seizeInitiative: this.runtime.buildInitiativeSeizure(world),
+        ...(hasThreads
+          ? {
+              threadTurn: this.runtime.buildThreadTurn(world),
+              threadTurnReady: this.runtime.buildThreadTurnReady(world),
+            }
+          : {}),
       });
       world.registerDialogueSelector(this.runtime.buildDialogueRegistration());
     }

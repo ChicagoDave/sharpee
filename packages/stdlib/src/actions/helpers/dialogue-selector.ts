@@ -43,9 +43,10 @@ import {
 import { ActionContext } from '../enhanced-types.js';
 import { hasTraversableExit } from './exit-legality.js';
 
-/** The sharedData slot marking a firing as exchange-gripped (D16). */
+/** The sharedData slots marking a firing as gripped (D16/D14). */
 interface GripSharedData {
   exchangeGripped?: boolean;
+  threadGripped?: boolean;
 }
 
 /** Whether this firing was marked exchange-gripped during validation. */
@@ -56,6 +57,16 @@ export function isExchangeGripped(context: ActionContext): boolean {
 /** Mark this firing exchange-gripped (validation-time, probe-confirmed). */
 export function markExchangeGripped(context: ActionContext): void {
   (context.sharedData as GripSharedData).exchangeGripped = true;
+}
+
+/** Whether this firing was marked thread-gripped during validation (D14). */
+export function isThreadGripped(context: ActionContext): boolean {
+  return (context.sharedData as GripSharedData).threadGripped === true;
+}
+
+/** Mark this firing thread-gripped (validation-time, probe-confirmed). */
+export function markThreadGripped(context: ActionContext): void {
+  (context.sharedData as GripSharedData).threadGripped = true;
 }
 
 /**
@@ -98,6 +109,36 @@ export function exchangeGrips(
   const ctx = selectionContext(context, target);
   if (!ctx.scene?.openExchange) return false;
   return registration.exchangeClaims(target, intent, ctx);
+}
+
+/**
+ * The PURE thread probe (ADR-320 D14): does a conversation thread claim
+ * this input? Consulted during validation AFTER the exchange probe (the
+ * precedence: open exchange > active thread > parked-thread resume >
+ * topic table) — a thread-gripped firing skips the interceptor phases
+ * exactly as an exchange-gripped one does, so no table bookkeeping runs
+ * for an input the thread will serve (an on-filter advance, a blocking
+ * refusal, an assertive protest, a resume, or an activation).
+ *
+ * @param context - The action context (provides world and player)
+ * @param target - The addressed NPC
+ * @param intent - What the player is conversationally doing
+ * @returns True when the firing is thread-gripped
+ */
+export function threadGrips(
+  context: ActionContext,
+  target: IFEntity,
+  intent: ConversationIntent,
+): boolean {
+  if (!target.has(TraitType.CHARACTER_MODEL)) return false;
+  const registration = context.world.getDialogueSelector();
+  if (!registration?.threadClaims) return false;
+
+  const ctx = selectionContext(context, target);
+  // The exchange stays innermost: an open exchange claiming the input is
+  // exchange-gripped, never thread-gripped (D14's precedence table).
+  if (ctx.scene?.openExchange && registration.exchangeClaims?.(target, intent, ctx)) return false;
+  return registration.threadClaims(target, intent, ctx);
 }
 
 /**

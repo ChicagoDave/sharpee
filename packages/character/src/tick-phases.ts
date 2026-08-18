@@ -34,6 +34,7 @@ import {
   type SceneWireEvent,
   type ConversationSceneState,
   type SceneOccasion,
+  type InitiativeSeizure,
 } from '@sharpee/world-model';
 import type { IRCondition } from '@sharpee/chord';
 import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
@@ -1146,6 +1147,31 @@ function runSceneSubStep(
     return opened.scene;
   };
 
+  /**
+   * Open a seizure's `then asks` exchange (#273; ADR-320 Phase 10.3):
+   * only against a scene that includes the player — an exchange targets
+   * the player, so an NPC↔NPC seizure drops the open silently (the row's
+   * phrase already spoke; the same occasion stays servable in player
+   * scenes, where the open is meaningful). Never a throw, never a wedge.
+   */
+  const applySeizedExchange = (scene: ConversationSceneState, seizure: InitiativeSeizure): void => {
+    if (!seizure.openExchange || !scene.participantIds.includes(ctx.playerId)) return;
+    pushWire(
+      applySceneDirectives(
+        world,
+        scene.id,
+        [{ kind: 'open-exchange', exchange: seizure.openExchange }],
+        memory,
+      ),
+    );
+    events.push(
+      createEvent('character.exchange.opened', {
+        exchangeId: seizure.openExchange.exchangeId,
+        word: seizure.openWord,
+      }),
+    );
+  };
+
   // 1) World acts break live scenes in their room — any grip, `blocking`
   // included (D8's exemption). Resolved and applied through the binding
   // so the interruption wire and memory folds match the dispatch path.
@@ -1185,6 +1211,7 @@ function runSceneSubStep(
         if (scene && seizure.spokenMessageId) {
           speak(scene.id, npc.id, act.actorId, seizure.spokenMessageId, coloringOf(registry, npc.id), seizure.spokenParams);
         }
+        if (scene) applySeizedExchange(scene, seizure);
         break; // one seizure per act — the moment is taken
       }
     }
@@ -1217,6 +1244,36 @@ function runSceneSubStep(
     speak(scene.id, t.speakerId, t.listenerId, t.soundMessageId, t.coloring, t.soundParams);
   }
 
+  // 4a) Thread floor turns (ADR-320 D14; Phase 10.4): a modeled NPC with
+  // a ready thread move toward the co-located player takes the floor —
+  // the owner's-own-turn half of D14's advance clause (the dispatch path
+  // is the other half). An `opens when` thread opens the scene itself;
+  // the pure probe runs first so no scene is minted for nothing. Threads
+  // are owner↔player only (D14 v1), so only pairs with the player are
+  // consulted; an open exchange holds the thread (a `then asks` beat
+  // waits for its exchange to close).
+  if (runtime.threadTurn && runtime.threadTurnReady) {
+    const candidates = npcs
+      .filter(
+        (n) =>
+          n.has(TraitType.CHARACTER_MODEL) &&
+          world.getLocation(n.id) === world.getLocation(ctx.playerId),
+      )
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    for (const npc of candidates) {
+      if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
+      const scene = ensureScene(npc.id, ctx.playerId);
+      if (!scene || scene.openExchange) continue;
+      const turn = runtime.threadTurn(npc.id, ctx.playerId, scene.id);
+      if (!turn) continue;
+      events.push(...turn.events);
+      if (turn.spokenMessageId) {
+        speak(scene.id, npc.id, ctx.playerId, turn.spokenMessageId, coloringOf(registry, npc.id), turn.spokenParams);
+      }
+      applySeizedExchange(scene, turn);
+    }
+  }
+
   // 5) Subject-change occasions (D9's third exposure): a thread abandoned
   // this turn is a moment a disposition can seize — authored rows only,
   // first modeled participant in id order.
@@ -1247,6 +1304,7 @@ function runSceneSubStep(
       if (seizure.spokenMessageId) {
         speak(scene.id, pid, undefined, seizure.spokenMessageId, coloringOf(registry, pid), seizure.spokenParams);
       }
+      applySeizedExchange(scene, seizure);
       break;
     }
   }

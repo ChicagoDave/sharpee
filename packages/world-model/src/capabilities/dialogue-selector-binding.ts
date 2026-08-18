@@ -157,4 +157,20 @@ export interface DialogueSelectorRegistration {
     intent: ConversationIntent,
     ctx: DialogueSelectionContext
   ) => boolean;
+
+  /**
+   * Pure (ADR-320 D14): does a conversation thread claim this input?
+   * True when the pair's ACTIVE thread will serve it (an on-filter
+   * advance, a blocking off-topic refusal, or an assertive protest with
+   * an authored `on parting` row), or when no thread is active and a
+   * parked thread resumes / an unopened thread activates on the matching
+   * filter. The dispatch precedence extends D16's innermost-wins: open
+   * exchange > active thread > parked-thread resume > topic table.
+   * Absent = no threads declared (every firing takes today's path).
+   */
+  threadClaims?: (
+    npc: IFEntity,
+    intent: ConversationIntent,
+    ctx: DialogueSelectionContext
+  ) => boolean;
 }

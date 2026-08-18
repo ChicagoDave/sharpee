@@ -18,7 +18,7 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IRCondition, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import { conditionRequiresSelfBreaking, normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
@@ -62,9 +62,18 @@ import {
 import { exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import {
   absenceWordFor,
+  activeThreadFor,
+  advanceThreadBeat,
   arbitrateConfidedReveal,
   askedWordFor,
   authoredInitiativeFor,
+  openThread,
+  parkThread,
+  readyThreadMove,
+  resumeThread,
+  stampThreadContinuability,
+  threadContinuabilityFor,
+  threadStateFor,
   boundaryKindOnOpen,
   createAuthorEvent,
   createTraitMemoryAccess,
@@ -1344,6 +1353,8 @@ export class ChordRuntime {
         return runtime.matchExchangeRow(open.exchange, intent) >= 0;
       },
 
+      threadClaims: (npc, intent, ctx): boolean => runtime.probeThreadClaims(npc, intent, ctx),
+
       select: (npc, intent, ctx): DialogueSelectionResult | undefined => {
         const world = ctx.world;
         const actorId = ctx.speakerId;
@@ -1394,6 +1405,31 @@ export class ChordRuntime {
               : {}),
             closesExchange: true,
           });
+        }
+
+        // 1.5) Conversation threads (ADR-320 D14): between the exchange
+        // and the boundary/table paths — active-thread advance, blocking
+        // refusal, assertive protest, parked resume, and activation all
+        // serve HERE; the passive transition falls through and the topic
+        // arm parks as it serves.
+        {
+          const threadServe = runtime.serveThreadDispatch({ world, owner, npc, intent, ctx, memory });
+          if (threadServe) {
+            // A thread-served ask still counts against the pair's asked
+            // record when a table row also matched (the arm is skipped
+            // for gripped firings; the unmatched case was recorded above).
+            if (
+              intent.type === 'ask' &&
+              runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0
+            ) {
+              const topicKey = runtime.askedTopicKey(owner, intent);
+              if (topicKey !== undefined) {
+                recordAsked(memory, npc.id, actorId, topicKey);
+                recordAsked(memory, actorId, npc.id, topicKey);
+              }
+            }
+            return threadServe;
+          }
         }
 
         // 2) A scene-opening firing serves the boundary row — unless a
@@ -1477,60 +1513,550 @@ export class ChordRuntime {
       if (!answer || answer.authored !== 'forces') return undefined;
 
       const rowIndex = rows.indexOf(answer.row);
-      const key = `${CHORD_OCCURRENCE_PREFIX}initiative.${owner.id}.${rowIndex}`;
-      const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
-      world.setStateValue(key, occurrence);
-
-      const reports = this.execStatements(
-        answer.row.body.filter((s) => s.kind !== 'hold-tongue'),
-        {
-          world,
-          it: owner.id,
-          occurrence,
-          ...(audienceId !== undefined ? { conversationPartnerId: audienceId } : {}),
-        },
-        'all',
+      return this.deliverSeizureBody(
+        world,
+        owner,
+        participantId,
+        answer.row.body,
+        `${CHORD_OCCURRENCE_PREFIX}initiative.${owner.id}.${rowIndex}`,
+        audienceId,
       );
+    };
+  }
 
-      // The delivery rules, one semantics (pin filter, first phrase wins,
-      // surplus rides the author channel, claims recorded on delivery).
-      const trait = world.getEntity(participantId)?.get(TraitType.CHARACTER_MODEL) as
-        | CharacterModelTrait
-        | undefined;
-      let filtered = reports;
-      if (trait && audienceId !== undefined) {
-        filtered = reports.filter((event) => {
-          if (event.type !== 'chord.phrase') return true;
-          const claims = this.claimsFor(String((event.data as Record<string, unknown> | undefined)?.messageId));
-          return pinAllowsClaim(trait, audienceId, claims);
+  /**
+   * Deliver one seizure-style body (ADR-320 D7/D14 — the tick-side serve
+   * path, shared by the initiative runner and the thread floor turn):
+   * occurrence key advanced, `then asks` extracted into the seizure's
+   * `openExchange` instead of reaching the statement walker (#273 — the
+   * caller opens it only against a player scene), pin rule enforced
+   * against the audience when known, first phrase becomes the spoken
+   * line, surplus rides the author channel, claims recorded on delivery.
+   *
+   * @returns The seizure-shaped delivery
+   */
+  private deliverSeizureBody(
+    world: WorldModel,
+    owner: IREntity,
+    participantId: string,
+    body: IRStatement[],
+    occurrenceKey: string,
+    audienceId?: string,
+  ): InitiativeSeizure {
+    const occurrence = ((world.getStateValue(occurrenceKey) as number | undefined) ?? 0) + 1;
+    world.setStateValue(occurrenceKey, occurrence);
+
+    const thenOpens = body.filter(
+      (s): s is Extract<IRStatement, { kind: 'then-open' }> => s.kind === 'then-open',
+    );
+    const reports = this.execStatements(
+      body.filter((s) => s.kind !== 'hold-tongue' && s.kind !== 'then-open'),
+      {
+        world,
+        it: owner.id,
+        occurrence,
+        ...(audienceId !== undefined ? { conversationPartnerId: audienceId } : {}),
+      },
+      'all',
+    );
+
+    let openExchange: ExchangeState | undefined;
+    let openWord: string | undefined;
+    for (const stmt of thenOpens) {
+      const when = (stmt as IRStatement & { stmtWhen?: IRCondition | null }).stmtWhen;
+      const frame = audienceId !== undefined ? { conversationPartnerId: audienceId } : {};
+      if (when && !this.evaluator.evalCondition(when, { world, it: owner.id, ...frame })) continue;
+      const target = (owner.exchanges ?? []).find((e) => e.name === stmt.exchange);
+      if (!target) {
+        throw new LoadError(`\`then ${stmt.word}\` names an unknown exchange \`${stmt.exchange}\` on \`${owner.id}\`.`, stmt.span);
+      }
+      const exchangeId = `${owner.id}.${target.name}`;
+      openExchange = {
+        exchangeId,
+        speakerId: participantId,
+        ...(target.strength ? { strength: target.strength } : {}),
+        openedTurn: this.dialogueTurn(world),
+        responses: this.exchangeResponses(exchangeId, target),
+      };
+      openWord = stmt.word;
+      break; // at most one open exchange (D4) — the first applying row's wins
+    }
+
+    // The delivery rules, one semantics (pin filter, first phrase wins,
+    // surplus rides the author channel, claims recorded on delivery).
+    const trait = world.getEntity(participantId)?.get(TraitType.CHARACTER_MODEL) as
+      | CharacterModelTrait
+      | undefined;
+    let filtered = reports;
+    if (trait && audienceId !== undefined) {
+      filtered = reports.filter((event) => {
+        if (event.type !== 'chord.phrase') return true;
+        const claims = this.claimsFor(String((event.data as Record<string, unknown> | undefined)?.messageId));
+        return pinAllowsClaim(trait, audienceId, claims);
+      });
+    }
+    let spoken: { messageId: string; params: Record<string, unknown> } | undefined;
+    const events: ISemanticEvent[] = [];
+    for (const event of filtered) {
+      const payload = (event.data ?? {}) as Record<string, unknown>;
+      if (event.type === 'chord.phrase' && !spoken) {
+        spoken = {
+          messageId: String(payload.messageId),
+          params: (payload.params as Record<string, unknown>) ?? {},
+        };
+      } else {
+        events.push(event);
+      }
+    }
+    if (trait && audienceId !== undefined && spoken) {
+      const claims = this.claimsFor(spoken.messageId);
+      if (claims) {
+        events.push(
+          ...recordClaimDelivery(trait, participantId, audienceId, claims, this.dialogueTurn(world)),
+        );
+      }
+    }
+
+    return {
+      events,
+      ...(spoken ? { spokenMessageId: spoken.messageId, spokenParams: spoken.params } : {}),
+      ...(openExchange !== undefined && openWord !== undefined ? { openExchange, openWord } : {}),
+    };
+  }
+
+  // ------------------- Conversation threads (ADR-320 D14, Phase 10.4)
+
+  /** The world-state key stamping a pair's dispatch-path beat advance this cycle. */
+  private threadCycleKey(ownerIrId: string, actorId: string): string {
+    return `chord.thread.served.${ownerIrId}.${actorId}`;
+  }
+
+  /** The hold-gate/`opens when` evaluator for one owner-partner pair. */
+  private threadEval(world: WorldModel, ownerIrId: string, actorId: string): (condition: IRCondition) => boolean {
+    return (condition) =>
+      this.evaluator.evalCondition(condition, { world, it: ownerIrId, conversationPartnerId: actorId });
+  }
+
+  /** Whether the intent's topic matches the thread's `about` filter. */
+  private matchesThreadFilter(thread: IRConversation, intent: ConversationIntent): boolean {
+    return thread.filter !== undefined && this.matchTopicFilters([thread.filter], intent) === 0;
+  }
+
+  /** Whether the thread's next beat's hold-gate is met (the conclusion is always ready). */
+  private threadBeatReady(
+    thread: IRConversation,
+    beatCursor: number,
+    evalFor: (condition: IRCondition) => boolean,
+  ): boolean {
+    if (beatCursor >= thread.beats.length) return true;
+    const beat = thread.beats[beatCursor];
+    return beat.condition === null || evalFor(beat.condition);
+  }
+
+  /**
+   * Whether an off-thread ask has a real other target (D14 transitions
+   * fire on actual switches): a topic-table match, or another thread —
+   * parked or unopened — claiming the filter. Unmatched asks never park a
+   * passive/assertive thread (nothing is pulling attention away); a
+   * blocking thread refuses them regardless (single-topic completion).
+   */
+  private hasOtherThreadTarget(
+    world: WorldModel,
+    owner: IREntity,
+    threads: IRConversation[],
+    intent: ConversationIntent,
+    npcWorldId: string,
+    actorId: string,
+    activeKey: string,
+  ): boolean {
+    if (this.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0) return true;
+    for (const thread of threads) {
+      if (thread.name === activeKey || !this.matchesThreadFilter(thread, intent)) continue;
+      const state = threadStateFor(world, npcWorldId, actorId, thread.name);
+      if (state === undefined || state.status === 'parked') return true;
+    }
+    return false;
+  }
+
+  /**
+   * The pair's live scene for a thread engagement: the shared one, or a
+   * fresh address-opened one when neither side is seated (the
+   * `runConversationScene` invariant, honored here because thread
+   * lifecycle wire needs the scene id at serve time — the action's own
+   * scene step then finds it live and just stamps the move). Undefined
+   * when a party is seated elsewhere — no scene, no thread engagement.
+   */
+  private ensureThreadScene(
+    world: WorldModel,
+    npcWorldId: string,
+    actorId: string,
+  ): { scene: ConversationSceneState; wire: SceneWireEvent[] } | undefined {
+    const shared = sceneWith(world, npcWorldId);
+    if (shared) {
+      return shared.participantIds.includes(actorId) ? { scene: shared, wire: [] } : undefined;
+    }
+    if (sceneWith(world, actorId)) return undefined;
+    const runtime = world.getSceneRuntime();
+    if (!runtime) return undefined;
+    const opened = runtime.openScene([actorId, npcWorldId], { kind: 'address', openerId: actorId });
+    return { scene: opened.scene, wire: opened.wireEvents };
+  }
+
+  /** Pure mirror of `ensureThreadScene`'s reachability (the probe's leg). */
+  private canShareThreadScene(world: WorldModel, npcWorldId: string, actorId: string): boolean {
+    const shared = sceneWith(world, npcWorldId);
+    if (shared) return shared.participantIds.includes(actorId);
+    return !sceneWith(world, actorId) && world.getSceneRuntime() !== undefined;
+  }
+
+  /**
+   * Advance the pair's ACTIVE thread one beat and serve the beat body as
+   * the reply (D14's dispatch-path advance). A gate-held thread re-serves
+   * its current beat when `allowHeldReserve` (the thread claims its topics
+   * while unconcluded); a held thread with nothing yet served falls
+   * through. Stamps the scene subject, the cycle stamp (one beat per turn
+   * across both paths), and the continuability snapshot.
+   */
+  private serveThreadAdvance(args: {
+    world: WorldModel;
+    owner: IREntity;
+    npc: IFEntity;
+    actorId: string;
+    memory: ConversationMemoryAccess;
+    threads: IRConversation[];
+    thread: IRConversation;
+    allowHeldReserve: boolean;
+  }): DialogueSelectionResult | undefined {
+    const { world, owner, npc, actorId, memory, threads, thread } = args;
+    const ensured = this.ensureThreadScene(world, npc.id, actorId);
+    if (!ensured) return undefined;
+    const sceneId = ensured.scene.id;
+    const evalFor = this.threadEval(world, owner.id, actorId);
+
+    const advance = advanceThreadBeat(world, sceneId, npc.id, actorId, thread, evalFor, memory);
+    if (!advance) {
+      // Held (unmet `beat, when`): re-serve the current beat — the thread
+      // wins while unconcluded — or fall through when nothing served yet.
+      if (!args.allowHeldReserve) return undefined;
+      const state = threadStateFor(world, npc.id, actorId, thread.name);
+      if (!state || state.beatCursor === 0) return undefined;
+      const index = state.beatCursor - 1;
+      const res = this.serveConversationBody({
+        world, owner, npc, actorId, scene: ensured.scene, memory,
+        body: thread.beats[index].body,
+        occurrenceKey: `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.beat.${index}`,
+        closesExchange: false,
+      });
+      return { ...res, wireEvents: [...ensured.wire, ...(res.wireEvents ?? [])] };
+    }
+
+    if (thread.filter) {
+      this.stampSceneThread(world, npc.id, actorId, this.canonicalTopic(thread.filter));
+    }
+    world.setStateValue(this.threadCycleKey(owner.id, actorId), this.dialogueTurn(world));
+
+    const served = threadStateFor(world, npc.id, actorId, thread.name);
+    const occurrenceKey =
+      advance.kind === 'conclusion'
+        ? `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.conclusion`
+        : `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.beat.${(served?.beatCursor ?? 1) - 1}`;
+    const res = this.serveConversationBody({
+      world, owner, npc, actorId, scene: ensured.scene, memory,
+      body: advance.body,
+      occurrenceKey,
+      closesExchange: false,
+    });
+    stampThreadContinuability(
+      world,
+      sceneId,
+      advance.kind === 'conclusion'
+        ? undefined
+        : threadContinuabilityFor(world, sceneId, npc.id, actorId, threads, evalFor),
+    );
+    return { ...res, wireEvents: [...ensured.wire, ...(res.wireEvents ?? []), ...advance.wireEvents] };
+  }
+
+  /**
+   * Thread dispatch (ADR-320 D14; Phase 10.4) — the D15 walk's step
+   * between the open exchange and the boundary/table paths. The
+   * precedence extends D16's innermost-wins: open exchange > active
+   * thread > parked-thread resume > topic table.
+   *
+   *  - ACTIVE + on-filter ask/tell (or TALK TO): one beat advances and its
+   *    body is the reply; past the last beat, the conclusion serves.
+   *  - ACTIVE + off-topic, `blocking`: refused back into the thread — the
+   *    authored `on refusing:` row first, the current beat re-served
+   *    otherwise (David: "authored first, repeat second").
+   *  - ACTIVE + off-topic with a real other target, `assertive` with an
+   *    authored `on parting:`: the protest consumes the turn — the parting
+   *    body is the reply and the thread parks; the other topic serves from
+   *    the next ask ("one authored beat of resistance, not a wall").
+   *  - ACTIVE + off-topic, `passive` (or assertive with nothing authored):
+   *    falls through — the topic arm parks the thread as it serves (its
+   *    postValidate hook), the same firing.
+   *  - No ACTIVE: an ask/tell matching a PARKED thread's filter resumes it
+   *    (`on resuming` is the reply when authored; the next beat serves
+   *    directly when not); one matching an unopened thread with a ready
+   *    first beat activates it. Concluded threads never re-claim.
+   *
+   * An open exchange in the pair's scene owns the moment entirely — the
+   * probe and this server both stand down (a `then asks` beat holds until
+   * its exchange closes; unmatched exchange input keeps D16's fallthrough).
+   */
+  private serveThreadDispatch(args: {
+    world: WorldModel;
+    owner: IREntity;
+    npc: IFEntity;
+    intent: ConversationIntent;
+    ctx: DialogueSelectionContext;
+    memory: ConversationMemoryAccess;
+  }): DialogueSelectionResult | undefined {
+    const { world, owner, npc, intent, ctx, memory } = args;
+    const threads = owner.conversations ?? [];
+    if (threads.length === 0 || intent.type === 'say') return undefined;
+    if (ctx.scene?.openExchange) return undefined;
+    const actorId = ctx.speakerId;
+    const evalFor = this.threadEval(world, owner.id, actorId);
+
+    const active = activeThreadFor(world, npc.id, actorId);
+    if (active) {
+      const thread = threads.find((t) => t.name === active.threadKey);
+      if (!thread) return undefined;
+      const onThread = intent.type === 'talk-to' || this.matchesThreadFilter(thread, intent);
+      if (onThread) {
+        return this.serveThreadAdvance({
+          world, owner, npc, actorId, memory, threads, thread,
+          allowHeldReserve: intent.type !== 'talk-to',
         });
       }
-      let spoken: { messageId: string; params: Record<string, unknown> } | undefined;
-      const events: ISemanticEvent[] = [];
-      for (const event of filtered) {
-        const payload = (event.data ?? {}) as Record<string, unknown>;
-        if (event.type === 'chord.phrase' && !spoken) {
-          spoken = {
-            messageId: String(payload.messageId),
-            params: (payload.params as Record<string, unknown>) ?? {},
-          };
-        } else {
-          events.push(event);
-        }
+      const strength = thread.strength ?? 'passive';
+      if (strength === 'blocking') {
+        const cursor = active.state.beatCursor;
+        const body = thread.onRefusing ?? thread.beats[Math.max(0, cursor - 1)].body;
+        const occurrenceKey = thread.onRefusing
+          ? `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.refusing`
+          : `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.beat.${Math.max(0, cursor - 1)}`;
+        const res = this.serveConversationBody({
+          world, owner, npc, actorId, scene: ctx.scene, memory, body, occurrenceKey, closesExchange: false,
+        });
+        return {
+          ...res,
+          authorEvents: [
+            ...(res.authorEvents ?? []),
+            this.rawEvent('character.thread.refused', { ownerId: npc.id, threadKey: thread.name }),
+          ],
+        };
       }
-      if (trait && audienceId !== undefined && spoken) {
-        const claims = this.claimsFor(spoken.messageId);
-        if (claims) {
-          events.push(
-            ...recordClaimDelivery(trait, participantId, audienceId, claims, this.dialogueTurn(world)),
+      if (
+        strength === 'assertive' &&
+        thread.onParting &&
+        this.hasOtherThreadTarget(world, owner, threads, intent, npc.id, actorId, thread.name)
+      ) {
+        const res = this.serveConversationBody({
+          world, owner, npc, actorId, scene: ctx.scene, memory,
+          body: thread.onParting,
+          occurrenceKey: `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.parting`,
+          closesExchange: false,
+        });
+        const parkWire = ctx.scene ? parkThread(world, ctx.scene.id, npc.id, actorId, thread.name) : [];
+        if (ctx.scene) stampThreadContinuability(world, ctx.scene.id, undefined);
+        return { ...res, wireEvents: [...(res.wireEvents ?? []), ...parkWire] };
+      }
+      return undefined; // passive-style transition: the topic arm parks as it serves
+    }
+
+    if (intent.type === 'talk-to') return undefined;
+    for (const thread of threads) {
+      if (!this.matchesThreadFilter(thread, intent)) continue;
+      const state = threadStateFor(world, npc.id, actorId, thread.name);
+      if (state?.status === 'parked') {
+        const ensured = this.ensureThreadScene(world, npc.id, actorId);
+        if (!ensured) return undefined;
+        const resumeWire = resumeThread(world, ensured.scene.id, npc.id, actorId, thread.name);
+        if (thread.onResuming) {
+          const res = this.serveConversationBody({
+            world, owner, npc, actorId, scene: ensured.scene, memory,
+            body: thread.onResuming,
+            occurrenceKey: `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.resuming`,
+            closesExchange: false,
+          });
+          stampThreadContinuability(
+            world,
+            ensured.scene.id,
+            threadContinuabilityFor(world, ensured.scene.id, npc.id, actorId, threads, evalFor),
           );
+          return { ...res, wireEvents: [...ensured.wire, ...resumeWire, ...(res.wireEvents ?? [])] };
+        }
+        const res = this.serveThreadAdvance({
+          world, owner, npc, actorId, memory, threads, thread, allowHeldReserve: true,
+        });
+        return res
+          ? { ...res, wireEvents: [...resumeWire, ...(res.wireEvents ?? [])] }
+          : { handled: true, wireEvents: [...ensured.wire, ...resumeWire] };
+      }
+      if (state === undefined && this.threadBeatReady(thread, 0, evalFor)) {
+        const ensured = this.ensureThreadScene(world, npc.id, actorId);
+        if (!ensured) return undefined;
+        const openWire = openThread(world, ensured.scene.id, npc.id, actorId, thread.name);
+        const res = this.serveThreadAdvance({
+          world, owner, npc, actorId, memory, threads, thread, allowHeldReserve: true,
+        });
+        return res
+          ? { ...res, wireEvents: [...openWire, ...(res.wireEvents ?? [])] }
+          : { handled: true, wireEvents: [...ensured.wire, ...openWire] };
+      }
+      // Concluded (or not yet ready): the thread stands down for this
+      // filter; a later declaration may still claim it.
+    }
+    return undefined;
+  }
+
+  /**
+   * The PURE thread probe backing `threadClaims` (D14): mirrors
+   * `serveThreadDispatch`'s decisions without mutating, so a gripped
+   * firing skips the topic arm exactly when the thread will serve.
+   */
+  private probeThreadClaims(npc: IFEntity, intent: ConversationIntent, ctx: DialogueSelectionContext): boolean {
+    const owner = this.irOwnerOf(npc.id);
+    const threads = owner?.conversations ?? [];
+    if (!owner || threads.length === 0 || intent.type === 'say') return false;
+    if (ctx.scene?.openExchange) return false;
+    const world = ctx.world;
+    const actorId = ctx.speakerId;
+    const evalFor = this.threadEval(world, owner.id, actorId);
+
+    const active = activeThreadFor(world, npc.id, actorId);
+    if (active) {
+      const thread = threads.find((t) => t.name === active.threadKey);
+      if (!thread) return false;
+      if (intent.type === 'talk-to') {
+        return this.threadBeatReady(thread, active.state.beatCursor, evalFor);
+      }
+      if (this.matchesThreadFilter(thread, intent)) {
+        // An advance, or a held re-serve of the current beat.
+        return this.threadBeatReady(thread, active.state.beatCursor, evalFor) || active.state.beatCursor > 0;
+      }
+      const strength = thread.strength ?? 'passive';
+      if (strength === 'blocking') return true;
+      return (
+        strength === 'assertive' &&
+        thread.onParting !== undefined &&
+        this.hasOtherThreadTarget(world, owner, threads, intent, npc.id, actorId, thread.name)
+      );
+    }
+
+    if (intent.type === 'talk-to') return false;
+    for (const thread of threads) {
+      if (!this.matchesThreadFilter(thread, intent)) continue;
+      const state = threadStateFor(world, npc.id, actorId, thread.name);
+      if (state?.status === 'parked') return this.canShareThreadScene(world, npc.id, actorId);
+      if (state === undefined && this.threadBeatReady(thread, 0, evalFor)) {
+        return this.canShareThreadScene(world, npc.id, actorId);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The scene binding's thread RUNNER (ADR-320 D14; Phase 10.4) — the
+   * owner's-own-floor-turn half of the advance clause: the tick calls it
+   * for the co-located player pair and the ready move executes — an
+   * `opens when` open (first beat spoken), a parked resume (`on resuming`
+   * as the turn's line when authored), or the active thread's next beat.
+   * One beat per turn cycle across both paths: a dispatch-path advance
+   * this cycle stamps the pair's cycle key and the runner stands down.
+   */
+  buildThreadTurn(
+    world: WorldModel,
+  ): (ownerId: string, partnerId: string, sceneId: string) => InitiativeSeizure | undefined {
+    return (ownerId, partnerId, sceneId) => {
+      const owner = this.irOwnerOf(ownerId);
+      const threads = owner?.conversations ?? [];
+      if (!owner || threads.length === 0) return undefined;
+      const evalFor = this.threadEval(world, owner.id, partnerId);
+      const move = readyThreadMove(world, ownerId, partnerId, threads, evalFor);
+      if (!move) return undefined;
+      const memory = createTraitMemoryAccess(world);
+      const events: ISemanticEvent[] = [];
+      const pushWire = (wire: SceneWireEvent[]): void => {
+        for (const w of wire) events.push(this.rawEvent(`character.scene.${w.kind}`, { ...w }));
+      };
+
+      if (move.kind === 'advance') {
+        const stamp = world.getStateValue(this.threadCycleKey(owner.id, partnerId));
+        if (stamp === this.dialogueTurn(world) - 1) return undefined; // dispatch advanced this cycle
+      } else {
+        // Open/resume only when the turn will actually say something —
+        // no lifecycle churn for a held first/next beat.
+        const state = threadStateFor(world, ownerId, partnerId, move.thread.name);
+        const cursor = state?.beatCursor ?? 0;
+        if (!move.thread.onResuming || move.kind === 'open') {
+          if (!this.threadBeatReady(move.thread, cursor, evalFor)) return undefined;
         }
       }
 
-      return {
-        events,
-        ...(spoken ? { spokenMessageId: spoken.messageId, spokenParams: spoken.params } : {}),
-      };
+      const lifecycleWire: SceneWireEvent[] = [];
+      if (move.kind === 'open') {
+        lifecycleWire.push(...openThread(world, sceneId, ownerId, partnerId, move.thread.name));
+      } else if (move.kind === 'resume') {
+        lifecycleWire.push(...resumeThread(world, sceneId, ownerId, partnerId, move.thread.name));
+        if (move.thread.onResuming) {
+          pushWire(lifecycleWire);
+          const delivery = this.deliverSeizureBody(
+            world, owner, ownerId, move.thread.onResuming,
+            `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${move.thread.name}.resuming`,
+            partnerId,
+          );
+          stampThreadContinuability(
+            world, sceneId,
+            threadContinuabilityFor(world, sceneId, ownerId, partnerId, threads, evalFor),
+          );
+          return { ...delivery, events: [...events, ...delivery.events] };
+        }
+      }
+
+      const advance = advanceThreadBeat(world, sceneId, ownerId, partnerId, move.thread, evalFor, memory);
+      if (!advance) {
+        pushWire(lifecycleWire);
+        return events.length > 0 ? { events } : undefined;
+      }
+      if (move.thread.filter) {
+        this.stampSceneThread(world, ownerId, partnerId, this.canonicalTopic(move.thread.filter));
+      }
+      const served = threadStateFor(world, ownerId, partnerId, move.thread.name);
+      const occurrenceKey =
+        advance.kind === 'conclusion'
+          ? `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${move.thread.name}.conclusion`
+          : `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${move.thread.name}.beat.${(served?.beatCursor ?? 1) - 1}`;
+      const delivery = this.deliverSeizureBody(world, owner, ownerId, advance.body, occurrenceKey, partnerId);
+      stampThreadContinuability(
+        world, sceneId,
+        advance.kind === 'conclusion'
+          ? undefined
+          : threadContinuabilityFor(world, sceneId, ownerId, partnerId, threads, evalFor),
+      );
+      pushWire([...lifecycleWire, ...advance.wireEvents]);
+      return { ...delivery, events: [...events, ...delivery.events] };
+    };
+  }
+
+  /** The pure probe for `buildThreadTurn` — would the owner take a thread turn now? */
+  buildThreadTurnReady(world: WorldModel): (ownerId: string, partnerId: string) => boolean {
+    return (ownerId, partnerId) => {
+      const owner = this.irOwnerOf(ownerId);
+      const threads = owner?.conversations ?? [];
+      if (!owner || threads.length === 0) return false;
+      const evalFor = this.threadEval(world, owner.id, partnerId);
+      const move = readyThreadMove(world, ownerId, partnerId, threads, evalFor);
+      if (!move) return false;
+      if (move.kind === 'advance') {
+        const stamp = world.getStateValue(this.threadCycleKey(owner.id, partnerId));
+        return stamp !== this.dialogueTurn(world) - 1;
+      }
+      const state = threadStateFor(world, ownerId, partnerId, move.thread.name);
+      const cursor = state?.beatCursor ?? 0;
+      if (move.kind === 'resume' && move.thread.onResuming) return true;
+      return this.threadBeatReady(move.thread, cursor, evalFor);
     };
   }
 
@@ -1876,6 +2402,59 @@ export class ChordRuntime {
               recordAsked(memory, actorId, npcWorldId, topicCandidatesOf(row)[0]);
             }
           }
+          // ADR-320 D14 transition (Phase 10.4): a table row serving while
+          // the pair's thread is ACTIVE parks it — the passive path
+          // (blocking and assertive-protest firings never reach the arm:
+          // the thread probe gripped them). The authored `on parting`
+          // body executes for its effects; its line rides the author
+          // channel and the D12 wire utterance, never this reply (one
+          // spoken line per firing — the delivery freeze).
+          const parked = npcWorldId ? activeThreadFor(world, npcWorldId, actorId) : undefined;
+          if (npcWorldId && parked) {
+            const parkEvents: ISemanticEvent[] = [];
+            const thread = (entity.conversations ?? []).find((t) => t.name === parked.threadKey);
+            const scene = sceneWith(world, npcWorldId);
+            if (thread?.onParting) {
+              const partingKey = `${CHORD_OCCURRENCE_PREFIX}thread.${entity.id}.${parked.threadKey}.parting`;
+              const partingOccurrence = ((world.getStateValue(partingKey) as number | undefined) ?? 0) + 1;
+              world.setStateValue(partingKey, partingOccurrence);
+              const partingReports = runtime.execStatements(
+                thread.onParting.filter((st) => st.kind !== 'then-open' && st.kind !== 'deflect' && st.kind !== 'leave'),
+                { world, it: entity.id, occurrence: partingOccurrence, conversationPartnerId: actorId },
+                'all',
+              );
+              for (const event of partingReports) {
+                if (event.type === 'chord.phrase') {
+                  const payload = (event.data ?? {}) as Record<string, unknown>;
+                  parkEvents.push(
+                    runtime.rawEvent('character.thread.parting', {
+                      ownerId: npcWorldId,
+                      threadKey: parked.threadKey,
+                      messageId: String(payload.messageId),
+                      params: (payload.params as Record<string, unknown>) ?? {},
+                    }),
+                  );
+                  if (scene) {
+                    parkEvents.push(
+                      runtime.rawEvent('character.scene.utterance', {
+                        sceneId: scene.id,
+                        speakerId: npcWorldId,
+                        addresseeId: actorId,
+                        messageId: String(payload.messageId),
+                        beats: [],
+                      }),
+                    );
+                  }
+                } else {
+                  parkEvents.push(event);
+                }
+              }
+            }
+            const parkWire = parkThread(world, scene?.id ?? '', npcWorldId, actorId, parked.threadKey);
+            parkEvents.push(...parkWire.map((w) => runtime.rawEvent(`character.scene.${w.kind}`, { ...w })));
+            if (scene) stampThreadContinuability(world, scene.id, undefined);
+            data.chordThreadPark = parkEvents;
+          }
         }
         return null;
       },
@@ -1937,6 +2516,11 @@ export class ChordRuntime {
 
         const result: InterceptorReportResult = {};
         const emit: CapabilityEffect[] = [];
+        // The D14 passive-park events staged in postValidate (parting
+        // effects, wire utterance, thread-parked) join the emit stream.
+        for (const event of (data.chordThreadPark as ISemanticEvent[] | undefined) ?? []) {
+          emit.push(toEffect(event));
+        }
         for (const event of reports) {
           const payload = (event.data ?? {}) as Record<string, unknown>;
           if (event.type === 'chord.phrase') {

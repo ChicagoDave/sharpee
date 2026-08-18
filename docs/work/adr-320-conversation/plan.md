@@ -723,7 +723,14 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
   regression test (an NPC-opened ask-beat opens its exchange without throwing). No other
   package yet consumes this runtime, and `is concluded` is not yet queryable from Chord
   rows (that is Phase 10.4's evaluator wiring).
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 590dbd) — thread-runtime.ts (open/
+  resume/park/advance/conclude + D14 table + readyThreadMove +
+  continuability projection) asserting on real trait state; #273 fixed
+  (seizure carries openExchange, tick applies it in player scenes only,
+  NPC↔NPC drops silently) with tick-side + real-path regression tests;
+  ContinuationEntry retired with supersession note. character 561,
+  story-loader 536, world-model 1492 passing; repo-wide tsc clean
+  (all run 2026-08-17).
 
 ### Phase 10.4: `packages/story-loader` + `packages/stdlib` — registration, dispatch precedence, and evaluator
 - **Tier**: Large
@@ -756,7 +763,19 @@ resuming / on refusing** (D14, FROZEN 2026-08-17).
   before/true-after behavior all hold on real trait/store state. The player-side
   continuation-prompt input is not yet wired (Phase 10.5's), so beat advance is proven
   here only via the owner's own floor turns.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-17, session 590dbd) — D15 select step 1.5 (activation,
+  advance, conclusion, blocking authored-first/repeat-second, assertive protest-turn,
+  parked resume), topic-arm passive park hook, stdlib thread grip
+  (asking/telling/talking), tick step 4a thread floor turns (opens-when self-open,
+  same-cycle guard), scene-close parking, continuability snapshot on scene state.
+  Transition-turn resolution recorded: passive parks and the other topic serves the
+  same turn (parting line rides wire + author channel); assertive spends the turn on
+  the authored protest; blocking walls until conclusion. Evidence (2026-08-17): 13
+  real-path tests in adr-320-phase10-threads.test.ts (3 added closing
+  mutation-verification gaps: tick-side then-asks, tick resume, TELL/TALK grip);
+  character 563, story-loader 549,
+  stdlib 1633, world-model 1492 passing; repo-wide tsc clean; ides 132+34, thealderman
+  75, Dungeo chain 952 — all baselines byte-clean.
 
 ### Phase 10.5: `packages/parser-en-us` — continuation-prompt forms
 - **Tier**: Small

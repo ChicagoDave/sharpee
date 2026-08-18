@@ -6,8 +6,14 @@
  * drive between-turn commentary and determine how aggressively the NPC
  * holds the player's focus.
  *
+ * Superseded surface: the skeleton's continuation scheduling
+ * (`ContinuationEntry`, `scheduleAfter`, `getContinuationMessage`) was
+ * retired in ADR-320 Phase 10.3 — authored multi-beat continuation is the
+ * conversation-thread construct (`define conversation`, ADR-320 D14),
+ * whose runtime lives in `thread-runtime.ts`.
+ *
  * Public interface: ContinuationIntent, ConversationStrength, ConversationContext,
- *   ContinuationEntry, InitiativeTrigger, ConversationLifecycle.
+ *   InitiativeTrigger, ConversationLifecycle.
  * Owner context: @sharpee/character / conversation
  */
 
@@ -62,15 +68,6 @@ export const DEFAULT_DECAY_THRESHOLDS: Record<ContinuationIntent, number> = {
 // ---------------------------------------------------------------------------
 // Continuation and initiative
 // ---------------------------------------------------------------------------
-
-/** A scheduled NPC continuation message within a conversation context. */
-export interface ContinuationEntry {
-  /** Turns after context was set before this continuation fires. */
-  afterTurns: number;
-
-  /** Message ID for the continuation. */
-  messageId: string;
-}
 
 /** An NPC initiative trigger — the NPC starts a conversation proactively. */
 export interface InitiativeTrigger {
@@ -141,9 +138,6 @@ export interface ConversationContext {
   /** Optional context label (e.g., 'confessing', 'caught'). */
   contextLabel?: string;
 
-  /** Scheduled continuation messages within this context. */
-  continuations: ContinuationEntry[];
-
   /** Author-overridden between-turn messages. Keyed by turn number. */
   betweenTurnOverrides: Map<number, string>;
 
@@ -193,7 +187,6 @@ export class ConversationLifecycle {
       strength,
       decayThreshold: DEFAULT_DECAY_THRESHOLDS[intent],
       nonConversationTurns: 0,
-      continuations: [],
       betweenTurnOverrides: new Map(),
     };
   }
@@ -390,35 +383,6 @@ export class ConversationLifecycle {
       case 'blocking':
         return 'blocks';
     }
-  }
-
-  // =========================================================================
-  // NPC continuation scheduling
-  // =========================================================================
-
-  /**
-   * Schedule a continuation message for N turns after context was set.
-   *
-   * @param afterTurns - Number of turns after context was set
-   * @param messageId - The message ID
-   */
-  scheduleAfter(afterTurns: number, messageId: string): void {
-    if (!this.context) return;
-    this.context.continuations.push({ afterTurns, messageId });
-  }
-
-  /**
-   * Get the continuation message for the current turn count, if any.
-   * Continuations fire based on non-conversation turns elapsed.
-   *
-   * @returns Message ID if a continuation is scheduled for this turn, or undefined
-   */
-  getContinuationMessage(): string | undefined {
-    if (!this.context) return undefined;
-
-    const turns = this.context.nonConversationTurns;
-    const entry = this.context.continuations.find(c => c.afterTurns === turns);
-    return entry?.messageId;
   }
 
   // =========================================================================

@@ -1223,8 +1223,14 @@ export {};
  * drive between-turn commentary and determine how aggressively the NPC
  * holds the player's focus.
  *
+ * Superseded surface: the skeleton's continuation scheduling
+ * (`ContinuationEntry`, `scheduleAfter`, `getContinuationMessage`) was
+ * retired in ADR-320 Phase 10.3 — authored multi-beat continuation is the
+ * conversation-thread construct (`define conversation`, ADR-320 D14),
+ * whose runtime lives in `thread-runtime.ts`.
+ *
  * Public interface: ContinuationIntent, ConversationStrength, ConversationContext,
- *   ContinuationEntry, InitiativeTrigger, ConversationLifecycle.
+ *   InitiativeTrigger, ConversationLifecycle.
  * Owner context: @sharpee/character / conversation
  */
 import type { SceneStrength } from '@sharpee/world-model';
@@ -1251,13 +1257,6 @@ export type RedirectResult = InterruptionOutcome;
  * keyed by intent. Authors can override per conversation context.
  */
 export declare const DEFAULT_DECAY_THRESHOLDS: Record<ContinuationIntent, number>;
-/** A scheduled NPC continuation message within a conversation context. */
-export interface ContinuationEntry {
-    /** Turns after context was set before this continuation fires. */
-    afterTurns: number;
-    /** Message ID for the continuation. */
-    messageId: string;
-}
 /** An NPC initiative trigger — the NPC starts a conversation proactively. */
 export interface InitiativeTrigger {
     /** Predicate conditions that must all be satisfied. */
@@ -1285,8 +1284,6 @@ export interface ConversationContext {
     nonConversationTurns: number;
     /** Optional context label (e.g., 'confessing', 'caught'). */
     contextLabel?: string;
-    /** Scheduled continuation messages within this context. */
-    continuations: ContinuationEntry[];
     /** Author-overridden between-turn messages. Keyed by turn number. */
     betweenTurnOverrides: Map<number, string>;
     /** Author-overridden leave-attempt message. */
@@ -1397,20 +1394,6 @@ export declare class ConversationLifecycle {
      * @returns The redirect result based on current conversation strength
      */
     private resolveStrengthCheck;
-    /**
-     * Schedule a continuation message for N turns after context was set.
-     *
-     * @param afterTurns - Number of turns after context was set
-     * @param messageId - The message ID
-     */
-    scheduleAfter(afterTurns: number, messageId: string): void;
-    /**
-     * Get the continuation message for the current turn count, if any.
-     * Continuations fire based on non-conversation turns elapsed.
-     *
-     * @returns Message ID if a continuation is scheduled for this turn, or undefined
-     */
-    getContinuationMessage(): string | undefined;
     /**
      * Register an initiative trigger for an NPC.
      * The NPC will initiate conversation when conditions are met.
@@ -2083,10 +2066,11 @@ export declare function writeSceneStore(world: WorldModel, state: SceneStoreStat
  * All turn reads go through the character clock seam (D6).
  *
  * Public interface: OpenSceneOptions, openScene, closeScene,
- *   recordSceneMove, applySceneDirectives, ageScenes.
+ *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
+ *   ageScenes.
  * Owner context: @sharpee/character / conversation
  */
-import type { WorldModel, ConversationSceneState, SceneBoundaryKind, SceneOpenedBy, SceneStrength, SceneDirective, SceneWireEvent } from '@sharpee/world-model';
+import type { WorldModel, ConversationSceneState, SceneBoundaryKind, SceneOpenedBy, SceneStrength, SceneDirective, SceneWireEvent, ThreadContinuability } from '@sharpee/world-model';
 import { type ConversationMemoryAccess } from './conversation-memory.js';
 /** What a caller supplies to open a scene. */
 export interface OpenSceneOptions {
@@ -2145,6 +2129,20 @@ export declare function recordSceneMove(world: WorldModel, sceneId: string): voi
  * @param topic - The normalized topic of the move
  */
 export declare function noteTopicMove(world: WorldModel, sceneId: string, topic: string): void;
+/**
+ * Stamp — or clear — a scene's active-thread continuability snapshot
+ * (ADR-320 D14; the D12 affordance surface). Written HERE because the
+ * scene runtime is the store's single writer; callers (the thread
+ * dispatch and the thread floor turn, Phase 10.4) compute the record via
+ * `threadContinuabilityFor` after each thread mutation. `undefined`
+ * clears it — the record disappears when no thread is active, the
+ * exchange-affordances never-stale discipline.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the affordance describes
+ * @param continuability - The fresh record, or undefined to clear
+ */
+export declare function stampThreadContinuability(world: WorldModel, sceneId: string, continuability: ThreadContinuability | undefined): void;
 /**
  * Apply a selection's scene directives (adr-320 contracts.md §4): the
  * selector stays pure and this runtime performs the lifecycle it asked
@@ -2400,6 +2398,226 @@ export interface AuthoredInitiative {
 export declare function authoredInitiativeFor(rows: IRInitiativeRow[], occasion: SceneOccasion, evalCondition: (row: IRInitiativeRow) => boolean, witnessedAction?: string): AuthoredInitiative | undefined;
 ```
 
+### conversation/thread-runtime
+
+```typescript
+/**
+ * Conversation-thread runtime — open, resume, park, advance, conclude
+ * (ADR-320 D14; Phase 10.3)
+ *
+ * The one writer of per-pair thread state: an author-scripted subject the
+ * owner carries beat by beat to a defined conclusion, across as many
+ * sittings as it takes. State lives on the owner's trait
+ * (`CharacterModelTrait.conversationThreads`, schema v3 — Phase 10.2's
+ * home), so it rides the world snapshot, survives scene closes and day
+ * boundaries, and restores mid-beat. The compiled `define conversation`
+ * shape (`IRConversation`, Phase 10.1) is this runtime's fixed input;
+ * serving a beat's statement body is the loader's (Phase 10.4) — this
+ * module owns cursor/status mutations, the D14 transition table, and the
+ * wire events. All turn reads go through the character clock seam (D6).
+ *
+ * Public interface: threadStateFor, activeThreadFor, ThreadTransition,
+ *   resolveThreadTransition, openThread, resumeThread, parkThread,
+ *   ThreadAdvance, advanceThreadBeat, concludeThread, ThreadMove,
+ *   readyThreadMove, threadContinuabilityFor.
+ * Owner context: @sharpee/character / conversation
+ */
+import { type WorldModel, type ConversationThreadState, type SceneStrength, type SceneWireEvent, type ThreadContinuability } from '@sharpee/world-model';
+import { type IRCondition, type IRConversation, type IRStatement } from '@sharpee/chord';
+import { type ConversationMemoryAccess } from './conversation-memory.js';
+/** A hold-gate/`opens when` evaluator, bound by the caller (the loader's). */
+export type ThreadConditionEval = (condition: IRCondition) => boolean;
+/**
+ * The owner's state for one thread with one partner, or undefined when the
+ * thread has never engaged (pre-v3 rehydrated traits lack the field — the
+ * absence reads the same).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread's owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The per-pair state, or undefined
+ */
+export declare function threadStateFor(world: WorldModel, ownerId: string, partnerId: string, threadKey: string): ConversationThreadState | undefined;
+/**
+ * The pair's one ACTIVE thread, or undefined (the at-most-one-ACTIVE
+ * invariant's read side).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @returns The active thread's key and state, or undefined
+ */
+export declare function activeThreadFor(world: WorldModel, ownerId: string, partnerId: string): {
+    threadKey: string;
+    state: ConversationThreadState;
+} | undefined;
+/**
+ * How an ACTIVE thread answers an off-thread ask (ADR-320 D14): `parks`
+ * silently by default (`on parting` renders if authored), `protests-then-
+ * parks` renders `on parting` as one authored beat of resistance then
+ * yields, `refuses` turns the ask back into the thread (the authored
+ * `on refusing:` row first, the current beat re-served otherwise).
+ */
+export type ThreadTransition = 'parks' | 'protests-then-parks' | 'refuses';
+/**
+ * The strength-governed transition answer (ADR-320 D14's table). Pure —
+ * the caller parks/serves/refuses accordingly.
+ *
+ * @param strength - The ACTIVE thread's effective strength
+ * @returns The transition word
+ */
+export declare function resolveThreadTransition(strength: SceneStrength): ThreadTransition;
+/**
+ * Open a thread fresh (ADR-320 D14): first engagement of the pair — a
+ * matching ask or an `opens when` occasion. Writes `active`/cursor 0.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the opening lands in (wire attribution)
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-opened wire event (empty for an unmodeled owner)
+ * @throws Error when the pair already has state for this thread, or
+ *   another thread is ACTIVE for the pair
+ */
+export declare function openThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Resume a parked thread (ADR-320 D14): re-engagement at the held cursor
+ * — same scene, the next day, or after a restore alike. The caller serves
+ * the authored `on resuming:` row alongside.
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the resumption lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-resumed wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not PARKED, or another thread is
+ *   ACTIVE for the pair
+ */
+export declare function resumeThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Park the ACTIVE thread (ADR-320 D14): the subject switched away, the
+ * scene closed, or the player left — the cursor holds. The caller serves
+ * the authored `on parting:` row alongside (silently absent for a passive
+ * thread with none authored).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the parking lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param threadKey - The `define conversation` key
+ * @returns The thread-parked wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not ACTIVE
+ */
+export declare function parkThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, threadKey: string): SceneWireEvent[];
+/**
+ * Park every ACTIVE thread between the scene's participants (ADR-320
+ * D14's persistence clause): a scene close never resets a thread — it
+ * parks it, cursor held, so the next engagement is a resume (`on
+ * resuming` renders whether the gap is three turns, a day boundary, or a
+ * restore). Called by `closeScene` for every ordered participant pair;
+ * unmodeled holders read blank and nothing changes.
+ *
+ * @param world - The live world
+ * @param sceneId - The closing scene (wire attribution)
+ * @param participantIds - The scene's participants
+ * @returns The thread-parked wire events, holder order
+ */
+export declare function parkActiveThreadsOnClose(world: WorldModel, sceneId: string, participantIds: string[]): SceneWireEvent[];
+/**
+ * Conclude the ACTIVE thread (ADR-320 D14): status CONCLUDED — terminal —
+ * and every `about` topic candidate recorded discussed on BOTH sides'
+ * conversation memory (the "topics record as discussed" clause; the
+ * `is concluded` evaluator reads the status straight off the trait).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the conclusion lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param thread - The compiled thread (key and `about` filter)
+ * @param memory - The per-pair conversation-memory home
+ * @returns The thread-concluded wire event (empty for an unmodeled owner)
+ * @throws Error when the thread is not ACTIVE (conclusion fires once)
+ */
+export declare function concludeThread(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, thread: IRConversation, memory: ConversationMemoryAccess): SceneWireEvent[];
+/** What one advance served: a numbered beat, or the conclusion. */
+export interface ThreadAdvance {
+    /** `beat` while beats remain; `conclusion` on the final advance. */
+    kind: 'beat' | 'conclusion';
+    /** The statement body to serve (the loader executes it — Phase 10.4). */
+    body: IRStatement[];
+    /** Wire events the advance produced. */
+    wireEvents: SceneWireEvent[];
+}
+/**
+ * Advance the ACTIVE thread one beat (ADR-320 D14's advance clause —
+ * fired on the owner's own floor turns AND on player continuation
+ * prompts; both paths land here). A held beat advances on neither: an
+ * open exchange in the pair's scene holds (a `then asks` beat waits for
+ * its exchange to close), and an unmet `beat, when` hold-gate waits for
+ * the world. Past the last beat, the advance serves the conclusion
+ * (`concludeThread`).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the advance lands in
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param thread - The compiled thread
+ * @param evalCondition - Hold-gate evaluator (the loader's, bound by the caller)
+ * @param memory - The per-pair conversation-memory home (conclusion's record)
+ * @returns The served advance, or undefined when the beat is held
+ * @throws Error when the thread is not ACTIVE for the pair
+ */
+export declare function advanceThreadBeat(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, thread: IRConversation, evalCondition: ThreadConditionEval, memory: ConversationMemoryAccess): ThreadAdvance | undefined;
+/**
+ * The thread move an owner would make with the floor (ADR-320 D14): what
+ * dispatch (Phase 10.4) turns into a forcing floor answer — threads claim
+ * the owner's floor turns the way authored initiative rows claim their
+ * occasions (D7 most-specific-wins), so disposition, interruption, and
+ * decay stay unchanged around them.
+ */
+export type ThreadMove = {
+    kind: 'advance';
+    thread: IRConversation;
+} | {
+    kind: 'resume';
+    thread: IRConversation;
+} | {
+    kind: 'open';
+    thread: IRConversation;
+};
+/**
+ * The pair's ready thread move, if any: the ACTIVE thread's next advance
+ * when it is not held; otherwise the first declared thread whose `opens
+ * when` holds — unopened opens fresh, parked resumes (a concluded thread
+ * never re-engages).
+ *
+ * @param world - The live world
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param conversations - The owner's compiled threads, declaration order
+ * @param evalCondition - Hold-gate/`opens when` evaluator (the loader's)
+ * @returns The ready move, or undefined when no thread claims the moment
+ */
+export declare function readyThreadMove(world: WorldModel, ownerId: string, partnerId: string, conversations: IRConversation[], evalCondition: ThreadConditionEval): ThreadMove | undefined;
+/**
+ * The pair's thread continuability (ADR-320 D14, the D12 affordance
+ * surface): present exactly while a thread is ACTIVE; `continuable` is
+ * false while the next beat is held (unmet gate or open exchange).
+ *
+ * @param world - The live world
+ * @param sceneId - The scene the affordance describes
+ * @param ownerId - The thread owner (world id)
+ * @param partnerId - The conversation partner (world id)
+ * @param conversations - The owner's compiled threads
+ * @param evalCondition - Hold-gate evaluator (the loader's)
+ * @returns The continuability record, or undefined when no thread is active
+ */
+export declare function threadContinuabilityFor(world: WorldModel, sceneId: string, ownerId: string, partnerId: string, conversations: IRConversation[], evalCondition: ThreadConditionEval): ThreadContinuability | undefined;
+```
+
 ### conversation/scene-binding
 
 ```typescript
@@ -2451,6 +2669,20 @@ export interface SceneBindingOptions {
      * Absent = authored occasions never run (builder-authored stories).
      */
     seizeInitiative?: (participantId: string, occasion: SceneOccasion, witnessedAction?: string, audienceId?: string) => InitiativeSeizure | undefined;
+    /**
+     * Take one thread floor turn (ADR-320 D14; Phase 10.4) — the loader
+     * binds compiled `define conversation` blocks here: the owner's ready
+     * thread move executes against the pair's live scene and the spoken
+     * line comes back for the observability surface. Absent = no threads
+     * declared (the tick's thread step no-ops, the D2 cost leg).
+     */
+    threadTurn?: (ownerId: string, partnerId: string, sceneId: string) => InitiativeSeizure | undefined;
+    /**
+     * Pure probe for `threadTurn`: would the owner take a thread floor
+     * turn toward this partner right now? Consulted before opening a scene
+     * for an `opens when` thread — must not mutate.
+     */
+    threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
 }
 /**
  * Build the world's scene runtime over the Phase 5 machinery.
