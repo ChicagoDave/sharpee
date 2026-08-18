@@ -1,0 +1,34 @@
+`define greetings for <person>` holds the rows that fire at the edges of
+a conversation rather than inside it — the opening and the parting. The
+boundary rows are `first time:`, `on return:`, and `on leaving:`, which
+cover the three moments every recurring character needs.
+
+`on return` can be narrowed by how long the player has been away:
+`on return, again so soon:` for coming straight back, and `on return,
+after days:` for a real absence. The runtime decides which applies from
+elapsed story time, so the author writes both readings and never
+schedules them. A bare `on return:` catches whatever the narrowed rows
+do not.
+
+The repetition rows count askings rather than absences: `asked once:`,
+`asked again:`, and `asked many times:` let a character notice being
+pressed. This is what turns a stock greeting into a character who reacts
+to being pestered — and it is worth authoring even when the reply is
+short, since the alternative is the same opening line forever.
+
+```chord
+define greetings for Will Kemp
+  first time:
+    phrase kemp-sizes-you-up
+  on return:
+    phrase kemp-nods
+  on return, again so soon:
+    phrase kemp-twice-in-an-hour
+  on return, after days:
+    phrase kemp-wheres-been
+  asked again:
+    phrase kemp-persistent
+  on leaving:
+    phrase kemp-turns-away
+end greetings
+```

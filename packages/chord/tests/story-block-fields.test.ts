@@ -292,12 +292,47 @@ describe('bare phrase references (AC-4, compile-time half)', () => {
     expect(ir?.meta.fields.prologue).toEqual({ kind: 'phrase-ref', value: 'opening-crawl' });
   });
 
-  it('joins an indented prose body into a literal value', () => {
+  // Header prose reflows exactly as a room description does
+  // (`parseProseParagraph`). Joining source lines with `\n` instead baked the
+  // author's editor wrap width into the value — and it rides the wire as
+  // `info.description`, so every client double-wrapped it.
+  it('reflows an indented prose body into one paragraph', () => {
     const result = parse('story\n  title: T\n  description:\n      Line one.\n      Line two.\n');
     expect(result.ast.header?.fields.description).toMatchObject({
       kind: 'literal',
-      value: 'Line one.\nLine two.',
+      value: 'Line one. Line two.',
     });
+  });
+
+  it('starts a new paragraph on a blank line', () => {
+    const result = parse(
+      'story\n  title: T\n  description:\n      Para one.\n      Still one.\n\n      Para two.\n'
+    );
+    expect(result.ast.header?.fields.description).toMatchObject({
+      kind: 'literal',
+      value: 'Para one. Still one.\n\nPara two.',
+    });
+  });
+
+  it('reflows inline text together with its continuation lines', () => {
+    const result = parse('story\n  title: T\n  description: Inline start.\n      Carried on.\n');
+    expect(result.ast.header?.fields.description).toMatchObject({
+      kind: 'literal',
+      value: 'Inline start. Carried on.',
+    });
+  });
+
+  it('applies the same reflow to prologue:', () => {
+    const result = parse('story\n  title: T\n  prologue:\n      One.\n      Two.\n');
+    expect(result.ast.header?.fields.prologue).toMatchObject({
+      kind: 'literal',
+      value: 'One. Two.',
+    });
+  });
+
+  it('still rejects a field with no value at all', () => {
+    const result = parse('story\n  title: T\n  description:\n  id: t\n');
+    expect(result.diagnostics.some((d) => d.code === 'parse.header-field')).toBe(true);
   });
 });
 

@@ -1,0 +1,15 @@
+<p><strong>Mood</strong> is the one piece of character state that moves during play. A person starts with <code>mood &lt;word&gt;</code> on the create line and changes with <code>change mood to &lt;word&gt;</code>, which is an ordinary statement and can sit in any row body. The built-in moods are <code>calm</code>, <code>content</code>, <code>cheerful</code>, <code>nervous</code>, <code>anxious</code>, <code>panicked</code>, <code>angry</code>, <code>furious</code>, <code>sad</code>, <code>grieving</code>, <code>suspicious</code>, <code>confused</code>, and <code>resigned</code>.</p>
+<p>A story that wants its own shade declares one against an existing mood with <code>define mood &lt;new&gt; like &lt;existing&gt;</code>, optionally narrowed by a modifier: <code>restless</code>, <code>stiller</code>, <code>darker</code>, or <code>brighter</code>. The new word behaves like the mood it derives from — so <code>define mood fearful like anxious, but darker</code> gives you a word that reads as your story's own while still selecting everywhere <code>anxious</code> would.</p>
+<p>Mood is read, not obeyed. Rows can condition on it (<code>when it is anxious</code>), <a href="/chord/guide/characters-and-conversation/manner">Manner</a> colors delivery by it, and <a href="/chord/guide/characters-and-conversation/initiative">Initiative</a> can refine an occasion by it. Do not use mood to model a lasting trait — a person who is permanently short-tempered wants a personality word, since mood is the thing a scene is expected to move.</p>
+<pre><code class="language-chord">define mood composed like calm
+define mood fearful like anxious, but darker
+
+create Jonas Reed
+  a person, proper
+  mood anxious
+
+define topics for Jonas Reed
+  about &quot;the vault&quot;:
+    change mood to fearful
+    phrase jonas-on-the-vault
+end topics</code></pre>

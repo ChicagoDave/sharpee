@@ -1,0 +1,40 @@
+**Personality** is a list of adjectives on the create line, each
+optionally graded by an intensity: `slightly`, `somewhat`, `very`, or
+`extremely`. The built-in vocabulary is fourteen words — `honest`,
+`loyal`, `cowardly`, `paranoid`, `cruel`, `cunning`, `curious`,
+`stubborn`, `generous`, `vain`, `devout`, `impulsive`, `remorseful`,
+`untroubled`. A word outside that list is a compile error
+(`analysis.trait-not-declared`), not a silent no-op, so a typo is caught
+at build time; where a story genuinely wants another word, it declares
+one with `define personality <word>` first.
+
+**Temperament** is how a person resolves a conflict between two
+motivations, written as `<force> over <force>`. The five forces are
+`fear`, `desire`, `duty`, `honor`, and `love`. Read it as a tiebreak, not
+a mood: `duty over fear` means that when duty and fear both pull, duty
+wins — which is what decides whether a frightened person still does the
+thing they promised. A temperament used by several people can be named
+once in a `define temperament` block and referenced by that name; a
+person who needs only one ordering writes it inline.
+
+Personality colors how a line is delivered; temperament decides what a
+person actually does under pressure. Neither generates behavior on its
+own — both are read by the conversation layers and by
+[Conscience](/chord/guide/characters-and-conversation/conscience).
+
+```chord
+define personality defensive
+
+define temperament professional
+  duty over fear
+  duty over desire
+end temperament
+
+create Jonas Reed
+  a person, proper, very impulsive, defensive, slightly honest
+  temperament professional
+
+create Marta Kell
+  a person, proper, stubborn
+  temperament duty over fear
+```

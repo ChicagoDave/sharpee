@@ -1578,6 +1578,14 @@ export class ChordStory implements Story {
   /**
    * End the story: set the if-domain ending flag and build the blessed
    * ending event (Prerequisite 3). The caller (rule evaluator) emits it.
+   *
+   * The phrase key rides as `endingMessageId`, NOT as a top-level
+   * `messageId`: the engine's ADR-097 domain-message handler renders any
+   * event carrying `data.messageId`, and the `win`/`lose` statement already
+   * emits the phrase itself through the ordinary chord phrase path (as
+   * `kill` does). Carrying it as `messageId` here printed every story's
+   * final paragraph twice (GH #274). Clients that want to identify the
+   * ending still get the key — it just no longer renders itself.
    */
   triggerEnding(world: WorldModel, ending: StoryEndingKind, messageId?: string): ISemanticEvent {
     world.setStateValue(STORY_ENDING_FLAG, ending);
@@ -1586,7 +1594,7 @@ export class ChordStory implements Story {
       type: ending === 'victory' ? StoryEndingEvents.VICTORY : StoryEndingEvents.DEFEAT,
       timestamp: Date.now(),
       entities: {},
-      data: { ending, ...(messageId ? { messageId } : {}) },
+      data: { ending, ...(messageId ? { endingMessageId: messageId } : {}) },
     };
   }
 

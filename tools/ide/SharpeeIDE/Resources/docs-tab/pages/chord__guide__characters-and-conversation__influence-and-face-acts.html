@@ -1,0 +1,12 @@
+<p><strong>Influence</strong> is a standing effect one person has on the people around them, declared as <code>influence &lt;name&gt;, &lt;mode&gt;, &lt;range&gt;</code> … <code>end influence</code>. The mode is <code>passive</code> or <code>active</code>; the range is <code>proximity</code> (whoever is near), <code>room</code>, or <code>targeted</code>. Inside, <code>makes mood &lt;word&gt;</code> and <code>makes threat &lt;level&gt;</code> say what the influence does to someone who does not resist — threat levels run <code>safe</code>, <code>uneasy</code>, <code>wary</code>, <code>threatened</code>, <code>cornered</code>, <code>desperate</code>.</p>
+<p>Influence can be resisted, and both outcomes are authorable: <code>phrase &lt;key&gt; on witnessed</code> fires when it lands, <code>phrase &lt;key&gt; on resisted</code> when someone shrugs it off. Whether a given person resists is read from their own model, so the same intimidating presence genuinely plays differently across a room — which is the reason to reach for influence rather than writing the reaction into each topic row by hand.</p>
+<p>A <strong>face-act</strong> is a moment where a person is seen losing face: <code>backs down</code>, <code>shows fear</code>, <code>admits fault</code>, <code>pleads</code>, <code>accepts insult</code>, <code>caught lying</code>. These are observable events rather than declarations — when one happens in front of others, the witnesses record it, and it travels the same way any other knowledge does (see <a href="/chord/guide/characters-and-conversation/feelings-and-knowledge">Feelings &amp; knowledge</a>). That is what lets a character be treated differently later because of something they did in public.</p>
+<pre><code class="language-chord">create Jonas Reed
+  a person, proper
+
+  influence intimidation, active, proximity
+    makes mood fearful
+    makes threat wary
+    phrase jonas-looms on witnessed
+    phrase jonas-looms-resisted on resisted
+  end influence</code></pre>

@@ -840,15 +840,29 @@ class Parser {
         case 'prologue':
         case 'description': {
           let valueSpan = lineSpan(fieldLine);
-          const parts: string[] = rest.length > 0 ? [rest] : [];
+          // Same shape as `parseProseParagraph`'s strictlyAbove mode: lines
+          // within a paragraph REFLOW (joined with a space) and a blank line
+          // starts a new paragraph (`\n\n`). Joining every line with `\n`
+          // instead — as this did — baked the author's editor wrap width into
+          // the value, which rides the wire as `info.description` and
+          // double-wraps in every client; and because blank lines were
+          // dropped, a header description could not have paragraphs at all.
+          const paragraphs: string[][] = [];
+          let current: string[] = rest.length > 0 ? [rest] : [];
           while (this.pos < this.lines.length && this.lines[this.pos].indent > fieldLine.indent) {
             const bodyLine = this.lines[this.pos++];
             span = mergeSpans(span, lineSpan(bodyLine));
             valueSpan = mergeSpans(valueSpan, lineSpan(bodyLine));
             const text = bodyLine.raw.trim();
-            if (text.length > 0) parts.push(text);
+            if (text.length === 0) continue;
+            if (bodyLine.afterBlank && (current.length > 0 || paragraphs.length > 0)) {
+              if (current.length > 0) paragraphs.push(current);
+              current = [];
+            }
+            current.push(text);
           }
-          const value = parts.join('\n');
+          if (current.length > 0) paragraphs.push(current);
+          const value = paragraphs.map((p) => p.join(' ')).join('\n\n');
           if (value.length === 0) {
             this.diagnostics.error(
               'parse.header-field',

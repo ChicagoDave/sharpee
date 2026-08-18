@@ -121,6 +121,102 @@ to the one file that matters).
   `StoryHeaderLines` as one shared list-aware iterator. Deliberately not done
   (a refactor of working product code, wider than the failure being cleared).
 
+## Chord character + conversation docs (plan: docs/work/archive/chord-character-conversation-docs/)
+David: "the IDE doc needs updating for all the character and conversation
+changes." Measured first — the gap was **total**: the Chord guide had no
+Characters or Conversation coverage at all, only `world/people` (17 lines:
+proper/aka/pronouns) and `behavior/topic-tables` (20 lines: define topics).
+No source material existed to adapt (`docs/reference/chord-language.md` has
+zero coverage; the book's "temperament" hits are prose about rabbits).
+- **All 4 phases DONE, plan archived.** 15 new pages under
+  `/chord/guide/characters-and-conversation/` — a new nav group between
+  Behavior and Flow & Progression; People and Topic-tables cross-linked, not
+  moved. Character model: personality-and-temperament, principles, mood,
+  feelings-and-knowledge, goals, influence-and-face-acts, conscience.
+  Conversation: manner, greetings, topic-recency, exchanges, initiative,
+  conversation-threads, continuation-prompts.
+- **Accuracy came from the compiler, not the ADRs.** Three scratch stories
+  driven to gate-clean `sharpee compose --check` at 3.3.0 (character surface,
+  every Phase 2 example, every Phase 3 example). That caught five facts ADR
+  prose would have gotten wrong, incl. the built-in personality vocabulary
+  being exactly 14 words with `define personality <word>` required for
+  anything else; `analysis.feels-duplicate` (one feeling per target);
+  `analysis.burdened-unheld` (`burdened by X` needs `knows X`); and that a
+  goal's `active when` reads state, never a fact value.
+  **`packages/chord/src/character-manifest.ts` is the authoritative source
+  for every frozen word list** — the docs quote it, never an ADR.
+- **Plan flaws caught before they cost anything**: plan-review found Phase 4's
+  page-count gate contradicted the plan's own page table (144+16=160 vs. the
+  real 144+15=159 — a gate that would have failed spuriously or been
+  "satisfied" by inventing a page). Then the build itself revealed a
+  phase-boundary flaw: it **hard-errors** on a nav entry without a page, so
+  registering all 15 entries in Phase 1 would have left the docs build broken
+  until Phase 3. Corrected — nav entries land with their pages.
+- **Open item resolved ahead of Phase 2**: `states:` on a person IS the same
+  World > States construct (thealderman:298), so Goals cross-links it.
+- **Evidence (2026-08-18)**: docs-tab **159 pages, 5 excluded, Chord 3.3.0**;
+  all 15 rendered fragments present in the bundle; version parity holds
+  (bundle == pin == CHORD_LANGUAGE_VERSION == 3.3.0); full `SharpeeIDETests`
+  **493/493 TEST SUCCEEDED**; `npx tsc --noEmit` clean in website/.
+
+## Stale example status-bar lines (David spotted one; swept for the rest)
+- `website/src/app/chord-writer/content.mdx` — was `Chord Writer 1.0.0 ·
+  Sharpee 5.0.0 / Chord 3.0.0` (all three stale).
+- `website/src/app/chord-writer/download/content.mdx` — was `Chord Writer
+  1.2.0 · Sharpee 5.0.1 / Chord 3.0.0`: partially updated at the 5.0.1 bump,
+  Chord missed. Both now `Chord Writer 1.2.0 · Sharpee 5.1.0 / Chord 3.3.0`.
+- Swept all website docs for version strings; only other hit is a correct
+  historical reference in `playground/examples.ts` (left alone). The download
+  page is in `EXCLUDED_PAGES`, so its fix is website-only, never in the IDE.
+- Verified: docs-tab rebuilt 159 pages / 5 excluded / Chord 3.3.0; full
+  `SharpeeIDETests` **493/493 TEST SUCCEEDED** after the bundle change.
+- **Recommendation (not implemented — new file, David's call)**: these
+  hand-copied version examples rot at every bump with nothing comparing them
+  to reality — the third instance this week of the duplicated-data pattern
+  the recurrence detector flagged. Precedent exists in
+  `scripts/playground-examples-check.mjs`; a small sibling asserting the
+  example lines match `CHORD_LANGUAGE_VERSION`, the root package version, and
+  `CFBundleShortVersionString` would make the next bump fail loudly.
+
+## Two platform prose defects fixed (David: "fix it", "fix #274 too")
+Both surfaced while generating a walkthrough from real output — the artifact
+made them visible in a way the transcript suites could not.
+
+**1. Header prose did not reflow (newline issue).**
+`packages/chord/src/parser.ts:851` joined `description:`/`prologue:`
+continuation lines with `'\n'`, while prose bodies reflow via
+`parseProseParagraph` (`:2668`, `p.join(' ')` within a paragraph, `'\n\n'`
+between). So the author's editor wrap width was baked into the value — and it
+rides the wire as `info.description`, double-wrapping in every client — while
+blank lines were dropped outright, making paragraphs unexpressible. Fixed to
+the same paragraph rule, using `line.afterBlank` for breaks. Six stories were
+affected (ides-of-march, character-acceptance + 3 variants, p10-threads);
+Fernhill and Dungeo escaped only by having one-line descriptions. Tests: the
+existing case pinning `'Line one.\nLine two.'` updated to the reflowed form
+(intended change, flagged not quietly retuned) + 4 new (paragraph break,
+inline+continuation, `prologue:` parity, empty-field rejection). One recorded
+artifact regenerated: the Ides `tests.json` `info.description` assertion.
+
+**2. GH #274 — win/lose ending printed twice.**
+`triggerEnding` (`packages/story-loader/src/loader.ts`) put the phrase key on
+the ending event as `data.messageId`, and the engine's ADR-097 domain-message
+handler renders anything carrying that field — while the `win`/`lose`
+statement already emits the phrase itself (`runtime.ts:3396`). Two emitters,
+two renders. Note `kill` directly below gets this right. Fixed by carrying it
+as **`endingMessageId`** — same re-typing shape as this session's earlier
+surplus-phrase fix — so clients can still name the ending without it being a
+second rendering site. No consumer read the old field (engine routes on
+`event.type`; tests assert `result.override`). Tests: the loader contract test
+updated to the new field + a negative assertion that no top-level `messageId`
+survives, plus a runtime test that nothing emits a second renderer.
+Verified by re-running the issue's own repro command — prints once.
+
+**Evidence (2026-08-18, after rebuild)**: chord 913, story-loader 562,
+stdlib 1633, engine 633, world-model 1492, character 563; ides 212 + wt-01 34;
+thealderman 75; Dungeo chain 952; character-acceptance 103 across 3 groups;
+Fernhill 9 cards/18 assertions; Ides recorded tests 2 cards/4 assertions;
+repo-wide tsc clean.
+
 ## Key Decisions
 - ADR-142's stamp amendment was made (docs-only) because the D4–D13 range
   predated D14 and no longer read correctly against the shipped implementation —
@@ -202,5 +298,38 @@ IDE Chord 3.3.0 alignment (Phases 1–4):
   regeneration, not a hand edit)
 - docs/work/archive/ide-chord-330-alignment/ (plan, archived; all 4 phases DONE)
 
+## Files Modified — second batch (after commit 57d60757)
+
+Chord character + conversation docs:
+- website/src/lib/nav.ts (new `Characters & Conversation` group, 15 entries)
+- website/src/app/chord/guide/characters-and-conversation/ (new — 15 pages,
+  each `content.mdx` + `page.tsx`)
+- website/src/app/chord/guide/world/people/content.mdx,
+  guide/behavior/topic-tables/content.mdx (See-also cross-links)
+- docs/work/archive/chord-character-conversation-docs/ (plan, archived DONE)
+
+Stale example status-bar lines:
+- website/src/app/chord-writer/content.mdx,
+  chord-writer/download/content.mdx (→ Chord Writer 1.2.0 · Sharpee 5.1.0 /
+  Chord 3.3.0)
+
+Platform prose fixes:
+- packages/chord/src/parser.ts (header `description:`/`prologue:` reflow)
+- packages/chord/tests/story-block-fields.test.ts (1 updated + 4 new)
+- packages/story-loader/src/loader.ts (`endingMessageId`, GH #274)
+- packages/story-loader/tests/loader.test.ts, tests/runtime.test.ts
+- stories/ides-of-march/chord/ides-of-march.tests.json (regenerated
+  `info.description` assertion)
+
+Build artifacts (regenerated, not hand-edited):
+- tools/ide/SharpeeIDE/Resources/docs-tab/ (docs-index.json + 17 page
+  fragments — 15 new, plus the two cross-linked pages and chord-writer.html)
+- packages/sharpee/docs/genai-api/index.md, stories/dungeo/src/version.ts
+
 ## Notes
 - Session started: 2026-08-17 23:58 (session ade288); work ran 2026-08-18.
+- Two finalizes this session: commit 57d60757 (ADR-320 closure, version bump,
+  IDE header fix), then this second batch. `.active-session` was retired by
+  the first finalize's session-end cleanup, which is why the finalize gate's
+  date-glob check does not resolve — the summary was verified by name and
+  size (302 lines) instead.

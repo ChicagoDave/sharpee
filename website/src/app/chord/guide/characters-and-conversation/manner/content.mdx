@@ -1,0 +1,27 @@
+A **manner** says how a person delivers lines in a given mood, without
+touching what the lines say. `define manner for <person>` holds one or
+more `when it is <mood>:` blocks, and each block carries either `beat`
+rows, a `voice` word, or both.
+
+A `beat` is a small piece of physical business printed alongside the
+reply — a gesture, a glance, a bit of stage direction. Several beats in a
+block rotate rather than repeat, so a character with three beats does not
+do the same thing twice in a row. A `voice` word colors the delivery
+instead of adding business, which is usually what you want for a mood
+that should make someone quieter rather than busier.
+
+Manner is the cheapest way to make one authored line read differently
+across a scene, because the line itself is written once. Reach for it
+before writing mood-conditioned duplicates of the same reply: if the
+words are the same and only the delivery changes, that is a manner, and
+splitting it into two rows will drift as soon as one of them is edited.
+
+```chord
+define manner for Will Kemp
+  when it is cheerful:
+    beat "He sketches half a jig step on the spot, done before it began."
+    beat "He snaps his fingers at a passing thought and grins."
+  when it is stung:
+    voice flat
+end manner
+```

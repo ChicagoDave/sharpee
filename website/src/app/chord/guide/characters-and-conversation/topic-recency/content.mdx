@@ -1,0 +1,31 @@
+Recency lets a row care about *when* something last came up. A topic is
+`fresh`, then `recent`, then `stale` as story time passes, and any
+condition can read it: `when the-blow-up is fresh`, or the negated form
+`when the-blow-up is not fresh and the-blow-up is not recent` for "only
+once this has had time to cool."
+
+Inside a [topic table](/chord/guide/behavior/topic-tables), a `refuse
+when <condition>: <phrase>` row turns recency into a refusal — the person
+declines the subject and says why, instead of answering. That is the
+usual shape for a sore point: press it too soon and you get the brush-off
+you earned, wait and the real answer is available.
+
+Two related predicates round this out. `<topic> was discussed` is true
+once a topic has come up at all, in any earlier conversation and in any
+order, and it survives save and restore — so it is the right way to gate
+something on the player having actually raised a subject. `the subject
+changes` is true on the turn a conversation is steered somewhere else,
+which lets a character notice the steer rather than simply following it.
+
+```chord
+define topics for Will Kemp
+  about "the rose", "the offer":
+    refuse when the-blow-up is fresh: kemp-too-raw
+    refuse when the-blow-up is recent: kemp-too-raw
+    phrase kemp-warms when the grievance was discussed
+    phrase kemp-brushes-off
+  about "the weather":
+    phrase kemp-marks-the-turn when the subject changes
+    phrase kemp-on-the-weather
+end topics
+```

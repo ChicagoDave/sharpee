@@ -154,7 +154,13 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.getStateValue(STORY_ENDING_FLAG)).toBe('victory');
     expect(story.isComplete()).toBe(true);
     expect(event.type).toBe('story.victory');
-    expect(event.data).toMatchObject({ ending: 'victory', messageId: 'message-intact' });
+    // GH #274: the key rides as `endingMessageId`, never as a top-level
+    // `messageId`. The engine's ADR-097 domain-message handler renders any
+    // event carrying `data.messageId`, and the `win`/`lose` statement already
+    // emits the phrase itself — carrying it here too printed every story's
+    // final paragraph twice.
+    expect(event.data).toMatchObject({ ending: 'victory', endingMessageId: 'message-intact' });
+    expect((event.data as Record<string, unknown>).messageId).toBeUndefined();
 
     const defeat = story.triggerEnding(world, 'defeat');
     expect(defeat.type).toBe('story.defeat');

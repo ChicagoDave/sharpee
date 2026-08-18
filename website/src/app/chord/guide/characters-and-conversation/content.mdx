@@ -1,0 +1,50 @@
+A person can carry a **character model** — who they are — and a
+**conversation system** — how that shows up when someone talks to them.
+The two are one mechanism read at two moments: the character model holds
+state (personality, temperament, mood, what they feel, what they know,
+what they want), and every conversation construct selects its response
+from that state. Nothing here generates dialogue; the author writes every
+line, and the model only decides which authored line fits the moment.
+
+Both layers are optional and additive. A person with none of these is
+still a person, and a story that declares nothing compiles exactly as it
+did before. Add only the layer a scene actually needs: a shopkeeper may
+want nothing but a topic table, while a suspect under pressure may want
+temperament, conscience, and a thread that will not let a subject drop.
+
+The vocabulary is closed. Personality words, moods, dispositions, forces,
+and the rest come from a frozen list, and a word outside it is a compile
+error rather than a silent no-op — so a typo is caught at build time, not
+discovered in play. Where a story genuinely needs a new word, it declares
+one (`define personality`, `define mood`, `define temperament`).
+
+**Character model** — [Personality & temperament](/chord/guide/characters-and-conversation/personality-and-temperament),
+[Principles](/chord/guide/characters-and-conversation/principles),
+[Mood](/chord/guide/characters-and-conversation/mood),
+[Feelings & knowledge](/chord/guide/characters-and-conversation/feelings-and-knowledge),
+[Goals](/chord/guide/characters-and-conversation/goals),
+[Influence & face-acts](/chord/guide/characters-and-conversation/influence-and-face-acts),
+[Conscience](/chord/guide/characters-and-conversation/conscience).
+
+**Conversation** — [Manner](/chord/guide/characters-and-conversation/manner),
+[Greetings](/chord/guide/characters-and-conversation/greetings),
+[Topic recency](/chord/guide/characters-and-conversation/topic-recency),
+[Exchanges](/chord/guide/characters-and-conversation/exchanges),
+[Initiative](/chord/guide/characters-and-conversation/initiative),
+[Conversation threads](/chord/guide/characters-and-conversation/conversation-threads),
+[Continuation prompts](/chord/guide/characters-and-conversation/continuation-prompts).
+
+See also [The World > People](/chord/guide/world/people) for the
+create-line constructs that name a person (`proper`, `aka`, `pronouns`),
+and [Behavior > Topic tables](/chord/guide/behavior/topic-tables) for
+`define topics`, the plain ASK/TELL table these layers build on.
+
+```chord
+create Jonas Reed
+  a person, proper, very impulsive, slightly honest
+  temperament duty over fear
+  never betrays a confidence
+  mood anxious
+  feels devoted to Marta Kell
+  knows the-ledger-burning, witnessed, certain
+```

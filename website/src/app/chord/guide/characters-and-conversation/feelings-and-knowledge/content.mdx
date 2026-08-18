@@ -1,0 +1,32 @@
+**Feelings** point at a target: `feels <disposition> <target>`, where the
+disposition and its preposition are one unit — `despises`, `hates`,
+`dislikes toward`, `wary of`, `neutral`, `likes`, `trusts toward`,
+`devoted to`. A block declares at most one feeling per target; a second
+line naming the same person is `analysis.feels-duplicate`, on the
+grounds that two simultaneous readings of one relationship is an
+authoring mistake rather than nuance.
+
+**Knowledge** is `knows <topic>, <source>, <confidence>`. The source says
+how they came by it — `witnessed`, `told`, `inferred`, `assumed`,
+`hallucinated` — and the confidence says how firmly they hold it:
+`uncertain`, `suspects`, `believes`, `certain`. The pair is the point.
+Something witnessed and certain behaves differently from the same fact
+inferred and suspected, and rows can read either half.
+
+`thinks <fact> is <value>, <confidence>, <source>` records a belief about
+a declared fact's value, which is how one person can be wrong about
+something the story knows. `spreads <topic> to <audience>` lets knowledge
+travel on its own — `trusted`, `allied`, or `anyone` — so a secret told
+to the wrong person arrives elsewhere without the author scripting the
+journey.
+
+```chord
+create Jonas Reed
+  a person, proper
+  feels devoted to Marta Kell
+  feels dislikes toward the Vault
+  knows the-ledger-burning, witnessed, certain
+  knows the-rumour, inferred, suspects
+  thinks the ledger is forged, certain, witnessed
+  spreads the-ledger-burning to trusted
+```

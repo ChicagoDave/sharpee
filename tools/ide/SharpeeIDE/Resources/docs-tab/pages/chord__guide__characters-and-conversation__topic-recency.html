@@ -1,0 +1,13 @@
+<p>Recency lets a row care about <em>when</em> something last came up. A topic is <code>fresh</code>, then <code>recent</code>, then <code>stale</code> as story time passes, and any condition can read it: <code>when the-blow-up is fresh</code>, or the negated form <code>when the-blow-up is not fresh and the-blow-up is not recent</code> for &quot;only once this has had time to cool.&quot;</p>
+<p>Inside a <a href="/chord/guide/behavior/topic-tables">topic table</a>, a <code>refuse when &lt;condition&gt;: &lt;phrase&gt;</code> row turns recency into a refusal — the person declines the subject and says why, instead of answering. That is the usual shape for a sore point: press it too soon and you get the brush-off you earned, wait and the real answer is available.</p>
+<p>Two related predicates round this out. <code>&lt;topic&gt; was discussed</code> is true once a topic has come up at all, in any earlier conversation and in any order, and it survives save and restore — so it is the right way to gate something on the player having actually raised a subject. <code>the subject changes</code> is true on the turn a conversation is steered somewhere else, which lets a character notice the steer rather than simply following it.</p>
+<pre><code class="language-chord">define topics for Will Kemp
+  about &quot;the rose&quot;, &quot;the offer&quot;:
+    refuse when the-blow-up is fresh: kemp-too-raw
+    refuse when the-blow-up is recent: kemp-too-raw
+    phrase kemp-warms when the grievance was discussed
+    phrase kemp-brushes-off
+  about &quot;the weather&quot;:
+    phrase kemp-marks-the-turn when the subject changes
+    phrase kemp-on-the-weather
+end topics</code></pre>

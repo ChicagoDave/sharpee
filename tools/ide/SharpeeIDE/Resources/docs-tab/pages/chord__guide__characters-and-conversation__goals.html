@@ -1,0 +1,13 @@
+<p>A <strong>goal</strong> is a short authored plan a person pursues on their own turns, written as <code>goal &lt;name&gt;, &lt;priority&gt;</code> … <code>end goal</code>. Priorities are <code>critical</code>, <code>high</code>, <code>medium</code>, and <code>low</code>, and they only decide which goal wins when more than one is live at once.</p>
+<p><code>active when &lt;condition&gt;</code> gates the goal. The condition reads character or story state — <code>it is breaking</code> (a <a href="/chord/guide/characters-and-conversation/conscience">conscience</a> band), <code>it is not calm</code> (a mood), a story state such as <code>second-day</code>, or a compound joined with <code>and</code>. It does not read a fact's value: writing <code>active when the ledger is forged</code> fails with <code>analysis.unknown-entity</code>, because <code>the ledger</code> resolves as an entity there. Gate on state, and let a <code>thinks</code> line carry what the person believes.</p>
+<p>The body is a short list of steps: <code>seek &lt;person&gt;</code> to go find someone, <code>move to &lt;room&gt;</code> to go somewhere, and <code>say &lt;phrase&gt; to &lt;target&gt;</code> to deliver an authored line on arrival. Steps are authored behavior, not a planner — nothing is searched or invented, and a goal that cannot make its next step simply does not act this turn. A conversation in progress suspends pursuit, so a person will not walk out mid-sentence to run an errand.</p>
+<p>A person's own <code>states:</code> list is the ordinary <a href="/chord/guide/world/states">World &gt; States</a> construct, driven with <code>change it to &lt;state&gt;</code>, and is often what a goal is gated on.</p>
+<pre><code class="language-chord">create Jonas Reed
+  a person, proper
+  states: denying, confessed
+
+  goal seek-the-vault, high
+    active when it is breaking
+    seek Marta Kell
+    move to the Vault
+  end goal</code></pre>

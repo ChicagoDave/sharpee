@@ -105,6 +105,26 @@ export const NAV: NavSection[] = [
         ],
       },
       {
+        title: 'Characters & Conversation',
+        items: [
+          { title: 'Overview', href: '/chord/guide/characters-and-conversation' },
+          { title: 'Personality & temperament', href: '/chord/guide/characters-and-conversation/personality-and-temperament' },
+          { title: 'Principles', href: '/chord/guide/characters-and-conversation/principles' },
+          { title: 'Mood', href: '/chord/guide/characters-and-conversation/mood' },
+          { title: 'Feelings & knowledge', href: '/chord/guide/characters-and-conversation/feelings-and-knowledge' },
+          { title: 'Goals', href: '/chord/guide/characters-and-conversation/goals' },
+          { title: 'Influence & face-acts', href: '/chord/guide/characters-and-conversation/influence-and-face-acts' },
+          { title: 'Conscience', href: '/chord/guide/characters-and-conversation/conscience' },
+          { title: 'Manner', href: '/chord/guide/characters-and-conversation/manner' },
+          { title: 'Greetings', href: '/chord/guide/characters-and-conversation/greetings' },
+          { title: 'Topic recency', href: '/chord/guide/characters-and-conversation/topic-recency' },
+          { title: 'Exchanges', href: '/chord/guide/characters-and-conversation/exchanges' },
+          { title: 'Initiative', href: '/chord/guide/characters-and-conversation/initiative' },
+          { title: 'Conversation threads', href: '/chord/guide/characters-and-conversation/conversation-threads' },
+          { title: 'Continuation prompts', href: '/chord/guide/characters-and-conversation/continuation-prompts' },
+        ],
+      },
+      {
         title: 'Flow & Progression',
         items: [
           { title: 'Overview', href: '/chord/guide/flow' },

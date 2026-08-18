@@ -1,0 +1,37 @@
+A **goal** is a short authored plan a person pursues on their own turns,
+written as `goal <name>, <priority>` … `end goal`. Priorities are
+`critical`, `high`, `medium`, and `low`, and they only decide which goal
+wins when more than one is live at once.
+
+`active when <condition>` gates the goal. The condition reads character
+or story state — `it is breaking` (a
+[conscience](/chord/guide/characters-and-conversation/conscience) band),
+`it is not calm` (a mood), a story state such as `second-day`, or a
+compound joined with `and`. It does not read a fact's value: writing
+`active when the ledger is forged` fails with `analysis.unknown-entity`,
+because `the ledger` resolves as an entity there. Gate on state, and let
+a `thinks` line carry what the person believes.
+
+The body is a short list of steps: `seek <person>` to go find someone,
+`move to <room>` to go somewhere, and `say <phrase> to <target>` to
+deliver an authored line on arrival. Steps are authored behavior, not a
+planner — nothing is searched or invented, and a goal that cannot make
+its next step simply does not act this turn. A conversation in progress
+suspends pursuit, so a person will not walk out mid-sentence to run an
+errand.
+
+A person's own `states:` list is the ordinary [World >
+States](/chord/guide/world/states) construct, driven with `change it to
+<state>`, and is often what a goal is gated on.
+
+```chord
+create Jonas Reed
+  a person, proper
+  states: denying, confessed
+
+  goal seek-the-vault, high
+    active when it is breaking
+    seek Marta Kell
+    move to the Vault
+  end goal
+```

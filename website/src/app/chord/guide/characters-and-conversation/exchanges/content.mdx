@@ -1,0 +1,36 @@
+An **exchange** is a question the other person asks *you*. `define
+exchange <key> for <person>` lists the replies that are available while
+it is open, and it is opened from a row with `then asks <key>` (or `then
+invites <key>`, which offers rather than presses).
+
+Rows come in three kinds. `answer "yes", "aye":` matches what the player
+says, with aliases; `answer the <entity>:` matches naming a thing rather
+than a phrase. An act row such as `on leaving:` fires when the player
+does something instead of replying. `on silence:` fires when they say
+nothing at all — and silence is always available, so an exchange can
+never trap a player who simply will not answer.
+
+The header takes an optional strength: `passive`, `assertive`, or
+`blocking`. A blocking exchange holds the floor — other subjects are
+refused until it resolves — while a passive one lets the conversation
+drift. Reach for `blocking` only when the character genuinely would not
+let a question go, because it takes the conversation away from the
+player until it is answered.
+
+Row bodies are ordinary statements, so an answer can change state, and
+`leave` ends the scene as part of the reply.
+
+```chord
+define exchange the-offer for Will Kemp, blocking
+  answer "yes", "aye", "sworn":
+    phrase kemp-sworn
+    change Will Kemp to sworn
+  answer the Tiring-House:
+    phrase kemp-looks-around
+  on leaving:
+    phrase kemp-calls-after
+    leave
+  on silence:
+    phrase kemp-offer-silence
+end exchange
+```

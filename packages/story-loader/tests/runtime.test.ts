@@ -139,6 +139,20 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     expect(cw.story.isComplete()).toBe(true);
   });
 
+  // GH #274: nothing in the emitted set may render the ending phrase a
+  // second time — the `win` statement's own phrase emit is the single
+  // rendering site. The ending event's own contract is pinned in
+  // loader.test.ts, where triggerEnding is called directly with a key.
+  it('emits no second renderer for the ending phrase', () => {
+    const cw = loadCloak();
+    hangCloak(cw);
+    const result = readMessage(cw);
+    const renderers = result.emit.filter(
+      (e) => (e.data as Record<string, unknown> | undefined)?.messageId === 'message-intact'
+    );
+    expect(renderers).toEqual([]);
+  });
+
   it('trampled: overrides with message-trampled, binds the garbled producer, no ending', () => {
     const cw = loadCloak();
     enterBar(cw); // tramples
