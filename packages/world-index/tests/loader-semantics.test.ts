@@ -14,15 +14,19 @@
 
 import { describe, expect, it } from 'vitest';
 import { compile, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS } from '@sharpee/chord';
+import { DirectionOpposites, type DirectionType } from '@sharpee/world-model';
 import {
   doorStartsLocked,
   initialStateOf,
   isInitialState,
   isPlatformStateWord,
   isStartableStateWord,
+  oppositeDirection,
+  platformStateHoldsAtStart,
   platformStateWordsFor,
   platformTraitForState,
   undirectedExits,
+  wiredEdges,
 } from '../src/loader-semantics.js';
 import { isRoom, roomsOf, startRoomOf } from '../src/story.js';
 
@@ -234,5 +238,122 @@ describe('D3 row 6 — readable is a superset of startable', () => {
 describe('story loading', () => {
   it('finds the start room from the player placement', () => {
     expect(startRoomOf(irOf(TWO_ROOMS))).toBe('hall');
+  });
+});
+
+describe('D3 row 2, second half — the mirror runs in the opposite direction', () => {
+  it('agrees with the platform on every direction Chord accepts', () => {
+    const CHORD_EXIT_DIRECTIONS = [
+      'north', 'south', 'east', 'west',
+      'northeast', 'northwest', 'southeast', 'southwest',
+      'up', 'down',
+    ];
+
+    for (const direction of CHORD_EXIT_DIRECTIONS) {
+      const platform = DirectionOpposites[direction.toUpperCase() as DirectionType];
+      expect(oppositeDirection(direction)?.toUpperCase()).toBe(platform);
+    }
+  });
+
+  it('has no opposite for a word that is not an exit direction', () => {
+    expect(oppositeDirection('sideways')).toBeUndefined();
+    expect(oppositeDirection('in')).toBeUndefined();
+  });
+
+  it('wires the mirror the compiler never wrote, carrying the door with it', () => {
+    const ir = irOf(`${TWO_ROOMS.replace('north to the Study', 'north to the Study through the oak door')}
+create the oak door
+  a door
+
+  An oak door.
+`);
+    const rooms = roomsOf(ir);
+    const known = new Set(rooms.map((room) => room.id));
+    const edges = wiredEdges(rooms, (id) => known.has(id));
+
+    expect(edges).toContainEqual({
+      from: 'hall', to: 'study', direction: 'north', via: 'oak-door', authored: true,
+    });
+    expect(edges).toContainEqual({
+      from: 'study', to: 'hall', direction: 'south', via: 'oak-door', authored: false,
+    });
+  });
+
+  it('yields no edge in either direction for an exit to nowhere', () => {
+    const ir = irOf(TWO_ROOMS);
+    const rooms = roomsOf(ir);
+    const edges = wiredEdges(rooms, (id) => id === 'hall');
+
+    expect(edges).toEqual([]);
+  });
+});
+
+describe('D3 rows 3 and 4, generalized — a platform state at start of play', () => {
+  it('reads a door as locked and every other lockable as unlocked', () => {
+    const ir = irOf(`${TWO_ROOMS.replace('north to the Study', 'north to the Study\n  down to the Cellar through the cellar door')}
+create the Cellar
+  a room
+
+  A cellar.
+
+create the cellar door
+  a door
+  lockable with the brass key
+
+  A cellar door.
+
+create the strongbox
+  in the Hall
+  lockable with the brass key
+
+  A strongbox.
+
+create the brass key
+  in the Hall
+
+  A small brass key.
+`);
+    const strongbox = ir.entities.find((e) => e.id === 'strongbox');
+    const cellarDoor = ir.entities.find((e) => e.id === 'cellar-door');
+
+    expect(platformStateHoldsAtStart(strongbox!, 'locked', false)).toBe(false);
+    expect(platformStateHoldsAtStart(strongbox!, 'unlocked', false)).toBe(true);
+    expect(platformStateHoldsAtStart(cellarDoor!, 'locked', true)).toBe(true);
+  });
+
+  it('returns undefined when no composed trait owns the word', () => {
+    const ir = irOf(`${TWO_ROOMS}
+create the boiler
+  in the Hall
+  states: cold, running
+
+  A boiler.
+`);
+    const boiler = ir.entities.find((e) => e.id === 'boiler');
+    expect(platformStateHoldsAtStart(boiler!, 'on', false)).toBeUndefined();
+    expect(platformStateHoldsAtStart(boiler!, 'cold', false)).toBeUndefined();
+  });
+
+  it('reads a switchable as off until the story says otherwise', () => {
+    const ir = irOf(`${TWO_ROOMS}
+create the lamp
+  in the Hall
+  switchable
+
+  A lamp.
+
+create the heater
+  in the Hall
+  switchable, starts on
+
+  A heater.
+`);
+    const lamp = ir.entities.find((e) => e.id === 'lamp');
+    const heater = ir.entities.find((e) => e.id === 'heater');
+
+    expect(platformStateHoldsAtStart(lamp!, 'off', false)).toBe(true);
+    expect(platformStateHoldsAtStart(lamp!, 'on', false)).toBe(false);
+    expect(platformStateHoldsAtStart(heater!, 'on', false)).toBe(true);
+    expect(platformStateHoldsAtStart(heater!, 'off', false)).toBe(false);
   });
 });

@@ -20,12 +20,66 @@ export {
   initialStateOf,
   isInitialState,
   undirectedExits,
+  wiredEdges,
+  oppositeDirection,
   doorStartsLocked,
+  platformStateHoldsAtStart,
   platformTraitForState,
   isPlatformStateWord,
   isStartableStateWord,
   platformStateWordsFor,
 } from './loader-semantics.js';
+export type { WiredEdge } from './loader-semantics.js';
+
+export { holderIndex, roomOf } from './containment.js';
+export type { ContainmentIndex } from './containment.js';
+
+export { collectStateWriters, entitiesMovedIntoPlay } from './statements.js';
+export type { StateWriter, WriterOwner } from './statements.js';
+
+export { holdsAtStart, canBeFalsified } from './conditions.js';
+export type { Truth, ConditionWorld } from './conditions.js';
+
+export { deriveReach } from './reach.js';
+export type {
+  ReachResult,
+  BlockedEdge,
+  BrokenExit,
+  NothingToRead,
+  ObstacleKind,
+  StrandedThing,
+} from './reach.js';
+
+export { buildDocument, buildFailure, WORLD_INDEX_SCHEMA } from './document.js';
+export type {
+  FailureCause,
+  PlacedRoom,
+  SerializedMap,
+  WorldIndexDocument,
+  WorldIndexFailure,
+  WorldIndexResponse,
+} from './document.js';
+
+export { buildVocabularyIndex, entityVocabulary, resolvePhrase } from './vocabulary.js';
+export type { VocabularyIndex } from './vocabulary.js';
+
+export { deriveIncomplete, extractNounPhrases } from './incomplete.js';
+export type {
+  AmbiguousFinding,
+  IncompleteResult,
+  MissingWordFinding,
+  NoObjectFinding,
+  NounPhrase,
+} from './incomplete.js';
+
+export { layoutMap } from './map.js';
+export type {
+  Cell,
+  DirectionSkew,
+  LayoutOptions,
+  MapResult,
+  ResolvedCollision,
+} from './map.js';
 
 export {
   readStoryIR,
@@ -37,3 +91,4 @@ export {
   thingsOf,
   startRoomOf,
 } from './story.js';
+export type { StoryIRReadFailure } from './story.js';

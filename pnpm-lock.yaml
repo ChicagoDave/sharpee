@@ -1270,6 +1270,9 @@ importers:
       '@sharpee/chord':
         specifier: workspace:*
         version: link:../chord
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
     devDependencies:
       '@types/node':
         specifier: ^20.8.0

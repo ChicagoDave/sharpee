@@ -93,14 +93,7 @@ export function undirectedExits(
  * @returns true when the entity begins play locked
  */
 export function doorStartsLocked(entity: IREntity, isDoor: boolean): boolean {
-  const lockable = (entity.traits ?? []).some((trait) => trait.name === 'lockable');
-  if (!lockable) return false;
-
-  const starts = entity.startsStates ?? [];
-  if (starts.includes('unlocked')) return false;
-  if (starts.includes('locked')) return true;
-
-  return isDoor;
+  return platformStateHoldsAtStart(entity, 'locked', isDoor) ?? false;
 }
 
 /**
@@ -154,4 +147,122 @@ export function platformStateWordsFor(entity: IREntity): string[] {
   return PLATFORM_STATE_PAIRS
     .filter(({ trait }) => composed.has(trait))
     .flatMap(({ pair }) => [...pair]);
+}
+
+/**
+ * Direction opposites for the ten exit directions Chord accepts.
+ *
+ * Pinned against the platform's own table by test rather than imported: the
+ * derivation depends on `@sharpee/chord` alone (ADR-321 D2), and `world-model`
+ * is a runtime package this tool has no other reason to load.
+ */
+const OPPOSITE_DIRECTION: Readonly<Record<string, string>> = {
+  north: 'south',
+  south: 'north',
+  east: 'west',
+  west: 'east',
+  northeast: 'southwest',
+  southwest: 'northeast',
+  northwest: 'southeast',
+  southeast: 'northwest',
+  up: 'down',
+  down: 'up',
+};
+
+/**
+ * The direction the mirror of an exit runs in.
+ *
+ * @param direction the authored exit's direction
+ * @returns the opposite direction, or `undefined` for a word that is not an exit
+ *   direction
+ */
+export function oppositeDirection(direction: string): string | undefined {
+  return OPPOSITE_DIRECTION[direction];
+}
+
+/** One room-to-room move as the world is wired, authored or mirrored. */
+export interface WiredEdge {
+  /** Room the move starts in. */
+  from: string;
+  /** Room it arrives in. */
+  to: string;
+  /** Direction typed from `from`. */
+  direction: string;
+  /** Door the move passes through, or null. */
+  via: string | null;
+  /** False when this edge is the loader's mirror rather than an authored row. */
+  authored: boolean;
+}
+
+/**
+ * Every room-to-room move the loader wires, in both directions.
+ *
+ * Connecting two rooms stamps the reverse exit as well — door and all — so an
+ * authored row implies a move the author never typed. Reading only the authored
+ * rows reports one-way exits that do not exist; reading them as undirected loses
+ * the direction a gate is declared on.
+ *
+ * @param rooms the story's room entities
+ * @param isKnownRoom predicate identifying a destination id as a real room; a
+ *   destination failing it yields no edge in either direction
+ * @returns every wired edge, authored rows first, each mirror following its row
+ */
+export function wiredEdges(
+  rooms: readonly IREntity[],
+  isKnownRoom: (id: string) => boolean,
+): WiredEdge[] {
+  const edges: WiredEdge[] = [];
+  for (const room of rooms) {
+    for (const exit of room.exits ?? []) {
+      if (!isKnownRoom(exit.to)) continue;
+      edges.push({
+        from: room.id,
+        to: exit.to,
+        direction: exit.direction,
+        via: exit.via,
+        authored: true,
+      });
+      const back = oppositeDirection(exit.direction);
+      if (back === undefined) continue;
+      edges.push({
+        from: exit.to,
+        to: room.id,
+        direction: back,
+        via: exit.via,
+        authored: false,
+      });
+    }
+  }
+  return edges;
+}
+
+/**
+ * The state a platform trait word holds before the player touches anything.
+ *
+ * Each pair has a resting member the loader seeds — closed, unlocked, off,
+ * unlit, unworn — with one kind-scoped exception: a lockable door starts locked.
+ * An explicit `starts` word wins over both.
+ *
+ * @param entity the IR entity to read
+ * @param word the platform state word to test
+ * @param isDoor whether this entity is a door kind
+ * @returns true when the entity begins play in that state, false when it begins
+ *   in the paired state, `undefined` when no composed trait owns the word
+ */
+export function platformStateHoldsAtStart(
+  entity: IREntity,
+  word: string,
+  isDoor: boolean,
+): boolean | undefined {
+  const owning = PLATFORM_STATE_PAIRS.find(({ pair }) => pair.includes(word));
+  if (owning === undefined) return undefined;
+  if (!(entity.traits ?? []).some((trait) => trait.name === owning.trait)) return undefined;
+
+  const [positive, negative] = owning.pair;
+  const starts = entity.startsStates ?? [];
+  if (starts.includes(word)) return true;
+  if (starts.includes(word === positive ? negative : positive)) return false;
+
+  const restingWord = owning.trait === 'lockable' && isDoor ? positive : negative;
+  return word === restingWord;
 }

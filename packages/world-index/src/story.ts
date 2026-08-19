@@ -23,23 +23,55 @@ import { readFileSync } from 'node:fs';
 import type { IREntity, StoryIR } from '@sharpee/chord';
 
 /**
+ * Why a Story IR could not be loaded.
+ *
+ * The two are different problems with different fixes — a path that names
+ * nothing versus a file that is not a Story IR — and the World tab says so
+ * (AC-9). Kept as its own narrow union rather than imported from the wire
+ * contract: `document.ts` reads this module, so the dependency runs one way.
+ */
+export type StoryIRReadFailure = 'unreadable' | 'malformed';
+
+/**
  * A Story IR that could not be read or did not parse.
  *
- * Carries the offending path so the IDE's World tab can name the cause in its
- * empty state rather than failing silently (ADR-321 AC-9).
+ * Carries the offending path and which of the two failures it was, so the IDE's
+ * World tab can name the cause in its empty state rather than failing silently
+ * (ADR-321 AC-9).
  */
 export class StoryIRReadError extends Error {
   /**
    * @param path the `.ir.json` path that could not be read
-   * @param cause the underlying filesystem or parse failure
+   * @param failure which failure this was
+   * @param cause the underlying filesystem or parse failure, when there was one
    */
   constructor(
     readonly path: string,
-    override readonly cause: unknown,
+    readonly failure: StoryIRReadFailure,
+    override readonly cause?: unknown,
   ) {
-    super(`Cannot read Story IR at ${path}: ${cause instanceof Error ? cause.message : String(cause)}`);
+    super(
+      cause === undefined
+        ? `Cannot read Story IR at ${path}`
+        : `Cannot read Story IR at ${path}: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
     this.name = 'StoryIRReadError';
   }
+}
+
+/**
+ * Whether a parsed value carries the two things every Story IR has.
+ *
+ * A shallow check on purpose: the point is to tell a Story IR from some other
+ * JSON file, not to revalidate what the compiler already guaranteed.
+ *
+ * @param value the parsed JSON
+ * @returns true when it has a format stamp and an entity list
+ */
+function looksLikeStoryIR(value: unknown): value is StoryIR {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as { format?: unknown; entities?: unknown };
+  return typeof candidate.format === 'string' && Array.isArray(candidate.entities);
 }
 
 /**
@@ -47,14 +79,28 @@ export class StoryIRReadError extends Error {
  *
  * @param path path to a `<story>.ir.json` emitted by the Chord compiler
  * @returns the parsed IR
- * @throws {StoryIRReadError} when the file is missing, unreadable, or not JSON
+ * @throws {StoryIRReadError} `unreadable` when the file is missing or cannot be
+ *   read; `malformed` when it is not JSON or not a Story IR
  */
 export function readStoryIR(path: string): StoryIR {
+  let source: string;
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as StoryIR;
+    source = readFileSync(path, 'utf8');
   } catch (cause) {
-    throw new StoryIRReadError(path, cause);
+    throw new StoryIRReadError(path, 'unreadable', cause);
   }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source);
+  } catch (cause) {
+    throw new StoryIRReadError(path, 'malformed', cause);
+  }
+
+  if (!looksLikeStoryIR(parsed)) {
+    throw new StoryIRReadError(path, 'malformed');
+  }
+  return parsed;
 }
 
 /**

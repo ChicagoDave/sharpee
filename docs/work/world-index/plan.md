@@ -119,7 +119,7 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
   retired in favour of the fielded form (ADR-298), and Chord refuses a door that no
   `through` exit line connects.
 
-### Phase 2: Map and Reach derivation — the D4 fixed point and D7 auto-layout (AC-1..AC-5) — CURRENT
+### Phase 2: Map and Reach derivation — the D4 fixed point and D7 auto-layout (AC-1..AC-5)
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: Reach (obstacle-aware, not topological) and Map (compass-grid auto-layout
@@ -145,7 +145,45 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: AC-1 through AC-5 all pass against real story IR (not synthetic fixtures);
   Fernhill's known collision (Study vs. Folly Hill) is handled by the spaced-grid resolution,
   not silently dropped.
-- **Status**: CURRENT (since 2026-08-19)
+- **Status**: DONE (2026-08-19, session 8cf526)
+- **Outcome**: five new modules — `containment.ts` (where a thing sits at start),
+  `statements.ts` (the `change`-writer and `move` walks, each carrying the context that
+  fires it), `conditions.ts` (tri-state `holdsAtStart` / `canBeFalsified` over `IRCondition`),
+  `reach.ts` (the D4 fixed point), `map.ts` (the D7 grid) — plus `wiredEdges`,
+  `oppositeDirection`, and `platformStateHoldsAtStart` added to `loader-semantics.ts`.
+  **50/50 tests green** (`pnpm --filter '@sharpee/world-index' test:ci`, 2026-08-19 03:44
+  local): 21 loader-semantics (AC-6, extended), 17 Reach (AC-1..AC-5), 12 Map (D7).
+  `npx tsf build` clean across the whole tree; both `local` and `esm` targets emitted.
+- **AC results, each against a story compiled from its own `.story` source** (never a
+  committed `.ir.json`, which would pin yesterday's compiler): AC-1 — Fernhill 13 rooms,
+  The Alderman 8, Ides of March 5, all report `findingCount: 0` unmodified. AC-2 — moving
+  `tarnished-key` into `cellar` leaves `cellar` unreached with reason *the key is inside the
+  room it opens*, and reports `crowbar` + `tarnished-key` stranded. AC-3 — an added
+  `kitchen east → scullery` yields exactly one broken exit and `rooms.total` stays 13
+  (the 14-of-13 regression). AC-4 — clearing `oil-lamp`'s `descriptionKey` reports it
+  reachable in `cellar-stairs` with nothing to read, and the same fault on a *stranded*
+  thing stays quiet (the stranding is the finding, not the prose). AC-5 — both of
+  Fernhill's gates read openable unmodified; emptying Mrs Kettle's `onClauses` seals the
+  study gate, and moving the boiler behind the exit it opens seals the greenhouse gate.
+- **Tests were mutation-checked, not just run green.** All 50 passed on the first run, so
+  each obstacle class was verified to fail when broken: inverting the `blocked while`
+  polarity fails both sealed-gate tests; disabling the lock check fails all three AC-2
+  tests; corrupting one row of the direction-opposites table fails the platform pin.
+- **Three modelling decisions worth carrying forward.** (1) *Gates are directional, locks are
+  not* — a blocked-exit line is keyed to one room and one direction, and it governs the
+  loader's **mirrored** exit as readily as an authored one (Fernhill's study gate sits on
+  `entrance-hall west`, which the author only ever wrote as `study east → entrance-hall`).
+  That is why `wiredEdges` replaced `undirectedExits` for this work. (2) *A platform trait
+  state is player-writable; an author state needs a triggerable writer* — `boiler is off`
+  lifts because `switchable` means a standard action turns it on, while `mrs-kettle is
+  guarded` lifts only because a `change` on her own clause moves her out of it. Without the
+  first half, D3's own table would have reported Fernhill's greenhouse gate permanently
+  sealed. (3) *A displaced room is never also a skew* — resolving a collision moves a room
+  off its compass cell by construction, so reporting that as skew would have made D7's
+  "direction skew is zero in all three" false the moment collision resolution shipped.
+- **Deferred by design**: manual map positions are an input (`LayoutOptions.overrides`), not
+  a store — where they persist is the IDE's call in Phase 6, and the analyzer stays a pure
+  function of the IR.
 
 ### Phase 3: Incomplete derivation — vocabulary check and candidate-list heuristic (D5, D6, D6b, AC-7)
 - **Tier**: Medium
@@ -174,7 +212,56 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
   boundary lists inline so tuning drift is visible in a future diff. No suppression
   mechanism is implemented — every finding, every build, exactly as D6a specifies for this
   ADR's scope.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-19, session 8cf526)
+- **Outcome**: two new modules — `vocabulary.ts` (the parser's resolution model) and
+  `incomplete.ts` (the extractor, the three classes, and the documented lists). **74/74
+  tests green** (`pnpm --filter '@sharpee/world-index' test:ci`, 2026-08-19 03:59 local):
+  21 loader-semantics, 17 Reach, 12 Map, 24 Incomplete. `npx tsf build` clean across the
+  whole tree.
+- **The resolution model is imported, not restated.** `deriveNameVocabulary` — the function
+  `command-validator.ts` itself calls — is imported from `@sharpee/world-model`, which is
+  therefore a runtime dependency of this package now, not just `@sharpee/chord`. Writing a
+  private copy of the parser's content-word rule inside a tool whose whole purpose is
+  "resolve the way the parser resolves" is the D3-class error this ADR exists to avoid.
+  `@sharpee/world-model` costs little: its only dependencies are `core` and `if-domain`.
+- **The parser matches on whole-vocabulary coverage, and the prototype did not.** The
+  validator's WORDS tier requires *every* content word of the query to appear in one
+  entity's vocabulary; the prototype instead indexed each name's **last** word as a head
+  noun and checked modifiers against whatever that head matched. Modelling the real rule
+  moved three Fernhill findings and is the reason the pinned figures differ from the
+  prototype's: *boiler's water valve* is **ambiguous**, not missing-word, because the
+  stopcock's alias *water valve* and the *brass valve handle* both answer to `valve` (the
+  prototype's head index only saw `handle`); *far wall* and *plain white* became
+  missing-word cases because `wall` genuinely reaches the wall niche and `white` genuinely
+  reaches the pantry door's *white door* alias.
+- **Two extractor rules were changed after measuring, not by taste.** `here`/`there` joined
+  the boundary list — as locatives they end a noun phrase, and without them *"left the ball
+  here"* headed on `here` and the whole phrase was lost. The minimum head length dropped
+  from four letters to three, because interactive fiction is full of three-letter objects
+  and the old floor silently dropped every one: the change recovered *small steel box* for
+  the deed box, *flat tin*, *leather pot*, and *hotel bar*, against exactly one junk entry
+  (`seedling now`) across the whole corpus. Both are documented at their constant.
+- **Pinned corpus figures** (D6b): Fernhill 20 missing-word / 9 ambiguous / 58 no-object;
+  The Alderman 4 / 0 / 36; Ides of March 7 / 0 / 30. Every case ADR-321 quotes is asserted
+  by name: *hurricane lamp* → `oil-lamp` missing `hurricane`; *long iron poker* →
+  `furnace-poker` missing `iron`; *study door* ambiguous across all three real doors;
+  `scrollwork`, `keyhole`, `bolt`, `cache` with no object behind them. The ADR's own
+  figure of 17 missing-word cases was the prototype's, measured with the head-noun model,
+  a four-letter floor, and first-visit prose unread — worth an ADR amendment when
+  convenient, not a discrepancy to reconcile.
+- **AC-7 green**, with no `adjectives` field anywhere: `ball` raises the three-way
+  disambiguation, each colour word resolves its own ball alone, `red green` and `brass ball`
+  resolve to nothing (a word the entity does not answer to disqualifies it), and `plant` /
+  `potted plant` / `potted` all reach the potted plant.
+- **Two limits are documented and pinned rather than papered over.** A verb the boundary
+  list does not name swallows the phrase after it (*the hurricane lamp burns* reads as a
+  three-word phrase headed by `burns`) — a part-of-speech pass is the fix and D6b defers it
+  deliberately, so a test asserts the loss so it stays visible. And **scope is not modelled**:
+  a generic noun resolves against the whole story, so `wall` in the Study's prose reaches the
+  Folly's wall niche and stays quiet. Adding scope would raise recall further and is a
+  design decision the ADR does not make — worth raising before Phase 6 renders this view.
+- **No suppression mechanism**, exactly as D6a specifies for this ADR's scope: every finding,
+  every build.
 
 ### Phase 4: Subprocess JSON contract and failure-state handling (AC-9)
 - **Tier**: Small
@@ -193,9 +280,41 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
   indirectly here and directly in Phase 6's IDE-side handling) each produce the documented
   failure shape; the schema is written down (a `.d.ts` or JSON-schema comment) as the
   contract Phase 6's Swift side parses against.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-19, session 8cf526)
+- **Outcome**: `src/document.ts` (the wire contract) and `src/cli.ts` (the entry point).
+  **83/83 tests green** (`pnpm --filter '@sharpee/world-index' test:ci`, 2026-08-19 04:09
+  local): 21 loader-semantics, 17 Reach, 12 Map, 24 Incomplete, **9 CLI**. `npx tsf build`
+  clean across the whole tree.
+- **Invocation**: `node packages/world-index/dist/cli.js <story>.ir.json`, following the
+  `transcript-tester` convention — a `src/cli.ts` with a shebang, no published `bin`.
+  Exit 0 carries an analysis, exit 1 carries a failure document, and anything else means
+  the process died before it could speak, which is the IDE's own empty state.
+- **The written-down schema is `dist/document.d.ts`**, emitted from `src/document.ts`. That
+  file is marked a wire contract in its own header and holds no `Map`, no `Set`, and no
+  optional-only fields — every absent value crosses as an explicit `null`, so the Swift side
+  decodes one shape. `WORLD_INDEX_SCHEMA` (`world-index/1`) is what Phase 6 branches on;
+  `analyzerVersion` is the package version and is diagnostics only.
+- **Two version fields, deliberately.** The ADR says the schema is "versioned with the
+  package", but the package version rides the platform's lockstep release train and would
+  churn the wire version on every release for no wire change — the failure `chord`'s own
+  `version.ts` exists to avoid. So the document carries both: a hand-bumped schema name the
+  IDE switches on, and the package version for diagnostics.
+- **Four failure causes, each a document rather than a stack trace**: `usage` (no path),
+  `unreadable-ir` (the path names nothing), `malformed-ir` (not JSON, or JSON that is not a
+  Story IR), `internal` (the analysis itself threw). `readStoryIR` gained the
+  unreadable/malformed distinction to feed this — Phase 1 collapsed both into one error.
+- **Real-path tested, not stubbed** (DEVARCH 13a): `tests/cli.test.ts` spawns the built
+  `dist/cli.js` as an actual child process and parses its real stdout for the success case
+  and all four failures, asserting stderr is empty every time. It compiles Fernhill itself
+  and writes the IR to a scratch directory rather than reading the committed build artifact,
+  so the run depends on this checkout's compiler rather than on when someone last built the
+  story. One test re-derives the document in-process and asserts the wire form is equal —
+  serialization loses nothing.
+- **AC-9's third case, an absent `node`, is not testable from inside a Node process** and is
+  IDE-side by nature. Phase 6 owns it; this phase's exit-code contract is what makes it
+  renderable.
 
-### Phase 5: AC-8 — synthetic corpus and scale timing
+### Phase 5: AC-8 — synthetic corpus and scale timing — CURRENT
 - **Tier**: Medium
 - **Budget**: 250 tool calls
 - **Domain focus**: performance tripwire for D4's fixed-point analysis, deliberately scoped
@@ -218,7 +337,7 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: five timing figures recorded in this work's session/context notes; a
   decision recorded (full analysis kept, or fallback engaged) with David's sign-off, since
   this is the ADR's single most consequential runtime trade-off.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-19)
 
 ### Phase 6: IDE World tab (D8) — Map / Reach / Incomplete views in SharpeeIDE
 - **Tier**: Medium
