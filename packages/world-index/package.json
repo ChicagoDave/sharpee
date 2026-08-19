@@ -17,7 +17,8 @@
     "lint": "eslint src --ext .ts",
     "build:npm": "tsc --outDir dist",
     "test": "vitest",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "scale": "WORLD_INDEX_SCALE_TABLE=1 vitest run tests/scale-timing.test.ts"
   },
   "dependencies": {
     "@sharpee/chord": "workspace:*",

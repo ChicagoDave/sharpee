@@ -314,7 +314,7 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
   IDE-side by nature. Phase 6 owns it; this phase's exit-code contract is what makes it
   renderable.
 
-### Phase 5: AC-8 — synthetic corpus and scale timing — CURRENT
+### Phase 5: AC-8 — synthetic corpus and scale timing
 - **Tier**: Medium
 - **Budget**: 250 tool calls
 - **Domain focus**: performance tripwire for D4's fixed-point analysis, deliberately scoped
@@ -337,7 +337,59 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: five timing figures recorded in this work's session/context notes; a
   decision recorded (full analysis kept, or fallback engaged) with David's sign-off, since
   this is the ADR's single most consequential runtime trade-off.
-- **Status**: CURRENT (since 2026-08-19)
+- **Status**: DONE (2026-08-19, session 421f1f)
+- **Decision — full analysis kept, fallback NOT implemented.** David's sign-off, 2026-08-19.
+  The D4 fixed point grows linearly in room count; the documented fallback would save under a
+  millisecond at 100 rooms while trading away the correctness D4 exists for. Any future
+  authoring-speed concern here is a question about process startup, not about the derivation.
+- **Outcome**: `tests/corpus-shape.ts` (structural profiler), `tests/synthetic-corpus.ts`
+  (the generator), `tests/scale-timing.ts` (the harness), their three test files, and a
+  `scale` package script. **119 passing, 1 skipped** (the gated report) —
+  `pnpm --filter '@sharpee/world-index' test:ci`, 2026-08-19 04:39 local; root
+  `npx tsc --noEmit` clean.
+- **The five figures** — `pnpm --filter '@sharpee/world-index' scale`, Node v25.8.1 on
+  darwin, 2026-08-19 04:40 local. Startup floor, measured from a no-argument run that
+  analyzes nothing: **63.53ms**.
+
+  | shape | rooms | entities | IR | analysis | subprocess | over floor |
+  |---|---|---|---|---|---|---|
+  | derived | 20 | 80 | 73K | 0.23ms | 68.03ms | 4.04ms |
+  | derived | 40 | 160 | 146K | 0.45ms | 68.95ms | 4.96ms |
+  | derived | 60 | 239 | 219K | 0.64ms | 70.29ms | 6.30ms |
+  | derived | 80 | 319 | 293K | 0.85ms | 70.79ms | 6.80ms |
+  | derived | 100 | 399 | 366K | 1.07ms | 71.14ms | 7.15ms |
+  | dense-chain (bound) | 100 | 430 | 395K | 1.19ms | 72.16ms | 8.17ms |
+
+  Growth: **rooms^0.95** derived, **rooms^1.08** for the adversarial bound. A 100-room story
+  — four times Fernhill's size — costs an author ~71ms, of which 63.5ms is node starting up
+  and ~1ms is the derivation. "Over floor" includes reading and parsing the 366K IR file; the
+  parse is the larger half of it, not the analysis.
+- **The corpus is derived, not invented.** Every structural parameter of a generated story is
+  read at generation time from ratios measured off Fernhill, The Alderman, and Ides of March
+  (`corpus-shape.ts`, pinned by inline snapshot): 1.65 exit lines/room, 2.65 things/room,
+  0.15 obstacles/room at a 0.25 lock share, 23.1 words/description, 6.5 rooms/region, 0.5
+  dead-end share, 0 cycles. The closing check is a round trip — generate from the measured
+  ratios, compile, profile the result with the same profiler, require it back within 15%.
+  An earlier hand-tuned generator was discarded: a fixture shaped to produce its own finding
+  makes the timing table describe a story nobody wrote.
+- **Finding that outlives this phase: every map in the corpus is a pure tree.** Fernhill
+  wires 12 connections across 13 rooms, The Alderman 7 across 8, Ides of March 4 across 5 —
+  not one cycle anywhere, and half of all rooms are dead ends. The Map view's collision
+  resolution and direction-skew detection (D7) therefore have no corpus behind them; Phase 6
+  will be rendering machinery no real story has exercised.
+- **Two ratios were corrected before anything was derived from them.** `roomsPerRegion` read
+  13 by counting all 26 rooms against Fernhill's 2 regions (real figure 6.5 — it is now taken
+  only over stories that declare regions), and raw connections-per-room read 0.88 — below a
+  tree — purely because pooling three stories loses one connection each. That is now
+  `cyclesPerRoom`, taken per story and then pooled, which reads 0 and generalizes.
+- **`dense-chain` is a labelled upper bound, never a representative case**: it packs
+  obstacles ~2x denser than the corpus and seals each opener where the walk cannot reach it
+  until the next pass. Its figures are reported as a bound and tested as one.
+- **Real-path tested, not stubbed** (DEVARCH 13a): the always-on acceptance tests spawn the
+  built `dist/cli.js` at 20 and 100 rooms and at the bound shape, and require a clean
+  analysis from each. Only the report is gated (`WORLD_INDEX_SCALE_TABLE=1`, via
+  `pnpm --filter '@sharpee/world-index' scale`) — it spends fifty-odd spawns producing a
+  table for a human to read, which belongs on demand rather than in every suite run.
 
 ### Phase 6: IDE World tab (D8) — Map / Reach / Incomplete views in SharpeeIDE
 - **Tier**: Medium
@@ -365,7 +417,12 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: the World tab renders Map, Reach, and Incomplete for at least Fernhill,
   driven by a real build; all three AC-9 failure states are exercised manually (missing IR,
   malformed IR, `node` unavailable) and each shows the explanatory state, not a crash.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-19) — Phase 5's timing decision is made (full analysis
+  kept), so the entry state is satisfied except for David's explicit approval of this phase's
+  `tools/ide` changes, which the entry state requires and which has not been given.
+- **Carried in from Phase 5**: the Map view's collision resolution and direction-skew
+  detection have no corpus behind them — every real Chord map is a tree with no cycles — so
+  those code paths will be built and reviewed without a real story that exercises them.
 
 ### Phase 7: Retire `tools/vscode-ext/src/world-explorer.ts` (D9, ADR-131's own consequence)
 - **Tier**: Small
