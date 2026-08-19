@@ -85,11 +85,19 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
   it('captures only the opening channels when none are declared (David 2026-08-09)', async () => {
     const game = assembleGame(makeStory(), { seed: 42 });
     await game.executeCommand('look');
-    // The banner and the prologue are ALWAYS captured — a transcript's
+    // The banner, the prologue and info are ALWAYS captured — a transcript's
     // opening claims read them via the boot snapshot. Nothing else joins
     // the capture set without a channels: declaration.
-    expect(Object.keys(game.lastChannels)
-      .every((id) => id === 'banner' || id === 'prologue')).toBe(true);
+    //
+    // `info` joined this set for GH #280: synthesizeOpeningAssertions reads
+    // its title/description, so leaving it uncaptured made that branch
+    // unreachable and every story recorded an empty opening card. The
+    // assertion below is the one that has to move when the opening set
+    // changes — which is the point of it, so keep it exact rather than
+    // loosening it to a subset check.
+    expect(Object.keys(game.lastChannels).every(
+      (id) => id === 'banner' || id === 'prologue' || id === 'info',
+    )).toBe(true);
     expect(game.lastChannels.chime).toBeUndefined();
   });
 

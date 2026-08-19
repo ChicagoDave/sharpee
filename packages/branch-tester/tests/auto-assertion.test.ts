@@ -186,6 +186,23 @@ const BOOT_CAPTURES: Record<string, unknown[]> = {
 };
 
 describe('synthesizeOpeningAssertions — the opening defaults (ADR-307 open question D)', () => {
+  // GH #280. Both shipped sample stories (ides-of-march, fernhill) declare
+  // `title:`/`description:` and NO prologue, and both recorded an empty opening
+  // card. The suite above did not catch it because its fixture hands the
+  // synthesizer an `info` capture the real pipeline never produced —
+  // `openingChannels` in @sharpee/bootstrap captured only ['banner','prologue'],
+  // so `bootChannelValues['info']` was always undefined in production and the
+  // title/description branch was unreachable. The fixture was right about the
+  // shape and wrong about reality; this case pins the story shape that actually
+  // ships.
+  it('claims title and description when the story has no prologue', () => {
+    const infoOnly = { info: [{ title: 'The Ides of March', description: 'Three days.' }] };
+    const claims = synthesizeOpeningAssertions('room-name-and-description', infoOnly);
+    expect(claims.length).toBeGreaterThan(0);
+    expect(claims.some((c) => c.channelPath?.includes('title'))).toBe(true);
+    expect(claims.some((c) => c.channelPath?.includes('description'))).toBe(true);
+  });
+
   it('claims prologue, title, and description from the boot captures', () => {
     expect(synthesizeOpeningAssertions('room-name-and-description', BOOT_CAPTURES)).toEqual([
       {

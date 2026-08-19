@@ -1525,7 +1525,8 @@
       if (this.active === MAIN_LINE && !this.hasOpening) {
         if (cursor < cards2.length && cards2[cursor].type === "opening") {
           const openingCard = cards2[cursor];
-          if (openingCard.assertions === void 0 && openingCard.skip !== true) {
+          const openingIsClaimless = openingCard.assertions === void 0 || Object.keys(openingCard.assertions).length === 0;
+          if (openingIsClaimless && openingCard.skip !== true) {
             const claims = cloneAssertions(delivery.openingAssertions);
             if (claims !== void 0) openingCard.assertions = claims;
           }
@@ -2493,7 +2494,14 @@
       const labels = captures.map((capture) => {
         const flat = proseTextLinesOf(capture.values).join(" ");
         const scalar = capture.values.length === 1 && typeof capture.values[0] !== "object" ? String(capture.values[0]) : null;
-        return `${capture.channel} \u2014 ${scalar ?? `"${flat.slice(0, 40)}"`}`;
+        if (scalar !== null) return `${capture.channel} \u2014 ${scalar}`;
+        if (flat.length > 0) return `${capture.channel} \u2014 "${flat.slice(0, 40)}"`;
+        const payload = capture.values.length === 1 ? capture.values[0] : void 0;
+        if (payload !== null && typeof payload === "object" && !Array.isArray(payload)) {
+          const summary = Object.entries(payload).filter(([, v]) => v !== void 0 && v !== null && v !== "").map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`).join(" \xB7 ");
+          if (summary.length > 0) return `${capture.channel} \u2014 ${summary.slice(0, 60)}`;
+        }
+        return `${capture.channel} \u2014 (no content)`;
       });
       showListPicker(anchor, "channels this turn captured", labels, (_label, index) => {
         const capture = captures[index];

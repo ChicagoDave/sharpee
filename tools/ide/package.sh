@@ -150,8 +150,13 @@ ok()   { echo "  ✓ $*"; }
 # mode this script is built to avoid.
 warn() { echo "  ⚠ $*"; }
 
-readonly USAGE="usage: package.sh [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
-       package.sh --dmg-from <app> [--keep-work] [--no-toolchain]"
+readonly USAGE="usage: package.sh [--arch arm64|x86_64] [--skip-platform-build] [--keep-work] [--no-notarize] [--rebuild]
+       package.sh --dmg-from <app> [--arch arm64|x86_64] [--keep-work] [--no-toolchain]
+       package.sh                            (resume; architecture is read from the staged app)
+
+  --arch is only a REQUEST, and only on the build path. With --dmg-from, or when
+  resuming, the architecture is read from the bundle itself and --arch is checked
+  against it rather than believed."
 
 SKIP_PLATFORM_BUILD=0
 KEEP_WORK=0
@@ -208,6 +213,107 @@ if [ "$NO_TOOLCHAIN" -eq 1 ] && [ -z "$DMG_FROM" ]; then
   so there is nothing for the flag to switch off on the build path."
 fi
 
+# --- Version, from project.yml (ADR-279 D1: Chord Writer versions on its own line)
+VERSION="$(sed -n 's/^ *CFBundleShortVersionString: *"\{0,1\}\([0-9][0-9.]*\)"\{0,1\} *$/\1/p' "$IDE_DIR/project.yml" | head -1)"
+[ -n "$VERSION" ] || die "could not read CFBundleShortVersionString from $IDE_DIR/project.yml."
+ok "version: $VERSION"
+
+# Per-arch naming. Chord Writer ships as separate per-arch installers (ADR-279
+# D4, David 2026-08-13): each app carries a bundled toolchain for exactly one
+# architecture, so the DMG has to say which.
+#
+# THE RULE: an artifact's architecture is a property of its BYTES, never of the
+# machine that happened to run this script. It is derived and asserted, never
+# inferred. Only the build path — which passes ARCHS= to xcodebuild explicitly
+# and then asserts the result — may take it from a flag or the host.
+#
+# This was `ARCH="$(uname -m)"` unconditionally, and it shipped two corrupt
+# artifacts on 2026-08-18: `--dmg-from <x86_64 app>` on an Apple Silicon host
+# wrote `ChordWriter-1.3.0-arm64.dmg` around an x86_64 app, and a bare resume of
+# an Intel run overwrote the arm64 Sparkle archive with Intel bytes under the
+# arm64 name. Neither errored. assert_arch_agreement did not catch either,
+# because it compares the app against its own bundled node — consistent in both
+# cases — and never against the name the artifact is being written under.
+arch_of_app() {  # arch_of_app <app> -> arm64|x86_64
+  local a
+  a="$(lipo -archs "$1/Contents/MacOS/Chord Writer" 2>/dev/null | tr -s ' ' | tr -d '[:space:]')"
+  case "$a" in
+    arm64) echo arm64 ;;
+    x86_64) echo x86_64 ;;
+    "") die "cannot read the architecture of '$1' — no Mach-O at Contents/MacOS/Chord Writer." ;;
+    *) die "'$1' is a $a binary. Chord Writer ships one architecture per installer
+  (ADR-279 D4); a fat or unexpected slice has no single correct DMG name." ;;
+  esac
+}
+
+# Precedence: the artifact being packaged, then the artifact already staged,
+# then the flag, then the host. Each earlier source is closer to the bytes.
+ARCH_SOURCE=""
+DERIVED_ARCH=""
+if [ -n "$DMG_FROM" ] && [ -d "$DMG_FROM" ]; then
+  DERIVED_ARCH="$(arch_of_app "$DMG_FROM")"
+  ARCH_SOURCE="the app passed to --dmg-from"
+elif [ -z "$ARCH" ]; then
+  # Bare resume. Each slice keeps its own ledger and staged app under
+  # release/<arch>/, so the pending run identifies itself — no need to guess the
+  # host, which is how the arm64 Sparkle archive was overwritten with Intel bytes.
+  pending=""
+  for cand in "$RELEASE_DIR"/*/; do
+    [ -f "$cand/.notarize-state" ] && [ -d "$cand/Chord Writer.app" ] || continue
+    pending="$pending${pending:+ }$(basename "$cand")"
+  done
+  case "$pending" in
+    "") : ;;                       # nothing pending — a fresh build, fall through to the host
+    *" "*) die "more than one slice has an unfinished run ($pending).
+  Say which to resume: package.sh --arch <arm64|x86_64>." ;;
+    *)
+      DERIVED_ARCH="$(arch_of_app "$RELEASE_DIR/$pending/Chord Writer.app")"
+      [ "$DERIVED_ARCH" = "$pending" ] || die "release/$pending holds a $DERIVED_ARCH app.
+  The directory names the slice; its contents must agree. Remove it and start that
+  slice again rather than resuming a run filed under the wrong architecture."
+      ARCH_SOURCE="the unfinished run in release/$pending"
+      ;;
+  esac
+fi
+
+if [ -n "$DERIVED_ARCH" ]; then
+  # A flag that disagrees with the bytes is a mistake, not a preference. Refuse
+  # rather than silently picking one — either choice mislabels a real artifact.
+  if [ -n "$ARCH" ]; then
+    case "$ARCH" in
+      arm64|aarch64) flag_slug=arm64 ;;
+      x86_64|x64)    flag_slug=x86_64 ;;
+      *) die "unsupported --arch '$ARCH' — expected arm64 or x86_64." ;;
+    esac
+    [ "$flag_slug" = "$DERIVED_ARCH" ] || die "--arch says $flag_slug but $ARCH_SOURCE is $DERIVED_ARCH.
+  Architecture is read from the bundle, not taken on trust. Drop --arch, or pass
+  the matching value, or point at the other slice's app."
+  fi
+  readonly ARCH_SLUG="$DERIVED_ARCH"
+  ok "architecture: $ARCH_SLUG (read from $ARCH_SOURCE)"
+else
+  # Build path only. ARCHS= is passed to xcodebuild from this value and the
+  # produced app is asserted against it after the archive (step 2).
+  [ -n "$ARCH" ] || ARCH="$(uname -m)"
+  case "$ARCH" in
+    arm64|aarch64) readonly ARCH_SLUG="arm64" ;;
+    x86_64|x64)    readonly ARCH_SLUG="x86_64" ;;
+    *) die "unsupported --arch '$ARCH' — expected arm64 or x86_64." ;;
+  esac
+fi
+readonly DMG_NAME="ChordWriter-${VERSION}-${ARCH_SLUG}.dmg"
+
+# Each slice owns everything it touches. Before this, one ledger and one staging
+# slot sat at release/ root and the two architectures could overwrite each other:
+# `notarize_artifact` checked the recorded DMG_SUBMISSION before submitting, so a
+# second slice polled the FIRST slice's verdict and would staple a ticket issued
+# for different bytes. release-all.sh carried a guard against exactly that — in
+# the driver, which calling package.sh directly bypassed. Separate directories
+# make the crossing structurally impossible instead of merely guarded against.
+# The DMG FILENAME is unchanged; only its containing directory moves. Served
+# paths are a hard constraint — SUFeedURL is compiled into every shipped binary.
+readonly ARCH_RELEASE_DIR="$RELEASE_DIR/$ARCH_SLUG"
+
 # ---------------------------------------------------------------------
 # Notarization state — the resume ledger
 # ---------------------------------------------------------------------
@@ -219,13 +325,13 @@ fi
 # The pattern is lifted from Ledga's mac-release-2.sh / mac-release-3.sh, which
 # were split into numbered scripts for exactly this reason. Here it is one script
 # that is idempotent instead of three that run in order.
-readonly STATE_FILE="$RELEASE_DIR/.notarize-state"
-readonly STAGED_APP="$RELEASE_DIR/Chord Writer.app"
+readonly STATE_FILE="$ARCH_RELEASE_DIR/.notarize-state"
+readonly STAGED_APP="$ARCH_RELEASE_DIR/Chord Writer.app"
 
 state_get() { [ -f "$STATE_FILE" ] && sed -n "s/^$1=//p" "$STATE_FILE" | head -1 || true; }
 
 state_set() {  # state_set <key> <value>
-  mkdir -p "$RELEASE_DIR"
+  mkdir -p "$ARCH_RELEASE_DIR"
   [ -f "$STATE_FILE" ] && sed -i '' "/^$1=/d" "$STATE_FILE" 2>/dev/null || true
   echo "$1=$2" >> "$STATE_FILE"
 }
@@ -486,7 +592,7 @@ step "Preflight"
 
 # `node` is in the always-required set because the toolchain seal scan runs in
 # both modes; xcodebuild/xcodegen/pnpm are demanded only by the path that builds.
-for tool in node hdiutil codesign xcrun shasum osascript; do
+for tool in node hdiutil codesign xcrun shasum osascript lipo; do
   command -v "$tool" >/dev/null || die "'$tool' is not on PATH but is required."
 done
 if [ -z "$DMG_FROM" ]; then
@@ -598,22 +704,6 @@ xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 \
   Override the profile name with NOTARY_PROFILE=<name> if yours differs."
 ok "notary profile '$NOTARY_PROFILE' authenticates"
 
-# --- Version, from project.yml (ADR-279 D1: Chord Writer versions on its own line)
-VERSION="$(sed -n 's/^ *CFBundleShortVersionString: *"\{0,1\}\([0-9][0-9.]*\)"\{0,1\} *$/\1/p' "$IDE_DIR/project.yml" | head -1)"
-[ -n "$VERSION" ] || die "could not read CFBundleShortVersionString from $IDE_DIR/project.yml."
-ok "version: $VERSION"
-
-# Per-arch naming. Chord Writer ships as separate per-arch installers (ADR-279
-# D4, David 2026-08-13): each app carries a bundled toolchain for exactly one
-# architecture, so the DMG has to say which. Defaults to the build host, which
-# keeps a bare `package.sh` doing what it always did on this machine.
-[ -n "$ARCH" ] || ARCH="$(uname -m)"
-case "$ARCH" in
-  arm64|aarch64) readonly ARCH_SLUG="arm64" ;;
-  x86_64|x64)    readonly ARCH_SLUG="x86_64" ;;
-  *) die "unsupported --arch '$ARCH' — expected arm64 or x86_64." ;;
-esac
-readonly DMG_NAME="ChordWriter-${VERSION}-${ARCH_SLUG}.dmg"
 WORK="$(mktemp -d)"
 if [ "$KEEP_WORK" -eq 1 ]; then
   trap 'echo ""; echo "work directory kept: $WORK"' EXIT
@@ -699,9 +789,9 @@ if [ -n "$DMG_FROM" ]; then
   if [ "$adopted" = "$staged_resolved" ]; then
     ok "already staged at $STAGED_APP"
   else
-    mkdir -p "$RELEASE_DIR"
+    mkdir -p "$ARCH_RELEASE_DIR"
     rm -rf "$STAGED_APP"
-    ditto "$adopted" "$STAGED_APP" || die "failed to stage the supplied app into $RELEASE_DIR."
+    ditto "$adopted" "$STAGED_APP" || die "failed to stage the supplied app into $ARCH_RELEASE_DIR."
     codesign --verify --deep --strict "$STAGED_APP" \
       || die "the staged copy does not verify — the copy damaged the signature."
     xcrun stapler validate "$STAGED_APP" >/dev/null 2>&1 \
@@ -799,6 +889,17 @@ $(tail -30 "$WORK/xcodebuild.log")"
 readonly APP="$ARCHIVE/Products/Applications/Chord Writer.app"
 [ -d "$APP" ] || die "archive produced no 'Chord Writer.app'. Log: $WORK/xcodebuild.log"
 ok "archived $(basename "$APP")"
+
+# Defense in depth: ARCHS= was passed explicitly above, so this should be
+# tautological — but the whole class of bug this script keeps meeting is an
+# artifact whose real architecture differs from the name it is filed under, and
+# a stale .xcodeproj is a documented way to get one (see assert_arch_agreement).
+# Assert the bytes, not the request.
+built_arch="$(arch_of_app "$APP")"
+[ "$built_arch" = "$ARCH_SLUG" ] || die "asked xcodebuild for $ARCH_SLUG but the archive
+  contains a $built_arch app. Every artifact from here — the DMG name, the Sparkle
+  archive, the appcast — would claim $ARCH_SLUG and carry $built_arch.
+  Re-run 'xcodegen generate' (project.yml's ARCHS is baked in at generation time)."
 
 assert_bundle_version "$APP"
 assert_minimum_system_version "$APP"
@@ -997,9 +1098,9 @@ ok "vendored node entitlements correct (allow-jit present, get-task-allow absent
 # notarization, the staple, the DMG — reads the staged copy, so the artifact in
 # the queue and the artifact on disk are the same bytes.
 step "Staging the signed app"
-mkdir -p "$RELEASE_DIR"
+mkdir -p "$ARCH_RELEASE_DIR"
 rm -rf "$STAGED_APP"
-ditto "$APP" "$STAGED_APP" || die "failed to stage the signed app into $RELEASE_DIR."
+ditto "$APP" "$STAGED_APP" || die "failed to stage the signed app into $ARCH_RELEASE_DIR."
 codesign --verify --deep --strict "$STAGED_APP" \
   || die "the staged copy does not verify — the copy damaged the signature."
 ok "staged at $STAGED_APP (signature re-verified after the copy)"
@@ -1057,8 +1158,8 @@ fi
 # dmg-layout-test.sh drives that script directly. This step owns WHAT goes in
 # and where the result lands — the script owns how the image is built.
 step "DMG"
-mkdir -p "$RELEASE_DIR"
-readonly DMG_PATH="$RELEASE_DIR/$DMG_NAME"
+mkdir -p "$ARCH_RELEASE_DIR"
+readonly DMG_PATH="$ARCH_RELEASE_DIR/$DMG_NAME"
 # On a resume the DMG is already built and already submitted; rebuilding it would
 # change its bytes and orphan that submission, exactly as a rebuilt app would.
 if [ -f "$DMG_PATH" ] && [ -n "$(state_get DMG_SUBMISSION)" ]; then
@@ -1098,7 +1199,7 @@ spctl --assess --type open --context context:primary-signature -vv "$DMG_PATH" 2
   || die "Gatekeeper rejected the DMG on the build machine. It will not open elsewhere."
 ok "Gatekeeper accepts the DMG"
 
-( cd "$RELEASE_DIR" && shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256" ) \
+( cd "$ARCH_RELEASE_DIR" && shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256" ) \
   || die "failed to write the checksum."
 
 # =====================================================================
@@ -1112,9 +1213,9 @@ ok "Gatekeeper accepts the DMG"
 # It runs AFTER the Gatekeeper gate deliberately — the payload is built from the
 # stapled app, so it must not exist until the app has actually passed.
 step "Sparkle update payload"
-"$IDE_DIR/sparkle/make-update.sh" "$SHIP_APP" "$VERSION" "$ARCH_SLUG" "$RELEASE_DIR" \
+"$IDE_DIR/sparkle/make-update.sh" "$SHIP_APP" "$VERSION" "$ARCH_SLUG" "$ARCH_RELEASE_DIR" \
   || die "failed to build the Sparkle update payload."
-ok "update archive, signature and appcast written to release/sparkle/$ARCH_SLUG/"
+ok "update archive, signature and appcast written to release/$ARCH_SLUG/sparkle/"
 
 # Both artifacts are stapled and the ledger has nothing left to resume. Clearing
 # it is what makes the NEXT run a fresh build rather than a resume of a release

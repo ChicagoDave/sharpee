@@ -311,7 +311,16 @@ export class TreeSessionModel {
         // Fill a void, never overwrite — same rule as every other bind: a
         // claim-less opening (a pre-pivot document, or a hand-edited one)
         // gains the boot's recorded claims on its first replay.
-        if (openingCard.assertions === undefined && openingCard.skip !== true) {
+        //
+        // `{}` counts as claim-less, not as filled (GH #280). Every recorded
+        // tree writes the opening as `"assertions": {}`, so testing only for
+        // `undefined` meant the self-heal above never once fired and the three
+        // shipped trees would have stayed empty forever — the very case this
+        // branch names ("a pre-pivot document, or a hand-edited one").
+        const openingIsClaimless =
+          openingCard.assertions === undefined
+          || Object.keys(openingCard.assertions).length === 0;
+        if (openingIsClaimless && openingCard.skip !== true) {
           const claims = cloneAssertions(delivery.openingAssertions);
           if (claims !== undefined) openingCard.assertions = claims;
         }

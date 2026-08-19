@@ -235,7 +235,13 @@ export function assembleGame(
   // stays empty unless someone subscribes. Standard-registry channels, so
   // the lookup below always resolves; invisible to golden recordings, same
   // as the policy channels above.
-  const openingChannels = ['banner', 'prologue'];
+  // `info` joins these because synthesizeOpeningAssertions reads its `title` and
+  // `description` (ADR-300 D13 dotted-path claims) — it was reading a channel
+  // nothing captured, so that whole branch was unreachable and every story's
+  // opening card recorded empty (GH #280). `banner` stays: it is the RENDERED
+  // banner (sparse, from game.started) and is claimable by hand in the IDE
+  // picker, deliberately not auto-synthesized (David 2026-08-10).
+  const openingChannels = ['banner', 'prologue', 'info'];
   const capturedChannels = [
     ...new Set([...(opts?.channels ?? []), ...policyChannels, ...openingChannels]),
   ];

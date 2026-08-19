@@ -4,7 +4,7 @@
 #
 # Public interface:
 #   make-update.sh <stapled-app> <version> <arch-slug> <release-dir>
-# Writes into <release-dir>/sparkle/<arch-slug>/:
+# Writes into <release-dir>/sparkle/:
 #   ChordWriter-<version>-<arch>.zip         the update payload
 #   ChordWriter-<version>-<arch>.zip.sha256  its checksum
 #   appcast-<arch>.xml                       the feed, signed, with this release appended
@@ -71,7 +71,11 @@ xcrun stapler validate "$APP" >/dev/null 2>&1 \
   || die "$APP is not stapled. Sparkle payloads must carry their own notarization
   ticket — build the update from the stapled app, not the pre-notarization one."
 
-readonly SPARKLE_DIR="$RELEASE_DIR/sparkle/$ARCH_SLUG"
+# <release-dir> is the caller's PER-ARCH directory (release/<arch>/), so the arch
+# is already in the path — appending it again would give release/arm64/sparkle/arm64/.
+# The arch still appears in the FILENAMES (appcast-<arch>.xml, ...-<arch>.zip),
+# which is what the served URLs depend on and must not change.
+readonly SPARKLE_DIR="$RELEASE_DIR/sparkle"
 mkdir -p "$SPARKLE_DIR"
 
 readonly ZIP_NAME="ChordWriter-$VERSION-$ARCH_SLUG.zip"

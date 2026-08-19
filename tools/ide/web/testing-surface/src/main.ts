@@ -305,7 +305,22 @@ const cards = new CardsView(model, {
       const flat = proseTextLinesOf(capture.values).join(' ');
       const scalar = capture.values.length === 1 && typeof capture.values[0] !== 'object'
         ? String(capture.values[0]) : null;
-      return `${capture.channel} — ${scalar ?? `"${flat.slice(0, 40)}"`}`;
+      if (scalar !== null) return `${capture.channel} — ${scalar}`;
+      if (flat.length > 0) return `${capture.channel} — "${flat.slice(0, 40)}"`;
+      // A JSON-payload channel (banner, info, …) has no prose to flatten, so
+      // both branches above yield "" and the row rendered as `banner — ""` —
+      // present in the list but reading as empty, which is why the banner
+      // looked absent next to the prose room channels (GH #280). Summarise the
+      // payload's own fields instead of showing nothing.
+      const payload = capture.values.length === 1 ? capture.values[0] : undefined;
+      if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+        const summary = Object.entries(payload as Record<string, unknown>)
+          .filter(([, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : String(v)}`)
+          .join(' · ');
+        if (summary.length > 0) return `${capture.channel} — ${summary.slice(0, 60)}`;
+      }
+      return `${capture.channel} — (no content)`;
     });
     showListPicker(anchor, 'channels this turn captured', labels, (_label, index) => {
       const capture = captures[index];

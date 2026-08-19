@@ -473,6 +473,53 @@ describe('splice (D4) — repairs validated by whole-path replay', () => {
   });
 });
 
+describe('opening self-heal — a claim-less opening gains the boot claims (GH #280)', () => {
+  // The fixture below uses `assertions: {}` deliberately: that is what EVERY
+  // recorded tree writes for an unclaimed opening. The suite's other fixtures
+  // use `{ type: 'opening' }` with assertions UNDEFINED, which is why the
+  // self-heal looked covered while the three shipped trees never once healed —
+  // the guard tested `=== undefined` and `{}` is not undefined.
+  const RECORDED: TreeDocument = {
+    version: 1,
+    story: 'mini',
+    seed: 42,
+    cards: [
+      { type: 'opening', assertions: {} },
+      { type: 'boot' },
+    ],
+  };
+
+  it('fills an opening recorded as `assertions: {}` on first replay', () => {
+    const model = new TreeSessionModel('mini', 42);
+    model.load(structuredClone(RECORDED));
+    model.addTurn({
+      ordinal: 1, command: '', boot: true, room: 'Den',
+      openingAssertions: { channels: [{ id: 'info.title', is: 'The Ides of March' }] },
+    });
+    expect(model.document.cards[0].assertions).toEqual({
+      channels: [{ id: 'info.title', is: 'The Ides of March' }],
+    });
+  });
+
+  it('never overwrites an opening that already carries claims', () => {
+    const model = new TreeSessionModel('mini', 42);
+    model.load(structuredClone({
+      ...RECORDED,
+      cards: [
+        { type: 'opening', assertions: { channels: [{ id: 'info.title', is: 'Authored' }] } },
+        { type: 'boot' },
+      ],
+    } as TreeDocument));
+    model.addTurn({
+      ordinal: 1, command: '', boot: true, room: 'Den',
+      openingAssertions: { channels: [{ id: 'info.title', is: 'Recorded' }] },
+    });
+    expect(model.document.cards[0].assertions).toEqual({
+      channels: [{ id: 'info.title', is: 'Authored' }],
+    });
+  });
+});
+
 describe('binding replay — restore re-derives the board from the document', () => {
   const PERSISTED: TreeDocument = {
     version: 1,

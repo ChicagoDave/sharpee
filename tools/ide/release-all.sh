@@ -23,7 +23,6 @@ set -euo pipefail
 
 readonly IDE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly RELEASE_DIR="$IDE_DIR/release"
-readonly STATE="$RELEASE_DIR/.notarize-state"
 readonly NOTARY_PROFILE="${NOTARY_PROFILE:-dc-notary}"
 
 # Apple has returned verdicts in 90 seconds and has also sat on a first-time
@@ -37,7 +36,18 @@ readonly MAX_POLLS=240
 readonly MAX_PASSES=4
 
 ARCH_LIST="arm64 x86_64"
-[ "${1:-}" = "--arch-list" ] && { ARCH_LIST="$2"; shift 2; }
+COLLECT_ONLY=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --arch-list) ARCH_LIST="$2"; shift 2 ;;
+    # Both slices are already built, notarized and stapled — just re-assemble
+    # release/<version>/. Exists because finishing a slice CLEARS its ledger, so a
+    # plain re-run sees no pending work and starts a fresh build instead of
+    # collecting: the collection step was unreachable once the builds succeeded.
+    --collect-only) COLLECT_ONLY=1; shift ;;
+    *) printf 'error: unknown flag %s\n' "$1" >&2; exit 1 ;;
+  esac
+done
 
 die() { printf '\nerror: %s\n' "$1" >&2; exit 1; }
 say() { printf '\n=== %s\n' "$1"; }
@@ -48,9 +58,9 @@ VERSION="$(sed -n 's/^ *CFBundleShortVersionString: *"\{0,1\}\([0-9][0-9.]*\)"\{
 # wait_for_submission — block until the id recorded in the ledger resolves.
 # Reads the id from the ledger rather than taking it as an argument, so the
 # thing being waited on is always the thing package.sh actually submitted.
-wait_for_submission() {
-  local id status i
-  id="$(sed -n 's/^[A-Z_]*SUBMISSION=//p' "$STATE" | tail -1)"
+wait_for_submission() {  # wait_for_submission <ledger>
+  local ledger="$1" id status i
+  id="$(sed -n 's/^[A-Z_]*SUBMISSION=//p' "$ledger" | tail -1)"
   [ -n "$id" ] || die "the ledger exists but carries no submission id."
   printf '    waiting on %s' "$id"
   for i in $(seq 1 "$MAX_POLLS"); do
@@ -70,8 +80,10 @@ wait_for_submission() {
 }
 
 build_arch() {
-  local arch="$1" pass dmg
-  dmg="$RELEASE_DIR/ChordWriter-$VERSION-$arch.dmg"
+  local arch="$1" pass dmg slice ledger
+  slice="$RELEASE_DIR/$arch"          # each slice owns its ledger, staging, DMG and sparkle payload
+  ledger="$slice/.notarize-state"
+  dmg="$slice/ChordWriter-$VERSION-$arch.dmg"
   say "$arch — building Chord Writer $VERSION"
 
   for pass in $(seq 1 "$MAX_PASSES"); do
@@ -80,14 +92,14 @@ build_arch() {
 
     # The ledger is the signal. package.sh clears it only when the release is
     # complete, so its presence means a submission is outstanding.
-    if [ -f "$STATE" ]; then
-      wait_for_submission
+    if [ -f "$ledger" ]; then
+      wait_for_submission "$ledger"
       continue
     fi
 
     # Ledger gone: assert the artifacts rather than trusting that.
     [ -f "$dmg" ] || die "the ledger is cleared but $dmg is missing."
-    [ -f "$RELEASE_DIR/sparkle/$arch/appcast-$arch.xml" ] \
+    [ -f "$slice/sparkle/appcast-$arch.xml" ] \
       || die "no appcast was produced for $arch."
     printf '  %s complete\n' "$arch"
     return 0
@@ -96,22 +108,33 @@ build_arch() {
 }
 
 # --- Build every slice ------------------------------------------------
+if [ "$COLLECT_ONLY" -eq 1 ]; then
+  say "--collect-only: skipping the builds, assembling from the existing slices"
+  for arch in $ARCH_LIST; do
+    [ -f "$RELEASE_DIR/$arch/ChordWriter-$VERSION-$arch.dmg" ] \
+      || die "--collect-only: release/$arch/ChordWriter-$VERSION-$arch.dmg is missing — that slice is not built."
+    [ -f "$RELEASE_DIR/$arch/sparkle/appcast-$arch.xml" ] \
+      || die "--collect-only: release/$arch/sparkle/appcast-$arch.xml is missing — that slice has no Sparkle payload."
+  done
+fi
 for arch in $ARCH_LIST; do
-  # A ledger from a DIFFERENT slice would make package.sh staple that
-  # architecture's submission while believing it is building this one. A ledger
-  # from THIS slice is just an unfinished run, which is exactly what resuming is
-  # for — so distinguish them by the staged app's actual architecture rather
-  # than by the ledger's mere existence.
-  if [ -f "$STATE" ]; then
-    staged="$RELEASE_DIR/Chord Writer.app/Contents/MacOS/Chord Writer"
-    [ -f "$staged" ] || die "a ledger exists at $STATE but no app is staged beside it.
-  Resolve it with ./tools/ide/package.sh, or remove it to start clean."
-    case "$(file -b "$staged")" in
-      *"$arch"*) printf '\n=== %s — resuming an unfinished run\n' "$arch" ;;
-      *) die "the ledger at $STATE belongs to a different architecture than $arch.
-  Finish that slice first with ./tools/ide/package.sh, or remove the ledger." ;;
-    esac
-  fi
+  [ "$COLLECT_ONLY" -eq 1 ] && continue
+  # A cross-arch ledger guard used to live here. It read the shared ledger at
+  # release/.notarize-state, inspected the single staged app's real architecture
+  # with `file -b`, and refused when the two disagreed — because one ledger and
+  # one staging slot served both slices, so a ledger could belong to the wrong
+  # one and make package.sh staple a ticket issued for different bytes.
+  #
+  # RETIRED 2026-08-18 because the condition it detected can no longer arise:
+  # each slice now owns release/<arch>/ entirely — its own ledger, staged app,
+  # DMG and Sparkle payload — so one slice's state is not reachable from the
+  # other's paths. The guard is not merely redundant, it had nothing left to
+  # read. Note it only ever protected release-all.sh; calling package.sh
+  # directly bypassed it, which is how both 2026-08-18 incidents happened.
+  # package.sh now derives architecture from the artifact itself, so the
+  # protection lives with the thing being protected rather than in this driver.
+  [ -f "$RELEASE_DIR/$arch/.notarize-state" ] \
+    && printf '\n=== %s — resuming an unfinished run\n' "$arch"
   build_arch "$arch"
 done
 
@@ -129,9 +152,9 @@ mkdir -p "$OUT/downloads/chord-writer"
 # transfer, not for publishing, so they go to a single CHECKSUMS.txt at the root
 # — mixing them in made a 6-file upload look like a 10-file one.
 for arch in $ARCH_LIST; do
-  cp "$RELEASE_DIR/ChordWriter-$VERSION-$arch.dmg"               "$OUT/downloads/"
-  cp "$RELEASE_DIR/sparkle/$arch/ChordWriter-$VERSION-$arch.zip" "$OUT/downloads/"
-  cp "$RELEASE_DIR/sparkle/$arch/appcast-$arch.xml"              "$OUT/downloads/chord-writer/"
+  cp "$RELEASE_DIR/$arch/ChordWriter-$VERSION-$arch.dmg"          "$OUT/downloads/"
+  cp "$RELEASE_DIR/$arch/sparkle/ChordWriter-$VERSION-$arch.zip"  "$OUT/downloads/"
+  cp "$RELEASE_DIR/$arch/sparkle/appcast-$arch.xml"               "$OUT/downloads/chord-writer/"
 done
 
 ( cd "$OUT/downloads" && shasum -a 256 ChordWriter-"$VERSION"-*.dmg ChordWriter-"$VERSION"-*.zip ) \
@@ -146,7 +169,7 @@ folder into the site's \`downloads/\` directory and every path lines up. There i
 nothing to rename and nothing to place by hand.
 
     cd tools/ide/release/$VERSION
-    scp -r downloads/* david@plover.net:~/repos/sharpee/website/public/downloads/
+    scp -r downloads/* dave@plover.net:~/repos/sharpee/website/public/downloads/
 
 \`-r\` matters: it carries the \`chord-writer/\` subfolder with the appcasts.
 \`CHECKSUMS.txt\` stays here — it verifies the transfer, it is not served.
