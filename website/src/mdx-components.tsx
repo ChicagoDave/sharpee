@@ -12,6 +12,7 @@ import type { MDXComponents } from "mdx/types";
 import { DownloadRow } from "@/components/download-card";
 import { GrammarBlock } from "@/components/grammar-block";
 import { Screenshot } from "@/components/screenshot";
+import { StatusBarExample } from "@/components/status-bar-example";
 import {
   Callout,
   CodeBlock,
@@ -34,6 +35,7 @@ const components: MDXComponents = {
   DownloadRow,
   GrammarBlock,
   Screenshot,
+  StatusBarExample,
   h2: ProseH2,
   h3: ProseH3,
   a: ProseLink,

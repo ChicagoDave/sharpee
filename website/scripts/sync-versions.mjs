@@ -33,6 +33,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const REPO = join(here, '..', '..');
 const SHARPEE_PKG = join(REPO, 'packages', 'sharpee', 'package.json');
 const CHORD_VERSION_TS = join(REPO, 'packages', 'chord', 'src', 'version.ts');
+const IDE_PROJECT_YML = join(REPO, 'tools', 'ide', 'project.yml');
 const DEST = join(here, '..', 'src', 'lib', 'versions.json');
 
 const die = (message) => {
@@ -63,7 +64,25 @@ function chordLanguageVersion() {
   return match[1];
 }
 
-const next = `${JSON.stringify({ sharpee: platformVersion(), chord: chordLanguageVersion() }, null, 2)}\n`;
+/**
+ * Chord Writer's shipped version, from the same line `package.sh` reads to name
+ * the DMGs. It has no nav badge (dropped 2026-08-19) but the docs DO quote it —
+ * the status-bar example on the Chord Writer pages names all three versions, and
+ * two of the three were stale within a day of being written by hand.
+ */
+function chordWriterVersion() {
+  if (!existsSync(IDE_PROJECT_YML)) die(`missing ${IDE_PROJECT_YML}`);
+  const source = readFileSync(IDE_PROJECT_YML, 'utf8');
+  const match = source.match(/^ *CFBundleShortVersionString: *"?(\d+\.\d+\.\d+)"? *$/m);
+  if (!match) die(`no CFBundleShortVersionString in ${IDE_PROJECT_YML}`);
+  return match[1];
+}
+
+const next = `${JSON.stringify({
+  sharpee: platformVersion(),
+  chord: chordLanguageVersion(),
+  chordWriter: chordWriterVersion(),
+}, null, 2)}\n`;
 
 // Write only on change so a no-op build does not churn the file's mtime.
 const current = existsSync(DEST) ? readFileSync(DEST, 'utf8') : '';

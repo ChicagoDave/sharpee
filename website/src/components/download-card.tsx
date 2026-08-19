@@ -22,6 +22,7 @@ import Image from "next/image";
 // Deliberately the shipped icon rather than separate download art: the tile is
 // showing the reader the thing they are about to install (David, 2026-08-13).
 import appIcon from "@/images/chord-writer/app-icon.png";
+import versions from "@/lib/versions.json";
 
 type Download = {
   /** Served from public/downloads/ — the file plover actually holds. */
@@ -40,16 +41,23 @@ type Download = {
  */
 const DOWNLOADS: Download[] = [
   {
-    file: "ChordWriter-1.2.0-arm64.dmg",
+    // Version is DERIVED from tools/ide/project.yml via versions.json — the same
+    // line package.sh reads to name the DMG, so the link and the artifact cannot
+    // disagree about which release this is. The SIZE stays literal: the DMGs are
+    // not in the repository (release/ is gitignored) and the site builds on the
+    // server, so there is nothing to measure at build time. Update it from the
+    // real artifact when a release ships — a guessed size caused a wrong label
+    // on 1.0.1.
+    file: `ChordWriter-${versions.chordWriter}-arm64.dmg`,
     label: "Apple silicon",
     requirement: "M1 or later · macOS 11+",
-    size: "60 MB",
+    size: "58 MB",
   },
   {
-    file: "ChordWriter-1.2.0-x86_64.dmg",
+    file: `ChordWriter-${versions.chordWriter}-x86_64.dmg`,
     label: "Intel",
     requirement: "Intel Mac · macOS 11+",
-    size: "62 MB",
+    size: "61 MB",
   },
 ];
 
