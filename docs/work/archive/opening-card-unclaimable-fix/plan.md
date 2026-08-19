@@ -1,7 +1,7 @@
 # Session Plan: Fix GH #280 — the opening card of a branch test tree is unclaimable
 
 **Created**: 2026-08-18
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: The opening card of every branch test tree (`ides-of-march`, `fernhill`,
 and by extension every future story) is written empty — `{"assertions": {}, "type":
 "opening"}` — because the channels `synthesizeOpeningAssertions` reads (`prologue`, `info`)
@@ -107,7 +107,7 @@ record-time synthesis, channel claim (`channel-contains` / `channel-is`).
   story boot through `synthesizeOpeningAssertions` against real captured channel values, not
   a hand-built fixture object standing in for the pipeline; the testing-surface test drives
   the actual `main.ts`/`cards.ts` picker wiring, not a mock of `onChannelPicker`.
-- **Status**: CURRENT (since 2026-08-18)
+- **Status**: DONE (2026-08-18)
 
 ### Phase 2: Backfill the three shipped opening cards and confirm real-path regression
 - **Tier**: Small
@@ -141,7 +141,8 @@ record-time synthesis, channel claim (`channel-contains` / `channel-is`).
   replay against. REAL-PATH TEST = a real tree-runner replay of each story's boot against
   its production story bundle, not a stub tree or a hand-typed assertion with no replay
   behind it.
-- **Status**: IN PROGRESS — 2 of 3 trees healed (2026-08-18 23:40). Replaying under the
+- **Status**: DONE (2026-08-19) — closed at 2 of 3 trees healed. David: "we can ignore the fernhill card - it's not important - we fixed the app". The code fix (Phase 1 item 4 self-heal guard) is what mattered; `fernhill`'s opening card stays `{}` until someone happens to replay it in the Testing tab, and that is deliberately not being chased. Original in-progress note follows.
+  2 of 3 trees healed (2026-08-18 23:40). Replaying under the
   fixed pipeline filled `ides-of-march` (`info.title` = "The Ides of March", plus
   `info.description`) and `thealderman` (`info.title` = "The Alderman"); `fernhill` is
   still `{}` and heals on its next replay. Ides now runs **39 cards / 48 assertions**
