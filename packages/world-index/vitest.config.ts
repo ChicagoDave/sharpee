@@ -1,0 +1,18 @@
+import { defineConfig } from 'vitest/config';
+import { workspaceAliases } from '../../vitest.shared';
+
+export default defineConfig({
+  resolve: { alias: workspaceAliases() },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary'],
+      include: ['src/**/*.ts'],
+      exclude: ['**/*.d.ts', '**/index.ts', '**/*.test.ts'],
+    },
+  },
+});

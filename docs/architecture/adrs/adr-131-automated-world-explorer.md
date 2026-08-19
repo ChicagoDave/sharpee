@@ -1,7 +1,24 @@
 # ADR-131: Automated World Explorer (Regression Test Generator)
 
-**Status:** Proposed — and **unbuilt** as of 2026-08-05: nothing in `packages/`
-or `repokit` implements it.
+**Status:** **SUPERSEDED IN PART** by
+[ADR-321](adr-321-world-index.md) (2026-08-19, session 317706) — and still **unbuilt**:
+nothing in `packages/` or `repokit` implements it.
+
+> **Do not build from the Decision below as written.** ADR-321 reframed this feature
+> around what an author actually opens a panel to learn — **map, reach, incomplete** — and
+> found that almost all of it is a *static join over the compiled Story IR*, not a walk.
+> The BFS-and-diff-prose bot specified here is demoted to an optional later stage
+> (ADR-321 D9) and is not what gets built first.
+>
+> **What survives:** the *reachability* mode added by ADR-303 D6, and Phase 3's
+> description-noun idea — which becomes ADR-321's **Incomplete** view, generalized from
+> "nouns with no entity" to a full vocabulary check against each object's name and
+> aliases. The **static half** living in `tools/vscode-ext/src/world-explorer.ts` is
+> subsumed by ADR-321's Map and Reach views; per this ADR's own consequence, the extension
+> copy is not deleted until that surface renders.
+>
+> This flip was made by the accepter of ADR-321, as that ADR's supersession ownership
+> requires.
 **Date:** 2026-02-18
 
 > **SCOPE WIDENED 2026-08-05 (session 51b5f4)**, replacing the scope question

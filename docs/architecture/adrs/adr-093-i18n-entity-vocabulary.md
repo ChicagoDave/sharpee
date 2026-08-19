@@ -1,8 +1,32 @@
 # ADR-093: Entity Vocabulary and Adjective Disambiguation
 
-## Status: IMPLEMENTED (Phase 1) / DEFERRED (Phase 2)
+## Status: IMPLEMENTED (Phase 1) / DEFERRED (Phase 2) — Phase 1 SUPERSEDED IN PRACTICE
 
 ## Date: 2026-01-12
+
+> **AMENDED 2026-08-19 (session 317706), by the accepter of
+> [ADR-321](adr-321-world-index.md), as that ADR's supersession ownership requires.**
+>
+> **Phase 1's `IdentityTrait.adjectives` field is redundant, and nothing new needs to set
+> it.** `CommandValidator.getEntityVocabulary()`
+> (`packages/stdlib/src/validation/command-validator.ts:1037`) builds an entity's matching
+> vocabulary from **name content words + alias content words + authored adjectives**,
+> derived on demand from the current name — and the modifier loop (same file, line 1166)
+> counts a match against that whole set: *"a modifier the entity's vocabulary covers
+> (adjective, **name word**, or alias word)"*. A name word is therefore already a modifier.
+>
+> Checked against this ADR's own motivating cases: `create the red ball` yields the
+> vocabulary `{red, ball}`, so `take ball` raises the disambiguation across three balls and
+> `take red ball` scores a `modifier_match_red` and resolves; `potted plant` yields
+> `{potted, plant}`, so `plant`, `potted plant`, and `potted` all match. Neither needs an
+> `adjectives` declaration. Every use of the field in this repository is already the first
+> word of the entity's own name — Dungeo declares `name: 'yellow button'` with
+> `adjectives: ['yellow']`, `'trap door'` with `['trap']`, `'shiny wire'` with `['shiny']`
+> — all predating the name-word derivation.
+>
+> **Consequences:** the field stays supported and existing declarations keep working; the
+> Chord language needs no adjective syntax, and `aka` correctly stays what it is —
+> *alternate names, not modifiers*. The i18n concern deferred as Phase 2 is untouched.
 
 ## Context
 
