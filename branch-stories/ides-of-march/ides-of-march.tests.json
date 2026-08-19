@@ -1,7 +1,21 @@
 {
   "cards": [
     {
-      "assertions": {},
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Ides of March"
+          },
+          {
+            "id": "info.description",
+            "is": "The last three days before Julius Caesar opens the new Globe. You are Henslowe's man, slipped in among the hired players. Bring the clown to the Admiral's Men and the play-book across Bankside, and let no one see your face beneath the face."
+          }
+        ],
+        "contains": [
+          "By Sharpee Platform"
+        ]
+      },
       "type": "opening"
     },
     {
@@ -18,8 +32,6 @@
           "The clown looks you over the way he looks over a crowd: all at once, and none of it missed. \"A new face among the hired men. Well, the house eats faces. Kemp.\" He does not bow; the name is the bow."
         ]
       },
-      "command": "talk to kemp",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
@@ -35,7 +47,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "talk to kemp",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -97,11 +111,9 @@
           "The tragedian stops mid-thought and turns the whole of his attention on you, which is like standing where the light falls. \"I do not know your face.\""
         ]
       },
-      "command": "talk to burbage",
-      "type": "turn",
       "branches": [
         {
-          "branch": 1,
+          "branch": 2,
           "cards": [
             {
               "assertions": {
@@ -115,7 +127,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "talk to burbage",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -267,11 +281,9 @@
           "\"Well. You know what I am owed and you know what I am worth, which puts you ahead of this company on both counts.\" He sets the pot down and gives you the whole of his attention, a thing crowds pay for. \"So ask it. Ask me the question Philip sent across the river in your mouth.\""
         ]
       },
-      "command": "go on",
-      "type": "turn",
       "branches": [
         {
-          "branch": 1,
+          "branch": 3,
           "cards": [
             {
               "assertions": {
@@ -285,7 +297,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "go on",
+      "type": "turn"
     },
     {
       "assertions": {

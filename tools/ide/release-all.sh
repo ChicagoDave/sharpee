@@ -152,18 +152,39 @@ mkdir -p "$OUT/downloads/chord-writer"
 # transfer, not for publishing, so they go to a single CHECKSUMS.txt at the root
 # — mixing them in made a 6-file upload look like a 10-file one.
 for arch in $ARCH_LIST; do
+  # The DMG stays at /downloads — it is what the download page links by name,
+  # and it carries the arch in its filename.
   cp "$RELEASE_DIR/$arch/ChordWriter-$VERSION-$arch.dmg"          "$OUT/downloads/"
-  cp "$RELEASE_DIR/$arch/sparkle/ChordWriter-$VERSION-$arch.zip"  "$OUT/downloads/"
+  # Sparkle payload moves under /downloads/chord-writer/<arch>/ to match
+  # make-update.sh's arch-scoped --download-url-prefix. Deltas are named from the
+  # CFBundleVersion pair with no arch in them, so a flat directory has the two
+  # slices overwrite each other and both feeds resolve to one survivor.
+  mkdir -p "$OUT/downloads/chord-writer/$arch"
+  # EVERY zip in the slice, not just this version's. generate_appcast catalogues
+  # each archive it finds, so older ones it used for delta computation also get
+  # feed entries — pointing at the new arch-scoped path, where they do not exist
+  # unless carried along. A feed referencing a 404 is a latent trap even when
+  # Sparkle would never fetch that entry (it only ever offers NEWER versions).
+  for zip in "$RELEASE_DIR/$arch/sparkle/"ChordWriter-*-"$arch".zip; do
+    [ -e "$zip" ] || continue
+    cp "$zip" "$OUT/downloads/chord-writer/$arch/"
+  done
+  for delta in "$RELEASE_DIR/$arch/sparkle/"*.delta; do
+    [ -e "$delta" ] || continue
+    cp "$delta" "$OUT/downloads/chord-writer/$arch/"
+  done
+  # The appcast itself stays put — SUFeedURL is compiled into every shipped
+  # binary and must never move.
   cp "$RELEASE_DIR/$arch/sparkle/appcast-$arch.xml"               "$OUT/downloads/chord-writer/"
 done
 
-( cd "$OUT/downloads" && shasum -a 256 ChordWriter-"$VERSION"-*.dmg ChordWriter-"$VERSION"-*.zip ) \
+( cd "$OUT/downloads" && shasum -a 256 ChordWriter-"$VERSION"-*.dmg chord-writer/*/ChordWriter-"$VERSION"-*.zip ) \
   > "$OUT/CHECKSUMS.txt" || die "failed to write CHECKSUMS.txt"
 
 cat > "$OUT/UPLOAD.md" <<UPLOADMD
 # Chord Writer $VERSION — upload
 
-**Six files.** Everything in \`downloads/\` is signed, notarized, stapled and
+**Everything in \`downloads/\`** is what gets served. It is signed, notarized, stapled and
 verified locally, and the layout mirrors the server — copy the \`downloads/\`
 folder into the site's \`downloads/\` directory and every path lines up. There is
 nothing to rename and nothing to place by hand.

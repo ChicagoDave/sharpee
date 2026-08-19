@@ -141,7 +141,16 @@ record-time synthesis, channel claim (`channel-contains` / `channel-is`).
   replay against. REAL-PATH TEST = a real tree-runner replay of each story's boot against
   its production story bundle, not a stub tree or a hand-typed assertion with no replay
   behind it.
-- **Status**: BLOCKED ON A GUI ACTION, not on code (2026-08-18). The mechanism question this
+- **Status**: IN PROGRESS — 2 of 3 trees healed (2026-08-18 23:40). Replaying under the
+  fixed pipeline filled `ides-of-march` (`info.title` = "The Ides of March", plus
+  `info.description`) and `thealderman` (`info.title` = "The Alderman"); `fernhill` is
+  still `{}` and heals on its next replay. Ides now runs **39 cards / 48 assertions**
+  passing, up from 38/45. **Correction to this phase's own prediction**: it stated the fix
+  "should only ever increase assertion counts, never card counts", and the card count moved
+  38 -> 39. That is not a new card — the opening card exists either way, but a claim-less
+  one is not counted as passing because it asserts nothing; carrying claims makes it count.
+  The document still holds 36 main-line cards. Original status follows.
+  BLOCKED ON A GUI ACTION, not on code (2026-08-18). The mechanism question this
   phase insisted be answered explicitly has an answer, and it removes the phase's work: the
   self-heal fixed in Phase 1 item 4 lives in the IDE Testing tab's session model
   (`tools/ide/web/testing-surface/src/model.ts`), which is the only thing that writes claims

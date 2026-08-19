@@ -25,7 +25,13 @@ export interface NavSection {
   /**
    * Released version shown beside the section label in the rail (display
    * only — title stays the identity for keys, crumbs, and the pager).
-   * Updated at release time alongside the platform version bump.
+   *
+   * DERIVED, never hand-written: set from `versions.json`, which
+   * `scripts/sync-versions.mjs` regenerates from the repository at prebuild.
+   * These were hand-copied once and went stale nine times across eight
+   * sessions. Omit the field entirely for a section whose version is not worth
+   * a badge — Chord Writer's was dropped for that reason (an app version on a
+   * docs sidebar, already stated authoritatively on the download page).
    */
   version?: string;
   groups: NavGroup[];
@@ -33,10 +39,11 @@ export interface NavSection {
   items?: NavItem[];
 }
 
+import versions from './versions.json';
+
 export const NAV: NavSection[] = [
   {
     title: 'Chord Writer',
-    version: '1.2.0',
     groups: [
       {
         title: 'Getting Started',
@@ -57,7 +64,7 @@ export const NAV: NavSection[] = [
     // Not a package version, and not tied to one — each section shows
     // the version of the thing it documents, which is why this, Sharpee's, and
     // Chord Writer's move independently.
-    version: '3.3.0',
+    version: versions.chord,
     groups: [
       {
         title: 'Getting Started',
@@ -349,7 +356,7 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Sharpee',
-    version: '5.1.0',
+    version: versions.sharpee,
     groups: [
       { title: 'Platform', items: [{ title: 'What is Sharpee?', href: '/sharpee' }, { title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },

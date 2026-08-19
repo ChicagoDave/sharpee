@@ -42,7 +42,6 @@ readonly GENERATE_APPCAST="$SPARKLE_TOOLS/generate_appcast"
 # only on that server: they are not in the repo, and no GitHub release carries
 # them. An appcast pointing at a release asset would 404 for every author.
 # The ADR needs amending to match; the code follows what ships.
-readonly DOWNLOAD_BASE="https://sharpee.net/downloads"
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
 note() { printf '  %s\n' "$1"; }
@@ -51,6 +50,21 @@ note() { printf '  %s\n' "$1"; }
 readonly APP="$1"
 readonly VERSION="$2"
 readonly ARCH_SLUG="$3"
+
+# Arch-scoped, and it has to be. Sparkle names binary deltas from the
+# CFBundleVersion pair alone ("Chord Writer6-5.delta") with NO architecture in
+# the name, so both slices generate byte-different files under identical names.
+# Flat in /downloads they overwrite each other and both feeds then point at one
+# survivor — an Apple-silicon app handed the Intel delta, which is the crossed
+# -arch corruption the two separate feeds exist to prevent, reappearing one
+# layer down (caught 2026-08-19 before upload; the zips were safe only because
+# they carry the arch in their own filenames).
+#
+# SUFeedURL is NOT affected — it stays /downloads/chord-writer/appcast-<arch>.xml,
+# so every installed app keeps polling the feed compiled into it. Only the
+# enclosure URLs inside move, and generate_appcast appends rather than rewrites,
+# so entries already published keep the URLs they shipped with.
+readonly DOWNLOAD_BASE="https://sharpee.net/downloads/chord-writer/$ARCH_SLUG"
 readonly RELEASE_DIR="$4"
 
 [ -d "$APP" ] || die "no app bundle at $APP"
