@@ -374,6 +374,168 @@ struct WorldNoObjectFinding: Decodable, Equatable {
     let phrase: String
 }
 
+
+// MARK: - Amendment 1 surfaces (D11, D12)
+
+/// Where a mention sits on the story's spine (D12).
+///
+/// Decoded with an unknown-value fallback rather than a strict `RawRepresentable`
+/// failure: a role this app does not know is a ranking question, and ranking a row
+/// low is a better answer than refusing the whole document over it.
+enum WorldMentionRole: String, Decodable {
+    /// A thing the player acts on.
+    case tool
+    /// A thing on the progression chain.
+    case progressionInfo = "progression-info"
+    /// Everything else the prose resolves to.
+    case atmosphereInfo = "atmosphere-info"
+
+    /// How high this role sorts in the candidate list — lower is more urgent.
+    var rank: Int {
+        switch self {
+        case .progressionInfo: return 0
+        case .tool: return 1
+        case .atmosphereInfo: return 2
+        }
+    }
+}
+
+/// The role table, decoded leniently.
+///
+/// A role word this app does not know ranks as atmosphere rather than failing the
+/// document: ranking one row low is a better answer than a blank World tab, and
+/// this table only ever decides sort order.
+struct WorldRoleTable: Decodable, Equatable {
+    private let byEntity: [String: WorldMentionRole]
+
+    /// Decodes the table, mapping unknown role words to atmosphere.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when the value is not an object of strings
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode([String: String].self)
+        byEntity = raw.mapValues { WorldMentionRole(rawValue: $0) ?? .atmosphereInfo }
+    }
+
+    /// The role of one entity, or nil when the table does not name it.
+    /// - Parameter entity: the entity id
+    /// - Returns: its role
+    subscript(entity: String) -> WorldMentionRole? { byEntity[entity] }
+
+    /// How many entities the table roles.
+    var count: Int { byEntity.count }
+}
+
+/// A phrase that resolved to exactly one thing, and what that thing is worth.
+struct WorldMentionEdge: Decodable, Equatable {
+    /// The phrase as written.
+    let phrase: String
+    /// The one thing it names.
+    let entity: String
+    /// What this mention is worth to a player reading it.
+    let role: WorldMentionRole
+    /// Where the phrase sits.
+    let site: WorldProseSite
+
+    private enum CodingKeys: String, CodingKey {
+        case phrase, entity, role, site
+    }
+
+    /// Decodes an edge, ranking an unknown role as atmosphere.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when phrase, entity, or site is absent
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        phrase = try c.decode(String.self, forKey: .phrase)
+        entity = try c.decode(String.self, forKey: .entity)
+        role = WorldMentionRole(rawValue: try c.decode(String.self, forKey: .role)) ?? .atmosphereInfo
+        site = try c.decode(WorldProseSite.self, forKey: .site)
+    }
+}
+
+/// The story's naming surface, as the analyzer published it (D11).
+///
+/// The IDE resolves against this and never derives it. `byWord` is rebuilt here
+/// rather than carried on the wire — it is an inversion of `wordsOf`, and two
+/// copies of one fact is how they come to disagree.
+struct WorldVocabulary: Decodable, Equatable {
+    /// Entity id to the content words it answers to.
+    let wordsOf: [String: Set<String>]
+    /// A whole lowercased name or alias to the entities carrying it.
+    let exactForms: [String: [String]]
+    /// A single content word to every entity whose vocabulary holds it.
+    private let byWord: [String: [String]]
+
+    private enum CodingKeys: String, CodingKey {
+        case wordsOf, exactForms
+    }
+
+    /// Decodes the surface and builds the word index the resolver walks.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when either half is absent
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let words = try c.decode([String: [String]].self, forKey: .wordsOf)
+        wordsOf = words.mapValues { Set($0) }
+        exactForms = try c.decode([String: [String]].self, forKey: .exactForms)
+
+        var inverted: [String: [String]] = [:]
+        for (id, vocabulary) in words {
+            for word in vocabulary { inverted[word, default: []].append(id) }
+        }
+        byWord = inverted
+    }
+
+    /// The content words one entity answers to.
+    /// - Parameter entity: the entity id
+    /// - Returns: its words, or an empty set when it has none
+    func words(of entity: String) -> Set<String> {
+        wordsOf[entity] ?? []
+    }
+
+    /// The entities a phrase resolves to.
+    ///
+    /// Two tiers, exactly as the analyzer has them: a phrase equalling a whole name
+    /// or alias resolves there and nowhere else; otherwise every word of the phrase
+    /// must appear in one entity's vocabulary, and a word matching nothing
+    /// disqualifies that entity outright.
+    ///
+    /// - Parameters:
+    ///   - phrase: the phrase as written, lowercased
+    ///   - words: the phrase's words
+    /// - Returns: the matching entity ids, sorted; empty when it names nothing
+    func resolve(phrase: String, words: [String]) -> [String] {
+        if let exact = exactForms[phrase] { return exact.sorted() }
+        guard let first = words.first, let holders = byWord[first] else { return [] }
+        return holders
+            .filter { id in words.allSatisfy { self.words(of: id).contains($0) } }
+            .sorted()
+    }
+}
+
+/// The extractor filters both readings share (D11).
+struct WorldExtractorFilters: Decodable, Equatable {
+    /// Head nouns that are never a thing the author forgot to implement.
+    let headStopwords: Set<String>
+    /// The shortest a head noun may be.
+    let minHeadLength: Int
+    /// The most words a noun phrase may carry.
+    let maxPhraseWords: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case headStopwords, minHeadLength, maxPhraseWords
+    }
+
+    /// Decodes the filters, taking the stopword list as a set.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when any field is absent
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        headStopwords = Set(try c.decode([String].self, forKey: .headStopwords))
+        minHeadLength = try c.decode(Int.self, forKey: .minHeadLength)
+        maxPhraseWords = try c.decode(Int.self, forKey: .maxPhraseWords)
+    }
+}
+
 /// The Incomplete view: what did the author name that isn't there yet?
 /// A candidate list, never an error list (ADR-321 D6).
 struct WorldIncomplete: Decodable, Equatable {
@@ -385,6 +547,28 @@ struct WorldIncomplete: Decodable, Equatable {
     let ambiguous: [WorldAmbiguousFinding]
     /// Phrases nothing answers to.
     let noObject: [WorldNoObjectFinding]
+    /// Every phrase that DID resolve, roled (D12). Not findings — the opposite.
+    let edges: [WorldMentionEdge]
+
+    private enum CodingKeys: String, CodingKey {
+        case counts, missingWord, ambiguous, noObject, edges
+    }
+
+    /// Decodes the Incomplete result, defaulting `edges` to empty.
+    ///
+    /// Defaulted rather than required for the same reason `lifted` is: a document
+    /// this app can otherwise render should not be refused over a list that only
+    /// ranks rows.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when the three finding lists or the counts are absent
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        counts = try c.decode(WorldIncompleteCounts.self, forKey: .counts)
+        missingWord = try c.decode([WorldMissingWordFinding].self, forKey: .missingWord)
+        ambiguous = try c.decode([WorldAmbiguousFinding].self, forKey: .ambiguous)
+        noObject = try c.decode([WorldNoObjectFinding].self, forKey: .noObject)
+        edges = try c.decodeIfPresent([WorldMentionEdge].self, forKey: .edges) ?? []
+    }
 }
 
 // MARK: - The document
@@ -411,6 +595,29 @@ struct WorldIndexDocument: Decodable, Equatable {
     let reach: WorldReach
     /// What was named that isn't there yet?
     let incomplete: WorldIncomplete
+    /// The role every entity's mentions carry (D12), applied here and never derived.
+    let roles: WorldRoleTable
+    /// The story's naming surface (D11), applied here and never derived.
+    let vocabulary: WorldVocabulary
+    /// Every authored passage, once — the part-of-speech pass's input (D11).
+    let prose: [WorldProseSite]
+    /// The extractor filters both readings share (D11).
+    let filters: WorldExtractorFilters
+
+    /// What a phrase found in this passage is worth, for ranking.
+    ///
+    /// An unresolved phrase names no entity and therefore carries no role of its
+    /// own — which is most of what ungated chunking adds. Its passage still has an
+    /// owner, so a missing noun in a progression-critical thing's prose outranks
+    /// one in a room's scenery. Where a passage has no owner either, the row sorts
+    /// last rather than being hidden.
+    ///
+    /// - Parameter site: the passage the phrase sits in
+    /// - Returns: the role to rank by
+    func role(at site: WorldProseSite) -> WorldMentionRole {
+        guard let owner = site.owner, let role = roles[owner] else { return .atmosphereInfo }
+        return role
+    }
 }
 
 /// Why there is no analysis, as a word the tab switches on.

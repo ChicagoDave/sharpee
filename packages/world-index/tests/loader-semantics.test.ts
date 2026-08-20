@@ -14,10 +14,17 @@
 
 import { describe, expect, it } from 'vitest';
 import { compile, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS } from '@sharpee/chord';
-import { DirectionOpposites, type DirectionType } from '@sharpee/world-model';
+import {
+  DirectionOpposites,
+  IFEntity,
+  RoomTrait,
+  SceneryTrait,
+  type DirectionType,
+} from '@sharpee/world-model';
 import {
   doorStartsLocked,
   initialStateOf,
+  isPortableByDefault,
   isInitialState,
   isPlatformStateWord,
   isStartableStateWord,
@@ -355,5 +362,68 @@ create the heater
     expect(platformStateHoldsAtStart(lamp!, 'on', false)).toBe(false);
     expect(platformStateHoldsAtStart(heater!, 'on', false)).toBe(true);
     expect(platformStateHoldsAtStart(heater!, 'off', false)).toBe(false);
+  });
+});
+
+describe('portability is default-on, and scenery is what withdraws it', () => {
+  const PORTABILITY = `story
+  title: Portability
+  authors:
+    Test
+  id: portability
+  story-version: 1.0.0
+
+create the Hall
+  a room
+
+  A hall.
+
+create the sherry bottle
+  in the Hall
+
+  A dusty bottle.
+
+create the cold range
+  scenery
+  in the Hall
+
+  A cold iron range.
+`;
+
+  /** Read one entity out of the fixture, failing loudly if it drifted. */
+  function thing(ir: ReturnType<typeof irOf>, id: string) {
+    const found = ir.entities.find((entity) => entity.id === id);
+    if (found === undefined) throw new Error(`fixture has no entity \`${id}\``);
+    return found;
+  }
+
+  // AC-6: pinned against what world-model DOES, not against a source line. There
+  // is no `takeable` row in the IR to read — the bottle declares nothing at all
+  // — so a derivation that hunts for an affordance row calls every plain object
+  // inert, which is backwards.
+  it('reads the platform default the IR never writes down', () => {
+    const ir = irOf(PORTABILITY);
+    expect(thing(ir, 'sherry-bottle').traits).toHaveLength(0);
+
+    expect(isPortableByDefault(thing(ir, 'sherry-bottle'), false)).toBe(true);
+    expect(isPortableByDefault(thing(ir, 'cold-range'), false)).toBe(false);
+  });
+
+  it('agrees with IFEntity.isTakeable, quirks included', () => {
+    const plain = new IFEntity('plain', 'thing');
+    expect(plain.isTakeable).toBe(true);
+
+    const scenery = new IFEntity('scenery', 'thing');
+    scenery.add(new SceneryTrait());
+    expect(scenery.isTakeable).toBe(false);
+
+    const room = new IFEntity('room', 'room');
+    room.add(new RoomTrait());
+    expect(room.isTakeable).toBe(false);
+
+    const ir = irOf(PORTABILITY);
+    expect(isPortableByDefault(thing(ir, 'sherry-bottle'), false)).toBe(plain.isTakeable);
+    expect(isPortableByDefault(thing(ir, 'cold-range'), false)).toBe(scenery.isTakeable);
+    expect(isPortableByDefault(thing(ir, 'hall'), true)).toBe(room.isTakeable);
   });
 });

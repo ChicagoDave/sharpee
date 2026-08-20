@@ -9,8 +9,8 @@
  * test per rule against platform behavior rather than against a source line.
  *
  * Public interface: initialStateOf, isInitialState, undirectedExits, doorStartsLocked,
- * platformTraitForState, isPlatformStateWord, isStartableStateWord,
- * platformStateWordsFor.
+ * isPortableByDefault, platformTraitForState, isPlatformStateWord,
+ * isStartableStateWord, platformStateWordsFor.
  *
  * Owner context: @sharpee/world-index — the derivation package the IDE's World tab
  * reads. No platform contract; nothing here is authoritative over the loader, it
@@ -94,6 +94,30 @@ export function undirectedExits(
  */
 export function doorStartsLocked(entity: IREntity, isDoor: boolean): boolean {
   return platformStateHoldsAtStart(entity, 'locked', isDoor) ?? false;
+}
+
+/**
+ * Whether a thing is takeable with nothing authored to make it so.
+ *
+ * There is no `takeable` row anywhere in the IR to read. `world-model` grants
+ * portability by default and `scenery` is what withdraws it, so a reading that
+ * hunts for an affordance row finds none and calls every unadorned object inert
+ * — backwards, because the unadorned object is precisely the one the player can
+ * pick up.
+ *
+ * Mirrors `IFEntity.isTakeable` exactly, quirk included: portability is
+ * withdrawn for scenery, rooms and doors and for nothing else, which leaves an
+ * actor nominally takeable. Whether that makes an NPC a *tool* is a question for
+ * the reading above this one (D12); this is not the place to disagree with the
+ * loader.
+ *
+ * @param entity the IR entity to test
+ * @param isPlaceOrDoor whether this entity is a room, region, or door kind
+ * @returns true when the player can take it without the author wiring anything
+ */
+export function isPortableByDefault(entity: IREntity, isPlaceOrDoor: boolean): boolean {
+  if (isPlaceOrDoor) return false;
+  return !(entity.traits ?? []).some((composed) => composed.name === 'scenery');
 }
 
 /**

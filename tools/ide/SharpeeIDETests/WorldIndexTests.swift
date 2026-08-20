@@ -83,23 +83,28 @@ final class WorldIndexTests: XCTestCase {
     ///   - story: the story whose workspace resolves the CLI
     ///   - timeout: seconds to wait for the child
     /// - Returns: the decoded response
+    /// - Throws: when the analysis does not complete inside `timeout`
     private func analyzeReal(_ irPath: URL, near story: URL, timeout: TimeInterval = 60)
-        -> WorldIndexResponse {
+        throws -> WorldIndexResponse {
         let done = expectation(description: "analysis completes")
-        var captured: WorldIndexResponse!
+        var captured: WorldIndexResponse?
         runner.analyze(irPath: irPath, near: story) { response in
             captured = response
             done.fulfill()
         }
         wait(for: [done], timeout: timeout)
-        return captured
+        // Unwrapped rather than force-unwrapped: a timeout here used to trap and
+        // take the whole test PROCESS down, so one hung analysis was reported as a
+        // crash log instead of as one failing test.
+        return try XCTUnwrap(captured,
+                             "the analyzer did not answer within \(timeout)s — it is hung, not slow")
     }
 
     /// A real analysis of Fernhill, or a skipped test.
     private func fernhillAnalysis() throws -> WorldIndexDocument {
         let story = try fernhillStory()
         let ir = try composeIR(for: story)
-        let response = analyzeReal(ir, near: story)
+        let response = try analyzeReal(ir, near: story)
         // A failed analysis FAILS here rather than skipping. A helper that skips
         // when the toolchain is broken takes every test that depends on it green
         // with it, which is the one outcome this suite must not be able to
@@ -163,7 +168,7 @@ final class WorldIndexTests: XCTestCase {
     func testMissingIRRendersTheUnreadableState() throws {
         let story = try fernhillStory()
         let absent = tempDir.appendingPathComponent("never-built.ir.json")
-        let response = analyzeReal(absent, near: story)
+        let response = try analyzeReal(absent, near: story)
 
         let failure = try XCTUnwrap(response.failure, "a missing IR must not decode as an analysis")
         XCTAssertEqual(failure.cause, .unreadableIR)
@@ -178,7 +183,7 @@ final class WorldIndexTests: XCTestCase {
         let story = try fernhillStory()
         let junk = tempDir.appendingPathComponent("junk.ir.json")
         try #"{"not":"a story"}"#.write(to: junk, atomically: true, encoding: .utf8)
-        let response = analyzeReal(junk, near: story)
+        let response = try analyzeReal(junk, near: story)
 
         let failure = try XCTUnwrap(response.failure, "junk must not decode as an analysis")
         XCTAssertEqual(failure.cause, .malformedIR)
@@ -263,19 +268,20 @@ final class WorldIndexTests: XCTestCase {
         XCTAssertTrue(WorldReachView.headline(for: reach).contains("1 finding"))
     }
 
-    /// Each Incomplete class lists exactly what the analyzer counted for it.
+    /// Each Incomplete class lists exactly what the merged reading holds for it.
     func testIncompleteViewListsEachClassAtItsCount() throws {
         let document = try fernhillAnalysis()
-        let counts = document.incomplete.counts
+        let reading = WorldProseChunker.read(document: document)
+        let counts = reading.counts
 
-        XCTAssertEqual(WorldIncompleteView.rows(for: document.incomplete, class: .missingWord).count,
+        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .missingWord, document: document).count,
                        counts.missingWord)
-        XCTAssertEqual(WorldIncompleteView.rows(for: document.incomplete, class: .ambiguous).count,
+        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .ambiguous, document: document).count,
                        counts.ambiguous)
-        XCTAssertEqual(WorldIncompleteView.rows(for: document.incomplete, class: .noObject).count,
+        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .noObject, document: document).count,
                        counts.noObject)
 
-        let titles = WorldIncompleteView.tabTitles(for: document.incomplete)
+        let titles = WorldIncompleteView.tabTitles(for: reading)
         XCTAssertEqual(titles.count, 3)
         XCTAssertTrue(titles[0].hasSuffix("\(counts.missingWord)"), titles[0])
     }
@@ -309,9 +315,196 @@ final class WorldIndexTests: XCTestCase {
     /// Findings carry the source line, so a double-click has somewhere to go.
     func testIncompleteFindingsCarryASourceLine() throws {
         let document = try fernhillAnalysis()
-        let rows = WorldIncompleteView.rows(for: document.incomplete, class: .noObject)
+        let reading = WorldProseChunker.read(document: document)
+        let rows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
         let first = try XCTUnwrap(rows.first, "Fernhill raises no-object candidates")
         XCTAssertNotNil(first.line, "a candidate names the line its phrase sits on")
+    }
+
+    // MARK: - D11: the part-of-speech pass
+
+    /// AC-16: the headless list is a subset, not a different reading.
+    ///
+    /// Held by construction rather than by argument — the analyzer's findings go
+    /// into the reading first and unchanged — and asserted anyway, because "by
+    /// construction" is a property of today's implementation and this is the test
+    /// that notices when someone changes it.
+    func testHeadlessListSurvivesWholeInsideTheIDEsReading() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+
+        func key(_ site: WorldProseSite, _ phrase: String) -> String { "\(site.key)|\(phrase)" }
+
+        let missing = Set(reading.missingWord.map { key($0.site, $0.phrase) })
+        for finding in document.incomplete.missingWord {
+            XCTAssertTrue(missing.contains(key(finding.site, finding.phrase)),
+                          "the CLI's “\(finding.phrase)” must survive with its own site")
+        }
+        let ambiguous = Set(reading.ambiguous.map { key($0.site, $0.phrase) })
+        for finding in document.incomplete.ambiguous {
+            XCTAssertTrue(ambiguous.contains(key(finding.site, finding.phrase)))
+        }
+        let noObject = Set(reading.noObject.map { key($0.site, $0.phrase) })
+        for finding in document.incomplete.noObject {
+            XCTAssertTrue(noObject.contains(key(finding.site, finding.phrase)))
+        }
+
+        // AC-11: never drops. The divergence is bounded to the recall direction.
+        XCTAssertGreaterThanOrEqual(reading.counts.missingWord, document.incomplete.counts.missingWord)
+        XCTAssertGreaterThanOrEqual(reading.counts.ambiguous, document.incomplete.counts.ambiguous)
+        XCTAssertGreaterThanOrEqual(reading.counts.noObject, document.incomplete.counts.noObject)
+    }
+
+    /// AC-11: the tagger re-heads what the verb list swallows.
+    ///
+    /// The analyzer reads *the hurricane lamp burns* as one three-word phrase and
+    /// loses the lamp, because `burns` is a verb `BOUNDARY_WORDS` does not name.
+    /// A run of nouns and adjectives stops at `lamp`, which is the finding.
+    func testTaggerRecoversAPhraseTheVerbListSwallows() throws {
+        let document = try fernhillAnalysis()
+        let filters = document.filters
+
+        let chunks = WorldProseChunker.candidates(
+            in: "A brass plate insists on the bell pull. The hurricane lamp burns low.",
+            filters: filters)
+        let phrases = chunks.map(\.phrase)
+
+        XCTAssertTrue(phrases.contains("brass plate"), "\(phrases)")
+        XCTAssertTrue(phrases.contains("hurricane lamp"), "\(phrases)")
+        XCTAssertFalse(phrases.contains(where: { $0.hasSuffix("burns") }),
+                       "a verb never heads a phrase here")
+    }
+
+    /// AC-11: it must never be used to DROP.
+    ///
+    /// The tagger mis-tags real nouns — `shroud` and `well` both come back as
+    /// adverbs — so a reading that trusted it alone would delete findings the
+    /// author needs. Those phrases survive because the analyzer's list is unioned
+    /// in rather than replaced.
+    func testMisTaggedNounsSurviveBecauseTheListIsUnioned() throws {
+        let document = try fernhillAnalysis()
+        let filters = document.filters
+
+        let mistagged = WorldProseChunker.candidates(in: "A shroud of dust lies over it.", filters: filters)
+        XCTAssertFalse(mistagged.map(\.phrase).contains("shroud"),
+                       "precondition: the tagger really does miss this one")
+
+        let reading = WorldProseChunker.read(document: document)
+        XCTAssertGreaterThanOrEqual(reading.counts.noObject, document.incomplete.counts.noObject,
+                                    "nothing the analyzer found is lost to a tagger error")
+    }
+
+    /// AC-11a: ungated chunking resolves what the article gate hides.
+    func testUngatedChunkingResolvesThePhrasesTheGateHid() throws {
+        let document = try fernhillAnalysis()
+
+        for word in ["plunger", "staging", "fuse", "smoke"] {
+            let chunk = WorldChunk(phrase: word, words: [word])
+            let verdict = WorldProseChunker.classify(chunk,
+                                                     against: document.vocabulary,
+                                                     filters: document.filters)
+            XCTAssertEqual(verdict, .resolved, "“\(word)” names a real thing")
+        }
+    }
+
+    /// AC-11a: the pass over a whole story's prose stays well inside its budget.
+    func testPartOfSpeechPassOverAWholeStoryStaysUnderBudget() throws {
+        let document = try fernhillAnalysis()
+
+        let started = Date()
+        var chunks = 0
+        for site in document.prose {
+            chunks += WorldProseChunker.candidates(in: site.text, filters: document.filters).count
+        }
+        let elapsed = Date().timeIntervalSince(started)
+
+        XCTAssertGreaterThan(chunks, 0)
+        XCTAssertLessThan(elapsed, 0.25, "tagged \(document.prose.count) passages in \(elapsed)s")
+    }
+
+    /// D11: the four surfaces the IDE applies and never derives all crossed.
+    func testTheFourSurfacesCrossTheWire() throws {
+        let document = try fernhillAnalysis()
+
+        XCTAssertFalse(document.prose.isEmpty, "every authored passage, once")
+        XCTAssertGreaterThan(document.roles.count, 0)
+        XCTAssertGreaterThan(document.vocabulary.wordsOf.count, 0)
+        XCTAssertFalse(document.vocabulary.exactForms.isEmpty, "both resolution tiers")
+        XCTAssertFalse(document.filters.headStopwords.isEmpty)
+        XCTAssertEqual(document.filters.maxPhraseWords, 3)
+
+        // The passages the analyzer's own findings never mention are exactly what
+        // this surface exists for: without it the IDE would chunk only the prose
+        // that already said something.
+        var mentioned = Set<String>()
+        for finding in document.incomplete.noObject { mentioned.insert(finding.site.key) }
+        for finding in document.incomplete.ambiguous { mentioned.insert(finding.site.key) }
+        for finding in document.incomplete.missingWord { mentioned.insert(finding.site.key) }
+        for edge in document.incomplete.edges { mentioned.insert(edge.site.key) }
+        let unmentioned = document.prose.filter { !mentioned.contains($0.key) }
+        XCTAssertFalse(unmentioned.isEmpty, "Fernhill has passages reachable no other way")
+    }
+
+    /// The analyzer's document is larger than a pipe holds, and the runner survives it.
+    ///
+    /// This is the regression for a deadlock that shipped in Phase 6 and was
+    /// invisible for exactly as long as Fernhill's document stayed under 64KB: the
+    /// runner read stdout inside `terminationHandler`, so once the child filled the
+    /// pipe it blocked on the write, never exited, and the handler never ran. The
+    /// size assertion is half the test — if the document ever shrinks below the
+    /// buffer this guard stops guarding anything, and should say so rather than
+    /// keep passing.
+    func testAnalyzerOutputExceedsAPipeBufferAndTheRunnerStillCompletes() throws {
+        let story = try fernhillStory()
+        let ir = try composeIR(for: story)
+
+        let sharpee = try XCTUnwrap(ComposeRunner.resolveSharpee(near: story))
+        let proc = Process()
+        proc.executableURL = sharpee
+        proc.arguments = ["world-index", ir.path]
+        proc.currentDirectoryURL = story.deletingLastPathComponent()
+        proc.environment = ShellEnvironment.buildEnvironment()
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        proc.standardError = Pipe()
+        try proc.run()
+        // Read BEFORE waiting, which is the whole point.
+        let bytes = (try pipe.fileHandleForReading.readToEnd() ?? Data()).count
+        proc.waitUntilExit()
+
+        XCTAssertGreaterThan(bytes, 65_536,
+                             "the document no longer exceeds a pipe buffer — this guard is now vacuous")
+
+        let response = try analyzeReal(ir, near: story)
+        XCTAssertNotNil(response.document, "the runner drains the child rather than deadlocking on it")
+    }
+
+    /// D12: the candidate list is ranked by role, most urgent first.
+    func testRowsAreRankedByRole() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+
+        let ranks = reading.noObject
+            .map { document.role(at: $0.site).rank }
+        let rankedRows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
+        XCTAssertEqual(rankedRows.count, reading.noObject.count, "ranking never drops a row")
+
+        // The unranked list is not already sorted, so the assertion below is not
+        // vacuous — and the ranked one is.
+        XCTAssertFalse(ranks == ranks.sorted(), "precondition: findings do not arrive in role order")
+
+        let rankedSites = WorldProseChunker.read(document: document)
+        _ = rankedSites
+        let orderedRanks = rankedRows.map { row -> Int in
+            let finding = reading.noObject.first { Self.rowTitle($0, document) == row.title }
+            return finding.map { document.role(at: $0.site).rank } ?? Int.max
+        }
+        XCTAssertEqual(orderedRanks, orderedRanks.sorted(), "rows come out progression, tool, atmosphere")
+    }
+
+    /// The title a no-object finding renders under, for matching rows back to findings.
+    private static func rowTitle(_ finding: WorldNoObjectFinding, _ document: WorldIndexDocument) -> String {
+        WorldIncompleteView.title(finding.phrase, finding.site)
     }
 
     /// Fernhill's one collision is reported rather than silently drawn wrong.

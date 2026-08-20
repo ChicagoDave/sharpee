@@ -142,7 +142,7 @@ final class WorldView: NSView {
                 + document.incomplete.counts.noObject
             mapView.show(map: document.map, unreached: Set(document.reach.rooms.unreached))
             reachView.show(document.reach)
-            incompleteView.show(document.incomplete)
+            incompleteView.show(document)
             sectionStrip.setTabs(Self.sectionTitles(for: document), select: selected.rawValue)
             explanation.isHidden = true
             sectionStrip.isHidden = false

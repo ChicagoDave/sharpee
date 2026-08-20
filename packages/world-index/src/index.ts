@@ -23,6 +23,7 @@ export {
   wiredEdges,
   oppositeDirection,
   doorStartsLocked,
+  isPortableByDefault,
   platformStateHoldsAtStart,
   platformTraitForState,
   isPlatformStateWord,
@@ -63,15 +64,24 @@ export type {
   WorldIndexResponse,
 } from './document.js';
 
-export { buildVocabularyIndex, entityVocabulary, resolvePhrase } from './vocabulary.js';
-export type { VocabularyIndex } from './vocabulary.js';
+export {
+  buildVocabularyIndex,
+  entityVocabulary,
+  publishVocabulary,
+  resolvePhrase,
+} from './vocabulary.js';
+export type { VocabularyIndex, VocabularySurface } from './vocabulary.js';
 
 export { collectProse } from './prose.js';
 export type { ProseKind, ProseSite } from './prose.js';
 
-export { deriveIncomplete, extractNounPhrases } from './incomplete.js';
+export { deriveRoles, roleTable } from './roles.js';
+export type { MentionEdge, MentionRole, ResolvedMention } from './roles.js';
+
+export { deriveIncomplete, extractNounPhrases, publishFilters } from './incomplete.js';
 export type {
   AmbiguousFinding,
+  ExtractorFilters,
   IncompleteResult,
   MissingWordFinding,
   NoObjectFinding,

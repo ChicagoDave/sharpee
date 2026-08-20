@@ -137,9 +137,25 @@ final class WorldIndexRunner {
         proc.standardOutput = out
         proc.standardError = err
 
+        // DRAINED WHILE THE CHILD RUNS, never after it exits — the same pattern
+        // `IntrospectionRunner` already uses, and for the same reason. A pipe holds
+        // about 64KB; a child writing more blocks on the write, so a parent that
+        // waits for termination before reading is waiting on a process that cannot
+        // finish. Fernhill's document was 55KB when this was written and crossed
+        // 64KB the moment Amendment 1 added its surfaces, which turned a latent
+        // deadlock into every World tab analysis hanging for good.
+        let outBuffer = DataBuffer()
+        let errBuffer = DataBuffer()
+        out.fileHandleForReading.readabilityHandler = { outBuffer.append($0.availableData) }
+        err.fileHandleForReading.readabilityHandler = { errBuffer.append($0.availableData) }
+
         proc.terminationHandler = { [weak self] finished in
-            let stdout = (try? out.fileHandleForReading.readToEnd()) ?? Data()
-            let stderr = (try? err.fileHandleForReading.readToEnd()) ?? Data()
+            out.fileHandleForReading.readabilityHandler = nil
+            err.fileHandleForReading.readabilityHandler = nil
+            outBuffer.append((try? out.fileHandleForReading.readToEnd()) ?? Data())
+            errBuffer.append((try? err.fileHandleForReading.readToEnd()) ?? Data())
+            let stdout = outBuffer.data
+            let stderr = errBuffer.data
             // Decoded HERE, in the handler's own context, so a large document never
             // parses on the main actor. Only the finished value crosses.
             let response = Self.interpret(stdout: stdout, stderr: stderr,
@@ -161,6 +177,8 @@ final class WorldIndexRunner {
         } catch {
             process = nil
             pending = nil
+            out.fileHandleForReading.readabilityHandler = nil
+            err.fileHandleForReading.readabilityHandler = nil
             completion(.failed(WorldIndexFailure(
                 cause: .unavailable,
                 message: "The World Index analyzer could not be started: \(error.localizedDescription)",

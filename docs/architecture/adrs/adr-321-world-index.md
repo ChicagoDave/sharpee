@@ -362,6 +362,21 @@ article gate makes the analyzer blind to, more than doubling the edge count D12 
 built on. It also means **D13's figure of 11 unnamed things is inflated by this blindness**,
 which is the recall caveat recorded there, quantified.
 
+**What it actually bought, measured after implementing (2026-08-19, NLTagger on macOS
+26.5.2).** Both predictions above were made against UNFILTERED chunking; the shipped chunker
+applies the published head filters — stopwords, minimum head length, inflected heads — so both
+figures come in lower:
+
+| | candidates | resolved edges |
+|---|---|---|
+| predicted above | +445 | +98 |
+| **measured, shipped** | **+260** (173 → 433) | **+54**, naming 26 entities |
+
+Fernhill's candidate list goes 23/14/136 to 52/22/359. The prediction is left standing above
+rather than edited, because the gap between it and the measurement is the useful record: a
+probe run without the filters the surface actually applies overstates both the cost and the
+prize.
+
 The 445 new candidates are the cost, and most are junk (`one`, `resistance`, `thumps`, and
 `hurricane` split off its lamp). At 3.5x the current list they would be unreadable as a flat
 list — **which is why this is only safe alongside D12.** Ungated extraction without roles is a
@@ -386,8 +401,48 @@ the result with the progression chain the same document carries. It never derive
 it applies what it was given.
 
 Measured cost of publishing it: **2.3KB of JSON for Fernhill** — 64 entities, 129 distinct
-words. The alternative, a second subprocess round-trip to resolve the IDE's chunks, buys
+words.
+
+**Amended while implementing D11 (2026-08-19): the split needs FOUR surfaces, not one, and the
+vocabulary surface needs both of its tiers.** Each was found by building the IDE side against
+the document and discovering it could not be written:
+
+1. **`vocabulary` carries `exactForms` as well as `wordsOf`.** `resolvePhrase` has two tiers,
+   and a phrase equalling a whole name resolves there *and nowhere else*. Publishing only the
+   content words hands the IDE a resolver that disagrees with the analyzer on precisely the
+   phrases exact forms exist to disambiguate. Fernhill: 149 forms, 6.2KB rather than 2.3KB.
+2. **`prose` carries every authored passage, once.** A passage that produced no finding and no
+   edge reaches the IDE nowhere else — **21 of Fernhill's 124 are invisible without it** — so
+   "chunk all the prose" would silently have meant "chunk the prose that already said
+   something". 28.6KB for Fernhill.
+3. **`filters` carries the shared head filters.** The two readings chunk differently by design
+   — articles this side, part of speech the other — but they must agree on what counts as a
+   head worth reporting, or the IDE's list is a different reading of the story rather than the
+   same one seen deeper. `BOUNDARY_WORDS` is deliberately NOT published: it ends runs for the
+   article gate only.
+4. **`roles`**, added under D12 for its own reasons, is the fourth.
+
+The document runs 116KB for Fernhill with all four. Roughly 88KB of that is passage text
+repeated inside every finding's embedded site; converting findings to site-by-reference would
+shrink it several-fold and is **not** done here — it is a wire refactor across every view, not
+a step of this decision.
+
+**And roles cannot rank the candidates ungating adds.** A role attaches to a resolved entity;
+the +445 new candidates are *no-object*, which by definition name nothing. Ranking them by
+role is therefore done through the **passage's owner** — a missing noun in a
+progression-critical thing's prose outranks one in a room's scenery — with an unowned passage
+sorting last rather than being hidden. Without this reading, "ungated extraction ranked by
+role is a better surface" is unimplementable for the very rows that make it necessary. The alternative, a second subprocess round-trip to resolve the IDE's chunks, buys
 nothing and costs another 63.5ms process start plus a protocol no other caller needs.
+
+**How the two readings meet: union, never replacement.** The IDE's list is the analyzer's
+findings *plus* what chunking adds, deduplicated on site and phrase — which makes AC-16 hold by
+construction rather than by argument, and makes "never drops" absolute rather than approximate.
+It has to be a union: the tagger mis-tags real nouns (`shroud` and `well` both come back
+adverbs on this corpus), so a reading that trusted the tagger alone would delete findings the
+author needs. The visible cost is that a re-headed phrase and the phrase it was re-headed from
+can both appear — *hurricane lamp* as a missing-word finding beside *hurricane lamp burns* as a
+no-object one — and that is the right trade against silently dropping either.
 
 The cost, stated rather than discovered: **the IDE and the CLI report different counts for the
 same story.** That is acceptable here and nowhere else — D6 defines Incomplete as a candidate
@@ -470,6 +525,17 @@ three finding types replace `where`/`whereName`/`line` with a single `site: Pros
 `unnamedTools(ir, reach, edges): UnnamedTool[]` (D13). The document gains `vocabulary:
 VocabularySurface`.
 
+**Amended while implementing D12 (2026-08-19): `roles.ts` also exports
+`roleTable(ir, reach): Map<string, MentionRole>`, and the document gains
+`roles: Record<string, MentionRole>` covering EVERY declared entity.** `deriveRoles` alone
+cannot serve the IDE. Under D11 Chord Writer chunks phrases the analyzer's article-gated
+extractor never resolves, so it holds edges the analyzer never made and would have to
+re-implement the role rule in Swift to place them — the drift D11a exists to prevent. The
+Alderman shows this is not hypothetical: all six `accusable` suspects are proper-named, so not
+one of them appears in an analyzer edge today, and every one is a tool the moment ungated
+chunking finds it. Publishing the table rather than the rule keeps one derivation and one
+answer. Cost measured on Fernhill: ~2.6KB, beside the vocabulary surface's 2.3KB.
+
 **D12 — Every mention carries one of three roles: tool, progression-info, or
 atmosphere-info**, and BOTH sides derive them with the same rule — the analyzer over the
 edges it resolved, Chord Writer over the edges it chunked, from the same published
@@ -499,9 +565,39 @@ entities** tools and **48 of 71** prose edges info. The progression chain is
 too generous: it filed the sherry bottle beside the cellar door, which is exactly the
 distinction the author opened the view to see.
 
+**Where a tool's affordance actually lives, measured (2026-08-19).** Four sources, any one of
+which is enough, and the second was missing from this decision as first written: an on-clause
+of the entity's own; **an on-clause on a story-declared trait the entity composes**; a
+composition that is itself an affordance (`openable`, `lockable`, `switchable`, `readable`,
+`wearable`, `edible`, `cuttable`, `pushable`, `pullable`, `climbable`, `container`,
+`supporter`); or plain portability. Fernhill's `case-clock` is the case that forced the second:
+its only clause of its own is `on every turn`, it is scenery, and it is a tool solely because
+`windable` answers `on winding` in `ir.traits`. This is the same shape of miss D14 fixed for
+the chain — the mechanism sits one indirection from where the obvious reading looks.
+
+**Portability has no row to read.** There is no `takeable` field anywhere in the IR: world-model
+grants portability by default and `scenery` withdraws it (`IFEntity.isTakeable`). A derivation
+that hunts for an affordance row therefore calls every unadorned object inert, which is
+backwards — the unadorned object is exactly the one the player can pick up. The rule is
+mirrored in `loader-semantics.ts` as `isPortableByDefault` and pinned against world-model's own
+getter, not against this paragraph.
+
+**Places and the player can never be tools.** Measured before that guard existed, Fernhill
+called `grounds`, `house` and `iron-gates` tools: a region and a room answer `on entering`,
+which is player-fired by every test above, and the player is portable because nothing withdraws
+it. The guard moved 13 Fernhill edges from tool to atmosphere.
+
+**The corpus after the split**: Fernhill **26 tool / 7 progression-info / 43 atmosphere-info**
+of 76 edges; The Alderman 7/0/18 of 25; Ides of March 41/0/20 of 61 (both have no gates, so no
+chain). Against the rejected two-way rule's 41-of-65 tools and 48-of-71 info, the sherry bottle
+now files as a tool and the cellar door as progression-info, which is the distinction the view
+was opened to see.
+
 **Atmosphere-info is a residual, not a classification, and that is a limit not a defect.**
 Nothing in the IR says "this is atmosphere" — it is what is left when a mention is neither an
-affordance nor on the chain. This is the case D6a's source-level suppression exists to serve,
+affordance nor on the chain. Rooms land there too: nine of Fernhill's twenty-two
+atmosphere-role entities are places. A fourth role for them is not this decision's, and was not
+invented while implementing it. This is the case D6a's source-level suppression exists to serve,
 and it narrows what that suppression must cover: the author confirms a residual rather than
 silencing an undifferentiated list. D6a is unchanged and still ships without suppression until
 its own ADR lands.

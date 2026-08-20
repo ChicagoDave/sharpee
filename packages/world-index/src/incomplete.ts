@@ -18,7 +18,12 @@
  * counts as a passage and where each one sits is `prose.ts`'s question; this module
  * takes the flat list and asks what the parser would make of the nouns in it.
  *
- * Public interface: deriveIncomplete, extractNounPhrases and their result types.
+ * Public interface: deriveIncomplete, extractNounPhrases, publishFilters and
+ * their result types.
+ *
+ * **It keeps what it used to throw away** (Amendment 1, D12). A phrase resolving
+ * cleanly is not a finding, but it is the prose-points-at-thing edge the role
+ * split rests on, so `classify` now names that case instead of returning nothing.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
  * contract.
@@ -29,6 +34,8 @@
 
 import type { StoryIR } from '@sharpee/chord';
 import { collectProse, type ProseSite } from './prose.js';
+import { deriveRoles, type MentionEdge, type ResolvedMention } from './roles.js';
+import { deriveReach, type ReachResult } from './reach.js';
 import { buildVocabularyIndex, resolvePhrase, type VocabularyIndex } from './vocabulary.js';
 
 /**
@@ -145,6 +152,14 @@ export interface IncompleteResult {
   ambiguous: AmbiguousFinding[];
   /** Phrases nothing answers to. */
   noObject: NoObjectFinding[];
+  /**
+   * Every phrase that DID resolve, roled (D12).
+   *
+   * Not a finding — the opposite of one. These are the places the prose and the
+   * world already agree, and the role on each is what lets a reader tell a thing
+   * the puzzle needs from a thing that is merely described.
+   */
+  edges: MentionEdge[];
 }
 
 /**
@@ -211,8 +226,8 @@ export function extractNounPhrases(text: string): NounPhrase[] {
  *
  * @param noun the extracted phrase
  * @param index the story's vocabulary index
- * @returns the finding kind and what it names, or undefined when the phrase
- *   resolves cleanly
+ * @returns the finding kind and what it names, or `resolved` and the one thing
+ *   it names — a clean resolution is the mention edge D12 roles, not a nothing
  */
 function classify(
   noun: NounPhrase,
@@ -221,9 +236,9 @@ function classify(
   | { kind: 'missing-word'; entity: string; missing: string[]; knownAs: string[] }
   | { kind: 'ambiguous'; candidates: string[] }
   | { kind: 'no-object' }
-  | undefined {
+  | { kind: 'resolved'; entity: string } {
   const candidates = resolvePhrase(index, noun.phrase, noun.words);
-  if (candidates.length === 1) return undefined;
+  if (candidates.length === 1) return { kind: 'resolved', entity: candidates[0] };
   if (candidates.length > 1) return { kind: 'ambiguous', candidates };
 
   const head = noun.words[noun.words.length - 1];
@@ -236,23 +251,28 @@ function classify(
   const missing = noun.words
     .slice(0, -1)
     .filter((word) => !vocabulary.has(word) && !HEAD_STOPWORDS.has(word));
-  if (missing.length === 0) return undefined;
+  if (missing.length === 0) return { kind: 'resolved', entity: only };
 
   return { kind: 'missing-word', entity: only, missing, knownAs: [...vocabulary] };
 }
 
 /**
  * Derive the Incomplete view: the places a player will reach for something that
- * isn't there.
+ * isn't there, and the places prose and world already agree.
  *
  * @param ir the story IR
- * @returns the three candidate lists and their counts
+ * @param reach the story's reach result, whose `progression` chain roles the
+ *   edges (D12). Defaults to deriving it, so a caller wanting only the candidate
+ *   lists need not know that roles exist; `document.ts` passes the one it has
+ *   already computed rather than paying for a second walk.
+ * @returns the three candidate lists, their counts, and the roled edges
  */
-export function deriveIncomplete(ir: StoryIR): IncompleteResult {
+export function deriveIncomplete(ir: StoryIR, reach: ReachResult = deriveReach(ir)): IncompleteResult {
   const index = buildVocabularyIndex(ir);
   const missingWord: MissingWordFinding[] = [];
   const ambiguous: AmbiguousFinding[] = [];
   const noObject: NoObjectFinding[] = [];
+  const resolved: ResolvedMention[] = [];
 
   // One pass per PASSAGE, not per entity (D10). Deduplication is per passage too: the
   // same phrase in a room's description and in its first-visit text is two places the
@@ -260,10 +280,11 @@ export function deriveIncomplete(ir: StoryIR): IncompleteResult {
   for (const site of collectProse(ir)) {
     for (const noun of extractNounPhrases(site.text)) {
       const finding = classify(noun, index);
-      if (finding === undefined) continue;
 
       const at = { site, phrase: noun.phrase };
-      if (finding.kind === 'missing-word') {
+      if (finding.kind === 'resolved') {
+        resolved.push({ ...at, entity: finding.entity });
+      } else if (finding.kind === 'missing-word') {
         missingWord.push({ ...at, entity: finding.entity, missing: finding.missing, knownAs: finding.knownAs });
       } else if (finding.kind === 'ambiguous') {
         ambiguous.push({ ...at, candidates: finding.candidates });
@@ -278,5 +299,38 @@ export function deriveIncomplete(ir: StoryIR): IncompleteResult {
     missingWord,
     ambiguous,
     noObject,
+    edges: deriveRoles(ir, reach, resolved),
+  };
+}
+
+/**
+ * The extractor's shared filters, published for the IDE (D11).
+ *
+ * Chord Writer chunks by part of speech rather than by article, so it does NOT
+ * share `BOUNDARY_WORDS` — that list exists to end a run this side, and the
+ * tagger ends runs for the other. What the two MUST agree on is what counts as a
+ * head worth reporting, because a candidate list filtered by two different
+ * stopword sets is two different readings of the same story rather than one
+ * reading seen at two depths.
+ */
+export interface ExtractorFilters {
+  /** Head nouns that are never a thing the author forgot to implement. */
+  headStopwords: string[];
+  /** The shortest a head noun may be. */
+  minHeadLength: number;
+  /** The most words a noun phrase may carry. */
+  maxPhraseWords: number;
+}
+
+/**
+ * The filter surface, as pure data.
+ *
+ * @returns the shared filters the IDE applies and never derives
+ */
+export function publishFilters(): ExtractorFilters {
+  return {
+    headStopwords: [...HEAD_STOPWORDS],
+    minHeadLength: MIN_HEAD_LENGTH,
+    maxPhraseWords: MAX_PHRASE_WORDS,
   };
 }

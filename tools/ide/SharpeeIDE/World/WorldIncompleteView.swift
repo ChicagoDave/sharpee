@@ -8,8 +8,14 @@
 // prose by heuristic and some of them are scenery the author meant to skip, so
 // the wording here says "places a player will reach for something" and never
 // "error". Nothing in this view blocks a build or claims a defect.
+// IT READS MORE PROSE THAN THE ANALYZER DOES (D11). The rows here are the
+// analyzer's findings UNIONED with what a part-of-speech pass over every passage
+// adds, so this list is a superset of the headless one and never a different
+// reading of it. The extra rows are ranked by role (D12) — without that ranking
+// the ungated pass adds roughly three and a half times the candidates and the
+// list stops being readable, which is why neither half ships alone.
 // Public interface: WorldIncompleteView.show(_:), onActivate,
-// WorldIncompleteView.rows(for:class:), tabTitles(for:), title(_:_:).
+// WorldIncompleteView.rows(for:class:document:), tabTitles(for:), title(_:_:).
 // Owner context: tools/ide — World.
 
 import AppKit
@@ -34,7 +40,8 @@ final class WorldIncompleteView: NSView {
 
     private let classStrip = TabStripView()
     private let table = WorldFindingTable()
-    private var incomplete: WorldIncomplete?
+    private var document: WorldIndexDocument?
+    private var reading: WorldReading?
     private var selected: FindingClass = .missingWord
 
     override init(frame frameRect: NSRect) {
@@ -68,10 +75,17 @@ final class WorldIncompleteView: NSView {
     }
 
     /// Renders one story's candidate list, keeping the selected class.
-    /// - Parameter incomplete: the analyzer's Incomplete result
-    func show(_ incomplete: WorldIncomplete) {
-        self.incomplete = incomplete
-        classStrip.setTabs(Self.tabTitles(for: incomplete), select: selected.rawValue)
+    ///
+    /// Takes the whole document rather than its Incomplete half, because the list
+    /// this view shows is read from the document's prose, vocabulary, filters and
+    /// roles together — not from the analyzer's findings alone.
+    ///
+    /// - Parameter document: the analyzer's document
+    func show(_ document: WorldIndexDocument) {
+        self.document = document
+        let reading = WorldProseChunker.read(document: document)
+        self.reading = reading
+        classStrip.setTabs(Self.tabTitles(for: reading), select: selected.rawValue)
         renderSelectedClass()
     }
 
@@ -80,12 +94,12 @@ final class WorldIncompleteView: NSView {
     /// Counts ride IN the titles, the ruling the Index tab's section strip
     /// already follows — a separate stats row would say the same numbers twice.
     ///
-    /// - Parameter incomplete: the analyzer's Incomplete result
+    /// - Parameter reading: the merged candidate list
     /// - Returns: one title per class, in `FindingClass` order
-    static func tabTitles(for incomplete: WorldIncomplete) -> [String] {
-        ["Missing word · \(incomplete.counts.missingWord)",
-         "Ambiguous · \(incomplete.counts.ambiguous)",
-         "No object · \(incomplete.counts.noObject)"]
+    static func tabTitles(for reading: WorldReading) -> [String] {
+        ["Missing word · \(reading.counts.missingWord)",
+         "Ambiguous · \(reading.counts.ambiguous)",
+         "No object · \(reading.counts.noObject)"]
     }
 
     /// The rows for one class, derived from the analyzer's answer.
@@ -93,14 +107,22 @@ final class WorldIncompleteView: NSView {
     /// Each row leads with the phrase as the author wrote it, because that is the
     /// string they will search their own prose for.
     ///
+    /// Rows are ordered by role, most urgent first: a phrase in the prose of a
+    /// progression-critical thing before one in a tool's, and a room's scenery
+    /// last. The order within a role is the order the findings arrived, so the
+    /// analyzer's own list keeps its shape inside each band.
+    ///
     /// - Parameters:
-    ///   - incomplete: the analyzer's Incomplete result
+    ///   - reading: the merged candidate list
     ///   - findingClass: which class to list
-    /// - Returns: the finding rows, in the analyzer's order
-    static func rows(for incomplete: WorldIncomplete, class findingClass: FindingClass) -> [WorldFindingRow] {
+    ///   - document: the document the roles are read from
+    /// - Returns: the finding rows, ranked
+    static func rows(for reading: WorldReading,
+                     class findingClass: FindingClass,
+                     document: WorldIndexDocument) -> [WorldFindingRow] {
         switch findingClass {
         case .missingWord:
-            return incomplete.missingWord.map { finding in
+            return ranked(reading.missingWord, by: { document.roles[$0.entity] ?? document.role(at: $0.site) }).map { finding in
                 let missing = finding.missing.map { "“\($0)”" }.joined(separator: ", ")
                 let known = finding.knownAs.joined(separator: ", ")
                 return WorldFindingRow(
@@ -111,7 +133,7 @@ final class WorldIncompleteView: NSView {
                     line: finding.site.line)
             }
         case .ambiguous:
-            return incomplete.ambiguous.map { finding in
+            return ranked(reading.ambiguous, by: { document.role(at: $0.site) }).map { finding in
                 WorldFindingRow(
                     title: Self.title(finding.phrase, finding.site),
                     detail: "reaches \(finding.candidates.joined(separator: ", "))",
@@ -120,7 +142,7 @@ final class WorldIncompleteView: NSView {
                     line: finding.site.line)
             }
         case .noObject:
-            return incomplete.noObject.map { finding in
+            return ranked(reading.noObject, by: { document.role(at: $0.site) }).map { finding in
                 WorldFindingRow(
                     title: Self.title(finding.phrase, finding.site),
                     detail: "nothing in the story answers to it",
@@ -129,6 +151,26 @@ final class WorldIncompleteView: NSView {
                     line: finding.site.line)
             }
         }
+    }
+
+    /// Sort findings by role without disturbing their order within a role.
+    ///
+    /// A stable sort, deliberately: the analyzer's findings arrive first and the
+    /// chunked ones after, so a stable order keeps the headless list's shape
+    /// visible inside each band instead of interleaving the two readings.
+    ///
+    /// - Parameters:
+    ///   - findings: the findings to rank
+    ///   - role: how to read one finding's role
+    /// - Returns: the findings, most urgent role first
+    private static func ranked<Finding>(_ findings: [Finding],
+                                        by role: (Finding) -> WorldMentionRole) -> [Finding] {
+        findings.enumerated()
+            .sorted { left, right in
+                let a = role(left.element).rank, b = role(right.element).rank
+                return a == b ? left.offset < right.offset : a < b
+            }
+            .map(\.element)
     }
 
     /// A finding's headline: the phrase, then where the author will find it.
@@ -151,11 +193,11 @@ final class WorldIncompleteView: NSView {
 
     /// Draws the selected class, or says why there is nothing to draw.
     private func renderSelectedClass() {
-        guard let incomplete else {
+        guard let document, let reading else {
             table.setRows([], emptyMessage: "Build the story to derive its candidate list.")
             return
         }
-        table.setRows(Self.rows(for: incomplete, class: selected),
+        table.setRows(Self.rows(for: reading, class: selected, document: document),
                       emptyMessage: Self.emptyMessage(for: selected))
     }
 

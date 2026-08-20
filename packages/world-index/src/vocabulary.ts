@@ -15,7 +15,14 @@
  * is redundant with the name-word derivation anyway — the modifier a player
  * types matches a name word just as well.
  *
- * Public interface: buildVocabularyIndex, resolvePhrase, VocabularyIndex.
+ * Public interface: buildVocabularyIndex, resolvePhrase, publishVocabulary,
+ * VocabularyIndex, VocabularySurface.
+ *
+ * **The index is also published on the wire** (Amendment 1, D11). Chord Writer
+ * chunks phrases this package's article-gated extractor never sees, and a chunk
+ * is worth nothing until it resolves, so the IDE is handed the naming surface
+ * rather than asked to rebuild it. `publishVocabulary` is the one place the
+ * in-process `Map`/`Set` index becomes the pure-data shape that can cross.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
  * contract; this mirrors the validator, it does not govern it.
@@ -118,4 +125,36 @@ export function resolvePhrase(
     const vocabulary = index.wordsOf.get(id);
     return vocabulary !== undefined && words.every((word) => vocabulary.has(word));
   });
+}
+
+/**
+ * The naming surface, flattened for the wire (D11a).
+ *
+ * Both halves of `resolvePhrase`'s two tiers, because publishing only the first
+ * would hand the IDE a resolver that disagrees with the analyzer on precisely
+ * the phrases exact forms exist to disambiguate. `byWord` is NOT published: it
+ * is an inversion of `wordsOf` that any consumer can build in a line, and
+ * shipping it would put two copies of the same fact on the wire.
+ */
+export interface VocabularySurface {
+  /** Entity id to the content words it answers to. */
+  wordsOf: Record<string, string[]>;
+  /** A whole lowercased name or alias to the entities carrying it. */
+  exactForms: Record<string, string[]>;
+}
+
+/**
+ * Flatten a vocabulary index into the surface the IDE resolves against.
+ *
+ * @param index the in-process index
+ * @returns the same facts as pure data — no Map, no Set
+ */
+export function publishVocabulary(index: VocabularyIndex): VocabularySurface {
+  const wordsOf: Record<string, string[]> = {};
+  for (const [id, words] of index.wordsOf) wordsOf[id] = [...words];
+
+  const exactForms: Record<string, string[]> = {};
+  for (const [form, holders] of index.exactForms) exactForms[form] = [...holders];
+
+  return { wordsOf, exactForms };
 }

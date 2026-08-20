@@ -572,8 +572,8 @@ costs one command per field.
 - **Exit state**: AC-10 through AC-16 pass against the real corpus; the D6b pins are
   re-recorded with both prose sources and the role split; the IDE's re-headed count is proven
   greater than or equal to the analyzer's on every corpus story, never less.
-- **Status**: CURRENT (since 2026-08-19) — **step 1 (D10) and D14 are DONE**; D12's roles,
-  D11's part-of-speech work, and D13 remain.
+- **Status**: CURRENT (since 2026-08-19) — **step 1 (D10), D14, D12, and D11 are DONE**; D13
+  remains.
 - **D14 outcome, 2026-08-19**: `obstacleOn` returns a verdict (`{open, requires}` or
   `{blocked}`) instead of `BlockedEdge | undefined`, so the moment an edge opens the loop
   records WHAT opened it rather than deleting the evidence. `ReachResult` gains
@@ -583,6 +583,75 @@ costs one command per field.
   carrying BOTH a gate and a locked door had its door unexamined (the gate branch returned
   first), and an obstacle overcome on first sight was never recorded at all, which made the
   chain depend on walk order. **world-index 127 passing / 1 skipped; IDE suite 517 passing.**
+- **D11 outcome, 2026-08-19**: new `tools/ide/SharpeeIDE/World/WorldProseChunker.swift`
+  (`NLTagger` chunking, re-heading, resolution, classification) and three more published
+  surfaces — `vocabulary` (both tiers), `prose` (every passage, once), `filters`. The Incomplete
+  view now renders the merged reading, role-ranked. **IDE suite 525 passing, 0 failures**
+  (from 517); **world-index 144 passing / 1 skipped**; root `npx tsc --noEmit` clean.
+- **The measured gain, Fernhill, NLTagger on macOS 26.5.2**: CLI 23/14/136 = 173 candidates;
+  IDE 52/22/359 = **433**, so **+260**. Resolved edges: 76 → **+54 new**, naming **26 entities**
+  the article gate hid. Both actuals land BELOW the ADR's predictions (+445 candidates, +98
+  edges) because this chunker applies the published head filters — stopwords, minimum head
+  length, inflected heads — which the ADR's probe evidently did not. Less junk than promised,
+  and fewer edges.
+- **AC-11a is satisfied in direction, not by a pinned count, deliberately.** The counts above
+  are a dated measurement in this plan rather than an assertion in the suite: they depend on
+  Apple's tagger, so pinning them would make a macOS update read as a Sharpee regression. The
+  tests assert what is actually ours — the count never decreases, the four named recoveries
+  (`plunger`, `staging`, `fuse`, `smoke`) resolve, and the pass stays under 250ms.
+- **Union, never replacement.** The IDE list is the analyzer's findings plus the chunked ones,
+  deduplicated on site and phrase, so AC-16 holds by construction. It has to be a union:
+  probed directly, `NLTagger` returns `shroud` and `well` as ADVERBS in real Fernhill
+  sentences, so a reading that trusted the tagger alone would delete real findings. (The ADR
+  recorded `grate` as an Adjective; on macOS 26.5.2 it tags Verb. Same conclusion, different
+  word.)
+- **Roles cannot rank what ungating adds, so ranking goes through the passage's owner.** A role
+  attaches to a resolved entity; the new candidates are no-object and name nothing. A missing
+  noun in a progression-critical thing's prose outranks one in a room's scenery; an unowned
+  passage sorts last rather than being hidden.
+- **A deadlock that shipped in Phase 6, found by this step and fixed here.**
+  `WorldIndexRunner` read the child's stdout inside `terminationHandler`, so once the analyzer
+  filled the ~64KB pipe it blocked on the write, never exited, and the handler never ran — the
+  tab would hang forever. It was invisible only because Fernhill's document fit: **55,460 bytes
+  at Phase 6, 83,594 after D12, 120,193 now.** Fixed by draining both pipes while the child
+  runs, the pattern `IntrospectionRunner` and `ComposeRunner` already used; their two identical
+  private `DataBuffer` copies are now one shared `Build/DataBuffer.swift`. The regression test
+  asserts the document still EXCEEDS a pipe buffer, so the guard says so if it ever stops
+  guarding anything. The test helper's `analyzeReal` also force-unwrapped after its wait, so a
+  hang crashed the whole test process instead of failing one test; it now unwraps.
+- **D12 outcome, 2026-08-19**: new `packages/world-index/src/roles.ts` — `roleTable(ir, reach)`
+  and `deriveRoles(ir, reach, edges)`. `classify` now names its clean-resolution case instead
+  of returning `undefined`, so `IncompleteResult` gains `edges: MentionEdge[]`; the wire gains
+  a top-level `roles` table. **world-index 140 passing / 1 skipped** (from 127), no schema
+  re-bump — v2 bumps once for the amendment.
+- **Four IR facts read before the code was written** (the phase-entry checklist, all measured
+  against compiled corpus stories rather than the ADR): there is **no `takeable` row** — the
+  loader grants portability by default and `scenery` withdraws it, so a derivation hunting for
+  an affordance row calls every plain object inert; an affordance can live on the **trait
+  declaration** rather than the entity (`case-clock` declares only `on every turn`, and is a
+  tool solely because `windable` answers `on winding` in `ir.traits`); `binding: 'every-turn'`
+  is the non-player discriminator, not the action word; and `kinds` is a separate array from
+  `traits` carrying `room`/`region`/`door`/`person`/`container`/`supporter`.
+- **The measured correction the corpus forced**: with affordances alone, Fernhill called
+  `grounds`, `house` and `iron-gates` **tools** — a region and a room answer `on entering`,
+  which is player-fired by every other test — and the player is portable because nothing
+  withdraws it. Places and the player can never be tools; the guard moved 13 Fernhill edges
+  from tool to atmosphere (39/7/30 → 26/7/43).
+- **The pin**: Fernhill **26 tool / 7 progression-info / 43 atmosphere-info** of 76 edges; The
+  Alderman 7/0/18 of 25; Ides of March 41/0/20 of 61. Against D12's rejected two-way rule
+  (41 of 65 entities tools, 48 of 71 edges info) the split now separates the sherry bottle
+  (tool) from the cellar door (progression-info), which is the distinction the view exists for.
+- **One D11a contract change, made deliberately**: D11a gives `deriveRoles(ir, reach, edges)`
+  and nothing else, which cannot serve the IDE — under D11 Chord Writer chunks phrases this
+  extractor never resolves, and it would have to re-implement the rule in Swift to role them.
+  The Alderman proves it is not hypothetical: all six `accusable` suspects are proper-named,
+  so not one appears in an analyzer edge today, yet each is a tool the moment ungated chunking
+  finds it. The document therefore publishes `roles: Record<entityId, MentionRole>` for **every
+  declared entity** — the IDE applies it and never derives it, the same posture D11 takes with
+  the vocabulary surface. ~2.6KB for Fernhill, comparable to vocabulary's 2.3KB.
+- **The limit worth watching in the World tab**: atmosphere-info is a residual, so places land
+  there — nine of Fernhill's twenty-two atmosphere entities are rooms. A fourth role for places
+  is not D12's and was not invented here.
 - **Fernhill's chain, and why the scan was rejected**: the fixed point reports `boiler`,
   `stopcock`, `primer-plunger`, `mrs-kettle`, `cellar-door`, `tarnished-key`. The static
   proxy reports the same COUNT and a different SET — it invents `folly-door` and

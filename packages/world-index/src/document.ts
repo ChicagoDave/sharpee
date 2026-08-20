@@ -26,9 +26,12 @@
  */
 
 import type { StoryIR } from '@sharpee/chord';
-import { deriveIncomplete, type IncompleteResult } from './incomplete.js';
+import { deriveIncomplete, publishFilters, type ExtractorFilters, type IncompleteResult } from './incomplete.js';
+import { collectProse, type ProseSite } from './prose.js';
 import { layoutMap, type Cell, type DirectionSkew, type ResolvedCollision } from './map.js';
 import { deriveReach, type ReachResult } from './reach.js';
+import { roleTable, type MentionRole } from './roles.js';
+import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from './vocabulary.js';
 
 /**
  * The wire schema's name and version.
@@ -44,7 +47,9 @@ import { deriveReach, type ReachResult } from './reach.js';
  * load-bearing rather than cosmetic — the Swift decoder REFUSES an unknown schema
  * by design, so an unbumped analyzer would be read as v1 and its findings
  * silently mis-decoded. Later steps of the same amendment add fields to v2; it
- * bumps once for the amendment, not once per field.
+ * bumps once for the amendment, not once per field. Fields added to v2 since:
+ * `incomplete.edges` and the top-level `roles` table (D12), and D11's three
+ * IDE-side surfaces: `vocabulary`, `prose`, and `filters`.
  */
 export const WORLD_INDEX_SCHEMA = 'world-index/2';
 
@@ -99,6 +104,43 @@ export interface WorldIndexDocument {
   reach: ReachResult;
   /** What was named that isn't there yet? */
   incomplete: IncompleteResult;
+  /**
+   * The role every entity's mentions carry (D12), published whole.
+   *
+   * Every declared entity is listed, not only the ones the analyzer's own edges
+   * reached, because Chord Writer chunks phrases this extractor cannot see and
+   * must role them by the same rule. Publishing the table rather than the rule is
+   * what keeps a Swift re-implementation from drifting — the same posture the
+   * vocabulary surface takes for resolution.
+   */
+  roles: Record<string, MentionRole>;
+  /**
+   * The story's naming surface (D11).
+   *
+   * Chord Writer chunks phrases this package's article-gated extractor never
+   * reads, and a chunk is worth nothing until it resolves against something.
+   * The analyzer alone BUILDS this — `deriveNameVocabulary` is the parser's own
+   * function and modelling it twice is the mistake this whole package exists to
+   * avoid — and hands it over. The IDE applies it and never derives it.
+   */
+  vocabulary: VocabularySurface;
+  /**
+   * Every authored passage, once (D11).
+   *
+   * The part-of-speech pass reads whole passages, and a passage that produced no
+   * finding and no edge reaches the IDE nowhere else — 21 of Fernhill's 124 are
+   * invisible without this, so "chunk all the prose" would quietly mean "chunk
+   * the prose that already said something".
+   *
+   * Findings still embed their own site rather than referencing this list by key.
+   * That duplication is real and measured — the document runs 116KB for Fernhill
+   * where roughly 88KB of it is repeated passage text — and is left alone here
+   * deliberately: converting findings to site-by-reference is a wire refactor
+   * across every view, not a step of this decision.
+   */
+  prose: ProseSite[];
+  /** The extractor filters both readings share (D11). */
+  filters: ExtractorFilters;
 }
 
 /** A failure the World tab must render rather than a crash it must survive. */
@@ -145,6 +187,7 @@ function declared(value: string | undefined): string | null {
  */
 export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexDocument {
   const map = layoutMap(ir);
+  const reach = deriveReach(ir);
   return {
     schema: WORLD_INDEX_SCHEMA,
     analyzerVersion,
@@ -162,8 +205,12 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexD
       skews: map.skews,
       connections: map.connections,
     },
-    reach: deriveReach(ir),
-    incomplete: deriveIncomplete(ir),
+    reach,
+    incomplete: deriveIncomplete(ir, reach),
+    roles: Object.fromEntries(roleTable(ir, reach)),
+    vocabulary: publishVocabulary(buildVocabularyIndex(ir)),
+    prose: collectProse(ir),
+    filters: publishFilters(),
   };
 }
 
