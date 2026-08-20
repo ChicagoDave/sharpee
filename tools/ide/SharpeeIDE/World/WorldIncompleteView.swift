@@ -18,8 +18,10 @@
 // their mention is worth — Progression, Tools, Atmosphere — because a ranked-but-
 // unlabelled list hides the one cut that makes six hundred candidates readable: a
 // missing noun in a puzzle's prose is work, the same noun in scenery may be nothing.
-// Public interface: WorldIncompleteView.show(_:), onActivate, onGoToTarget,
-// candidateCount, WorldIncompleteView.rows(for:class:document:), tabTitles(for:),
+// EVERY CARD CARRIES ITS OWN READING (Amendment 3). There was a panel under the list
+// holding the selected finding's explanation and buttons; the cards absorbed all of it,
+// and two places saying the same thing is how they drift apart.
+// Public interface: WorldIncompleteView.show(_:), onActivate, onEdit, candidateCount, WorldIncompleteView.rows(for:class:document:), tabTitles(for:),
 // bandTitle(_:), title(_:_:).
 // Owner context: tools/ide — World.
 
@@ -55,12 +57,6 @@ final class WorldIncompleteView: NSView {
     /// Invoked when the author accepts an offer that changes the story source.
     var onEdit: ((WorldCandidateAction, WorldFindingRow) -> Void)?
 
-    /// Invoked when the author asks to see the thing a finding matched, in the code.
-    var onGoToTarget: ((WorldFindingDestination) -> Void)? {
-        get { explanation.onGoToTarget }
-        set { explanation.onGoToTarget = newValue }
-    }
-
     /// What the list is showing of what it holds.
     enum Showing: Int, CaseIterable {
         /// Every candidate, ignored ones included.
@@ -77,7 +73,6 @@ final class WorldIncompleteView: NSView {
                                                     trackingMode: .selectOne,
                                                     target: nil, action: nil)
     private let table = WorldFindingTable()
-    private let explanation = WorldFindingExplanation()
     private var ignores = WorldIgnoreStore(storyURL: nil)
 
     /// Words the author has added this session, by phrase.
@@ -131,12 +126,9 @@ final class WorldIncompleteView: NSView {
         showingControl.action = #selector(showingChanged)
 
         table.rendersCards = true
-        table.onSelect = { [weak self] row in self?.explanation.show(row) }
         table.onCardAction = { [weak self] action, row in self?.perform(action, on: row) }
-        explanation.onGoToPhrase = { [weak self] destination in self?.table.onActivate?(destination) }
-        explanation.onIgnore = { [weak self] phrase in self?.toggleIgnore(phrase) }
 
-        for subview in [classStrip, bandStrip, showingControl, table, explanation] as [NSView] {
+        for subview in [classStrip, bandStrip, showingControl, table] as [NSView] {
             subview.translatesAutoresizingMaskIntoConstraints = false
             addSubview(subview)
         }
@@ -159,14 +151,7 @@ final class WorldIncompleteView: NSView {
             table.topAnchor.constraint(equalTo: bandStrip.bottomAnchor),
             table.leadingAnchor.constraint(equalTo: leadingAnchor),
             table.trailingAnchor.constraint(equalTo: trailingAnchor),
-
-            // The panel is the list's footer, not a pane: it holds one finding's
-            // reading and never competes with the list for space.
-            explanation.topAnchor.constraint(equalTo: table.bottomAnchor),
-            explanation.leadingAnchor.constraint(equalTo: leadingAnchor),
-            explanation.trailingAnchor.constraint(equalTo: trailingAnchor),
-            explanation.bottomAnchor.constraint(equalTo: bottomAnchor),
-            explanation.heightAnchor.constraint(greaterThanOrEqualToConstant: 62),
+            table.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
     }
 

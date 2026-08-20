@@ -69,7 +69,6 @@ final class WorldView: NSView {
 
         reachView.onActivate = { [weak self] span in self?.onActivate?(span) }
         incompleteView.onActivate = { [weak self] span in self?.onActivate?(span) }
-        incompleteView.onGoToTarget = { [weak self] destination in self?.onActivate?(destination) }
         incompleteView.onEdit = { [weak self] action, row in self?.onEdit?(action, row) }
 
         spinner.style = .spinning
