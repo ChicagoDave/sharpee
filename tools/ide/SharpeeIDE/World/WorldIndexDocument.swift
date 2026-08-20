@@ -22,7 +22,29 @@ import Foundation
 /// document's shape changes; a mismatch is a decode failure, never a partial
 /// render (a newer analyzer's document read as an older one is how a field
 /// silently means something else).
-let worldIndexSchema = "world-index/2"
+let worldIndexSchema = "world-index/3"
+
+/// A region of `.story` source. Lines and columns are 1-based.
+struct WorldSourceSpan: Decodable, Equatable {
+    let line: Int
+    let column: Int
+    let endLine: Int
+    let endColumn: Int
+}
+
+/// What an entity is called, and where the author declared it.
+///
+/// A finding names its target by id, which is neither the author's word for the thing
+/// nor anywhere they can go. This is both (Amendment 2).
+struct WorldEntityDeclaration: Decodable, Equatable {
+    /// The author's own name for it, e.g. `tiring-house door`.
+    let name: String
+    /// Where its declaration sits, when the IR carried one.
+    let span: WorldSourceSpan?
+    /// The room it is in at the start — itself, when it IS a room; nil when nothing
+    /// places it. A thing named in an NPC's topic goes where that NPC is.
+    let room: String?
+}
 
 // MARK: - Map
 
@@ -298,13 +320,17 @@ struct WorldProseSite: Decodable, Equatable {
     let ownerName: String?
     /// The clause or action that fires it, e.g. `on opening`.
     let firedBy: String?
-    /// Source line of the passage.
-    let line: Int?
+    /// Where the WHOLE passage sits — a description runs several lines and the
+    /// phrase a finding names sits in one of them (Amendment 2).
+    let span: WorldSourceSpan?
     /// The whole passage — the part-of-speech pass's input (D11).
     let text: String
 
+    /// The passage's first line, for the surfaces that only label a finding.
+    var line: Int? { span?.line }
+
     private enum CodingKeys: String, CodingKey {
-        case key, kind, owner, ownerName, firedBy, line, text
+        case key, kind, owner, ownerName, firedBy, span, text
     }
 
     /// Decodes a site, treating an unrecognised passage kind as a response.
@@ -321,7 +347,7 @@ struct WorldProseSite: Decodable, Equatable {
         owner = try c.decodeIfPresent(String.self, forKey: .owner)
         ownerName = try c.decodeIfPresent(String.self, forKey: .ownerName)
         firedBy = try c.decodeIfPresent(String.self, forKey: .firedBy)
-        line = try c.decodeIfPresent(Int.self, forKey: .line)
+        span = try c.decodeIfPresent(WorldSourceSpan.self, forKey: .span)
         text = try c.decode(String.self, forKey: .text)
     }
 
@@ -340,6 +366,36 @@ struct WorldIncompleteCounts: Decodable, Equatable {
     let missingWord: Int
     let ambiguous: Int
     let noObject: Int
+    /// Things declared and never described (Amendment 3).
+    let undescribed: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case missingWord, ambiguous, noObject, undescribed
+    }
+
+    /// Decodes the counts.
+    /// - Parameter decoder: the wire decoder
+    /// - Throws: when a count is absent
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        missingWord = try c.decode(Int.self, forKey: .missingWord)
+        ambiguous = try c.decode(Int.self, forKey: .ambiguous)
+        noObject = try c.decode(Int.self, forKey: .noObject)
+        undescribed = try c.decode(Int.self, forKey: .undescribed)
+    }
+
+    /// Builds counts directly, for the IDE's own merged reading.
+    /// - Parameters:
+    ///   - missingWord: phrases naming a thing by a word it does not answer to
+    ///   - ambiguous: phrases two or more things answer to
+    ///   - noObject: phrases nothing answers to
+    ///   - undescribed: things declared and never described
+    init(missingWord: Int, ambiguous: Int, noObject: Int, undescribed: Int) {
+        self.missingWord = missingWord
+        self.ambiguous = ambiguous
+        self.noObject = noObject
+        self.undescribed = undescribed
+    }
 }
 
 /// Prose naming a real thing by a word that thing does not answer to.
@@ -354,6 +410,8 @@ struct WorldMissingWordFinding: Decodable, Equatable {
     let missing: [String]
     /// The words it does answer to.
     let knownAs: [String]
+    /// The word that reached this target — why THIS thing and not another.
+    let matched: String
 }
 
 /// Prose naming something two or more things answer to.
@@ -364,6 +422,8 @@ struct WorldAmbiguousFinding: Decodable, Equatable {
     let phrase: String
     /// Everything the phrase reaches.
     let candidates: [String]
+    /// The word or phrase that reached them all.
+    let matched: String
 }
 
 /// Prose naming something that does not exist.
@@ -389,6 +449,9 @@ enum WorldMentionRole: String, Decodable {
     case progressionInfo = "progression-info"
     /// Everything else the prose resolves to.
     case atmosphereInfo = "atmosphere-info"
+
+    /// The bands in display order, most urgent first.
+    static var bands: [WorldMentionRole] { [.progressionInfo, .tool, .atmosphereInfo] }
 
     /// How high this role sorts in the candidate list — lower is more urgent.
     var rank: Int {
@@ -520,12 +583,25 @@ struct WorldExtractorFilters: Decodable, Equatable {
     let minHeadLength: Int
     /// The most words a noun phrase may carry.
     let maxPhraseWords: Int
+    /// Suffixes that mark a noun as an action or a quality, not a thing.
+    let abstractSuffixes: [String]
+    /// Things whose names end in one of those suffixes anyway.
+    let physicalExceptions: Set<String>
+    /// Nouns that name an act or a manner and are spelled like anything else.
+    let eventiveHeads: Set<String>
+    /// The analyzer's verdicts for this story's own prose: words naming no thing.
+    ///
+    /// The lexicon behind them (12,444 lemmas with no physical sense in Open English
+    /// WordNet) stays in the analyzer — only the answers for words this story
+    /// actually contains cross the wire, which is under a kilobyte.
+    let notThingHeads: Set<String>
 
     private enum CodingKeys: String, CodingKey {
         case headStopwords, minHeadLength, maxPhraseWords
+        case abstractSuffixes, physicalExceptions, eventiveHeads, notThingHeads
     }
 
-    /// Decodes the filters, taking the stopword list as a set.
+    /// Decodes the filters, taking the word lists as sets.
     /// - Parameter decoder: the wire decoder
     /// - Throws: when any field is absent
     init(from decoder: Decoder) throws {
@@ -533,6 +609,26 @@ struct WorldExtractorFilters: Decodable, Equatable {
         headStopwords = Set(try c.decode([String].self, forKey: .headStopwords))
         minHeadLength = try c.decode(Int.self, forKey: .minHeadLength)
         maxPhraseWords = try c.decode(Int.self, forKey: .maxPhraseWords)
+        abstractSuffixes = try c.decode([String].self, forKey: .abstractSuffixes)
+        physicalExceptions = Set(try c.decode([String].self, forKey: .physicalExceptions))
+        eventiveHeads = Set(try c.decode([String].self, forKey: .eventiveHeads))
+        notThingHeads = Set(try c.decode([String].self, forKey: .notThingHeads))
+    }
+
+    /// Whether a phrase names a thing at all, or names how something was done.
+    ///
+    /// The analyzer's rule, APPLIED — never re-derived. Two readings of one story
+    /// must share a definition of "thing", or the IDE's own pass quietly re-adds
+    /// every phrase the headless one understood and set aside (Amendment 2).
+    ///
+    /// - Parameter head: the phrase's head noun
+    /// - Returns: true when the phrase reads as a thing the author could implement
+    func readsAsThing(head: String) -> Bool {
+        if eventiveHeads.contains(head) { return false }
+        if notThingHeads.contains(head) { return false }
+        return physicalExceptions.contains(head)
+            || head.count <= 5
+            || !abstractSuffixes.contains { head.hasSuffix($0) }
     }
 }
 
@@ -549,9 +645,11 @@ struct WorldIncomplete: Decodable, Equatable {
     let noObject: [WorldNoObjectFinding]
     /// Every phrase that DID resolve, roled (D12). Not findings — the opposite.
     let edges: [WorldMentionEdge]
+    /// Things the story declares and never describes, by id (Amendment 3).
+    let undescribed: [String]
 
     private enum CodingKeys: String, CodingKey {
-        case counts, missingWord, ambiguous, noObject, edges
+        case counts, missingWord, ambiguous, noObject, edges, undescribed
     }
 
     /// Decodes the Incomplete result, defaulting `edges` to empty.
@@ -568,6 +666,7 @@ struct WorldIncomplete: Decodable, Equatable {
         ambiguous = try c.decode([WorldAmbiguousFinding].self, forKey: .ambiguous)
         noObject = try c.decode([WorldNoObjectFinding].self, forKey: .noObject)
         edges = try c.decodeIfPresent([WorldMentionEdge].self, forKey: .edges) ?? []
+        undescribed = try c.decodeIfPresent([String].self, forKey: .undescribed) ?? []
     }
 }
 
@@ -603,6 +702,8 @@ struct WorldIndexDocument: Decodable, Equatable {
     let prose: [WorldProseSite]
     /// The extractor filters both readings share (D11).
     let filters: WorldExtractorFilters
+    /// Every declared entity: its authored name, and where it was declared (Amendment 2).
+    let declarations: [String: WorldEntityDeclaration]
 
     /// What a phrase found in this passage is worth, for ranking.
     ///

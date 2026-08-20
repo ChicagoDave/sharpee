@@ -98,7 +98,28 @@ describe('a compiled story', () => {
     expect(run.document.reach.findingCount).toBe(0);
     // Both prose sources cross the wire (Amendment 1 D10) — the description half of
     // these figures is pinned against the pre-amendment numbers in incomplete.test.ts.
-    expect(run.document.incomplete.counts).toEqual({ missingWord: 23, ambiguous: 14, noObject: 136 });
+    expect(run.document.incomplete.counts).toEqual({
+      missingWord: 30,
+      ambiguous: 15,
+      noObject: 115,
+      undescribed: 0,
+    });
+  });
+
+  // POINT AT THE THING, NOT AT ITS ID (Amendment 2). A finding names `oil-lamp`; the
+  // author wrote *the oil lamp* and declared it somewhere. Both facts cross the wire so
+  // the surface can say the name and go to the declaration.
+  it('carries every entity\'s name and where it was declared', () => {
+    expect(run.document.ok).toBe(true);
+    if (!run.document.ok) return;
+
+    const lamp = run.document.declarations['oil-lamp'];
+    expect(lamp?.name).toBe('oil lamp');
+    expect(lamp?.span?.line).toBeGreaterThan(0);
+
+    const missing = run.document.incomplete.missingWord;
+    expect(missing.length).toBeGreaterThan(0);
+    expect(missing.every((finding) => run.document.ok && finding.entity in run.document.declarations)).toBe(true);
   });
 
   it('loses nothing crossing the wire', () => {

@@ -223,12 +223,12 @@ final class WorldIndexTests: XCTestCase {
     /// A document from a schema this app does not read is REPORTED, never decoded
     /// into the shape it happens to resemble.
     func testUnknownSchemaIsReportedRatherThanDecoded() throws {
-        let future = Data(#"{"schema":"world-index/3","analyzerVersion":"9.0.0","ok":true}"#.utf8)
+        let future = Data(#"{"schema":"world-index/4","analyzerVersion":"9.0.0","ok":true}"#.utf8)
         let response = try WorldIndexResponse.decode(future)
 
         let failure = try XCTUnwrap(response.failure, "a newer schema must not decode as an analysis")
         XCTAssertEqual(failure.cause, .unavailable)
-        XCTAssertTrue(failure.message.contains("world-index/3") && failure.message.contains(worldIndexSchema),
+        XCTAssertTrue(failure.message.contains("world-index/4") && failure.message.contains(worldIndexSchema),
                       "both versions are named: \(failure.message)")
     }
 
@@ -269,20 +269,26 @@ final class WorldIndexTests: XCTestCase {
     }
 
     /// Each Incomplete class lists exactly what the merged reading holds for it.
+    ///
+    /// Counted WITHOUT the band headings (D12): a heading is structure, not a finding,
+    /// and counting it would make the list claim more candidates than it holds.
     func testIncompleteViewListsEachClassAtItsCount() throws {
         let document = try fernhillAnalysis()
         let reading = WorldProseChunker.read(document: document)
         let counts = reading.counts
 
-        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .missingWord, document: document).count,
-                       counts.missingWord)
-        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .ambiguous, document: document).count,
-                       counts.ambiguous)
-        XCTAssertEqual(WorldIncompleteView.rows(for: reading, class: .noObject, document: document).count,
-                       counts.noObject)
+        func findings(_ findingClass: WorldIncompleteView.FindingClass) -> [WorldFindingRow] {
+            WorldIncompleteView.rows(for: reading, class: findingClass, document: document)
+                .filter { !$0.isHeader }
+        }
+
+        XCTAssertEqual(findings(.missingWord).count, counts.missingWord)
+        XCTAssertEqual(findings(.ambiguous).count, counts.ambiguous)
+        XCTAssertEqual(findings(.noObject).count, counts.noObject)
 
         let titles = WorldIncompleteView.tabTitles(for: reading)
-        XCTAssertEqual(titles.count, 3)
+        XCTAssertEqual(titles.count, 4, "three prose classes and Undescribed (Amendment 3)")
+        XCTAssertTrue(titles[3].hasPrefix("Undescribed · "), titles[3])
         XCTAssertTrue(titles[0].hasSuffix("\(counts.missingWord)"), titles[0])
     }
 
@@ -317,7 +323,7 @@ final class WorldIndexTests: XCTestCase {
         let document = try fernhillAnalysis()
         let reading = WorldProseChunker.read(document: document)
         let rows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
-        let first = try XCTUnwrap(rows.first, "Fernhill raises no-object candidates")
+        let first = try XCTUnwrap(rows.first { !$0.isHeader }, "Fernhill raises no-object candidates")
         XCTAssertNotNil(first.line, "a candidate names the line its phrase sits on")
     }
 
@@ -479,27 +485,80 @@ final class WorldIndexTests: XCTestCase {
         XCTAssertNotNil(response.document, "the runner drains the child rather than deadlocking on it")
     }
 
-    /// D12: the candidate list is ranked by role, most urgent first.
-    func testRowsAreRankedByRole() throws {
+    /// D12: every row carries its role band, and the bands come out in rank order.
+    ///
+    /// The bands are TABS now (David's ruling), so there are no heading rows: the strip
+    /// above the list does the dividing and the band rides on the row.
+    func testRowsAreBandedByRole() throws {
         let document = try fernhillAnalysis()
         let reading = WorldProseChunker.read(document: document)
 
-        let ranks = reading.noObject
-            .map { document.role(at: $0.site).rank }
-        let rankedRows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
-        XCTAssertEqual(rankedRows.count, reading.noObject.count, "ranking never drops a row")
+        let ranks = reading.noObject.map { document.role(at: $0.site).rank }
+        let rows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
+        XCTAssertEqual(rows.count, reading.noObject.count, "banding never drops a row")
+        XCTAssertTrue(rows.allSatisfy { !$0.isHeader }, "bands are tabs, not headings")
+        XCTAssertTrue(rows.allSatisfy { $0.band != nil }, "every row knows its band")
 
-        // The unranked list is not already sorted, so the assertion below is not
-        // vacuous — and the ranked one is.
+        // The unbanded list is not already sorted, so the assertion below is not
+        // vacuous — and the banded one is.
         XCTAssertFalse(ranks == ranks.sorted(), "precondition: findings do not arrive in role order")
+        let orderedRanks = rows.compactMap { $0.band?.rank }
+        XCTAssertEqual(orderedRanks, orderedRanks.sorted(), "rows come out story, tools, atmosphere")
+    }
 
-        let rankedSites = WorldProseChunker.read(document: document)
-        _ = rankedSites
-        let orderedRanks = rankedRows.map { row -> Int in
-            let finding = reading.noObject.first { Self.rowTitle($0, document) == row.title }
-            return finding.map { document.role(at: $0.site).rank } ?? Int.max
+    /// The largest class has no target to rank by, so it ranks by recurrence.
+    ///
+    /// A list of six hundred candidates is worth nothing unless its first rows are its
+    /// best ones, and a phrase the prose keeps using is the better bet.
+    func testNoObjectRowsRankByHowOftenTheProseSaysThem() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+        let rows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
+
+        var occurrences: [String: Int] = [:]
+        for finding in reading.noObject { occurrences[finding.phrase, default: 0] += 1 }
+        let repeated = occurrences.filter { $0.value > 1 }
+        try XCTSkipIf(repeated.isEmpty, "Fernhill names no phrase twice — nothing to rank")
+
+        for band in WorldMentionRole.bands {
+            let counts = rows.filter { $0.band == band }.compactMap { occurrences[$0.phrase ?? ""] }
+            XCTAssertEqual(counts, counts.sorted(by: >),
+                           "\(WorldIncompleteView.bandTitle(band)): the most-named phrases come first")
         }
-        XCTAssertEqual(orderedRanks, orderedRanks.sorted(), "rows come out progression, tool, atmosphere")
+    }
+
+    /// An ignored phrase leaves the working list and can be found again.
+    func testIgnoringAPhraseFiltersItAndIsReversible() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+        let rows = WorldIncompleteView.rows(for: reading, class: .noObject, document: document)
+        let row = try XCTUnwrap(rows.first { $0.phrase != nil })
+        let phrase = try XCTUnwrap(row.phrase)
+
+        let story = tempDir.appendingPathComponent("ignores.story")
+        try "x".write(to: story, atomically: true, encoding: .utf8)
+        var ignores = WorldIgnoreStore(storyURL: story)
+
+        XCTAssertTrue(WorldIncompleteView.shows(row, showing: .remaining, ignores: ignores))
+        XCTAssertFalse(WorldIncompleteView.shows(row, showing: .ignored, ignores: ignores))
+
+        ignores.toggle(phrase)
+        XCTAssertTrue(ignores.contains(phrase), "the dismissal is remembered")
+        XCTAssertFalse(WorldIncompleteView.shows(row, showing: .remaining, ignores: ignores),
+                       "a dismissed phrase leaves the working list")
+        XCTAssertTrue(WorldIncompleteView.shows(row, showing: .ignored, ignores: ignores))
+        XCTAssertTrue(WorldIncompleteView.shows(row, showing: .all, ignores: ignores),
+                      "All means all — the author can always see what they dismissed")
+
+        // It survives the window: the list lives beside the story, not in defaults.
+        let reopened = WorldIgnoreStore(storyURL: story)
+        XCTAssertTrue(reopened.contains(phrase), "the dismissal outlives the session")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: WorldIgnoreStore.listURL(for: story).path))
+
+        ignores.toggle(phrase)
+        XCTAssertFalse(WorldIgnoreStore(storyURL: story).contains(phrase), "and can be taken back")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: WorldIgnoreStore.listURL(for: story).path),
+                       "an empty list leaves no file in the author's project")
     }
 
     /// The title a no-object finding renders under, for matching rows back to findings.
@@ -565,11 +624,9 @@ final class WorldIndexTests: XCTestCase {
 
         view.showLoading()
         XCTAssertTrue(view.isLoading)
-        XCTAssertEqual(view.findingCount, 0, "the previous build's badge does not survive a rebuild")
 
         view.show(.ok(try fernhillAnalysis()))
         XCTAssertFalse(view.isLoading, "the answer clears the loading state")
-        XCTAssertGreaterThan(view.findingCount, 0)
     }
 
     /// A failure clears it too — otherwise the tab spins forever on an absent toolchain.
@@ -594,14 +651,88 @@ final class WorldIndexTests: XCTestCase {
     /// The tab's section titles carry the numbers the author is looking for.
     func testSectionTitlesCarryTheirCounts() throws {
         let document = try fernhillAnalysis()
-        let titles = WorldView.sectionTitles(for: document)
+        let reading = WorldProseChunker.read(document: document)
+        let candidates = reading.counts.missingWord + reading.counts.ambiguous + reading.counts.noObject
+        let titles = WorldView.sectionTitles(for: document, candidates: candidates)
 
         XCTAssertEqual(titles[0], "Map · 13")
         XCTAssertEqual(titles[1], "Reach · 0")
-        let candidates = document.incomplete.counts.missingWord
-            + document.incomplete.counts.ambiguous
-            + document.incomplete.counts.noObject
         XCTAssertEqual(titles[2], "Incomplete · \(candidates)")
+    }
+
+    /// The IDE reads the analyzer's definition of a thing rather than its own.
+    ///
+    /// Two readings of one story must agree on what they are looking for. If the
+    /// chunker skipped this, its ungated pass would re-add every manner and act the
+    /// analyzer understood and set aside, and the suppression would be worth nothing.
+    func testTheChunkerAppliesThePublishedThingRule() throws {
+        let document = try fernhillAnalysis()
+        XCTAssertFalse(document.filters.eventiveHeads.isEmpty, "the rule crosses the wire")
+
+        XCTAssertFalse(document.filters.readsAsThing(head: "flourish"))
+        XCTAssertFalse(document.filters.readsAsThing(head: "hesitation"))
+        XCTAssertTrue(document.filters.readsAsThing(head: "bolt"))
+        XCTAssertTrue(document.filters.readsAsThing(head: "monument"))
+
+        let reading = WorldProseChunker.read(document: document)
+        let heads = (reading.noObject.map(\.phrase) + reading.missingWord.map(\.phrase))
+            .compactMap { $0.split(separator: " ").last.map(String.init) }
+        XCTAssertFalse(heads.contains { document.filters.eventiveHeads.contains($0) },
+                       "the IDE's own pass must not re-add what the analyzer set aside")
+    }
+
+    /// A row says which thing it matched, in the author's words, and why.
+    ///
+    /// The id is not an answer: `oil-lamp` is the analyzer's handle for a thing the
+    /// author called *the oil lamp* and declared on a line they can be taken to.
+    /// Amendment 2 exists because a row that names neither can only be argued with.
+    func testMissingWordRowNamesTheTargetAndSaysWhyItMatched() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+        let rows = WorldIncompleteView.rows(for: reading, class: .missingWord, document: document)
+
+        let lamp = try XCTUnwrap(rows.first { $0.phrase == "hurricane lamp" },
+                                 "the ADR's own example finding must be in the list")
+        XCTAssertEqual(lamp.targetName, "oil lamp", "the author's name for it, not `oil-lamp`")
+        let explanation = try XCTUnwrap(lamp.explanation)
+        XCTAssertTrue(explanation.contains("oil lamp"), explanation)
+        XCTAssertTrue(explanation.contains("lamp"), "the matched word is named: \(explanation)")
+        XCTAssertTrue(explanation.contains("hurricane"), "the word it does NOT answer to: \(explanation)")
+
+        XCTAssertNotNil(lamp.passage, "the row can find its phrase in the prose")
+        XCTAssertNotNil(lamp.declaration, "the row can reach the thing it matched")
+    }
+
+    /// Asking for the target is a different request from asking for the phrase.
+    func testTheTargetJumpAsksForTheDeclaration() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+        let rows = WorldIncompleteView.rows(for: reading, class: .missingWord, document: document)
+        let row = try XCTUnwrap(rows.first { $0.declaration != nil })
+
+        XCTAssertEqual(row.destination.place, .phrase, "a row's own destination is its phrase")
+        XCTAssertEqual(row.destination.atDeclaration().place, .declaration)
+        XCTAssertEqual(row.destination.atDeclaration().declaration, row.declaration)
+    }
+
+    /// The Incomplete section's number names the list the author actually sees.
+    ///
+    /// The strip under it counts the merged reading (D11), so a section title read
+    /// from the analyzer's own findings would name a smaller list than the one on
+    /// screen — the defect a screenshot of Ides of March showed as `Incomplete · 232`
+    /// over a class strip summing to 647.
+    func testIncompleteSectionCountMatchesTheClassStrip() throws {
+        let document = try fernhillAnalysis()
+        let reading = WorldProseChunker.read(document: document)
+        let stripTotal = reading.counts.missingWord + reading.counts.ambiguous + reading.counts.noObject
+
+        let titles = WorldView.sectionTitles(for: document, candidates: stripTotal)
+        XCTAssertEqual(titles[2], "Incomplete · \(stripTotal)")
+        XCTAssertGreaterThan(stripTotal,
+                             document.incomplete.counts.missingWord
+                                 + document.incomplete.counts.ambiguous
+                                 + document.incomplete.counts.noObject,
+                             "the IDE reading is a superset — otherwise this test proves nothing")
     }
 
 }

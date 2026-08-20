@@ -84,22 +84,30 @@ describe('the real corpus, measured', () => {
     `);
   });
 
+  // IDES OF MARCH IS A LIVE STORY. Its author accepts the World tab's offers on it —
+
+  // `aka door, oak, stout` on 2026-08-19, `create the pen` on 2026-08-20 — and every
+
+  // accepted offer moves these numbers. A diff here means the story grew, not that the
+
+  // profiler drifted; check `git diff branch-stories/ides-of-march` before hunting.
+
   it('profiles Ides of March', () => {
     expect(profileStory(idesOfMarch)).toMatchInlineSnapshot(`
       {
         "connections": 4,
         "deadEnds": 2,
         "describedRooms": 5,
-        "describedThings": 12,
+        "describedThings": 13,
         "doors": 1,
-        "entities": 19,
+        "entities": 20,
         "exits": 8,
         "gates": 0,
         "lockedDoors": 0,
-        "proseWords": 484,
+        "proseWords": 487,
         "regions": 0,
         "rooms": 5,
-        "things": 12,
+        "things": 13,
       }
     `);
   });
@@ -113,8 +121,8 @@ describe('the real corpus, measured', () => {
         "lockShare": 0.25,
         "obstaclesPerRoom": 0.15,
         "roomsPerRegion": 6.5,
-        "thingsPerRoom": 2.65,
-        "wordsPerDescription": 23.12,
+        "thingsPerRoom": 2.69,
+        "wordsPerDescription": 22.91,
       }
     `);
   });

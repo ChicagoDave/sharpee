@@ -101,6 +101,12 @@ packages/interpreter/src-tauri/Cargo.lock
 # Generated code
 **/*.generated.*
 
+# …except the non-physical-noun lexicon, which is generated ONCE from a committed
+# data file and then compiled like any other source. The analyzer imports it, so a
+# checkout without it does not build; regenerate with
+# `node packages/world-index/scripts/build-lexicon.mjs` (ADR-321 Amendment 2, D19).
+!packages/world-index/src/non-physical-nouns.generated.ts
+
 # Package symlinks (created during build)
 packages/core/core
 packages/event-processor/event-processor

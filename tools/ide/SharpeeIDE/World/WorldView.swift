@@ -17,7 +17,7 @@
 // state of its own rather than a stale render — showing the previous story's map under the
 // new story's name is the same lie the empty state exists to avoid.
 // Public interface: WorldView.show(_:), showEmpty(reason:), showLoading(), onActivate,
-// findingCount, isLoading.
+// isLoading.
 // Owner context: tools/ide — World.
 
 import AppKit
@@ -29,12 +29,14 @@ final class WorldView: NSView {
         case map, reach, incomplete
     }
 
-    /// Invoked when a finding naming a source line is double-clicked.
-    var onActivate: ((DiagnosticSpan) -> Void)?
+    /// Invoked when a finding is double-clicked — see `WorldFindingDestination`.
+    var onActivate: ((WorldFindingDestination) -> Void)?
 
-    /// Reach findings plus Incomplete candidates in the current analysis — the
-    /// number the tab strip badges. Zero when there is no analysis to count.
-    private(set) var findingCount = 0
+    /// Invoked when the author accepts a card's offer to change the story source.
+    ///
+    /// The tab knows what the author asked for; the WINDOW owns the editor and applies
+    /// it, so an accepted offer lands as an ordinary undoable typing edit.
+    var onEdit: ((WorldCandidateAction, WorldFindingRow) -> Void)?
 
     private let sectionStrip = TabStripView()
     private let mapView = WorldMapView()
@@ -67,6 +69,8 @@ final class WorldView: NSView {
 
         reachView.onActivate = { [weak self] span in self?.onActivate?(span) }
         incompleteView.onActivate = { [weak self] span in self?.onActivate?(span) }
+        incompleteView.onGoToTarget = { [weak self] destination in self?.onActivate?(destination) }
+        incompleteView.onEdit = { [weak self] action, row in self?.onEdit?(action, row) }
 
         spinner.style = .spinning
         spinner.controlSize = .small
@@ -119,7 +123,6 @@ final class WorldView: NSView {
     /// a deeper scan affordable (ADR-321 Amendment 1).
     func showLoading() {
         isLoading = true
-        findingCount = 0
         explanation.stringValue = "Deriving the world index\u{2026}"
         explanation.isHidden = false
         sectionStrip.isHidden = true
@@ -128,26 +131,34 @@ final class WorldView: NSView {
     }
 
     /// Renders one analyzer response — the analysis, or why there isn't one.
-    /// - Parameter response: what the analyzer answered
-    func show(_ response: WorldIndexResponse) {
+    /// - Parameters:
+    ///   - response: what the analyzer answered
+    ///   - storyURL: the story it analysed, for the ignore list kept beside it
+    func show(_ response: WorldIndexResponse, storyURL: URL? = nil) {
         isLoading = false
         spinner.stopAnimation(nil)
         switch response {
         case .failed(let failure):
             showEmpty(reason: Self.explanation(for: failure))
         case .ok(let document):
-            findingCount = document.reach.findingCount
-                + document.incomplete.counts.missingWord
-                + document.incomplete.counts.ambiguous
-                + document.incomplete.counts.noObject
             mapView.show(map: document.map, unreached: Set(document.reach.rooms.unreached))
             reachView.show(document.reach)
-            incompleteView.show(document)
-            sectionStrip.setTabs(Self.sectionTitles(for: document), select: selected.rawValue)
+            // Incomplete renders BEFORE the counts are read: its merged reading is
+            // what the strip and the badge must both name, or the tab says one
+            // number and the list under it shows another.
+            incompleteView.show(document, storyURL: storyURL)
+            sectionStrip.setTabs(Self.sectionTitles(for: document, candidates: incompleteView.candidateCount),
+                                 select: selected.rawValue)
             explanation.isHidden = true
             sectionStrip.isHidden = false
             applyVisibility()
         }
+    }
+
+    /// Records where the last accepted offer wrote, for the card that follows it.
+    /// - Parameter line: the line the edit landed on
+    func reportEdited(line: Int) {
+        incompleteView.editedLine = line
     }
 
     /// Shows the explanatory state and nothing else.
@@ -160,7 +171,6 @@ final class WorldView: NSView {
     func showEmpty(reason: String) {
         isLoading = false
         spinner.stopAnimation(nil)
-        findingCount = 0
         explanation.stringValue = reason
         explanation.isHidden = false
         sectionStrip.isHidden = true
@@ -172,12 +182,12 @@ final class WorldView: NSView {
     /// Map carries its room count, which is a size and not a complaint; Reach and
     /// Incomplete carry their finding counts.
     ///
-    /// - Parameter document: the analysis being shown
+    /// - Parameters:
+    ///   - document: the analysis being shown
+    ///   - candidates: how many candidates the Incomplete view holds — its own
+    ///     merged reading (D11), which is a superset of the analyzer's findings
     /// - Returns: one title per section, in `Section` order
-    static func sectionTitles(for document: WorldIndexDocument) -> [String] {
-        let candidates = document.incomplete.counts.missingWord
-            + document.incomplete.counts.ambiguous
-            + document.incomplete.counts.noObject
+    static func sectionTitles(for document: WorldIndexDocument, candidates: Int) -> [String] {
         return ["Map · \(document.map.positions.count)",
                 "Reach · \(document.reach.findingCount)",
                 "Incomplete · \(candidates)"]

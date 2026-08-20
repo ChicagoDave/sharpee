@@ -17,8 +17,9 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
-import { deriveIncomplete, extractNounPhrases } from '../src/incomplete.js';
+import { deriveIncomplete, extractNounPhrases, publishFilters, readsAsThing } from '../src/incomplete.js';
 import { buildVocabularyIndex, entityVocabulary, resolvePhrase } from '../src/vocabulary.js';
+import { collectProse } from '../src/prose.js';
 import { CORPUS, compileSource, compileStory, entity } from './corpus.js';
 
 /** A two-room fixture the AC-7 cases hang their objects in. */
@@ -120,7 +121,7 @@ create the red ball
 
   A red ball.
 `);
-    expect(deriveIncomplete(clean).counts).toEqual({ missingWord: 0, ambiguous: 0, noObject: 0 });
+    expect(deriveIncomplete(clean).counts).toEqual({ missingWord: 0, ambiguous: 0, noObject: 0, undescribed: 0 });
   });
 
   it('reports the ambiguity when the prose names a ball with three of them present', () => {
@@ -258,27 +259,45 @@ describe('D6b — the corpus pin', () => {
   }
 
   // D10 SPLIT THE PIN IN TWO, and the description half is the regression that matters:
-  // reading response prose must ADD findings, never move or lose one. All three stories
-  // report description figures identical to what they reported before Amendment 1, so
-  // the walk over passages is a strict superset of the walk over entities.
-  it("finds in Fernhill's descriptions exactly what it found before Amendment 1", () => {
-    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 20, ambiguous: 9, noObject: 58 });
+  // reading response prose must ADD findings, never move or lose one.
+  //
+  // THE FIGURES MOVED ONCE, deliberately, when the extractor stopped breaking phrases at
+  // a hyphen and stopped reading a possessive as a name (2026-08-19). Both were reporting
+  // things the author never wrote: `tiring-house door` is the door's own name, and no
+  // player types "house's first play". Fernhill's descriptions went 20/9/58 → 27/10/51 —
+  // the seven added missing-word findings are compound-adjective phrases the hyphen
+  // boundary used to shred (*cast-iron estate boiler*, *long-handled primer plunger*,
+  // *wooden-handled tin opener*), and the seven lost no-object rows are their fragments.
+  it("finds in Fernhill's descriptions what the compound-aware extractor sees", () => {
+    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 27, ambiguous: 10, noObject: 48 });
   });
 
   it("finds in Fernhill's response prose what only D10 can see", () => {
-    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 78 });
-    expect(deriveIncomplete(fernhill).counts).toEqual({ missingWord: 23, ambiguous: 14, noObject: 136 });
+    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 67 });
+    expect(deriveIncomplete(fernhill).counts).toEqual({
+      missingWord: 30,
+      ambiguous: 15,
+      noObject: 115,
+      undescribed: 0,
+    });
   });
 
+  // IDES OF MARCH MOVED ON 2026-08-20 because its AUTHOR moved it, not because this
+  // extractor did: accepting two `+ word` offers in Chord Writer wrote `aka door, oak,
+  // stout` and `aka ale, pot, leather, small` into the story, which is exactly what
+  // those two findings asked for. Two missing-word rows became resolved edges (the
+  // roles pin moved with them). A pin that drops when the author fixes what it
+  // reported is the pin working.
+  //
   // Ides of March is the case the section split exists for: 94 of its 113 passages are
   // response prose, so its candidate list is 7x its description list. Merged into one
   // list the description findings would be unfindable.
   it('finds what it currently finds in the other two stories, both halves', () => {
-    expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 4, ambiguous: 0, noObject: 36 });
-    expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 1, ambiguous: 0, noObject: 89 });
+    expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 5, ambiguous: 0, noObject: 30 });
+    expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 1, ambiguous: 0, noObject: 80 });
 
-    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 7, ambiguous: 0, noObject: 30 });
-    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 10, ambiguous: 1, noObject: 184 });
+    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 3, ambiguous: 0, noObject: 27 });
+    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 11, ambiguous: 1, noObject: 150 });
   });
 
   it('names the sharpest missing-word cases ADR-321 quotes', () => {
@@ -287,6 +306,187 @@ describe('D6b — the corpus pin', () => {
 
     expect(byPhrase.get('hurricane lamp')).toMatchObject({ entity: 'oil-lamp', missing: ['hurricane'] });
     expect(byPhrase.get('long iron poker')).toMatchObject({ entity: 'furnace-poker', missing: ['iron'] });
+  });
+
+  // A HYPHEN JOINS. The author writes *the tiring-house door* and that IS the door's
+  // name; breaking at the hyphen made the analyzer blind to the compound and left the
+  // IDE's own pass reporting a phrase — "tiring house door" — nobody ever wrote.
+  it('reads a hyphenated compound as the one word the author wrote', () => {
+    const phrases = extractNounPhrases('The tiring-house door stands west; the yard is south.');
+    expect(phrases.map((found) => found.phrase)).toContain('tiring-house door');
+
+    const { missingWord, noObject } = deriveIncomplete(idesOfMarch);
+    const bogus = [...missingWord, ...noObject].filter((finding) => finding.phrase.includes('tiring house'));
+    expect(bogus).toEqual([]);
+  });
+
+  // A POSSESSIVE NAMES ITS OWNER. No player types "house's first play", so reporting
+  // the play-book for not answering to "house's" is a finding about nothing.
+  it('stops a phrase at a possessive rather than naming one', () => {
+    const phrases = extractNounPhrases("The house's first play is chalked on the plot-board.");
+    expect(phrases.map((found) => found.phrase)).not.toContain("house's first play");
+
+    const { missingWord } = deriveIncomplete(idesOfMarch);
+    expect(missingWord.filter((finding) => finding.phrase.includes("'s"))).toEqual([]);
+  });
+
+  // NAMING HOW SOMETHING WAS DONE IS NOT NAMING A THING (Amendment 2). `No object`
+  // is a class defined by a negative — "nothing answers to this" — so it catches every
+  // noun in the prose that is not an object, which is most of English.
+  it('does not report a manner or an act as a missing thing', () => {
+    const { noObject, notThings } = deriveIncomplete(idesOfMarch);
+    const phrases = noObject.map((finding) => finding.phrase);
+
+    expect(phrases).not.toContain('flourish');
+    expect(phrases).not.toContain('errand');
+    expect(notThings).toBeGreaterThan(0);
+  });
+
+  // A STATUS CAN BE A THING (David's ruling). `knighthood`, `ladyship`, `fellowship`
+  // look like the purest abstractions morphology can find — and a story can hand one
+  // to the player, name it in prose, and mean an object. The `-ship`/`-hood` families
+  // are dropped from the shape rule for this, not patched word by word.
+  it('keeps a status the story could confer', () => {
+    const thing = (word: string) => readsAsThing({ phrase: word, words: [word] });
+
+    for (const status of ['knighthood', 'ladyship', 'lordship', 'fellowship',
+                          'apprenticeship', 'priesthood']) {
+      expect(thing(status), `${status} is a thing a story can give someone`).toBe(true);
+    }
+
+    const { noObject } = deriveIncomplete(idesOfMarch);
+    expect(noObject.map((finding) => finding.phrase)).toContain('knighthood');
+  });
+
+  // THE COST OF THE RULE IS A ROW LOST, so it is drawn to lose as few as possible:
+  // an unimplemented physical thing must survive it, whatever the sentence around it.
+  it('keeps a physical thing the author has not implemented', () => {
+    const thing = (phrase: string) => readsAsThing({ phrase, words: phrase.split(' ') });
+
+    expect(thing('bolt')).toBe(true);
+    expect(thing('coat pocket')).toBe(true);
+    expect(thing('bright slot')).toBe(true);
+    expect(thing('monument')).toBe(true);
+    expect(thing('flourish')).toBe(false);
+    expect(thing('hesitation')).toBe(false);
+  });
+
+  // THE PROPS WORDNET FILES UNDER `communication` AND `measure` (ADR-321 Amendment 2).
+  // A deed is a piece of paper, a coin is metal, a ticket is card — every one is a
+  // thing an interactive fiction hands the player, and every one is classed as an
+  // abstraction by the lexicon. The three branches are dropped for exactly this.
+  it('never suppresses a written prop or a coin', () => {
+    const thing = (word: string) => readsAsThing({ phrase: word, words: [word] });
+
+    for (const prop of ['coin', 'deed', 'ticket', 'receipt', 'playbill', 'warrant',
+                        'charter', 'contract', 'passport', 'scroll', 'certificate']) {
+      expect(thing(prop), `${prop} is a thing an author implements`).toBe(true);
+    }
+    // And the group branch, which is where the crowd stands.
+    for (const gathering of ['crowd', 'audience', 'company']) {
+      expect(thing(gathering), `${gathering} is scenery, not an abstraction`).toBe(true);
+    }
+  });
+
+  // MORPHOLOGY READS SHAPE, AND SHAPE LIES. English gives physical objects abstract
+  // endings freely — a potion is a liquid, a harness is leather, an airship flies.
+  // The lexicon runs first for exactly this reason, and what it does not know, the
+  // exception list must.
+  it('keeps the physical nouns whose endings lie', () => {
+    const thing = (word: string) => readsAsThing({ phrase: word, words: [word] });
+
+    for (const object of ['potion', 'station', 'harness', 'wilderness', 'airship',
+                          'audience', 'entrance', 'partition', 'instrument', 'parchment']) {
+      expect(thing(object), `${object} is a thing, whatever its ending`).toBe(true);
+    }
+  });
+
+  // THE LEXICON ANSWERS ON EVIDENCE, the suffix rule on shape, and the shape rule is
+  // the one that survives words no dictionary lists — `-ness` attaches to any adjective,
+  // so the class is open and 12,444 lemmas can only ever be a snapshot of it.
+  it('reads a word no dictionary lists', () => {
+    const thing = (word: string) => readsAsThing({ phrase: word, words: [word] });
+
+    expect(thing('saltiness')).toBe(false);
+    expect(thing('enterprisingness')).toBe(false);
+    expect(thing('rhythmicity')).toBe(false);
+  });
+
+  // THE WIRE CARRIES THE ANSWERS, NEVER THE LEXICON. 12,444 words is ~180KB of JSON
+  // on a document that describes one story; the IDE only ever asks about words this
+  // story contains, so those are answered in advance and the dictionary stays here.
+  it('publishes verdicts for this story rather than the lexicon', () => {
+    const filters = publishFilters(collectProse(idesOfMarch));
+
+    expect(filters.notThingHeads.length).toBeGreaterThan(0);
+    expect(filters.notThingHeads.length).toBeLessThan(500);
+    expect(JSON.stringify(filters.notThingHeads).length).toBeLessThan(8_000);
+    expect(filters.notThingHeads).not.toContain('coin');
+    expect(filters.notThingHeads.every((word) => !readsAsThing({ phrase: word, words: [word] }))).toBe(true);
+  });
+
+  // A THING IS A THING BY DEMONSTRATION. A story that implements `the flourish` as
+  // an object never meets this rule: it is asked only of phrases that reached nothing.
+  it('never suppresses a phrase that resolves', () => {
+    const { edges } = deriveIncomplete(fernhill);
+    expect(edges.length).toBeGreaterThan(0);
+    expect(edges.every((edge) => edge.phrase.length > 0)).toBe(true);
+  });
+
+  // THE FOURTH CLASS (Amendment 3): declared, and says nothing.
+  //
+  // A candidate, never an error — Chord compiles and plays without a word of
+  // description, and *"You see nothing special about the sign"* is a fine answer for
+  // a thing that exists to be mentioned. It exists because the IDE can now CREATE
+  // things: the surface that writes a declaration and stops at the description is the
+  // one that should remember the hole.
+  it('reports a thing that says nothing, and excludes what is never examined', () => {
+    const story = compileSource(`${ROOMS}
+create the bankside sign
+  scenery
+  in the Hall
+
+create the lantern
+  in the Hall
+
+  A tin lantern.
+`);
+
+    const { undescribed, counts } = deriveIncomplete(story);
+    expect(undescribed).toContain('bankside-sign');
+    expect(undescribed).not.toContain('lantern');
+    expect(undescribed).not.toContain('hall');
+    expect(undescribed).not.toContain('player');
+    expect(counts.undescribed).toBe(undescribed.length);
+  });
+
+  // The corpus is well described, and that is the pin: a class that fires on a clean
+  // story is a class nobody will trust when it fires on a dirty one.
+  it('finds nothing to report in two finished stories', () => {
+    expect(deriveIncomplete(fernhill).undescribed).toEqual([]);
+    expect(deriveIncomplete(idesOfMarch).undescribed).toEqual([]);
+  });
+
+  // SAY WHICH WORD REACHED IT (Amendment 2). The target is otherwise an assertion the
+  // reader cannot check: `play-book` for *roman play* is arbitrary until the row says
+  // the head word `play` is the one in its vocabulary.
+  it('carries the word that reached the target', () => {
+    const { missingWord } = deriveIncomplete(fernhill);
+    const lamp = missingWord.find((finding) => finding.phrase === 'hurricane lamp');
+    expect(lamp).toMatchObject({ entity: 'oil-lamp', matched: 'lamp' });
+    expect(missingWord.every((finding) => finding.knownAs.includes(finding.matched))).toBe(true);
+  });
+
+  // SAY WHERE, EXACTLY (Amendment 2). A description spans several lines and the phrase
+  // sits in one of them; publishing only the first line can only ever select the wrong
+  // one. Stage's description runs 34-38 and holds *tiring-house door* on 37.
+  it('publishes the whole passage span, not its first line', () => {
+    const stage = deriveIncomplete(idesOfMarch)
+      .edges.map((edge) => edge.site)
+      .find((site) => site.key === 'stage.description');
+
+    expect(stage?.span).toMatchObject({ line: 34, endLine: 38 });
+    expect(stage?.span?.endLine).toBeGreaterThan(stage?.span?.line ?? 0);
   });
 
   it('reports the study door as ambiguous across the three real doors', () => {

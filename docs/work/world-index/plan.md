@@ -574,6 +574,31 @@ costs one command per field.
   greater than or equal to the analyzer's on every corpus story, never less.
 - **Status**: CURRENT (since 2026-08-19) — **step 1 (D10), D14, D12, and D11 are DONE**; D13
   remains.
+
+### Phase 9: Amendments 2 and 3 — say where/which/why, then let the list act (D15–D25)
+- **Tier**: Large
+- **Not planned, driven by review.** Every item below came from David using the shipped World
+  tab on Ides of March and reporting what it got wrong; the phase is recorded after the fact
+  so the plan matches the ADR (Amendment 2 and Amendment 3 in `adr-321-world-index.md`).
+- **Outcome (2026-08-20, session b983d6)**: DONE, uncommitted at time of writing.
+  - Render: row height derived from the panel font (`FontPreference.panelRowHeight`, three
+    tables); one-line rows via a truncating paragraph style — the visible smear was WRAPPING,
+    not height, and the fixture agreed with the code while the real artifact disagreed with
+    both. The World tab badge is removed (D18).
+  - Analyzer: hyphens join, possessives end a run (D15); wire `world-index/3` — passage spans,
+    `matched`, `declarations` (D16, D17); the not-a-thing rule with David's 12,444-lemma
+    WordNet lexicon (D19).
+  - IDE: phrase-accurate navigation (`WorldPhraseLocator`), role bands as tabs, recurrence
+    ranking, per-story ignore file, candidate cards with editing offers, completion tracking,
+    and the `Undescribed` fourth class (D20–D25).
+- **Evidence**: world-index 159 passing / 1 skipped; devkit 171 passing / 1 skipped; IDE 559
+  passing / 0 failures (single clean `xcodebuild test`, logged). Mutation-checked: restoring
+  `rowSizeStyle = .small` fails two row-height tests; removing the wrap guards fails the
+  one-line test at 78pt drawn into a 25pt row.
+- **Corpus note**: the pins for Ides of March moved because its AUTHOR moved it — two accepted
+  `+ word` offers wrote `aka door, oak, stout` and `aka ale, pot, leather, small` into the
+  story. Expect these pins to keep moving as the feature is used on the corpus stories.
+- **Status**: DONE (2026-08-20, session b983d6)
 - **D14 outcome, 2026-08-19**: `obstacleOn` returns a verdict (`{open, requires}` or
   `{blocked}`) instead of `BlockedEdge | undefined`, so the moment an edge opens the loop
   records WHAT opened it rather than deleting the evidence. `ReachResult` gains

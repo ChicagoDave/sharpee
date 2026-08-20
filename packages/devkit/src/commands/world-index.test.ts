@@ -43,7 +43,7 @@ describe('sharpee world-index', () => {
 
     const { code, document } = runCapturing([ir]);
     expect(code).toBe(0);
-    expect(document.schema).toBe('world-index/2');
+    expect(document.schema).toBe('world-index/3');
     expect(document.ok).toBe(true);
     expect(document).toHaveProperty('map');
     expect(document).toHaveProperty('reach');

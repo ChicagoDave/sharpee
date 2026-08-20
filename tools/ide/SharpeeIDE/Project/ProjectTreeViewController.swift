@@ -70,6 +70,7 @@ final class ProjectTreeViewController: NSViewController {
     }
 
     @objc private func fontPreferenceChanged() {
+        outlineView.rowHeight = FontPreference.panelRowHeight
         outlineView.reloadData()
     }
 
@@ -163,7 +164,7 @@ final class ProjectTreeViewController: NSViewController {
         // re-standardize cell fonts on styled (expandable) rows — folder rows
         // silently reverted to the system font (ProjectTreeFontTests).
         outlineView.rowSizeStyle = .custom
-        outlineView.rowHeight = 20
+        outlineView.rowHeight = FontPreference.panelRowHeight
         outlineView.style = .plain
         outlineView.dataSource = self
         outlineView.delegate = self

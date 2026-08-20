@@ -25,11 +25,12 @@
  * @see ADR-321 AC-9: failure states render
  */
 
-import type { StoryIR } from '@sharpee/chord';
+import type { Span, StoryIR } from '@sharpee/chord';
 import { deriveIncomplete, publishFilters, type ExtractorFilters, type IncompleteResult } from './incomplete.js';
 import { collectProse, type ProseSite } from './prose.js';
 import { layoutMap, type Cell, type DirectionSkew, type ResolvedCollision } from './map.js';
 import { deriveReach, type ReachResult } from './reach.js';
+import { holderIndex, roomOf } from './containment.js';
 import { roleTable, type MentionRole } from './roles.js';
 import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from './vocabulary.js';
 
@@ -41,17 +42,22 @@ import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from 
  * every release for no wire change. The Swift side branches on this; it reads
  * `analyzerVersion` only for diagnostics.
  *
- * `world-index/2` (ADR-321 Amendment 1): every Incomplete finding carries a
+ * `world-index/2` (ADR-321 Amendment 1): every Incomplete finding carried a
  * `ProseSite` in place of `where`/`whereName`/`line`, because D10 reads response
  * prose whose attribution a single owner id cannot express. The bump is
  * load-bearing rather than cosmetic — the Swift decoder REFUSES an unknown schema
- * by design, so an unbumped analyzer would be read as v1 and its findings
- * silently mis-decoded. Later steps of the same amendment add fields to v2; it
- * bumps once for the amendment, not once per field. Fields added to v2 since:
- * `incomplete.edges` and the top-level `roles` table (D12), and D11's three
- * IDE-side surfaces: `vocabulary`, `prose`, and `filters`.
+ * by design, so an unbumped analyzer would be read at the old version and its
+ * findings silently mis-decoded. v2 also carried `incomplete.edges`, the
+ * top-level `roles` table (D12), and D11's `vocabulary`, `prose` and `filters`.
+ *
+ * `world-index/3` (Amendment 2 — say where, say which, say why): a passage
+ * publishes its whole `span` in place of `line`, so a consumer can find the
+ * PHRASE rather than select the passage's first line; findings carry the
+ * `matched` word that reached their target; and `declarations` names every
+ * entity and where it was declared. A field REPLACED rather than added is what
+ * forces this bump — a v2 reader would find no `line` at all.
  */
-export const WORLD_INDEX_SCHEMA = 'world-index/2';
+export const WORLD_INDEX_SCHEMA = 'world-index/3';
 
 /** One room's placement on the compass grid. */
 export interface PlacedRoom {
@@ -141,6 +147,55 @@ export interface WorldIndexDocument {
   prose: ProseSite[];
   /** The extractor filters both readings share (D11). */
   filters: ExtractorFilters;
+  /**
+   * Every declared entity: what to call it, and where the author declared it.
+   *
+   * A finding names its target by id (`tiring-house-door`), which is neither what
+   * the author wrote nor somewhere they can go. With this the surface can say
+   * *the tiring-house door* and take the reader to the `create` that made it —
+   * the second half of "point at the phrase AND at the thing it means".
+   */
+  declarations: Record<string, EntityDeclaration>;
+}
+
+/** What an entity is called, where it was declared, and where it is. */
+export interface EntityDeclaration {
+  /** The author's own name for it, e.g. `tiring-house door`. */
+  name: string;
+  /** Where its declaration sits, when the IR carries one. */
+  span: Span | null;
+  /**
+   * The room it is in at the start — itself, when it IS a room.
+   *
+   * A phrase read out of an NPC's topic list names something that has to go
+   * SOMEWHERE, and the only place anyone can defend is where the speaker is:
+   * *the pen* Shakespeare talks about belongs in the room Shakespeare is in
+   * (ADR-321 Amendment 3). Null when nothing places the entity at all.
+   */
+  room: string | null;
+}
+
+/**
+ * Read every entity's name and declaration site.
+ *
+ * Names come from the IR verbatim — the author's own words, not a prettified id —
+ * and an entity whose IR carries no span publishes `null` rather than a guess, so
+ * a consumer can tell "declared over there" from "I do not know where".
+ *
+ * @param ir the story IR
+ * @returns one entry per declared entity, keyed by id
+ */
+function declarationsOf(ir: StoryIR): Record<string, EntityDeclaration> {
+  const containment = holderIndex(ir);
+  const declarations: Record<string, EntityDeclaration> = {};
+  for (const entity of ir.entities) {
+    declarations[entity.id] = {
+      name: entity.name ?? entity.id,
+      span: entity.span ?? null,
+      room: roomOf(containment, entity.id) ?? null,
+    };
+  }
+  return declarations;
 }
 
 /** A failure the World tab must render rather than a crash it must survive. */
@@ -188,6 +243,9 @@ function declared(value: string | undefined): string | null {
 export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexDocument {
   const map = layoutMap(ir);
   const reach = deriveReach(ir);
+  // Collected once: the passages are the Incomplete view's input, the prose surface
+  // the IDE chunks, and the corpus the per-story filter verdicts are read from.
+  const prose = collectProse(ir);
   return {
     schema: WORLD_INDEX_SCHEMA,
     analyzerVersion,
@@ -209,8 +267,9 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexD
     incomplete: deriveIncomplete(ir, reach),
     roles: Object.fromEntries(roleTable(ir, reach)),
     vocabulary: publishVocabulary(buildVocabularyIndex(ir)),
-    prose: collectProse(ir),
-    filters: publishFilters(),
+    prose,
+    filters: publishFilters(prose),
+    declarations: declarationsOf(ir),
   };
 }
 

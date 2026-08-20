@@ -16,7 +16,7 @@ import AppKit
 final class WorldReachView: NSView {
 
     /// Invoked when a finding naming a source line is double-clicked.
-    var onActivate: ((DiagnosticSpan) -> Void)? {
+    var onActivate: ((WorldFindingDestination) -> Void)? {
         get { table.onActivate }
         set { table.onActivate = newValue }
     }

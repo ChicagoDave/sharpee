@@ -829,6 +829,146 @@ executed against `fernhill.ir.json` during design and produced exactly the outpu
 
 ## Session
 
+## Amendment 2 — say where, say which, say why (2026-08-20)
+
+Raised by David reading the shipped Incomplete list against Ides of March: *"This is not
+pointing to the right place and the message isn't even correct."* Three separate defects
+under one complaint, each verified against the story source before anything was changed.
+
+**D15 — A hyphen joins, and a possessive names its owner.** The extractor turned every
+non-letter into a boundary, so `the tiring-house door` was unreadable to it — while the
+IDE's part-of-speech pass, tokenising with `.omitPunctuation`, split the compound and
+reported a phrase the author never wrote (*"tiring house door" does not answer to "tiring",
+"house"*) about a door whose own name is `tiring-house door`. Both sides now keep hyphenated
+compounds whole. Possessives end a run rather than becoming names: no player types
+*house's first play*, so reporting `play-book` for not answering to `house's` is a finding
+about nothing. Measured on Fernhill's descriptions: 20/9/58 → 27/10/51, where the seven
+added missing-word findings are compound-adjective phrases the hyphen boundary used to
+shred (*cast-iron estate boiler*, *long-handled primer plunger*, *wooden-handled tin
+opener*) and the seven lost no-object rows are their fragments.
+
+**D16 — A passage publishes its whole span, and a finding says which word reached its
+target.** `ProseSite` carried only the passage's first line, so every finding in a
+five-line description navigated to the same place; `stage.description` runs 34–38 and holds
+*tiring-house door* on 37. The wire now carries the whole span and the IDE resolves the
+phrase inside it against the source text — matching words across line breaks, never leaving
+the passage, falling back to its first line. Findings also carry `matched`, the word that
+reached the target, because *"house's first play" → play-book* is an assertion the reader
+cannot check until the row says the head word `play` is what did it.
+
+**D17 — Every entity publishes its name, its declaration span and its room.** A finding
+named `oil-lamp`, which is neither what the author wrote nor anywhere they can go. The new
+`declarations` table carries all three, which is what lets a row say *the oil lamp*, take
+the reader to the `create` that made it, and — under Amendment 3 — put a new thing where it
+belongs. **Wire bumped to `world-index/3`**: `prose[].span` REPLACES `line`, so a v2 reader
+finds no `line` at all.
+
+**D18 — The candidate list does not badge the tab.** The tab strip badges defect counts;
+World's number is the size of a heuristic candidate list, most of it scenery the author
+meant to leave as words. Badging it dressed *"631 things to read"* as *"631 problems"*
+(David's ruling). The per-class counts stay inside the tab, where the reader can see what
+they count.
+
+**D19 — Naming a manner or an act is not naming a thing.** `No object` is defined by a
+negative — *nothing answers to this* — so it necessarily catches every noun in the prose
+that is not an object, which is most of English: Ides of March raised 611. Three tests were
+considered (David's framing: the senses test, the dependency test, the nominalized-verb
+test). Only the last is mechanizable without a lexicon, so the rule is layered:
+
+1. **An override**, checked first — words this project insists can be things whatever any
+   authority says. It carries the written-instrument class (`deed`, `ticket`, `petition`,
+   `commission`) and conferrable status (`knighthood`, `lordship`, `apprenticeship`),
+   because a story can hand the player a knighthood and a candidate list that hides the
+   word is hiding a thing (David's ruling).
+2. **A five-word hand list** — `flourish jig clank whump wheeze` — the zero-derived cases a
+   lexicon lets through because they have one concrete sense (a jig is also a workshop
+   fixture; a flourish is also the ink).
+3. **The lexicon**, 12,444 lemmas with no `physical entity` sense in Open English WordNet
+   2024, supplied by David and reduced from 16,958 by dropping three branches that leak
+   things: `group` (`crowd`, `audience`), `measure` (`coin`), and `communication` (the
+   whole written-prop class). CC BY 4.0; attribution ships in the data file and the
+   generated module.
+4. **Morphology**, last, for words no dictionary lists — `-ness` attaches to any adjective,
+   so the class is open and 12,444 lemmas can only be a snapshot. `-ship` and `-hood` are
+   absent: what they collect in English is conferrable status.
+
+A syntactic manner rule (*with a flourish*) was written, measured and **removed**: across
+Fernhill and Ides it correctly suppressed four and wrongly suppressed six things an author
+might genuinely have left unimplemented (`a bolt`, `a coat pocket`, `a bright slot`, `a
+mended sleeve`). D6b prices a missed gap above a junk row. The lexicon stays in the
+analyzer; only the verdicts for words this story contains cross the wire (75–85 per story,
+under 1.5KB, against ~180KB for the dictionary).
+
+Measured: Ides of March no-object 207 → 181, Fernhill 127 → 115, suppressions published as
+`notThings` rather than dropped silently.
+
+## Amendment 3 — the list acts (2026-08-20)
+
+Raised by David after using the amended surface: the roles were invisible, the volume was
+unrankable, and a row that says *the door does not answer to "stout"* and leaves the author
+to go and type it is a diagnosis with no treatment.
+
+**D20 — The role bands are tabs, and No object ranks by recurrence.** D12's roles shipped as
+a sort order, which left them invisible: a reader scrolling six hundred candidates cannot
+see where the puzzle-critical ones stopped. Story / Tools / Atmosphere are now a strip of
+their own with their own counts. Within a band, the one class with no target to rank
+against ranks by how often the prose says the phrase — a phrase named four times is a
+better candidate than one named once, and the row says so.
+
+**D21 — An author can dismiss a phrase, and the dismissal lives with the story.** Ignoring
+is per phrase and story-wide (dismissing *the word* means the phrase, not its fifth row),
+written to `<story>.world-ignore.json` beside the `.story` file: diffable, committed, and
+true on the next machine. `SessionState` is window geometry; this is authored content. The
+list is filtered All / Remaining / Ignored, defaulting to Remaining, and an empty list
+deletes its file rather than leaving an artifact in the author's repository.
+
+**D22 — Each candidate is a card that carries its own fix.** A button per word the prose
+used (`+ stout`, `+ oak`), `Define as scenery` for a phrase nothing answers to, `Write the
+description` for a thing that says nothing, plus navigation and Ignore. Three rules hold
+across all of them:
+
+- **The card offers; the window applies.** Edits go through the editor's undoable
+  `replaceText`, so an accepted offer is an ordinary typing edit — ⌘Z works, the tab goes
+  dirty, the author saves when they choose. Nothing writes the file behind them.
+- **Nothing invents prose.** Adding `stout` uses the author's own word for that door.
+  Declaring scenery writes the `create` block and stops at the description; `Write the
+  description` writes a blank line and an indent. What goes there is the author's.
+- **Edits are computed against the buffer, and anchored to text.** The analysis describes
+  the story as it was BUILT; the buffer moves the moment the author types or accepts
+  another offer. An edit measured against the file while the buffer has moved lands that
+  many characters wrong — which is how a declaration landed inside a `define phrase` block
+  during review. Blocks are found by their `create` line and ended by where indentation
+  stops.
+
+**D23 — A new thing goes next to what named it.** Not at the end of the file: a story is
+read in the order it is written, and appending scatters a room's furniture across the file
+in the order the author happened to accept offers. The host need not be a room — *the pen*
+is named in a poet's topic list, so it belongs beside the poet, in the room the poet is in.
+Those are two different questions and the placement answers both from the same host: the
+room for the `in the …` line, the host for the file position. A passage owned by nothing
+has neither, and only then does the declaration go to the end.
+
+**D24 — After every tap, the card asks whether it is finished.** The analysis keeps
+reporting a finding the author has just fixed until the next build, so the card answers for
+itself in between: each accepted word leaves it, and the last one marks it **done** —
+fixed, not ignored. The distinction is the point: ignoring is what an author does to a
+finding they disagree with. Done is session state, cleared by the next analysis; ignoring
+is a decision that outlives the session. Accepting `Define as scenery` does not remove the
+card either — it becomes *"declared, and says nothing"*, because the author is already here
+with the file open.
+
+**D25 — Undescribed is the fourth class, and it is not a build error.** A thing with no
+description answers *"You see nothing special about the bankside sign"* — a fine answer for
+a thing that exists to be mentioned, and a hole for everything else. It compiles and plays,
+so failing a build over it would fail builds over an authoring judgement, and a warning
+that fires on every deliberately-plain object is one authors learn to scroll past (David's
+ruling). It is derived from the IR (`descriptionKey` and `initialDescriptionKey` both
+absent), which means it also catches what the author declared by hand months ago — not only
+what this surface created. Regions and the player are excluded: nobody examines a region,
+and the player's description is the story's business. Both corpus stories report zero,
+which is the pin that matters: a class that fires on a clean story is one nobody trusts
+when it fires on a dirty one.
+
 Session `317706` (2026-08-19, branch `main`). Originated in a review of open ADRs, which
 surfaced ADR-131 as unbuilt; David reframed its intent, then narrowed the surface to Map /
 Reach / Incomplete. The prototype and surface study were built and corrected against

@@ -78,7 +78,8 @@ export type { ProseKind, ProseSite } from './prose.js';
 export { deriveRoles, roleTable } from './roles.js';
 export type { MentionEdge, MentionRole, ResolvedMention } from './roles.js';
 
-export { deriveIncomplete, extractNounPhrases, publishFilters } from './incomplete.js';
+export { deriveIncomplete, extractNounPhrases, publishFilters, readsAsThing } from './incomplete.js';
+export { deriveUndescribed } from './undescribed.js';
 export type {
   AmbiguousFinding,
   ExtractorFilters,

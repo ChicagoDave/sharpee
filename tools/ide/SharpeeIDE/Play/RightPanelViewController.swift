@@ -241,34 +241,35 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.worldTab)
     }
 
-    /// Renders an analyzer response into the World tab and badges the strip with
-    /// what it found, without leaving whatever tab the author is on.
+    /// Renders an analyzer response into the World tab, without leaving whatever
+    /// tab the author is on.
     ///
     /// The World tab never steals focus: a build's payoff is the Play tab, and a
-    /// candidate list that interrupts a play-test is a nag. The badge is how the
-    /// author learns there is something to look at.
+    /// candidate list that interrupts a play-test is a nag.
     ///
-    /// - Parameter response: what the analyzer answered
-    func showWorld(_ response: WorldIndexResponse) {
-        world.show(response)
-        tabStrip.setCount(world.findingCount, forTab: Self.worldTab)
+    /// NO BADGE (David's ruling). The strip badges DEFECT counts — Diagnosis does,
+    /// and a number there means something is wrong. World's number is the size of a
+    /// candidate list read out of prose by heuristic, most of which is scenery the
+    /// author meant to leave as words; badging it dresses "your story has 631 things
+    /// to read" as "your story has 631 problems". The per-class counts inside the tab
+    /// say the same thing where the reader can see what they are counting.
+    ///
+    /// - Parameters:
+    ///   - response: what the analyzer answered
+    ///   - storyURL: the story it analysed, for the ignore list kept beside it
+    func showWorld(_ response: WorldIndexResponse, storyURL: URL? = nil) {
+        world.show(response, storyURL: storyURL)
     }
 
     /// Says an analysis is running, and clears the badge the last one left.
-    ///
-    /// The count goes with it: a badge from the previous build describes a story that has
-    /// since changed, and leaving it up through a rebuild attributes the old findings to the
-    /// new source.
     func showWorldLoading() {
         world.showLoading()
-        tabStrip.setCount(0, forTab: Self.worldTab)
     }
 
     /// Returns the World tab to its explanatory state (no story, or a new one).
     /// - Parameter reason: the sentence to show in place of an analysis
     func clearWorld(reason: String) {
         world.showEmpty(reason: reason)
-        tabStrip.setCount(0, forTab: Self.worldTab)
     }
 
     /// Switches to the Documentation tab, optionally at a given page.

@@ -180,7 +180,7 @@ end phrase
   // inside a single "info" list of fifty.
   it('splits the corpus the way D12 says it should', () => {
     expect(edgeRoles(fernhill)).toEqual({
-      tool: 26,
+      tool: 25,
       'progression-info': 7,
       'atmosphere-info': 43,
     });
@@ -190,9 +190,9 @@ end phrase
       'atmosphere-info': 18,
     });
     expect(edgeRoles(idesOfMarch)).toEqual({
-      tool: 41,
+      tool: 43,
       'progression-info': 0,
-      'atmosphere-info': 20,
+      'atmosphere-info': 26,
     });
   });
 

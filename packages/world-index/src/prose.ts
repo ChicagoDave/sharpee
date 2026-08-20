@@ -24,7 +24,7 @@
  * @see ADR-321 Amendment 1, D10 and D11a
  */
 
-import type { IREntity, StoryIR } from '@sharpee/chord';
+import type { IREntity, Span, StoryIR } from '@sharpee/chord';
 
 /**
  * What kind of passage a phrase was read from.
@@ -48,8 +48,15 @@ export interface ProseSite {
   ownerName: string | null;
   /** The clause or action that fires it, e.g. `on opening`. */
   firedBy: string | null;
-  /** Source line of the passage. */
-  line: number | null;
+  /**
+   * Where the passage sits in the source — the WHOLE region, not its first line.
+   *
+   * A description is usually several lines and a finding names a phrase inside
+   * one of them: *the tiring-house door* is on line 37 of a passage that starts
+   * at 34. A consumer given only the start can do nothing but select the wrong
+   * line, so the span it needs to search is what crosses the wire.
+   */
+  span: Span | null;
   /** The whole passage — every variant joined, and the part-of-speech pass's input. */
   text: string;
 }
@@ -92,7 +99,7 @@ export function collectProse(ir: StoryIR): ProseSite[] {
       owner: from.owner,
       ownerName: from.ownerName,
       firedBy: from.firedBy,
-      line: phrase.span?.line ?? null,
+      span: phrase.span ?? null,
       text: phrase.variants.map((variant) => variant.text).join(' '),
     });
   };

@@ -117,7 +117,7 @@ create Your Lodging
 
 create the tiring-house door
   a door, openable, starts open, lockable with the tiring-house key, starts unlocked
-  aka door
+  aka door, oak, stout
 
   A stout oak door between stage and tiring-house, usually left
   standing open so the book-holder can follow the lines.
@@ -174,7 +174,7 @@ create the property table
 
 create a pot of ale
   in the Tavern
-  aka ale, pot
+  aka ale, pot, leather, small
 
   Small ale in a leather pot, the tavern's one honest good.
 
@@ -538,6 +538,12 @@ create William Shakespeare
     seek Richard Burbage
     say shakespeare-confers to Richard Burbage
   end goal
+
+create the pen
+  scenery
+  in the Tiring-House
+  
+  Ink-tipped and well-used.
 
 define topics for William Shakespeare
   about "the play", "caesar", "julius caesar":

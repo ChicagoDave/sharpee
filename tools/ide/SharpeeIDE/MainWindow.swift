@@ -910,11 +910,20 @@ private final class MainSplitViewController: NSSplitViewController {
             // Index jump: first line + neutral gutter dot (red = errors only).
             self.editorViewController.openDocument(at: storyURL, navigateTo: span)
         }
-        // A World finding names a line in the same story source the Index does,
-        // so it jumps the same way (ADR-321: findings are navigable, not a report).
-        rightPanelViewController.world.onActivate = { [weak self] span in
+        // A World finding names a place in the same story source the Index does, so it
+        // jumps the same way (ADR-321: findings are navigable, not a report) — but at
+        // the PHRASE, not the passage. The analyzer publishes the passage's whole span
+        // and cannot know which line inside it the reader means; the text says, and
+        // this is the side holding the text (Amendment 2).
+        rightPanelViewController.world.onActivate = { [weak self] destination in
             guard let self, let storyURL = self.treeState.storyURL else { return }
+            guard let span = self.resolve(destination, in: storyURL) else { return }
             self.editorViewController.openDocument(at: storyURL, navigateTo: span)
+        }
+        // A card's offer becomes an ordinary typing edit: undoable with ⌘Z, visible in
+        // the buffer, saved when the author chooses. Nothing writes the file behind them.
+        rightPanelViewController.world.onEdit = { [weak self] action, row in
+            self?.applyWorldOffer(action, row)
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
@@ -924,6 +933,71 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makeProjectItem())
         addSplitViewItem(makeEditorItem())
         addSplitViewItem(makePlayItem())
+    }
+
+    /// Applies what a World card offered, through the editor's undoable path.
+    ///
+    /// Computed against the BUFFER, and anchored to text rather than to the analysis's
+    /// line numbers. The analysis describes the story as it was built; the buffer moves
+    /// the moment the author types or accepts another offer, and an edit measured
+    /// against the file while the buffer has moved lands that many characters wrong —
+    /// which is how a declaration ended up inside a phrase block.
+    ///
+    /// - Parameters:
+    ///   - action: the offer the author accepted
+    ///   - row: the candidate it came from
+    private func applyWorldOffer(_ action: WorldCandidateAction, _ row: WorldFindingRow) {
+        guard let storyURL = treeState.storyURL,
+              let source = editorViewController.currentText(of: storyURL) else { return }
+
+        let edit: WorldSourceEdit?
+        switch action {
+        case .addWord(let word):
+            edit = row.targetName.flatMap { WorldSourceEdit.addingWord(word, toThingNamed: $0, in: source) }
+        case .defineScenery:
+            edit = row.phrase.map { WorldSourceEdit.definingScenery($0, placedBy: row.room, in: source) }
+        case .writeDescription:
+            edit = row.targetName.flatMap { WorldSourceEdit.openingDescription(forThingNamed: $0, in: source) }
+        default:
+            edit = nil
+        }
+        guard let edit else { return }
+
+        editorViewController.replaceText(edit.text, in: edit.range, in: storyURL)
+        editorViewController.openDocument(at: storyURL,
+                                          navigateTo: DiagnosticSpan(line: edit.line, column: 1,
+                                                                     endLine: edit.line, endColumn: 1))
+        // Where it landed, so a card that becomes "and now describe it" can point there.
+        rightPanelViewController.world.reportEdited(line: edit.line)
+    }
+
+    /// Turn a World row's destination into a span to navigate to.
+    ///
+    /// Reads the story from disk rather than from the editor: the analysis describes
+    /// the story as it was BUILT, and an unsaved edit would move the phrase out from
+    /// under the finding that named it.
+    ///
+    /// - Parameters:
+    ///   - destination: where the activated row can take the reader
+    ///   - storyURL: the story source
+    /// - Returns: the phrase's own span when it can be found, else the passage's first
+    ///   line, else the bare line a Reach row named; nil when the row names nowhere
+    private func resolve(_ destination: WorldFindingDestination, in storyURL: URL) -> DiagnosticSpan? {
+        if destination.place == .declaration {
+            guard let declaration = destination.declaration else { return nil }
+            return DiagnosticSpan(line: declaration.line, column: declaration.column,
+                                  endLine: declaration.line, endColumn: declaration.column)
+        }
+        if let passage = destination.passage {
+            let source = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+            if let phrase = destination.phrase,
+               let located = WorldPhraseLocator.locate(phrase: phrase, in: source, passage: passage) {
+                return located
+            }
+            return DiagnosticSpan(line: passage.line, column: 1, endLine: passage.line, endColumn: 1)
+        }
+        guard let line = destination.line else { return nil }
+        return DiagnosticSpan(line: line, column: 1, endLine: line, endColumn: 1)
     }
 
     /// Opens a file the author activated in the project sidebar.
@@ -1358,8 +1432,11 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     /// Renders a World Index analysis, or the explanation standing in for one.
+    ///
+    /// The story travels with it: the phrases an author has dismissed are kept beside
+    /// their `.story` file, so the World tab needs to know which story it is reading.
     fileprivate func showWorldIndex(_ response: WorldIndexResponse) {
-        rightPanelViewController.showWorld(response)
+        rightPanelViewController.showWorld(response, storyURL: treeState.storyURL)
     }
 
     /// Shows the World tab's loading state while the derivation runs.

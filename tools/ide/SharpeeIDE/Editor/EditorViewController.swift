@@ -215,6 +215,22 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         replaceText(text, in: NSRange(location: characterIndex, length: 0), in: url)
     }
 
+    /// The text a writer must compute against: the BUFFER when the file is open,
+    /// the file on disk when it is not.
+    ///
+    /// An outside writer that reads the file while the author has unsaved changes
+    /// computes offsets against text that is not the text it will edit — every
+    /// character the author typed shifts the result. The World tab landed a
+    /// declaration in the middle of a phrase block that way.
+    ///
+    /// - Parameter url: the file to read
+    /// - Returns: its current text, or nil when it can be neither read nor found
+    func currentText(of url: URL) -> String? {
+        if activeDocument?.url == url { return textView.string }
+        if let open = documents.first(where: { $0.url == url }) { return open.content }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+
     /// Replaces `range` with `text` in `url`'s buffer, opening it if needed.
     ///
     /// The general form of `insertText` — an insertion is a zero-length range.

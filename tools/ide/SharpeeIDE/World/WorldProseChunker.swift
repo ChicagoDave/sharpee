@@ -41,11 +41,17 @@ struct WorldReading: Equatable {
     let ambiguous: [WorldAmbiguousFinding]
     /// Phrases nothing answers to.
     let noObject: [WorldNoObjectFinding]
+    /// Things declared and never described — the analyzer's, unchanged (Amendment 3).
+    ///
+    /// The part-of-speech pass reads PROSE and can add nothing here: a thing with no
+    /// description has no prose to read.
+    let undescribed: [String]
     /// How many of each class this reading holds.
     var counts: WorldIncompleteCounts {
         WorldIncompleteCounts(missingWord: missingWord.count,
                               ambiguous: ambiguous.count,
-                              noObject: noObject.count)
+                              noObject: noObject.count,
+                              undescribed: undescribed.count)
     }
 }
 
@@ -71,15 +77,33 @@ enum WorldProseChunker {
 
         var runs: [[String]] = []
         var run: [String] = []
+        var previousEnd: String.Index?
 
         tagger.enumerateTags(in: text.startIndex..<text.endIndex,
                              unit: .word,
                              scheme: .lexicalClass,
                              options: [.omitPunctuation, .omitWhitespace]) { tag, range in
             let word = text[range].lowercased()
+            // A HYPHEN JOINS. The tagger reads `tiring-house` as two words, and a
+            // phrase built from those halves is one the author never wrote — the
+            // door's own name IS `tiring-house door`. Rejoin across a hyphen the
+            // tagger dropped as punctuation.
+            let joinedByHyphen = previousEnd.map { text[$0..<range.lowerBound] == "-" } ?? false
+            previousEnd = range.upperBound
+
+            if joinedByHyphen, !run.isEmpty {
+                run[run.count - 1] += "-" + word
+                return true
+            }
             switch tag {
             case .noun, .adjective:
-                run.append(word)
+                // A possessive names its owner, not the head: nobody types
+                // "house's first play", so the run ends rather than carrying it.
+                if isPossessive(word) {
+                    if !run.isEmpty { runs.append(run); run = [] }
+                } else {
+                    run.append(word)
+                }
             default:
                 if !run.isEmpty { runs.append(run); run = [] }
             }
@@ -127,6 +151,13 @@ enum WorldProseChunker {
         word.hasSuffix("ed") || word.hasSuffix("ing")
     }
 
+    /// Whether a token is a possessive form.
+    /// - Parameter word: the token to test
+    /// - Returns: true for `house's` and `players'` — owners, never names
+    private static func isPossessive(_ word: String) -> Bool {
+        word.hasSuffix("'s") || word.hasSuffix("\u{2019}s") || word.hasSuffix("s'")
+    }
+
     // MARK: - Reading a whole document
 
     /// Read one story's prose the way only this side can, and union the result
@@ -159,20 +190,28 @@ enum WorldProseChunker {
                 switch classify(chunk, against: document.vocabulary, filters: document.filters) {
                 case .resolved:
                     continue
-                case .missingWord(let entity, let missing, let knownAs):
+                case .missingWord(let entity, let missing, let knownAs, let matched):
                     missingWord.append(WorldMissingWordFinding(
                         site: site, phrase: chunk.phrase, entity: entity,
-                        missing: missing, knownAs: knownAs))
-                case .ambiguous(let candidates):
+                        missing: missing, knownAs: knownAs, matched: matched))
+                case .ambiguous(let candidates, let matched):
                     ambiguous.append(WorldAmbiguousFinding(
-                        site: site, phrase: chunk.phrase, candidates: candidates))
+                        site: site, phrase: chunk.phrase, candidates: candidates, matched: matched))
                 case .noObject:
+                    // LATE, NEVER EARLY. The question "does this name a thing at all"
+                    // is asked only of phrases that reached nothing: a phrase that
+                    // resolves is a thing by demonstration, and a story implementing
+                    // `the flourish` must keep its edge. Applying this in the chunker
+                    // would have dropped resolved mentions too.
+                    guard let head = chunk.words.last,
+                          document.filters.readsAsThing(head: head) else { continue }
                     noObject.append(WorldNoObjectFinding(site: site, phrase: chunk.phrase))
                 }
             }
         }
 
-        return WorldReading(missingWord: missingWord, ambiguous: ambiguous, noObject: noObject)
+        return WorldReading(missingWord: missingWord, ambiguous: ambiguous, noObject: noObject,
+                            undescribed: document.incomplete.undescribed)
     }
 
     /// A finding's identity for deduplication: where it sits, and what it says.
@@ -191,9 +230,9 @@ enum WorldProseChunker {
         /// It names exactly one thing — not a finding.
         case resolved
         /// It names a real thing by words that thing does not answer to.
-        case missingWord(entity: String, missing: [String], knownAs: [String])
+        case missingWord(entity: String, missing: [String], knownAs: [String], matched: String)
         /// It reaches two or more things.
-        case ambiguous(candidates: [String])
+        case ambiguous(candidates: [String], matched: String)
         /// Nothing answers to it.
         case noObject
     }
@@ -213,12 +252,12 @@ enum WorldProseChunker {
                          filters: WorldExtractorFilters) -> Verdict {
         let candidates = vocabulary.resolve(phrase: chunk.phrase, words: chunk.words)
         if candidates.count == 1 { return .resolved }
-        if candidates.count > 1 { return .ambiguous(candidates: candidates) }
+        if candidates.count > 1 { return .ambiguous(candidates: candidates, matched: chunk.phrase) }
 
         guard let head = chunk.words.last else { return .noObject }
         let headMatches = vocabulary.resolve(phrase: head, words: [head])
         if headMatches.isEmpty { return .noObject }
-        if headMatches.count > 1 { return .ambiguous(candidates: headMatches) }
+        if headMatches.count > 1 { return .ambiguous(candidates: headMatches, matched: head) }
 
         let only = headMatches[0]
         let known = vocabulary.words(of: only)
@@ -226,6 +265,6 @@ enum WorldProseChunker {
             !known.contains($0) && !filters.headStopwords.contains($0)
         }
         if missing.isEmpty { return .resolved }
-        return .missingWord(entity: only, missing: Array(missing), knownAs: known.sorted())
+        return .missingWord(entity: only, missing: Array(missing), knownAs: known.sorted(), matched: head)
     }
 }
