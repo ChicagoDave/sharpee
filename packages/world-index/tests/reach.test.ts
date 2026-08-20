@@ -232,3 +232,78 @@ describe('a gate with no condition never lifts', () => {
     expect(reach.blocked).toEqual([]);
   });
 });
+
+describe('D14 — the progression chain, kept from the fixed point rather than scanned', () => {
+  let fernhill: StoryIR;
+
+  beforeAll(() => {
+    fernhill = compileStory(CORPUS.fernhill);
+  });
+
+  // AC-14. The stopcock is the case a static scan gets wrong, and it is worth being
+  // precise about WHY, because the ADR's first draft named the wrong mechanism.
+  // Fernhill's greenhouse gate reads `north is blocked while the boiler is off`. `off`
+  // is the switchable trait's state, and the boiler only becomes switchable-on through
+  // `define machine the boiler works`, whose first transition is `when turning the
+  // stopcock`. The stopcock appears in no condition, in no `change` statement, and in
+  // none of the boiler's own clauses — only as a trigger on a top-level machine.
+  it('names the machine trigger that lifts the greenhouse gate', () => {
+    const { progression } = deriveReach(fernhill);
+    expect(progression).toContain('stopcock');
+    expect(progression).toContain('primer-plunger');
+  });
+
+  it('names every obstacle the walk overcame, and what each one took', () => {
+    const { lifted } = deriveReach(fernhill);
+    expect(lifted.map((step) => `${step.from} ${step.direction}`)).toEqual([
+      'greenhouse north',
+      'entrance-hall west',
+      'cellar-stairs down',
+    ]);
+
+    const byExit = new Map(lifted.map((step) => [`${step.from} ${step.direction}`, step]));
+    expect(byExit.get('greenhouse north')?.requires).toEqual([
+      'boiler',
+      'stopcock',
+      'primer-plunger',
+    ]);
+    expect(byExit.get('entrance-hall west')?.requires).toEqual(['mrs-kettle']);
+    expect(byExit.get('cellar-stairs down')?.requires).toEqual(['cellar-door', 'tarnished-key']);
+  });
+
+  it('resolves a machine role to the entity it plays, never the private name', () => {
+    // `role furnace is the boiler`, and the third transition triggers on `$furnace`.
+    const { progression } = deriveReach(fernhill);
+    expect(progression).toContain('boiler');
+    expect(progression.every((id) => !id.startsWith('$'))).toBe(true);
+  });
+
+  it('is a different SET from what a static scan produces, not merely a bigger one', () => {
+    const { progression } = deriveReach(fernhill);
+    // The scan this decision rejects finds doors, declared keys, and gate subjects:
+    // folly-door, pantry-door, cellar-door, tarnished-key, boiler, mrs-kettle. Same
+    // count, different membership — it invents two doors that gate nothing and misses
+    // both machine triggers, which is why "the scan under-counts" would be the wrong
+    // way to describe the difference.
+    expect(progression).not.toContain('folly-door');
+    expect(progression).not.toContain('pantry-door');
+    expect(new Set(progression)).toEqual(
+      new Set(['boiler', 'stopcock', 'primer-plunger', 'mrs-kettle', 'cellar-door', 'tarnished-key']),
+    );
+  });
+
+  it('keeps an obstacle overcome on first sight, so the chain does not depend on walk order', () => {
+    // The cellar door is never recorded as blocked when the walk reaches the key first;
+    // it is still a step of the spine.
+    const { lifted, blocked } = deriveReach(fernhill);
+    expect(blocked).toEqual([]);
+    expect(lifted.some((step) => step.door === 'cellar-door')).toBe(true);
+  });
+
+  it('reports no chain for a story with nothing in the way', () => {
+    const idesOfMarch = compileStory(CORPUS.idesOfMarch);
+    const { lifted, progression } = deriveReach(idesOfMarch);
+    expect(lifted).toEqual([]);
+    expect(progression).toEqual([]);
+  });
+});

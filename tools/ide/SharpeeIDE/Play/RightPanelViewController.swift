@@ -13,9 +13,14 @@
 // surface controller is installed per project by the window (its D8 session
 // sidecar is per-story), so this panel hosts a container and a placeholder
 // until one arrives.
+// The World tab (ADR-321 D8) is the story ANALYSED — map, reachability, and the
+// phrases its prose names that nothing answers to — and is a sibling of Index,
+// which is the story ENUMERATED. It sits last in the strip rather than beside
+// Index so the persisted tab index keeps meaning what it meant before it existed.
 // Public interface: buildPanel, play, testingSurface, installTestingSurface(_:),
-// clearTestingSurface(), docsTab, index, diagnosis, showBuildTab(),
+// clearTestingSurface(), docsTab, index, diagnosis, world, showBuildTab(),
 // showPlayTab(), showTestingTab(), showDocsTab(page:), showPublishTab(),
+// showWorldTab(), showWorld(_:), showWorldLoading(), clearWorld(reason:),
 // showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(),
 // onOpenLocation, onTestingTabSelected.
 // Owner context: tools/ide — Play (right panel).
@@ -28,6 +33,9 @@ final class RightPanelViewController: NSViewController {
     let play = PlayViewController()
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
+    /// The World tab (ADR-321): map, reach, and incomplete, derived by the
+    /// analyzer subprocess after a successful build.
+    let world = WorldView()
     /// The testing play surface (ADR-306), installed per project — nil until
     /// the window binds one (the D8 session sidecar is per-story).
     private(set) var testingSurface: TestingSurfaceViewController?
@@ -46,7 +54,7 @@ final class RightPanelViewController: NSViewController {
 
     /// Restores a persisted tab choice. Out-of-range values are ignored.
     func selectTab(_ index: Int) {
-        guard (0...Self.publishTab).contains(index) else { return }
+        guard (0...Self.worldTab).contains(index) else { return }
         tabStrip.select(index)
     }
     /// The author documentation bundled with the app (go-live Phase 3): the same
@@ -70,6 +78,7 @@ final class RightPanelViewController: NSViewController {
     private static let diagnosisTab = 4
     private static let docsTabIndex = 5
     private static let publishTab = 6
+    private static let worldTab = 7
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
@@ -83,6 +92,7 @@ final class RightPanelViewController: NSViewController {
         tabStrip.addTab(title: "Diagnosis")
         tabStrip.addTab(title: "Documentation")
         tabStrip.addTab(title: "Publish")
+        tabStrip.addTab(title: "World")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -97,6 +107,7 @@ final class RightPanelViewController: NSViewController {
         testingContainer.addSubview(testingPlaceholder)
         docsTab.view.translatesAutoresizingMaskIntoConstraints = false
         publish.translatesAutoresizingMaskIntoConstraints = false
+        world.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
@@ -105,6 +116,7 @@ final class RightPanelViewController: NSViewController {
         container.addSubview(testingContainer)
         container.addSubview(docsTab.view)
         container.addSubview(publish)
+        container.addSubview(world)
 
         NSLayoutConstraint.activate([
             play.view.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
@@ -147,6 +159,11 @@ final class RightPanelViewController: NSViewController {
             publish.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             publish.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             publish.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            world.topAnchor.constraint(equalTo: tabStrip.bottomAnchor),
+            world.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            world.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            world.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -218,6 +235,42 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.publishTab)
     }
 
+    /// Switches to the World tab (ADR-321) — the story's map, reach, and
+    /// incomplete views.
+    func showWorldTab() {
+        tabStrip.select(Self.worldTab)
+    }
+
+    /// Renders an analyzer response into the World tab and badges the strip with
+    /// what it found, without leaving whatever tab the author is on.
+    ///
+    /// The World tab never steals focus: a build's payoff is the Play tab, and a
+    /// candidate list that interrupts a play-test is a nag. The badge is how the
+    /// author learns there is something to look at.
+    ///
+    /// - Parameter response: what the analyzer answered
+    func showWorld(_ response: WorldIndexResponse) {
+        world.show(response)
+        tabStrip.setCount(world.findingCount, forTab: Self.worldTab)
+    }
+
+    /// Says an analysis is running, and clears the badge the last one left.
+    ///
+    /// The count goes with it: a badge from the previous build describes a story that has
+    /// since changed, and leaving it up through a rebuild attributes the old findings to the
+    /// new source.
+    func showWorldLoading() {
+        world.showLoading()
+        tabStrip.setCount(0, forTab: Self.worldTab)
+    }
+
+    /// Returns the World tab to its explanatory state (no story, or a new one).
+    /// - Parameter reason: the sentence to show in place of an analysis
+    func clearWorld(reason: String) {
+        world.showEmpty(reason: reason)
+        tabStrip.setCount(0, forTab: Self.worldTab)
+    }
+
     /// Switches to the Documentation tab, optionally at a given page.
     func showDocsTab(page href: String? = nil) {
         if let href { docsTab.showPage(href) }
@@ -234,6 +287,7 @@ final class RightPanelViewController: NSViewController {
         testingContainer.isHidden = selected != Self.testingTabIndex
         docsTab.view.isHidden = selected != Self.docsTabIndex
         publish.isHidden = selected != Self.publishTab
+        world.isHidden = selected != Self.worldTab
         if selected == Self.testingTabIndex { onTestingTabSelected?() }
         onTabChanged?()
     }

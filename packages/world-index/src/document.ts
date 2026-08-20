@@ -37,8 +37,16 @@ import { deriveReach, type ReachResult } from './reach.js';
  * the package version rides the platform's lockstep and would churn this on
  * every release for no wire change. The Swift side branches on this; it reads
  * `analyzerVersion` only for diagnostics.
+ *
+ * `world-index/2` (ADR-321 Amendment 1): every Incomplete finding carries a
+ * `ProseSite` in place of `where`/`whereName`/`line`, because D10 reads response
+ * prose whose attribution a single owner id cannot express. The bump is
+ * load-bearing rather than cosmetic — the Swift decoder REFUSES an unknown schema
+ * by design, so an unbumped analyzer would be read as v1 and its findings
+ * silently mis-decoded. Later steps of the same amendment add fields to v2; it
+ * bumps once for the amendment, not once per field.
  */
-export const WORLD_INDEX_SCHEMA = 'world-index/1';
+export const WORLD_INDEX_SCHEMA = 'world-index/2';
 
 /** One room's placement on the compass grid. */
 export interface PlacedRoom {

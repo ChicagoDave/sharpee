@@ -143,7 +143,7 @@ create the blue ball
     const result = deriveIncomplete(ambiguous);
     expect(result.counts.ambiguous).toBe(1);
     expect(result.ambiguous[0]).toMatchObject({
-      where: 'hall',
+      site: expect.objectContaining({ owner: 'hall' }),
       phrase: 'ball',
       candidates: expect.arrayContaining(['red-ball', 'green-ball', 'blue-ball']),
     });
@@ -166,7 +166,7 @@ create the oil lamp
     const result = deriveIncomplete(story);
     expect(result.missingWord).toContainEqual(
       expect.objectContaining({
-        where: 'hall',
+        site: expect.objectContaining({ owner: 'hall' }),
         phrase: 'hurricane lamp',
         entity: 'oil-lamp',
         missing: ['hurricane'],
@@ -178,7 +178,7 @@ create the oil lamp
   it('names something with nothing behind it', () => {
     const result = deriveIncomplete(story);
     expect(result.noObject).toContainEqual(
-      expect.objectContaining({ where: 'hall', phrase: 'scrollwork' }),
+      expect.objectContaining({ site: expect.objectContaining({ owner: 'hall' }), phrase: 'scrollwork' }),
     );
   });
 
@@ -249,17 +249,36 @@ describe('D6b — the corpus pin', () => {
     idesOfMarch = compileStory(CORPUS.idesOfMarch);
   });
 
-  it('finds what it currently finds in Fernhill', () => {
-    expect(deriveIncomplete(fernhill).counts).toEqual({
-      missingWord: 20,
-      ambiguous: 9,
-      noObject: 58,
-    });
+  /** The three classes, counted over the passages of one kind (D10). */
+  function countsFrom(ir: StoryIR, source: 'description' | 'response') {
+    const result = deriveIncomplete(ir);
+    const of = (list: Array<{ site: { kind: string } }>) =>
+      list.filter((finding) => (finding.site.kind === 'response') === (source === 'response')).length;
+    return { missingWord: of(result.missingWord), ambiguous: of(result.ambiguous), noObject: of(result.noObject) };
+  }
+
+  // D10 SPLIT THE PIN IN TWO, and the description half is the regression that matters:
+  // reading response prose must ADD findings, never move or lose one. All three stories
+  // report description figures identical to what they reported before Amendment 1, so
+  // the walk over passages is a strict superset of the walk over entities.
+  it("finds in Fernhill's descriptions exactly what it found before Amendment 1", () => {
+    expect(countsFrom(fernhill, 'description')).toEqual({ missingWord: 20, ambiguous: 9, noObject: 58 });
   });
 
-  it('finds what it currently finds in the other two stories', () => {
-    expect(deriveIncomplete(alderman).counts).toEqual({ missingWord: 4, ambiguous: 0, noObject: 36 });
-    expect(deriveIncomplete(idesOfMarch).counts).toEqual({ missingWord: 7, ambiguous: 0, noObject: 30 });
+  it("finds in Fernhill's response prose what only D10 can see", () => {
+    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 78 });
+    expect(deriveIncomplete(fernhill).counts).toEqual({ missingWord: 23, ambiguous: 14, noObject: 136 });
+  });
+
+  // Ides of March is the case the section split exists for: 94 of its 113 passages are
+  // response prose, so its candidate list is 7x its description list. Merged into one
+  // list the description findings would be unfindable.
+  it('finds what it currently finds in the other two stories, both halves', () => {
+    expect(countsFrom(alderman, 'description')).toEqual({ missingWord: 4, ambiguous: 0, noObject: 36 });
+    expect(countsFrom(alderman, 'response')).toEqual({ missingWord: 1, ambiguous: 0, noObject: 89 });
+
+    expect(countsFrom(idesOfMarch, 'description')).toEqual({ missingWord: 7, ambiguous: 0, noObject: 30 });
+    expect(countsFrom(idesOfMarch, 'response')).toEqual({ missingWord: 10, ambiguous: 1, noObject: 184 });
   });
 
   it('names the sharpest missing-word cases ADR-321 quotes', () => {
@@ -289,7 +308,22 @@ describe('D6b — the corpus pin', () => {
 
   it('reads first-visit prose as well as the ordinary description', () => {
     const { noObject } = deriveIncomplete(fernhill);
-    const firstVisit = noObject.filter((finding) => finding.where === 'iron-gates');
-    expect(firstVisit.map((finding) => finding.phrase).sort()).toEqual(['cab', 'estate', 'lane', 'scrollwork']);
+    const firstVisit = noObject.filter((finding) => finding.site.kind === 'first-visit');
+    expect(firstVisit.map((finding) => finding.phrase).sort()).toEqual(['cab', 'estate', 'lane']);
+  });
+
+  // D10: the passage, not the entity, is the unit — and both attribution fields are
+  // independently optional, which is why the phrase key is the attribution of record.
+  it('reads response prose and attributes it to the clause that fires it', () => {
+    const findings = [...deriveIncomplete(fernhill).noObject, ...deriveIncomplete(fernhill).ambiguous];
+    const responses = findings.filter((finding) => finding.site.kind === 'response');
+    expect(responses.length).toBeGreaterThan(0);
+
+    const fired = responses.find((finding) => finding.site.firedBy !== null);
+    expect(fired?.site.firedBy).toMatch(/^(on|after|before|topic|action)\b/);
+    expect(fired?.site.key).not.toBe('');
+
+    // Story-level prose hangs off no entity at all — 22 of Fernhill's passages.
+    expect(responses.some((finding) => finding.site.owner === null)).toBe(true);
   });
 });

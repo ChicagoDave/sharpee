@@ -96,7 +96,9 @@ describe('a compiled story', () => {
     expect(run.document.map.positions).toHaveLength(13);
     expect(run.document.map.unplaced).toEqual([]);
     expect(run.document.reach.findingCount).toBe(0);
-    expect(run.document.incomplete.counts).toEqual({ missingWord: 20, ambiguous: 9, noObject: 58 });
+    // Both prose sources cross the wire (Amendment 1 D10) — the description half of
+    // these figures is pinned against the pre-amendment numbers in incomplete.test.ts.
+    expect(run.document.incomplete.counts).toEqual({ missingWord: 23, ambiguous: 14, noObject: 136 });
   });
 
   it('loses nothing crossing the wire', () => {

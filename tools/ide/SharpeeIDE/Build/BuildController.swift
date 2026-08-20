@@ -4,6 +4,11 @@
 // (auto-showing it), and reports the final status. Owns the runner so the
 // Build/Cancel menu actions and their validation can route through it. No npm
 // housekeeping — a Chord story needs none (D2).
+// A successful build also derives the World Index (ADR-321 D8): the build wrote
+// `dist/<story>.ir.json`, and the analyzer subprocess turns it into the World
+// tab's three views. It runs here rather than inside BuildRunner because
+// BuildRunner owns ONE child process and its lifecycle; a second, unrelated
+// child spawned from inside it would give it two reasons to change.
 // Public interface: BuildController.build(storyFile:), cancel(), isBuilding.
 // Owner context: tools/ide — Build.
 
@@ -13,6 +18,8 @@ import AppKit
 final class BuildController: BuildRunnerDelegate {
 
     private let runner = BuildRunner()
+    /// Derives the World tab's content from what the build just wrote (ADR-321).
+    private let worldIndex = WorldIndexRunner()
     private weak var window: MainWindowController?
     private var startUptime: TimeInterval = 0
 
@@ -83,6 +90,25 @@ final class BuildController: BuildRunnerDelegate {
         // (ADR-258 D6). Play reloads from the freshly-built dist/web/<id>/.
         if result.state == .success, let currentStory {
             window?.reloadPlayAfterBuild(projectRoot: currentStory.deletingLastPathComponent())
+            deriveWorldIndex(for: currentStory)
+        }
+    }
+
+    // MARK: - World Index (ADR-321)
+
+    /// Analyzes the IR this build just wrote and hands the result to the World tab.
+    ///
+    /// Only after a SUCCESSFUL build: a failed build leaves the previous run's
+    /// `.ir.json` on disk, and analyzing that would answer questions about a story
+    /// the author has already changed. A failed analysis is not a failed build —
+    /// the tab renders the explanation and the build's own status is untouched.
+    ///
+    /// - Parameter storyFile: the story that was built
+    private func deriveWorldIndex(for storyFile: URL) {
+        window?.showWorldIndexLoading()
+        worldIndex.analyze(irPath: WorldIndexRunner.irPath(forStory: storyFile),
+                           near: storyFile) { [weak window] response in
+            window?.showWorldIndex(response)
         }
     }
 }

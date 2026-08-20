@@ -22,6 +22,7 @@
     "@sharpee/ide-protocol": "workspace:*",
     "@sharpee/story-loader": "workspace:*",
     "@sharpee/transcript-tester": "workspace:*",
+    "@sharpee/world-index": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "esbuild": "^0.27.2",
     "fflate": "^0.8.2"

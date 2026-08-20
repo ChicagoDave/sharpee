@@ -227,6 +227,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
+    /// Renders a World Index analysis — or the reason there isn't one — into the
+    /// World tab (ADR-321 D8).
+    func showWorldIndex(_ response: WorldIndexResponse) {
+        rootViewController?.showWorldIndex(response)
+    }
+
+    /// Says the World Index is being derived (the analysis runs off the main actor).
+    func showWorldIndexLoading() {
+        rootViewController?.showWorldIndexLoading()
+    }
+
     /// Composes `storyURL` to populate the project tree + Problems (ADR-258 D6:
     /// live, source-derived — no build gate). Called on project open.
     func composeStory(at storyURL: URL) {
@@ -764,6 +775,14 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
+    func showWorldIndex(_ response: WorldIndexResponse) {
+        mainSplitViewController.showWorldIndex(response)
+    }
+
+    func showWorldIndexLoading() {
+        mainSplitViewController.showWorldIndexLoading()
+    }
+
     func composeStory(at storyURL: URL) {
         mainSplitViewController.composeStory(at: storyURL)
     }
@@ -889,6 +908,12 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.index.onActivate = { [weak self] span in
             guard let self, let storyURL = self.treeState.storyURL else { return }
             // Index jump: first line + neutral gutter dot (red = errors only).
+            self.editorViewController.openDocument(at: storyURL, navigateTo: span)
+        }
+        // A World finding names a line in the same story source the Index does,
+        // so it jumps the same way (ADR-321: findings are navigable, not a report).
+        rightPanelViewController.world.onActivate = { [weak self] span in
+            guard let self, let storyURL = self.treeState.storyURL else { return }
             self.editorViewController.openDocument(at: storyURL, navigateTo: span)
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
@@ -1323,14 +1348,34 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// Shows the empty story state with a one-line reason (D8) — rendered in
     /// the Index, the IR-sourced story view.
+    ///
+    /// The World tab clears with it: its analysis belongs to the story that just
+    /// went away, and leaving it on screen would attribute one story's findings
+    /// to another (ADR-321 D8).
     fileprivate func showEmptyStateExplanation(_ text: String) {
         rightPanelViewController.index.setState(.empty(reason: text))
+        rightPanelViewController.clearWorld(reason: text)
+    }
+
+    /// Renders a World Index analysis, or the explanation standing in for one.
+    fileprivate func showWorldIndex(_ response: WorldIndexResponse) {
+        rightPanelViewController.showWorld(response)
+    }
+
+    /// Shows the World tab's loading state while the derivation runs.
+    fileprivate func showWorldIndexLoading() {
+        rightPanelViewController.showWorldLoading()
     }
 
     /// Composes `storyURL` from its on-disk content (project open — no editor
     /// buffer yet). The outcome populates the tree and Problems through the
     /// standard pipeline.
     fileprivate func composeStory(at storyURL: URL) {
+        // A World Index belongs to the story it was derived from; opening
+        // another one resets the tab rather than showing the last story's map
+        // under this story's name (ADR-321 D8).
+        rightPanelViewController.clearWorld(
+            reason: "Build \(storyURL.lastPathComponent) (\u{2318}B) to derive its world index.")
         let content = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         composeScheduler.composeNow(storyURL: storyURL, content: content)
     }

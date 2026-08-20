@@ -14,6 +14,10 @@
  * or `HEAD_STOPWORDS` changes what this view reports, so the corpus test pins
  * the result and any tuning shows up as a diff in the expected findings.
  *
+ * **It reads every authored passage, not only descriptions** (Amendment 1, D10). What
+ * counts as a passage and where each one sits is `prose.ts`'s question; this module
+ * takes the flat list and asks what the parser would make of the nouns in it.
+ *
  * Public interface: deriveIncomplete, extractNounPhrases and their result types.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
@@ -23,7 +27,8 @@
  * @see ADR-321 D5, D6, D6b
  */
 
-import type { IREntity, StoryIR } from '@sharpee/chord';
+import type { StoryIR } from '@sharpee/chord';
+import { collectProse, type ProseSite } from './prose.js';
 import { buildVocabularyIndex, resolvePhrase, type VocabularyIndex } from './vocabulary.js';
 
 /**
@@ -100,10 +105,8 @@ export interface NounPhrase {
 
 /** The prose names something the object does not answer to. */
 export interface MissingWordFinding {
-  /** Entity whose description carries the phrase. */
-  where: string;
-  /** That entity's display name. */
-  whereName: string;
+  /** Where the phrase sits, and what fired it (D10). */
+  site: ProseSite;
   /** The phrase as written. */
   phrase: string;
   /** The one thing the head noun resolves to. */
@@ -112,34 +115,24 @@ export interface MissingWordFinding {
   missing: string[];
   /** The words it does answer to. */
   knownAs: string[];
-  /** Source line of the description. */
-  line: number | null;
 }
 
 /** The prose names something two or more objects answer to. */
 export interface AmbiguousFinding {
-  /** Entity whose description carries the phrase. */
-  where: string;
-  /** That entity's display name. */
-  whereName: string;
+  /** Where the phrase sits, and what fired it (D10). */
+  site: ProseSite;
   /** The phrase as written. */
   phrase: string;
   /** Everything it reaches. */
   candidates: string[];
-  /** Source line of the description. */
-  line: number | null;
 }
 
 /** The prose names something that does not exist. */
 export interface NoObjectFinding {
-  /** Entity whose description carries the phrase. */
-  where: string;
-  /** That entity's display name. */
-  whereName: string;
+  /** Where the phrase sits, and what fired it (D10). */
+  site: ProseSite;
   /** The phrase as written. */
   phrase: string;
-  /** Source line of the description. */
-  line: number | null;
 }
 
 /** The Incomplete view for one story — a candidate list, never an error list. */
@@ -206,30 +199,6 @@ export function extractNounPhrases(text: string): NounPhrase[] {
   return found;
 }
 
-/**
- * The text of an entity's authored descriptions, first-visit text included.
- *
- * @param ir the story IR
- * @param entity the entity to read
- * @returns each description's text and source line
- */
-function describedProse(ir: StoryIR, entity: IREntity): Array<{ text: string; line: number | null }> {
-  const locale = ir.phrases.locales[ir.phrases.defaultLocale] ?? {};
-  const keys = [entity.descriptionKey, entity.initialDescriptionKey].filter(
-    (key): key is string => typeof key === 'string',
-  );
-
-  const prose: Array<{ text: string; line: number | null }> = [];
-  for (const key of keys) {
-    const phrase = locale[key];
-    if (phrase === undefined) continue;
-    prose.push({
-      text: phrase.variants.map((variant) => variant.text).join(' '),
-      line: phrase.span?.line ?? null,
-    });
-  }
-  return prose;
-}
 
 /**
  * Classify one phrase against the story's naming surface.
@@ -285,24 +254,21 @@ export function deriveIncomplete(ir: StoryIR): IncompleteResult {
   const ambiguous: AmbiguousFinding[] = [];
   const noObject: NoObjectFinding[] = [];
 
-  for (const entity of ir.entities) {
-    const seen = new Set<string>();
-    for (const prose of describedProse(ir, entity)) {
-      for (const noun of extractNounPhrases(prose.text)) {
-        if (seen.has(noun.phrase)) continue;
-        seen.add(noun.phrase);
+  // One pass per PASSAGE, not per entity (D10). Deduplication is per passage too: the
+  // same phrase in a room's description and in its first-visit text is two places the
+  // author has to fix, and collapsing them hides the second.
+  for (const site of collectProse(ir)) {
+    for (const noun of extractNounPhrases(site.text)) {
+      const finding = classify(noun, index);
+      if (finding === undefined) continue;
 
-        const finding = classify(noun, index);
-        if (finding === undefined) continue;
-
-        const where = { where: entity.id, whereName: entity.name, phrase: noun.phrase, line: prose.line };
-        if (finding.kind === 'missing-word') {
-          missingWord.push({ ...where, entity: finding.entity, missing: finding.missing, knownAs: finding.knownAs });
-        } else if (finding.kind === 'ambiguous') {
-          ambiguous.push({ ...where, candidates: finding.candidates });
-        } else {
-          noObject.push(where);
-        }
+      const at = { site, phrase: noun.phrase };
+      if (finding.kind === 'missing-word') {
+        missingWord.push({ ...at, entity: finding.entity, missing: finding.missing, knownAs: finding.knownAs });
+      } else if (finding.kind === 'ambiguous') {
+        ambiguous.push({ ...at, candidates: finding.candidates });
+      } else {
+        noObject.push(at);
       }
     }
   }

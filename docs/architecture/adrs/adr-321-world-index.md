@@ -3,6 +3,12 @@
 **Status**: ACCEPTED (2026-08-19, session 317706) — all six open questions resolved by
 interview, `adr-review` findings addressed, flipped with David's approval. Acceptance does
 not authorize implementation; the implementation plan is a separate step.
+**Amended**: Amendment 1 (2026-08-19, session 4db9d0) adds D10–D15 (contracts in D11a) — response prose, IDE-side
+part-of-speech re-heading, tool/progression-info/atmosphere-info roles, the progression chain
+captured from the Reach fixed point, the unnamed-tool finding, and the background-thread
+placement that makes a deeper scan affordable — raised by David during Phase 6 and measured on
+Fernhill before being written. D6b's deferral of a
+part-of-speech pass is superseded by D11; every other original decision stands.
 **Date**: 2026-08-19 (session 317706)
 **Supersedes in part**: [ADR-131](adr-131-automated-world-explorer.md) — its BFS walk is
 demoted from the centre of the feature to an optional later stage. ADR-131 is not
@@ -175,7 +181,12 @@ Three distinct failures, and they are not interchangeable:
 - **Missing word** — the object exists but the prose calls it something the parser will
   not accept. Fernhill: *the **hurricane** lamp* where `oil-lamp` answers only to
   *oil lamp, lamp*; *a long **iron** poker* where `furnace-poker` answers to
-  *furnace poker, poker*. 17 in a finished, tested story. This is the sharpest class,
+  *furnace poker, poker*. 17 in a finished, tested story. *(Corrected 2026-08-19, Amendment 1:
+  **20**, not 17. The prototype's figure was measured with a head-noun index, a four-letter
+  head floor, and first-visit prose unread; the built analyzer models the validator's
+  whole-vocabulary rule and pins Fernhill at 20 missing-word / 9 ambiguous / 58 no-object.
+  Both quoted examples survive the correction and are asserted by name in the corpus test.)*
+  This is the sharpest class,
   because the player is reading the author's own words back and being refused. **The fix is
   always an alternate name** — `aka hurricane lamp` — because each of these prose phrases is
   itself a noun phrase naming the thing. No bare adjective needs a home.
@@ -228,7 +239,9 @@ trade-off is only defensible *because* D6a exists; without a suppression mechani
 list would decay into noise nobody reads. A part-of-speech pass is the upgrade path if the
 junk rate proves worse on a real mid-authoring story than it looks on finished ones; it is
 not taken now, since `lang-en-us`'s `commonAdjectives` is recorded by ADR-093 as never
-having been wired up, so there is no lexicon to build on.
+having been wired up, so there is no lexicon to build on. *(Superseded by D11, Amendment 1:
+macOS ships the lexicon this paragraph looked for, and the measured effect is the opposite of
+what was expected here — the pass raises recall rather than cutting junk.)*
 
 **D7 — The map auto-lays out on a compass grid, with collision resolution and persisted
 manual nudges.** Walking exits from the start and stepping one cell per compass
@@ -270,6 +283,346 @@ this surface renders.
 
 ---
 
+## Amendment 1 — prose coverage, part-of-speech re-heading, and mention roles (2026-08-19)
+
+Raised by David during Phase 6, after the World tab was built and rendering: *how are we
+identifying room description or NPC/Action messages with embedded nouns and adjective nouns?
+Those won't be in any object unless the author has created those objects.* The answer exposed
+one gap, one deferred decision now ready to make, and one classification the analyzer was
+computing and discarding. They are amended in together because each makes the others
+honest: roles make the noise rankable, part-of-speech work makes the recall trustworthy, and
+response prose is where both matter most.
+
+**Every figure below was measured on `branch-stories/fernhill` during this session
+(2026-08-19), not estimated.**
+
+**D10 — Incomplete reads every authored phrase, not only descriptions.** `describedProse`
+reads exactly two keys per entity, `descriptionKey` and `initialDescriptionKey`. Fernhill
+declares **124 phrases; 64 are read and 60 are not** — NPC replies, action responses, refusal
+messages, and event text, which is precisely where an author writes *"the brass key is on the
+mantel"* about a mantel that does not exist. Scanning them adds **85 no-object and 2 ambiguous
+candidates** on Fernhill, roughly 2.5x the current list.
+
+Response prose is **attributed by phrase key and by the clause or action that fires it**, not
+by an owning entity: a finding today carries `where`/`whereName` naming the entity whose
+description holds the phrase, and a response has no such owner. It is **reported in its own
+section**, not merged into the description counts, so a noisier source cannot bury the
+description findings that are currently clean.
+
+**D11 — Part-of-speech tagging is an IDE-side refinement that RE-HEADS candidates and never
+drops them.** D6b named a part-of-speech pass as the upgrade path and declined it for want of
+a lexicon. macOS ships one: `NaturalLanguage`'s `NLTagger` with `.lexicalClass`, which is why
+this sat open since 2026-08-09 (`docs/work/testing/design-testing-play-surface.md` §14, where
+it is captured as *"likely sufficient and preferred… quality-check against real Chord prose
+before committing"*). The quality check has now been run, over **all 172 no-object candidates
+in Fernhill's prose**:
+
+| | count | share |
+|---|---|---|
+| head is already a noun — unchanged | 142 | 83% |
+| head is not a noun, a noun sits earlier — **re-headable** | 21 | 12% |
+| no noun anywhere | 9 | 5% |
+
+It inverts §14's framing. **The tagger is a recall tool, not a filter.** The 21 re-headable
+cases are exactly the verb-swallowing limit D6b documents and pins a test against —
+`brass plate insists` → `brass plate`, `plunger sinks` → `plunger`, `the hurricane lamp burns`
+→ `hurricane lamp` — findings currently being *lost*, which it recovers. It does not
+meaningfully reduce junk.
+
+And it must never be used to drop: of the 9 phrases with no noun anywhere, roughly four are
+tagger errors rather than extractor errors (`grate/Adjective`, `shroud/Adverb`, `well/Adverb`,
+`wooden/Adjective`). A grate the prose names with nothing behind it is the finding. A
+drop-if-head-is-not-a-noun rule would delete real gaps to remove junk the author reads past in
+a second, which is D6b's trade-off run backwards.
+
+The effect concentrates in exactly the prose D10 adds: **16 of the 21 re-headable cases are in
+response text** — about 19% of response candidates against 6% of description candidates.
+Response prose is verb-dense, so the extractor loses three times as much there.
+
+**And the budget says go further than re-heading: drop the article gate.** The extractor only
+reads phrases opened by `the`/`a`/`an`, a gate that exists purely because ungated extraction
+without part-of-speech information is too noisy to ship. Measured cost of removing it —
+tagging every word of every phrase rather than only the candidates — is **9.2ms over all of
+Fernhill's prose** (10.8ms with lemmas, ~2,400 words), which extrapolates to under 100ms on a
+100-room story. AC-8 measured the whole analysis at ~1ms against a 63.5ms process-startup
+floor, so this is spending 2% of a five-second budget the surface does not have to honour
+anyway.
+
+What it buys, measured by chunking Fernhill's prose into adjective-noun runs with no gate and
+resolving the result through the real vocabulary index:
+
+| | phrases | resolved edges | unresolved candidates |
+|---|---|---|---|
+| article-gated (today) | 249 | 71 | 172 |
+| POS-chunked, ungated | 758 | **+98 new** | **+445 new** |
+
+The **98 new edges are the prize** — `plunger` → `primer-plunger`, `staging` →
+`staging-benches`, `fuse` → `fuse`, `smoke` → the cat — prose naming real things that the
+article gate makes the analyzer blind to, more than doubling the edge count D12 and D13 are
+built on. It also means **D13's figure of 11 unnamed things is inflated by this blindness**,
+which is the recall caveat recorded there, quantified.
+
+The 445 new candidates are the cost, and most are junk (`one`, `resistance`, `thumps`, and
+`hurricane` split off its lamp). At 3.5x the current list they would be unreadable as a flat
+list — **which is why this is only safe alongside D12.** Ungated extraction without roles is a
+worse surface than the article gate; ungated extraction ranked by role is a better one. Neither
+half ships without the other.
+
+**Where it runs, and what has to cross for it to work.** `NLTagger` is macOS-and-Swift; the
+extractor is TypeScript in `packages/world-index`, and Incomplete is today a pure function of
+the IR that `sharpee world-index` reproduces headlessly.
+
+A phrase the IDE chunks is worth nothing until it is **resolved** against the story's
+vocabulary, so ungated chunking cannot be IDE-side while resolution stays analyzer-side — the
+98 new phrases would have nothing to resolve against, and D12 could not role them because the
+analyzer never saw them. *(Caught by `adr-review`, 2026-08-19: the first draft of this
+decision asserted both halves and was undischargeable.)*
+
+The split is therefore drawn one notch lower. **The analyzer alone BUILDS the vocabulary
+index** — `deriveNameVocabulary` is the parser's own function and modelling it twice is the
+D3-class error this ADR exists to avoid — and it **publishes that index on the wire** as a
+`vocabulary` surface. Chord Writer chunks, resolves against the published surface, and roles
+the result with the progression chain the same document carries. It never derives vocabulary;
+it applies what it was given.
+
+Measured cost of publishing it: **2.3KB of JSON for Fernhill** — 64 entities, 129 distinct
+words. The alternative, a second subprocess round-trip to resolve the IDE's chunks, buys
+nothing and costs another 63.5ms process start plus a protocol no other caller needs.
+
+The cost, stated rather than discovered: **the IDE and the CLI report different counts for the
+same story.** That is acceptable here and nowhere else — D6 defines Incomplete as a candidate
+list rather than an error list, the divergence is bounded to the recall direction (the IDE
+sees strictly more, never fewer), and the headless list stays a correct, usable subset. It
+would not be acceptable for Reach or Map, which are claims about the world rather than a
+reading of prose, and neither of those may acquire an IDE-side derivation.
+
+**D11a — The wire contract for all of the above, written down.** Amendment 1 adds required
+fields to the document, so the schema **bumps to `world-index/2`**: `WORLD_INDEX_SCHEMA` in
+`packages/world-index/src/document.ts` and `worldIndexSchema` in
+`tools/ide/SharpeeIDE/World/WorldIndexDocument.swift` move together, and the Swift decoder's
+existing refusal to read an unknown schema is what makes the bump load-bearing rather than
+cosmetic — an unbumped analyzer would be silently read as `world-index/1` by every shipped
+app.
+
+```ts
+/** Where a mention sits on the story's spine (D12). */
+export type MentionRole = 'tool' | 'progression-info' | 'atmosphere-info';
+
+/** What kind of passage a phrase was read from (D10). */
+export type ProseKind = 'description' | 'first-visit' | 'response';
+
+/**
+ * Where a phrase was found. ONE shape for every prose source, with BOTH attribution
+ * fields independently optional — corrected against Fernhill's IR while implementing
+ * D10, where an earlier draft of this block had it wrong. A response usually DOES have
+ * an owner (`folly-jammed` hangs off `folly-door`'s `on opening`), and some passages
+ * have neither: 22 of Fernhill's 124 are story-level, referenced from no entity at all.
+ * The phrase key is the only identity every passage is guaranteed to have, which is why
+ * it and not the owner is the attribution of record.
+ */
+export interface ProseSite {
+  key: string;                 // the locale-table key — always present
+  kind: ProseKind;             // 'response' covers on-clause text, topics, and action responses
+  owner: string | null;        // the entity it hangs off, when one does
+  ownerName: string | null;
+  firedBy: string | null;      // the clause or action that fires it, e.g. 'on opening'
+  line: number | null;
+  text: string;                // the whole passage — the part-of-speech pass's input
+}
+
+/** A phrase that resolved: the prose-points-at-thing edge D12 roles. */
+export interface MentionEdge {
+  phrase: string;
+  entity: string;
+  role: MentionRole;
+  site: ProseSite;
+}
+
+/**
+ * An obstacle the fixed point overcame, and what it took (D14). Same shape as the
+ * BlockedEdge it would have produced — its `reason` reads why it OPENED — plus the
+ * two facts only the loop knows.
+ */
+export interface LiftedObstacle extends BlockedEdge {
+  pass: number;                // fixed-point pass it lifted on; 0 = open from the start
+  requires: string[];          // entities that had to be reachable first
+}
+
+/** A thing the mechanics need that no prose names (D13). */
+export interface UnnamedTool {
+  entity: string;
+  name: string;
+  role: MentionRole;           // 'progression-info' here is the severe case
+  reason: string;              // what needs it, in the author's terms
+}
+
+/** The resolution surface the IDE applies but never derives (D11). */
+export interface VocabularySurface {
+  wordsOf: Record<string, string[]>;   // entity id -> the words it answers to
+}
+```
+
+`ReachResult` gains `lifted: LiftedObstacle[]` beside `blocked`, and
+`progression: string[]` — the closure of entities on the chain, which is what D12 consumes and
+what the Swift side roles against. `IncompleteResult` gains `edges: MentionEdge[]`, and its
+three finding types replace `where`/`whereName`/`line` with a single `site: ProseSite`.
+`roles.ts` exports `deriveRoles(ir, reach, edges): MentionEdge[]` and
+`unnamedTools(ir, reach, edges): UnnamedTool[]` (D13). The document gains `vocabulary:
+VocabularySurface`.
+
+**D12 — Every mention carries one of three roles: tool, progression-info, or
+atmosphere-info**, and BOTH sides derive them with the same rule — the analyzer over the
+edges it resolved, Chord Writer over the edges it chunked, from the same published
+`progression` list. David's framing, 2026-08-19: the explorer *"should differentiate on things
+that are used in the story and things that provide information to progress the story"*, *"and
+that things that just add atmosphere"*, then narrowed to *"tool or progression-info or
+atmosphere-info — and I suspect we can deduce if info has no bearing on a puzzle or
+progressing the story."*
+
+| role | the mention names | derived from |
+|---|---|---|
+| **tool** | a thing the player acts on | its own affordances — takeable, openable, switchable, an on-clause bound to a player action |
+| **progression-info** | something on the progression chain | the Reach fixed point's own record of what gated what, and what lifted it (D14) |
+| **atmosphere-info** | anything else the prose resolves to | the residual, after the two above |
+
+**The info edge is already computed and thrown away.** `classify` opens with
+`if (candidates.length === 1) return undefined` — a phrase resolving cleanly to exactly one
+entity is discarded, and that resolution *is* the prose-points-at-thing edge. Nothing new is
+derived to get the edges; what exists is kept.
+
+**The three-way split is a correction, not a refinement, and the measurement is why.** This
+decision was first drafted as a two-way tool/info split with *tool* defined as "referenced
+anywhere outside its own declaration." Measured on Fernhill that rule calls **41 of 65
+entities** tools and **48 of 71** prose edges info. The progression chain is
+**six entities** — `folly-door`, `pantry-door`, `cellar-door`, `tarnished-key`, `boiler`,
+`mrs-kettle` — and **five** prose edges point at them. The draft rule was roughly eight times
+too generous: it filed the sherry bottle beside the cellar door, which is exactly the
+distinction the author opened the view to see.
+
+**Atmosphere-info is a residual, not a classification, and that is a limit not a defect.**
+Nothing in the IR says "this is atmosphere" — it is what is left when a mention is neither an
+affordance nor on the chain. This is the case D6a's source-level suppression exists to serve,
+and it narrows what that suppression must cover: the author confirms a residual rather than
+silencing an undifferentiated list. D6a is unchanged and still ships without suppression until
+its own ADR lands.
+
+**D13 — A new Reach-adjacent finding: a tool no prose ever names.** A thing the mechanics
+require that no description and no response mentions leaves the player no way to learn it
+exists. Fernhill has **11** once rooms and the player are excluded: `winding-key`, `crowbar`,
+`deed-box`, `deed`, `kipper`, `kipper-tin`, `nailed-crate`, `mantel`, `grey-overcoat`,
+`doormat`. That is closer to unwinnability than anything Incomplete reports today, and it falls out of
+D12's edges. Its sharpest form is the intersection with D14: a **progression-critical** thing
+no prose names is not a nag, it is a story the player cannot finish by reading.
+
+**It is gated on D10, D11, and D14, and must not ship before them.** "No prose names it" means "no
+phrase the extractor pulls resolves to it," and the extractor is article-gated, three-word
+capped, and loses phrases to verbs. A crowbar named without an article is invisible to it, so
+that count is an **upper bound** until recall is fixed. Shipping D13 on today's extractor
+would report authored things as unnamed, which is the class of false finding D4's polarity
+guard exists to prevent.
+
+**D14 — The progression chain comes from the Reach fixed point recording its own successes,
+never from a static scan of the IR.** D4's loop already computes it and discards it:
+
+```js
+const block = obstacleOn(edge, gates, containment, reached, byName, world);
+if (block !== undefined) { blocks.set(edgeKey(edge.from, edge.direction), block); continue; }
+blocks.delete(edgeKey(edge.from, edge.direction));   // <- the obstacle lifted; what lifted it is dropped
+reached.add(edge.to);
+```
+
+`obstacleOn` returning `undefined` means *this edge opens*, and the `BlockedEdge` it would
+have produced — carrying the door, the key, and the key's room — is deleted rather than
+recorded. Kept instead, in a `lifted` list beside `blocked`, it is the dependency graph of
+progress: which obstacle gated which room, and what had to be reachable first.
+
+**A static scan cannot substitute, and the corpus proves it — implemented and measured
+2026-08-19.** The two chains for Fernhill are the same SIZE and a different SET:
+
+| | chain |
+|---|---|
+| static scan (rejected) | `folly-door`, `pantry-door`, `cellar-door`, `tarnished-key`, `boiler`, `mrs-kettle` |
+| fixed point (D14) | `boiler`, **`stopcock`**, **`primer-plunger`**, `mrs-kettle`, `cellar-door`, `tarnished-key` |
+
+The scan invents two doors that gate nothing — neither `folly-door` nor `pantry-door` starts
+locked — and misses both machine triggers. "The scan under-counts" would be the wrong way to
+describe that; it is wrong in both directions at once, which is worse, because the count looks
+right.
+
+**The mechanism, stated precisely, because this ADR's first draft named the wrong one.**
+Fernhill's greenhouse gate reads `north is blocked while the boiler is off`. `off` is the
+**`switchable` trait's** state, so Phase 2 was right that a standard action flips it — but
+whether that action *succeeds* is governed by `refuse when it is cold` / `refuse when it is
+filled` on the boiler, and the boiler only leaves those states through `define machine the
+boiler works`, whose transitions are `when turning the stopcock` → filled, `when pushing the
+primer plunger` → primed. **The machine is a top-level IR construct**, not a clause on any
+entity: `ir.machines`, with its own roles and transitions. The stopcock appears in no
+condition, in no `change` statement, and nowhere in the boiler's own clauses. A per-entity
+scan cannot reach it by construction, and the fixed point reaches it because
+`machineDrivers` resolves each machine's role to the entity it plays and reads the triggers
+that advance it.
+
+Verified by mutation, not only by a green run: blinding the walk to `ir.machines` drops
+`stopcock` and `primer-plunger` from the chain and fails three tests.
+
+**D15 — The derivation runs off the main actor and the tab says so while it does; duration is
+therefore not a constraint on this amendment's scope.** David's ruling, 2026-08-19: *"if we run
+it on a background thread with a Loading message on the tab, I think we're safe."*
+
+Of AC-8's 71ms for a 100-room story, 63.5ms is Node starting up and ~1ms is the derivation, and
+the analysis already runs after a build completes rather than during one. What the ruling adds
+is the two properties that make a *deeper* scan safe rather than merely fast: the child's
+output is decoded in the termination handler's own context, so a document carrying a source
+sentence per candidate never parses on the main actor, and the World tab holds an explicit
+loading state between the build finishing and the analysis landing.
+
+Loading is a state of its own, not a stale render. Leaving the previous analysis on screen
+through a rebuild — with its finding badge — attributes one version of the story's findings to
+another, which is the same lie the AC-9 empty states exist to prevent.
+
+**What still binds is placement.** This work must not move onto a keystroke, a save, or the
+compose loop that feeds the Index tab. There, a background thread does not help: the author is
+waiting on the result, and a five-second scan becomes the reason the feature gets turned off.
+Post-build, and only post-build.
+
+### Acceptance for this amendment
+
+- **AC-10 — response prose is read and attributed.** Every phrase in the locale table is
+  scanned, response findings are attributed by phrase key and firing clause, and they are
+  reported in their own section. The corpus figures (D6b) are re-pinned across both sources.
+  *(SELF-VERIFYING.)*
+- **AC-11 — the tagger re-heads and never drops.** A test asserts that no candidate is removed
+  by the part-of-speech pass, and that the phrases D6b pins as lost to verb-swallowing —
+  `the hurricane lamp burns` among them — are recovered at their real head. *(SELF-VERIFYING.)*
+- **AC-11a — ungated chunking recovers the edges the article gate hides.** `plunger`,
+  `staging`, `fuse`, and `smoke` resolve to their entities, and the corpus edge count is
+  pinned before and after so the gain is a recorded figure rather than a claim. The
+  part-of-speech pass over a whole story's prose stays under 250ms. *(SELF-VERIFYING.)*
+- **AC-12 — roles are derived and pinned.** Every resolved prose edge lands in exactly one of
+  tool, progression-info, atmosphere-info, with the corpus counts pinned per story.
+  *(SELF-VERIFYING.)*
+- **AC-13 — the unnamed-tool finding is correct on the corpus.** Each reported tool is
+  confirmed absent from every authored phrase by direct search of the prose, not only by the
+  extractor's own reading — the check that keeps an extractor recall gap from being reported
+  as an authoring gap. *(SELF-VERIFYING.)*
+- **AC-14 — the progression chain is the fixed point's, not a scan's.** `stopcock` is reported
+  progression-critical on Fernhill — the case a static scan gets wrong because the boiler gate
+  lifts through the `switchable` trait — and a test asserts it, so a later refactor cannot
+  quietly substitute a scan. *(SELF-VERIFYING; this is D14's regression, the way AC-5 is
+  D4's.)*
+- **AC-15 — the tab never blocks and never lies while working.** The decode is callable off
+  the main actor (a test drives it from a detached task), the tab reports loading between a
+  build and its analysis, and both an analysis and a failure clear that state — a tab that
+  spins forever on an absent toolchain is the failure mode this state introduces.
+  *(SELF-VERIFYING; satisfied by Phase 6, ahead of the rest of this amendment.)*
+- **AC-16 — the headless list is a subset, not a different reading.** For every corpus story,
+  every finding the CLI reports appears in the IDE's list with the same site and the same
+  phrase, and the IDE's count is greater than or equal to the CLI's. This is the test that
+  keeps D11's accepted divergence bounded to recall — without it, "the IDE sees strictly more"
+  is an argument rather than a property. *(SELF-VERIFYING.)*
+
+---
+
 ## Implementation
 
 Not authorized by this ADR. The prototype is `docs/work/explorer/world-index.js` — one file,
@@ -286,6 +639,12 @@ tests, and a hand-tuned extractor.
 | `tools/ide/SharpeeIDE/World/` (new) | the tab's three views |
 | `tools/ide/SharpeeIDE/Build/BuildRunner.swift` | invoke the analyzer after a successful build |
 | `tools/vscode-ext/src/world-explorer.ts` | deleted **only after** the World tab renders (ADR-131's own consequence) |
+| *Amendment 1* — `packages/world-index/src/incomplete.ts` | reads every authored phrase, not two keys per entity (D10); keeps the resolved prose edge it discards today (D12) |
+| *Amendment 1* — `packages/world-index/src/roles.ts` (new) | tool/progression-info/atmosphere-info derivation and the unnamed-tool finding (D12, D13) |
+| *Amendment 1* — `packages/world-index/src/reach.ts` | keeps the obstacle it lifts instead of deleting it — the progression chain (D14) |
+| *Amendment 1* — `packages/world-index/src/document.ts` | schema bumps to `world-index/2`; carries `ProseSite` (with the source sentence), `MentionEdge`, `LiftedObstacle`, and the `vocabulary` surface (D11a) |
+| *Amendment 1* — `tools/ide/SharpeeIDE/World/WorldIndexDocument.swift` | `worldIndexSchema` bumps with it, and the new shapes decode (D11a) |
+| *Amendment 1* — `tools/ide/SharpeeIDE/World/` | `NLTagger` re-heading before render, and role-ranked sections (D11, D12) |
 
 **The IDE↔analyzer boundary.** The analyzer is a subprocess reading a `.ir.json` path and
 writing one JSON document to stdout; the IDE parses it and renders. The document's schema is
@@ -328,6 +687,7 @@ executed against `fernhill.ir.json` during design and produced exactly the outpu
   rooms; D4's full gate analysis is kept if timings stay within an authoring-speed budget, and
   the documented fallback is taken if not. *(PREMISE-DEPENDENT — the budget is set when the
   first timings exist; no number is asserted here.)*
+- *(AC-10 through AC-13 are Amendment 1's, and live in its own Acceptance subsection above.)*
 - **AC-9 — failure states render.** Missing IR, malformed IR, and absent `node` each produce
   the explanatory empty state rather than a crash or a silent blank tab. *(SELF-VERIFYING.)*
 

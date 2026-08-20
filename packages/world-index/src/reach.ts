@@ -84,6 +84,19 @@ export interface NothingToRead {
   room?: string;
 }
 
+/**
+ * An obstacle the fixed point overcame, and what it took (Amendment 1, D14).
+ *
+ * The same shape as the `BlockedEdge` this edge would have produced had it stayed
+ * shut — its `reason` reads why it OPENED — plus the two facts only the loop knows.
+ */
+export interface LiftedObstacle extends BlockedEdge {
+  /** Fixed-point pass it opened on; 1 is the first sweep. */
+  pass: number;
+  /** Entities that had to be reachable, or actable on, first. */
+  requires: string[];
+}
+
 /** The Reach view for one story. */
 export interface ReachResult {
   /** The room play begins in, when the story places a player. */
@@ -100,6 +113,19 @@ export interface ReachResult {
   nothingToRead: NothingToRead[];
   /** Every finding above, counted — zero is a clean story. */
   findingCount: number;
+  /**
+   * Obstacles the walk overcame, in the order it overcame them.
+   *
+   * NOT a finding — a story with a rich lifted list is a story with puzzles in it.
+   * It is the dependency graph of progress, and D12 reads it to tell a tool the
+   * player must use from scenery that merely exists.
+   */
+  lifted: LiftedObstacle[];
+  /**
+   * Every entity on the progression chain: the doors, keys, gate subjects, and
+   * machine triggers that stand between the start room and the rest of the story.
+   */
+  progression: string[];
 }
 
 /** A gate declaration, keyed to the room and direction it blocks. */
@@ -187,16 +213,29 @@ export function deriveReach(ir: StoryIR): ReachResult {
   const reached = new Set<string>(start !== undefined && roomIds.has(start) ? [start] : []);
 
   const world = conditionWorld(containment, reached, moved, writers, namedConditions);
+  const drivers = machineDrivers(ir);
   const blocks = new Map<string, BlockedEdge>();
+  const lifted: LiftedObstacle[] = [];
 
-  for (let growing = true; growing; ) {
+  for (let growing = true, pass = 1; growing; pass += 1) {
     growing = false;
     for (const edge of edges) {
       if (!reached.has(edge.from) || reached.has(edge.to)) continue;
-      const block = obstacleOn(edge, gates, containment, reached, byName, world);
-      if (block !== undefined) {
-        blocks.set(edgeKey(edge.from, edge.direction), block);
+      const verdict = obstacleOn(edge, gates, containment, reached, byName, world, drivers);
+      if (!verdict.open) {
+        blocks.set(edgeKey(edge.from, edge.direction), verdict.block);
         continue;
+      }
+      // D14: an edge that took something to open is a step of the story's spine, and
+      // this is the only moment anything knows what it took. The old code deleted the
+      // record here and kept the reached room alone.
+      if (verdict.requires.length > 0) {
+        lifted.push({
+          ...(blocks.get(edgeKey(edge.from, edge.direction)) ?? openedEdge(edge)),
+          reason: 'the player can open this before they need it',
+          pass,
+          requires: verdict.requires,
+        });
       }
       blocks.delete(edgeKey(edge.from, edge.direction));
       reached.add(edge.to);
@@ -223,6 +262,11 @@ export function deriveReach(ir: StoryIR): ReachResult {
     stranded,
     brokenExits,
     nothingToRead,
+    lifted,
+    progression: unique([
+      ...lifted.flatMap((step) => step.requires),
+      ...blocked.flatMap((block) => [block.door, block.key].filter((id): id is string => id !== undefined)),
+    ]),
     findingCount:
       blocked.length +
       stranded.length +
@@ -314,6 +358,21 @@ function conditionWorld(
  * @param world the condition world
  * @returns the block, or undefined when the move is passable
  */
+/**
+ * What the fixed point decided about one edge, and why.
+ *
+ * An open edge carries `requires` — the entities it consulted to decide — which is
+ * the thing D14 exists to keep. `blocks.delete()` used to throw exactly this away:
+ * the loop knew the cellar door opened BECAUSE the tarnished key was reachable, and
+ * recorded only that the cellar was reached.
+ */
+type EdgeVerdict =
+  | { open: false; block: BlockedEdge }
+  | { open: true; requires: string[] };
+
+/** An unguarded edge: nothing stood in the way, so nothing is on the chain. */
+const UNGUARDED: EdgeVerdict = { open: true, requires: [] };
+
 function obstacleOn(
   edge: WiredEdge,
   gates: GateIndex,
@@ -321,7 +380,8 @@ function obstacleOn(
   reached: ReadonlySet<string>,
   byName: ReadonlyMap<string, string>,
   world: ConditionWorld,
-): BlockedEdge | undefined {
+  drivers: ReadonlyMap<string, readonly string[]>,
+): EdgeVerdict {
   const gate = gates.get(edgeKey(edge.from, edge.direction));
   if (gate !== undefined) {
     const base = {
@@ -332,19 +392,58 @@ function obstacleOn(
       line: gate.span?.line,
     };
     if (gate.condition === null) {
-      return { ...base, reason: 'the exit is blocked with no condition that lifts it' };
+      return { open: false, block: { ...base, reason: 'the exit is blocked with no condition that lifts it' } };
     }
     if (holdsAtStart(gate.condition, world) === 'true') {
       const openable = canBeFalsified(gate.condition, world);
       if (openable === 'false') {
-        return { ...base, reason: 'nothing the player can reach lifts the condition blocking this exit' };
+        return {
+          open: false,
+          block: { ...base, reason: 'nothing the player can reach lifts the condition blocking this exit' },
+        };
       }
       if (openable === 'unknown') {
-        return { ...base, reason: 'the condition blocking this exit cannot be read statically' };
+        return {
+          open: false,
+          block: { ...base, reason: 'the condition blocking this exit cannot be read statically' },
+        };
       }
+      // It lifts. What the player must act on to lift it is the condition's own
+      // subjects plus whatever drives them — D14's `requires`.
+      const subjects = conditionSubjects(gate.condition);
+      const gateRequires = [...subjects, ...subjects.flatMap((id) => drivers.get(id) ?? [])];
+      // An exit can carry BOTH a gate and a locked door. Before D14 the gate branch
+      // returned first and the door went unexamined.
+      const lock = lockRequires(edge, containment, reached, byName);
+      if (lock !== undefined && 'block' in lock) return { open: false, block: lock.block };
+      return {
+        open: true,
+        requires: unique([...gateRequires, ...(lock?.requires ?? [])]),
+      };
     }
   }
 
+  const lock = lockRequires(edge, containment, reached, byName);
+  if (lock === undefined) return UNGUARDED;
+  if ('block' in lock) return { open: false, block: lock.block };
+  return { open: true, requires: lock.requires };
+}
+
+/**
+ * The lock on an edge, if it has one: the block it produces, or what opening it took.
+ *
+ * Split out of `obstacleOn` so a gated edge can consult it too — an exit may carry a
+ * gate AND a locked door, and before D14 the gate branch returned first and the door
+ * went unexamined.
+ *
+ * @returns undefined when no locked door stands here
+ */
+function lockRequires(
+  edge: WiredEdge,
+  containment: ContainmentIndex,
+  reached: ReadonlySet<string>,
+  byName: ReadonlyMap<string, string>,
+): { block: BlockedEdge } | { requires: string[] } | undefined {
   const doorId = edge.via;
   const door = doorId === null ? undefined : containment.byId.get(doorId);
   if (door === undefined || !doorStartsLocked(door, isDoor(door))) return undefined;
@@ -357,19 +456,114 @@ function obstacleOn(
     door: door.id,
   };
   const keyId = declaredKeyOf(door, byName);
-  if (keyId === undefined) return { ...base, reason: 'the door is locked and declares no key' };
+  if (keyId === undefined) {
+    return { block: { ...base, reason: 'the door is locked and declares no key' } };
+  }
 
   const keyRoom = roomOf(containment, keyId);
-  if (keyRoom !== undefined && reached.has(keyRoom)) return undefined;
+  if (keyRoom !== undefined && reached.has(keyRoom)) {
+    return { requires: [door.id, keyId] };
+  }
   return {
-    ...base,
-    key: keyId,
-    keyRoom,
-    reason:
-      keyRoom === edge.to
-        ? 'the key is inside the room it opens'
-        : 'the key cannot be reached before the door',
+    block: {
+      ...base,
+      key: keyId,
+      keyRoom,
+      reason:
+        keyRoom === edge.to
+          ? 'the key is inside the room it opens'
+          : 'the key cannot be reached before the door',
+    },
   };
+}
+
+/**
+ * Entities a condition names.
+ *
+ * Shape-agnostic for the same reason `statements.ts` walks that way: an `IRCondition`
+ * is a tree whose node kinds grow, and a walk keyed to today's names silently stops
+ * finding subjects the day a new one lands.
+ *
+ * @param condition the condition to read
+ * @returns every entity id it mentions, first occurrence order
+ */
+function conditionSubjects(condition: IRCondition): string[] {
+  const found: string[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const child of node) walk(child);
+      return;
+    }
+    if (typeof node !== 'object' || node === null) return;
+    const record = node as Record<string, unknown>;
+    if (record.kind === 'entity' && typeof record.id === 'string') found.push(record.id);
+    for (const value of Object.values(record)) walk(value);
+  };
+  walk(condition);
+  return unique(found);
+}
+
+/**
+ * What the player acts on to drive each entity's state, by entity id.
+ *
+ * A machine's roles name the entities it drives; its transitions name the actions
+ * that advance it. THIS IS THE HALF A STATIC SCAN CANNOT SEE — Fernhill's greenhouse
+ * gate reads `the boiler is off`, and the boiler only reaches a state that lifts it
+ * through `define machine the boiler works`, whose first transition is
+ * `when turning the stopcock`. The stopcock appears nowhere in the gate, nowhere in
+ * the boiler's own clauses, and nowhere in any `change` statement attached to an
+ * entity; it is a trigger on a top-level construct (D14).
+ *
+ * @param ir the story IR
+ * @returns entity id -> the entities whose actions drive its state
+ */
+function machineDrivers(ir: StoryIR): Map<string, string[]> {
+  const drivers = new Map<string, string[]>();
+  for (const machine of ir.machines ?? []) {
+    // A trigger may name a ROLE rather than an entity — `switching_on $furnace`
+    // where `role furnace is the boiler`. Resolved here so the chain names things
+    // the author can look up, never the machine's private vocabulary.
+    const roleEntity = new Map(machine.roles.map((role) => [`$${role.name}`, role.entity]));
+    const triggers: string[] = [];
+    for (const state of machine.states) {
+      for (const transition of state.transitions) {
+        const target = (transition.trigger as { target?: unknown }).target;
+        if (typeof target !== 'string') continue;
+        triggers.push(roleEntity.get(target) ?? target);
+      }
+    }
+    if (triggers.length === 0) continue;
+    for (const role of machine.roles) {
+      drivers.set(role.entity, unique([...(drivers.get(role.entity) ?? []), ...triggers]));
+    }
+  }
+  return drivers;
+}
+
+/**
+ * The record for an edge that opened without ever having been recorded as blocked.
+ *
+ * The walk tests an edge only once its `from` room is reached, so an obstacle whose
+ * key was already in hand is overcome on first sight and never enters `blocks`. It is
+ * still a step of the spine, and omitting it would make the chain depend on walk order.
+ *
+ * @param edge the edge that opened
+ * @returns the base record, ready for `reason`, `pass`, and `requires`
+ */
+function openedEdge(edge: WiredEdge): BlockedEdge {
+  return {
+    from: edge.from,
+    to: edge.to,
+    direction: edge.direction,
+    obstacle: edge.via === null ? 'gate' : 'lock',
+    ...(edge.via === null ? {} : { door: edge.via }),
+    reason: '',
+  };
+}
+
+/** The list with duplicates removed, first occurrence winning. */
+function unique(ids: readonly string[]): string[] {
+  return [...new Set(ids)];
 }
 
 /**

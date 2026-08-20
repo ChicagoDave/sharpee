@@ -43,12 +43,15 @@ export type { Truth, ConditionWorld } from './conditions.js';
 export { deriveReach } from './reach.js';
 export type {
   ReachResult,
+  LiftedObstacle,
   BlockedEdge,
   BrokenExit,
   NothingToRead,
   ObstacleKind,
   StrandedThing,
 } from './reach.js';
+
+export { analyzeStoryIR, analyzerVersionFromScript } from './analyze.js';
 
 export { buildDocument, buildFailure, WORLD_INDEX_SCHEMA } from './document.js';
 export type {
@@ -62,6 +65,9 @@ export type {
 
 export { buildVocabularyIndex, entityVocabulary, resolvePhrase } from './vocabulary.js';
 export type { VocabularyIndex } from './vocabulary.js';
+
+export { collectProse } from './prose.js';
+export type { ProseKind, ProseSite } from './prose.js';
 
 export { deriveIncomplete, extractNounPhrases } from './incomplete.js';
 export type {

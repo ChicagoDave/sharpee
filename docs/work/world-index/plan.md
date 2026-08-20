@@ -248,7 +248,8 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
   `scrollwork`, `keyhole`, `bolt`, `cache` with no object behind them. The ADR's own
   figure of 17 missing-word cases was the prototype's, measured with the head-noun model,
   a four-letter floor, and first-visit prose unread — worth an ADR amendment when
-  convenient, not a discrepancy to reconcile.
+  convenient, not a discrepancy to reconcile. **Done 2026-08-19**: corrected in place in
+  ADR-321's Missing-word bullet as part of Amendment 1.
 - **AC-7 green**, with no `adjectives` field anywhere: `ball` raises the three-way
   disambiguation, each colour word resolves its own ball alone, `red green` and `brass ball`
   resolve to nothing (a word the entity does not answer to disqualifies it), and `plant` /
@@ -417,12 +418,68 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: the World tab renders Map, Reach, and Incomplete for at least Fernhill,
   driven by a real build; all three AC-9 failure states are exercised manually (missing IR,
   malformed IR, `node` unavailable) and each shows the explanatory state, not a crash.
-- **Status**: CURRENT (since 2026-08-19) — Phase 5's timing decision is made (full analysis
-  kept), so the entry state is satisfied except for David's explicit approval of this phase's
-  `tools/ide` changes, which the entry state requires and which has not been given.
-- **Carried in from Phase 5**: the Map view's collision resolution and direction-skew
-  detection have no corpus behind them — every real Chord map is a tree with no cycles — so
-  those code paths will be built and reviewed without a real story that exercises them.
+- **Status**: AWAITING CONFIRMATION (since 2026-08-19, session 4db9d0) — code and tests are
+  complete and no further implementation is planned here; the single open exit-state item is
+  David's own confirmation that the tab RENDERS, driven by a real build. Phase 7 requires that
+  confirmation ("David has seen the World tab work, not just code review"), so the phase does
+  not close on a green suite. Deliberately NOT `CURRENT`: Phase 8 is the phase being worked,
+  and two CURRENT phases would leave the next session unable to tell which one it is resuming.
+- **Outcome (code + tests)**: seven new files under `tools/ide/SharpeeIDE/World/` —
+  `WorldIndexDocument.swift` (the Swift half of Phase 4's wire contract),
+  `WorldIndexRunner.swift` (the subprocess), `WorldFindingTable.swift` (the shared sectioned
+  list), `WorldMapView.swift`, `WorldReachView.swift`, `WorldIncompleteView.swift`,
+  `WorldView.swift` (the tab) — plus `SharpeeIDETests/WorldIndexTests.swift`. Wired into
+  `RightPanelViewController` (World appended at index 7), `Theme.swift` (nine new
+  `dynamic(light:dark:)` pairs), `BuildController` (derives after a successful build), and
+  `MainWindow` (forwarding, source-line jump, clears on project switch).
+  **20 new tests; the full IDE suite is 513 passing, 0 failures**
+  (`xcodebuild test -only-testing:SharpeeIDETests -derivedDataPath ./DerivedData`,
+  2026-08-19 18:00 local). `xcodebuild build` clean; root `npx tsc --noEmit` clean.
+- **Off the main actor, behind a loading state (D15, added 2026-08-19).** The child's output
+  is decoded in the termination handler's own context — `interpret` is `nonisolated`, with a
+  test driving it from a detached task — so only the finished value crosses to the main actor.
+  The tab holds an explicit loading state between the build finishing and the analysis landing,
+  cleared by an analysis and by a failure alike (a tab that spins forever on an absent
+  toolchain is the failure mode the state introduces). This is what makes Amendment 1's deeper
+  scan affordable, and it satisfies AC-15 ahead of the rest of that amendment.
+- **The analyzer is reached through the author CLI, not a script path.** The plan's
+  deliverable said BuildRunner would invoke the analyzer; resolving
+  `packages/world-index/dist/cli.js` would have worked inside a checkout and nowhere else,
+  leaving a permanently empty World tab for every author who did not clone the monorepo.
+  David approved the platform change 2026-08-19: `@sharpee/devkit` gains
+  `sharpee world-index <story>.ir.json` (one dependency line, one command file), and the IDE
+  resolves it through `ComposeRunner.resolveSharpee` — the same three tiers as build, compose,
+  test, and play, riding the sealed bundled toolchain for free. The analysis moved to
+  `world-index/src/analyze.ts` (`analyzeStoryIR`) so the package's own `cli.js` and the devkit
+  command cannot disagree about what a failure is called. **4 new devkit tests; devkit 167
+  passing, 1 skipped; world-index unchanged at 119 passing, 1 skipped.**
+- **The invocation sits in `BuildController`, not `BuildRunner`.** `BuildRunner` owns ONE
+  child process and its lifecycle; a second, unrelated child spawned from inside it would give
+  it two reasons to change (DEVARCH 7).
+- **AC-9's three failure states are automated, not just exercised by hand**: a missing IR
+  (answered before anything is spawned), a malformed IR (through the REAL analyzer, which is
+  what decides unreadable from malformed), and a process that dies without speaking — the
+  absent-`node` case, unreachable from inside a Node process, asserted at the seam that has to
+  render it. A fourth guard rejects a document whose `schema` this app does not read, naming
+  both versions rather than decoding a newer shape into an older struct.
+- **Real-path tested, not stubbed** (DEVARCH 13a): the suite spawns the real `sharpee` this
+  checkout resolves, against an IR composed by the real compiler into a scratch directory
+  rather than the committed `branch-stories/fernhill/dist/` artifact — the analysis under test
+  is of THIS checkout's compiler output. Two mutations confirmed the suite can fail: renaming
+  the subcommand fails the real-CLI test with `unknown command: world-index-oops` (proof the
+  subprocess really runs), and emitting the unreached-rooms header unconditionally fails the
+  clean-story assertion.
+- **Blocker cleared en route — the docs-tab pre-build phase had been failing for days**,
+  taking the whole app build down before a single Swift file compiled. Two independent cases
+  of website drift: `website/src/lib/nav.ts` gained `import versions from './versions.json'`,
+  which a `data:` URL has no base to resolve (fixed by bundling rather than transforming, so
+  the data URL imports nothing no matter what the website adds next), and `<StatusBarExample>`
+  appeared in the corpus with no handler (`mdx.mjs` now renders it from the same
+  `versions.json` the website component reads, so the two cannot name different releases).
+- **Carried in from Phase 5, and still true**: the Map view's collision resolution and
+  direction-skew detection have no corpus behind them beyond Fernhill's single Study/Folly
+  Hill displacement — every real Chord map is a tree with no cycles — so the skew path ships
+  built and reviewed but never exercised by a real story.
 
 ### Phase 7: Retire `tools/vscode-ext/src/world-explorer.ts` (D9, ADR-131's own consequence)
 - **Tier**: Small
@@ -439,3 +496,115 @@ for any `tools/ide` xcodebuild run (governs Phase 6).
 - **Exit state**: no remaining references to `world-explorer.ts` in `tools/vscode-ext`; the
   extension still builds (or is confirmed dead/unshipped, David's call, before deletion).
 - **Status**: PENDING
+
+### Phase 8: Amendment 1 — response prose, POS re-heading, and mention roles (D10–D15, AC-10..AC-16)
+- **Tier**: Large
+- **Budget**: 400 tool calls
+- **Domain focus**: the Incomplete view's inputs and its meaning — what prose is read, what a
+  phrase resolves to, and what a resolution is worth. Distinct from Phase 3's extractor work,
+  which built the resolution; this decides what to do with it.
+- **Entry state**: Phase 6 complete and confirmed rendering (the roles and the re-heading both
+  surface in the World tab, so there must be a tab to surface them in). ADR-321 Amendment 1
+  accepted. David's approval for the `packages/world-index` changes (platform) as well as the
+  `tools/ide` ones.
+- **Numbered after Phase 7 deliberately, not before it.** Phase 7's deletion is gated on the
+  World tab rendering, which Phase 6 satisfies; holding it behind this phase would leave a
+  superseded VS Code copy alive for the length of a large phase. Run 7 when David confirms the
+  render, and 8 whenever it is scheduled — they share no code.
+- **Deliverable**, in the order each unblocks the next:
+  1. **D10 — every authored phrase is read.** `describedProse` walks the locale table rather
+     than two keys per entity. Response findings attribute by phrase key and firing clause
+     (a response has no owning entity) and report in their own section. The D6b corpus pins
+     are re-measured across both sources and re-recorded — the figures WILL move, and the diff
+     is the point.
+  2. **D14 — the progression chain, then D12 — roles.** `reach.ts` keeps the obstacle it
+     lifts (`blocks.delete` today) in a `lifted` list beside `blocked`; that IS the dependency
+     graph of progress. `roles.ts` then splits every resolved prose edge into tool (the thing
+     has player affordances), progression-info (it is on the chain), or atmosphere-info (the
+     residual). The edge itself already exists inside `classify`, which discards it. **D14
+     first and not optionally**: a static scan of the IR puts `stopcock` in atmosphere-info,
+     because the boiler gate lifts through the `switchable` trait rather than a `change` a
+     scan can follow. Roles ride the wire and rank the candidate list.
+  3. **D11 — IDE-side part-of-speech work, in two steps.** The wire carries each candidate's
+     source sentence; `tools/ide/SharpeeIDE/World/` tags with `NLTagger` (`.lexicalClass`)
+     before rendering. **(a) Re-head, never drop** — a test asserts the count is
+     non-decreasing, because four of Fernhill's nine no-noun phrases are tagger errors on real
+     nouns (`grate`, `shroud`, `well`, `wooden`) and dropping them would delete real gaps.
+     **(b) Drop the article gate**, chunking adjective-noun runs over all prose: measured at
+     9.2ms for Fernhill's ~2,400 words, under 100ms extrapolated to 100 rooms. It yields
+     **+98 resolved edges** (`plunger` → `primer-plunger`, `staging` → `staging-benches`,
+     `smoke` → the cat) against **+445 raw candidates** — only shippable because step 2's
+     roles rank them. Ships with step 2 or not at all.
+  4. **D13 — the unnamed-tool finding.** Last, and only after 1, 2, and 3: it is a claim that
+     no prose names a thing, and today's extractor is article-gated and three-word capped, so
+     the claim is only as good as the recall beneath it. Its sharpest form needs D14 —
+     a *progression-critical* thing no prose names is not a nag, it is a story the player
+     cannot finish by reading.
+- **`adr-review` findings, fixed in the ADR before this phase was scheduled** (2026-08-19,
+  6/13 — BLOCKED on the first pass): the resolution boundary was undischargeable as drafted
+  (the IDE was asked to chunk phrases it had nothing to resolve against), so the analyzer now
+  publishes a `vocabulary` surface — 2.3KB for Fernhill — that the IDE applies but never
+  derives; the schema bumps to `world-index/2` because the Swift decoder refuses an unknown
+  one by design; `lifted`, `MentionEdge`, `ProseSite`, and `roles.ts`'s exports have real
+  signatures in D11a; and AC-16 pins the CLI list as a subset of the IDE's. **Implement
+  against D11a, not against the prose.**
+- **Exit state**: AC-10 through AC-16 pass against the real corpus; the D6b pins are
+  re-recorded with both prose sources and the role split; the IDE's re-headed count is proven
+  greater than or equal to the analyzer's on every corpus story, never less.
+- **Status**: CURRENT (since 2026-08-19) — **step 1 (D10) and D14 are DONE**; D12's roles,
+  D11's part-of-speech work, and D13 remain.
+- **D14 outcome, 2026-08-19**: `obstacleOn` returns a verdict (`{open, requires}` or
+  `{blocked}`) instead of `BlockedEdge | undefined`, so the moment an edge opens the loop
+  records WHAT opened it rather than deleting the evidence. `ReachResult` gains
+  `lifted: LiftedObstacle[]` and `progression: string[]`; `machineDrivers` reads
+  `ir.machines`, resolving each role to the entity it plays (`$furnace` → `boiler`) and
+  collecting the triggers that advance it. Two latent bugs fell out on the way: an exit
+  carrying BOTH a gate and a locked door had its door unexamined (the gate branch returned
+  first), and an obstacle overcome on first sight was never recorded at all, which made the
+  chain depend on walk order. **world-index 127 passing / 1 skipped; IDE suite 517 passing.**
+- **Fernhill's chain, and why the scan was rejected**: the fixed point reports `boiler`,
+  `stopcock`, `primer-plunger`, `mrs-kettle`, `cellar-door`, `tarnished-key`. The static
+  proxy reports the same COUNT and a different SET — it invents `folly-door` and
+  `pantry-door` (neither starts locked) and misses both machine triggers. Mutation-checked:
+  blinding the walk to `ir.machines` drops the two triggers and fails three tests.
+- **Step 1 outcome (D10 + the D11a contracts it needs), 2026-08-19**: new
+  `packages/world-index/src/prose.ts` — `collectProse(ir): ProseSite[]`, one site per
+  authored passage, walking description and first-visit keys by entity and every
+  `phraseKey` reference by a shape-agnostic tree walk that carries the enclosing entity
+  and clause. `incomplete.ts` now iterates passages rather than entities, and all three
+  finding types carry `site: ProseSite` in place of `where`/`whereName`/`line`. The wire
+  bumped to **`world-index/2`** in `document.ts` and `WorldIndexDocument.swift` together;
+  Swift decodes `WorldProseSite` with an unknown-kind fallback and a `label` that falls
+  back owner → firing clause → phrase key, so no finding is ever unlocatable.
+  **world-index 121 passing / 1 skipped; devkit 167 passing / 1 skipped; IDE suite 515
+  passing, 0 failures** (2026-08-19 20:21 local).
+- **The pin is now two pins, and the description half did not move.** Every story reports
+  exactly its pre-amendment description figures — Fernhill 20/9/58, The Alderman 4/0/36,
+  Ides of March 7/0/30 — so reading response prose is a strict superset, not a
+  re-reading. What it adds: Fernhill +3/+5/+78 (124 passages, 60 of them response), The
+  Alderman +1/+0/+89 (82 passages, 62 response), **Ides of March +10/+1/+184** (113
+  passages, **94 response**). That last story is the case D10's own-section rule exists
+  for: its candidate list is seven times its description list, and merged into one list
+  the description findings would be unfindable.
+- **Two contract corrections found by implementing against the real IR**, both folded back
+  into D11a: `ProseSite.owner` and `firedBy` are **independently optional** — a response
+  usually DOES have an owner (`folly-jammed` hangs off `folly-door`'s `on opening`) and 22
+  of Fernhill's passages are story-level with neither — and the passage text field is
+  `text`, not `sentence`, because a site is a whole passage and the part-of-speech pass
+  wants the full context anyway.
+- **Measured going in** (Fernhill, 2026-08-19, recorded in Amendment 1 rather than re-derived
+  here): 124 phrases of which 60 are unread; +85 no-object and +2 ambiguous from reading them;
+  172 no-object candidates of which 21 are re-headable and 9 have no noun (about four of those
+  nine being tagger errors); the rejected two-way rule calls 41 of 65 entities tools and 48 of
+  71 edges info, against a progression chain of **six** entities and **five** edges — the
+  correction that produced D12's three-way split; 11 things no prose names.
+- **Duration is not a constraint here; placement is** (D15, David 2026-08-19). The derivation
+  runs off the main actor behind a loading state — **already built and tested in Phase 6**, so
+  this phase inherits it rather than adding it. Do not move the work onto a keystroke, a save,
+  or the compose loop behind the Index tab: there a background thread does not help, because
+  the author is waiting on the result.
+- **The one divergence to keep visible**: after D11 the IDE and the CLI report different
+  Incomplete counts for the same story. Bounded to the recall direction and acceptable only
+  because D6 defines Incomplete as a candidate list — Reach and Map must never acquire an
+  IDE-side derivation, and a test should assert the headless list stays a subset rather than
+  drifting into a different reading.
