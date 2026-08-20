@@ -32,6 +32,7 @@ import { layoutMap, type Cell, type DirectionSkew, type ResolvedCollision } from
 import { deriveReach, type ReachResult } from './reach.js';
 import { holderIndex, roomOf } from './containment.js';
 import { roleTable, type MentionRole } from './roles.js';
+import { deriveUnnamedTools, type UnnamedTool } from './unnamed.js';
 import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from './vocabulary.js';
 
 /**
@@ -56,8 +57,14 @@ import { buildVocabularyIndex, publishVocabulary, type VocabularySurface } from 
  * `matched` word that reached their target; and `declarations` names every
  * entity and where it was declared. A field REPLACED rather than added is what
  * forces this bump — a v2 reader would find no `line` at all.
+ *
+ * `world-index/4` (D13 — a tool no prose ever names): `unnamedTools` joins the
+ * top level. An addition rather than a replacement, and bumped anyway: the field
+ * is required, and a v3 analyzer paired with a v4 reader would answer a question
+ * about unwinnability with silence. Silence and *nothing is wrong* are the same
+ * bytes, which is the one place this wire cannot afford to guess.
  */
-export const WORLD_INDEX_SCHEMA = 'world-index/3';
+export const WORLD_INDEX_SCHEMA = 'world-index/4';
 
 /** One room's placement on the compass grid. */
 export interface PlacedRoom {
@@ -156,6 +163,15 @@ export interface WorldIndexDocument {
    * the second half of "point at the phrase AND at the thing it means".
    */
   declarations: Record<string, EntityDeclaration>;
+  /**
+   * Things the mechanics require that no prose ever names (D13).
+   *
+   * Reach-adjacent rather than a Reach finding: it is derived from the prose the
+   * Incomplete view reads and the roles D12 publishes, and it is deliberately NOT
+   * counted in `reach.findingCount`, because a story can be clean by AC-1 and
+   * still leave a crowbar the player has no way to hear about.
+   */
+  unnamedTools: UnnamedTool[];
 }
 
 /** What an entity is called, where it was declared, and where it is. */
@@ -244,8 +260,10 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexD
   const map = layoutMap(ir);
   const reach = deriveReach(ir);
   // Collected once: the passages are the Incomplete view's input, the prose surface
-  // the IDE chunks, and the corpus the per-story filter verdicts are read from.
+  // the IDE chunks, the corpus the per-story filter verdicts are read from, and the
+  // text D13 searches directly before claiming nothing names a thing.
   const prose = collectProse(ir);
+  const roles = roleTable(ir, reach);
   return {
     schema: WORLD_INDEX_SCHEMA,
     analyzerVersion,
@@ -265,11 +283,12 @@ export function buildDocument(ir: StoryIR, analyzerVersion: string): WorldIndexD
     },
     reach,
     incomplete: deriveIncomplete(ir, reach),
-    roles: Object.fromEntries(roleTable(ir, reach)),
+    roles: Object.fromEntries(roles),
     vocabulary: publishVocabulary(buildVocabularyIndex(ir)),
     prose,
     filters: publishFilters(prose),
     declarations: declarationsOf(ir),
+    unnamedTools: deriveUnnamedTools(ir, roles, prose),
   };
 }
 

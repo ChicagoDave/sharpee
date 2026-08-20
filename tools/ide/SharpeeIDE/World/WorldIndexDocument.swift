@@ -1,6 +1,6 @@
 // WorldIndexDocument.swift
 // The Swift half of the World Index wire contract (ADR-321, the IDE↔analyzer
-// boundary): the `world-index/2` JSON document `@sharpee/world-index`'s CLI
+// boundary): the `world-index/4` JSON document `@sharpee/world-index`'s CLI
 // writes to stdout, decoded into the shapes the World tab renders.
 //
 // This file MIRRORS `packages/world-index/src/document.ts` and its imports.
@@ -22,7 +22,7 @@ import Foundation
 /// document's shape changes; a mismatch is a decode failure, never a partial
 /// render (a newer analyzer's document read as an older one is how a field
 /// silently means something else).
-let worldIndexSchema = "world-index/3"
+let worldIndexSchema = "world-index/4"
 
 /// A region of `.story` source. Lines and columns are 1-based.
 struct WorldSourceSpan: Decodable, Equatable {
@@ -683,6 +683,25 @@ struct WorldStoryHeader: Decodable, Equatable {
 }
 
 /// A successful analysis — all three views of one story.
+/// A thing the mechanics require, that nothing in the story announces (D13).
+///
+/// The analyzer confirms the absence by direct search of every passage the thing
+/// does not itself own, and skips what the standard room listing announces without
+/// being asked — so a row here means the player has no way to learn this exists,
+/// not merely that one extractor missed a phrase (AC-13).
+struct WorldUnnamedTool: Decodable, Equatable {
+    /// Entity id.
+    let id: String
+    /// The author's own name for it.
+    let name: String
+    /// `progressionInfo` is the sharp case: a thing on the chain nobody hears about.
+    let role: WorldMentionRole
+    /// The room it sits in, when it sits in one.
+    let room: String?
+    /// Every word a player could have typed for it, none of which any other passage uses.
+    let vocabulary: [String]
+}
+
 struct WorldIndexDocument: Decodable, Equatable {
     /// The analyzer package's version, for diagnostics only.
     let analyzerVersion: String
@@ -704,6 +723,12 @@ struct WorldIndexDocument: Decodable, Equatable {
     let filters: WorldExtractorFilters
     /// Every declared entity: its authored name, and where it was declared (Amendment 2).
     let declarations: [String: WorldEntityDeclaration]
+    /// Things the mechanics require that nothing in the story announces (D13).
+    ///
+    /// Reach-adjacent rather than a Reach finding, and uncounted by
+    /// `reach.findingCount`: a story can be perfectly reachable and still leave a
+    /// thing the player is never told about.
+    let unnamedTools: [WorldUnnamedTool]
 
     /// What a phrase found in this passage is worth, for ranking.
     ///

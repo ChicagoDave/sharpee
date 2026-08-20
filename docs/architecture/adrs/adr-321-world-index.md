@@ -9,6 +9,15 @@ captured from the Reach fixed point, the unnamed-tool finding, and the backgroun
 placement that makes a deeper scan affordable — raised by David during Phase 6 and measured on
 Fernhill before being written. D6b's deferral of a
 part-of-speech pass is superseded by D11; every other original decision stands.
+**Amended**: Amendment 2 (2026-08-20, session `b983d6`) adds D16–D20 (AC-17..AC-21) — hyphens join
+and possessives end a run, a passage publishes its whole span and a finding the word that matched,
+every entity publishes its name and declaration site, the World tab loses its badge, and a
+manner or an act stops counting as a missing thing. **Wire bumped to `world-index/3`**:
+`prose[].span` REPLACES `line`, so a v2 reader finds no `line` at all.
+**Amended**: Amendment 3 (2026-08-20, session `b983d6`) adds D21–D26 (AC-22..AC-27) — role bands
+become their own tab strip, a phrase can be dismissed story-wide, each candidate becomes a card
+that carries its own fix, a new declaration lands beside what named it, a fixed card marks itself
+done rather than ignored, and `Undescribed` joins as the fourth Incomplete class.
 **Date**: 2026-08-19 (session 317706)
 **Supersedes in part**: [ADR-131](adr-131-automated-world-explorer.md) — its BFS walk is
 demoted from the centre of the feature to an optional later stage. ADR-131 is not
@@ -617,6 +626,38 @@ that count is an **upper bound** until recall is fixed. Shipping D13 on today's 
 would report authored things as unnamed, which is the class of false finding D4's polarity
 guard exists to prevent.
 
+**Implemented and measured 2026-08-20, and the figure above did not survive its own guard.**
+The 11 are the extractor's reading alone — the very reading the paragraph above forbids
+shipping. Three readings were measured against all three corpus stories before one was
+chosen:
+
+| Reading | Fernhill | Alderman | Ides |
+|---|---|---|---|
+| No edge resolves to it (the figure above, re-measured) | 16 | 7 | 3 |
+| + absent from a direct search of ALL prose (AC-13 as drafted) | 0 | 0 | 0 |
+| + the thing's own passages do not count, and the room listing is not prose | **1** | 0 | 0 |
+
+The first is what AC-13 exists to forbid: every one of Fernhill's 16 is plainly named in the
+prose — `crowbar`, `deed box`, `kipper tin` — and only the extractor cannot see them. The
+second is vacuous for the opposite reason, and the reason is worth writing down: **a thing's
+own description names it**, and almost every thing has one, so a search that counts it clears
+everything. A description reachable only by someone who can already refer to the thing
+announces nothing, so the search skips the passages the entity itself owns.
+
+That leaves four in Fernhill, and three of them — `crowbar`, `furnace-poker`, `tobias` — lie
+loose in a room, where the standard `looking` action lists them whether or not a word of
+prose mentions them. **Prose is not the only thing that announces a thing, and the finding
+had to learn the difference**: a non-scenery thing directly in a room is announced by the
+platform, and reporting it would report the platform's own behaviour as an authoring hole.
+Doors are deliberately not covered by that guard — a door is reached through the exit that
+names it, never listed as room contents.
+
+What survives both guards is Fernhill's `doormat`: scenery, so the room listing passes over
+it, and named by no passage but its own. Nothing in the story tells the player it is there,
+which is precisely the finding D13 asked for. One row in three stories is the shape this
+finding should have — the same posture as D26's zero, where a class that fires often on a
+clean story is one nobody trusts when it fires on a dirty one.
+
 **D14 — The progression chain comes from the Reach fixed point recording its own successes,
 never from a static scan of the IR.** D4's loop already computes it and discards it:
 
@@ -783,7 +824,8 @@ executed against `fernhill.ir.json` during design and produced exactly the outpu
   rooms; D4's full gate analysis is kept if timings stay within an authoring-speed budget, and
   the documented fallback is taken if not. *(PREMISE-DEPENDENT — the budget is set when the
   first timings exist; no number is asserted here.)*
-- *(AC-10 through AC-13 are Amendment 1's, and live in its own Acceptance subsection above.)*
+- *(AC-10 through AC-16 are Amendment 1's, AC-17 through AC-21 Amendment 2's, and AC-22
+  through AC-27 Amendment 3's; each lives in its own amendment's Acceptance subsection.)*
 - **AC-9 — failure states render.** Missing IR, malformed IR, and absent `node` each produce
   the explanatory empty state rather than a crash or a silent blank tab. *(SELF-VERIFYING.)*
 
@@ -829,13 +871,34 @@ executed against `fernhill.ir.json` during design and produced exactly the outpu
 
 ## Session
 
+Session `317706` (2026-08-19, branch `main`). Originated in a review of open ADRs, which
+surfaced ADR-131 as unbuilt; David reframed its intent, then narrowed the surface to Map /
+Reach / Incomplete. The prototype and surface study were built and corrected against
+source across the session — four classes of false finding were caught and fixed before
+anything was reported as real (literal exit rows, `lockable` read as locked, trait states
+read as author states, `states[0]` not treated as initial).
+
+All six open questions were resolved by interview in the same session, and `adr-review`
+returned NEEDS WORK (9/18) on the result — the Implementation section left stale by the
+folds, no acceptance criteria, unowned supersession, stale consequences, and a Chord
+language change carried inside an IDE ADR. All five findings were addressed before the
+acceptance offer; the language change was split out rather than defined here.
+
+Amendment 1 (2026-08-19, session `4db9d0`) was raised by David during Phase 6 and measured
+on Fernhill before it was written. Amendments 2 and 3 (2026-08-20, session `b983d6` on branch
+`feat/adr-321-world-index`, committed as `60756a59`) were raised the same way and for the same
+reason: David used the shipped surface on his own story, and every decision below started
+as a defect he hit rather than one this ADR predicted.
+
+---
+
 ## Amendment 2 — say where, say which, say why (2026-08-20)
 
 Raised by David reading the shipped Incomplete list against Ides of March: *"This is not
 pointing to the right place and the message isn't even correct."* Three separate defects
 under one complaint, each verified against the story source before anything was changed.
 
-**D15 — A hyphen joins, and a possessive names its owner.** The extractor turned every
+**D16 — A hyphen joins, and a possessive names its owner.** The extractor turned every
 non-letter into a boundary, so `the tiring-house door` was unreadable to it — while the
 IDE's part-of-speech pass, tokenising with `.omitPunctuation`, split the compound and
 reported a phrase the author never wrote (*"tiring house door" does not answer to "tiring",
@@ -847,7 +910,7 @@ added missing-word findings are compound-adjective phrases the hyphen boundary u
 shred (*cast-iron estate boiler*, *long-handled primer plunger*, *wooden-handled tin
 opener*) and the seven lost no-object rows are their fragments.
 
-**D16 — A passage publishes its whole span, and a finding says which word reached its
+**D17 — A passage publishes its whole span, and a finding says which word reached its
 target.** `ProseSite` carried only the passage's first line, so every finding in a
 five-line description navigated to the same place; `stage.description` runs 34–38 and holds
 *tiring-house door* on 37. The wire now carries the whole span and the IDE resolves the
@@ -856,20 +919,20 @@ the passage, falling back to its first line. Findings also carry `matched`, the 
 reached the target, because *"house's first play" → play-book* is an assertion the reader
 cannot check until the row says the head word `play` is what did it.
 
-**D17 — Every entity publishes its name, its declaration span and its room.** A finding
+**D18 — Every entity publishes its name, its declaration span and its room.** A finding
 named `oil-lamp`, which is neither what the author wrote nor anywhere they can go. The new
 `declarations` table carries all three, which is what lets a row say *the oil lamp*, take
 the reader to the `create` that made it, and — under Amendment 3 — put a new thing where it
 belongs. **Wire bumped to `world-index/3`**: `prose[].span` REPLACES `line`, so a v2 reader
 finds no `line` at all.
 
-**D18 — The candidate list does not badge the tab.** The tab strip badges defect counts;
+**D19 — The candidate list does not badge the tab.** The tab strip badges defect counts;
 World's number is the size of a heuristic candidate list, most of it scenery the author
 meant to leave as words. Badging it dressed *"631 things to read"* as *"631 problems"*
 (David's ruling). The per-class counts stay inside the tab, where the reader can see what
 they count.
 
-**D19 — Naming a manner or an act is not naming a thing.** `No object` is defined by a
+**D20 — Naming a manner or an act is not naming a thing.** `No object` is defined by a
 negative — *nothing answers to this* — so it necessarily catches every noun in the prose
 that is not an object, which is most of English: Ides of March raised 611. Three tests were
 considered (David's framing: the senses test, the dependency test, the nominalized-verb
@@ -902,27 +965,62 @@ under 1.5KB, against ~180KB for the dictionary).
 Measured: Ides of March no-object 207 → 181, Fernhill 127 → 115, suppressions published as
 `notThings` rather than dropped silently.
 
+### Acceptance for this amendment
+
+- **AC-17 — a compound reads as one word, and a possessive names nobody.** The extractor
+  keeps `tiring-house door` whole and stops a run at `house's` rather than heading a phrase
+  on it, and the IDE's part-of-speech pass makes the same reading, so a re-headed candidate
+  cannot re-break a compound the analyzer joined. The corpus figures move as a recorded
+  measurement (Fernhill 20/9/58 → 27/10/51), re-pinned rather than relaxed.
+  *(SELF-VERIFYING.)*
+- **AC-18 — a finding lands on the phrase, not on the passage.** `prose[].span` carries the
+  whole passage and the IDE resolves the phrase inside it against the source text: matched
+  across a line break, never outside the passage, never inside a longer word, falling back
+  to the passage's first line when the phrase cannot be found. The real case is asserted
+  against `ides-of-march.story` itself, not a fixture. Every finding carries `matched`, and
+  the row says which word reached the target. *(SELF-VERIFYING.)*
+- **AC-19 — every finding's entity is in the declarations table.** Not merely most of them:
+  the test asserts the property over the whole missing-word list, because a row that cannot
+  say the author's name for a thing or take the reader to its `create` is the defect this
+  decision exists to close. `oil-lamp` resolves to the name *oil lamp* and a declaration
+  line greater than zero. *(SELF-VERIFYING.)*
+- **AC-20 — the counts inside the tab agree with each other.** Each Incomplete section's
+  count matches the class strip's, which is the reading D19 keeps — one number, inside the
+  tab, for a candidate list. The badge's absence is a property of the tab strip and has no
+  test of its own. *(SELF-VERIFYING for the counts; the badge removal is observed, not
+  pinned.)*
+- **AC-21 — the rule suppresses manners and never suppresses things.** A manner or an act
+  stops being reported; a conferrable status, a written prop, a coin, a physical noun whose
+  ending lies (`harness`, `witness`), and a physical thing the author simply has not
+  implemented all survive it; a word no dictionary lists still gets an answer from
+  morphology; and no phrase that resolves to an entity is ever suppressed. Only this
+  story's verdicts cross the wire, and the IDE's chunker applies the published rule rather
+  than a second copy of it. Measured: Ides of March no-object 207 → 181, Fernhill 127 →
+  115. *(SELF-VERIFYING.)*
+
+---
+
 ## Amendment 3 — the list acts (2026-08-20)
 
 Raised by David after using the amended surface: the roles were invisible, the volume was
 unrankable, and a row that says *the door does not answer to "stout"* and leaves the author
 to go and type it is a diagnosis with no treatment.
 
-**D20 — The role bands are tabs, and No object ranks by recurrence.** D12's roles shipped as
+**D21 — The role bands are tabs, and No object ranks by recurrence.** D12's roles shipped as
 a sort order, which left them invisible: a reader scrolling six hundred candidates cannot
 see where the puzzle-critical ones stopped. Story / Tools / Atmosphere are now a strip of
 their own with their own counts. Within a band, the one class with no target to rank
 against ranks by how often the prose says the phrase — a phrase named four times is a
 better candidate than one named once, and the row says so.
 
-**D21 — An author can dismiss a phrase, and the dismissal lives with the story.** Ignoring
+**D22 — An author can dismiss a phrase, and the dismissal lives with the story.** Ignoring
 is per phrase and story-wide (dismissing *the word* means the phrase, not its fifth row),
 written to `<story>.world-ignore.json` beside the `.story` file: diffable, committed, and
 true on the next machine. `SessionState` is window geometry; this is authored content. The
 list is filtered All / Remaining / Ignored, defaulting to Remaining, and an empty list
 deletes its file rather than leaving an artifact in the author's repository.
 
-**D22 — Each candidate is a card that carries its own fix.** A button per word the prose
+**D23 — Each candidate is a card that carries its own fix.** A button per word the prose
 used (`+ stout`, `+ oak`), `Define as scenery` for a phrase nothing answers to, `Write the
 description` for a thing that says nothing, plus navigation and Ignore. Three rules hold
 across all of them:
@@ -940,7 +1038,7 @@ across all of them:
   during review. Blocks are found by their `create` line and ended by where indentation
   stops.
 
-**D23 — A new thing goes next to what named it.** Not at the end of the file: a story is
+**D24 — A new thing goes next to what named it.** Not at the end of the file: a story is
 read in the order it is written, and appending scatters a room's furniture across the file
 in the order the author happened to accept offers. The host need not be a room — *the pen*
 is named in a poet's topic list, so it belongs beside the poet, in the room the poet is in.
@@ -948,7 +1046,7 @@ Those are two different questions and the placement answers both from the same h
 room for the `in the …` line, the host for the file position. A passage owned by nothing
 has neither, and only then does the declaration go to the end.
 
-**D24 — After every tap, the card asks whether it is finished.** The analysis keeps
+**D25 — After every tap, the card asks whether it is finished.** The analysis keeps
 reporting a finding the author has just fixed until the next build, so the card answers for
 itself in between: each accepted word leaves it, and the last one marks it **done** —
 fixed, not ignored. The distinction is the point: ignoring is what an author does to a
@@ -957,7 +1055,7 @@ is a decision that outlives the session. Accepting `Define as scenery` does not 
 card either — it becomes *"declared, and says nothing"*, because the author is already here
 with the file open.
 
-**D25 — Undescribed is the fourth class, and it is not a build error.** A thing with no
+**D26 — Undescribed is the fourth class, and it is not a build error.** A thing with no
 description answers *"You see nothing special about the bankside sign"* — a fine answer for
 a thing that exists to be mentioned, and a hole for everything else. It compiles and plays,
 so failing a build over it would fail builds over an authoring judgement, and a warning
@@ -969,15 +1067,32 @@ and the player's description is the story's business. Both corpus stories report
 which is the pin that matters: a class that fires on a clean story is one nobody trusts
 when it fires on a dirty one.
 
-Session `317706` (2026-08-19, branch `main`). Originated in a review of open ADRs, which
-surfaced ADR-131 as unbuilt; David reframed its intent, then narrowed the surface to Map /
-Reach / Incomplete. The prototype and surface study were built and corrected against
-source across the session — four classes of false finding were caught and fixed before
-anything was reported as real (literal exit rows, `lockable` read as locked, trait states
-read as author states, `states[0]` not treated as initial).
+### Acceptance for this amendment
 
-All six open questions were resolved by interview in the same session, and `adr-review`
-returned NEEDS WORK (9/18) on the result — the Implementation section left stale by the
-folds, no acceptance criteria, unowned supersession, stale consequences, and a Chord
-language change carried inside an IDE ADR. All five findings were addressed before the
-acceptance offer; the language change was split out rather than defined here.
+- **AC-22 — the bands are visible and the unrankable class ranks.** Rows band by role into
+  their own strip with their own counts, and within No object a phrase the prose says four
+  times sorts above one said once. *(SELF-VERIFYING.)*
+- **AC-23 — a dismissal survives the window and can be taken back.** Ignoring a phrase
+  filters it, persists to `<story>.world-ignore.json`, is still true when the store is
+  reopened from disk, and un-ignoring both restores the row and deletes the file rather
+  than leaving an empty artifact in the author's repository. *(SELF-VERIFYING.)*
+- **AC-24 — the card offers and the window applies.** An accepted word extends an existing
+  `aka` line or opens one under the kind line, a word the thing already answers to is
+  refused, and opening a description writes a blank line and an indent and no prose. Every
+  edit is computed against the editor's live buffer: a second offer accepted into an
+  unsaved buffer lands correctly, which is the bug that forced the decision. *(SELF-
+  VERIFYING; this is D23's regression.)*
+- **AC-25 — a declaration lands beside its host, and a block ends where indentation
+  stops.** Scenery declared from a room's prose lands after that room, scenery declared
+  from a speaker's topic lands beside the speaker in the speaker's room, a host with no
+  room still anchors the block, and a host with no room omits the `in the …` line rather
+  than inventing a placement. *(SELF-VERIFYING.)*
+- **AC-26 — done is not ignored.** Accepting the last word completes the card rather than
+  dismissing it, defining scenery turns the card into a description card instead of
+  removing it, an undescribed card offers only the description, and every card offers its
+  fixes before its dismissal. *(SELF-VERIFYING; the distinction is the decision — a test
+  that accepted either outcome would pin nothing.)*
+- **AC-27 — the fourth class fires on nothing in a finished story.** `Undescribed` is
+  derived from the IR with regions and the player excluded, and both corpus stories report
+  zero. That zero is the pin that matters: a class that fires on a clean story is one
+  nobody trusts when it fires on a dirty one. *(SELF-VERIFYING.)*

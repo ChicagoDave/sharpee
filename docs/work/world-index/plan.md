@@ -572,25 +572,30 @@ costs one command per field.
 - **Exit state**: AC-10 through AC-16 pass against the real corpus; the D6b pins are
   re-recorded with both prose sources and the role split; the IDE's re-headed count is proven
   greater than or equal to the analyzer's on every corpus story, never less.
-- **Status**: CURRENT (since 2026-08-19) — **step 1 (D10), D14, D12, and D11 are DONE**; D13
-  remains.
+- **Status**: DONE (2026-08-20, session f7938b) — step 1 (D10), D14, D12, D11 and D13 are all
+  complete. D13 shipped as `packages/world-index/src/unnamed.ts` plus a Reach-view section,
+  wire bumped to `world-index/4`. **Its corpus figure is not the ADR's**: the drafted "Fernhill
+  has 11" is the extractor-only reading AC-13 forbids, and the shipped rule reports one thing
+  (`doormat`) across all three stories — the measurement and both guards are written into the
+  ADR's D13.
 
-### Phase 9: Amendments 2 and 3 — say where/which/why, then let the list act (D15–D25)
+### Phase 9: Amendments 2 and 3 — say where/which/why, then let the list act (D16–D26)
 - **Tier**: Large
 - **Not planned, driven by review.** Every item below came from David using the shipped World
   tab on Ides of March and reporting what it got wrong; the phase is recorded after the fact
   so the plan matches the ADR (Amendment 2 and Amendment 3 in `adr-321-world-index.md`).
-- **Outcome (2026-08-20, session b983d6)**: DONE, uncommitted at time of writing.
+- **Outcome (2026-08-20, session b983d6)**: DONE, committed as `60756a59` (the amendments
+  were renumbered to D16–D26 in session f7938b — Amendment 1 already owned D15).
   - Render: row height derived from the panel font (`FontPreference.panelRowHeight`, three
     tables); one-line rows via a truncating paragraph style — the visible smear was WRAPPING,
     not height, and the fixture agreed with the code while the real artifact disagreed with
-    both. The World tab badge is removed (D18).
-  - Analyzer: hyphens join, possessives end a run (D15); wire `world-index/3` — passage spans,
-    `matched`, `declarations` (D16, D17); the not-a-thing rule with David's 12,444-lemma
-    WordNet lexicon (D19).
+    both. The World tab badge is removed (D19).
+  - Analyzer: hyphens join, possessives end a run (D16); wire `world-index/3` — passage spans,
+    `matched`, `declarations` (D17, D18); the not-a-thing rule with David's 12,444-lemma
+    WordNet lexicon (D20).
   - IDE: phrase-accurate navigation (`WorldPhraseLocator`), role bands as tabs, recurrence
     ranking, per-story ignore file, candidate cards with editing offers, completion tracking,
-    and the `Undescribed` fourth class (D20–D25).
+    and the `Undescribed` fourth class (D21–D26).
 - **Evidence**: world-index 159 passing / 1 skipped; devkit 171 passing / 1 skipped; IDE 559
   passing / 0 failures (single clean `xcodebuild test`, logged). Mutation-checked: restoring
   `rowSizeStyle = .small` fails two row-height tests; removing the wrap guards fails the

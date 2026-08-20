@@ -223,12 +223,15 @@ final class WorldIndexTests: XCTestCase {
     /// A document from a schema this app does not read is REPORTED, never decoded
     /// into the shape it happens to resemble.
     func testUnknownSchemaIsReportedRatherThanDecoded() throws {
-        let future = Data(#"{"schema":"world-index/4","analyzerVersion":"9.0.0","ok":true}"#.utf8)
+        // A schema NEWER than the one this app decodes. Bumped each time the wire
+        // bumps: the fixture's whole job is to name a version that does not exist
+        // yet, so a stale sentinel silently becomes a decode of the current shape.
+        let future = Data(#"{"schema":"world-index/5","analyzerVersion":"9.0.0","ok":true}"#.utf8)
         let response = try WorldIndexResponse.decode(future)
 
         let failure = try XCTUnwrap(response.failure, "a newer schema must not decode as an analysis")
         XCTAssertEqual(failure.cause, .unavailable)
-        XCTAssertTrue(failure.message.contains("world-index/4") && failure.message.contains(worldIndexSchema),
+        XCTAssertTrue(failure.message.contains("world-index/5") && failure.message.contains(worldIndexSchema),
                       "both versions are named: \(failure.message)")
     }
 
@@ -245,7 +248,7 @@ final class WorldIndexTests: XCTestCase {
         let document = try fernhillAnalysis()
 
         XCTAssertEqual(WorldReachView.rows(for: document.reach), [],
-                       "a clean story lists no findings")
+                       "a clean story lists no REACH findings")
         let headline = WorldReachView.headline(for: document.reach)
         XCTAssertTrue(headline.contains("13 rooms"), headline)
         XCTAssertTrue(headline.contains("nothing unreachable"), headline)
@@ -266,6 +269,50 @@ final class WorldIndexTests: XCTestCase {
         XCTAssertTrue(rows[0].isHeader)
         XCTAssertEqual(rows[1].title, "cellar")
         XCTAssertTrue(WorldReachView.headline(for: reach).contains("1 finding"))
+    }
+
+    /// D13, on the real story: Fernhill's doormat is scenery, so the room listing
+    /// passes over it, and no passage but its own says `doormat` or `mat`. It is the
+    /// one thing in the whole corpus that survives both of AC-13's guards, and it
+    /// arrives WITHOUT disturbing AC-1 — reachability and being told about a thing
+    /// are two different claims.
+    func testReachViewNamesTheOneThingFernhillNeverMentions() throws {
+        let document = try fernhillAnalysis()
+
+        XCTAssertEqual(document.unnamedTools.map(\.id), ["doormat"],
+                       "the analyzer's own answer, before any rendering")
+        XCTAssertEqual(document.reach.findingCount, 0,
+                       "D13 is Reach-adjacent: it must not make a clean story look unreachable")
+
+        let rows = WorldReachView.rows(for: document.reach, unnamedTools: document.unnamedTools)
+        XCTAssertEqual(rows.count, 2, "one header, one finding")
+        XCTAssertTrue(rows[0].isHeader)
+        XCTAssertTrue(rows[0].title.contains("Nothing tells the player"), rows[0].title)
+        XCTAssertEqual(rows[1].title, "doormat")
+        XCTAssertEqual(rows[1].detail, "in fountain-court")
+
+        let headline = WorldReachView.headline(for: document.reach, unnamedTools: document.unnamedTools)
+        XCTAssertTrue(headline.contains("nothing unreachable"), headline)
+        XCTAssertTrue(headline.contains("1 thing nothing mentions"), headline)
+    }
+
+    /// The sharp case says what it costs. A thing the walk had to use, that nothing
+    /// announces, is not a nag — the row has to read as the different thing it is.
+    func testAThingOnTheChainNobodyMentionsSaysWhatItCosts() {
+        let reach = WorldReach(
+            start: "hall",
+            rooms: WorldRoomReach(total: 1, reachable: ["hall"], unreached: []),
+            blocked: [], stranded: [], brokenExits: [], nothingToRead: [],
+            findingCount: 0, lifted: [], progression: ["brass-key"])
+        let unnamed = [WorldUnnamedTool(id: "brass-key", name: "brass key",
+                                        role: .progressionInfo, room: "hall",
+                                        vocabulary: ["brass", "key"])]
+
+        let rows = WorldReachView.rows(for: reach, unnamedTools: unnamed)
+        XCTAssertEqual(rows.count, 2)
+        XCTAssertEqual(rows[1].title, "brass key")
+        XCTAssertTrue(rows[1].detail?.contains("cannot be finished without it") == true,
+                      rows[1].detail ?? "no detail")
     }
 
     /// Each Incomplete class lists exactly what the merged reading holds for it.

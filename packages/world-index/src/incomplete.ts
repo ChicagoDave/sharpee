@@ -305,6 +305,31 @@ function isPossessive(word: string): boolean {
 }
 
 /**
+ * Split a passage into the words this package treats as words.
+ *
+ * One reading, shared: the phrase extractor runs over these tokens, and D13's
+ * unnamed-tool check asks whether a thing's own vocabulary appears among them.
+ * Two tokenizers would let a thing be named for one question and unnamed for the
+ * other — which is the drift Amendment 2 (D16) had just finished removing between
+ * this package and the IDE's part-of-speech pass.
+ *
+ * @param text the passage, any casing
+ * @returns its words, lowercased, hyphenated compounds kept whole, punctuation
+ *   replaced by the `|` sentinel that ends a run
+ */
+export function tokenizeProse(text: string): string[] {
+  return text
+    .toLowerCase()
+    // A hyphen joins, it does not break: the author writes *the tiring-house door*
+    // and the thing's own name IS `tiring-house door`. Turning the hyphen into a
+    // boundary hid every compound-named object from this pass and left the IDE's
+    // part-of-speech reading to report a phrase nobody wrote.
+    .replace(/[^a-z'\-\s]/g, ' | ')
+    .split(/\s+/)
+    .filter((token) => token.length > 0 && token !== '-');
+}
+
+/**
  * Pull the noun phrases out of a passage of authored prose.
  *
  * Each run starts at an article and stops at the first boundary word, adverb,
@@ -315,15 +340,7 @@ function isPossessive(word: string): boolean {
  * @returns each distinct phrase, in order of appearance
  */
 export function extractNounPhrases(text: string): NounPhrase[] {
-  const tokens = text
-    .toLowerCase()
-    // A hyphen joins, it does not break: the author writes *the tiring-house door*
-    // and the thing's own name IS `tiring-house door`. Turning the hyphen into a
-    // boundary hid every compound-named object from this pass and left the IDE's
-    // part-of-speech reading to report a phrase nobody wrote.
-    .replace(/[^a-z'\-\s]/g, ' | ')
-    .split(/\s+/)
-    .filter((token) => token.length > 0 && token !== '-');
+  const tokens = tokenizeProse(text);
 
   const found: NounPhrase[] = [];
   const seen = new Set<string>();

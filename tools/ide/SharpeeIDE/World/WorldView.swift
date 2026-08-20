@@ -141,7 +141,7 @@ final class WorldView: NSView {
             showEmpty(reason: Self.explanation(for: failure))
         case .ok(let document):
             mapView.show(map: document.map, unreached: Set(document.reach.rooms.unreached))
-            reachView.show(document.reach)
+            reachView.show(document.reach, unnamedTools: document.unnamedTools)
             // Incomplete renders BEFORE the counts are read: its merged reading is
             // what the strip and the badge must both name, or the tab says one
             // number and the list under it shows another.
