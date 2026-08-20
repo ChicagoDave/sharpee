@@ -65,6 +65,27 @@ before implementation (governs Phases 1–5); no CI gates for Sharpee (AC-6/AC-8
 locally and via `repokit`, never wired into a CI workflow); `-derivedDataPath ./DerivedData`
 for any `tools/ide` xcodebuild run (governs Phase 6).
 
+## Phase-entry checklist
+
+**Before drafting the ADR paragraph a phase implements, read the exact IR shape for every
+field that phase depends on.** Not the ADR, not the prototype, not a prior phase's summary —
+the compiled `.ir.json` of a real story, or the `@sharpee/chord` type that produces it.
+
+This is here because `pattern-recurrence-detector` found the same defect in **three of this
+plan's sessions** (0129, 0329, 1745, all 2026-08-19), and each one's own Recurrence Check
+answered NO — they compared against a single matching prior instance rather than the shared
+root cause. Every instance is a design assumption written from *reading* and found wrong only
+once code ran against a real story: mirrored exit rows and `lockable`≠locked (0129); gates
+being directional, not undirected, which cost `undirectedExits` (0329); `ProseSite`'s
+attribution fields, the `text`/`sentence` name, and D14's mechanism being a top-level
+`define machine` rather than the `switchable` trait (1745).
+
+The package already treats this as house style for TESTS — compile from source, never commit a
+`.ir.json` snapshot, spawn the real binary (`tests/corpus.ts`, `tests/cli.test.ts`) — and
+Phase 5 named it "measure-then-derive" after David rejected a hand-tuned generator. The gap
+was never the tests; it was that the *prose* got written first. The fix is procedural and
+costs one command per field.
+
 ## Phases
 
 ### Phase 1: `packages/world-index` scaffold, IR loading, and loader-semantics module (D2, D3, AC-6)
