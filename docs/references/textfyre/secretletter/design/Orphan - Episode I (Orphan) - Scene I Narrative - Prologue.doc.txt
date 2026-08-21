@@ -1,0 +1,197 @@
+Scene I - Prologue
+
+Begins:	Soldiers are chasing you for no apparent reason.
+Ends:		When they put you in the jail cell OR you reach the rooftops
+Locations:	Grubber’s Market, Commerce Street
+Overview:	This scene opens with Jack on the run from soldiers. The scene ends if Jack is put in jail or if Jack makes it to the rooftops after meeting Bobby in Lord’s Market. The scene overlaps with the jailhouse scene since that is the beginning of another scene. The rooftops are also the beginning of another scene.
+
+Potential Additional Locations: N/A
+
+Crucial events in this scene:
+Meet Bobby in Lord’s Market / Commerce Street.  Exchange small talk and learn some things about the back story and plot through him and store keepers.
+
+Options: Can enter all the shops and talk to the NPC’s there.  Learn hints about back story and plot through them.
+	 
+Running for your life, you slip into Grubber's Market. Those mercenaries used by Baron Fossville will have a very hard time catching you this time...
+
+Grubber's Market
+The smell of fresh fish and live chickens pervades the market where the poorer folk of the town gather to hawk their merchandise. Occasionally, soldiers will press through the crowd on their way to the Lord's Keep to the north. The Lord's Market is on the other side of town to the east and the Southern Road can be reached to the south of the town.
+
+A detail of soldiers can be seen working their way through the market.
+
+[Commands?]
+Breathless, you consider your options.  Though you’re not sure why the soldiers are after you – you haven’t committed any great act of mischief that you know of, at least lately – it was clear from the pursuing shouts that they meant you bodily harm.  A one-way trip to the prison would be the kindest treatment you could expect from them, so it would be best to avoid all soldiers for now, at least until you can figure out what’s going on.
+
+As you think this and your heart pounds, you catch a glance of Commerce Street leading out to the east and to the Lord’s Market.  It appears to be your only escape route.
+
+You make a dash through the maze of merchants’ stalls thronged with the backs of haggling common folk, and just as you duck into Commerce Street the pursuing sound of rattling armor and chain mail makes its appearance. This is followed by the gruff shouts of the Sherriff’s men and you hear one of them say, “I’m gonna skewer that little urchin!” and just in time you’re claimed by the comparative safety of Commerce Street.
+   
+Commerce Street
+Shops are crammed side by side on the narrow street including a bakery, butchery, armory, clothier, jeweler, and moneylender. Patrons and passersby walk along sidewalks, protecting them from the occasional teamster driving down the middle of the street. The street ends to the west at the Grubber's Market and extends east to the center of the village.
+
+Looking behind you as you run down the sheltered lane, you reduce your speed and expertly emulate the calm, steady gait of most of its inhabitants.  You leave the street and mount the sidewalk, where you disappear like a specter into the steady flow of serious-minded folk entering in and out of shops.  Just another passerby now, if identifiable as one of the many young street children wandering the town, you’ll have bought yourself some time before the soldiers are on to you.  What to do now?
+
+You contemplate making your escape back to Maiden House, the refuge where you have spent all of your 12 years, but you know that you would surely be caught en route.  No, you have to find a hiding place.  Maybe the rooftops above the street, where you know from your fellow orphans you could access any number of buildings without being seen.  Or perhaps ducking into one of the shops themselves would do the trick.  Some of the proprietors know you, and are friendly to you, despite your occasional … lapse of payment.
+
+[look at butchery, examine butchery]
+The sign above the butchery is a picture of a large pig. In the window you can see chickens, small pigs, hanks of beef, and other assorted meat dressed and ready for purchase. The smell of burning sausage masks the heavier smells of butchered animals.
+
+[enter butchery, northwest]
+Making a quick decision, you enter the butchery, and as soon as you’re inside you smile to yourself at the scene that presents itself…
+
+The Cleaver
+Old man Holstenoffer yells, 'Welcome to The Cleaver HI HO!' and continues rapidly serving his customers. Aside from the animals in the window, there is also a small windowed shelf with assorted dried and smoked meats. Every few minutes you hear Mr. Holstenoffer yell again as customer’s stream in and out of his shop. The southern door leads back to Commerce Street.
+
+[say hi to butcher, talk to butcher, yell, say hi ho]
+It takes a few minutes for Old man Holstenoffer to notice your presence, but all at once, right in the middle of his wrapping a great pig’s tongue, he squints into the crowd of customers and his eyes unexpectedly meet yours.  He is startled, but his red face gradually widens into a smile and he beckons you over in the same voice he uses to announce the arrival of a fresh holiday roast: ‘Well, by all the Lords and Dukes, if it ain’t my young friend Jack!  Come over here, lad, let me get a good look at ya!
+
+[Ask Holstenoffer about the soldiers]
+”So I hear there’s quite a ruckus out on the streets today,” Holstenoffer growls, still busily cutting meat, wrapping it, accepting handfuls of coin from customers, and otherwise accommodating the shouted requests of newcomers.  ”Baron Fossville’s mercenaries are out and about in greater numbers than usual, and not just in search of more revenue from the Night Crew, if you take my meaning.  Of course, if they were,” he grins, ”they’d have to be damned strapped for coin, there being a lot of daylight to burn ‘fore the thieves, beggars, and ruffians come out! Ha, ha, ha!”
+
+”But by the way, Jack,” says the butcher, “That other lad Bobby was here looking for ya.  Quite dashing and handsome he is for a boy of fifteen.  Wish I was developed as he is at that age, by all the Saints!  Said if I happened to see ya, you should take a stroll towards the Lord’s Market, and he’d be about some where’s.”  At that, Old man Holstenoffer winks, and for a moment you get the feeling he knows more about you than he lets on.  Inside your chest a nervous feeling stirs, but also something else … the desire to see Bobby.  Maybe he could shed some light on why the soldiers were after you today…
+
+[examine moneylender, look at lender]
+A discreet placard next to the door reads, “Chorus Brothers”, while the remainder of the windowless storefront is painted blue.
+
+[enter moneylender, north]
+Heavy wood banded with iron make up the entire decor of the lending establishment. Two elderly men stand behind teller windows awaiting customers.
+
+{first time inside}
+You greet the two elderly men standing behind the teller windows, which have a reputation for being straight forward and direct with their customers.  Kindliness and wisdom from long years of experience exude from their lined granite-like visages, but they are also known for their secrecy when it comes to sharing valuable information with strangers.  The dullness of their eyes suggests having little interest in matters that don’t concern business, and an equal lack of interest in folk who don’t promise a good investment.
+
+“Their gray eyes look down at you now and one of the brothers says, ‘Hello, young one.  We are not disposed to be rude, but you don’t possibly have any business to attend to, do you?  Perhaps you should move along.’”
+
+[ask Chorus Brothers about the solders]
+One of the brothers smiles knowingly.  ”Oh, yes.  Baron Fossville’s soldiers are quite expensive.  I wonder what they’re up to…”
+
+[examine jeweler, look at jeweler, look at jeweler’s shop]
+A sign above the store shows a necklace of pearls. The window is barred, but in a subtle way, and engraved with the name “Sandler and Son”.
+
+[enter jeweler]
+Sandler and Son
+Small pedestals of exquisite jeweler can be seen at evenly space points of the store. Two large men in fine clothing watch your every move (probably guards). The establishment is run by the widow of Mr. Sandler and her son and two daughters.
+
+[Talk to guards for the 1st time]
+One of the guards looks you in the eye and says to his counterpart, “So Pieter. Do you think we should break the urchin into small pieces or just throw it out into the gutter?”
+
+Pieter replies, “No my brother Rudolph. This one is known to be harmless...and not what it seems.” he winks at you knowingly. This sends a chill up your spine. It is your sincerest hope that very few people know your secret.
+
+[Talk to guards 2nd time]
+Pieter and Rudolph are the two guards employed by the Widow Sandler, and they nod to you coolly in response to your greeting.  Rudolph is round-faced and dour, saying very little at all times, but Pieter is more outgoing and rosy-cheeked.  He could even be considered handsome, but a scar mars his appearance from his temple to beneath his right eye.  In any case, a youthful smile now lights up his face as he looks down at you.
+
+“‘Wait a minute; I think I know this one.  You wouldn’t be Jack once again?” Pieter says.  The smile on his face turns into a smirk, but still somehow manages to be charming.  Barely.  “Why, you’re as sprightly as a pixie, skipping down the lane under cover of good looks, as I often see.  Ain’t that so, Rudy?’
+“Rudolph shrugs and says nothing, preferring to keep his eye on the more well-to-do customers in Sandler and Son.”
+
+[Ask Pieter about soldiers]
+“Well, now, I don’t know about soldiers,” Pieter says, “but I know about Baron Fossville’s mercenaries.  Quite a different group, them.  Then again, I’d better keep my mouth shut.  Frequently the customers here are minor lords, and I could get sent to the clink for voicing my suspicions.”  Suddenly, his face changes, as if the word ‘clink’ jogged his memory about something.  ‘So how old are you, anyway?  Has anyone ever told you that you’ve got quite the soft features for a lad?  Fast developing, too, I warrant.  Wonder which way your tender voice will go, though, down or … up.  Heh Heh.’
+
+“You duck your head at Pieter’s words, worried that you’ve encountered another person who seems to suspect your true identity.  Perhaps it’s just that your natural beauty is beginning to shine through with years.  Though this could be dangerous, a small part of you is pleased.”
+
+[talk to Mrs. Sandler]
+You greet Mrs. Sandler.  She is a plump middle-aged woman who has always been friendly, even giving you hot food once when you were sick and unable to return to Maiden House.  Her warmth has always struck you as odd, though, as if the product of a relationship unknown to you.  Today you get the sensation that something is amiss with the widow.  You hope that it has nothing to do with you.
+
+”Child, it is good to see you,” Mrs. Sandler says worriedly, standing behind her wooden counter and taking occasional glances at some of the customers.  She is currently working on a length of something that looks like pearls.  “Pray keep safe out on the streets, okay?  For your mother’s sake, the Saints rest her soul.”
+
+[Ask Mrs. Sandler about your mother]
+“Ah, yes, child,” the widow says, her voice lowering.  ”I don’t believe I’ve mentioned this to you, but I knew her, so I did.  Way back before you were born.  When the Maiden House took you in, I saw no reason to fret about the past, but I knew her and she was a fine woman.  You should be proud of your heritage.”
+
+[Ask Mrs. Sandler about your heritage]
+“Mrs. Sandler only smiles, but the gesture quickly fades away.  ”I have something here that you should have.  It was your mother’s and I’ve been keeping it for a long spell.  If you ever have desperate need for money, ask for it and I will give it to you.  But I dare not hand it over on a day like this one.”  She notices a wealthy man dressed in finery and sporting well-groomed mustachios in the shop. He begins to approach the counter, and she gives you one last look that says ‘run along’ before settling her attention on him.
+
+Meet Bobby (NPC and continuous character)
+
+I had not (I don’t think) setup Lord’s Market yet, but it would be east of Commerce Street East. I need to flesh that area out with some locations and descriptions.
+
+{on first entry}	
+You make your way further east along Commerce Street until the narrow lane broadens into a plaza that is the doorstep of the Lord’s Market.
+
+Lord’s Market
+Taverns adorned with finely engraved windowpanes distinguish the area, and loaded wagons rolling into the market as well as baying livestock congest its entrance with the concerns of big commerce.  You stop in your tracks to absorb the mayhem when suddenly you are grabbed from behind! 
+
+“There is a moment of wrestling and acrobatic maneuvering, and you get the feeling your life is not in danger after all.  Sure enough, when the wiry arms release you, it is Bobby, grinning widely.
+
+“’Hello, Jack!’ Bobby says merrily.  ‘Glad you could make it.  Old man Holstenoffer give you my message?”
+
+[Examine Bobby]
+Bobby is an orphan, fifteen years old, and seems to do things for various people for money, but you can never quite figure out what he does. You don't know where he sleeps, but he always seems "taken care of". Well, sometimes he looks a wreck, but that's rare.
+
+For the last few years, he has been your main partner in crime in your life on the streets, but most recently you have felt yourself develop a faint crush on him.  Which is problematic, considering he doesn’t even know you’re a girl!  You admire his smooth blond hair and mischievous blue eyes and wonder what this is all about…
+
+[Tell Bobby about the soldiers]
+“Yes, I know,” Bobby says.  ”That is why I told the butcher to tell you I was out looking for you.  I figured you might duck into old Holstenoffer’s, though frankly I’m surprised you didn’t just take to the rooftops straight away.  You do know how to get up there, don’t you?”  He cranes his neck, as if suggesting that, as the older member of the Night Crew, he’d feel professionally obliged to teach you if you didn’t.”
+
+[Ask Bobby about the rooftops]
+“’Well, Jackie, you can get into all sorts of places from up there!  The Black Gate Estate, you name it.  And as you might be thinking, it’s a terrific place to hide from the law when you’ve been a bit careless swiping a herring, or a copper coin, as the case may be.  Or in your case….” he trails off, grimacing for a moment.  He shakes his head.  “At any rate, Jack, I can’t tell you right off how to access them, can I?  Has to be a challenge!  But go snooping between the shops on Commerce Street and you’ll find out how quick enough.  But maybe we should talk about the present situation…”
+
+[Ask Bobby about the present situation]
+Bobby puts his arm around your shoulder and together the two of you take shelter in a shallow alley wedged between two taverns.  The smell of vomit and stale beer momentarily distracts you, but Bobby begins talking seriously before your thoughts have an opportunity to wander: “Now, Jack,” the older street kid tells you, ”you know about our Lord’s death, right?  I don’t know why I say “our,” as he never did me a lick of good, but nonetheless you hear the talk out there, right?  Well, ever since his death was announced, things have been happening that I don’t like the looks of.  And Baron Fossville’s one of those things.”
+
+Bobby pauses, his eyes searching for the right words.  “The rub of the whole matter is that, through the grapevine, I’ve heard that agents of the Crown are investigating his death as a murder, and what with Baron Fossville’s hiring of all these new mercenaries in town, it seems safe to assume he’s preparing for a response of some sort on their part.  Are you with me so far, Jackie?”
+
+[yes, wait]
+In truth, you feel more than a little confused, but, convinced it’s going to start making sense at some point, you let him continue speaking.
+
+Bobby takes a hold of your shoulder again.  ”Now here’s the blushing joker of the deck.  Ordinarily, the errands I run for … certain folk … generally steer away from politics.  But it seems that both the Crown and Baron Fossville are convinced there’s a ‘hidden heir’ or some such tucked away in town somewhere and has been since the beginning!  And they want to find him.”
+
+”Now, Jackie, I guess this is the part where you ask me, ‘what in all the hells does this have to do with me?”  Bobby grins.  ”Well, the fact is, as I said they may just be looking for heirs.  And you were just chased for no apparent reason, as you say, by Fossville’s mercenaries.  Don’t go running away with your imagination here, but everything my information tells me suggests that you should get off the streets.”
+
+Bobby emphasizes, “And without stalling to pick the pocket of an inebriated nobleman.”
+
+ [Ask Bobby for advice]
+“Well, of course, I’ll give you advice, that’s what I’ve always been here for!” he says, and punches your arm playfully.  In the dark of the alley, you’re suddenly very much aware you’re alone with him, and standing close together.  Mixed with your fear and confusion stemming from everything Bobby has been telling you is the adrenaline that propelled you away from the soldiers and into Commerce Street earlier.  You find yourself nodding to Bobby’s directions unconsciously, your mind in many different places.
+
+“Head for the rooftops if you can,” he says.  “Wait until nightfall, when the moon is at its height, and then it should be safe enough for you to find a more permanent refuge.  Where is it you go sometimes, Maiden House?  I’ll be on a mission of my own tonight.  I’m going to find a way into Lord’s Keep and acquire some … information.  It’ll be dangerous, but then again, you can come with me if you like.  Meet me here again at this location if you want to come with.  Bye bye, Jackie.  Keep safe.”
+
+Giving you a final jab in the arm, Bobby leaves the alley and slips into the crowd.  Your heart sinks as you watch him go.
+
+
+Getting sent to the jail cell
+
+“’There he is!  Get ‘em!’ shouts a soldier.
+
+“You try to flee, but this time it’s no use.  Your flight from one mailed figure leads into a headlong collision with another, who you didn’t even see standing right behind you. 
+
+PC (Jacqueline / Jack) attacks:  "You aim a kick at one of the nearest soldiers who spins nimbly and backhands you squarely in the side of the head. 'OW!' you squeal as the rest of the soldiers push you around, adding to your embarrasment. The first soldier says, 'Try to grow a few inches before you take on a soldier son. We're a crusty crew, but forgiving. You won't be so lucky with others.’
+
+“That’s right,” another of the mercenaries snickers.  “Off to the jailhouse you go!’”  The snickering is the last thing you hear before a large burlap sack is thrust over your head and darkness proceeds to claim you…
+
+
+
+
+
+
+
+
+
+
+
+
+
+The World of Orphan		Episode I - Orphan
+
+
+
+I’ve never liked my introduction. Can you expand this a bit. Give the soldiers some life and then add some depth to the chase.
+I altered this to be reusable and vague. The soldiers are here, but not really specifically near you.
+I’m not sure how I want this text to come about. The player needs to interact. I’m thinking we could do a small puzzle here. Maybe a maze of actions that gets you out onto Commerce Street. Let’s call this section of text “After Escaping the Soldiers in Grubber’s Market.”
+Do you like this description? I’m tempted to change it so that the stores aren’t listed. The alternative is to expand the description.
+“slow to a walk”?
+You can also go down into the sewers, but you’re not as familiar with them. Going into the sewer does not end the scene.
+I hadn’t thought too much about religions, so let’s be careful of how we use certain kinds of exclamations. Remember, this is someone else’s world, not ours. If you want to help me with some rules in this area, feel free.
+handsomely paid?
+revise
+We’ve already established that Pieter “knows” you. Pieter should be nice, but still all business. Revise.
+revise
+I don’t mind the commentary, but let’s assume that Pieter knows you’re a girl, an orphan, and has heard rumors about someone taking care of you. He doesn’t know you’re the heir though. Revise.
+This is good…
+Also good.
+We need a full description of Lord’s Market, but I’ll get to that.
+normal for the streets.
+Revise.
+No, no you don’t. You’re 14 and you have no clue why he’s attractive or why you have “feelings” for him.
+Bobby wasn’t around until _after_ her fathers death.
+Should we say this out loud or let this simmer a bit longer?
+This is tricky because it’s an unusual topic. We have to support the idea of asking bobby for advice somewhere in the narrative. This is often called “guess the verb”, but in this case it’s “guess the topic”. I don’t mind though, as long as it’s supported somewhere else, or possibly in more than one place.
+Good stuff.
+
+

@@ -1,0 +1,27 @@
+Version 1/080509 of FyreVM Map Channel Support (for Glulx only) by Textfyre begins here.
+
+Include Version 1 of FyreVM Support by Textfyre.
+
+When play begins (this is the setup map locations rule):
+	repeat with roomname running through rooms:
+		choose a blank row in the Table of Map Locations;
+		change location name entry to the printed name of roomname;
+		change state entry to 0.
+
+Every turn (this is the print fyrevm map location information rule):
+	if map switch is on:
+		say "<map>";
+		repeat through Table of Map Locations:
+			say "<location state='";
+			say "[state entry]";
+			say "'>";
+			say "[location name entry]";
+			say "</location>";
+		say "</map>";
+
+Table of Map Locations
+location name	state
+text		a number
+with 100 blank rows
+
+FyreVM Map Channel Support ends here.

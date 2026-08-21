@@ -1,0 +1,92 @@
+Notes on Design Document Jan 4, 2007
+
+This is starting to take shape. The main thing it needs right now is to have the information more rigidly compartmentalized. See for example, the comments about plot description creeping into character description. You can probably limit each NPC’s description down to three sentences: one to describe who the NPC is, one to describe what he looks like, and one to describe his personality. What the NPC does in the course of the game is better left for the description of the event in which it happens.
+
+Also, we need a section describing the major places/areas in the game. Again, don’t go into detail about what happens there -- just what it is, where it is, and what it looks/feels like.
+
+The last bit -- the “details” section -- is the one that will take the most work. You said before that you don’t want the writers to think about code, and I agree with that philosophy. However, I’m assuming that in your ideal system, the programmer would be able to simply lift out the individual chunks of text provided by the writer and drop them into the source code with a minimum of fuss or revision. I think that in order for that to happen, the design document is going to have to in some ways mirror the structure of Inform source code.
+
+Fortunately, Inform lends itself to a fairly straightforward structure: the room and object tree, and the events and contingencies that occur within it. What I’m envisioning is something like this:
+
+
+START OF PLAY TEXT [player is sitting in shade in grubber’s market, eating an orange, when guards suddenly arrive]: 	
+
+
+
+
+PLAYER-CHARACTER
+	self-description: 
+
+OBJECT: orange
+	description: 
+
+
+ROOM: Grubber’s Market [lower class open-air market; hot, dirty, crowded]
+	description by day: 
+
+
+	description at night: 
+
+
+OBJECT: market stalls  [treated as a single, collective object]
+	description: 
+
+	enter stall [stallkeeper chases you away]: 
+
+OBJECT: crowds of people [treated as a single, collective object]
+	description: 
+
+	talk to people [ignored, or shoved rudely away]: 
+
+	random description of passerby to be displayed every few turns: 
+
+ROOM: Alley [narrow, dark, garbage-strewn]
+	description by day: 
+
+
+	description at night: 
+
+
+OBJECT: stacked crates 
+	description: 
+
+	open/search crates [nailed shut]: 
+
+	take/move crates [too heavy]:
+
+	climb crates [affords access to market roof]:
+
+	climb crates when the mercenaries are after you:
+
+
+EVENT/PUZZLE: Mercenaries Search for Jack [Starts at start of play. The mercenaries are present in Grubber’s Market, Commerce Street, East Commerce Street. The player must climb the crates to get on top of the market roof, then come down in Commerce Street. The puzzle ends when the player goes east to Lord’s Market. If you leave Grubber’s Market by any direction other than the rooftops, you get captured. If you wait too long in one room, you get captured. Entering a shop or kicking a guard buys you a few turns.]
+
+Person: Mercenary [rough, mean, unshaven]
+	description: 
+
+	random message of mercenary scanning the crowd, displayed every few turns: 
+
+	mercenary spots you [if you wait in one place too long]: 
+
+	mercenary grabs you [if you don’t move right after he spots you]:
+
+	talk to mercenary [you get grabbed]: 
+
+	leave Grubber’s Market by any direction other than rooftops [you get grabbed]:
+
+	kick mercenary unprovoked [you buy a bit of time]: 
+
+	kick mercenary after you’re grabbed [he lets you go]: 
+
+	wait after you’ve been grabbed [you get hauled to jail and game ends]: 
+
+	escape [by making it to Lord’s Market]: 
+
+
+…and so forth.
+
+I think there will probably be some ambiguity about how to arrange certain elements, especially the events, which may not clearly belong to any one room or object. I also think that during the process the writer may think of possible events or contingencies on his own and add them in after consulting with the designer. (E.g., “Should we have a special message when moving between rooms in the market region while the mercenaries are looking for you, something about slipping stealthily through the crowd?”) Also, during the revision and/or coding process, I imagine new things will come up that will be sent to the writer for a quick gap-fill. (E.g., “We need a message for if the player WAITS UNTIL NIGHT from a safe hiding spot while the guards are still out looking -- basically the guards give up and go home.”)
+
+But the basic idea is that the designer should explicitly list as many contingencies that would require unique game text as possible -- then the writer fills in the blanks with blurbs -- then the coder drops those blurbs into code.
+
+Do you agree?

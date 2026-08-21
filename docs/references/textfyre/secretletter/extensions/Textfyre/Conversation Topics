@@ -1,0 +1,98 @@
+Version 1 of Conversation Topics by Textfyre begins here.
+
+"Something of a compromise solution for ask/tell conversation - somewhere between the purely OO approach of Quips, and a traditional but unwieldy table-based method."
+
+Include Triggers by Textfyre.
+
+Use authorial modesty.
+
+Part 1 - Definitions
+
+A conversation topic is a kind of trigger.
+A conversation topic has some text called the enquiry text.
+A conversation topic has some text called the response text.
+
+A person has a table-name called the conversation table.
+The conversation table of a person is usually the table of nothing to say.
+
+The chosen conversation table is a table-name that varies. The chosen conversation table is the table of nothing to say.
+The chosen conversation topic is an object that varies. The chosen conversation topic is CONV_DEFAULT.
+
+Table of nothing to say
+topic			conversation
+"default"		CONV_DEFAULT
+
+CONV_DEFAULT is a conversation topic. The response text is "There is no reply."
+
+A person has a conversation topic called the default topic.
+
+Section 2 - Firing
+
+Rule for firing a conversation topic (called c):
+	if the enquiry text of c is not "",
+		say the enquiry text of c, paragraph break;
+	if the response text of c is not "",
+		say the response text of c, paragraph break;
+
+Section 3 - Speaking With
+
+Speaking with something is an activity.
+
+Rule for speaking with somebody:
+	fire the chosen conversation topic;
+
+Section 4 - Choosing a conversation table
+
+Choosing the conversation table of something is an activity.
+
+Rule for choosing the conversation table of something (called the NPC):
+	change the chosen conversation table to the conversation table of the NPC;
+
+Section 4 - Choosing a conversation topic
+
+Choosing the conversation topic of something is an activity.
+
+Rule for choosing the conversation topic for something (called the NPC):
+	repeat through the chosen conversation table:
+		if the topic understood includes topic entry:
+			if there is a conversation entry:
+				change the chosen conversation topic to the conversation entry;
+				rule succeeds;
+	carry out the choosing the default conversation topic activity with the NPC;
+
+Choosing the default conversation topic of something is an activity.
+
+Rule for choosing the default conversation topic for something (called the NPC):
+	change the chosen conversation topic to the default topic of the NPC;
+
+Part 2 - Actions
+
+Section 1 - Convert Telling and Answering to Asking
+
+Replacable-action-name is an action name that varies. Replacable-action-name variable translates into I6 as "action".
+
+First before telling: change the replacable-action-name to the asking it about action.
+First before answering: change the replacable-action-name to the asking it about action.
+
+[these actions are hard-coded into the inform parser, so using "Understand the command.... as something new." won't work. Changing the action produces better performance than re-trying a whole new action.]
+
+Section 2 - Talking to action (for use without Quips by Textfyre)
+
+Talking to is an action applying to one thing.
+
+Understand "talk to [someone]" as talking to.
+Understand "chat to/with [someone]" as talking to.
+
+Report talking to someone (called the NPC):
+	carry out the choosing the conversation table activity with the NPC;
+	carry out the choosing the default conversation topic activity with the NPC;
+	carry out the speaking with activity with the NPC instead;	
+
+Part 3 - Implementation
+
+Report asking someone (called the NPC) about something:
+	carry out the choosing the conversation table activity with the NPC;
+	carry out the choosing the conversation topic activity with the NPC;
+	carry out the speaking with activity with the NPC instead;	
+
+Conversation Topics ends here.

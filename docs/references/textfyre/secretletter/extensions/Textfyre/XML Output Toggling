@@ -1,0 +1,23 @@
+Version 1 of XML Output Toggling by Textfyre begins here.
+
+Use authorial modesty;
+
+XML-output-flag is a truth state which varies.
+
+Part 1A (for use with FyreVM Support by Textfyre)
+
+XML-output-flag is true.
+
+To decide whether XML is in use:
+	if XML-output-flag is true:
+		decide on whether or not FyreVM is present;
+	decide no;
+
+Part 1B (for use without FyreVM Support by Textfyre)
+
+XML-output-flag is false.
+
+To decide whether XML is in use:
+	decide on whether or not XML-output-flag is true;
+
+XML Output Toggling ends here.

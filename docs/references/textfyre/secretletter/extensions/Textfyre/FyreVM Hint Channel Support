@@ -1,0 +1,84 @@
+Version 1/080509 of FyreVM Hint Channel Support (for Glulx only) by Textfyre begins here.
+
+Include Version 1 of FyreVM Support by Textfyre.
+
+OnHinting is an action out of world.
+OffHinting is an action out of world.
+
+Report OnHinting:
+	say "Hints are turned on."
+
+Report OffHinting:
+	say "Hints are turned off."
+
+Carry out OnHinting:
+	turn on hint output.
+
+Carry out OffHinting:
+	turn off hint output.
+
+Understand "hints on" as OnHinting.
+Understand "hints off" as OffHinting.
+
+To add the hint topic (topic-title - text) with the name (topic-name - text):
+	if there is a topic name of topic-name in the Table of Hint Topics, stop;
+		choose a blank row in the Table of Hint Topics;
+		change visible entry to true;
+		change topic name entry to topic-name;
+		change topic title entry to topic-title.
+
+To set the hint topic (topic-name - text) visible:
+	choose a row with a topic name of topic-name in the Table of Hint Topics;
+	change the visible entry to true.
+
+To set the hint topic (topic-name - text) invisible:
+	choose a row with a topic name of topic-name in the Table of Hint Topics;
+	change the visible entry to false.
+
+To add the hint (hint-title - text) as (hint-name - text) to the topic name (topic-name - text):
+	if there is a topic name of topic-name in the Table of Hint Topics:
+		unless there is a hint name of hint-name in the Table of Hints:
+			choose a blank row in the Table of Hints;
+			change the topic name entry to topic-name;
+			change the hint name entry to hint-name;
+			change the hint title entry to hint-title.
+
+To remove the hint (hint-name - text):
+	choose the row with a hint name of hint-name in the Table of Hints;
+	blank out the whole row.
+
+Every turn (this is the write hints rule):
+	if the hint switch is on begin;
+		select the hints channel;
+		say "<hints>";
+		repeat through the Table of Hint Topics begin;
+			if visible entry is true begin;
+				let the topicname be topic name entry;
+				say "<topic title='";
+				say "[topic title entry]";
+				say "'>";
+				repeat through the Table of Hints begin;
+					if topic name entry is topicname begin;
+						say "<hint>";
+						say "[hint title entry]";
+						say "</hint>";
+					end if;
+				end repeat;
+			end if;
+		end repeat;
+		say "</hints>";
+	end if;
+	select the main channel.
+
+Table of Hint Topics
+topic name	topic title	visible
+text		text		truth state
+with 10 blank rows
+
+Table of Hints
+topic name	hint name	hint title
+text		text		text
+with 200 blank rows
+
+FyreVM Hint Channel Support ends here.
+

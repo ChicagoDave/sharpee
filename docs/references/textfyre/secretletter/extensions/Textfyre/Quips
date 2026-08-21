@@ -1,0 +1,372 @@
+Version 2 of Quips by Textfyre begins here.
+
+"Quips that represent nodes in a conversation tree -- really, a conversation network -- and allow the player to select from a list of responses."
+
+Use authorial modesty.
+
+Include Triggers by Textfyre.
+Include XML Output Toggling by Textfyre.
+
+Part 1 - Definitions
+
+Chapter 1 - Standard quips
+
+A quip is a kind of trigger.
+
+The current conversation is a list of objects [quips] that varies.
+
+When play begins:
+	now the current conversation is {};
+
+The menu option currently being displayed is a number that varies;
+
+The current conversationalist is a person that varies.
+The chosen opening gambit is an object that varies.
+
+A quip has a text called the menu text.
+A quip has a text called the display text.
+A quip has a text called the repeat text.
+A quip has a list of objects [quips] called the response.
+
+Chapter 2 - Transition quips
+
+A transitional quip is a kind of quip.
+A transitional quip has an object called the following quip.
+The response of a transitional quip is always {}.
+
+Chapter 3 - Firing activity
+
+Rule for firing an unfired quip (called q):
+	if the display text of q is not "",
+		say the display text of q, paragraph break;
+
+Rule for firing a fired quip (called q):
+	if the repeat text of q is not "":
+		say the repeat text of q, paragraph break;
+	otherwise if the display text of q is not "":
+		say the display text of q, paragraph break;
+
+Chapter 4 - Conversation Initiation
+
+Initiating conversation with something is an activity.
+
+The first before initiating conversation with rule:
+	now the chosen opening gambit is nothing;
+
+After initiating conversation with a thing (called the new person):
+	unless the chosen opening gambit is nothing:
+		now the current conversationalist is the new person;
+
+Chapter 5 - Conversation termination
+
+Terminating conversation with something is an activity.
+
+Rule for terminating conversation with a thing (called the former party):
+	if the current conversationalist is the former party: [it may well not be!]
+		now the current conversationalist is the player;
+
+Section 2 (For use with FyreVM Support by Textfyre)
+
+Last after terminating conversation with:
+	if the current conversationalist is the player: [it may well not be! the conversation may yet continue if the game has intervened.]
+		select the conversation channel;
+		if XML is in use:
+			say "<TopicList />";
+		select the main channel;
+
+Part 2 - Verbs
+
+Talking to is an action applying to one visible thing. 
+
+Understand "talk to [someone]" as talking to.
+
+Check talking to the player:
+	say "Second sign of madness." instead;
+
+Check talking to the current conversationalist:
+	if the number of entries in the current conversation is 1:
+		try selecting menu option 1 instead; 
+	say "You are already talking to [the noun]." instead. [and then display the menu, but that is done by an Every Turn rule]
+
+Carry out talking to someone:
+	carry out the initiating conversation with activity with the noun;
+
+Report talking to someone:
+	if the chosen opening gambit is nothing:
+		say "There is no reply." instead;
+	carry out the firing activity with the chosen opening gambit;
+	carry out the populating activity with the chosen opening gambit;
+	if the number of entries in the current conversation is 0:
+		carry out the terminating conversation with activity with the current conversationalist;
+
+Part 3 - Menu options
+
+Chapter 1 - Menu selection
+
+Selecting menu option is an action applying to one number.
+Understand "[number]" as selecting menu option when the current conversationalist is not the player and the number of entries in the current conversation is greater than 0.
+
+Check selecting menu option:
+	if the current conversationalist is the player begin;
+		say "You are not talking to anyone." instead;
+	end if;
+
+Check selecting menu option:
+	if the number of entries in the current conversation is 0 begin;
+		say "You are not talking to anyone." instead;
+	end if;
+
+Check selecting menu option:
+	if the number understood is less than 1 begin;
+		say "No such option." instead;
+	end if;
+	if the number understood is greater than the number of entries in the current conversation begin;
+		say "No such option." instead;
+	end if;
+
+Report selecting menu option:
+	let n be the number understood;
+	let q be entry n of the current conversation;
+	carry out the firing activity with q;
+	unless the current conversationalist is the player:
+		carry out the populating activity with q;
+
+Populating something is an activity.
+
+Rule for populating a quip (called q) (this is the standard quip-populating rule):
+	let n be the number of entries in the current conversation;
+	now the current conversation is the response of q;
+
+Last after populating a transitional quip (called tq) (this is the standard quip-transitioning rule):
+	let the real destination be the following quip of tq;
+	if the real destination is not nothing:
+		carry out the firing activity with the real destination;
+		carry out the populating activity with the real destination;
+
+Chapter 2 - Viewing the menu
+
+Menu option number display is a truth state that varies.
+
+When play begins:
+	if XML is in use:
+		now menu option number display is false;
+	otherwise:
+		now menu option number display is true;
+
+Section 1 - The Game Action
+
+Viewing the menu is an action out of world applying to nothing.
+Understand "menu" as viewing the menu.
+Understand "topics" as viewing the menu.
+Understand "topic" as viewing the menu.
+Understand "topic list" as viewing the menu.
+Understand "topiclist" as viewing the menu.
+
+Displaying the menu is an activity.
+Printing the menu text of something is an activity.
+
+Check viewing the menu:
+	if the current conversationalist is the player begin;
+		say "You are not talking to anyone." instead;
+	end if;
+
+Check viewing the menu:
+	if the number of entries in the current conversation is 0 begin;
+		say "You are not talking to anyone." instead;
+	end if;
+
+Report viewing the menu:
+	display the menu;
+
+To display the menu:
+	carry out the displaying the menu activity;
+
+Section 2 (For use with FyreVM Support by Textfyre)
+
+First before displaying the menu rule:
+	select the conversation channel;
+
+Before displaying the menu when XML is in use:
+	if the current conversationalist is not the player or the number of entries in the current conversation is not 0:
+		say "<TopicList Character='[The Current Conversationalist]'>[line break]";
+
+Rule for displaying the menu when the current conversationalist is the player or the number of entries in the current conversation is 0:
+	if XML is in use:
+		say "<TopicList/>";
+
+After displaying the menu when XML is in use:
+	if the current conversationalist is not the player or the number of entries in the current conversation is not 0:
+		say "</TopicList>";
+
+The last after displaying the menu rule:
+	select the main channel;
+
+Section 2 - For Universal use
+
+Rule for displaying the menu:
+	now the menu option currently being displayed is 1;
+	repeat with X running through the current conversation begin;
+		carry out the printing the menu text activity with X;
+		increase the menu option currently being displayed by 1;
+	end repeat;
+
+Section 3 - Menu option display (For use with FyreVM Support by Textfyre)
+
+First before printing the menu text of a quip when XML is in use:
+	say "<Topic ID='[the menu option currently being displayed]'>";
+
+After printing the menu text of a quip when XML is in use:
+	say "</Topic>";
+
+Section 4 - Menu option display (Universal)
+
+Before printing the menu text of a quip when menu option number display is true:
+	say "[the menu option currently being displayed]. ";
+
+Rule for printing the menu text of a quip (called q):
+	say menu text of q;
+
+Last after printing the menu text of a quip:
+	say line break;
+
+Section 5 - Automatic menu display
+
+Last every turn rule when we are selecting menu option or we are talking to someone:
+	unless the current conversationalist is the player or we are talking to the player:
+		if the number of entries in the current conversation is greater than 0:
+			display the menu;
+		otherwise:
+			carry out the terminating conversation with activity with the current conversationalist;
+
+Part 4 - Starting conversations pre-emptively
+
+[This is broken. To fix it demands an extensive rewrite: some of the existing activities need to be recast as proper actions, and "start conversation with..." phrases instead need to become, for instance, "try Jacobs trying talking to the player". This is a step worth taking, as it reduces code complexity, but the existing implementation is not terrible: that is to say, it can all wait for now.]
+
+To start conversation with (the certain someone - a person) on (q - a thing), even if not present:
+	if the location of the certain someone is the location or even if not present:
+		now the current conversationalist is the certain someone;
+		carry out the firing activity with q;
+		if the current conversationalist is [still] the certain someone:
+			carry out the populating activity with q;
+			if the number of entries in the current conversation is 0:
+				carry out the terminating conversation with activity with the certain someone;
+		if the number of entries in the current conversation is not 0:
+			unless we are talking to someone or we are selecting menu option: [in which cases this is done automatically--]
+				display the menu;
+
+Part 5 - Terminating conversations automatically 
+
+Last every turn (this is the terminating conversations with absent people rule):
+	if the current conversationalist is not in the location:
+		carry out the terminating conversation with activity with the current conversationalist;
+
+Part 6 - Fixing misleading parser errors
+
+To TF_QUIP_fix_parser:
+	(- etype = STUCK_PE; -)
+
+Before printing a parser error when the latest parser error is didn't understand that number error:
+	TF_QUIP_fix_parser;
+
+Part 7 - Toggling topic numbers
+
+Understand "show topic numbers" as showing topic numbers.
+Understand "hide topic numbers" as hiding topic numbers.
+
+Showing topic numbers is an action out of world applying to nothing.
+Hiding topic numbers is an action out of world applying to nothing.
+
+Carry out showing topic numbers:
+	now menu option number display is true;
+
+Carry out hiding topic numbers:
+	now menu option number display is false;
+
+Report showing topic numbers:
+	say "[bracket]Topic numbers are now on.[close bracket][paragraph break]";
+
+Report hiding topic numbers:
+	say "[bracket]Topic numbers are now off.[close bracket][paragraph break]";
+
+Part X - Debugging - Not for release
+
+After printing the name of an unfired quip (this is the unfired quip status for-debug-only rule):
+	say " (unfired)"
+
+After printing the name of an fired quip (this is the fired quip status for-debug-only rule):
+	say " *FIRED*"
+
+After printing the name of a room while constructing the status line (this is the current listener in statusline for-debug-only rule):
+	if the current conversationalist is not the player:
+		say " (talking to [the current conversationalist])";
+
+To fire (t - a quip):
+	bug "Directly fired a quip via 'fire [printed name of t]' rather than 'start conversation with (someone) on [printed name of t]'.";
+	carry out the firing activity with t.   [ when we   fire <quip>    then any menu attached to it will never appear. Nor will the conversationalist be displayed in fancier UIs, I imagine. ]
+
+[Understand "quip [any quip]" as a mistake ("[yourself quips the noun]").]
+
+
+Quips ends here.
+
+---- DOCUMENTATION ---- 
+
+Quips is an implementation of the Miradania series conversation quips specification. It defines a new kind, "quip", which represents a node in the conversation network. 
+It provides two new actions, "talk to" by which the player may attempt to initiate conversation with a character in the game, and "menu" which displays the list of available responses to the most recently-fired quip.
+
+"Firing" a quip happens when that quip is selected by the player, or when a character in the game decides to initiate conversation with the player (or in other circumstances, see below.) If the quip has not been fired before, then the "display text" of the quip is displayed. If the quip *has* been fired before, then the "repeat text" of the quip is displayed, if it has one (and if not, the display text is displayed as normal.)
+After a quip is fired, the available responses are assembled and listed to the player. If there are no available responses, the conversation is terminated. The "response" property of a quip holds the list of options that the player should be given: it is an Inform list of objects, and each object in the list must be a quip.
+
+	EG1 is a quip. The display text is "You wave at Bobby. 'Hi!' Bobby waves back sheepishly."
+
+	The response of EG1 is { EG2, EG3, EG4 }.
+
+	EG2 is a quip. The menu text is "What are you doing here?" 
+	EG3 is a quip. The menu text is "What's that you're holding?"
+	EG4 is a quip. The menu text is "Where are your trousers?"
+
+And so on, which might yield in-game output as follows:
+
+	You wave at Bobby. 'Hi!' Bobby waves back, sheepishly.
+
+	1. What are you doing here?
+	2. What's that you're holding?
+	3. Where are your trousers?
+
+(The order of quips as given in the response property is preserved in the menu.)
+
+It is often desirable to only display certain quip options in certain circumstances. The process of deciding which quips are to be displayed in the response list is implemented in the "populating" activity - a name which was chosen more for reasons of brevity than of descriptive clarity:
+
+	After populating EG1:
+		if Bobby does not carry the mysterious smelly thing,
+			remove EG3 from the current conversation;
+		if Bobby is wearing the trousers,
+			remove EG4 from the current conversation;
+
+A player can only be in conversation with one game character at a time, although there may be several other people in the room. "The current conversationalist" holds this value. If the player is not presently in conversation with anyone, then the "current conversationalist" evaluates to the player object itself.
+
+When the player types "talk to Bobby" then - assuming no before rules, instead rules, or standard check rules interfere - the "initiating conversation" activity is carried out. The initiating conversation with rules have a chance to set the global value "the chosen opening gambit" to a quip. In practice, all this means that setting the starting quip for an NPC usually looks something like this:
+
+	Rule for initiating conversation with Bobby:
+		now the chosen opening gambit is EG1.
+
+Technically, this "initiating" activity is called "initiating conversation with" - and unlike "of" which is automatically stripped from activity names, "with" is not a recognised I7 preposition. It is only important to know this when carrying out the activity manually:
+
+	carry out the initiating conversation with activity with such-and-such person.
+
+Rather than
+
+	carry out the initiating conversation activity with such-and-such. [doesn't work, no such activity.]
+
+A minor inconvenience but not one that is likely to have any great impact - the initiating activity is rarely generated outside of the extension itself. However the same caveat also applies to the "terminating conversation with" activity which is symmetrical.
+
+This extension also provides a special kind of quip called a "transitional quip". These are an exception to the rule that a menu of options is displayed after a quip is fired: in fact, the response list of a transitional quip is never consulted. Instead, the "following quip" property should be set to the name of another quip which will be seamlessly fired immediately after this one.
+
+	EG5 is a transitional quip. The menu text is "What's that dog doing?"
+	EG6 is a transitional quip. The menu text is "What color's your kettle?"
+
+	The following quip of EG5 is EG7. The following quip of EG6 is EG7.
+
+	EG7 is a quip. The display text is "'Never mind about that', says Bobby."
+
+I am aware of the adage, "never get programmers to write documentation," and although I'm trying my best, I appreciate that these notes are probably obscure, incomplete, impenetrable, and go into too much detail over unimportant things, (and not enough detail over important ones.) Of course I can easily hand-wave and say look to the Jack & The Secret Letter source for examples, but if a proper set of examples would be more helpful I'd be happy to oblige.

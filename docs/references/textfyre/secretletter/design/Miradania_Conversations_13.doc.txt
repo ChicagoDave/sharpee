@@ -1,0 +1,986 @@
+Conversation Menu Dialogue System
+for Jack Toresal & The Secret Letter
+Design
+A "quip" is an object that represents a specific "location" in the dialogue tree. Typically, when a quip is "activated," the game displays a line of dialogue from an NPC in the game, and/or provides the player with a menu of possible responses. Selecting a response usually activates yet another quip. Quips can be activated by the player initiating conversation with an NPC, or activated pre-emptively by the game, when an NPC initiates conversation with the player.
+A quip has several attributes:
+ID – This is a unique identifier for each quip.
+Trigger – Special rule for activating the quip, if any. If no trigger rule is listed, then assume the quip is triggered when it is chosen from a response menu. 
+Menu – This is the text that is displayed in the menu when a quip is offered as a possible response to the last-triggered quip. Usually this presented as a the words, or a paraphrase of the words, that Jack will actually say to the NPC. If no menu text is listed, this means the quip is only ever triggered by the game, and not from the response menu.
+Display – This is the text that is displayed by the game when the quip is triggered.
+Response – This is a list of quips to be queued up and arranged in a menu after the Display Text is printed.
+Display, Menu, and Response may all be affected by rules for specific situations, including whether or not a quip has been previously activated.
+Gameplay
+"Ask" and "Tell" are disabled. If the player tries to ASK/TELL someone ABOUT something, the game should respond with a gentle error message: "If you want to converse with someone just type TALK TO [person]."
+Typing TALK TO [someone] will activate a quip, according to rules specific to the NPC and the situation. It also puts the player in a state of being "in conversation with" the NPC.
+Being in conversation does not usurp the normal command prompt. A player can type TALK TO BUTCHER, which activates a quip and queues up a menu of responses, but then decide to EXAMINE SAUSAGE instead of choosing a response.
+Likewise, typing a command instead of choosing a response does not take the player out of conversation. Also, the last-activated quip is still "in effect" and the menu of responses is still "active." In the above example, after the player examines the sausage, she may then choose, say, response #2, "Do you have any bacon?" on her next turn.
+A player remains in conversation with a given NPC until she moves to a different location, or her state changes as a result of a game-triggered event.
+Typing TALK TO [someone] while you are already in conversation with that person generates the error message "You are already talking to [person]," and/or a refresh of the menu of responses available from the last-triggered quip.
+Table of Contents TOC \o "3-3" \h \z \u  HYPERLINK \l "_Toc191459399" Teisha	 PAGEREF _Toc191459399 \h 3
+ HYPERLINK \l "_Toc191459400" Stallkeeper	 PAGEREF _Toc191459400 \h 7
+ HYPERLINK \l "_Toc191459401" Germaise the Baker	 PAGEREF _Toc191459401 \h 9
+ HYPERLINK \l "_Toc191459402" Holstenoffer the Butcher	 PAGEREF _Toc191459402 \h 12
+ HYPERLINK \l "_Toc191459403" Olgan Minor, the Armory Shopkeeper	 PAGEREF _Toc191459403 \h 16
+ HYPERLINK \l "_Toc191459404" Dame Sandler	 PAGEREF _Toc191459404 \h 18
+ HYPERLINK \l "_Toc191459405" Bobby	 PAGEREF _Toc191459405 \h 21
+ HYPERLINK \l "_Toc191459406" Widow Theresa	 PAGEREF _Toc191459406 \h 26
+ HYPERLINK \l "_Toc191459407" Widow Fiona	 PAGEREF _Toc191459407 \h 29
+ HYPERLINK \l "_Toc191459408" Widow Shannon	 PAGEREF _Toc191459408 \h 33
+ HYPERLINK \l "_Toc191459409" Jacobs	 PAGEREF _Toc191459409 \h 36
+ HYPERLINK \l "_Toc191459410" Olmer	 PAGEREF _Toc191459410 \h 40
+Teisha
+TE1
+Trigger: First time Jack enters the silk tent.
+Display: "Hello, Jack," says Teisha. "Change your mind about that cloak?" Then she gets a look at your face and frowns. "Something the matter, sweetie? You look spooked."
+Response: TE2, TE3, TE4, TE20 if the player has the necklace
+TE2
+Menu: "There are big guys with swords chasing me."
+Display: "Now that you mention it, I am a bit spooked," you say, trying to catch your breath. "There's a bunch of big guys with swords out there, chasing me all over the market!"
+	Teisha frowns. "Big guys with – you mean mercenaries? In Grubbers?" She peeks out through the front flap. "Brigid help us," she mutters, glancing back at you. "Don't tell me what they're after you for – I don't want to know."
+Response: TE7, TE8, TE20 if the player has the necklace
+TE3
+Menu: "Actually, I'd like to look at that cloak again."
+Display: "Um, actually," you mutter, glancing nervously at the tent flap, "I'd like to look at that cloak again. If you don't mind."
+	Teisha gives you a suspicious look. "Well, all right, Jack," she says finally. "Browse all you like."
+Response: TE10, TE20 if the player has the necklace
+TE4
+Menu: "No, everything's fine."
+Display: "No, no," you say quickly. "Everything's just fine. Couldn't be better."
+	Teisha raises one eyebrow at you, but doesn't push it.
+Response: TE10, TE20 if the player has the necklace
+TE5
+Trigger: Second time Jack enters the silk tent (from the south) if TE2 or TE6 has not been triggered.
+Display: "Back so soon, Jack?" Teisha asks. She eyes you closely. "Are you sure there's nothing the matter?"
+Response: TE2, TE6, TE20 if the player has the necklace
+TE6
+Menu: "No, really, everything's just tricky."
+Display: "No, really," you say, in a not-quite-steady voice. "Everything's just tricky."
+	Teisha smirks. "Uh-huh. You know I don't just sit by myself in this silk tent all day, don't you, Jack? I do have some idea of what's going on in the world outside, you know. I know there are mercenaries searching Grubber's, and I'm guessing they're probably after you." Her voice softens, and she puts her hand on your shoulder. "Don't worry, Jack. I don't need to know what you did to get them after you. I won't turn you in."
+Response: TE7, TE8, TE20 if the player has the necklace
+TE7
+Menu: "I need somewhere to hide."
+Display: "I need help, Teisha," you tell her plaintively. "I need somewhere to hide."
+	Teisha sighs. Although you know she cares about you, you also know that Teisha is a smart, practical woman, and first and foremost she is worried about losing her customers. "All right," she says, "you can stay in here as long as you like, but if the mercenaries decide to search the place I can't stop them. Probably your best bet is to slip out that way—" she points to the narrow gap in the back wall of the tent. "I'll pretend I never saw you."
+Response: TE8 if it has not already been triggered; TE10; TE20 if the player has the necklace
+TE8
+Menu: "I need a disguise."
+Display: Suddenly your eyes fall on the many cloaks hanging among Teisha's silks. "I could use one of your cloaks as a disguise," you say. "The mercenaries expect me to be wearing my usual ratty stuff."
+	Teisha sighs. "Jack… I'm sorry. These silks are expensive, and I have to pay my suppliers and make a living for myself. If you have coin, or something worth trading, maybe I can cut you a deal. Otherwise…" she shakes her head.
+Response: TE7 if it has not already been triggered; TE10; TE20 if the player has the necklace
+TE9
+Trigger: Subsequent times you enter the silk tent (from the south), if TE2 or TE6 have already been triggered.
+Display: Teisha's face falls as you stumble back into the tent. "You're still here?" she asks. "I'd hoped you'd gotten away by now."
+Response: TE7 if it has not already been triggered; TE8 if it has not already been triggered; TE10; TE20 if the player has the necklace
+TE10
+Trigger: TALK TO TEISHA if you are not already in conversation with her
+Menu: "Can I ask you a question?"
+Display: "Teisha, can I ask you a question?"
+	"Of course, Jack," she says.
+Response: TE7 if either TE6 or TE2 have been triggered and TE7 has not been triggered; TE8 if either TE6 or TE2 have been triggered and TE8 has not been triggered; TE11; TE12; TE13; TE14; TE15 if you've been to the Gem Stall but don't yet have the gem; TE16 if you've triggered TE8; TE18; TE20 if the player has the necklace
+TE11
+Menu: "What can you tell me about Grubber's Market?"
+Display: "What can you tell me about Grubber's Market?" you ask. "Are there any other ways out of here?"
+	Teisha shrugs. "I figured you'd know more about the place than I do, the way you sneak about," she says. "From the northwest junction you can leave the city. East will take you to Commerce Street. Those are the only two ways out of the square, as far as I know."
+Response: TE17, TE19
+TE12
+Menu: "Who's selling what today?"
+Display: "I know that different merchants set up their stalls on different days of the week," you say. "So who's selling what today?"
+	"Well, there's the fruit stand on the northeast corner, but that's there every day." says Teisha. "To the east is a grocer's stall and a hat seller; to the west, an herb seller and the gem merchant; and the leatherworker and weaponsmith have set up shop on the south end. The inner ring is me, a rope merchant, a pottery merchant, and that awful candlemaker – the stench has been driving off my customers all morning."
+Response: TE17, TE19
+TE13 
+Menu: "What's behind your tent?"
+Display: "What's that behind your tent?" you ask, nodding towards the back exit.
+	"There's nothing back there except the central pole holding up the big awning over the market," Teisha says. "That's why all the merchants want this spot," she adds, "… it's got the best shade." 
+Response: TE17, TE19
+TE14
+Menu: "Do you make these clothes yourself?"	
+Display: "These clothes are all so beautiful," you say. "Do you make them yourself?"
+	Teisha smiles. "Some of them," she says. "Most of them I sell on consignment. One of these days, I'm going to clear enough profit to rent a shop on Commerce Street and move out of this hot, smelly tent."
+Response: TE17, TE19
+TE15
+Menu: "What's the deal with that monkey?"
+Display: "The gem merchant sounds like he's got a real vendetta against that monkey," you remark. "What's the story with them?"
+	Teisha rolls her eyes. "That pesky thing came in on the fruit vendor's wagon yesterday and just made itself at home. Now it's all over the place, bothering everybody. Fortunately, it likes shiny things more than it likes women's clothes. Oh, and bananas. The little rodent loves bananas. Constantly drops the peels on the roof of my tent."
+Response: TE17, TE19
+TE16
+Menu: "What will you trade for a cloak?"
+Display: "I need one of those cloaks, Teisha," you say. "Just tell me what you want for it, and I'll get it, somehow."
+	Teisha thinks for a moment. "Most of the things you'd find in Grubbers are staple goods, not much use to me. I'd need something with resale value. Jewelry, or the like. But don't you go stealing anything, Jack," she adds hastily. "I don't want you getting into even more trouble than you're already in!"
+Response: TE17; TE19; TE20 if the player has the necklace
+TE17
+Menu: "One more question."
+Display: "Can I ask you another question?" you ask.
+	"Ask away," says Teisha.
+Response: TE7 if either TE6 or TE2 have been triggered and TE7 has not been triggered; TE8 if either TE6 or TE2 have been triggered and TE8 has not been triggered; TE11; TE12; TE13; TE14; TE15 if you've been to the Gem Stall but don't yet have the gem; TE16 if you've triggered TE8; TE18; TE20 if the player has the necklace
+TE18
+Menu: "Never mind."
+Display: "Um, never mind," you say.
+	"All right," says Teisha. "Just let me know if you need anything."
+	[player is now out of conversation]
+TE19
+Menu: "Thanks."
+Display: "Thanks, Teisha."
+	"No problem, Jack."
+	[player is now out of conversation]
+TE20
+Trigger: give or show Teisha the necklace
+Menu: "Will you trade me a cloak for this necklace?"
+Display: You hold out the necklace, dangling it by its chain. "Have a look at this, Teisha," you say. "You think this is worth one of your cloaks?"
+	Teisha's eyebrow shoots up, but she manages to hide her excitement with the coolness of a professional haggler. "That's not bad," she mutters. "Most of Hathid's wares are just pretty glass, but this…" She gives you a look. "Now, tell me the truth, Jack, you didn't just steal this from somewhere, did you?"
+	You shake your head proudly. It's not exactly a lie.
+	"Well, not that it matters." The necklace disappears into one of Teisha's pockets. "Let's see…" she starts searching through the clothes, looking for something in your size. "This should fit. I think it suits you, too." She holds out a light green cloak. "What do you think?"
+	It takes your breath away, but you try to hide your eagerness just as Teisha hid hers. "It's tricky," you say, nodding casually.
+	Teisha laughs. "Then it's yours."
+	[silk cloak is now worn by the player]
+	[trigger Final Chase Scene]
+Stallkeeper
+ST1
+Trigger: TALK TO STALLKEEPER
+Display: "What do you want?" snaps the stallkeeper.
+Response: ST2 if it hasn't already been triggered; ST3 if it hasn't already been triggered; ST4 if it hasn't already been triggered; ST5
+ST2
+Menu: "What do you have for sale?"
+Display: "So, what are you selling today?" you ask, trying to sound casual.
+	[trigger ST5]
+ST3
+Menu: "Do you know anything about these mercenaries?"
+Display: "You know anything about these mercenaries running around Grubber's?" you ask.
+	"Only that they're bad for business," mutters the stallkeeper. "I don't know who hired them, but the Lord's Guard ought to run them off."
+Response: ST2 if it hasn't already been triggered; ST4 if it hasn't already been triggered; ST9
+ST4
+Menu: "I'd like to buy something, please."
+Display: "I'd like one of those, please," you say, pointing.
+	[trigger ST5]
+ST5
+Trigger: triggering ST2 or ST4
+Display: The merchant sneers at you. "You have any coin?"
+Response: ST6, ST7, ST8
+ST6
+Menu: "Yes."
+Display: "Yes," you respond indignantly, "and lots of it."
+	The stallkeeper snorts derisively. "If you've half a penny that isn't stolen from somewhere, I'll sell my stall to the monkey. Now go bother someone else before I call those mercenaries over here myself!"
+	[player is now out of conversation]
+ST7
+Menu: "No."
+Display: "Um, no," you say.
+	The stallkeeper rolls his eyes. "Do I look like I have time to gab at you all day? Beat it, kid."
+	[player is now out of conversation]
+ST8
+Menu: "Never mind."
+Display: "Uh, never mind."
+	"Whatever," the stallkeeper mutters, and goes back to nervously scanning the crowd.
+	[player is now out of conversation]
+ST9
+Menu: "Good-bye."
+Display: "Yeah, fine, scram," the stallkeeper mutters.
+	[player is now out of conversation]
+Germaise the Baker
+GE1
+Trigger: TALK TO BAKER
+Display: You lean casually on the counter, and the baker raises one flour-dusted eyebrow. "You want something?" he asks.
+Response: GE2; GE3; GE4; GE5 if HO1 has been triggered; GE6; GE7 if GE2 has been triggered; GE8 if GE7 has been triggered; GE9 if GE7 has been triggered; GE10 if GE7 has been triggered; GE11 if GE7 has been triggered; GE12 if GE8 has been triggered
+GE2
+Menu: "How's business?"
+Display: "So how's business, Germaise?" you ask.
+	Germaise sighs. "Eh, Fossville's throwing a ball tomorrow night, and I've had the ovens fired up night and day all week trying to fill his order. It's good for business, don't get me wrong, but…" He slaps dispiritedly at the dough, sending up a puff of flour. "You have to spend time on a pastry to make it just right. Breaks my heart to do slapdash work like this, but what can you do? The Baron wants quantity, not quality."
+Response: GE7; GE8; GE9 if GE7 has been triggered; GE10 if GE7 has been triggered; GE11 if GE7 has been triggered; GE15
+GE3
+Menu: "What have you got to sell today?"
+Display: Knowing that the question always puts him in a good mood, you ask, "What are you selling today, Germaise?"
+	A smile spreads across the baker's flour-streaked face. "What is it you desire?" he replies. "I have round breads and flat breads, grain breads and white breads, hard breads and soft breads, long loaves and demi-loaves. I make rolls, muffins, pastries, cakes, and the most delicious fried dough you will ever taste. It is no joke to say that my buns are the most firm and delicious in all of Toresal."
+Response: GE15
+GE4
+Menu: "Do you know about the mercenaries in Grubber's Market?"
+Display: "So…" you say, trying to play it tricky, "you hear anything about mercenaries running around Grubbers?"
+	"Eh?" Germaise looks up, startled. "Mercenaries in Grubber's?"
+	"Oh yeah," you say. "I, uh, heard they were kicking over stalls, scaring the locals, really roughing up the place. I was just wondering if you knew anything about it?"
+	"Did they knock over Teisha's tent?" Germaise blurts out. "Is Teisha all right?"
+Response: GE13, GE14
+GE5
+Menu: "Have you seen Bobby around?"
+Display: "You seen Bobby around lately?"
+	"Seen him?" Germaise snaps. "I chased him out of here for stealing one of my tarts! You tell him from me, he comes around my bakery again, he gets the wrong end of my bread knife in his you-know-what!"
+	"So… that'd be a no, then?"
+	Germaise sniffs and pounds at his dough.
+Response: GE15
+GE6
+Menu: "Nothing, never mind."
+Display: "Oh, nothing," you say.
+	Germaise nods and goes back to his dough.
+	[player is out of conversation]
+GE7
+Menu: "What's the occasion for the ball?"
+Display: "Fancy ball at Lord's Keep, eh?" you ask, trying not to sound too enthusiastic. You can't help yourself; you know it's girlish, but you've always been fascinated by the lavish parties thrown by Toresal's nobility. "What's the occasion?"
+	Germaise snorts. "He's throwing it for the Queen and Princess, come down from Aubrimere. Making his play for the Ascension, no doubt. All the more reason to take extra care over the pastries, but what do I know? I'm just the baker."
+Response: GE8, GE9, GE10, GE11, GE15
+GE8
+Menu: "What do you think of Baron Fossville?"
+Display: "What do you think of Baron Fossville?" you ask. "It sounds like you're not exactly pleased to be getting his custom."
+	"No, no, it's not that, not that at all," Germaise says hastily. "Fossville runs the city well and his taxes are fair. They say he has a temper, but who am I to judge? Now, the Duke before him…" he seems on the verge of saying something, but then thinks better of it. "Eh, well," he mutters, and attacks his dough with renewed vigor.
+Response: GE12, GE15
+GE9
+Menu: "What do you think of the Queen?"
+Display: "What do you think of the Queen?" you ask.
+	Germaise shrugs and makes a dismissive pfff noise, blowing a cloud of flour from his moustache. "I try not to. The King placed a greater value on looks than wisdom, and that is his royal prerogative, but then he went and died and the rest of us had to live with the consequences."
+Response: GE10, GE15
+GE10
+Menu: "What do you think of the Princess?"
+Display: "What do you think of the Princess?" you ask.
+	Germaise shrugs. "I hear she's a pretty thing, like her mother once was. That plus the throne makes her quite the prize."
+Response: GE9, GE15
+GE11
+Menu: "What do you know about the Ascension?"
+Display: "It seems like the Ascension is all anyone talks about lately," you say. "What's the big deal, anyway?"
+	Germaise rolls his eyes and flaps his flour-white hands in the air. "Eh, a big how-do-you-do about nothing, believe me. The Ascension is when the throne is bestowed on the Queen's successor. Officially we common folk get some say in who that will be, but if you believe that, you're daft. Anyone with a dram of sense knows that the throne will go to the Queen's daughter, and to whoever is ruthless enough and lucky enough to wed her. Don't trouble your head about Royal politics, Jack," Germaise adds, giving his dough a vicious punch. "It's far above the likes of you and me."
+Response: GE8; GE9; GE11; GE12 if GE8 has been triggered; GE15
+GE12
+Menu: "What did you think of the old Duke?"
+Display: "It's only been a couple of years since the old Duke died," you say. "Do you miss him?"
+	Germaise gets a faraway look in his eyes. "Ah, Duke Toresal," he mutters, "there was a bright and honorable Lord. He'd have been in line for the throne himself if he hadn't married below his station. And if he hadn't died." He sighs. "Eh, well. Those were better days, Jack."
+Response: GE15
+GE13
+Menu: "Yes, Teisha's fine."
+Display: There he goes again, you think, trying not to roll your eyes too obviously. "Yeah, uh, Teisha's just fine. She's great."
+	Germaise lets out a sigh of relief. "Ah good. Such a lovely girl, that Teisha. Such a firm girl. Maybe I'll send her a few pastries as a gift, so she knows I'm thinking about her…"
+Response:  GE16, GE15
+GE14
+Menu: "The mercenaries roughed Teisha up."
+Display: "No, actually, the mercenaries roughed her up and stomped all over her tent," you say, relishing the effect that this news has on Germaise, who has had a crush on your friend for as long as you can remember.
+	"The scoundrels!" Germaise shouts, slamming his fist into the middle of his mound of dough with a dull splat. "I'll go see her right away, I'll bring her a plate of my best pastries. I'll, uh…" he looks around in dismay. "I'll do that… as soon as I finish the Baron's order." He starts working the dough at double-speed.
+Response: GE16, GE15
+GE15
+Menu: "One more question."
+Display: "You mind if I ask you something else?" you ask.
+	"As long as it doesn't slow down my pastries," Germaise replies.
+Response: GE2; GE3; GE4; GE5 if HO1 has been triggered; GE6; GE7 if GE2 has been triggered; GE8 if GE7 has been triggered; GE9 if GE7 has been triggered; GE10 if GE7 has been triggered; GE11 if GE7 has been triggered; GE12 if GE8 has been triggered
+Holstenoffer the Butcher
+HO1
+Trigger: Entering the butcher shop for the first time.
+Display: Holstenoffer glances over his shoulder as you come in. "Ey, Jack!" he calls. "Long time, no see. Bobby was around this morning, looking for yeh. Up to something again, eh?" he laughs.
+Response: HO2; HO3; HO4; HO10
+HO2
+Menu: "What did Bobby want?"
+Display: "Bobby's was looking for me?" you ask, trying to contain your excitement. "Did he say what he wanted?"
+	Holstenoffer shrugs. "Didn't say. He said he'd be waiting for you over by Lord's Market. Yeh oughtta stick by Bobby more, Jack," he adds. "Big strong lad, he is; do a skinny boy like yerself good to learn from him."
+Response: HO11, HO12
+HO3
+Menu: "Heard any gossip?"
+Display: "So, heard any good gossip lately, Holstenoffer?" you ask.
+	"Well, the mercenaries in Grubber's have got everyone excited," Holstenoffer says, "but I expect they'll be old news by tomorrow. Aside from that, all anyone talks about is the upcoming Ascension, yeh know. That and the Baron's fancy ball, with the Queen and Princess coming down to make a Royal appearance." Holstenoffer rolls his eyes. "Ooh, and would yeh like some tea?" he squeaks in a silly falsetto. "Or maybe some crumpets? Ol' Baron Fussypants likes his fancy things, he does."
+Response: HO5, HO6, HO7, HO8
+HO4
+Menu: "What do you know about the mercenaries in Grubber's?"
+Display: "Have you heard about the mercenaries in Grubber's Market this morning?" you ask.
+	Holstenoffer's eyes narrow. "All I know about mercs is, they're filthy scavengers to a man, with empty purses where their sense of honor oughtta be. Let 'em try coming up Commerce Street," he growls, tightening his grip on his cleaver, "They'll find more than some timid stallkeeper here!"
+Response: HO12
+HO5
+Menu: "What do you think about Baron Fossville?"
+Display: "So tell us what you really think of Baron Fossville," you say, smiling at Hostenoffer's earlier impression.
+	The butcher's face suddenly grows dark, and his cleaver thwacks into the wooden block. "Tell yeh the truth Jack, I laugh about it when I can, but the Baron's a rat and I'm not afraid to say it. He don't care about this city, he don't care for anything but his own purse and his own power, and he ain't half the lord the old Duke was. He and the old Duke were always at odds, yeh know. But Fossville won that quarrel, and not by playing fair, I'd wager." Holstenoffer shakes his cleaver menacingly. "It makes a man so angry, he's liable to cut his own hand off if he's not careful."
+Response: HO6, HO7, HO8, HO9, HO12
+HO6
+Menu: "What do you think of the Queen?"
+Display: "What do you think of the Queen?" you ask.
+	"Bah," spits Holstenoffer, "that old bat couldn't rule so much as her own temper. This whole kingdom went to pot when she took the throne, and we'll be even worse off if she gets to decide who takes the throne after her."
+Response: HO5; HO7; HO8; HO9 if HO5 has been triggered; HO12
+HO7
+Menu: "What do you think of the Princess?"
+Display: "What do you think of the Princess?" you ask.
+	"Well, the apple doesn't fall too far from the tree, yeh know," grumbles Holstenoffer. "I figure if the Ascension goes to the Queen's little brat, it'll be just like she never left."
+Response: HO5; HO6; HO8; HO9 if HO5 has been triggered; HO12
+HO8
+Menu: "What do you think of the Ascension?"
+Display: "What's your opinion of the upcoming Ascension?" you ask. "Who do you think will take the throne?"
+	Holstenoffer heaves a sigh and spreads his arms in a wide shrug (forcing you to duck as a bit of bloody suet flies off the end of his cleaver and splats against the wall). "I'm just a humble butcher, Jack. I know chopping meat, not Royal politics. But I do know that Fossville has his eye on the Queen's daughter, and that means his eye is on the throne, and that means no good for anyone. Yeh know what I think?" he asks, squinting at you and pointing with his cleaver. "Old Holstenoffer thinks we're all doomed. That's what I think."
+Response: HO5; HO6; HO7; HO9 if HO5 has been triggered; HO12
+HO9
+Menu: "What did you think of the old Duke?"
+Display: "I guess you liked the old Duke better, huh?" you ask.
+	Holstenoffer takes a deep breath. "It's hard for someone your age to understand, Jack," he says. "Duke Toresal was a great man. A great, great man." He starts chopping furiously, as if trying to hide a sudden rush of emotion.
+Response: HO12
+HO10
+Menu: "Where did you get the tattoos?"
+Display: "Holstenoffer," you ask, "where did you get those tattoos?"
+	Holstenoffer looks proudly down at his arms. "Got these during my days at sea," he said. "I was quite the old salty dog, yeh know, before I came back to the city to be a meat chopper." Then he frowns. "Never did get the hang of it, though," he admits. "Kept getting' seasick. Still, the tattoos are quite the conversation piece, they are."
+Response: HO12
+HO11
+Menu: "Thanks."
+Display: "Thanks, Holstenoffer," you say.
+	"Always a pleasure," he says, bringing his cleaver down with a crunch.
+	[player is now out of conversation]
+HO12
+Trigger: TALK TO HOLSTENOFFER
+Menu: "Can I ask you something?"
+Display: "Mind if I ask you a question?" you say.
+	"Go right ahead," says Holstenoffer.
+Response: HO2; HO3; HO4; HO5 if HO3 has been triggered; HO6 if HO3 has been triggered; HO7 if HO3 has been triggered; HO8 if HO3 has been triggered; HO9 if HO5 has been triggered; HO10; HO13
+HO13
+Menu: "Never mind."
+Display: "Nah, never mind, it was nothing."
+	"Suit yourself," Holstenoffer says with a shrug.
+	[player is now out of conversation]
+HO14
+Trigger: 2-5 turns after the player enters the Butcher shop for the first time
+Display: "Say, Jack," says Holstenoffer suddenly, "I haven't seen Widow Shannon down this way in a few days. Everything all right at Maiden House?"
+Response:
+Note: The menu responses for this quip override the menu responses for whatever quip was most recently activated.
+HO15
+Menu: "She's fine; she's just been busy."
+Display: "Oh, everything's fine at Maiden House," you say, while thinking to yourself, and boring as ever. "Widow Shannon's just been busy; she hasn't had time to do the shopping."
+	"Well, tell her I've been savin' some choice cuts for her next time she comes down here. Good meat, better than she'll get in Grubber's, and cheaper too. Those orphans need to eat healthy." He grins. "And I need to convince Widow Shannon that I'd make her a good husband."
+Response: HO16, HO17, HO12
+HO16
+Menu: "I try to stay away from Maiden House."
+Display: You try to stifle a groan. "To tell you the truth, Holstenoffer, I try to stay away from Maiden House whenever I can."
+	Holstenoffer smiles knowingly. "The widows breathin' down yer neck a bit, eh? Well, I know all about that. Plenty a' times I sneaked outta the bedroom window when I was a wee lad stayin' with me aunty. Still," he waves his cleaver at you admonishingly, and you step back quickly to avoid a deep facial scar. "Still, Maiden House is a good place for urchins like yerself. Keeps yeh outta trouble. And the widows are a fine bunch of women. Especially that Shannon," he adds, with a wistful look in his eye.
+Response: HO17, HO12
+HO17
+Menu: "She's just not into you, Holstenoffer."
+Display: You sigh. "You know, I've told you before, Widow Shannon isn't looking for a husband. It's nothing against you personally, I think she just likes devoting all her time to the orphans."
+	Holstenoffer just smiles. "Oh, I know, Jack, that's what she says. But old Holstenoffer knows a few tricks too, yeh know." He waves his cleaver in the air nonchalantly; a bit of bloody gristle dangles from the blade's tip. "You just get her down here, and let Holstenoffer work his charm."
+	You know from past experience that there's no use arguing with him about this, so you just smile and nod. "I'll let her know," you say.
+Response: HO12
+Olgan Minor, the Armory Shopkeeper
+OL1
+Trigger: TALK TO OLGAN MINOR
+Display: "Um, mind if I ask you something?" you stammer.
+	The man's lip twitches slightly, but he says nothing. You decide (foolishly, perhaps) to interpret this as a "yes".
+Response: OL2; OL3; OL4 if HO1 has been triggered; OL5 if either HO3 or GE2 have been triggered; OL6 if either HO3 or GE2 have been triggered; OL7
+OL2
+Menu: "Tell me about your weapons."
+Display: You make a show of looking around the shop. "You sure have a lot of interesting weapons, here," you say. "Can you tell me something about them?"
+	"You should find something else to be interested in," Olgan sneers, "else you're likely to get cut."
+Response: OL3; OL4 if HO1 has been triggered; OL5 if either HO3 or GE2 have been triggered; OL6 if either HO3 or GE2 have been triggered; OL7
+OL3
+Menu: "What do you know about the mercenaries in Grubber's Market?"
+Display: "Do you, uh, know anything about the mercenaries who were in Grubber's Market this morning?"
+	Olgan smiles unpleasantly. "They're some of my best customers. Should I let them know you were asking?"
+	"Er—no, no thanks," you stammer. "Not necessary."
+Response: OL2; OL4 if HO1 has been triggered; OL5 if either HO3 or GE2 have been triggered; OL6 if either HO3 or GE2 have been triggered; OL7
+OL4
+Menu: "Have you seen Bobby lately?"
+Display: "I, uh, don't suppose you've seen Bobby around?" you ask. "Tall? Blonde hair?"
+	Olgan Minor just curls his lip with contempt.
+Response: OL2; OL3; OL5 if either HO3 or GE2 have been triggered; OL6 if either HO3 or GE2 have been triggered; OL7
+OL5
+Menu: "What do you think about the upcoming ball?"
+Display: "What do you think about the ball Baron Fossville's throwing?" you ask.
+	Olgan bares his teeth. "I've no interest in dandified nobles or the political games they play. Why are you asking me stupid questions?"
+Response: OL2; OL3; OL4 if HO1 has been triggered; OL6 if either HO3 or GE2 have been triggered; OL7
+OL6
+Menu: "What do you think about Baron Fossville?"
+Display: "So what's your opinion on Baron Fossville?" you ask.
+	"I don't discuss politics with customers," Olgan snaps. 
+Response: OL2; OL3; OL4 if HO1 has been triggered; OL5 if either HO3 or GE2 have been triggered; OL7
+OL7
+Menu: "Never mind."
+Display: "Uh, okay then," you mumble. "I'll just… look around by myself, then."
+	[player is out of conversation]
+OL8
+Trigger: if the player triggers any of quips OL1-OL6 twice
+Display: "I'm through listening to your chatter, little boy," Olgan growls. "Now get out of my store before I decide to test my wares on your soft, pink hide." He advances on you menacingly, and you find yourself backpedaling towards the door.
+	[player is out of conversation; move player to Commerce Street]
+Dame Sandler
+DS1
+Trigger: entering the jeweler's shop for the first time
+Display: Dame Sandler's eyebrows raise slightly as you walk into her store. "Well, hello there, Sire Jack," she says, in her typically smooth (and the slightest bit mocking) tone. "We haven't had the pleasure of your company in a while. You look a bit out of breath – nothing ails you, I hope?"
+Response: DS2, DS3
+DS2
+Menu: "No, I'm fine."
+Display: "No, I'm fine," you say.
+	"I see," says Dame Sandler, in a tone that suggests she doesn't believe you, but doesn't have any particular objection to you lying.
+	"Well then, young man," she continues after a brief pause, "Was there anything in particular on your mind?"
+Response: DS4 if HO1 has been triggered; DS5 if DS6 has not been triggered; DS7 if either HO3 or GE2 have been triggered; DS13
+DS3
+Menu: "There were mercenaries chasing me this morning."
+Display: "There were mercenaries chasing me all over Grubber's Market this morning," you admit. "I guess I'm still a bit shaken up."
+	[trigger quip DS6]
+DS4
+Menu: "Have you seen Bobby?"
+Display: "Have you seen Bobby around?" you ask, trying to make it sound casual.
+	"Ah, Bobby," says Dame Sandler with a knowing smile. "Now there's a boy a who could get you into all sorts of the most… interesting sorts of trouble. Why yes," she adds. "I have seen him. He was wandering around the south end of the square, just by the alley."
+Response: DS12
+DS5
+Menu: "Have you heard about the mercenaries?"
+Display: "Did you hear about the mercenaries in Grubber's Market this morning?" you ask.
+	[trigger quip DS6]
+DS6
+Trigger: printing either DS3 or DS5
+Display: "Ah yes, I did hear about that nasty business in Grubber's Market," Dame Sandler says. "How terrible. Odd, the way they seemed so interested in you."
+Response: DS9, DS11
+DS7
+Menu: "Have you heard about Fossville's ball?"
+Display: "Did you know Fossville's throwing a fancy ball tomorrow night?" you ask.
+	"Well, of course I know about it, Sire Jack," says Dame Sandler. "Toresal's best and brightest have been rushing to my store all week, looking for pretty trinkets to wear on the big night. I also know that the Queen and Princess will be in attendance, and that Fossville is making a bid for her hand. The Baron has a great deal riding on this little soiree." She arches one thin eyebrow. "Which is doubly interesting, in light of your narrow escape this morning."
+Response: DS8, DS11
+DS8
+Menu: "Why is that interesting?"
+Display: "Interesting?" you ask. "How do you mean?"
+	[trigger DS10]
+DS9
+Menu: "What do you mean, 'odd'?"
+Display: "What do you mean, 'odd'?" you ask.
+	[trigger DS10]
+DS10
+Trigger: printing either DS8 or DS9
+Display: "Only that there seems to be no conceivable reason for a group of trained soldiers to be hunting for an orphan of no significant heritage. Questions spring to mind, such as: who hired them? And why now in particular? And is everything about this incident what it seems to be?"
+	Dame Sandler smiles at you. She doesn't seem to be actually asking you these questions, so much as hinting to you that she already knows the answers.
+Response: DS11
+DS11
+Menu: "I don't know what you're talking about."
+Display: Suddenly Dame Sandler's knowing tone starts to seem a little bit creepy. "I don't know what you're talking about," you say, cautiously. "Those mercenaries chasing me were just a coincidence."
+	Dame Sandler smiles. "Of course they were, my dear Jack. Of course they were."
+	[player is not in conversation]
+DS12
+Menu: "Thanks! I should go."
+Display: "Thanks!" you say, not quite able to hide your enthusiasm. "I should probably go find him…"
+	Dame Sandler smiles. "Of course, Sire Jack. Don't let me keep you."
+	[player is not in conversation]
+DS13
+Menu: "Not really."
+Display: "Nothing in particular," you say. "Just dropping by."
+	"Well, your visits are always a pleasure, Jack," Dame Sandler says. "I do enjoy keeping my eye on you."
+	[player is not in conversation]
+DS14
+Trigger: first time player tries to leave the shop (preventing exit)
+Display: Just as you're about to leave, Dame Sandler calls out, "Oh, Jack, I almost forgot to ask you…what are your thoughts on the coming Ascension?"
+Response: DS15, DS16, DS17
+DS15
+Menu: "I don't know anything about it."
+Display: You shrug. "I don't know anything about it. It's all over my head, really."
+	"Oh, but it's really very simple," says Dame Sandler. "The King – or Queen, in this case – chooses her successor for the throne, usually her direct, lineal descendant, although technically she can choose anyone. Unless someone else has a valid claim to the throne. Then it becomes very, very complicated."
+	[trigger DS18]
+DS16
+Menu: "It seems like it's going to fall to the Princess."
+Display: "It seems like a done deal, from what I've heard," you say. "The Princess will take the throne, and I guess Baron Fossville if she consents to marry him."
+	Dame Sandler shakes her head. "It's never a 'done deal', Jack, not until the crown is finally placed on someone's head – and sometimes not even then. The throne is the greatest prize in all the kingdom, and no one with any stake in it can afford to let it be a forgone conclusion."
+	[trigger DS18]
+DS17
+Menu: "Why should I care?"
+Display: You shrug. "What is it to me? That sort of thing is way beyond us common folk, isn't it?"
+	"Tsk, tsk, Jack," Dame Sandler sighs. "Such cynicism in youth is unattractive."
+	[trigger DS18]
+DS18
+Trigger: printing DS15, DS16, or DS17
+Display: She smiles in that knowing way of hers. "Some friendly advice, Jack: the Ascension is the most important event you will withness in your lifetime. It would behoove you to understand more about it. You should ask around; you might be surprised at some of the answers you get."
+	Then she gives a little wave. "On your way, then."
+Bobby
+BO1
+Trigger: first entering the Alley and seeing Bobby
+Display: Bobby stands and stretches, then sees you. The corner of his mouth goes up in that lop-sided grin you know so well. "'Lo, Jack," he says. "What's happening?"
+Response: BO2, BO3
+BO2
+Menu: "Nothing much."
+Display: "Oh, nothing much," you say. "Just, you know… doing stuff. Around the city. Staying tricky."
+	"Huh," says Bobby, nodding vaguely.
+	Goddesses, you think to yourself, I am such a dim!
+Response: BO6, BO11
+BO3
+Menu: "I was chased by some mercenaries."
+Display: "Oh, nothing much," you say, nonchalantly. "Unless you count being chased by armed mercenaries through Grubber's Market."
+	Bobby grins and snaps his fingers. "Oh, I heard about that! Extra tricky! Wish I could've been there to help; that would've been a time!"
+	You look away, wondering if it's obvious, the way you're totally glowing right now.
+Response: BO6, BO11
+BO4
+Menu: "What's with the urchins?"
+Display: "So what’s with all the urchins I saw you with?" you ask.
+	"Oh, I just got lucky this morning," Bobby says. "Some dim was striding around Lord's Market with his purse strings too loose, so I stopped and tightened them for him. By the time I'd finished, he'd already left. So I thought I'd share the wealth." He sighs and looks uncharacteristically glum. "They have so little…" he murmurs, then shakes his head. "Anyway."
+Response: BO6, BO11
+BO5
+Menu: "Were you at Maiden House?"
+Display: "I don't usually see you on this side of town," you remark. "Were you visiting Maiden House?" You try to make it sound casual, but inside you're practically holding your breath. Because if Bobby was visiting Maiden House, theat means he was coming to visit you.
+	"Nah, not for me, that place," says Bobby. "You know how the Widows are, they'd just mother-hen me to death. I can't be cooped up; there's too many things to do, places to see. Trinkets to nick." He laughs, then glances at you. "But you know, it's all right for someone younger, like you. Good to have a shelter, somewhere you can run back to when things get sticky."
+	You feel your neck growing hot. "I don't need to run anywhere," you mutter. You hate it when he brings up your age. He's only two years older than you, anyway!
+	Bobby looks embarassed. "Er, yeah, yeah, I know that, Jack," he says. "Sorry, mate. I didn't mean anything by it. Let's change the subject."
+Response: BO6, BO11
+BO6
+Menu: "What did you want to see me for?"
+Display: "So, I heard you were looking for me," you say. "What'd you want to tell me?"
+	Bobby grins.
+	[trigger BO8]
+BO7
+Trigger: trying to leave the location before BO8 is triggered
+Display: "Wait, wait," Bobby says, catching your arms. "There was something I wanteed to  tell you."
+	[trigger BO8]
+BO8
+Trigger: triggered by BO6 or BO7
+Display: He makes a show of looking carefully over one shoulder, then the other, then leans close to whisper. "I found this new place, right? It's a big secret, extra tricky. I was thinking of doing a bit of exploring there later tonight. You want to come with?" He smiles that knowing half-smile of his, the one that always means he's about to do something that will be very fun, or land you both in a pile of trouble, or – the usual case – both.
+Response: BO9, BO10
+BO9
+Menu: "Where is this place?"
+Display: "I don't know," you say. "Where is this place?"
+	Bobby rolls his eyes. "Well, that's kind of the point, if I told you, it would ruin the secret. C'mon, Jack, are you in or out?"
+Response: BO10
+BO10
+Menu: "I'm in."
+Display: Could you even consider saying no? "Okay, let's do it," you say, your heart thumping hard. "I'm in."
+	"You're a good bloke, Jack," says Bobby. "Now, you don't want the Maidens worrying about you, so head on home for now. Once it gets dark, sneak back out and meet me in the Grubber's Market. Right? Good. See you later, Jack." He claps his hand on your shoulder, then turns and strides, all grace and overconfidence, out of the alley.
+	[remove Bobby from play; player is now out of conversation]
+BO11
+Trigger: TALK TO BOBBY
+Menu: "Can I ask you a question?"
+Display: "Hey, Bobby, you mind if I ask you a question?" you ask.
+	"Sure," says Bobby.
+Response: BO6, BO12, BO13, BO14, BO15
+BO12
+Menu: "Do you know anything about the mercenaries?"
+Display: "Do you know anything about those mercenaries that were chasing me?" you ask.
+	Bobby shakes his head. "Sorry, Jack. I was all the way on the other side of town when it happened. Word on the street is, they were looking for someone important. What that has to do with you, I have no idea."
+	"Oh, thanks," you say, punching him in the arm.
+Response: BO6, BO13, BO14, BO15
+BO13
+Menu: "Did you know about Baron Fossville's ball?"
+Display: "Did you hear Baron Fossville's throwing a big ball tomorrow night?" you ask.
+	"Oh, I heard about it, all right," Bobby says, nodding sagaciously. "In fact, I wouldn't be surprised if we heard a lot more about it soon."
+	You give him a look, but Bobby just smiles.
+Response: BO6, BO12, BO14, BO15
+BO14
+Menu: "What do you think about Baron Fossville?"
+Display: "What do you think about Baron Fossville?" you ask.
+	Bobby shrugs. "I try not to. He's a little man who cares more about his power than about the people in this city. But then, most of them are like that, aren't they?"
+Response: BO6, BO12, BO13, BO15
+BO15
+Menu: "What do you know about the Ascension"
+Display: "What do you know about this Ascension thing?" you ask.
+	Bobby looks at you incredulously. "Ascension? Well, I know a little…" He takes a deep breath, as though gathering his thoughts. "Okay, so, the King died without naming any heir, right? I don't know why he didn't just name his own daughter, but he didn't. And that makes things interesting, because now that means the people get a say. Well… important people, mainly, the Dukes and Barons and whatnot, but even the common blokes like you and me get represented by a People's Regent who gets a bit of a say. And the thing is, the Queen's never been all that popular. She wants to keep the succession in the bloodline, and all the Dukes and Barons want someone who's going to keep the treasuries filled, and the People's Regent is going to be pulling for a good-looking hero type who looks out for the poor, or pretends to at least. And there's no obvious good choice. So now basically everything's up for grabs."
+	He turns red when he notices you staring at him. "Or at least, uh, that's what I hear."
+Response: BO6, BO12, BO13, BO14
+BO16
+Trigger: two turns after player wakes up in Holding Cell
+Display: Suddenly you hear a voice whisper your name. "Jack…"
+	At first you think it's the creepy guy in the corner, but he hasn't moved. You're still staring at him when the whisper comes again, louder this time: "Jack…" It's coming from somewhere outside the cell.
+Response: BO17
+BO17
+Menu: "Bobby? Is that you?"
+Display: You rush up and press your face against the viewing window, but you can't see anything out there except an empty room. "Bobby?" you call, trying to keep the fear out of your voice. "Bobby, is that you? I'm locked in here, Bobby, help me!"
+	[trigger BO18]
+BO18
+Trigger: triggered by BO17; or two turns after BO16 is triggered, whichever comes first
+Display: The voice chuckles, then coughs weakly. "I'm in the cell next to yours, Jack. I'm locked in, too. Sorry."
+	Your heart sinks a little at that, but at least being trapped in a cell with Bobby nearby is a little bit better than being trapped in a cell with no one around to help you at all… right?
+	"Jack, listen," Bobby says. His voice is ragged and hoarse; you're worried that the mercenaries might have hurt him badly. "I'm going to get us out of this mess, don't worry. But in case I'm not able to meet up with you after, you need to listen carefully."
+Response: BO19
+BO19
+Menu: "What do you mean?"
+Display: "Not able to meet up with me?" You whisper, dismayed. "What do you mean? What—" but Bobby cuts you off.
+	[trigger BO20]
+BO20
+Trigger: triggered by BO19; or two turns after BO18 is triggered, whichever comes first
+Display: "Jack, listen to me. Go to Fossville's estate in the city. Use the rooftops; there's an alley next to the bakery where you can climb up."
+	"You want me to break into Baron Fossville's house?" you whisper back, incredulously. "Bobby, I don't understand—"
+	"He has secrets," Bobby goes on, "that you need to know. Secrets about your father."
+	You pause, stunned.
+	"Look for a letter—" says Bobby, but he is cut off by a door slamming open elsewhere in the room. Guards move past your cell door; one of them slams a wooden cudgel against the bars right in front of your face, and you stagger back.
+Response: BO21
+BO21
+Menu: "Bobby, what's happening?"
+Display: "Bobby?" you cry, "Bobby? What's happening? What letter?"
+	[trigger BO22]
+BO22
+Trigger: triggered by BO21; or one turn after BO20
+Display: You hear a metallic rattling, the squeak of hinges. Then several meaty thuds, mixed with grunts and cries of pain. The guards reappear, this time dragging Bobby with them. He looks up as he passes the viewing window, and you get a brief glimpse of his face – bruised, bloody, but still smiling. You'd swear he was trying to wink at you, except that his eye is swollen shut.
+	"Fossvile, Jack!" he yells as they bundle him off. "The rooftops! Look for the letter!"
+	Somewhere a door slams one final time… and then everything is silent.
+	[remove Bobby from play; player is out of conversation]
+
+Widow Theresa
+TH1
+Trigger: First time you enter Maiden House
+Display: After checking the door one last time to make sure it's securely fastened, Widow Theresa turns to you. "You're filthy, she says, "though no more than usual. I realize it's too much to ask you to actually do any of your chores, but you might at least like to wash yourself, if only in consideration for the next poor girl who has to wash your sheets."
+Response: TH2, TH3, TH4
+TH2
+Menu: "And how are you this evening?"
+Display: "And how are you this fine evening, Widow Theresa?" you say, dropping an exaggerated curtsey.
+	Her face twitches. "I'll not be baited by the simple sarcasm of a spoiled brat," she says. "Go find someone else to bother."
+Response: TH5, TH6
+TH3
+Menu: "You can't lock me in!"
+Display: "You can't lock me in here!" you shout. "I'm supposed to meet Bobby tonight!"
+	Widow Theresa somehow manages to look both scandalized at the idea of you keeping a midnight tryst and pleased that she has managed to ruin your entire night already. (It's a look she practices often.) "That Bobby is a bad influence," she declares. "You shouldn't be running amok with older boys in the first place, much less a delinquent like him."
+Response: TH5, TH6
+TH4
+Menu: "Give me a break, I was chased by mercenaries this morning."
+Display: "Come on, Widow Theresa," you say, "give me a break. I'm tired; I was chased all over Grubber's Market by armed soldiers this morning."
+	She smirks. "An obvious lie," she says, "not up to your usual standards. And even if it were true, they were probably hired by someone you'd stolen from, and it would have served you right if you were caught."
+Response: TH5, TH6
+TH5
+Menu: "Where are Fiona and Shannon?"
+Display: You sigh. The last thing you need is to get drawn into another argument with Widow Theresa. "Where are Widow Fiona and Widow Shannon?" you ask.
+	"Fiona is in the kitchen, washing the dishes," she says, "and Shannon is in the laundry room. Which is to say, they are actually doing something productive, so you'll avoid them at all costs, I'm sure."
+Response: TH6
+TH6
+Menu: "Let me ask you something."
+Display: "Let me ask you something," you say.
+	Widow Theresa does not answer at first, but after a moment she glares at you sharply and says, "What?"
+Response: TH5 if it has not been triggered already; TH7, TH8, TH9, TH10
+TH7
+Menu: "What do you think of Widow Fiona?"
+Display: "What do you think of Widow Fiona?" you ask.
+	Theresa looks at you for a long time before answering. "I think," she says, finally, "that playing favorites does an injustice to the other children here, but in your case it's even worse because of how little you deserve it. Fiona thinks you're something special. But I think you're just a spoiled brat who thinks she can get away with whatever she likes. And I think that one day, you're going to be caught with your fingers in the wrong pocket, and then you will be very, very sorry." She sneers and adds in a low voice, "And I think I'm looking forward to that day."
+Response: TH5 if it has not been triggered already; TH8, TH9, TH10
+TH8
+Menu: "What do you think of Widow Shannon?"
+Display: What do you think of Widow Shannon?" you ask.
+	"Shannon?" laughs Theresa. "I'd say she's too dim to catch a husband, but I'm not sure she even wants one. Don't worry, she'll still be here long after you're dead in a gutter somewhere."
+Response: TH5 if it has not been triggered already; TH7, TH9, TH10
+TH9
+Menu: "What do you think of Baron Fossville?"
+Display: "What do you think of Baron Fossville?" you ask.
+	Widow Theresa gets a wistful look in her eye. "Baron Fossville is a great man. A great and… handsome man." Her look hardens. "It pains me to hear his name coming from your dirty little liar's mouth."
+Response: TH5 if it has not been triggered already; TH7, TH8, TH10
+TH10
+Menu: "What do you know about the Ascension?"
+Display: "What do you know about the Ascension?" you ask.
+	Widow Theresa sniffs. "Royal politics are for people of breeding and intellect, which puts it far above your concern, I'm sure."
+TH11
+Menu: "What do you know about my parents?"
+Display: "Widow Theresa," you say suddenly, "what do you know about my parents?" You're not quite sure why you asked the question; it's certainly never occurred to you to ask her before.
+	But as soon as the words leave your mouth, you realize your mistake. Widow Theresa would never let such a rich opportunity to hurt you pass unsiezed. 
+	"I don't know much," she says, "but I can make an educated guess. No doubt your father was some vagrant, probably on the run from the law. Obviously he was too shifty to stay around for you, at any rate. As for your mother," she goes on with a cruel smile, "no one knows who she was, nor is anyone likely to ever learn. But women like that all tend to end up in the same place in the end, don't they?"
+	Your face is alternating burning hot and icy cold, and your fists are clenched to keep your hands from shaking. "Well. Thanks," you manage to whisper.
+	[player is out of conversation]
+Widow Fiona
+FI1
+Trigger: first time entering the kitchen, after her initial appearance
+Display: Fiona looks over her shoulder as you enter the kitchen. "Good evening, Jacqueline. And how has the day treated you?"
+Response: FI2, 
+FI2
+Menu: "Oh, fine,"
+Display: "Oh, it's been fine," you say. "Not much going on."
+	"Mm-hmm," Fiona says, distractedly.
+Response: FI15 if player has not WASHED DISHES, otherwise bypass response menu and trigger F11
+FI3
+Menu: "I was chased by mercenaries."
+Display: "It's been kind of crazy, to tell the truth," you say. "There were armed mercenaries chasing me through Grubber's Market this morning."
+	"What?" Widow Fiona drops her dishes and rushes over to you. "Oh, Goddesses, Jacqueline, are you hurt?"
+Response: FI4, FI5
+FI4
+Menu: "Nah, I'm fine."
+Display: "Nah, it was tricky," you say, feigning an insouciance that you don't really feel. "Just a lot of people running around and yelling about nothing."
+	Widow Fiona doesn't seem convinced, however. She checks you all over to for injuries, muttering "Goddesses… so close… could have been…all because of…" Finally, after she's satisfied that you aren't secretly bleeding to death, she looks you directly in the eye. "Listen, Jacqueline, I'm glad you're all right, but I think it would be a good idea to stay off the streets for a while. Especially Grubber's Market. We'll send Shannon if we need any groceries."
+Response: FI6, FI7
+FI5
+Menu: "A few bumps and scratches is all."
+Display: "A few bruises and scratches as I was getting away," you say. "Nothing serious." You pause, then add, "I was… pretty scared, though." Fiona is probably the only other person in the whole city to whom you'd admit that.
+	She pulls you to her and hugs you tight. "It's all right now," she whispers, "you're safe now." Then, after she checks you all over to for injuries and satisfies herself that you aren't secretly bleeding to death, she looks you directly in the eye. "Listen, Jacqueline, I think it would be a good idea to stay off the streets for a while. Especially Grubber's Market. We'll send Shannon if we need any groceries."
+Response: FI6, FI7
+FI6
+Menu: "Why are you so worried?"
+Display: Even though she's trying to hide it, you've never seen Widow Fiona so upset. "Why are you so worried?" you ask. "Do you know something about those men?"
+	She looks away, goes back to the basin and starts clattering dishes around. "No… no. I'm just so relieved that you're not hurt. Please, Jacqueline, promise me you'll stay away from Grubber's Market."
+Response: FI7
+FI7
+Menu: "Yes ma'am."
+Display: "Yes, ma'am, I will," you say. You know it's a promise you can't possibly keep, but you also know it will comfort Fiona to hear it.
+	She takes a deep breath. "Thank you, Jacqueline."
+Response: FI15 if player has not WASHED DISHES, otherwise bypass response menu and trigger F11
+FI8
+Menu: "I saw Bobby on the way home."
+Display: "Oh, it was a great day," you tell her. "I saw Bobby on the way home just now; we talked for a while."
+	Fiona smiles. "Bobby's a good boy," she says. She usually adds, and cute, too, but today she spares you the teasing. "Rough around the edges, maybe, but he has a good heart, and he knows this city like no one else. You should listen to what he says… you might learn something important."
+	Suddenly you remember the impossible situation that Widow Theresa has put you in. "Oh, but Widow Theresa has locked me in for the night!" you cry. "I'm supposed to meet Bobby later on!"
+	[trigger FI10]
+FI9
+Menu: "Widow Theresa locked me in!"
+Display: "It's been a horrible day," you snap. "Widow Theresa's locked the doors, but I promised Bobby I'd meet him later tonight! Please make her open the doors for me, Fiona, you have to!"
+	[trigger FI10]
+FI10
+Trigger: triggered by FI8 or FI9
+Display: Fiona sighs. "Now, Jacqueline, you know the curfew rules here. You can stay out all night if you like – although I wish you wouldn't – but once you're in and the evening bells ring, you're in. And I can't let you out after Widow Theresa's locked the doors for the night; it would undermine her authority."
+	All you can do is seethe. Just for once, it would be nice if the things Widow Theresa sais about Fiona playing favorites with you were actually true.
+Response: FI15 if player has not WASHED DISHES, otherwise bypass response menu and trigger F11
+FI11
+Trigger: triggered by FI2, FI7, FI10 if player has not WASHED DISHES
+Display: Widow Fiona leans away from the basin, stretching her back. "How about you help me with some of these dishes, Jacqueline?" she asks.
+FI12
+Menu: "I'll pass."
+Display: "Uh, I think I'll pass," you say.
+	She sighs. "Well, since it's not technically your chore night, I won't press the issue. But it wouldn't hurt you to be more helpful around here."
+	[player is out of conversation]
+FI13
+Menu: "Okay."
+Display: "Okay," you say. You start stacking the dry dishes as Fiona washes them.
+	"Thank you. You are a dear one," she says.
+Response: FI15
+FI14
+Trigger: TALK TO FIONA if you have not WASHED DISHES and F13 is not triggered
+Display: "Can I ask you a question?" you ask.
+	"Not unless you're willing to help me with the dishes," Fiona says, firmly.
+	[player is out of conversation]
+FI15
+Trigger: menu selection; TALK TO FIONA if you have either WASHED DISHES or F13 has been triggered
+Menu: "Can I ask you a question?" 
+Display: "Do you mind if I ask you a question?" you ask.
+	"Of course not, dear," Widow Fiona says.
+Response: FI16, FI17, FI18, FI19, FI20
+FI16
+Menu: "What do you think of Widow Theresa?"
+Display: "What do you think of Widow Theresa?" you ask, trying to keep the angry edge out of your voice.
+	"Widow Theresa can be prickly at times," Fiona says, keeping her voice carefully neutral, "but you must be patient with her. She's had a difficult life. Her late husband left her with a heavy debt, and she's never been able to forgive him for that."
+Response: FI17, FI18, FI19, FI20
+FI17
+Menu: "What do you think of Widow Shannon?"
+Display: "What do you think of Widow Shannon?" you ask.
+	"Oh, Shannon's a sweet one," Fiona says. "Don't ever make the mistake of thinking her simple. She's here because she loves the children, and that's all she needs."
+Response: FI16, FI18, FI19, FI20
+FI18
+Menu: "What do you think of Baron Fossville?"
+Display: "What do you think of Baron Fossville?" you ask.
+	Widow Fiona's expression hardens, which is not something that happens often. "Fossville is a very ambitious man," she says. "And ambitious men tend to be dangerous to those around them, whether they mean to be or not. You shouldn't concern yourself with him, Jacqueline."
+Response: FI16, FI17, FI19, FI20
+FI19
+Menu: "What do you know about the Ascension?"
+Display: "What do you know about the Ascension?" you ask.
+	Fiona gives you an odd look. "The Ascension?" she asks. "What makes you ask?"
+	You shrug. "It's just that I keep hearing about it. Everyone's talking about it, and everyone has a different opinion about it, and it seems terribly important, but I still don't understand it very much."
+	She thinks for a moment, then says, "The reason why everyone is talking about the Ascension is because it's the first time we've had one in a long time. There's no clear successor to the throne, and so everyone is in a tizzy about who has a solid claim and who will be chosen. Probably we'll have a People's Regent, and when the time comes I'll make my voice heard along with everyone else… but the truth is, Jacqueline, is that even with the Regent, people like you and me have very little say in what happens."
+Response: FI16, FI17, FI18, FI20
+FI20
+Menu: What do you know about my parents?"
+Display: "Can you tell me anything about my parents?" you ask.
+	Fiona looks at you, surprised. "What brought that question on?"
+	"I don't really know," you say, which for once is the unvarnished truth. "I've just been thinking about them lately."
+	She dries her hands off and puts a hand on your shoulder. "We've told you before, your mother came to us and stayed only long enough to leave you on our doorstep. No one knows where she is now. As for your father…" She hesitates. "The only thing I can tell you with absolute certainty is that he loved you very much. Your parents weren't bad people, Jacqueline, they were put in a hard circumstance and had to make a terrible sacrifice. You were never unwanted. Just… unfortunate."
+Response: FI16, FI17, FI18, FI19
+Widow Shannon
+SH1
+Trigger: entering laundry room for the first time
+Display: Widow Shannon looks over her shoulder and gives you a friendly nod. "Hello, Miss Jacqueline," she says.
+Response: SH2, SH3
+SH2
+Menu: "Hello, Widow Shannon."
+Display: "Hello, Widow Shannon," you say, without much enthusiasm. "How's the, uh… washing today?"
+	Shannon smiles. "Hard work builds patience and character, Jacqueline," she says.
+	"So I've heard," you mutter, rolling your eyes when Shannon looks away.
+Response: SH4, SH7
+SH3
+Menu: "You need a hand with the washing?"
+Display: "You need a hand with the washing?" you ask.
+	"No, no," Shannon says happily. "It's my day for it, anyway."
+	You breathe an inward sigh of relief. You were trying to be polite, but not that polite.
+Response: SH4, SH7
+SH4
+Menu: "Can you unlock the front door?"
+Display: "Widow Shannon," you say, picking your words carefully, "I was wondering… do you think you could open the front door for me, so I can go out? I know the bells have rung, but just this once? Please?"
+	Shannon frowns. "Widow Theresa's got the only key," she says. "What do you want to go out for?"
+Response: SH5, SH6
+SH5
+Menu: "Oh, nothing."
+Display: "Oh, nothing," you say quickly. "Just to… do some things… that I forgot."
+	Shannon gives you a suspicious but good-humored look. "I'm sorry, Miss Jacqueline, but curfew is curfew. Widow Theresa wouldn't give me the key if I asked, and even if she did, I'd not relish being on her waspish side if I were to let you out."
+Response: SH7
+SH6
+Menu: "I'm meeting Bobby later tonight."
+Display: "I'm supposed to meet Bobby later tonight," you tell her.
+	Shannon laughs and gives you a knowing wink. "Oh, it's Bobby, is it? He is a cute one." She shakes her head. "I'm sorry, Miss Jacqueline, but curfew is curfew. Widow Theresa wouldn't give me the key if I asked, and even if she did, I'd not relish being on her waspish side if I were to let you out. However…" she adds, in an innocent-sounding voice, "if a clever girl like you were to find some way around the obstacles to make her midnight tryst, I'm sure I'd never notice a thing."
+Response: SH7
+SH7
+Trigger: TALK TO SHANNON
+Menu: "Can I ask you a question?"
+Display: "Can I ask you a question?" you ask.
+	"Of course, Miss Jacqueline," says Shannon.
+Response: SH4 if it has not been triggered; SH8, SH9, SH10, SH11, SH12
+SH8
+Menu: "What do you think of Widow Theresa?"
+Display: "What do you think of Widow Theresa?" you ask.
+	Widow Shannon scrunches up her nose and starts scrubbing the clothes harder when you mention Theresa. "Well," she says, "it's important to obey your elders, Jacqueline. I'm sure Widow Theresa has your best interests in her heart."
+Response: SH4 if it has not been triggered; SH9, SH10, SH11, SH12
+SH9
+Menu: "What do you think of Widow Fiona?"
+Display: "What do you think of Widow Fiona?" you ask.
+	"Oh, Miss Fiona is terribly smart," Shannon says, with a touch of awe in her voice. "You mind her and listen to what she says, Jacqueline. She knows what's best."
+Response: SH4 if it has not been triggered; SH8, SH10, SH11, SH12
+SH10
+Menu: "What do you think of Baron Fossville?"
+Display: "What do you think of Baron Fossville?" you ask.
+	"Fossville?" Shannon replies, somewhat confused, "Why, he's the new lord of the Toresal, since the old Duke died. I thought everyone knew that."
+Response: SH4 if it has not been triggered; SH8, SH9, SH11, SH12
+SH11
+Menu: "What do you know about the Ascension?"
+Display: "What do you know about the Ascension?" you ask.
+	"The Ascension?" Shannon laughs. "Goddesses, Miss Jacqueline, where's your head been today? That Royal politics is far above the likes of me. I keep my feet on the ground, and my hands in the washing, where they belong."
+Response: SH4 if it has not been triggered; SH8, SH9, SH10, SH12
+SH12
+Menu: "What do you know about my parents?"
+Display: "Widow Shannon, did you ever know my parents?"
+	"Why, your mother was a beautiful woman," she says immediately. "And your father was a great man." This is what Widow Shannon says every time you ask about your parents; you're pretty sure that she never saw either one of them in her life.
+Response: SH4 if it has not been triggered; SH8, SH9, SH10, SH11
+Jacobs
+JA1
+Trigger: TALK TO JACOBS
+Display: He doesn't answer you at all; he just keep staring with those creepy, bloodshot eyes.
+	[player is not in conversation]
+JA2
+Trigger: one turn after Bobby is dragged away
+Display: "Well," says a thick, rough voice behind you. The shadowy man in the corner puts his huge, thick-fingered hands on his knees and pushes himself up. "Now that the guards are busy takin care of him…" the man stretches, glances at you, and smiles. It is not a friendly smile.
+	"Name's Jacobs, by the way."
+Response: JA3, JA4, JA6
+JA3
+Menu: "My name's Jack."
+Display: "Um… hi," you manage to say. "My name's, uh… Jack."
+	[trigger JA5]
+JA4
+Menu: "Stay away from me!"
+Display: Without meaning to, you find yourself backing into the far corner of the cell. "Stay away from me," you say, trying to sound brave. "I have… I have powerful friends!"
+	[trigger JA5]
+JA5
+Trigger: triggered by JA3 or JA4
+Display: The man named Jacobs glances at you, a flicker of amusement crossing his dull, reddish eyes, but doesn't otherwise respond.
+Response: JA6
+JA6
+Menu: "Do you know any way to get out of here?"
+Display: "Do you, uh—" you clear your throat— "…do you know some way we could get out of this place?"
+	Jacobs raises an eyebrow. "Well now, little runt. I suppose I do."
+	[trigger JA7]
+JA7
+Trigger: triggered by JA6, or two turns after JA2, whichever comes first
+Display: The hulking man walks over to the cell door and squints at it for a while, standing with his hands on his hips. "My father'll have me out of here by tomorrow, of course," he mutters, "but I don't like to wait that long." He barely looks at you – in fact, you're not sure that he's talking to you at all. It's more like he's just muttering to himself. 
+	He bends over and digs something out of the side of his boot, then stands up and thrusts his hand through the viewing window. He curses and strains to push his arm through, but the bars are too narrowly spaced – he can't reach out past his elbow. "Damn," he mutters, "didn't expect this…"
+	[player is not in conversation]
+JA8
+Trigger: third turn after JA7 is triggered
+Display: "Aaah! Goddesses curse it!" Jacobs jerks his hand back, rubbing his wrist.
+	"Well, you gonna help me, runt, or not?" he asks, and holds out a short, stiff piece of wire, pinched between his thumb and forefinger.
+	[lockpick is now in scope, carried by Jacobs]
+Response: JA9, JA10, JA12
+JA9
+Menu: "What is that thing?"
+Display: "What is that thing?" you ask, squinting at the tiny wire – although you're pretty sure you already know.
+	"What are you, dim?" snarls Jacobs. "It's a lockpick. Now take it and help me get this door open."
+Response: 
+JA10
+Menu: "I'd rather not."
+Display: Picking locks has never been your strong suit, and the idea of this brute breathing over your shoulder while you try it gives you stomach-flips. "Uh-uh," you say, holding up your hands and backing away. "I'd rather not, if it's all the same."
+	[trigger JA11]
+JA11
+Trigger: triggered by JA10; or three turns after JA8 if player does not TAKE LOCKPICK or trigger JA12
+Display: "Oh, for the love of – fine!" he yells. He throws the lockpick to the floor and stomps back to his corner. "I guess I'll just wait for my father, then. A hundred cells in this twice-cursed jail, and I get stuck in the one with a dim-witted, muling runt and a tiny window…"
+	[lockpick is now in location, not carried by Jacobs; player is out of conversation]
+JA12
+Menu: "Okay."
+Display: "Um, okay," you say, and pluck the wire from his thick, calloused fingers.
+	[trigger JA13]
+JA13
+Trigger: triggered by JA12; or TAKE LOCKPICK (whether it is on the floor or held by Jacobs)
+Display: "That's the spirit, runt!" Jacobs says. Suddenly he comes over and puts his huge hands around your waist, hoisting you up as though you weighed no more than a sack of feathers. He feels strong enough to snap you in half.
+	"You ever pick a lock before, runt?"
+Response: JA14, JA15
+JA14
+Menu: "Yes."
+Display: You manage a nod. Bobby showed you a few tricks once, but you've never actually tried to pick a lock "for real" before.
+	"Good," Jacob says, pushing up against the viewing window. "This one should be easy, long as you can reach it."
+	[player is out of conversation]
+JA15
+Menu: "No."
+Display: "No," you lie.
+	"Well, doesn't matter," Jacobs mutters, pushing you up against the viewing window. "These jail locks aren't complicated. Just reach down there and jiggle around a bit."
+	[player is out of conversation]
+JA16
+Trigger: when Jacobs and player are both in the Jailhouse room
+Display: Jacobs turns to you. "I heard what your friend in the other cell said, before they dragged him out," he says. "Sounds like Fossville's taken quite an interest in you."
+Response: JA17, JA18
+JA17
+Menu: "Yes, he has."
+Display: You nod. "I guess he has," you say, "but I have no idea why."
+	[trigger JA19]
+JA18
+Menu: "I don't know what you're talking about."
+Display: Something tells you not to trust this man. "I don’t know what you're talking about," you say, trying to sound tough and sullen. "I don't know what he was talking about, either. Why would Fossville be interested in me?"
+	Jacobs gives you a shrewd look. You're not sure if he believes you or not.
+	[trigger JA19]
+JA19
+Trigger: triggered by JA17 or JA18; or two turns after JA16 has been triggered, whichever comes first
+Display: The big man seems to consider something. "You can come with me if you want," he says. "I'll take you somewhere safe."
+	A shaky, wheedling voice from the north cell calls out: "Don't you listen to him, girl! That's Jacobs the Elder's son; he'd as soon sell you to slavers as help you."
+	"Shut up, you!" yells Jacobs, pounding on the cell door in a sudden rage.
+Response: JA20, JA22
+JA20
+Menu: "No, thanks."
+Display: "No offense," you say, "but I'll find my own way out, thanks."
+	[trigger JA21]
+JA21
+Trigger: triggered by JA20; or if player UNLOCKS NORTH DOOR WITH LOCKPICK while Jacobs is in the room; or if three turns elapse after JA19 is triggered
+Display: "Fine, then," Jacobs snarls, "good luck getting past the guards, runt." He turns on his heel and stalks out, leaving you alone with the other prisoners.
+	[remove Jacobs from play; player is out of conversation; trigger OL1 if it has not already been triggered]
+JA22
+Menu: "Sure, let's go."
+Display: "Smart kid," Jacobs says, following you closely. You can hear the other prisoner shouting something behind you, but soon their voices fade as you hurry down the corridor, leaving the cells far behind you.
+	Jacobs leads you down dim, torchlit halls until you reach a wooden door. Jacobs motions you to be silent, then puts his ear up to the wood. After a moment he nods, opens the door, and then shoves you through it into the next room.
+	Bright lantern-light blinds you, and when your eyes clear you see a dozen men of the Lord's Guard standing in a semicircle around you… and in the middle, the man in the red robes.
+	"Little mouse…" murmurs the man in the red robes, "…always finding some new hole to crawl through."
+	Behind you, Jacobs puts his heavy hand on your shoulder and grips it tight. "Like I said, runt," he laughs, "Fossville has taken a special interest in you. And aiding the Baron in his interests can be very profitable." 
+	The red-robed man and the guards close in on you. This time, you do not escape.
+	[game over]
+JA23
+Trigger: triggered by OL1 if Jacobs is in the room
+Display: Jacobs snorts. "You must be dim, you pathetic boozer." To you he says, " We don't have time for him. I can take care of the guards; he can barely unlace his breeches to take a leak. If you want to do the smart thing, then let's go now." And he jerks his thumb toward the southeast.
+Response: JA20, JA22
+Olmer
+OL1
+Trigger: following turn after JA19 is triggered; or when JA21 is triggered, whichever comes first
+Display: "Do us a kindness, girl, and free us as well," whines the man in the north cell. "We ain't done nothin' terrible, and we can show you a way out, too, one that doesn't include leaving you dead in an alley for your shoes."
+	[if Jacobs is in the room, trigger JA23]
+Response: [only if Jacobs is not in the room] OL3, OL4, OL5
+OL2
+Trigger: if player has been in Jailhouse room for 3 turns without talking to Olmer or triggering any of his quips
+Display: "Miss?" wheezes the man in the north cell again. "Are you there? Will you take pity on two poor drunkards and use that fancy lock-picker of yours?"
+Response: OL3, OL4, OL5
+OL3
+Menu: "Hang on for a minute."
+Display: "Just hang on for a minute," you tell him. "I need to look around."
+	"You are wise beyond your years, miss," the man says, sounding a bit disappointed. "I'm sure you'll do the right thing."
+	[player is now out of conversation]
+OL4
+Menu: "All right, I'll let you out."
+Display: "All right, hold your horses," you say. "I'll let you out."
+	[move lockpick to player's possession if it is not held already; try unlocking the door with the lockpick]
+OL5
+Menu: "Who are you?"
+Display: Through the viewing window, you eye the red-faced man warily. To tell the truth, he doesn't inspire much more confidence than Jacobs did. "Who are you?" you ask. "What's your name?"
+	"Please forgive me, miss," he wheezes. "I am called Olmer, and this is my associate, Darrens." The skinny man standing behind him smiles and nods enthusiastically.
+Response: OL3 if Olmer is in his cell; OL4 if Olmer is in his cell; OL6, OL7, OL8; OL11 if the player has been in the drain room
+OL6
+Menu: "Why doesn't your friend talk?"
+Display: You nod towards the red-faced man's skinny friend. "The tall one," you ask, "why doesn't he ever talk?"
+	"Oh, Darrens wasn't always a mute," Olmer explains. "One o' the Lord's Guard kicked him in the head for nickin' from the fruit stall in Grubber's a few years back, 'til the blood came out his ears and his eyes stayed crossed for near on a week. He's never been quite right since."
+	Darrens nods sadly.
+Response: OL3 if Olmer is in his cell; OL4 if Olmer is in his cell; OL7, OL8; OL11 if the player has been in the drain room
+OL7
+Menu: "What are you doing in prison?"
+Display: "What did you do to end up in prison?" you ask.
+	"Oh, nothin' worse than the Lord's Guard gets up to themselves on payday," wheezes Olmer. "A weakness for the drink is our curse. Every now and again the Goddesses see fit to bless me with an opportunity to learn from my shameful mistakes." He gives you a wide, gap-toothed grin.
+Response: OL3 if Olmer is in his cell; OL4 if Olmer is in his cell; OL6, OL8; OL11 if the player has been in the drain room
+OL8
+Menu: "What have you got against Jacobs?"
+Display: "What have you got against Jacobs?" you ask.
+	"That Jacobs is a brute and a scoundrel," Olmer says. "He'd sell his own mother to slavers if he thought there'd be a profit in it, and if his pirate of a father didn't get to her first."
+Response: OL3 if Olmer is in his cell; OL4 if Olmer is in his cell; OL6, OL7; OL11 if the player has been in the drain room
+OL9
+Trigger: TALK TO OLMER when Olmer is in the cell
+Display: "Hey, you still in there?" you call through the viewing window. "Can I ask you something?"
+	"We are at your service, miss," comes the wavering voice.
+Response: OL3, OL4; OL5 if it has not been triggered; (OL6, OL7, OL8; OL11 if the player has been in the drain room) if OL5 has been triggered
+OL10
+Trigger: TALK TO OLMER when Olmer is not in the cell
+Display: "Let me ask you something," you say.
+	"Of course," wheezes Olmer.
+Response: OL6, OL7, OL8; OL11 if the player has been in the drain room
+OL11
+Menu: "Where does the drain lead?"
+Display: "That drain," you ask, "where does it lead?"
+	"Down to the sewers, it does miss," says Olmer excitedly. "Tunnels, leading all under the city. A crafty bloke without too delicate a sensibility could escape to anywhere. But it's very easy to get lost; you'll need Darrens and me to find your way."
+Response: OL3 if Olmer is in his cell; OL4 if Olmer is in his cell; OL6, OL7, OL8
+
+
+
+
+
+
+
+
+
+
+ PAGE 41
+
+
+

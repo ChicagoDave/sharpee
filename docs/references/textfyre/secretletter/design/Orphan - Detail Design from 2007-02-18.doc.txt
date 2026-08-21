@@ -1,0 +1,526 @@
+Detail Design TextFyre, Inc Copyright © 2007 – All Rights Reserved
+World: 	Orphan
+Series:		Orphan, Princess, and Queen
+Episode:	Orphan
+
+Team:
+Original Design:	David Cornelson Writers:		Michael Gentry Programmers:		David Cornelson First Draft Testers: Alpha Testers: Beta Testers: Finalization Testers: Editors:		Fahmida Cater, Bob Feest, Bill Kolomyjec Graphic Artist: Flash Artist:
+Modification History
+Who
+When
+What
+David Cornelson
+30-Nov-2006
+Original Draft
+David Cornelson
+21-Dec-2006
+Cleaned up per Mike Gentry’s comments
+David Cornelson
+02-Jan-2007
+Detailed world elements
+David Cornelson
+04-Jan-2007
+Updated Synopsis
+David Cornelson
+10-Feb-2007
+First Draft of Scene I
+David Cornelson
+14-Feb-2007
+Scene II Design – Commerce Street
+David Cornelson
+17-Feb-2007
+Finalized synopsis and added outline headings. Added Chapter II design. Started Chapter III.
+
+Table of Contents
+ TOC \o "1-3" \h \z \u  HYPERLINK \l "_Toc171052476" Map of Miradan	 PAGEREF _Toc171052476 \h 8
+ HYPERLINK \l "_Toc171052477" The World of Orphan	 PAGEREF _Toc171052477 \h 9
+ HYPERLINK \l "_Toc171052478" The People	 PAGEREF _Toc171052478 \h 9
+ HYPERLINK \l "_Toc171052479" Ascension	 PAGEREF _Toc171052479 \h 9
+ HYPERLINK \l "_Toc171052480" Magic	 PAGEREF _Toc171052480 \h 9
+ HYPERLINK \l "_Toc171052481" In People	 PAGEREF _Toc171052481 \h 9
+ HYPERLINK \l "_Toc171052482" In Things	 PAGEREF _Toc171052482 \h 10
+ HYPERLINK \l "_Toc171052483" Physics	 PAGEREF _Toc171052483 \h 10
+ HYPERLINK \l "_Toc171052484" Astronomy	 PAGEREF _Toc171052484 \h 10
+ HYPERLINK \l "_Toc171052485" Recent History	 PAGEREF _Toc171052485 \h 10
+ HYPERLINK \l "_Toc171052486" Before The Story Begins…	 PAGEREF _Toc171052486 \h 12
+ HYPERLINK \l "_Toc171052487" Royalty Reference	 PAGEREF _Toc171052487 \h 13
+ HYPERLINK \l "_Toc171052488" The Players	 PAGEREF _Toc171052488 \h 14
+ HYPERLINK \l "_Toc171052489" The Player Character	 PAGEREF _Toc171052489 \h 14
+ HYPERLINK \l "_Toc171052490" Jacqueline Toresal (aka Jack)	 PAGEREF _Toc171052490 \h 14
+ HYPERLINK \l "_Toc171052491" Major Non-Playing Characters	 PAGEREF _Toc171052491 \h 14
+ HYPERLINK \l "_Toc171052492" Bobby	 PAGEREF _Toc171052492 \h 14
+ HYPERLINK \l "_Toc171052493" Baron Fossville (aka The Baron, Fossville, the Dark Hunter)	 PAGEREF _Toc171052493 \h 14
+ HYPERLINK \l "_Toc171052494" Mercenaries (group of men)	 PAGEREF _Toc171052494 \h 14
+ HYPERLINK \l "_Toc171052495" Hester Rodop (aka the Magistrate)	 PAGEREF _Toc171052495 \h 14
+ HYPERLINK \l "_Toc171052496" Jacobs	 PAGEREF _Toc171052496 \h 14
+ HYPERLINK \l "_Toc171052497" Olmer	 PAGEREF _Toc171052497 \h 14
+ HYPERLINK \l "_Toc171052498" Darens	 PAGEREF _Toc171052498 \h 14
+ HYPERLINK \l "_Toc171052499" Other Major Characters	 PAGEREF _Toc171052499 \h 15
+ HYPERLINK \l "_Toc171052500" Duke William Toresal (aka Lord of the Keep, the Old Lord, the Prince, the Queen’s Son)	 PAGEREF _Toc171052500 \h 15
+ HYPERLINK \l "_Toc171052501" Minor Non-Playing Characters	 PAGEREF _Toc171052501 \h 15
+ HYPERLINK \l "_Toc171052502" Teisha	 PAGEREF _Toc171052502 \h 15
+ HYPERLINK \l "_Toc171052503" Angeline, Clara, Fiona, Theresa, Shannon (Maiden House)	 PAGEREF _Toc171052503 \h 15
+ HYPERLINK \l "_Toc171052504" Old man Holstenoffer (In Butchery)	 PAGEREF _Toc171052504 \h 15
+ HYPERLINK \l "_Toc171052505" Olgan Minor (Armory)	 PAGEREF _Toc171052505 \h 15
+ HYPERLINK \l "_Toc171052506" Mrs. Sandler (Jewelry)	 PAGEREF _Toc171052506 \h 15
+ HYPERLINK \l "_Toc171052507" Pieter (Jewelry)	 PAGEREF _Toc171052507 \h 15
+ HYPERLINK \l "_Toc171052508" Rudolph (Jewelry)	 PAGEREF _Toc171052508 \h 15
+ HYPERLINK \l "_Toc171052509" Chorus Brothers	 PAGEREF _Toc171052509 \h 16
+ HYPERLINK \l "_Toc171052510" The Screenplay	 PAGEREF _Toc171052510 \h 17
+ HYPERLINK \l "_Toc171052511" SYNOPSIS	 PAGEREF _Toc171052511 \h 17
+ HYPERLINK \l "_Toc171052512" Game Features	 PAGEREF _Toc171052512 \h 19
+ HYPERLINK \l "_Toc171052513" Time Keeping	 PAGEREF _Toc171052513 \h 19
+ HYPERLINK \l "_Toc171052514" Details	 PAGEREF _Toc171052514 \h 20
+ HYPERLINK \l "_Toc171052515" Chapter I – Grubber’s Market	 PAGEREF _Toc171052515 \h 20
+ HYPERLINK \l "_Toc171052516" Map	 PAGEREF _Toc171052516 \h 20
+ HYPERLINK \l "_Toc171052517" Rundown	 PAGEREF _Toc171052517 \h 20
+ HYPERLINK \l "_Toc171052518" Notes	 PAGEREF _Toc171052518 \h 21
+ HYPERLINK \l "_Toc171052519" Design	 PAGEREF _Toc171052519 \h 21
+ HYPERLINK \l "_Toc171052520" Chapter II – Commerce Street and Bobby	 PAGEREF _Toc171052520 \h 27
+ HYPERLINK \l "_Toc171052521" Map	 PAGEREF _Toc171052521 \h 27
+ HYPERLINK \l "_Toc171052522" Rundown	 PAGEREF _Toc171052522 \h 27
+ HYPERLINK \l "_Toc171052523" Notes	 PAGEREF _Toc171052523 \h 27
+ HYPERLINK \l "_Toc171052524" Design	 PAGEREF _Toc171052524 \h 28
+ HYPERLINK \l "_Toc171052525" Chapter III – Bobby	 PAGEREF _Toc171052525 \h 31
+ HYPERLINK \l "_Toc171052526" Map	 PAGEREF _Toc171052526 \h 31
+ HYPERLINK \l "_Toc171052527" Rundown	 PAGEREF _Toc171052527 \h 32
+ HYPERLINK \l "_Toc171052528" Notes	 PAGEREF _Toc171052528 \h 32
+ HYPERLINK \l "_Toc171052529" Design	 PAGEREF _Toc171052529 \h 32
+ HYPERLINK \l "_Toc171052530" Chapter IV – Maiden House	 PAGEREF _Toc171052530 \h 33
+ HYPERLINK \l "_Toc171052531" Map	 PAGEREF _Toc171052531 \h 33
+ HYPERLINK \l "_Toc171052532" Rundown	 PAGEREF _Toc171052532 \h 33
+ HYPERLINK \l "_Toc171052533" Notes	 PAGEREF _Toc171052533 \h 33
+ HYPERLINK \l "_Toc171052534" Design	 PAGEREF _Toc171052534 \h 33
+ HYPERLINK \l "_Toc171052535" Chapter V – Captured	 PAGEREF _Toc171052535 \h 34
+ HYPERLINK \l "_Toc171052536" Map	 PAGEREF _Toc171052536 \h 34
+ HYPERLINK \l "_Toc171052537" Rundown	 PAGEREF _Toc171052537 \h 34
+ HYPERLINK \l "_Toc171052538" Notes	 PAGEREF _Toc171052538 \h 34
+ HYPERLINK \l "_Toc171052539" Design	 PAGEREF _Toc171052539 \h 34
+ HYPERLINK \l "_Toc171052540" Chapter  VI – Underground	 PAGEREF _Toc171052540 \h 35
+ HYPERLINK \l "_Toc171052541" Map	 PAGEREF _Toc171052541 \h 35
+ HYPERLINK \l "_Toc171052542" Rundown	 PAGEREF _Toc171052542 \h 35
+ HYPERLINK \l "_Toc171052543" Notes	 PAGEREF _Toc171052543 \h 35
+ HYPERLINK \l "_Toc171052544" Design	 PAGEREF _Toc171052544 \h 35
+ HYPERLINK \l "_Toc171052545" Chapter VII – Black Gate Estate	 PAGEREF _Toc171052545 \h 36
+ HYPERLINK \l "_Toc171052546" Map	 PAGEREF _Toc171052546 \h 36
+ HYPERLINK \l "_Toc171052547" Rundown	 PAGEREF _Toc171052547 \h 36
+ HYPERLINK \l "_Toc171052548" Notes	 PAGEREF _Toc171052548 \h 36
+ HYPERLINK \l "_Toc171052549" Design	 PAGEREF _Toc171052549 \h 36
+ HYPERLINK \l "_Toc171052550" Chapter VIII – Maiden House II	 PAGEREF _Toc171052550 \h 37
+ HYPERLINK \l "_Toc171052551" Map	 PAGEREF _Toc171052551 \h 37
+ HYPERLINK \l "_Toc171052552" Rundown	 PAGEREF _Toc171052552 \h 37
+ HYPERLINK \l "_Toc171052553" Notes	 PAGEREF _Toc171052553 \h 37
+ HYPERLINK \l "_Toc171052554" Design	 PAGEREF _Toc171052554 \h 37
+ HYPERLINK \l "_Toc171052555" Chapter IX – Red Gate Estate	 PAGEREF _Toc171052555 \h 38
+ HYPERLINK \l "_Toc171052556" Map	 PAGEREF _Toc171052556 \h 38
+ HYPERLINK \l "_Toc171052557" Rundown	 PAGEREF _Toc171052557 \h 38
+ HYPERLINK \l "_Toc171052558" Notes	 PAGEREF _Toc171052558 \h 38
+ HYPERLINK \l "_Toc171052559" Design	 PAGEREF _Toc171052559 \h 38
+ HYPERLINK \l "_Toc171052560" Chapter X – Pieter	 PAGEREF _Toc171052560 \h 39
+ HYPERLINK \l "_Toc171052561" Map	 PAGEREF _Toc171052561 \h 39
+ HYPERLINK \l "_Toc171052562" Rundown	 PAGEREF _Toc171052562 \h 39
+ HYPERLINK \l "_Toc171052563" Notes	 PAGEREF _Toc171052563 \h 39
+ HYPERLINK \l "_Toc171052564" Design	 PAGEREF _Toc171052564 \h 39
+ HYPERLINK \l "_Toc171052565" Chapter XI – Mercenaries	 PAGEREF _Toc171052565 \h 40
+ HYPERLINK \l "_Toc171052566" Map	 PAGEREF _Toc171052566 \h 40
+ HYPERLINK \l "_Toc171052567" Rundown	 PAGEREF _Toc171052567 \h 40
+ HYPERLINK \l "_Toc171052568" Notes	 PAGEREF _Toc171052568 \h 40
+ HYPERLINK \l "_Toc171052569" Design	 PAGEREF _Toc171052569 \h 40
+ HYPERLINK \l "_Toc171052570" Chapter XII – The Baron	 PAGEREF _Toc171052570 \h 41
+ HYPERLINK \l "_Toc171052571" Map	 PAGEREF _Toc171052571 \h 41
+ HYPERLINK \l "_Toc171052572" Rundown	 PAGEREF _Toc171052572 \h 41
+ HYPERLINK \l "_Toc171052573" Notes	 PAGEREF _Toc171052573 \h 41
+ HYPERLINK \l "_Toc171052574" Design	 PAGEREF _Toc171052574 \h 41
+ HYPERLINK \l "_Toc171052575" Chapter XIII – The War Room	 PAGEREF _Toc171052575 \h 42
+ HYPERLINK \l "_Toc171052576" Map	 PAGEREF _Toc171052576 \h 42
+ HYPERLINK \l "_Toc171052577" Rundown	 PAGEREF _Toc171052577 \h 42
+ HYPERLINK \l "_Toc171052578" Notes	 PAGEREF _Toc171052578 \h 42
+ HYPERLINK \l "_Toc171052579" Design	 PAGEREF _Toc171052579 \h 42
+ HYPERLINK \l "_Toc171052580" Chapter VIX – The Princess	 PAGEREF _Toc171052580 \h 43
+ HYPERLINK \l "_Toc171052581" Map	 PAGEREF _Toc171052581 \h 43
+ HYPERLINK \l "_Toc171052582" Rundown	 PAGEREF _Toc171052582 \h 43
+ HYPERLINK \l "_Toc171052583" Notes	 PAGEREF _Toc171052583 \h 43
+ HYPERLINK \l "_Toc171052584" Design	 PAGEREF _Toc171052584 \h 43
+
+Map of Miradan
+
+The World of Orphan
+In this world there exists a single planet where humans live and magic is extremely rare. The world has large bodies of water and at least one land mass as of this history. This continent is known as Miradan and is loosely ruled by the Kingdom of Jais Del Brin.
+The People
+The people of Jais Del Brin are generally farmers, fisherman, and townspeople. Commerce is rugged and local, and the Kingdom generally functions without much taxation. Royalty includes the King and Queen, Princes, Princesses, Dukes and Duchesses, Earls and Countess, Barons and Baronesses.
+Ascension
+The Kingdom generally selects new Kings based bloodlines, but this is married to the fact that the vast majority of Kings have sired strong, popular, and healthy sons to ascend to the throne. The key here is popularity. The Kingdom has rarely had to think about succession and when it has, it has generally been between two strong choices, not a complete lack of strong choices.
+In the absence of a strong and popular blood prince, the laws of the Kingdom state that the King or Queen must choose a successor. In the event of the death of the King and the Queen before a successor has been named, all of the primary royals will select a Regent to handle Kingdom affairs until a successor is selected by vote. Voting is weighted in that Princes and Princesses get ten votes, Dukes and Duchesses get five votes, Earls and Countesses get three votes, and Barons and Baronesses get a single vote. But again, the general public’s opinion is taken into consideration before a successor is selected. A special People’s Regent role has always been filled, but never used but for ceremony. The role in the case of an unclear successor is to poll the people and make known their wishes. Obviously, in certain circumstances, this could become a very dangerous and powerful role.
+Magic
+In People
+Magic is known to exist and is treated respectfully by the general population. They consider it either lucky or unlucky to have good or bad things happen due to magic respectively. Everyone always dreams of some minor magic to help their daily lives, but almost no one goes in search of it. Life is hard and there is no time for such endeavors. Those people that have discovered a talent for magic generally keep it to themselves and help or hurt those as they would with any other talent. There is no general commerce in magic, but if a magic user is available, some may intrude to ask for a favor and offer some token in return. Magic tends to develop in women more than men, although an analysis of those with “talent” would show that girls are encouraged to look within and boys are not, so never develop whatever ability they may have. Girls with talent are considered blessed or cursed, depending upon their nature (if a girl is a trouble-maker, she’s cursed…if a girl is kind, she is considered blessed).
+Most magic is minor. Very little “grand magic” is know about or has ever been seen. The common uses of magic are to mend clothes, cure minor ailments, fix broken tools, and the like. On occasion a magic user will have more interesting abilities.
+In Things
+There are artifacts that are imbued with magical ability, giving the owner of the artifact some magical ability, albeit focused and limited.
+Physics
+The general physics of this world are the same as Earth.
+Astronomy
+The night sky of this world is full of stars. One section of the sky that is seen in summer is a strip of very bright stars known commonly as “The River of Light”. It also has two moons, one noticeably large than the other. They are known commonly as Big Sister and Little Brother.
+Recent History
+The Realtic Kingdom has been seemingly healthy for hundreds of years, with successions going without any problem. But the last two kings have ruled poorly and the most recent king has left the land to an elderly queen, who only late in life realized she would need to rule and determine a successor.  Although her children and grandchildren may vie for the crown, their particular fates have produced a great deal of concern from the public and the Lord’s council as to their ability to rule.
+Succession rights are simple where blood is concerned, but with so many inline, the fate of the kingdom is not so simply decided. It’s almost a game or a sport. Whoever shows the Queen that they deserve it, and then garners public approval, will become the heir to the throne. Because the Kingdom has had such a peaceful history, the public would balk at a heavy-handed ruler.
+Orphan is the story of a young girl that is at the top of the blood lines, along with many other potential successors. Her father was the last son born of the current queen, with seven siblings in front of him. Unfortunately, his fate was decided by Baron Fossville. Having seen the coming turmoil, he wished to vie for the thrown himself, and turned to dark means to attain it.
+In the 756th year of the Kingdom, Baron Fossville managed to slowly poison Duke Toresal, making it look like a mysterious illness. What Fossville did not know until taking over the Duke’s keep and lands was that the former Lord had bore a child with a woman in secrecy. Since the Duke was already married, the secret remained buried for years. But before his death, Duke Toresal left written claim to all of his estates to his only daughter. He had loved the woman that bore her, but could not openly recognize her or their child…a mandate from the Queen herself, since the woman was not of royal blood.
+But his will left the door open for young Jacqueline, and this is her story….
+
+Before The Story Begins…
+Your name is Jacqueline, but everyone outside of the Maiden House knows you as Jack. A few people have come to know you well enough to know that you are a girl and some have figured it out on their own. A few suspect that you are special and some think it's because you are the daughter of a royal personage. No one knows for sure. There is proof of the matter within your father’s personal papers and some people in the royal government know. The fact that you exist and there is no other clear heir to the local lands (much less the Kingdom’s throne) is the intrigue into which you were born. If you were to be recognized a royal heir it would cause a great deal of upheaval and if you were not recognized, things would probably progress more smoothly, albeit in a fashion the crown is not comfortable with. It would elevate a family that is highly ambitious, placing their heirs in a position to marry into the throne.
+
+Your sponsor has in fact been your father by blood. He loved the woman that bore you to him, but as a mistress, there was no way to bring her or you to court. For the first ten years of your life, your father watched as you grew. He made sure that some of the women in Maiden House were well-educated and paid them to tutor you.
+
+In your eleventh year, Lord Duke Toresal died of a mysterious illness. He left a legacy of goodwill among the people, but the succession to his lands was clearly going to Baron Fossville, a man who hired mercenaries for mysterious businesses and who had clear ambitions for the royal court. Fossville’s machinations were coming to fruition as a royal ball was planned at which he would be betrothed to one of the Queen’s daughters.
+
+You are a fourteen year old girl on the verge of becoming a woman. Your mother died when you were born and you do not know who your father was. You do know that someone sponsored your early upbringing at Maiden House. Even though they care for you and feed you, and even though you do appreciate everything they did, you always felt you were destined for something else. You learned to read and write; a great deal of history of the land, to speak and act properly, and how to be respectful. You even were given the gift of a solid self-esteem. You possess all of the things that most orphans never even know about.
+
+Eventually you decide that the stodgy lifestyle of the Maiden House was more than you can bear and you began taking to the streets at the age of eleven, nearly the same time Lord Toresal died. Wearing trousers and a boy’s shirt and continually cutting your hair off with a blade and covering it with a hat, you instinctively realized that certain doors were open to you pretending to be a boy.
+
+The maidens counted it a phase and although they worried if you were out all night, they never questioned where you'd been or what you'd done. It was as if they accepted your maturity and decision making almost entirely without question. But they did look out for you too. More than once you caught one of the younger maidens "accidentally" bumping into you.
+
+For the next three years you manage to befriend other orphans, although of less luck. They happily show you how to beg, steal, and sneak around town without ever getting caught by the magistrate or his soldiers. One of the beggars you befriend is a boy named Bobby, who appeared on the streets shortly after your eleventh birthday. Never questioning the appearance or disappearance of any of the orphans, you don’t realize that he is in fact a spy for the royal court, and in some ways, your protector.
+Royalty Reference
+King, Queen 
+Prince, Princess 
+Duke, Duchess 
+Prince, Princess (if they have royal parentage)
+Earl, Countess 
+Baron, Baroness 
+
+
+The Players
+The Player Character
+Jacqueline Toresal (aka Jack)
+Jacqueline is a fourteen year old girl coming of age in a rugged town on the outskirts of the Kingdom.
+Major Non-Playing Characters
+Bobby
+Bobby is an orphan, sixteen years old, and seems to do things for various people for money, but you can never quite figure out what he does. You don't know where he sleeps, but he always seems "taken care of". Well, sometimes he looks a wreck, but he never seems bothered by it.
+Baron Fossville (aka The Baron, Fossville, the Dark Hunter)
+Baron Fossville is a nobleman by birth, the son of some cousin of the royal family. He’s been sent on many a mission for the crown to deal with uprisings and skirmishes with the western people. Through these efforts he has gained a formidable following. It is commonly believed that he is maneuvering to marry the eldest daughter of the Queen and become heir to the throne.
+Mercenaries (group of men)
+The mercenaries are generic men with tunics, pants, swords, helms. They all speak in broken language laced with common slurs. They aren’t very smart either.
+Hester Rodop (aka the Magistrate)
+The magistrate, Hester Rodop, is a very bad man. He will try very hard to catch you doing something wrong and if he does, it will not go well for you. You could wind up in a cell with bad men. 
+Jacobs
+Jacob’s is the son of a wealthy merchant. He’s a big brutish man. Though he is slightly insane, he will talk about anything to anyone.
+Olmer
+Olmer is a typical town bum. On some days he’ll work and some days he’ll steal. He’s never seen without Darens.
+Darens
+Darens is another typical bum. He’s always with Olmer.
+
+Other Major Characters
+Duke William Toresal (aka Lord of the Keep, the Old Lord, the Prince, the Queen’s Son)
+Lord Toresal ruled the namesake lands for several decades in peace and prosperity. The keep was always open to commoners and the town was built to provide a place for commerce. Everyone seemingly benefited from the prince’s rule, except for Baron Fossville. Toresal kept Fossville at arm’s length for some unknown reason and two were known to have verbal jousts in public.
+Minor Non-Playing Characters
+Teisha
+Teisha is a girl in Grubber’s market that is somewhat of a friend. She teases you about the Maiden House and is somewhat aloof, but she is never mean to you. Although there is no blood relationship, the two of you look somewhat alike, if not a perfect match.
+Angeline, Clara, Fiona, Theresa, Shannon (Maiden House)
+Angeline, Clara, Fiona, Theresa, and Shannon are the women in the Maiden House. They are all widows that look out for each other. They do various odd jobs for town folk and farmers who pay them in food and bare necessities. They know many things about the town and surrounding area, although they will very rarely offer details without some prior knowledge.
+
+These women are the help system. They will offer information on how to solve problems within the game as you learn about them. So when you find a door you can't unlock (unlikely), they will know how to help you.
+Old man Holstenoffer (In Butchery)
+The butcher will talk incessantly while you are in his shop. Some of the things he says will give you some clues to puzzles.
+Olgan Minor (Armory)
+Olgan will talk about Fossville’s recent purchases of armor, as if he plans to build an army.
+Mrs. Sandler (Jewelry)
+As it turns out, Mrs. Sandler knows who your mother was and liked her. She also is in possession of something that belongs to you; a diamond and ruby necklace.
+Pieter (Jewelry)
+Pieter is also a spy for the crown, but plays a guard. He knows all about you.
+Rudolph (Jewelry)
+Rudolph is a simpleton guard, and friend of Pieter’s.
+
+Chorus Brothers
+When rumors start floating about your possible inheritance, the Chorus brothers are more than willing to lend you money, considering it an excellent investment.
+
+
+
+The Screenplay
+SYNOPSIS
+
+A young orphan girl pretending to be a boy discovers people are trying to kill her, that she is royal born, and that she must save herself by finding out as much information as possible, as well as proving that she is worthy of being recognized as the heir to the local lands.
+
+Jack is chased by mercenaries and does not know why.
+Jack has opportunities to talk to people about the environment.
+Butcher
+Baker
+Armory
+Moneylender
+Jeweler
+Clothier
+Jack meets Bobby and is taken on a wild chase through town and into the woods, escaping into the secret tunnel of Lord’s Keep. They find about the Queen’s visit and the upcoming ball where the Baron will marry into the Royal Family.
+Jack goes back to town to sleep at Maiden House, where the women hide her in a secret room. Here she learns about her mother.
+Jack tries to get back through town to the woods and is captured. Bobby is beaten up badly in an adjacent cell. He whispers about secrets in Black Gate Estate, the in-town residence of Baron Fossville. Jack meets crooks that help her escape and tell her where to hide in the sewer.
+Jack is chased into sewer system and hides.
+Jack comes out of hiding and gets into Black Gate Estate. She finds out about her father, including the letter that recognizes her as heir.
+Jack hears that Bobby has been hung and returns to Maiden House. The women open up about everything and tell her that the Red Gate Estate (previously her father’s residence) is her home now, but dangerous to go there.
+Jack gets into Red Gate Estate with key from maidens and one of the maidens coming with her. She finds artifacts about her father. She also finds fresh clothes and a bath. One of the maidens helps her bath and suggests she buy a new gown and to sneak into the ball to seek audience with the Queen.
+Jack visits the moneylender and with the letter is able to take money out. Jack visits the clothier and jeweler to get ready for ball. Pieter decides to accompany her. Jack visits the armory and buys a stiletto knife and hides it in her bodice.
+Jack and Pieter cannot enter Lord’s Keep directly as the mercenaries are all standing guard. Jack shows Pieter the secret entrance. On their way through the woods, an odd old woman approaches them. She cryptically offers Jack a potion. The potion makes Jack’s hair grow out. They enter the Keep and filter into the ball room, uninvited. The Queen has not arrived yet.
+The mercenaries start filtering into the Keep. They begin to recognize Jack and Pieter disappears. The Baron appears at Jack’s side and holds her arm tightly. He walks her to the War Room.
+Jack enters the War Room. Pieter is slumped on the floor, bound hand and foot. Several mercenaries glare at Jack menacingly. The Baron has the door guarded and sits down. He asks Jack what you’re doing. Jack shows him the letter. He seems nervous, but confident. The Baron burns the letter in the fireplace and picks up his sword. He approaches. Suddenly there is an argument outside. A fight is heard. The door is knocked down and Bobby comes charging in. He fights a dual with the Baron.
+Jack releases Pieter with your knife. He takes it and begins fighting mercenaries. The Baron knocks Bobby down and runs out of the room. The mercenaries follow, as do Pieter and Bobby. The Princess comes into the room from a secret passage. She has more mercenaries with her and they kidnap Jack.
+
+
+
+
+
+
+Game Features
+Time Keeping
+The setting must have night and day characteristics.
+
+Room locations should note light regarding the sun and moon where appropriate.
+
+Room locations should note crowdedness based on the time of day. For instance, the markets are crowded during the day and empty at night.
+
+We should be able to easily enough implement "wait for darkness" or "wait until morning". This could potentially be an extension.
+
+Details
+Chapter I – Grubber’s Market
+Map
+ EMBED Visio.Drawing.11  
+Rundown
+You have no money. You are wearing a wool cloak. You have an apple. You may steal a knife from a mercenary. You may trade the knife for nearly anything in the market including herbs, fruit, candles, rope, pottery, silk, belt, boots, coin, small gem, or a hat. You will always be able to steal another knife, but never hold more than one at a time. The monkey wants a banana. The monkey has a necklace and will trade for a banana. The monkey runs across the postal wires all the time. If you’re at the Exotic Gems stand, he will come down to its roof and taunt you with the necklace. Teisha, in the silk stand, will give you a silk cloak for the necklace. You can get a hat by trading your cloak. You can get a belt by trading a hat. You can get fruit with coin. You can never go east to the Eastern Edge or you will be caught and have to escape back to the west. You can go up the center post and slide down to any of the outer posts. When you slide down, the guards will see you. You should not be wearing the cloak yet. When you go down from the n, w, or s post, you should wear the cloak and undo your hair so that you look like a girl. Now you can leave the market before the men recognize you.
+Notes
+Should the monkey be able to block you from sliding down? If so, how should we get rid of the monkey? This _has_ to be a funny response. I can just feel it.
+If you simply turn into a girl and start walking directly out of the market, the mercenaries at the eastern edge are so loose that they’re pretty much accosting everyone and will catch you. In order to get past them, they must be on edge from seeing you traverse the wire from the center post.
+Design
+Before Play Begins: (prologue)
+Player is walking through market near silk stand. She says “Hi” to Teisha, noticing silk cloaks she can’t afford. She walks to fruit stand and buys an apple. She stops in the alley to eat the apple.
+When Play Begins:
+The Player is named Jack or Jacqueline Toresal. She looks like a boy, but is a girl.
+Jack is sitting in an alley about to eat an apple. She hears loudly talking men walking towards her from the north. The men will arrive in the alley in several turns.
+The player is carrying:
+Object: Apple.
+Object: Cloak. (wool, masculine)
+Object: Satchel. (cloth)
+Prologue – Alley
+Description: narrow, dark, garbage strewn.
+Object: Crates. (piled up, empty, immovable)
+Command: listen to men [men are loud, but their conversation is not discernable]
+Command: pick up crate [too heavy]
+Command: climb crates or go up [player moves to roof of outer market]
+Command: wait [men get closer-louder, after several turns, men will arrive]
+Command: north [men appear and grab you before you can leave alley]
+Command: southeast [player moves to Northwest Junction of Grubber’s Market]
+
+NOTE: Grubber’s Market at night is a single large empty location. You can traverse northwest to the alley, north to Lord’s Road, or East to Commerce Street. During the day it has the following mapped layout:
+
+Grubber’s Market – Mercenaries
+There are a random number of mercenaries actually chasing you. There is a group of them on Lord’s Road and at the Eastern Edge.
+You generally are able to slip past them, but they grab you once in awhile. You can kick, bite, scratch, claw, punch, hit, or spit at them to escape.
+When you are in the arms of the mercenaries, one of the men will drop a knife. You may pick this up before escaping. Only one knife can be held at a time.
+You will always have time to look around and do business at a stand. But they will constantly be grabbing you and the frequency of this should increase to give of the feeling of them “closing in”.
+Eventually they catch you and the game has to end. There’s just no way to get around the fact that you have to solve this puzzle.
+Commands: (need text responses)
+Kick:
+Bite:
+Scratch:
+Claw:
+Punch:
+Hit:
+Spit At:
+Scream:
+Grubber’s Market – Northwest Junction
+Description: Stands to northeast, south, southeast. Alley back northwest. Lord’s Road is north, but you can see mercenaries loitering in that direction.
+Grubber’s Market – Fruit Stand
+Description: Stands to southwest and southeast. Northern post is here. You can see the wire from the center post to the northern post.
+Command: [trade knife for banana]
+Grubber’s Market – Miscellaneous Food
+Description: Stands to northwest and south.
+Grubber’s Market – Eastern Junction
+Description: Inner stands to west, outer stands are north and south. The eastern edge is east, but is clearly occupied by mercenaries. The eastern junction pole is here. You can see the wire from the center post to the eastern junction post and then from the eastern junction post to the eastern post.
+Grubber’s Market – Hat Stand
+Description: Eastern Junction is to the north, with stands beyond the bend while more stands are to the southwest.
+Command: [trade cloak for hat] (note: since you already have a hat, this might be another interesting moment for humor. Maybe some confusion with the seller)
+Grubber’s Market - Exotic Gems Stand
+Description: Stands are to the west and northeast. The southern post is here and you can see the wire from the center post to the southern post.
+Command: [trade banana for necklace] (note: this might allow for some humor if you have to coax the monkey into the bargain)
+Grubber’s Market - Weapons Trader Stand
+Description: Stands are to the northwest and east.
+Command: [trade knife for coin] player receives one coin, good for purchasing fruit, rope, candle, herbs, or food.
+Grubber’s Market – Leather Shop
+Description: Stands are to the north and southeast.
+Command: [trade hat for belt]
+Grubber’s Market – Herb Stand
+Description: Stands are to the north and south. The western post is here and you can see the wire from the center post to the western post.
+Grubber’s Market – Candle Maker Stand
+Description: Stands are to the southwest and southeast. You can see the top of the center post and the wires running in all four cardinal directions.
+Grubber’s Market – Rope Stand
+Description: Stands are to the northeast and southwest. You can see the top of the center post and the wires running in all four cardinal directions.
+Grubber’s Market – Pottery Stand
+Description: Stands are to the northwest and southeast and the eastern junction is to the east. You can see the top of the center post and the wires running in all four cardinal directions.
+Grubber’s Market – Outside Silk Stand
+Description: Stands are to the northwest and northeast. This stand is deeper than all the others and allows entrance. You can see the top of the center post and the wires running in all four cardinal directions.
+Command: [enter, in] player moves to Inside Silk Stand.
+Grubber’s Market – Inside Silk Stand
+Description: Silk items all over.
+Command: [talk to Teisha] Teisha is your friend. She also knows that the men are looking for you, but does not know why. But she also can’t give away any silk. She does comment about the monkey and its necklace though.
+Command: [trade necklace for cloak]
+Command: [north] player moves to Center Post.
+Command: [exit, out, south] player moves to Outside Silk Stand.
+Grubber’s Market – Center Post
+Description: You can see the backs of three stands and a slight entrance into the back of the silk stand to the south. You can see the center post and the wires running in all four cardinal directions.
+Command: [climb post, up] player easily crawls up post since she has young and athletic.
+Grubber’s Market – Top of Center Post
+Description: You can survey the entire market, Lord’s road and Lord’s Keep to the north, Commerce Street to the east, and farmlands in all other directions. You can also see the wires going down to the four outer posts.
+Command: [slide down (north/south/east/west) wire with rope] this results in disaster. The rope is too stiff and hard to hold. Jack is dumped onto a stand and causes an uproar.
+Command: [slide down (north/south/east/west) wire with belt] this results in a successful trip down the wire to the lower post and down to the nearest outer market stand. The guards see you slide too and will yell out commands. If you slide down the east wire, the guards will catch you instantly. If you’re dressed like a girl when they catch you, the game must end.
+Grubber’s Market – Eastern Edge
+Description: Grubber’s market is to the west, along with the searching mercenaries. Commerce Street beckons to the east.
+Chapter II – Commerce Street and Bobby
+Map
+ EMBED Visio.Drawing.11  
+Rundown
+Jack has opportunities to talk to people about the environment.
+
+Baker
+
+Butcher
+
+Armory
+
+Clothier
+
+Jeweler
+
+Moneylender
+
+
+Notes
+There isn’t much to this scene other than gathering information. The player can end the scene at anytime by going to find Bobby.
+I’ve pasted the text I’d written in my original I7 file into some of the commands and descriptions. You may rewrite as you see fit.
+
+Design
+Scene Begins when Jack enters Commerce Street for the first time.
+Commerce Street
+Description: Shops are evenly spaced side by side on the narrow street including a bakery, butchery, armory, clothier, jeweler, and moneylender. Patrons and passersby walk along sidewalks, protecting them from the occasional teamster driving down the middle of the street. The street ends to the west at the Grubber's Market and extends east to the center of town.
+ [examine bakery] A sign above the store front has a picture of a loaf of bread. In the window you can see baguettes lined up and deeper in the store is a counter full of rolls and breads. The smell of deep fried dough wafts through the doorway, making your stomach growl.
+[examine butchery] The sign above the butchery is a picture of a large pig. In the window you can see chickens, small pigs, hanks of beef, and other assorted meat dressed and ready for purchase. The smell of burning sausage masks the heavier smells of butchered animals.
+[examine armory] An axe and shield can be seen hanging from a sign above the window, which frames an assortment of swords, rapiers, pikes, and helms.
+[examine shops] The bakery, butchery, and armory are evenly spaced on the north side of Commerce Street while the clothier, jeweler, and moneylender shops line the south side.
+[examine clothier] The exterior of the clothier's shop is trimmed in fine dark wood and in the window are a tunic and accessories that fit the current trends in fashion. As well, a finely made dress stands next to the bodiless tunic and behind both is drapery, hiding the interior of the shop.
+[examine jeweler] A sign above the store shows a necklace of pearls. The window is barred, but in a subtle way, and engraved with the name 'Sandler and Son'.
+[examine lender] A discreet placard next to the door reads, 'Chorus Brothers', while the remainder of the windowless storefront is painted blue.
+[examine space, look between shops] There are very narrow spaces between each of the six businesses.
+[examine sidewalk] The brick sidewalks are raised slightly above the road with runoff drains marking each side.
+[examine drains] The drain on the north side of the street is rusty and damaged. It's well known for pooling rainwater during a strong storm, while the drain on the south side of the street seems newly repaired and leaves a wide gap into the sewers below.
+[examine north drain]	 The drain on the north side of the street is rusty and damaged. It's well known for pooling rainwater during a strong storm.
+[examine south drain]	The drain on the south side of the street seems newly repaired and leaves a wide gap into the sewers below.
+[northwest] Move player to bakery.
+[north] Move player to butchery.
+[northeast] Move player to armory.
+[southwest] Move player to clothier.
+[south] Move player to jeweler.
+[southeast] Move player to lender.
+[down] Move player to sewer (1).
+[east] Move player to Commerce East.
+[go between bakery and butchery] Mention “You squeeze in between the two shops, barely...” and then move player to between bakery and butchery.
+[go between butchery and armory] Mention “You squeeze in between the two shops, barely...” and then move player to between butchery and armory.
+
+
+
+Chapter III – Bobby
+Map
+ EMBED Visio.Drawing.11  
+Rundown
+Notes
+Design
+
+Chapter IV – Maiden House
+Map
+Rundown
+Notes
+Design
+
+
+Chapter V – Captured
+Map
+Rundown
+Notes
+Design
+
+Chapter  VI – Underground
+Map
+Rundown
+Notes
+Design
+
+Chapter VII – Black Gate Estate
+Map
+Rundown
+Notes
+Design
+
+Chapter VIII – Maiden House II
+Map
+Rundown
+Notes
+Design
+
+Chapter IX – Red Gate Estate
+Map
+Rundown
+Notes
+Design
+
+Chapter X – Pieter
+Map
+Rundown
+Notes
+Design
+
+Chapter XI – Mercenaries
+Map
+Rundown
+Notes
+Design
+
+Chapter XII – The Baron
+Map
+Rundown
+Notes
+Design
+
+
+Chapter XIII – The War Room
+Map
+Rundown
+Notes
+Design
+
+
+Chapter VIX – The Princess
+Map
+Rundown
+Notes
+Design
+
+
+
+
+
+
+
+
+
+
+
+
+Orphan – Episode I
+
+
+
+
+Copyright © 2007 Textfyre, Inc. – All Rights Reserved.	Page  PAGE   \* MERGEFORMAT 8
+
+
+
+
+
+
+
+
