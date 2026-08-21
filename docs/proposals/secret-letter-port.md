@@ -29,7 +29,7 @@ Inform 7 source (three variants), the design archive (16 Detail Design revisions
 ### P-2: Measure the world inventory from the Inform 7 source
 The dialogue was measured precisely in prior scoping (~40 conversations, 380 quip declarations, 307 response edges). The world never was.
 
-ADR-322 already records three figures in passing — ~1,192 authored response rules over 32 rooms, 12,635 lines. This item verifies those against the source and extends them, rather than starting fresh, so the two records cannot drift.
+ADR-322 already records three figures in passing — ~1,192 authored response rules over 32 rooms, 12,635 lines. This item verifies those against the source and extends them, rather than starting fresh, so the two records cannot drift. (Outcome: ADR-322 D13 was corrected 2026-08-21 to 84 rooms; lines and response rules stood.)
 
 - **Done when**: a written inventory exists giving counts for rooms, objects, NPCs, scenes, chapters, and puzzles, plus a chapter-by-chapter map — derived from the I7 source rather than from the playtest transcripts — with ADR-322's three figures each either confirmed or corrected by name.
 - **Status**: DONE (2026-08-21, plan Phase 2) — `docs/references/textfyre/secretletter/INVENTORY.md`. 84 rooms by book, 47 NPCs, 23 quip trees / 380 quips, ~300 object declarations, 56 scenes, the book spine, and the puzzle path from the source's own `Book X` walkthrough. ADR-322 D13: 12,635 lines **confirmed exactly**; 1,192 response rules **confirmed exactly** (= `Instead` 778 + `After` 244 + `Before` 127 + `Check` 43); 32 rooms **corrected to 84** — the cited figure was a naive `grep 'is a room'` that missed five other declaration forms.
@@ -53,17 +53,17 @@ The first real answer to whether beat-based Chord conversation carries the mater
 
 Depends on P-4: chapter 1 cannot be built before the change document covers chapter 1.
 
-- **Done when**: `branch-stories/secret-letter/` follows the fernhill layout (`.story` plus config/recipe/tests/world-ignore), builds, and plays chapter 1 end to end including at least one complete conversation; authored transcript tests for that chapter pass against a freshly built bundle.
+- **Done when**: `branch-stories/secret-letter/` follows the fernhill layout (`.story` plus config/recipe/tests/world-ignore), builds, and plays chapter 1 end to end including at least one complete conversation; that chapter's branch-tester tree-document lines (`secret-letter.tests.json`, ADR-302 D16 / ADR-307 — **not** v1 `.transcript` files) pass against a freshly built platform.
 - **Status**: PLANNED (docs/work/secret-letter-port/plan.md)
 
 ### P-6: Prove the quip-tree → beat-thread rewrite pattern, then apply it
 The original is a menu-driven quip tree: 380 quip declarations, 297 `menu text` lines, 307 `response of` edges, 40 `start conversation with` entry points — roughly 40 conversations averaging 9-10 nodes. Textfyre's own `Conversation Topics` extension sat commented out at `story.ni:206`; they had the topic model and chose the menu. Chord's beats are a third model again, so this is a rewrite, not a translation.
 
-- **Done when**: a written rewrite pattern exists, demonstrated on one complete conversation, stating how quip nodes, menu text, and response edges map to beats; and the remaining conversations are converted against it with their own transcript tests.
+- **Done when**: a written rewrite pattern exists, demonstrated on one complete conversation, stating how quip nodes, menu text, and response edges map to beats; and the remaining conversations are converted against it with their own tree-document lines.
 - **Status**: PLANNED (docs/work/secret-letter-port/plan.md)
 
 ### P-7: Port the remaining chapters and world
-- **Done when**: every chapter covered by P-4's change document is playable in `branch-stories/secret-letter/`, each with authored transcript tests passing.
+- **Done when**: every chapter covered by P-4's change document is playable in `branch-stories/secret-letter/`, each with its recorded tree-document lines passing.
 - **Status**: PLANNED (docs/work/secret-letter-port/plan.md)
 
 ### P-8: Resolve `Adjacent Rooms`
@@ -87,7 +87,7 @@ The determination is in scope now. **Building** an equivalent is not: it adds la
 
 Building a platform-level adjacent-rooms construct would add language surface to serve **one story's house style**. If the pattern proves general across several Chord stories later, promote it then, with its own ADR at rule 11's bar. Verified absent today: no `distant`/`remote`-room concept anywhere in `packages/chord`, `packages/world-model`, or `packages/stdlib`, and `looking` has no direction handling — so this is a genuine gap, deliberately left to the story layer rather than closed in the platform.
 
-**The one unverified step**, stated rather than buried: whether a per-room text is cleanest as a phrase key, a `define trait` on the room, or a room-body field was not settled here — that is a small spike inside Phase 5's Chapter 1 slice, where the first distant descriptions get written. If that spike finds the story layer genuinely cannot carry it, this decision reopens and an ADR is the precondition, exactly as the item requires.
+**The one unverified step**, stated rather than buried: whether a per-room text is cleanest as a phrase key, a `define trait` on the room, or a room-body field was not settled here — that is a small spike inside Phase 6's Chapter 1 slice, where the first distant descriptions get written. If that spike finds the story layer genuinely cannot carry it, this decision reopens and an ADR is the precondition, exactly as the item requires.
 
 ### P-9: Decide ADR-323 deferred narration for this port
 ADR-323 is ACCEPTED but unimplemented, and it is a platform change (CLAUDE.md-gated). The port runs without it; it exists because Textfyre's Dramatic Priority extension had no Chord equivalent, and this is the story that motivated it.
@@ -113,14 +113,14 @@ ADR-323 is ACCEPTED but unimplemented, and it is a platform change (CLAUDE.md-ga
 
 The port is finished when the Chord *Secret Letter* is a real, playable, published game — not when it merely runs in the repo. Checkable terms:
 
-1. Every chapter David's change document (P-4) covers is playable end to end, with authored transcript tests passing against a freshly built `dist/cli/sharpee.js`.
+1. Every chapter David's change document (P-4) covers is playable end to end, with its branch-tester tree-document lines passing (`./sharpee test branch-stories/secret-letter`) against a freshly built platform.
 2. `./repokit build secret-letter --browser` produces a self-contained client under `dist/web/secret-letter/`.
 3. That build is hosted at a public URL and reachable by someone who has never seen this repository.
 4. It has a landing page and its own IFID.
 5. It is announced.
 
-**This is the most ambitious of the four options and it changes the shape of the work.** The current plan (`docs/work/secret-letter-port/plan.md`) ends at Phase 8 — "every chapter is playable and test-covered" — which satisfies item 1 only. Items 2 through 5 pull art, client presentation, polish, hosting, and a landing page into scope, and **no phase covers any of them today.**
+**This is the most ambitious of the four options and it changes the shape of the work.** The current plan (`docs/work/secret-letter-port/plan.md`) ends at Phase 11 — its last build phase, Phase 10, is "every chapter is playable and test-covered" — which satisfies item 1 only. Items 2 through 5 pull art, client presentation, polish, hosting, and a landing page into scope, and **no phase covers any of them today.**
 
-That gap is recorded here deliberately rather than closed by inventing phases now: the release work cannot be planned usefully until the game exists and its presentation needs are known. **The plan needs a re-plan pass when Phase 8 nears completion**, and until that happens the plan reaching Phase 8 must not be read as the port being done. Tracked as an open item in the session record.
+That gap is recorded here deliberately rather than closed by inventing phases now: the release work cannot be planned usefully until the game exists and its presentation needs are known. **The plan needs a re-plan pass when Phase 10 nears completion**, and until that happens the plan reaching Phase 10 must not be read as the port being done. Tracked as an open item in the session record.
 
 Two constraints already known for that later pass: the existing OpenSilver re-host at `secretletter.plover.net` serves the *2009* game, so the Chord port needs its own address rather than silently replacing it, and a public release is a real work David's name goes on — the standing GenAI-out-of-real-works constraint applies to anything shipped, with the narrow dialogue clearance in P-4 the only exception.

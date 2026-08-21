@@ -368,7 +368,7 @@ comparison target.
 **3 — Intent-neutrality, and this is the one the tool is most likely to fail.**
 Every Textfyre story was written against a design invariant: **a non-IF middle
 school audience**. The structure follows from it — a strictly linear scene chain,
-a large hint apparatus, ~1,192 authored response rules over 32 rooms. Reviewers
+a large hint apparatus, ~1,192 authored response rules over 84 rooms. Reviewers
 called this out as a lack of agency, and they were describing the design working as
 specified, not failing.
 
@@ -392,9 +392,19 @@ what this ADR records is that the first L3 declaration to clear D3's bar was
 produced by a sample rather than by a designer at a whiteboard.
 
 **Secret Letter is not the performance sample.** Large source, small state space —
-12,635 lines over 32 rooms with a linear spine will likely sweep in milliseconds.
+12,635 lines over 84 rooms with a linear spine will likely sweep in milliseconds.
 D12's scaling curve still needs the synthesized story; these are two different jobs
 and conflating them would leave both unmeasured.
+
+**Correction (2026-08-21) — the room count was wrong: 32 → 84.** D13's three figures
+were measured against the Inform 7 source by the Secret Letter port's own inventory
+pass (`docs/references/textfyre/secretletter/INVENTORY.md`, proposal item P-2).
+**12,635 lines and 1,192 response rules are confirmed exactly** (1,192 = `Instead` 778
++ `After` 244 + `Before` 127 + `Check` 43). **32 rooms is wrong; the source has 84.**
+The original figure came from a naive `grep 'is a room'` that missed five other room
+declaration forms. Nothing in D13's argument turns on it — 84 rooms with a linear
+spine still sweeps in milliseconds, and the intent-neutrality test is unaffected — but
+the two records must not drift, which is what P-2 was written to prevent.
 
 ### Acceptance (extends the list above)
 

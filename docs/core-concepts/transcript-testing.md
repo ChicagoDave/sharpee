@@ -1,5 +1,17 @@
 # Transcript Testing
 
+> **Scope — which harness is this?** Sharpee has two, and the split is strict:
+>
+> | | Harness | Artifact | Command |
+> |---|---|---|---|
+> | **Sharpee** | `@sharpee/transcript-tester` | `*.transcript` | `node dist/cli/sharpee.js --test` |
+> | **Chord** | `@sharpee/branch-tester` (ADR-307) | one `<story-id>.tests.json` tree document beside the `.story` | `sharpee test <story-dir>` |
+>
+> **Transcript tests are strictly Sharpee. Chord stories are strictly tree
+> documents.** This document covers the Sharpee side only — the tree document is
+> not a transcript and shares none of the grammar below. If you are writing a
+> Chord story, nothing here applies to it.
+
 Sharpee uses **transcript testing** to verify interactive fiction stories. Transcript files describe a sequence of player commands and expected outcomes in a format that reads like actual gameplay. The transcript tester runs these against the game engine and verifies that output, events, and world state match expectations.
 
 There are two kinds of transcript tests:
@@ -9,33 +21,31 @@ There are two kinds of transcript tests:
 
 ## Quick Start
 
-### Published stories (npx)
+### Authoring your own story — not this harness
 
-From your story project directory:
+`sharpee build --test` no longer exists; there is no `--test` flag on the
+author build. An authored story is tested through its **tree document**:
 
 ```bash
-# Build your story and run all transcript tests
-npx sharpee build --test
-
-# With verbose output
-npx sharpee build --test --verbose
-
-# Stop on first failure
-npx sharpee build --test --stop-on-failure
+sharpee test                     # from the project directory
+sharpee test <dir|name|file.story>
+sharpee test --stop-on-failure --verbose
 ```
 
-`npx sharpee build --test` compiles your TypeScript, creates a `.sharpee` bundle, builds the browser client (if configured), then runs all transcript tests it finds:
-
-- `walkthroughs/wt-*.transcript` — run as a chain (state persists between files)
-- `tests/transcripts/*.transcript` — run individually (fresh game per file)
+That reads `<story-id>.tests.json` beside your `.story` and replays it against a
+real engine. Tests are recorded in the IDE's Testing tab rather than hand-written.
+Everything from "Writing Transcripts" down is the *other* harness and does not
+apply to it. `--chain` and `--coverage` are retired there (ADR-302 D10,
+ADR-307 cutover).
 
 ### Sharpee development (bundle)
 
 When working on Sharpee itself, the pre-built bundle is faster (~170ms load vs multi-second package resolution):
 
 ```bash
-# Build the platform + story first
-./sharpee build dungeo
+# Build the platform + story first (ADR-187: ./repokit is the in-repo build;
+# ./sharpee is the author tool and redirects a workspace story here anyway)
+./repokit build dungeo
 
 # Run a single unit test
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/basket-elevator.transcript
@@ -105,6 +115,20 @@ description: Tests that the locked door requires the brass key
 | `author` | No | Author name |
 | `description` | No | What this transcript tests |
 
+Seven further keys carry **run configuration** rather than prose, recognized
+case-insensitively (ADR-294 D3/D6/D8/D13/D15/D19, ADR-293 Phase C). Anything
+else in the header stays a raw string.
+
+| Field | Description |
+|-------|-------------|
+| `seed` | Pin the master seed. This is the only way to pin one — `[SEED: N]` is removed grammar |
+| `seeds` | Multiple seeds for a matrix run |
+| `channels` | Channels to capture |
+| `events` | Events to capture |
+| `locale` | Language/locale for the run |
+| `forces` | Force an outcome class at a point: `point[#occurrence]=CLASS`, comma-separated |
+| `point-seed` | Pin one point's seed: `point=seed`, comma-separated |
+
 The `---` separator marks the end of the header.
 
 ### Commands
@@ -145,6 +169,11 @@ Lines starting with `##` are section headers. They appear in test output to orga
 
 ## Text Assertions
 
+The full live set is `[OK]`, `[OK: contains "..."]`, payload-less `[OK: contains]`
+with a text block, `[OK: not contains "..."]`, `[FAIL: reason]`, `[TODO: note]`,
+`[SKIP]`, `[EVENT:]`, `[STATE:]`, and the `[GOAL:]` label. Anything else is
+[removed grammar](#removed-grammar).
+
 Text assertions check the game's textual output after a command. Every assertion is enclosed in `[brackets]`.
 
 ### Contains
@@ -166,33 +195,21 @@ Check that output does NOT include a substring:
 [OK: not contains "You have died"]
 ```
 
-### Contains Any
-
-Check that output includes at least one of several strings:
-
-```
-> inventory
-[OK: contains_any "sword" "knife" "dagger"]
-```
-
-### Regex Match
-
-Check output against a regular expression:
-
-```
-> examine paintings
-[OK: matches /\d+ paintings?/i]
-```
-
 ### Expected Failure
 
-Use `[FAIL]` to assert a check should NOT pass (inverted logic). This is useful for testing that something does NOT happen:
+`[FAIL: reason]` marks a command as an **expected failure**. The command is
+excluded from the pass/fail count and never fails a run, whatever its other
+assertions do — `reason` is a free-text label, not a check:
 
 ```
 > east
-[FAIL: contains "East-West Passage"]
-[OK: contains "troll blocks"]
+[FAIL: the troll blocks this until the axe puzzle is solved]
 ```
+
+It does **not** invert an individual assertion. To assert that something is
+absent, use `[OK: not contains "..."]`. Verified 2026-08-21: a `[FAIL:]` command
+whose sibling `[OK: contains]` matched, and one whose sibling did not, both
+report `EXPECTED FAIL` and exit 0.
 
 ### Skip / TODO
 
@@ -249,15 +266,6 @@ Match specific properties in event data:
 > push rug
 [EVENT: true, type="action.success" messageId="pushed_nudged"]
 [EVENT: true, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
-```
-
-### Event Count
-
-Verify exact number of events emitted:
-
-```
-> push rug
-[EVENTS: 3]
 ```
 
 ### Common Event Types
@@ -336,92 +344,60 @@ Entity names in state expressions are resolved by name, ID, or alias.
 
 ---
 
-## Control Flow Directives
+## Structural Labels
 
-Transcripts support directives for handling variable outcomes, loops, and navigation.
+Five of the six control-flow directives this section once documented were
+removed by ADR-294 D4 — output and state are deterministic at a pinned seed, so
+a loop, a retry, or a condition never varies. The parser rejects each by name.
+See [Removed Grammar](#removed-grammar). One survives.
 
 ### GOAL / END GOAL
 
-Organize transcripts into named objectives with preconditions and postconditions:
+`[GOAL: name]` and `[END GOAL]` group a run of commands under a label. It is a
+**structural label only** — it groups and names, it does not assert, branch, or
+verify that the goal was reached:
 
 ```
-[GOAL: Get the torch]
-[REQUIRES: inventory contains "rope"]
-[ENSURES: inventory contains "torch"]
-
-> tie rope to railing
-[OK: contains "rope"]
-
-> down
-[OK: contains "Torch Room"]
+[GOAL: retrieve the torch]
+> north
+[OK: contains "Dark Passage"]
 
 > take torch
 [OK: contains "Taken"]
-
 [END GOAL]
 ```
 
-- `[REQUIRES: condition]` — must be true before the goal starts (test fails if not)
-- `[ENSURES: condition]` — must be true after the goal completes (test fails if not)
+---
 
-### IF / END IF
+## Removed Grammar
 
-Conditional execution based on world state:
+Sixteen forms were removed by ADR-293/ADR-294. **The parser rejects each by
+name** with a message pointing at the replacement, so a transcript using one
+fails to parse rather than misbehaving. They are listed here because earlier
+revisions of this document taught several of them, and because a rejection is
+easier to act on when you know what to write instead.
 
-```
-[IF: location = "Troll Room"]
-> attack troll with sword
-[END IF]
-```
+The common cause: **a run is deterministic at a pinned seed.** A loop, a retry,
+a precondition, and a condition therefore cannot vary between runs — so the
+fixed command list they produce is what the transcript should say outright.
 
-### WHILE / END WHILE
+| Removed | Write instead |
+|---|---|
+| `[SEED: N]` | `seed: N` in the header, above the `---` |
+| `[WHILE:]` / `[END WHILE]` | the fixed command list the loop produced |
+| `[RETRY:]` / `[END RETRY]` | the fixed command list the retries produced |
+| `[DO]` / `[UNTIL]` | the fixed command list the loop produced |
+| `[IF:]` / `[END IF]` | the branch that actually happens |
+| `[REQUIRES:]` | nothing — a precondition either always holds, or the transcript is wrong |
+| `[ENSURES:]` | a golden recording for durable protection; `[OK: contains "..."]` or `[STATE:]` for unit intent |
+| `[NAVIGATE TO:]` | the movement commands themselves |
+| `[OK: any]` | `[OK]` |
+| `[OK: contains_any]` | `[OK: contains "..."]` with the text that actually occurs |
+| `[OK: matches]` | `[OK: contains "..."]`, or a golden recording |
+| `[EVENTS: N]` | `[EVENT: true, N, type="..."]` for a specific type |
 
-Loop while a condition is true (max 100 iterations):
-
-```
-[WHILE: room contains "troll"]
-> attack troll with sword
-[END WHILE]
-```
-
-### DO / UNTIL
-
-Execute at least once, then repeat until output matches:
-
-```
-[DO]
-> attack troll with sword
-[OK: contains_any "troll" "staggering"]
-[UNTIL "slumps to the floor dead" OR "He dies" OR "You are dead"]
-```
-
-Multiple UNTIL conditions use OR logic. Output accumulates across iterations.
-
-### RETRY
-
-Retry a block on failure, restoring world state between attempts. Essential for handling randomness (combat outcomes, NPC behavior):
-
-```
-[RETRY: max=5]
-[DO]
-> attack troll with sword
-[OK: contains_any "troll" "staggering"]
-[UNTIL "slumps to the floor dead" OR "He dies" OR "You are dead"]
-[ENSURES: not entity "troll" alive]
-[END RETRY]
-```
-
-The tester saves world state before the block and restores it on failure before retrying.
-
-### NAVIGATE TO
-
-Auto-pathfind to a room by name using BFS on the world model:
-
-```
-[NAVIGATE TO: "Torch Room"]
-```
-
-Useful for skipping tedious navigation in long tests.
+Do not reintroduce any of them, and do not add new control-flow forms in their
+place — that is the shape ADR-294 D4 closed.
 
 ---
 
@@ -461,7 +437,9 @@ Stories can implement their own debug tools as well. For example, Dungeo impleme
 
 ## Condition Expressions
 
-Used in `REQUIRES`, `ENSURES`, `IF`, and `WHILE` directives:
+Used in `[STATE: true|false, expression]` assertions. (They were also the
+argument to `REQUIRES`, `ENSURES`, `IF`, and `WHILE`; all four are removed
+grammar — `[STATE:]` is where these expressions live now.)
 
 | Expression | Meaning |
 |------------|---------|
@@ -534,13 +512,11 @@ Example pattern:
 title: Get Torch Early
 story: dungeo
 description: Get the torch ASAP to save lantern battery
+seed: 42
 
 ---
 
 [GOAL: Collect essential items from house]
-[ENSURES: inventory contains "rope"]
-[ENSURES: inventory contains "lantern"]
-[ENSURES: inventory contains "sword"]
 
 > look
 [OK: contains "West of House"]
@@ -642,21 +618,24 @@ Summary output:
 
 ## CLI Reference
 
-### npx sharpee build
+### sharpee build (author tool)
 
 | Flag | Description |
 |------|-------------|
-| `--test` | Run transcript tests after building |
-| `--verbose`, `-v` | Show detailed test output |
-| `--stop-on-failure` | Stop on first test failure |
 | `--no-minify` | Skip browser client minification |
 | `--no-sourcemap` | Skip source map generation |
+
+There is no `--test` flag. Author-side testing is `sharpee test`, which runs the
+tree document — see [Scope](#transcript-testing) at the top.
 
 ### node dist/cli/sharpee.js (development)
 
 | Flag | Description |
 |------|-------------|
 | `--test <files>` | Run transcript test(s) |
+| `--story <path>` | Story dir or `.story` file. Inferred from the transcript paths' `stories/<name>/` prefix for `--test`; **required** for `--play`/`--exec` — there is no default story |
+| `--seed <n>` / `--vary` | Override the pinned seed / run off-baseline (mutually exclusive) |
+| `--output-dir <dir>`, `-o` | Write timestamped results to a directory |
 | `--chain` | Chain transcripts (state persists between files) |
 | `--stop-on-failure` | Stop on first failure |
 | `--verbose` | Show detailed output |
@@ -703,12 +682,25 @@ Entity names in state expressions are resolved by name, ID, or alias. Check that
 
 ### Combat Randomness
 
-Combat outcomes are random. Use `[DO]`/`[UNTIL]` with `[RETRY]` blocks to handle variable results. Providing 6 attack commands is usually sufficient without retry logic.
+Combat is **deterministic at a pinned seed** — it is not a source of flakiness,
+and it needs no loop or retry (`[DO]`/`[UNTIL]`/`[RETRY]` are removed grammar).
+Write the exact command list the fight actually takes: derive it by probing with
+`--exec`, or pin a specific outcome with the `forces:` / `point-seed:` header
+fields (ADR-293 Phase C).
+
+**Do not pad with surplus attack commands "for safety."** The count in a
+combat sequence is an exact pinned-seed result; extra commands make the
+transcript wrong, not safer. If a run differs from the recorded one at the same
+seed, that is a real finding — investigate it rather than re-running.
 
 ---
 
 ## Further Reading
 
 - [ADR-073: Transcript Story Testing](../architecture/adrs/adr-073-transcript-story-testing.md) — Original design rationale
-- [ADR-092: Smart Transcript Directives](../architecture/adrs/adr-092-smart-transcript-directives.md) — Control flow extensions (GOAL, IF, WHILE, RETRY, NAVIGATE TO)
+- [ADR-092: Smart Transcript Directives](../architecture/adrs/adr-092-smart-transcript-directives.md) — the control-flow extensions (GOAL, IF, WHILE, RETRY, NAVIGATE TO). **Historical**: everything but GOAL was removed by ADR-294 D4; read it for why they existed, not for what to write
 - [ADR-134: Generic IF Transcript Tester](../architecture/adrs/adr-134-generic-if-transcript-tester.md) — Future extraction as standalone tool
+- [ADR-293: Determinism and forcing](../architecture/adrs/adr-293-determinism-and-forcing.md) — the pinned seed the removals rest on, and the `forces:` / `point-seed:` header fields
+- [ADR-294](../architecture/adrs/) — D2/D3/D4 removed the assertion and control-flow forms listed under [Removed Grammar](#removed-grammar)
+- [ADR-307: The Testing Tree, Model v2](../architecture/adrs/adr-307-testing-tree-model-v2.md) — the *other* harness: the tree document that Chord and IDE stories use instead of this grammar
+- [`README.md`](./README.md) — `@sharpee/transcript-tester` vs `@sharpee/branch-tester`, and which world each serves
