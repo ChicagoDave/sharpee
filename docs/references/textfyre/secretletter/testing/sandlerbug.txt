@@ -1,5 +1,5 @@
 Jack Toresal and The Secret Letter by Textfyre, Inc
-Copyright � 2009 by Textfyre, Inc
+Copyright © 2009 by Textfyre, Inc
 Story by David Cornelson
 Written by Michael Gentry
 Game Engine (FyreVM) by Tara McGrew

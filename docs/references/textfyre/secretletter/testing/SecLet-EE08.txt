@@ -2,7 +2,7 @@ Start of a transcript of
 
 Jack Toresal and The Secret Letter
 Jack Toresal and The Secret Letter by Textfyre, Inc
-Copyright � 2009 by Textfyre, Inc
+Copyright © 2009 by Textfyre, Inc
 Designed by David Cornelson and Michael Gentry
 Written by Michael Gentry
 Programmed by Voldemort
@@ -3664,7 +3664,7 @@ You seem to want to talk to someone, but I can't see whom.
 You step into a world of light...
 
 Ballroom
-Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canap�s. Somewhere, a string quartet is playing a lively concerto.
+Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canapés. Somewhere, a string quartet is playing a lively concerto.
 
 It's breathtaking. It's every fantasy of beauty and riches that you ever dreamed of, brought to life.
 
@@ -3787,7 +3787,7 @@ I didn't understand that sentence.
 
 >l
 Ballroom
-Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canap�s. Somewhere, a string quartet is playing a lively concerto.
+Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canapés. Somewhere, a string quartet is playing a lively concerto.
 
 The Earl of Bresa, the Baron of Amhyron, the Duke and Duchess of Inhyron, the Princess and Jacobs the Elder are elsewhere in the crowd.
 
@@ -3831,7 +3831,7 @@ I didn't understand that sentence.
 
 >l
 Ballroom
-Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canap�s. Somewhere, a string quartet is playing a lively concerto.
+Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canapés. Somewhere, a string quartet is playing a lively concerto.
 
 The Earl of Bresa, the Baron of Amhyron, the Duke and Duchess of Inhyron and Jacobs the Elder are elsewhere in the crowd.
 
@@ -4078,7 +4078,7 @@ The Duke nods politely as you leave.
 
 >l
 Ballroom
-Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canap�s. Somewhere, a string quartet is playing a lively concerto.
+Hundreds of candles spread an unearthly golden glow throughout the hall. From massive chandeliers dripping with crystal, from golden candelabras ensconced in the walls, the multitude of flames flicker like stars. The ballroom is packed with people; all of Toresal's high society seems to be here tonight, and still the enormous hall does not seem full. Servants navigate through the crowds, carrying silver platters loaded with pastries and canapés. Somewhere, a string quartet is playing a lively concerto.
 
 The Earl of Bresa, the Baron of Amhyron, the Duke and Duchess of Inhyron and Jacobs the Elder are elsewhere in the crowd.
 

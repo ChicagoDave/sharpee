@@ -36,7 +36,7 @@
 - **Entry state**: Phase 1 complete — I7 source and the five clean playtest transcripts are landed under the reference corpus.
 - **Deliverable**: (P-2) A written inventory — rooms, objects, NPCs, scenes, chapters, puzzles, plus a chapter-by-chapter map — derived from the I7 source (not the transcripts), with ADR-322's three figures (~1,192 response rules, 32 rooms, 12,635 lines) each confirmed or corrected by name so the two records never drift. (P-3) The five playtest transcripts converted to readable form under the reference corpus, each labeled with what it covers, with an explicit note that they are reference material and not the acceptance gate for this port. That note is scoped to this port and asserts nothing — in either direction — about any other use of the transcripts.
 - **Exit state**: Inventory document and converted transcripts both committed under the reference corpus; P-2 and P-3 closed.
-- **Status**: CURRENT (since 2026-08-21)
+- **Status**: DONE (2026-08-21) — `INVENTORY.md` and `testing/README.md` landed under the corpus. ADR-322 D13's figures reconciled: 12,635 lines and 1,192 response rules confirmed exactly, **32 rooms corrected to 84**. Phase 8's build checklist now exists.
 
 ### Phase 3: Resolve the three port-scoping decisions (P-8, P-9, P-10)
 - **Tier**: Small
@@ -45,7 +45,8 @@
 - **Entry state**: Phase 1 complete (Adjacent Rooms extension source is in the landed corpus). Independent of Phases 2 and 4-8 otherwise — can run any time after Phase 1.
 - **Deliverable**: (P-8) The proposal records either an explicit "drop it" decision for an Adjacent-Rooms equivalent with the reason, or a decision to build one — in which case building it is out of this plan's scope until a separate ACCEPTED ADR covering the new language surface exists. (P-9) The proposal records either that an implementing child ADR/plan for ADR-323 exists and will ship with AC-1 through AC-7 satisfied (tracked on its own plan, not this one), or an explicit decision that the port ships without deferred narration. (P-10) The proposal records what "done" means for this port in checkable terms (branch-stories only / browser build / public release / parity with `secretletter.plover.net`).
 - **Exit state**: All three decisions recorded in `docs/proposals/secret-letter-port.md`; P-8, P-9, P-10 closed at the decision layer regardless of which branch each took.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-21) — all three recorded in the proposal. **P-8**: no platform equivalent for `Adjacent Rooms`; its 142 distant/dead-end texts are authored as story content against `define action` + `directions` (ADR-267 D12), ADR-173 adjacency, and `WorldModel.findPath` — with a small per-room-text spike carried into Phase 5. **P-9**: the port ships without ADR-323 deferred narration (18 `dramatic event` declarations in the whole source; the ADR stays alive on its own track). **P-10**: **a public release** (David) — hosted, landing page, IFID, announced.
+- **Consequence for this plan**: P-10's target is not satisfied by Phase 8. Phase 8's exit state covers only the first of P-10's five checkable terms; the browser build, hosting, landing page, IFID, and announcement have **no phase**. A re-plan pass is required as Phase 8 nears completion — until then, reaching Phase 8 does not mean the port is done.
 
 ### Phase 4: Confirm the content-authority gate (P-4)
 - **Tier**: Small
@@ -54,7 +55,7 @@
 - **Entry state**: David has authored the change document covering at least Chapter 1 (external input; not produced by this plan).
 - **Deliverable**: The change document is reachable from `docs/proposals/secret-letter-port.md` by path. This phase itself produces no chapter content — it only confirms the gate is open before Phase 5 starts, and Phases 5, 7, and 8 each cite the specific section of the document that authorizes the chapter being built. A chapter the document does not cover is not ported.
 - **Exit state**: Change document linked and reachable — P-4 **gate-confirmed, not closed**. Half of P-4's "Done when" is a property of Phases 5, 7, and 8 (each citing the section that authorizes its chapter), which have not run when this phase exits; P-4 closes with Phase 8, when the last citing phase has cited. Its coverage stays a live, re-checked constraint throughout — a chapter added to the document later reopens what Phases 7 and 8 may build.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-21) — blocked on external input: David's change document is not produced by this plan.
 
 ### Phase 5: Chapter 1 vertical slice in `branch-stories/secret-letter/` (P-5)
 - **Tier**: Large

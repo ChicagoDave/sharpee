@@ -11,7 +11,7 @@ not an update.
 | Path | What it is |
 | --- | --- |
 | `dungeon-81/` | The 1981 Mainframe Zork MDL source — the authoritative reference for the Dungeo port. `patched_confusion/` is canon per David (2026-07-15); `original_source/` is the unpatched original. |
-| `textfyre/secretletter/` | The 2009 *Jack Toresal and The Secret Letter* Inform 7 source and design archive — the authoritative reference for the Chord port (`docs/proposals/secret-letter-port.md`). **Deliberately modified**: two person-level name substitutions were applied before staging, and its own `README.md` records them. Read that first — the divergence from upstream is intentional, and this directory is the stated exception to the never-changes rule above. |
+| `textfyre/secretletter/` | The 2009 *Jack Toresal and The Secret Letter* Inform 7 source and design archive — the authoritative reference for the Chord port (`docs/proposals/secret-letter-port.md`). **Deliberately modified**: two person-level name substitutions were applied before staging, plus a later two-character encoding repair in the transcripts; its own `README.md` records all three. Read that first — the divergence from upstream is intentional, and this directory is the stated exception to the never-changes rule above. Its `INVENTORY.md` holds the world measured from the I7 source. |
 
 ## Why this directory exists
 
