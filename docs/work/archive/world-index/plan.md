@@ -1,7 +1,7 @@
 # Session Plan: Implement ADR-321 — The World Index (Map, Reach, Incomplete)
 
 **Created**: 2026-08-19
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (closed 2026-08-20, session c5bc96)
 **Overall scope**: Build the World Index feature end to end: a new `packages/world-index`
 derivation package that statically analyzes a compiled Chord Story IR for map topology,
 obstacle-aware reachability, and vocabulary gaps; a synthetic-corpus timing gate (AC-8);
@@ -439,12 +439,13 @@ costs one command per field.
 - **Exit state**: the World tab renders Map, Reach, and Incomplete for at least Fernhill,
   driven by a real build; all three AC-9 failure states are exercised manually (missing IR,
   malformed IR, `node` unavailable) and each shows the explanatory state, not a crash.
-- **Status**: AWAITING CONFIRMATION (since 2026-08-19, session 4db9d0) — code and tests are
-  complete and no further implementation is planned here; the single open exit-state item is
-  David's own confirmation that the tab RENDERS, driven by a real build. Phase 7 requires that
-  confirmation ("David has seen the World tab work, not just code review"), so the phase does
-  not close on a green suite. Deliberately NOT `CURRENT`: Phase 8 is the phase being worked,
-  and two CURRENT phases would leave the next session unable to tell which one it is resuming.
+- **Status**: DONE (2026-08-20, session c5bc96) — code and tests completed 2026-08-19
+  (session 4db9d0); the phase then held at AWAITING CONFIRMATION for David's own confirmation
+  that the tab RENDERS from a real build, since a green suite does not prove a rendered tab.
+  Closed on the evidence that followed: Phases 8 and 9 and ADR-321's Amendments 2 and 3 were
+  all worked *through* the rendered World tab across sessions 421f1f, f7938b and b983d6 —
+  including David hand-editing `ides-of-march.story` via the tab's finding cards, which is a
+  stronger confirmation than the look this status was waiting for.
 - **Outcome (code + tests)**: seven new files under `tools/ide/SharpeeIDE/World/` —
   `WorldIndexDocument.swift` (the Swift half of Phase 4's wire contract),
   `WorldIndexRunner.swift` (the subprocess), `WorldFindingTable.swift` (the shared sectioned
@@ -516,7 +517,12 @@ costs one command per field.
   satisfied, not amended further — ADR-131 already documents its own supersession.
 - **Exit state**: no remaining references to `world-explorer.ts` in `tools/vscode-ext`; the
   extension still builds (or is confirmed dead/unshipped, David's call, before deletion).
-- **Status**: PENDING
+- **Status**: ABANDONED (2026-08-20, session c5bc96) — David's call when the plan was closed:
+  the VS Code extension is not something this project cares about, so its copy of the world
+  explorer is not worth a deletion pass. `tools/vscode-ext/src/world-explorer.ts` and its eight
+  reference sites (`package.json`, `extension.ts`, and six sibling explorer files) are left
+  exactly as they are; nothing was deleted. ADR-131's supersession note stands unamended — the
+  macOS IDE's World tab superseded this surface regardless of whether the old file is removed.
 
 ### Phase 8: Amendment 1 — response prose, POS re-heading, and mention roles (D10–D15, AC-10..AC-16)
 - **Tier**: Large

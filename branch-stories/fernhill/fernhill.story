@@ -233,7 +233,7 @@ create the doormat
   flat.
 
 create the tarnished key
-  aka key
+  aka key, small, crank
   concealed
   on the doormat
   score found worth 5
@@ -252,7 +252,7 @@ create the oil lamp
   A hurricane lamp with a full reservoir and a clean chimney.
 
 create the boiler
-  aka furnace
+  aka furnace, cast-iron
   scenery, switchable
   in the Boiler Shed
   states: cold, filled, primed, running

@@ -1,7 +1,18 @@
 {
   "cards": [
     {
-      "assertions": {},
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Folly at Fernhill"
+          },
+          {
+            "id": "info.description",
+            "is": "One cold winter night to find the deed that keeps Fernhill in the family."
+          }
+        ]
+      },
       "type": "opening"
     },
     {
@@ -46,8 +57,6 @@
           "Boiler Shed"
         ]
       },
-      "command": "east",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
@@ -72,7 +81,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "east",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -125,11 +136,9 @@
           "Kitchen"
         ]
       },
-      "command": "east",
-      "type": "turn",
       "branches": [
         {
-          "branch": 1,
+          "branch": 2,
           "cards": [
             {
               "assertions": {
@@ -142,7 +151,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "east",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -240,11 +251,9 @@
           "Folly"
         ]
       },
-      "command": "north",
-      "type": "turn",
       "branches": [
         {
-          "branch": 1,
+          "branch": 3,
           "cards": [
             {
               "assertions": {
@@ -266,7 +275,9 @@
             }
           ]
         }
-      ]
+      ],
+      "command": "north",
+      "type": "turn"
     },
     {
       "assertions": {
