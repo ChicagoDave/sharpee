@@ -1,6 +1,7 @@
 # State-Space Analysis for Sharpee / Chord
 
-**Status:** Working document for **ADR-322** (state-space analysis, umbrella — DRAFT).
+**Status:** Working document for **ADR-322** (state-space analysis, umbrella — ACCEPTED
+2026-08-20).
 **Read ADR-322 first.** It settles the layer split (D1), declaration-vs-claim (D2), the
 annotation rules (D3–D5), the performance budget (D6), the soundness contract (D7),
 consumption of ADR-321 (D8), and the open finding vocabulary (D9). **Those constraints are
@@ -46,8 +47,10 @@ of §9's mitigations is needed now.
 
 ### What instrumentation is for
 
-Not go/no-go. **It tells you which of §9's mitigations you need on day one rather than in
-principle.** Carry these numbers permanently, from the first walk onward:
+Not go/no-go for the sweep — build it, that is how the numbers get made. But **ADR-322 D12
+makes it go/no-go for the IDE integration**: how this connects to the IDE is not decidable
+until these numbers exist on real stories. Beyond that, it tells you which of §9's
+mitigations you need on day one rather than in principle. Carry these numbers permanently, from the first walk onward:
 
 | Measurement | What it tells you |
 |---|---|
@@ -61,9 +64,28 @@ principle.** Carry these numbers permanently, from the first walk onward:
 (`on every turn while one chance in 6`), turn-indexed sequence events, and Chord has
 counters (ADR-264) — three of the four explosion sources §9 names, in the corpus you would
 pilot on. So the first walk exercises the mitigations immediately rather than deferring
-them. Ides of March second. Dungeo is the stress test, not the pilot: thief and combat make
-it the most stochastic corpus here, and a pilot there would be spent debugging false
-positives.
+them. Ides of March second.
+
+**But Fernhill is not a large sample, and the corpus does not contain one.** At 1,155
+lines it is the largest Chord story here (thealderman 938, Ides of March 921, measured
+2026-08-20). Per ADR-322 D12 the measurement therefore adds a **synthesized stress story
+whose state bits scale on a controlled axis** — state bits, not source lines, are what
+explodes — plus a **generative-entity-space case the sweep must decline** rather than grind
+(Counterfeit Monkey's letter-remover is the exemplar class). The IDE needs an answer for
+the declined case as much as for the fast one.
+
+**Dungeo is not the stress test.** An earlier draft of this line said it was; that is wrong
+on mechanism — Dungeo has no `.story` file, it is TypeScript under `stories/dungeo/src/`,
+so it is not a Chord IR sweep target at all.
+
+**And speed is not the only thing to measure.** ADR-322 D13 adds a validation corpus that
+this repository could not previously supply, because every Chord story here was written by
+this project against this project's assumptions: *Jack Toresal and The Secret Letter*
+(source-available, owned) brings five playtest transcripts recorded 2007-2010 — **a path the
+sweep calls unreachable is a defect in the sweep** — the designers' own puzzle diagrams to
+check ADR-321's `lifted` against, and published reviews. It is *not* a performance sample:
+12,635 lines over 32 rooms with a linear spine is large source over a small state space, and
+will likely sweep in milliseconds.
 
 The walk itself, per §9: BFS, fork by re-execution (ADR-302 D17), validate-only pruning at
 each node, forcing at choice points (ADR-293 Phase C), and the D22 signature projection.
@@ -90,6 +112,11 @@ where Chord already reports build errors (ADR-276, source-authoritative errors).
 
 That reframing drives §2 and §10. The goal is not a report — it is a finding attached to a
 source span with a minimal reproduction.
+
+**Which of those two regimes this becomes is measured, not assumed** (ADR-322 D12). They
+are different products — different trigger, different surface, different cost when a result
+goes stale — so the IDE connection is specified after real sweeps have run, not alongside
+them.
 
 Note the existing house position: *there are no CI gates in this project* (ADR-303 D5).
 Nothing here proposes one. On-save diagnostics and a CLI mode, not a gate.
@@ -398,6 +425,15 @@ today every one is estimated by intuition.
 Two of these invert the usual assumption and should be presented that way in the UI:
 shortest-path is not a quality target, and low expected-failure is not a success.
 
+**All of them are intent-neutral, on the same terms §6 sets for cruelty.** A game may hold
+near-total single-run coverage, a near-zero island fraction and near-zero expected failures
+per gate because it is railroaded by accident — or because it is scaffolded on purpose for
+an audience new to the form. The numbers are identical. The tool reports them and says the
+range is extreme; **it does not say the design is deficient**, and the `declare guided` in
+§7 is how an author states which case theirs is. See ADR-322 D13: this is the validation
+most likely to fail, because an analysis that editorializes is obnoxious in a way that a
+merely wrong one is not.
+
 ---
 
 ## 6. Cruelty: what to compute and what not to ship
@@ -519,17 +555,51 @@ declare exclusive
   the Norwich branch
   the Burbage branch
 end declare
+
+declare guided
+  the critical path is a single chain
+  because the audience is new to parser interactive fiction
+  # obligation (ADR-322 D4): asserts the spine is still a chain, so a later
+  # edit that branches it fails this declaration instead of silently voiding it
+end declare
 ```
+
+**`declare guided` is the first declaration real material argued for, not a designer at a
+whiteboard** (ADR-322 D13). Every Textfyre story was written against a non-IF middle-school
+audience, and *Jack Toresal and The Secret Letter* has the structure that follows: a
+strictly linear scene chain, a large hint apparatus, ~1,192 authored response rules over 32
+rooms. Reviewers read that as an absence of agency. They were describing the design working
+as specified.
+
+A deliberate spine and accidental railroading are byte-for-byte identical in the IR, so
+**ADR-322 D3's test is met** — intent must be declarable here, because no inference
+separates them. Without it §5's agency metrics accuse every game that scaffolds on purpose,
+which is exactly the mistake §6 refuses to make about cruelty.
+
+Sketch only, per ADR-322 D5 — the name `guided`, the clause wording, and whether the
+`because` line is free text or a closed key set are all open. **Alternative considered**: a
+`story` header key mirroring `cruelty-scale:`. The `declare` block is preferred because
+ADR-322 D4 requires every declaration to carry an obligation, and a header key has nowhere
+to put one.
 
 Intentional *unwinnable states* are **not** declared here — they are dismissed through
 ADR-321 D22's existing `<story>.world-ignore.json`, per ADR-322 D4.
 
-### L4 — claims (prescriptive, fails the build)
+### L4 — claims (prescriptive; disposition authored, advisory by default — ADR-322 D11)
 
 The acceptance-criteria section — a defined block, verified on every build.
 
+The block's **first line is a disposition key** — it lives inside `claims`, not in the
+`story` header. Absent, it is `advisory`. The sketch below states it explicitly.
+
+It is not a story-header key because it governs one block, and a reader deciding what a
+red build means should find the answer in the block that produced it rather than
+sixty lines up in unrelated metadata. `cruelty-scale:` is in the header because it
+describes the whole story; this describes how one block reports.
+
 ```
 claims
+  reported as: binding      # advisory | binding; absent = advisory
   always winnable unless dismissed
   every ending is reachable
   no ending is reachable before the second day
@@ -559,6 +629,31 @@ Design notes:
 - Claims want ADR-276's source-authoritative error treatment.
 - `unless dismissed` is how ADR-322 D4 stays coherent: the global invariant holds except where a
   dismissal has taken responsibility, and each dismissal carries its own obligation.
+- **Advisory is the default so the block is writable before the story is finished.** Under
+  `advisory` a violated or *unproven* claim is a `warning` and the build still succeeds;
+  under `binding` both are `error`s and it does not. A draft violates most of its own
+  claims, and a binding default would break the build the day the author wrote their first
+  one — teaching them to postpone claims to release, when there is least left to catch. One
+  key, in the source, tightened at release.
+- **Advisory is not silence.** The claim tally — held / violated / unproven — prints on
+  every build at either disposition. Downgrading severity is not suppression; going quiet
+  is, and a quiet disposition would be the suppression-only annotation ADR-322 D4 forbids.
+- **Three outcomes, not two** (ADR-322 D11): held, violated, and **unproven** — the sweep hit
+  the budget or a pruning rule before it could decide. Unproven is never reported as held,
+  at either disposition, or ADR-322 D7's *absence is not proof* would launder itself into a
+  green build.
+- **No new reporting mechanism is needed.** `DiagnosticSeverity` is already
+  `'error' | 'warning'` (`packages/chord/src/diagnostics.ts:13`) and build success is already
+  "no error-severity diagnostic" (`diagnostics.ts:48`, `index.ts:45`). The disposition picks
+  which method a claim violation reports through; the span and the ADR-276 treatment are the
+  same either way.
+- **Alternative sketch, not preferred**: a bare modifier on the block's opening line
+  (`claims, advisory`). The key-line form is preferred because a closed key set has
+  somewhere to grow if a third disposition ever earns its place, and because it reads as a
+  property of the block rather than as punctuation. Per ADR-322 D5, neither is decided.
+- **Per-claim override is deliberately absent.** It is the construct that rots quietly — one
+  claim downgraded during a debugging session, never restored, invisible in a block that
+  still reads as binding.
 
 ---
 
@@ -721,12 +816,18 @@ small and very legible to the IF community.
    deciding which is canonical is not. Related: a sweep-driven "merciful mode" would
    mechanically convert any game to Merciful, and that property is *provable* rather than
    asserted.
-8. **ADR-131 disposition.** It was already amended (SCOPE WIDENED, 2026-08-05, session
-   51b5f4) on the assumption ADR-303 would accept. ADR-322 supersedes ADR-303 but does not
-   name ADR-131, so that amendment now cites a superseded ADR. Re-point it at ADR-322.
-9. **ADR-322's dateline, when it moves off DRAFT.** Not open — explained in Provenance
-   above — but worth one line in the ADR itself so a reader reconstructing the sequence
-   does not have to come here to learn which document was extracted from which.
+8. ~~**ADR-131 disposition.**~~ **Resolved 2026-08-20 (session 502b0b), and not the way
+   this item proposed.** Re-pointing the amendment at ADR-322 would have been wrong:
+   ADR-303's own supersession record already disposes of D6 — *"D6's widening of ADR-131
+   is moot: ADR-321 subsumed ADR-131's static half on 2026-08-19"* — and ADR-322 D8
+   consumes ADR-321's `lifted` rather than widening any explorer, so there is no widening
+   left to own. The SCOPE WIDENED block is closed in place as history instead, noting that
+   its trigger (whoever accepts ADR-303) never fired, since ADR-303 went to SUPERSEDED
+   without ever being accepted.
+9. ~~**ADR-322's dateline, when it moves off DRAFT.**~~ **Resolved 2026-08-20**: the ADR
+   was accepted in session 502b0b, and its Date line now carries the full sequence
+   (drafted c5bc96, Amendment 1 and acceptance 502b0b) with the extraction order recorded
+   in its own Session section.
 
 ---
 

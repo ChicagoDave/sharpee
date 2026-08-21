@@ -47,6 +47,25 @@ nothing in `packages/` or `repokit` implements it.
 > DRAFT. Landed early on David's instruction (session 51b5f4). The obligation D6
 > records is discharged here, and D6's own "ADR-131 stands unamended until that
 > lands" sentence is corrected in place to say so.
+>
+> ---
+>
+> **CLOSED 2026-08-20 (session 502b0b) — the widening above is moot, and its
+> trigger never fired.** ADR-303 was **SUPERSEDED** on 2026-08-20 without ever
+> being accepted, so the acceptance this amendment anticipated will not happen and
+> the ownership it names has no holder. Read everything above as history.
+>
+> **Do not re-point it at ADR-322.** ADR-303's own supersession record disposes of
+> D6 directly — *"D6's widening of ADR-131 is moot: ADR-321 subsumed ADR-131's
+> static half on 2026-08-19, and the proposal's §4A consumes ADR-321's Reach rather
+> than rebuilding it."* The second mode this block grants was overtaken twice: by
+> ADR-321 for the static half (see the SUPERSEDED IN PART header above, which is the
+> later and governing statement), and by ADR-322 D8 for the reachability half, which
+> **consumes ADR-321's `lifted` rather than widening any explorer**. Re-pointing the
+> citation would resurrect a widening that two later documents removed the need for.
+>
+> **Where the live work is**: ADR-322 (ACCEPTED 2026-08-20) and its working document
+> `docs/proposals/state-space-analysis.md`. Nothing is owed by this ADR to either.
 
 ## Context
 
