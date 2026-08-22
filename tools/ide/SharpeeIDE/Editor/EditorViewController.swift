@@ -286,13 +286,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             queue: .main)
         source.setEventHandler { [weak self] in
             guard let self else { return }
-            self.handleExternalChange(at: url)
-            // Re-arm: the vnode may be gone (atomic replace); a fresh open
-            // binds the NEW file at the same path.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-                guard let self, self.documents.contains(where: { $0.url == url }) else { return }
+            // Re-arm FIRST, synchronously: the vnode may be gone (atomic
+            // replace) and a fresh open binds the NEW file at the same path.
+            // Re-arming after a delay left a window in which a second write
+            // went unseen (GH #295 follow-up); binding before handling the
+            // change means the next write is always observed.
+            if self.documents.contains(where: { $0.url == url }) {
                 self.startWatching(url)
             }
+            self.handleExternalChange(at: url)
         }
         source.setCancelHandler { close(descriptor) }
         source.resume()
@@ -333,7 +335,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         let visibleRect = wasActive ? textView.visibleRect : .zero
         documents[index] = reloaded
         if wasActive {
-            switchTo(index: index)
+            // Not `switchTo(index:)`: it short-circuits on the already-active
+            // tab and never touches the text view, so the reload would stay
+            // invisible and the stale view would overwrite it on the next
+            // persist (GH #295). Load the new content into the view directly.
+            loadActiveDocumentIntoTextView()
+            refreshUI()
             let length = (textView.string as NSString).length
             let location = min(selection.location, length)
             textView.setSelectedRange(NSRange(location: location, length: 0))
@@ -907,8 +914,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         let rulerAlreadyExcluded = (scrollView.frame.width - clipWidth) >= rulerWidth - 1
         let visibleWidth = rulerAlreadyExcluded ? clipWidth : clipWidth - rulerWidth
         let wrapWidth = visibleWidth - textView.textContainerInset.width * 2
+        // Guard on BOTH things the body sets. A pre-layout pass can leave the
+        // frame one gutter too wide while the container already holds the
+        // width the settled layout computes (the ruler flips from "counted in
+        // the clip" to "excluded" and the two measurements cancel), so a
+        // container-only guard skipped the pass that would have fixed the
+        // frame — text hidden under the gutter until a resize (GH #290).
+        let containerStale = abs(container.containerSize.width - wrapWidth) > 0.5
+        let frameStale = abs(textView.frame.width - clipWidth) > 0.5
         guard clipWidth > 0, wrapWidth > 50,
-              force || abs(container.containerSize.width - wrapWidth) > 0.5 else { return }
+              force || containerStale || frameStale else { return }
         container.containerSize = NSSize(width: wrapWidth,
                                          height: CGFloat.greatestFiniteMagnitude)
         textView.setFrameSize(NSSize(width: clipWidth, height: textView.frame.height))

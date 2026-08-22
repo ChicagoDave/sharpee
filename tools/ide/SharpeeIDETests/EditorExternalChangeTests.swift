@@ -85,6 +85,31 @@ final class EditorExternalChangeTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "title: rewritten\n")
     }
 
+    /// GH #295: the ACTIVE tab must repaint on a silent reload, and the
+    /// repainted view must not later overwrite the reload. Asserted on the
+    /// VIEW (`currentText(of:)`), which is the surface the model-only
+    /// assertion above cannot see.
+    func testActiveTabRepaintsOnExternalWriteAndDoesNotClobberReload() async throws {
+        let file = try makeFile("active.transcript", "title: original\n")
+        editor.openDocument(at: file)
+        XCTAssertEqual(editor.currentText(of: file), "title: original\n")
+
+        try "title: rewritten\n".write(to: file, atomically: true, encoding: .utf8)
+        try await waitUntil("model reload of the active buffer") {
+            self.editor.currentText(at: file) == "title: rewritten\n"
+        }
+        XCTAssertEqual(editor.currentText(of: file), "title: rewritten\n",
+                       "the active tab's text view must show the reloaded content")
+
+        // A tab switch persists the view back into the model. If the view was
+        // stale, this is the step that silently undoes the reload.
+        let other = try makeFile("other.transcript", "other\n")
+        editor.openDocument(at: other)
+        XCTAssertEqual(editor.currentText(at: file), "title: rewritten\n",
+                       "switching tabs must not overwrite the reload with stale view text")
+        XCTAssertFalse(editor.hasUnsavedChanges(at: file))
+    }
+
     func testDirtyBufferIsBadgedAndNeitherSideIsClobbered() async throws {
         let file = try makeFile("dirty.transcript", "title: original\n")
         editor.openDocument(at: file)
