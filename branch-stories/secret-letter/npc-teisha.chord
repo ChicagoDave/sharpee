@@ -1,0 +1,174 @@
+## ---------------------------------------------------------------------------
+## TEISHA — the silk seller
+##
+## HER OWN IMPORT (`import "npc-teisha"`), not part of the market atom. Teisha
+## is a major NPC whose tree splits by occasion and carries across the chapter
+## break; the stallkeepers are the market's ambient texture and belong to the
+## place. Cutting on that line — a place is one import, a major NPC is its own —
+## keeps her whole in one file as her tree grows into the chase.
+##
+## Imports do not nest (`packages/chord/src/index.ts:151`, ADR-251 D5), so this
+## file sits BESIDE `grubbers-market`, not inside it, even though Teisha stands
+## in the market. The main `.story` file is the only importer.
+##
+## The silk seller, and the first perceiver the player meets (vision.md §3d).
+## Her tree splits by occasion (change document, "Teisha's conversation"): the
+## informational quips play here, in the calm walk, and TE1-TE9/TE16/TE20 stay
+## in the chase. Text below is Gentry's, carried from `story.ni:3110-3219`.
+##
+## The `[first time]…[subsequently][rp]…[only]` shape the source uses for every
+## one of these quips is Chord's `first-time` strategy, verified 2026-08-22
+## (vision.md §3h). `[rp]` is the source's own randomised repeat prefix
+## (`story.ni:655`). Chord does NOT interpolate one phrase inside another's
+## body — `{key}` prints literally there — so the five prefixes are carried
+## inline, one per quip, rather than drawn at random from a shared phrase.
+## Every prefix is Gentry's; only the randomness is lost.
+## ---------------------------------------------------------------------------
+
+
+create Teisha
+  a person, proper
+  aka woman, merchant, saleswoman, seller, vendor, clothier, redhead, red curls, curls
+  pronouns she
+  mood calm
+  starts in Inside the Silk Tent
+  carries the measuring cord
+
+  Teisha is a short, busty woman with a smile as warm as her tumbling red curls.
+  She likes you, and she knows that you'd never nick from her stall, so she lets
+  you hang around the stall and look through the merchandise. She also knows your
+  big secret (guessed it the very first time she caught you loitering at the tent
+  flap), which is a little bit scary and a little bit of a relief — it's nice to
+  be able to let your guard down and talk to someone outside Maiden House.
+
+  on every turn while one chance in 5
+    phrase teisha-atmosphere
+  end on
+
+create the measuring cord
+  aka cord, measuring tape
+
+  It's a five-foot-long length of cord, marked off in ten segments, used to take
+  a customer's measurements.
+
+define topics for Teisha
+  about "the market", "grubbers market", "the stalls", "who's selling what", "today":
+    phrase teisha-the-market
+  about "the tent", "behind the tent", "the pole", "the post":
+    phrase teisha-behind-the-tent
+  about "the clothes", "the silks", "the garments", "the gowns", "her wares":
+    phrase teisha-the-clothes
+  about "the monkey":
+    phrase teisha-the-monkey
+  about "fossville", "baron fossville", "the baron":
+    phrase teisha-fossville
+  about "the ascension":
+    phrase teisha-the-ascension
+end topics
+
+define greetings for Teisha
+  first time:
+    phrase teisha-calm-opener
+  on return:
+    phrase teisha-calm-return
+end greetings
+
+define phrase teisha-atmosphere, randomly
+  Teisha hums quietly to herself.
+or
+  Teisha smiles at you warmly.
+or
+  Teisha brushes a loose thread from the sleeve of one of her gowns.
+or
+  Teisha toys with her measuring cord, spinning it idly.
+end phrase
+
+define phrase teisha-the-market, first-time
+  'I know that different merchants set up their stalls on different days of the
+  week,' you say. 'So who's selling what today?'
+
+  'Well, there's the fruit stall on the northeast corner, but that's there every
+  day,' says Teisha. 'To the north is a grocer's stall; a hat seller to the
+  southeast; to the west is an herb seller and the gem merchant; and the
+  leatherworker and weaponsmith have set up shop on the south end. The inner ring
+  is me, a rope merchant, a pottery merchant, and that awful candlemaker — the
+  stench has been driving off my customers all morning.'
+or
+  'As I said,' says Teisha, 'there's the fruit stall to the northeast; the grocer to the
+  north; the hat seller to the southeast; the herb seller and the gem merchant to
+  the west; the leatherworker and weaponsmith to the south; and me, the rope
+  merchant, the potter merchant, and the candlemaker in the inner ring.'
+end phrase
+
+define phrase teisha-behind-the-tent, first-time
+  'What's that behind your tent?' you ask, nodding towards the back exit.
+
+  'There's nothing back there except the central pole holding up the big awning
+  over the market,' Teisha says. 'That's why all the merchants want this spot,'
+  she adds, '...it's got the best shade.'
+or
+  'I told you already,' says Teisha, 'it's just a big pole.'
+end phrase
+
+define phrase teisha-the-clothes, first-time
+  'These clothes are all so beautiful,' you say. 'Do you make them yourself?'
+
+  Teisha smiles. 'Some of them,' she says. 'Most of them I sell on consignment.
+  One of these days, I'm going to clear enough profit to rent a shop on Commerce
+  Street and move out of this hot, smelly tent.'
+or
+  'Like I said,' says Teisha, 'some of them I make myself, some I sell for others.'
+end phrase
+
+define phrase teisha-the-monkey, first-time
+  'The gem merchant sounds like he's got a real vendetta against that monkey,'
+  you remark. 'What's the story with them?'
+
+  Teisha rolls her eyes. 'That pesky thing came in on the fruit vendor's wagon
+  yesterday and just made itself at home. Now it's all over the place, bothering
+  everybody. Fortunately, it likes shiny things more than it likes women's
+  clothes. Oh, and bananas. The little rodent loves bananas. Constantly drops the
+  peels on the roof of my tent.'
+or
+  'I already told you,' says Teisha, 'it just runs around, eats bananas, and steals anything shiny
+  that isn't nailed down.'
+end phrase
+
+define phrase teisha-fossville, first-time
+  'It seems like everyone has an opinion about Baron Fossville, lately,' you
+  remark. 'What's yours?'
+
+  Teisha laughs. 'So you've noticed it too, huh? I don't usually like to talk
+  politics, which means I haven't had much in the way of conversation in
+  Grubber's Market lately.' She shrugs. 'I don't like his high taxes, but who
+  does? Fossville doesn't strike me as a very nice person, but I guess he doesn't
+  have to be.'
+or
+  'I told you,' says Teisha, 'I don't like him very much, but there's not much use
+  complaining.'
+end phrase
+
+## DAVID: TE22 is marked "corrected per vision.md §3e" in the change document.
+## The source's answer rests the succession on the King not having named his
+## DAUGHTER heir; §3e moves the claim onto blood and makes Jack the heir, so the
+## reply has to change and the new wording is yours. Gentry's original is kept
+## verbatim in the corpus at `story.ni:3219` for reference.
+
+define phrase teisha-the-ascension
+  (PLACEHOLDER — David's line. TE22's answer needs rewriting under vision.md
+  §3e; the 2009 text rests it on the King's unnamed daughter.)
+end phrase
+
+## DAVID: the calm opener. TE1 assumes Jack is already spooked and cannot be
+## reused here (change document, "Teisha's conversation" — costs carried into
+## Phase 6). This is your line to write, and the calm visit is also where the
+## Vedd idiom register's voice is first fixed (vision.md §2).
+
+define phrase teisha-calm-opener
+  (PLACEHOLDER — David's line. Teisha's calm-walk greeting.)
+end phrase
+
+define phrase teisha-calm-return
+  (PLACEHOLDER — David's line. Teisha's calm-walk return greeting.)
+end phrase
+

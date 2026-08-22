@@ -27,7 +27,13 @@ already exists (contradicting an earlier claim in the same session), and
 purpose-built fixture remains the nicer long-term artifact if the frozen copy ever gets in the
 way — this document is the design for it.
 
+**Plan Status**: ABANDONED
 **Created**: 2026-08-07
+**Dispositioned**: 2026-08-22 — the prose `## Status: SUPERSEDED` heading above (written
+2026-08-07) is not a field the plan-staleness scan reads, so this plan kept surfacing as a
+stale CURRENT phase. Recorded here in the contract field, phases marked ABANDONED, and the
+plan archived. The design above is preserved, not withdrawn: if the frozen `fernhill-frozen`
+copy ever gets in the way, this document is still the design for a purpose-built fixture.
 **Overall scope**: Replace `TestingTabRealPathTests.swift`'s coupling to the real author
 story `branch-stories/fernhill` with a small, purpose-built, invisible fixture story +
 transcript tree, so the 7-test rule-13a suite (ADR-301/302 acceptance) survives go-live
@@ -183,7 +189,7 @@ not the other way around.
   4. No file under `branch-stories/fernhill/tests/transcripts/` was read.
   5. If any check surfaces a need to touch `packages/`, the note says so loudly and this
      phase stops rather than proceeding to Phase 2 (Hard Constraint 7).
-- **Status**: CURRENT
+- **Status**: ABANDONED
 
 ### Phase 2: Author the fixture story + transcript tree
 - **Tier**: Medium
@@ -211,7 +217,7 @@ not the other way around.
      genuinely absent from anything shipped (Hard Constraint 2, closed for real here, not
      just reasoned about in Phase 1).
   5. No file under `branch-stories/fernhill/tests/transcripts/` was read.
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 3: Record real tally numbers from a live run (clean and broken)
 - **Tier**: Small
@@ -241,7 +247,7 @@ not the other way around.
      disagreement is called out explicitly (it is not a defect in this plan — real runs
      govern).
   4. No file under `branch-stories/fernhill/tests/transcripts/` was read.
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 4: Rewrite TestingTabRealPathTests.swift against the fixture
 - **Tier**: Medium
@@ -281,7 +287,7 @@ not the other way around.
      `StoryIndexTests.swift`, etc.) is untouched; this plan's scope is
      `TestingTabRealPathTests.swift` only, confirmed by `git status`/`git diff` at the end
      of this phase.
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ## Out of scope (explicitly)
 

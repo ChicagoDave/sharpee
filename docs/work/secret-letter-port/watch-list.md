@@ -80,6 +80,11 @@ estimated: the errors were legible only because the message named the phrase
 keys (`st-for-sale`, `st-coin-question`), which happened to be unique to the
 fragment. A duplicate-id or undefined-reference error carries no such tell.
 
+**FILED 2026-08-22 as [#301](https://github.com/ChicagoDave/sharpee/issues/301)**
+— root cause named there: `Span` (`packages/chord/src/span.ts:12`) has no file
+field, so spliced declarations carry fragment-relative lines with no origin.
+Blocks W-9.
+
 ## W-2: `import` has compiler coverage and zero author coverage
 
 **Watch**: everything about using imports for real.
@@ -201,6 +206,31 @@ or many, and the ratio of per-owner boilerplate to shared phrase text.
 an owner list or a kind-bound conversation. Do not build it as part of the
 port. Note the workaround costs nothing at runtime; it costs at authoring and
 at edit time only.
+
+## W-9: imports do not nest, so a place cannot own its inhabitants
+
+**Watch**: whether ADR-251 D5's flat import model holds as the port's file
+count grows.
+
+**Finding (2026-08-22, hit while restructuring)**: the story was split into
+place-atoms and per-NPC files — `import "grubbers-market"` (seventeen rooms,
+the stalls, the apple, ten stallkeepers) and `import "npc-teisha"`. Teisha
+stands in the market and the market cannot import her
+(`packages/chord/src/index.ts:151`), so `secret-letter.story` must know she
+exists. The flat list conflates what the STORY is made of with what a
+COMPONENT is made of.
+
+**Why it bites at scale**: an import is a paste at its own line (D4), so
+arbitration across a flat list is a hand-maintained global topological sort
+with no tool help — the failure is silent. With 23 trees left across 47 NPCs
+the main file ends as roughly fifty import lines and a header.
+
+**How to check**: record the import count and any arbitration surprise as each
+tree lands.
+
+**FILED 2026-08-22 as [#302](https://github.com/ChicagoDave/sharpee/issues/302)**,
+blocked on #301 — fragment spans must name their file before nesting is
+debuggable. Platform change; do not build it as part of the port.
 
 ## Recording results
 
