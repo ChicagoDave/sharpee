@@ -2,19 +2,20 @@
 ##
 ## Chapter 1: the Prologue and Grubber's Market, as one extent.
 ##
-## AUTHORITY. Every line of prose in this file is either Michael Gentry's 2009
-## text carried over, or a marked placeholder for a line David has still to
-## write. Nothing here is drafted by an assistant. Where the change document
-## calls for new prose, this file carries a `## DAVID:` marker and a phrase
-## whose body says so, so the gap is loud at run time instead of quiet.
+## AUTHORITY. Every line of prose in this file and in the files it imports is
+## either Michael Gentry's 2009 text carried over, or a marked placeholder for
+## a line David has still to write. Nothing here is drafted by an assistant.
+## Where the change document calls for new prose, this file carries a
+## `## DAVID:` marker and a phrase whose body says so, so the gap is loud at
+## run time instead of quiet.
 ##
 ## WHERE THIS FILE DEVIATES FROM GENTRY'S WORDS — the complete list, so the
 ## authority question never has to be re-audited:
 ##
-##   1. The nine stall lines in the P-8 section drop the source's trailing
+##   1. The nine stall lines in `peering.chord` drop the source's trailing
 ##      "to the [quick best route]" clause. Chord cannot interpolate the
 ##      direction back as a compass word, so the route cannot be filled; see
-##      the ruling flagged in that section. The three variants of each line are
+##      the ruling flagged in that file. The three variants of each line are
 ##      otherwise verbatim.
 ##   2. `distant-silk-tent-outside` reads "…is that way" where the source reads
 ##      "…is [quick best route] from here". The two words "that way" are the
@@ -49,6 +50,10 @@ story
   story-version: 0.1.0
   description: Grubber's Market, a stolen apple, and a girl the whole city is about to start looking for.
   states: calm, chase
+
+## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
+
+import "peering"
 
 ## ---------------------------------------------------------------------------
 ## THE MARKET
@@ -322,226 +327,6 @@ create the old gray cloak
   Your cloak is made of undyed wool, stained and patched in several places. You
   wear it in the masculine style, fastened on the side and thrown back over your
   right shoulder.
-
-## ---------------------------------------------------------------------------
-## P-8 — "SEEN FROM ELSEWHERE"
-##
-## The source's `distant description` (the `Adjacent Rooms` extension) carried a
-## short line about the room a direction leads to. There is no platform
-## equivalent, so P-8 authorises it as story content. The spike's answer, run
-## against these rooms 2026-08-22, is below; the three shapes P-8 offered were
-## a room-body field, a `define trait`, and a phrase key.
-##
-##   * A ROOM-BODY FIELD does not exist. `create` accepts no such property
-##     (`packages/chord/src/parser.ts:1190-1420`).
-##   * A `define trait` cannot hold the text. Trait data types are `entity`,
-##     `number`, `name`, and `flag` (`packages/chord/src/parser.ts:3360`) — there
-##     is no text-valued field.
-##   * A PHRASE KEY wins by elimination, and it has to be a story-level named
-##     phrase rather than a per-room `phrase distant:` override: an override
-##     does register `<room-id>.distant`, but `phrase` statements take a STATIC
-##     key (`packages/chord/src/parser.ts:6366`), so nothing can say "emit that
-##     room's distant phrase." The dispatch must name every pair.
-##
-## Hence: one phrase per target room, and one dispatch line per (room,
-## direction) pair. Flat and greppable, and the analyzer checks every name.
-##
-## THE DIRECTION WORDS ARE DELIBERATELY NOT COMPASS WORDS. A `directions` block
-## whose canonicals are compass words binds a value that never compares equal,
-## so every `when the direction is …` is silently false — filed as GH #285. The
-## `wayNE`-style canonicals below are the workaround; the compass words the
-## player actually types are aliases, so nothing changes at the keyboard.
-##
-## OPEN — DAVID'S RULING. The source's line ended "…to the [quick best route]",
-## naming the way to walk. That clause is dropped here, because the player has
-## just supplied the direction and Chord cannot interpolate the canonical back
-## as a compass word (it would read "wayNE"). If the route should survive, it
-## needs a per-pair phrase instead of a per-room one — roughly sixty phrases
-## rather than fourteen.
-## ---------------------------------------------------------------------------
-
-define action peering
-  grammar
-    peer the direction
-    look toward the direction
-  directions
-    wayN or north or n
-    wayNE or northeast or ne
-    wayE or east or e
-    waySE or southeast or se
-    wayS or south or s
-    waySW or southwest or sw
-    wayW or west or w
-    wayNW or northwest or nw
-    wayUp or up or u
-    wayDown or down or d
-  refuse without direction: peer-where
-
-  phrase distant-northwest-junction when the direction is waySE and the player is in the Alley
-
-  phrase distant-herb-stall when the direction is wayS and the player is in the Northwest Junction
-  phrase distant-candle-stall when the direction is wayE and the player is in the Northwest Junction
-  phrase distant-rope-stall when the direction is waySE and the player is in the Northwest Junction
-
-  phrase distant-northwest-junction when the direction is waySW and the player is in the Grocery Stall
-  phrase distant-fruit-stall when the direction is waySE and the player is in the Grocery Stall
-  phrase distant-candle-stall when the direction is wayS and the player is in the Grocery Stall
-
-  phrase distant-candle-stall when the direction is wayW and the player is in the Fruit Stall
-  phrase distant-pottery-stall when the direction is waySW and the player is in the Fruit Stall
-  phrase distant-eastern-junction when the direction is wayS and the player is in the Fruit Stall
-
-  phrase distant-fruit-stall when the direction is wayN and the player is in the Eastern Junction
-  phrase distant-hat-stall when the direction is wayS and the player is in the Eastern Junction
-  phrase distant-pottery-stall when the direction is wayW and the player is in the Eastern Junction
-
-  phrase distant-eastern-junction when the direction is wayN and the player is in the Hat Stall
-  phrase distant-pottery-stall when the direction is wayNW and the player is in the Hat Stall
-  phrase distant-silk-tent-outside when the direction is wayW and the player is in the Hat Stall
-  phrase distant-leather-stall when the direction is waySW and the player is in the Hat Stall
-
-  phrase distant-hat-stall when the direction is wayNE and the player is in the Leather Stall
-  phrase distant-silk-tent-outside when the direction is wayNW and the player is in the Leather Stall
-  phrase distant-weapons-stall when the direction is wayW and the player is in the Leather Stall
-
-  phrase distant-leather-stall when the direction is wayE and the player is in the Weaponsmith's Stall
-  phrase distant-silk-tent-outside when the direction is wayNE and the player is in the Weaponsmith's Stall
-  phrase distant-gems-stall when the direction is wayNW and the player is in the Weaponsmith's Stall
-
-  phrase distant-herb-stall when the direction is wayN and the player is in the Exotic Gems Stall
-  phrase distant-rope-stall when the direction is wayNE and the player is in the Exotic Gems Stall
-  phrase distant-silk-tent-outside when the direction is wayE and the player is in the Exotic Gems Stall
-  phrase distant-weapons-stall when the direction is waySE and the player is in the Exotic Gems Stall
-
-  phrase distant-northwest-junction when the direction is wayN and the player is in the Herb Stall
-  phrase distant-rope-stall when the direction is wayE and the player is in the Herb Stall
-  phrase distant-gems-stall when the direction is wayS and the player is in the Herb Stall
-
-  phrase distant-northwest-junction when the direction is wayNW and the player is in the Rope Stall
-  phrase distant-candle-stall when the direction is wayNE and the player is in the Rope Stall
-  phrase distant-herb-stall when the direction is wayW and the player is in the Rope Stall
-  phrase distant-gems-stall when the direction is waySW and the player is in the Rope Stall
-  phrase distant-silk-tent-outside when the direction is waySE and the player is in the Rope Stall
-
-  phrase distant-fruit-stall when the direction is wayE and the player is in the Candlemaker's Stall
-  phrase distant-northwest-junction when the direction is wayW and the player is in the Candlemaker's Stall
-  phrase distant-pottery-stall when the direction is waySE and the player is in the Candlemaker's Stall
-  phrase distant-rope-stall when the direction is waySW and the player is in the Candlemaker's Stall
-
-  phrase distant-candle-stall when the direction is wayNW and the player is in the Pottery Stall
-  phrase distant-fruit-stall when the direction is wayNE and the player is in the Pottery Stall
-  phrase distant-eastern-junction when the direction is wayE and the player is in the Pottery Stall
-  phrase distant-hat-stall when the direction is waySE and the player is in the Pottery Stall
-  phrase distant-silk-tent-outside when the direction is waySW and the player is in the Pottery Stall
-
-  phrase distant-silk-tent-inside when the direction is wayN and the player is in Outside the Silk Tent
-  phrase distant-hat-stall when the direction is wayE and the player is in Outside the Silk Tent
-  phrase distant-gems-stall when the direction is wayW and the player is in Outside the Silk Tent
-  phrase distant-pottery-stall when the direction is wayNE and the player is in Outside the Silk Tent
-  phrase distant-rope-stall when the direction is wayNW and the player is in Outside the Silk Tent
-  phrase distant-leather-stall when the direction is waySE and the player is in Outside the Silk Tent
-  phrase distant-weapons-stall when the direction is waySW and the player is in Outside the Silk Tent
-
-  phrase distant-silk-tent-outside when the direction is wayS and the player is in Inside the Silk Tent
-
-  phrase distant-silk-tent-inside when the direction is wayS and the player is in the Base of the Center Post
-  phrase distant-top-of-post when the direction is wayUp and the player is in the Base of the Center Post
-
-  phrases en-US
-    peer-where:
-      Look which way?
-
-define phrase distant-fruit-stall, randomly
-  There's a fruit stall.
-or
-  There's fruit for sale.
-or
-  Looks like they're selling fruit.
-end phrase
-
-define phrase distant-hat-stall, randomly
-  There's a hat stall.
-or
-  There's hats for sale.
-or
-  Looks like they're selling hats.
-end phrase
-
-define phrase distant-leather-stall, randomly
-  There's a leather goods stall.
-or
-  There's leather goods for sale.
-or
-  Looks like they're selling leather goods.
-end phrase
-
-define phrase distant-weapons-stall, randomly
-  There's a weapon stall.
-or
-  There's weapons for sale.
-or
-  Looks like they're selling weapons.
-end phrase
-
-define phrase distant-gems-stall, randomly
-  There's a gem stall.
-or
-  There's gems for sale.
-or
-  Looks like they're selling gems.
-end phrase
-
-define phrase distant-herb-stall, randomly
-  There's a herb stall.
-or
-  There are herbs for sale.
-or
-  Looks like they're selling herbs.
-end phrase
-
-define phrase distant-rope-stall, randomly
-  There's a rope stall.
-or
-  There's rope for sale.
-or
-  Looks like they're selling rope.
-end phrase
-
-define phrase distant-candle-stall, randomly
-  There's a candle stall.
-or
-  There's candles for sale.
-or
-  Looks like they're selling candles.
-end phrase
-
-define phrase distant-pottery-stall, randomly
-  There's a pottery stall.
-or
-  There's pottery for sale.
-or
-  Looks like they're selling pottery.
-end phrase
-
-define phrase distant-northwest-junction
-  The junction is a relatively open space at the market's northwest corner.
-end phrase
-
-define phrase distant-eastern-junction
-  There is a relatively open space at the market's eastern edge.
-end phrase
-
-define phrase distant-silk-tent-outside
-  Teisha's silk tent is that way.
-end phrase
-
-define phrase distant-silk-tent-inside
-  Teisha's tent is bright blue, though now it's somewhat faded and covered with market dust.
-end phrase
-
-define phrase distant-top-of-post
-  The top of the central post is high, high above you.
-end phrase
 
 ## ---------------------------------------------------------------------------
 ## TEISHA
