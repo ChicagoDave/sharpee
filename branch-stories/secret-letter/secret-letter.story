@@ -8,6 +8,27 @@
 ## calls for new prose, this file carries a `## DAVID:` marker and a phrase
 ## whose body says so, so the gap is loud at run time instead of quiet.
 ##
+## WHERE THIS FILE DEVIATES FROM GENTRY'S WORDS — the complete list, so the
+## authority question never has to be re-audited:
+##
+##   1. The nine stall lines in the P-8 section drop the source's trailing
+##      "to the [quick best route]" clause. Chord cannot interpolate the
+##      direction back as a compass word, so the route cannot be filled; see
+##      the ruling flagged in that section. The three variants of each line are
+##      otherwise verbatim.
+##   2. `distant-silk-tent-outside` reads "…is that way" where the source reads
+##      "…is [quick best route] from here". The two words "that way" are the
+##      substitution.
+##   3. `distant-silk-tent-inside` drops the source's closing "You can enter to
+##      the [north/south]", route-dependent in the same way. What remains is
+##      verbatim.
+##   4. Teisha's five repeat prefixes are Gentry's five, but fixed one per quip
+##      instead of drawn at random, because Chord does not interpolate a phrase
+##      inside another phrase's body (GH #286).
+##
+## Everything else is carried verbatim from the 2009 source or is a marked
+## `(PLACEHOLDER — David's line …)`.
+##
 ## What the port is checked against:
 ##   docs/references/textfyre/secretletter/           the 2009 I7 source and design archive
 ##   docs/references/textfyre/secretletter/INVENTORY.md   84 rooms, 47 NPCs, 23 quip trees
