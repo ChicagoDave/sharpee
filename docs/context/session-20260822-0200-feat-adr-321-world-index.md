@@ -33,6 +33,20 @@ The spike ran against Chapter 1's rooms and is now implemented (~190 lines).
 - Shape shipped: one `define action peering` with a `directions` block, fourteen target-room phrases (nine with the source's three random variants), and one `phrase … when the direction is … and the player is in …` line per pair. Flat, greppable, fully name-checked by the analyzer.
 - **GH #285 filed.** A `directions` block whose canonicals are **compass words** binds a value that never compares equal, so every `when the direction is …` is silently false — no diagnostic, at compile time or run time, while the analyzer positively validates the lowercase canonical. `{the direction}` interpolates `NORTHEAST`, which is the tell. `stories/nautical` misses it because its direction words (`port`/`starboard`/`fore`/`aft`) are not compass words. Workaround in use: non-compass canonicals (`wayNE`) with the compass words as aliases.
 
+### Teisha's calm conversation — built and passing
+- `create Teisha` with Gentry's description carried verbatim (`story.ni:3110`), the measuring cord, and the four-variant ambient beat (`ATMOS_Teisha`, `story.ni:3122`).
+- `define topics for Teisha` carries the six informational quips the change document assigns to the calm walk — `TE12` the market, `TE13` behind the tent, `TE14` her wares, `TE15` the monkey, `TE21` Fossville, `TE22` the Ascension. Each is a `define phrase …, first-time` with the source's own two variants, which is exactly the `[first time]…[subsequently]…[only]` shape the quips are written in.
+- Verified in play: second and later asks give the repeat variant.
+
+### Second Chord finding: no phrase-in-phrase interpolation
+`{some-phrase-key}` inside a `define phrase` body is **not** resolved — it prints literally. The source's `[rp]` repeat prefix (`story.ni:655`) picks at random from five phrasings, so it wanted to be a shared phrase. Carried inline instead: one of Gentry's five prefixes per quip, so every prefix is his and only the randomness is lost. Noted in the story file beside the section.
+
+### Chapter 1 is test-covered
+`secret-letter.tests.json` rewritten from the scaffold's two placeholder cards to **36 cards** — the opening channels, boot, a 22-move walk asserting every one of the seventeen rooms, three `peer` assertions for the P-8 layer, Teisha's description, and five conversation assertions including the first-time/subsequent switch. `./sharpee test branch-stories/secret-letter` runs green against the current platform: **36 cards passing, 38 assertions passing.**
+
+### One grammar bug of my own, found by the tests
+`look the direction` in the peering action's grammar swallowed plain `look`, so the room description was replaced by "Look which way?". The tree document caught it on the boot card. Grammar line removed; `peer <dir>` and `look toward <dir>` remain.
+
 ## Key Decisions
 
 ### 1. The route clause is dropped from distant text — NEEDS DAVID'S RULING
@@ -42,7 +56,13 @@ The source's line ended "…to the [quick best route]". It is dropped, because t
 Per the withdrawn prose clearance, every line in the story file is either Gentry's carried over or a marked placeholder. Teisha's calm opener — which the change document names as David's to write — is not written here.
 
 ## Next Phase
-- Phase 6 continues: Teisha's calm conversation as `define conversation` beats (the phase's named "at least one complete conversation"), the apple/alley transition, then the chase and the monkey chain.
+Phase 6 continues, in this order:
+1. **The apple and the alley transition** — the walk's ending, per the change document's "What ends the walk" and "Theft" decisions.
+2. **The `ST` stallkeeper tree** — decided this session; needs stallkeeper NPCs, and the tree is generic so it is authored once.
+3. **The mercenaries' four-state pressure model**, then the chase and the monkey chain.
+4. **Dead-end text** — see the open item below; it needs a design answer, not just authoring.
+
+Teisha's material is as complete as it can be until David writes the two greeting lines and the corrected `TE22`. Whether the calm visit also wants a beat-driven `define conversation` (the phase's "at least one complete conversation" wording) is worth his ruling: her calm tree is player-driven asks, which is `define topics` by shape; the beat form fits her chase thread, which is where the necklace-for-cloak trade lives.
 
 ## Open Items
 
@@ -50,7 +70,8 @@ Per the withdrawn prose clearance, every line in the story file is either Gentry
 - The route clause ruling above.
 - Dead-end text (the source's two "nothing that way" lines) uses the same mechanism as the distant descriptions and is not yet wired.
 - The Grocery Stall, the Alley, and the Base of the Center Post have no distant text **in the source** — carried as-is, not an omission.
-- Teisha's calm opener is David's line; the conversation cannot be completed without it.
+- **Three placeholders await David's lines**, and they say so loudly in play: Teisha's calm opener, her calm return greeting, and `TE22`'s answer (which the change document marks "corrected per vision.md §3e" — the 2009 text rests the succession on the King's unnamed daughter).
+- **Dead-end text has no natural home yet.** The source's "nothing that way" lines use the same idea as the distant descriptions, but the P-8 mechanism has no fallback arm: every matching `when` statement emits, and there is no `otherwise` at statement level, so "there is a room that way" and "there is nothing that way" cannot be written as alternatives without enumerating every non-exit pair (~100 lines). Needs a design answer.
 
 ### Long Term
 - GH #285 needs a platform fix; the port runs on the workaround until then.
@@ -83,4 +104,4 @@ Autonomous session — David went to bed after approving Phase 6 with "get as mu
 - N/A — no side-effect source code written. Story content and documentation only.
 
 ## Test Coverage Delta
-- Geometry verified by execution (all 17 rooms walked in one run); tree-document lines not yet recorded.
+- `secret-letter.tests.json`: 2 scaffold cards → 36 real cards. `./sharpee test branch-stories/secret-letter` — 36 cards passing, 38 assertions passing (run 2026-08-22, against the current platform, no rebuild needed).
