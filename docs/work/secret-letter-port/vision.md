@@ -342,6 +342,240 @@ shapes forms of address, pronouns, and dialogue throughout — across 23 convers
 380 quips. It belongs in the change document as a rule governing all dialogue, not as a scene
 written once.
 
+### 3e. The claim: heir to the throne, through the Duke — David, 2026-08-22
+
+**Jack is heir to the throne.** Her father the Duke **was the King's brother**, and the King died
+without naming an heir. No one is supposed to know Jack is the heir.
+
+**And the public language of that claim names her as the Duke's son** — which the remake keeps,
+painfully. She must press a claim to the throne in a name that is not hers.
+
+**This is a change to the source's mechanism, not a clarification of it.** The 2009 game builds
+Jack's claim on *popularity*, not blood: Dame Sandler states the law as *"in the absence of a
+named successor, the ruler is determined by the will of the people,"* and grounds Jack's standing
+in her father's esteem — *"You are the daughter of one of the most loved and respected noblemen in
+living memory... As his heir — even as his illegitimate heir — much of that esteem would fall to
+you"* (`DS38`/`DS39`, `story.ni:10633-10634`). The Duke is nowhere said to be the King's brother,
+and consanguinity plays no part. Making him the King's brother converts a popular-acclaim claim
+into a claim by succession — which is why the Ascension can be contested at all under the note
+above, and why Fossville's motive to remove Jack becomes structural rather than reputational.
+
+**The public-record language is a real, if small, rewrite surface** — measured 2026-08-22 against
+`source/story.ni`: 16 occurrences of "daughter", 11 of "heir", 16 of "son". The lineage language is
+concentrated in Dame Sandler's reveal (`DS32`-`DS44`), the Princess's confrontation (`PR15`), the
+Ascension quips (`TE22`, `GE`, `HO8`, `BO15`), and the bath-scene reveal (`story.ni:1330`, *"you
+are Jacqueline Toresal, daughter of the Duke"*). Roughly thirty lines carry it. Cheap to execute,
+which is not the same as easy to write.
+
+**[derived, awaiting David's confirmation] Composition with 3d.** If the public record says son,
+then perception and record disagree about Jack's lineage as well as about her self — the law and
+the letter would say the Duke's son while the people with the talent see the Duke's daughter. Dame
+Sandler is both a perceiver (3d) and the character who delivers the claim (`DS32`, *"We've all
+been waiting for the Duke's daughter to finally make herself known"*), so her reveal is where the
+two languages would meet in one scene. Recorded as a reading of the two rules together, not as a
+ruling — David has not been asked whether perceivers use the true lineage language.
+
+**Androgyny — RESOLVED (David, 2026-08-22): androgynous only in her description.** David raised
+making Jack androgynous — *"seems like a boy, but could be a girl"* — and then scoped it: the
+androgyny lives in how Jack is **described**, not in how the world **perceives** her. The public
+still reliably reads her as a boy, and §1's maintained presentation stands.
+
+**What that preserves.** §3d stays exclusive: the talent remains the only channel by which anyone
+sees Jack truly, so Teisha *"guessed it the very first time she caught you loitering"*
+(`story.ni:3110`) and Dame Sandler's *"did you really think I hadn't guessed?"* (`DS32`) remain
+evidence of the talent rather than of ordinary sharp eyes. It also keeps the hat furniture live —
+*"it's a lot harder to pretend to be a boy with your hair hanging down around your ears"*
+(`story.ni:1408`), the refusal to uncap around Bobby — which Chapter 1 runs on.
+
+**And the "assumed, not deceived" framing survives anyway**, at the legal layer: under 3e the
+public record says son because nobody asked, not because Jack lied to a clerk. The softer reading
+of the pain is available without spending the talent's distinctiveness to get it.
+
+**Consequence for the coda (§2).** The Vedd's theology — peeling away the layers of life to reveal
+a thing's true nature — now has the inheritance itself as its subject, not only Jack's body. The
+claim that makes her heir is written in the wrong name; the coda is where the right one surfaces.
+
+### 3f. Who knows what: three tiers — David, 2026-08-22
+
+**The public** knows a thief named Jack. Nothing about lineage, because as far as the public is
+concerned there is no lineage to know.
+
+**The mercenaries** know there is a scion. Not who, not where — that there is one, and that they
+are hunting them.
+
+**A small group** knows everything.
+
+**This narrows the lineage-language question sharply.** Most of the cast never speaks about Jack's
+parentage at all, so §3e's public "son" is not a word the market uses — it is the word of the
+documents and of the people who know, and its reach is roughly the thirty lines §3e measured, not
+the whole script.
+
+**[source] The tiers are already in the text, and the eavesdrop is where all three meet.** The
+mercenaries' overheard briefing (`story.ni:1798`, the `Table of overheard mercenary utterances`)
+has the leader say *"we know he skulks Grubber's most mornings"* and *"this is a kid we're lookin'
+for... I find out later he got away under your nose"* — they are hunting a scion and they assume a
+boy. But **the parchment they read from describes a body, not a person**: *"Shoulder-length brown
+hair. Green eyes. Slight of build. Ten, maybe twelve spans high. Usually wears a hat and a gray
+cloak."* No name, no gender. The "he" is the leader's inference, not what is written — which sits
+exactly right beside the androgyny ruling in §3e, and which is also why the silk cloak works as a
+disguise at all: the parchment names the gray one.
+
+**Knowledge and perception are independent axes, and the change document must carry both.** They
+are not the same rule and do not correlate:
+
+| | Perceives Jack (3d) | Does not |
+| --- | --- | --- |
+| **Knows everything** | Dame Sandler | Widow Fiona |
+| **Public tier** | Teisha, Widow Shannon | the market, the stallkeepers, Bobby |
+
+Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
+for, I don't want to know"* (`TE2`). Fiona has the entire conspiracy and none of the sight: she
+sought Dame Sandler's help when the Duke died (`DS35`) and still does not see the girl in front of
+her. Neither cell of that table is empty, which is what makes it a matrix rather than one rule
+wearing two names.
+
+### 3g. The standing dialogue rule: position picks the word — David, 2026-08-22
+
+This is the standing rule §3d says the change document must carry. It governs every speaking
+character in every conversation, and it is decided by **position**, not by perception alone.
+
+| Position | Words used | Examples |
+| --- | --- | --- |
+| Perceivers outside the arrangement | true words, freely — nobody is paying them not to | Teisha, Widow Shannon |
+| Perceivers inside the arrangement | true words, but only in private — which is what the reveal scene *is* | Dame Sandler |
+| Non-perceivers who know the politics | public words, bound twice: they do not see, and they are paid not to look | Widow Fiona |
+| Everyone else | never speaks of lineage at all (§3f) | the market, the stallkeepers, Bobby |
+
+### And the default is a neutral noun: "brat" — David, 2026-08-22
+
+**Where a neutral noun will carry the line, use one.** David's word is **brat**. It does two jobs
+at once: it **avoids the pronoun problem** — no gendered pronoun has to be chosen for a speaker
+whose position has not yet been established for the player — and it **deliberately confuses the
+player**, who cannot yet tell what any given character actually sees.
+
+**[source] The neutral register already dominates the original and only needs systematising.**
+Measured 2026-08-22 against `source/story.ni`:
+
+| Neutral, already in voice | | Gendered, must be assigned by position |
+| --- | ---: | --- |
+| child | 33 | girl — 40 |
+| urchin | 29 | boy — 27 |
+| kid | 14 | lad — 6 |
+| brat | 5 | |
+| little rat | 3 | |
+
+Roughly 84 neutral tokens against 73 gendered ones. The neutral words are already
+position-flavoured in Gentry's text without being deliberate: the mercenaries reach for *kid* and
+*"the little rat"* (`story.ni:2163`), the widows and Dame Sandler for *child*, the Princess and
+Jack herself for *urchin*. The rewrite makes that systematic rather than inventing it.
+
+**[watch] "brat" is already taken, once.** Holstenoffer uses it for the Princess — *"if the
+Ascension goes to the Queen's little brat"* (`HO7`, `story.ni:4597`). Two claimants both called
+the brat is either a deliberate rhyme worth keeping or a real ambiguity; flagged for David rather
+than resolved, since confusing the player about what characters *see* is intended and confusing
+them about *which claimant is meant* probably is not.
+
+### 3h. A Miradanian word for what Jack is: **veshen**, worn to **vesh** — David, 2026-08-22
+
+**The word is `veshen`, the old form, which people have worn down to `vesh`.** David's coinage,
+2026-08-22. Recorded below: the brief it satisfies, the candidates set aside on the way, and the
+consequences that follow — so no later session re-proposes a rejected candidate, invents a variant,
+or writes a line that explains the word.
+
+**Why the two forms are the strongest part of it.** §2 establishes that the Vedd idioms survive as
+fossils — the speech outlived the order by centuries. `veshen` → `vesh` puts that *inside the word*:
+it has visibly worn down in the mouth, so the evidence of its age is carried by its shape rather
+than by anyone stating it. The axiom that nothing is explained is satisfied by the etymology being
+audible instead of told.
+
+**And the pair is a second tell, free.** Which form a character reaches for is characterisation:
+the old form from someone formal, learned, or old — someone who knows it *is* old, and is therefore
+standing closer to the source of it — and the worn form everywhere else. That is a register axis
+that did not have to be built, and it composes with §3g's position table rather than competing
+with it.
+
+**What the word is for — it is the positive half of §3g's device.** The neutral-noun default
+("brat") keeps the player from telling who sees what. A word does the opposite: **a character who
+uses it is a character who sees.** Today the only perceiver marker is Shannon's *"Miss
+Jacqueline"* (`SH1`, `SH7`, `SH13`) and pronoun choice — and pronouns are exactly what "brat"
+exists to avoid. The word gives perceivers a way to signal without a pronoun ever being chosen.
+
+**The brief:**
+
+| Constraint | Why |
+| --- | --- |
+| a **standing property**, not an event | it must apply to Jack in Chapter 1, long before the coda's rite |
+| **one word** | two-word terms read as doctrine, and §2 forbids doctrine |
+| **worn and plain** | it is a Vedd fossil; the register is `Brigid`, `the Goddesses`, `spans` |
+| **not explanatory** | §2's axiom: nothing about the world is ever accounted for |
+| **usable in ordinary speech** | it is a tell, so it must fit inside a market sentence |
+
+**Candidates tested and set aside** (David's, 2026-08-22):
+- *cut in two* — implies division and damage. Fights §3a (no stigma) and the premise itself: Jack is
+  one thing under a presented surface, which is also the Vedd's own theology (peeling layers away,
+  not cleaving).
+- *spiritually born* / *mystic birthing* — explanatory, and both name an **event**. Jack's event is
+  the coda (§2), so a perceiver in Chapter 1 could not yet use either.
+- *ethereal* — right grammar (a standing quality, one word, usable of her now), wrong meaning and
+  wrong mouth: Latinate and literary where Miradania is plain.
+
+**A made-up word satisfies the hardest constraint by construction.** An English compound carries its
+theory in its morphemes; an invented word carries none, so its meaning can only arrive from watching
+who says it and about whom. That is §2's axiomatic world working as designed — the player is never
+told, and no character can explain a word they inherited.
+
+**[source] The original already invents common nouns and never glosses them** — the precedent to
+match for register: `kello`, a fruit, used casually (*"Normally you'd kill for a slice of kello"*,
+`story.ni:2378`), and `spans`, a unit of height, used in the mercenaries' parchment description
+(`story.ni:1806`) with no explanation offered. Short, plain, unglossed, load-bearing.
+
+**Consequence for Phase 6, if the word exists.** Teisha is the first perceiver the player meets and
+she is now met in Chapter 1's calm walk — so Chapter 1 is where the word is first heard, and its
+first uses must be positioned so the player can triangulate the meaning from context alone.
+
+**The word has to be a parser word, and that collides with the axiom.** A player who *hears*
+`vesh` will *type* it — "ask teisha about vesh", "x vesh", "vesh". An invented word the parser does
+not know is a word the game has taught the player not to trust, and in a story whose central device
+is a term you are meant to notice, that is a real cost. So `vesh` and `veshen` both need custom
+vocabulary and a response.
+
+But §2 says **no character explains**, so the response cannot define the word.
+
+**David wrote the response, 2026-08-22 — the PC's own answer:**
+
+> **First time:** "There are many old mystical sayings, some still carry their original meaning.
+> Most are just gibberish."
+>
+> **Subsequently:** "Mystic nonsense."
+
+**The repeat is a harder dismissal, and it deepens the irony rather than just saving words**: the
+more the player pokes at the thing that is about her, the more curtly Jack waves it off.
+
+**[source] This is the original's own pattern**, used throughout the quip trees —
+`[first time]...[subsequently][rp]...[only]` (e.g. `TE12`, `TE15`, `TE22`), so the shape is
+idiomatic to the material rather than imported.
+
+**[Phase 6 to verify]** Whether Chord expresses a first-time/subsequent response variant directly,
+or whether it is authored some other way. Not checked this session — a grep of
+`docs/reference/chord-language.md` for the concept returned nothing, which is inconclusive rather
+than evidence of absence, and the reference is known to lag the language (1.4.0 against 2.1.0).
+Confirm against the compiler and `packages/story-loader`, not against the doc.
+
+**This is the default response for the entire Vedd idiom register, not only for `vesh`.** Phase 8
+scatters idioms across 380 quips and 1,192 response rules, and every one of them is a phrase a
+player may type. One line in Jack's own voice answers all of them, which collapses what looked like
+a per-character writing obligation into a single authored response plus custom vocabulary. It also
+holds the axiom: it acknowledges that the sayings are old and that meaning has been lost, and
+defines nothing.
+
+**And it buys dramatic irony for free.** The player asks about `vesh`; Jack — who does not know she
+is the subject of one of these sayings, and who has just been called it by a perceiver — dismisses
+the lot as gibberish. Her ignorance is the joke and the ache at once, and it is delivered by the
+line that exists for a parser reason.
+
+**Open**: whether there is also a separate word for the **seeing** (§3d's talent), or whether the
+talent stays unnamed — which would be the more consistent reading of §2's axiom.
+
 ## 4. The Maiden House rewrite
 
 **The maidens see Jack as a boy.** This requires rewriting the Maiden House material.
@@ -379,6 +613,32 @@ other knows, and the house keeps two different secrets about the same child.
 **[source] An unintended rhyme, possibly worth keeping.** Jack rates Shannon as "plain-looking,
 none too bright" (`6425`), and the description later concedes "your respect for her has grown."
 The person Jack dismisses is the person who sees her.
+
+### Fiona's knot: the house is built on discretion — David, 2026-08-22
+
+**The Maiden House runs on discretion, and was paid well to mind Jack.** Fiona is therefore
+**ethically tied in a knot**: she holds the political secret, she is paid to keep it, and she does
+not have the sight (§4 above). Her use of the public words is not ignorance alone — it is an
+obligation she took money for.
+
+**[source] The knot is already in her warmest lines, and the rewrite is where it hurts.** Fiona's
+two most loving moments both reach for the true words:
+
+- *"Oh, child,"* she whispers, holding Jack. *"You've been like a daughter to me, you know."*
+  (`story.ni:6134`)
+- *"I love you, too, Jacqueline,"* she says, *"but we haven't time for that now."* (`story.ni:6134`)
+
+Under §4 Fiona does not perceive Jack, and her "Jacqueline" becomes "Jack" — so both lines convert
+to the boy words. The person who loves Jack most in that house is the person who can only say so
+about a child who is not quite the one in front of her. This is the concrete form of the pain David
+named in §3e, and it is not carried by documents or by the throne; it is carried by an embrace in a
+kitchen.
+
+**Consequence for §4's "two kinds of knowing".** The separation stands, but Fiona's half is now
+*paid* rather than merely private, which changes what her silence costs her and gives her a reason
+to hold it beyond habit. It also means her later turn — sending Jack to Dame Sandler (`DS34`, *"I
+was only to step in as a last resort"*) — is her breaking an arrangement she has kept for money and
+for love at the same time.
 
 ### The Shannon dress scene — no longer a collision
 
@@ -426,6 +686,26 @@ David's sequence for the early and middle game:
 | Townhouse / Library / Bath | **pull** | knowledge |
 | Remainder | push / pull / quiet sequences | |
 
+### Pressure has teeth: capture and death stay — David, 2026-08-22
+
+**The losing endings stay.** Capture and death are part of the story, and they are where the
+tension comes from. David's reference point: Disney, which has always represented darkness.
+
+**What this settles concretely in Chapter 1** — the sharpest instance, because it is the first
+twenty minutes of the game: the pole sequence keeps its timer and its disaster ending
+(`Pole Destruction ends in disaster`, `story.ni:4098`), and being caught in the market keeps its
+ending — the sack over Jack's head and *"Why they wanted you, you never awake to find out"*
+(`story.ni:2163`).
+
+**And it settles the §5 open question's shape, if not its content.** Whatever supplies pressure
+outside a chase has to be able to actually take the player, or it is not pressure — it is
+atmosphere. A remake that kept the market's openness while removing its teeth would be keeping the
+part that is easy to copy and dropping the part that made it work.
+
+**Standing consequence**: no phase of this port may quietly soften a fail state into a warning, a
+retry, or a scripted rescue on the grounds of modern player tolerance. Where a scene can kill or
+capture Jack in the source, it can in the remake unless David rules otherwise for that scene.
+
 ### [open] What supplies pressure outside a chase?
 
 The mercenaries work because Jack is being hunted *right now*. Whatever the Lord's Keep or
@@ -461,6 +741,13 @@ actually play — of which the 2026-08-21 clearance was the narrow exception.
 **The line that matters in practice: conversion is not authoring.** Carrying Gentry's existing
 sentences forward into beats is conversion and stays in scope. Generating new sentences in his
 style does not. Phases 7 and 8 restructure; they do not rewrite.
+
+**"You're the guide" includes running the conversation — David, 2026-08-22.** The split does not mean
+David works alone and hands over finished documents. Phase 4 was reframed the same day from an artifact
+this plan waits on into a conversation this plan runs: Claude presents what a chapter is in the 2009
+source and asks the decisions it forces, David answers, Claude records the answers as the change
+document's section for that chapter. Guiding is asking the right question against a measured world.
+It is not proposing an answer, and a silence in David's response is never Claude's to fill.
 
 **How much is actually left to write — measured 2026-08-22 against `source/story.ni`:**
 

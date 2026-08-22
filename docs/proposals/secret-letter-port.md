@@ -1,13 +1,13 @@
 # Proposal: Secret Letter port to Chord
 
-**Status**: IN PROGRESS — **6 of 10 items DONE** (P-1, P-2, P-3 via plan Phases 1-2; P-8, P-9, P-10 via plan Phase 3). P-4 through P-7 remain PLANNED, and P-4 is blocked on David's change document, which this plan does not produce. All ten accepted by David 2026-08-21, then planned into `docs/work/secret-letter-port/plan.md` (session 7d2ec9) the same day. `proposal-review` ran the same day (2 blocking, 2 overlap, 3 advisory): both blockers dissolved by David's ruling that this port is a separate effort from ADR-322, and the overlaps and advisories are folded into the items below.
+**Status**: IN PROGRESS — **6 of 10 items DONE** (P-1, P-2, P-3 via plan Phases 1-2; P-8, P-9, P-10 via plan Phase 3). P-4 through P-7 remain PLANNED. **P-4 is no longer blocked** — reframed 2026-08-22 (David: "Phase 4 turns into a conversation (you're the guide, I'm the writer)"), the change document is produced inside the plan by guided conversation rather than waited on as external input. All ten accepted by David 2026-08-21, then planned into `docs/work/secret-letter-port/plan.md` (session 7d2ec9) the same day. `proposal-review` ran the same day (2 blocking, 2 overlap, 3 advisory): both blockers dissolved by David's ruling that this port is a separate effort from ADR-322, and the overlaps and advisories are folded into the items below.
 **Date**: 2026-08-21
 **Session**: 7d2ec9
 **Origin**: conversation — David's decision (2026-08-21) to port *The Secret Letter* (Textfyre, 2009) to Chord as a long-term endeavor landing in `branch-stories/`, building on the scoping done in sessions 502b0b and 7d2ec9 against the `ChicagoDave/textfyre` design archive and Inform 7 extension trees.
 
 This is the third incarnation of the game. The original is Inform 7 / Glulx, shipped 2009 on the Textfyre VM. `~/repos/SecretLetter2026` is an OpenSilver/.NET re-host of that same compiled story file, live at secretletter.plover.net. This proposal covers a genuine port: the game rebuilt native in Chord, not re-hosted.
 
-**It is a retarget, not a faithful port.** The original's "non-IF middle school audience" constraint is gone. David documents the story changes separately; that document is the content authority for anything structural (P-4), and its absence bounds how far the build items can run.
+**It is a retarget, not a faithful port.** The original's "non-IF middle school audience" constraint is gone. The story changes are documented in their own document, which is the content authority for anything structural (P-4), and its per-chapter coverage bounds how far the build items can run. As of 2026-08-22 that document is produced through guided conversation rather than authored alone — Claude asks against the measured source, David decides and supplies every line — so its absence is now a thing this plan closes rather than a thing it waits on.
 
 **This port is a separate effort from ADR-322** (David, 2026-08-21). It is not the
 validation corpus for D13's state-space sweep and carries none of AC-10 or AC-11.
@@ -45,13 +45,15 @@ Depends on P-1, which is what lands them.
 ### P-4: David's change document is the port's content authority
 Anything structural — what happens, which chapters survive, whether the linear chapter spine holds, who the retargeted audience is — comes from David. **Claude writes no prose for this port.** The Gentry's-voice clearance granted 2026-08-21 was withdrawn 2026-08-22 (David: "you're the guide and I will provide content") — this is a public release, and AI-generated prose in a living author's voice is not something the credit line can carry well regardless of permission. Claude's role is structural: the Chord conversion, analysis, measurement, and the shape David writes into. Carrying Gentry's *existing* sentences forward into beats is conversion and remains in scope.
 
-- **Done when**: the change document exists and is reachable from this proposal by path, and every build item below (P-5 through P-7) cites the section of it that authorizes the chapter being built. A chapter the document does not cover is not ported.
-- **Status**: PLANNED (docs/work/secret-letter-port/plan.md)
+**How it is produced — reframed 2026-08-22.** David: "Phase 4 turns into a conversation (you're the guide, I'm the writer)." The document is built inside the plan, chapter by chapter: Claude presents what a chapter actually is in the 2009 source and asks the decisions it forces; David answers; Claude records the answers under that chapter's heading. This changes the *method*, not the *authority* — every decision and every line remains David's, and Claude proposes no content and writes no prose. It also makes the document incremental: Chapter 1's section alone releases P-5, and later chapters' sections are produced just-in-time ahead of the items that build them.
+
+- **Done when**: the change document exists at `docs/work/secret-letter-port/change-document.md`, is reachable from this proposal by path, and every build item below (P-5 through P-7) cites the section of it that authorizes the chapter being built. A chapter the document does not cover is not ported.
+- **Status**: PLANNED (docs/work/secret-letter-port/plan.md) — unblocked 2026-08-22; first increment (Chapter 1) in progress
 
 ### P-5: Chapter 1 vertical slice in `branch-stories/secret-letter/`
 The first real answer to whether beat-based Chord conversation carries the material. `define conversation` is verified real — Chord parser/IR/analyzer, `packages/character/src/conversation/` thread runtime, and a load-through test at `packages/story-loader/tests/adr-320-phase10-threads.test.ts`.
 
-Depends on P-4: chapter 1 cannot be built before the change document covers chapter 1.
+Depends on P-4: chapter 1 cannot be built before the change document covers chapter 1 — which is now the first increment of P-4's conversation, not a wait on external input.
 
 - **Done when**: `branch-stories/secret-letter/` follows the fernhill layout (`.story` plus config/recipe/tests/world-ignore), builds, and plays chapter 1 end to end including at least one complete conversation; that chapter's branch-tester tree-document lines (`secret-letter.tests.json`, ADR-302 D16 / ADR-307 — **not** v1 `.transcript` files) pass against a freshly built platform.
 - **Status**: PLANNED (docs/work/secret-letter-port/plan.md)
