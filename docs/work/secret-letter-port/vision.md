@@ -555,11 +555,34 @@ more the player pokes at the thing that is about her, the more curtly Jack waves
 `[first time]...[subsequently][rp]...[only]` (e.g. `TE12`, `TE15`, `TE22`), so the shape is
 idiomatic to the material rather than imported.
 
-**[Phase 6 to verify]** Whether Chord expresses a first-time/subsequent response variant directly,
-or whether it is authored some other way. Not checked this session — a grep of
-`docs/reference/chord-language.md` for the concept returned nothing, which is inconclusive rather
-than evidence of absence, and the reference is known to lag the language (1.4.0 against 2.1.0).
-Confirm against the compiler and `packages/story-loader`, not against the doc.
+**[RESOLVED 2026-08-22 — Chord expresses this directly, as a named strategy.]** The concept is
+spelled **`first-time`**, which is why the earlier grep of `docs/reference/chord-language.md` found
+nothing: it was searched for as prose, and it is a keyword. Verified against the compiler and the
+runtime rather than the reference doc.
+
+**The semantics are exactly the two-variant shape David wrote**: variant 1 on the first read,
+variant 2 on every read after — `variants[n === 0 ? 0 : Math.min(1, variants.length - 1)]`, with
+the occurrence count persisted in world state, so it survives save/restore
+(`packages/story-loader/src/runtime.ts:3329` for phrase reads, `:3765` for the in-rule form).
+`first-time` is one of five strategies the parser accepts
+(`packages/chord/src/parser.ts:173`; also `randomly`, `cycling`, `stopping`, `sticky`) and it
+reaches the IR as a first-class field (`packages/chord/src/ir.ts:887`).
+
+**Three authoring positions carry it**, so the response can sit wherever Chapter 1 wants it:
+
+| Form | Where it is written | Cite |
+| --- | --- | --- |
+| `define phrase <key>, first-time` with `or`-separated variants | a standalone phrase, reusable by every idiom the player types | `packages/chord/src/ast.ts:1275` |
+| `select first-time … or … end select` | inline inside a rule body | `packages/chord/src/parser.ts:6881` |
+| `first time` ordinal block | inline inside a rule, indent-scoped, first occurrence only | `packages/chord/src/ast.ts:2040` |
+
+**The reusable phrase is the right one here**, since this line answers the whole Vedd idiom register
+and not one question — one `define phrase` keyed to the register, referenced by every `vesh`,
+`veshen`, and Phase 8 idiom response.
+
+**Do not write `once`.** It is a retired spelling of this strategy and the parser rejects it by name
+(`packages/chord/src/parser.ts:175`). Note also that the hyphen is positional: `first-time` in a
+strategy slot, `first time` as an ordinal block head or a `define greetings` row.
 
 **This is the default response for the entire Vedd idiom register, not only for `vesh`.** Phase 8
 scatters idioms across 380 quips and 1,192 response rules, and every one of them is a phrase a

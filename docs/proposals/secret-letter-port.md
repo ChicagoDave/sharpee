@@ -119,6 +119,21 @@ The port is finished when the Chord *Secret Letter* is a real, playable, publish
 2. `./repokit build secret-letter --browser` produces a self-contained client under `dist/web/secret-letter/`.
 3. That build is hosted at a public URL and reachable by someone who has never seen this repository.
 4. It has a landing page and its own IFID.
+
+   **The IFID is a new one — DECIDED (David, 2026-08-22).** The port does not inherit the 2009
+   release's identifier. Three reasons, in the order they settle it: the identifier names a story
+   file, and this one shares no bytes with the 2009 Glulx build, runs on a different engine, and
+   ships alongside an original that remains published and catalogued — reusing its IFID would merge
+   the two works in archive and IFDB metadata instead of distinguishing them; the 2009 IFID is not
+   in the landed corpus at all (`grep -ri ifid docs/references/textfyre/secretletter/` returns
+   nothing — it lives only in the compiled release and its IFDB record), so keeping it would mean
+   retrieving it first; and a new one is the zero-work path, because since ADR-309 the IFID is
+   tool-owned, minted at story creation into `<story-name>.config.json` and rendered into the header
+   on save and build (`packages/chord/src/version.ts:129`). `branch-stories/secret-letter/` will
+   therefore carry a fresh uppercase UUID v4 unless someone deliberately overwrites it.
+
+   The lineage belongs in the iFiction record's prose and on the landing page — "a remake of the
+   2009 Textfyre release" — not in the identifier.
 5. It is announced.
 
 **This is the most ambitious of the four options and it changes the shape of the work.** The current plan (`docs/work/secret-letter-port/plan.md`) ends at Phase 11 — its last build phase, Phase 10, is "every chapter is playable and test-covered" — which satisfies item 1 only. Items 2 through 5 pull art, client presentation, polish, hosting, and a landing page into scope, and **no phase covers any of them today.**

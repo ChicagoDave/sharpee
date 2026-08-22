@@ -237,3 +237,68 @@ story and are where the tension comes from — *"ref Disney and always represent
 Recorded as a standing principle for the whole port at `vision.md` §5 ("Pressure has teeth"), not
 only for this chapter: `Pole Destruction ends in disaster` (`story.ni:4098`) and the market capture
 ending (`story.ni:2163`) both survive, in the first twenty minutes of the game, on a timer.
+
+### The stallkeeper tree — DECIDED (David, 2026-08-22): the calm walk carries it whole, `ST3` included
+
+**`ST` is not one character's tree.** It hangs off `Rule for initiating conversation with a
+stallkeeper` (`story.ni:1881`), so it is the market's ambient conversation — every stallkeeper in
+Grubber's speaks it. That is what makes it worth carrying: nine quips of texture that apply
+everywhere the walk goes, at no per-NPC authoring cost.
+
+**It is already calm-only in the source, which inverts the question as it was posed.** Talking to a
+stallkeeper is refused outright whenever mercenaries are in the room, in two flavours by their
+state (`story.ni:1875-1879`): *"Better find somewhere else to chat; if you start making
+conversation, the mercenaries might take notice"* while they are oblivious, and *"No time to chat
+now; you've got to run!"* once they are approaching or grabbing. So `ST3` is not chase-specific.
+It is the opposite — the one quip that lets Jack learn about the mercenaries **before** they are
+hunting her: *"Only that they're bad for business... I don't know who hired them, but the Lord's
+Guard ought to run them off"* (`story.ni:1888`).
+
+**In 2009 the tree was nearly unreachable, and the new opening is what makes it work as written.**
+The narrated market walk meant the player's first playable steps in Grubber's were already the
+chase, and the chase is exactly when this tree refuses to run. The playable walk is the first
+occasion the material has ever had.
+
+**Two things come with it, both free.**
+- **The patience counter** (`story.ni:1937-1949`): a second approach draws *"Didn't I tell you to
+  take it somewhere else?"* and a third draws *"I said, beat it!"* — ambient pressure during the
+  calm half that needs no new mechanism and no new text.
+- **`ST6` seeds the monkey** — *"If you've half a penny that isn't stolen from somewhere, I'll sell
+  my stall to the monkey"* (`story.ni:1894`) — which is load-bearing for the decision below.
+
+**Consistent with `vision.md` §3g without adjustment.** The stallkeeper is a non-perceiver and his
+written address is already neutral: *"Beat it, kid"* (`ST7`), *"What do you want?"* (`ST1`). No
+pronoun is chosen anywhere in the tree, so it converts without touching the perceiver matrix.
+
+### The monkey — DECIDED (David, 2026-08-22): verbal-only in the calm walk, armed by the chase
+
+**The monkey is off-stage until `EVENT_monkey` fires**, and that event is what puts it on the centre
+post (`story.ni:2705-2707`). What arms the event is the `Monkey business` scene, which **begins when
+the player first enters the Exotic Gems Stall** (`story.ni:2698`) — a location trigger with no
+reference to the chase at all.
+
+**In 2009 those two things were the same event; under the new opening they come apart.** With the
+market walk narrated, the player's first entry to any stall was already the chase, so a location
+trigger was a chase trigger. Now the player can wander into the gems stall while everything is still
+calm, and the trigger would fire there.
+
+**The cloak is what decides it.** The chain the monkey starts — banana → monkey → necklace → Teisha
+→ silk cloak — ends in the disguise, and the cloak's own text is written for a Jack who is already
+being hunted: *"You realize suddenly that this is exactly what you need: the perfect disguise!"*
+(`story.ni:3050`). If the chain can complete during the calm walk, the player can be wearing the
+disguise before anyone is looking for her, and the chase has nothing left to be about.
+
+**So the trigger moves off first-entry-to-the-gems-stall and onto the start of the chase.** One
+gate; the event's text, the monkey's placement, and everything downstream carry over unchanged.
+
+**The seeding is already written and already placed.** Before the monkey exists physically it exists
+in speech, in two quips this chapter already assigns to the calm walk: `ST6` above, and `TE15`'s full
+answer — *"That pesky thing came in on the fruit vendor's wagon yesterday and just made itself at
+home. Now it's all over the place, bothering everybody... The little rodent loves bananas"*
+(`story.ni:3205`). `TE15` is in the calm column of the Teisha split, so no further work is needed to
+establish the monkey before the player meets it.
+
+**Carried into Phase 6.** `EVENT_monkey` is one of the source's 18 `dramatic event` declarations,
+and P-9 ships the port without ADR-323 deferred narration — so its firing needs re-authoring on
+whatever the port's own mechanism is, regardless of this decision. The decision changes only *when*
+it is armed.
