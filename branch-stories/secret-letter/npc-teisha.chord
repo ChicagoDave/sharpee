@@ -7,9 +7,9 @@
 ## place. Cutting on that line — a place is one import, a major NPC is its own —
 ## keeps her whole in one file as her tree grows into the chase.
 ##
-## Imports do not nest (`packages/chord/src/index.ts:151`, ADR-251 D5), so this
-## file sits BESIDE `grubbers-market`, not inside it, even though Teisha stands
-## in the market. The main `.story` file is the only importer.
+## Imported by `grubbers-market` (imports nest, ADR-251 D5 as amended
+## 2026-08-22): the market owns its people, so the main `.story` file no longer
+## names this file. The import path is story-rooted either way.
 ##
 ## The silk seller, and the first perceiver the player meets (vision.md §3d).
 ## Her tree splits by occasion (change document, "Teisha's conversation"): the

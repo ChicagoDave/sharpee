@@ -65,13 +65,13 @@ story
 ## others. Major NPCs are cut out of the place and imported on their own, since
 ## their trees outlive the room they stand in.
 ##
-## Imports do not nest (`packages/chord/src/index.ts:151`, ADR-251 D5): this
-## list is flat and this file is the only importer, so `grubbers-market` cannot
-## pull in `npc-teisha` itself even though Teisha stands in the market.
+## Imports nest (ADR-251 D5 as amended 2026-08-22): a place imports the people
+## who stand in it, so `grubbers-market` pulls in `npc-teisha` itself and this
+## file lists only the places and mechanism layers.
 ##
-## ORDER IS SEMANTIC. An import is a paste at its own line (ADR-251 D4), so the
-## sequence below is arbitration order: the mechanism layer first, then the
-## place, then the people who stand in it. Reordering these lines changes
+## ORDER IS SEMANTIC. An import is a paste at its own line (ADR-251 D4), pasted
+## depth-first, so the sequence below is arbitration order: the mechanism layer
+## first, then the place (with its people). Reordering these lines changes
 ## behaviour.
 ## ---------------------------------------------------------------------------
 
@@ -80,13 +80,10 @@ story
 import "peering"
 
 ## Grubber's Market, atomic: seventeen rooms, the stalls, the apple and the
-## alley that ends the walk, and the ten stallkeepers sharing the `ST` tree.
+## alley that ends the walk, the ten stallkeepers sharing the `ST` tree, and
+## Teisha, imported from inside the market (`npc-teisha`).
 
 import "grubbers-market"
-
-## The silk seller, and the first perceiver the player meets.
-
-import "npc-teisha"
 
 ## ---------------------------------------------------------------------------
 ## THE PLAYER

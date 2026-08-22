@@ -110,3 +110,7 @@ Both `compose.ts` and `browser-core.ts` resolvers were already shape-compatible 
 ---
 
 **Progressive update**: Session completed 2026-08-22 17:50 CDT
+
+---
+
+**Progressive update (18:25 CDT)**: after the 911f45fb push, David clarified the Secret Letter layout — major NPCs keep their own files AND the place imports them (my "never nest NPCs" reading was wrong and is withdrawn; the note is now `project_secret_letter_file_layout.md`, this story only, not a rule). Moved `import "npc-teisha"` from `secret-letter.story` to the end of `grubbers-market.chord` (after the stallkeepers, preserving arbitration order); rewrote the three header comments that described the flat workaround. Evidence: `./sharpee compose branch-stories/secret-letter/secret-letter.story --check` gate-clean; IR composed from the committed tree vs. the working tree differs only in 24 lines of main-file span numbers (player/cloak moved up three lines) — declarations, order, phrases identical. Files: `branch-stories/secret-letter/secret-letter.story`, `grubbers-market.chord`, `npc-teisha.chord`. #302 closed on GitHub after the push.

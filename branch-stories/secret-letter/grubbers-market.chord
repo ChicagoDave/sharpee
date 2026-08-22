@@ -7,17 +7,17 @@
 ## stall exists to be stolen from; the alley exists as the walk's exit; the
 ## stallkeepers exist as the texture the walk moves through.
 ##
-## What is NOT here: major NPCs. Teisha stands in this market and is imported
-## separately (`npc-teisha`), because her tree splits by occasion and carries
-## into the chase — she outlives the place. Imports do not nest
-## (`packages/chord/src/index.ts:151`, ADR-251 D5), so every fragment is a
-## sibling in the main file's flat list; the market cannot own its own NPCs
-## even where the fiction says it does.
+## What is NOT written here: major NPCs. Teisha stands in this market and keeps
+## her own file (`npc-teisha`), because her tree splits by occasion and carries
+## into the chase — she outlives the place. The market IMPORTS her, at the end
+## of this file (imports nest, ADR-251 D5 as amended 2026-08-22), so the place
+## owns its people in the import graph as the fiction says it does.
 ##
 ## ORDER IS SEMANTIC. An import is a paste at the import site (ADR-251 D4), and
 ## within this file the sections paste in source order: the rooms first, then
-## what stands in them, then who does. Later declarations arbitrate against
-## earlier ones, so moving a section is a behavioural change, not a tidy-up.
+## what stands in them, then who does, then Teisha. Later declarations
+## arbitrate against earlier ones, so moving a section is a behavioural change,
+## not a tidy-up.
 ## ===========================================================================
 
 ## ---------------------------------------------------------------------------
@@ -1013,3 +1013,13 @@ or
 or
   'I said, get out of here!' the stallkeeper yells.
 end phrase
+
+## ---------------------------------------------------------------------------
+## TEISHA
+##
+## The silk seller, and the first perceiver the player meets. Her own file;
+## pasted here, after everything else in the market, so her declarations
+## arbitrate last.
+## ---------------------------------------------------------------------------
+
+import "npc-teisha"
