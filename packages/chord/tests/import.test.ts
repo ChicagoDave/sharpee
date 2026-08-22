@@ -101,12 +101,16 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
     expect(d.span.line).toBe(1); //             the fragment's own line 1 (its story header)
   });
 
-  it('nested import → analysis.import-fragment-nested at the fragment span', () => {
-    const frag = 'create the shed\n  a room\n\n  A shed.\n\nimport "deeper"\n';
-    const d = byCode(mainWith('import "frag"'), (n) => (n === 'frag.chord' ? frag : null))['analysis.import-fragment-nested'];
+  it('import cycle → analysis.import-cycle at the import line in the file that closes the loop', () => {
+    const frags: Record<string, string> = {
+      'a.chord': 'create the shed\n  a room\n\n  A shed.\n\nimport "b"\n',
+      'b.chord': 'import "a"\n',
+    };
+    const d = byCode(mainWith('import "a"'), (n) => frags[n] ?? null)['analysis.import-cycle'];
     expect(d).toBeDefined();
-    expect(d.message).toContain('[frag.chord]');
-    expect(d.span.line).toBe(6); //             the nested `import "deeper"` line WITHIN the fragment
+    expect(d.message).toContain('a.chord → b.chord → a.chord');
+    expect(d.span.file).toBe('b.chord');
+    expect(d.span.line).toBe(1); //             the `import "a"` line WITHIN b.chord
   });
 
   it('malformed fragment → analysis.import-fragment-content at the fragment span', () => {
@@ -187,5 +191,101 @@ describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment f
     const d = byCode(mainWith('import "nowhere"'), () => null)['analysis.import-unresolved'];
     expect(d.span.file).toBeUndefined();
     expect(d.span.line).toBe(7);
+  });
+});
+
+describe('ADR-251 D5 (amended 2026-08-22) — imports nest (GH #302)', () => {
+  const room = (name: string, extra = '') => `create ${name}\n  a room\n\n  ${name}.\n${extra}`;
+  const mk = (frags: Record<string, string>): Resolver => (n) => frags[n] ?? null;
+
+  it('a fragment\'s own import is spliced: declarations two levels down reach the IR', () => {
+    const r = compile(mainWith('import "regions/market"'), {
+      importResolver: mk({
+        'regions/market.chord': room('the Market', '\nimport "npcs/teisha"\n'),
+        'npcs/teisha.chord': room('the Silk Tent'),
+      }),
+    });
+    // `mainWith`'s player is `a room` (analysis.player-kind) — filter to import diagnostics.
+    expect(r.diagnostics.filter((d) => d.code.startsWith('analysis.import-'))).toEqual([]);
+    const ids = r.ir.entities.map((e) => e.id);
+    expect(ids).toContain('market');
+    expect(ids).toContain('silk-tent');
+  });
+
+  it('paths inside a fragment are story-rooted: the resolver sees the same string it would from the main file', () => {
+    const asked: string[] = [];
+    compile(mainWith('import "regions/market"'), {
+      importResolver: (n) => {
+        asked.push(n);
+        if (n === 'regions/market.chord') return 'import "npcs/teisha"\n';
+        if (n === 'npcs/teisha.chord') return room('the Silk Tent');
+        return null;
+      },
+    });
+    expect(asked).toEqual(['regions/market.chord', 'npcs/teisha.chord']);
+  });
+
+  it('paste order is depth-first at each import line (D4 unchanged)', () => {
+    const r = compile(mainWith('import "outer"'), {
+      importResolver: mk({
+        'outer.chord': room('the First') + '\nimport "inner"\n\n' + room('the Third'),
+        'inner.chord': room('the Second'),
+      }),
+    });
+    const order = r.ir.entities.map((e) => e.id).filter((id) => id !== 'player');
+    expect(order).toEqual(['first', 'second', 'third']);
+  });
+
+  it('a span two levels down names ITS file, not the fragment that imported it', () => {
+    const diags = errorsOf(mainWith('import "regions/market"'), mk({
+      'regions/market.chord': room('the Market', '\nimport "npcs/teisha"\n'),
+      'npcs/teisha.chord': room('the Silk Tent', '\n  after entering it\n    phrase no-such-key\n  end after\n'),
+    }));
+    const missing = diags.find((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toBeDefined();
+    expect(missing!.span.file).toBe('npcs/teisha.chord');
+    expect(missing!.span.line).toBe(7);
+  });
+
+  it('after a cycle is dropped the rest of the splice continues', () => {
+    const r = compile(mainWith('import "a"'), {
+      importResolver: mk({
+        'a.chord': 'import "b"\n\n' + room('the Shed'),
+        'b.chord': 'import "a"\n\n' + room('the Barn'),
+      }),
+    });
+    const codes = r.diagnostics.filter((d) => d.code.startsWith('analysis.import-')).map((d) => d.code);
+    expect(codes).toEqual(['analysis.import-cycle']);
+    const ids = r.ir.entities.map((e) => e.id);
+    expect(ids).toContain('shed');
+    expect(ids).toContain('barn');
+  });
+
+  it('a self-import is the one-element cycle', () => {
+    const d = byCode(mainWith('import "a"'), mk({ 'a.chord': 'import "a"\n' }))['analysis.import-cycle'];
+    expect(d).toBeDefined();
+    expect(d.message).toContain('a.chord → a.chord');
+  });
+
+  it('a diamond is pasted twice and collides as an ordinary duplicate, not an import diagnostic', () => {
+    const r = compile(mainWith('import "left"\nimport "right"'), {
+      importResolver: mk({
+        'left.chord': 'import "shared"\n',
+        'right.chord': 'import "shared"\n',
+        'shared.chord': room('the Well'),
+      }),
+    });
+    const codes = r.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+    expect(codes.some((c) => c.startsWith('analysis.import-'))).toBe(false);
+    expect(codes).toContain('analysis.duplicate-entity');
+  });
+
+  it('a fragment carrying a story header is rejected wherever it is reached (the main file is never importable)', () => {
+    const d = byCode(mainWith('import "outer"'), mk({
+      'outer.chord': 'import "main-copy"\n',
+      'main-copy.chord': mainWith(''),
+    }))['analysis.import-fragment-story'];
+    expect(d).toBeDefined();
+    expect(d.span.file).toBe('main-copy.chord');
   });
 });

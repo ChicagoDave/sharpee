@@ -1,6 +1,6 @@
 # ADR-251: Chord generalized `import` — multi-file story sources
 
-## Status: ACCEPTED + IMPLEMENTED (2026-07-21 — all five decisions ruled by David directly, session eb743f: story block main-file-only; imports carry complete declarations only, no partials; `.chord` extension assumed; no nested imports; single bare `import "<file>"` folding `import phrasebook`; compiler appends `.chord`, resolver stays dumb. No Open Questions. adr-review 13/15 same-session → both FAILs closed by the `## Acceptance` worked-example section added before the flip. Supersedes ADR-250 D2 in part; ADR-250 carries a supersession pointer here. IMPLEMENTED same session via `docs/work/adr-251-generalized-import/plan.md` Phases 1–4, David-gated per phase: chord parser/AST/splice/diagnostics + devkit fs resolver + browser inline-bundle resolver; regression green — chord 452, devkit 45, dungeo `--browser` clean, fernhill 496/496. One correction folded back mid-implementation: the "both hosts already wire `importResolver`" claim in Consequences was false — neither did; both were wired in Phases 2–3. **Amended 2026-08-22 (session 2fa584, David): D6's span contract gains `Span.file` — see D6 amendment and the Consequences entry; implementation owned by `docs/work/tier-2-import-seam/plan.md` Phase 2, GH #301.**)
+## Status: ACCEPTED + IMPLEMENTED (2026-07-21 — all five decisions ruled by David directly, session eb743f: story block main-file-only; imports carry complete declarations only, no partials; `.chord` extension assumed; no nested imports; single bare `import "<file>"` folding `import phrasebook`; compiler appends `.chord`, resolver stays dumb. No Open Questions. adr-review 13/15 same-session → both FAILs closed by the `## Acceptance` worked-example section added before the flip. Supersedes ADR-250 D2 in part; ADR-250 carries a supersession pointer here. IMPLEMENTED same session via `docs/work/adr-251-generalized-import/plan.md` Phases 1–4, David-gated per phase: chord parser/AST/splice/diagnostics + devkit fs resolver + browser inline-bundle resolver; regression green — chord 452, devkit 45, dungeo `--browser` clean, fernhill 496/496. One correction folded back mid-implementation: the "both hosts already wire `importResolver`" claim in Consequences was false — neither did; both were wired in Phases 2–3. **Amended 2026-08-22 (session 2fa584, David): D6's span contract gains `Span.file` — see D6 amendment and the Consequences entry; implementation owned by `docs/work/tier-2-import-seam/plan.md` Phase 2, GH #301. Amended again 2026-08-22 (session c8aa87, David): D5 reversed — imports nest, depth-first, story-rooted paths, `analysis.import-cycle`; D3's `import` exclusion struck; `analysis.import-fragment-nested` retired. Implementation: same plan, Phase 4, GH #302.**)
 
 ## Date: 2026-07-21
 
@@ -95,8 +95,11 @@ exclusions:
 - **No `story` block** — the story header lives only in the main `.story`
   file (single home for story identity/config). A `story` block in a
   fragment is a diagnostic.
-- **No `import` line** — imports do not nest (D5). An `import` inside a
-  fragment is a diagnostic.
+- ~~**No `import` line** — imports do not nest (D5). An `import` inside a
+  fragment is a diagnostic.~~ **Struck 2026-08-22** — fragments may
+  import (D5 amendment). The `story`-block exclusion stands, and it is
+  what makes the main `.story` file un-importable: a fragment that
+  imports it trips `analysis.import-fragment-story`.
 - **No partials** — a fragment holds *whole* declarations; a declaration
   is never split across files. (The parser already rejects a half-block,
   so this is enforced by construction plus an explicit content check.)
@@ -125,13 +128,58 @@ now general. It settles three would-be questions with no new rule:
   entities/states with no binding rules of its own. (This generalizes
   ADR-250's existing "fragments may reference story entities" allowance.)
 
-### D5 — Flat only; no nested imports; cycles impossible by construction
+### D5 — Imports nest; depth-first paste; cycles are a diagnostic
 
-Only the main `.story` file may carry `import` lines. A `.chord` fragment
+~~Only the main `.story` file may carry `import` lines. A `.chord` fragment
 cannot import (D3). Import is therefore one level deep and **cycles
 cannot arise** — no cycle detection, no `analysis.import-cycle`. Nesting
 was rejected in favor of a model an author can hold in their head: the
-main file lists its imports, and that list is the whole graph.
+main file lists its imports, and that list is the whole graph.~~
+
+**Amended 2026-08-22 (David, session c8aa87; GH #302).** The flat model
+held at three imports and had already failed its own rationale at
+three: *The Secret Letter* port's `npc-teisha.chord` stands in
+`grubbers-market.chord`, the market could not import her, and the main
+file had to carry an edge that is internal to two other files. At the
+port's end (~50 fragments, 47 NPCs, 23 conversation trees) the main
+file is a fifty-line manifest whose order is the story's entire
+arbitration order, sorted by hand. A tree is the model an author can
+hold; a long flat list is not. The rule is now:
+
+- **Any `.chord` fragment may carry `import` lines.** They mean exactly
+  what they mean in the main file: a paste at that line (D4). Nothing
+  in the semantic model changes — paste a fragment that contains an
+  import and the inner import is pasted at *its* line, so the assembled
+  order is **depth-first at each import line**. Arbitration order is
+  thereby local: a component decides the order of its own parts, the
+  main file decides the order of its components.
+- **Import paths are story-rooted everywhere.** `import "npcs/teisha"`
+  inside `regions/market.chord` resolves `npcs/teisha.chord` relative
+  to the main file's directory, exactly as it would from the main file.
+  This is the same string the host resolver already receives (D2) and
+  the same string `Span.file` already holds (D6), so neither changes.
+  Fragment-relative paths were rejected: they need `..` normalization in
+  the compiler and make `Span.file` a computed path rather than the one
+  the author wrote.
+- **The main `.story` file is never importable.** Not a new rule: it
+  carries the `story` block, which a fragment may not (D3), so importing
+  it is `analysis.import-fragment-story` by construction.
+- **Cycles are detected, not impossible.** The splice keeps the set of
+  fragments currently being resolved; an `import` whose target is in
+  that set raises **`analysis.import-cycle`** on the offending `import`
+  line (in the file that contains it, via `Span.file`), with the chain
+  in the message — `a.chord → b.chord → a.chord`. The import is dropped
+  and the splice continues so the rest of the story still diagnoses.
+- **Diamonds are not cycles and are not deduplicated.** A fragment
+  imported by two different fragments is pasted twice, and its
+  declarations collide post-splice as the ordinary duplicate-declaration
+  error — the same outcome as pasting the text twice by hand. No
+  import-once rule; that would break the paste model.
+- **Hosts are untouched.** Both resolvers are `(name) => text | null`
+  (`packages/devkit/src/commands/compose.ts`,
+  `packages/devkit/src/standalone/browser-core.ts`); recursion lives
+  inside `resolveImports`, and the browser build already captures every
+  name the compiler asks for into its bundle.
 
 ### D6 — Diagnostics
 
@@ -140,7 +188,8 @@ main file lists its imports, and that list is the whole graph.
 | `parse.import-form` | `import` not followed by `STRING NL` (bare word, missing string) | error |
 | `analysis.import-unresolved` | resolver returned null for `<name>.chord` (or no resolver provided) | error |
 | `analysis.import-fragment-story` | fragment contains a `story` block | error |
-| `analysis.import-fragment-nested` | fragment contains an `import` line | error |
+| ~~`analysis.import-fragment-nested`~~ | ~~fragment contains an `import` line~~ — retired 2026-08-22 (D5 amendment) | — |
+| `analysis.import-cycle` | an `import` names a fragment already being resolved on the current chain (D5 amendment, 2026-08-22) | error |
 | `analysis.import-fragment-content` | fragment contains anything but complete story declarations + comments | error |
 
 ~~Cross-file span attribution keeps ADR-250's approach: fragment
@@ -213,7 +262,9 @@ namespace, D4).
 
 - import of a missing file → `analysis.import-unresolved`
 - fragment containing a `story` block → `analysis.import-fragment-story`
-- fragment containing its own `import` line → `analysis.import-fragment-nested`
+- ~~fragment containing its own `import` line → `analysis.import-fragment-nested`~~ (retired 2026-08-22)
+- fragment whose `import` chain returns to a fragment already being resolved → `analysis.import-cycle`, anchored on that `import` line in its own file
+- a fragment imported by two fragments → the ordinary duplicate-declaration error, not an import diagnostic
 - fragment containing a partial or non-declaration content → `analysis.import-fragment-content`
 - `import` not followed by a string → `parse.import-form`
 
@@ -256,8 +307,16 @@ extension dropped from the import string.
   and `importResolver` is exercised only in `packages/chord`'s own tests.
   So the hosts gain real, unbuilt work — an fs-backed resolver for
   `sharpee compose`/devkit and a bundle-map resolver for the browser
-  (plan Phases 2–3), not no-op verification. Neither needs recursion (D5);
-  each resolves a `.chord` name the compiler hands it.
+  (plan Phases 2–3), not no-op verification. Neither needs recursion —
+  true under flat D5 and still true under the 2026-08-22 nesting
+  amendment, because recursion lives in the compiler's `resolveImports`;
+  each host resolves a `.chord` name the compiler hands it.
+- **Stories may be organised as components** (D5 amendment,
+  2026-08-22): a place fragment imports the people who stand in it, a
+  chapter imports its places, the main file lists its chapters. The
+  `[<name>.chord]` prefix and `Span.file` name the fragment a diagnostic
+  is in, whatever depth it was reached at. Implementation is Phase 4 of
+  `docs/work/tier-2-import-seam/plan.md`, GH #302.
 - **Hosts resolve the site as `span.file ?? <main file>`** (D6
   amendment, 2026-08-22). `sharpee compose` stamps every compile
   diagnostic with the main story's path today
@@ -282,4 +341,10 @@ Open Item taken up.
 D6 amendment: session 2fa584 (2026-08-22, branch
 feat/adr-321-world-index), ruled by David in conversation from the
 measured #301 evidence; implementation is Phase 2 of
+`docs/work/tier-2-import-seam/plan.md`.
+
+D5 amendment: session c8aa87 (2026-08-22, branch
+feat/adr-321-world-index), ruled by David in conversation from the
+Secret Letter port's measured shape (3 imports today, ~50 at the end,
+the Teisha edge already misplaced at 3); implementation is Phase 4 of
 `docs/work/tier-2-import-seam/plan.md`.

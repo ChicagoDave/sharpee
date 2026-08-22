@@ -332,7 +332,8 @@ export interface DefinePhrasebook {
  * `path` is the name as written, WITHOUT extension: the compiler appends
  * `.chord` before handing it to the host `importResolver`, which resolves
  * it to the fragment's source text. The fragment's complete declarations
- * (any kind except a `story` header or a nested `import`) are spliced at
+ * (any kind except a `story` header; its own `import` lines nest, spliced
+ * depth-first at their own position) are spliced at
  * this position (import site = arbitration position — D4). Unresolved at
  * analysis time = `analysis.import-unresolved`. Supersedes ADR-250 D2's
  * typed `import phrasebook`/`.story` form.

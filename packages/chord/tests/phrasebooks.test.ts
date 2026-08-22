@@ -257,9 +257,11 @@ describe('import "<file>" (ADR-251)', () => {
     expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-story');
   });
 
-  it('a fragment with a nested import raises analysis.import-fragment-nested', () => {
-    const bad = 'import "deeper"\n';
-    expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-nested');
+  it('a fragment with its own import nests it (ADR-251 D5 as amended 2026-08-22)', () => {
+    const frags: Record<string, string> = { 'outer.chord': 'import "deeper"\n', 'deeper.chord': 'define phrasebook deep\n  a-key:\n    Deep.\nend phrasebook\n' };
+    const codes = errorCodes(story('import "outer"\n\n'), { importResolver: (n) => frags[n] ?? null });
+    expect(codes).not.toContain('analysis.import-fragment-nested');
+    expect(codes).not.toContain('analysis.import-unresolved');
   });
 
   it('a fragment that does not parse into declarations raises analysis.import-fragment-content', () => {

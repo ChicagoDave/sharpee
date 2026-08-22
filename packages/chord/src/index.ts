@@ -99,29 +99,58 @@ export function compile(source: string, options?: CompileOptions): CompileResult
  * complete declarations, in place (import site = arbitration position —
  * ADR-251 D4: "an import is a paste"). The compiler appends `.chord` to
  * the target before resolving (D2), so the host `importResolver` always
- * receives `"<name>.chord"`. A fragment may contain any complete
- * declaration EXCEPT a `story` header (D3 → `analysis.import-fragment-story`)
- * or a nested `import` (D5: imports are flat → `analysis.import-fragment-nested`);
- * a fragment that fails to parse cleanly (partial/non-declaration content)
- * additionally raises `analysis.import-fragment-content` at the import site,
- * beside the granular fragment parse errors. Processed imports are removed
- * from the AST either way, so the analyzer never double-reports. Fragment
- * diagnostics are re-reported with the fragment name prefixed, and every
- * span in the fragment — its diagnostics and every node of its AST — is
- * stamped with the fragment's file (D6 as amended 2026-08-22), so analyzer
- * diagnostics raised later on spliced declarations name the fragment
- * instead of an innocent main-file line.
+ * receives `"<name>.chord"`. Imports nest (D5 as amended 2026-08-22): a
+ * fragment's own `import` lines are spliced at their own position inside
+ * it, so the assembled order is depth-first at each import line. Import
+ * paths are story-rooted everywhere — the same string from a fragment as
+ * from the main file — so the host resolver needs no notion of depth.
+ * A fragment may contain any complete declaration EXCEPT a `story` header
+ * (D3 → `analysis.import-fragment-story`); a fragment that fails to parse
+ * cleanly (partial/non-declaration content) additionally raises
+ * `analysis.import-fragment-content` at the first parse error, beside the
+ * granular fragment parse errors. An import whose target is already being
+ * resolved on the current chain raises `analysis.import-cycle` at that
+ * import line and is dropped; the rest of the splice continues. A fragment
+ * reached by two paths is pasted twice and collides post-splice as the
+ * ordinary duplicate-declaration error — no import-once rule. Processed
+ * imports are removed from the AST either way, so the analyzer never
+ * double-reports. Fragment diagnostics are re-reported with the fragment
+ * name prefixed, and every span in the fragment — its diagnostics and every
+ * node of its AST — is stamped with the fragment's file (D6 as amended
+ * 2026-08-22), so analyzer diagnostics raised later on spliced declarations
+ * name the fragment instead of an innocent main-file line.
  */
 function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag: DiagnosticBag): void {
   if (!ast.declarations.some((d) => d.kind === 'import')) return;
+  ast.declarations = spliceImports(ast.declarations, options, bag, []);
+}
+
+/**
+ * Replace every `import` in `declarations` with its fragment's declarations,
+ * recursing into each fragment before splicing it. `chain` is the ordered
+ * list of fragment names currently being resolved (the main file is the
+ * implicit root and is never on it); a target already on it is a cycle.
+ */
+function spliceImports(
+  declarations: readonly Declaration[],
+  options: CompileOptions | undefined,
+  bag: DiagnosticBag,
+  chain: readonly string[],
+): Declaration[] {
   const resolved: Declaration[] = [];
-  for (const decl of ast.declarations) {
+  for (const decl of declarations) {
     if (decl.kind !== 'import') {
       resolved.push(decl);
       continue;
     }
     // D2: the extension is a language fact, appended here — the resolver stays dumb.
     const fragmentName = `${decl.path}.chord`;
+    if (chain.includes(fragmentName)) {
+      // D5 (amended): the chain has returned to a fragment still being spliced.
+      const cycle = [...chain.slice(chain.indexOf(fragmentName)), fragmentName].join(' → ');
+      bag.error('analysis.import-cycle', `\`import "${decl.path}"\` completes an import cycle: ${cycle}.`, decl.span);
+      continue;
+    }
     const text = options?.importResolver ? options.importResolver(fragmentName) : null;
     if (text === null || text === undefined) {
       bag.error(
@@ -137,7 +166,9 @@ function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag
     const fragAst = parseStory(text, fragBag);
     // Stamp the fragment's file onto every span — the AST's and its parse
     // diagnostics' (the latter in place, so the content diagnostic below,
-    // anchored on the first of them, carries the file too).
+    // anchored on the first of them, carries the file too). Spans that
+    // already carry a file are left alone, which is what keeps a nested
+    // fragment's own attribution once its imports are spliced below.
     stampSpanFile(fragAst, fragmentName);
     stampSpanFile(fragBag.all(), fragmentName);
     for (const d of fragBag.all()) {
@@ -146,7 +177,7 @@ function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag
     }
     // D6 span contract: fragment diagnostics carry the fragment's OWN span
     // (with the `[<name>.chord]` prefix identifying the file); only the
-    // unresolved-import diagnostic above points at the main-file import line.
+    // unresolved-import and cycle diagnostics above point at the import line.
     if (fragBag.hasErrors()) {
       // Partial / non-declaration content — the granular parse errors above
       // carry the detail; anchor the category diagnostic at the first of them.
@@ -156,16 +187,11 @@ function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag
     if (fragAst.header) {
       bag.error('analysis.import-fragment-story', `[${fragmentName}] An imported fragment carries no story header — the \`story\` block lives only in the main \`.story\` file.`, fragAst.header.span);
     }
-    for (const d of fragAst.declarations) {
-      if (d.kind === 'import') {
-        // D5: imports do not nest — only the main `.story` file may import.
-        bag.error('analysis.import-fragment-nested', `[${fragmentName}] Imports do not nest — remove the \`import "${d.path}"\` line from \`${fragmentName}\`.`, d.span);
-      } else {
-        resolved.push(d);
-      }
-    }
+    // Depth-first: the fragment's own imports are pasted at their own lines
+    // before the fragment is pasted at this one.
+    resolved.push(...spliceImports(fragAst.declarations, options, bag, [...chain, fragmentName]));
   }
-  ast.declarations = resolved;
+  return resolved;
 }
 
 /**
