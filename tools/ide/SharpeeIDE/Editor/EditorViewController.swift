@@ -57,6 +57,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Read-only view of the active tab index. Used for session persistence.
     var activeDocumentIndex: Int? { activeIndex }
 
+    /// The active document's current UTF-16 selection (length 0 at a bare
+    /// caret), or nil with no document showing.
+    var activeSelection: NSRange? {
+        activeIndex == nil ? nil : textView.selectedRange()
+    }
+
     /// Fired whenever the open-document set or active index changes (open, close, switch).
     /// Not fired on dirty-flag toggles or content edits — those don't affect persistable state.
     var onStateChanged: (() -> Void)?

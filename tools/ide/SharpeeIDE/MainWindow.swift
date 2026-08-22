@@ -81,6 +81,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.saveActiveDocument()
     }
 
+    /// Whether File → New Import… / Edit → Extract Selection to Import… apply.
+    var importCommandsApply: Bool { rootViewController?.importCommandsApply ?? false }
+    func newImport() { rootViewController?.newImport() }
+    func extractSelectionToImport() { rootViewController?.extractSelectionToImport() }
+
     /// Saves every dirty document — Build's precondition (the build reads disk).
     /// Returns false when a save failed and the build should not proceed.
     @discardableResult
@@ -536,6 +541,10 @@ private final class RootViewController: NSViewController {
     func saveActiveDocument() {
         mainSplitViewController.saveActiveDocument()
     }
+
+    var importCommandsApply: Bool { mainSplitViewController.importCommandsApply }
+    func newImport() { mainSplitViewController.newImport() }
+    func extractSelectionToImport() { mainSplitViewController.extractSelectionToImport() }
 
     func saveAllDocuments() -> Bool {
         mainSplitViewController.saveAllDocuments()
@@ -1142,6 +1151,80 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Applies a compose run's records as editor underlines for `url`.
     fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         editorViewController.setDiagnostics(records, forFile: url)
+    }
+
+    // MARK: - Imports (GH #288)
+
+    /// Whether an import command applies right now: a Chord source file
+    /// (`.story` or `.chord`) is active inside the open story's folder.
+    var importCommandsApply: Bool {
+        activeChordSource() != nil
+    }
+
+    /// The active Chord source and the story folder it belongs to, or nil.
+    private func activeChordSource() -> (url: URL, storyDirectory: URL)? {
+        guard let doc = editorViewController.activeDocument, ChordSource.isChordSource(doc.url),
+              let storyURL = treeState.storyURL else { return nil }
+        let storyDirectory = storyURL.deletingLastPathComponent()
+        guard doc.url.standardizedFileURL.path.hasPrefix(storyDirectory.standardizedFileURL.path + "/") else { return nil }
+        return (doc.url, storyDirectory)
+    }
+
+    /// File → New Import…: prompts for a name, then `ImportCommands.newImport`.
+    func newImport() {
+        guard let (url, storyDirectory) = activeChordSource() else { return }
+        guard let name = promptForImportName(title: "New Import",
+                                             message: "Name the import. A folder path is fine — regions/harbor creates regions/harbor.chord.") else { return }
+        let commands = ImportCommands(editor: editorViewController, storyDirectory: storyDirectory)
+        if case .failure(let refusal) = commands.newImport(named: name, in: url) {
+            presentRefusal(refusal); return
+        }
+        refreshProjectTree()
+    }
+
+    /// Edit → Extract Selection to Import…: checks the selection, prompts for
+    /// a name, then `ImportCommands.extractSelection`.
+    func extractSelectionToImport() {
+        guard let (url, storyDirectory) = activeChordSource(),
+              let selection = editorViewController.activeSelection else { return }
+        let commands = ImportCommands(editor: editorViewController, storyDirectory: storyDirectory)
+        // Check the selection before asking for a name, so a refusal comes first.
+        if case .failure(let refusal) = commands.checkSelection(selection, in: url) {
+            presentRefusal(refusal); return
+        }
+        guard let name = promptForImportName(title: "Extract Selection to Import",
+                                             message: "Name the import the selected declarations move into.") else { return }
+        if case .failure(let refusal) = commands.extractSelection(selection, in: url, named: name) {
+            presentRefusal(refusal); return
+        }
+        refreshProjectTree()
+    }
+
+    /// Asks for an import name and validates it; nil when the author cancels.
+    private func promptForImportName(title: String, message: String) -> String? {
+        while true {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: "Create")
+            alert.addButton(withTitle: "Cancel")
+            let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+            field.placeholderString = "regions/harbor"
+            alert.accessoryView = field
+            alert.window.initialFirstResponder = field
+            guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+            switch ImportRefactor.validatedName(field.stringValue) {
+            case .success(let name): return name
+            case .failure(let refusal): presentRefusal(refusal)
+            }
+        }
+    }
+
+    private func presentRefusal(_ refusal: ImportRefactor.Refusal) {
+        let alert = NSAlert()
+        alert.messageText = refusal.message
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     func switchToDocument(at index: Int) {
