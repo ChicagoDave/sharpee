@@ -101,9 +101,10 @@ final class SyntaxHighlighter {
         return left.span.endColumn == right.span.column
     }
 
-    /// True if this highlighter can color the file at `url` (Chord `.story` only).
+    /// True if this highlighter can color the file at `url`: Chord source, which
+    /// is a `.story` file or an imported `.chord` fragment (ADR-251; GH #287).
     func canHighlight(_ url: URL) -> Bool {
-        url.pathExtension.lowercased() == "story"
+        ChordSource.isChordSource(url)
     }
 
     /// Lexes `storage`'s contents and applies foreground token colors over the

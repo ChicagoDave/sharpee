@@ -69,6 +69,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// the compose pipeline runs after a debounce (ADR-258 D5, Q3 ruling).
     var onStoryEdited: ((URL, String) -> Void)?
 
+    /// Fired when an imported `.chord` fragment becomes active or is saved
+    /// (GH #287). A fragment has no header and compiles only through the
+    /// `.story` that imports it, so the receiver recomposes THAT story; the
+    /// fragment's buffer cannot feed a compose until `sharpee compose` accepts
+    /// an overlay, so this fires on activation and save, not on edit.
+    var onFragmentNeedsCompose: ((URL) -> Void)?
+
     /// Fired on every edit to ANY document (story, hatch module, browser page) —
     /// a source change invalidates the play surface (David's ruling).
     var onDocumentEdited: ((URL) -> Void)?
@@ -419,8 +426,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// the Problems list still carries the full span.
     func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         clearDiagnosticUnderlines()
-        guard let doc = activeDocument, doc.url == url,
-              let storage = textView.textStorage else { return }
+        // Records name their own file (`Span.file`, ADR-251 D6 as amended): a
+        // fragment's records underline in the fragment's tab, the story's in
+        // the story's. `url` is the composed story; an active fragment is
+        // accepted when it sits in that story's folder tree (GH #287).
+        guard let doc = activeDocument, let storage = textView.textStorage,
+              doc.url == url || Self.isFragment(doc.url, of: url) else { return }
+        let url = doc.url
 
         var flaggedLines: Set<Int> = []
         for record in records {
@@ -435,6 +447,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             flaggedLines.insert(record.line)
         }
         lineNumberRuler?.errorLines = flaggedLines
+    }
+
+    /// True when `candidate` is a `.chord` fragment under `story`'s folder.
+    private static func isFragment(_ candidate: URL, of story: URL) -> Bool {
+        guard ChordSource.isFragment(candidate) else { return false }
+        let storyDir = story.deletingLastPathComponent().standardizedFileURL.path
+        return candidate.standardizedFileURL.path.hasPrefix(storyDir + "/")
     }
 
     private func clearDiagnosticUnderlines() {
@@ -572,10 +591,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         notifyStoryActivated()
     }
 
-    /// Reports a newly-active `.story` document to the compose pipeline.
+    /// Reports a newly-active `.story` document to the compose pipeline, or a
+    /// newly-active `.chord` fragment so its importing story recomposes.
     private func notifyStoryActivated() {
-        guard let doc = activeDocument, doc.url.pathExtension == "story" else { return }
-        onStoryActivated?(doc.url, doc.content)
+        guard let doc = activeDocument else { return }
+        if ChordSource.isStoryFile(doc.url) {
+            onStoryActivated?(doc.url, doc.content)
+        } else if ChordSource.isFragment(doc.url) {
+            onFragmentNeedsCompose?(doc.url)
+        }
     }
 
     /// Clears all open documents and returns to the placeholder state.
@@ -598,6 +622,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             let outcome = try doc.save()
             if outcome.contentChanged { loadActiveDocumentIntoTextView() }
             noteStoryReconciled(doc, outcome)
+            if ChordSource.isFragment(doc.url) { onFragmentNeedsCompose?(doc.url) }
             refreshUI()
         } catch {
             let alert = NSAlert(error: error)
@@ -610,7 +635,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// was reconciled, or its config is broken and only an on-disk compose can
     /// raise the row.
     private func noteStoryReconciled(_ doc: Document, _ outcome: Document.SaveOutcome) {
-        guard doc.url.pathExtension == "story",
+        // `.story` only: a fragment has no identity line to reconcile (ADR-251 D3).
+        guard ChordSource.isStoryFile(doc.url),
               outcome.contentChanged || outcome.brokenConfig != nil else { return }
         onStoryReconciled?(doc.url, doc.content)
     }
@@ -745,9 +771,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             doc.isDirty = true
             refreshUI()
         }
-        if doc.url.pathExtension == "story" {
+        if ChordSource.isStoryFile(doc.url) {
             onStoryEdited?(doc.url, doc.content)
         }
+        // A fragment edit does not compose (see `onFragmentNeedsCompose`); its
+        // underlines were cleared above and repaint on the next save.
         onDocumentEdited?(doc.url)
     }
 
@@ -835,12 +863,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         applyWordWrap()
     }
 
-    /// Whether the ACTIVE document wraps: `.story` files always do (David's
+    /// Whether the ACTIVE document wraps: Chord source (`.story`, `.chord`) always does (David's
     /// ruling — the story pane wraps, whatever the toggle says; an old stored
     /// preference must not leave prose scrolling sideways); other files follow
     /// the View → Word Wrap preference.
     private var effectiveWrap: Bool {
-        if activeDocument?.url.pathExtension.lowercased() == "story" { return true }
+        if let url = activeDocument?.url, ChordSource.isChordSource(url) { return true }
         return WordWrapPreference.isEnabled
     }
 

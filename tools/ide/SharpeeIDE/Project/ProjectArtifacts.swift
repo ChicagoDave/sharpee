@@ -89,6 +89,9 @@ enum ProjectArtifacts {
     private static let browserDirectory = "browser"
     private static let templatesExtension = "templates"
     private static let storyExtension = "story"
+    /// An imported Chord fragment (ADR-251 D2): authored story source, so it
+    /// belongs in the Story lens wherever it sits on disk (ADR-280 D1; GH #287).
+    private static let fragmentExtension = "chord"
 
     /// The typed groups for `project`, in ADR-280 D1 order.
     ///
@@ -141,7 +144,19 @@ enum ProjectArtifacts {
                     }
                 }
             case .unclassified:
-                other.append(node)
+                // A folder the lens does not name may still hold story source:
+                // `import "regions/harbor"` → `regions/harbor.chord` (ADR-251 D2).
+                // Its fragments lift into Story (ADR-280 D1: a typed lens, not a
+                // folder mirror); the folder itself stays in Other only while it
+                // holds something that is not a fragment, so nothing is dropped
+                // and a fragments-only folder is not listed twice (GH #287).
+                if node.isDirectory {
+                    let (fragments, holdsOther) = fragmentsBeneath(node)
+                    story.append(contentsOf: fragments)
+                    if holdsOther || fragments.isEmpty { other.append(node) }
+                } else {
+                    other.append(node)
+                }
             }
         }
 
@@ -180,7 +195,8 @@ enum ProjectArtifacts {
             default: return .unclassified
             }
         }
-        if node.url.pathExtension == storyExtension { return .story }
+        if node.url.pathExtension == storyExtension
+            || node.url.pathExtension == fragmentExtension { return .story }
         // The layout file is story-named (ADR-286 Q-2: one `<storyId>.templates`
         // per story, beside the `.story` file).
         if node.url.pathExtension == templatesExtension,
@@ -188,6 +204,26 @@ enum ProjectArtifacts {
             return .webTemplate
         }
         return .unclassified
+    }
+
+    /// Every `.chord` file beneath `directory`, at any depth, plus whether the
+    /// tree holds anything that is not a fragment (a file of another kind; an
+    /// empty subfolder counts as nothing).
+    private static func fragmentsBeneath(_ directory: FileNode) -> (fragments: [FileNode], holdsOther: Bool) {
+        var fragments: [FileNode] = []
+        var holdsOther = false
+        for child in directory.children {
+            if child.isDirectory {
+                let nested = fragmentsBeneath(child)
+                fragments.append(contentsOf: nested.fragments)
+                holdsOther = holdsOther || nested.holdsOther
+            } else if child.url.pathExtension == fragmentExtension {
+                fragments.append(child)
+            } else {
+                holdsOther = true
+            }
+        }
+        return (fragments, holdsOther)
     }
 
     /// The two `browser/` escape hatches ADR-280 D1 folds into Web Template: the

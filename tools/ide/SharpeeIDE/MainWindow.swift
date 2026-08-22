@@ -885,6 +885,17 @@ private final class MainSplitViewController: NSSplitViewController {
             // the row only exists on an on-disk run (ADR-309 D5).
             self?.composeScheduler.composeNow(storyURL: url, content: content)
         }
+        editorViewController.onFragmentNeedsCompose = { [weak self] fragmentURL in
+            // A fragment compiles only through its importing story (ADR-251):
+            // recompose the open story from DISK, which is where the compiler
+            // reads fragments from. Fragment records come back naming the
+            // fragment (`Span.file`), so they underline in its tab.
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            let storyDir = storyURL.deletingLastPathComponent().standardizedFileURL.path
+            guard fragmentURL.standardizedFileURL.path.hasPrefix(storyDir + "/"),
+                  let content = try? String(contentsOf: storyURL, encoding: .utf8) else { return }
+            self.composeScheduler.composeNow(storyURL: storyURL, content: content)
+        }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
             // ruling): any edited document inside the open story's folder means
