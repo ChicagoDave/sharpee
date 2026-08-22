@@ -89,14 +89,20 @@ Teisha's material is as complete as it can be until David writes the two greetin
 - `docs/work/secret-letter-port/plan.md` — Phase 6 marked CURRENT.
 - `docs/proposals/secret-letter-port.md` — the IFID decision under P-10.
 
+## Commits (local, on `feat/adr-321-world-index`)
+- `8655282b` — build Chapter 1's market, answer the P-8 spike
+- `42252923` — Teisha's calm-walk conversation, Chapter 1 test-covered
+- `8df83708` — furnish the fruit stall
+- `eda17f70` — list every deviation from Gentry's words in the story header
+
 ## Notes
 Autonomous session — David went to bed after approving Phase 6 with "get as much done as you can."
 
 ---
 
 ## Session Metadata
-- **Status**: IN PROGRESS
-- **Blocker**: None. Two items need David's ruling but neither blocks the next increment.
+- **Status**: COMPLETE — the session's own goals are met. Phase 6 remains CURRENT and partial by design: Chapter 1's world, the P-8 layer, Teisha's calm conversation, and the fruit stall are built and test-covered; the theft mechanism, the `ST` tree, and the chase are not.
+- **Blocker**: None blocking. Three of the next increments want David first — the calm-theft success line, how the source's one generic stallkeeper tree maps onto Chord's per-character `define topics`, and the route-clause ruling.
 - **Rollback Safety**: safe — no platform code touched; all changes are story content and planning docs.
 
 ## Dependency/Prerequisite Check
