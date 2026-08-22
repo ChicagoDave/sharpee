@@ -123,3 +123,69 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
     expect(d.span.line).toBe(7); //             the import line in the MAIN file
   });
 });
+
+describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment file (GH #301)', () => {
+  /** Fragment whose room fires an undefined phrase at its line 6 — an ANALYZER error, raised post-splice. */
+  const fragment = [
+    'create the Market', //      1
+    '  a room', //               2
+    '', //                       3
+    '  Stalls.', //              4
+    '', //                       5
+    '  after entering it', //    6
+    '    phrase no-such-key', // 7
+    '  end after', //            8
+    '',
+  ].join('\n');
+  const resolver: Resolver = (name) => (name === 'regions/market.chord' ? fragment : null);
+
+  it('an analyzer diagnostic inside a fragment names the fragment file and its own line', () => {
+    const diags = errorsOf(mainWith('import "regions/market"'), resolver);
+    const missing = diags.find((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toBeDefined();
+    expect(missing!.span.file).toBe('regions/market.chord');
+    expect(missing!.span.line).toBe(7);
+  });
+
+  it('in one compile, the fragment error names the fragment and the main-file error names no file', () => {
+    // Main story with its OWN missing phrase at line 13 of the main file.
+    const main = [
+      'story', //                 1
+      '  id: x', //               2
+      '  title: X', //            3
+      '  authors:', //            4
+      '    N', //                 5
+      '', //                      6
+      'import "regions/market"', // 7
+      '', //                      8
+      'create the player', //     9
+      '  a person', //           10
+      '', //                     11
+      '  You.', //               12
+      '', //                     13
+      '  after entering it', //  14
+      '    phrase main-missing', // 15
+      '  end after', //          16
+      '',
+    ].join('\n');
+    const missing = errorsOf(main, resolver).filter((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toHaveLength(2);
+    const inFragment = missing.find((d) => d.message.includes('no-such-key'));
+    const inMain = missing.find((d) => d.message.includes('main-missing'));
+    expect(inFragment?.span).toMatchObject({ file: 'regions/market.chord', line: 7 });
+    expect(inMain?.span.file).toBeUndefined();
+    expect(inMain?.span.line).toBe(15);
+  });
+
+  it('a fragment PARSE diagnostic also carries the fragment file', () => {
+    const broken: Resolver = (name) => (name === 'bad.chord' ? 'xyzzy not a declaration\n' : null);
+    const content = byCode(mainWith('import "bad"'), broken)['analysis.import-fragment-content'];
+    expect(content.span.file).toBe('bad.chord');
+  });
+
+  it('the unresolved-import diagnostic stays on the main file (no file on its span)', () => {
+    const d = byCode(mainWith('import "nowhere"'), () => null)['analysis.import-unresolved'];
+    expect(d.span.file).toBeUndefined();
+    expect(d.span.line).toBe(7);
+  });
+});

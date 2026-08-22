@@ -8,8 +8,19 @@
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
 
-/** A half-open region of `.story` source. Lines and columns are 1-based. */
+/**
+ * A half-open region of story source. Lines and columns are 1-based.
+ *
+ * `file` names the source file when it is NOT the file handed to
+ * `compile()`: an imported fragment's spans carry the import path as the
+ * author wrote it plus `.chord` (`regions/harbor.chord`), relative to the
+ * main file's directory — the same string the import resolver receives.
+ * Absent means the main file. It is stamped at splice time, never by the
+ * lexer or parser (ADR-251 D6, amended 2026-08-22).
+ */
 export interface Span {
+  /** Source file, relative to the main file's directory; absent = the main file. */
+  file?: string;
   /** 1-based line of the first character. */
   line: number;
   /** 1-based column of the first character. */
@@ -30,11 +41,17 @@ export function spanOf(line: number, column: number, length = 1): Span {
   return { line, column, endLine: line, endColumn: column + length };
 }
 
-/** The smallest span covering both `a` and `b`. */
+/**
+ * The smallest span covering both `a` and `b`.
+ * Invariant: only meaningful when both spans share a `file` (the analyzer
+ * merges within one declaration, so this holds by construction); the
+ * result carries `a`'s file.
+ */
 export function mergeSpans(a: Span, b: Span): Span {
   const startFirst = a.line < b.line || (a.line === b.line && a.column <= b.column) ? a : b;
   const endLast = a.endLine > b.endLine || (a.endLine === b.endLine && a.endColumn >= b.endColumn) ? a : b;
   return {
+    ...(a.file !== undefined ? { file: a.file } : {}),
     line: startFirst.line,
     column: startFirst.column,
     endLine: endLast.endLine,

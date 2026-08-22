@@ -1,6 +1,6 @@
 # ADR-251: Chord generalized `import` — multi-file story sources
 
-## Status: ACCEPTED + IMPLEMENTED (2026-07-21 — all five decisions ruled by David directly, session eb743f: story block main-file-only; imports carry complete declarations only, no partials; `.chord` extension assumed; no nested imports; single bare `import "<file>"` folding `import phrasebook`; compiler appends `.chord`, resolver stays dumb. No Open Questions. adr-review 13/15 same-session → both FAILs closed by the `## Acceptance` worked-example section added before the flip. Supersedes ADR-250 D2 in part; ADR-250 carries a supersession pointer here. IMPLEMENTED same session via `docs/work/adr-251-generalized-import/plan.md` Phases 1–4, David-gated per phase: chord parser/AST/splice/diagnostics + devkit fs resolver + browser inline-bundle resolver; regression green — chord 452, devkit 45, dungeo `--browser` clean, fernhill 496/496. One correction folded back mid-implementation: the "both hosts already wire `importResolver`" claim in Consequences was false — neither did; both were wired in Phases 2–3.)
+## Status: ACCEPTED + IMPLEMENTED (2026-07-21 — all five decisions ruled by David directly, session eb743f: story block main-file-only; imports carry complete declarations only, no partials; `.chord` extension assumed; no nested imports; single bare `import "<file>"` folding `import phrasebook`; compiler appends `.chord`, resolver stays dumb. No Open Questions. adr-review 13/15 same-session → both FAILs closed by the `## Acceptance` worked-example section added before the flip. Supersedes ADR-250 D2 in part; ADR-250 carries a supersession pointer here. IMPLEMENTED same session via `docs/work/adr-251-generalized-import/plan.md` Phases 1–4, David-gated per phase: chord parser/AST/splice/diagnostics + devkit fs resolver + browser inline-bundle resolver; regression green — chord 452, devkit 45, dungeo `--browser` clean, fernhill 496/496. One correction folded back mid-implementation: the "both hosts already wire `importResolver`" claim in Consequences was false — neither did; both were wired in Phases 2–3. **Amended 2026-08-22 (session 2fa584, David): D6's span contract gains `Span.file` — see D6 amendment and the Consequences entry; implementation owned by `docs/work/tier-2-import-seam/plan.md` Phase 2, GH #301.**)
 
 ## Date: 2026-07-21
 
@@ -143,10 +143,45 @@ main file lists its imports, and that list is the whole graph.
 | `analysis.import-fragment-nested` | fragment contains an `import` line | error |
 | `analysis.import-fragment-content` | fragment contains anything but complete story declarations + comments | error |
 
-Cross-file span attribution keeps ADR-250's approach: fragment
+~~Cross-file span attribution keeps ADR-250's approach: fragment
 diagnostics prefix the message with `[<name>.chord]` and carry the
 fragment's own span; the unresolved-import diagnostic carries the import
-line's span in the main file.
+line's span in the main file.~~
+
+**Amended 2026-08-22 (David, session 2fa584; GH #301).** The original
+text held only for the diagnostics `resolveImports` raises itself. After
+the splice (D4) a fragment's declarations join the main AST carrying
+fragment-relative spans with no file identity, so every *analyzer*
+diagnostic on a spliced declaration was reported as a main-file line —
+measured: twenty `analysis.phrase-overlap` errors from one fragment, all
+pointing at innocent lines of `secret-letter.story`. The span contract
+is now:
+
+- **`Span` carries an optional `file?: string`.** Absent means "the file
+  handed to `compile()`" — the main `.story`. A single-file story never
+  sets it; nothing in the lexer or parser changes.
+- **`file` holds the import path as the author wrote it, plus
+  `.chord`** — `import "grubbers-market"` → `grubbers-market.chord`,
+  `import "regions/harbor"` → `regions/harbor.chord`. It is the same
+  string the compiler hands the `importResolver` (D2), relative to the
+  main file's directory; never an absolute path.
+- **Populated at splice time, in `resolveImports`, and only there.**
+  `parseStory` stays file-agnostic. After parsing a fragment, the splice
+  stamps `file` onto every span in the fragment's AST (declarations and
+  their nested nodes) and onto every diagnostic the fragment's parse
+  raised, then pushes the declarations. The analyzer runs after and
+  inherits correct attribution with no cross-file special case. This
+  composes with any future nesting (see D5 / GH #302): an inner fragment
+  is stamped with its own name at its own splice.
+- **The `[<name>.chord]` message prefix stays** as the human-readable
+  half of the same fact; hosts should render the site from `span.file`,
+  not parse the prefix.
+- **Invariant:** `mergeSpans` is only meaningful for two spans with the
+  same `file`; the merged span carries the first span's `file`. The
+  analyzer only merges within one declaration, so this holds by
+  construction.
+- The unresolved-import diagnostic still carries the import line's span
+  in the main file (`file` absent).
 
 ## Acceptance
 
@@ -223,6 +258,14 @@ extension dropped from the import string.
   `sharpee compose`/devkit and a bundle-map resolver for the browser
   (plan Phases 2–3), not no-op verification. Neither needs recursion (D5);
   each resolves a `.chord` name the compiler hands it.
+- **Hosts resolve the site as `span.file ?? <main file>`** (D6
+  amendment, 2026-08-22). `sharpee compose` stamps every compile
+  diagnostic with the main story's path today
+  (`packages/devkit/src/commands/compose.ts`); it must read `span.file`
+  first so its `file:line:col` stderr line and the IDE's
+  `ComposeDiagnostic.file` (already on the wire) name the fragment.
+  Chord Writer then opens the right file at the right line with no
+  IDE-side change beyond honoring a `.chord` path (GH #287).
 - This ADR **decides language + compile semantics only**. It authorizes
   no implementation — a separate plan, gated on David's go-ahead, owns
   the code change, the `import phrasebook` migration audit, and the E2E
@@ -235,3 +278,8 @@ from David's five rulings in conversation (D1–D6), no interview skill
 run — every open question ADR-245 parked was resolved in the same
 session. Follows ADR-247's completion (session 99aee6) as the next parked
 Open Item taken up.
+
+D6 amendment: session 2fa584 (2026-08-22, branch
+feat/adr-321-world-index), ruled by David in conversation from the
+measured #301 evidence; implementation is Phase 2 of
+`docs/work/tier-2-import-seam/plan.md`.

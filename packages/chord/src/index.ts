@@ -106,8 +106,11 @@ export function compile(source: string, options?: CompileOptions): CompileResult
  * additionally raises `analysis.import-fragment-content` at the import site,
  * beside the granular fragment parse errors. Processed imports are removed
  * from the AST either way, so the analyzer never double-reports. Fragment
- * diagnostics are re-reported with the fragment name prefixed, since spans
- * are file-relative.
+ * diagnostics are re-reported with the fragment name prefixed, and every
+ * span in the fragment — its diagnostics and every node of its AST — is
+ * stamped with the fragment's file (D6 as amended 2026-08-22), so analyzer
+ * diagnostics raised later on spliced declarations name the fragment
+ * instead of an innocent main-file line.
  */
 function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag: DiagnosticBag): void {
   if (!ast.declarations.some((d) => d.kind === 'import')) return;
@@ -132,6 +135,11 @@ function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag
     }
     const fragBag = new DiagnosticBag();
     const fragAst = parseStory(text, fragBag);
+    // Stamp the fragment's file onto every span — the AST's and its parse
+    // diagnostics' (the latter in place, so the content diagnostic below,
+    // anchored on the first of them, carries the file too).
+    stampSpanFile(fragAst, fragmentName);
+    stampSpanFile(fragBag.all(), fragmentName);
     for (const d of fragBag.all()) {
       // Fragment spans are relative to the fragment file — prefix the name.
       bag[d.severity === 'error' ? 'error' : 'warning'](d.code, `[${fragmentName}] ${d.message}`, d.span);
@@ -158,4 +166,35 @@ function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag
     }
   }
   ast.declarations = resolved;
+}
+
+/**
+ * Stamp `file` onto every span reachable from `node` that does not already
+ * carry one. Spans are recognized structurally (`line`/`column`/`endLine`/
+ * `endColumn` numbers), so every AST node kind is covered without
+ * enumerating them. Leaving an existing `file` untouched is what lets an
+ * inner splice keep its own attribution if imports ever nest.
+ */
+function stampSpanFile(node: unknown, file: string, seen = new Set<object>()): void {
+  if (node === null || typeof node !== 'object' || seen.has(node)) return;
+  seen.add(node);
+  if (Array.isArray(node)) {
+    for (const item of node) stampSpanFile(item, file, seen);
+    return;
+  }
+  const record = node as Record<string, unknown>;
+  if (isSpanLike(record)) {
+    if (record.file === undefined) record.file = file;
+    return;
+  }
+  for (const value of Object.values(record)) stampSpanFile(value, file, seen);
+}
+
+function isSpanLike(record: Record<string, unknown>): boolean {
+  return (
+    typeof record.line === 'number' &&
+    typeof record.column === 'number' &&
+    typeof record.endLine === 'number' &&
+    typeof record.endColumn === 'number'
+  );
 }
