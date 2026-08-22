@@ -1,0 +1,577 @@
+## ---------------------------------------------------------------------------
+## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)
+##
+## Nine quips (`ST1`-`ST9`, `story.ni:1881-1935`) that every stallkeeper in
+## Grubber's speaks. In the source they hang off `Rule for initiating
+## conversation with a stallkeeper`, so the tree belongs to the KIND, not to a
+## character — which is what makes it worth carrying whole (change document,
+## "The stallkeeper tree"): nine quips of texture that apply everywhere the walk
+## goes, at no per-character authoring cost.
+##
+## WHY THIS IS ITS OWN FILE. Chord binds a conversation to an entity —
+## `define topics for <entity>` needs a person and takes exactly one owner
+## (`packages/chord/src/analyzer.ts:1509, 1520`), and `define greetings` and
+## `define exchange` are owner-bound the same way. A tree shared by ten
+## characters therefore has no shared home: it is ten near-identical blocks
+## around one set of shared phrases. The PROSE cost is still zero, which is what
+## the change document promised — but the structural cost is real, and it is
+## recorded as watch-list item W-8 rather than hidden here.
+##
+## WHAT THE REWRITE CHANGED, and what it did not:
+##
+##   * Gentry's menu becomes topics. `ST2`/`ST3`/`ST4` are menu choices in 2009;
+##     here they are things Jack can ask about, because Chord is a parser game
+##     and a menu is not the idiom. The words spoken are unchanged.
+##   * `ST5`'s "You have any coin?" becomes a `define exchange` — the one place
+##     the source's shape survives literally, since `ST6`/`ST7`/`ST8` really are
+##     a yes/no/never-mind question.
+##   * The patience counter (`story.ni:1937-1949`) becomes the `asked again` and
+##     `asked many times` greeting arms — but it counts a different thing, and
+##     the difference is measured, not assumed (driven through `sharpee play`,
+##     2026-08-22). The source counts APPROACHES: every `talk to` bumps it, and
+##     moving to another stall resets it. Chord counts TOPIC ASKS, cumulatively
+##     and forever, and the arm is only consulted when a conversation scene
+##     REOPENS — a second `talk to` inside a live scene answers "doesn't
+##     respond", and the scene stays live for several turns after the player
+##     walks away. So a stallkeeper you pestered stays exasperated when you come
+##     back much later, where Gentry's cooled off the moment you moved on. The
+##     lines are his either way; only the trigger differs.
+##   * `ST9`'s good-bye is authored on the `on leaving` arm and is CURRENTLY
+##     UNREACHABLE (checked the same way, and then in the source): the arm means
+##     "when this character walks out on YOU" — both its consumers key on the
+##     NPC's own `leave` statement — and the parser has no `goodbye`/`bye` verb
+##     for the other direction. Filed as GH #300. The line stays here because
+##     the arm is the right home for it the day a farewell exists; nothing else
+##     depends on it.
+##   * `After populating ST1` removes already-fired options from the menu.
+##     That is menu bookkeeping with no parser analogue, so it is not carried;
+##     re-asking simply replays the answer.
+##
+## THE MERCENARIES ARE ALREADY IN THE MARKET during the calm walk — they are
+## just not hunting Jack yet. That is what makes `ST3` the quip the change
+## document says it is, the one that lets Jack learn about them BEFORE they are
+## looking for her, and it is why the stallkeeper's own description ("Armed
+## thugs stomping around...") reads correctly here without a calm variant. The
+## refusals that gate this tree once they start sweeping (`story.ni:1875-1879`)
+## belong with the chase and are not built here.
+##
+## Every line below is Gentry's, carried from `story.ni:1841-1949`.
+## ---------------------------------------------------------------------------
+
+create the grocer
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, grocer, greengrocer
+  pronouns he
+  mood nervous
+  in the Grocery Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the grocer
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the grocer
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-grocer
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-grocer
+end topics
+
+define exchange st-coin-grocer for the grocer
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the fruit stallkeeper
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, fruit seller, fruit vendor, fruiterer
+  pronouns he
+  mood nervous
+  in the Fruit Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the fruit stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the fruit stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-fruit
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-fruit
+end topics
+
+define exchange st-coin-fruit for the fruit stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the hat stallkeeper
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, milliner, hatter, hat seller
+  pronouns he
+  mood nervous
+  in the Hat Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the hat stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the hat stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-hat
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-hat
+end topics
+
+define exchange st-coin-hat for the hat stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the leather stallkeeper
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, leatherworker, leather seller, tanner
+  pronouns he
+  mood nervous
+  in the Leather Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the leather stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the leather stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-leather
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-leather
+end topics
+
+define exchange st-coin-leather for the leather stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the weaponsmith
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, smith, armorer, armourer, weapon seller
+  pronouns he
+  mood nervous
+  in the Weaponsmith's Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the weaponsmith
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the weaponsmith
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-weaponsmith
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-weaponsmith
+end topics
+
+define exchange st-coin-weaponsmith for the weaponsmith
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the gems stallkeeper
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, jeweler, jeweller, gem merchant, gem seller
+  pronouns he
+  mood nervous
+  in the Exotic Gems Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the gems stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the gems stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-gems
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-gems
+end topics
+
+define exchange st-coin-gems for the gems stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the herbalist
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, herb seller, herbwife
+  pronouns he
+  mood nervous
+  in the Herb Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the herbalist
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the herbalist
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-herb
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-herb
+end topics
+
+define exchange st-coin-herb for the herbalist
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the rope dealer
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, ropemaker, rope seller
+  pronouns he
+  mood nervous
+  in the Rope Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the rope dealer
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the rope dealer
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-rope
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-rope
+end topics
+
+define exchange st-coin-rope for the rope dealer
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the candlemaker
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, chandler, candle seller
+  pronouns he
+  mood nervous
+  in the Candlemaker's Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the candlemaker
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the candlemaker
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-candle
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-candle
+end topics
+
+define exchange st-coin-candle for the candlemaker
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the pottery stallkeeper
+  a person
+  aka stallkeeper, stall keeper, merchant, seller, vendor, potter, pot seller
+  pronouns he
+  mood nervous
+  in the Pottery Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the pottery stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the pottery stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-pottery
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-pottery
+end topics
+
+define exchange st-coin-pottery for the pottery stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+## The nine quips, shared by all ten stallkeepers. `ST1`-`ST9` in file order.
+
+define phrase st-opener
+  'What do you want?' snaps the stallkeeper.
+end phrase
+
+define phrase st-for-sale
+  'So, what are you selling today?' you ask, trying to sound casual.
+
+  The merchant sneers at you. 'You have any coin?'
+end phrase
+
+define phrase st-mercenaries
+  'You know anything about these mercenaries running around Grubber's?' you ask.
+
+  'Only that they're bad for business,' mutters the stallkeeper. 'I don't know
+  who hired them, but the Lord's Guard ought to run them off.'
+end phrase
+
+define phrase st-buy
+  'I'd like one of those, please,' you say, pointing.
+
+  The merchant sneers at you. 'You have any coin?'
+end phrase
+
+define phrase st-coin-yes
+  'Yes,' you respond indignantly, 'and lots of it.'
+
+  The stallkeeper snorts derisively. 'If you've half a penny that isn't stolen
+  from somewhere, I'll sell my stall to the monkey. Now go bother someone else
+  before I call those mercenaries over here myself!'
+end phrase
+
+define phrase st-coin-no
+  'Um, no,' you say.
+
+  The stallkeeper rolls his eyes. 'Do I look like I have time to gab at you all
+  day? Beat it, kid.'
+end phrase
+
+define phrase st-nevermind
+  'Uh, never mind.'
+
+  'Whatever,' the stallkeeper mutters, and goes back to nervously scanning the
+  crowd.
+end phrase
+
+define phrase st-goodbye
+  'Yeah, fine, scram,' the stallkeeper mutters.
+end phrase
+
+## The patience counter. The third-approach line is Gentry's `[one of]beat it
+## [or]scram[or]get out of here[at random]`, expanded to three variants because
+## Chord randomises whole phrase arms rather than words inside one.
+
+define phrase st-patience-second
+  The stallkeeper suddenly looks exasperated. 'Didn't I tell you to take it
+  somewhere else?'
+end phrase
+
+define phrase st-patience-third, randomly
+  'I said, beat it!' the stallkeeper yells.
+or
+  'I said, scram!' the stallkeeper yells.
+or
+  'I said, get out of here!' the stallkeeper yells.
+end phrase

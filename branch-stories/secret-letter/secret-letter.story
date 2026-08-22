@@ -26,6 +26,12 @@
 ##   4. Teisha's five repeat prefixes are Gentry's five, but fixed one per quip
 ##      instead of drawn at random, because Chord does not interpolate a phrase
 ##      inside another phrase's body (GH #286).
+##   5. `st-patience-third` in `stallkeepers.chord` expands Gentry's `[one of]
+##      beat it[or]scram[or]get out of here[at random]` into three whole-phrase
+##      variants, because Chord randomises phrase arms rather than words inside
+##      one. Same three words, same odds. (Two quips are also FOLDED in that
+##      file — `ST2`+`ST5` and `ST4`+`ST5` become one phrase each — but the
+##      source always plays them in that order, so no word changes.)
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
 ## `(PLACEHOLDER — David's line …)`.
@@ -54,6 +60,10 @@ story
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
 
 import "peering"
+
+## The market's ambient conversation: ten stallkeepers sharing the `ST` tree.
+
+import "stallkeepers"
 
 ## ---------------------------------------------------------------------------
 ## THE MARKET
@@ -507,7 +517,7 @@ end phrase
 
 create the display of apples
   aka apples, apple display
-  scenery, plural
+  scenery, a supporter, plural
   in the Fruit Stall
 
   These don't look half bad. If you hadn't stumbled into so much trouble, you'd
@@ -548,8 +558,18 @@ create the display of bananas
 create the apple
   aka round, firm, green apple
   edible
+  on the display of apples
 
   The apple is round, firm, green at the bottom shading up to red near the stem.
+
+  after taking it while calm, once
+    phrase apple-lifted-quietly
+  end after
+
+  on eating it
+    refuse when the player is not in the Alley: apple-not-here
+    phrase apple-first-bite
+  end on
 
 create the banana
   aka kozarian banana, yellow banana
@@ -573,3 +593,83 @@ create the cluster of brambleberries
   edible
 
   The thumb-sized cluster is shiny and bluish-black.
+
+## ---------------------------------------------------------------------------
+## THE APPLE AND THE ALLEY
+##
+## The walk's exit condition (change document, "What ends the walk"). Jack
+## steals the apple, wants to eat it, and cannot eat it in the open; the refusal
+## points her northwest, where the Alley advertises itself through the peering
+## layer — `distant-alley` in `peering.chord` is Gentry's own line, carried
+## verbatim from `story.ni:1488`, and it is the only one of the fourteen with no
+## route-clause deviation, because he wrote the compass word into the sentence.
+##
+## Theft is situational, not universal (change document, "Theft"): quiet while
+## the market is calm, and the source's noisy rule (`story.ni:1978-1997` — the
+## player is spotted, ejected to a random adjacent room, and the stall is
+## permanently blocked) once the mercenaries are sweeping. Only the calm half is
+## built here; the noisy half belongs with the chase.
+##
+## OPEN — what the walk ends INTO. The change document settles that the first
+## bite ends the walk and that the eavesdrop poisons it. It does not settle what
+## occasion the bite hands off to: the story declares two states, `calm` and
+## `chase`, and the eavesdrop is neither — Jack is not yet being hunted, which
+## is the whole point of the scene. So this file does NOT change state on the
+## bite. That gate waits on David.
+##
+## MECHANISM DEVIATION from the source, recorded here rather than in the story
+## header's list, which covers prose. The source keeps each fruit off-stage and
+## materialises it on theft (`storage bin` with a `corresponding item`,
+## `story.ni:2380-2390`, reached through `Before taking a stall display: try
+## stealing`). That shape does not survive the port: Sharpee's `taking` refuses
+## scenery inside `validate`, before any story hook is consulted
+## (`packages/stdlib/src/actions/standard/taking/taking.ts:112`), so an
+## `on taking` clause on a scenery display can never fire. The apple therefore
+## SITS on the display, which is a scenery supporter, and `take apple` is an
+## ordinary take that the apple's own `after` clause narrates. Same outcome,
+## one fewer indirection — but it means the display cannot gate the theft, so
+## the calm/noisy split rides the story state on the fruit itself.
+## ---------------------------------------------------------------------------
+
+create the wooden crates
+  aka crates, crate, box, boxes, stack, wood, shipping crates
+  a supporter, enterable, plural
+  in the Alley
+
+  Just ordinary wooden crates, used by merchants throughout Miradania to store
+  and ship goods. There are scores more just like these to be found all over the
+  market.
+
+## DAVID: the calm theft. The source has only the noisy message, written for a
+## market already on edge (`story.ni:1990`). The calm lift exists in Gentry's
+## words only as third-person narration inside the deleted opening block —
+## "nicking an apple from the fruit stall while its owner argues with a fat
+## Easterner over local politics" (`story.ni:1469`). Turning that into a line
+## the player is shown at the moment of the theft is a rewrite, so it is yours.
+
+define phrase apple-lifted-quietly
+  (PLACEHOLDER — David's line. The quiet lift, calm market.)
+end phrase
+
+## DAVID: the refusal, and the hardest of the three. The change document
+## requires it be directional — it has to leave the player knowing where would
+## work "without naming a waypoint". The source's only eat-refusal is the chase
+## one, "No time for breakfast right now!" (`story.ni:2417`), which is the wrong
+## occasion and says nothing about where. Gentry's own reason is in the opening
+## block: the alley is "where you can catch a breath from the crowds and enjoy
+## your apple in peace" (`story.ni:1469`).
+
+define phrase apple-not-here
+  (PLACEHOLDER — David's line. Refused in the open; points northwest without
+  naming it.)
+end phrase
+
+## DAVID: the first bite. Two Gentry lines are candidates and either can be
+## carried verbatim if you want it: the generic "Crisp and delicious!"
+## (`story.ni:2419`), or the opening block's "You settle yourself on a crate and
+## take a bite of your apple. Suddenly, from the alley's entrance, you hear
+## voices." (`story.ni:1469`) — which is also where the eavesdrop begins.
+
+define phrase apple-first-bite
+  (PLACEHOLDER — David's line. The first bite, taken in the Alley.)
+end phrase

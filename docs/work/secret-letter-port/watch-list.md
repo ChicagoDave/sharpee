@@ -69,6 +69,17 @@ and needs discussion + likely its own ADR amending ADR-251 D6's span contract �
 probably a `file` field on `Span`, populated at splice time. Do not fix it
 inline as part of the port.
 
+**CONFIRMED at authoring time (2026-08-22)**, without needing a deliberate
+fixture — the first real fragment produced it. Twenty `analysis.phrase-overlap`
+errors raised inside `stallkeepers.chord` were every one of them reported as
+`secret-letter.story:72:5`, `:78:5`, `:118:5` and so on. Those lines exist in
+the main file and are ordinary room text, so the diagnostic does not merely
+lose the file — it points confidently at an innocent line in a different file.
+The prediction above was exact, and the cost is now measured rather than
+estimated: the errors were legible only because the message named the phrase
+keys (`st-for-sale`, `st-coin-question`), which happened to be unique to the
+fragment. A duplicate-id or undefined-reference error carries no such tell.
+
 ## W-2: `import` has compiler coverage and zero author coverage
 
 **Watch**: everything about using imports for real.
@@ -157,6 +168,39 @@ size, it degrades after the pattern is already committed.
 
 **How to check**: note the rewrite time and the resulting Chord line count per
 tree as trees are converted, so a per-tree cost is known before the bulk pass.
+
+## W-8: A conversation shared by many characters has no shared owner
+
+**Watch**: what it costs to author one conversation tree that several NPCs
+speak, as against one tree per NPC.
+
+**Finding (verified 2026-08-22, building the `ST` tree)**: Chord binds a
+conversation to a single entity. `define topics for <entity>` requires a person
+and takes exactly one owner (`packages/chord/src/analyzer.ts:1509, 1520`), and
+`define greetings` and `define exchange` are owner-bound the same way. There is
+no kind, trait, or class the tree can hang off — which is precisely how the
+source expresses it (`Rule for initiating conversation with a stallkeeper`,
+`story.ni:1881`, over `A stallkeeper is a kind of person`).
+
+**Measured cost**: the `ST` tree is 9 quips spoken by 10 characters. In Chord
+that is 10 near-identical `create` + `greetings` + `topics` + `exchange`
+groups — about 460 lines — around 11 shared phrases of about 60 lines. The
+PROSE cost really is zero, which is what the change document promised; the
+structural cost is roughly 8:1 boilerplate to content, and it is the kind of
+duplication that silently rots when one copy is edited.
+
+**Why it bites at scale**: `ST` is the smallest instance in the port. Any later
+ambient tree — guards, ballgoers, street crowd — multiplies the same way, and
+the port has 23 trees to place across 47 NPCs.
+
+**How to check**: as each remaining tree lands, record whether it has one owner
+or many, and the ratio of per-owner boilerplate to shared phrase text.
+
+**If it stays uncomfortable**: this is a platform/language change
+(`packages/chord`) and needs discussion plus its own ADR — the shape would be
+an owner list or a kind-bound conversation. Do not build it as part of the
+port. Note the workaround costs nothing at runtime; it costs at authoring and
+at edit time only.
 
 ## Recording results
 

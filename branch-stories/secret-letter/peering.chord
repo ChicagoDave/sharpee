@@ -57,6 +57,7 @@ define action peering
 
   phrase distant-northwest-junction when the direction is waySE and the player is in the Alley
 
+  phrase distant-alley when the direction is wayNW and the player is in the Northwest Junction
   phrase distant-herb-stall when the direction is wayS and the player is in the Northwest Junction
   phrase distant-candle-stall when the direction is wayE and the player is in the Northwest Junction
   phrase distant-rope-stall when the direction is waySE and the player is in the Northwest Junction
@@ -207,6 +208,10 @@ end phrase
 
 define phrase distant-eastern-junction
   There is a relatively open space at the market's eastern edge.
+end phrase
+
+define phrase distant-alley
+  The entrance to a narrow alley lies northwest.
 end phrase
 
 define phrase distant-silk-tent-outside
