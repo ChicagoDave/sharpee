@@ -31,7 +31,7 @@ The spike ran against Chapter 1's rooms and is now implemented (~190 lines).
 - **A `define trait` cannot hold the text** — trait data types are `entity`, `number`, `name`, `flag` (`parser.ts:3360`); there is no text-valued field.
 - **A phrase key wins by elimination**, and it must be a story-level named phrase rather than a per-room `phrase distant:` override: an override does register `<room-id>.distant`, but `phrase` statements take a **static** key (`parser.ts:6366`), so nothing can say "emit that room's distant phrase." The dispatch has to name every pair.
 - Shape shipped: one `define action peering` with a `directions` block, fourteen target-room phrases (nine with the source's three random variants), and one `phrase … when the direction is … and the player is in …` line per pair. Flat, greppable, fully name-checked by the analyzer.
-- **GH #285 filed.** A `directions` block whose canonicals are **compass words** binds a value that never compares equal, so every `when the direction is …` is silently false — no diagnostic, at compile time or run time, while the analyzer positively validates the lowercase canonical. `{the direction}` interpolates `NORTHEAST`, which is the tell. `stories/nautical` misses it because its direction words (`port`/`starboard`/`fore`/`aft`) are not compass words. Workaround in use: non-compass canonicals (`wayNE`) with the compass words as aliases.
+- **GH #285 and GH #286 filed** (details under Open Items). #285 first: A `directions` block whose canonicals are **compass words** binds a value that never compares equal, so every `when the direction is …` is silently false — no diagnostic, at compile time or run time, while the analyzer positively validates the lowercase canonical. `{the direction}` interpolates `NORTHEAST`, which is the tell. `stories/nautical` misses it because its direction words (`port`/`starboard`/`fore`/`aft`) are not compass words. Workaround in use: non-compass canonicals (`wayNE`) with the compass words as aliases.
 
 ### Teisha's calm conversation — built and passing
 - `create Teisha` with Gentry's description carried verbatim (`story.ni:3110`), the measuring cord, and the four-variant ambient beat (`ATMOS_Teisha`, `story.ni:3122`).
@@ -41,8 +41,13 @@ The spike ran against Chapter 1's rooms and is now implemented (~190 lines).
 ### Second Chord finding: no phrase-in-phrase interpolation
 `{some-phrase-key}` inside a `define phrase` body is **not** resolved — it prints literally. The source's `[rp]` repeat prefix (`story.ni:655`) picks at random from five phrasings, so it wanted to be a shared phrase. Carried inline instead: one of Gentry's five prefixes per quip, so every prefix is his and only the randomness is lost. Noted in the story file beside the section.
 
+### The fruit stall is furnished
+The five `storage bin` displays and their five fruit items, all with Gentry's descriptions carried verbatim (`story.ni:2380-2390`, `2410-2425`). The apple and the banana are created without a location on purpose — nothing places them yet, because the taking-and-stealing mechanism is the next increment, and it is the one the change document's theft decision governs (the apple and the banana share a stall, so a source-faithful noisy theft would block the stall before the monkey puzzle needs its banana).
+
+One correction worth recording: I wrote a banana-display description of my own before finding that Gentry's exists at `story.ni:2390`, and replaced mine with his. Every line of display text in the file is his.
+
 ### Chapter 1 is test-covered
-`secret-letter.tests.json` rewritten from the scaffold's two placeholder cards to **36 cards** — the opening channels, boot, a 22-move walk asserting every one of the seventeen rooms, three `peer` assertions for the P-8 layer, Teisha's description, and five conversation assertions including the first-time/subsequent switch. `./sharpee test branch-stories/secret-letter` runs green against the current platform: **36 cards passing, 38 assertions passing.**
+`secret-letter.tests.json` rewritten from the scaffold's two placeholder cards to **44 cards** — the opening channels, boot, a 22-move walk asserting every one of the seventeen rooms, three `peer` assertions for the P-8 layer, Teisha's description, five conversation assertions including the first-time/subsequent switch, and the fruit stall's five displays. `./sharpee test branch-stories/secret-letter` runs green against the current platform: **44 cards passing, 46 assertions passing.**
 
 ### One grammar bug of my own, found by the tests
 `look the direction` in the peering action's grammar swallowed plain `look`, so the room description was replaced by "Look which way?". The tree document caught it on the boot card. Grammar line removed; `peer <dir>` and `look toward <dir>` remain.
@@ -74,7 +79,8 @@ Teisha's material is as complete as it can be until David writes the two greetin
 - **Dead-end text has no natural home yet.** The source's "nothing that way" lines use the same idea as the distant descriptions, but the P-8 mechanism has no fallback arm: every matching `when` statement emits, and there is no `otherwise` at statement level, so "there is a room that way" and "there is nothing that way" cannot be written as alternatives without enumerating every non-exit pair (~100 lines). Needs a design answer.
 
 ### Long Term
-- GH #285 needs a platform fix; the port runs on the workaround until then.
+- **GH #285** — compass-word `directions` canonicals make every `when the direction is …` silently false. The port runs on the non-compass-canonical workaround until it is fixed.
+- **GH #286** — `{phrase-key}` interpolates in a description body but prints literally inside a `define phrase` body. Verified both ways, gated and ungated. It cost the port the source's shared randomised `[rp]` repeat prefix (`story.ni:655`), which is referenced from hundreds of places across 23 quip trees, so this one will keep costing as Phase 8 proceeds.
 
 ## Files Modified
 - `branch-stories/secret-letter/secret-letter.story` — Chapter 1's world, the player, and the P-8 layer.
@@ -104,4 +110,4 @@ Autonomous session — David went to bed after approving Phase 6 with "get as mu
 - N/A — no side-effect source code written. Story content and documentation only.
 
 ## Test Coverage Delta
-- `secret-letter.tests.json`: 2 scaffold cards → 36 real cards. `./sharpee test branch-stories/secret-letter` — 36 cards passing, 38 assertions passing (run 2026-08-22, against the current platform, no rebuild needed).
+- `secret-letter.tests.json`: 2 scaffold cards → 44 real cards. `./sharpee test branch-stories/secret-letter` — 44 cards passing, 46 assertions passing (run 2026-08-22, against the current platform, no rebuild needed).

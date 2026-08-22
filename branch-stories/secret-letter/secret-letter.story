@@ -684,3 +684,86 @@ end phrase
 define phrase teisha-calm-return
   (PLACEHOLDER — David's line. Teisha's calm-walk return greeting.)
 end phrase
+
+## ---------------------------------------------------------------------------
+## THE FRUIT STALL
+##
+## The stall the apple and the banana both come from — which is why the change
+## document's theft decision matters here ("Theft — calm theft is quiet, chase
+## theft is noisy"): a source-faithful apple theft would block this stall before
+## the monkey puzzle needs its banana.
+##
+## The displays are the source's `storage bin`s (`story.ni:2380-2390`), each
+## with a corresponding item. Descriptions are Gentry's, carried verbatim. The
+## apple and the banana are created without a location: nothing places them yet,
+## because the taking and stealing mechanism is the next increment.
+## ---------------------------------------------------------------------------
+
+create the display of apples
+  aka apples, apple display
+  scenery, plural
+  in the Fruit Stall
+
+  These don't look half bad. If you hadn't stumbled into so much trouble, you'd
+  be eating one right now.
+
+create the display of pears
+  aka pears, pear display
+  scenery, plural
+  in the Fruit Stall
+
+  These vary in color from yellowish-green to dusky orange-brown, with thick,
+  twisty stems.
+
+create the display of kello fruit
+  aka kello, kello fruit, kello display
+  scenery, plural
+  in the Fruit Stall
+
+  Normally you'd kill for a slice of kello, but these look a bit too green. Not
+  quite in season.
+
+create the display of brambleberries
+  aka brambleberries, brambleberry clusters, clusters, berries
+  scenery, plural
+  in the Fruit Stall
+
+  The thumb-sized clusters are shiny and bluish-black. Your mouth waters at the
+  thought of how tart they must be.
+
+create the display of bananas
+  aka bananas, banana display, bushel
+  scenery, plural
+  in the Fruit Stall
+
+  You rarely see bananas this far north. These look just about perfect — plump,
+  bright yellow with just a sprinkling of brown freckles.
+
+create the apple
+  aka round, firm, green apple
+  edible
+
+  The apple is round, firm, green at the bottom shading up to red near the stem.
+
+create the banana
+  aka kozarian banana, yellow banana
+  edible
+
+  The banana is plump, bright yellow with just a sprinkling of brown freckles.
+
+create the pear
+  edible
+
+  The pear is yellowish green with a bit of light brown on the bottom.
+
+create the kello fruit
+  aka green fruit, unripe fruit
+  edible
+
+  It's a little bit too green, but probably still tasty.
+
+create the cluster of brambleberries
+  aka brambleberry cluster, berry cluster
+  edible
+
+  The thumb-sized cluster is shiny and bluish-black.
