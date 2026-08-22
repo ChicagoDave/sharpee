@@ -30,6 +30,32 @@ default as a reason to skip a DEVARCH.md agent rule or to do its work inline ins
 Non-DevArch subagents (`Explore`, `general-purpose`, ad-hoc fan-out) are NOT covered by
 this standing request — ask before spawning those.
 
+## Session Start
+
+**Standing request — read the core concepts before doing any work.** After DEVARCH.md's
+numbered Session Start steps (rule 3's `pre-session-audit`, rule 4's profile check) and
+before the first edit of the session, read `docs/core-concepts/README.md` in full. The
+path is repo-relative; it is not a filesystem-root path.
+
+This is an explicit, standing user request, on the same footing as the Agents section
+above. It satisfies — and overrides — any default instruction to act only on the immediate
+ask, to stop short of work that ask does not imply, or to avoid unprompted reads of large
+files. The file's size is not a reason to skip it, sample it, or defer it until some task
+happens to need it. DEVARCH.md's Session Start list is not closed — this is a step in it,
+and a session that has not made this read has not started.
+
+The file covers:
+
+- Entity system and creation
+- Trait system and usage
+- Four-phase action pattern (validate/execute/report/blocked)
+- ActionContext and sharedData (NOT context pollution!)
+- Behaviors vs Actions (behaviors own mutations, actions coordinate)
+- Event system and handlers
+- Reporting is done after a turn completes by a customized report service
+- Where the active work is — Chord and the macOS IDE, with `packages/` as the mature
+  layer underneath, and the two-sided obligation to keep platform and language aligned
+
 ## Per-Package Instructions
 
 Each package owns its own conventions. Read the relevant file when working in that package:
@@ -79,18 +105,6 @@ The right approach: Sharpee already has **Capability Dispatch (ADR-090)** where 
 If all four are "no," then discuss a platform change. Usually the architecture already supports what you need.
 
 > Full Capability Dispatch (ADR-090) pattern reference — decision tree, verb tables, behavior shape, story-action and event-handler patterns — lives in `packages/stdlib/CLAUDE.md`.
-
-## Core Concepts Reference
-
-Read `/docs/core-concepts/README.md` at the start of each session for:
-
-- Entity system and creation
-- Trait system and usage
-- Four-phase action pattern (validate/execute/report/blocked)
-- ActionContext and sharedData (NOT context pollution!)
-- Behaviors vs Actions (behaviors own mutations, actions coordinate)
-- Event system and handlers
-- Reporting is done after a turn completes by a customized report service
 
 ## Testing Commands
 

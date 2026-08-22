@@ -71,15 +71,211 @@ than translated, and it annexes the opening of the unwritten sequel.
 sequel-title line: `grep -c -i "vedd" source/story.ni` = 1 (`story.ni:12224`). They are a name
 and nothing more — no faction, no character, no prior mention.
 
-### Foreshadowing the Vedd — [open]
+### Foreshadowing the Vedd — RESOLVED (David, 2026-08-21)
 
-David: "we should probably foreshadow the Vedd somehow — TBD, though the idea of Jack reading
-about them and imagining being reborn might be a great thread."
+**Seeded, and diffuse.** David: "I would seed the Vedd mysteries throughout the story...every
+character has some offhand wavy spiritual thing about the Vedd."
 
-Mechanism is **TBD**. Note that seeding the Vedd earlier reverses the near-zero ripple above:
-threading them back through the ported chapters touches existing text throughout.
+### Who the Vedd are — David, 2026-08-22
 
-**[source]** Existing furniture the thread could attach to, all already present:
+**A mystical group of women — witches, in another world's terms — who have real power.**
+Their power is real in-world, not superstition the story winks at.
+
+**And the story never delves into a magic system.** David, explicitly: "though we're never going
+to delve into any magic system." The Vedd's power is asserted and shown exactly once, literally,
+at the coda transformation — never explained, never costed, never given rules. **This is a
+scoping decision as much as a world one:** it forecloses magic mechanics as a work item. No
+platform support, no ADR, no trait or behavior models the Vedd. The coda is authored as a scene,
+not built as a system.
+
+**What they believe — David, 2026-08-22 ("I'm making this up"):** the foundation of Vedd
+mysticism is **the essence of truth — peeling away the layers of life to reveal something's true
+nature.** That single idea runs through the whole of their belief, not one doctrine among
+several.
+
+**They are mysterious and well respected, and widely believed gone.** No one has seen a Vedd in
+hundreds of years; a good part of the population takes them for lost from the world. Respect and
+absence coexist — they are revered the way an old order is revered once it stops being a
+present institution.
+
+### The theology is the story's own thesis
+
+**This is the keystone, and it is worth stating plainly: the Vedd believe exactly what this
+story is about.** Jack's true nature sits under a presented surface. §3c's talent is defined as
+seeing **past the physical** to the real person. §1's core change is that Jack *is* a girl,
+whatever the world reads. And the coda is the literal form of the same act — the layers peeled
+away, the true body revealed. The Vedd's founding principle and the remake's premise are one
+proposition stated twice, once as theology and once as plot.
+
+**So the idiom layer stops being flavor.** Every Vedd idiom in ordinary speech is quietly about
+Jack, whether or not the speaker knows it. The register was already justified as world-building;
+this makes it **foreshadowing carried in diction** — the cheapest and most durable kind, because
+it never announces itself and never costs a scene. It also settles what the idioms should be
+*about*: truth, surface and substance, seeing through, getting down to what a thing really is.
+Not power, not ritual, not prophecy.
+
+**And the absence explains why the idioms survive at all.** An order gone for centuries whose
+language is still in everyone's mouth is a **fossil**: the speech outlived the institution, the
+way people say things about petards and rubicons without knowing what either was. Two useful
+consequences follow. The idioms should feel **worn** — inherited, slightly archaic, used without
+examination. And characters may hold **different attitudes toward the same phrase** — reverent,
+dismissive, superstitious, embarrassed — which supplies per-character texture without needing
+per-character beats, exactly the thing the register was chosen to avoid.
+
+**The coda gains stakes from this.** A prayer circle of the Vedd is not a new faction arriving;
+it is **the return of something the world believed lost**, performing the act their whole belief
+is founded on, on the one person the story has been about. That is a stronger ending than "a
+mystical group transforms Jack," and it is earned entirely by the idiom layer that precedes it.
+
+### Standing rule: the world's properties are axiomatic — David, 2026-08-22
+
+**Nothing about the Vedd or the talent is ever explained.** David: "I've read a ton of fantasy
+stories in my life and one thing you can always count on is that a given world setting has
+properties... we don't need to explain The Vedd or the talent... it's just fundamental to this
+world." The Vedd exist and have power. Some people see past the physical. Both are **givens of
+Miradania**, in the way a fantasy setting's properties are given, and the story states them by
+using them rather than by accounting for them.
+
+**This closes a question rather than answering it.** An earlier draft of this section asked
+whether the talent is a Vedd remnant — the same faculty described twice — and left both readings
+live. **It is not a question the story answers.** Neither reading needs choosing, because
+choosing would mean explaining, and the resemblance can simply stand. Any future session that
+rediscovers the parallel should recognise it as intended texture, not as a loose end.
+
+**It generalises the no-magic-system ruling above.** That decision foreclosed mechanics; this one
+forecloses *exposition* as well, and covers §3c and §3d as much as §2. Concretely, the port
+carries **no** Vedd origin story, cosmology, history, doctrine list, or explanation of how the
+talent is acquired or distributed — and no lore document to hold any of it. That is a real
+scoping win: a whole class of plausible-looking work is ruled out before anyone proposes it.
+
+**Two authoring constraints follow.**
+
+- **No character explains.** A character who accounts for what the Vedd are, or for why some
+  people see truly, breaks the rule however naturally the line reads. The fossil quality of the
+  idioms protects against this by construction: worn phrases used **without examination** are
+  non-explanatory by nature, which is precisely why the register suits the constraint.
+- **The coda does not justify itself.** The transformation happens. It is not earned by a rule,
+  costed by a system, or explained by a Vedd who arrives to describe their order.
+
+**How the player learns anything, then.** By accretion, the way Shadow teaches clockwork: the
+idiom layer carries the culture in ordinary speech, so by the coda the Vedd are familiar without
+ever having been described. This is not a tension with the rule — it is the reason the idiom
+technique was the right mechanism to borrow. Exposition would have been the alternative to it,
+not a supplement to it.
+
+**Why the restraint is worth wanting, not just obeying — David, 2026-08-22:** "it would be
+awesome if people did play this version and there was a call for a Vedd backstory."
+
+That is the success condition for the idiom layer, and it is the reverse of an argument for
+explaining more. Appetite comes from withholding: a reader who has heard the Vedd invoked a
+hundred times in ordinary speech and never once described is the reader who wants the book about
+them. Explaining, at any point, spends exactly the thing this hopes to accumulate.
+
+**And the call already has a title.** The 2009 game's closing line hands off to *The Miradania
+Chronicles, Part 2: **Jacqueline Toresal and the Trials of the Vedd*** (`story.ni:12224`) — the
+sequel David and Gentry laid out and never wrote. So players asking for Vedd backstory would not
+be asking for a supplement to this game; they would be asking for the Part 2 that has been named
+since 2009. Recorded as intent, not as a work item: nothing in this plan builds toward a sequel,
+and P-10's ship target (a public release) is unchanged. It does raise the value of §7's open
+question about whether the sequel notes exist in readable form.
+
+### The mechanism: an idiom layer, not per-character asides
+
+**The Vedd are prominent enough that idioms about them and their magic are woven through the
+whole population's everyday speech.** People swear by them, measure by them, and reach for them
+as figures of speech, the way any real culture's dominant institution leaks into its idiom.
+
+**The model is Textfyre's own** — David: "I'm stealing this concept from *Shadow in the
+Cathedral* where all the NPCs use machinery sayings all the time. In Toresal, people use Vedd
+idioms." David staged that source on 2026-08-22 at
+`docs/references/textfyre/shadow/source/story.ni` (22,301 lines, 1.3 MB — 1.8x Secret Letter),
+so the technique is **verified against the source**, not just described. Four findings, from a
+targeted sweep rather than an exhaustive count:
+
+**1. The technique is idiom substitution: swap the culture's dominant noun into a stock English
+phrase.** The canonical instance is `story.ni:750` — refusing to take a hymnal, the PC says
+**"I don't need one: I know all the hymns by gear."** "By heart" becomes "by gear." The phrase
+carries its ordinary meaning intact; only the noun is local. That is the whole trick, and it is
+the one to copy: a Vedd idiom should be a familiar English phrase with a Vedd noun in it, not a
+new saying the player has to decode.
+
+**2. It lives in narration and response text, not only in NPC dialogue.** `750` is the PC's own
+refusal message, and Shadow runs in first person (`story.ni:~117`, "change the library message
+person to first person"). Also `16778`, the PC narrating: "Like the lowliest ratchet in the
+bottom of a gear-train, I move in darkness." **Consequence for the port:** the Vedd register
+reaches Toresal's response rules — Phase 2 measured **1,192** of them — and not only its 380
+quips. Phase 8's diction pass is correspondingly wider than the conversation trees alone.
+
+**3. The machinery is the state religion, which is why it saturates speech.** `story.ni:3108`:
+a weight on a string is a pendulum, but "once it's put into a clock it is sanctified by the
+clockwork." Clockwork is the sacred order, not merely the local industry. **This is the exact
+structural parallel to the Vedd** and the reason the borrowing works: in both games the
+dominant institution is a mystical one, so its vocabulary leaks into everyday speech as a
+matter of course.
+
+**4. Calibration — the figurative layer is far lighter than the raw counts suggest.** Machinery
+vocabulary is everywhere in Shadow (`gear` 170, `machine` 286, `brass` 198, `clockwork` 118),
+but nearly all of it is **literal**: the game is set in a clockwork world, so those are objects
+and descriptions. Genuine idiom substitutions are rare — the sweep found a small handful across
+22,301 lines, alongside two machinery oaths ("by the clockwork," "by gear"). So "all the NPCs
+use machinery sayings all the time" describes the *impression* the technique creates, not its
+density. **Season lightly.** Over-salting Toresal's dialogue with Vedd idiom would read as
+parody where Shadow reads as a world.
+
+**This supersedes the first reading of "every character has some offhand wavy spiritual thing."**
+The earlier capture read that as a per-character *content beat* — one spiritual remark each,
+authored as a small piece of story. It is not that. It is a **register**: a way everyone talks,
+applied across dialogue as diction, not a set of individual disclosures. A character using a
+Vedd idiom is saying nothing about the Vedd and nothing about themselves, exactly as saying "a
+cog in the machine" is not a statement about machines. David's earlier candidate (Jack reading
+about them and imagining being reborn) is a separate, heavier device and is not this layer.
+
+**Consequence for how much text this touches.** A register reaches further than four characters'
+remarks: eventually it colors most speaking lines, which makes it a diction pass over the quip
+corpus rather than a fixed count of authored insertions. It is also *cheaper per line* than the
+per-character reading — an idiom is a phrase, not a beat — but it is applied in far more places.
+
+**Consequence: the near-zero ripple above is reversed.** Threading the Vedd back through the
+ported chapters touches existing text throughout. It lands mostly in **dialogue**, which makes
+it a concern of the quip-tree to beat-thread rewrite (P-6, plan Phases 7 and 8) rather than of
+room description. **Chapter 1 is in scope**: plan Phase 6's entry state assumed "unseeded likely
+leaves Chapter 1 untouched either way," and that assumption no longer holds.
+
+**Starting set — David, 2026-08-21: "Teisha, Shannon, Bobby, Dame to start."** These four are
+where the idiom register is **first authored**, not four characters who uniquely know about the
+Vedd — under the idiom reading above, everyone speaks this way, so the set is a starting *density*
+and a proving ground, not a guest list. Their four trees are where the port establishes what a
+Vedd idiom sounds like; Phases 7 and 8 spread the register outward from there.
+
+**David writes the idioms — Claude does not** (2026-08-22: "you're the guide and I will provide
+content"). The Gentry's-voice prose clearance granted 2026-08-21 is **withdrawn**: this is a
+public release (P-10), and a credit line naming AI-generated prose in a living author's voice
+would land badly regardless of permission. Claude's role here is structural — the conversion,
+the analysis, the measurements, and the shape David writes into. Idioms are cited to the change
+document wherever that document covers the chapter.
+
+| Character | Where | Quips | Note |
+|---|---|---|---|
+| **Teisha** | Grubber's Market, Teisha's Tent (`story.ni:3110`) | 22 | In the opening market, so the seeding starts in the first scene the player meets. |
+| **Bobby** | Back Alley (`story.ni:5635`) | 23 | The one of the four with no gender sight (`5650`), which makes him the clean test that the idiom is cultural, not perceptive. |
+| **Dame Sandler** | Jewelers shop, Lord's Market (`story.ni:5236`) | 34 | The "Dame" of David's list; the source has exactly one. Largest quip tree of the four. |
+| **Widow Shannon** | Maiden House, the Laundry (`story.ni:6423`) | 16 | |
+
+95 quips across the four, out of the source's 380 — a quarter of the corpus, which is a
+reasonable sample to fix the register against before it reaches the rest.
+
+**The talent/Vedd collision is dissolved, not left open.** An earlier draft of this section
+flagged a worry: three of the four starting characters (Teisha and Dame Sandler per §3d, Shannon
+per §4) already carry the gender sight, while Bobby explicitly does not (`story.ni:5650` — "He
+doesn't even know that you're really a girl"), so putting Vedd remarks on that set looked like it
+might silently fuse two mystical systems. **The idiom reading removes the problem entirely.**
+Idioms are cultural currency available to everyone, so a character using one carries no
+implication about the talent, which §3c fixes as distributed at random and **not** a bloodline.
+Bobby speaks Vedd idiom because everyone does. The two systems never touch at the level of
+speech, and no phase needs to keep them apart by hand.
+
+**[source]** Existing furniture the thread can still attach to, all already present, now
+secondary to the ambient mechanism rather than candidates for carrying it alone:
 
 - **The Library** — `story.ni:9367`: "Tall bookshelves line all four walls, and a chandelier hangs from the high ceiling." Already plot-wired: `story.ni:1278` has an image-changing rule for being in the Library holding the Secret Letter. Four walls of books, none modeled as readable.
 - **Jack's body as an object** — `story.ni:1436-1444`: `your body` is part of the player, with a large part-name synonym list, and a description that currently deflects — "All your parts are where they should be... If you want to know what you look like, just examine yourself or look in a mirror." This is the object a transformation changes, and it is already an `examine` target.
@@ -248,6 +444,41 @@ the rails because they are not.
 
 This is the license every later decision leans on. Without it recorded, a future session hits
 a scene that does not fit and wonders whether cutting it is allowed.
+
+### Authorship split — David, 2026-08-22: "you're the guide and I will provide content"
+
+**The Gentry's-voice prose clearance (2026-08-21) is withdrawn.** Claude writes no prose for
+this port — not dialogue, not Vedd idioms, not the coda, not room text. Claude does the
+structural work: the Chord conversion, the analysis, the measurement, and the shape David writes
+into. David authors every line that ships.
+
+**Why, in David's framing:** this is a public release (P-10), and a credit line reading
+"additional content produced by Claude in Michael Gentry's voice (by permission)" would land as
+a machine wearing a living author's style, with the permission being the part people quote. The
+withdrawal also restores the project's standing default — GenAI stays out of works people
+actually play — of which the 2026-08-21 clearance was the narrow exception.
+
+**The line that matters in practice: conversion is not authoring.** Carrying Gentry's existing
+sentences forward into beats is conversion and stays in scope. Generating new sentences in his
+style does not. Phases 7 and 8 restructure; they do not rewrite.
+
+**How much is actually left to write — measured 2026-08-22 against `source/story.ni`:**
+
+| | Count | |
+|---|---|---|
+| Quip declarations | 380 | 333 plain + 47 `transitional` — reconciles with `INVENTORY.md:209` |
+| Quips carrying display text | 317 | |
+| **Words of Gentry display-text prose** | **20,573** | ~82 pages at 250 w/p — **this carries forward; it is not rewritten** |
+| Quips naming "Jacqueline" | 37 | the per-NPC perception rewrite surface (§3d) — mostly forms of address, not new prose |
+| Maiden House quips (TH/FI/SH) | 55 | §4's rewrite territory |
+
+**The shape this gives the job.** The overwhelming majority of the port's prose is Gentry's,
+already written, and moves across structurally. The genuinely *new* writing is bounded: the
+Vedd idiom layer (light, per §2's calibration), the coda (one scene), the perception-driven
+forms of address across those 37 quips, and whatever the change document adds. That is a
+volume David can write himself without it being a burden — which is what makes the withdrawal
+cheap rather than costly, and lets the credit line read as the ordinary thing: written by
+David Cornelson, based on the game by Michael Gentry.
 
 ## 7. Open TODOs
 
