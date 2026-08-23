@@ -455,18 +455,15 @@ create the wandering mercenaries
     reset recovery
   end when
 
-  on attacking it while it is oblivious
-    refuse merc-dont-provoke
-  end on
-
-  after attacking it
+  on attacking it
+    refuse when it is oblivious: merc-dont-provoke
     phrase merc-break-free when it is aggressive
     phrase merc-shove-off when it is approaching
     change it to approaching
     reset lunge
     reset capture
     start recovery
-  end after
+  end on
 
   on talking it while it is not oblivious
     refuse merc-ignore-pleas
@@ -523,6 +520,15 @@ not survive the pinned tree document and the source's own turn counts:
   and resets every clock. With `, while it is approaching`, a move while they were
   `oblivious` left `search` running in the room she had left, and "There he is!" fired
   from another room. The dash-away line keeps its own `when it is approaching`.
+
+**Amendment 2026-08-23, later the same day (session 55eedf).** The attack reaction is one
+`on attacking` clause, not the `on`+`after` pair the block first shipped with: an `on`
+clause's first phrase becomes the action's message (interceptor `override`), where an
+`after` reaction can only append — so the `after` form let stdlib's "Your attack has no
+effect on the wandering mercenaries." print ahead of the break-free text (the open item
+session 48e73d recorded). Mutations, phrases, and postures are unchanged; the block above
+shows the merged shape. Tree-pinned: the attack card asserts the stdlib line is absent
+(102 cards / 117 assertions passing, 2026-08-23T22:54Z).
 
 ## Non-goals
 

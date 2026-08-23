@@ -149,3 +149,18 @@ stallkeeper talk-refusal increment:
 - **Known seam, carried as-is**: topic asks bypass the gate (the source gated only the
   conversation opening); David to rule on whether asks should share it.
 - Session checkpoint (rule 16, ~17:40): on track, no drift, no orphans.
+
+---
+
+## Progressive update — second Phase 6 increment (18:00 CDT)
+
+Closed the 48e73d open item (stdlib "Your attack has no effect…" printing ahead of the
+break-free text) at story level: the attack reaction is now ONE `on attacking` clause —
+an `on` clause's first phrase overrides the action's message (`runtime.ts:966`), where the
+prior `after attacking` could only append. Same mutations/phrases/postures. Lesson: `##`
+comments are not legal inside a `create` block (parse.create-property). ADR-325's block
+amended in place with a second dated note. Tree pin added (attack card asserts the stdlib
+line absent): 102 cards passing, 118 assertions passing (2026-08-23T22:55:09Z).
+Committed earlier this session: `cd146cf0` (Tier 1 seam), `3037edc0` (wary stallkeepers).
+Finalize commits this increment: `mercenaries.chord`, `secret-letter.tests.json`,
+`adr-325-chord-presence-and-duration.md`, `docs/work/secret-letter-port/plan.md`.

@@ -67,6 +67,12 @@
 ## keepers. Not here, on purpose: the conspicuous shopper (`story.ni:3395-3420`)
 ## and the noisy theft rule — each is its own increment against this model.
 ##
+## The attack reaction is ONE `on attacking` clause, not on+after: an `on`
+## clause's first phrase becomes the action's message, where an `after`
+## reaction can only append — which is what kept the stdlib "Your attack has
+## no effect" line printing ahead of the break-free text. Same mutations,
+## phrases, and postures as the block ADR-325 records.
+##
 ## Every line below is Gentry's, carried from `story.ni:2037-2182`.
 ## ===========================================================================
 
@@ -168,18 +174,15 @@ create the wandering mercenaries
     reset recovery
   end when
 
-  on attacking it while it is oblivious
-    refuse merc-dont-provoke
-  end on
-
-  after attacking it
+  on attacking it
+    refuse when it is oblivious: merc-dont-provoke
     phrase merc-break-free when it is aggressive
     phrase merc-shove-off when it is approaching
     change it to approaching
     reset lunge
     reset capture
     start recovery
-  end after
+  end on
 
   on talking it while it is not oblivious
     refuse merc-ignore-pleas
