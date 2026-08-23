@@ -107,6 +107,14 @@ create the player
   Jack Toresal, who has been a boy in this market for as long as anyone here has
   bothered to look.
 
+  on going while the wandering mercenaries is aggressive
+    refuse merc-held
+  end on
+
+  after going while hunted
+    restart waiting
+  end after
+
 create the old gray cloak
   aka gray cloak, grey cloak, cloak, old cloak
   wearable

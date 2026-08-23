@@ -363,7 +363,8 @@ a landing is where a thing is put, not where it walks in.
 ### What the mercenaries become
 
 The whole of `mercenaries.chord` under this ADR. Five timers, no counters, no numbers, no
-`on every turn`, no trait on the rooms. Every prose line is Gentry's.
+`on every turn`, no trait on the rooms. Every prose line is Gentry's. (Amended 2026-08-23
+to the block as shipped in AC-4 — see the note after it.)
 
 ```
 define timer waiting for the player
@@ -386,7 +387,6 @@ end timer
 
 define timer capture for the wandering mercenaries
   held
-  straining
 end timer
 
 define timer recovery for the wandering mercenaries
@@ -397,7 +397,7 @@ create the wandering mercenaries
   a person, plural
   aka mercenaries, mercenary, thugs, thug, soldiers, soldier, bravos, men, pair
   pronouns they
-  states, reversible: oblivious, approaching, staggered, aggressive
+  states, reversible: oblivious, approaching, aggressive
   carries the sword
 
   Rough and ugly, with dirty clothes and mean, scarred faces. They carry
@@ -443,16 +443,16 @@ create the wandering mercenaries
   end when
 
   when recovery expires
-    change it to approaching
     start lunge
   end when
 
-  when the player moves, while it is approaching
-    phrase merc-dash-away
+  when the player moves
+    phrase merc-dash-away when it is approaching
     move it offstage
     change it to oblivious
     reset search
     reset lunge
+    reset recovery
   end when
 
   on attacking it while it is oblivious
@@ -462,7 +462,7 @@ create the wandering mercenaries
   after attacking it
     phrase merc-break-free when it is aggressive
     phrase merc-shove-off when it is approaching
-    change it to staggered
+    change it to approaching
     reset lunge
     reset capture
     start recovery
@@ -506,9 +506,23 @@ How the source's beats map: its re-rolled 1–3 `timeout` is `waiting` (two name
 interrupted one chance in two); "in the location for two turns" is `lingering` carrying
 its own line, "three turns" is `search` expiring; the countdown of 1 between "There he
 is!" and "Gotcha!" is `lunge`; "the leader arrives in two turns from now" is `capture`;
-the countdown of 2 after a break-free is `recovery`, which is what the `staggered` posture
-runs during. Whether `staggered` earns its place as a posture (or `after attacking` goes
-straight to `approaching` and `restart lunge`) is a story decision still open with David.
+the countdown of 2 after a break-free is `recovery`, during which they are `approaching`
+again.
+
+**Amendment 2026-08-23 (AC-4 shipped).** Three lines of the first draft of this block did
+not survive the pinned tree document and the source's own turn counts:
+
+- **No `staggered` posture** (David, 2026-08-23). The fourth posture said nothing
+  `recovery` running did not already say, and it broke the pinned break-free line: the
+  `when the player moves` clause fires only for an `approaching` pair, so a `staggered`
+  pair let her walk off silently with every clock still running.
+- **`capture` has one named turn.** "The leader arrives in two turns from now"
+  (`story.ni:2120`): `held`, then the captain. A second named turn made it three.
+- **`when the player moves` carries no `while`.** Any move while they are not holding her
+  (a held player's going is refused, so the event never fires then) sends them offstage
+  and resets every clock. With `, while it is approaching`, a move while they were
+  `oblivious` left `search` running in the room she had left, and "There he is!" fired
+  from another room. The dash-away line keeps its own `when it is approaching`.
 
 ## Non-goals
 
@@ -599,6 +613,8 @@ Authorized 2026-08-23. The issues are filed; this is the landing order:
    expires at the pinned seed; `lingering`'s line the turn after arrival; "There he is!"
    the turn after; "Gotcha!" the turn after that; the captain two turns later). The tree
    document is the acceptance oracle, not the first cut's timing.
+   **Done 2026-08-23**: `./sharpee test` on the Secret Letter tree — 91 cards passing,
+   103 assertions passing, all four lines green with no re-pin needed.
 5. A pre-bump save restores (Consequences, persistence).
 
 ## Session

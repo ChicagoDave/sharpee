@@ -21,30 +21,46 @@
 ##   5. TEXTURE. Idle oblivious mercenaries have a 1-in-5 chance per turn of
 ##      an atmosphere line.
 ##
+## How the beats map onto the timers below (ADR-325, "What the mercenaries
+## become"):
+##
+##   * The re-rolled 1-3 `timeout` is the player's `waiting` — two named turns,
+##      interrupted one chance in two, restarted whenever she moves while
+##      hunted. It expires wherever she is standing, and that is where they
+##      arrive: `move it here`.
+##   * "In the location for two turns" is `search` in its `lingering` turn,
+##      carrying the warning line; "three turns" is `search` expiring.
+##   * The countdown of 1 between "There he is!" and "Gotcha!" is `lunge`, a
+##      timer with no named turns.
+##   * "The leader arrives in two turns from now" (`story.ni:2120`) is
+##      `capture`: one named turn, then the captain.
+##   * The countdown of 2 after a break-free is `recovery`; when it runs out
+##      they lunge again.
+##
 ## What changed in the port, and why:
 ##
 ##   * The third posture is `aggressive`, not the source's `grabbing` (David,
 ##     2026-08-23): it is a standing state the rest of the model reads, and a
-##     standing state wants a posture word.
-##   * The rolled 1-3 timeout is a per-turn `one chance in 2` roll once Jack
-##     has waited a turn (David, 2026-08-23). Chord has no "random number
-##     between" assignment; the pacing is the same in expectation, and the
-##     roll runs on the seeded stream so tree-document lines are deterministic.
-##   * The arrival reaches WHEREVER JACK IS through a trait on the rooms, not a
-##     rule on the mercenaries: `move X to <place>` takes a named room and
-##     Chord has no "the player's location" destination, so each swept room
-##     owns the arrival and names itself as `it`.
+##     standing state wants a posture word. There is no fourth posture for the
+##     break-free window: the mercenaries are `approaching` while `recovery`
+##     runs, which is what lets her dash away during it.
+##   * Losing them: the source takes them off-stage; so does this (`move it
+##     offstage`). Any move she makes while they are not holding her sends
+##     them offstage and puts every clock back, so a search never finishes in
+##     a room she has already left. The dash-away line is only for the move
+##     that shakes off an approach.
 ##   * The source suppresses the warning and the spotting when "the
 ##     mercenaries will not recognise us" (woolen cap off, captain not yet
 ##     wise — `story.ni:2093-2099`). The cap is not wearable yet, so that
 ##     branch is NOT carried here; it lands with the disguise work. Until
 ##     then the "looks right at you … don't recognize you" arrival variant
 ##     is also held back, and only the "haven't seen you yet" line is used.
-##   * Escaped mercenaries are not taken off-stage: Chord's `remove` deletes
-##     the entity, so they stay in the room where they lost her until the
-##     next arrival moves them (see the swept trait's notes).
 ##   * `kick` has no verb in the port yet; the break-free reaction is on
 ##     `attacking`. The source's kick-specific line is held with it.
+##
+## On the player, in `secret-letter.story`: `on going` refuses while they hold
+## her, and `after going while hunted` restarts `waiting`. The apple's
+## `on eating` starts `waiting` the moment the story turns `hunted`.
 ##
 ## Not here, on purpose: the conspicuous shopper (`story.ni:3395-3420`), the
 ## stallkeeper talk-refusals in the mercenaries' presence (`story.ni:1875-1879`),
@@ -54,79 +70,102 @@
 ## ===========================================================================
 
 ## ---------------------------------------------------------------------------
-## THE MERCENARIES
-##
-## Off-stage until the first arrival. `patience` is the source's "have been in
-## the location for N turns"; `countdown` is its `grabbing countdown`.
+## THE CLOCKS
 ## ---------------------------------------------------------------------------
 
-## Clause by clause, in order:
+define timer waiting for the player
+  pausing
+  loitering
+  interrupted one chance in 2
+end timer
+
+define timer search for the wandering mercenaries
+  arriving
+  lingering
+    Those mercenaries are getting uncomfortably close. You'd better get going
+    before they notice you!
+  meanwhile, one chance in 5
+    phrase merc-idle
+end timer
+
+define timer lunge for the wandering mercenaries
+end timer
+
+define timer capture for the wandering mercenaries
+  held
+end timer
+
+define timer recovery for the wandering mercenaries
+  reeling
+end timer
+
+## ---------------------------------------------------------------------------
+## THE MERCENARIES
 ##
-##   1. The dwell clock — runs only while they share Jack's room and have not
-##      yet spotted her. Warning at two turns, spotted at three.
-##   2. The grab — the countdown starts at 1 on spotting, 2 on a break-free;
-##      the grab fires the turn it reaches 0, and re-arms the countdown to
-##      2, which is now the captain's clock (`story.ni:2120`, "the leader
-##      arrives in two turns from now"). The `when it is approaching` guard
-##      on the lowering keeps the grab turn from also ticking the new clock.
-##   2a. The captain — two turns of being held and it is over. If she breaks
-##      free first, the state has left `aggressive` and nothing happens.
-##   3. The dwell clock starts over each time they lose her. A room cannot
-##      reach another entity's counter (`its` is the only counter path), so
-##      the reset lives here, on the turns they are out of her room.
-##   4. Texture — the idle lines, one turn in five while they loiter unaware.
-##   5. Provoking oblivious mercenaries is refused (`story.ni:2065`).
-##   6. Breaking free (`story.ni:2153-2163`) — works whether they are closing
-##      in or already holding her; either way they fall back to approaching
-##      with a two-turn countdown, which is her window to run. One `after`
-##      clause, since a second would mask the first; the `when` guards split
-##      the held and the not-yet-held cases. The held branch must run first,
-##      because the first line moves them to approaching.
-##   7. Pleading is ignored once they have noticed her.
-##
-## Counters have no `set`, only `raise`/`lower`, and they clamp at their
-## bounds — so "reset to 0" is written as `lower … by <its ceiling>`.
+## Off-stage until the first arrival.
+## ---------------------------------------------------------------------------
 
 create the wandering mercenaries
   a person, plural
   aka mercenaries, mercenary, thugs, thug, soldiers, soldier, bravos, men, pair
   pronouns they
   states, reversible: oblivious, approaching, aggressive
-  counter patience starts 0 between 0 and 3
-  counter countdown starts 0 between 0 and 2
   carries the sword
 
   Rough and ugly, with dirty clothes and mean, scarred faces. They carry
   serious-looking swords on their hips.
 
-  on every turn while it is oblivious and it is here
-    raise its patience by 1
-    phrase merc-warning when its patience is 2
-    change it to approaching when its patience is at least 3
-    lower its countdown by 2 when its patience is at least 3
-    raise its countdown by 1 when its patience is at least 3
-    phrase merc-spotted when its patience is at least 3
-  end on
+  when the player's waiting expires
+    move it here
+    change it to oblivious
+    restart search
+    phrase merc-arrival
+  end when
 
-  on every turn while it is approaching and it is here
-    change it to aggressive when its countdown is 0
-    phrase merc-grab when its countdown is 0
-    raise its countdown by 2 when its countdown is 0
-    lower its countdown by 1 when it is approaching
-  end on
+  when search expires
+    change it to approaching
+    start lunge
+    phrase merc-spotted
+  end when
 
-  on every turn while it is aggressive
-    kill the player merc-captain-arrives when its countdown is 0
-    lower its countdown by 1
-  end on
+  when lunge expires
+    change it to aggressive
+    start capture
+    phrase merc-grab
+  end when
 
-  on every turn while it is not here
-    lower its patience by 3
-  end on
+  when capture expires
+    kill the player
+      The captain soon arrives, followed by two more of his men. One of them
+      grabs your other arm as their leader smiles. 'Good work, dims. Got
+      ourselves a nice little commission with this one.' And before you can
+      react, he takes a sack of black cloth from his belt and jerks it down
+      over your head.
 
-  on every turn while it is oblivious and it is here and one chance in 5
-    phrase merc-idle
-  end on
+      Everything goes dark. You can't breathe. You struggle, but you can no
+      more break the iron grip on your arms than you could uproot a tree. The
+      men holding you curse. Dimly, you hear shouts from the crowd — someone
+      protesting this rough treatment of a child.
+
+      'Don't worry, m'lady,' laughs the mercenary leader. 'We'll treat the
+      little rat nice an' gentle. Like this, see?'
+
+      Something huge and heavy crashes into your head, and the rest of your
+      senses are yanked away. Why they wanted you, you never awake to find out.
+  end when
+
+  when recovery expires
+    start lunge
+  end when
+
+  when the player moves
+    phrase merc-dash-away when it is approaching
+    move it offstage
+    change it to oblivious
+    reset search
+    reset lunge
+    reset recovery
+  end when
 
   on attacking it while it is oblivious
     refuse merc-dont-provoke
@@ -135,8 +174,10 @@ create the wandering mercenaries
   after attacking it
     phrase merc-break-free when it is aggressive
     phrase merc-shove-off when it is approaching
-    change it to approaching when it is aggressive
-    raise its countdown by 2
+    change it to approaching
+    reset lunge
+    reset capture
+    start recovery
   end after
 
   on talking it while it is not oblivious
@@ -155,73 +196,12 @@ create the sword
   end on
 
 ## ---------------------------------------------------------------------------
-## THE SWEPT ROOMS
-##
-## The fourteen market rooms between the Alley and the centre post carry this
-## trait. It owns three things the source put on the scene: the waiting count
-## (reset whenever Jack moves), the arrival (into whichever swept room she is
-## standing in), and the two movement rules — losing them, and being held.
-## ---------------------------------------------------------------------------
-
-define counter waiting starts 0 between 0 and 5
-
-## Clause by clause:
-##
-##   1. The waiting count: raised every hunted turn Jack stands in a swept
-##      room, zeroed by the `after going` below. Only swept rooms count, so
-##      turns in the Alley or up the post never carry in. (`it is here` on a
-##      room means the player is in it.)
-##   1a. The arrival. The raise above runs first on the same turn, so "at
-##      least 2" is what makes Jack stand still for one full turn before the
-##      first roll — the source's timeout, as a roll.
-##      (A trait's `after entering it` would have been the natural reset for
-##      edges from unswept rooms, but on a trait that gerund binds to the
-##      stdlib container-entering action, not room arrival — only a room's
-##      own block gets the arrival event. Hence the count is owned here.)
-##   2. Held: no leaving while they have her (`story.ni:2137`).
-##   3. Losing them (`story.ni:2084-2089`, `story.ni:2147-2150`): moving while
-##      they are approaching shakes them off and resets the sweep. Moving
-##      while they are merely oblivious just leaves them behind — they will
-##      find her again on the next roll. The source takes them off-stage
-##      here; Chord's `remove` is terminal (the entity is deleted), so the
-##      port leaves them standing where they lost her, oblivious again, and
-##      the next arrival moves them. If Jack walks back into that room the
-##      dwell clock simply starts — a small deviation, recorded in the header.
-
-define trait swept
-  on every turn while hunted and it is here
-    raise waiting by 1
-  end on
-
-  on every turn while hunted and it is here and the wandering mercenaries is not here and waiting is at least 2 and one chance in 2
-    move the wandering mercenaries to it
-    change the wandering mercenaries to oblivious
-    phrase merc-arrival
-  end on
-
-  on going it while the wandering mercenaries is aggressive
-    refuse merc-held
-  end on
-
-  after going it
-    lower waiting by 5
-    phrase merc-dash-away when the wandering mercenaries is approaching
-    change the wandering mercenaries to oblivious
-  end after
-end trait
-
-## ---------------------------------------------------------------------------
 ## THE LINES — all Gentry's
 ## ---------------------------------------------------------------------------
 
 define phrase merc-arrival
   You notice a couple of the mercenaries pushing through the crowd, heading
   your way. They haven't seen you yet, but they're getting close.
-end phrase
-
-define phrase merc-warning
-  Those mercenaries are getting uncomfortably close. You'd better get going
-  before they notice you!
 end phrase
 
 define phrase merc-spotted
@@ -233,24 +213,6 @@ end phrase
 define phrase merc-grab
   A rock-hard fist closes around your upper arm. 'Gotcha!' the mercenary
   yells. The other one starts hollering for his companions.
-end phrase
-
-define phrase merc-captain-arrives
-  The captain soon arrives, followed by two more of his men. One of them grabs
-  your other arm as their leader smiles. 'Good work, dims. Got ourselves a nice
-  little commission with this one.' And before you can react, he takes a sack
-  of black cloth from his belt and jerks it down over your head.
-
-  Everything goes dark. You can't breathe. You struggle, but you can no more
-  break the iron grip on your arms than you could uproot a tree. The men
-  holding you curse. Dimly, you hear shouts from the crowd — someone
-  protesting this rough treatment of a child.
-
-  'Don't worry, m'lady,' laughs the mercenary leader. 'We'll treat the little
-  rat nice an' gentle. Like this, see?'
-
-  Something huge and heavy crashes into your head, and the rest of your senses
-  are yanked away. Why they wanted you, you never awake to find out.
 end phrase
 
 ## The source draws this from three ("pull and struggle" / "beat on the

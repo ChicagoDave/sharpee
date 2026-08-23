@@ -47,7 +47,7 @@ create the Alley
   one is likely to bother you here. You can leave to the southeast.
 
 create the Northwest Junction
-  a room, swept
+  a room
   aka junction, northwest corner
   northwest to the Alley
   northeast to the Grocery Stall
@@ -61,7 +61,7 @@ create the Northwest Junction
   into the alley to the northwest.
 
 create the Grocery Stall
-  a room, swept
+  a room
   aka grocer, grocers stall
   southwest to the Northwest Junction
   southeast to the Fruit Stall
@@ -74,7 +74,7 @@ create the Grocery Stall
   market to the south.
 
 create the Fruit Stall
-  a room, swept
+  a room
   aka fruit
   northwest to the Grocery Stall
   west to the Candlemaker's Stall
@@ -90,7 +90,7 @@ create the Fruit Stall
   stalls lead northwest, west, southwest, and south.
 
 create the Eastern Junction
-  a room, swept
+  a room
   aka eastern edge
   north to the Fruit Stall
   south to the Hat Stall
@@ -101,7 +101,7 @@ create the Eastern Junction
   head towards the market's central hub to the west.
 
 create the Hat Stall
-  a room, swept
+  a room
   aka hats, hatter
   north to the Eastern Junction
   northwest to the Pottery Stall
@@ -115,7 +115,7 @@ create the Hat Stall
   lie to the north, northwest, west, and southwest.
 
 create the Leather Stall
-  a room, swept
+  a room
   aka leather, leather shop, leather goods
   northeast to the Hat Stall
   northwest to Outside the Silk Tent
@@ -127,7 +127,7 @@ create the Leather Stall
   and northeast.
 
 create the Weaponsmith's Stall
-  a room, swept
+  a room
   aka weapons stall, weapons, weaponsmith, smith
   east to the Leather Stall
   northeast to Outside the Silk Tent
@@ -138,7 +138,7 @@ create the Weaponsmith's Stall
   and northwest.
 
 create the Exotic Gems Stall
-  a room, swept
+  a room
   aka gems stall, gems, jewels, jeweler
   north to the Herb Stall
   northeast to the Rope Stall
@@ -153,7 +153,7 @@ create the Exotic Gems Stall
   price range. Other stalls lie to the north, northeast, east, and southeast.
 
 create the Herb Stall
-  a room, swept
+  a room
   aka herbs, herbalist
   north to the Northwest Junction
   east to the Rope Stall
@@ -165,7 +165,7 @@ create the Herb Stall
   market opens out a little to the north.
 
 create the Rope Stall
-  a room, swept
+  a room
   aka rope, rope dealer, ropemaker
   northwest to the Northwest Junction
   northeast to the Candlemaker's Stall
@@ -180,7 +180,7 @@ create the Rope Stall
   the market opens out a bit to the northwest.
 
 create the Candlemaker's Stall
-  a room, swept
+  a room
   aka candle stall, candles, candlemaker, chandler
   north to the Grocery Stall
   east to the Fruit Stall
@@ -196,7 +196,7 @@ create the Candlemaker's Stall
   and southwest.
 
 create the Pottery Stall
-  a room, swept
+  a room
   aka pottery, potter, urns
   northwest to the Candlemaker's Stall
   northeast to the Fruit Stall
@@ -212,7 +212,7 @@ create the Pottery Stall
   head out to the market's edge to the east.
 
 create Outside the Silk Tent
-  a room, swept
+  a room
   aka silk stall, outside the tent, teishas stall
   north to Inside the Silk Tent
   east to the Hat Stall
@@ -227,7 +227,7 @@ create Outside the Silk Tent
   stalls to the east, west, northeast, northwest, southeast, or southwest.
 
 create Inside the Silk Tent
-  a room, swept
+  a room
   aka silk tent, tent, inside the tent
   south to Outside the Silk Tent
   north to the Base of the Center Post
@@ -332,6 +332,7 @@ create the apple
     refuse when the player is not in the Alley: apple-not-here
     phrase apple-first-bite
     change the story to hunted
+    start the player's waiting
   end on
 
 create the banana
@@ -1031,9 +1032,9 @@ import "npc-teisha"
 ## THE MERCENARIES
 ##
 ## The `hunted` state's pressure model — the pair that sweeps the market once
-## Jack has overheard them. Pasted after Teisha: the `swept` trait the rooms
-## above compose is defined in this file, and trait definitions resolve
-## story-wide, so the order is a reading order, not a binding one.
+## Jack has overheard them. Pasted after Teisha as a reading order: the
+## mercenaries' clocks are their own and the player's, and the rooms carry
+## nothing for them.
 ## ---------------------------------------------------------------------------
 
 import "mercenaries"

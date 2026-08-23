@@ -938,13 +938,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// stale — the "autowrap not working" bug).
     private func syncWrapWidth(force: Bool = false) {
         guard effectiveWrap, let container = textView.textContainer else { return }
-        let clipWidth = scrollView.contentSize.width
         // Wrap INSIDE the visible area. Two width thieves must be subtracted:
         // the container inset (text draws offset by it), and — measured live,
         // because contentSize does NOT reliably exclude it — the line-number
         // ruler (46pt), which otherwise pushes every line's tail past the
         // divider by the gutter width.
         let rulerWidth = scrollView.verticalRulerView?.ruleThickness ?? 0
+        let clipWidth = scrollView.contentSize.width
         let rulerAlreadyExcluded = (scrollView.frame.width - clipWidth) >= rulerWidth - 1
         let visibleWidth = rulerAlreadyExcluded ? clipWidth : clipWidth - rulerWidth
         let wrapWidth = visibleWidth - textView.textContainerInset.width * 2
@@ -959,13 +959,19 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         // Wrapped text never scrolls sideways. While the frame was stale (one
         // gutter too wide) a trackpad swipe could still slide the clip right
         // — the scroller is hidden, not the scrolling — and correcting the
-        // frame does not move the clip back, so the first characters of every
-        // line stay hidden under the gutter until something else scrolls
-        // horizontally (nothing does). Clamp the origin every pass, outside
-        // the staleness guard: the slide can outlive the stale frame.
+        // frame does not move the clip back. Clamp the origin every pass,
+        // outside the staleness guard: the slide can outlive the stale frame.
+        // The RESTING origin is NOT zero: with automaticallyAdjustsContentInsets
+        // AppKit reserves the ruler's gutter through the CLIP VIEW's computed
+        // contentInsets (the scroll view's own contentInsets property still
+        // reads 0), so an unscrolled clip rests at x = -clip.contentInsets.left
+        // (-46 with the gutter). The previous clamp pinned x to 0, which
+        // "un-scrolled" every view 46pt leftward and hid the first characters
+        // of every line under the gutter — the margin bug it was meant to fix.
         let clip = scrollView.contentView
-        if clip.bounds.origin.x != 0 {
-            clip.scroll(to: NSPoint(x: 0, y: clip.bounds.origin.y))
+        let restingX = -clip.contentInsets.left
+        if clip.bounds.origin.x != restingX {
+            clip.scroll(to: NSPoint(x: restingX, y: clip.bounds.origin.y))
             scrollView.reflectScrolledClipView(clip)
         }
         guard clipWidth > 0, wrapWidth > 50,
