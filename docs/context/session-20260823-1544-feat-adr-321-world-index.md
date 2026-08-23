@@ -126,3 +126,26 @@ No live story currently carries the phrase-in-phrase pattern outside the diagnos
 ---
 
 **Progressive update**: Session completed 2026-08-23 17:00
+
+---
+
+## Progressive update — Phase 6 increment (17:40 CDT)
+
+After the Tier 1 commit (`cd146cf0`), the session resumed the port plan's Phase 6 with the
+stallkeeper talk-refusal increment:
+
+- **Built**: the `wary` trait (`branch-stories/secret-letter/mercenaries.chord`,
+  `story.ni:1875-1879` verbatim), composed on the ten keepers in `grubbers-market.chord`.
+  One `on talking` clause — the analyzer's duplicate-clause gate rejects two on one trait —
+  with the refusal partition splitting oblivious ("Better find somewhere else to chat…")
+  from not-oblivious ("No time to chat now; you've got to run!"). Gated on
+  `the wandering mercenaries is here`, so the calm ST tree is untouched.
+- **Tested**: new tree branch 4 under the Alley bite, probe-derived at seed 1209
+  (scratch-copy + `--capture-output`): arrival, warning, hush-refusal on the spotting turn,
+  Gotcha, run-refusal on the capture turn. `./sharpee test branch-stories/secret-letter` —
+  102 cards passing, 117 assertions passing (2026-08-23T22:33:51Z), up from 91/103.
+- **Deferred with evidence**: conspicuous shopper (cross-product line → #303 item 2,
+  second evidence recorded); noisy theft (needs a random-adjacent-room move — filed **#311**).
+- **Known seam, carried as-is**: topic asks bypass the gate (the source gated only the
+  conversation opening); David to rule on whether asks should share it.
+- Session checkpoint (rule 16, ~17:40): on track, no drift, no orphans.

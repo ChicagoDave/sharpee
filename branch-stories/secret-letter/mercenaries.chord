@@ -62,8 +62,9 @@
 ## her, and `after going while hunted` restarts `waiting`. The apple's
 ## `on eating` starts `waiting` the moment the story turns `hunted`.
 ##
-## Not here, on purpose: the conspicuous shopper (`story.ni:3395-3420`), the
-## stallkeeper talk-refusals in the mercenaries' presence (`story.ni:1875-1879`),
+## The stallkeeper talk-refusals in the mercenaries' presence
+## (`story.ni:1875-1879`) live below as the `wary` trait, composed on the ten
+## keepers. Not here, on purpose: the conspicuous shopper (`story.ni:3395-3420`)
 ## and the noisy theft rule — each is its own increment against this model.
 ##
 ## Every line below is Gentry's, carried from `story.ni:2037-2182`.
@@ -196,6 +197,24 @@ create the sword
   end on
 
 ## ---------------------------------------------------------------------------
+## THE WARY STALLKEEPERS
+##
+## The talk-refusals in the mercenaries' presence (`story.ni:1875-1879`): a
+## keeper will not open the ST tree while the pair is standing in the room.
+## Oblivious, chatting might draw their notice; once they've seen Jack, there
+## is no time. Composed on the ten keepers in `grubbers-market.chord`. The
+## mercenaries are offstage during the calm walk, so the tree plays freely
+## there.
+## ---------------------------------------------------------------------------
+
+define trait wary
+  on talking it while the wandering mercenaries is here
+    refuse when the wandering mercenaries is oblivious: merc-hush
+    refuse merc-run
+  end on
+end trait
+
+## ---------------------------------------------------------------------------
 ## THE LINES — all Gentry's
 ## ---------------------------------------------------------------------------
 
@@ -285,6 +304,15 @@ end phrase
 
 define phrase merc-ignore-pleas
   The mercenaries both ignore your pleas.
+end phrase
+
+define phrase merc-hush
+  Better find somewhere else to chat; if you start making conversation, the
+  mercenaries might take notice.
+end phrase
+
+define phrase merc-run
+  No time to chat now; you've got to run!
 end phrase
 
 define phrase sword-not-for-you

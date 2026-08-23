@@ -495,13 +495,15 @@ end phrase
 ## looking for her, and it is why the stallkeeper's own description ("Armed
 ## thugs stomping around...") reads correctly here without a calm variant. The
 ## refusals that gate this tree once they start sweeping (`story.ni:1875-1879`)
-## belong with the chase and are not built here.
+## are the `wary` trait each keeper carries, defined with the sweep in
+## `mercenaries.chord` — they fire only while the pair is on-stage in the room.
 ##
 ## Every line below is Gentry's, carried from `story.ni:1841-1949`.
 ## ---------------------------------------------------------------------------
 
 create the grocer
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, grocer, greengrocer
   pronouns he
   mood nervous
@@ -547,6 +549,7 @@ end exchange
 
 create the fruit stallkeeper
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, fruit seller, fruit vendor, fruiterer
   pronouns he
   mood nervous
@@ -592,6 +595,7 @@ end exchange
 
 create the hat stallkeeper
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, milliner, hatter, hat seller
   pronouns he
   mood nervous
@@ -637,6 +641,7 @@ end exchange
 
 create the leather stallkeeper
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, leatherworker, leather seller, tanner
   pronouns he
   mood nervous
@@ -682,6 +687,7 @@ end exchange
 
 create the weaponsmith
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, smith, armorer, armourer, weapon seller
   pronouns he
   mood nervous
@@ -727,6 +733,7 @@ end exchange
 
 create the gems stallkeeper
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, jeweler, jeweller, gem merchant, gem seller
   pronouns he
   mood nervous
@@ -772,6 +779,7 @@ end exchange
 
 create the herbalist
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, herb seller, herbwife
   pronouns he
   mood nervous
@@ -817,6 +825,7 @@ end exchange
 
 create the rope dealer
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, ropemaker, rope seller
   pronouns he
   mood nervous
@@ -862,6 +871,7 @@ end exchange
 
 create the candlemaker
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, chandler, candle seller
   pronouns he
   mood nervous
@@ -907,6 +917,7 @@ end exchange
 
 create the pottery stallkeeper
   a person
+  wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, potter, pot seller
   pronouns he
   mood nervous
