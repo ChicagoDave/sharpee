@@ -16,6 +16,7 @@
     { "path": "../lang-en-us" },
     { "path": "../parser-en-us" },
     { "path": "../stdlib" },
+    { "path": "../story-loader" },
     { "path": "../text-blocks" },
     { "path": "../world-model" }
   ]

@@ -20,6 +20,7 @@ import {
   type RandomForceStatus,
   RandomForceLoadError
 } from '@sharpee/core';
+import { CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import {
   Transcript,
   TranscriptCommand,
@@ -145,6 +146,8 @@ interface WorldModel {
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
   getPlayer?(): any;
+  /** World-state lookup — carries the Chord story phase (`story.state` claims). */
+  getStateValue?(key: string): unknown;
 }
 
 /**
@@ -1190,10 +1193,28 @@ function checkStateAssertion(assertion: Assertion, world?: WorldModel): Assertio
  * Supports: entity.property = value, entity.property != value,
  *           collection contains item, collection not-contains item
  */
-function evaluateStateExpression(
+export function evaluateStateExpression(
   expression: string,
   world: WorldModel
 ): { matches: boolean; details?: string } {
+  // Reserved head: "story.state = <state>" / "story.state != <state>" — the
+  // Chord story object's phase (`states:` in the header, moved by `change the
+  // story to`). It is a world-state value, not an entity property, so it
+  // cannot ride the entity form below.
+  const storyStateMatch = expression.match(/^story\.state\s*(=|!=)\s*(\S+)$/);
+  if (storyStateMatch) {
+    const [, operator, expected] = storyStateMatch;
+    const actual = world.getStateValue?.(CHORD_STORY_STATE_KEY);
+    if (actual === undefined) {
+      return { matches: false, details: 'story.state: this story declares no states' };
+    }
+    const isEqual = actual === expected;
+    if (operator === '=') {
+      return { matches: isEqual, details: isEqual ? undefined : `story.state is "${actual}", expected "${expected}"` };
+    }
+    return { matches: !isEqual, details: !isEqual ? undefined : `story.state should not be "${expected}"` };
+  }
+
   // Parse "entity.property = value" or "entity.property != value"
   const equalityMatch = expression.match(/^(\w+)\.(\w+)\s*(=|!=)\s*(.+)$/);
   if (equalityMatch) {

@@ -331,7 +331,89 @@ middle state is the sweep: gates locked, pursuers on the board, Jack unseen.
 - The market gates lock at the transition (`story.ni:1749`) — the market becomes a box, which is
   what makes the sweep a threat rather than a chase the player could simply walk away from.
 
-**Open — what moves `hunted` → `chase`.** The source fires it on `TE20`, i.e. the moment Jack is
-*inside Teisha's tent holding the cloak*, and the timers (`Tent Escape`, `Pole Escape`) run from
-there. Whether the port keeps that trigger, or moves it to a sighting (the pursuer reaching
-`approaching`/`grabbing`), is David's next ruling.
+**What moves `hunted` → `chase` — DECIDED (David, 2026-08-22): `TE20`, as in the source.** The
+chase begins the moment the necklace-for-cloak trade fires (`story.ni:4005`), with Jack inside
+Teisha's tent holding the green silk cloak; the `Tent Escape` and `Pole Escape` timers run from
+there (`story.ni:4021-4040`). A sighting during the sweep does **not** start the chase: the
+pursuer's `approaching`/`grabbing` postures remain `hunted`-state pressure with their own
+consequences (the market capture ending, `story.ni:2163`, stays a `hunted` outcome), and the
+player reaches the tent by evading them, not by being flushed out. Consequence for Phase 6: the
+transition is authored on the TE20 exchange in `npc-teisha.chord`, and the tent/pole timers are
+`chase` content.
+
+### The sweep — DECIDED (David, 2026-08-22): the random sweep stays, as original story logic
+
+**The `hunted` state keeps Gentry's random mercenary sweep**, not a fixed patrol the player could
+learn. David: *"keep the random sweep, it's original story logic."* The pursuer's three postures
+(`oblivious` / `approaching` / `grabbing`, `story.ni:2071-2182`), the per-room waiting timeout,
+and the 1-in-10 conspicuous-shopper roll (`story.ni:3403`) are carried as mechanism. Randomness
+runs on the engine's seeded streams (ADR-293), so the tree-document lines stay deterministic at
+the pinned seed, and a specific outcome can be forced for a test without changing the model.
+
+### The escape disguise — DECIDED (David, 2026-08-22): a dress and a fashionable hat, from Teisha, changed into after the slide
+
+**Jack opens the chapter as the urchin and leaves it as a well-dressed young woman.** The source's
+escape garment, the green silk cloak Teisha trades for the necklace (`TE20`, `story.ni:3215`), is
+replaced: **Teisha gives Jack a dress and a fashionable hat.** David: *"Jack is going to get a
+dress from Teisha and not a cloak with a fashionable hat. Jack will have these things stuffed in a
+satchel when she slides down the rope and she will quickly change into the dress and the hat."*
+
+**The chain keeps its shape.** Necklace → Teisha → dress and hat **into the satchel** → back up the
+post → slide the cable on the gray cloak (the cloak is still the zipline and is still left behind)
+→ land → **change into the dress and hat** → walk out. The source's "wear the silk" step becomes a
+change of clothes.
+
+**Why it passes the sweep.** The parchment describes "a hat and a gray cloak" on a slight
+brown-haired kid, and the leader assumes a boy (`story.ni:1804-1806`). A girl in a dress and a
+fashionable hat matches neither the garments nor the expectation. The 2009 move, hat off and hair
+down (`story.ni:2119`), hid the girl to pass; the remake's move presents her. This is the chapter's
+first deliberate step toward Jacqueline, and it lands on vision.md §1 without touching the
+opening: Jack still walks the calm market as the urchin, and the androgyny ruling (public reads
+her as a boy) stands.
+
+**The opening dress — the urchin — gains its missing piece.** The scaffold dropped the source's
+woolen cap (`story.ni:1393`, hair stuffed under it) without a ruling. It comes back: the parchment's
+"hat and a gray cloak" must describe what the player actually wears for the recognition logic to
+mean anything.
+
+**Consequences for Phase 6.**
+- `npc-teisha.chord`: `TE20` is rewritten around a dress and hat rather than a cloak. Gentry's
+  perceiver line, *"It brings out your eyes. You look... almost royal"*, was said of the cloak; whether
+  it carries to the dress is David's call when TE20 is written (it is a §3d perceiver line and the
+  change document earlier marked it as carried verbatim — that marking is now provisional).
+- New objects: the dress, the fashionable hat, the satchel (the source already has one —
+  `story.ni:4270` moves the silk cloak into it), and the woolen cap worn at start.
+- The landing step needs a change-of-clothes action the player performs; the source's landing is
+  at the Fruit Stall (`Market Escape`, `story.ni:4132`).
+- The `hunted` recognition check is now specifiable: the mercenaries match **worn gray cloak + worn
+  cap**; in the dress and hat they do not recognise her. The captain's later drawing
+  (`story.ni:2493`) is what eventually defeats it, in a later chapter.
+
+**Where she changes — DECIDED (David, 2026-08-22): in the open, with a couple of beats of grace, and
+the boots give her away.** David: *"We give her a couple of beats to change clothes before the
+mercenaries see that she has boots on and not dress shoes."* So the landing runs: a short window
+(two turns or so) in which the sweep does not read her while she changes; then the disguise holds
+from the parchment's point of view (no cap, no gray cloak, a girl) but fails on a detail the
+parchment never mentioned — **an urchin's boots under a lady's dress**. A mercenary notices the
+boots, and the chase is back on, now with the mercenaries knowing what she is wearing. The
+disguise buys the head start rather than the escape; the escape is still Commerce Street, where
+the Lord's Guard keeps them off her (`story.ni:4268`).
+
+**Why this is better than the source's clean pass.** It keeps the remake's principle that
+pressure has teeth (vision.md §5) through the one step that, in 2009, switched the pressure off;
+and it plants the boots as the loose thread the way the captain's drawing is — a detail the
+hunters now carry forward.
+
+**Consequences for Phase 6.** A grace counter on the landing (two turns); the boots as a worn
+object on the player from the start (the source has none — check `story.ni` for footwear before
+adding); a "they see the boots" beat that flips the mercenaries back to approaching; the chase
+endgame unchanged (reach Commerce Street).
+
+**The boots are a thread, and Dame Sandler closes it — DECIDED, provisionally (David,
+2026-08-22: "Her shoes get replaced with Dame I think").** The boots stay on Jack out of the market
+and through the middle game; proper shoes arrive with Dame Sandler's dressing of her for the ball
+(the source's clothier scene, `story.ni:5119`, is where Jack is first made to look "like a
+princess"). Until then the boots are the one thing about her that still says urchin, which is
+what the mercenaries now know to look for. Whether the captain's description grows "boots" is
+authored when that chapter is reached. The grace window is a fixed two turns unless the `hunted`
+build finds a dwell counter does the job more cleanly.

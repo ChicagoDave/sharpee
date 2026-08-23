@@ -55,7 +55,7 @@ story
   ifid: B4647034-34D8-40E3-B2F3-B590573387CB
   story-version: 0.1.0
   description: Grubber's Market, a stolen apple, and a girl the whole city is about to start looking for.
-  states: calm, chase
+  states: calm, hunted, chase
 
 ## ---------------------------------------------------------------------------
 ## THE IMPORTS

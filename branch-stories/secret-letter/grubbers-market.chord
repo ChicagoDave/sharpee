@@ -331,6 +331,7 @@ create the apple
   on eating it
     refuse when the player is not in the Alley: apple-not-here
     phrase apple-first-bite
+    change the story to hunted
   end on
 
 create the banana
@@ -372,12 +373,14 @@ create the cluster of brambleberries
 ## permanently blocked) once the mercenaries are sweeping. Only the calm half is
 ## built here; the noisy half belongs with the chase.
 ##
-## OPEN — what the walk ends INTO. The change document settles that the first
-## bite ends the walk and that the eavesdrop poisons it. It does not settle what
-## occasion the bite hands off to: the story declares two states, `calm` and
-## `chase`, and the eavesdrop is neither — Jack is not yet being hunted, which
-## is the whole point of the scene. So this file does NOT change state on the
-## bite. That gate waits on David.
+## What the walk ends INTO — decided (change document, "The eavesdrop's
+## aftermath"): the first bite moves the story from `calm` to `hunted`, the
+## third state between the walk and the chase. Jack has heard the voices and
+## knows she is wanted; nobody has seen her yet. The chase itself begins later,
+## on Teisha's TE20 cloak trade, not here. The source also locks the market
+## gates at this moment (`story.ni:1749`); the port has no gates to lock yet —
+## Chapter 1 has no exit out of the market — so that waits for the rooms that
+## carry them.
 ##
 ## MECHANISM DEVIATION from the source, recorded here rather than in the story
 ## header's list, which covers prose. The source keeps each fruit off-stage and
