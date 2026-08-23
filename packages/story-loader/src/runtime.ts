@@ -189,6 +189,19 @@ interface ExecContext extends EvalContext {
   owner?: string;
 }
 
+/**
+ * A refusal veto from the validate partition: the fully-qualified message id
+ * plus the render params its phrase stages (the strategy Choice, hatch
+ * producers, slot bindings). Spread into an `InterceptorResult` /
+ * `ValidationResult` / `CapabilityValidationResult` — all three carry
+ * `error` + `params`, and stdlib threads `params` through to the blocked
+ * render (lifecycle-engine `vetoOf`).
+ */
+interface RefusalVeto {
+  error: string;
+  params?: Record<string, unknown>;
+}
+
 /** What a scheduler tick provides (structural subset of plugin-scheduler's SchedulerContext). */
 export interface SchedulerTick {
   world: WorldModel;
@@ -910,7 +923,7 @@ export class ChordRuntime {
           return null;
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
 
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
@@ -2488,7 +2501,7 @@ export class ChordRuntime {
         if (!row) return catchAll?.preValidate?.(target, world, actorId, data) ?? null;
         const ctx: ExecContext = { world, it: entity.id, ...frameOf(row, actorId) };
         const refusal = runtime.findRefusal(rowParts[index].plain, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
 
       postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
@@ -2796,7 +2809,9 @@ export class ChordRuntime {
           return { valid: true };
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        if (refusal) return { valid: false, error: refusal };
+        // Key only — this path's own blocked() re-renders via phraseEvent,
+        // which stages the Choice itself; the staged params are not read.
+        if (refusal) return { valid: false, error: refusal.error };
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
@@ -2849,7 +2864,7 @@ export class ChordRuntime {
           return null;
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         const bag = runtime.clauseBag(data, ns);
@@ -3039,7 +3054,7 @@ export class ChordRuntime {
           // Routing is decided by the mutations pass, not here (ADR-289 D1).
           const bodyCtx: ExecContext = { world: context.world, slots };
           const refusal = runtime.findRefusal(def.body, bodyCtx);
-          if (refusal) return { valid: false, error: refusal };
+          if (refusal) return { valid: false, ...refusal };
         }
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
@@ -3959,15 +3974,15 @@ export class ChordRuntime {
    * and `refuse when` prohibitions (refuse when the hazard HOLDS) — checked
    * in source order until the first non-refusal statement.
    */
-  private findRefusal(body: IRStatement[], ctx: ExecContext): string | null {
+  private findRefusal(body: IRStatement[], ctx: ExecContext): RefusalVeto | null {
     for (const stmt of body) {
-      if (stmt.kind === 'refuse') return this.resolvePhraseKey(stmt.phraseKey, ctx);
+      if (stmt.kind === 'refuse') return this.refusalOf(stmt.phraseKey, ctx);
       if (stmt.kind === 'must') {
-        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
+        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return this.refusalOf(stmt.phraseKey, ctx);
         continue;
       }
       if (stmt.kind === 'refuse-when') {
-        if (this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
+        if (this.evaluator.evalCondition(stmt.condition, ctx)) return this.refusalOf(stmt.phraseKey, ctx);
         continue;
       }
       break; // first non-refusal statement ends the validate partition
@@ -3976,16 +3991,27 @@ export class ChordRuntime {
   }
 
   /**
-   * Resolve a refusal phrase key to its registered message id. A
-   * per-entity `phrase <key>:` declaration registers entity-scoped as
-   * `<irId>.<key>` — the same override rule `phraseEvent` applies at emit
-   * time — so a bare refusal key written inside that entity's clause must
-   * travel as the scoped id: the key crosses into stdlib's blocked() as a
-   * fully-qualified message id (ADR-231 D1) and is rendered verbatim.
+   * Resolve a refusal phrase key to its veto payload. A per-entity
+   * `phrase <key>:` declaration registers entity-scoped as `<irId>.<key>` —
+   * the same override rule `phraseEvent` applies at emit time — so a bare
+   * refusal key written inside that entity's clause must travel as the
+   * scoped id: the key crosses into stdlib's blocked() as a fully-qualified
+   * message id (ADR-231 D1). A key with a phrase-table entry additionally
+   * stages that phrase's render params — in particular the strategy
+   * variants as a Choice — so the refusal selects an arm exactly as a
+   * `phrase <key>` statement does, instead of rendering the registered
+   * `{variants}` template's placeholder literally (GH #304). A key with no
+   * table entry (a bare message id, or a book-covered key whose template
+   * the render-path book layer supplies, ADR-250) travels alone, as before.
    */
-  private resolvePhraseKey(key: string, ctx: ExecContext): string {
+  private refusalOf(key: string, ctx: ExecContext): RefusalVeto {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    return ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
+    const overrideKey = ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
+    const phrase = table[overrideKey];
+    if (!phrase) return { error: overrideKey };
+    const params: Record<string, unknown> = {};
+    this.stagePhraseParams(params, overrideKey, phrase, null, ctx);
+    return Object.keys(params).length > 0 ? { error: overrideKey, params } : { error: overrideKey };
   }
 
   /**
@@ -4114,6 +4140,32 @@ export class ChordRuntime {
       const asEntity = typeof value === 'string' ? ctx.world.getEntity(value) : undefined;
       params[p.param] = asEntity ? asEntity.name : (value as string | number | boolean);
     }
+    this.stagePhraseParams(params, overrideKey, phrase ?? null, bookVariants, ctx, counter);
+    return this.rawEvent('chord.phrase', { messageId: overrideKey, params });
+  }
+
+  /**
+   * Stage the render params a phrase's template consumes — hatch producers
+   * bound by marker name, grammar-slot bindings, verbatim text, and the
+   * strategy variants as a persistent Choice atom. Shared by `phraseEvent`
+   * (`phrase <key>` statements) and `refusalOf` (the validate partition's
+   * veto path): a refusal keyed to a strategy phrase must carry the same
+   * Choice the statement path carries, or the registered `{variants}`
+   * template renders its raw placeholder.
+   *
+   * @param params Mutated in place. Keys already present (authored `with`
+   *   bindings) are overridden by hatch producers but win over grammar-slot
+   *   bindings — exactly the precedence `phraseEvent` had before this was
+   *   extracted.
+   */
+  private stagePhraseParams(
+    params: Record<string, unknown>,
+    overrideKey: string,
+    phrase: IRPhrase | null,
+    bookVariants: IRPhraseVariant[] | null,
+    ctx: ExecContext,
+    counter?: { entityId: string; messageKey: string },
+  ): void {
     for (const variant of phrase ? phrase.variants : bookVariants!) {
       for (const marker of variant.markers) {
         const producer = this.host.producers.get(marker);
@@ -4165,8 +4217,6 @@ export class ChordRuntime {
       };
       params.variants = choice;
     }
-
-    return this.rawEvent('chord.phrase', { messageId: overrideKey, params });
   }
 
   /**

@@ -215,14 +215,15 @@ define phrase merc-grab
   yells. The other one starts hollering for his companions.
 end phrase
 
-## The source draws this from three ("pull and struggle" / "beat on the
-## mercenary's arms with your fists" / "claw the mercenary's arms skin with
-## your fingernails"). A refusal phrase renders its variants as the literal
-## word "variants" today (GH #304), so only the first is
-## carried until that is fixed.
+## The struggle in the mercenary's grip (`story.ni:2168`): three random
+## arms, ported verbatim — "arms skin" as Gentry wrote it.
 
-define phrase merc-held
+define phrase merc-held, randomly
   You pull and struggle, but the man is just too strong.
+or
+  You beat on the mercenary's arms with your fists, but the man is just too strong.
+or
+  You claw the mercenary's arms skin with your fingernails, but the man is just too strong.
 end phrase
 
 define phrase merc-dash-away

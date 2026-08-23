@@ -248,6 +248,19 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     expect(errors[0].message).toContain('{gremlin}');
     expect(errors[0].message).toContain('spooky');
   });
+
+  it('gate: a phrase-body marker naming another phrase is rejected, a room-description one is not (GH #286)', () => {
+    const result = compileFixture('gates/phrase-in-phrase.story');
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    // Exactly one: the `{again}` inside `tent-reply`. The `{again}` in the
+    // Field's description is the WORKING snippet path (Z2) and must not
+    // start erroring — the length-1 assertion pins both directions.
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('analysis.phrase-in-phrase');
+    expect(errors[0].message).toContain('{again}');
+    expect(errors[0].message).toContain('tent-reply');
+    expect(errors[0].message).toContain('print literally');
+  });
 });
 
 // The `analysis.missing-ifid` span tests lived here. The diagnostic retired

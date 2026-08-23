@@ -686,6 +686,14 @@ class Analyzer {
    */
   private bookKeys = new Map<string, boolean>();
   private partialCoverageWarned = new Set<string>();
+  /**
+   * Phrase-table keys derived from entity DESCRIPTIONS (`<id>.description`,
+   * `<id>.initial-description`) rather than authored phrase bodies. The
+   * phrase-in-phrase gate (GH #286) exempts them: room descriptions resolve
+   * their markers through the Z2 snippet path, and non-room descriptions
+   * keep markers unrewritten by pinned contract (zoo surfaces phase 2).
+   */
+  private descriptionKeys = new Set<string>();
 
   run(): StoryIR {
     // ADR-269 D8: grammar-file mode — a `grammar` header confines the file
@@ -3194,6 +3202,7 @@ class Analyzer {
     // Derived phrase keys: entity descriptions and per-entity overrides.
     for (const e of this.entities) {
       if (e.decl.description) {
+        this.descriptionKeys.add(`${e.id}.description`);
         this.registerPhrase(DEFAULT_LOCALE, `${e.id}.description`, {
           strategy: null,
           variants: [this.variantOf(e.decl.description)],
@@ -3202,6 +3211,7 @@ class Analyzer {
       }
       if (e.decl.initialDescription) {
         // Z1: the `first time` prose — first-visit description, its own key.
+        this.descriptionKeys.add(`${e.id}.initial-description`);
         this.registerPhrase(DEFAULT_LOCALE, `${e.id}.initial-description`, {
           strategy: null,
           variants: [this.variantOf(e.decl.initialDescription)],
@@ -7303,7 +7313,24 @@ class Analyzer {
         if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
         if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
         if (this.hatchNames.has(marker)) continue;
-        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
+        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) {
+          // Description-derived entries are not phrase BODIES: room
+          // descriptions resolve markers via Z2 snippets, non-room ones
+          // keep them unrewritten by pinned contract. Silent, as before.
+          if (this.descriptionKeys.has(label)) continue;
+          // GH #286 floor: nothing resolves a phrase reference inside
+          // another phrase's body — snippet rewriting is room-description
+          // prose only (Z2, checkDescriptionMarkers) — so the marker would
+          // reach the player as literal braces. Reject it instead. Whether
+          // phrase-in-phrase should RESOLVE is held open (GH #303 item 2);
+          // if it lands, this gate relaxes into cycle detection.
+          this.diagnostics.error(
+            'analysis.phrase-in-phrase',
+            `\`{${marker}}\` in phrase \`${label}\` names another phrase, but a phrase body cannot invoke a phrase — the marker would print literally. Carry the text inline, or emit \`phrase ${marker}\` beside this one at the call site.`,
+            phrase.span,
+          );
+          continue;
+        }
         if (this.bookKeys.has(marker)) continue; // book coverage counts (ADR-250 D4.6)
         this.diagnostics.error(
           'analysis.unbound-marker',
