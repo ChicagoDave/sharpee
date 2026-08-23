@@ -302,3 +302,36 @@ establish the monkey before the player meets it.
 and P-9 ships the port without ADR-323 deferred narration — so its firing needs re-authoring on
 whatever the port's own mechanism is, regardless of this decision. The decision changes only *when*
 it is armed.
+
+### The eavesdrop's aftermath — DECIDED (David, 2026-08-22): a third story state, and the chase starts later
+
+**The bite hands off to a third state, between `calm` and `chase`.** Jack has heard the voices and
+knows she is wanted; nobody has seen her yet. That is neither the calm walk nor the chase, and it
+is not folded into either: the chase does **not** begin in the Alley. David: *"a third state, the
+chase starts later."*
+
+**This is the source's own window, named.** Gentry runs the same three beats as scenes:
+`Eavesdropping on Soldiers` ends when the utterance table empties or the mercenaries reach the
+Alley; `Avoiding Soldiers` then runs until `Final Chase` begins (`story.ni:1742-1751`). When the
+eavesdrop ends the market gates close and lock (`story.ni:1749`), and the wandering mercenaries
+sweep the market with three postures — `oblivious`, `approaching`, `grabbing` (`story.ni:2071-2182`).
+`Final Chase` begins when `TE20` fires, the necklace-for-cloak trade (`story.ni:4005`). So the
+middle state is the sweep: gates locked, pursuers on the board, Jack unseen.
+
+**Consequences for Phase 6.**
+- `secret-letter.story:58` declares `states: calm, chase`; a third state goes between them.
+  Working name **`hunted`** (Claude's proposal — David renames at will; the name is an
+  identifier, not prose). The bite in the Alley moves `calm` → `hunted`; the move to `chase` is
+  the next decision below.
+- The mercenary pressure model the prior session queued as the next authored increment is the
+  **`hunted`** state's content, not the chase's: the four-state pursuer (source's oblivious /
+  approaching / grabbing plus absent) lives here, and the theft rules' noisy half (`story.ni:1978-1997`,
+  ejection and permanent stall block) and the eat-refusal "No time for breakfast right now!"
+  (`story.ni:2417`) are `hunted`/`chase` behaviour, not `calm`.
+- The market gates lock at the transition (`story.ni:1749`) — the market becomes a box, which is
+  what makes the sweep a threat rather than a chase the player could simply walk away from.
+
+**Open — what moves `hunted` → `chase`.** The source fires it on `TE20`, i.e. the moment Jack is
+*inside Teisha's tent holding the cloak*, and the timers (`Tent Escape`, `Pole Escape`) run from
+there. Whether the port keeps that trigger, or moves it to a sighting (the pursuer reaching
+`approaching`/`grabbing`), is David's next ruling.

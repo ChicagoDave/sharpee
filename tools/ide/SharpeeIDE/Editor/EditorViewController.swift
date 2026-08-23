@@ -956,6 +956,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         // frame — text hidden under the gutter until a resize (GH #290).
         let containerStale = abs(container.containerSize.width - wrapWidth) > 0.5
         let frameStale = abs(textView.frame.width - clipWidth) > 0.5
+        // Wrapped text never scrolls sideways. While the frame was stale (one
+        // gutter too wide) a trackpad swipe could still slide the clip right
+        // — the scroller is hidden, not the scrolling — and correcting the
+        // frame does not move the clip back, so the first characters of every
+        // line stay hidden under the gutter until something else scrolls
+        // horizontally (nothing does). Clamp the origin every pass, outside
+        // the staleness guard: the slide can outlive the stale frame.
+        let clip = scrollView.contentView
+        if clip.bounds.origin.x != 0 {
+            clip.scroll(to: NSPoint(x: 0, y: clip.bounds.origin.y))
+            scrollView.reflectScrolledClipView(clip)
+        }
         guard clipWidth > 0, wrapWidth > 50,
               force || containerStale || frameStale else { return }
         container.containerSize = NSSize(width: wrapWidth,

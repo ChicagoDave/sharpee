@@ -93,4 +93,39 @@ final class EditorWrapWidthTests: XCTestCase {
                        "a layout pass must re-sync a stale frame even when the container already matches (GH #290)")
         XCTAssertEqual(container.containerSize.width, settledContainerWidth, accuracy: 0.5)
     }
+
+    /// The state David keeps seeing: while the frame was one gutter too wide,
+    /// a sideways swipe slid the clip right. Correcting the frame width does
+    /// not move the clip back, so the first characters of every line stay
+    /// under the gutter. A slide must not stick: the clip's bounds-change
+    /// sync clamps it straight back, and a layout pass keeps it at x = 0.
+    func testASidewaysSlideCannotStickInWrapMode() throws {
+        let file = tmp.appendingPathComponent("slid.chord")
+        try "## a fragment\n\ncreate Teisha\n  a person, proper\n"
+            .write(to: file, atomically: true, encoding: .utf8)
+        editor.openDocument(at: file) // .chord always soft-wraps
+        editor.view.layoutSubtreeIfNeeded()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
+
+        let textView = try XCTUnwrap(findTextView(in: editor.view))
+        let scrollView = try XCTUnwrap(textView.enclosingScrollView)
+        let clip = scrollView.contentView
+        let clipWidth = scrollView.contentSize.width
+        let rulerWidth = try XCTUnwrap(scrollView.verticalRulerView?.ruleThickness)
+        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5, "settled editor starts at the left edge")
+
+        // Stale wide frame, then the sideways slide it permits.
+        textView.setFrameSize(NSSize(width: clipWidth + rulerWidth, height: textView.frame.height))
+        clip.scroll(to: NSPoint(x: rulerWidth, y: clip.bounds.origin.y))
+        scrollView.reflectScrolledClipView(clip)
+        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5,
+                       "wrapped text never scrolls sideways — the slide must be clamped back as it happens")
+
+        editor.view.needsLayout = true
+        editor.view.layoutSubtreeIfNeeded()
+
+        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5,
+                       "and a layout pass must leave the clip at x = 0")
+        XCTAssertEqual(textView.frame.width, clipWidth, accuracy: 0.5)
+    }
 }
