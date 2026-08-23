@@ -17,7 +17,7 @@
  * - Unknown constructs throw LoadError: the compiler gates should make
  *   these unreachable; reaching one is a loader bug, not author error.
  */
-import type { IRCondition, IREntity, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type SeededRandom } from '@sharpee/core';
 import {
   CharacterModelTrait,
@@ -39,7 +39,7 @@ import {
 import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -93,6 +93,8 @@ export class Evaluator {
    */
   private readonly irEntities: IREntity[];
   private readonly irEntityById = new Map<string, IREntity>();
+  /** ADR-325 D3: timer definitions by `qualified` key, for state-word reads. */
+  private readonly timerDefs = new Map<string, IRTimerDef>();
 
   /**
    * Live client-capability source for `client has` (ADR-216) — set by the
@@ -124,6 +126,7 @@ export class Evaluator {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
     this.irEntities = ir.entities;
     for (const e of ir.entities) this.irEntityById.set(e.id, e);
+    for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
     for (const trait of ir.traits) {
       this.entityFields.set(
         trait.name,
@@ -170,6 +173,12 @@ export class Evaluator {
       case 'story-state':
         // The story object's phase (`while after-hours`, ratchet D2).
         return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
+      case 'timer-has': {
+        // ADR-325 D3d: `has started` = running, stopped, or expired; `has
+        // expired` = over. Idle (never started, or reset) answers no to both.
+        const record = this.timerRecord(cond.timer, ctx);
+        return cond.what === 'started' ? record.phase !== 'idle' : record.phase === 'expired';
+      }
       case 'client-has': {
         // ADR-216: the live negotiated client capability. Without a
         // provider (load time, headless tests) the engine's text-only
@@ -338,8 +347,11 @@ export class Evaluator {
         return raw(irEntity.kinds.some((k) => k.name === classifier));
       }
       case 'is-in': {
+        // ADR-325 D1: the place may be `<owner>'s location`; an offstage
+        // owner has none, and `is in` nothing is false, never an error.
         const subjectId = this.entityValue(cond.subject, ctx);
-        const placeId = this.entityValue(cond.object, ctx);
+        const placeId = this.evalValue(cond.object, ctx);
+        if (typeof placeId !== 'string' || !ctx.world.getEntity(placeId)) return raw(false);
         return raw(this.isWithin(ctx.world, subjectId, placeId));
       }
       case 'is-here': {
@@ -528,6 +540,15 @@ export class Evaluator {
         }
         return this.readField(base, value.field, ctx);
       }
+      case 'timer': {
+        // ADR-325 D3d: the timer's current named turn, `expired` once over,
+        // and no value (null) before it starts or after a reset.
+        const record = this.timerRecord(value.timer, ctx);
+        if (record.phase === 'idle') return null;
+        if (record.phase === 'expired') return 'expired';
+        const def = this.timerDefs.get(value.timer);
+        return record.index >= 1 && def ? def.states[record.index - 1] ?? null : null;
+      }
       case 'counter': {
         // ADR-264 D3: read a counter's current value from world state. The
         // owner (per-entity) resolves to an IR entity id, matching how the
@@ -585,6 +606,12 @@ export class Evaluator {
       .map((e) => e.id);
   }
 
+  /** A timer's persisted record (ADR-325 D3g); idle when never written. */
+  timerRecord(qualified: string, ctx: EvalContext): TimerRecord {
+    const stored = ctx.world.getStateValue(timerKey(qualified)) as TimerRecord | undefined;
+    return stored ?? { phase: 'idle', index: 0, startedTurn: -1 };
+  }
+
   /** Evaluate a value that must be an entity (world id). */
   entityValue(value: IRValue, ctx: EvalContext): string {
     const result = this.evalValue(value, ctx);
@@ -597,7 +624,11 @@ export class Evaluator {
   private readField(worldId: string, field: string, ctx: EvalContext): unknown {
     switch (field) {
       case 'location':
-        return ctx.world.getLocation(worldId);
+        // ADR-325 D1: `location` is the containing room, always — a room is
+        // its own; a thing carried or on a supporter reads the room around
+        // it. Undefined when the entity is offstage.
+        if (ctx.world.getEntity(worldId)?.has(TraitType.ROOM)) return worldId;
+        return ctx.world.getContainingRoom(worldId)?.id ?? ctx.world.getLocation(worldId);
       case 'state': {
         const irId = this.ids.irIdOf(worldId);
         if (irId === undefined) throw new LoadError('Cannot read `state` of a non-story entity.');

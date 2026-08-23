@@ -70,3 +70,28 @@ export function selectOccurrenceKey(id: string, ownerIrId?: string): string {
  * reserved bare-digits id shape is what keeps the two distinguishable forever.
  */
 export const RETIRED_SELECT_KEY = /^chord\.occurrence\.select\.\d+$/;
+
+/**
+ * Named-turn timers (ADR-325 D3g): `chord.timer.<qualified>` holds the
+ * timer's record (`TimerRecord`), ordinary world state so save/restore
+ * carries a timer mid-run.
+ */
+export const CHORD_TIMER_PREFIX = 'chord.timer.';
+
+/** The world-state key for a timer, by its IR `qualified` key. */
+export function timerKey(qualified: string): string {
+  return `${CHORD_TIMER_PREFIX}${qualified}`;
+}
+
+/**
+ * A timer's position. `idle` = not started (or reset); `running` steps one
+ * named turn per turn; `stopped` holds; `expired` is over. `index` counts
+ * steps taken since start (0 = started, no named turn yet; n = the n-th
+ * named turn). `startedTurn` keeps a timer started on turn T from stepping
+ * before T+1.
+ */
+export interface TimerRecord {
+  phase: 'idle' | 'running' | 'stopped' | 'expired';
+  index: number;
+  startedTurn: number;
+}

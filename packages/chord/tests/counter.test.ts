@@ -138,3 +138,27 @@ describe('per-entity counter (ADR-264 D1)', () => {
     expect(ir.counters).toEqual([]);
   });
 });
+
+describe('possessive counter reference — singular and plural owners (GH #305)', () => {
+  const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+  const owner = (name: string, plural: boolean, counter: boolean) =>
+    `create the ${name}\n` +
+    `  a person${plural ? ', plural' : ''}\n` +
+    (counter ? '  counter suspicion starts 0 between 0 and 10\n' : '') +
+    '  on every turn\n' +
+    `    raise the ${name}${plural ? "'" : "'s"} suspicion by 1\n` +
+    '  end on\n\n' +
+    `  The ${name}.\n`;
+
+  it("accepts `the innkeeper's suspicion` on a singular owner", () => {
+    expect(errs(story(owner('innkeeper', false, true)))).toEqual([]);
+  });
+
+  it("accepts `the guards' suspicion` on a plural owner", () => {
+    expect(errs(story(owner('guards', true, true)))).toEqual([]);
+  });
+
+  it("still rejects `the guards' suspicion` when the guards declare no such counter", () => {
+    expect(errs(story(owner('guards', true, false)))).toContain('analysis.unknown-counter');
+  });
+});

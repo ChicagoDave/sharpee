@@ -58,7 +58,7 @@ export interface StoryIR {
    * NO presence gate; `it` is unbound (compile-gated), narration
    * broadcasts.
    */
-  story: { states: string[]; reversible: boolean; onClauses: IROnClause[] };
+  story: { states: string[]; reversible: boolean; onClauses: IROnClause[]; timerClauses?: IRTimerClause[] };
   /**
    * `use <extension>` names (ADR-215), validated against the manifest
    * registry — the loader registers each against its trusted runtime
@@ -109,6 +109,8 @@ export interface StoryIR {
   hunger?: IRHungerDef;
   /** Story-global numeric counters (ADR-264 D1). */
   counters: IRCounterDef[];
+  /** Named-turn timers (ADR-325 D3), every owner — keyed by `qualified`. */
+  timers: IRTimerDef[];
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
@@ -285,6 +287,8 @@ export interface IREntity {
   statesReversible: boolean;
   /** Per-entity numeric counters (ADR-264 D1) — one value per instance. */
   counters: IRCounterDecl[];
+  /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
+  timerClauses?: IRTimerClause[];
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
   /**
@@ -1168,6 +1172,35 @@ export interface IRCounterDef {
   span: Span;
 }
 
+/**
+ * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key:
+ * `<owner-ir-id>.<name>` for an entity's or the player's (`player.<name>`),
+ * bare `<name>` for the story's. A state's prose, when authored, lives in
+ * the phrase table under `<qualified>.<state>`.
+ */
+export interface IRTimerDef {
+  name: string;
+  qualified: string;
+  /** The owning entity's IR id (`player` for the player), or null for the story. */
+  owner: string | null;
+  /** Named turns in order; `expired` follows the last and is never listed. */
+  states: string[];
+  /** `meanwhile[, one chance in n]` body — each turn the timer is running. */
+  meanwhile: { chance: number | null; body: IRStatement[] } | null;
+  /** `interrupted one chance in n` — per-turn chance of expiring early. */
+  interrupted: number | null;
+  span: Span;
+}
+
+/** `when <timer> expires [, while <cond>]` (ADR-325 D3e) — on the clause owner. */
+export interface IRTimerClause {
+  /** The timer's `qualified` key. */
+  timer: string;
+  condition: IRCondition | null;
+  body: IRStatement[];
+  span: Span;
+}
+
 /** A per-entity numeric counter (ADR-264 D1) — same shape, carried on IREntity. */
 export interface IRCounterDecl {
   name: string;
@@ -1342,6 +1375,8 @@ export type IRStatement =
   // ADR-264 D2: `raise`/`lower` a counter by an amount. `owner` is the entity
   // IRValue for a per-entity counter, or null for a story-global one.
   | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
+  /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
+  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1442,6 +1477,9 @@ export type IRValue =
   /** A numeric counter read (ADR-264 D3) — `owner` is the entity IRValue for a
    *  per-entity counter, or null for a story-global one. */
   | { kind: 'counter'; name: string; owner: IRValue | null }
+  /** A timer's current named state (ADR-325 D3d) — `timer` is the `qualified` key. Reads
+   *  as the state word while running/stopped, `expired` after, nothing before start. */
+  | { kind: 'timer'; timer: string }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
   /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
@@ -1453,6 +1491,8 @@ export type IRCondition =
   | { kind: 'or'; operands: IRCondition[] }
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
+  /** `<timer> has started` / `has expired` (ADR-325 D3d). */
+  | { kind: 'timer-has'; timer: string; what: 'started' | 'expired' }
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }

@@ -56,7 +56,10 @@ import {
   MachineTransition,
   MediaStmt,
   NameRef,
+  PlaceExpr,
   OnClause,
+  DefineTimer,
+  TimerClause,
   PatternPart,
   StateName,
   Statement,
@@ -97,6 +100,8 @@ import {
   IRHungerDef,
   IRMeterRung,
   IRCounterDef,
+  IRTimerDef,
+  IRTimerClause,
   IRCounterDecl,
   IRGrammarExtension,
   IRGrammarRemoval,
@@ -235,6 +240,17 @@ function isNegationOf(candidate: string, base: string): boolean {
  * gate's per-condition event-clause key. Same shape → same string.
  */
 function conditionFingerprint(cond: ConditionNode): string {
+  const placeKey = (pl: PlaceExpr): string => {
+    switch (pl.kind) {
+      case 'name':
+        return pl.ref.words.join(' ').toLowerCase();
+      case 'location':
+        return `loc:${value(pl.owner)}`;
+      case 'here':
+      case 'offstage':
+        return pl.kind;
+    }
+  };
   const value = (v: ValueExpr): string => {
     switch (v.kind) {
       case 'literal':
@@ -278,9 +294,11 @@ function conditionFingerprint(cond: ConditionNode): string {
         case 'is-a':
           return `is-a${p.negated ? '!' : ''}(${value(cond.subject)},${p.classifier.join(' ').toLowerCase()})`;
         case 'is-in':
-          return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
+          return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${placeKey(p.place)})`;
         case 'is-here':
           return `is-here${p.negated ? '!' : ''}(${value(cond.subject)})`;
+        case 'timer-has':
+          return `timer-has-${p.what}${p.negated ? '!' : ''}(${value(cond.subject)})`;
         case 'has':
         case 'holds':
         case 'wears':
@@ -413,7 +431,9 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'compare':
           return visitValue(p.value);
         case 'is-in':
-          return nameIsIt(p.place);
+          return p.place.kind === 'name' ? nameIsIt(p.place.ref)
+            : p.place.kind === 'location' ? visitValue(p.place.owner)
+            : false;
         case 'has':
         case 'holds':
         case 'wears':
@@ -427,6 +447,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'is-a':
         // `is here` has no object node — the subject was already visited above.
         case 'is-here':
+        case 'timer-has':
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
@@ -515,7 +536,7 @@ interface PhaseOrderState {
 
 /** The source keyword a statement was written with, for phase-order messages. */
 function statementWord(stmt: Statement): string {
-  return stmt.kind === 'media' ? stmt.form : stmt.kind;
+  return stmt.kind === 'media' ? stmt.form : stmt.kind === 'timer-verb' ? stmt.verb : stmt.kind;
 }
 
 class Analyzer {
@@ -543,6 +564,10 @@ class Analyzer {
   private scoreNames = new Map<string, number>();
   /** Story-global counter names (ADR-264) — for `raise`/`lower`/read resolution. */
   private storyCounterNames = new Set<string>();
+  /** ADR-325 D3: timers by `qualified` key (`<owner>.<name>` / `<name>`). */
+  private timers = new Map<string, { name: string; owner: string | null; states: string[]; decl: DefineTimer }>();
+  /** Lowered timer defs, in declaration order — the IR `timers` list. */
+  private timerDefs: IRTimerDef[] = [];
   /** Entity id → its per-entity counter names (ADR-264). */
   private entityCounterNames = new Map<string, Set<string>>();
   /** Owner-qualified score declarations, for ir.scores emission. */
@@ -722,6 +747,8 @@ class Analyzer {
     this.resolveClaims();
     // ADR-318 D12a: witnessed-act aliases resolve against the entity table.
     this.buildWitnessedTopics();
+    // ADR-325 D3: timers resolve their owners against the entity table.
+    this.buildTimers();
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -747,6 +774,9 @@ class Analyzer {
           ...this.buildOnClause(c, STORY_SCOPE, 'story', i),
           narration: 'broadcast' as const,
         })),
+        ...((this.ast.header?.timerClauses ?? []).length > 0
+          ? { timerClauses: (this.ast.header?.timerClauses ?? []).map((c, i) => this.buildTimerClause(c, STORY_SCOPE, 'story', i)) }
+          : {}),
       },
       entities: [],
       conditions: [],
@@ -760,6 +790,7 @@ class Analyzer {
       ranks: this.buildRanks(),
       ...(hungerDef !== undefined ? { hunger: hungerDef } : {}),
       counters: [],
+      timers: this.timerDefs,
       sequences: [],
       machines: [],
       channels: [],
@@ -5430,6 +5461,9 @@ class Analyzer {
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
         this.buildOnClause(c, entityScope(sym ?? null), id, i),
       ),
+      ...(decl.timerClauses.length > 0
+        ? { timerClauses: decl.timerClauses.map((c, i) => this.buildTimerClause(c, entityScope(sym ?? null), id, i)) }
+        : {}),
       // Filled by applyTopics after every entity is built (ADR-239).
       topics: [],
       span: decl.span,
@@ -5527,8 +5561,10 @@ class Analyzer {
         case 'award':
         case 'raise':
         case 'lower':
+        case 'timer-verb':
           // `raise`/`lower` are mutations (D3) — a counter change is world
           // state, and a refusal after one is as dead as after a `change`.
+          // A timer verb (ADR-325 D3c) is the same kind of change.
           state.ended ??= { kind: 'mutation', what: statementWord(stmt) };
           break;
         case 'refuse':
@@ -5658,13 +5694,22 @@ class Analyzer {
           span: stmt.span,
         };
       }
-      case 'set':
+      case 'set': {
+        // ADR-325 D3: a timer never takes a value.
+        if (this.timerKeyOf(stmt.target, scope) !== null) {
+          this.diagnostics.error(
+            'analysis.tally-verb-on-timer',
+            '`set` writes a value — a timer has none; it is `start`ed, `stop`ped, `restart`ed, `reset`, or `interrupt`ed.',
+            stmt.span,
+          );
+        }
         return {
           kind: 'set',
           target: this.resolveValue(stmt.target, scope),
           value: this.resolveValue(stmt.value, scope),
           span: stmt.span,
         };
+      }
       case 'change': {
         // `change the story to <state>` targets the story object (D2).
         const targetWords = stmt.entity.words.map((w) => w.toLowerCase());
@@ -5757,7 +5802,7 @@ class Analyzer {
         return {
           kind: 'move',
           entity: this.resolveEntityValue(stmt.entity, scope),
-          place: this.resolveEntityValue(stmt.place, scope),
+          place: this.resolvePlace(stmt.place, scope),
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
@@ -5784,11 +5829,24 @@ class Analyzer {
         }
         return { kind: 'award', expression, once: stmt.once, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
+      case 'timer-verb': {
+        // ADR-325 D3c: the five timer verbs. A tally is not a timer.
+        const timer = this.resolveTimerRef(stmt.target, scope, stmt.span, stmt.verb);
+        return { kind: 'timer', verb: stmt.verb, timer: timer ?? '', stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
       case 'raise':
       case 'lower': {
         // ADR-264 D2: resolve the target — a bare name (story-global) or a
         // possessive (per-entity), validated against the counter registries.
         const target = stmt.target;
+        // ADR-325 D3: a timer never takes a number.
+        if (this.timerKeyOf(target, scope) !== null) {
+          this.diagnostics.error(
+            'analysis.tally-verb-on-timer',
+            `\`${stmt.kind}\` moves a tally, not a timer — a timer is \`start\`ed, \`stop\`ped, \`restart\`ed, \`reset\`, or \`interrupt\`ed, never counted.`,
+            stmt.span,
+          );
+        }
         let counter = '';
         let owner: IRValue | null = null;
         let ownerId: string | null = null;
@@ -5986,13 +6044,18 @@ class Analyzer {
       case 'possessive': {
         // ADR-264 D3: `<owner>'s <counter>` / `its <counter>` reads a per-entity
         // counter when the field names one; otherwise it is a trait field.
+        // ADR-325 D3d: `<owner>'s <timer>` reads the timer's state word.
         const base = this.resolveValue(expr.base, scope);
         const field = expr.field.join(' ');
         let ownerId: string | null = null;
         if (base.kind === 'entity') ownerId = base.id;
+        else if (base.kind === 'player') ownerId = 'player';
         else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
         if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(field)) {
           return { kind: 'counter', name: field, owner: base };
+        }
+        if (ownerId !== null && this.timers.has(`${ownerId}.${field}`)) {
+          return { kind: 'timer', timer: `${ownerId}.${field}` };
         }
         return { kind: 'field', base, field };
       }
@@ -6001,6 +6064,9 @@ class Analyzer {
         if (expr.ref.kind === 'name' && expr.ref.words.length === 1 && this.storyCounterNames.has(expr.ref.words[0])) {
           return { kind: 'counter', name: expr.ref.words[0], owner: null };
         }
+        // ADR-325 D3d: a bare timer name, owner-first then story.
+        const timer = this.timerKeyOf(expr, scope);
+        if (timer !== null) return { kind: 'timer', timer };
         return this.resolveRefValue(expr.ref, scope);
       }
       case 'bare': {
@@ -6395,6 +6461,141 @@ class Analyzer {
     return { kind: 'symbol', name: ref.words.join(' ') };
   }
 
+  // ---------------------------------------------------------------- timers
+
+  /**
+   * ADR-325 D3a: resolve every `define timer` — owner to an entity id (or
+   * `player`, or null for the story), state names unique, state prose into
+   * the phrase table under `<qualified>.<state>`, and the `meanwhile` body
+   * lowered in the owner's scope (`it` = the owner).
+   */
+  private buildTimers(): void {
+    const decls = this.ast.declarations.filter((d): d is DefineTimer => d.kind === 'define-timer');
+    // Register names first so `meanwhile` bodies may name any timer.
+    for (const decl of decls) {
+      let owner: string | null = null;
+      if (decl.owner) {
+        const lower = decl.owner.words.join(' ').toLowerCase();
+        owner = PLAYER_WORDS.has(lower) ? 'player' : this.resolveEntityId(decl.owner);
+        if (owner === null) continue; // unknown owner already reported
+      }
+      const qualified = owner === null ? decl.name : `${owner}.${decl.name}`;
+      if (this.timers.has(qualified)) {
+        this.diagnostics.error('analysis.duplicate-timer', `A timer named \`${decl.name}\` is already declared${owner ? ` for \`${owner}\`` : ''}.`, decl.span);
+        continue;
+      }
+      const states: string[] = [];
+      for (const st of decl.states) {
+        if (states.includes(st.name)) {
+          this.diagnostics.error('analysis.duplicate-timer-state', `The timer \`${decl.name}\` already has a turn named \`${st.name}\`.`, st.span);
+          continue;
+        }
+        states.push(st.name);
+        if (st.text) {
+          this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.span });
+        }
+      }
+      this.timers.set(qualified, { name: decl.name, owner, states, decl });
+    }
+    for (const [qualified, t] of this.timers) {
+      const scope = t.owner === null ? STORY_SCOPE : t.owner === 'player' ? entityScope(this.byId.get('player') ?? null) : entityScope(this.byId.get(t.owner) ?? null);
+      const meanwhile = t.decl.meanwhile
+        ? { chance: t.decl.meanwhile.chance, body: t.decl.meanwhile.body.map((st, i) => this.resolveStatement(st, scope, `timer.${qualified}.meanwhile.${i}`)) }
+        : null;
+      this.timerDefs.push({ name: t.name, qualified, owner: t.owner, states: t.states, meanwhile, interrupted: t.decl.interrupted, span: t.decl.span });
+    }
+  }
+
+  /**
+   * The timer a value names, or null: a bare name resolves owner-first
+   * (the scope's owner, the player inside the player's block) then the
+   * story's; a possessive names its owner outright (ADR-325 D3c).
+   */
+  private timerKeyOf(expr: ValueExpr, scope: Scope): string | null {
+    if (expr.kind === 'ref' && expr.ref.words.length === 1) {
+      const name = expr.ref.words[0];
+      const ownerId = scope.owner?.id ?? null;
+      if (ownerId !== null && this.timers.has(`${ownerId}.${name}`)) return `${ownerId}.${name}`;
+      if (this.timers.has(name)) return name;
+      return null;
+    }
+    if (expr.kind === 'bare' && expr.words.length === 1) {
+      return this.timerKeyOf({ kind: 'ref', ref: { kind: 'name', article: null, words: expr.words, span: expr.span }, span: expr.span }, scope);
+    }
+    if (expr.kind === 'possessive' && expr.field.length === 1) {
+      const base = this.resolveValue(expr.base, scope);
+      let ownerId: string | null = null;
+      if (base.kind === 'entity') ownerId = base.id;
+      else if (base.kind === 'player') ownerId = 'player';
+      else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
+      if (ownerId === null) return null;
+      const key = `${ownerId}.${expr.field[0]}`;
+      return this.timers.has(key) ? key : null;
+    }
+    return null;
+  }
+
+  /** Resolve a timer reference for a verb or clause head; errors name the verb. */
+  private resolveTimerRef(expr: ValueExpr, scope: Scope, span: Span, verb: string): string | null {
+    const key = this.timerKeyOf(expr, scope);
+    if (key !== null) return key;
+    const written =
+      expr.kind === 'ref' ? expr.ref.words.join(' ')
+      : expr.kind === 'bare' ? expr.words.join(' ')
+      : expr.kind === 'possessive' ? expr.field.join(' ')
+      : '<value>';
+    // A tally named where a timer is wanted is its own error (D3).
+    const ownerCounters = scope.owner ? this.entityCounterNames.get(scope.owner.id) : undefined;
+    const isTally =
+      ((expr.kind === 'ref' || expr.kind === 'bare') && (this.storyCounterNames.has(written) || ownerCounters?.has(written) === true)) ||
+      (expr.kind === 'possessive' && [...this.entityCounterNames.values()].some((set) => set.has(written)));
+    if (isTally) {
+      this.diagnostics.error(
+        'analysis.timer-verb-on-tally',
+        `\`${verb}\` acts on a timer, not a tally — \`${written}\` is a counter; it is \`raise\`d, \`lower\`ed, or \`set\`.`,
+        span,
+      );
+      return null;
+    }
+    // Suggest the reachable spellings: a same-named timer elsewhere is
+    // offered by its possessive, never by the bare name that just failed.
+    const candidates = [...this.timers.values()].map((t) => (t.owner === null ? t.name : `the ${t.owner}'s ${t.name}`));
+    this.diagnostics.error(
+      'analysis.unknown-timer',
+      `\`${written}\` is not a declared timer${scope.owner ? ` of \`${scope.owner.id}\` or the story` : ''}${this.suggestText(written, candidates)}.`,
+      span,
+    );
+    return null;
+  }
+
+  /** `when <timer> expires [, while <cond>]` (ADR-325 D3e) on an owner. */
+  private buildTimerClause(clause: TimerClause, scope: Scope, ownerKey: string, index: number): IRTimerClause {
+    const timer = this.resolveTimerRef(clause.timer, scope, clause.span, 'when … expires') ?? '';
+    const condition = clause.condition ? this.resolveCondition(clause.condition, scope) : null;
+    const body = clause.body.map((st, i) => this.resolveStatement(st, scope, `${ownerKey}.expires-${index}.${i}`));
+    this.checkPhaseOrder(clause.body, { ended: null });
+    return { timer, condition, body, span: clause.span };
+  }
+
+  /**
+   * Lower a place (ADR-325 D1–D2) onto the existing IR value shapes — no new
+   * IR kind: `<owner>'s location` is the `location` field read, `here` is
+   * that read on the player, `offstage` is the `offstage` symbol the loader
+   * treats as "no location".
+   */
+  private resolvePlace(place: PlaceExpr, scope: Scope): IRValue {
+    switch (place.kind) {
+      case 'name':
+        return this.resolveEntityValue(place.ref, scope);
+      case 'location':
+        return { kind: 'field', base: this.resolveValue(place.owner, scope), field: 'location' };
+      case 'here':
+        return { kind: 'field', base: { kind: 'player' }, field: 'location' };
+      case 'offstage':
+        return { kind: 'symbol', name: 'offstage' };
+    }
+  }
+
   private resolveEntityValue(ref: NameRef, scope: Scope): IRValue {
     // `holds nothing` — the empty-contents idiom, not an entity lookup.
     if (ref.words.length === 1 && ref.words[0].toLowerCase() === 'nothing') {
@@ -6602,8 +6803,17 @@ class Analyzer {
               pred: 'is-in',
               negated: cond.predicate.negated,
               subject,
-              object: this.resolveEntityValue(cond.predicate.place, scope),
+              object: this.resolvePlace(cond.predicate.place, scope),
             };
+          case 'timer-has': {
+            // ADR-325 D3d: `has started` / `has expired` read a timer's lifecycle.
+            if (subject.kind !== 'timer') {
+              this.diagnostics.error('analysis.unknown-timer', `\`has ${cond.predicate.what}\` reads a timer — the subject is not a declared timer.`, cond.predicate.span);
+              return { kind: 'condition', name: '' };
+            }
+            const node: IRCondition = { kind: 'timer-has', timer: subject.timer, what: cond.predicate.what };
+            return cond.predicate.negated ? { kind: 'not', operand: node } : node;
+          }
           case 'is-here': {
             // Z4 deictic: entity-valued subjects only — a literal can
             // never be "here", so reject at load rather than evaluating
@@ -6719,6 +6929,22 @@ class Analyzer {
       expr.kind === 'ref' ? expr.ref.words : expr.kind === 'bare' ? expr.words : null;
     if (words && words.length === 1) {
       const word = words[0];
+      // ADR-325 D3d: a timer subject reads its own named turns; `expired`
+      // is the lifecycle's word (`has expired`), never `is expired`.
+      if (subject.kind === 'timer') {
+        const timer = this.timers.get(subject.timer)!;
+        if (word === 'expired') {
+          this.diagnostics.error('analysis.timer-is-expired', '`is expired` is not a read — write `has expired` (the lifecycle), or name one of the timer\'s turns.', span);
+          return { kind: 'symbol', name: word };
+        }
+        if (timer.states.includes(word)) return { kind: 'symbol', name: word };
+        this.diagnostics.error(
+          'analysis.unknown-timer-state',
+          `\`${word}\` is not a turn of the timer \`${timer.name}\`${this.suggestText(word, timer.states)}.`,
+          span,
+        );
+        return { kind: 'symbol', name: word };
+      }
       // Trait-field subjects validate against the field's own value set
       // (`if kind is snake` — one-of members; flags — true/false).
       const fieldValues = this.fieldValueSet(subject, scope);

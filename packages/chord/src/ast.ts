@@ -133,6 +133,8 @@ export interface StoryHeader {
    * header hosts.
    */
   onClauses: OnClause[];
+  /** `when <timer> expires` clauses for story-owned timers (ADR-325 D3e). */
+  timerClauses: TimerClause[];
   /**
    * `use <extension>` lines in the header's indented body (ADR-215):
    * static, one trusted platform-extension name per line. Each admits that
@@ -266,6 +268,7 @@ export type Declaration =
   | DefineAction
   | DefineHatch
   | DefineSequence
+  | DefineTimer
   // ADR-264 story-global numeric counter:
   | DefineCounter
   // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
@@ -776,6 +779,8 @@ export interface CreateDecl {
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
   phraseOverrides: PhraseOverride[];
   onClauses: OnClause[];
+  /** `when <timer> expires` clauses (ADR-325 D3e). */
+  timerClauses: TimerClause[];
   /**
    * `mood <word>` lines (ADR-310 D3) — collected in order so the analyzer
    * can reject duplicates with the second line's span (the pronouns idiom).
@@ -1683,6 +1688,44 @@ export interface MachineTransition {
   span: Span;
 }
 
+/**
+ * `define timer <name> [for <owner>] … end timer` (ADR-325 D3a) — a timer
+ * counts turns by name: once started it steps through `states` one per
+ * turn and ends in the built-in `expired`. `owner` null = the story's.
+ */
+export interface DefineTimer {
+  kind: 'define-timer';
+  name: string;
+  /** `for <owner>` — an entity or the player; null = story-owned. */
+  owner: NameRef | null;
+  states: TimerStateDecl[];
+  /** `meanwhile[, one chance in n]` body — runs each turn the timer is running. */
+  meanwhile: { chance: number | null; body: Statement[]; span: Span } | null;
+  /** `interrupted one chance in n` — per-turn chance of expiring early. */
+  interrupted: number | null;
+  span: Span;
+}
+
+/** One named turn of a timer, with optional prose spoken when it is reached. */
+export interface TimerStateDecl {
+  name: string;
+  text: TextValue | null;
+  span: Span;
+}
+
+/**
+ * `when <timer> expires [, while <cond>] … end when` (ADR-325 D3e) — the
+ * expiry clause head on the owner's block. `timer` is a bare name (the
+ * block owner's, then the story's) or a possessive (`the player's waiting`).
+ */
+export interface TimerClause {
+  kind: 'timer-clause';
+  timer: ValueExpr;
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
+
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
   kind: 'define-sequence';
@@ -1740,6 +1783,7 @@ export type Statement =
   | RemoveStmt
   | AwardStmt
   | CounterMutateStmt
+  | TimerVerbStmt
   | WinStmt
   | LoseStmt
   | KillStmt
@@ -1942,11 +1986,28 @@ export interface ChangeFeelingStmt {
   span: Span;
 }
 
-/** `move <entity> to <place> [when <cond>]` */
+/**
+ * A place, wherever the grammar wants one (ADR-325 D1–D2): the destination
+ * of `move … to`, the object of `is in`.
+ *
+ * - `name` — a room or holder by name (`the Rope Stall`, `the crate`).
+ * - `location` — `<owner>'s location` / `its location`: the owner's
+ *   containing room, always (a room is its own).
+ * - `here` — sugar for the player's location (`move it here`).
+ * - `offstage` — no location at all (`move it offstage`); the entity stays
+ *   in the world, detached, until a later `move` reattaches it.
+ */
+export type PlaceExpr =
+  | { kind: 'name'; ref: NameRef; span: Span }
+  | { kind: 'location'; owner: ValueExpr; span: Span }
+  | { kind: 'here'; span: Span }
+  | { kind: 'offstage'; span: Span };
+
+/** `move <entity> to <place> | here | offstage [when <cond>]` (ADR-325 D1–D2) */
 export interface MoveStmt {
   kind: 'move';
   entity: NameRef;
-  place: NameRef;
+  place: PlaceExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -1960,6 +2021,18 @@ export interface MoveStmt {
 export interface RemoveStmt {
   kind: 'remove';
   entity: NameRef;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `start|stop|restart|reset|interrupt <timer> [when <cond>]` (ADR-325 D3c).
+ * `target` is a bare name (owner-first, then story) or a possessive.
+ */
+export interface TimerVerbStmt {
+  kind: 'timer-verb';
+  verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt';
+  target: ValueExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2179,11 +2252,13 @@ export type Predicate =
    */
   | { kind: 'compare'; op: 'gte' | 'gt' | 'lte' | 'lt' | 'eq'; value: ValueExpr; span: Span }
   | { kind: 'is-a'; negated: boolean; classifier: string[]; span: Span }
-  | { kind: 'is-in'; negated: boolean; place: NameRef; span: Span }
+  | { kind: 'is-in'; negated: boolean; place: PlaceExpr; span: Span }
   /** `<subject> is here` — the Z4 deictic: subject shares the player's location. */
   | { kind: 'is-here'; negated: boolean; span: Span }
   | { kind: 'holds'; thing: NameRef; span: Span }
   | { kind: 'has'; thing: NameRef; span: Span }
+  /** `<timer> has started` / `has expired` (ADR-325 D3d) — the lifecycle reads. */
+  | { kind: 'timer-has'; negated: boolean; what: 'started' | 'expired'; span: Span }
   | { kind: 'wears'; thing: NameRef; span: Span }
   /** `can see <thing>` / `can reach <thing>` (design.md §2.7; Phase B). */
   | { kind: 'can'; ability: string; thing: NameRef; span: Span }

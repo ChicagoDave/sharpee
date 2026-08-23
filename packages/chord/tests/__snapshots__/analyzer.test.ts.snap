@@ -926,6 +926,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     "reversible": false,
     "states": [],
   },
+  "timers": [],
   "traits": [],
   "uses": [],
 }

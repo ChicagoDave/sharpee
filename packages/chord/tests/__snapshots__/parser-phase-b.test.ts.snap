@@ -460,18 +460,27 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
                   "kind": "is-in",
                   "negated": false,
                   "place": {
-                    "article": "the",
                     "kind": "name",
+                    "ref": {
+                      "article": "the",
+                      "kind": "name",
+                      "span": {
+                        "column": 31,
+                        "endColumn": 45,
+                        "endLine": 39,
+                        "line": 39,
+                      },
+                      "words": [
+                        "Break",
+                        "Room",
+                      ],
+                    },
                     "span": {
                       "column": 31,
                       "endColumn": 45,
                       "endLine": 39,
                       "line": 39,
                     },
-                    "words": [
-                      "Break",
-                      "Room",
-                    ],
                   },
                   "span": {
                     "column": 31,
@@ -1022,6 +1031,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1115,6 +1125,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1203,6 +1214,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       },
     ],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Trait Declarations Fixture",
     "usePhrasebooks": [],
     "uses": [
@@ -1312,6 +1324,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1402,6 +1415,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -2700,6 +2714,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -2794,6 +2809,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -2917,6 +2933,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
   ],
@@ -2953,6 +2970,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
     },
     "states": [],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Zoo Actions Fixture",
     "usePhrasebooks": [],
     "uses": [
@@ -3061,6 +3079,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -3150,6 +3169,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -3968,6 +3988,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -4059,18 +4080,27 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "move",
               "place": {
-                "article": "the",
                 "kind": "name",
+                "ref": {
+                  "article": "the",
+                  "kind": "name",
+                  "span": {
+                    "column": 16,
+                    "endColumn": 30,
+                    "endLine": 98,
+                    "line": 98,
+                  },
+                  "words": [
+                    "Staff",
+                    "Gate",
+                  ],
+                },
                 "span": {
                   "column": 16,
                   "endColumn": 30,
                   "endLine": 98,
                   "line": 98,
                 },
-                "words": [
-                  "Staff",
-                  "Gate",
-                ],
               },
               "span": {
                 "column": 5,
@@ -4121,17 +4151,26 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
                   "kind": "is-in",
                   "negated": false,
                   "place": {
-                    "article": "the",
                     "kind": "name",
+                    "ref": {
+                      "article": "the",
+                      "kind": "name",
+                      "span": {
+                        "column": 46,
+                        "endColumn": 56,
+                        "endLine": 102,
+                        "line": 102,
+                      },
+                      "words": [
+                        "Aviary",
+                      ],
+                    },
                     "span": {
                       "column": 46,
                       "endColumn": 56,
                       "endLine": 102,
                       "line": 102,
                     },
-                    "words": [
-                      "Aviary",
-                    ],
                   },
                   "span": {
                     "column": 46,
@@ -4233,6 +4272,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -4395,6 +4435,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -4483,6 +4524,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       },
     ],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Zoo Timeline Fixture",
     "usePhrasebooks": [],
     "uses": [],

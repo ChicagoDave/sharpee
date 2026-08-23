@@ -1045,7 +1045,14 @@ export class ChordStory implements Story {
     registerSlotEntry?(entry: ChordSlotEntry): void;
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
     getClientCapabilities?(): object;
+    getContext?(): { currentTurn: number };
   }): void {
+    // ADR-325 D3f: timers stamp the turn they start on from the engine's
+    // live counter, so a `start` in the player's action waits one turn.
+    if (engine.getContext) {
+      const getContext = engine.getContext.bind(engine);
+      this.runtime.setTurnProvider(() => getContext().currentTurn);
+    }
     // ADR-216 `client has`: wire the LIVE capability source (the engine
     // negotiates capabilities at start(); reads happen per evaluation).
     // Engines without the accessor leave the text-only default in place.

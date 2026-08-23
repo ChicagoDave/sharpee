@@ -54,6 +54,8 @@ import {
   DefinePronouns,
   DefineMachine,
   DefineSequence,
+  DefineTimer,
+  TimerStateDecl,
   EmitField,
   EmitValue,
   MediaStmt,
@@ -93,6 +95,7 @@ import {
   RemoveStmt,
   MustRequirement,
   NameRef,
+  PlaceExpr,
   OnClause,
   OrdinalBlock,
   ParamBinding,
@@ -131,6 +134,8 @@ import {
   CounterDecl,
   DefineCounter,
   CounterMutateStmt,
+  TimerVerbStmt,
+  TimerClause,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
@@ -266,6 +271,7 @@ function looksLikeComment(line: Line): boolean {
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
+  'start', 'restart', 'reset', 'interrupt',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
   // ADR-320 conversation-row statements (frozen 2026-08-17):
   'then', 'deflect', 'leave', 'hold',
@@ -572,6 +578,7 @@ class Parser {
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
     const onClauses: OnClause[] = [];
+    const timerClauses: TimerClause[] = [];
     const uses: UseDecl[] = [];
     const usePhrasebooks: UsePhrasebookDecl[] = [];
     const ranks: RankDecl[] = [];
@@ -671,6 +678,12 @@ class Parser {
       // `on every turn [while <cond>][, once]` — the story-owned daemon
       // (ADR-236 D7, ratchet R4). The only clause form the header hosts;
       // anything else keeps its owner-attached home.
+      if (this.isTimerClauseHead(peeked)) {
+        const clause = this.parseTimerClause();
+        span = mergeSpans(span, clause.span);
+        timerClauses.push(clause);
+        continue;
+      }
       if (peekedWord === 'on' || peekedWord === 'after') {
         const clause = this.parseOnClause(peeked.indent, peekedWord);
         span = mergeSpans(span, clause.span);
@@ -910,7 +923,7 @@ class Parser {
       );
     }
 
-    return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
+    return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, timerClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
   }
 
   /**
@@ -1153,6 +1166,153 @@ class Parser {
     return { kind: 'define-counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
   }
 
+  /**
+   * `define timer <name> [for <owner>] … end timer` (ADR-325 D3a). Body
+   * lines: a state name (one turn, optional indented prose), `meanwhile[,
+   * one chance in n]` + statements, `interrupted one chance in n`.
+   */
+  private parseDefineTimer(): DefineTimer | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define timer
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.timer-name', 'Expected a timer name after `define timer`.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    let owner: NameRef | null = null;
+    if (c.matchWord('for')) {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0) {
+        this.diagnostics.error('parse.timer-owner', 'Expected an owner after `for` (`for the player`, `for the guards`).', c.restSpan());
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.timer-head', 'Expected `define timer <name> [for <owner>]` and nothing more on the line.', c.restSpan());
+    }
+
+    const states: TimerStateDecl[] = [];
+    let meanwhile: DefineTimer['meanwhile'] = null;
+    let interrupted: number | null = null;
+    const parseChance = (lc: Cursor, line: Line): number | null => {
+      if (!(lc.matchWord('one') && lc.matchWord('chance') && lc.matchWord('in'))) {
+        this.diagnostics.error('parse.timer-chance', 'Expected `one chance in <n>`.', lc.restSpan());
+        return null;
+      }
+      const n = lc.next();
+      if (!n || n.kind !== 'number' || Number(n.text) < 1) {
+        this.diagnostics.error('parse.timer-chance', 'Expected a positive number after `one chance in`.', lc.restSpan());
+        return null;
+      }
+      return Number(n.text);
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent || isEndLine(line)) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'meanwhile') {
+        this.pos++;
+        lc.next();
+        let chance: number | null = null;
+        if (lc.peek()?.kind === 'comma') {
+          lc.next();
+          chance = parseChance(lc, line);
+        }
+        if (meanwhile) {
+          this.diagnostics.error('parse.timer-meanwhile', 'A timer has one `meanwhile` block.', lineSpan(line));
+        }
+        const body = this.parseStatements(line.indent, 'timer', 'meanwhile');
+        meanwhile = { chance, body, span: lineSpan(line) };
+        continue;
+      }
+      if (word === 'interrupted') {
+        this.pos++;
+        lc.next();
+        const n = parseChance(lc, line);
+        if (interrupted !== null) {
+          this.diagnostics.error('parse.timer-interrupted', 'A timer has one `interrupted` line.', lineSpan(line));
+        }
+        interrupted = n;
+        continue;
+      }
+      // A state name: one word, optionally followed by an indented prose body.
+      this.pos++;
+      const stateTok = lc.next();
+      if (!stateTok || stateTok.kind !== 'word' || !lc.atEnd()) {
+        this.diagnostics.error(
+          'parse.timer-state',
+          'Expected a state name (one word), `meanwhile`, or `interrupted one chance in <n>` inside `define timer`.',
+          lineSpan(line),
+        );
+        while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent && !isEndLine(this.lines[this.pos])) this.pos++;
+        continue;
+      }
+      if (stateTok.text === 'expired') {
+        this.diagnostics.error('parse.timer-expired', '`expired` is every timer\'s built-in final state — it is never written.', stateTok.span);
+      }
+      let text: TextValue | null = null;
+      const next = this.lines[this.pos];
+      if (next && next.indent > line.indent && !isEndLine(next)) {
+        text = this.parseProseParagraph(next.indent, line.indent);
+      }
+      states.push({ name: stateTok.text, text, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('timer', headLine);
+    return { kind: 'define-timer', name: nameTok.text, owner, states, meanwhile, interrupted, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** At `has`: is the read `has [not] started|expired` standing alone (ADR-325 D3d)? */
+  private isTimerHasRead(c: Cursor): boolean {
+    let i = 1;
+    if (c.isWord('not', i)) i++;
+    const w = c.peek(i);
+    if (!w || w.kind !== 'word' || (w.text !== 'started' && w.text !== 'expired')) return false;
+    const after = c.peek(i + 1);
+    return !after || (after.kind === 'word' && PHRASE_STOPS.has(after.text)) || after.kind === 'comma';
+  }
+
+  /** Is this line a `when <timer> expires[, while …]` clause head (ADR-325 D3e)? */
+  private isTimerClauseHead(line: Line): boolean {
+    if (firstWord(line) !== 'when') return false;
+    return line.tokens.some((t, i) => i > 1 && t.kind === 'word' && t.text === 'expires');
+  }
+
+  /** `when <timer> expires [, while <cond>] … end when` (ADR-325 D3e). */
+  private parseTimerClause(): TimerClause {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('when');
+    const timer = this.parseValueExpr(c, headLine, new Set(['expires']));
+    if (!c.matchWord('expires')) {
+      this.diagnostics.error('parse.timer-clause', 'Expected `when <timer> expires`.', c.restSpan());
+    }
+    let condition: ConditionNode | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('while')) {
+        this.diagnostics.error('parse.timer-clause', 'Expected `, while <condition>` after `expires`.', c.restSpan());
+      } else {
+        condition = this.parseCondition(c, headLine);
+      }
+    } else if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.timer-clause', 'Unexpected words after the `when … expires` head.', c.restSpan());
+    }
+    const body = this.parseStatements(headLine.indent, 'when');
+    const endSpan = this.consumeEnd('when', headLine);
+    return { kind: 'timer-clause', timer, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
@@ -1200,6 +1360,7 @@ class Parser {
       initialDescription: null,
       phraseOverrides: [],
       onClauses: [],
+      timerClauses: [],
       moods: [],
       feels: [],
       knows: [],
@@ -1404,6 +1565,8 @@ class Parser {
         decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if (word === 'after') {
         decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
+      } else if (this.isTimerClauseHead(line)) {
+        decl.timerClauses.push(this.parseTimerClause());
       } else if (
         word === 'phrase' &&
         line.tokens[1]?.kind === 'word' &&
@@ -2810,6 +2973,9 @@ class Parser {
         return null;
       case 'sequence':
         return this.parseDefineSequence();
+      case 'timer':
+        // ADR-325 D3a: a named-turn timer.
+        return this.parseDefineTimer();
       case 'counter':
         // ADR-264: a story-global numeric counter.
         return this.parseDefineCounter();
@@ -3627,7 +3793,7 @@ class Parser {
         }
         if (c.isWord('in')) {
           c.next();
-          const place = this.parseNameRef(c, () => false);
+          const place = this.parsePlace(c, line, new Set());
           return { kind: 'is-in', negated: false, place, span: place.span };
         }
         // `be any <name>` — membership over a named open condition (David,
@@ -6390,8 +6556,20 @@ class Parser {
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'emit', event, payload, stmtWhen, span: lineSpan(line) } as EmitStmt;
       }
+      case 'stop': {
+        // `stop music` / `stop ambient` are media (ADR-216); any other
+        // object is a timer (ADR-325 D3c).
+        if (c.isWord('music', 1) || c.isWord('ambient', 1)) {
+          this.pos++;
+          return this.parseMediaStatement(word, c, line);
+        }
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['when']));
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'timer-verb', verb: 'stop', target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+      }
       case 'play':
-      case 'stop':
       case 'show':
       case 'hide':
       case 'transition':
@@ -6409,6 +6587,18 @@ class Parser {
         }
         const value = this.parseValueExpr(c, line, new Set());
         return { kind: 'set', target, value, span: lineSpan(line) } as SetStmt;
+      }
+      case 'start':
+      case 'restart':
+      case 'reset':
+      case 'interrupt': {
+        // ADR-325 D3c: `<verb> <timer> [when <cond>]`.
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['when']));
+        if (target.kind === 'bare' && target.words.length === 0) return null;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'timer-verb', verb: word, target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
       }
       case 'raise':
       case 'lower': {
@@ -6488,14 +6678,25 @@ class Parser {
         return { kind: 'change', entity, state: state.text, stmtWhen, span: lineSpan(line) } as ChangeStmt;
       }
       case 'move': {
+        // ADR-325 D1–D2: `move X to <place>` | `move X here` | `move X offstage`.
+        // A trailing `here`/`offstage` (end of line or before `when`) ends
+        // the entity; anywhere else it is part of the entity's name.
         this.pos++;
         c.next();
-        const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
-        if (!c.matchWord('to')) {
-          this.diagnostics.error('parse.move-to', `Expected \`to <place>\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
-          return null;
+        const entity = this.parseNameRef(c, (t) =>
+          t.kind === 'word' && (t.text === 'to' || (this.isTrailingPlaceWord(c, t.text))),
+        );
+        let place: PlaceExpr;
+        if (c.isWord('here') || c.isWord('offstage')) {
+          const tok = c.next()!;
+          place = { kind: tok.text as 'here' | 'offstage', span: tok.span };
+        } else {
+          if (!c.matchWord('to')) {
+            this.diagnostics.error('parse.move-to', `Expected \`to <place>\`, \`here\`, or \`offstage\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
+            return null;
+          }
+          place = this.parsePlace(c, line, new Set(['when']));
         }
-        const place = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
       }
@@ -6936,6 +7137,35 @@ class Parser {
   // ----------------------------------------------------------- expressions
 
   /** Parse a name reference: optional article + words until a stop. */
+  /**
+   * Is `word` at the cursor a trailing `here`/`offstage` — the last word of
+   * the line, or followed only by a `when` clause? Only then does it end the
+   * `move` entity (ADR-325 D1–D2); `the stage crew` keeps its name.
+   */
+  private isTrailingPlaceWord(c: Cursor, word: string): boolean {
+    if (word !== 'here' && word !== 'offstage') return false;
+    const after = c.peek(1);
+    return !after || (after.kind === 'word' && after.text === 'when');
+  }
+
+  /**
+   * Parse a place (ADR-325 D1): a possessive `location` (`Teisha's
+   * location`, `its location`, `the player's location`), or otherwise a
+   * name exactly as before — an apostrophe inside a name (`the
+   * Weaponsmith's Stall`) is part of the name, not a possessive. Stops at
+   * PHRASE_STOPS or `extraStops`.
+   */
+  private parsePlace(c: Cursor, line: Line, extraStops: Set<string>): PlaceExpr {
+    const start = c.i;
+    const expr = this.parseValueExpr(c, line, extraStops);
+    if (expr.kind === 'possessive' && expr.field.length === 1 && expr.field[0] === 'location') {
+      return { kind: 'location', owner: expr.base, span: expr.span };
+    }
+    c.i = start;
+    const ref = this.parseNameRef(c, (t) => t.kind === 'word' && (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)));
+    return { kind: 'name', ref, span: ref.span };
+  }
+
   private parseNameRef(c: Cursor, stop: (t: Token) => boolean): NameRef {
     let article: string | null = null;
     const first = c.peek();
@@ -7011,7 +7241,8 @@ class Parser {
       if (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)) break;
       c.next();
       span = mergeSpans(span, t.span);
-      const poss = /^(.*)'s$/.exec(t.text);
+      // `innkeeper's` → innkeeper; `guards'` → guards (plural possessive, GH #305).
+      const poss = /^(.*)'s$/.exec(t.text) ?? /^(.*s)'$/.exec(t.text);
       if (poss) {
         words.push(poss[1]);
         possessiveBase = poss[1];
@@ -7235,7 +7466,7 @@ class Parser {
       }
       if (c.isWord('in')) {
         c.next();
-        const place = this.parseNameRef(c, () => false);
+        const place = this.parsePlace(c, line, new Set());
         return {
           kind: 'predicate',
           subject,
@@ -7315,6 +7546,19 @@ class Parser {
         subject,
         predicate: { kind: 'is', negated, value, span: value.span },
         span: mergeSpans(subject.span, value.span),
+      };
+    }
+
+    if (t.text === 'has' && this.isTimerHasRead(c)) {
+      // ADR-325 D3d: `<timer> has [not] started|expired` — the lifecycle reads.
+      c.next();
+      const negated = !!c.matchWord('not');
+      const what = c.next()!;
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'timer-has', negated, what: what.text as 'started' | 'expired', span: what.span },
+        span: mergeSpans(subject.span, what.span),
       };
     }
 

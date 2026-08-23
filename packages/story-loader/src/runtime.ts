@@ -18,7 +18,7 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTimerClause, IRTimerDef, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import { conditionRequiresSelfBreaking, normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
@@ -103,6 +103,8 @@ import {
   CHORD_TRAIT_PREFIX,
   counterKey,
   selectOccurrenceKey,
+  timerKey,
+  type TimerRecord,
 } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
@@ -206,6 +208,14 @@ export class ChordRuntime {
   private eventSeq = 0;
   /** Declared score identities (Phase B): name → worth. */
   private readonly scoreWorth = new Map<string, number>();
+  /** ADR-325 D3: timers by `qualified` key, in declaration order. */
+  private readonly timerDefs = new Map<string, IRTimerDef>();
+  /** ADR-325 D3e: expiry clauses by timer `qualified` key, with their `it`. */
+  private readonly timerClauses = new Map<string, { clause: IRTimerClause; it: string | null }[]>();
+  /** The engine's live turn counter (wired at engine-ready); null headless. */
+  private turnProvider: (() => number) | null = null;
+  /** The last scheduler tick's turn — the headless fallback for `turnNow`. */
+  private lastTickTurn = 0;
 
   constructor(
     private readonly ir: StoryIR,
@@ -213,6 +223,19 @@ export class ChordRuntime {
     private readonly evaluator: Evaluator,
   ) {
     for (const score of ir.scores) this.scoreWorth.set(score.name, score.worth);
+    for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
+    for (const e of ir.entities) {
+      for (const clause of e.timerClauses ?? []) {
+        const list = this.timerClauses.get(clause.timer) ?? [];
+        list.push({ clause, it: e.id });
+        this.timerClauses.set(clause.timer, list);
+      }
+    }
+    for (const clause of ir.story.timerClauses ?? []) {
+      const list = this.timerClauses.get(clause.timer) ?? [];
+      list.push({ clause, it: null });
+      this.timerClauses.set(clause.timer, list);
+    }
   }
 
   // ------------------------------------------------------------------ bind
@@ -3064,6 +3087,16 @@ export class ChordRuntime {
   buildSchedulerDaemons(): SchedulerDaemon[] {
     const daemons: SchedulerDaemon[] = [];
 
+    // ADR-325 D3f: the timer stepper runs ahead of every other daemon
+    // kind — a timer's turn is decided before anything else reacts to it.
+    if (this.timerDefs.size > 0) {
+      daemons.push({
+        id: 'chord.timers',
+        name: 'ADR-325 timers',
+        run: (ctx) => this.stepTimers(ctx),
+      });
+    }
+
     for (const sequence of this.ir.sequences) {
       // Steps arm in order: `at turn N` on the wall clock, `N turns later`
       // relative to the PREVIOUS step's firing turn, `when <owner> becomes
@@ -3239,6 +3272,109 @@ export class ChordRuntime {
    * containing room (same co-location rule as can-see/can-reach — presence,
    * not sight, so the snake speaks in darkness).
    */
+  // ---------------------------------------------------------------- timers
+
+  /** Wire the engine's turn counter (loader-only; ADR-325 D3f). */
+  setTurnProvider(provider: () => number): void {
+    this.turnProvider = provider;
+  }
+
+  /** The current turn: the engine's when wired, else the last tick's. */
+  private turnNow(): number {
+    return this.turnProvider ? this.turnProvider() : this.lastTickTurn;
+  }
+
+  private timerRecord(qualified: string, world: WorldModel): TimerRecord {
+    return this.evaluator.timerRecord(qualified, { world });
+  }
+
+  private writeTimer(qualified: string, world: WorldModel, record: TimerRecord): void {
+    world.setStateValue(timerKey(qualified), record);
+  }
+
+  /**
+   * ADR-325 D3c verb semantics. `start` on a started timer is a no-op;
+   * `restart` always runs from the top; `reset` returns to idle;
+   * `stop` holds; `interrupt` expires any started timer now (idle: no-op).
+   */
+  private runTimerVerb(verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt', qualified: string, ctx: ExecContext): ISemanticEvent[] {
+    const world = ctx.world;
+    const record = this.timerRecord(qualified, world);
+    switch (verb) {
+      case 'start':
+        if (record.phase === 'idle') this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        return [];
+      case 'restart':
+        this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        return [];
+      case 'reset':
+        this.writeTimer(qualified, world, { phase: 'idle', index: 0, startedTurn: -1 });
+        return [];
+      case 'stop':
+        if (record.phase === 'running') this.writeTimer(qualified, world, { ...record, phase: 'stopped' });
+        return [];
+      case 'interrupt':
+        if (record.phase === 'idle' || record.phase === 'expired') return [];
+        return this.expireTimer(qualified, world);
+    }
+  }
+
+  /** Mark a timer expired and fire its `when … expires` clauses (once per run). */
+  private expireTimer(qualified: string, world: WorldModel): ISemanticEvent[] {
+    const record = this.timerRecord(qualified, world);
+    this.writeTimer(qualified, world, { ...record, phase: 'expired' });
+    const out: ISemanticEvent[] = [];
+    for (const { clause, it } of this.timerClauses.get(qualified) ?? []) {
+      const evalCtx: ExecContext = it ? { world, it } : { world };
+      if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
+      out.push(...this.execStatements(clause.body, evalCtx));
+    }
+    return out;
+  }
+
+  /**
+   * ADR-325 D3f: one step for every running timer, in declaration order.
+   * A timer started this turn waits for the next. Each step: the
+   * `interrupted` roll, then the next named turn (its prose spoken, owner
+   * present) or expiry; `meanwhile` only while still running afterward.
+   */
+  private stepTimers(tick: SchedulerTick): ISemanticEvent[] {
+    this.lastTickTurn = tick.turn;
+    const world = tick.world;
+    const out: ISemanticEvent[] = [];
+    for (const def of this.timerDefs.values()) {
+      const record = this.timerRecord(def.qualified, world);
+      if (record.phase !== 'running') continue;
+      if (record.startedTurn === tick.turn) continue; // first named turn is next turn
+      const ownerCtx: ExecContext = def.owner && def.owner !== 'player' ? { world, it: def.owner } : { world };
+      if (def.interrupted !== null && this.evaluator.evalCondition({ kind: 'chance', n: def.interrupted }, ownerCtx)) {
+        out.push(...this.expireTimer(def.qualified, world));
+        continue;
+      }
+      const index = record.index + 1;
+      if (index > def.states.length) {
+        out.push(...this.expireTimer(def.qualified, world));
+        continue;
+      }
+      this.writeTimer(def.qualified, world, { ...record, index });
+      const state = def.states[index - 1];
+      const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+      if (table[`${def.qualified}.${state}`] && this.timerOwnerPresent(def, world)) {
+        out.push(this.phraseEvent(`${def.qualified}.${state}`, { world }));
+      }
+      if (def.meanwhile && (def.meanwhile.chance === null || this.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
+        out.push(...this.execStatements(def.meanwhile.body, ownerCtx));
+      }
+    }
+    return this.narrated(out);
+  }
+
+  /** A state's prose needs its audience: the owner's room (story/player: always). */
+  private timerOwnerPresent(def: IRTimerDef, world: WorldModel): boolean {
+    if (def.owner === null || def.owner === 'player') return true;
+    return this.playerPresentAt(world, def.owner);
+  }
+
   private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
     const ownerId = this.host.entityId(irEntityId);
     const playerId = world.getPlayer()?.id;
@@ -3450,8 +3586,7 @@ export class ChordRuntime {
         case 'move': {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
-            const place = this.evaluator.entityValue(stmt.place, ctx);
-            this.moveWithLifecycle(thing, place, ctx);
+            this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx), ctx);
           }
           break;
         }
@@ -3495,6 +3630,15 @@ export class ChordRuntime {
             }
             ctx.world.awardScore(name, worth, name);
           }
+          break;
+        }
+        case 'timer': {
+          // ADR-325 D3c: the five verbs. `interrupt` expires the timer now
+          // and fires its expiry clauses in place — decided once in the
+          // mutations pass, their narration replayed to the reports pass.
+          if (!holds) break;
+          const fired = ledger.resolve(stmt, 'expiry', () => this.runTimerVerb(stmt.verb, stmt.timer, ctx));
+          if (phase !== 'mutations') events.push(...fired);
           break;
         }
         case 'raise':
@@ -3615,7 +3759,31 @@ export class ChordRuntime {
    * @param placeWorldId the destination's world id
    * @param ctx the executing context (live world)
    */
-  private moveWithLifecycle(thingWorldId: string, placeWorldId: string, ctx: ExecContext): void {
+  /**
+   * Resolve a `move` destination (ADR-325 D1–D2) to a world id, or null for
+   * `offstage`. A possessive `location` whose owner is offstage has no
+   * place to move to: a diagnostic naming the owner, never a silent no-op.
+   */
+  private resolvePlace(place: IRValue, ctx: ExecContext): string | null {
+    if (place.kind === 'symbol' && place.name === 'offstage') return null;
+    const resolved = this.evaluator.evalValue(place, ctx);
+    if (typeof resolved === 'string' && ctx.world.getEntity(resolved)) return resolved;
+    if (place.kind === 'field' && place.field === 'location') {
+      const ownerId = this.evaluator.evalValue(place.base, ctx);
+      const owner = typeof ownerId === 'string' ? ctx.world.getEntity(ownerId) : undefined;
+      const name = owner?.name ?? 'the owner';
+      throw new LoadError(`Cannot move to ${name}'s location — ${name} is offstage.`);
+    }
+    throw new LoadError(`Expected a place, got \`${String(resolved)}\`.`);
+  }
+
+  /**
+   * Move an entity and enqueue what the player witnessed: `exited` when it
+   * leaves the player's room, `entered` when it arrives, and `disappeared`
+   * (ADR-325 D2, the same row `remove` uses) when it goes offstage from the
+   * player's room. `placeWorldId` null detaches the entity (offstage).
+   */
+  private moveWithLifecycle(thingWorldId: string, placeWorldId: string | null, ctx: ExecContext): void {
     const world = ctx.world;
     const roomOf = (id: string): string | undefined =>
       world.getContainingRoom(id)?.id ?? world.getLocation(id);
@@ -3631,7 +3799,7 @@ export class ChordRuntime {
     const playerRoom = roomOf(playerId);
     if (playerRoom === undefined) return;
     if (playerRoom === fromRoom) {
-      const event = this.channelEvent(irId, 'exited', world);
+      const event = this.channelEvent(irId, placeWorldId === null ? 'disappeared' : 'exited', world);
       if (event) this.enqueueChannelEvent(event);
     }
     if (playerRoom === toRoom) {

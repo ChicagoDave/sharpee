@@ -143,6 +143,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -325,6 +326,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -415,6 +417,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -536,6 +539,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     },
     "states": [],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Determinism Fixture",
     "usePhrasebooks": [],
     "uses": [],
@@ -790,6 +794,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -875,6 +880,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1144,6 +1150,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1237,6 +1244,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [
         {
           "article": "the",
@@ -1338,6 +1346,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1476,6 +1485,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1765,6 +1775,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -2013,6 +2024,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     },
     "states": [],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Cloak of Darkness",
     "usePhrasebooks": [],
     "uses": [],
