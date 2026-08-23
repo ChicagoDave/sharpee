@@ -417,3 +417,20 @@ princess"). Until then the boots are the one thing about her that still says urc
 what the mercenaries now know to look for. Whether the captain's description grows "boots" is
 authored when that chapter is reached. The grace window is a fixed two turns unless the `hunted`
 build finds a dwell counter does the job more cleanly.
+
+### The sweep's postures — DECIDED (David, 2026-08-23): `oblivious`, `approaching`, `aggressive`
+
+The mercenaries' third posture is renamed. The source's `grabbing` (`story.ni:2071-2182`) names
+one moment — the fist closing on Jack's arm — but the port carries it as a standing entity state
+the rest of the model reads from ("going is refused while they are aggressive", "the captain
+arrives two turns after they become aggressive"), and a standing state wants a posture word.
+David: *"Maybe 'aggressive' instead of grabbing."* The ladder is therefore `oblivious →
+approaching → aggressive`, with the mechanism unchanged: arrival sets `oblivious`, three turns
+of dwell make them `approaching`, the expired countdown makes them `aggressive`, and `kick` /
+`attack` knocks them back to `approaching`. Gentry's lines for each rung carry as written.
+
+**The arrival clock and the capture — DECIDED (David, 2026-08-23: "Confirmed").** The source's
+rolled 1–3 timeout becomes a per-turn `one chance in 2` roll once Jack has waited a turn — Chord
+has no "random number between" assignment, the expected pacing is the same, and the roll runs on
+the seeded stream so tree-document lines stay deterministic. The captain's arrival two turns into
+`aggressive` stays a death, as the source has it (`story.ni:2126`).
