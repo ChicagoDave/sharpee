@@ -136,6 +136,8 @@ import {
   CounterMutateStmt,
   TimerVerbStmt,
   TimerClause,
+  MoveClause,
+  LandingDecl,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
@@ -245,6 +247,18 @@ class Cursor {
 function lineSpan(line: Line): Span {
   if (line.tokens.length === 0) return spanOf(line.lineNo, line.indent + 1, Math.max(1, line.raw.trim().length));
   return mergeSpans(line.tokens[0].span, line.tokens[line.tokens.length - 1].span);
+}
+
+/**
+ * Blocks that react to something already done — `after` clauses and the
+ * `when … expires` / `when … moves` event clauses (ADR-325 D3e/D3h) — can
+ * never refuse: there is nothing left to refuse.
+ */
+/** Landing strategy words (ADR-325 D5) — the phrase vocabulary's choosing words. */
+const LANDING_STRATEGIES = new Set(['randomly', 'cycling', 'stopping']);
+
+function isReactionBlock(blockKeyword: string): boolean {
+  return blockKeyword === 'after' || blockKeyword === 'when';
 }
 
 function firstWord(line: Line): string | null {
@@ -1313,6 +1327,76 @@ class Parser {
     return { kind: 'timer-clause', timer, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
+  /**
+   * `landing <room>` | `landing, randomly|cycling|stopping: <room list>`
+   * (ADR-325 D5). A list with no strategy word and a strategy with a single
+   * room are both errors here — the line says how to choose, or names one.
+   */
+  private parseLandingLine(line: Line): LandingDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('landing');
+    let strategy: LandingDecl['strategy'] = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const word = c.next();
+      if (!word || word.kind !== 'word' || !LANDING_STRATEGIES.has(word.text)) {
+        this.diagnostics.error('parse.landing-strategy', 'Expected `randomly`, `cycling`, or `stopping` after the comma.', word?.span ?? c.restSpan());
+        return null;
+      }
+      strategy = word.text as Exclude<LandingDecl['strategy'], null>;
+      if (c.peek()?.kind !== 'colon') {
+        this.diagnostics.error('parse.landing-strategy', `Expected \`:\` and the room list after \`${word.text}\`.`, c.restSpan());
+        return null;
+      }
+      c.next();
+    }
+    const rooms = this.parseNameRefList(c, line);
+    if (rooms.length === 0) return null;
+    if (rooms.length > 1 && strategy === null) {
+      this.diagnostics.error('parse.landing-strategy', 'Say how to choose — `landing, randomly: …`, `landing, cycling: …`, or `landing, stopping: …`.', lineSpan(line));
+      return null;
+    }
+    if (rooms.length === 1 && strategy !== null) {
+      this.diagnostics.error('parse.landing-strategy', 'A single landing takes no strategy word — write `landing <room>`.', lineSpan(line));
+      return null;
+    }
+    return { rooms, strategy, span: lineSpan(line) };
+  }
+
+  /** Is this line a `when <entity> moves[, while …]` clause head (ADR-325 D3h)? */
+  private isMoveClauseHead(line: Line): boolean {
+    if (firstWord(line) !== 'when') return false;
+    return line.tokens.some((t, i) => i > 1 && t.kind === 'word' && t.text === 'moves');
+  }
+
+  /** `when <entity> moves [, while <cond>] … end when` (ADR-325 D3h). */
+  private parseMoveClause(): MoveClause {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('when');
+    const mover = this.parseValueExpr(c, headLine, new Set(['moves']));
+    if (!c.matchWord('moves')) {
+      this.diagnostics.error('parse.move-clause', 'Expected `when <entity> moves`.', c.restSpan());
+    }
+    let condition: ConditionNode | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (!c.matchWord('while')) {
+        this.diagnostics.error('parse.move-clause', 'Expected `, while <condition>` after `moves`.', c.restSpan());
+      } else {
+        condition = this.parseCondition(c, headLine);
+      }
+    } else if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.move-clause', 'Unexpected words after the `when … moves` head.', c.restSpan());
+    }
+    const body = this.parseStatements(headLine.indent, 'when');
+    const endSpan = this.consumeEnd('when', headLine);
+    return { kind: 'move-clause', mover, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
@@ -1348,6 +1432,7 @@ class Parser {
       wears: [],
       carries: [],
       containing: [],
+      landing: null,
       exits: [],
       blockedExits: [],
       deadlyExits: [],
@@ -1361,6 +1446,7 @@ class Parser {
       phraseOverrides: [],
       onClauses: [],
       timerClauses: [],
+      moveClauses: [],
       moods: [],
       feels: [],
       knows: [],
@@ -1547,6 +1633,17 @@ class Parser {
         this.pos++;
         cur.matchWord('containing');
         decl.containing.push(...this.parseNameRefList(cur, line));
+      } else if (word === 'landing') {
+        // ADR-325 D5: `landing <room>` or `landing, <strategy>: <rooms>`.
+        this.pos++;
+        const landing = this.parseLandingLine(line);
+        if (landing) {
+          if (decl.landing) {
+            this.diagnostics.error('parse.landing-duplicate', 'A region has one `landing` line — this is the second.', landing.span);
+          } else {
+            decl.landing = landing;
+          }
+        }
       } else if (word === 'starts' && cur.isWord('in', 1)) {
         // The `starts` dispatch is one-token lookahead (ADR-231 D5a):
         // `starts in <place>` is placement (here); `starts <known-state>` is
@@ -1567,6 +1664,8 @@ class Parser {
         decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
       } else if (this.isTimerClauseHead(line)) {
         decl.timerClauses.push(this.parseTimerClause());
+      } else if (this.isMoveClauseHead(line)) {
+        decl.moveClauses.push(this.parseMoveClause());
       } else if (
         word === 'phrase' &&
         line.tokens[1]?.kind === 'word' &&
@@ -5256,6 +5355,10 @@ class Parser {
       } else {
         this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
       }
+    } else if (actionWord === 'going' && (c.atEnd() || c.isWord('while') || c.peek()?.kind === 'comma')) {
+      // Bare `on going` / `after going` — the player's own movement (ADR-325
+      // D3h). Only `going` has a bare form; the analyzer checks the owner.
+      binding = 'self';
     } else {
       if (!c.matchWord('it')) {
         this.diagnostics.error('parse.on-target', `Expected \`it\`, \`anything as the <role>\`, or \`every turn\` in the \`${clauseKind}\` header.`, c.restSpan());
@@ -6467,8 +6570,8 @@ class Parser {
     // `<subject> must <predicate>: <key>` body statement (ratchet D6).
     if (lineHasMust(line)) {
       this.pos++;
-      if (blockKeyword === 'after') {
-        this.reportRefusalInAfter(line);
+      if (isReactionBlock(blockKeyword)) {
+        this.reportRefusalInAfter(line, blockKeyword);
         return null;
       }
       return this.parseMustLine(line);
@@ -6482,8 +6585,8 @@ class Parser {
         // `refuse when <condition>: <key>` — the prohibition form (D6) in
         // body position; same shape as the define-action line.
         if (word === 'refuse' && c.isWord('when')) {
-          if (blockKeyword === 'after') {
-            this.reportRefusalInAfter(line);
+          if (isReactionBlock(blockKeyword)) {
+            this.reportRefusalInAfter(line, blockKeyword);
             return null;
           }
           return this.parseRefuseWhenStatement(line);
@@ -6495,8 +6598,8 @@ class Parser {
         }
         const params = this.parseParams(c, line);
         if (word === 'refuse') {
-          if (blockKeyword === 'after') {
-            this.reportRefusalInAfter(line);
+          if (isReactionBlock(blockKeyword)) {
+            this.reportRefusalInAfter(line, blockKeyword);
             return null;
           }
           // Misordered prohibition (platform-issue-sweep Phase 8 #15c):
@@ -6585,8 +6688,13 @@ class Parser {
           this.diagnostics.error('parse.set-to', `Expected \`to <value>\` in the \`set\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
-        const value = this.parseValueExpr(c, line, new Set());
-        return { kind: 'set', target, value, span: lineSpan(line) } as SetStmt;
+        const value = this.parseValueExpr(c, line, new Set(['when']));
+        const stmtWhen = this.parseStatementWhen(c, line);
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.set-trailing', `Unexpected words after the \`set\` value: \`${c.peek()!.text}\`.`, c.restSpan());
+          return null;
+        }
+        return { kind: 'set', target, value, stmtWhen, span: lineSpan(line) } as SetStmt;
       }
       case 'start':
       case 'restart':
@@ -6763,7 +6871,22 @@ class Parser {
           c.next();
         }
         const stmtWhen = this.parseStatementWhen(c, line);
-        return { kind: 'kill', phraseKey, stmtWhen, span: lineSpan(line) } as KillStmt;
+        // ADR-325 D3i: an indented prose block in place of the key — the
+        // same declare-and-emit shape `phrase <key>` takes.
+        let inlineText: TextValue | null = null;
+        const next = this.lines[this.pos];
+        if (next && next.indent > line.indent && !isStatementLine(next)) {
+          if (phraseKey) {
+            this.diagnostics.error(
+              'parse.kill-body',
+              '`kill the player` takes a phrase key or an indented text body, not both.',
+              lineSpan(next),
+            );
+          }
+          inlineText = this.parseProseParagraph(line.indent + 1, line.indent);
+        }
+        const span = inlineText ? mergeSpans(lineSpan(line), inlineText.span) : lineSpan(line);
+        return { kind: 'kill', phraseKey, inlineText, stmtWhen, span } as KillStmt;
       }
       case 'then': {
         // ADR-320 D4/D8: `then asks|invites <exchange-key>` — open the
@@ -6918,10 +7041,12 @@ class Parser {
   }
 
   /** `refuse`/`must` inside an `after` clause — reactions cannot refuse (D3). */
-  private reportRefusalInAfter(line: Line): void {
+  private reportRefusalInAfter(line: Line, blockKeyword: string): void {
     this.diagnostics.error(
       'parse.react-refusal',
-      'Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.',
+      blockKeyword === 'when'
+        ? 'Refusals (`refuse`, `must`) cannot appear in a `when … moves` or `when … expires` clause — the event has already happened. A refusal belongs on the mover\'s own `on going`.'
+        : 'Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.',
       lineSpan(line),
     );
   }

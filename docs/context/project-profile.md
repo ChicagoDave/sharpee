@@ -1,111 +1,73 @@
-# Project Profile: Sharpee
+# Project Profile
 
-**Generated**: 2026-08-16
-**Repository**: sharpee (`@sharpee/*` lockstep v5.0.1, published to npm; Chord language version tracked independently at v3.0.0, ADR-257)
-**Branch at generation**: `feat/ide-explain-npc-turn`
+**Generated**: 2026-08-23
+**Repository**: sharpee (`@sharpee/*` lockstep v5.1.1; Chord language versioned independently at v3.3.0, ADR-257)
 
 ## Domains
 
-- **Domain Modeling** — DDD-style `world-model` package: traits, behaviors, capability dispatch (ADR-090, ADR-207 per-instance registry), `if-domain` contract types; computed exits (ADR-295); D9 this cycle threaded NPC attribution through the capability effect envelope (`CapabilityEffect.actor`, all four re-mint sites)
-- **Normative Character Layer / Social Simulation (new dominant arc)** — `packages/character` (ADR-141, ADR-310 "words the author writes, numbers the runtime owns", ADR-318 "what a character will not do"): goals, influence, propagation, arbiter, dialogue-selector socket, act-detection, tick-phases, conversation, temperaments/principles/honor/conscience/claims/witnessed-as. Both ADR-310 and ADR-318 flipped ACCEPTED 2026-08-15 after their open-questions interviews closed; the 2026-08-16 acceptance audit discharged all 9 + 8 criteria. This is the arc nearly all of the last ~20 commits belong to (Phases 1–7, seam 1–6 permanence audits, D6–D18 closures) — it displaces Testing Intelligence as the single most active area since the last profile
-- **API / Service (Engine)** — `engine` owns turn cycle/scheduler; `stdlib` standard actions (validate/execute/report/blocked, ADR-051); `parser-en-us` grammar generated from Chord source (ADR-269: `standard-en-us.story`, `repokit grammar` build step); `plugins` package now formalizes turn-cycle extensibility contracts consumed by `plugin-npc`/`plugin-scheduler`/`plugin-state-machine`
-- **Chord Story Language (Compiler Frontend + Interpreter)** — `packages/chord` (npm package v5.0.1; language itself now versioned at **3.0.0**, up from 2.2.0 — playground examples migrated to Chord 3 this cycle): lexer, parser, semantic analyzer, Story IR, diagnostics for the `.story` author language. `packages/story-loader` is the generic Story IR interpreter (ADR-210); `packages/bootstrap` is the shared story-assembly loader (ADR-180); `packages/interpreter` remains archived (`packages/_archive/interpreter`, excluded from workspace, ADR-180 retirement)
-- **Deterministic Execution / Choice Points** — seed authority + named RNG streams (ADR-291), testability/bounded-outcome-search contract (ADR-292), choice points with per-point RNG streams (ADR-293, save format 3.0.0), prose-order emission ownership (ADR-296). Stable — no changes this cycle
-- **Testing Intelligence / Transcript Authoring** — ADR-300 through ADR-306 substrate (`packages/branch-tester`: `auto-assertion.ts`, `tree.ts`, `tree-runner.ts`, `from-play.ts`, `search.ts`, `coverage.ts`) continues to underpin the IDE's testing surface; this cycle's flagship addition is the **explain-NPC-turn panel** (commit cc3b16fb): author-channel wire (`authorChannels` flip, D12/AC8 isolation — the player page never carries it), a per-NPC explain panel in `tools/ide/web/testing-surface/src/character.ts`, and click-to-assert channel claims lifting `[SKIP]` fixtures. `tools/ide/web/testing-surface` is now a distinct, actively-developed sibling to the older `testing-tab` substrate
-- **macOS IDE (Swift native + embedded WebView surfaces)** — `tools/ide/SharpeeIDE` (Xcode project, ~90 Swift source files, `SharpeeIDETests` XCTest target): native panes for Project, Editor, Compose, Play, Test, Docs, Publish, Settings, Menus, Persistence, Workspace, Build, Launch; `tools/ide/web/{docs-tab,testing-tab,testing-surface}` are HTML/JS/CSS substrates rendered inside native WebViews via scheme handlers. This cycle shipped Sparkle 2 auto-update (Chord Writer 1.2.0, ADR-279 D7) and the explain-NPC-turn panel; current branch (`feat/ide-explain-npc-turn`) continues this arc
-- **Natural-Language Text Rendering ("Phrase Algebra")** — `text-blocks` + `lang-en-us`: phrase-model assembler core and atom system (ADR-192–206), turn narrative slots (ADR-296). Stable
-- **Event Sourcing / Messaging** — `event-processor` dispatches effects/events; `channel-service` is the universal channel-I/O wire producer (ADR-163); `ext-daemon`/`plugin-scheduler`/`plugin-state-machine`/`plugin-npc` for daemons/fuses/NPC turn phases; ADR-208 interceptor registry. A parallel design-only umbrella, **Temporal Controls** (ADR-315–317, `docs/work/temporal-controls/`), is scoped this cycle but explicitly "all design, nothing authorized for implementation" — not yet a code domain
-- **Frontend UI (web)** — `packages/platform-browser`, `packages/media`, `packages/map-editor` (excluded from workspace via `!packages/map-editor`), `packages/runtime` (headless engine runtime for iframe embedding via postMessage), `website/` — Next.js/React, includes an embedded Chord editor (CodeMirror-based) and a public roadmap page (temporal controls, ADR-315–317). Website saw active work this cycle (Sharpee 5.0.1 nav/roadmap, homepage card fixes, Apple-silicon DMG label, chord.ebnf sync at build time) — unlike the prior profile's "no changes" cycle. `tools/zifmia` (multi-user server) remains retired/archived (`tools/_archive/zifmia`, 2026-08-13) alongside `tools/_archive/shite`
-- **CLI / Tooling / Author Platform** — `packages/devkit` (author tool, `./sharpee`), `packages/transcript-tester` (narrowing scope as `branch-tester`'s tree model takes over regression), `tools/repokit` (in-repo platform build CLI, ADR-187), `tools/ide` (Swift IDE, see above), `tools/vscode-ext`, `packages/bridge` (Node subprocess bridge, NDJSON over stdin/stdout), `packages/helpers` (fluent entity builders), `packages/queries` (LINQ-style fluent entity query API), `packages/ide-protocol` (wire types for the IDE project-introspection manifest, ADR-184), `packages/story-runtime-baseline` (ADR-178 manifest declaring the canonical package set a `.sharpee` story bundle may import), `packages/core` (foundational engine primitives)
-- **Library / Package** — Publishable `@sharpee/*` npm packages with auto-generated GenAI API docs (`packages/sharpee/docs/genai-api/`)
-- **Long-Form Documentation / Publishing** — `docs/book` (two live editions: `v1.5.0/`, `v2.0.0/`), naive-regression QA gate (transcript-driven walkthroughs of every chapter). Stable — no chapter-content changes this cycle beyond the standing QA gate
+- Domain Modeling — `world-model` traits/behaviors/capability dispatch (ADR-090), `if-domain` contracts
+- API / Service (Engine) — `engine` turn cycle/scheduler, `stdlib` validate/execute/report actions (ADR-051), `parser-en-us` grammar
+- Chord Story Language — `packages/chord` (lexer/parser/analyzer/IR), `story-loader`, `bootstrap`; new `packages/world-index` derives map/reachability/vocab-gaps from Story IR (ADR-321, current branch)
+- Normative Character Layer — `packages/character` (goals, influence, propagation, arbiter, dialogue, act-detection, ADR-310/318)
+- Testing Intelligence — `packages/branch-tester` (tree/coverage/auto-assertion), IDE testing-surface
+- macOS IDE — `tools/ide/SharpeeIDE` (Swift/XCTest) + `tools/ide/web/{docs-tab,testing-tab,testing-surface}`
+- Event Sourcing / Messaging — `event-processor`, `channel-service` (ADR-163 universal channel wire), `plugin-scheduler`/`plugin-npc`/`plugin-state-machine`
+- Frontend UI (web) — `platform-browser`, `runtime`, `media`, `website/` (Next.js/React)
+- CLI / Tooling — `devkit` (author tool), `tools/repokit` (in-repo build CLI, ADR-187), `bridge`, `helpers`, `queries`, `ide-protocol`
+- Library / Package — publishable `@sharpee/*` packages with generated API docs (`packages/sharpee/docs/genai-api/`)
 
 ## Tech Stack
 
-- **Language**: TypeScript 5.x (ES2022 target, CommonJS modules) for the platform/Chord/IDE-web layer; Swift for `tools/ide/SharpeeIDE` (native macOS app, XCTest)
-- **Runtime**: Node.js (platform); native macOS app process (IDE) hosting bundled Node.js toolchain + WKWebView surfaces
-- **Framework(s)**: Custom in-memory World Model engine (no external DB); Next.js/React for `website/`; AppKit/SwiftUI (mixed, per Xcode project layout) for `SharpeeIDE`
-- **Data layer**: None — in-memory `WorldModel`, entity/trait system persisted via save/load (save format 3.0.0, ADR-293, versioned reader); IDE persists project/session state via `SharpeeIDE/Persistence`
-- **Messaging**: In-process event/effect dispatch (`event-processor`), universal channel-I/O wire (`channel-service`, ADR-163), daemon/fuse scheduling (`plugin-scheduler`) — no external broker; IDE↔web surfaces communicate over WKWebView scheme handlers + NDJSON line buffers
-- **Test framework**: Vitest 3.x (unit/integration, per-package `vitest`/`test:ci` scripts), Stryker 9.x (mutation testing, `stryker.config.json`), custom transcript tester (`.transcript` walkthrough/integration format, run via `dist/cli/sharpee.js --test`) plus `branch-tester` tree-runner (`continues:` trees, ADR-302); XCTest for the Swift IDE (`SharpeeIDETests`)
-- **Test command**: `pnpm exec turbo run test:ci` — runs every workspace package's `vitest run` (per-package bare `test` scripts run `vitest` in *watch* mode; `test:ci` is the non-interactive whole-suite entry point defined in `turbo.json`, there is no root `package.json` alias). This covers unit/integration only — the transcript regression baseline (`node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript`) requires `./repokit build dungeo` first and remains a separate, deliberately-manual gate per CLAUDE.md
-- **Build tool**: `@davidcornelson/tsf` (ts-forge) for package compilation, Turborepo for task orchestration, esbuild for CLI/browser bundling; `./repokit` (in-repo platform build, ADR-187, includes an ADR-269 `grammar` build step) and `./sharpee` (author tool / `@sharpee/devkit`); Xcode/`xcodebuild` for `SharpeeIDE` (`project.yml` via XcodeGen)
+- **Language**: TypeScript 5.x (ES2022, CommonJS) for platform/Chord/IDE-web; Swift for `SharpeeIDE`
+- **Runtime**: Node.js; native macOS app hosting bundled Node + WKWebView surfaces
+- **Framework**: Custom in-memory World Model engine; Next.js/React (`website/`); AppKit/SwiftUI (`SharpeeIDE`)
+- **Data layer**: None (external) — in-memory `WorldModel`, versioned save format (ADR-293)
+- **Messaging**: In-process event/effect dispatch (`event-processor`), channel-I/O wire (`channel-service`); no external broker
+- **Test framework**: Vitest 3.x per-package, Stryker 9.x (mutation), custom `.transcript` walkthrough tester, `branch-tester` tree-runner, XCTest (Swift)
+- **Test command**: `pnpm exec turbo run test:ci` — runs every workspace package's `vitest run` non-interactively (bare `test` scripts are watch mode). Transcript regression baseline (`node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript`) requires `./repokit build dungeo` first and is a separate manual gate per CLAUDE.md.
+- **Build tool**: `@davidcornelson/tsf` (ts-forge), Turborepo, esbuild; `./repokit` (platform build) and `./sharpee` (author tool); Xcode/`xcodebuild` for `SharpeeIDE`
 - **Package manager**: pnpm 10.13.1 workspace
-- **CI/CD**: GitHub Actions — `build-platforms.yml` and `publish-npm.yml` only, unchanged this cycle
-- **Monorepo**: Yes (pnpm workspaces + Turborepo). `pnpm-workspace.yaml` is the source of truth (root `package.json`'s `workspaces` array is stale — it still lists `packages/forge`, `packages/cli`, `packages/web-client`, `packages/dev-tools`, `packages/platforms/*`, none of which exist on disk; do not trust it). The real workspace lists `packages/*` plus `packages/extensions/{testing,basic-combat,scoring,hunger}`, excludes `!packages/map-editor` and `!packages/_archive/**`, and curates workspace stories to `dungeo`, `channel-service-test`, `family-zoo-tutorial`, `cloak-of-darkness` plus `tools/repokit`
+- **CI/CD**: GitHub Actions — `build-platforms.yml`, `publish-npm.yml`
+- **Monorepo**: Yes (pnpm workspaces + Turborepo). `pnpm-workspace.yaml` is authoritative; root `package.json`'s `workspaces` array is stale (lists `packages/forge`, `packages/cli`, `packages/web-client`, `packages/dev-tools`, `packages/platforms/*`, none present on disk)
 
 ## Conventions
 
-- **Test location**: Separate `test`/`tests` dirs per package (excluded from `tsc` build via tsconfig `exclude`); story walkthrough/unit transcripts at `stories/{story}/{walkthroughs,tests/transcripts}/*.transcript`; IDE tests at `tools/ide/SharpeeIDETests/*.swift` and `tools/ide/web/testing-surface/tests/`
-- **Test naming**: `*.test.ts` (Vitest unit tests, 697 files), `wt-*.transcript` (walkthroughs, run with `--chain`), other `*.transcript` (unit-style integration tests; 182 total, up from 165 — reflects new character/dialogue and testing-surface coverage), `*Tests.swift` (XCTest)
-- **Source structure**: Layer-based by package (traits/behaviors in world-model, actions in stdlib, grammar in parser-en-us generated from Chord source, text/messages in lang-en-us); actions follow a 4-file convention: `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, `<name>-types.ts`; `chord` compiler frontend follows lexer → parser → analyzer → IR staging; `character` is sub-module-based (`goals/`, `influence/`, `propagation/`, `arbiter/`, `conversation/`, `act-detection/`); `SharpeeIDE` is feature-folder-based (`Play/`, `Test/`, `Editor/`, `Compose/`, `Docs/`, `Publish/`, etc.)
-- **TypeScript strict mode**: Yes — `strict`, `noImplicitAny`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `forceConsistentCasingInFileNames` (via shared `tsconfig.base.json`, composite project references) — unchanged
-- **Import style**: CommonJS module resolution (Node), per-package `references` for project-reference builds; no path-alias convention observed at root
-- **Language layer separation**: All user-facing text lives in `lang-en-us`; engine/stdlib/world-model emit semantic events with message IDs only (no embedded English)
-- **Versioning**: Uniform lockstep versioning across `@sharpee/*` packages — bumped to **5.0.1** this cycle (was 4.3.0). Chord language carries an independent semantic version (ADR-257) — bumped to **3.0.0** this cycle (was 2.2.0), decoupled from the platform release train
-- **RNG/determinism discipline** (ADR-291–293, stable): all randomness routes through `RandomService` via named `ChoicePoint`s with per-point seed derivation; tests assert byte-identical output at a pinned seed
-- **Normative character discipline (new, ADR-310/318)**: authors write words (temperaments, principles, honor, conscience, claims), the runtime owns numbers (goals, influence weights, propagation edges); the arbiter and dialogue-selector socket are the only sanctioned points where character state resolves into action — do not hand-roll character decision logic elsewhere
-- **Testing-surface convention shift (ADR-300–306, stable)**: regression is a *tree* of transcripts (`continues:` branches) rather than a single blessed golden run; author-channel data (used by the explain-NPC-turn panel) is isolated per D12/AC8 and must never leak to the player-facing page
+- **Test location**: separate `test`/`tests` dirs per package; story transcripts at `stories/{story}/{walkthroughs,tests/transcripts}/*.transcript`; IDE tests under `tools/ide/SharpeeIDETests` and `tools/ide/web/testing-surface/tests`
+- **Test naming**: `*.test.ts` (Vitest), `wt-*.transcript` (walkthroughs, run with `--chain`), other `*.transcript` (unit-style), `*Tests.swift` (XCTest)
+- **Source structure**: layer-based per package; actions follow a 4-file convention (`<name>.ts`, `-data.ts`, `-events.ts`, `-messages.ts`, `-types.ts`); `character` is sub-module-based; `SharpeeIDE` is feature-folder-based
+- **TypeScript strict mode**: Yes — `strict`, `noImplicitAny`, `noImplicitReturns`, `noFallthroughCasesInSwitch` via shared `tsconfig.base.json`
+- **Import style**: CommonJS resolution (Node), composite project references; no path-alias convention at root
+- **Language layer separation**: all user-facing text lives in `lang-en-us`; engine/stdlib/world-model emit message-ID-only events
 
 ## Mutation Signatures
 
-For each detected domain, the mutation patterns that mutation-verification should look for:
+### Domain Modeling / Engine (world-model, stdlib, engine)
+- **Mutation calls**: `WorldModel` entity/trait mutations via `*Behavior` classes, capability dispatch (`findTraitWithCapability`), scheduler/turn-cycle state transitions, `event-processor` effect application, `RandomService` draws against a named `ChoicePoint`
+- **Reporting without mutation**: an action's `report` phase emitting text/events without `execute` having called a behavior mutator or changed state
+- **Test assertions — verify**: post-call `WorldModel` state inspection, emitted event message IDs + payload, byte-identical transcript output at a pinned seed
+- **Test assertions — insufficient**: "didn't throw," asserting only on `execute()`'s return value, asserting event type without payload
+
+### Chord Story Language (chord, story-loader, bootstrap, world-index)
+- **Mutation calls**: lexer/parser/analyzer producing tokens → AST → Story IR; diagnostic sink mutations; `world-index` deriving map/reachability/vocab-gap reports from IR
+- **Reporting without mutation**: claiming a construct "compiles" without an emitted IR node; a diagnostic "caught" with nothing pushed to the sink
+- **Test assertions — verify**: shape/contents of emitted IR, specific diagnostic codes/spans, `world-index` output asserted against known story fixtures
+- **Test assertions — insufficient**: asserting `parse()`/`analyze()` returned without throwing; snapshotting IR without asserting specific fields
 
 ### Normative Character Layer (packages/character)
+- **Mutation calls**: tick-phase advances, goal/influence/propagation state changes, arbiter decisions (`apply.ts`), act-detection classification, conversation state advances
+- **Reporting without mutation**: narrating a reaction without a corresponding goal/influence state change
+- **Test assertions — verify**: post-tick state inspection, arbiter output traced to state read/written
+- **Test assertions — insufficient**: asserting a tick "completed" without checking which goals/edges changed
 
-- **Mutation calls**: `character-clock.ts` tick-phase advances (`tick-phases.ts`), goal state transitions (`goals/`), influence-edge minting/expiry (`influence/`), propagation graph updates (`propagation/`), arbiter decisions selecting a dialogue/act response (`arbiter/`, `apply.ts`/`apply-compiled.ts`), act-detection classifying a player/NPC action (`act-detection/`), conversation state advances (`conversation/`)
-- **Reporting without mutation**: A character "reacting" to an event in narration without a corresponding goal/influence/propagation state change; an arbiter decision reported as made without `apply.ts` actually writing the resulting state; a discharge/expiry claimed without the edge/goal actually being removed or flagged expired
-- **Test assertions — verify**: Post-tick inspection of goal/influence/propagation state (not just that a tick "ran"), arbiter output traced to the specific state it read and the state it wrote, act-detection classification asserted against the specific act type expected, conversation/dialogue selection asserted against the resolved socket value
-- **Test assertions — insufficient**: Asserting a tick "completed" without checking which goals/edges changed; asserting dialogue text was produced without checking which selector/socket resolved it; treating "no exception during arbiter run" as sufficient
-
-### Domain Modeling / Engine (world-model, stdlib, engine)
-
-- **Mutation calls**: `WorldModel` entity/trait mutations via `*Behavior` classes, capability dispatch handlers (`findTraitWithCapability`), capability effect envelope re-minting (`CapabilityEffect.actor`, D9 attribution), scheduler/turn-cycle state transitions, event/effect application in `event-processor`, `RandomService` draws against a named `ChoicePoint`
-- **Reporting without mutation**: An action's `report` phase emitting success text/events without the corresponding `execute` phase having called a behavior mutator or changed entity/trait state; an NPC-attributed effect reported without the actor field actually re-minted on the `CapabilityEffect`
-- **Test assertions — verify**: Post-call inspection of `WorldModel` entity/trait state, emitted semantic events with correct message IDs and payload including actor attribution, byte-identical transcript output at a pinned seed against a committed fixture
-- **Test assertions — insufficient**: Asserting only that an action "didn't throw," asserting only on the return value of `execute()` without checking world state, asserting on event *type* without checking event *payload* (including `actor`)
-
-### Chord Story Language (packages/chord, story-loader, bootstrap)
-
-- **Mutation calls**: Lexer producing a token stream from `.story` source; parser building an AST from tokens; semantic analyzer resolving symbols, validating catalog references, lowering AST to Story IR; diagnostic collection mutating a diagnostics sink; `story-loader` interpreting Story IR into a runnable Story
-- **Reporting without mutation**: Claiming a `.story` construct "compiles" without an actual IR node being emitted; a diagnostic "caught" with no entry pushed to the diagnostics collection; claiming a language version bump without updating `CHORD_LANGUAGE_VERSION` (currently 3.0.0) and the `chord.ebnf` surface pin
-- **Test assertions — verify**: Asserting on the shape/contents of emitted IR, asserting on specific diagnostic codes/spans for invalid input, round-trip tests against known-good IR fixtures
-- **Test assertions — insufficient**: Asserting only that `parse()`/`analyze()` returned without throwing; snapshotting IR without asserting specific fields under test
-
-### Testing Intelligence / Transcript Branching (branch-tester, testing-surface, engine RandomService)
-
-- **Mutation calls**: `RandomService` draws scoped to a named `ChoicePoint`; `branch-tester` tree mutations (`tree.ts`/`tree-runner.ts`); `auto-assertion.ts` synthesizing claims; `from-play.ts` (`createTranscriptFromPlay`) serializing a played session into a transcript; `tools/ide/web/testing-surface/src/character.ts` per-NPC explain panel and click-to-assert lifting a `[SKIP]` fixture into an asserted claim; `authorChannels` flip mutating channel visibility
-- **Reporting without mutation**: Marking a branch/walkthrough "passing" without an actual re-run and diff; a "click-to-assert" action reported as recorded without the transcript fixture file actually updated; claiming author-channel isolation without verifying the player page's channel set was unaffected
-- **Test assertions — verify**: Actual replay of a `continues:` branch against pinned-seed output; `createTranscriptFromPlay` output asserted against the serialized transcript file's contents; author-channel isolation asserted by checking the player-facing channel list does NOT contain author-only entries (D12/AC8)
-- **Test assertions — insufficient**: Running a walkthrough once with unpinned randomness and eyeballing output; asserting a branch "exists" without asserting it replays; treating a Swift-side UI callback as verified without checking the NDJSON payload or the file it wrote
-
-### macOS IDE (SharpeeIDE, Swift + testing-surface web)
-
-- **Mutation calls**: `TestRunner.swift` invoking the platform test harness and parsing results; `TranscriptDiscovery.swift`/`TranscriptSourceProvider.swift` scanning/registering transcript files; persistence writes in `SharpeeIDE/Persistence`; scheme-handler responses bridging web-surface actions to native file/process mutations; `testing-surface/src/main.ts`/`character.ts` DOM mutations that must trace back to a real click-to-assert or explain-panel data fetch
-- **Reporting without mutation**: A test-tab UI element reported "passing"/"updated" without a corresponding `TestRunner` invocation and result parse; an explain-panel "shown" without the underlying NPC digest actually fetched from `WorldDigestEntity`
-- **Test assertions — verify**: XCTest assertions against actual written files/persisted state; NDJSON payloads parsed and asserted field-by-field; `character.test.ts`/`ac-signoff-cli.test.ts`-style real-path fixture assertions
-- **Test assertions — insufficient**: Asserting a Swift closure/callback fired without checking its argument payload; UI-state-only assertions that never touch the underlying file or process the UI claims to have driven
-
-### Long-Form Documentation / Publishing (docs/book, site build)
-
-- **Mutation calls**: `scripts/build-book.sh` regenerating built book output; naive-regression runs executing every book-referenced transcript/walkthrough against the built platform; website build syncing `chord.ebnf` from `packages/chord`
-- **Reporting without mutation**: Marking the naive-regression gate "GREEN" without an accompanying clean run log; claiming a chapter fix without re-running its walkthrough transcript
-- **Test assertions — verify**: Transcript run exits clean against `dist/cli/sharpee.js`, referenced against the specific tested npm version
-- **Test assertions — insufficient**: Manual read-through without executing transcripts; treating RNG-based flakes as gate failures — a flake at a pinned seed is more likely a real regression
+### Testing Intelligence (branch-tester, testing-surface)
+- **Mutation calls**: `RandomService` draws scoped to a `ChoicePoint`; `branch-tester` tree mutations; `from-play.ts` serializing a play session into a transcript
+- **Reporting without mutation**: marking a branch "passing" without an actual re-run and diff
+- **Test assertions — verify**: actual replay of a `continues:` branch against pinned-seed output
+- **Test assertions — insufficient**: running a walkthrough once with unpinned randomness and eyeballing output
 
 ## Notes
 
-- **New dominant arc since the 2026-08-09 profile: ADR-310/ADR-318, the Normative Character Layer.** Both ADRs flipped ACCEPTED on 2026-08-15 (session 00aaa0) after their open-questions interviews closed; the 2026-08-16 acceptance audit discharged all 9 ADR-310 + 8 ADR-318 criteria. Nearly every commit in the log since the last profile — Phases 1 through 7, seams 1–6 permanence, D6 through D18 closures — belongs to this arc. It displaces the ADR-300–306 testing-intelligence arc as the single most active area, though that arc continues (this session's commit, explain-NPC-turn panel, is where the two intersect: the panel surfaces character/NPC state for click-to-assert testing).
-- **Chord language bumped to 3.0.0** (was 2.2.0) — playground examples were migrated this cycle (commit 89a37da8). `CHORD_LANGUAGE_VERSION` lives at `packages/chord/src/version.ts:181`.
-- **Platform lockstep version bumped to 5.0.1** (was 4.3.0) across all 34 `@sharpee/*` packages (commit 03a2a72c).
-- **A new design-only umbrella exists but is NOT yet a code domain**: Temporal Controls (ADR-315, ADR-316, ADR-317; `docs/work/temporal-controls/README.md`) covers daemon lifecycle, intra-turn ordering, and four-phase validation over daemons/stages. Its own coverage table states "all design, nothing authorized for implementation" — R1 (daemon lifecycle) already has a complete engine API but zero Chord surface; R2 (turn ordering) is partly addressed by ADR-317; R3 (four-phase over daemons) is an acknowledged gap. Do not treat this as implemented.
-- **ADR-319 "Flashbacks" is DRAFT with 10 open unresolved questions** (written 2026-08-16, session 1a2bf1) — proposes atomic story state, "inflated and destroyed," extending toward parallel storylines (NARR-007, NARR-013). Per rule 11a, this must not be treated as accepted or actionable until the open-questions interview runs.
-- **`packages/character` is now a first-class first-party domain**, not a footnote — sub-modules for goals, influence, propagation, arbiter, conversation, act-detection, tick-phases, plus `character-clock.ts`, `story-oracle.ts`, `vocabulary-extension.ts`, `cognitive-presets.ts`. Previously existed at the 2026-08-09 profile date but was not separately called out; the last week of work makes it undeniable.
-- **Five packages previously present but not separately named are now called out**: `core` (foundational primitives), `channel-service` (ADR-163 universal channel-I/O wire producer, has a `/wire` sub-export), `ide-protocol` (ADR-184 IDE manifest wire types), `plugins` (turn-cycle extensibility contracts), `story-runtime-baseline` (ADR-178 bundle-import manifest).
-- **`tools/ide/web/testing-surface` is a newer, actively-developed sibling to `testing-tab`** — this cycle's explain-NPC-turn work landed almost entirely here (`character.ts`, `cards.ts`, `main.ts`), not in the older `testing-tab` directory. A future profile should watch whether `testing-tab` is being superseded outright.
-- **Root `package.json`'s `workspaces` array remains stale** (confirmed again this cycle) — it lists `packages/forge`, `packages/cli`, `packages/web-client`, `packages/dev-tools`, `packages/platforms/*`, none of which exist on disk. `pnpm-workspace.yaml` is the only source of truth; do not consult the root `package.json` array for workspace membership.
-- **Codebase scale**: ~423.5K lines TypeScript across packages/stories/tools (was ~418K), 697 `*.test.ts` files (was 703 — a slight decrease, likely test consolidation during the character-layer rewrite rather than a coverage regression; worth confirming in-session if raised), 182 `.transcript` files (was 165, +10% — new character/dialogue and testing-surface coverage), 90 Swift files in `SharpeeIDE` (was ~95).
-- **ADR volume**: 325 top-level ADR files (was 315), now running through ADR-319 (DRAFT).
-- **website/ saw real activity this cycle** (unlike the 2026-08-09 profile's "no changes" note): Sharpee 5.0.1 nav/roadmap update, homepage card link fixes, Apple-silicon DMG size label fix, `/play` route repair for `branch-stories/`, `chord.ebnf` build-time sync from `packages/chord`, and the new roadmap page covering temporal controls.
-- **CI/CD unchanged**: still only `build-platforms.yml` and `publish-npm.yml` under `.github/workflows/`.
-- Several `docs/context/.devarch-events-*.jsonl` / `.devarch-gate-*` files remain typical untracked DevArch housekeeping artifacts in git status — not part of the profile signal set.
+- Active branch `feat/adr-321-world-index` adds `packages/world-index` (new since last profile) — static Story IR analysis for map/reachability/vocab gaps.
+- Platform version 5.1.1, Chord language version 3.3.0 — both bumped since the prior 2026-08-16 profile (5.0.1 / 3.0.0).
+- ADR count now 336 (was 325).
+- Per project direction notes: platform (`packages/`) is mature infrastructure secondary to Chord + the macOS IDE; platform changes require discussion first (CLAUDE.md).

@@ -67,10 +67,15 @@ no warning: a meter naturally saturates (sanity tops out, hunger fills), so a `r
 lands at the ceiling and a `lower` past the floor lands at the floor, with no guard required at the call
 site. An unbounded counter never clamps.
 
-`raise` and `lower` are the **only** mutators — there is no `set`/multiply/derived arithmetic. A reset
-to the floor is `lower <counter> by` a large amount (it clamps); absolute assignment to an arbitrary
-value and richer arithmetic are deliberately out of scope, deferred to a later ADR if a real consumer
-needs them (Consequences).
+`raise` and `lower` were the **only** mutators as accepted — no `set`/multiply/derived arithmetic. A
+reset to the floor was `lower <counter> by` a large amount (it clamps); absolute assignment and
+richer arithmetic were deferred to a later ADR if a real consumer needed them (Consequences).
+
+> **Amended 2026-08-23 (ADR-325 D4, GH #310).** `set <counter> to <n>` is now the one absolute
+> write: the same target forms as `raise`/`lower` (bare story counter, `<entity>'s <name>`, `its
+> <name>`), a number literal only, clamped to the declared bounds. `raise`/`lower` are no longer the
+> only mutators. Arithmetic between counters, money, and prices remain deferred (ADR-325 D4's
+> math-and-money subsystem).
 
 ### D3 — Counters read in conditions
 

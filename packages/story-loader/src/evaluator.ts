@@ -39,7 +39,7 @@ import {
 import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey, type TimerRecord } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, landingKey, timerKey, type LandingRecord, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -93,6 +93,8 @@ export class Evaluator {
    */
   private readonly irEntities: IREntity[];
   private readonly irEntityById = new Map<string, IREntity>();
+  /** The resolved story seed — per-region landing streams derive from it (ADR-293). */
+  private readonly storySeed: number;
   /** ADR-325 D3: timer definitions by `qualified` key, for state-word reads. */
   private readonly timerDefs = new Map<string, IRTimerDef>();
 
@@ -139,6 +141,7 @@ export class Evaluator {
       this.moodWordAxes[mood.name] = mood.but ? applyMoodModifier(anchor, mood.but as MoodModifier) : anchor;
     }
     this.rng = createSeededRandom(seed);
+    this.storySeed = this.rng.getSeed();
   }
 
   /**
@@ -595,6 +598,70 @@ export class Evaluator {
   }
 
   /**
+   * A region's landing draw (ADR-325 D5): the room something put in the
+   * region lands in. One room → that room; `randomly` → the region's own
+   * persisted seeded stream; `cycling` / `stopping` → a persisted cursor.
+   * Undefined when `worldId` is not a region with a landing.
+   * @param worldId the candidate region's world id
+   * @returns the landing room's world id, or undefined
+   */
+  drawLanding(worldId: string, world: WorldModel): string | undefined {
+    const irId = this.ids.irIdOf(worldId);
+    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+    if (!region?.landing || irId === undefined) return undefined;
+    const key = landingKey(irId);
+    const record = this.landingRecord(irId, region.landing.rooms, world);
+    const n = record.rooms.length;
+    if (n === 0) return undefined;
+    if (n === 1) return record.rooms[0];
+    switch (region.landing.strategy) {
+      case 'randomly': {
+        const stream = createSeededRandom(record.seed);
+        const pick = stream.int(1, n) - 1;
+        world.setStateValue(key, { ...record, seed: stream.getSeed() });
+        return record.rooms[pick];
+      }
+      case 'stopping': {
+        const at = Math.min(record.cursor, n - 1);
+        world.setStateValue(key, { ...record, cursor: Math.min(record.cursor + 1, n - 1) });
+        return record.rooms[at];
+      }
+      case 'cycling':
+      default: {
+        world.setStateValue(key, { ...record, cursor: record.cursor + 1 });
+        return record.rooms[record.cursor % n];
+      }
+    }
+  }
+
+  /**
+   * `set <region>'s landing to <room>` (ADR-325 D5): replaces the whole
+   * landing list with one room and rewinds the cursor.
+   * @throws LoadError when `regionWorldId` is not a region with a landing
+   */
+  setLanding(regionWorldId: string, roomWorldId: string, world: WorldModel): void {
+    const irId = this.ids.irIdOf(regionWorldId);
+    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+    if (!region?.landing || irId === undefined) {
+      throw new LoadError(`\`${world.getEntity(regionWorldId)?.name ?? regionWorldId}\` is not a region with a landing — only a landing can be set.`);
+    }
+    const record = this.landingRecord(irId, region.landing.rooms, world);
+    world.setStateValue(landingKey(irId), { ...record, rooms: [roomWorldId], cursor: 0 });
+  }
+
+  /** The persisted landing record, seeded from the IR on first touch. */
+  private landingRecord(irId: string, irRooms: readonly string[], world: WorldModel): LandingRecord {
+    const stored = world.getStateValue(landingKey(irId)) as LandingRecord | undefined;
+    if (stored) return stored;
+    const rooms = irRooms.map((id) => this.ids.entityId(id)).filter((id): id is string => id !== undefined);
+    // Per-region stream: the story seed folded with the region id, so two
+    // regions never share a sequence and a fixed seed pins each one.
+    let seed = this.storySeed;
+    for (const ch of irId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    return { rooms, cursor: 0, seed };
+  }
+
+  /**
    * The entities satisfying a named open condition, as IR ids in
    * declaration order — E3's pinned creation-order enumeration. Used by
    * the runtime's `each` execution and its pre-mutation snapshot.
@@ -623,12 +690,16 @@ export class Evaluator {
 
   private readField(worldId: string, field: string, ctx: EvalContext): unknown {
     switch (field) {
-      case 'location':
+      case 'location': {
         // ADR-325 D1: `location` is the containing room, always — a room is
         // its own; a thing carried or on a supporter reads the room around
-        // it. Undefined when the entity is offstage.
+        // it. Undefined when the entity is offstage. A region with a
+        // landing (D5) reads as its landing — one draw per read.
         if (ctx.world.getEntity(worldId)?.has(TraitType.ROOM)) return worldId;
+        const landing = this.drawLanding(worldId, ctx.world);
+        if (landing !== undefined) return landing;
         return ctx.world.getContainingRoom(worldId)?.id ?? ctx.world.getLocation(worldId);
+      }
       case 'state': {
         const irId = this.ids.irIdOf(worldId);
         if (irId === undefined) throw new LoadError('Cannot read `state` of a non-story entity.');

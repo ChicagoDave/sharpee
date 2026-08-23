@@ -60,6 +60,9 @@ import {
   OnClause,
   DefineTimer,
   TimerClause,
+  MoveClause,
+  KillStmt,
+  LandingDecl,
   PatternPart,
   StateName,
   Statement,
@@ -102,6 +105,8 @@ import {
   IRCounterDef,
   IRTimerDef,
   IRTimerClause,
+  IRMoveClause,
+  IRLanding,
   IRCounterDecl,
   IRGrammarExtension,
   IRGrammarRemoval,
@@ -181,6 +186,16 @@ const OPPOSITE_DIRECTION: Record<string, string> = {
   northwest: 'southeast', southeast: 'northwest',
   up: 'down', down: 'up',
 };
+/**
+ * The phrase key an inline `kill the player` body registers under (ADR-325
+ * D3i): source-position keyed, so two inline deaths never collide and the
+ * key is derivable from the statement alone in both the collection and
+ * lowering passes.
+ */
+function inlineKillKey(stmt: KillStmt): string {
+  return `death-at-${stmt.span.line}-${stmt.span.column}`;
+}
+
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
 /** Reserved-name gate text (David, 2026-07-12 — each package P3). */
@@ -1380,6 +1395,45 @@ class Analyzer {
       }
     }
 
+    // ADR-325 D5: every landing room is a room the region contains,
+    // directly or through a nested region.
+    const roomsWithin = (region: IREntity, seen = new Set<string>()): Set<string> => {
+      const out = new Set<string>();
+      if (seen.has(region.id)) return out;
+      seen.add(region.id);
+      for (const member of region.containing) {
+        const target = byId.get(member.id);
+        if (!target) continue;
+        if (isRegionEntity(target)) {
+          for (const id of roomsWithin(target, seen)) out.add(id);
+        } else {
+          out.add(target.id);
+        }
+      }
+      return out;
+    };
+    for (const region of regions) {
+      if (!region.landing) continue;
+      const within = roomsWithin(region);
+      for (const roomId of region.landing.rooms) {
+        const target = byId.get(roomId);
+        if (!target) continue;
+        if (!target.kinds.some((k) => k.name === 'room')) {
+          this.diagnostics.error(
+            'analysis.landing-kind',
+            `\`${target.name}\` is not a room — a landing is a room the region contains.`,
+            region.landing.span,
+          );
+        } else if (!within.has(roomId)) {
+          this.diagnostics.error(
+            'analysis.landing-not-contained',
+            `\`${target.name}\` is not contained by \`${region.name}\` — a landing must be one of the region's own rooms (directly or through a nested region).`,
+            region.landing.span,
+          );
+        }
+      }
+    }
+
     // Containment cycles (walking child → parent; two-parents kept the
     // first edge, so the graph is functional and one walk per region ends).
     const walked = new Map<string, 'visiting' | 'done'>();
@@ -2464,7 +2518,7 @@ class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(c, scope, `trait.${decl.name}`, i)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(this.checkGoingBinding(c, false), scope, `trait.${decl.name}`, i)),
       span: decl.span,
     };
   }
@@ -2848,6 +2902,7 @@ class Analyzer {
       // owned, so ownerless/bare-key scope — the same registration the five
       // pre-existing contexts use.
       for (const clause of this.ast.header.onClauses) this.collectInlineTexts(clause.body);
+      for (const clause of this.ast.header.timerClauses) this.collectInlineTexts(clause.body);
       // `use phrasebook` lines (ADR-250 D2/D3) — header position puts every
       // used book ahead of body-declared books in the arbitration order.
       for (const use of this.ast.header.usePhrasebooks) this.collectUsePhrasebook(use);
@@ -3199,6 +3254,9 @@ class Analyzer {
       // owner-derived key (phrase-override mechanism) — four owners each
       // declaring `phrase confession` must not collide (Phase C P3).
       for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body, e.id);
+      // Event clause bodies (ADR-325 D3e/D3h) are owner-scoped the same way.
+      for (const clause of e.decl.timerClauses) this.collectInlineTexts(clause.body, e.id);
+      for (const clause of e.decl.moveClauses) this.collectInlineTexts(clause.body, e.id);
     }
 
     // Topic-table row bodies are entity-owned (ADR-239): their inline
@@ -3284,6 +3342,18 @@ class Analyzer {
         case 'phrase':
           if (stmt.inlineText) {
             this.registerPhrase(DEFAULT_LOCALE, ownerId ? `${ownerId}.${stmt.phraseKey}` : stmt.phraseKey, {
+              strategy: null,
+              variants: [this.variantOf(stmt.inlineText)],
+              span: stmt.inlineText.span,
+            });
+          }
+          break;
+        case 'kill':
+          // ADR-325 D3i: the inline death text registers under a
+          // synthesized key (bare — death text is one-shot, never
+          // overridden per owner) that the lowering step also derives.
+          if (stmt.inlineText) {
+            this.registerPhrase(DEFAULT_LOCALE, inlineKillKey(stmt), {
               strategy: null,
               variants: [this.variantOf(stmt.inlineText)],
               span: stmt.inlineText.span,
@@ -5309,6 +5379,15 @@ class Analyzer {
         decl.placement.span,
       );
     }
+    // ADR-325 D5: `landing` is a region's door — on any other block it
+    // names nothing.
+    if (!isRegion && decl.landing) {
+      this.diagnostics.error(
+        'analysis.landing-host',
+        `\`landing\` declares where things put in a region land — \`${decl.name.words.join(' ')}\` is not a region.`,
+        decl.landing.span,
+      );
+    }
     // ADR-236 D2: `containing` is region membership — on any other block it
     // would be a silent no-op, so it is a load error, never a guess.
     if (!isRegion && decl.containing.length > 0) {
@@ -5408,6 +5487,7 @@ class Analyzer {
       containing: decl.containing
         .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
         .filter((m) => m.id !== ''),
+      ...(decl.landing && isRegion ? { landing: this.buildLanding(decl.landing) } : {}),
       exits: decl.exits.map((e) => ({
         direction: e.direction,
         to: this.resolveEntityId(e.to) ?? '',
@@ -5459,15 +5539,45 @@ class Analyzer {
       descriptionKey: decl.description ? `${id}.description` : null,
       initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
-        this.buildOnClause(c, entityScope(sym ?? null), id, i),
+        this.buildOnClause(this.checkGoingBinding(c, isPlayer), entityScope(sym ?? null), id, i),
       ),
       ...(decl.timerClauses.length > 0
         ? { timerClauses: decl.timerClauses.map((c, i) => this.buildTimerClause(c, entityScope(sym ?? null), id, i)) }
+        : {}),
+      ...(decl.moveClauses.length > 0
+        ? { moveClauses: decl.moveClauses.map((c, i) => this.buildMoveClause(c, entityScope(sym ?? null), id, i)) }
         : {}),
       // Filled by applyTopics after every entity is built (ADR-239).
       topics: [],
       span: decl.span,
     };
+  }
+
+  /**
+   * ADR-325 D3h: the two `going` forms are owner-keyed. Bare `on going` /
+   * `after going` is the player's own movement and lives only in the
+   * player's block; `on going it` there has no referent (the player is
+   * never a going target) and is refused with the bare form as the fix.
+   * Other owners keep `on going it` — the source room's clause.
+   * @returns the clause unchanged (diagnostics only)
+   */
+  private checkGoingBinding(clause: OnClause, isPlayer: boolean): OnClause {
+    if (clause.action !== 'going') return clause;
+    const head = `${clause.clauseKind} going`;
+    if (clause.binding === 'self' && !isPlayer) {
+      this.diagnostics.error(
+        'analysis.going-self-owner',
+        `\`${head}\` without \`it\` is the player's own movement and belongs in the player's block — on a room write \`${head} it\`.`,
+        clause.span,
+      );
+    } else if (clause.binding === 'it' && isPlayer) {
+      this.diagnostics.error(
+        'analysis.going-player-it',
+        `\`${head} it\` in the player's block — the player's own movement is bare \`${head}\`; \`it\` names a room the move leaves.`,
+        clause.span,
+      );
+    }
+    return clause;
   }
 
   /**
@@ -5703,10 +5813,40 @@ class Analyzer {
             stmt.span,
           );
         }
+        // ADR-325 D4: `set <tally> to <n>` — the one absolute tally write,
+        // same target forms as raise/lower; clamped by the loader.
+        const tally = this.counterTargetOf(stmt.target, scope);
+        if (tally) {
+          const v = stmt.value;
+          const literal = v.kind === 'literal' && v.literalKind === 'number' ? Number(v.value) : null;
+          if (literal === null) {
+            this.diagnostics.error(
+              'analysis.set-counter-value',
+              `\`set ${tally.counter} to …\` takes a number — tally arithmetic is later scope.`,
+              stmt.span,
+            );
+          }
+          return { kind: 'set-counter', counter: tally.counter, owner: tally.owner, value: literal ?? 0, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        }
+        const target = this.resolveValue(stmt.target, scope);
+        // ADR-325 D5: `set <region>'s landing to <room>` — the base must be
+        // a region that declared a landing (a `set` replaces, never creates).
+        if (target.kind === 'field' && target.field === 'landing' && target.base.kind === 'entity') {
+          const sym = this.byId.get(target.base.id);
+          const isRegion = sym?.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region') ?? false;
+          if (sym && (!isRegion || !sym.decl.landing)) {
+            this.diagnostics.error(
+              'analysis.landing-set-target',
+              `\`${sym.decl.name.words.join(' ')}\` has no landing to set — only a region with a \`landing\` line has one.`,
+              stmt.span,
+            );
+          }
+        }
         return {
           kind: 'set',
-          target: this.resolveValue(stmt.target, scope),
+          target,
           value: this.resolveValue(stmt.value, scope),
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
       }
@@ -5878,9 +6018,11 @@ class Analyzer {
       }
       case 'win':
       case 'lose':
-      case 'kill':
+      case 'kill': {
         if (stmt.phraseKey) this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
-        return { kind: stmt.kind, phraseKey: stmt.phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        const phraseKey = stmt.kind === 'kill' && stmt.inlineText ? inlineKillKey(stmt) : stmt.phraseKey;
+        return { kind: stmt.kind, phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
       case 'must': {
         // `<subject> must <predicate>: <key>` (ratchet D6) — a positive
         // requirement; compiled as its predicate condition plus the key.
@@ -6578,17 +6720,87 @@ class Analyzer {
   }
 
   /**
+   * `when <entity> moves [, while <cond>]` (ADR-325 D3h): the mover must be
+   * an entity or the player — a value of any other shape has no actor.
+   * @param ownerKey the owner's IR id (statement-path prefix, ADR-289 D2)
+   * @param index position among the owner's move clauses
+   */
+  private buildMoveClause(clause: MoveClause, scope: Scope, ownerKey: string, index: number): IRMoveClause {
+    const mover = this.resolveValue(clause.mover, scope);
+    if (mover.kind !== 'entity' && mover.kind !== 'player') {
+      this.diagnostics.error(
+        'analysis.move-clause-mover',
+        '`when <entity> moves` names who moves — an entity or the player.',
+        clause.mover.span,
+      );
+    }
+    const condition = clause.condition ? this.resolveCondition(clause.condition, scope) : null;
+    const body = clause.body.map((st, i) => this.resolveStatement(st, scope, `${ownerKey}.moves-${index}.${i}`));
+    this.checkPhaseOrder(clause.body, { ended: null });
+    return { mover, condition, body, span: clause.span };
+  }
+
+  /**
    * Lower a place (ADR-325 D1–D2) onto the existing IR value shapes — no new
    * IR kind: `<owner>'s location` is the `location` field read, `here` is
    * that read on the player, `offstage` is the `offstage` symbol the loader
    * treats as "no location".
    */
+  /**
+   * Is this value a declared counter (ADR-264) — a bare name in the story
+   * registry, or `<entity>'s <name>` / `its <name>` in the owner's? Returns
+   * the counter name and owner value, or null when it names no counter.
+   * Diagnostics-free: a probe for verbs (`set`) that accept other targets.
+   */
+  private counterTargetOf(target: ValueExpr, scope: Scope): { counter: string; owner: IRValue | null } | null {
+    if (target.kind === 'possessive') {
+      const counter = target.field.join(' ');
+      const owner = this.resolveValue(target.base, scope);
+      const ownerId = owner.kind === 'entity' ? owner.id : owner.kind === 'it' ? scope.owner?.id ?? null : null;
+      if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(counter)) return { counter, owner };
+      return null;
+    }
+    const counter = target.kind === 'ref' ? target.ref.words.join(' ') : target.kind === 'bare' ? target.words.join(' ') : null;
+    if (counter !== null && this.storyCounterNames.has(counter)) return { counter, owner: null };
+    return null;
+  }
+
+  /** Lower a `landing` line (ADR-325 D5); unresolved rooms are dropped (already reported). */
+  private buildLanding(landing: LandingDecl): IRLanding {
+    const rooms = landing.rooms.map((r) => this.resolveEntityId(r)).filter((id): id is string => id !== null);
+    return { rooms, strategy: landing.strategy, span: landing.span };
+  }
+
+  /**
+   * ADR-325 D5: a region is a place only once it names a landing. Fires on
+   * a region used as a destination or as the owner of `'s location`.
+   */
+  private checkRegionPlace(value: IRValue, span: Span): void {
+    if (value.kind !== 'entity') return;
+    const sym = this.byId.get(value.id);
+    if (!sym) return;
+    const isRegion = sym.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region');
+    if (isRegion && !sym.decl.landing) {
+      this.diagnostics.error(
+        'analysis.region-not-a-place',
+        `\`${sym.decl.name.words.join(' ')}\` is a region with no \`landing\` line — a region is a place only once it says where things put in it land.`,
+        span,
+      );
+    }
+  }
+
   private resolvePlace(place: PlaceExpr, scope: Scope): IRValue {
     switch (place.kind) {
-      case 'name':
-        return this.resolveEntityValue(place.ref, scope);
-      case 'location':
-        return { kind: 'field', base: this.resolveValue(place.owner, scope), field: 'location' };
+      case 'name': {
+        const value = this.resolveEntityValue(place.ref, scope);
+        this.checkRegionPlace(value, place.ref.span);
+        return value;
+      }
+      case 'location': {
+        const owner = this.resolveValue(place.owner, scope);
+        this.checkRegionPlace(owner, place.owner.span);
+        return { kind: 'field', base: owner, field: 'location' };
+      }
       case 'here':
         return { kind: 'field', base: { kind: 'player' }, field: 'location' };
       case 'offstage':

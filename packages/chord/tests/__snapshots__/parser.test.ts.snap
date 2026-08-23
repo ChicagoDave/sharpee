@@ -76,7 +76,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -219,7 +221,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -360,7 +364,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -756,7 +762,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -846,7 +854,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1000,7 +1010,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1184,7 +1196,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1311,7 +1325,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1428,7 +1444,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1529,7 +1547,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",

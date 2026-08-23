@@ -267,6 +267,12 @@ export interface IREntity {
    * (analyzer-gated).
    */
   containing: IRContainedMember[];
+  /**
+   * The region's landing (ADR-325 D5): resolved room ids and how to choose
+   * among them (null = a single room). Present only on region-kind
+   * entities with a `landing` line; its presence makes the region a place.
+   */
+  landing?: IRLanding;
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
@@ -289,6 +295,8 @@ export interface IREntity {
   counters: IRCounterDecl[];
   /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
   timerClauses?: IRTimerClause[];
+  /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */
+  moveClauses?: IRMoveClause[];
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
   /**
@@ -772,6 +780,13 @@ export interface IRConfigSetting {
   values?: string[];
 }
 
+/** A region's landing (ADR-325 D5) — see IREntity.landing. */
+export interface IRLanding {
+  rooms: string[];
+  strategy: 'randomly' | 'cycling' | 'stopping' | null;
+  span: Span;
+}
+
 /** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
 export interface IRContainedMember {
   /** Entity ID of the member. */
@@ -831,8 +846,12 @@ export interface IROnClause {
   once: boolean;
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
-  /** How the clause binds: target (`it`), role (`anything as the <role>`), or every turn. */
-  binding: 'it' | 'role' | 'every-turn';
+  /**
+   * How the clause binds: target (`it`), role (`anything as the <role>`),
+   * every turn, or `self` — the player's own `going` (ADR-325 D3h), which
+   * fires on the going action's source-room slot with `it` = the player.
+   */
+  binding: 'it' | 'role' | 'every-turn' | 'self';
   /** Role name for role-bound clauses (validated against the action's roles). */
   role: string | null;
   /** `while` qualifier (every-turn clauses). */
@@ -1201,6 +1220,19 @@ export interface IRTimerClause {
   span: Span;
 }
 
+/**
+ * `when <entity> moves [, while <cond>]` (ADR-325 D3h) — on the clause owner.
+ * The loader chains the actor-moved event and fires when the event's actor
+ * is `mover`'s world entity; `it` in the body is the owner.
+ */
+export interface IRMoveClause {
+  /** The mover — an entity reference or the player. */
+  mover: IRValue;
+  condition: IRCondition | null;
+  body: IRStatement[];
+  span: Span;
+}
+
 /** A per-entity numeric counter (ADR-264 D1) — same shape, carried on IREntity. */
 export interface IRCounterDecl {
   name: string;
@@ -1362,7 +1394,7 @@ export type IRStatement =
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
   /** Payload present only when authored (`with …`, ADR-216) — additive field. */
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
-  | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
+  | { kind: 'set'; target: IRValue; value: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   /** `change mood to <word>` (ADR-310 D3) — the clause's `it` takes the mood. */
   | { kind: 'change-mood'; mood: string; stmtWhen?: IRCondition | null; span: Span }
@@ -1375,6 +1407,8 @@ export type IRStatement =
   // ADR-264 D2: `raise`/`lower` a counter by an amount. `owner` is the entity
   // IRValue for a per-entity counter, or null for a story-global one.
   | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
+  /** `set <tally> to <n>` (ADR-325 D4) — absolute assignment, clamped to the counter's bounds. */
+  | { kind: 'set-counter'; counter: string; owner: IRValue | null; value: number; stmtWhen?: IRCondition | null; span: Span }
   /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
   | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }

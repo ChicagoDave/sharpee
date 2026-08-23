@@ -755,6 +755,12 @@ export interface CreateDecl {
    * only on region blocks (the analyzer's gate).
    */
   containing: NameRef[];
+  /**
+   * `landing <room>` / `landing, <strategy>: <rooms>` (ADR-325 D5) — where
+   * something put in the region lands. One per region (the parser rejects
+   * a second); region-only and contained-only are the analyzer's gates.
+   */
+  landing: LandingDecl | null;
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
@@ -781,6 +787,8 @@ export interface CreateDecl {
   onClauses: OnClause[];
   /** `when <timer> expires` clauses (ADR-325 D3e). */
   timerClauses: TimerClause[];
+  /** `when <entity> moves` clauses (ADR-325 D3h). */
+  moveClauses: MoveClause[];
   /**
    * `mood <word>` lines (ADR-310 D3) — collected in order so the analyzer
    * can reject duplicates with the second line's span (the pronouns idiom).
@@ -1228,6 +1236,8 @@ export interface PhraseOverride {
  *   `after <action> it [while <condition>] [, once]`       → reaction (D3)
  *   `on <action> anything as the <role>`                    → binding 'role'
  *   `on every turn [while <condition>] [, once]`            → binding 'every-turn'
+ *   `on going [while <condition>]` / `after going …`        → binding 'self'
+ *     (ADR-325 D3h: the player's own movement, legal only in the player's block)
  * `on` intercepts (may refuse; phrase output is primary); `after` reacts
  * (refuse is a parse error; phrase output appends).
  */
@@ -1237,8 +1247,8 @@ export interface OnClause {
   clauseKind: 'on' | 'after';
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
-  /** How the clause binds (Phase A only had 'it'). */
-  binding: 'it' | 'role' | 'every-turn';
+  /** How the clause binds (Phase A only had 'it'); `self` is the player's own going (ADR-325 D3h). */
+  binding: 'it' | 'role' | 'every-turn' | 'self';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */
@@ -1726,6 +1736,28 @@ export interface TimerClause {
   span: Span;
 }
 
+/** A region's landing line (ADR-325 D5). `strategy` is null for a single room. */
+export interface LandingDecl {
+  rooms: NameRef[];
+  strategy: 'randomly' | 'cycling' | 'stopping' | null;
+  span: Span;
+}
+
+/**
+ * `when <entity> moves [, while <cond>] … end when` (ADR-325 D3h) — an
+ * event clause head on any entity block, riding the actor-moved event the
+ * `going` action emits. Fires on the COMPLETED move only; a refusal belongs
+ * on the mover's own `on going`. `it` inside the body is the clause owner.
+ */
+export interface MoveClause {
+  kind: 'move-clause';
+  /** The mover — an entity name or `the player`. */
+  mover: ValueExpr;
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
+
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
   kind: 'define-sequence';
@@ -1945,11 +1977,13 @@ export type EmitValue =
   | { kind: 'array'; items: EmitValue[]; span: Span }
   | { kind: 'object'; fields: EmitField[]; span: Span };
 
-/** `set <field-path> to <value>` */
+/** `set <field-path> to <value> [when <cond>]` */
 export interface SetStmt {
   kind: 'set';
   target: ValueExpr;
   value: ValueExpr;
+  /** Statement `when` suffix (ratchet D7) — execute only if it holds. */
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
@@ -2084,6 +2118,12 @@ export interface LoseStmt {
 export interface KillStmt {
   kind: 'kill';
   phraseKey: string | null;
+  /**
+   * ADR-325 D3i: an indented prose block in place of the key — the death
+   * text, registered under a synthesized key by the analyzer. Null when a
+   * key (or nothing) was written.
+   */
+  inlineText: TextValue | null;
   stmtWhen: ConditionNode | null;
   span: Span;
 }

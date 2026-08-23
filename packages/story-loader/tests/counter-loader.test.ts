@@ -145,6 +145,38 @@ describe('raise / lower runtime mutation (ADR-264 D2)', () => {
   });
 });
 
+describe('set <tally> to <n> runtime mutation (ADR-325 D4)', () => {
+  it('assigns absolutely, regardless of the current value', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    raise madness by 30\n    set madness to 7\n  end on', 'define counter madness between 0 and 100'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(7);
+    tick(daemons, world, 2); expect(world.getStateValue(counterKey('madness'))).toBe(7);
+  });
+
+  it('clamps to the declared bounds', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    set madness to 500\n  end on', 'define counter madness between 0 and 100'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(100);
+    const low = loadDaemons(
+      DAEMON_STORY('  on every turn\n    set madness to 2\n  end on', 'define counter madness starts 50 between 10 and 100'),
+    );
+    tick(low.daemons, low.world, 1); expect(low.world.getStateValue(counterKey('madness'))).toBe(10);
+  });
+});
+
+describe('set … when <cond> (statement suffix)', () => {
+  it('resets only once the gate holds', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    raise madness by 4\n    set madness to 0 when madness is at least 8\n  end on', 'define counter madness between 0 and 10'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(4);
+    tick(daemons, world, 2); expect(world.getStateValue(counterKey('madness'))).toBe(0);
+    tick(daemons, world, 3); expect(world.getStateValue(counterKey('madness'))).toBe(4);
+  });
+});
+
 describe('counter comparison gates a runtime statement (ADR-264 D3)', () => {
   const died = (events: ISemanticEvent[]) => events.some((e) => e.type === 'if.event.player.died');
 

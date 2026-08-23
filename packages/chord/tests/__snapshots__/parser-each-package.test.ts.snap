@@ -777,7 +777,9 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -835,7 +837,9 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -915,7 +919,9 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",

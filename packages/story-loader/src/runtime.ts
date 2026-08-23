@@ -18,7 +18,7 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTimerClause, IRTimerDef, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRMoveClause, IRPhrase, IRPhraseVariant, IRStatement, IRTimerClause, IRTimerDef, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import { conditionRequiresSelfBreaking, normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
@@ -108,7 +108,7 @@ import {
 } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
-import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
+import { crossingRegionId, enteringDestination, movedActorId, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
 import { translateEventId } from './event-id-map.js';
 import { aliasToActionMessageId } from './message-alias-map.js';
 
@@ -271,6 +271,15 @@ export class ChordRuntime {
           );
         }
         // D5 fail-fast (ADR-228): only bind clauses something will consult.
+        // ADR-325 D3h: the player's own `on going`/`after going` rides the
+        // going action's source-room slot (the player is never a going
+        // target); its arm matches any room target with `it` = the player.
+        if (clause.binding === 'self') {
+          const list = byAction.get(clause.action) ?? [];
+          list.push({ entity, clause });
+          byAction.set(clause.action, list);
+          return;
+        }
         if (!this.isConsultedGerund(clause.action)) {
           if (this.isDispatchAction(clause.action)) {
             // Dispatch reactions fire via fireAfterClauses (the runtime owns
@@ -308,11 +317,25 @@ export class ChordRuntime {
     }
 
     for (const [action, clauses] of byAction) {
-      world.registerActionInterceptor(
-        ChordBehaviorTrait.type,
-        `if.action.${action}`,
-        this.buildDispatchingInterceptor(action, clauses),
-      );
+      const interceptor = this.buildDispatchingInterceptor(action, clauses);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, `if.action.${action}`, interceptor);
+      // A self-bound going clause must reach every source room, marked or
+      // not — bind the same interceptor under the room trait too.
+      if (clauses.some((c) => c.clause?.binding === 'self')) {
+        world.registerActionInterceptor(TraitType.ROOM, `if.action.${action}`, interceptor);
+      }
+    }
+
+    // `when <entity> moves` clauses (ADR-325 D3h) ride the actor-moved event.
+    for (const entity of this.ir.entities) {
+      (entity.moveClauses ?? []).forEach((clause, clauseIndex) => {
+        const key = `chord.moves.${entity.id}.${clauseIndex}`;
+        world.chainEvent(
+          EVENT_TRIGGERS.entering,
+          (event, w) => this.fireMoveClause(entity, clause, key, event, w as WorldModel),
+          { key },
+        );
+      });
     }
 
     // Phase B: `define trait` clauses register per TRAIT TYPE — capability
@@ -673,6 +696,48 @@ export class ChordRuntime {
     return this.execStatements(clause.body, ctx);
   }
 
+  // ---------------------------------------------------------- move clauses
+
+  /** Test/debug entry: run every `when <entity> moves` clause for this event. */
+  fireMoveClauses(world: WorldModel, event: ISemanticEvent): ISemanticEvent[] {
+    const out: ISemanticEvent[] = [];
+    if (event.type !== EVENT_TRIGGERS.entering) return out;
+    for (const entity of this.ir.entities) {
+      (entity.moveClauses ?? []).forEach((clause, clauseIndex) => {
+        const produced = this.fireMoveClause(entity, clause, `chord.moves.${entity.id}.${clauseIndex}`, event, world);
+        if (produced) out.push(...produced);
+      });
+    }
+    return out;
+  }
+
+  /**
+   * `when <entity> moves [, while <cond>]` (ADR-325 D3h): fires when the
+   * actor-moved event's actor is the mover's world entity — the completed
+   * move only (a refused go emits no actor-moved event). `it` is the owner.
+   */
+  private fireMoveClause(
+    entity: IREntity,
+    clause: IRMoveClause,
+    key: string,
+    event: ISemanticEvent,
+    world: WorldModel,
+  ): ISemanticEvent[] | null {
+    const moverId = clause.mover.kind === 'player'
+      ? world.getPlayer()?.id
+      : clause.mover.kind === 'entity' ? this.host.entityId(clause.mover.id) : undefined;
+    if (!moverId || movedActorId(event) !== moverId) return null;
+
+    const ctx: ExecContext = { world, it: entity.id };
+    if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
+
+    const occKey = CHORD_OCCURRENCE_PREFIX + key;
+    const occurrence = ((world.getStateValue(occKey) as number | undefined) ?? 0) + 1;
+    world.setStateValue(occKey, occurrence);
+    ctx.occurrence = occurrence;
+    return this.execStatements(clause.body, ctx);
+  }
+
   // ------------------------------------------------------------ on-clauses
 
   /** Mark the clause's target entity so interceptor resolution finds it. */
@@ -780,14 +845,18 @@ export class ChordRuntime {
       const built = entityClauses.map((clause, index) =>
         this.buildInterceptor(entity, clause, `${entity.id}.${action}.${clause.clauseKind}.${index}`),
       );
+      const selfBound = entityClauses.some((c) => c.binding === 'self');
       const catchAll = built.length ? this.mergeArms(built) : undefined;
       const interceptor = isTopicAction && (entity.topics ?? []).length
         ? this.buildTopicArm(entity, catchAll, action)
         : catchAll ?? {};
-      return { entity, interceptor };
+      return { entity, interceptor, selfBound };
     });
+    // A self-bound arm (the player's own going, ADR-325 D3h) answers for the
+    // source-room slot — any room target; the door slot (no room trait)
+    // and the destination slot (a different action id) never reach it.
     const armFor = (target: IFEntity): ActionInterceptor | undefined =>
-      arms.find((a) => runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
+      arms.find((a) => a.selfBound ? target.has(TraitType.ROOM) : runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
@@ -814,12 +883,15 @@ export class ChordRuntime {
    */
   private buildInterceptor(entity: IREntity, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
-    const ownWorldId = () => runtime.host.entityId(entity.id);
+    // Self-bound (the player's own going, ADR-325 D3h): the hook's target is
+    // the source room, not the owner — match any room; `it` stays the owner.
+    const isMine = (target: IFEntity): boolean =>
+      clause.binding === 'self' ? target.has(TraitType.ROOM) : target.id === runtime.host.entityId(entity.id);
     const occurrenceKey = CHORD_OCCURRENCE_PREFIX + `on.${ns}`;
 
     return {
       preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (target.id !== ownWorldId() || clause.clauseKind === 'after') return null;
+        if (!isMine(target) || clause.clauseKind === 'after') return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -842,7 +914,7 @@ export class ChordRuntime {
       },
 
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (target.id !== ownWorldId()) return null;
+        if (!isMine(target)) return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8: same gate, same evaluation point (see preValidate).
@@ -863,14 +935,14 @@ export class ChordRuntime {
 
       postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
-        if (target.id !== ownWorldId() || bag.skip === true) return;
+        if (!isMine(target) || bag.skip === true) return;
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.execStatements(clause.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
-        if (target.id !== ownWorldId() || bag.skip === true) return {};
+        if (!isMine(target) || bag.skip === true) return {};
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.execStatements(clause.body, ctx, 'reports');
 
@@ -3602,9 +3674,16 @@ export class ChordRuntime {
           break;
         }
         case 'set': {
-          if (phase !== 'reports') {
+          if (phase !== 'reports' && holds) {
             const value = this.evaluator.evalValue(stmt.value, ctx);
-            if (stmt.target.kind === 'field') {
+            if (stmt.target.kind === 'field' && stmt.target.field === 'landing') {
+              // `set <region>'s landing to <room>` (ADR-325 D5).
+              const regionId = this.evaluator.entityValue(stmt.target.base, ctx);
+              if (typeof value !== 'string' || !ctx.world.getEntity(value)?.has(TraitType.ROOM)) {
+                throw new LoadError('A landing is set to a room.', stmt.span);
+              }
+              this.evaluator.setLanding(regionId, value, ctx.world);
+            } else if (stmt.target.kind === 'field') {
               // Trait data fields (`set its treats to 3`) write the entity's
               // chord trait instance — world state via traits (AC-6-safe).
               const baseId = this.evaluator.entityValue(stmt.target.base, ctx);
@@ -3650,6 +3729,21 @@ export class ChordRuntime {
             const bounds = this.counterBounds(stmt.counter, ownerIrId);
             const current = Number(ctx.world.getStateValue(key) ?? 0);
             let next = current + (stmt.kind === 'raise' ? stmt.amount : -stmt.amount);
+            if (bounds) {
+              if (bounds.lo !== null && next < bounds.lo) next = bounds.lo;
+              if (bounds.hi !== null && next > bounds.hi) next = bounds.hi;
+            }
+            ctx.world.setStateValue(key, next);
+          }
+          break;
+        }
+        case 'set-counter': {
+          // ADR-325 D4: absolute tally assignment, clamped like raise/lower.
+          if (phase !== 'reports' && holds) {
+            const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
+            const key = counterKey(stmt.counter, ownerIrId ?? undefined);
+            const bounds = this.counterBounds(stmt.counter, ownerIrId);
+            let next = stmt.value;
             if (bounds) {
               if (bounds.lo !== null && next < bounds.lo) next = bounds.lo;
               if (bounds.hi !== null && next > bounds.hi) next = bounds.hi;
@@ -3767,7 +3861,10 @@ export class ChordRuntime {
   private resolvePlace(place: IRValue, ctx: ExecContext): string | null {
     if (place.kind === 'symbol' && place.name === 'offstage') return null;
     const resolved = this.evaluator.evalValue(place, ctx);
-    if (typeof resolved === 'string' && ctx.world.getEntity(resolved)) return resolved;
+    if (typeof resolved === 'string' && ctx.world.getEntity(resolved)) {
+      // ADR-325 D5: a region with a landing is a place — land there.
+      return this.evaluator.drawLanding(resolved, ctx.world) ?? resolved;
+    }
     if (place.kind === 'field' && place.field === 'location') {
       const ownerId = this.evaluator.evalValue(place.base, ctx);
       const owner = typeof ownerId === 'string' ? ctx.world.getEntity(ownerId) : undefined;

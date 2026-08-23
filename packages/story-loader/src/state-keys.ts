@@ -95,3 +95,26 @@ export interface TimerRecord {
   index: number;
   startedTurn: number;
 }
+
+/**
+ * A region's landing (ADR-325 D5): `chord.landing.<region-ir-id>`. Absent
+ * until first read or first `set`; the loader seeds it from the IR then.
+ */
+export const CHORD_LANDING_PREFIX = 'chord.landing.';
+
+/** The world-state key for a region's landing record. */
+export function landingKey(regionIrId: string): string {
+  return `${CHORD_LANDING_PREFIX}${regionIrId}`;
+}
+
+/**
+ * A landing's live state. `rooms` are WORLD ids (a `set` replaces the whole
+ * list with one); `cursor` is the cycling/stopping position; `seed` is the
+ * region's own random stream (ADR-293: derived from the story seed, so a
+ * fixed seed yields a byte-identical sequence per region).
+ */
+export interface LandingRecord {
+  rooms: string[];
+  cursor: number;
+  seed: number;
+}
