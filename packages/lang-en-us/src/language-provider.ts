@@ -82,10 +82,12 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'scope.not_carried': "{You} aren't holding {the item}.",
       'scope.out_of_scope': "{You} {can't} do that.",
       // Room description body (ADR-192/195): the room's prose realized through the
-      // phrase pipeline, carrying the `{slot:here}` room-occupant channel so present
-      // occupants append a presence clause at realize time (the room name is a
-      // separate structural block emitted by the room handler).
-      'if.room.description_body': '{verbatim:description}{slot:here}',
+      // phrase pipeline. `{slot:detail}` is the room's ADR-195 S2 state-derived
+      // detail channel (GH #316) — the same registry examining's `{slot:detail}`
+      // renders, filled by the room handler at the read point, so it precedes the
+      // `{slot:here}` occupant clauses as description prose. The room name is a
+      // separate structural block emitted by the room handler.
+      'if.room.description_body': '{verbatim:description}{slot:detail}{slot:here}',
       // Game lifecycle messages
       'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
       // Platform prompt (ADR-137)

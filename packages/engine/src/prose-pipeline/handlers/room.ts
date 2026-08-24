@@ -21,6 +21,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { SnippetMap } from '@sharpee/if-domain';
 import { resolveSnippetDescription } from '@sharpee/stdlib';
+import { getStateClauses, type IFEntity } from '@sharpee/world-model';
 import type { HandlerContext } from './types.js';
 import { createBlock, createBlocks, extractValue } from '../assemble.js';
 import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
@@ -120,6 +121,13 @@ export function handleRoomDescription(
       // no map bind the plain string exactly as before (AC-7).
       let descriptionParam: unknown = resolvedDesc;
       const roomId = data.roomId ?? data.room?.id;
+      // GH #316: the room's ADR-195 S2 state-derived detail clauses, read at the
+      // render point (ADR-240 D5) so every emitter of this event — look, arrival,
+      // the light-on reveal — folds them without staging anything itself. Same
+      // registry examining consults; the entity is the concrete world's, so the
+      // IFEntity narrowing holds whenever a world is wired.
+      const roomEntity = roomId ? context.world?.getEntity(roomId) : undefined;
+      const detailClauses = roomEntity ? getStateClauses(roomEntity as IFEntity) : [];
       if (data.roomSnippets && roomId && phraseAvailable(context)) {
         const lp = context.languageProvider;
         descriptionParam = resolveSnippetDescription(
@@ -144,7 +152,12 @@ export function handleRoomDescription(
         ? renderViaPhrase(
             context,
             ROOM_DESCRIPTION_BODY_ID,
-            { description: descriptionParam },
+            {
+              description: descriptionParam,
+              ...(detailClauses.length > 0
+                ? { __slots__: { detail: detailClauses.map((text) => ({ kind: 'literal', text })) } }
+                : {}),
+            },
             BLOCK_KEYS.ROOM_DESCRIPTION,
           ) ?? createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc)
         : createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);
