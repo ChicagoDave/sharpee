@@ -152,6 +152,12 @@ create the Exotic Gems Stall
   affordable to anyone in Grubber's Market. Still, they're far, far out of your
   price range. Other stalls lie to the north, northeast, east, and southeast.
 
+  on every turn while hunted and the monkey is hidden
+    change the monkey to loose
+    move the monkey to the Top of the Post
+    phrase monkey-commotion
+  end on
+
 create the Herb Stall
   a room
   aka herbs, herbalist
@@ -338,8 +344,18 @@ create the apple
 create the banana
   aka kozarian banana, yellow banana
   edible
+  on the display of bananas
 
   The banana is plump, bright yellow with just a sprinkling of brown freckles.
+
+  after taking it while calm, once
+    phrase banana-lifted-quietly
+  end after
+
+define phrase banana-lifted-quietly
+  (PLACEHOLDER — David's line. The quiet lift, calm market — the banana's
+  twin of the apple's line; the monkey chain needs it in hand.)
+end phrase
 
 create the pear
   edible
@@ -1049,3 +1065,20 @@ import "npc-teisha"
 ## ---------------------------------------------------------------------------
 
 import "mercenaries"
+
+## ---------------------------------------------------------------------------
+## The aerial runway — the cables at the Top of the Post and the two-turn
+## slide with its hidden landing (change document, escape-disguise amendments
+## 2026-08-23). Pasted after the mercenaries: the ride-out's caught
+## consequence will hook their machinery when the chase increment lands.
+## ---------------------------------------------------------------------------
+
+import "aerial-runway"
+
+## ---------------------------------------------------------------------------
+## The monkey and the necklace — the chain's first link, armed by `hunted`
+## and staged at the gems stall. Pasted after the runway: the monkey stands
+## on the cable the runway creates.
+## ---------------------------------------------------------------------------
+
+import "monkey"

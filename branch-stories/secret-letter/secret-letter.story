@@ -105,6 +105,8 @@ create the player
   kick-yourself
   wears the old gray cloak
   wears the woolen cap
+  wears the boots
+  carries the cloth satchel
 
   Jack Toresal, who has been a boy in this market for as long as anyone here has
   bothered to look.
@@ -125,13 +127,24 @@ create the old gray cloak
   wear it in the masculine style, fastened on the side and thrown back over your
   right shoulder.
 
+  on taking_off it
+    refuse clothing-stays
+  end on
+
+  on taking it while the player wears the old gray cloak
+    refuse clothing-stays
+  end on
+
 ## The urchin's other garment (`story.ni:1393`), worn from the first turn — the
 ## change document's escape-disguise ruling brought it back: the parchment's
-## "hat and a gray cloak" must describe what the player actually wears. The
-## wear/take-off lines are `story.ni:1402`/`:1414`. The source's later
-## take-off restrictions (around Bobby, after the market) belong to their own
-## chapters, not here; what the sweep reads from the cap is David's open
-## ruling and is NOT wired yet.
+## "hat and a gray cloak" must describe what the player actually wears.
+##
+## Clothing is the look, not objects (change document, 2026-08-24): no garment
+## is directly removable — outfit-level actions (CHANGE OUTFIT, SWITCH HATS,
+## WEAR DRESS, arriving with the escape build) are what change Jack's look.
+## The `clothing-stays` refusal below carries that on cap, cloak, and boots;
+## the source's wear/take-off lines (`story.ni:1402`/`:1414`) are kept aside
+## as candidate SWITCH HATS texture, no longer wired to direct actions.
 
 create the woolen cap
   aka cap, hat, woolen hat, wool cap
@@ -140,23 +153,59 @@ create the woolen cap
   Your woolen cap is patchy and stained, like the rest of you. You usually
   keep your hair stuffed up under it.
 
-  on wearing it
-    phrase cap-on
-  end on
-
   on taking_off it
-    phrase cap-off
+    refuse clothing-stays
   end on
 
-define phrase cap-on
-  You pull the cap down over your head and stuff your hair up into it.
-end phrase
+  on taking it
+    refuse clothing-stays
+  end on
 
-define phrase cap-off
-  You take the cap off and shake your hair out.
+## Kept aside for SWITCH HATS (`story.ni:1402`/`:1414`, Gentry's) — not wired:
+##   "You pull the cap down over your head and stuff your hair up into it."
+##   "You take the cap off and shake your hair out."
+
+define phrase clothing-stays
+  (PLACEHOLDER — David's line. The one refusal for fiddling with any worn
+  garment directly: the outfit changes only through its own actions.)
 end phrase
 
 define phrase kick-self
   Not so hard really, was it?
 end phrase
+
+## The boots (change document, escape-disguise: "the boots as a worn object on
+## the player from the start") — the remake's addition, no source text exists
+## (the 2009 game has no footwear object). They are the detail the parchment
+## never mentioned: an urchin's boots under a lady's dress, the thread the
+## mercenaries pick up at the Fruit Stall and Dame Sandler later closes.
+
+create the boots
+  aka boot, urchin's boots, worn boots
+  wearable, plural
+
+  (PLACEHOLDER — David's line. The urchin's boots: worn from the first turn;
+  the one thing about her that still says urchin once the dress is on.)
+
+  on taking_off it
+    refuse clothing-stays
+  end on
+
+  on taking it
+    refuse clothing-stays
+  end on
+
+## The trusty satchel (`story.ni:1367-1389`) — the holdall the escape's dress
+## and hat ride in. Deliberately a plain open container: the source's
+## openable-with-auto-open conveniences amount to never being in the way, so
+## the port skips the lid outright. The source's "You stuff [the noun] into
+## your satchel." insert-line is held — no known marker surface names the
+## inserted item from an entity clause phrase.
+
+create the cloth satchel
+  aka satchel, bag, sack, purse
+  a container
+
+  Your trusty cloth satchel: big enough to hold the things you nick, small
+  enough to not hamper your getaway.
 

@@ -1,0 +1,179 @@
+## ===========================================================================
+## THE AERIAL RUNWAY — the two-turn slide and the hidden landing
+##
+## The slide down the anchor cable (`story.ni:3700-3830`, the source's own
+## "Aerial Runway" chapter), reshaped by the change document's escape-disguise
+## amendments (2026-08-23): the slide takes TWO turns, and the mid-slide text
+## reveals the open spot behind the fruit stall — let go there and Jack drops
+## in unseen; ride it out and she lands in front of the stall with Gentry's
+## knocking-over-shoppers ending, seen.
+##
+## The machine, in turns:
+##
+##   1. `slide down cables` (Top of the Post, cloak required) moves Jack to
+##      On the Wire and starts the cables' one-turn `sliding` clock. The
+##      turn's text is Gentry's first half; the room's own description is the
+##      mid-slide reveal.
+##   2. `let go` on the mid-slide turn drops her into Behind Fruit Stall —
+##      the ONLY way in (change document: "only surfaces from that landing").
+##      Any other command lets the clock expire: the slide completes, Gentry's
+##      landing block runs unchanged, and she is standing in the Fruit Stall.
+##
+## Not built yet, by design — these land with the chase + dress increment
+## (TE20, the satchel, the boots): the capture on the ride-out landing, the
+## one-turn change window behind the stall, the one-turn return window, the
+## boots identification at the Fruit Stall, and the mercenaries moving to the
+## stall when she lingers. Until then the sweep model alone reads her moves.
+##
+## Also held: the other three cables' slides (the source's landing table —
+## southeast: Hat Stall, southwest: Exotic Gems, northwest: Northwest
+## Junction) and the `hang <garment> on cable` entry point with the other
+## slide-worthy garments (belt, rope, reins, harness — none exist yet). One
+## cable path is the designed one; the rest arrive with the chase.
+##
+## Structural choices for David to rename or redirect at will: the mid-slide
+## room's name ("On the Wire") and Behind Fruit Stall's return exit direction
+## (southwest). Every finished line is Gentry's; the marked PLACEHOLDER texts
+## are David's to write.
+##
+## Known seam: `move the player to <room>` narrates nothing, so a landing
+## prints only its authored line, not the destination's description (`look`
+## still answers). The reveal is therefore emitted as its own phrase on the
+## slide turn. Whether the landings should also re-describe is polish for the
+## change-window increment.
+## ===========================================================================
+
+define timer sliding for the cables
+end timer
+
+## The ride-out clock expires after exactly one mid-slide command — Gentry's
+## landing block (`story.ni:3822`) runs unchanged; the change document's
+## caught-on-landing consequence waits on the chase increment.
+
+create the cables
+  aka cable, anchor cables, anchor cable, wires, wire, braided wire
+  scenery, plural
+  in the Top of the Post
+  slideable
+
+  There are four cables, each made of thick, braided wire. They stretch
+  southwest, southeast, northeast, and northwest to the four corners of the
+  market.
+
+  when sliding expires, while the player is in On the Wire
+    phrase slide-ride-out
+    move the old gray cloak to the Fruit Stall
+    move the player to the Fruit Stall
+  end when
+
+## ---------------------------------------------------------------------------
+## THE SLIDE — first turn
+## ---------------------------------------------------------------------------
+
+define action sliding
+  grammar
+    slide the target
+    slide down the target
+    slide along the target
+
+define trait slideable
+  on sliding it
+    the player must have the old gray cloak: slide-barehanded
+    phrase slide-first-half
+    move the player to On the Wire
+    phrase on-the-wire-reveal
+    start the cables' sliding
+  end on
+end trait
+
+## The room's description body and the `on-the-wire-reveal` phrase are the
+## SAME text, kept in both places: the phrase prints the reveal at the end of
+## the slide turn (a `move the player` narrates nothing on its own), and the
+## body answers `look` mid-slide. When David writes the line, it goes in both.
+
+create On the Wire
+  a room
+
+  (PLACEHOLDER — David's line. The mid-slide reveal: halfway down the wire,
+  the description shows the open spot behind the fruit stall — let go now and
+  that is where she drops; hold on and the slide carries her the rest of the
+  way in front of the stall.)
+
+## ---------------------------------------------------------------------------
+## LETTING GO — the hidden landing
+## ---------------------------------------------------------------------------
+
+define action letting-go
+  grammar
+    let go
+  refuse when the player is not in On the Wire: let-go-nothing
+  phrase let-go-drop
+  move the old gray cloak to Behind Fruit Stall
+  move the player to Behind Fruit Stall
+  reset the cables' sliding
+
+create Behind Fruit Stall
+  a room
+  aka behind the fruit stall
+  southwest to the Fruit Stall
+
+  (PLACEHOLDER — David's line. The open spot behind the fruit stall: cramped,
+  unseen from the market, the one private place to change. Its only exit
+  returns to the Fruit Stall.)
+
+## ---------------------------------------------------------------------------
+## THE LINES — Gentry's, split across the two turns
+##
+## The source's single slide block (`story.ni:3822`) splits at the wind
+## sentence: the wrap-and-kick-off half is turn one, the ground-rushes-up
+## half is the ride-out. The heartbeat sentences are the source's own
+## `[first time]` insert, carried as the first-time arm.
+## ---------------------------------------------------------------------------
+
+define phrase slide-first-half, first-time
+  You wrap one end of your cloak around your hand, then squat down and sling
+  the other end around the anchor cable. You give it a good, hard yank to
+  test your grip. You take a deep breath. You try to convince your heartbeat
+  to slow down, or at least continue its dreadful hammering in some part of
+  your body other than your throat. You fail. Then, finally, you swing down
+  under the wire and kick off into space.
+
+  The wind is exhilarating as you zip down the line.
+or
+  You wrap one end of your cloak around your hand, then squat down and sling
+  the other end around the anchor cable. You give it a good, hard yank to
+  test your grip. Then you swing down under the wire and kick off into space.
+
+  The wind is exhilarating as you zip down the line.
+end phrase
+
+define phrase slide-ride-out
+  The ground rushes up at you with terrifying speed. Your cloak whizzes hotly
+  against the rough wire, and you vaguely smell smoke, but your impromptu
+  harness holds. Suddenly your feet hit dirt. You let go of the cloak and
+  tumble to the hard ground, knocking over a couple of shoppers before you
+  roll to a stop. The next moment you are back on your feet, bruised and
+  breathless.
+end phrase
+
+define phrase slide-barehanded
+  The cable is too steep for you to climb down, and the rough wire would tear
+  up your hands. But if you had something you could loop over the cable, you
+  might be able to slide down while hanging underneath.
+end phrase
+
+define phrase on-the-wire-reveal
+  (PLACEHOLDER — David's line. The mid-slide reveal: halfway down the wire,
+  the description shows the open spot behind the fruit stall — let go now and
+  that is where she drops; hold on and the slide carries her the rest of the
+  way in front of the stall.)
+end phrase
+
+define phrase let-go-drop
+  (PLACEHOLDER — David's line. The drop: she lets go mid-slide and lands in
+  the open spot behind the fruit stall, unseen.)
+end phrase
+
+define phrase let-go-nothing
+  (PLACEHOLDER — David's line. `let go` anywhere but mid-slide.)
+end phrase

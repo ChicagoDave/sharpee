@@ -1,0 +1,219 @@
+## ===========================================================================
+## THE MONKEY AND THE NECKLACE — the chain's first link
+##
+## The forest monkey and the stolen necklace (`story.ni:2695-2707`, the gems
+## stall commotion; `story.ni:3840-3920`, monkey business at the Top of the
+## Post). The chain it starts — banana → monkey → necklace → Teisha — is the
+## change document's puzzle spine for the escape.
+##
+## ARMING (change document, "The monkey"): the monkey is off-stage until the
+## commotion fires, and the 2009 first-entry-to-the-gems-stall trigger must
+## not fire during the calm walk. The change document's wording ("onto the
+## start of the chase") predates the same-day three-state split; arming at
+## the literal chase (TE20) would deadlock the chain that produces TE20, so
+## this file arms it at `hunted` — and keeps the gems stall as the STAGE,
+## because Gentry's commotion text is written from inside that stall ("from
+## the back of the stall"). So: first time Jack stands in the Exotic Gems
+## Stall while hunted, the commotion fires and the monkey takes the post.
+## (The arming clause lives on the Exotic Gems Stall's own create block in
+## `grubbers-market.chord` — an offstage entity's every-turn clauses never
+## run, so the stage owns the trigger.)
+## BOTH readings (hunted-not-chase; location kept as staging) are flagged for
+## David's confirmation.
+##
+## HELD, with the reason:
+##   * The monkey-escape beat (`story.ni:3873`, grab the necklace → the
+##     monkey slides away down the wire and comes back later): a refusal
+##     cannot carry mutations in Chord, so the flee-and-return loop has no
+##     clean home; text and mutation are held together rather than printing
+##     a departure that does not happen. The four random guard arms carry
+##     the refusals meanwhile.
+##   * The monkey "conversation" (`MONKEY_QUIP1-3` gibberish machinery,
+##     `story.ni:3917+`): quip trees are rewritten, not ported, and this one
+##     is generated-text machinery besides. Talking to the monkey falls to
+##     the stdlib default for now.
+##   * Kissing (`story.ni:3852`, "Are you crazy?…") — the platform parses no
+##     kiss verb, so the clause can never fire; held with the line.
+##   * Throwing-at and the source's shake/turn refusals; the initial-
+##     appearance line ("Balancing on the southeast cable…") — no authored
+##     initial-appearance surface; the description carries the cable line.
+##   * The flash-loot show/give-to-others rules travel with TE20.
+##
+## PLACEHOLDERS (David's, on hold until he is home): the banana's quiet-lift
+## line, and the necklace wear-refusal — the 2009 line ("You're still trying
+## to look like a boy…") sits on the remake's gender frame, so it is not
+## carried without his ruling.
+##
+## Every finished line is Gentry's, `story.ni:2705`/`:3846-3906` verbatim.
+##
+## Divergence: no has-negation surface in `while` conditions, so the plain
+## idle pool is not suppressed while Jack holds the banana — the two idle
+## clauses roll independently and can very occasionally both print where the
+## source swapped pools outright.
+## ===========================================================================
+
+create the monkey
+  a person
+  aka forest monkey, little monkey, pet, rodent, animal
+  pronouns it
+  states: hidden, loose
+  carries the necklace
+
+  The monkey has silvery fur and black mask-like markings on its startlingly
+  human face. It seems to regard you with a mixture of curiosity and
+  amusement — as though you were some strange little animal whose antics it
+  found entertaining. It grips the necklace protectively, tight against its
+  tiny chest. The monkey is standing on the southeast cable.
+
+  on every turn while it is here and the player has the banana and one chance in 5
+    phrase monkey-idle-banana
+  end on
+
+  on every turn while it is here and one chance in 5
+    phrase monkey-idle
+  end on
+
+  on listening it
+    refuse monkey-chatter
+  end on
+
+  on smelling it
+    refuse monkey-no-smell
+  end on
+
+  on taking it
+    refuse monkey-jumps-away
+  end on
+
+  on attacking it
+    refuse monkey-jumps-away
+  end on
+
+  on pushing it
+    refuse monkey-jumps-away
+  end on
+
+  on pulling it
+    refuse monkey-jumps-away
+  end on
+
+  on giving it
+    phrase monkey-trade when it has the banana
+    move the necklace to the player when it has the banana
+    move the banana offstage when it has the banana
+    move it offstage when the player has the necklace
+  end on
+
+create the necklace
+  aka gem, jewel, silver chain, starburst, star
+
+  It's a beautiful gem, clear blue with a deep indigo star in its center,
+  set in a silver-wrought starburst on a silver chain. It's easily worth the
+  price of any piece of merchandise in the market.
+
+  on taking it while the monkey has the necklace
+    refuse monkey-guards-necklace
+  end on
+
+  on wearing it
+    refuse necklace-not-worn
+  end on
+
+## ---------------------------------------------------------------------------
+## THE LINES — Gentry's, except the marked placeholder
+## ---------------------------------------------------------------------------
+
+define phrase monkey-commotion
+  Suddenly you hear a commotion from the back of the stall: the crash of a
+  display case hitting the ground; shouts and curses from the stallkeeper;
+  and a horrific, gibbering shriek.
+
+  'Come back here, you flea-bitten thief!' yells the stallkeeper, and for a
+  panicked moment you think he means *you*. Then you see something small and
+  gray dart up to the roof of the stall...it's just a forest monkey, probably
+  someone's pet running loose. And it's clutching one of the stallkeeper's
+  necklaces in its tiny black fist.
+
+  The monkey turns and screeches back at the stallkeeper, dodges a clumsily
+  thrown dirt clod, and scampers away.
+end phrase
+
+define phrase monkey-trade
+  You hold out the banana and wiggle it enticingly. 'Here, monkey. C'mon,
+  little monkey,' you whisper, trying to ignore how stupid it sounds.
+
+  The monkey creeps closer, eyes locked on the yellow fruit. It's only about
+  a foot away from your out-stretched hand now. Its little face contorts
+  into bizarre expressions as it wrestles with the conflicting desires to
+  grab the tasty treat, hold onto the shiny trinket, and stay out of your
+  reach, all at the same time.
+
+  Suddenly the monkey lunges. You make a grab with your free hand. The
+  monkey grabs the banana just as your fingers hook around the necklace's
+  chain. The monkey screams, jumps six feet straight up, lands on your head,
+  and scampers off down the wire behind you. Your heart leaps into your
+  throat as you lose your balance on top of the pole. You totter, pinwheel
+  your arms... and stay on.
+
+  You're breathing hard, but you're safe. And you have the necklace.
+
+  Somewhere far below you, a stallkeeper is cursing and wiping smushed
+  banana off his face.
+end phrase
+
+define phrase monkey-guards-necklace, randomly
+  The monkey screeches at you and backs away.
+or
+  The monkey jumps back, chattering angrily and holding the necklace out of
+  reach.
+or
+  The monkey scampers back, clutching the necklace to its chest.
+or
+  The monkey hops back a few feet on the wire and blows a raspberry at you,
+  as though daring you to come after it.
+end phrase
+
+define phrase monkey-idle, randomly
+  The monkey bounces up and down on its wire, screeching happily.
+or
+  The monkey turns the necklace over and over in its tiny hands, staring
+  intently into the gem's blue depths.
+or
+  The monkey tosses the necklace high in the air, swings itself under the
+  wire and back up again with its tail, and at the last second catches the
+  necklace in its little black hands.
+or
+  The monkey hoots at you.
+or
+  The monkey sniffs at you and shrieks with amusement.
+end phrase
+
+define phrase monkey-idle-banana, randomly
+  The monkey sniffs at you excitedly, and emits a hopeful chirp.
+or
+  The monkey hops up and down on the wire, and makes a gesture with its tiny
+  hands as though it were peeling a banana.
+or
+  The monkey stares hungrily at your banana.
+end phrase
+
+define phrase monkey-chatter
+  The monkey chatters and hoots to itself constantly.
+end phrase
+
+define phrase monkey-no-smell
+  It won't let you close enough to smell it, but hey, it's a monkey — it
+  probably doesn't smell like roses.
+end phrase
+
+define phrase monkey-jumps-away
+  The monkey screams and jumps away from you, chattering with rage and
+  shaking its tiny fist.
+end phrase
+
+define phrase necklace-not-worn
+  (PLACEHOLDER — David's line. The wear-refusal: the 2009 line reads "On
+  second thought, better not. You're still trying to look like a boy, and
+  boys just don't wear this kind of jewelry." — whether and how it carries
+  under the remake's gender frame is David's ruling.)
+end phrase

@@ -125,3 +125,73 @@
 
 - Similar to past issue? YES, benignly: the `##`-comment-in-create-block parse gate documented by session 55eedf was hit again before the comments were moved out — the documented lesson caught it immediately; no new pattern.
 
+
+---
+
+## Progressive update — post-commit increment (19:20 CDT)
+
+After the `8d076393` finalize, David said "Phase 6": built the two-turn slide
+(`aerial-runway.chord`, imported from the market file) per the change document's
+same-day amendments. Cables + `sliding` action (cloak-gated, Gentry's barehanded
+line), On the Wire mid-slide room (reveal emitted as a phrase — `move the player`
+narrates nothing, noted seam), one-turn ride-out clock into Gentry's landing at
+the Fruit Stall, `let go` (entity-less) into Behind Fruit Stall. Four PLACEHOLDERs
+are David's lines. Capture/windows/boots and the other three cables deferred to
+the chase + dress increment. Tree: three new branches at the Top of the Post card
+with `states:` mutation assertions — 127 cards passing, 156 assertions passing
+(from 116/135). Uncommitted as of this note.
+
+---
+
+## Progressive update — monkey increment (20:05 CDT, David remote, content on hold)
+
+Built `monkey.chord`: the gems-stall commotion (armed at `hunted`, staged at the
+stall — both readings flagged for David; TE20-arming would deadlock the chain),
+the monkey on the post with Gentry's texture (idle pools, guard arms, refusals),
+the banana placed with a quiet-lift placeholder, and the banana→necklace trade
+via `on giving it` post-state guards. GH #313 filed: NPC-carried items wholly
+out of scope (necklace guards + mercenaries' sword refusal authored but
+unreachable). Held: flee/return beat, monkey gibberish tree, kiss verb. New
+PLACEHOLDERs: banana lift, necklace wear-refusal (gender-frame line — David's).
+Tree branch 7 pins the chain with state assertions: 142 cards passing,
+178 assertions passing. Uncommitted with the slide increment.
+
+---
+
+## Progressive update — satchel increment (2026-08-24, ~09:00 CDT)
+
+Built the cloth satchel (`secret-letter.story`, Gentry's description, carried at
+start, plain open container — the source's lid conveniences net out to no lid).
+Held: the stuff-into-satchel insert-line (no marker names the inserted item).
+GH #314 filed: bare `take X from Y` has no grammar shape (tool-less take-from
+missing from the manifest) and `remove <wearable> from <container>` re-wears
+the item — both land on the change-behind-the-stall sequence. New tree branch
+pins put/take with states: 145 cards passing, 183 assertions passing.
+Uncommitted with the slide + monkey increments.
+
+---
+
+## Progressive update — boots + survey (2026-08-24, ~09:25 CDT)
+
+Boots added (worn at start, placeholder description — remake addition, source
+check confirmed no footwear object) and pinned: 146 cards passing,
+185 assertions passing. Surveyed and held with reasons in the plan note: the
+market gates (two David calls) and the Commerce Street east exit (#311 +
+captain + superseded recognition text). Buildable-without-content queue is now
+empty; remaining Phase 6 work waits on David's lines (placeholders, TE20),
+rulings (gates, monkey arming confirm, caught-mapping confirms), or platform
+fixes (#311, #313, #314).
+
+---
+
+## Progressive update — clothing ruling + rework (2026-08-24, ~09:50 CDT)
+
+David ruled: all clothing is scenery, not directly removable — CHANGE OUTFIT /
+SWITCH HATS / WEAR DRESS change the look (recorded verbatim in the change
+document). Reworked: `clothing-stays` refusal (one PLACEHOLDER) on cap/cloak/
+boots taking+taking-off (cloak's take gated on worn — the slide strands it at
+the landing for retrieval); cap's wear/take-off reactions removed, Gentry's
+lines parked as SWITCH HATS candidates. Tree branches re-derived: barehanded
+gate now via ride-out + re-climb; clothing-refusal pins replace cap
+manipulation; banana in/out of satchel added. 155 cards passing, 198 assertions
+passing. Outfit actions themselves land with the escape build (need the dress).

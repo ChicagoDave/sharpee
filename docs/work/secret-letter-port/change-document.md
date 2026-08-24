@@ -402,6 +402,25 @@ and fashionable hat. Consequences:
   escape sequence.
 - The suppression state is built with the escape sequence (dress + hat worn), nowhere before it.
 
+**Clothing is the look, not objects — DECIDED (David, 2026-08-24): "all clothing is scenery and
+not directly removable.. we use CHANGE OUTFIT or SWITCH HATS or WEAR DRESS and the player's look
+changes with those actions."** Garments are fixtures of Jack's appearance, not inventory to
+fiddle with piece by piece:
+
+- **No direct manipulation.** `take off cap`, `wear cap`, `drop cloak`, `put cap in satchel` —
+  all refused. The refusal line is David's to write (one placeholder carries it meanwhile).
+- **Outfit-level actions change the look**: CHANGE OUTFIT, SWITCH HATS, WEAR DRESS. They arrive
+  with the escape build (the dress and fashionable hat), and the player's own description
+  changes with them.
+- **Consequences for what is already built**: the cap's carried wear/take-off lines
+  (`story.ni:1402`/`:1414`, "You pull the cap down…"/"You take the cap off…") do not survive as
+  reactions to direct wearing — the phrases are kept aside as candidate texture for SWITCH
+  HATS. The slide is unaffected: it strips the cloak by its own action, which is exactly the
+  outfit-changes-by-action model. The 2009 hat-off move is now doubly dead (the recognition
+  rule above, and no direct take-off at all).
+- **The satchel is not clothing** — it stays a carried container; the dress and hat ride in it
+  as items until WEAR DRESS consumes them into the look.
+
 **Where she changes — DECIDED (David, 2026-08-22): in the open, with a couple of beats of grace, and
 the boots give her away.** David: *"We give her a couple of beats to change clothes before the
 mercenaries see that she has boots on and not dress shoes."* So the landing runs: a short window
