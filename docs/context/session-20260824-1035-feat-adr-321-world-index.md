@@ -32,6 +32,14 @@
 - `packages/engine/tests/prose-pipeline/handlers/room-detail-slot.test.ts` — new, 4 tests asserting on rendered output (gated line present when its condition holds, absent when it doesn't).
 - `branch-stories/secret-letter/secret-letter.tests.json` — restored the trimmed Fruit Stall `look` assertion (the "phrase detail while calm:" banana line) — the issue's own named acceptance check.
 
+### Phase 2 (#315) — blocked-exit lines compose instead of last-wins
+- David challenged the initial compose proposal ("seems hacky breaky potentially dangerous"); a deep dive followed before implementing. Findings: the read contract was always one-value-per-key (`packages/stdlib/src/actions/standard/going.ts:136`/`:143`, `packages/stdlib/src/actions/standard/exit-legality.ts:50`); zero existing stories carry a multi-line direction; the `mergeArms` idiom (`packages/story-loader/src/runtime.ts:799`) is the loader's established declaration-order merge precedent; two real dangers were found — the blocked/message evaluator pair can drift if composed independently, and world-index's `gateIndex` (`packages/world-index/src/reach.ts:149`, `Map.set`) had the same last-wins clobber at the IR layer. David ruled the revised shape 2026-08-24.
+- Implementation: `packages/story-loader/src/runtime.ts` `registerDerivedEvaluators` — one `selectArm` closure per (room, direction), declaration order, first-true-wins, condition-less line = always-true fallback; `exitBlockedKey := selectArm ≠ undefined`, `exitMessageKey := selected arm's phrase` (single selection, no drift). `packages/world-index/src/reach.ts` — `GateIndex` now holds all arms per edge; `obstacleOn` blocks while any arm holds, opens only when every holding arm is liftable, condition-less arm anywhere = permanent block. `packages/chord/src/analyzer.ts` — new warning `analysis.blocked-exit-unreachable` for a blocked line after a condition-less line on the same direction. Story: `grubbers-market.chord` wires both gates-locked arms (hunted, chase) beside the calm deflection; the earlier clobber comment was retired.
+- New tests: `packages/story-loader/tests/blocked-exit-compose.test.ts` (4), `packages/world-index/tests/multi-arm-gates.test.ts` (2), `packages/chord/tests/blocked-exit-unreachable.test.ts` (4). Tree pins: calm-deflection trunk card after boot + branch 9 on the eat-apple card (swept lockout).
+- Verification (2026-08-24, re-run this pass to corroborate the unit counts): `pnpm --filter '@sharpee/chord' run test:ci` → 991 passed (991); `pnpm --filter '@sharpee/story-loader' run test:ci` → 610 passed (610); `pnpm --filter '@sharpee/world-index' run test:ci` → 169 passed | 1 skipped (170, the skip is pre-existing). `./sharpee test branch-stories/secret-letter` (160 cards / 209 assertions passing) and the Dungeo walkthrough chain (952 passing in 17 transcripts at the pinned seed) were not re-run this pass — those two counts are [reported by session, unverified].
+- Note recorded: two arms covering an entity's whole state space are a permanent block in disguise; the static walk analyzes per-arm at start state and won't catch it (same approximation class as ADR-321's stopcock note).
+- Phase 1 was committed earlier this session as `45dce17d` and #316 closed. The Phase 2 commit follows this summary update; #315 closes with it.
+
 ## Key Decisions
 
 ### 1. Render-point fix over a stdlib-only fix
@@ -43,32 +51,48 @@ David's "pause the port," combined with the triage finding that the port's own f
 ### 3. Seam design before Tier 2 implementation
 Phase 4 of the new plan is one design conversation (no code) covering all five Tier-2 issues together, since plan-review and the triage doc both treat them as facets of one parser-scope/story-grammar seam rather than five independent bugs.
 
+### 4. Single-selection arm model, not independent composition (Phase 2, #315)
+The first compose proposal treated `exitBlockedKey` and `exitMessageKey` as two independently-composed values; David flagged it as risky before implementation. The revised design derives both keys from one `selectArm` closure per (room, direction) — first-true-wins in declaration order, condition-less line as an always-true fallback — so the blocked flag and the message text can never drift apart, by construction rather than by discipline.
+
+### 5. Fix world-index's `gateIndex` clobber alongside the loader fix
+The deep dive for #315 surfaced a second, independent last-wins bug: world-index's `GateIndex` (`reach.ts:149`) used `Map.set` per edge, silently keeping only the last-declared arm at the IR layer. Left alone, the static analyzer would have kept reasoning about a single-arm model even after the loader started reading all of them. Fixed in the same phase so runtime and static analysis agree on the multi-arm model.
+
 ## Next Phase
-- **Phase 2**: "Compose multiple blocked-exit lines per direction instead of last-wins (#315)" — Small tier, 100-budget.
-- **Entry state**: David has not yet ruled on the proposed mechanism — compose in declaration order (first line whose condition holds wins, condition-less line as fallback) vs. a load-time diagnostic refusing multiple lines per direction. plan-review already constrained the composing option: it builds one composed closure per key inside story-loader, leaving `registerEvaluator`'s idempotent last-wins convention (ADR-240 D6) untouched platform-wide.
+- **Phase 3**: "#311 — random-adjacent-room" — an ADR is expected for this one; the entry state is a design discussion with David before implementation, not a ruled mechanism yet.
+- **Entry state**: Phase 2 (#315) is done — implemented, tested, and verified 2026-08-24; #315 closes with its commit. Phase 3 has not started; per rule 8a/11-style discipline, David wants the design conversation first (likely a new Chord place-expression / adjacency primitive) before any code is written.
 
 ## Open Items
 
 ### Short Term
-- Commit Phase 1's changes and close #316 on GitHub with the verification evidence — immediate next step after this summary.
-- Phase 2 design discussion with David (compose-vs-diagnostic not yet ruled).
+- Commit Phase 2's changes and close #315 on GitHub with the verification evidence — immediate next step after this summary (Phase 1 was already committed as `45dce17d`, #316 closed).
+- Phase 3 (#311, random-adjacent-room) design discussion with David before any implementation — an ADR is expected out of it.
 
 ### Long Term
 - Phases 3-8 of the new plan remain PENDING: #311's Chord place-expression / adjacency primitive (likely ADR-worthy), the Tier 2 seam design, and its four implementation phases (#313/#312 scope predicates, #314 grammar coverage, #317 story-grammar scoping, #318 cross-turn clarification state — also likely ADR-worthy).
+- Static-analysis approximation noted in Phase 2: two arms that together cover an entity's whole state space are a permanent block in disguise; the per-arm-at-start-state static walk won't catch it (same approximation class as ADR-321's stopcock note) — worth a future look if it causes a real false-negative.
 - Secret Letter port Phases 4 and 6 stay paused, resumable once this plan reaches DONE.
 
 ## Files Modified
 
-**Platform code** (3 files):
+**Platform code — Phase 1** (3 files):
 - `packages/engine/src/prose-pipeline/handlers/room.ts` - reads gated state-clauses for room descriptions, fills new `{slot:detail}` channel
 - `packages/lang-en-us/src/language-provider.ts` - `if.room.description_body` template gains `{slot:detail}`
 - `packages/engine/tests/prose-pipeline/handlers/room-detail-slot.test.ts` - new, 4 tests
 
-**Story content** (1 file):
-- `branch-stories/secret-letter/secret-letter.tests.json` - restored trimmed Fruit Stall `look` assertion
+**Platform code — Phase 2** (6 files):
+- `packages/story-loader/src/runtime.ts` - `registerDerivedEvaluators` builds one `selectArm` closure per (room, direction); first-true-wins in declaration order, condition-less line = fallback
+- `packages/world-index/src/reach.ts` - `GateIndex` holds all arms per edge instead of last-write-wins; blocks while any arm holds, opens only when every holding arm is liftable
+- `packages/chord/src/analyzer.ts` - new `analysis.blocked-exit-unreachable` warning for a blocked line declared after a condition-less line on the same direction
+- `packages/story-loader/tests/blocked-exit-compose.test.ts` - new, 4 tests
+- `packages/world-index/tests/multi-arm-gates.test.ts` - new, 2 tests
+- `packages/chord/tests/blocked-exit-unreachable.test.ts` - new, 4 tests
+
+**Story content** (2 files):
+- `branch-stories/secret-letter/secret-letter.tests.json` - restored trimmed Fruit Stall `look` assertion (Phase 1)
+- `branch-stories/secret-letter/grubbers-market.chord` - wires both gates-locked arms (hunted, chase) beside the calm deflection; retires the earlier clobber comment (Phase 2)
 
 **Planning/process** (4 files):
-- `docs/work/backlog-tier1-2-platform/plan.md` - new, 8-phase plan
+- `docs/work/backlog-tier1-2-platform/plan.md` - new, 8-phase plan; updated again through Phase 2 (compose-vs-diagnostic ruling folded in, Phase 1 and Phase 2 status)
 - `docs/work/secret-letter-port/plan.md` - supersession stamp (rule 18b "still live")
 - `docs/work/issue-triage/triage-20260824.md` - new triage pass
 - `docs/context/.current-plan` - repointed to the new plan
@@ -83,7 +107,7 @@ Phase 4 of the new plan is one design conversation (no code) covering all five T
 
 ## Session Metadata
 
-- **Status**: COMPLETE (unverified: the mutation-verification agent's GREEN grading of the 4 new tests — the agent's run is confirmed by the event log, but its grading output was not independently reproduced this pass)
+- **Status**: COMPLETE (unverified: the mutation-verification agent's GREEN grading of Phase 1's 4 new tests — the agent's run is confirmed by the event log, but its grading output was not independently reproduced this pass; and Phase 2's `./sharpee test branch-stories/secret-letter` (160 cards / 209 assertions) and Dungeo walkthrough-chain (952 in 17 transcripts) counts, reported by the session but not re-run this pass — Phase 2's unit-suite counts for chord/story-loader/world-index WERE independently re-run and confirmed exact-match this pass)
 - **Blocker** (if any): N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A — this checkpoint is mid-plan; Phases 2-8 remain, no single time estimate given this session
@@ -118,4 +142,4 @@ Phase 4 of the new plan is one design conversation (no code) covering all five T
 
 ---
 
-**Progressive update**: Session completed 2026-08-24 (checkpoint through Phase 1; session continues into Phase 2)
+**Progressive update**: Session completed 2026-08-24 (checkpoint through Phase 2 — #315 fixed, tested, verified; #316 already committed and closed. Phase 3 (#311) needs a design discussion with David before implementation.)

@@ -128,8 +128,14 @@ export interface ReachResult {
   progression: string[];
 }
 
-/** A gate declaration, keyed to the room and direction it blocks. */
-type GateIndex = ReadonlyMap<string, IRBlockedExit>;
+/**
+ * Gate declarations, keyed to the room and direction they block. One direction
+ * may carry several arms (GH #315): the runtime composes them in declaration
+ * order (first arm whose condition holds supplies the refusal), so this index
+ * holds them all — `Map.set` per gate would keep only the last and misreport
+ * the edge.
+ */
+type GateIndex = ReadonlyMap<string, readonly IRBlockedExit[]>;
 
 /** The key under which an edge and a gate meet. */
 function edgeKey(from: string, direction: string): string {
@@ -143,10 +149,13 @@ function edgeKey(from: string, direction: string): string {
  * @returns blocked exits keyed by room and direction
  */
 function gateIndex(ir: StoryIR): GateIndex {
-  const gates = new Map<string, IRBlockedExit>();
+  const gates = new Map<string, IRBlockedExit[]>();
   for (const entity of ir.entities) {
     for (const gate of entity.blockedExits ?? []) {
-      gates.set(edgeKey(entity.id, gate.direction), gate);
+      const key = edgeKey(entity.id, gate.direction);
+      const group = gates.get(key);
+      if (group) group.push(gate);
+      else gates.set(key, [gate]);
     }
   }
   return gates;
@@ -382,19 +391,26 @@ function obstacleOn(
   world: ConditionWorld,
   drivers: ReadonlyMap<string, readonly string[]>,
 ): EdgeVerdict {
-  const gate = gates.get(edgeKey(edge.from, edge.direction));
-  if (gate !== undefined) {
-    const base = {
-      from: edge.from,
-      to: edge.to,
-      direction: edge.direction,
-      obstacle: 'gate' as const,
-      line: gate.span?.line,
-    };
-    if (gate.condition === null) {
-      return { open: false, block: { ...base, reason: 'the exit is blocked with no condition that lifts it' } };
-    }
-    if (holdsAtStart(gate.condition, world) === 'true') {
+  const edgeGates = gates.get(edgeKey(edge.from, edge.direction));
+  if (edgeGates !== undefined) {
+    // GH #315 multi-arm semantics: the edge is blocked while ANY arm holds, so
+    // traversal needs every holding arm lifted. An arm whose condition does not
+    // hold at start is inert here, exactly as a single non-holding gate was.
+    const gateRequires: string[] = [];
+    let anyHolding = false;
+    for (const gate of edgeGates) {
+      const base = {
+        from: edge.from,
+        to: edge.to,
+        direction: edge.direction,
+        obstacle: 'gate' as const,
+        line: gate.span?.line,
+      };
+      if (gate.condition === null) {
+        return { open: false, block: { ...base, reason: 'the exit is blocked with no condition that lifts it' } };
+      }
+      if (holdsAtStart(gate.condition, world) !== 'true') continue;
+      anyHolding = true;
       const openable = canBeFalsified(gate.condition, world);
       if (openable === 'false') {
         return {
@@ -411,9 +427,12 @@ function obstacleOn(
       // It lifts. What the player must act on to lift it is the condition's own
       // subjects plus whatever drives them — D14's `requires`.
       const subjects = conditionSubjects(gate.condition);
-      const gateRequires = [...subjects, ...subjects.flatMap((id) => drivers.get(id) ?? [])];
-      // An exit can carry BOTH a gate and a locked door. Before D14 the gate branch
-      // returned first and the door went unexamined.
+      gateRequires.push(...subjects, ...subjects.flatMap((id) => drivers.get(id) ?? []));
+    }
+    if (anyHolding) {
+      // Every holding arm lifts. An exit can carry BOTH a gate and a locked
+      // door. Before D14 the gate branch returned first and the door went
+      // unexamined.
       const lock = lockRequires(edge, containment, reached, byName);
       if (lock !== undefined && 'block' in lock) return { open: false, block: lock.block };
       return {

@@ -581,19 +581,35 @@ export class ChordRuntime {
       if (irEntity.blockedExits.length === 0) continue;
       const worldId = this.host.entityId(irEntity.id);
       if (!worldId) continue;
+      // GH #315: the evaluator registry is one-value-per-key (idempotent
+      // last-wins, ADR-240 D6), so a direction's N blocked lines must compose
+      // into ONE registration per key — registering per line silently kept
+      // only the last. Group by direction, declaration order preserved.
+      const byDirection = new Map<DirectionType, typeof irEntity.blockedExits>();
       for (const blocked of irEntity.blockedExits) {
         const direction = (Direction as Record<string, DirectionType>)[blocked.direction.toUpperCase()];
         if (!direction) continue;
-        const condition = blocked.condition;
+        const group = byDirection.get(direction);
+        if (group) group.push(blocked);
+        else byDirection.set(direction, [blocked]);
+      }
+      for (const [direction, arms] of byDirection) {
+        // One arm selection per (room, direction): first line in declaration
+        // order whose condition holds; a condition-less line is the always-true
+        // fallback (the mergeArms idiom). Both keys below are views of this one
+        // selection, so the blocked boolean and the refusal phrase cannot drift.
+        const selectArm = (w: WorldModel) =>
+          arms.find(
+            (arm) => !arm.condition || this.evaluator.evalCondition(arm.condition, { world: w, it: irEntity.id }),
+          );
         world.registerEvaluator(
           exitBlockedKey(worldId, direction),
-          condition
-            ? (w) => this.evaluator.evalCondition(condition, { world: w as WorldModel, it: irEntity.id })
-            : () => true,
+          (w) => selectArm(w as WorldModel) !== undefined,
         );
-        world.registerEvaluator(exitMessageKey(worldId, direction), (w) =>
-          this.blockedPhraseText(blocked.phraseKey, w as WorldModel),
-        );
+        world.registerEvaluator(exitMessageKey(worldId, direction), (w) => {
+          const arm = selectArm(w as WorldModel) ?? arms[0];
+          return this.blockedPhraseText(arm.phraseKey, w as WorldModel);
+        });
       }
     }
   }

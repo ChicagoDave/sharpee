@@ -51,12 +51,9 @@ create the Alley
 ## the deflection line is David's (2026-08-24). Once the sweep starts the gates
 ## are closed and locked as in the source (`story.ni:1749`), and the refusal is
 ## Gentry's (`story.ni:2250`). The gates as an examinable (ceremonial doors,
-## "Until now." conditional tail) are a later increment. Only the calm line is
-## wired: two `is blocked` lines on one direction clobber each other (the
-## loader registers both under one evaluator key, last wins — GH #315),
-## so the hunted/chase locked-gates refusal (`gates-locked` below, ready) waits
-## on that fix or on the gates increment; meanwhile hunted/chase `north` falls
-## to the stdlib can't-go default.
+## "Until now." conditional tail) are a later increment. All three arms are
+## wired: blocked lines on one direction compose in declaration order, first
+## condition that holds wins (GH #315, fixed 2026-08-24).
 
 create the Northwest Junction
   a room
@@ -67,6 +64,8 @@ create the Northwest Junction
   east to the Candlemaker's Stall
   southeast to the Rope Stall
   north is blocked while calm: north-deflected
+  north is blocked while hunted: gates-locked
+  north is blocked while chase: gates-locked
 
   This is the northwest corner of Grubber's Market. You can skirt around the
   edge of the market to the northeast or south, or head into the thick of it to

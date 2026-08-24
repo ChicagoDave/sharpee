@@ -5507,8 +5507,23 @@ class Analyzer {
         via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
         span: e.span,
       })),
-      blockedExits: decl.blockedExits.map((b) => {
+      blockedExits: decl.blockedExits.map((b, i) => {
         this.requirePhrase(b.phraseKey, b.span);
+        // GH #315: a direction's blocked lines compose in declaration order —
+        // the first line whose condition holds supplies the refusal, and a
+        // condition-less line always holds. Any later line on the same
+        // direction can therefore never be selected; say so at compile time
+        // instead of leaving the order rule as runtime folklore.
+        const shadowedBy = decl.blockedExits.findIndex(
+          (earlier, j) => j < i && earlier.direction === b.direction && !earlier.condition,
+        );
+        if (shadowedBy !== -1) {
+          this.diagnostics.warning(
+            'analysis.blocked-exit-unreachable',
+            `This \`${b.direction} is blocked\` line can never fire: the condition-less \`${b.direction} is blocked\` line above it always supplies the refusal first. Blocked lines compose in declaration order — put the condition-less fallback last.`,
+            b.span,
+          );
+        }
         return {
           direction: b.direction,
           phraseKey: b.phraseKey,
