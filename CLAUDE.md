@@ -196,12 +196,6 @@ FILE (e.g. `branch-stories/fernhill/fernhill.story`), not the directory.
 
 **Walkthrough Testing:**
 ```bash
-# Run single walkthrough
-node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
-
-# Run walkthrough chain (MUST use --chain for walkthroughs that depend on prior state)
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
-
 # Stop on first failure
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```
@@ -215,18 +209,6 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.tr
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
 
-**CLI Flags for `node dist/cli/sharpee.js`:**
-
-| Flag                 | Description                                              |
-| -------------------- | -------------------------------------------------------- |
-| `--test <file>`      | Run transcript test(s)                                   |
-| `--chain`            | Chain transcripts (game state persists between them)     |
-| `--stop-on-failure`  | Stop on first failure                                    |
-| `--play`             | Interactive play mode (REPL)                             |
-| `--story <path>`     | Story dir or `.story` file (inferred from transcript paths for `--test`; required for `--play`/`--exec`) |
-| `--verbose`          | Show detailed output                                     |
-| `--output-dir <dir>` | `-o` — Write timestamped results to directory            |
-
 **IMPORTANT — Don't modify working transcripts:**
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
 - Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
@@ -237,8 +219,6 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 
 ## Project Structure
 
-- Uses pnpm workspace with multiple packages.
-- Main packages: engine, stdlib, world-model, parser-en-us.
 - Actions follow validate/execute/report pattern (ADR-051).
 - Event handlers for custom logic (ADR-052).
 

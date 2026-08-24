@@ -46,6 +46,18 @@ create the Alley
   exactly the most pleasant-smelling place in all of Miradania, but at least no
   one is likely to bother you here. You can leave to the southeast.
 
+## THE NORTH ROAD (change document, "The market gates", ruled 2026-08-24): the
+## gates stand open through the calm walk and Jack is deflected, not blocked —
+## the deflection line is David's (2026-08-24). Once the sweep starts the gates
+## are closed and locked as in the source (`story.ni:1749`), and the refusal is
+## Gentry's (`story.ni:2250`). The gates as an examinable (ceremonial doors,
+## "Until now." conditional tail) are a later increment. Only the calm line is
+## wired: two `is blocked` lines on one direction clobber each other (the
+## loader registers both under one evaluator key, last wins — GH #315),
+## so the hunted/chase locked-gates refusal (`gates-locked` below, ready) waits
+## on that fix or on the gates increment; meanwhile hunted/chase `north` falls
+## to the stdlib can't-go default.
+
 create the Northwest Junction
   a room
   aka junction, northwest corner
@@ -54,6 +66,7 @@ create the Northwest Junction
   south to the Herb Stall
   east to the Candlemaker's Stall
   southeast to the Rope Stall
+  north is blocked while calm: north-deflected
 
   This is the northwest corner of Grubber's Market. You can skirt around the
   edge of the market to the northeast or south, or head into the thick of it to
@@ -73,6 +86,13 @@ create the Grocery Stall
   outer ring to the southwest or southeast, or head in towards the center of the
   market to the south.
 
+## The description's final sentence is David's (2026-08-24, change document
+## "The escape disguise" ruling): it restores the source's shadowy-recesses
+## shape and carries the tentpole-wire hint that seeds the slide's landing
+## geography during the calm walk. It replaced the earlier exit-listing
+## adaptation ("Aisles between the stalls lead northwest, west, southwest,
+## and south.").
+
 create the Fruit Stall
   a room
   aka fruit
@@ -87,7 +107,11 @@ create the Fruit Stall
   attracts more flies than customers). They have apples and pears from the city
   orchards, and brambleberries from the northern counties. Oranges, limes, kello
   fruit — even a bushel of bananas from the Kozar Delta. Aisles between the
-  stalls lead northwest, west, southwest, and south.
+  bins wind their way back into shadowy recesses of the stall, with a tentpole
+  wire stretching overhead from market center.
+
+  phrase detail while calm:
+    The bushel of bananas is currently blocked by the stallkeeper.
 
 create the Eastern Junction
   a room
@@ -348,13 +372,23 @@ create the banana
 
   The banana is plump, bright yellow with just a sprinkling of brown freckles.
 
-  after taking it while calm, once
-    phrase banana-lifted-quietly
-  end after
+  on taking it while calm
+    refuse banana-blocked
+  end on
 
-define phrase banana-lifted-quietly
-  (PLACEHOLDER — David's line. The quiet lift, calm market — the banana's
-  twin of the apple's line; the monkey chain needs it in hand.)
+## The calm-walk banana is unreachable — RULED (David, 2026-08-24): the
+## stallkeeper is blocking the banana bin during the calm walk, so there is no
+## quiet banana lift (that placeholder is retired). The theft happens under
+## the sweep, where the source's noisy rule applies — built with the chase
+## half. The room's gated detail line carries David's "currently blocked by
+## the stallkeeper" wording while calm — it renders on examining only until
+## GH #316 (looking must consult gated detail like examining) lands; the
+## trimmed `look`-card assertion in the tree document is that fix's
+## acceptance check.
+
+define phrase banana-blocked
+  Unfortunately, the bin holding the bananas is too close to the stallkeeper
+  to make a move.
 end phrase
 
 create the pear
@@ -422,15 +456,27 @@ create the wooden crates
   and ship goods. There are scores more just like these to be found all over the
   market.
 
-## DAVID: the calm theft. The source has only the noisy message, written for a
-## market already on edge (`story.ni:1990`). The calm lift exists in Gentry's
-## words only as third-person narration inside the deleted opening block —
-## "nicking an apple from the fruit stall while its owner argues with a fat
-## Easterner over local politics" (`story.ni:1469`). Turning that into a line
-## the player is shown at the moment of the theft is a rewrite, so it is yours.
+## The north-road deflection is David's line (2026-08-24); the locked-gates
+## refusal is Gentry's, `story.ni:2250` verbatim.
+
+define phrase north-deflected
+  The road leads outside of your normal wandering and besides, your stomach is
+  telling you to find a bite to eat.
+end phrase
+
+define phrase gates-locked
+  The mercenaries have locked the gates. You're not getting out this way.
+end phrase
+
+## The calm theft — David's line (2026-08-24). The source has only the noisy
+## message, written for a market already on edge (`story.ni:1990`); the calm
+## lift existed in Gentry's words only as third-person narration inside the
+## deleted opening block (`story.ni:1469`), so this line is the remake's own.
 
 define phrase apple-lifted-quietly
-  (PLACEHOLDER — David's line. The quiet lift, calm market.)
+  You casually raise your satchel as if looking inside and pull an apple from
+  the bin. No one sees your not so subtle theft before the apple is hidden
+  from view.
 end phrase
 
 ## DAVID: the refusal, and the hardest of the three. The change document

@@ -86,18 +86,17 @@ define trait slideable
   end on
 end trait
 
-## The room's description body and the `on-the-wire-reveal` phrase are the
-## SAME text, kept in both places: the phrase prints the reveal at the end of
-## the slide turn (a `move the player` narrates nothing on its own), and the
-## body answers `look` mid-slide. When David writes the line, it goes in both.
+## The mid-slide texts are David's — RULED (2026-08-24), with the design
+## stated: "learn by dying." The reveal is the extended wind sentence at the
+## end of the slide turn (`on-the-wire-reveal` below — Gentry's arms now end
+## before the wind sentence so it prints once); nothing surfaces `let go` as
+## the move, and the ride-out is fatal. A mid-air `look` answers with the
+## terse room body below.
 
 create On the Wire
   a room
 
-  (PLACEHOLDER — David's line. The mid-slide reveal: halfway down the wire,
-  the description shows the open spot behind the fruit stall — let go now and
-  that is where she drops; hold on and the slide carries her the rest of the
-  way in front of the stall.)
+  The wire (sliding towards the Fruit Stall).
 
 ## ---------------------------------------------------------------------------
 ## LETTING GO — the hidden landing
@@ -112,14 +111,32 @@ define action letting-go
   move the player to Behind Fruit Stall
   reset the cables' sliding
 
+## Bare `drop` is the mid-slide synonym (David, 2026-08-24) — its own action
+## so its elsewhere-refusal can differ from LET GO's. Outside the wire it
+## prints a static stand-in for the stdlib missing-noun prompt: the real
+## routing (story grammar losing to the stdlib parse outside its room, and
+## the next-command answer flow) is platform work — GH #317 and #318.
+
+define action releasing
+  grammar
+    drop
+  refuse when the player is not in On the Wire: drop-what
+  phrase let-go-drop
+  move the old gray cloak to Behind Fruit Stall
+  move the player to Behind Fruit Stall
+  reset the cables' sliding
+
+define phrase drop-what
+  What do you want to drop?
+end phrase
+
 create Behind Fruit Stall
   a room
   aka behind the fruit stall
   southwest to the Fruit Stall
 
-  (PLACEHOLDER — David's line. The open spot behind the fruit stall: cramped,
-  unseen from the market, the one private place to change. Its only exit
-  returns to the Fruit Stall.)
+  Cramped and flea-ridden with barely room to move. The market is out to the
+  southwest.
 
 ## ---------------------------------------------------------------------------
 ## THE LINES — Gentry's, split across the two turns
@@ -137,14 +154,10 @@ define phrase slide-first-half, first-time
   to slow down, or at least continue its dreadful hammering in some part of
   your body other than your throat. You fail. Then, finally, you swing down
   under the wire and kick off into space.
-
-  The wind is exhilarating as you zip down the line.
 or
   You wrap one end of your cloak around your hand, then squat down and sling
   the other end around the anchor cable. You give it a good, hard yank to
   test your grip. Then you swing down under the wire and kick off into space.
-
-  The wind is exhilarating as you zip down the line.
 end phrase
 
 define phrase slide-ride-out
@@ -163,17 +176,17 @@ define phrase slide-barehanded
 end phrase
 
 define phrase on-the-wire-reveal
-  (PLACEHOLDER — David's line. The mid-slide reveal: halfway down the wire,
-  the description shows the open spot behind the fruit stall — let go now and
-  that is where she drops; hold on and the slide carries her the rest of the
-  way in front of the stall.)
+  The wind is exhilarating as you zip down the line...coming up behind the
+  fruit stall...
 end phrase
 
 define phrase let-go-drop
-  (PLACEHOLDER — David's line. The drop: she lets go mid-slide and lands in
-  the open spot behind the fruit stall, unseen.)
+  You release one side of the cloak, dropping hard to a small space behind
+  the fruit stall.
 end phrase
 
+## `let go` anywhere but mid-slide — David's line (2026-08-24).
+
 define phrase let-go-nothing
-  (PLACEHOLDER — David's line. `let go` anywhere but mid-slide.)
+  You meditate for a second, just like they showed you in Maiden House.
 end phrase

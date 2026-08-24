@@ -165,9 +165,11 @@ create the woolen cap
 ##   "You pull the cap down over your head and stuff your hair up into it."
 ##   "You take the cap off and shake your hair out."
 
+## The one refusal for fiddling with any worn garment directly — David's line
+## (2026-08-24); the outfit changes only through its own actions.
+
 define phrase clothing-stays
-  (PLACEHOLDER — David's line. The one refusal for fiddling with any worn
-  garment directly: the outfit changes only through its own actions.)
+  You're always fiddling with your clothes, but outfit changes are rare.
 end phrase
 
 define phrase kick-self
@@ -184,8 +186,7 @@ create the boots
   aka boot, urchin's boots, worn boots
   wearable, plural
 
-  (PLACEHOLDER — David's line. The urchin's boots: worn from the first turn;
-  the one thing about her that still says urchin once the dress is on.)
+  Leather, floppy, from a pile in Maiden House.
 
   on taking_off it
     refuse clothing-stays

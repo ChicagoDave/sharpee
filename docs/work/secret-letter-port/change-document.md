@@ -214,6 +214,16 @@ source's rule takes over **unchanged**.
 affordance means different things as the pursuer's state escalates. Phase 6 should treat it as a
 second instance of the pattern the market is being kept as the template *for*, not as a one-off.
 
+**AMENDED (David, 2026-08-24): the banana has no calm lift — the stallkeeper is blocking the
+bin.** During the calm walk the banana cannot be taken at all: *"The stallkeeper is blocking the
+banana bin during the calm walk"*, surfaced in the stall's own text in David's words — *"even a
+bushel of bananas from the Kozar Delta, currently blocked by the stallkeeper."* So the quiet
+lift stays the apple's beat alone; the banana's theft happens under the sweep, where the
+source's noisy rule applies unchanged (seen, kept, ejected, stall blocked — built with the
+chase half). `take banana` while calm refuses, with David's refusal line to come. This also
+dissolves the ordering wrinkle his drafted banana line raised (a "signature move" callback that
+presumed the apple came first): there is no calm banana line to order.
+
 ### The chase — DECIDED (David, 2026-08-22): the chain stays, and so do the losing endings
 
 **The escape chain survives intact**, as the designers' own walkthrough runs it (`Test Market`,
@@ -302,6 +312,20 @@ establish the monkey before the player meets it.
 and P-9 ships the port without ADR-323 deferred narration — so its firing needs re-authoring on
 whatever the port's own mechanism is, regardless of this decision. The decision changes only *when*
 it is armed.
+
+**The necklace wear-refusal carries verbatim — RULED (David, 2026-08-24): "keep it verbatim,
+it lands differently now and that's the point."** Gentry's line (`story.ni:3852` — *"On second
+thought, better not. You're still trying to look like a boy, and boys just don't wear this kind
+of jewelry."*) was held because it sits on the remake's gender frame; the ruling is that this is
+exactly why it stays: the 2009 disguise logic, read on the remake's frame, is the remake's own
+line without changing a word.
+
+**CONFIRMED (David, 2026-08-24): armed at `hunted`, staged at the gems stall.** The "start of the
+chase" wording above predates the same-day three-state split; arming at the literal chase (TE20)
+would deadlock the chain that produces TE20. Both build readings stand as built in `monkey.chord`:
+the commotion fires the first time Jack stands in the Exotic Gems Stall while `hunted` (the calm
+walk never fires it), and the gems stall remains the stage because Gentry's commotion text is
+written from inside it.
 
 ### The eavesdrop's aftermath — DECIDED (David, 2026-08-22): a third story state, and the chase starts later
 
@@ -476,10 +500,16 @@ before getting caught."* This reshapes the landing:
 - **Prose consequences**: the source's single slide block splits into two turns, with the
   mid-slide reveal and the let-go drop being new text — David's lines to write with the escape
   sequence. The knock-over ending stays Gentry's.
-- Build reading, to confirm with the escape build: the mid-slide moment is a state where "let
-  go" is the meaningful action and anything else lets the slide complete; how the front-landing
-  capture plays out mechanically is authored then (David's words fix the outcome — caught —
-  not the turn count).
+- Build reading — CONFIRMED (David, 2026-08-24), with two additions: the mid-slide moment is a
+  state where letting go is the meaningful action and **anything** else — look, wait, inventory,
+  a direction — burns the turn and lets the slide complete. No refusal wall mid-air; hesitation
+  is the choice. **`DROP` is a second phrasing of it** (David: *"we can add DROP too"*) — the
+  bare verb, no noun, alongside `let go`. And **the Fruit Stall's description gains a subtle
+  hint that the centerpost wire ends directly overhead** (David: *"I think maybe the fruit stand
+  description might have a subtle hint about the centerpost wire directly overhead"*) — seeding
+  the landing geography during the calm walk; the hint line is David's to write. The
+  front-landing capture's mechanics are no longer open — ruled 2026-08-24 (below): caught and
+  killed, a hard ending.
 
 **Both timing questions — DECIDED (David, 2026-08-23):**
 
@@ -491,9 +521,15 @@ before getting caught."* This reshapes the landing:
 2. **A second turn behind the stall forfeits the escape.** David: *"Second turn behind stall
    puts mercenaries at fruit stall so when comes out she's immediately caught."* Lingering over
    the change moves the pair to the Fruit Stall; stepping out walks her straight into them —
-   caught on the exit, no free turn. (Build reading, to confirm: "caught" is the standing grab
-   posture — 'Gotcha!', capture clock running, break-free still possible — not a bespoke hard
-   ending.)
+   caught on the exit, no free turn.
+
+**"Caught" at these two spots is death — RULED (David, 2026-08-24): "she's caught and
+killed."** The earlier build reading (standing grab posture, 'Gotcha!', capture clock,
+break-free still possible) is **rejected** for both failure spots: riding the slide out to the
+front of the fruit stall, and stepping out after a second turn behind the stall, each end in
+capture and death outright. No grab fight, no break-free window — these are hard endings, like
+the pole-destruction disaster. The standing grab machinery remains what runs everywhere else in
+the sweep.
 
 **The boots are a thread, and Dame Sandler closes it — DECIDED, provisionally (David,
 2026-08-22: "Her shoes get replaced with Dame I think").** The boots stay on Jack out of the market
@@ -514,6 +550,34 @@ David: *"Maybe 'aggressive' instead of grabbing."* The ladder is therefore `obli
 approaching → aggressive`, with the mechanism unchanged: arrival sets `oblivious`, three turns
 of dwell make them `approaching`, the expired countdown makes them `aggressive`, and `kick` /
 `attack` knocks them back to `approaching`. Gentry's lines for each rung carry as written.
+
+### The market gates — DECIDED (David, 2026-08-24): open and deflected in the calm walk, closed as in the source after it
+
+**The gates behave as the source has them, with one addition for the calm walk the source never
+had.** The north gates at the Northwest Junction (`story.ni:2236`) close and lock **at the
+eavesdrop's end** — the `calm` → `hunted` transition — exactly as `story.ni:1749` does it.
+David: *"to me, the chase start and eavesdrop end are the same"* — his "chase" is the everyday
+word for the whole hunted-and-chased stretch; the mechanical TE20 split between `hunted` and
+`chase` is unaffected, and the gates key on the sweep's start. Gentry's locked refusals carry
+unchanged: enter/push cascades to opening, and opening gets *"The mercenaries have locked the
+gates. You're not getting out this way."*
+
+**During the calm walk the gates stand open and Jack is deflected, not blocked.** David: *"we
+have to deflect Jack from going north, simply by a stomach growl and maybe a stop to see
+Teisha. The gate is open, but we deflect."* `north` at the open gates refuses softly, in Jack's
+own reasons — the appetite thread (the same hunger the apple pays off) and Teisha's tent as the
+pull back into the market. The deflection line is David's to write; a placeholder carries it
+until then.
+
+**The gates' description carries as written, conditional tail included** — *"…they're certainly
+never closed. [if closed]Until now."* The calm walk's examine gets the ceremony-and-never-closed
+text; the first examine after the sweep begins lands the payoff.
+
+**A north-road push-through-and-escape idea was raised and withdrawn in the same conversation**
+(David, 2026-08-24 — a north/east mix-up: *"East is to Commerce Street, right? Then everything I
+just said about the north road is as it was"*). There is no push-through: the closed gates are a
+wall, the market stays the box that makes the sweep a threat, and the chapter's escape remains
+**east via Commerce Street** (`story.ni:4268`), as already recorded.
 
 **The arrival clock and the capture — DECIDED (David, 2026-08-23: "Confirmed").** The source's
 rolled 1–3 timeout becomes a per-turn `one chance in 2` roll once Jack has waited a turn — Chord

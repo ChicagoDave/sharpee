@@ -18,8 +18,8 @@
 ## (The arming clause lives on the Exotic Gems Stall's own create block in
 ## `grubbers-market.chord` — an offstage entity's every-turn clauses never
 ## run, so the stage owns the trigger.)
-## BOTH readings (hunted-not-chase; location kept as staging) are flagged for
-## David's confirmation.
+## BOTH readings (hunted-not-chase; location kept as staging) CONFIRMED by
+## David, 2026-08-24 (change document, "The monkey", dated confirmation).
 ##
 ## HELD, with the reason:
 ##   * The monkey-escape beat (`story.ni:3873`, grab the necklace → the
@@ -39,10 +39,10 @@
 ##     initial-appearance surface; the description carries the cable line.
 ##   * The flash-loot show/give-to-others rules travel with TE20.
 ##
-## PLACEHOLDERS (David's, on hold until he is home): the banana's quiet-lift
-## line, and the necklace wear-refusal — the 2009 line ("You're still trying
-## to look like a boy…") sits on the remake's gender frame, so it is not
-## carried without his ruling.
+## Both held placeholders are resolved (David, 2026-08-24): the banana's
+## quiet-lift is RETIRED (no calm lift — the stallkeeper blocks the bin; see
+## `grubbers-market.chord`), and the necklace wear-refusal is carried
+## verbatim (ruling at the phrase below).
 ##
 ## Every finished line is Gentry's, `story.ni:2705`/`:3846-3906` verbatim.
 ##
@@ -211,9 +211,11 @@ define phrase monkey-jumps-away
   shaking its tiny fist.
 end phrase
 
+## Carried verbatim — RULED (David, 2026-08-24): "keep it verbatim, it lands
+## differently now and that's the point." Gentry's disguise logic
+## (`story.ni:3852`) read on the remake's frame is the remake's own line.
+
 define phrase necklace-not-worn
-  (PLACEHOLDER — David's line. The wear-refusal: the 2009 line reads "On
-  second thought, better not. You're still trying to look like a boy, and
-  boys just don't wear this kind of jewelry." — whether and how it carries
-  under the remake's gender frame is David's ruling.)
+  On second thought, better not. You're still trying to look like a boy, and
+  boys just don't wear this kind of jewelry.
 end phrase
