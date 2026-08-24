@@ -102,7 +102,9 @@ import "grubbers-market"
 
 create the player
   starts in the Northwest Junction
+  kick-yourself
   wears the old gray cloak
+  wears the woolen cap
 
   Jack Toresal, who has been a boy in this market for as long as anyone here has
   bothered to look.
@@ -122,4 +124,39 @@ create the old gray cloak
   Your cloak is made of undyed wool, stained and patched in several places. You
   wear it in the masculine style, fastened on the side and thrown back over your
   right shoulder.
+
+## The urchin's other garment (`story.ni:1393`), worn from the first turn — the
+## change document's escape-disguise ruling brought it back: the parchment's
+## "hat and a gray cloak" must describe what the player actually wears. The
+## wear/take-off lines are `story.ni:1402`/`:1414`. The source's later
+## take-off restrictions (around Bobby, after the market) belong to their own
+## chapters, not here; what the sweep reads from the cap is David's open
+## ruling and is NOT wired yet.
+
+create the woolen cap
+  aka cap, hat, woolen hat, wool cap
+  wearable
+
+  Your woolen cap is patchy and stained, like the rest of you. You usually
+  keep your hair stuffed up under it.
+
+  on wearing it
+    phrase cap-on
+  end on
+
+  on taking_off it
+    phrase cap-off
+  end on
+
+define phrase cap-on
+  You pull the cap down over your head and stuff your hair up into it.
+end phrase
+
+define phrase cap-off
+  You take the cap off and shake your hair out.
+end phrase
+
+define phrase kick-self
+  Not so hard really, was it?
+end phrase
 

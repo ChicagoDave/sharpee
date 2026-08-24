@@ -389,6 +389,19 @@ mean anything.
   cap**; in the dress and hat they do not recognise her. The captain's later drawing
   (`story.ni:2493`) is what eventually defeats it, in a later chapter.
 
+**The recognition rule, sharpened — DECIDED (David, 2026-08-23): "anything except dress and new
+hat leaves Jack exposed."** Not garment-matching: taking the cap off, shedding the cloak, or any
+partial state changes nothing — the sweep reads her as Jack in every state except the full dress
+and fashionable hat. Consequences:
+
+- The source's cap-off suppression (`story.ni:2093-2099`, the 2009 clean pass) is **dropped
+  entirely**, not deferred. No suppression branch is ever keyed to the woolen cap.
+- The "looks right at you … don't recognize you" arrival variant (`story.ni:2119`) is not
+  carried in its 2009 form. If a not-recognised arrival line exists at all, it can only occur in
+  the dress-and-hat window after the change, and whether it is used there is authored with the
+  escape sequence.
+- The suppression state is built with the escape sequence (dress + hat worn), nowhere before it.
+
 **Where she changes — DECIDED (David, 2026-08-22): in the open, with a couple of beats of grace, and
 the boots give her away.** David: *"We give her a couple of beats to change clothes before the
 mercenaries see that she has boots on and not dress shoes."* So the landing runs: a short window
@@ -408,6 +421,60 @@ hunters now carry forward.
 object on the player from the start (the source has none — check `story.ni` for footwear before
 adding); a "they see the boots" beat that flips the mercenaries back to approaching; the chase
 endgame unchanged (reach Commerce Street).
+
+**AMENDED (David, 2026-08-23): the change happens Behind Fruit Stall, and the landing is
+unseen.** David: *"I think we need to add a Behind Fruit Stall location that only surfaces from
+that landing and in this one case, no one gets knocked over and no one sees you land. You have
+one turn to change and one turn to return to market and head east."* This replaces the
+in-the-open change:
+
+- **New room: Behind Fruit Stall**, surfacing only from the northeast-cable landing — no
+  walk-in entrance from the market; its one exit returns to the Fruit Stall.
+- **The slide's ending changes for this landing only**: no one gets knocked over, no one sees
+  Jack land. The source's ending ("knocking over a couple of shoppers…", `story.ni:3822`) needs
+  a Behind-Fruit-Stall variant — David's line to write. The other three landings are untouched
+  by this amendment.
+- **The window is now concrete**: one turn to change, one turn to return to the market and head
+  east. This supersedes the earlier "two turns or so in the open" shape; the change itself is
+  private, so the window is about speed, not about being watched while changing.
+
+**AMENDED again (David, 2026-08-23): the slide takes two turns, and the hidden landing is a
+mid-air choice.** David: *"It happens in two turns and in the middle the description actually
+explains that there is an open spot behind the fruit stall if she lets go now, but if she
+doesn't, she lands in front of the fruit stall and doesn't have any way to change properly
+before getting caught."* This reshapes the landing:
+
+- **Turn one** is the first half of the slide. Its text ends mid-air and reveals the open spot
+  behind the fruit stall — the description itself is the tell: let go now and that is where she
+  drops.
+- **Letting go on the mid-slide turn** is the only way into Behind Fruit Stall — the "only
+  surfaces from that landing" rule now means this drop, not the completed slide.
+- **Not letting go** completes the slide on turn two: she lands **in front of** the fruit
+  stall, in the market, seen — the source's ending ("knocking over a couple of shoppers…",
+  `story.ni:3822`) now belongs to this outcome, and it survives unchanged. With the gray cloak
+  left on the wire, no private place to change, and the sweep converging, she gets caught; the
+  escape is forfeited.
+- **Prose consequences**: the source's single slide block splits into two turns, with the
+  mid-slide reveal and the let-go drop being new text — David's lines to write with the escape
+  sequence. The knock-over ending stays Gentry's.
+- Build reading, to confirm with the escape build: the mid-slide moment is a state where "let
+  go" is the meaningful action and anything else lets the slide complete; how the front-landing
+  capture plays out mechanically is authored then (David's words fix the outcome — caught —
+  not the turn count).
+
+**Both timing questions — DECIDED (David, 2026-08-23):**
+
+1. **Identification fires at the Fruit Stall, one turn after the return.** David: *"Player gets
+   one turn at fruit stall before identification."* She comes out to the Fruit Stall, has one
+   turn there; if she is still there on the next turn, the boots-spotted beat fires —
+   identification, chase back on, mercenaries knowing what she is wearing. Heading east inside
+   that turn keeps the head start.
+2. **A second turn behind the stall forfeits the escape.** David: *"Second turn behind stall
+   puts mercenaries at fruit stall so when comes out she's immediately caught."* Lingering over
+   the change moves the pair to the Fruit Stall; stepping out walks her straight into them —
+   caught on the exit, no free turn. (Build reading, to confirm: "caught" is the standing grab
+   posture — 'Gotcha!', capture clock running, break-free still possible — not a bespoke hard
+   ending.)
 
 **The boots are a thread, and Dame Sandler closes it — DECIDED, provisionally (David,
 2026-08-22: "Her shoes get replaced with Dame I think").** The boots stay on Jack out of the market

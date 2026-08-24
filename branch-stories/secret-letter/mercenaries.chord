@@ -51,12 +51,16 @@
 ##     that shakes off an approach.
 ##   * The source suppresses the warning and the spotting when "the
 ##     mercenaries will not recognise us" (woolen cap off, captain not yet
-##     wise — `story.ni:2093-2099`). The cap is not wearable yet, so that
-##     branch is NOT carried here; it lands with the disguise work. Until
-##     then the "looks right at you … don't recognize you" arrival variant
-##     is also held back, and only the "haven't seen you yet" line is used.
-##   * `kick` has no verb in the port yet; the break-free reaction is on
-##     `attacking`. The source's kick-specific line is held with it.
+##     wise — `story.ni:2093-2099`). That branch is DROPPED, not deferred
+##     (change document, "The recognition rule, sharpened", 2026-08-23):
+##     anything except the dress and new hat leaves Jack exposed, so no
+##     suppression is ever keyed to the woolen cap, and the "looks right at
+##     you … don't recognize you" arrival variant is not carried in its
+##     2009 form. The suppression state arrives with the escape sequence
+##     (dress + hat), nowhere before it.
+##   * `kick` is the story's own dispatch action (below): the `kick-escape`
+##     trait forces the source's shin line where a plain attack rolls the
+##     narrow-escape pool.
 ##
 ## On the player, in `secret-letter.story`: `on going` refuses while they hold
 ## her, and `after going while hunted` restarts `waiting`. The apple's
@@ -114,6 +118,7 @@ end timer
 
 create the wandering mercenaries
   a person, plural
+  kick-escape
   aka mercenaries, mercenary, thugs, thug, soldiers, soldier, bravos, men, pair
   pronouns they
   states, reversible: oblivious, approaching, aggressive
@@ -218,6 +223,52 @@ define trait wary
 end trait
 
 ## ---------------------------------------------------------------------------
+## THE KICK VERB
+##
+## `story.ni:553-563`: kicking is its own action that hands off to attacking,
+## which is what lets `story.ni:2184` force the shin line when the verb is
+## kick. Chord has no delegation, so the hand-off inverts: the `kick-escape`
+## trait below mirrors the attack clause with the kick phrases, and kicking
+## anything else falls to the platform's own can't-do-that line rather than
+## the source's attack response — the one divergence, noted here.
+##
+## No `must be reachable` line, deliberately: that constraint's scope drops
+## the player, and `kick me` (`story.ni:559`) has to parse. Kicking something
+## out of reach falls to the same can't-do-that line.
+## ---------------------------------------------------------------------------
+
+define action kicking
+  grammar
+    kick the target
+
+## The kick-specific break-free (`story.ni:2184-2185`): the source forces the
+## shin line when the verb is kick, where a plain attack rolls the
+## narrow-escape pool. Same mutations and postures as `on attacking it` above;
+## a dispatch action's reactions live in traits, so this one is composed on
+## the mercenaries.
+
+define trait kick-escape
+  on kicking it
+    refuse when it is oblivious: merc-dont-provoke
+    phrase merc-break-free-kick when it is aggressive
+    phrase merc-shove-off-kick when it is approaching
+    change it to approaching
+    reset the wandering mercenaries' lunge
+    reset the wandering mercenaries' capture
+    start the wandering mercenaries' recovery
+  end on
+end trait
+
+## `kick me` (`story.ni:559`, the kicking yourself rule), composed on the
+## player in `secret-letter.story`.
+
+define trait kick-yourself
+  on kicking it
+    refuse kick-self
+  end on
+end trait
+
+## ---------------------------------------------------------------------------
 ## THE LINES — all Gentry's
 ## ---------------------------------------------------------------------------
 
@@ -256,9 +307,15 @@ define phrase merc-dash-away
 end phrase
 
 ## The narrow escapes (`story.ni:2165-2168`). The source picks one at random
-## and prefixes "Thinking quickly, you"; the kick variant waits on a kick verb.
+## and prefixes "Thinking quickly, you"; its first arm is the shin kick, which
+## `kick` itself forces via the -kick phrases below.
 
 define phrase merc-break-free, randomly
+  Thinking quickly, you kick the mercenary in the shin.
+
+  'Argh! Oh, you miserable runt—' the mercenary's grip on your arm loosens,
+  and you twist away. You're free!
+or
   Thinking quickly, you elbow the mercenary as hard as you can, aiming below
   the belt.
 
@@ -280,6 +337,11 @@ or
 end phrase
 
 define phrase merc-shove-off, randomly
+  Thinking quickly, you kick the mercenary in the shin.
+
+  'Argh! Oh, you miserable runt—' He stumbles backwards into his companion.
+  Now they're both distracted; now's your chance to run!
+or
   Thinking quickly, you elbow the mercenary as hard as you can, aiming below
   the belt.
 
@@ -295,6 +357,23 @@ or
   Thinking quickly, you scream your head off. People from two stalls away stop
   what they're doing to see what the commotion is, and when the mercenary
   clamps his hand over your mouth, you bite down hard.
+
+  'Argh! Oh, you miserable runt—' He stumbles backwards into his companion.
+  Now they're both distracted; now's your chance to run!
+end phrase
+
+## The forced shin line (`story.ni:2184-2185`): deterministic where the pools
+## above roll, one phrase per posture for the two tails.
+
+define phrase merc-break-free-kick
+  Thinking quickly, you kick the mercenary in the shin.
+
+  'Argh! Oh, you miserable runt—' the mercenary's grip on your arm loosens,
+  and you twist away. You're free!
+end phrase
+
+define phrase merc-shove-off-kick
+  Thinking quickly, you kick the mercenary in the shin.
 
   'Argh! Oh, you miserable runt—' He stumbles backwards into his companion.
   Now they're both distracted; now's your chance to run!
