@@ -18,11 +18,15 @@
  *   these unreachable; reaching one is a loader bug, not author error.
  */
 import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
-import { createSeededRandom, type SeededRandom } from '@sharpee/core';
+import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
+import { exitBlockedKey } from '@sharpee/stdlib';
 import {
   CharacterModelTrait,
   LightSourceTrait,
+  LockableBehavior,
   LockableTrait,
+  RoomBehavior,
+  type DirectionType,
   MOOD_AXES,
   OpenableTrait,
   PRESSURE_BANDS,
@@ -39,7 +43,7 @@ import {
 import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, landingKey, timerKey, type LandingRecord, type TimerRecord } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -109,6 +113,19 @@ export class Evaluator {
   /** Wire the live capability source (loader-only; ADR-216). */
   setCapabilitiesProvider(provider: () => Record<string, unknown> | undefined): void {
     this.capabilitiesProvider = provider;
+  }
+
+  /**
+   * The engine's session random service (ADR-293) — set by the loader at
+   * engine-ready. Needed only when an adjacent-room draw consults a
+   * computed-exit resolver (ADR-326 D6); the draw's own stream is the
+   * persisted per-mover seed, not this service. Null headless.
+   */
+  private randomService: RandomService | null = null;
+
+  /** Wire the engine's random service (loader-only; ADR-326 D6). */
+  setRandomService(service: RandomService): void {
+    this.randomService = service;
   }
 
   /**
@@ -632,6 +649,85 @@ export class Evaluator {
         return record.rooms[record.cursor % n];
       }
     }
+  }
+
+  /**
+   * The rooms one traversable exit from `roomWorldId` for `actorId`, in
+   * direction order, deduplicated (ADR-326 D1/D6). The read order is
+   * going's own (`hasTraversableExit`, stdlib `exit-legality.ts`): every
+   * static direction plus computed-exit keys; a direction whose composed
+   * blocked evaluator (GH #315) or trait fallback says blocked contributes
+   * nothing; a computed direction answers through its resolver — inactive
+   * → the static destination, `exit` → its destination (narration dropped:
+   * this is a consult, not a traversal), `blocked` → nothing; a static exit
+   * whose door is locked contributes nothing.
+   * @throws LoadError when a computed direction is met with no random
+   *   service wired (headless) — never a silent skip
+   */
+  adjacentRooms(roomWorldId: string, actorId: string, world: WorldModel): string[] {
+    const room = world.getEntity(roomWorldId);
+    if (!room || !room.has(TraitType.ROOM)) return [];
+    const directions = new Set<string>(RoomBehavior.getAllExits(room).keys());
+    for (const trait of room.traits.values()) {
+      const computed = (trait as { computedExits?: Record<string, unknown> }).computedExits;
+      if (computed) for (const direction of Object.keys(computed)) directions.add(direction);
+    }
+    const out: string[] = [];
+    for (const dir of directions) {
+      const direction = dir as DirectionType;
+      const derived = world.evaluate(exitBlockedKey(room.id, direction));
+      const blocked = typeof derived === 'boolean' ? derived : RoomBehavior.isExitBlocked(room, direction);
+      if (blocked) continue;
+      const staticExit = RoomBehavior.getExit(room, direction);
+      let destination: string | undefined = staticExit?.destination;
+      if (RoomBehavior.getComputedExitDeclaration(room, direction)) {
+        if (!this.randomService) {
+          throw new LoadError(
+            `Cannot draw an adjacent room from ${room.name}: its ${direction} exit is computed and no random service is wired (headless run).`,
+          );
+        }
+        const resolution = RoomBehavior.resolveExit(room, direction, { world, actorId, random: this.randomService });
+        if (resolution?.kind === 'blocked') continue;
+        if (resolution?.kind === 'exit') destination = resolution.destination;
+      } else if (staticExit?.via) {
+        const door = world.getEntity(staticExit.via);
+        if (door && door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door)) continue;
+      }
+      if (destination && world.getEntity(destination) && !out.includes(destination)) out.push(destination);
+    }
+    return out;
+  }
+
+  /**
+   * `move … to a random adjacent room` (ADR-326 D1/D2): draws one of the
+   * mover's traversable neighbours on the mover's own persisted seeded
+   * stream — saves round-trip, a pinned seed replays byte-identically.
+   * @returns the drawn room's world id, or undefined when no neighbour is
+   *   traversable (the caller raises the D3 diagnostic and performs no move)
+   */
+  drawAdjacentRoom(moverWorldId: string, world: WorldModel): string | undefined {
+    const roomId = world.getContainingRoom(moverWorldId)?.id ?? world.getLocation(moverWorldId);
+    if (!roomId) return undefined;
+    const candidates = this.adjacentRooms(roomId, moverWorldId, world);
+    if (candidates.length === 0) return undefined;
+    const irId = this.ids.irIdOf(moverWorldId) ?? moverWorldId;
+    const key = adjacentKey(irId);
+    const record = this.adjacentRecord(irId, world);
+    if (candidates.length === 1) return candidates[0];
+    const stream = createSeededRandom(record.seed);
+    const pick = stream.int(1, candidates.length) - 1;
+    world.setStateValue(key, { seed: stream.getSeed() });
+    return candidates[pick];
+  }
+
+  private adjacentRecord(irId: string, world: WorldModel): AdjacentRecord {
+    const stored = world.getStateValue(adjacentKey(irId)) as AdjacentRecord | undefined;
+    if (stored) return stored;
+    // Per-mover stream: the story seed folded with the mover's id (the
+    // landing-record idiom), so two movers never share a sequence.
+    let seed = this.storySeed;
+    for (const ch of irId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    return { seed };
   }
 
   /**

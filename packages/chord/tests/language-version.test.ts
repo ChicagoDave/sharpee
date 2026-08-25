@@ -55,8 +55,9 @@ const PINNED = {
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '3.3.0',
-  ebnfSha256: 'ad0219207b6ccff3870abdf6b080467e52ccc7f90043f7f4365dc81c170b3715',
+  // (3.4.0 — ADR-326, 2026-08-25: `a random adjacent room`, additive minor.)
+  languageVersion: '3.4.0',
+  ebnfSha256: '3551b95bda4f82adde160fb4de89b77884f055da99b256ee50ae8c738c916fba',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

@@ -859,6 +859,12 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
                                                               or any entity *)
              | "move" name "to" name [ stmt-when ] NL
+             | "move" name "to" "a" "random" "adjacent" "room"
+               [ stmt-when ] NL                            (* ADR-326 D1: the computed
+                                                              place — one traversable
+                                                              exit from the mover's
+                                                              room, drawn at effect
+                                                              time; no strategy word *)
              | "remove" name [ stmt-when ] NL              (* Z6: remove from play;
                                                               never the player *)
              | "award" { token } [ "," "once" ] [ stmt-when ] NL

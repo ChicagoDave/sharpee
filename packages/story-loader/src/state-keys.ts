@@ -118,3 +118,20 @@ export interface LandingRecord {
   cursor: number;
   seed: number;
 }
+
+export const CHORD_ADJACENT_PREFIX = 'chord.adjacent.';
+
+/** The world-state key for a mover's adjacent-room draw record (ADR-326 D2). */
+export function adjacentKey(moverIrId: string): string {
+  return `${CHORD_ADJACENT_PREFIX}${moverIrId}`;
+}
+
+/**
+ * A mover's adjacent-room draw state (ADR-326 D2): only the stream `seed`
+ * persists — the candidate set is recomputed at every draw from the live
+ * exits, so nothing else is worth storing. Derived from the story seed
+ * folded with the mover's IR id, so two movers never share a sequence.
+ */
+export interface AdjacentRecord {
+  seed: number;
+}

@@ -2030,12 +2030,17 @@ export interface ChangeFeelingStmt {
  * - `here` — sugar for the player's location (`move it here`).
  * - `offstage` — no location at all (`move it offstage`); the entity stays
  *   in the world, detached, until a later `move` reattaches it.
+ * - `adjacent-room` — `a random adjacent room` (ADR-326 D1): a room one
+ *   traversable exit from the mover's room, drawn at effect time. The
+ *   randomness is in the noun; there is no strategy word. Legal only as a
+ *   `move` destination.
  */
 export type PlaceExpr =
   | { kind: 'name'; ref: NameRef; span: Span }
   | { kind: 'location'; owner: ValueExpr; span: Span }
   | { kind: 'here'; span: Span }
-  | { kind: 'offstage'; span: Span };
+  | { kind: 'offstage'; span: Span }
+  | { kind: 'adjacent-room'; span: Span };
 
 /** `move <entity> to <place> | here | offstage [when <cond>]` (ADR-325 D1–D2) */
 export interface MoveStmt {

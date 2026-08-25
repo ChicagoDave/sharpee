@@ -91,7 +91,7 @@ import {
   getHungerSeverity,
   setHungerSeverity,
 } from '@sharpee/ext-hunger';
-import { type ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
@@ -263,7 +263,8 @@ export class ChordStory implements Story {
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
-  private readonly evaluator: Evaluator;
+  /** The expression evaluator — public beside `runtime` so hosts and tests reach its wiring seams (ADR-326 D6). */
+  readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
 
@@ -1046,6 +1047,7 @@ export class ChordStory implements Story {
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
     getClientCapabilities?(): object;
     getContext?(): { currentTurn: number };
+    getRandomService?(): RandomService;
   }): void {
     // ADR-325 D3f: timers stamp the turn they start on from the engine's
     // live counter, so a `start` in the player's action waits one turn.
@@ -1058,6 +1060,11 @@ export class ChordStory implements Story {
     // Engines without the accessor leave the text-only default in place.
     if (engine.getClientCapabilities) {
       this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities!() as Record<string, unknown>);
+    }
+    // ADR-326 D6: an adjacent-room draw that meets a computed exit consults
+    // the resolver, which draws on the engine's session random service.
+    if (engine.getRandomService) {
+      this.evaluator.setRandomService(engine.getRandomService());
     }
     // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
     // (unlike the scheduler's daemon-gated registration below), and each

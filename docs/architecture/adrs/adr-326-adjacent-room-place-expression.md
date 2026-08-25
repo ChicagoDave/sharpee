@@ -4,7 +4,7 @@
 ACCEPTED"). All open questions resolved: no filter (D4) 2026-08-24; spelling `a random
 adjacent room` (D1) and computed directions answer "where would going take the mover
 right now" (D6) via the rule-11a interview 2026-08-25; D5 amended to depend on ADR-327 D5;
-`adr-review` 19/19 after one fold. Mechanism shape (place expression extending ADR-325's family, not an ADR-295
+`adr-review` 19/19 after one fold. **Implemented 2026-08-25, session 8ae644** (Chord 3.4.0; chord 999 green, story-loader 624 green, world-index/Dungeo chain/secret-letter baselines unchanged) — with ADR-327 D5's move-arrival slice. Mechanism shape (place expression extending ADR-325's family, not an ADR-295
 exit resolver) ruled by David 2026-08-24 in the Phase 3 design discussion of
 `docs/work/backlog-tier1-2-platform/plan.md`.
 
@@ -144,8 +144,12 @@ yields the static destination; `kind: 'exit'` yields `destination`, and any narr
 is narrated by the draw (D5); `kind: 'blocked'` contributes nothing. The `actorId` is
 the mover's. The `random` is the session `RandomService` (ADR-293): the loader does not
 hold one today (its own draws ride persisted chance streams, `runtime.ts:4079`), so the
-runtime receives the engine's service at construction through the bootstrap seam — the
-one wiring addition this ADR makes, story-loader-side, no engine change. The traversability filter (D1) then runs over the answers. A computed direction
+evaluator receives the engine's service at `ChordStory.onEngineReady` — the seam the
+loader already uses for the turn counter and client capabilities (`loader.ts:1043`;
+`GameEngine.getRandomService()`, `game-engine.ts:1851`) — the one wiring addition this
+ADR makes, story-loader-side, no engine or bootstrap change. (Corrected at landing
+2026-08-25 from "at construction through the bootstrap seam".) Headless, a computed
+direction met by the draw is a `LoadError`, never a silent skip. The traversability filter (D1) then runs over the answers. A computed direction
 that currently leads nowhere contributes nothing; one that is currently live contributes
 exactly where it leads — never its whole declared candidate list, and never a room the
 exit would not have chosen this turn.

@@ -35,6 +35,14 @@
 ### Memory saved (outside repo)
 - `feedback_language_design_needs_full_code_example.md` — David twice asked for full code examples during Chord syntax questions.
 
+### Phase 3 (#311) implemented — after the chain closed (same session, after finalize)
+- Shape written first (`docs/work/backlog-tier1-2-platform/phase-3-implementation-shape.md`); David: "go — any mover is fine, use onEngineReady".
+- chord: `PlaceExpr` `adjacent-room`; `parsePlace` recognizes exactly `a random adjacent room` with `parse.adjacent-room-spelling` / `-strategy` / `-placement` (one gate in `parsePlace`, `allowAdjacent` set only by `move`); analyzer lowers to `symbol adjacent-room`; EBNF row; `CHORD_LANGUAGE_VERSION` 3.3.0 → 3.4.0 (pin re-recorded; 4 golden snapshots changed only on `languageVersion`). `pnpm --filter '@sharpee/chord' run test:ci` → 999 passed (991 + 8), 2026-08-25.
+- story-loader: `adjacentKey`/`AdjacentRecord`; `Evaluator.adjacentRooms` (going's read order + `RoomBehavior.resolveExit` for computed directions) and `drawAdjacentRoom` (per-mover persisted seed); `resolvePlace(place, ctx, mover)`; `moveWithLifecycle` → `witnessMove` + `fireMoveArrival` (synthesized `actor_moved`, `fireEventClauses` + `fireMoveClauses`, depth cap 8, `runtime.move-arrival-reentry`); `onEngineReady` takes `getRandomService`; `ChordStory.evaluator` made public. `pnpm --filter '@sharpee/story-loader' run test:ci` → 624 passed (610 + 14), 2026-08-25.
+- Baselines re-run after `./repokit build dungeo` (2026-08-25): world-index 169 passed / 1 skipped; Dungeo chain 952 passed in 17 transcripts; `./sharpee test branch-stories/secret-letter` 160 cards / 209 assertions.
+- Two self-inflicted stops, both reported before fixing: a `*/` placement typo in `version.ts`; a `'north'` vs `Direction.NORTH` key in a test trait (found by a throwaway probe test, removed).
+- Paper trail: `chord-grammar-changes.md` row; ADR-295 D6 amendment stamp; ADR-326 D6 wiring corrected to `onEngineReady` + "Implemented" stamp; plan Phase 3 DONE; #311 closed with the evidence.
+
 ## Key Decisions
 
 ### 1. ADR-328 ACCEPTED — actors are a platform concept
@@ -79,7 +87,7 @@ D8 confines `it`/`its` to the trait carrier inside `define trait` blocks (remove
 
 **Session duration**: session started 2026-08-25 01:27 CDT (session 8ae644); duration not separately tracked.
 
-**Approach**: Pure design/ADR work — three interlocking ADRs interviewed and accepted in dependency order (328 → 327 → 326), each via `/devarch:adr-interview` to resolve Open Questions one at a time, with `adr-review` run to 19/19 before acceptance. No source code touched; no builds or tests run.
+**Approach**: Pure design/ADR work — three interlocking ADRs interviewed and accepted in dependency order (328 → 327 → 326), each via `/devarch:adr-interview` to resolve Open Questions one at a time, with `adr-review` run to 19/19 before acceptance. First half: no source code touched. Second half (after finalize): Phase 3 implemented — chord + story-loader source, new tests, full baseline re-run; rule-15 `mutation-verification` not fired (no changed function matches the name signal: `drawAdjacentRoom`, `fireMoveArrival`, `resolvePlace`, `adjacentRooms`).
 
 ---
 
@@ -110,11 +118,20 @@ D8 confines `it`/`its` to the trait carrier inside `define trait` blocks (remove
 - Tests verify actual state mutations (not just events): N/A
 - If NO: N/A
 
+### Phase 3 addendum (mutation audit)
+- Files with state-changing logic modified: `packages/story-loader/src/evaluator.ts` (`drawAdjacentRoom` writes `chord.adjacent.<mover>`), `packages/story-loader/src/runtime.ts` (`resolvePlace` + `moveWithLifecycle`/`fireMoveArrival` move entities and fire clauses).
+- Tests verify actual state mutations: YES — `tests/adjacent-room-runtime.test.ts` asserts on `world.getContainingRoom(player)` after each draw, on `world.getStateValue(adjacentKey(...))` changing per draw, on location unchanged after the D3/cap errors, and on the bounce's final location (2026-08-25, 14 passed).
+
 ## Recurrence Check
 
 - Similar to past issue? NO — this is forward ADR/design sequencing work, not a bug fix or blocker recurrence.
 
 ## Test Coverage Delta
+
+### Phase 3 addendum
+- Tests added: 8 (`packages/chord/tests/adjacent-room.test.ts`) + 14 (`packages/story-loader/tests/adjacent-room-runtime.test.ts`).
+- Before → after (2026-08-25): chord 991 → 999; story-loader 610 → 624; world-index 169/1 skipped unchanged; Dungeo chain 952/17 unchanged; secret-letter 160 cards / 209 assertions unchanged.
+- Files modified (Phase 3): `packages/chord/{chord.ebnf,src/ast.ts,src/parser.ts,src/analyzer.ts,src/version.ts,tests/language-version.test.ts,tests/__snapshots__/*.snap ×4}`, `packages/story-loader/src/{state-keys,evaluator,runtime,loader}.ts`, `docs/architecture/chord-grammar-changes.md`, `docs/architecture/adrs/adr-295-computed-exits.md`, `docs/architecture/adrs/adr-326-adjacent-room-place-expression.md`, `docs/work/backlog-tier1-2-platform/{plan.md,phase-3-implementation-shape.md}`; `stories/dungeo/src/version.ts` re-stamped by the build.
 
 - Tests added: 0
 - Tests passing before: N/A → after: N/A — no test changes this session

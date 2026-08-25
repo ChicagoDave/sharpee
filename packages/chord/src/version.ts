@@ -201,5 +201,12 @@
  * `opens when <condition>`, ordered `beat[, when <condition>]:` rows, the
  * transition rows `on parting:` / `on resuming:` / `on refusing:`, exactly
  * one `conclusion:`) and the `<thread> is concluded` predicate.
+ *
+ * 3.4.0 — ADR-326, 2026-08-25 (session 8ae644): the adjacent-room place.
+ * Additive: `move <entity> to a random adjacent room` — a room one
+ * traversable exit from the mover's room, drawn at effect time on a
+ * per-mover seeded stream; the randomness is in the noun (no strategy
+ * word). Legal only as a `move` destination. A minor bump by D2's
+ * ordinary rule.
  */
-export const CHORD_LANGUAGE_VERSION = '3.3.0';
+export const CHORD_LANGUAGE_VERSION = '3.4.0';

@@ -217,6 +217,14 @@ export interface SchedulerDaemon {
   run: (ctx: SchedulerTick) => ISemanticEvent[];
 }
 
+/** ADR-327 D5: the most nested move-arrivals one turn may fire before the runtime refuses. */
+const MOVE_ARRIVAL_DEPTH_CAP = 8;
+
+/** The containing room of an entity, or its raw location when it has none. */
+function roomOfIn(world: WorldModel, id: string): string | undefined {
+  return world.getContainingRoom(id)?.id ?? world.getLocation(id);
+}
+
 export class ChordRuntime {
   private eventSeq = 0;
   /** Declared score identities (Phase B): name → worth. */
@@ -3689,7 +3697,7 @@ export class ChordRuntime {
         case 'move': {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
-            this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx), ctx);
+            this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx, thing), ctx);
           }
           break;
         }
@@ -3889,8 +3897,21 @@ export class ChordRuntime {
    * `offstage`. A possessive `location` whose owner is offstage has no
    * place to move to: a diagnostic naming the owner, never a silent no-op.
    */
-  private resolvePlace(place: IRValue, ctx: ExecContext): string | null {
+  private resolvePlace(place: IRValue, ctx: ExecContext, moverWorldId: string): string | null {
     if (place.kind === 'symbol' && place.name === 'offstage') return null;
+    if (place.kind === 'symbol' && place.name === 'adjacent-room') {
+      // ADR-326 D1–D3: drawn at effect time from the mover's own room.
+      const drawn = this.evaluator.drawAdjacentRoom(moverWorldId, ctx.world);
+      if (drawn === undefined) {
+        const mover = ctx.world.getEntity(moverWorldId);
+        const roomId = ctx.world.getContainingRoom(moverWorldId)?.id ?? ctx.world.getLocation(moverWorldId);
+        const room = roomId ? ctx.world.getEntity(roomId) : undefined;
+        throw new LoadError(
+          `Cannot move ${mover?.name ?? moverWorldId} to a random adjacent room — no exit from ${room?.name ?? 'its location'} is traversable right now.`,
+        );
+      }
+      return drawn;
+    }
     const resolved = this.evaluator.evalValue(place, ctx);
     if (typeof resolved === 'string' && ctx.world.getEntity(resolved)) {
       // ADR-325 D5: a region with a landing is a place — land there.
@@ -3917,14 +3938,32 @@ export class ChordRuntime {
       world.getContainingRoom(id)?.id ?? world.getLocation(id);
     const fromRoom = roomOf(thingWorldId);
     world.moveEntity(thingWorldId, placeWorldId);
+    const toRoom = roomOf(thingWorldId);
 
+    this.witnessMove(thingWorldId, placeWorldId, fromRoom, toRoom, world);
+
+    // ADR-327 D5: an arrival is an arrival, walked or moved — a room
+    // transition fires the destination's entering clauses and every
+    // `when <entity> moves` clause for the mover, whoever the mover is.
+    if (placeWorldId !== null && toRoom !== undefined && fromRoom !== toRoom) {
+      this.fireMoveArrival(thingWorldId, fromRoom, toRoom, world);
+    }
+  }
+
+  /** The witnessed `exited`/`entered`/`disappeared` rows for a move (ADR-325 D2, Z3). */
+  private witnessMove(
+    thingWorldId: string,
+    placeWorldId: string | null,
+    fromRoom: string | undefined,
+    toRoom: string | undefined,
+    world: WorldModel,
+  ): void {
     const playerId = world.getPlayer()?.id;
     if (!playerId || thingWorldId === playerId) return;
     const irId = this.host.irIdOf(thingWorldId);
     if (!irId) return;
-    const toRoom = roomOf(thingWorldId);
     if (fromRoom === toRoom) return; // not a room transition — nothing to witness
-    const playerRoom = roomOf(playerId);
+    const playerRoom = roomOfIn(world, playerId);
     if (playerRoom === undefined) return;
     if (playerRoom === fromRoom) {
       const event = this.channelEvent(irId, placeWorldId === null ? 'disappeared' : 'exited', world);
@@ -3933,6 +3972,45 @@ export class ChordRuntime {
     if (playerRoom === toRoom) {
       const event = this.channelEvent(irId, 'entered', world);
       if (event) this.enqueueChannelEvent(event);
+    }
+  }
+
+  /** Nesting depth of move-arrival firings in flight (ADR-327 D5's re-entry cap). */
+  private moveArrivalDepth = 0;
+  /** The rooms of the arrival chain in flight, for the diagnostic. */
+  private readonly moveArrivalChain: string[] = [];
+
+  /**
+   * Fire the loader's own arrival for a `move` (ADR-327 D5): the destination
+   * room's `entering` event clauses and the `when <entity> moves` clauses,
+   * exactly as a walked arrival's `actor_moved` would through the engine's
+   * chain — but fired here, not emitted, so the engine never fires them a
+   * second time. Whatever the clauses produce is enqueued as channel
+   * narration and drained by the enclosing report pass (the Z3 sink).
+   * @throws LoadError `runtime.move-arrival-reentry` past 8 nested arrivals
+   */
+  private fireMoveArrival(actorId: string, fromRoom: string | undefined, toRoom: string, world: WorldModel): void {
+    if (this.moveArrivalDepth >= MOVE_ARRIVAL_DEPTH_CAP) {
+      const chain = [...this.moveArrivalChain, toRoom].map((id) => world.getEntity(id)?.name ?? id).join(' → ');
+      throw new LoadError(
+        `runtime.move-arrival-reentry: a \`move\` arrival re-entered ${MOVE_ARRIVAL_DEPTH_CAP} times (${chain}) — an entering clause keeps moving the arriver into a room whose entering clause moves them again.`,
+      );
+    }
+    const event: ISemanticEvent = {
+      id: `chord-move-arrival-${++this.eventSeq}`,
+      type: EVENT_TRIGGERS.entering,
+      timestamp: Date.now(),
+      entities: { actor: actorId },
+      data: { actorId, fromRoom, toRoom },
+    };
+    this.moveArrivalDepth++;
+    this.moveArrivalChain.push(toRoom);
+    try {
+      const produced = [...this.fireEventClauses(world, event), ...this.fireMoveClauses(world, event)];
+      for (const e of produced) this.enqueueChannelEvent(e);
+    } finally {
+      this.moveArrivalDepth--;
+      this.moveArrivalChain.pop();
     }
   }
 

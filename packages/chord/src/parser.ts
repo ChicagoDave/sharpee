@@ -168,6 +168,8 @@ import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+/** The landing-list strategy words (ADR-325 D5) — rejected after `a random adjacent room` (ADR-326 D1). */
+const STRATEGY_WORDS = new Set(['randomly', 'cycling', 'stopping']);
 // ADR-298 D4: the structural test for a header prose value being a phrase
 // reference — a single kebab atom, nothing else on the value.
 const KEBAB_ATOM = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -6803,7 +6805,7 @@ class Parser {
             this.diagnostics.error('parse.move-to', `Expected \`to <place>\`, \`here\`, or \`offstage\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
             return null;
           }
-          place = this.parsePlace(c, line, new Set(['when']));
+          place = this.parsePlace(c, line, new Set(['when']), true);
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
@@ -7280,7 +7282,21 @@ class Parser {
    * Weaponsmith's Stall`) is part of the name, not a possessive. Stops at
    * PHRASE_STOPS or `extraStops`.
    */
-  private parsePlace(c: Cursor, line: Line, extraStops: Set<string>): PlaceExpr {
+  private parsePlace(c: Cursor, line: Line, extraStops: Set<string>, allowAdjacent = false): PlaceExpr {
+    const adjacent = this.parseAdjacentRoomPlace(c);
+    if (adjacent) {
+      if (!allowAdjacent) {
+        // ADR-326 D1: the computed place is a `move` destination only — in a
+        // condition it would be a predicate, and the ADR deliberately adds no
+        // adjacency condition (Non-goals). One gate here covers every caller.
+        this.diagnostics.error(
+          'parse.adjacent-room-placement',
+          '`a random adjacent room` is a place for `move … to`, not a condition — write `is in <room>`.',
+          adjacent.span,
+        );
+      }
+      return adjacent;
+    }
     const start = c.i;
     const expr = this.parseValueExpr(c, line, extraStops);
     if (expr.kind === 'possessive' && expr.field.length === 1 && expr.field[0] === 'location') {
@@ -7289,6 +7305,50 @@ class Parser {
     c.i = start;
     const ref = this.parseNameRef(c, (t) => t.kind === 'word' && (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)));
     return { kind: 'name', ref, span: ref.span };
+  }
+
+  /**
+   * `a random adjacent room` (ADR-326 D1) — the one computed place. The
+   * spelling is exact: the randomness lives in the noun, so a missing
+   * `random` and a trailing strategy word are both named errors with the
+   * ruled spelling as the fix-it. Returns null when the words are not an
+   * adjacent-room place at all (an ordinary name follows).
+   */
+  private parseAdjacentRoomPlace(c: Cursor): PlaceExpr | null {
+    const words: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const t = c.peek(i);
+      if (!t || t.kind !== 'word') break;
+      words.push(t.text.toLowerCase());
+    }
+    const idx = words.indexOf('adjacent');
+    if (idx === -1 || words[idx + 1] !== 'room') return null;
+    const lead = words.slice(0, idx);
+    const exact = lead.length === 2 && lead[0] === 'a' && lead[1] === 'random';
+    const first = c.peek()!;
+    let span = first.span;
+    for (let i = 0; i < idx + 2; i++) span = mergeSpans(span, c.next()!.span);
+    if (!exact) {
+      this.diagnostics.error(
+        'parse.adjacent-room-spelling',
+        'The adjacent-room place is spelled `a random adjacent room` — the randomness is in the noun (ADR-326).',
+        span,
+      );
+    }
+    // A strategy word after the place (`, randomly`) says the randomness twice.
+    const afterComma = c.peek()?.kind === 'comma' ? 1 : 0;
+    const next = c.peek(afterComma);
+    if (next && next.kind === 'word' && STRATEGY_WORDS.has(next.text.toLowerCase())) {
+      let strategySpan = next.span;
+      if (afterComma) strategySpan = mergeSpans(c.next()!.span, strategySpan);
+      c.next();
+      this.diagnostics.error(
+        'parse.adjacent-room-strategy',
+        `\`a random adjacent room\` takes no strategy word — drop \`${next.text}\`; the candidate set is drawn afresh each time, so \`random\` already says how (ADR-326).`,
+        strategySpan,
+      );
+    }
+    return { kind: 'adjacent-room', span };
   }
 
   private parseNameRef(c: Cursor, stop: (t: Token) => boolean): NameRef {

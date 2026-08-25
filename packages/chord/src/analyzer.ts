@@ -263,6 +263,7 @@ function conditionFingerprint(cond: ConditionNode): string {
         return `loc:${value(pl.owner)}`;
       case 'here':
       case 'offstage':
+      case 'adjacent-room':
         return pl.kind;
     }
   };
@@ -6830,6 +6831,9 @@ class Analyzer {
         return { kind: 'field', base: { kind: 'player' }, field: 'location' };
       case 'offstage':
         return { kind: 'symbol', name: 'offstage' };
+      case 'adjacent-room':
+        // ADR-326 D1: a computed place — the loader draws it at effect time.
+        return { kind: 'symbol', name: 'adjacent-room' };
     }
   }
 
