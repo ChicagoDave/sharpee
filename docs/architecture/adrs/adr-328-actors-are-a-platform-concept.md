@@ -1,9 +1,10 @@
 # ADR-328: Actors are a platform concept
 
-**Status**: DRAFT (2026-08-25, session 915e68) — all three open questions resolved via
-the rule-11a interview 2026-08-25 (dissolve NpcService, no compatibility layers; the
-Chord acting surface is designed in this program; the voice sweep lands in full, up
-front); awaiting review and David's ACCEPTED flip. Direction is David's, ruled
+**Status**: **ACCEPTED** (David, 2026-08-25, session 8ae644 — "flip ADR-328 to
+ACCEPTED"). Accepted as an umbrella: all three open questions were resolved via the
+rule-11a interview 2026-08-25 (dissolve NpcService, no compatibility layers; the Chord
+acting surface is designed in this program; the voice sweep lands in full, up front),
+and `adr-review` passed 12/12 the same day. Direction is David's, ruled
 2026-08-25 out of ADR-327's Q-1: *"I think this is a bigger deal than you realize… NPCs
 need to be pulled into the platform."* Umbrella-scale: this ADR decides the target model
 and the disposition questions; child ADRs/plans carry the phases (the ADR-266 pattern).
@@ -22,8 +23,9 @@ under this ADR itself — it is direction; children implement.
 **Analysis**: `docs/work/actor-platform/impact-analysis-20260825.md` — the full
 three-layer impact analysis (Sharpee / Chord / Dungeo) this ADR compresses; every code
 fact below was verified there, 2026-08-25.
-**Related**: [ADR-327](adr-327-explicit-references.md) (actor-explicit clause heads — its
-Q-1 is gated on this ADR's landing order), [ADR-325](adr-325-chord-presence-and-duration.md)
+**Related**: [ADR-327](adr-327-explicit-references.md) (actor-explicit clause heads —
+ACCEPTED 2026-08-25; its D7 fires named actors on this ADR's D1/D2 path, its D9
+`change the player to <entity>` gives ADR-132's `switchPlayer` its first caller), [ADR-325](adr-325-chord-presence-and-duration.md)
 (`move` stays authorial teleportation; witness channels unify here),
 [ADR-310](adr-310-character-model-in-chord.md)/[ADR-318](adr-318-normative-character-layer.md)
 (the normative character layer whose arbiter gains an output pipeline), ADR-069 (PerceptionService — the witness gate),
@@ -132,8 +134,10 @@ mercenaries take the sword") as part of this program — a child ADR designs the
 alongside the platform phases, so language and runtime land together rather than the
 substrate shipping doorless. The lessons-learned method applies: write the story block
 first, then list what it needs; the mercenaries and the port's later chapters are the
-worked example. ADR-327's analyzer lifts its per-head actor restriction as the runtime
-learns each actor path, per its own Q-1 resolution.
+worked example. ADR-327 (ACCEPTED 2026-08-25) carries no per-head actor restriction —
+its Q-1 resolved to full implementation (its D7): named actors fire on this ADR's D1/D2
+path, so ADR-327's non-player acceptance items close when D2's execution entry lands.
+(Amended 2026-08-25, session 8ae644, per ADR-327's Supersedes section.)
 
 ## Non-goals
 
@@ -168,7 +172,10 @@ learns each actor path, per its own Q-1 resolution.
    action through the pipeline; a trait refusal blocks it; the player witnesses it in
    third person from the same room and sees nothing from another room; Dungeo's chain is
    green at re-pinned seeds.
-3. ADR-327's analyzer restriction lifts for at least one non-player actor path.
+3. ADR-327's non-player acceptance items (its AC-2 and AC-5) are green through this
+   program's D2 execution entry — a non-player actor fires `on <actor> <gerund>` and not
+   the player's head. (Reworded 2026-08-25, session 8ae644: ADR-327 D7 removed the
+   analyzer restriction this item originally named.)
 4. ADR-070/120 carry their amendment stamps.
 
 ## Session

@@ -1,7 +1,10 @@
-# ADR-326: The adjacent-room place expression — `move … to an adjacent room, randomly`
+# ADR-326: The adjacent-room place expression — `move … to a random adjacent room`
 
-**Status**: DRAFT (2026-08-24, session 915e68) — Open Questions below; DRAFT until they resolve
-(rule 11a). Mechanism shape (place expression extending ADR-325's family, not an ADR-295
+**Status**: **ACCEPTED** (David, 2026-08-25, session 8ae644 — "flip ADR-326 to
+ACCEPTED"). All open questions resolved: no filter (D4) 2026-08-24; spelling `a random
+adjacent room` (D1) and computed directions answer "where would going take the mover
+right now" (D6) via the rule-11a interview 2026-08-25; D5 amended to depend on ADR-327 D5;
+`adr-review` 19/19 after one fold. Mechanism shape (place expression extending ADR-325's family, not an ADR-295
 exit resolver) ruled by David 2026-08-24 in the Phase 3 design discussion of
 `docs/work/backlog-tier1-2-platform/plan.md`.
 
@@ -10,10 +13,10 @@ exit resolver) ruled by David 2026-08-24 in the Phase 3 design discussion of
 (placement gates, strategy requirement, filter validation), `packages/chord/src/ir.ts` (the
 place kind), `packages/story-loader/src/evaluator.ts` (the adjacency draw, beside
 `drawLanding` at `evaluator.ts:608`), `packages/story-loader/src/runtime.ts` (the `move`
-sink consumes the new place). **No engine, stdlib, or world-model change**: traversability is
-read through the existing going read points (`exitBlockedKey` — already imported by the
-loader at `runtime.ts:62` — plus `RoomBehavior`/`LockableBehavior`), and the move itself
-rides the existing `move` sink, observers included. EBNF row + `chord-grammar-changes.md` +
+sink consumes the new place). **No engine, stdlib, or world-model change**: traversability is read through the existing
+going read points (`exitBlockedKey` — already imported by the loader at `runtime.ts:62` —
+plus `RoomBehavior`/`LockableBehavior`, and the ADR-295 exit-resolver binding for computed
+directions, D6), and the move itself rides the existing `move` sink, observers included. EBNF row + `chord-grammar-changes.md` +
 ADR-257 version bump per the usual paper trail.
 
 **Date**: 2026-08-24 (session 915e68)
@@ -53,14 +56,15 @@ order and is mirrored in `hasTraversableExit` (`stdlib/src/actions/helpers/exit-
 
 ## Decision
 
-### D1. `an adjacent room` is a place
+### D1. `a random adjacent room` is a place
 
-`an adjacent room` is legal where the `move` statement takes a place, and means: **a room
-one traversable exit away from the mover's containing room, drawn at effect time.**
+`a random adjacent room` is legal where the `move` statement takes a place, and means:
+**a room one traversable exit away from the mover's containing room, drawn at effect
+time.** (Spelling — Q-1 resolved 2026-08-25, David: option b.)
 
 ```
-move the player to an adjacent room, randomly            ## the noisy-theft eject
-move the monkey to an adjacent room, randomly            ## any entity can be the mover
+move the player to a random adjacent room            ## the noisy-theft eject
+move the monkey to a random adjacent room            ## any entity can be the mover
 ```
 
 - **Adjacency is the mover's**, read from the mover's containing room at the moment the
@@ -69,10 +73,13 @@ move the monkey to an adjacent room, randomly            ## any entity can be th
   false (or the trait fallback), and the exit's door, if any, is not locked. A closed
   unlocked door qualifies (it can be opened; the fiction is "she darts through the crowd").
   One truth, read through the existing read points — no second adjacency physics.
-- **The strategy word is required** and only `randomly` is legal: `cycling`/`stopping` hold
-  a cursor over a *stable* list, and the candidate set here is recomputed per draw. A
-  missing or other strategy word is a compile error naming the rule ("say how to choose" —
-  the landing-list precedent, ADR-325 D5).
+- **The randomness is in the noun, not a strategy word.** `cycling`/`stopping` hold a
+  cursor over a *stable* list, and the candidate set here is recomputed per draw — so
+  there is exactly one way to choose, and a strategy slot would be a slot with one value.
+  `random` is part of the place's spelling: `an adjacent room` alone, or `a random
+  adjacent room, randomly`, is a compile error whose fix-it quotes `a random adjacent
+  room`. This departs from the landing-list precedent (ADR-325 D5) deliberately: a
+  landing list is a declared list with several sensible strategies; this place has one.
 
 ### D2. The draw is seeded and persisted, per mover
 
@@ -96,8 +103,8 @@ isn't about (lesson 5), in a newly invented grammar position (lesson 8's inversi
 The blocked-stall exclusion the source wants is **story composition, not syntax**. The
 source's own site 2 (`story.ni:1825-1835`) already defines what a blocked stall does to
 an arriving Jack — the keeper yells and she darts away again — and that is a story rule
-on the stall (`while blocked`: phrase, then `move the player to an adjacent room,
-randomly`), written entirely in existing forms plus this ADR's place. An eject that
+on the stall (`while blocked`: phrase, then `move the player to a random adjacent
+room`), written entirely in existing forms plus this ADR's place. An eject that
 lands her in a blocked stall triggers that rule; the "exclusion" emerges from two simple
 rules composing, exactly as the source behaves. Guards live at the event that changes
 the situation (lesson 2), not inside the draw.
@@ -106,21 +113,68 @@ If a future story produces evidence that a candidate filter earns its place, it 
 own ADR, checked against lesson 1 first (`chord-lessons-learned-timers.md`, "Where this
 applies next").
 
-### D5. Observers and arrival are unchanged
+### D5. Observers are unchanged; a moved arrival fires the room's entering clause
 
 The move rides the existing `move` sink: `disappeared`/`entered` witness narration
 (ADR-213/325) fires exactly as for any `move`, and a moved player sees the arrival exactly
 as `move the player to <room>` shows it today. Nothing new is narrated by the draw itself.
 
+What *is* new — and what D4's composition depends on — is
+[ADR-327](adr-327-explicit-references.md) D5 (ACCEPTED 2026-08-25): an arrival by `move`
+fires the destination room's `after <actor> entering` clause exactly as a walked arrival
+does, for any actor, bounded by a re-entry cap of 8 and the `runtime.move-arrival-reentry`
+diagnostic. That is what makes the blocked-stall rule re-eject an ejected Jack: the draw
+lands her, the stall's `after the player entering, while the Grocery Stall is blocked`
+fires, and she is drawn again. (Amended 2026-08-25 from "arrival is unchanged," which
+was true before ADR-327 D5 and is the one ruling this ADR depends on.)
+
+### D6. Adjacency is where going would take the mover right now — computed directions included
+
+(Q-2 resolved 2026-08-25, David: *"a computed direction could be legit at a given
+moment so we can't explicitly rule it out… compute all directions and exclude ones that
+are not currently available and include those that are."*) The candidate walk asks each
+direction of the mover's room the question going asks: **where would this direction
+take the mover at this moment?** A plain exit answers with its static destination. A direction under an ADR-295 computed-exit declaration answers through its resolver, via
+the read point going uses — `RoomBehavior.resolveExit(room, direction, ctx)`
+(`world-model/src/traits/room/roomBehavior.ts:271`), whose `ExitResolverContext` is
+`{ world, actorId, random }` (`exit-resolver-binding.ts:29-36`). Its three answers map
+as: `undefined` (resolver inactive or absent — static topology governs, ADR-295 D4)
+yields the static destination; `kind: 'exit'` yields `destination`, and any narration
+`events` it carries are **discarded** — this is a consult, not a traversal, and nothing
+is narrated by the draw (D5); `kind: 'blocked'` contributes nothing. The `actorId` is
+the mover's. The `random` is the session `RandomService` (ADR-293): the loader does not
+hold one today (its own draws ride persisted chance streams, `runtime.ts:4079`), so the
+runtime receives the engine's service at construction through the bootstrap seam — the
+one wiring addition this ADR makes, story-loader-side, no engine change. The traversability filter (D1) then runs over the answers. A computed direction
+that currently leads nowhere contributes nothing; one that is currently live contributes
+exactly where it leads — never its whole declared candidate list, and never a room the
+exit would not have chosen this turn.
+
+Two consequences, accepted:
+
+- **This extends ADR-295's resolution scope.** D6 there confines resolution to "player
+  traversal through the going action" and calls extension "deferred, not precluded";
+  this ADR is that extension, for the adjacency draw only. The resolver is consulted once
+  per direction per draw — a distinct question from the traversal's own once-per-going
+  consult, so ADR-295's called-exactly-once invariant holds per question. Flip owner:
+  the implementation change under GH #311 stamps ADR-295 D6 with the amendment.
+- **An active resolver's consult consumes its point-stream draw** (ADR-293), exactly as
+  a traversal would. The result stays deterministic at the pinned seed; the only stories
+  it could affect are ones combining a Chord eject with a computed exit, of which there
+  are none (computed exits have no Chord surface and exist only in Dungeo's TS
+  `CarouselExitTrait`).
+
 ## Non-goals
 
-- **No ADR-295 change.** Computed exits, `resolveExit`, and the deferred "Chord authoring
-  surface for computed exits" stay exactly where that ADR left them. A room that scrambles
-  *going* is ADR-295's case; a story effect that flings the mover is this one's.
+- **No ADR-295 change beyond D6's scope note.** Computed exits, `resolveExit`, and the
+  deferred "Chord authoring surface for computed exits" stay exactly where that ADR left
+  them. A room that scrambles *going* is ADR-295's case; a story effect that flings the
+  mover is this one's — it consults, it does not redefine.
 - No `is adjacent to` **condition** — this is a place, not a predicate; a condition surface
   is a separate decision if a story ever needs one.
-- No NPC pathfinding change; no `holder`; no new strategy words beyond `randomly`.
-- No engine/stdlib/world-model surface (consumption of existing read points only).
+- No NPC pathfinding change; no `holder`; no strategy word on this place at all.
+- No engine/stdlib/world-model surface (consumption of existing read points only — the
+  exit-resolver read point included, D6).
 
 ## Consequences
 
@@ -137,12 +191,16 @@ as `move the player to <room>` shows it today. Nothing new is narrated by the dr
 
 ## Acceptance
 
-1. Compile tests: the place parses in `move`; analyzer gates tested by name — missing
-   strategy word, a strategy other than `randomly`, the place outside a `move` destination.
+1. Compile tests: the place parses in `move`; analyzer gates tested by name — `an
+   adjacent room` without `random`, a trailing strategy word, the place outside a `move`
+   destination.
 2. REAL-PATH loader tests (rule 13a) driving a real engine: at a pinned seed the mover lands
    in one of the traversable adjacent rooms (asserted on `world` location, with the drawn
-   destination pinned); a blocked direction's room is never drawn (exercising a composed
-   #315 arm); a locked-door direction's room is never drawn; a blocked-stall bounce rule
+   destination pinned); a blocked direction's room is never drawn (exercising a composed #315 arm); a locked-door
+   direction's room is never drawn; a computed direction contributes its resolved room while its resolver is active and its
+   static destination while inactive, contributes nothing when it answers `blocked`, and
+   its narration events never render (D6 — a test-story resolver, since no Chord story
+   has one); a blocked-stall bounce rule
    composed story-side (D4's shape) re-ejects on arrival; an emptied set produces the D3
    diagnostic and no move; an NPC mover works; the
    draw's persisted record round-trips the save shape (the `drawLanding` test pattern).
@@ -150,16 +208,6 @@ as `move the player to <room>` shows it today. Nothing new is narrated by the dr
    end-to-end against the market's adjacency graph — the finished chase increment itself
    resumes under the port plan, not this ADR.
 4. Paper trail: EBNF row, `chord-grammar-changes.md`, ADR-257 bump.
-
-## Open Questions
-
-1. **The exact article and noun.** Recommendation: `an adjacent room, randomly` (the issue's
-   Option 1 spelling) — the strategy word carries the randomness, so `a random adjacent
-   room` would say it twice.
-2. **Computed-exit directions.** A direction governed by an ADR-295 computed-exit
-   declaration has no static destination to enumerate. Recommendation: exclude such
-   directions from the candidate set in v1 (no current story combines the two; ADR-295's
-   candidate enumeration exists if a story ever wants them included).
 
 ## Session
 
