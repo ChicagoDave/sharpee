@@ -5,6 +5,8 @@ ACCEPTED"). All three open questions resolved via the rule-11a interview the sam
 (D7 full implementation on ADR-328's path; D8 `it` is the carrier inside `define trait`
 only; D1's own-block bare head stays); the role rule (D1) and `change the player to`
 (D9) added from David's questions during review; `adr-review` 19/19 on the second pass.
+**Amended 2026-08-25 (same session, after acceptance, David: "confirmed — fold it into
+ADR-327 as D10")**: `before the game starts` block, `create the player` removed (D10).
 Direction is David's, ruled across the 2026-08-24/25 design
 conversation that began as ADR-326's enterer question: *"an IF language should be explicit
 about that kind of thing"*; *"I hate 'it' with a passion… it reads wrong."*
@@ -15,8 +17,10 @@ and possessive positions), `packages/chord/src/analyzer.ts` (head actor resoluti
 name/gerund boundary gates; migration diagnostics), `packages/chord/src/ir.ts` (clause
 actor field), `packages/story-loader/src/runtime.ts` (clause firing filtered by the head's
 actor; any actor's `move`-arrival firing, D5; the `change the player to` effect emitting
-its switch event, D9), the `playable` create-block line (parser → IR → loader sets
-`ActorTrait.isPlayable`, D9), `packages/engine/src/game-engine.ts` (one consumer: the
+its switch event, D9), the `playable` create-block line (parser → IR → loader sets `ActorTrait.isPlayable`, D9),
+the `before the game starts` block and the `create the player` removal diagnostic
+(parser/analyzer/IR; the loader runs the block before turn one and creates the player
+from the assigned character, D10), `packages/engine/src/game-engine.ts` (one consumer: the
 D9 switch event calls the existing `switchPlayer` at turn end), EBNF +
 `chord-grammar-changes.md` rows + ADR-257 MAJOR bump, corpus migration sweep (every
 story and fixture). All other engine/stdlib changes belong to ADR-328 (D7); this ADR
@@ -153,8 +157,9 @@ never take a bare head.
 question: *"have we covered the case where 'the player' changes object definitions?"*).
 In a clause head, `the player` means whoever is the PC when the action fires —
 `world.getPlayer()` at fire time, the way `when the player moves` already resolves its
-mover (`runtime.ts:755-756`) — never a compile-time binding to the entity `create the
-player` built. Own-block bare heads bind the other way: to the *entity* whose block they
+mover (`runtime.ts:755-756`) — never a compile-time binding to any entity; there is no
+`create the player` any more (D10), only characters, one of whom holds the role. Own-block
+bare heads bind the other way: to the *entity* whose block they
 sit in. So under PC rotation (ADR-319 on ADR-132's `switchPlayer`), a room's `after the
 player entering` follows the switch to Viola, while Jack's own `on going` keeps firing
 when Jack goes — now as an NPC, on ADR-328's symmetric path. An author who wants
@@ -257,15 +262,22 @@ new form is added.
 (David, 2026-08-25: *"I would prefer 'change the player to Viola'."*) The statement that
 moves the PC role to another entity is the existing `change` effect with `the player` as
 its object — the role is a thing whose current value is an entity, and `change X to Y`
-is already how Chord says "X is now Y." No new word.
+is already how Chord says "X is now Y." No new word. It is also how the role is assigned
+the *first* time, from D10's start block — one statement for the role, wherever it is
+used.
 
 ```chord
 create Viola
-  starts in the Chapel
+  a person
   playable
+  starts in the Chapel
+
+  Viola.
 
 create the Chapel
   a room
+
+  A chapel.
 
   after Jack examining the seal
     phrase cut-to-viola
@@ -294,6 +306,55 @@ follows as it always would, so plugins and the status line learn of the switch f
 engine, never from the loader. ADR-319 Q2's remaining parts — vocabulary, pronouns, status
 line inside a segment — stay ADR-319's.
 
+### D10. `before the game starts` — and `create the player` leaves the language
+
+(David, 2026-08-25, on the D9 example: *"there is no 'create the player' syntax anymore …
+this exposes the need for a 'before game starts' block"*; spelling confirmed the same
+day.) If the player is a role, no entity is *the player* by construction — so the block
+that created one goes, and the role is assigned by the same statement that reassigns it,
+from a block that runs before the first turn:
+
+```chord
+story
+  title: The Secret Letter
+
+before the game starts
+  change the player to Jack
+end before
+
+create Jack
+  a person
+  playable
+  starts in the Northwest Junction
+
+  Jack Toresal, who has been a boy in this market for as long as anyone here has
+  bothered to look.
+
+  on going while the wandering mercenaries is aggressive
+    refuse merc-held
+  end on
+```
+
+- **The block.** `before the game starts` … `end before` is a top-level declaration in
+  the `on … end on` block family, at most one per story (a second is a named duplicate
+  error). Its body is ordinary effect statements. It runs once, after the world is built
+  and before turn one — ahead of the first room description — so what it changes is what
+  the player first sees. It is the story's one hook for "once, at the start"; nothing
+  else in the language runs there.
+- **The role must be filled.** A story whose start block does not `change the player to`
+  a `playable` character (or has no start block) is a compile error naming the block —
+  the runtime never reaches turn one with nobody in the role.
+- **`create the player` is removed**, not deprecated: it becomes `parse.removed-create-player`
+  with a fix-it quoting the D10 shape (name the character, mark it `playable`, assign the
+  role in the start block). `starts in` stays on the character — it is about the
+  character, not the role. The 17 in-repo stories and fixtures that open with
+  `create the player` (`grep -rl '^create the player' branch-stories stories`,
+  2026-08-25) migrate in D6's sweep.
+- **Why a block and not a header field.** `player: Jack` in the story header would be
+  static data standing in for an action; assigning the role *is* an action (D9), and a
+  field would give the language two spellings for one thing, one of which cannot be
+  used again after the start.
+
 ### Supersedes — and who flips what
 
 - **ADR-328 D7 (last sentence) and its acceptance item 3** assumed this ADR's analyzer
@@ -301,7 +362,8 @@ line inside a segment — stay ADR-319's.
   Flip owner: a hand-edit to ADR-328 in the session that accepts this ADR (2026-08-25),
   since it is a direct consequence of the Q-1 ruling.
 - **ADR-325 D3h's examples** (`when the player moves, while it is approaching` … `move it
-  offstage`) use spellings D2 removes; D3h's own-block bare head stands. Flip owner: the
+  offstage`, and its `create the player` block) use spellings D2 and D10 remove; D3h's
+  own-block bare head stands. Flip owner: the
   D6 landing change amends ADR-325's examples to the explicit spelling (amend-after-code).
 - **ADR-264 D2's `raise its suspicion by 5` form** is removed by D2; the possessive-by-name
   form is the survivor. Flip owner: the D6 landing change strikes the `its` clause from
@@ -357,6 +419,11 @@ line inside a segment — stay ADR-319's.
    clause's turn ends with `game.pc_switched`, the next turn's `after the player
    entering` fires for the new PC and not the old one, the old PC's own-block clause
    still fires when the old PC acts, and two switches in one turn raise the diagnostic.
+6. D10, compile and REAL-PATH: `before the game starts … end before` parses at top level
+   and only there; a second block, a missing role assignment, and `create the player`
+   each produce their named error (the last with the fix-it); through a real engine the
+   block's statements have taken effect before the first room description renders, and
+   `world.getPlayer()` is the assigned character at turn one.
 
 ## Session
 

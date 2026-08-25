@@ -42,6 +42,7 @@
 - Baselines re-run after `./repokit build dungeo` (2026-08-25): world-index 169 passed / 1 skipped; Dungeo chain 952 passed in 17 transcripts; `./sharpee test branch-stories/secret-letter` 160 cards / 209 assertions.
 - Two self-inflicted stops, both reported before fixing: a `*/` placement typo in `version.ts`; a `'north'` vs `Direction.NORTH` key in a test trait (found by a throwaway probe test, removed).
 - Paper trail: `chord-grammar-changes.md` row; ADR-295 D6 amendment stamp; ADR-326 D6 wiring corrected to `onEngineReady` + "Implemented" stamp; plan Phase 3 DONE; #311 closed with the evidence.
+- After the Phase 3 commit: blog draft `docs/work/blog/2026-08-25-who-is-doing-what.md` (David's voice, syntax only). Writing it surfaced that `create the player` cannot survive the role model; David ruled a `before the game starts … end before` block (role assigned there by `change the player to Jack`; `create the player` removed; `playable` marks candidates) — folded into ADR-327 as **D10** with AC-6 and a post-acceptance amendment note. Uncommitted.
 
 ## Key Decisions
 
