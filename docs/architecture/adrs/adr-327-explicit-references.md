@@ -306,6 +306,25 @@ follows as it always would, so plugins and the status line learn of the switch f
 engine, never from the loader. ADR-319 Q2's remaining parts — vocabulary, pronouns, status
 line inside a segment — stay ADR-319's.
 
+**Autonomous behaviour follows the role at fire time** (added 2026-08-26, David, session
+1f4b9f). A character's own `on every turn` clauses (scheduler daemons,
+`story-loader/src/runtime.ts:3254-3277`) and its NPC tick are *the NPC half of that
+character*; they must be silent while it holds the role and live while it does not.
+Nothing toggles at the switch. Each daemon asks, when it runs, whether its owner is
+`world.getPlayer()` — the same fire-time resolution D1 gives `the player` heads, and the
+shape the hunger daemon already has (`loader.ts:1253`). No on/off state to keep in step
+with save/restore/undo, and the first assignment from D10's start block is handled by the
+same check as every later switch. Two scenarios this must satisfy: (A) Actor1 is the PC,
+Actor2 an NPC with every-turn clauses; `change the player to Actor2` silences Actor2's
+clauses from the next turn and wakes Actor1's, if any; (B) Actor1 is written with
+every-turn clauses meant to lie dormant while it is the PC and wake when it becomes an
+NPC — they register at load like any other and start firing the turn after the switch,
+with no author-side switch statement. Off-stage firing of those clauses is ADR-328 D3
+(as amended the same day): they fire wherever the character is; the output is tagged,
+and the client decides what to show. The loader's `!irEntity.isPlayer` guard on
+`NpcTrait` (`loader.ts:871`) goes with `create the player`: every character with a
+character block carries the trait, and the tick skips whoever holds the role.
+
 ### D10. `before the game starts` — and `create the player` leaves the language
 
 (David, 2026-08-25, on the D9 example: *"there is no 'create the player' syntax anymore …

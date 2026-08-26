@@ -84,13 +84,50 @@ actor and nothing else changes shape. `CommandExecutor`'s dormant `actorId` beco
 live; the 126 `context.player` reads across 49 standard-action files become reads of the
 command's actor.
 
-### D3. Perception gates what the player witnesses
+### D3. Perception tags what the player witnesses — the client decides what to show
 
-An NPC-actored event renders only if the player perceives it — the PerceptionService
-(ADR-069, already `canPerceive(actor, location, world, sense)`) is promoted from
-darkness-filter to the witness gate for all non-player action. The loader's hand-rolled
-witness channels and legality pre-checks retire onto this path. Unwitnessed NPC action
-mutates the world silently, exactly as the fiction expects.
+**Amended 2026-08-26 (David, session 1f4b9f).** As accepted, this decision read "an
+NPC-actored event renders only if the player perceives it … unwitnessed NPC action
+mutates the world silently." The mutation half stands; the rendering half is replaced:
+**perception tags, it never drops.** (David: *"the narration events fire, but with a flag
+'elsewhere' or by location and the client decides to show it or not — I could see a
+client displaying all actor emissions."*)
+
+- **Every actor-sourced narration event fires, wherever the actor is.** The producer —
+  the loader's every-turn daemon, the action pipeline for a D1/D2 actor action, ADR-144
+  propagation — stamps two facts on the event beside the existing `narrate` hint
+  (`packages/core/src/events/types.ts:73`): `location` (the room it happened in) and
+  `presence: 'present' | 'absent' | 'concealed'`, ADR-144's own vocabulary
+  (`packages/character/src/propagation/visibility.ts:20`), computed at emit time from the
+  PerceptionService — whether the PC perceived it is an engine fact, not a client guess.
+- **The prose pipeline renders everything** and copies `location` and `presence` onto
+  the `ITextBlock`; the channel packet carries them (ADR-163 — channels carry every
+  story→UI signal). One attribute on the existing `narrative` blocks, not a new channel.
+- **Presentation is the client's.** The default renderer shows `present` and
+  `concealed` and hides `absent`; the IDE's Play panel (and any author-customised
+  client) may show all actor emissions, labelled by location. transcript-tester renders
+  through the default, so hand-authored transcripts keep their meaning; an omniscient
+  mode is available for testing NPC behaviour off-stage.
+- **ADR-069 darkness stays a transform** (`if.event.perception.blocked`,
+  `stdlib/src/services/PerceptionService.ts:252`): the player is present and cannot
+  see — a different fact from absent.
+- **The Phase C "decision 10" firing gate is retired.** The chord-zoo ownership package
+  (`docs/work/chord/phase-c-ownership-proposal.md:240`, grammar-changes D11,
+  2026-07-11) made entity-owned `on every turn` clauses *performances* — no audience,
+  no firing (`story-loader/src/runtime.ts:3270`, `:3327`, `:3486`). That contradicts
+  ADR-144 (absent → offscreen, state mutation only) and the actor model here: a former
+  PC's dormant daemons must run while the current PC is elsewhere, or the character
+  freezes. Under this amendment those clauses fire every turn; `, once` and RNG
+  conditions therefore consume off-stage (the zookeeper leaves at closing whether or not
+  the player is in the Main Path; the farewell is simply tagged `absent`). Affected
+  goldens re-pin — deterministic at seed, a different sequence.
+- **Lands whole, no interim.** (David, 2026-08-26: *"no interim work — we complete the
+  change in full."*) The daemon gate is not removed until the tag rides core → engine →
+  text-blocks → channel-service → clients in the same landing; an untagged off-stage
+  line shown to the player is the regression this ordering exists to prevent.
+
+The loader's hand-rolled witness channels and legality pre-checks retire onto this path
+as before.
 
 ### D4. Voice is a rendering property — any actor, any person
 
