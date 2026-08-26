@@ -1,6 +1,6 @@
 /**
  * runtime.test.ts — Phase 5 gate, ownership-package grammar: entity event
- * clauses (`after entering it`), ordinals, derived darkness, the on-reading
+ * clauses (`after the player entering`), ordinals, derived darkness, the on-reading
  * interceptor, and seeded determinism (AC-5/AC-6 groundwork).
  *
  * Event clauses are driven through `fireEventClauses` (the same handler the
@@ -85,7 +85,7 @@ describe('derived darkness (dark while the player has the velvet cloak)', () => 
   });
 });
 
-describe('the stumble clause (the Foyer Bar\'s `after entering it while in-darkness`)', () => {
+describe('the stumble clause (the Foyer Bar\'s `after the player entering while in-darkness`)', () => {
   it('fires the stumble phrase and advances message state on the 1st and 3rd dark entries', () => {
     const cw = loadCloak();
     const stateKey = CHORD_STATE_PREFIX + 'message-in-the-sawdust';
@@ -196,8 +196,8 @@ create the box
   in the Room
   states: shut, ajar
 
-  on reading it
-    select on its state
+  on the player reading
+    select on the box's state
       when shut
         change the box to ajar
         phrase box-opened
@@ -320,7 +320,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     select stopping
       phrase step-one
     or
@@ -377,7 +377,7 @@ create the Room
 
   A room.
 
-  after entering it
+  after the player entering
     refuse nope
   end after
 

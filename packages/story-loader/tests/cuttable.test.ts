@@ -2,7 +2,7 @@
  * cuttable.test.ts — ADR-230 D3c: the `cuttable` trait adjective, tool
  * name → WORLD id resolution (forward references legal, no raw-string
  * config), the load-time implementation check (dual-surface re-pin:
- * exactly one `on cutting it` clause or capability behavior), and the
+ * exactly one `on the player cutting` clause or capability behavior), and the
  * REAL-PATH cut: a Chord-compiled story drives stdlib's cuttingAction
  * end-to-end — real compiler, real loader, real registered interceptor,
  * no hand-rolled stand-in for any owned dependency.
@@ -67,7 +67,7 @@ const CUTTABLE_ROPE = `create the rope
 
   A rope.
 
-  on cutting it
+  on the player cutting
     phrase rope-severed
     move the rope to the Bin
   end on
@@ -114,7 +114,7 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
 
   A rope.
 
-  on cutting it
+  on the player cutting
     phrase nope
   end on
 
@@ -153,7 +153,7 @@ create the sand
 
   Sand.
 
-  on digging it
+  on the player digging
     phrase sand-shifts
   end on
 
@@ -190,7 +190,7 @@ end phrase
     trait-snip:
       Snip.
 
-  on cutting it
+  on the player cutting
     phrase trait-snip
   end on
 end trait
@@ -201,7 +201,7 @@ create the rope
 
   A rope.
 
-  on cutting it
+  on the player cutting
     phrase entity-snip
   end on
 

@@ -37,7 +37,7 @@ function load(source: string, seed = 11): { story: ChordStory; world: WorldModel
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Fire the `after entering it` clauses of one room, the runtime.test.ts way. */
+/** Fire the `after the player entering` clauses of one room, the runtime.test.ts way. */
 function enterRoom(story: ChordStory, world: WorldModel, playerId: string, roomIrId: string): ISemanticEvent[] {
   const roomId = story.entityId(roomIrId)!;
   world.moveEntity(playerId, roomId);
@@ -70,7 +70,7 @@ create the Orchard
 
   An orchard.
 
-  after entering it
+  after the player entering
     change the plum to ripe
   end after
 
@@ -80,7 +80,7 @@ create the Barn
 
   A barn.
 
-  after entering it
+  after the player entering
     change the story to noon
   end after
 
@@ -135,7 +135,7 @@ create the Shore
 
   A shore.
 
-  after entering it
+  after the player entering
     change the tide to low
   end after
 
@@ -357,7 +357,7 @@ define trait pokeable
     poked:
       Poked. It bristles.
 
-  on poking it
+  on the player poking
     it must be calm: too-angry
     change it to angry
     phrase poked
@@ -384,7 +384,7 @@ create the lantern
   states, reversible: dim, bright
 
   on every turn
-    phrase glow when it is bright
+    phrase glow when the lantern is bright
   end on
 
 create the player

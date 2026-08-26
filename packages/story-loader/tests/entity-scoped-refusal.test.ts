@@ -1,6 +1,6 @@
 /**
  * entity-scoped-refusal.test.ts — ADR-231 D1: a bare `refuse <key>` written
- * inside an entity's `on taking it` clause, where the entity also declares a
+ * inside an entity's `on the player taking` clause, where the entity also declares a
  * per-entity `phrase <key>:` block, must travel as the ENTITY-SCOPED message
  * id `<irId>.<key>` (runtime.refusalOf), cross into stdlib's blocked()
  * marked errorQualified, and land on the blocked event verbatim — never as
@@ -62,7 +62,7 @@ create the iron ring
 
   An iron ring set into the flagstones.
 
-  on taking it
+  on the player taking
     refuse stuck-fast
   end on
 `;
@@ -143,7 +143,7 @@ or
 end phrase
 
 define trait bolted
-  on taking it
+  on the player taking
     refuse held-fast
   end on
 end trait
@@ -163,7 +163,7 @@ create the statue
 
   A statue.
 
-  on taking it
+  on the player taking
     refuse held-fast
   end on
 

@@ -33,8 +33,8 @@ create the machine
 
   A squat machine.
 
-  on examining it
-    change it to humming
+  on the player examining
+    change the machine to humming
     phrase machine-hums
       The machine shudders into a low hum.
   end on

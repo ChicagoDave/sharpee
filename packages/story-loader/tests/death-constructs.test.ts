@@ -214,7 +214,7 @@ create the Crypt
 
   A cold crypt.
 
-  after entering it
+  after the player entering
     kill the player crypt-curse when the player has the amulet
   end after
 

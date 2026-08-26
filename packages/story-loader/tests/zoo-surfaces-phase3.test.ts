@@ -48,7 +48,7 @@ function boot(source: string): Booted {
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Fire a room's `after entering it` clauses with the player already there. */
+/** Fire a room's `after the player entering` clauses with the player already there. */
 function enterRoom(booted: Booted, roomIrId: string): ISemanticEvent[] {
   const roomId = booted.story.entityId(roomIrId)!;
   booted.world.moveEntity(booted.playerId, roomId);
@@ -173,7 +173,7 @@ create the Lab
 
   A lab.
 
-  after entering it
+  after the player entering
     move the cat to the Annex when the cat is in the Lab
     move the cat to the Annex when the cat is in the Hall
   end after
@@ -188,7 +188,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     move the cat to the Hall when the cat is in the Annex
   end after
 
@@ -258,7 +258,7 @@ create the Lab
 
   A lab.
 
-  after entering it
+  after the player entering
     remove the cat when the cat is here
   end after
 
@@ -356,7 +356,7 @@ create the flashlight
 
   A flashlight.
 
-  phrase detail while it is on:
+  phrase detail while the flashlight is on:
     It clicks faintly.
 
 create the lantern
@@ -365,7 +365,7 @@ create the lantern
 
   A lantern.
 
-  phrase detail while it is lit:
+  phrase detail while the lantern is lit:
     Its glow steadies.
 
 create the jar

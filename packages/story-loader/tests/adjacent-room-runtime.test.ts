@@ -43,7 +43,7 @@ function boot(source: string, seed = 5): Booted {
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Put the player in `roomIr` and fire that room's `after entering it` clause. */
+/** Put the player in `roomIr` and fire that room's `after the player entering` clause. */
 function enter(b: Booted, roomIr: string): ISemanticEvent[] {
   const roomId = b.story.entityId(roomIr)!;
   b.world.moveEntity(b.playerId, roomId);
@@ -92,7 +92,7 @@ create the Hub
 
   The hub.
 
-  after entering it while calm
+  after the player entering while calm
     ${hubClause}
   end after
 
@@ -274,7 +274,7 @@ create the Cell
 
   The cell.
 
-  after entering it
+  after the player entering
     move the player to a random adjacent room
   end after
 
@@ -321,7 +321,7 @@ create the Hub
 
   The hub.
 
-  after entering it while calm
+  after the player entering while calm
     move the player to a random adjacent room
   end after
 
@@ -333,7 +333,7 @@ create the Stall
 
   The stall.
 
-  after entering it while it is blocked
+  after the player entering while the Stall is blocked
     change the story to hunted
     phrase keeper-yells
     move the player to a random adjacent room
@@ -397,7 +397,7 @@ create the Ping
 
   Ping.
 
-  after entering it
+  after the player entering
     move the player to a random adjacent room
   end after
 
@@ -407,7 +407,7 @@ create the Pong
 
   Pong.
 
-  after entering it
+  after the player entering
     move the player to a random adjacent room
   end after
 

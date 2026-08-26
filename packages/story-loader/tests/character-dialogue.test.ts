@@ -41,7 +41,7 @@ const SOURCE =
   'define topic the Maid betrays a confidence as the-betrayal\n\n' +
   'define topics for the Maid\n' +
   '  about "the killer":\n' +
-  '    phrase maid-killer-lie when it is calm\n' +
+  '    phrase maid-killer-lie when the Maid is calm\n' +
   '    phrase maid-killer-truth\n' +
   '  about "the secret": phrase maid-secret-reveal\n' +
   '  about "the weather": phrase maid-weather\n' +

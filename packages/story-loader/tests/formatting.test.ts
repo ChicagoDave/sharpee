@@ -38,7 +38,7 @@ create the plaque
   in the Hall
   scenery
 
-  on reading it
+  on the player reading
     phrase verse
   end on
 
@@ -46,7 +46,7 @@ create the map
   in the Hall
   scenery
 
-  on reading it
+  on the player reading
     phrase chart
   end on
 

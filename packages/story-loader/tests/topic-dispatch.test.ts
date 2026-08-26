@@ -27,8 +27,8 @@ const FIXTURE = readFileSync(join(CHORD_FIXTURES, 'topic-basic.story'), 'utf8');
 
 /** The fixture without its catch-all clauses (AC-4's default branch). */
 const NO_CATCH_ALL = FIXTURE
-  .replace(/ {2}on asking it\n {4}phrase shrug-reply\n {2}end on\n\n/, '')
-  .replace(/ {2}on telling it\n {4}phrase nod-reply\n {2}end on\n\n/, '');
+  .replace(/ {2}on the player asking\n {4}phrase shrug-reply\n {2}end on\n\n/, '')
+  .replace(/ {2}on the player telling\n {4}phrase nod-reply\n {2}end on\n\n/, '');
 
 /** A porter with ONLY a catch-all clause and no table — the pre-ADR-239
  *  shape, pinning the seedData addition's non-effect on plain clauses. */
@@ -143,7 +143,7 @@ describe('AC-2: aliases are declared, never inferred (lookup, not search)', () =
 });
 
 describe('AC-4: catch-all fires only on a miss; a hit suppresses it entirely', () => {
-  it('a miss fires the declared catch-all (`on asking it`)', () => {
+  it('a miss fires the declared catch-all (`on the player asking`)', () => {
     const l = load(FIXTURE);
     const r = ask(l, { text: 'the weather' });
     expect(messageId(r)).toBe('shrug-reply');

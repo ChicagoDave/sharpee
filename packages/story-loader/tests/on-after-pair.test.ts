@@ -32,13 +32,13 @@ create the tablet
 
   A stone tablet.
 
-  on reading it
+  on the player reading
     phrase tablet-text
       The letters bite deep: REMEMBER.
   end on
 
-  after reading it, once
-    change it to studied
+  after the player reading, once
+    change the tablet to studied
     phrase tablet-after
       Something in the words stays with you.
   end after
@@ -56,12 +56,12 @@ create the player
   You.
 
 define trait chimed
-  on pushing it
+  on the player pushing
     phrase bell-swings
       The bell swings.
   end on
 
-  after pushing it, once
+  after the player pushing, once
     change it to rung
     phrase bell-echo
       The echo hangs on.
@@ -136,7 +136,7 @@ describe('D3 pair in a TRAIT: merged registration, no last-wins overwrite', () =
 describe('capability pair: refused legibly, never silently overwritten', () => {
   it('two trait clauses on one dispatch action throw a LoadError naming the merge fix', () => {
     const source = SOURCE.replace(`define trait chimed
-  on pushing it`, `define action ringing
+  on the player pushing`, `define action ringing
   grammar
     ring the target
   the target must be reachable
@@ -147,7 +147,7 @@ describe('capability pair: refused legibly, never silently overwritten', () => {
       You can't ring that.
 
 define trait chimed
-  on ringing it`).replace('after pushing it, once', 'after ringing it, once')
+  on the player ringing`).replace('after the player pushing, once', 'after the player ringing, once')
       .replace(`create the bell
   scenery
   in the Shrine`, `create the bell

@@ -49,6 +49,27 @@ import { ActionLifecycleDescriptor } from './descriptor.js';
 const LIFECYCLE_KEY = '_lifecycle';
 
 /**
+ * Slot id of the implicit actor consultation (ADR-327 D1): every wired
+ * action consults the acting entity last. Not a descriptor slot —
+ * descriptors never declare it.
+ */
+export const ACTOR_SLOT_ID = 'actor';
+
+/**
+ * The registration key an interceptor uses to be consulted AS THE ACTOR
+ * (ADR-327 D1): `actor:<actionId>`. A separate key, not the action's own id,
+ * so a binding keyed on a trait the actor happens to carry (ACTOR on a
+ * give/show recipient, CONTAINER on the player) is never consulted twice —
+ * once as a target, once as the actor. Opting in is registering under this
+ * key: `world.registerActionInterceptor(trait, actorConsultationId(id), …)`.
+ * @param actionId the action's primary id (`if.action.taking`)
+ * @returns the actor-consultation registration key
+ */
+export function actorConsultationId(actionId: string): string {
+  return `actor:${actionId}`;
+}
+
+/**
  * One resolved (entity, actionId) interceptor consultation.
  *
  * A slot that consults two action ids (D6 both-ids) yields up to two
@@ -137,6 +158,27 @@ export function resolveLifecycle(
         entity,
         interceptor: lookup.interceptor,
         data
+      });
+    }
+  }
+
+  // ADR-327 D1 (ruled 2026-08-26): the ACTING entity is an implicit slot,
+  // consulted last under the actor-consultation key — a clause "when this
+  // character does X, to anything" has no target entity to hang on, so the
+  // actor itself carries the interceptor, registered for that purpose.
+  // Today the actor is the player; ADR-328 D2 makes this the command's
+  // actor (the one line that flips).
+  const actor = context.player;
+  if (actor) {
+    const actorActionId = actorConsultationId(descriptor.actionId);
+    const lookup = context.world.getInterceptorForAction(actor, actorActionId);
+    if (lookup) {
+      consultations.push({
+        slotId: ACTOR_SLOT_ID,
+        actionId: actorActionId,
+        entity: actor,
+        interceptor: lookup.interceptor,
+        data: {}
       });
     }
   }

@@ -26,7 +26,7 @@ const STORY =
   '  in the Cell\n' +
   '  knows the-routine, witnessed, certain\n' +
   '\n' +
-  '  on attacking it\n' +
+  '  on the player attacking\n' +
   '    change mood to panicked\n' +
   '    change feeling toward the player to wary of\n' +
   '  end on\n' +

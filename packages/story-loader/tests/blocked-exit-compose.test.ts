@@ -52,7 +52,7 @@ create the bell
 
   A bell.
 
-  on pushing it
+  on the player pushing
     change the story to hunted
   end on
 
@@ -62,7 +62,7 @@ create the gong
 
   A gong.
 
-  on pushing it
+  on the player pushing
     change the story to chase
   end on
 

@@ -55,7 +55,7 @@ create the Lab
 
   Shelves line the walls{note}. A door leads north.
 
-  after entering it
+  after the player entering
     phrase note
   end after
 

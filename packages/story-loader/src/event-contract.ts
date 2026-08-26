@@ -74,11 +74,13 @@ export function crossingRegionId(data: unknown): string | undefined {
 }
 
 /**
- * Type-guarded read of an actor-moved event's mover (ADR-325 D3h `when
- * <entity> moves`): the envelope's `entities.actor` (stamped on every
- * action event — the player, or the NPC the plugin minted the event for),
- * falling back to the payload's actor snapshot id.
- * @param event the actor-moved event
+ * Type-guarded read of a movement event's mover (ADR-325 D3h `when <entity>
+ * moves`; ADR-327 D1 `after <actor> entering`): the envelope's
+ * `entities.actor` (stamped on every action event — the player, or the NPC
+ * the plugin minted the event for), else the payload's `actorId` (the
+ * region crossing events and the loader's own D5 move-arrival stamp it
+ * there), else the payload's actor snapshot id.
+ * @param event the actor-moved / region-crossing event
  * @returns the mover's world entity id, or undefined
  */
 export function movedActorId(event: { entities?: Record<string, unknown>; data?: unknown }): string | undefined {
@@ -86,6 +88,8 @@ export function movedActorId(event: { entities?: Record<string, unknown>; data?:
   if (typeof fromEnvelope === 'string') return fromEnvelope;
   const data = event.data;
   if (typeof data !== 'object' || data === null) return undefined;
+  const actorId = (data as Record<string, unknown>).actorId;
+  if (typeof actorId === 'string') return actorId;
   const actor = (data as Record<string, unknown>).actor;
   if (typeof actor !== 'object' || actor === null) return undefined;
   const id = (actor as Record<string, unknown>).id;

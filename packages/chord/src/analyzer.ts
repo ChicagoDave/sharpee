@@ -2592,7 +2592,11 @@ class Analyzer {
     const seen = new Map<string, OnClause>();
     for (const clause of clauses) {
       if (clause.binding === 'every-turn') continue;
-      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}`;
+      // ADR-327 D1: the head's actor is part of the clause's identity —
+      // `on the player taking` and `on the guards taking` on one owner are
+      // two clauses, each firing for its own actor (Acceptance item 2).
+      const actor = clause.actor ? valueExprText(clause.actor).toLowerCase() : '';
+      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}|${actor}`;
       if (EVENT_VERBS.has(clause.action)) {
         key += `|${clause.condition ? conditionFingerprint(clause.condition) : ''}`;
       }

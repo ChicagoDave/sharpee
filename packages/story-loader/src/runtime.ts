@@ -59,7 +59,7 @@ import {
   type InitiativeSeizure,
   sceneWith,
 } from '@sharpee/world-model';
-import { exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
+import { actorConsultationId, exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import {
   absenceWordFor,
   activeThreadFor,
@@ -269,6 +269,9 @@ export class ChordRuntime {
     // register one dispatching interceptor per action that routes by the
     // action's target entity.
     const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
+    // ADR-327 D1 bare heads — consulted through the lifecycle engine's actor
+    // slot, under `actorConsultationId(...)`, never under the action's own id.
+    const byActorAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
     for (const entity of this.ir.entities) {
       entity.onClauses.forEach((clause, clauseIndex) => {
         // Entity every-turn clauses are scheduler daemons, not interceptors.
@@ -287,20 +290,21 @@ export class ChordRuntime {
           // `leaving` exists only as a region crossing reaction (D6) — on
           // any other owner it would silently never fire. Refuse at load.
           throw new LoadError(
-            `\`${clause.clauseKind} ${clause.action} it\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            clause.span,
+          );
+        }
+        // ADR-327 D1: a bare head is the owner's own action, reached through
+        // the lifecycle engine's actor consultation — so the OWNER carries the
+        // interceptor, like any other arm. Dispatch actions consult no actor:
+        // a bare head there could never fire, so refuse at load.
+        if (clause.binding === 'self' && this.isDispatchAction(clause.action)) {
+          throw new LoadError(
+            `\`${clause.clauseKind} ${clause.action}\` in \`${entity.name}\`'s block — \`${clause.action}\` is a Chord dispatch action, which consults no actor, so a bare head could never fire. React on the thing acted on instead: \`after the player ${clause.action}\` in its block.`,
             clause.span,
           );
         }
         // D5 fail-fast (ADR-228): only bind clauses something will consult.
-        // ADR-325 D3h: the player's own `on going`/`after going` rides the
-        // going action's source-room slot (the player is never a going
-        // target); its arm matches any room target with `it` = the player.
-        if (clause.binding === 'self') {
-          const list = byAction.get(clause.action) ?? [];
-          list.push({ entity, clause });
-          byAction.set(clause.action, list);
-          return;
-        }
         if (!this.isConsultedGerund(clause.action)) {
           if (this.isDispatchAction(clause.action)) {
             // Dispatch reactions fire via fireAfterClauses (the runtime owns
@@ -309,16 +313,20 @@ export class ChordRuntime {
             if (clause.clauseKind === 'after') return;
             // …but an entity `on` clause has no dispatch surface at all.
             throw new LoadError(
-              `\`on ${clause.action} it\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on ${clause.action} it\`) and compose the trait, or react with \`after ${clause.action} it\`.`,
+              `\`on the player ${clause.action}\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on the player ${clause.action}\`) and compose the trait, or react with \`after the player ${clause.action}\`.`,
               clause.span,
             );
           }
           throw this.deadGerundError(clause);
         }
         this.prepareOnClauseTarget(world, entity, clause);
-        const list = byAction.get(clause.action) ?? [];
+        // Bare heads register under the actor-consultation key (the owner
+        // is consulted as the actor); explicit heads under the action's own
+        // id (the owner is consulted as the target).
+        const table = clause.binding === 'self' ? byActorAction : byAction;
+        const list = table.get(clause.action) ?? [];
         list.push({ entity, clause });
-        byAction.set(clause.action, list);
+        table.set(clause.action, list);
       });
     }
     // ADR-239: topic tables ride the asking/telling dispatch. Every table
@@ -340,11 +348,10 @@ export class ChordRuntime {
     for (const [action, clauses] of byAction) {
       const interceptor = this.buildDispatchingInterceptor(action, clauses);
       world.registerActionInterceptor(ChordBehaviorTrait.type, `if.action.${action}`, interceptor);
-      // A self-bound going clause must reach every source room, marked or
-      // not — bind the same interceptor under the room trait too.
-      if (clauses.some((c) => c.clause?.binding === 'self')) {
-        world.registerActionInterceptor(TraitType.ROOM, `if.action.${action}`, interceptor);
-      }
+    }
+    for (const [action, clauses] of byActorAction) {
+      const interceptor = this.buildDispatchingInterceptor(action, clauses);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, actorConsultationId(`if.action.${action}`), interceptor);
     }
 
     // `when <entity> moves` clauses (ADR-325 D3h) ride the actor-moved event.
@@ -714,11 +721,14 @@ export class ChordRuntime {
     if (entity.kinds.some((k) => k.name === 'region')) {
       if (crossingRegionId(event.data) !== this.host.entityId(entity.id)) return null;
     } else if (clause.action === 'entering' && enteringDestination(event.data) !== this.host.entityId(entity.id)) {
-      // Room/enterable owners: `after entering it` fires when the
+      // Room/enterable owners: `after the player entering` fires when the
       // movement's destination IS the owner — read through the AC-9 payload
       // guard, never a blind cast (the stdlib event is a foreign surface).
       return null;
     }
+    // ADR-327 D1: the head names who arrives — the event's actor (the
+    // walker, or the `move`d entity under D5) must be the head's actor.
+    if (!this.actorMatches(clause.actor, movedActorId(event), world)) return null;
 
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
@@ -746,6 +756,23 @@ export class ChordRuntime {
       });
     }
     return out;
+  }
+
+  /**
+   * ADR-327 D1: does this actor satisfy a clause head? `the player` is the
+   * ROLE — compared against `world.getPlayer()` at fire time, never cached,
+   * so a head follows a PC switch (ADR-132/D9); a named actor is its world
+   * entity. A null head (bare / every-turn) is gated by its own path.
+   * @param actor the IR head actor, or null
+   * @param actorId the acting entity's world id, if the path knows one
+   * @param world the live world (for the player role)
+   */
+  actorMatches(actor: IRValue | null, actorId: string | undefined, world: WorldModel): boolean {
+    if (actor === null) return true;
+    if (actorId === undefined) return false;
+    if (actor.kind === 'player') return actorId === world.getPlayer()?.id;
+    if (actor.kind === 'entity') return actorId === this.host.entityId(actor.id);
+    return false;
   }
 
   /**
@@ -777,9 +804,24 @@ export class ChordRuntime {
 
   // ------------------------------------------------------------ on-clauses
 
+  /**
+   * Does the player's own block carry clauses that need the player entity
+   * marked for interceptor resolution (ADR-327 D1 bare heads, or heads on
+   * the player as target)? The loader consults this at `createPlayer`,
+   * which may run before or after `bind` depending on the host's order.
+   */
+  playerCarriesClauses(): boolean {
+    const player = this.ir.entities.find((e) => e.isPlayer);
+    return !!player && player.onClauses.some((c) => c.binding !== 'every-turn' && !this.eventTriggerFor(player, c));
+  }
+
   /** Mark the clause's target entity so interceptor resolution finds it. */
   private prepareOnClauseTarget(world: WorldModel, entity: IREntity, clause: IROnClause): void {
     const worldId = this.host.entityId(entity.id);
+    // The player is created by the host on its own schedule — in the direct/
+    // test order after the world is built, so it has no instance at bind
+    // time. `createPlayer` marks it instead (`playerCarriesClauses`).
+    if (!worldId && entity.isPlayer) return;
     if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, clause.span);
     const target = world.getEntity(worldId);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, clause.span);
@@ -787,8 +829,9 @@ export class ChordRuntime {
     if (!target.has(ChordBehaviorTrait.type)) {
       target.add(new ChordBehaviorTrait());
     }
-    // `on reading it` targets must satisfy the reading action's trait gate.
-    if (clause.action === 'reading' && !target.has(TraitType.READABLE)) {
+    // `on the player reading` targets must satisfy the reading action's
+    // trait gate (a bare-head owner is the reader, not the text — untouched).
+    if (clause.action === 'reading' && clause.binding !== 'self' && !target.has(TraitType.READABLE)) {
       target.add(new ReadableTrait({ text: '' }));
     }
   }
@@ -882,18 +925,18 @@ export class ChordRuntime {
       const built = entityClauses.map((clause, index) =>
         this.buildInterceptor(entity, clause, `${entity.id}.${action}.${clause.clauseKind}.${index}`),
       );
-      const selfBound = entityClauses.some((c) => c.binding === 'self');
       const catchAll = built.length ? this.mergeArms(built) : undefined;
       const interceptor = isTopicAction && (entity.topics ?? []).length
         ? this.buildTopicArm(entity, catchAll, action)
         : catchAll ?? {};
-      return { entity, interceptor, selfBound };
+      return { entity, interceptor };
     });
-    // A self-bound arm (the player's own going, ADR-325 D3h) answers for the
-    // source-room slot — any room target; the door slot (no room trait)
-    // and the destination slot (a different action id) never reach it.
+    // The consulted entity IS the arm's owner — as the action's target
+    // (explicit heads) or as the actor (ADR-327 D1 bare heads, reached
+    // through the lifecycle engine's actor consultation). Each clause then
+    // gates on who acts.
     const armFor = (target: IFEntity): ActionInterceptor | undefined =>
-      arms.find((a) => a.selfBound ? target.has(TraitType.ROOM) : runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
+      arms.find((a) => runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
@@ -920,15 +963,17 @@ export class ChordRuntime {
    */
   private buildInterceptor(entity: IREntity, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
-    // Self-bound (the player's own going, ADR-325 D3h): the hook's target is
-    // the source room, not the owner — match any room; `it` stays the owner.
-    const isMine = (target: IFEntity): boolean =>
-      clause.binding === 'self' ? target.has(TraitType.ROOM) : target.id === runtime.host.entityId(entity.id);
+    // ADR-327 D1: the hook's target is always the owner — consulted as the
+    // action's object (explicit head: fire when the head's actor is acting)
+    // or as the actor itself (bare head: fire when the owner is the actor).
+    const isMine = (target: IFEntity, world: WorldModel, actorId: string): boolean =>
+      target.id === runtime.host.entityId(entity.id) &&
+      (clause.binding === 'self' ? actorId === target.id : runtime.actorMatches(clause.actor, actorId, world));
     const occurrenceKey = CHORD_OCCURRENCE_PREFIX + `on.${ns}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target) || clause.clauseKind === 'after') return null;
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        if (!isMine(target, world, actorId) || clause.clauseKind === 'after') return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -950,8 +995,8 @@ export class ChordRuntime {
         return refusal ? { valid: false, ...refusal } : null;
       },
 
-      postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target)) return null;
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        if (!isMine(target, world, actorId)) return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8: same gate, same evaluation point (see preValidate).
@@ -970,16 +1015,16 @@ export class ChordRuntime {
         return null;
       },
 
-      postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
+      postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target) || bag.skip === true) return;
+        if (!isMine(target, world, actorId) || bag.skip === true) return;
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.execStatements(clause.body, ctx, 'mutations');
       },
 
-      postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+      postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target) || bag.skip === true) return {};
+        if (!isMine(target, world, actorId) || bag.skip === true) return {};
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.execStatements(clause.body, ctx, 'reports');
 
@@ -2816,6 +2861,12 @@ export class ChordRuntime {
     return {
       validate(entity, world, actorId, data): CapabilityValidationResult {
         const ctx = ctxOf(entity, world, actorId, data);
+        // ADR-327 D1: the head names who acts — another actor's action is
+        // not this clause's (the dispatcher reads `chordSkip` as not claiming).
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          data.chordSkip = true;
+          return { valid: true };
+        }
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
         // validate time, BEFORE findRefusal — a gated-out clause sits out
         // entirely, refusals included. ADR-229 R5: the dispatch action
@@ -2868,7 +2919,7 @@ export class ChordRuntime {
     const occurrenceKeyOf = (target: IFEntity) => `${CHORD_OCCURRENCE_PREFIX}trait.${ns}.${itOf(target)}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         if (clause.clauseKind === 'after') return null;
         const ctx: ExecContext = { world, it: itOf(target) };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -2877,6 +2928,12 @@ export class ChordRuntime {
         // evaluate the gate: no mutation occurs between them within one
         // action, so the answers cannot differ. Do not move this evaluation.
         const bag = runtime.clauseBag(data, ns);
+        // ADR-327 D1: the head names who acts — a clause for another actor
+        // sits out entirely, refusals included.
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          bag.skip = true;
+          return null;
+        }
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           bag.skip = true;
           return null;
@@ -2890,9 +2947,14 @@ export class ChordRuntime {
         const refusal = runtime.findRefusal(clause.body, ctx);
         return refusal ? { valid: false, ...refusal } : null;
       },
-      postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: itOf(target) };
+        // ADR-327 D1: same actor gate as preValidate (after-clauses reach here first).
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          bag.skip = true;
+          return null;
+        }
         // D8: same gate, same evaluation point (see preValidate).
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           bag.skip = true; // `while <cond>` gate — clause sits out this firing
@@ -3117,7 +3179,7 @@ export class ChordRuntime {
         }
         // After-clauses bind to the target entity — an entity-less command
         // has no owner to react (ADR-275 D1).
-        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
+        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world, context.player.id));
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
@@ -3505,7 +3567,7 @@ export class ChordRuntime {
    * confirmed (interceptor hooks never fire on the dispatch path; the
    * runtime owns these actions, so reactions run in their report phase).
    */
-  private fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel): ISemanticEvent[] {
+  private fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel, actorId: string): ISemanticEvent[] {
     const out: ISemanticEvent[] = [];
     const targetIrId = this.host.irIdOf(target.id);
     if (targetIrId === undefined) return out;
@@ -3514,6 +3576,8 @@ export class ChordRuntime {
 
     irEntity.onClauses.forEach((clause, clauseIndex) => {
       if (clause.clauseKind !== 'after' || clause.action !== actionName) return;
+      // ADR-327 D1: the head names who acts.
+      if (!this.actorMatches(clause.actor, actorId, world)) return;
       const ctx: ExecContext = { world, it: targetIrId };
       if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return;
       const key = `${CHORD_OCCURRENCE_PREFIX}after.${irEntity.id}.${actionName}.${clauseIndex}`;

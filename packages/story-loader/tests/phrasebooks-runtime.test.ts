@@ -31,7 +31,7 @@ create the bell
 
   A hand bell.
 
-  on pushing it
+  on the player pushing
     change the story to midnight
   end on
 

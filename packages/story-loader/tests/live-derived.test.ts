@@ -41,7 +41,7 @@ create the sundial
 
   A brass sundial.
 
-  on pushing it
+  on the player pushing
     change the story to night
   end on
 

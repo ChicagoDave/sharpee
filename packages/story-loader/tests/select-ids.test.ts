@@ -38,7 +38,7 @@ create the tablet
 
   A stone tablet.
 
-  on reading it
+  on the player reading
     select cycling
       phrase one
         One.
@@ -49,7 +49,7 @@ create the tablet
   end on
 
 define trait chimed
-  on pushing it
+  on the player pushing
     select cycling
       phrase ring
         A ring.
@@ -124,9 +124,9 @@ function selectIds(ir: StoryIR): string[] {
 }
 
 describe('ADR-289 D2 — compiler-assigned select ids', () => {
-  it('IR_FORMAT is `story language 2`', () => {
-    expect(IR_FORMAT).toBe('story language 2');
-    expect(compiled().format).toBe('story language 2');
+  it('IR_FORMAT is `story language 3`', () => {
+    expect(IR_FORMAT).toBe('story language 3');
+    expect(compiled().format).toBe('story language 3');
   });
 
   it('names owner, clause and statement path', () => {

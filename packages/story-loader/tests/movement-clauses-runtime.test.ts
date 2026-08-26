@@ -11,6 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
+import { actorConsultationId } from '@sharpee/stdlib';
 import { HealthBehavior, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { timerKey } from '../src/state-keys';
@@ -81,16 +82,28 @@ ${player}
 `;
 
 /** Drive the going action's source-room slot through the registered interceptor. */
+/**
+ * Drive a `go` from a room the way the lifecycle engine consults it: the
+ * source-room slot first (the room's own clauses), then the actor slot
+ * (the player's bare `on going`, under the actor-consultation key —
+ * ADR-327 D1). First veto wins; the post hooks run for both.
+ */
 function goFrom(b: Booted, roomIrId: string) {
   const room = b.world.getEntity(b.story.entityId(roomIrId)!)!;
-  const lookup = b.world.getInterceptorForAction(room, 'if.action.going');
-  expect(lookup, 'going interceptor bound on the source room').toBeDefined();
-  const data = {};
-  const veto = lookup!.interceptor.preValidate!(room, b.world, b.playerId, data);
-  if (veto) return { veto, report: null };
-  lookup!.interceptor.postValidate!(room, b.world, b.playerId, data);
-  lookup!.interceptor.postExecute!(room, b.world, b.playerId, data);
-  return { veto: null, report: lookup!.interceptor.postReport!(room, b.world, b.playerId, data) };
+  const player = b.world.getEntity(b.playerId)!;
+  const consultations = [
+    { target: room, lookup: b.world.getInterceptorForAction(room, 'if.action.going') },
+    { target: player, lookup: b.world.getInterceptorForAction(player, actorConsultationId('if.action.going')) },
+  ].filter((c) => c.lookup !== undefined).map((c) => ({ ...c, data: {} }));
+  expect(consultations.length, 'a going interceptor bound on the room or the player').toBeGreaterThan(0);
+  for (const c of consultations) {
+    const veto = c.lookup!.interceptor.preValidate?.(c.target, b.world, b.playerId, c.data) ?? null;
+    if (veto) return { veto, report: null };
+  }
+  for (const c of consultations) c.lookup!.interceptor.postValidate?.(c.target, b.world, b.playerId, c.data);
+  for (const c of consultations) c.lookup!.interceptor.postExecute?.(c.target, b.world, b.playerId, c.data);
+  const reports = consultations.map((c) => c.lookup!.interceptor.postReport?.(c.target, b.world, b.playerId, c.data) ?? {});
+  return { veto: null, report: reports.find((r) => r.override || r.emit) ?? reports[0] };
 }
 
 describe("the player's own going (D3h)", () => {
@@ -103,11 +116,14 @@ describe("the player's own going (D3h)", () => {
   end after
 `;
 
-  it('binds to the source room through the room trait — an unmarked room reaches the clause', () => {
+  it('binds on the player under the actor-consultation key — an unmarked room carries no going interceptor (ADR-327 D1)', () => {
     const b = boot(SOURCE('', PLAYER));
     const yard = b.world.getEntity(b.story.entityId('yard')!)!;
     expect(yard.has(TraitType.ROOM)).toBe(true);
-    expect(b.world.getInterceptorForAction(yard, 'if.action.going')).toBeDefined();
+    expect(b.world.getInterceptorForAction(yard, 'if.action.going')).toBeUndefined();
+    const player = b.world.getEntity(b.playerId)!;
+    expect(b.world.getInterceptorForAction(player, actorConsultationId('if.action.going'))).toBeDefined();
+    expect(b.world.getInterceptorForAction(player, 'if.action.going')).toBeUndefined();
   });
 
   it('`on going while …` refuses the move when the gate holds, from any room', () => {
@@ -128,12 +144,12 @@ describe("the player's own going (D3h)", () => {
   });
 
   it("`it` inside the clause is the player, not the room", () => {
-    const b = boot(SOURCE('', '  after going\n    move it to the Gate\n  end after\n'));
+    const b = boot(SOURCE('', '  after going\n    move the player to the Gate\n  end after\n'));
     goFrom(b, 'yard');
     expect(b.world.getLocation(b.playerId)).toBe(b.story.entityId('gate'));
   });
 
-  it("a room's own `on going it` still fires only for that room", () => {
+  it("a room's own `on the player going` still fires only for that room", () => {
     const src = `story
   title: Movement
   authors:
@@ -147,7 +163,7 @@ end phrase
 
 create the Yard
   a room
-  on going it
+  on the player going
     refuse merc-held
   end on
 
@@ -171,8 +187,8 @@ create the player
 });
 
 describe('when <entity> moves (D3h)', () => {
-  const GUARDS = `  when the player moves, while it is calm
-    change it to alert
+  const GUARDS = `  when the player moves, while the guards is calm
+    change the guards to alert
     phrase merc-held
   end when
 `;

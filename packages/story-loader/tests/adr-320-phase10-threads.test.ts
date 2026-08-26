@@ -92,7 +92,7 @@ function threadBlock(opts: { strength?: string; opensWhen?: string; beatTwoWhen?
     (opts.omitRefusing ? '' : '  on refusing:\n    phrase refusing-line\n') +
     '  conclusion:\n' +
     (opts.gatedConclusion
-      ? '    phrase conclusion-line when it is cheerful\n    phrase parting-line\n'
+      ? '    phrase conclusion-line when Kemp is cheerful\n    phrase parting-line\n'
       : '    phrase conclusion-line\n') +
     'end conversation\n'
   );
@@ -396,7 +396,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('an `opens when` thread opens its own scene and speaks beat 1 unprompted', () => {
-    const l = load(storySource(threadBlock({ opensWhen: 'it is cheerful' })));
+    const l = load(storySource(threadBlock({ opensWhen: 'Kemp is cheerful' })));
 
     const events = tick(l, 1);
 
@@ -417,7 +417,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   it("a thread beat's `then asks` opens its exchange from the owner's own turn", () => {
     const l = load(
       storySource(
-        threadBlock({ opensWhen: 'it is cheerful', beatOneExtra: 'then asks the-offer' }),
+        threadBlock({ opensWhen: 'Kemp is cheerful', beatOneExtra: 'then asks the-offer' }),
         'define exchange the-offer for Kemp\n  answer "aye":\n    phrase offer-aye\nend exchange\n\n' +
           'define phrase offer-aye\n  "Good."\nend phrase\n',
       ),
@@ -435,7 +435,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('an `opens when` thread parked mid-story resumes on the owner turn via `on resuming:`', () => {
-    const l = load(storySource(threadBlock({ opensWhen: 'it is cheerful' })));
+    const l = load(storySource(threadBlock({ opensWhen: 'Kemp is cheerful' })));
     tick(l, 1); // the thread opens itself and speaks beat 1
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -456,7 +456,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('a held next beat holds the thread; the scene decays and the close parks it', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -523,7 +523,7 @@ describe('AC14 — continuation prompts (Phase 10.5: the targetless advance)', (
   });
 
   it('does not advance a held beat (unmet `beat, when` gate)', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -653,7 +653,7 @@ describe('AC14 (D12 leg, Phase 10.6) — the thread-affordances channel projects
   });
 
   it('advertises continuable: false while the next beat holds on its gate', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([
       expect.objectContaining({ threadKey: 'the-defection', beatCursor: 1, continuable: false }),

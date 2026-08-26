@@ -35,7 +35,7 @@ function boot(source: string, seed = 5): Booted {
   return { story, world, playerId: player.id };
 }
 
-/** Fire the Alley's `after entering it` clause with the player there. */
+/** Fire the Alley's `after the player entering` clause with the player there. */
 function enterAlley(b: Booted) {
   const roomId = b.story.entityId('alley')!;
   b.world.moveEntity(b.playerId, roomId);
@@ -84,7 +84,7 @@ create the Alley
 
   An alley.
 
-  after entering it
+  after the player entering
     ${clause}
   end after
 

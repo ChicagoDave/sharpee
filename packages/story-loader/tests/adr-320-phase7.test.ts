@@ -99,7 +99,7 @@ const SOURCE =
   '    phrase kemp-leaving\n' +
   'end greetings\n\n' +
   'define manner for Kemp\n' +
-  '  when it is cheerful:\n' +
+  '  when Kemp is cheerful:\n' +
   '    beat "He sketches a jig step."\n' +
   '    beat "He winks at a stagehand."\n' +
   'end manner\n\n' +

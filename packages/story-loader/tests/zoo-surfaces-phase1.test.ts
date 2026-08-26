@@ -63,7 +63,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     phrase mood
   end after
 
@@ -107,7 +107,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     select sticky
       phrase pick-one
         First.

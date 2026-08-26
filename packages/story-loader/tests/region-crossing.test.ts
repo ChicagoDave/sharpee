@@ -1,6 +1,6 @@
 /**
  * region-crossing.test.ts — ADR-236 D6 (AC-5, ratchet R3): `after entering
- * it` and `after leaving it` on region blocks bind to the shipped crossing
+ * it` and `after the player leaving` on region blocks bind to the shipped crossing
  * events. REAL-PATH: real @sharpee/chord compile, real loader world,
  * movement through stdlib's REAL goingAction — its report() emits
  * `if.event.region_entered`/`region_exited` per boundary actually crossed
@@ -30,15 +30,15 @@ create the Underground
   a region
   containing the Mines, the Round Room
 
-  after entering it
+  after the player entering
     phrase under-in
   end after
 
-  after leaving it
+  after the player leaving
     phrase under-out
   end after
 
-  after entering it while stormy
+  after the player entering while stormy
     phrase under-storm
   end after
 
@@ -46,11 +46,11 @@ create the Mines
   a region
   containing the Shaft Top, the Coal Seam
 
-  after entering it
+  after the player entering
     phrase mine-in
   end after
 
-  after leaving it
+  after the player leaving
     phrase mine-out
   end after
 
@@ -201,7 +201,7 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
     expect(go(Direction.DOWN)).toContain('under-storm');
   });
 
-  it('refuses `after leaving it` on a non-region owner at load (never silently dead)', () => {
+  it('refuses `after the player leaving` on a non-region owner at load (never silently dead)', () => {
     const source = STORY.replace(
       `create the Surface Camp
   a room
@@ -212,7 +212,7 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
   down to the Round Room
   east to the Coal Seam
 
-  after leaving it
+  after the player leaving
     phrase under-out
   end after`,
     );

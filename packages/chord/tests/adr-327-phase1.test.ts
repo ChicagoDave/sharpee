@@ -119,6 +119,15 @@ describe('D1 — actor-explicit heads carry the actor in the IR', () => {
     expect(c).toMatchObject({ action: 'taking', binding: 'role', role: 'taker', actor: { kind: 'player' } });
   });
 
+  it('two heads with different actors on one owner are two clauses, not a duplicate (Acceptance item 2)', () => {
+    const ir = ok({ sword: '  on the player taking\n    refuse nope\n  end on\n\n  on Jack taking\n    refuse note\n  end on\n' });
+    expect(ir.entities.find((e) => e.id === 'sword')!.onClauses.map((c) => c.actor)).toEqual([{ kind: 'player' }, { kind: 'entity', id: 'jack' }]);
+  });
+
+  it('the same actor twice on one owner is still analysis.duplicate-clause', () => {
+    expect(codes({ sword: '  on the player taking\n    refuse nope\n  end on\n\n  on the player taking\n    refuse note\n  end on\n' })).toEqual(['analysis.duplicate-clause']);
+  });
+
   it('`while` and `, once` still follow the head', () => {
     const c = clause(ok({ hall: '  after the player entering while the sword is sheathed, once\n    phrase note\n  end after\n' }), 'hall');
     expect(c).toMatchObject({ action: 'entering', actor: { kind: 'player' }, once: true });

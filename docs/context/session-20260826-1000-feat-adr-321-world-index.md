@@ -24,7 +24,16 @@
 - Chord `dist`/`dist-esm` rebuilt.
 - Repo `npx tsc --noEmit` clean [reported by session, unverified — no corroborating event-log row].
 
+## Completed — Phase 2 (after commit `e0ebc947`)
+- Phase 2 design presented (`phase-2-loader-shape.md`); David ruled Q1 (a) — actor consultation slot in stdlib — and Q2 — story-loader fixtures migrate in Phase 2.
+- `packages/stdlib` `lifecycle-engine.ts`: `resolveLifecycle` appends an implicit actor consultation, **opt-in by key** `actorConsultationId(id)` = `actor:<id>` (the action-id-keyed version broke 8 stdlib tests — target-trait bindings the player also carries fired twice); `ACTOR_SLOT_ID`; four pin tests. stdlib 116 files / 1637 passing.
+- `packages/story-loader`: `actorMatches` gates the interceptor, trait-interceptor, capability, `fireAfterClauses` (new `actorId` param), and `fireEventClause` paths; bare heads register on the owner under the actor key (`TraitType.ROOM` double-registration and its first-arm-wins defect retired); `playerCarriesClauses` + `createPlayer` marks the player (no world instance at bind in test order); `movedActorId` reads `data.actorId` (region crossings, D5 arrivals); three stale `LoadError` texts respelled. 31 fixture files migrated (pass 1 + fix-it pass). `tests/adr-327-actor-match.test.ts` — 13 REAL-PATH tests (interceptor both actors, occurrence keys as state, role follows `setPlayer`, bare heads under the actor key incl. the deferred player, event path both movers, a real `move` daemon arrival).
+- `packages/chord`: `checkDuplicateClauses` keys on the head's actor (the player/guards pair on one owner is Acceptance item 2, not a duplicate); two tests. chord 69 / 1041.
+- Gates: engine 63 / 637; story-loader 86 of 87 files, 635 of 637 — `zoo-pure-ir` reads the corpus `zoo.story` (Phase 4). Repo `tsc --noEmit` clean.
+
 ## Key Decisions
+- Actor consultation is opt-in by registration key (`actor:<actionId>`), never the action's own id — so no existing target-keyed binding changes behavior (2026-08-26, implementation finding).
+- story-loader's `zoo-pure-ir` (corpus reader) is the one accepted red at Phase 2 exit; Phase 4 owns it.
 
 ### 1. Placement vs. clause-head split by block structure, not the leading article
 `chord.ebnf`'s `placement` row previously let the article distinguish `on the table` (placement) from `on the player going` (head). Under the new actor-before-gerund grammar the article no longer separates them, so `Parser.isOnClauseHead` now looks ahead structurally: a head is followed by a deeper-indented body line or its own `end on`; a placement never is. The head branch runs before the placement branch. Found by implementation, not the shape doc; recorded in `phase-1-grammar-shape.md` Landing notes for the Phase 5 paper trail.
@@ -67,6 +76,7 @@ The resolver has no statement context at the point it fires, so the fix-it names
 **Migrated fixtures/tests/docs** (~65 files):
 - ~50 `packages/chord/tests/*.test.ts` files, 8 `.story` fixtures, 7 golden snapshots migrated to the new spelling
 - `docs/architecture/chord-grammar-changes.md`, `docs/work/adr-327-explicit-references/{plan.md,phase-1-grammar-shape.md}`
+- Phase 2: `packages/stdlib/src/actions/lifecycle/{lifecycle-engine,index}.ts` + its test; `packages/story-loader/src/{runtime,loader,event-contract}.ts`; `packages/story-loader/tests/adr-327-actor-match.test.ts` (new) + 32 migrated test files/fixtures; `packages/chord/src/analyzer.ts` (duplicate gate) + test; `docs/work/adr-327-explicit-references/{phase-2-loader-shape.md (new),plan.md}`
 
 ## Notes
 

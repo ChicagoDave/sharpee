@@ -38,7 +38,7 @@ function boot(source: string): Booted {
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Fire the Stall's `after entering it` clause with the player already there. */
+/** Fire the Stall's `after the player entering` clause with the player already there. */
 function enterStall(booted: Booted): ISemanticEvent[] {
   const roomId = booted.story.entityId('stall')!;
   booted.world.moveEntity(booted.playerId, roomId);
@@ -63,7 +63,7 @@ create the Stall
 
   A stall.
 
-  after entering it
+  after the player entering
     ${stallClause}
   end after
 

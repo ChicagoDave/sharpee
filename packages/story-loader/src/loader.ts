@@ -170,7 +170,7 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
-import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
+import { ChordBehaviorTrait, ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
@@ -721,6 +721,12 @@ export class ChordStory implements Story {
     );
     player.add(new ActorTrait({ isPlayer: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+    // ADR-327 D1: the player's own clauses (bare heads, or heads on the
+    // player as target) resolve through this marker; `bind` cannot add it
+    // when the player is created after the world (direct/test order).
+    if (irPlayer && this.runtime.playerCarriesClauses() && !player.has(ChordBehaviorTrait.type)) {
+      player.add(new ChordBehaviorTrait());
+    }
     this.playerId = player.id;
     if (irPlayer) {
       this.worldIds.set(irPlayer.id, player.id);

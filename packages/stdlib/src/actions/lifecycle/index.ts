@@ -19,6 +19,8 @@ export {
   LifecycleState,
   ResolvedConsultation,
   ResolveLifecycleOptions,
+  ACTOR_SLOT_ID,
+  actorConsultationId,
   resolveLifecycle,
   getLifecycleState,
   runPreValidate,

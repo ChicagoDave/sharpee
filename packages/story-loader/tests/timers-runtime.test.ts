@@ -30,7 +30,7 @@ interface Booted {
   turn: number;
   /** Run the daemon roster for the next turn; returns message ids narrated. */
   tick(): string[];
-  /** Fire the Yard's `after entering it` clause (the verbs live there). */
+  /** Fire the Yard's `after the player entering` clause (the verbs live there). */
   enterYard(): string[];
   record(): { phase: string; index: number } | undefined;
   read(stateKey: string): unknown;
@@ -98,7 +98,7 @@ create the Yard
 
   A yard.
 
-  after entering it
+  after the player entering
 ${verbs.split('\n').map((l) => `    ${l}`).join('\n')}
   end after
 
@@ -116,7 +116,7 @@ create the guards
     They mutter.
 
   when search expires
-    change it to alert
+    change the guards to alert
     phrase expired-line
   end when
 ${extra}
