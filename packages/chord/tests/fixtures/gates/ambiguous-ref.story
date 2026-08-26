@@ -10,7 +10,7 @@ create the Closet
 
   A closet.
 
-  after entering it
+  after the player entering
     move the hook to the Closet
   end after
 

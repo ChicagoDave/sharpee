@@ -95,7 +95,7 @@ create Sam the zookeeper
   Sam wrangles feed buckets with practiced ease.
 
   on every turn while after-hours, once
-    move it to the Staff Gate
+    move Sam the zookeeper to the Staff Gate
     phrase zoo-after-hours-keeper-leaves
       Sam the zookeeper checks her watch, waves goodnight to the animals,
       and lets herself out through the staff gate.

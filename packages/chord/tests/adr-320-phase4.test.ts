@@ -262,7 +262,7 @@ end exchange
 
   A playbill.
 
-  on reading it
+  on the player reading
     then asks loyalty-question
   end on
 
@@ -336,7 +336,7 @@ end topics
 
   A playbill.
 
-  on reading it
+  on the player reading
     STMT
   end on
 `;
@@ -349,7 +349,7 @@ end topics
 
 describe('define initiative — occasion rows (D7)', () => {
   const INITIATIVE = `define initiative for Will Kemp
-  on an open floor, when it is cheerful:
+  on an open floor, when Will Kemp is cheerful:
     phrase kemp-grumbles
       "Speak up, whoever you are."
   on silence:
@@ -361,7 +361,7 @@ describe('define initiative — occasion rows (D7)', () => {
   on drawing:
     phrase kemp-flinches
       He flinches.
-  on an open floor, when it is sad:
+  on an open floor, when Will Kemp is sad:
     hold their tongue
 end initiative
 `;

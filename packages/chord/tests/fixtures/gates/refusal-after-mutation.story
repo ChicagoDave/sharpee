@@ -8,7 +8,7 @@ story
 create the box
   states: shut, open
 
-  on reading it
+  on the player reading
     change the box to open
     refuse cant-read
   end on

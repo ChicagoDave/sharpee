@@ -195,7 +195,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "kind": "phrase",
@@ -285,7 +288,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "placement": null,
       "span": {
         "column": 1,
-        "endColumn": 38,
+        "endColumn": 46,
         "endLine": 37,
         "line": 29,
       },
@@ -503,7 +506,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "onClauses": [
         {
           "action": "reading",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "arms": [
@@ -608,7 +614,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               },
               "subject": {
                 "base": {
-                  "kind": "it",
+                  "id": "message-in-the-sawdust",
+                  "kind": "entity",
                 },
                 "field": "state",
                 "kind": "field",
@@ -642,7 +649,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
       "span": {
         "column": 1,
-        "endColumn": 16,
+        "endColumn": 24,
         "endLine": 72,
         "line": 66,
       },
@@ -670,7 +677,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "wears": [],
     },
   ],
-  "format": "story language 2",
+  "format": "story language 3",
   "grammarExtensions": [
     {
       "action": "putting",
@@ -720,7 +727,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
-  "languageVersion": "3.4.0",
+  "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

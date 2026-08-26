@@ -9,7 +9,7 @@ create the message
   scenery
   states: intact, trampled
 
-  on reading it
+  on the player reading
     phrase message-intact when the message is intactt
   end on
 

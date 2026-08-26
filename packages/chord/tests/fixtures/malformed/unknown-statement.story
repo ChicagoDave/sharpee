@@ -10,7 +10,7 @@ create the East Room
 
   A bare room.
 
-  after entering it
+  after the player entering
     frobnicate the message
     phrase stumble
   end after

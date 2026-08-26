@@ -13,11 +13,11 @@ create the Forest
     phrase forest-birdsong
   end on
 
-  after entering it
+  after the player entering
     phrase forest-gloom
   end after
 
-  after leaving it
+  after the player leaving
     phrase open-sky
   end after
 

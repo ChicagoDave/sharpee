@@ -16,11 +16,11 @@ create the player
 create the goat
   in the Barn
 
-  on prodding it while any sweep-time
+  on the player prodding while any sweep-time
     phrase nope
   end on
 
-  after feeding it while no sweep-time
+  after the player feeding while no sweep-time
     each sweep-time
       phrase nope
     end each

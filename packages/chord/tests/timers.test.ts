@@ -109,9 +109,9 @@ describe('timer verbs (D3c)', () => {
     expect(verb(inGuards('restart curfew'))).toMatchObject({ kind: 'timer', verb: 'restart', timer: 'curfew' });
   });
 
-  it("a possessive names its owner (`the player's waiting`, `its search`)", () => {
+  it("a possessive names its owner (`the player's waiting`, `the guards\' search`)", () => {
     expect(verb(inGuards("reset the player's waiting"))).toMatchObject({ verb: 'reset', timer: 'player.waiting' });
-    expect(verb(inGuards('interrupt its search'))).toMatchObject({ verb: 'interrupt', timer: 'guards.search' });
+    expect(verb(inGuards('interrupt the guards\' search'))).toMatchObject({ verb: 'interrupt', timer: 'guards.search' });
   });
 
   it('`stop <timer>` is a timer verb; `stop music` stays media', () => {
@@ -120,7 +120,7 @@ describe('timer verbs (D3c)', () => {
   });
 
   it("the plural possessive works from the player's block (GH #305)", () => {
-    const ir = ok(story(TIMERS, '', "  on every turn\n    restart the guards' search\n  end on\n"));
+    const ir = ok(story(TIMERS, '', "  on every turn\n    restart the guards\' search\n  end on\n"));
     expect(ir.entities.find((e) => e.id === 'player')!.onClauses[0].body[0]).toMatchObject({ verb: 'restart', timer: 'guards.search' });
   });
 
@@ -131,7 +131,7 @@ describe('timer verbs (D3c)', () => {
 
   it('rejects raise / lower / set on a timer', () => {
     expect(errs(inGuards('raise search by 1'))).toContain('analysis.tally-verb-on-timer');
-    expect(errs(inGuards('lower its search by 1'))).toContain('analysis.tally-verb-on-timer');
+    expect(errs(inGuards('lower the guards\' search by 1'))).toContain('analysis.tally-verb-on-timer');
     expect(errs(inGuards('set search to 3'))).toContain('analysis.tally-verb-on-timer');
   });
 });
@@ -146,7 +146,7 @@ describe('timer reads (D3d)', () => {
   });
 
   it('an entity state and a timer turn sharing a word are told apart by subject', () => {
-    const src = story(TIMERS.replace('  arriving\n', '  arriving\n  calm\n'), '  on every turn while it is calm and search is calm\n    phrase idle\n  end on\n', '');
+    const src = story(TIMERS.replace('  arriving\n', '  arriving\n  calm\n'), '  on every turn while the guards is calm and search is calm\n    phrase idle\n  end on\n', '');
     expect(errs(src)).toEqual([]);
   });
 
@@ -162,16 +162,16 @@ describe('timer reads (D3d)', () => {
 });
 
 describe('when <timer> expires (D3e)', () => {
-  it('lowers on an entity with `it` = the clause owner, and on the story header', () => {
+  it('lowers on an entity naming the clause owner, and on the story header', () => {
     const src = story(
       TIMERS,
-      "  when search expires\n    change it to alert\n  end when\n\n  when the player's waiting expires, while it is calm\n    start search\n  end when\n",
+      "  when search expires\n    change the guards to alert\n  end when\n\n  when the player's waiting expires, while the guards is calm\n    start search\n  end when\n",
       '',
     ).replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n\n  when curfew expires\n    phrase idle\n  end when\n');
     const ir = ok(src);
     const guards = ir.entities.find((e) => e.id === 'guards')!;
     expect(guards.timerClauses).toMatchObject([
-      { timer: 'guards.search', condition: null, body: [{ kind: 'change', entity: { kind: 'it' }, state: 'alert' }] },
+      { timer: 'guards.search', condition: null, body: [{ kind: 'change', entity: { kind: 'entity', id: 'guards' }, state: 'alert' }] },
       { timer: 'player.waiting', condition: { kind: 'predicate' }, body: [{ kind: 'timer', verb: 'start', timer: 'guards.search' }] },
     ]);
     expect(ir.story.timerClauses).toMatchObject([{ timer: 'curfew', body: [{ kind: 'phrase', phraseKey: 'idle' }] }]);

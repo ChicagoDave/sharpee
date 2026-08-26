@@ -10,7 +10,29 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 22,
+                "line": 22,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 22,
+              "line": 22,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "kind": "must",
@@ -451,7 +473,29 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 38,
+                "line": 38,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 38,
+              "line": 38,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {
@@ -659,6 +703,28 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "taking",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 52,
+                "line": 52,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 52,
+              "line": 52,
+            },
+          },
           "binding": "role",
           "body": [
             {
@@ -1802,7 +1868,29 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "petting",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 62,
+                "line": 62,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 62,
+              "line": 62,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {
@@ -2166,7 +2254,29 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 90,
+                "line": 90,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 90,
+              "line": 90,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "kind": "must",
@@ -2614,7 +2724,29 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 109,
+                "line": 109,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 109,
+              "line": 109,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "expression": [
@@ -2714,7 +2846,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       ],
       "span": {
         "column": 1,
-        "endColumn": 19,
+        "endColumn": 27,
         "endLine": 109,
         "line": 99,
       },
@@ -3197,6 +3329,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actor": null,
           "binding": "every-turn",
           "body": [
             {
@@ -3319,6 +3452,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actor": null,
           "binding": "every-turn",
           "body": [
             {
@@ -4084,6 +4218,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actor": null,
           "binding": "every-turn",
           "body": [
             {
@@ -4092,12 +4227,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
                 "kind": "name",
                 "span": {
                   "column": 10,
-                  "endColumn": 12,
+                  "endColumn": 27,
                   "endLine": 98,
                   "line": 98,
                 },
                 "words": [
-                  "it",
+                  "Sam",
+                  "the",
+                  "zookeeper",
                 ],
               },
               "kind": "move",
@@ -4107,8 +4244,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
                   "article": "the",
                   "kind": "name",
                   "span": {
-                    "column": 16,
-                    "endColumn": 30,
+                    "column": 31,
+                    "endColumn": 45,
                     "endLine": 98,
                     "line": 98,
                   },
@@ -4118,15 +4255,15 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
                   ],
                 },
                 "span": {
-                  "column": 16,
-                  "endColumn": 30,
+                  "column": 31,
+                  "endColumn": 45,
                   "endLine": 98,
                   "line": 98,
                 },
               },
               "span": {
                 "column": 5,
-                "endColumn": 30,
+                "endColumn": 45,
                 "endLine": 98,
                 "line": 98,
               },

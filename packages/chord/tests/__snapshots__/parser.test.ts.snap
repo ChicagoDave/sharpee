@@ -98,7 +98,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 15,
+                "line": 15,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 15,
+              "line": 15,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -135,7 +157,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 20,
+        "endColumn": 28,
         "endLine": 15,
         "line": 9,
       },
@@ -243,7 +265,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 25,
+                "line": 25,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 25,
+              "line": 25,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -274,7 +318,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         },
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 29,
+                "line": 29,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 29,
+              "line": 29,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -295,8 +361,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
             "kind": "chance",
             "n": 3,
             "span": {
-              "column": 27,
-              "endColumn": 42,
+              "column": 35,
+              "endColumn": 50,
               "endLine": 29,
               "line": 29,
             },
@@ -320,7 +386,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 42,
+        "endColumn": 50,
         "endLine": 29,
         "line": 19,
       },
@@ -1032,7 +1098,29 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 37,
+                "line": 37,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 37,
+              "line": 37,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -1127,8 +1215,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "kind": "condition-ref",
             "name": "in-darkness",
             "span": {
-              "column": 27,
-              "endColumn": 38,
+              "column": 35,
+              "endColumn": 46,
               "endLine": 37,
               "line": 37,
             },
@@ -1152,7 +1240,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 38,
+        "endColumn": 46,
         "endLine": 37,
         "line": 29,
       },
@@ -1571,7 +1659,29 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "reading",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 72,
+                "line": 72,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 72,
+              "line": 72,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "arms": [
@@ -1681,21 +1791,21 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                 "base": {
                   "kind": "ref",
                   "ref": {
-                    "article": null,
+                    "article": "the",
                     "kind": "name",
                     "span": {
                       "column": 15,
-                      "endColumn": 18,
+                      "endColumn": 28,
                       "endLine": 73,
                       "line": 73,
                     },
                     "words": [
-                      "it",
+                      "message",
                     ],
                   },
                   "span": {
                     "column": 15,
-                    "endColumn": 18,
+                    "endColumn": 28,
                     "endLine": 73,
                     "line": 73,
                   },
@@ -1706,7 +1816,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                 "kind": "possessive",
                 "span": {
                   "column": 15,
-                  "endColumn": 24,
+                  "endColumn": 34,
                   "endLine": 73,
                   "line": 73,
                 },
@@ -1757,7 +1867,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 16,
+        "endColumn": 24,
         "endLine": 72,
         "line": 66,
       },

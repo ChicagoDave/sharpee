@@ -53,7 +53,7 @@ const irMoveOf = (src: string) => {
 
 describe('`a random adjacent room` is a place (ADR-326 D1)', () => {
   it('parses in `move` as the adjacent-room place', () => {
-    const src = clause('move it to a random adjacent room');
+    const src = clause('move the monkey to a random adjacent room');
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place.kind).toBe('adjacent-room');
   });
@@ -65,7 +65,7 @@ describe('`a random adjacent room` is a place (ADR-326 D1)', () => {
   });
 
   it('takes a statement `when` suffix like any move', () => {
-    const src = clause('move it to a random adjacent room when the player is in the Stall');
+    const src = clause('move the monkey to a random adjacent room when the player is in the Stall');
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place.kind).toBe('adjacent-room');
     expect(moveOf(src).stmtWhen).not.toBeNull();
@@ -74,25 +74,25 @@ describe('`a random adjacent room` is a place (ADR-326 D1)', () => {
 
 describe('the spelling is exact (ADR-326 D1)', () => {
   it('`an adjacent room` is the spelling error, and the fix-it quotes the ruled form', () => {
-    const src = clause('move it to an adjacent room');
+    const src = clause('move the monkey to an adjacent room');
     const d = diags(src);
     expect(d.map((x) => x.code)).toEqual(['parse.adjacent-room-spelling']);
     expect(d[0].message).toContain('`a random adjacent room`');
   });
 
   it('`the adjacent room` is the same spelling error', () => {
-    expect(errs(clause('move it to the adjacent room'))).toEqual(['parse.adjacent-room-spelling']);
+    expect(errs(clause('move the monkey to the adjacent room'))).toEqual(['parse.adjacent-room-spelling']);
   });
 
   it('a trailing strategy word is rejected — the randomness is in the noun', () => {
-    const d = diags(clause('move it to a random adjacent room, randomly'));
+    const d = diags(clause('move the monkey to a random adjacent room, randomly'));
     expect(d.map((x) => x.code)).toEqual(['parse.adjacent-room-strategy']);
     expect(d[0].message).toContain('randomly');
-    expect(errs(clause('move it to a random adjacent room cycling'))).toEqual(['parse.adjacent-room-strategy']);
+    expect(errs(clause('move the monkey to a random adjacent room cycling'))).toEqual(['parse.adjacent-room-strategy']);
   });
 
   it('a room merely named with those words is not the place', () => {
-    const src = story('  on every turn\n    move it to the Alley\n  end on\n');
+    const src = story('  on every turn\n    move the monkey to the Alley\n  end on\n');
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place.kind).toBe('name');
   });

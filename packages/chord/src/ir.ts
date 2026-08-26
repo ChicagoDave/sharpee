@@ -1,5 +1,5 @@
 /**
- * ir.ts — the Story IR wire types (`story language 2`).
+ * ir.ts — the Story IR wire types (`story language 3`).
  *
  * Purpose: the versioned, JSON-serializable product of Chord compilation
  * (ADR-210: the IR is the product). Everything is resolved — entity
@@ -16,8 +16,12 @@
 import type { ScopeRequirementWord } from './catalog.js';
 import type { Span } from './span.js';
 
-/** Format stamp of this IR schema. Consumers refuse unknown formats. */
-export const IR_FORMAT = 'story language 2';
+/**
+ * Format stamp of this IR schema. Consumers refuse unknown formats.
+ * `story language 3` (ADR-327, 2026-08-26): `IROnClause.actor` is a new
+ * required field and the owner-is-object binding is spelled `object`.
+ */
+export const IR_FORMAT = 'story language 3';
 
 /** Root of a compiled story. */
 export interface StoryIR {
@@ -847,11 +851,20 @@ export interface IROnClause {
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
   /**
-   * How the clause binds: target (`it`), role (`anything as the <role>`),
-   * every turn, or `self` — the player's own `going` (ADR-325 D3h), which
-   * fires on the going action's source-room slot with `it` = the player.
+   * Who acts (ADR-327 D1): `{kind:'player'}` for the player ROLE — the loader
+   * resolves it against `world.getPlayer()` at fire time, never a compile-time
+   * entity — or `{kind:'entity'}` for a named character. Null for `self`
+   * (the owner acts) and `every-turn`.
    */
-  binding: 'it' | 'role' | 'every-turn' | 'self';
+  actor: IRValue | null;
+  /**
+   * How the clause binds: the owner is the action's object (`object`), the
+   * named role (`anything as the <role>`), every turn, or `self` — the
+   * owner's own action (ADR-327 D1's own-block bare head; before ADR-327 only
+   * the player's `going`, ADR-325 D3h), which fires on the action's
+   * source-room slot with the owner as the actor.
+   */
+  binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for role-bound clauses (validated against the action's roles). */
   role: string | null;
   /** `while` qualifier (every-turn clauses). */

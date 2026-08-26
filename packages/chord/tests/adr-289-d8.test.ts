@@ -126,7 +126,7 @@ describe('Acceptance 21 — the misparse hint names both remedies', () => {
 
   A sign.
 
-  on reading it
+  on the player reading
     phrase sign-text
       ${opener} into the wall, the plaque has weathered badly.
   end on
@@ -162,7 +162,7 @@ ${PHRASES}`;
 
   A sign.
 
-  on reading it
+  on the player reading
     set the sign
   end on
 `;

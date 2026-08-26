@@ -357,6 +357,13 @@ interface Scope {
   slots: Set<string> | null;
   /** Trait-declared states visible on `it` in trait scope (ratchet D8). */
   ownStates: string[] | null;
+  /**
+   * ADR-327 D2/D8: `it`/`its` are a carrier word here — the block has no
+   * name for its subject. True inside a `define trait` body (the carrying
+   * entity) and a `define condition` (the quantified subject of an open
+   * condition). Everywhere else `it`/`its` are `analysis.it-removed`.
+   */
+  carrierIt?: boolean;
   /** Score-owner key for `award` resolution (entity id, `trait.<t>`, `action.<a>`; null = story). */
   scoreOwner: string | null;
   /** Inside an `each` block body — the `the match` binder is in scope (E3). */
@@ -388,6 +395,37 @@ function entityScope(owner: EntitySymbol | null): Scope {
 /** True when the scope binds `it` (entity clause or trait clause). */
 function scopeHasIt(scope: Scope): boolean {
   return scope.owner !== null || scope.fields !== null;
+}
+
+/**
+ * Can this entity act (ADR-327 D1)? The player, or a `a person` block —
+ * the two block kinds whose owner is a clause head's subject.
+ */
+function isActorSymbol(sym: EntitySymbol): boolean {
+  if (sym.id === 'player') return true;
+  return sym.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+}
+
+/** The entity's name as the author wrote it (`the Grocery Stall`), for fix-its. */
+function entityDisplayName(sym: EntitySymbol): string {
+  const n = sym.decl.name;
+  return [n.article, ...n.words].filter((w): w is string => !!w).join(' ');
+}
+
+/** A value expression's words as written, for quoting heads in diagnostics. */
+function valueExprText(expr: ValueExpr): string {
+  switch (expr.kind) {
+    case 'ref':
+      return [expr.ref.article, ...expr.ref.words].filter((w): w is string => !!w).join(' ');
+    case 'bare':
+      return expr.words.join(' ');
+    case 'literal':
+      return expr.value;
+    case 'possessive':
+      return `${valueExprText(expr.base)}'s ${expr.field.join(' ')}`;
+    case 'match':
+      return 'the match';
+  }
 }
 
 // The when-header verb-derivation table (petting → pets) died with floating
@@ -590,6 +628,8 @@ class Analyzer {
   private scoreDecls: IRScoreDef[] = [];
   /** condition name → OPEN (references `it`/`its`; usable as a selection). */
   private openConditions = new Map<string, boolean>();
+  /** Spans already reported as `analysis.it-removed` (ADR-327 D2) — one per source position. */
+  private itRemovedSpans = new Set<string>();
   // Ownership package (Phase C):
   /** Story-declared phases (ratchet D2); bare names are condition refs. */
   private storyStates: string[] = [];
@@ -849,7 +889,9 @@ class Analyzer {
           ir.conditions.push({
             name: decl.name,
             open: this.openConditions.get(decl.name) ?? false,
-            condition: this.resolveCondition(decl.condition, TOP_SCOPE),
+            // `it` is the quantified subject here — a carrier word, the
+            // second of ADR-327 D8's two allowances (see Scope.carrierIt).
+            condition: this.resolveCondition(decl.condition, { ...TOP_SCOPE, carrierIt: true }),
             span: decl.span,
           });
           break;
@@ -1127,7 +1169,7 @@ class Analyzer {
           if (!(comp.name === 'dark' && isRoom) && !npcShaped) {
             this.diagnostics.error(
               'analysis.conditional-composition-unsupported',
-              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
+              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on the player <action>\` clauses can test it) or split the behavior.`,
               comp.span,
             );
             continue;
@@ -2514,6 +2556,7 @@ class Analyzer {
       ownStates: visible.length ? visible : null,
       scoreOwner: `trait.${decl.name}`,
       inEach: false,
+      carrierIt: true,
     };
     return {
       name: decl.name,
@@ -2527,7 +2570,7 @@ class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(this.checkGoingBinding(c, false), scope, `trait.${decl.name}`, i)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(c, scope, `trait.${decl.name}`, i)),
       span: decl.span,
     };
   }
@@ -5565,7 +5608,7 @@ class Analyzer {
       descriptionKey: decl.description ? `${id}.description` : null,
       initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
-        this.buildOnClause(this.checkGoingBinding(c, isPlayer), entityScope(sym ?? null), id, i),
+        this.buildOnClause(c, entityScope(sym ?? null), id, i),
       ),
       ...(decl.timerClauses.length > 0
         ? { timerClauses: decl.timerClauses.map((c, i) => this.buildTimerClause(c, entityScope(sym ?? null), id, i)) }
@@ -5580,30 +5623,73 @@ class Analyzer {
   }
 
   /**
-   * ADR-325 D3h: the two `going` forms are owner-keyed. Bare `on going` /
-   * `after going` is the player's own movement and lives only in the
-   * player's block; `on going it` there has no referent (the player is
-   * never a going target) and is refused with the bare form as the fix.
-   * Other owners keep `on going it` — the source room's clause.
-   * @returns the clause unchanged (diagnostics only)
+   * ADR-327 D1: resolve a clause head's actor and gate the head against its
+   * block. An explicit head names the player (the role, fire-time) or a
+   * character; one naming the block's own owner is the bare form written
+   * long (`analysis.head-actor-is-owner`); anything else that is not an
+   * actor is `analysis.head-actor`. A bare head is the owner's own action
+   * and belongs only in the player's or a character's block — a trait body,
+   * a room, or a thing has no acting owner (`analysis.head-bare-outside-actor`).
+   * @returns the actor IRValue (`player` | `entity`), or null for a bare or
+   *   every-turn head — and for an unresolvable actor, already reported.
    */
-  private checkGoingBinding(clause: OnClause, isPlayer: boolean): OnClause {
-    if (clause.action !== 'going') return clause;
-    const head = `${clause.clauseKind} going`;
-    if (clause.binding === 'self' && !isPlayer) {
-      this.diagnostics.error(
-        'analysis.going-self-owner',
-        `\`${head}\` without \`it\` is the player's own movement and belongs in the player's block — on a room write \`${head} it\`.`,
-        clause.span,
-      );
-    } else if (clause.binding === 'it' && isPlayer) {
-      this.diagnostics.error(
-        'analysis.going-player-it',
-        `\`${head} it\` in the player's block — the player's own movement is bare \`${head}\`; \`it\` names a room the move leaves.`,
-        clause.span,
-      );
+  private resolveHeadActor(clause: OnClause, scope: Scope): IRValue | null {
+    if (clause.binding === 'every-turn') return null;
+    const owner = scope.owner;
+    const explicit = `${clause.clauseKind} the player ${clause.action}`;
+
+    if (clause.actor === null) {
+      // Bare head — or the parser's marker for an already-reported `… it`.
+      if (clause.binding !== 'self') return null;
+      if (!owner || !isActorSymbol(owner)) {
+        this.diagnostics.error(
+          'analysis.head-bare-outside-actor',
+          `\`${clause.clauseKind} ${clause.action}\` names no actor — a bare head is the block owner's own action and belongs only in the player's or a character's block. Name who acts: \`${explicit}\` (or the actor's name).`,
+          clause.span,
+        );
+      }
+      return null;
     }
-    return clause;
+
+    const actorText = valueExprText(clause.actor);
+    const head = `${clause.clauseKind} ${actorText} ${clause.action}`;
+    const ref = clause.actor.kind === 'ref' ? clause.actor.ref : null;
+    const words = ref ? ref.words.map((w) => w.toLowerCase()) : [];
+    if (ref && words.length === 1 && PLAYER_WORDS.has(words[0])) {
+      if (owner?.id === 'player') {
+        this.diagnostics.error(
+          'analysis.head-actor-is-owner',
+          `\`${head}\` in the player's own block — the subject of a block is its owner; write bare \`${clause.clauseKind} ${clause.action}\`.`,
+          clause.span,
+        );
+        return null;
+      }
+      return { kind: 'player' };
+    }
+    const sym = ref && !(words.length === 1 && words[0] === 'it') ? this.findEntitySilent(ref) : null;
+    if (sym && !isActorSymbol(sym)) {
+      this.diagnostics.error(
+        'analysis.head-actor',
+        `\`${head}\` — \`${actorText}\` cannot act; a head names the player or a character (\`a person\`): \`${explicit}\`.`,
+        clause.span,
+      );
+      return null;
+    }
+    if (sym && owner && sym.id === owner.id) {
+      this.diagnostics.error(
+        'analysis.head-actor-is-owner',
+        `\`${head}\` in ${entityDisplayName(owner)}'s own block — the subject of a block is its owner; write bare \`${clause.clauseKind} ${clause.action}\`.`,
+        clause.span,
+      );
+      return null;
+    }
+    if (sym) return { kind: 'entity', id: sym.id };
+    this.diagnostics.error(
+      'analysis.head-actor',
+      `\`${head}\` — \`${actorText}\` is not the player or a character. A head is \`${clause.clauseKind} <who acts> <action>\`: the actor first, then the action word (here \`${clause.action}\`) — e.g. \`${explicit}\`.`,
+      clause.span,
+    );
+    return null;
   }
 
   /**
@@ -5639,6 +5725,7 @@ class Analyzer {
     }
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
+    const actor = this.resolveHeadActor(clause, scope);
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
     const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
     const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
@@ -5647,6 +5734,7 @@ class Analyzer {
       clauseKind: clause.clauseKind,
       once: clause.once,
       action: clause.action,
+      actor,
       binding: clause.binding,
       role: clause.role,
       condition,
@@ -6018,7 +6106,7 @@ class Analyzer {
         let ownerId: string | null = null;
         if (target.kind === 'possessive') {
           counter = target.field.join(' ');
-          owner = this.resolveValue(target.base, scope);
+          owner = this.possessiveBase(target, scope);
           if (owner.kind === 'entity') ownerId = owner.id;
           else if (owner.kind === 'it') ownerId = scope.owner?.id ?? null;
         } else if (target.kind === 'ref') {
@@ -6213,8 +6301,8 @@ class Analyzer {
         // ADR-264 D3: `<owner>'s <counter>` / `its <counter>` reads a per-entity
         // counter when the field names one; otherwise it is a trait field.
         // ADR-325 D3d: `<owner>'s <timer>` reads the timer's state word.
-        const base = this.resolveValue(expr.base, scope);
         const field = expr.field.join(' ');
+        const base = this.possessiveBase(expr, scope);
         let ownerId: string | null = null;
         if (base.kind === 'entity') ownerId = base.id;
         else if (base.kind === 'player') ownerId = 'player';
@@ -6558,7 +6646,7 @@ class Analyzer {
     if (!scope.inEach) {
       this.diagnostics.error(
         'analysis.match-outside-each',
-        '`the match` is the `each`-block binder — outside an `each` body there is no match to reference. Use `it` for the clause owner, or name the entity.',
+        '`the match` is the `each`-block binder — outside an `each` body there is no match to reference. Name the entity (or, in a `define trait` body, use `it` for the carrier).',
         span,
       );
     }
@@ -6602,10 +6690,49 @@ class Analyzer {
     return null;
   }
 
+  /**
+   * ADR-327 D2: `it`/`its` outside a carrier scope (trait body, open
+   * condition — D8) is the removed spelling. The owner is known statically,
+   * so the fix-it names it: `it` → `the gate`, `its lunge` → `the gate's lunge`.
+   * Story-owned scope keeps its own unbound-referent gate.
+   */
+  private reportItRemoved(ref: NameRef, scope: Scope, field: string | null): void {
+    // Statement lowering probes some values twice (`counterTargetOf` before
+    // the verb resolves its target); one span reports once.
+    const key = `${ref.span.line}:${ref.span.column}`;
+    if (this.itRemovedSpans.has(key)) return;
+    this.itRemovedSpans.add(key);
+    const owner = scope.owner ? entityDisplayName(scope.owner) : null;
+    const spelled = field ? `its ${field}` : 'it';
+    const fix = owner ? `name the owner: \`${field ? `${owner}'s ${field}` : owner}\`` : 'name the entity you mean';
+    this.diagnostics.error(
+      'analysis.it-removed',
+      `\`${spelled}\` is no longer a form outside \`define trait\` — ${fix}.`,
+      ref.span,
+    );
+  }
+
+  /**
+   * The base of a possessive (`<owner>'s <field>` / `its <field>`), resolved.
+   * `its` is the parser's possessive over a base `it`: ADR-327 D2 reports the
+   * possessive spelling once, here (`its lunge` → `Jack's lunge`), and lowers
+   * the base to the carrier without re-reporting the bare `it` beneath it.
+   * Every site that reads a possessive's owner goes through here.
+   */
+  private possessiveBase(expr: Extract<ValueExpr, { kind: 'possessive' }>, scope: Scope): IRValue {
+    if (expr.base.kind === 'ref' && nameIsIt(expr.base.ref)) {
+      if (scope.storyOwned) this.reportStoryClauseIt(expr.base.ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(expr.base.ref, scope, expr.field.join(' '));
+      return { kind: 'it' };
+    }
+    return this.resolveValue(expr.base, scope);
+  }
+
   private resolveRefValue(ref: NameRef, scope: Scope): IRValue {
     const words = ref.words.map((w) => w.toLowerCase());
     if (words.length === 1 && words[0] === 'it') {
       if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(ref, scope, null);
       return { kind: 'it' };
     }
     // `the match` in NameRef positions (`change`/`move` targets, predicate
@@ -6620,6 +6747,7 @@ class Analyzer {
     // `its <field>` in name position (`the actor has its food`).
     if (words.length > 1 && words[0] === 'its') {
       if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(ref, scope, words.slice(1).join(' '));
       return { kind: 'field', base: { kind: 'it' }, field: words.slice(1).join(' ') };
     }
     const scoped = this.resolveScopedWords(ref.words, scope, ref.span);
@@ -6691,7 +6819,7 @@ class Analyzer {
       return this.timerKeyOf({ kind: 'ref', ref: { kind: 'name', article: null, words: expr.words, span: expr.span }, span: expr.span }, scope);
     }
     if (expr.kind === 'possessive' && expr.field.length === 1) {
-      const base = this.resolveValue(expr.base, scope);
+      const base = this.possessiveBase(expr, scope);
       let ownerId: string | null = null;
       if (base.kind === 'entity') ownerId = base.id;
       else if (base.kind === 'player') ownerId = 'player';
@@ -6781,7 +6909,7 @@ class Analyzer {
   private counterTargetOf(target: ValueExpr, scope: Scope): { counter: string; owner: IRValue | null } | null {
     if (target.kind === 'possessive') {
       const counter = target.field.join(' ');
-      const owner = this.resolveValue(target.base, scope);
+      const owner = this.possessiveBase(target, scope);
       const ownerId = owner.kind === 'entity' ? owner.id : owner.kind === 'it' ? scope.owner?.id ?? null : null;
       if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(counter)) return { counter, owner };
       return null;

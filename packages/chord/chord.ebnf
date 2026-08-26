@@ -278,21 +278,52 @@ counter-line = "counter" WORD [ "starts" NUMBER ]
                   block; story-global counters use `define counter` instead *)
 
 
-(* ---- on / after clauses (D3/D5) ---------------------------------------- *)
+(* ---- on / after clauses (D3/D5; heads ADR-327 D1) ---------------------- *)
 
 on-clause    = ( "on" | "after" ) clause-form
                [ "while" condition ]
                { "," clause-modifier } NL
                >>> { statement } "end" ( "on" | "after" ) NL ;
                                         (* terminator matches the opener *)
-clause-form  = WORD "it"                          (* verb binding *)
-             | WORD "anything" "as" "the" WORD    (* role binding *)
-             | "every" "turn" ;                   (* `on` only *)
+clause-form  = head [ "anything" "as" "the" WORD ]   (* role tail: the owner is
+                                                        the named role *)
+             | "every" "turn" ;                      (* `on` only *)
+head         = actor gerund                          (* explicit actor — ADR-327 D1:
+                                                        the owner is the action's
+                                                        object *)
+             | gerund ;                              (* bare — the owner's own
+                                                        action; legal only in the
+                                                        player's or a person's
+                                                        block (analysis.head-bare-
+                                                        outside-actor) *)
+actor        = "the" "player"                        (* the ROLE — resolved at fire
+                                                        time, never a compile-time
+                                                        entity *)
+             | name ;                                (* a character: `Jack`, `the
+                                                        wandering mercenaries`; a
+                                                        room/thing or the block's
+                                                        own owner is an analyzer
+                                                        error (analysis.head-actor /
+                                                        analysis.head-actor-is-owner) *)
+gerund       = WORD ;                                (* the LAST head word — split
+                                                        syntactically, never guessed
+                                                        (D3); `<gerund> it` is the
+                                                        removed pre-ADR-327 spelling,
+                                                        parse.removed-head-it *)
 clause-modifier = "once"                          (* D5: one lifetime firing *)
              | ( "before" | "after" ) WORD ;      (* trait ordering *)
 
 (* `refuse`/`refuse when`/`must` inside an `after` body are parse errors;
-   `after every turn` is a parse error. *)
+   `after every turn` is a parse error. A role tail on a bare head is
+   parse.on-head — a role head names who acts. *)
+
+(* Syntactic `it`/`its` (ADR-327 D2/D8): removed from statement, condition,
+   and possessive positions everywhere EXCEPT a `define trait` body, where
+   they mean the carrier, and a `define condition`, where `it` is the open
+   condition's quantified subject. Elsewhere: analysis.it-removed, fix-it
+   naming the block owner. Scene heads (`on parting:` / `on resuming:` /
+   `on refusing:` in `define conversation`, `on leaving` in a scene) are
+   not on-clauses and are untouched (D4). *)
 
 (* Event verbs (catalog EVENT_VERBS, gerund register): `entering` on rooms/
    enterables binds to the movement event; on REGION blocks (ADR-236 D6)

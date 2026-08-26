@@ -81,7 +81,7 @@ describe('kill-statement grammar', () => {
 create the Crypt
   a room
 
-  after entering it
+  after the player entering
     ${stmt}
   end after
 

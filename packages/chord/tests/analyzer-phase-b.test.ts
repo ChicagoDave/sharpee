@@ -30,7 +30,7 @@ describe('zoo-actions IR (§3.4 + ownership package)', () => {
 
   it('routes dispatch-verb trait clauses to CapabilityBehaviors', () => {
     const pettable = ir.traits.find((t) => t.name === 'pettable')!;
-    expect(pettable.onClauses[0]).toMatchObject({ clauseKind: 'on', action: 'petting', binding: 'it', routing: 'capability' });
+    expect(pettable.onClauses[0]).toMatchObject({ clauseKind: 'on', action: 'petting', binding: 'object', actor: { kind: 'player' }, routing: 'capability' });
     const feedable = ir.traits.find((t) => t.name === 'feedable')!;
     expect(feedable.onClauses[0].routing).toBe('capability');
   });
@@ -62,7 +62,7 @@ describe('zoo-actions IR (§3.4 + ownership package)', () => {
     expect('everyRules' in ir).toBe(false);
     const goats = ir.entities.find((e) => e.id === 'pygmy-goats')!;
     expect(goats.onClauses).toMatchObject([
-      { clauseKind: 'after', action: 'feeding', binding: 'it', routing: 'capability' },
+      { clauseKind: 'after', action: 'feeding', binding: 'object', actor: { kind: 'player' }, routing: 'capability' },
     ]);
   });
 
@@ -157,7 +157,7 @@ describe('zoo-timeline IR (§3.3 + ownership package)', () => {
     const clause = sam.onClauses[0];
     expect(clause).toMatchObject({ clauseKind: 'on', action: 'every-turn', binding: 'every-turn', once: true, routing: null });
     expect(clause.condition).toEqual({ kind: 'story-state', state: 'after-hours' });
-    expect(clause.body[0]).toMatchObject({ kind: 'move', entity: { kind: 'it' }, place: { kind: 'entity', id: 'staff-gate' } });
+    expect(clause.body[0]).toMatchObject({ kind: 'move', entity: { kind: 'entity', id: 'sam-the-zookeeper' }, place: { kind: 'entity', id: 'staff-gate' } });
     expect(clause.body[2]).toMatchObject({
       kind: 'phrase',
       phraseKey: 'keeper-wave',
@@ -241,7 +241,7 @@ describe('ownership-package additions — inline sources', () => {
 
   it('merges trait-declared states into composer entities for state checks (D8)', () => {
     const errors = errorsOf(
-      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after entering it\n    change the cat to awake\n  end after\n\ncreate the cat\n  sleepy\n  in the Hall\n\n  A cat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    change the cat to awake\n  end after\n\ncreate the cat\n  sleepy\n  in the Hall\n\n  A cat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -250,7 +250,7 @@ describe('ownership-package additions — inline sources', () => {
 describe('Phase B gate classes', () => {
   it('unknown role, with suggestion', () => {
     const errors = errorsOf(
-      `${HEADER}define trait grabby\n  on taking anything as the muncher\n    refuse nope\n  end on\nend trait\n\ndefine phrases en-US\n  nope:\n    No.\n`,
+      `${HEADER}define trait grabby\n  on the player taking anything as the muncher\n    refuse nope\n  end on\nend trait\n\ndefine phrases en-US\n  nope:\n    No.\n`,
     );
     expect(errors.some((e) => e.code === 'analysis.unknown-role' && e.message.includes('taker'))).toBe(true);
   });
@@ -269,7 +269,7 @@ describe('Phase B gate classes', () => {
 
   it('unknown score in award, with suggestion', () => {
     const errors = errorsOf(
-      `${HEADER}create the Vault\n  a room\n  score gold worth 5\n\n  Shiny.\n\n  after entering it\n    award golds\n  end after\n\ncreate the player\n  starts in the Vault\n\n  You.\n`,
+      `${HEADER}create the Vault\n  a room\n  score gold worth 5\n\n  Shiny.\n\n  after the player entering\n    award golds\n  end after\n\ncreate the player\n  starts in the Vault\n\n  You.\n`,
     );
     expect(
       errors.some(
@@ -290,7 +290,7 @@ describe('Phase B gate classes', () => {
 
   it('open condition accepted as a truth test where `it` is in scope', () => {
     const result = compile(
-      `${HEADER}define condition roomish: it is a room\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after entering it while roomish\n    win\n  end after\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define condition roomish: it is a room\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering while roomish\n    win\n  end after\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.conditions).toMatchObject([{ name: 'roomish', open: true }]);

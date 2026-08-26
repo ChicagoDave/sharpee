@@ -40,7 +40,7 @@ create the Petting Zoo
   dispenser is mounted on a post, and an info plaque is posted by the gate.
   The main path is back to the west.
 
-  after entering it
+  after the player entering
     award visit
   end after
 
@@ -56,16 +56,16 @@ create the Aviary
   the entrance. The gift shop is to the west. The main path is back to the
   east.
 
-  after entering it
+  after the player entering
     award visit
   end after
 
-  after entering it while not after-hours
+  after the player entering while not after-hours
     phrase parrot-notices
       The parrot ruffles its feathers and eyes you with interest.
   end after
 
-  after entering it while after-hours
+  after the player entering while after-hours
     phrase parrot-nods
       The parrot glances at you and nods, as if recognizing a fellow
       after-hours regular.
@@ -83,7 +83,7 @@ create the Supply Room
   battered radio sits on one of the shelves. The staff gate leads back
   north.
 
-  after entering it
+  after the player entering
     award visit
   end after
 
@@ -97,7 +97,7 @@ create the Nocturnal Animals Exhibit
   babies, and a barn owl. A warning sign is posted near the entrance. The
   exit leads back north to the supply room.
 
-  after entering it
+  after the player entering
     award visit
   end after
 
@@ -110,7 +110,7 @@ create the Gift Shop
   souvenir penny press machine stands near the door. A disposable camera
   sits on the counter. The aviary is back to the east.
 
-  after entering it
+  after the player entering
     award visit
   end after
 
@@ -138,7 +138,7 @@ create the staff gate
 
   A sturdy metal gate with a "STAFF ONLY" sign.
 
-  on examining it
+  on the player examining
     phrase gate-look
       A sturdy metal gate with a "STAFF ONLY" sign.
 
@@ -292,7 +292,7 @@ create the info plaque
 
   A brass plaque mounted on a wooden post near the petting zoo gate.
 
-  on reading it
+  on the player reading
     phrase plaque-text
       PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always
       hungry.
@@ -308,7 +308,7 @@ create the aviary plaque
 
   A colorful information board near the aviary entrance.
 
-  on reading it
+  on the player reading
     phrase plaque-text
       WELCOME TO THE AVIARY — Home to over 30 species!
 
@@ -324,7 +324,7 @@ create the warning sign
 
   A yellow warning sign near the nocturnal exhibit entrance.
 
-  on reading it
+  on the player reading
     phrase sign-text
       CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a
       flashlight. Do NOT use camera flash. (We don't talk about the Great Owl
@@ -339,7 +339,7 @@ create the zoo brochure
 
   A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on the cover.
 
-  on reading it
+  on the player reading
     award read
     phrase brochure-text
   end on
@@ -351,7 +351,7 @@ create the zoo map
 
   A colorful folding map of the Willowbrook Family Zoo.
 
-  after taking it
+  after the player taking
     award collected
   end after
 
@@ -438,7 +438,7 @@ define trait pettable
     petted:
       You pet the animal. It seems pleased.
 
-  on petting it
+  on the player petting
     emit petted
     phrase petted
   end on
@@ -457,7 +457,7 @@ define trait feedable
     fed:
       You offer some feed. The animal eats it gratefully.
 
-  on feeding it
+  on the player feeding
     the actor must have its food: no-feed
     it must be hungry: already-fed
     change it to content
@@ -548,7 +548,7 @@ create the zookeeper
       I guess!" He gives you a friendly wave and ambles off toward the staff
       parking lot. A moment later, you hear an engine start and fade into the
       distance.
-    move it to the Staff Parking Lot
+    move the zookeeper to the Staff Parking Lot
   end on
 
 create the parrot
@@ -569,7 +569,7 @@ create the parrot
   phrase presence:
     A scarlet macaw watches you with one bright, knowing eye.
 
-  on examining it
+  on the player examining
     phrase parrot-look
       A magnificent scarlet macaw perched on a rope. It tilts its head and
       watches you with one bright eye.
@@ -609,7 +609,7 @@ create the pygmy goats
   phrase presence:
     Three pygmy goats mill about hopefully, eyeing your pockets for snacks.
 
-  after feeding it
+  after the player feeding
     award fed
   end after
 
@@ -642,7 +642,7 @@ create the rabbits
   phrase presence:
     A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.
 
-  after feeding it
+  after the player feeding
     award fed
   end after
 

@@ -96,8 +96,8 @@ describe('duplicate-clause gate (Phase C P3)', () => {
   it('condition-differentiated event clauses are legal (the aviary pattern)', () => {
     const errors = errorsOf(
       `${HEADER}create the Aviary\n  a room\n\n  A dome.\n\n` +
-        `  after entering it while after-hours\n    phrase nods\n      Nods.\n  end after\n\n` +
-        `  after entering it while not after-hours\n    phrase notices\n      Notices.\n  end after\n\n` +
+        `  after the player entering while after-hours\n    phrase nods\n      Nods.\n  end after\n\n` +
+        `  after the player entering while not after-hours\n    phrase notices\n      Notices.\n  end after\n\n` +
         `create the player\n  starts in the Aviary\n\n  You.\n`,
     );
     expect(errors.filter((e) => e.code === 'analysis.duplicate-clause')).toEqual([]);
@@ -138,7 +138,7 @@ describe('change legality (D4)', () => {
     const errors = errorsOf(
       `${HEADER}create the vase\n  scenery\n  states, reversible: whole, broken\n\n` +
         `create the Parlor\n  a room\n\n  A parlor.\n\n` +
-        `  after entering it\n    change the vase to whole\n  end after\n\ncreate the player\n  starts in the Parlor\n\n  You.\n`,
+        `  after the player entering\n    change the vase to whole\n  end after\n\ncreate the player\n  starts in the Parlor\n\n  You.\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -157,7 +157,7 @@ describe('state adjectives (D1) and narration tags (decision 10)', () => {
   it('entity clauses are presence-scoped; sequences broadcast', () => {
     const result = compile(
       `${HEADER}create the Aviary\n  a room\n\n  A dome.\n\n` +
-        `  after entering it\n    phrase notices\n      Notices.\n  end after\n\n` +
+        `  after the player entering\n    phrase notices\n      Notices.\n  end after\n\n` +
         `define sequence closing time\n  at turn 2\n    phrase bell\n      A bell rings.\nend sequence\n\ncreate the player\n  starts in the Aviary\n\n  You.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
@@ -170,8 +170,8 @@ describe('state adjectives (D1) and narration tags (decision 10)', () => {
 describe('owner-scoped inline phrases (Phase C P3)', () => {
   const result = compile(
     `${HEADER}create the Den\n  a room\n\n  A den.\n\n` +
-      `  after entering it\n    phrase confession\n      The den confesses.\n  end after\n\n` +
-      `create the snake\n  scenery\n  in the Den\n\n  after entering it\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
+      `  after the player entering\n    phrase confession\n      The den confesses.\n  end after\n\n` +
+      `create the snake\n  scenery\n  in the Den\n\n  after the player entering\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
       `create the player\n  starts in the Den\n\n  You.\n`,
   );
 

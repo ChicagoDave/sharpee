@@ -220,7 +220,10 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "expression": [
@@ -264,7 +267,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       },
       "span": {
         "column": 1,
-        "endColumn": 19,
+        "endColumn": 27,
         "endLine": 109,
         "line": 99,
       },
@@ -427,10 +430,10 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "wears": [],
     },
   ],
-  "format": "story language 2",
+  "format": "story language 3",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "3.4.0",
+  "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -764,7 +767,10 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "petting",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {
@@ -955,7 +961,10 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {

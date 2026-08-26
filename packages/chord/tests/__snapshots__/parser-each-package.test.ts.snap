@@ -330,7 +330,29 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "onClauses": [
         {
           "action": "prodding",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 22,
+                "line": 22,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 22,
+              "line": 22,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {
@@ -407,8 +429,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "condition": "alarm-trigger",
             "kind": "any-of",
             "span": {
-              "column": 24,
-              "endColumn": 41,
+              "column": 32,
+              "endColumn": 49,
               "endLine": 22,
               "line": 22,
             },
@@ -941,7 +963,29 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 60,
+                "line": 60,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 60,
+              "line": 60,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "body": [
@@ -1139,8 +1183,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
             "condition": "alarm-trigger",
             "kind": "none-of",
             "span": {
-              "column": 26,
-              "endColumn": 42,
+              "column": 34,
+              "endColumn": 50,
               "endLine": 60,
               "line": 60,
             },
@@ -1187,7 +1231,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 42,
+        "endColumn": 50,
         "endLine": 60,
         "line": 56,
       },

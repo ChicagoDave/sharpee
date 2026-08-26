@@ -210,3 +210,39 @@ lost.
 - Version pin and snapshots re-recorded; `pnpm --filter '@sharpee/chord' run test:ci` green.
   Existing chord tests with old spellings (50 files) migrate in this phase — they are chord's
   own fixtures, not corpus.
+
+## Landing notes (session e822b1, 2026-08-26) — two things the shape missed
+
+Both surfaced by the implementation, not by review; both resolved in code and
+recorded here for the ADR's amendment at Phase 5.
+
+1. **`on <article> …` collides with placement.** In a `create` block the parser
+   classified `on <article> <name>` as a placement (`on the table`) and only
+   `on <bare word>` as a clause head — the rule is written into `chord.ebnf`'s
+   `placement` row. `on the player going` therefore parsed as "placed on an entity
+   named `player going`". The article cannot separate them any more; block structure
+   can: a head is followed by a deeper-indented body line or by its own `end on`, a
+   placement never is (comment lines are indent-0 only, ADR-249). `Parser.isOnClauseHead`
+   makes that lookahead, and the head branch now runs before the placement branch.
+   A bare `on <name>` with no body and no `end on` falls through to placement and its
+   existing unknown-entity gate — a poor diagnostic for a pathological line, left as is.
+
+2. **Open conditions use `it` as their quantified subject.** `define condition
+   hungry-neighbor: it is hungry` (the `each` package: `any`/`no`/`each <cond>`) has
+   no name for its subject any more than a trait body has for its carrier. ADR-327
+   D2/D8 never mention it; read literally D8's "and nowhere else" would remove the
+   `each` package's only spelling. Resolved as a second carrier scope: `Scope.carrierIt`
+   is true in `define trait` bodies and in `define condition`; everywhere else `it`/`its`
+   is `analysis.it-removed`. **Owed to ADR-327 D8 as an amendment** (Phase 5's paper
+   trail): "inside `define trait` — and as the subject of an open `define condition`".
+   Blocks *for* a named entity (`define manner for Will Kemp`, `define conversation …
+   for`, `define topics for`, a character's `goal … active when`) are NOT carrier
+   scopes — the name is in the header, so D2 applies and the fixtures were migrated to
+   `when Will Kemp is cheerful`.
+
+Also retired with the reform: `parse.on-target` (its one remaining case is
+`parse.on-head` / `parse.removed-head-it`), `analysis.going-self-owner` and
+`analysis.going-player-it` (generalized by `analysis.head-bare-outside-actor` and
+`analysis.head-actor-is-owner`). The IR's `narration`, `routing`, and `role` fields are
+untouched; the loader does not read the renamed binding value (verified: no
+`binding === 'it'` reads in `story-loader/src`, `world-index/src`).

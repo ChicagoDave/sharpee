@@ -15,7 +15,7 @@ create the goat
   in the Barn
   states: hungry, content
 
-  on prodding it
+  on the player prodding
     change the match to content
     phrase prod-note with animal = the match
   end on

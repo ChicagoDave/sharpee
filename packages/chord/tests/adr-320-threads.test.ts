@@ -56,7 +56,7 @@ function kemp(result: ReturnType<typeof compile>): IREntity {
 
 const THREAD = `define conversation the-defection for Will Kemp, blocking
   about "the rose", "the admirals men"
-  opens when it is cheerful
+  opens when Will Kemp is cheerful
   beat:
     phrase kemp-looks-south
       He looks south over the roofs.
@@ -120,7 +120,7 @@ end conversation
 
   it('carries no strength and no filter when unset (runtime derives; opens-when-only threads)', () => {
     const result = compiled(`define conversation quiet-word for Will Kemp
-  opens when it is cheerful
+  opens when Will Kemp is cheerful
   beat:
     phrase kemp-a-word
       "A word with you."

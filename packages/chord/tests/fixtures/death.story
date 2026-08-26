@@ -32,7 +32,7 @@ create the Tomb
 
   A dusty tomb, thick with curse.
 
-  after entering it
+  after the player entering
     kill the player tomb-curse
   end after
 

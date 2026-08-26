@@ -209,7 +209,7 @@ describe('D3 — change mood / change feeling transitions', () => {
     '  in the Hall\n' +
     '  mood calm\n' +
     '\n' +
-    '  on attacking it\n' +
+    '  on the player attacking\n' +
     '    change mood to panicked\n' +
     '    change feeling toward the player to wary of\n' +
     '  end on\n' +
@@ -238,9 +238,9 @@ describe('D3 — change mood / change feeling transitions', () => {
     expect(errors.some((e) => e.code === 'analysis.unknown-disposition-word')).toBe(true);
   });
 
-  it('`change it to <state>` keeps its state reading', () => {
+  it('`change the Kettle to <state>` keeps its state reading', () => {
     const result = compileStory(
-      'create the Kettle\n  states: cold, hot\n\n  on taking it\n    change it to hot\n  end on\n\n  A kettle.\n',
+      'create the Kettle\n  states: cold, hot\n\n  on the player taking\n    change the Kettle to hot\n  end on\n\n  A kettle.\n',
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
@@ -491,7 +491,7 @@ describe('D5 — custom vocabulary (Option 2)', () => {
         '  a person, very watchful\n' +
         '  mood haunted\n' +
         '\n' +
-        '  on attacking it\n' +
+        '  on the player attacking\n' +
         '    change mood to haunted\n' +
         '  end on\n' +
         '\n' +
@@ -594,7 +594,7 @@ describe('D10 — spreads propagation lines', () => {
         '  knows the player suspects me, inferred\n' +
         '\n' +
         '  goal eliminate-player, critical\n' +
-        '    active when it is in the Kitchen\n' +
+        '    active when Colonel Mustard is in the Kitchen\n' +
         '    seek the kitchen knife in the Kitchen\n' +
         '    wait for the player is here\n' +
         '    act mustard-attacks-player\n' +
@@ -1070,9 +1070,9 @@ describe('ADR-318 D8/D4 — burdened by, confided, band predicates', () => {
     expect(penitent.character?.knows[0]).toMatchObject({ confided: true, source: 'witnessed' });
   });
 
-  it('band words gate conditions and goal activation (`active when it is breaking`)', () => {
+  it('band words gate conditions and goal activation (`active when the Penitent is breaking`)', () => {
     const result = compileStory(
-      'create the Chapel\n  a room\n\n  A chapel.\n\ncreate the Penitent\n  a person\n  knows the accident, witnessed\n  burdened by the accident\n  goal confess, critical\n    active when it is breaking\n    move to the Chapel\n  end goal\n\n  Him.\n',
+      'create the Chapel\n  a room\n\n  A chapel.\n\ncreate the Penitent\n  a person\n  knows the accident, witnessed\n  burdened by the accident\n  goal confess, critical\n    active when the Penitent is breaking\n    move to the Chapel\n  end goal\n\n  Him.\n',
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const penitent = result.ir.entities.find((e) => e.id === 'penitent')!;
@@ -1212,7 +1212,7 @@ describe('ADR-318 D9/D12a — claims tags and witnessed-act aliases', () => {
 describe('ADR-318 D8 — unknown band word in a predicate', () => {
   it('a near-band typo errors with the band words in the offered vocabulary', () => {
     const errors = errorsOf(
-      'create Tobias\n  a person\n  knows the accident, witnessed\n  goal confess, low\n    active when it is burdned\n    move to Tobias\n  end goal\n\n  A man.\n',
+      'create Tobias\n  a person\n  knows the accident, witnessed\n  goal confess, low\n    active when Tobias is burdned\n    move to Tobias\n  end goal\n\n  A man.\n',
     );
     const unknown = errors.filter((e) => e.code === 'analysis.unknown-value');
     expect(unknown).toHaveLength(1);

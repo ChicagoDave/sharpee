@@ -44,7 +44,7 @@ describe('Z3: reserved channel keys', () => {
 
   it('emitting a channel via a `phrase` statement is a load error (channels are never pushed)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on examining it\n    phrase present\n      Pushed.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    phrase present\n      Pushed.\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.channel-pushed');
   });
@@ -82,9 +82,9 @@ describe('CP3: override strategy adverbs and or-variants', () => {
 });
 
 describe('Z3b: detail blocks', () => {
-  it('`phrase detail while it is on:` compiles with its condition', () => {
+  it('`phrase detail while the flashlight is on:` compiles with its condition', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while it is on:\n    It clicks faintly as it powers up.\n`,
+      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It clicks faintly as it powers up.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const phrase = result.ir.phrases.locales['en-US']['flashlight.detail'];
@@ -94,7 +94,7 @@ describe('Z3b: detail blocks', () => {
 
   it('two detail blocks per owner get deterministic suffixed keys', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while it is on:\n    It hums.\n\n  phrase detail while the cat is here:\n    The cat eyes it warily.\n`,
+      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It hums.\n\n  phrase detail while the cat is here:\n    The cat eyes it warily.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const table = result.ir.phrases.locales['en-US'];
@@ -127,7 +127,7 @@ describe('Z3b: detail blocks', () => {
 describe('Z6: the `remove` statement', () => {
   it('parses and IR-compiles alongside `move`, with the D7 when-suffix', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on examining it\n    remove the cat when the cat is here\n  end on\n`,
+      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the cat when the cat is here\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const clause = result.ir.entities.find((e) => e.id === 'bell')!.onClauses[0];
@@ -138,13 +138,13 @@ describe('Z6: the `remove` statement', () => {
     });
   });
 
-  it('`remove it` resolves to the clause owner', () => {
+  it('`remove the crumbs` resolves the owner by name in its own block', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the crumbs\n  in the Lab\n\n  Crumbs.\n\n  after taking it\n    remove it\n  end after\n`,
+      `${HEADER}${WORLD}create the crumbs\n  in the Lab\n\n  Crumbs.\n\n  after the player taking\n    remove the crumbs\n  end after\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const clause = result.ir.entities.find((e) => e.id === 'crumbs')!.onClauses[0];
-    expect(clause.body[0]).toMatchObject({ kind: 'remove', entity: { kind: 'it' } });
+    expect(clause.body[0]).toMatchObject({ kind: 'remove', entity: { kind: 'entity', id: 'crumbs' } });
   });
 
   it('is a member of the D13 sequence mutation kit', () => {
@@ -160,7 +160,7 @@ describe('Z6: the `remove` statement', () => {
 
   it('`remove the player` is a load error (analysis.remove-player)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on examining it\n    remove the player\n  end on\n`,
+      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the player\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.remove-player');
   });

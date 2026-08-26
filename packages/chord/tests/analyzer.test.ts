@@ -24,7 +24,7 @@ describe('cloak.story IR', () => {
   });
 
   it('stamps the IR format version', () => {
-    expect(ir.format).toBe('story language 2');
+    expect(ir.format).toBe('story language 3');
     expect(ir.format).toBe(IR_FORMAT);
   });
 
@@ -115,7 +115,8 @@ describe('cloak.story IR', () => {
     expect(clause).toMatchObject({
       clauseKind: 'after',
       action: 'entering',
-      binding: 'it',
+      actor: { kind: 'player' },
+      binding: 'object',
       once: false,
       routing: 'interceptor',
     });
@@ -134,7 +135,7 @@ describe('cloak.story IR', () => {
     const select = message.onClauses[0].body[0];
     expect(select).toMatchObject({
       kind: 'select-on',
-      subject: { kind: 'field', base: { kind: 'it' }, field: 'state' },
+      subject: { kind: 'field', base: { kind: 'entity', id: 'message-in-the-sawdust' }, field: 'state' },
     });
   });
 

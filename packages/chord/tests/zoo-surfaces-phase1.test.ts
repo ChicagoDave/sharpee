@@ -69,7 +69,7 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
     ['once', 'first-time'],
   ])('Z5 applies at the `select` site too: `select %s` errors naming `%s`', (retired, replacement) => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on pull it\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.select-strategy-retired');
     const retiredError = errors.find((e) => e.code === 'parse.select-strategy-retired')!;
@@ -78,7 +78,7 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
 
   it('`select sticky` parses clean (new adverb accepted at the select site)', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on pull it\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });

@@ -10,7 +10,7 @@ create the Foyer
 
   A room.
 
-  after entering it
+  after the player entering
     phrase nonexistent-key
   end after
 

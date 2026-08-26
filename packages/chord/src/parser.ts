@@ -445,7 +445,7 @@ class Parser {
         case 'when':
           this.diagnostics.error(
             'parse.removed-when',
-            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after <verb> it` on the entity or room it is about.',
+            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after the player <verb>` on the entity or room it is about.',
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -1365,6 +1365,21 @@ class Parser {
     return { rooms, strategy, span: lineSpan(line) };
   }
 
+  /**
+   * Is this `on` line a clause head rather than a placement? In a create
+   * block `on` opens both: `on the table` (placement, one line) and `on the
+   * player taking` (ADR-327 D1 head, a block). Since heads carry an actor the
+   * article no longer separates them; block structure does — a head is
+   * followed by a deeper-indented body line or by its own `end on`, a
+   * placement never is (comment lines are indent-0 only, ADR-249).
+   */
+  private isOnClauseHead(line: Line): boolean {
+    const next = this.lines[this.pos + 1];
+    if (!next) return false;
+    if (next.indent > line.indent) return true;
+    return next.indent === line.indent && firstWord(next) === 'end' && next.tokens[1]?.kind === 'word' && next.tokens[1].text === 'on';
+  }
+
   /** Is this line a `when <entity> moves[, while …]` clause head (ADR-325 D3h)? */
   private isMoveClauseHead(line: Line): boolean {
     if (firstWord(line) !== 'when') return false;
@@ -1656,6 +1671,11 @@ class Parser {
         cur.next();
         cur.next();
         decl.placement = this.finishPlacement('starts-in', cur, line);
+      } else if (word === 'on' && this.isOnClauseHead(line)) {
+        // Before the placement branch: `on the player taking` (ADR-327 D1)
+        // and `on the table` both open with an article — block structure
+        // tells them apart, not the article.
+        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if ((word === 'in' || word === 'on') && line.tokens[1] && line.tokens[1].kind === 'word' && ARTICLES.has(line.tokens[1].text)) {
         this.pos++;
         cur.next();
@@ -3058,7 +3078,7 @@ class Parser {
         // removed rather than repaired.
         this.diagnostics.error(
           'parse.removed-behavior-hatch',
-          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on <verb> it` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
+          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on the player <verb>` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
           lineSpan(this.lines[this.pos]),
         );
         this.pos++;
@@ -5315,55 +5335,94 @@ class Parser {
   // ------------------------------------------------------------- on clause
 
   /**
-   * `on <verb> it` (intercept) / `after <verb> it` (react, ratchet D3) /
-   * `on every turn` — with `while <cond>` on any binding and the `, once`
-   * clause modifier (D5). Terminated by `end on` / `end after`.
+   * `on|after <actor> <gerund>` (intercept / react, ADR-327 D1) — the words
+   * before the gerund name who acts (`the player`, or a character); a bare
+   * `on <gerund>` is the block owner's own action (the own-block exception,
+   * legal only in an actor's block — the analyzer's gate). `anything as the
+   * <role>` may follow the gerund; `on every turn` is unchanged. `while
+   * <cond>` on any binding and the `, once` clause modifier (D5). Terminated
+   * by `end on` / `end after`.
+   *
+   * The head is split syntactically — D3's effect (the gerund is matched,
+   * never guessed) without the gerund set, which lives in other files: the
+   * LAST head word is the gerund, everything before it is the actor. A
+   * trailing `it` is the removed pre-ADR-327 spelling (`parse.removed-head-it`);
+   * the rest of the clause still parses so one migration line yields one
+   * diagnostic.
    */
   private parseOnClause(indent: number, clauseKind: 'on' | 'after'): OnClause {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord(clauseKind);
-    const action = c.next();
-    let actionWord = '';
-    if (action && action.kind === 'word') {
-      actionWord = action.text;
-    } else {
-      this.diagnostics.error('parse.on-action', `Expected an action word after \`${clauseKind}\`.`, lineSpan(headLine));
-    }
 
-    let binding: OnClause['binding'] = 'it';
+    let actionWord = '';
+    let actor: ValueExpr | null = null;
+    let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
     let condition: ConditionNode | null = null;
     let once = false;
     let ordering: OnClause['ordering'] = null;
 
-    if (actionWord === 'every' && c.isWord('turn')) {
+    if (c.isWord('every') && c.isWord('turn', 1)) {
       // `on every turn [while <condition>] [, once]` (§3.3 + D5).
+      c.next();
       c.next();
       binding = 'every-turn';
       actionWord = 'every-turn';
       if (clauseKind === 'after') {
         this.diagnostics.error('parse.after-every-turn', '`after every turn` is not a form — every-turn clauses are `on every turn` (they are not reactions to an action).', lineSpan(headLine));
       }
-    } else if (c.matchWord('anything')) {
-      // `on <action> anything as the <role>` (design.md §2.2 role binding).
-      binding = 'role';
-      if (!c.matchWord('as') || !c.matchWord('the')) {
-        this.diagnostics.error('parse.on-role', 'Expected `as the <role>` after `anything`.', c.restSpan());
-      }
-      const roleTok = c.next();
-      if (roleTok && roleTok.kind === 'word') {
-        role = roleTok.text;
-      } else {
-        this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
-      }
-    } else if (actionWord === 'going' && (c.atEnd() || c.isWord('while') || c.peek()?.kind === 'comma')) {
-      // Bare `on going` / `after going` — the player's own movement (ADR-325
-      // D3h). Only `going` has a bare form; the analyzer checks the owner.
-      binding = 'self';
     } else {
-      if (!c.matchWord('it')) {
-        this.diagnostics.error('parse.on-target', `Expected \`it\`, \`anything as the <role>\`, or \`every turn\` in the \`${clauseKind}\` header.`, c.restSpan());
+      // Head words: everything up to `while`, `anything`, a comma, or EOL.
+      const headWords: Token[] = [];
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'anything') break;
+        headWords.push(t);
+        c.next();
+      }
+      if (headWords.length === 0) {
+        this.diagnostics.error('parse.on-head', `Expected \`${clauseKind} <who acts> <action>\` — e.g. \`${clauseKind} the player taking\`.`, c.restSpan());
+      } else {
+        let gerundTok = headWords[headWords.length - 1];
+        let actorToks = headWords.slice(0, -1);
+        if (gerundTok.text === 'it' && actorToks.length > 0) {
+          // The removed spelling: `on taking it`. Drop the `it`, keep parsing.
+          const spelled = `${clauseKind} ${headWords.map((t) => t.text).join(' ')}`;
+          const gerund = actorToks[actorToks.length - 1].text;
+          this.diagnostics.error(
+            'parse.removed-head-it',
+            `\`${spelled}\` is no longer a form — name who acts: \`${clauseKind} the player ${gerund}\` (or the actor's name).`,
+            mergeSpans(headWords[0].span, gerundTok.span),
+          );
+          gerundTok = actorToks[actorToks.length - 1];
+          actorToks = [];
+          // actor stays null with binding 'object': the AST's marker that the
+          // head was already reported (OnClause.actor invariant).
+        } else if (actorToks.length > 0) {
+          actor = this.headActorExpr(actorToks);
+        } else {
+          // Bare head — the block owner's own action; the analyzer gates the owner.
+          binding = 'self';
+        }
+        actionWord = gerundTok.text;
+      }
+
+      if (c.matchWord('anything')) {
+        // `on <actor> <action> anything as the <role>` (design.md §2.2 role binding).
+        if (binding === 'self') {
+          this.diagnostics.error('parse.on-head', `A role head names who acts — write \`${clauseKind} the player ${actionWord} anything as the <role>\` (or the actor's name).`, lineSpan(headLine));
+        }
+        binding = 'role';
+        if (!c.matchWord('as') || !c.matchWord('the')) {
+          this.diagnostics.error('parse.on-role', 'Expected `as the <role>` after `anything`.', c.restSpan());
+        }
+        const roleTok = c.next();
+        if (roleTok && roleTok.kind === 'word') {
+          role = roleTok.text;
+        } else {
+          this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
+        }
       }
     }
 
@@ -5397,6 +5456,7 @@ class Parser {
       kind: 'on-clause',
       clauseKind,
       action: actionWord,
+      actor,
       binding,
       role,
       condition,
@@ -7369,6 +7429,20 @@ class Parser {
       c.next();
     }
     return { kind: 'name', article, words, span: span ?? spanOf(c.line.lineNo, 1) };
+  }
+
+  /**
+   * The actor of a clause head (ADR-327 D1) as a value expression: an
+   * optional article then the name words, already split from the gerund by
+   * `parseOnClause`. Never empty — the caller passes at least one token. A
+   * lone article stays a word so the analyzer can name what it saw.
+   */
+  private headActorExpr(toks: Token[]): ValueExpr {
+    const span = mergeSpans(toks[0].span, toks[toks.length - 1].span);
+    const hasArticle = toks.length > 1 && ARTICLES.has(toks[0].text);
+    const article = hasArticle ? toks[0].text : null;
+    const words = (hasArticle ? toks.slice(1) : toks).map((t) => t.text);
+    return { kind: 'ref', ref: { kind: 'name', article, words, span }, span };
   }
 
   /**

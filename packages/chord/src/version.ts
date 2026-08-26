@@ -208,5 +208,26 @@
  * per-mover seeded stream; the randomness is in the noun (no strategy
  * word). Legal only as a `move` destination. A minor bump by D2's
  * ordinary rule.
+ *
+ * **4.0.0 — ADR-327, 2026-08-26 (session e822b1): explicit references.**
+ * A syntax existing stories relied on stops parsing — a MAJOR by D2's
+ * ordinary rule (the ADR-270 `define verb` precedent; one-shot cutover, D6):
+ *   - clause heads name who acts (D1): `on the player taking`, `after Jack
+ *     entering`; `on <gerund> it` is removed (`parse.removed-head-it`). The
+ *     bare head `on <gerund>` is the block owner's own action and is legal
+ *     only in the player's or a person's block (`analysis.head-bare-outside-
+ *     actor`); a head naming the block's own owner is
+ *     `analysis.head-actor-is-owner`; a non-actor is `analysis.head-actor`.
+ *     Role heads take the actor too: `on the player feeding anything as the
+ *     food`.
+ *   - syntactic `it`/`its` leave statements, conditions, and possessives
+ *     (D2): `analysis.it-removed`, fix-it naming the owner. The one
+ *     allowance (D8) is a `define trait` body, where they mean the carrier —
+ *     and a `define condition`, where `it` is the open condition's subject.
+ *   - `analysis.going-self-owner` / `analysis.going-player-it` /
+ *     `parse.on-target` retire into the gates above; the AST/IR binding
+ *     `'it'` is spelled `'object'`; `IR_FORMAT` → `story language 3`.
+ * D9/D10 (`playable`, `before the game starts`, `change the player to`) land
+ * in a later phase of the same major.
  */
-export const CHORD_LANGUAGE_VERSION = '3.4.0';
+export const CHORD_LANGUAGE_VERSION = '4.0.0';

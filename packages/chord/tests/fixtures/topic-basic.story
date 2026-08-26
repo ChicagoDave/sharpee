@@ -17,11 +17,11 @@ create the porter
 
   A stooped porter in a moth-eaten coat.
 
-  on asking it
+  on the player asking
     phrase shrug-reply
   end on
 
-  on telling it
+  on the player telling
     phrase nod-reply
   end on
 
@@ -55,7 +55,7 @@ define topics for the porter
   about "treasure", "the hoard": phrase treasure-reply
   about "the folly":
     phrase folly-reply
-    change it to nervous
+    change the porter to nervous
 end topics
 
 create the player

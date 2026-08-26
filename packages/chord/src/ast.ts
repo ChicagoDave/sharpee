@@ -1231,15 +1231,19 @@ export interface PhraseOverride {
 
 /**
  * `on|after … end on|end after` behavior clause — inside a create block or a
- * `define trait`. Header forms (design.md §2.2 + ownership package D3/D5):
- *   `on <action> it [, before <trait> | , after <trait>] [, once]`
- *   `after <action> it [while <condition>] [, once]`       → reaction (D3)
- *   `on <action> anything as the <role>`                    → binding 'role'
+ * `define trait`. Header forms (ADR-327 D1 heads; ownership package D3/D5):
+ *   `on <actor> <action> [, before <trait> | , after <trait>] [, once]`
+ *   `after <actor> <action> [while <condition>] [, once]`   → reaction (D3)
+ *   `on <actor> <action> anything as the <role>`            → binding 'role'
  *   `on every turn [while <condition>] [, once]`            → binding 'every-turn'
- *   `on going [while <condition>]` / `after going …`        → binding 'self'
- *     (ADR-325 D3h: the player's own movement, legal only in the player's block)
- * `on` intercepts (may refuse; phrase output is primary); `after` reacts
- * (refuse is a parse error; phrase output appends).
+ *   `on <action> [while <condition>]` / `after <action> …`  → binding 'self'
+ *     (own-block bare head: the block owner's own action; legal only in the
+ *     player's or a character's block — the analyzer's gate)
+ * The actor is `the player` (the role, resolved at fire time) or a
+ * character's name; the block owner is the action's object (`object`) or,
+ * with a role tail, the named role. `on` intercepts (may refuse; phrase
+ * output is primary); `after` reacts (refuse is a parse error; phrase
+ * output appends).
  */
 export interface OnClause {
   kind: 'on-clause';
@@ -1247,8 +1251,20 @@ export interface OnClause {
   clauseKind: 'on' | 'after';
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
-  /** How the clause binds (Phase A only had 'it'); `self` is the player's own going (ADR-325 D3h). */
-  binding: 'it' | 'role' | 'every-turn' | 'self';
+  /**
+   * Who acts (ADR-327 D1): the words before the gerund — `the player` or a
+   * character's name — as a value expression the analyzer resolves. Null for
+   * a bare head (`self`) and for `every turn`.
+   * Invariant: non-null iff `binding` is 'object' or 'role' — except after
+   * `parse.removed-head-it`, where the parser leaves it null with binding
+   * 'object' so the analyzer knows the head was already reported.
+   */
+  actor: ValueExpr | null;
+  /**
+   * How the clause binds: the owner is the action's object (`object`), the
+   * named role (`role`), every turn, or the owner's own action (`self`).
+   */
+  binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */

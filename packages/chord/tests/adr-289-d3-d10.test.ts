@@ -40,7 +40,7 @@ const PHRASES = `define phrases en-US
     Fine.
 `;
 
-/** A story whose innkeeper carries `body` as its `on prodding it` clause. */
+/** A story whose innkeeper carries `body` as its `on the player prodding` clause. */
 function innkeeper(body: string, extra = ''): string {
   const indented = body
     .trimEnd()
@@ -54,7 +54,7 @@ create the innkeeper
 
   A publican.
 
-  on prodding it
+  on the player prodding
 ${indented}
   end on
 
@@ -68,14 +68,14 @@ function errorsOf(source: string) {
 describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
   it('a refusal leading the clause is clean, mutations after it and all', () => {
     const errors = errorsOf(
-      innkeeper('refuse when it is roused: nope\nchange the innkeeper to roused\nphrase fine'),
+      innkeeper('refuse when the innkeeper is roused: nope\nchange the innkeeper to roused\nphrase fine'),
     );
     expect(errors).toEqual([]);
   });
 
   it('Acceptance 9: `raise` counts as a mutation', () => {
     const errors = errorsOf(
-      innkeeper('raise suspicion by 1\nrefuse when it is roused: nope', 'define counter suspicion starts 0\n\n'),
+      innkeeper('raise suspicion by 1\nrefuse when the innkeeper is roused: nope', 'define counter suspicion starts 0\n\n'),
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
@@ -83,14 +83,14 @@ describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
 
   it('`lower` counts as a mutation too', () => {
     const errors = errorsOf(
-      innkeeper('lower suspicion by 1\nrefuse when it is roused: nope', 'define counter suspicion starts 1\n\n'),
+      innkeeper('lower suspicion by 1\nrefuse when the innkeeper is roused: nope', 'define counter suspicion starts 1\n\n'),
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
   });
 
   it('Acceptance 8: a refusal after a `phrase` is misplaced, and the message names the position', () => {
-    const errors = errorsOf(innkeeper('phrase fine\nrefuse when it is roused: nope'));
+    const errors = errorsOf(innkeeper('phrase fine\nrefuse when the innkeeper is roused: nope'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
     expect(errors[0].message).toContain('phrase');
@@ -100,7 +100,7 @@ describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
 
   it('Acceptance 8: a refusal inside a `select on` arm is misplaced', () => {
     const errors = errorsOf(
-      innkeeper('select on its state\n  when idle\n    refuse nope\n  when roused\n    phrase fine\nend select'),
+      innkeeper('select on the innkeeper\'s state\n  when idle\n    refuse nope\n  when roused\n    phrase fine\nend select'),
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
@@ -110,7 +110,7 @@ describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
   it('Acceptance 10: a refusal in arm two is NOT accused of following arm one’s mutation', () => {
     const errors = errorsOf(
       innkeeper(
-        'select on its state\n  when idle\n    change the innkeeper to roused\n  when roused\n    refuse nope\nend select',
+        'select on the innkeeper\'s state\n  when idle\n    change the innkeeper to roused\n  when roused\n    refuse nope\nend select',
       ),
     );
     expect(errors).toHaveLength(1);
@@ -133,7 +133,7 @@ describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
   it('a select whose arms all mutate still ends the partition — a refusal after it is after-mutation', () => {
     const errors = errorsOf(
       innkeeper(
-        'select on its state\n  when idle\n    change the innkeeper to roused\n  when roused\n    phrase fine\nend select\nrefuse when it is roused: nope',
+        'select on the innkeeper\'s state\n  when idle\n    change the innkeeper to roused\n  when roused\n    phrase fine\nend select\nrefuse when the innkeeper is roused: nope',
       ),
     );
     expect(errors).toHaveLength(1);
@@ -142,7 +142,7 @@ describe('D3 — the leading validate partition (Acceptance 8, 9, 10)', () => {
 
   it('a select with no mutation in any arm still ends the partition', () => {
     const errors = errorsOf(
-      innkeeper('select cycling\n  phrase fine\nor\n  phrase nope\nend select\nrefuse when it is roused: nope'),
+      innkeeper('select cycling\n  phrase fine\nor\n  phrase nope\nend select\nrefuse when the innkeeper is roused: nope'),
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
@@ -159,8 +159,8 @@ create the innkeeper
 
   A publican.
 
-  after prodding it
-    select on its state
+  after the player prodding
+    select on the innkeeper\'s state
       when idle
         refuse nope
       when roused
@@ -182,7 +182,7 @@ create the innkeeper
 
   A publican.
 
-  after prodding it
+  after the player prodding
     first time
       the player must be in the Bar: nope
   end after
@@ -195,7 +195,7 @@ ${PHRASES}`;
 
   it('the same refusal in an `on` clause’s select is the analyzer’s gate, not the parser’s', () => {
     const errors = errorsOf(
-      innkeeper('select on its state\n  when idle\n    refuse nope\n  when roused\n    phrase fine\nend select'),
+      innkeeper('select on the innkeeper\'s state\n  when idle\n    refuse nope\n  when roused\n    phrase fine\nend select'),
     );
     expect(errors.every((e) => e.code !== 'parse.react-refusal')).toBe(true);
   });
@@ -254,7 +254,7 @@ create the cat
     const source = `${HEADER}${TRAIT}define trait skittish
   states: calm, spooked
 
-  on prodding it while it is hungry
+  on the player prodding while it is hungry
     phrase fine
   end on
 

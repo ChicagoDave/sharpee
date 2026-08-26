@@ -14,7 +14,7 @@ create the Parlor
 
   A quiet parlor.
 
-  after entering it
+  after the player entering
     change the vase to whole
   end after
 

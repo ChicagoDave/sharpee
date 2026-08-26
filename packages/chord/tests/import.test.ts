@@ -136,7 +136,7 @@ describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment f
     '', //                       3
     '  Stalls.', //              4
     '', //                       5
-    '  after entering it', //    6
+    '  after the player entering', //    6
     '    phrase no-such-key', // 7
     '  end after', //            8
     '',
@@ -167,7 +167,7 @@ describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment f
       '', //                     11
       '  You.', //               12
       '', //                     13
-      '  after entering it', //  14
+      '  after the player entering', //  14
       '    phrase main-missing', // 15
       '  end after', //          16
       '',
@@ -239,7 +239,7 @@ describe('ADR-251 D5 (amended 2026-08-22) — imports nest (GH #302)', () => {
   it('a span two levels down names ITS file, not the fragment that imported it', () => {
     const diags = errorsOf(mainWith('import "regions/market"'), mk({
       'regions/market.chord': room('the Market', '\nimport "npcs/teisha"\n'),
-      'npcs/teisha.chord': room('the Silk Tent', '\n  after entering it\n    phrase no-such-key\n  end after\n'),
+      'npcs/teisha.chord': room('the Silk Tent', '\n  after the player entering\n    phrase no-such-key\n  end after\n'),
     }));
     const missing = diags.find((d) => d.code === 'analysis.missing-phrase');
     expect(missing).toBeDefined();

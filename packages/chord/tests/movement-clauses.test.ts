@@ -67,20 +67,27 @@ describe("the player's own going (D3h)", () => {
     expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0]).toMatchObject({ binding: 'self', once: true });
   });
 
-  it('rejects `on going it` inside the player block', () => {
-    expect(errs(story('', '', '  on going it\n    refuse held\n  end on\n'))).toContain('analysis.going-player-it');
+  it("rejects `on the player going` inside the player block — the owner is the block's subject (ADR-327 D1)", () => {
+    expect(errs(story('', '', '  on the player going\n    refuse held\n  end on\n'))).toContain('analysis.head-actor-is-owner');
   });
 
-  it('rejects bare `on going` on another entity and in a trait', () => {
-    expect(errs(story('', '  on going\n    refuse held\n  end on\n', ''))).toContain('analysis.going-self-owner');
-    expect(errs(story('define trait jumpy\n  after going\n    phrase held\n  end after\nend trait', '', ''))).toContain('analysis.going-self-owner');
+  it('accepts bare `on going` in a character block — the character\'s own movement (ADR-327 D1)', () => {
+    const ir = ok(story('', '  on going\n    refuse held\n  end on\n', ''));
+    expect(ir.entities.find((e) => e.id === 'guards')!.onClauses[0]).toMatchObject({ action: 'going', binding: 'self', actor: null });
   });
 
-  it('the bare form exists only for going', () => {
-    expect(errs(story('', '', '  on taking\n    refuse held\n  end on\n'))).toContain('parse.on-target');
+  it('rejects bare `on going` on a room and in a trait — no acting owner', () => {
+    const onRoom = story('', '', '').replace('create the Yard\n  a room\n', 'create the Yard\n  a room\n  on going\n    refuse held\n  end on\n');
+    expect(errs(onRoom)).toContain('analysis.head-bare-outside-actor');
+    expect(errs(story('define trait jumpy\n  after going\n    phrase held\n  end after\nend trait', '', ''))).toContain('analysis.head-bare-outside-actor');
   });
 
-  it('`on going it` on a room is unchanged', () => {
+  it('the bare form generalizes to any gerund in an actor block (ADR-327 D1, Q1)', () => {
+    const ir = ok(story('', '', '  on taking\n    refuse held\n  end on\n'));
+    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0]).toMatchObject({ action: 'taking', binding: 'self', actor: null });
+  });
+
+  it('`on the player going` on a room is unchanged', () => {
     const src = `story
   title: Movement
   authors:
@@ -94,7 +101,7 @@ end phrase
 
 create the Yard
   a room
-  on going it
+  on the player going
     refuse held
   end on
 
@@ -106,18 +113,18 @@ create the player
   You.
 `;
     const ir = ok(src);
-    expect(ir.entities.find((e) => e.id === 'yard')!.onClauses[0]).toMatchObject({ action: 'going', binding: 'it' });
+    expect(ir.entities.find((e) => e.id === 'yard')!.onClauses[0]).toMatchObject({ action: 'going', binding: 'object', actor: { kind: 'player' } });
   });
 });
 
 describe('when <entity> moves (D3h)', () => {
-  it('lowers the head, its while, and `it` as the owner', () => {
-    const ir = ok(story('', '  when the player moves, while it is calm\n    change it to alert\n  end when\n', ''));
+  it('lowers the head, its while, and the owner by name', () => {
+    const ir = ok(story('', '  when the player moves, while the guards is calm\n    change the guards to alert\n  end when\n', ''));
     const guards = ir.entities.find((e) => e.id === 'guards')!;
     expect(guards.moveClauses).toHaveLength(1);
     expect(guards.moveClauses![0].mover).toEqual({ kind: 'player' });
     expect(guards.moveClauses![0].condition).not.toBeNull();
-    expect(guards.moveClauses![0].body[0]).toMatchObject({ kind: 'change', entity: { kind: 'it' } });
+    expect(guards.moveClauses![0].body[0]).toMatchObject({ kind: 'change', entity: { kind: 'entity', id: 'guards' } });
   });
 
   it('accepts `while` without the comma and an entity mover', () => {

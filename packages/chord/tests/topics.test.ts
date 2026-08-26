@@ -56,7 +56,7 @@ const FULL_TABLE = `define topics for the porter
   about "treasure", "the hoard": phrase treasure-reply
   about "the folly":
     phrase folly-reply
-    change it to nervous
+    change the porter to nervous
 end topics
 `;
 
@@ -81,7 +81,7 @@ describe('`define topics` table block (ADR-239 D3 as amended / D4)', () => {
     expect(porter.topics[2].filter).toEqual({ kind: 'text', primary: 'the folly', aliases: [] });
     expect(porter.topics[2].body).toMatchObject([
       { kind: 'phrase', phraseKey: 'folly-reply' },
-      { kind: 'change', entity: { kind: 'it' }, state: 'nervous' },
+      { kind: 'change', entity: { kind: 'entity', id: 'porter' }, state: 'nervous' },
     ]);
 
     // Additive default: entities without a block carry an empty table.

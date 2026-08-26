@@ -19,7 +19,7 @@ define trait skittish
     scatter:
       Everything scatters.
 
-  on prodding it while any alarm-trigger
+  on the player prodding while any alarm-trigger
     it must be any barn-occupant: all-clear
     refuse when no stray-treasure: all-clear
     each barn-occupant
@@ -62,7 +62,7 @@ create the pygmy goat
   in the Trophy Barn
   states: hungry, content
 
-  after feeding it while no alarm-trigger
+  after the player feeding while no alarm-trigger
     each barn-occupant
       phrase fed-note with animal = the match
       phrase hungry-note when the match is hungry

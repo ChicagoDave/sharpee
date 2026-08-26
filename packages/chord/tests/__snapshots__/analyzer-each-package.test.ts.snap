@@ -369,7 +369,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "onClauses": [
         {
           "action": "feeding",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "body": [
@@ -491,7 +494,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       },
       "span": {
         "column": 1,
-        "endColumn": 42,
+        "endColumn": 50,
         "endLine": 65,
         "line": 61,
       },
@@ -506,10 +509,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "wears": [],
     },
   ],
-  "format": "story language 2",
+  "format": "story language 3",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "3.4.0",
+  "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -767,7 +770,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "onClauses": [
         {
           "action": "prodding",
-          "binding": "it",
+          "actor": {
+            "kind": "player",
+          },
+          "binding": "object",
           "body": [
             {
               "condition": {

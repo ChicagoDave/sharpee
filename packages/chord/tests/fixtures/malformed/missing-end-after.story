@@ -7,7 +7,7 @@ story
 
 create the East Room
   a room
-  after entering it
+  after the player entering
     phrase stumble
 
 create the West Room

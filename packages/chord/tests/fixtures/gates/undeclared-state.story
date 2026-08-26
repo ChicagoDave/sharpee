@@ -10,7 +10,7 @@ create the Foyer
 
   A room.
 
-  after entering it
+  after the player entering
     change the message to smashed
   end after
 

@@ -45,7 +45,7 @@ describe('the `use scoring` gate (ADR-261 D4)', () => {
     // construct kind, which is the point of gating them together.
     const found = errors(story(
       '  score lamp worth 20\n',
-      '\n  after entering it\n    award lamp\n  end after\n'
+      '\n  after the player entering\n    award lamp\n  end after\n'
     ));
 
     expect(found.map((d) => d.code).sort()).toEqual([
@@ -77,7 +77,7 @@ describe('the `use scoring` gate (ADR-261 D4)', () => {
       '  score lamp worth 20\n' +
       '  use scoring\n' +
       '    rank "Curious Visitor" at 0\n',
-      '\n  after entering it\n    award lamp\n  end after\n'
+      '\n  after the player entering\n    award lamp\n  end after\n'
     ));
 
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);

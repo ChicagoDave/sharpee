@@ -56,8 +56,10 @@ const PINNED = {
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
   // (3.4.0 — ADR-326, 2026-08-25: `a random adjacent room`, additive minor.)
-  languageVersion: '3.4.0',
-  ebnfSha256: '3551b95bda4f82adde160fb4de89b77884f055da99b256ee50ae8c738c916fba',
+  // (4.0.0 — ADR-327, 2026-08-26: actor-explicit heads, `it`/`its` removed
+  //  outside `define trait`; `on <gerund> it` stops parsing — a MAJOR.)
+  languageVersion: '4.0.0',
+  ebnfSha256: '92a873241bb83cbba4de68b08735e0becd407e1c6bf9591106e01fe13c5187e2',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

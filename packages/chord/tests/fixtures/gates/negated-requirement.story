@@ -10,7 +10,7 @@ define trait tethered
     no-rope:
       It is tied down and you have no rope.
 
-  on taking it
+  on the player taking
     refuse when not the actor holds the rope: no-rope
   end on
 end trait

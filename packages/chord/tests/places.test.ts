@@ -52,7 +52,7 @@ const clause = (stmt: string) => story(`  on every turn\n    ${stmt}\n  end on\n
 
 describe('move destinations (ADR-325 D1–D2)', () => {
   it("`move X to <owner>'s location` parses as a location place and lowers to the location field", () => {
-    const src = clause("move it to Teisha's location");
+    const src = clause("move the monkey to Teisha's location");
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place.kind).toBe('location');
     const ir = compile(src).ir;
@@ -61,10 +61,10 @@ describe('move destinations (ADR-325 D1–D2)', () => {
     expect(move).toMatchObject({ kind: 'move', place: { kind: 'field', field: 'location', base: { kind: 'entity', id: 'teisha' } } });
   });
 
-  it('`move X to its location` keeps `its` as the owner', () => {
-    const src = clause('move Teisha to its location');
+  it('`move X to <own>\'s location` names the clause owner', () => {
+    const src = clause('move Teisha to the monkey\'s location');
     expect(errs(src)).toEqual([]);
-    expect(moveOf(src).place).toMatchObject({ kind: 'location', owner: { kind: 'ref', ref: { words: ['it'] } } });
+    expect(moveOf(src).place).toMatchObject({ kind: 'location', owner: { kind: 'ref', ref: { article: 'the', words: ['monkey'] } } });
   });
 
   it("`move X here` is the player's location", () => {
@@ -77,7 +77,7 @@ describe('move destinations (ADR-325 D1–D2)', () => {
   });
 
   it('`move X offstage` lowers to the offstage symbol and takes a when-suffix', () => {
-    const src = clause('move it offstage when Teisha is here');
+    const src = clause('move the monkey offstage when Teisha is here');
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place.kind).toBe('offstage');
     const ir = compile(src).ir;
@@ -86,35 +86,35 @@ describe('move destinations (ADR-325 D1–D2)', () => {
   });
 
   it('`move X to <room>` is unchanged', () => {
-    const src = clause('move it to the Alley');
+    const src = clause('move the monkey to the Alley');
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place).toMatchObject({ kind: 'name', ref: { words: ['Alley'] } });
   });
 
   it("an apostrophe inside a room name stays a name (`the Weaponsmith's Stall`)", () => {
-    const src = clause("move it to the Weaponsmith's Stall").replace('create the Alley', "create the Weaponsmith's Stall\n  a room\n\n  Weapons.\n\ncreate the Alley");
+    const src = clause("move the monkey to the Weaponsmith's Stall").replace('create the Alley', "create the Weaponsmith's Stall\n  a room\n\n  Weapons.\n\ncreate the Alley");
     expect(errs(src)).toEqual([]);
     expect(moveOf(src).place).toMatchObject({ kind: 'name', ref: { words: ["Weaponsmith's", 'Stall'] } });
   });
 
   it("a non-`location` possessive is an ordinary (unknown) name, not a place", () => {
-    expect(errs(clause("move it to Teisha's state"))).toContain('analysis.unknown-entity');
+    expect(errs(clause("move the monkey to Teisha's state"))).toContain('analysis.unknown-entity');
   });
 
   it('an undeclared owner is still an unknown entity', () => {
-    expect(errs(clause("move it to the captain's location"))).toContain('analysis.unknown-entity');
+    expect(errs(clause("move the monkey to the captain's location"))).toContain('analysis.unknown-entity');
   });
 });
 
 describe("is in <owner>'s location (ADR-325 D1)", () => {
   it('accepts the possessive place in a condition', () => {
-    expect(errs(clause("change it to wary when Teisha is in the player's location"))).not.toContain('parse.place');
-    const src = story("  states: calm, wary\n  on every turn\n    change it to wary when Teisha is in the player's location\n  end on\n");
+    expect(errs(clause("change the monkey to wary when Teisha is in the player's location"))).not.toContain('parse.place');
+    const src = story("  states: calm, wary\n  on every turn\n    change the monkey to wary when Teisha is in the player's location\n  end on\n");
     expect(errs(src)).toEqual([]);
   });
 
   it("accepts the plural possessive (`the guards' location`, GH #305)", () => {
-    const src = story("  states: calm, wary\n  on every turn\n    change it to wary when it is in the guards' location\n  end on\n")
+    const src = story("  states: calm, wary\n  on every turn\n    change the monkey to wary when the monkey is in the guards' location\n  end on\n")
       .replace('create the player', "create the guards\n  a person, plural\n  in the Alley\n\n  Guards.\n\ncreate the player");
     expect(errs(src)).toEqual([]);
   });

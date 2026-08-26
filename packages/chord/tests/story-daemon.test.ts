@@ -96,7 +96,7 @@ describe('story-owned `on every turn` (ADR-236 D7, ratchet R4)', () => {
     expect(
       errorCodes(
         story(`
-  on taking it
+  on the player taking
     phrase clock-tick
   end on
 `),

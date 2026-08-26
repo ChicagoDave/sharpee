@@ -19,7 +19,7 @@ define trait sealable
     unsealed-empty:
       {You} {open} {the container}, which is empty.
 
-  on opening it
+  on the player opening
     it must be sealed: already-ajar
     change it to ajar
     emit unsealed
@@ -35,7 +35,7 @@ define trait barrable
     barred:
       {capitalize the item} {verb:is item} barred shut.
 
-  on opening it, before sealable
+  on the player opening, before sealable
     refuse when its key is in the Break Room: barred
   end on
 end trait
@@ -49,7 +49,7 @@ define trait carrying-limit
     hands-full:
       {You're} carrying too much already.
 
-  on taking anything as the taker
+  on the player taking anything as the taker
     refuse when the taker holds the flimsy basket: hands-full
   end on
 end trait

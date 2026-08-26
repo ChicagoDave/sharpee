@@ -177,7 +177,7 @@ describe('set <tally> to <n> — the one absolute write (ADR-325 D4)', () => {
     expect(ir.story.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'madness', owner: null, value: 0 });
   });
 
-  it("lowers a possessive tally — `the innkeeper's suspicion` and `its suspicion`", () => {
+  it("lowers a possessive tally — `the innkeeper's suspicion` from another block and from its own", () => {
     const src = `story
   title: S
   authors:
@@ -196,7 +196,7 @@ create the innkeeper
   counter suspicion starts 0 between 0 and 5
 
   on every turn
-    set its suspicion to 2
+    set the innkeeper's suspicion to 2
   end on
 
   Inn.
@@ -211,7 +211,7 @@ create the player
   You.
 `;
     const ir = lowered(src);
-    expect(ir.entities.find((e) => e.id === 'innkeeper')!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'it' }, value: 2 });
+    expect(ir.entities.find((e) => e.id === 'innkeeper')!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 2 });
     expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 5 });
   });
 
