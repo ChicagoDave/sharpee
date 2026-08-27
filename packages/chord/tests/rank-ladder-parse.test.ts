@@ -22,10 +22,17 @@ create the Lawn
 
   A lawn.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lawn
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const header = (source: string): StoryHeader => parse(source).ast.header!;
@@ -80,7 +87,7 @@ describe('`use scoring` rank ladder (ADR-261 D2)', () => {
       '\n' +
       '  A lawn.\n' +
       '\n' +
-      'create the player\n' +
+      'create Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n' +
       '  starts in the Lawn\n' +
       '\n' +
       '  You.\n'

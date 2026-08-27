@@ -193,7 +193,7 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               gate, narration broadcasts,
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
-declaration  = create | define-condition | define-phrase | define-phrases
+declaration  = create | start-block | define-condition | define-phrase | define-phrases
              | define-text                                 (* define-verb REMOVED — ADR-270 D7 *)
              | define-trait | define-action | define-hatch
              | define-sequence
@@ -334,6 +334,24 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
    presence = the player is in a member room, transitive through nesting. *)
 
 
+(* ---- start block (ADR-327 D10) ----------------------------------------- *)
+
+start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before" NL ;
+                                                           (* exactly one per story
+                                                              (analysis.duplicate-start-block;
+                                                              analysis.start-block-missing when
+                                                              absent), and it must assign the
+                                                              player role on some path
+                                                              (analysis.start-block-no-role).
+                                                              Effect statements only: `phrase`
+                                                              and `emit` are analysis.start-
+                                                              block-narration — the block runs
+                                                              before any turn exists to carry
+                                                              prose; the story header's
+                                                              `prologue:` is that seam.
+                                                              `create the player` is REMOVED
+                                                              (parse.removed-create-player) *)
+
 (* ---- create ------------------------------------------------------------ *)
 
 create       = "create" name NL >>> { create-line } ;
@@ -349,6 +367,13 @@ create-line  = "aka" alias { "," alias } NL
              | score-line
              | counter-line                                (* ADR-264 D1 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
+             | "playable" NL                             (* ADR-327 D10: this character may
+                                                              hold the player role. Person
+                                                              blocks only (analysis.playable-
+                                                              non-person); who HOLDS the role
+                                                              is a run-time fact the start
+                                                              block decides, never a create
+                                                              line *)
              | placement NL
              | "wears" name NL
              | "containing" name { [ "," ] [ "and" ] name } NL
@@ -887,6 +912,15 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               event.data *)
              | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr NL
+             | "change" "the" "player" "to" name [ stmt-when ] NL
+                                                           (* ADR-327 D9/D10: the role moves
+                                                              to a named `playable` person
+                                                              (analysis.player-target-not-
+                                                              person / -not-playable). Read
+                                                              twice by the loader: an
+                                                              assignment inside the start
+                                                              block, a switch request on any
+                                                              turn after that *)
              | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
                                                               or any entity *)
              | "move" name "to" name [ stmt-when ] NL

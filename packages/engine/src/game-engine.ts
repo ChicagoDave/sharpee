@@ -9,6 +9,7 @@ import {
   IFEntity,
   IdentityTrait,
   ActorTrait,
+  movePlayerRoleVocabulary,
   ContainerTrait,
   ListenerTrait,
   StandardCapabilities,
@@ -383,7 +384,25 @@ export class GameEngine {
     // Build narrative settings from story config (ADR-089)
     this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
 
-    // Create player first so initializeWorld() can place them
+
+    // ADR-148 concealment: register the standard concealed-visibility
+    // behavior on this world (NPCs can't see a concealed player — the
+    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
+    // story can override the binding with its own NPC-detection behavior
+    // (per-world registration is last-wins, ADR-207). It has to stay ahead of
+    // the world build for that precedence to hold, which is why it did NOT
+    // travel with createPlayer when the two were swapped below.
+    registerConcealedVisibilityBehavior(this.world);
+
+    // ADR-327 D10 (design C, ruled 2026-08-26): the WORLD is built first, and
+    // the player second. Under D10 the protagonist is a named character the
+    // story's `before the game starts` block picks out — an ordinary world
+    // entity — so it cannot exist before the world does. `createPlayer` is now
+    // a lookup of that character, not a build, and a story places it in
+    // `createPlayer` (where the world is finished) rather than in
+    // `initializeWorld` (where the player used to already exist).
+    story.initializeWorld(this.world);
+
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
@@ -398,15 +417,6 @@ export class GameEngine {
       newPlayer.add(new ListenerTrait());
     }
 
-    // ADR-148 concealment: register the standard concealed-visibility
-    // behavior on this world (NPCs can't see a concealed player — the
-    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
-    // story can override the binding with its own NPC-detection behavior
-    // (per-world registration is last-wins, ADR-207).
-    registerConcealedVisibilityBehavior(this.world);
-
-    // Initialize story-specific world content (player must exist first)
-    story.initializeWorld(this.world);
 
     // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
     // snippet-bearing room's description carries an unbound {snippet:name}.
@@ -1268,6 +1278,13 @@ export class GameEngine {
         this.sessionMoves++;
       }
 
+      // ADR-327 D9: drain the turn's player-switch request. The story loader
+      // holds no engine handle, so `change the player to X` mid-play reaches
+      // us as an event (the `triggerEnding` seam) and the switch itself
+      // happens here, at the turn boundary — never mid-action, where half the
+      // turn would have run as one character and half as another.
+      this.drainPlayerSwitch(turn);
+
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
         await this.processPlatformOperations(turn);
@@ -1678,6 +1695,42 @@ export class GameEngine {
    * Story code must position the new PC (via world.moveEntity) BEFORE
    * calling switchPlayer, since parser context uses the entity's current location.
    */
+  /**
+   * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
+   *
+   * @param turn the turn just executed
+   * @returns nothing; on a request the role moves and `game.pc_switched` is
+   *   emitted. Two requests in one turn are a story bug, not a sequence: the
+   *   first wins and the rest are reported as `runtime.double-player-switch`,
+   *   because "who is the player at the end of this turn" has one answer and
+   *   silently taking the last one hides the contradiction.
+   */
+  private drainPlayerSwitch(turn: number): void {
+    const requests = (this.turnEvents.get(turn) ?? []).filter(
+      (e) => e.type === 'if.event.player.switch_requested',
+    );
+    if (requests.length === 0) return;
+
+    const first = requests[0].data as { entityId?: string };
+    if (requests.length > 1) {
+      const targets = requests.map((r) => (r.data as { entityId?: string }).entityId ?? '?');
+      this.emitGameEvent({
+        id: `runtime-double-player-switch-${turn}`,
+        type: 'runtime.double-player-switch',
+        timestamp: Date.now(),
+        entities: {},
+        data: {
+          message: `Two \`change the player to\` statements ran in one turn (${targets.join(', ')}). The first won.`,
+          targets,
+          turn,
+        },
+      });
+    }
+    if (first.entityId && first.entityId !== this.context.player.id) {
+      this.switchPlayer(first.entityId);
+    }
+  }
+
   switchPlayer(entityId: string): void {
     const newPlayer = this.world.getEntity(entityId);
     if (!newPlayer) {
@@ -1706,6 +1759,12 @@ export class GameEngine {
 
     // Set new PC's flag
     newActorTrait.isPlayer = true;
+
+    // ADR-327 Q2 (ruled 2026-08-26): `me`/`myself`/`self` name whoever is
+    // being played, not a character, so they move with the role. They live on
+    // the entity's IdentityTrait, which `syncPlayerState` does not touch —
+    // without this, `x me` keeps naming the old PC after every switch.
+    movePlayerRoleVocabulary(oldPlayer, newPlayer);
 
     // Update WorldModel canonical reference
     this.world.setPlayer(entityId);

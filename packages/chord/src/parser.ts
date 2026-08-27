@@ -29,12 +29,14 @@ import {
   DeadlyExitDecl,
   KillStmt,
   ChangeStmt,
+  ChangePlayerStmt,
   ChangeMoodStmt,
   ChangeFeelingStmt,
   CompositionItem,
   ConditionNode,
   ConfigSetting,
   CreateDecl,
+  StartBlockDecl,
   Declaration,
   DefineAction,
   ExtendAction,
@@ -202,6 +204,8 @@ const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 const TOP_KEYWORDS = new Set([
   'story', 'grammar', 'create', 'define', 'when', 'once', 'every', 'import', 'override',
   'extend', 'remove',
+  // ADR-327 D10: `before the game starts … end before`.
+  'before',
 ]);
 
 /**
@@ -401,6 +405,13 @@ class Parser {
         case 'create':
           declarations.push(this.parseCreate());
           break;
+        case 'before': {
+          // ADR-327 D10: `before the game starts` — the story's one pre-play
+          // block, where the player role is assigned.
+          const d = this.parseStartBlock();
+          if (d) declarations.push(d);
+          break;
+        }
         case 'define': {
           const d = this.parseDefine();
           if (d) declarations.push(d);
@@ -1427,6 +1438,41 @@ class Parser {
     return { kind: 'counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
   }
 
+  // ----------------------------------------------------------- start block
+
+  /**
+   * `before the game starts` … statements … `end before` (ADR-327 D10).
+   *
+   * The head must read exactly those four words; anything else is
+   * `parse.start-block` rather than a generic error, because `before` opens
+   * nothing else at the top level. The body is an ordinary statement body —
+   * the effect-statements-only rule (D10 Q3) is an analyzer gate, not a parse
+   * one, so a `phrase` here still parses and reports against its own span.
+   *
+   * @param  none — reads from the parser's line cursor
+   * @returns the declaration, or null when the head did not parse (the parser
+   *   has already resynchronized to the next top-level line)
+   */
+  private parseStartBlock(): StartBlockDecl | null {
+    const headLine = this.lines[this.pos];
+    const words = headLine.tokens.map((t) => (t.kind === 'word' ? t.text.toLowerCase() : null));
+    const isHead =
+      words.length === 4 && words[0] === 'before' && words[1] === 'the' && words[2] === 'game' && words[3] === 'starts';
+    if (!isHead) {
+      this.diagnostics.error(
+        'parse.start-block',
+        'Expected `before the game starts` — the story\'s pre-play block, closed by `end before`.',
+        lineSpan(headLine),
+      );
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    this.pos++;
+    const body = this.parseStatements(headLine.indent, 'before');
+    const endSpan = this.consumeEnd('before', headLine);
+    return { kind: 'start-block', body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   // ---------------------------------------------------------------- create
 
   private parseCreate(): CreateDecl {
@@ -1436,6 +1482,15 @@ class Parser {
     const name = this.parseNameRef(c, () => false);
     if (name.words.length === 0) {
       this.diagnostics.error('parse.create-name', 'Expected an entity name after `create`.', lineSpan(headLine));
+    }
+    // ADR-327 D10: the player is no longer a block you create — it is a role
+    // a named character holds. The block named `player` is gone with it.
+    if (name.words.length === 1 && name.words[0].toLowerCase() === 'player') {
+      this.diagnostics.error(
+        'parse.removed-create-player',
+        '`create the player` was removed — name the character, mark it `playable`, and assign the role in a `before the game starts` block.',
+        lineSpan(headLine),
+      );
     }
 
     const decl: CreateDecl = {
@@ -6833,6 +6888,25 @@ class Parser {
             stmtWhen,
             span: lineSpan(line),
           } as ChangeFeelingStmt;
+        }
+        // ADR-327 D9/D10: `change the player to <entity>` — the role moves to
+        // a named character. The tail is a name ref, not the single state word
+        // the generic `change` takes, so this is its own statement kind and
+        // has to be recognized before the generic target parse consumes `to`.
+        const playerAt = c.isWord('the') && c.isWord('player', 1) ? 2 : c.isWord('player') ? 1 : -1;
+        if (playerAt > 0 && c.isWord('to', playerAt)) {
+          for (let i = 0; i <= playerAt; i++) c.next();
+          const target = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+          if (target.words.length === 0) {
+            this.diagnostics.error(
+              'parse.change-player',
+              'Expected a character name after `change the player to`.',
+              c.restSpan(),
+            );
+            return null;
+          }
+          const stmtWhen = this.parseStatementWhen(c, line);
+          return { kind: 'change-player', target, stmtWhen, span: lineSpan(line) } as ChangePlayerStmt;
         }
         const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
         if (!c.matchWord('to')) {

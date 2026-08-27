@@ -104,7 +104,7 @@ function isMechanical(role: MentionRole | undefined): role is 'tool' | 'progress
  * @returns true when no reading of "unnamed tool" could apply
  */
 function isNotAThingToUse(entity: IREntity): boolean {
-  return isRoom(entity) || isRegion(entity) || entity.isPlayer === true;
+  return isRoom(entity) || isRegion(entity) || entity.isPlayable === true;
 }
 
 /**

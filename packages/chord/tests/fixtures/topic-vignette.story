@@ -50,7 +50,13 @@ define topics for the gamekeeper
     change the gamekeeper to unsettled
 end topics
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gate
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

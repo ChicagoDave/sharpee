@@ -64,8 +64,14 @@ create the Shed
 
   A shed.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
+
+before the game starts
+  change the player to Alex
+end before
 
 create the camera
   in the Yard

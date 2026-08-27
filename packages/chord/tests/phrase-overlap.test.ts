@@ -24,9 +24,15 @@ const story = (rows: string) => `story
   story-version: 0.0.1
   states: daytime, after-hours
 
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the Lodge
   a room

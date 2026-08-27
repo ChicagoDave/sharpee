@@ -77,7 +77,7 @@ define action sliding
     slide along the target
 
 define trait slideable
-  on sliding it
+  on the player sliding
     the player must have the old gray cloak: slide-barehanded
     phrase slide-first-half
     move the player to On the Wire

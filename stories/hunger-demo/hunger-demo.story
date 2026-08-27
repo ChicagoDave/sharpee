@@ -30,7 +30,13 @@ create the ration
 
   One dry emergency ration, hard as a roof tile.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Waste
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

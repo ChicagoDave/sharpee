@@ -22,7 +22,7 @@ describe('sharpee compose', () => {
 
     // The mutation under test: the file exists and holds the versioned IR.
     const ir = JSON.parse(readFileSync(out, 'utf8'));
-    expect(ir.format).toBe('story language 2');
+    expect(ir.format).toBe('story language 4');
     expect(Array.isArray(ir.entities)).toBe(true);
     expect(ir.entities.length).toBeGreaterThan(0);
   });
@@ -34,7 +34,7 @@ describe('sharpee compose', () => {
     const story =
       'story\n  title: T\n  authors:\n    A\n  id: t\n  story-version: 0.0.1\n\n' +
       'create the Den\n  a room\n\n  A small den.\n\n' +
-      'create the player\n  starts in the Den\n\n  You.\n';
+      'create Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     const storyFile = join(dir, 't.story');
     writeFileSync(storyFile, story);
     writeFileSync(join(dir, 't.config.json'), '{ not json');
@@ -74,7 +74,7 @@ describe('sharpee compose', () => {
     const story =
       'story\n  title: T\n  authors:\n    A\n  id: t\n  story-version: 0.0.1\n\n' +
       'import "regions/market"\n\n' +
-      'create the player\n  starts in the Market\n\n  You.\n';
+      'create Alex\n  a person\n  playable\n  starts in the Market\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     const fragment = 'create the Market\n  a room\n\n  Stalls.\n\n  after entering it\n    phrase no-such-key\n  end after\n';
     const storyFile = join(dir, 't.story');
     writeFileSync(storyFile, story);

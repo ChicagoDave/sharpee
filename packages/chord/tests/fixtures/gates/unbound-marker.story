@@ -10,3 +10,11 @@ define text garbled from "./extras.ts"
 define phrases en-US
   spooky:
     You see {gremlin} in the dark.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

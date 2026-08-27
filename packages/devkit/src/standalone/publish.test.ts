@@ -41,8 +41,15 @@ create the Landing
 
   A quiet place to begin.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Landing
+
+before the game starts
+  change the player to Alex
+end before
+
 `,
   );
   return file;

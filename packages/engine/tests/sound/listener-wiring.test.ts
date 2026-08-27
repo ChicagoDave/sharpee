@@ -60,6 +60,8 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
       };
 
       private _player: IFEntity | null = null;
+      /** Starting room, recorded by initializeWorld (ADR-327 D10 order). */
+      private _startRoomId: string | undefined;
       private _customTrait: ListenerTrait | null = null;
       private _room: IFEntity | null = null;
 
@@ -81,11 +83,9 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
 
       initializeWorld(world: WorldModel): void {
         const room = world.createEntity('Test Room', 'room');
+        this._startRoomId = room.id;
         room.add(new RoomTrait());
         this._room = room;
-        if (this._player) {
-          world.moveEntity(this._player.id, room.id);
-        }
       }
 
       initialize(): void {}

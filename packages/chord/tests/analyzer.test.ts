@@ -24,7 +24,7 @@ describe('cloak.story IR', () => {
   });
 
   it('stamps the IR format version', () => {
-    expect(ir.format).toBe('story language 3');
+    expect(ir.format).toBe('story language 4');
     expect(ir.format).toBe(IR_FORMAT);
   });
 
@@ -48,12 +48,12 @@ describe('cloak.story IR', () => {
       'foyer-of-the-opera-house',
       'cloakroom',
       'foyer-bar',
-      'player',
+      'alex',
       'velvet-cloak',
       'brass-hook',
       'message-in-the-sawdust',
     ]);
-    expect(ir.entities[3].isPlayer).toBe(true);
+    expect(ir.entities[3].isPlayable).toBe(true);
   });
 
   it('resolves exits and placement to entity IDs', () => {

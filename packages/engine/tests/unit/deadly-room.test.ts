@@ -16,14 +16,20 @@ import { Story } from '../../src/story';
 
 /** A story whose one room is a deadly room (falls-style: only LOOK/EXAMINE are safe). */
 function deadlyRoomStory(): Story {
+  // ADR-327 D10: setStory builds the world first, so the room exists by the
+  // time createPlayer runs and the placement lives there.
+  let roomId: string | undefined;
   return {
     config: { id: 'deadly-room-test', title: 'Deadly Room', authors: ['Test'], version: '1.0.0' },
-    createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
+    createPlayer: (world: WorldModel) => {
+      const player = world.createEntity('You', EntityType.ACTOR);
+      if (roomId) world.moveEntity(player.id, roomId);
+      return player;
+    },
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Aragain Falls', EntityType.ROOM);
       room.add(new DeadlyRoomTrait({ cause: 'fall', safeVerbs: ['looking', 'examining'] }));
-      const player = world.getPlayer()!;
-      world.moveEntity(player.id, room.id);
+      roomId = room.id;
     },
   };
 }

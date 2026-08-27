@@ -23,10 +23,17 @@ const WORLD = `create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function errorsOf(source: string) {
@@ -180,10 +187,17 @@ create the Study
 
   A study.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     expect(errorsOf(source)).toEqual([]);
   });

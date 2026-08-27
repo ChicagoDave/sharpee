@@ -36,7 +36,7 @@ const SOURCE =
   'define phrase menace-resisted\n  The look slides off.\nend phrase\n\n' +
   'define phrase menace-lifted\n  The pressure eases.\nend phrase\n\n' +
   'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
-  'create the player\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
   'create Greta\n' +
   '  a person, proper\n' +

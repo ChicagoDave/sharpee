@@ -107,7 +107,7 @@ describe('core NPC behaviors through the real loader (ADR-215 AC-4)', () => {
   it('a hostile guard attacks through the real combat resolver (use combat) and mutates health', () => {
     // The player's combat traits COMPOSE from the story block (Gap-2
     // ruling, David 2026-07-18): `a person, combatant with health 30 and
-    // skill 10` on `create the player` lands on the real traits.
+    // skill 10` on the playable character lands on the real traits.
     const combatant = player.get(TraitType.COMBATANT) as CombatantTrait;
     expect(combatant, 'player-block combatant composed').toBeDefined();
     expect(combatant.skill).toBe(10);

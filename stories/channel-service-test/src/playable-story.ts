@@ -46,9 +46,13 @@ export class ChannelServiceTestStory implements Story {
       'AC-15 fixture for ADR-163 channel-I/O parity. One room, one beacon, one debug-stats channel.',
   };
 
+
+  /** The starting room, remembered for `createPlayer` (ADR-327 D10 order). */
+  private labId?: string;
   initializeWorld(world: WorldModel): void {
     // The Lab — single room with one portable item.
     const lab = world.createEntity('The Lab', EntityType.ROOM);
+    this.labId = lab.id;
     lab.add(
       new RoomTrait({
         exits: {},
@@ -81,13 +85,6 @@ export class ChannelServiceTestStory implements Story {
     // Place the beacon in the lab so the player can take it.
     world.moveEntity(beacon.id, lab.id);
 
-    // Place the player in the lab. The player is created externally
-    // (via createPlayer + setPlayer); positioning happens here so the
-    // engine's first turn produces the lab's room description.
-    const player = world.getPlayer();
-    if (player) {
-      world.moveEntity(player.id, lab.id);
-    }
   }
 
   createPlayer(world: WorldModel): IFEntity {
@@ -98,6 +95,10 @@ export class ChannelServiceTestStory implements Story {
     }
     const player = world.createEntity('yourself', EntityType.ACTOR);
     ensurePlayerTraits(player);
+    // ADR-327 D10: setStory builds the world FIRST, so the lab exists by the
+    // time this runs — the player is placed here rather than in
+    // initializeWorld, where it used to already exist.
+    if (this.labId) world.moveEntity(player.id, this.labId);
     return player;
   }
 

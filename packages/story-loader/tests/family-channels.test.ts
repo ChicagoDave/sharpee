@@ -35,10 +35,16 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define sound rain from "audio/rain.wav"
 define image map from "img/map.png"

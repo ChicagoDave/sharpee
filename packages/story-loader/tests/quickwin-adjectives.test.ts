@@ -63,10 +63,17 @@ create the Bin
 
 ${body}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shed
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D1: pushable/pullable loader cases', () => {

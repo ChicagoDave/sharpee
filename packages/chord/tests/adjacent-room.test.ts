@@ -32,10 +32,17 @@ create the monkey
 ${body}
   A monkey.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Stall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const diags = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error');

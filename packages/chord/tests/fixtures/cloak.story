@@ -42,7 +42,9 @@ create the Foyer Bar
       change the message to obliterated
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Foyer of the Opera House
   wears the velvet cloak
 
@@ -100,3 +102,7 @@ define phrases en-US
     The message has been trampled beyond recognition. You have lost!
 
 define text garbled from "./extras.ts"
+
+before the game starts
+  change the player to Alex
+end before

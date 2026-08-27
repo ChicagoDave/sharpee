@@ -353,11 +353,11 @@ create the apple
 
   The apple is round, firm, green at the bottom shading up to red near the stem.
 
-  after taking it while calm, once
+  after the player taking while calm, once
     phrase apple-lifted-quietly
   end after
 
-  on eating it
+  on the player eating
     refuse when the player is not in the Alley: apple-not-here
     phrase apple-first-bite
     change the story to hunted
@@ -371,7 +371,7 @@ create the banana
 
   The banana is plump, bright yellow with just a sprinkling of brown freckles.
 
-  on taking it while calm
+  on the player taking while calm
     refuse banana-blocked
   end on
 

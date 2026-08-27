@@ -43,3 +43,11 @@ define phrases en-US
     The walls meet in the middle, and you are in the way.
   tomb-curse:
     The curse of the tomb strikes you down where you stand.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

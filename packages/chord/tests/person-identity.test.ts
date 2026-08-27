@@ -18,6 +18,14 @@ const story = (body: string) => `story
   id: estate
   story-version: 0.0.1
 
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
+
 create the Hall
   a room
 

@@ -174,7 +174,7 @@ describe('the cross-host byte contract (shared with Chord Writer)', () => {
 describe('splice mechanics', () => {
   it('stops scanning at the first non-field line — an ifid: in a nested block is not a header field', () => {
     const source =
-      'story\n  title: T\n  id: t\n\nuse thing\n  ifid: NOT-A-HEADER\n\ncreate the player\n  a room\n\n  You.\n';
+      'story\n  title: T\n  id: t\n\nuse thing\n  ifid: NOT-A-HEADER\n\ncreate Alex\n  a person\n  playable\n  a room\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     const storyFile = project(source);
     writeStoryConfig(configPathFor(storyFile), { version: STORY_CONFIG_VERSION, ifid: 'DDDD-4444' });
 

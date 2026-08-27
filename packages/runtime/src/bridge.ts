@@ -164,7 +164,10 @@ export class SharpeeRuntimeBridge {
     try {
       // Bootstrap the engine stack
       this.world = new WorldModel();
-      const player = this.story.createPlayer(this.world);
+      // ADR-327 D10: see the note in @sharpee/bridge — the role is claimed by
+      // `setStory`, after the world exists. This placeholder only satisfies the
+      // engine constructor.
+      const player = this.world.createEntity('player', 'actor');
       this.world.setPlayer(player.id);
 
       const language = new EnglishLanguageProvider();

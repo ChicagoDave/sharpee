@@ -78,10 +78,16 @@ create the sea
 
   The sea.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Beach
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define action waving
   grammar

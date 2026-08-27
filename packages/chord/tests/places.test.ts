@@ -36,10 +36,17 @@ create the monkey
 ${body}
   A monkey.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Stall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
@@ -115,7 +122,7 @@ describe("is in <owner>'s location (ADR-325 D1)", () => {
 
   it("accepts the plural possessive (`the guards' location`, GH #305)", () => {
     const src = story("  states: calm, wary\n  on every turn\n    change the monkey to wary when the monkey is in the guards' location\n  end on\n")
-      .replace('create the player', "create the guards\n  a person, plural\n  in the Alley\n\n  Guards.\n\ncreate the player");
+      .replace('create Alex', "create the guards\n  a person, plural\n  in the Alley\n\n  Guards.\n\ncreate Alex");
     expect(errs(src)).toEqual([]);
   });
 });

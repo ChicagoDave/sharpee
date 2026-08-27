@@ -31,10 +31,18 @@ create the guards
 ${guards}
   Guards.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
+
 ${player}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const TIMERS = `define timer search for the guards
@@ -121,7 +129,7 @@ describe('timer verbs (D3c)', () => {
 
   it("the plural possessive works from the player's block (GH #305)", () => {
     const ir = ok(story(TIMERS, '', "  on every turn\n    restart the guards\' search\n  end on\n"));
-    expect(ir.entities.find((e) => e.id === 'player')!.onClauses[0].body[0]).toMatchObject({ verb: 'restart', timer: 'guards.search' });
+    expect(ir.entities.find((e) => e.id === 'alex')!.onClauses[0].body[0]).toMatchObject({ verb: 'restart', timer: 'guards.search' });
   });
 
   it('rejects an unknown timer, and a tally named where a timer is wanted', () => {

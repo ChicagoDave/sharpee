@@ -119,7 +119,9 @@ create the Staff Parking Lot
 
   A small staff parking lot beyond the zoo fence. Off limits to visitors.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Zoo Entrance
 
   Just an ordinary visitor to the zoo.
@@ -756,3 +758,7 @@ define phrases en-US
 define text flavor from "./chord-extras.ts"
 define text aside from "./chord-extras.ts"
 define text gate-status from "./chord-extras.ts"
+
+before the game starts
+  change the player to Alex
+end before

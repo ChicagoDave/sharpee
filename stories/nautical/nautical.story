@@ -43,7 +43,13 @@ create the tiller
 
   Worn smooth by three generations of hands.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Cockpit
 
   Salt-streaked and squinting.
+
+before the game starts
+  change the player to Alex
+end before

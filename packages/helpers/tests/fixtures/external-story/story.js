@@ -34,11 +34,16 @@ class HelpersBoundaryStory {
   createPlayer(world) {
     const { actor } = createHelpers(world);
 
-    return actor('yourself')
+    const player = actor('yourself')
       .description('As good-looking as ever.')
       .aliases('self', 'me')
       .properName()
       .build();
+
+    // ADR-327 D10: setStory builds the world FIRST, so the hall exists by the
+    // time this runs — the player is placed here, not in initializeWorld.
+    if (this.hallId) world.moveEntity(player.id, this.hallId);
+    return player;
   }
 
   initializeWorld(world) {
@@ -58,7 +63,7 @@ class HelpersBoundaryStory {
       .in(hall)
       .build();
 
-    world.moveEntity(world.getPlayer().id, hall.id);
+    this.hallId = hall.id;
   }
 }
 

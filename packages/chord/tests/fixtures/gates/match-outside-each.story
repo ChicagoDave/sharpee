@@ -8,7 +8,9 @@ story
 create the Barn
   a room
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Barn
 
 create the goat
@@ -23,3 +25,7 @@ create the goat
 define phrases en-US
   prod-note:
     Prodded.
+
+before the game starts
+  change the player to Alex
+end before

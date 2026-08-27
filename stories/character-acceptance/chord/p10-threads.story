@@ -38,12 +38,14 @@ create the Archive
 
   Shelves of ledgers past.
 
-  after entering it while quiet-day
+  after the player entering while quiet-day
     phrase night-passes
     change the story to next-day
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Counting Room
 
   You.
@@ -120,3 +122,7 @@ end phrase
 define phrase night-passes
   "The lamps burn down; morning finds you among the shelves."
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

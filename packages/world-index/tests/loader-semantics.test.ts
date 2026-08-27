@@ -66,8 +66,15 @@ create the Study
 
   A study.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D3 row 1 — states[0] is the implicit initial state', () => {
@@ -144,8 +151,14 @@ create the Pantry
 
   A pantry.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
 
 create the front door
   a door, lockable
@@ -388,6 +401,14 @@ create the cold range
   in the Hall
 
   A cold iron range.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
   /** Read one entity out of the fixture, failing loudly if it drifted. */

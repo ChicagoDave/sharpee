@@ -56,13 +56,14 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
       'create', // Foyer
       'create', // Cloakroom
       'create', // Foyer Bar
-      'create', // player
+      'create', // Alex
       'create', // velvet cloak
       'create', // brass hook
       'create', // message
       'extend-action',
       'define-phrases',
       'define-text',
+      'start-block', // ADR-327 D10 — last in cloak.story
     ]);
   });
 

@@ -30,7 +30,9 @@ create the West Room
     phrase lucky-draught
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the East Room
 
   Determined-looking.
@@ -46,3 +48,7 @@ end phrase
 define phrases en-US
   lucky-draught:
     A lucky draught of air sweeps past you.
+
+before the game starts
+  change the player to Alex
+end before

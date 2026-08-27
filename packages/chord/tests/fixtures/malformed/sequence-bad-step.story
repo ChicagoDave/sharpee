@@ -13,3 +13,11 @@ define sequence countdown
     phrase tock
       Tock.
 end sequence
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

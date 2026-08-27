@@ -804,24 +804,13 @@ export class ChordRuntime {
 
   // ------------------------------------------------------------ on-clauses
 
-  /**
-   * Does the player's own block carry clauses that need the player entity
-   * marked for interceptor resolution (ADR-327 D1 bare heads, or heads on
-   * the player as target)? The loader consults this at `createPlayer`,
-   * which may run before or after `bind` depending on the host's order.
-   */
-  playerCarriesClauses(): boolean {
-    const player = this.ir.entities.find((e) => e.isPlayer);
-    return !!player && player.onClauses.some((c) => c.binding !== 'every-turn' && !this.eventTriggerFor(player, c));
-  }
-
   /** Mark the clause's target entity so interceptor resolution finds it. */
   private prepareOnClauseTarget(world: WorldModel, entity: IREntity, clause: IROnClause): void {
     const worldId = this.host.entityId(entity.id);
-    // The player is created by the host on its own schedule — in the direct/
-    // test order after the world is built, so it has no instance at bind
-    // time. `createPlayer` marks it instead (`playerCarriesClauses`).
-    if (!worldId && entity.isPlayer) return;
+    // ADR-327 D10: every character, the role-holder included, is built by the
+    // world passes before `bind` runs — so there is no longer an entity with
+    // clauses and no world instance. The player special case retired with the
+    // player block.
     if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, clause.span);
     const target = world.getEntity(worldId);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, clause.span);
@@ -3324,6 +3313,12 @@ export class ChordRuntime {
           id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
           name: `on every turn (${irEntity.id})`,
           run: (ctx) => {
+            // Role gate (ADR-327 D9): a character's autonomous clauses drive
+            // them only while they are NOT the one being played. Checked
+            // before the presence gate so the RNG stream and `, once` are
+            // untouched for as long as the owner holds the role — the clause
+            // wakes, unconsumed, the turn the role moves off them.
+            if (this.holdsPlayerRole(ctx.world, irEntity.id)) return [];
             // Presence gate (decision 10): performances need an audience —
             // the clause does not FIRE off-stage. Checked before the
             // condition so an off-stage `one chance in N` never draws the
@@ -3384,8 +3379,10 @@ export class ChordRuntime {
               const worldId = this.host.entityId(irEntity.id);
               const entity = worldId ? ctx.world.getEntity(worldId) : undefined;
               if (!entity?.has(traitType)) continue;
-              // Presence gate (decision 10) — before any condition so the
-              // RNG stream and `, once` are untouched off-stage.
+              // Role gate (ADR-327 D9), then the presence gate (decision 10)
+              // — both before any condition so the RNG stream and `, once`
+              // are untouched off-stage and while the owner is the PC.
+              if (this.holdsPlayerRole(ctx.world, irEntity.id)) continue;
               if (!this.playerPresentAt(ctx.world, irEntity.id)) continue;
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.evaluator.evalCondition(comp.condition, evalCtx)) continue;
@@ -3548,6 +3545,21 @@ export class ChordRuntime {
     return this.playerPresentAt(world, def.owner);
   }
 
+  /**
+   * Is this IR entity the one currently holding the player role (ADR-327 D9)?
+   *
+   * Asked at fire time, never stored: the role moves, and a clause silenced
+   * this turn must be able to speak the next one.
+   *
+   * @param world the live world
+   * @param irEntityId the clause owner's IR id
+   * @returns true when that character is the current PC
+   */
+  private holdsPlayerRole(world: WorldModel, irEntityId: string): boolean {
+    const worldId = this.host.entityId(irEntityId);
+    return worldId !== undefined && worldId === world.getPlayer()?.id;
+  }
+
   private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
     const ownerId = this.host.entityId(irEntityId);
     const playerId = world.getPlayer()?.id;
@@ -3658,6 +3670,44 @@ export class ChordRuntime {
    * 'mutations' applies change/set/move only; 'reports' collects
    * phrase/emit/win/lose only; 'all' (rules) does both in source order.
    */
+  /**
+   * The world entity the start block assigned the player role to (ADR-327
+   * D10). Set by the `change-player` effect while the world has no player;
+   * read once by the loader's `createPlayer`. Undefined means the block ran
+   * and never assigned — a load error, not a default.
+   */
+  assignedPlayerId?: string;
+
+  /**
+   * True only while `runStartBlock` is executing. This — not "does the world
+   * have a player yet" — is what tells `change the player to` which of its two
+   * meanings applies. Hosts are free to seed a placeholder player before
+   * `setStory` (bootstrap does), so the world's own answer says nothing about
+   * whether the story has opened.
+   */
+  private inStartBlock = false;
+
+  /**
+   * Run the story's `before the game starts` body against the fully built
+   * world (ADR-327 D10).
+   *
+   * @param world the world every entity has already been built into
+   * @returns the events the block's effects produced — ordinarily none, since
+   *   the block takes effect statements only (`analysis.start-block-narration`)
+   */
+  runStartBlock(world: WorldModel): ISemanticEvent[] {
+    const block = this.ir.startBlock;
+    if (!block) return [];
+    this.inStartBlock = true;
+    try {
+      // A story-owned context: no owner entity, so `it` is unbound — the same
+      // shape a story-owned daemon body runs in.
+      return this.execStatements(block.body, { world });
+    } finally {
+      this.inStartBlock = false;
+    }
+  }
+
   private execStatements(
     body: IRStatement[],
     ctx: ExecContext,
@@ -3754,6 +3804,28 @@ export class ChordRuntime {
                 );
               }
               ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
+            }
+          }
+          break;
+        }
+        case 'change-player': {
+          // ADR-327 D9/D10 — one statement, two moments. Inside the start
+          // block it IS the assignment: the loader reads `assignedPlayerId`
+          // and returns that entity from `createPlayer`. Anywhere else it is a
+          // request the engine drains at turn end, because the loader holds no
+          // engine handle (the `triggerEnding` seam).
+          if (holds) {
+            if (this.inStartBlock) {
+              // A state change: it belongs to the mutations pass.
+              if (phase !== 'reports') this.assignedPlayerId = this.evaluator.entityValue(stmt.entity, ctx);
+            } else if (phase !== 'mutations') {
+              // A signal for the engine to act on at the turn boundary, so it
+              // rides the REPORTS pass — the mutations pass's events are
+              // recorded and dropped, which is where this request went missing.
+              const targetId = this.evaluator.entityValue(stmt.entity, ctx);
+              if (targetId) {
+                events.push(this.rawEvent('if.event.player.switch_requested', { entityId: targetId }));
+              }
             }
           }
           break;

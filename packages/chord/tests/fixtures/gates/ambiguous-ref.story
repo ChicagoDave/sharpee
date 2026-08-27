@@ -24,8 +24,13 @@ create the iron hook
   scenery
   in the Closet
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Closet
 
   You.
 
+before the game starts
+  change the player to Alex
+end before

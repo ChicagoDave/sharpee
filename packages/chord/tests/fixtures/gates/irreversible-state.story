@@ -18,7 +18,13 @@ create the Parlor
     change the vase to whole
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Parlor
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

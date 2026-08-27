@@ -17,10 +17,16 @@ const WORLD = `create the Lab
 
   A lab.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the cat
   in the Lab

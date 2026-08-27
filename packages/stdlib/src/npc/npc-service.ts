@@ -220,7 +220,7 @@ export class NpcService implements INpcService {
 
     // Process each NPC
     for (const npc of npcs) {
-      if (!this.canNpcAct(npc)) continue;
+      if (!this.canNpcAct(npc, world)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior) continue;
@@ -269,7 +269,7 @@ export class NpcService implements INpcService {
     const npcs = entities.filter((e) => e.has(TraitType.NPC));
 
     for (const npc of npcs) {
-      if (!this.canNpcAct(npc)) continue;
+      if (!this.canNpcAct(npc, world)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerEnters) continue;
@@ -310,7 +310,7 @@ export class NpcService implements INpcService {
     const npcs = entities.filter((e) => e.has(TraitType.NPC));
 
     for (const npc of npcs) {
-      if (!this.canNpcAct(npc)) continue;
+      if (!this.canNpcAct(npc, world)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerLeaves) continue;
@@ -345,7 +345,7 @@ export class NpcService implements INpcService {
     const npc = world.getEntity(npcId);
     if (!npc) return [];
 
-    if (!this.canNpcAct(npc)) return [];
+    if (!this.canNpcAct(npc, world)) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onSpokenTo) {
@@ -393,7 +393,7 @@ export class NpcService implements INpcService {
     const npc = world.getEntity(npcId);
     if (!npc) return [];
 
-    if (!this.canNpcAct(npc)) return [];
+    if (!this.canNpcAct(npc, world)) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onAttacked) return [];
@@ -420,14 +420,20 @@ export class NpcService implements INpcService {
   // ==================== Private Helpers ====================
 
   /**
-   * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+   * Whether an NPC can take a turn: it is an NPC, it is not the character
+   * currently being played (ADR-327 D9), and — if it carries life-state —
    * is alive and conscious. An NPC with no `HealthTrait` is active by default
    * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
    * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility
    * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
    */
-  private canNpcAct(npc: IFEntity): boolean {
+  private canNpcAct(npc: IFEntity, world: WorldModel): boolean {
     if (!npc.has(TraitType.NPC)) return false;
+    // ADR-327 D9: under PC rotation every character carries the NPC trait, so
+    // what keeps the service off the protagonist is that they hold the role
+    // THIS turn — asked here, never stored, so a character the role moves off
+    // resumes being driven on the very next turn.
+    if (npc.id === world.getPlayer()?.id) return false;
     const health = npc.get(TraitType.HEALTH) as HealthTrait | undefined;
     return !health || HealthBehavior.canAct(health);
   }
@@ -464,7 +470,7 @@ export class NpcService implements INpcService {
 
   private getActiveNpcs(world: WorldModel): IFEntity[] {
     const allEntities = world.getAllEntities();
-    return allEntities.filter((e) => this.canNpcAct(e));
+    return allEntities.filter((e) => this.canNpcAct(e, world));
   }
 
   private getBehaviorForNpc(npc: IFEntity): NpcBehavior | undefined {

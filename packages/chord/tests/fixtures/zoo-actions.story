@@ -12,7 +12,9 @@ create the Petting Zoo
 
   A straw-floored yard full of amiable animals.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Petting Zoo
 
   You.
@@ -122,3 +124,7 @@ create the garden snake
   pettable with kind snake
 
   Coiled behind glass, radiating disdain.
+
+before the game starts
+  change the player to Alex
+end before

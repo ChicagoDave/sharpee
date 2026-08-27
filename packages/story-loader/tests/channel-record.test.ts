@@ -50,6 +50,14 @@ define channel clock
     chimes list of chime
   end record
 end channel
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 function compileSource(source: string): StoryIR {

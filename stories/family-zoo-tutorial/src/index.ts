@@ -268,6 +268,9 @@ export class FriendlyZooStory implements Story {
     player.add(new IdentityTrait({ name: 'yourself', description: 'Just an ordinary visitor to the zoo.', aliases: ['self', 'myself', 'me'], properName: true, article: '' }));
     player.add(new ActorTrait({ isPlayer: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+    // ADR-327 D10: setStory builds the world FIRST, so the entrance exists by
+    // the time this runs — the player is placed here, not in initializeWorld.
+    world.moveEntity(player.id, this.roomIds.entrance);
     return player;
   }
 
@@ -286,9 +289,6 @@ export class FriendlyZooStory implements Story {
     // per-world, idempotent — no duplicate-registration guard needed)
     world.registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
 
-    // Place the player
-    const player = world.getPlayer();
-    if (player) world.moveEntity(player.id, rooms.entrance);
   }
 
   getCustomActions(): any[] {

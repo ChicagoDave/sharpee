@@ -41,8 +41,15 @@ create the Study
 
   A study.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** Resolve a phrase against a compiled fixture, the way the parser would. */

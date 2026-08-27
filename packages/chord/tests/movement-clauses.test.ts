@@ -18,7 +18,7 @@ define phrase held
   They hold you.
 end phrase
 
-define timer waiting for the player
+define timer waiting for Alex
   pausing
 end timer
 
@@ -36,10 +36,18 @@ create the guards
 ${guards}
   Guards.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
+
 ${player}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
@@ -53,22 +61,30 @@ const ok = (src: string) => {
 describe("the player's own going (D3h)", () => {
   it('lowers bare `on going` and `after going` as self-bound clauses', () => {
     const ir = ok(story('', '', '  on going while the guards is alert\n    refuse held\n  end on\n\n  after going\n    restart waiting\n  end after\n'));
-    const player = ir.entities.find((e) => e.isPlayer)!;
+    const player = ir.entities.find((e) => e.isPlayable)!;
     expect(player.onClauses.map((c) => [c.clauseKind, c.action, c.binding, c.routing])).toEqual([
       ['on', 'going', 'self', 'interceptor'],
       ['after', 'going', 'self', 'interceptor'],
     ]);
     expect(player.onClauses[0].condition).not.toBeNull();
-    expect(player.onClauses[1].body[0]).toMatchObject({ kind: 'timer', verb: 'restart', timer: 'player.waiting' });
+    expect(player.onClauses[1].body[0]).toMatchObject({ kind: 'timer', verb: 'restart', timer: 'alex.waiting' });
   });
 
   it('accepts `, once` on the bare form', () => {
     const ir = ok(story('', '', '  after going, once\n    restart waiting\n  end after\n'));
-    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0]).toMatchObject({ binding: 'self', once: true });
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0]).toMatchObject({ binding: 'self', once: true });
   });
 
-  it("rejects `on the player going` inside the player block — the owner is the block's subject (ADR-327 D1)", () => {
-    expect(errs(story('', '', '  on the player going\n    refuse held\n  end on\n'))).toContain('analysis.head-actor-is-owner');
+  // ADR-327 D10: there is no player block any more, so `on the player going`
+  // inside a character's block no longer names that block's own owner — it
+  // names the role, which some other character may hold. Naming the owner by
+  // name is what still gates.
+  it('accepts `on the player going` inside a character block — the head names the role', () => {
+    expect(errs(story('', '', '  on the player going\n    refuse held\n  end on\n'))).toEqual([]);
+  });
+
+  it("rejects `on Alex going` inside Alex's own block — the owner is the block's subject (ADR-327 D1)", () => {
+    expect(errs(story('', '', '  on Alex going\n    refuse held\n  end on\n'))).toContain('analysis.head-actor-is-owner');
   });
 
   it('accepts bare `on going` in a character block — the character\'s own movement (ADR-327 D1)', () => {
@@ -84,7 +100,7 @@ describe("the player's own going (D3h)", () => {
 
   it('the bare form generalizes to any gerund in an actor block (ADR-327 D1, Q1)', () => {
     const ir = ok(story('', '', '  on taking\n    refuse held\n  end on\n'));
-    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0]).toMatchObject({ action: 'taking', binding: 'self', actor: null });
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0]).toMatchObject({ action: 'taking', binding: 'self', actor: null });
   });
 
   it('`on the player going` on a room is unchanged', () => {
@@ -107,10 +123,17 @@ create the Yard
 
   A yard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     const ir = ok(src);
     expect(ir.entities.find((e) => e.id === 'yard')!.onClauses[0]).toMatchObject({ action: 'going', binding: 'object', actor: { kind: 'player' } });
@@ -129,7 +152,7 @@ describe('when <entity> moves (D3h)', () => {
 
   it('accepts `while` without the comma and an entity mover', () => {
     const ir = ok(story('', '', '  when the guards moves while the guards is alert\n    restart waiting\n  end when\n'));
-    const player = ir.entities.find((e) => e.isPlayer)!;
+    const player = ir.entities.find((e) => e.isPlayable)!;
     expect(player.moveClauses![0].mover).toEqual({ kind: 'entity', id: 'guards' });
   });
 
@@ -178,6 +201,6 @@ describe('inline phrase bodies inside event clauses', () => {
     const ir = ok(story('', '  when the player moves\n    phrase jolt\n      They jolt.\n  end when\n', '  when waiting expires\n    phrase done\n      Done waiting.\n  end when\n'));
     const table = ir.phrases.locales[ir.phrases.defaultLocale];
     expect(table['guards.jolt'].variants[0].text).toBe('They jolt.');
-    expect(table['player.done'].variants[0].text).toBe('Done waiting.');
+    expect(table['alex.done'].variants[0].text).toBe('Done waiting.');
   });
 });

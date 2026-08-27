@@ -44,10 +44,18 @@ create the monkey
 
   A monkey.
 ${extra}
-create the player
+create Alex
+  a person
+  playable
   starts in the Alley
+
 ${player}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
@@ -102,12 +110,12 @@ describe('a region as a place (D5)', () => {
 
   it('a landing makes the region a destination', () => {
     const ir = ok(story('  landing the East Gate', '', clause('move the monkey to the Market')));
-    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0].body[0]).toMatchObject({ kind: 'move', place: { kind: 'entity', id: 'market' } });
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0].body[0]).toMatchObject({ kind: 'move', place: { kind: 'entity', id: 'market' } });
   });
 
   it("`set <region>'s landing to <room>` lowers as a field write", () => {
     const ir = ok(story('  landing the East Gate', '', clause("set the Market's landing to the Hat Stall")));
-    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0].body[0]).toMatchObject({
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0].body[0]).toMatchObject({
       kind: 'set',
       target: { kind: 'field', base: { kind: 'entity', id: 'market' }, field: 'landing' },
       value: { kind: 'entity', id: 'hat-stall' },

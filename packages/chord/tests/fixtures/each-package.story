@@ -50,7 +50,9 @@ create the Trophy Barn
 
   A barn with a ledger and strong opinions.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Trophy Barn
 
 create the pygmy goat
@@ -88,3 +90,7 @@ define phrases en-US
     The keeper sweeps the yard.
   guard-note:
     The sign hangs steady.
+
+before the game starts
+  change the player to Alex
+end before

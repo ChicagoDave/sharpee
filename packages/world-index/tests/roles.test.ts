@@ -99,6 +99,14 @@ create the humming pipe
 define phrase pipe-knock
   The pipe knocks once.
 end phrase
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 `);
     const pipe = entity(ir, 'humming-pipe');
     expect(pipe.onClauses).toHaveLength(1);
@@ -120,7 +128,7 @@ end phrase
   });
 
   it('never calls the player a tool, though nothing withdraws their portability', () => {
-    const player = fernhill.entities.find((e) => e.isPlayer);
+    const player = fernhill.entities.find((e) => e.isPlayable);
     expect(player?.traits ?? []).toHaveLength(0);
     expect(rolesOf(fernhill).get(player!.id)).toBe('atmosphere-info');
   });

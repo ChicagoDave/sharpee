@@ -21,6 +21,14 @@ const story = (body: string, defines: string) => `story
   on every turn
 ${body}  end on
 
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
+
 create the Hall
   a room
 

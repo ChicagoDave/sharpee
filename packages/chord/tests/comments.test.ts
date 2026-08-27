@@ -43,10 +43,17 @@ create the Cave
 
   A cave.
 
-${mid}create the player
+${mid}create Alex
+  a person
+  playable
   starts in the Cave
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('ADR-249 lexer: `##` comment lines (AC group 1)', () => {

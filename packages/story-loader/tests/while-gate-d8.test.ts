@@ -198,10 +198,17 @@ create the flag
 
   A flag.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 type Loaded = ReturnType<typeof load>;

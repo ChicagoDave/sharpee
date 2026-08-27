@@ -23,9 +23,16 @@ const story = (body: string) => `story
   story-version: 0.0.1
 
 ${body}
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('region kind noun (ADR-236 D1, ratchet R1)', () => {

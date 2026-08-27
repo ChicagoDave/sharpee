@@ -113,10 +113,17 @@ create the Underground
   a region
   containing the Mines
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Coal Seam
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const mines = world.getEntity(worldId('mines'))!;
     expect((mines.get(TraitType.REGION) as RegionTrait).parentRegionId).toBe(worldId('underground'));

@@ -30,10 +30,16 @@ ${safeLines}
 
   A safe.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the brass key
 
@@ -76,7 +82,7 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
   it('leaves `starts in <place>` placement untouched', () => {
     const result = compile(story('  a container'));
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    const player = result.ir.entities.find((e) => e.id === 'player')!;
+    const player = result.ir.entities.find((e) => e.id === 'alex')!;
     expect(player.placement).toMatchObject({ relation: 'starts-in', place: 'vault' });
     expect(player.startsStates).toEqual([]);
   });

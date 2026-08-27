@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
-const WORLD = 'create the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n';
+const WORLD = 'create the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
 
 const action = (lines: string) =>
   `${HEADER}define action testing\n${lines}  otherwise refuse cant\n\n  phrases en-US\n    cant:\n      No.\n\n${WORLD}`;

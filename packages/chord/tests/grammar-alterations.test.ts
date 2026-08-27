@@ -15,7 +15,7 @@ const errorsOf = (source: string) =>
 const codesOf = (source: string) => errorsOf(source).map((d) => d.code);
 
 const STORY =
-  'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n\n';
+  'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n';
 
 describe('extend action (ADR-270 D2/D6)', () => {
   it('an extension with patterns, means, and a constraint compiles clean into grammarExtensions', () => {

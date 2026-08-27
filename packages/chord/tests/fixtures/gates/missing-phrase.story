@@ -14,7 +14,13 @@ create the Foyer
     phrase nonexistent-key
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Foyer
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

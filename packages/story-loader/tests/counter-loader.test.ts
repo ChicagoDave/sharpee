@@ -48,10 +48,17 @@ create the guard
 
   A bored guard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('counter loader lowering (ADR-264 P1)', () => {
@@ -97,10 +104,17 @@ create the Camp
 
   A camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function loadDaemons(text: string) {

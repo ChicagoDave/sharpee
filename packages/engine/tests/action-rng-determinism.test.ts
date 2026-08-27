@@ -88,8 +88,9 @@ class ThrowRngTestStory implements Story {
           article: 'a',
         }),
       );
-      // Carried by the player so the throw needs no implicit take.
-      world.moveEntity(item.id, this._player!.id);
+      // ADR-327 D10: the player does not exist yet — createPlayer runs second
+      // now — so the carried items are recorded and handed over there.
+      this._carriedIds.push(item.id);
     }
 
     // Stationary throw target (non-actor: 90% hit, then 80% break).
@@ -104,8 +105,12 @@ class ThrowRngTestStory implements Story {
     );
     world.moveEntity(statue.id, room.id);
 
-    world.moveEntity(this._player!.id, room.id);
+    this._startRoomId = room.id;
   }
+
+  /** Recorded by initializeWorld, applied here (ADR-327 D10 order). */
+  private _startRoomId?: string;
+  private readonly _carriedIds: string[] = [];
 
   createPlayer(world: WorldModel): IFEntity {
     this._player = world.createEntity('yourself', 'actor');
@@ -120,6 +125,8 @@ class ThrowRngTestStory implements Story {
       }),
     );
     this._player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+    if (this._startRoomId) world.moveEntity(this._player.id, this._startRoomId);
+    for (const id of this._carriedIds) world.moveEntity(id, this._player.id);
     return this._player;
   }
 }

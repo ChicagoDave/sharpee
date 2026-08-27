@@ -29,8 +29,14 @@ const WORLD = `create the Lab
 
   A bare laboratory.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
+
+before the game starts
+  change the player to Alex
+end before
 
 create the widget
   in the Lab
@@ -133,8 +139,14 @@ describe('Z1: `first time` room descriptions', () => {
 
   You stand before the wrought-iron gates.
 
-create the player
+create Alex
+  a person
+  playable
   in the Zoo Entrance
+
+before the game starts
+  change the player to Alex
+end before
 
 `;
 
@@ -158,21 +170,21 @@ create the player
 
   it('`second time` at create scope is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Hall\n  a room\n  second time\n    Prose.\n\n  A hall.\n\ncreate the player\n  in the Hall\n`,
+      `${HEADER}create the Hall\n  a room\n  second time\n    Prose.\n\n  A hall.\n\ncreate Alex\n  a person\n  playable\n  in the Hall\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.create-ordinal-time');
   });
 
   it('`first time` on a non-room is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate the player\n  in the Lab\n\ncreate the widget\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
+      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate Alex\n  a person\n  playable\n  in the Lab\n\nbefore the game starts\n  change the player to Alex\nend before\n\ncreate the widget\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.first-time-non-room');
   });
 
   it('a duplicate `first time` block is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Hall\n  a room\n  first time\n    One.\n  first time\n    Two.\n\n  A hall.\n\ncreate the player\n  in the Hall\n`,
+      `${HEADER}create the Hall\n  a room\n  first time\n    One.\n  first time\n    Two.\n\n  A hall.\n\ncreate Alex\n  a person\n  playable\n  in the Hall\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.first-time-duplicate');
   });

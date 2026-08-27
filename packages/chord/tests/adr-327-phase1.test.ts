@@ -65,10 +65,18 @@ create the sword
 ${s.sword ?? ''}
   A sword.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
 ${s.player ?? ''}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 ${PHRASES}`;
 
 const errors = (s: Slots) => compile(world(s)).diagnostics.filter((d) => d.severity === 'error');
@@ -137,7 +145,7 @@ describe('D1 — actor-explicit heads carry the actor in the IR', () => {
 
 describe("D1 — the own-block bare head is the owner's own action", () => {
   it('bare `on taking` in the player block binds self with no actor (Q1: any gerund)', () => {
-    const c = clause(ok({ player: '  on taking\n    refuse nope\n  end on\n' }), 'player');
+    const c = clause(ok({ player: '  on taking\n    refuse nope\n  end on\n' }), 'alex');
     expect(c).toMatchObject({ action: 'taking', binding: 'self', actor: null });
   });
 
@@ -161,9 +169,12 @@ describe("D1 — the own-block bare head is the owner's own action", () => {
   });
 
   it("naming the block's own owner: analysis.head-actor-is-owner, fix-it quoting the bare form", () => {
-    const player = errors({ player: '  on the player taking\n    refuse nope\n  end on\n' });
-    expect(player.map((d) => d.code)).toEqual(['analysis.head-actor-is-owner']);
-    expect(player[0].message).toContain('`on taking`');
+    // ADR-327 D10: `on the player …` inside a character block names the ROLE,
+    // not that block's owner — who holds it is a run-time fact — so only the
+    // by-name form still gates.
+    const alex = errors({ player: '  on Alex taking\n    refuse nope\n  end on\n' });
+    expect(alex.map((d) => d.code)).toEqual(['analysis.head-actor-is-owner']);
+    expect(alex[0].message).toContain('`on taking`');
     const jack = errors({ jack: '  after Jack going\n    phrase note\n  end after\n' });
     expect(jack.map((d) => d.code)).toEqual(['analysis.head-actor-is-owner']);
     expect(jack[0].message).toContain("Jack's own block");
@@ -345,10 +356,10 @@ describe('placement vs head — split by block structure, not by the article', (
 });
 
 describe('the wire stamps move with the major', () => {
-  it('IR format is `story language 3` and the language version is 4.0.0', () => {
+  it('IR format is `story language 4` and the language version is 4.0.0', () => {
     const ir = ok({});
-    expect(IR_FORMAT).toBe('story language 3');
-    expect(ir.format).toBe('story language 3');
+    expect(IR_FORMAT).toBe('story language 4');
+    expect(ir.format).toBe('story language 4');
     expect(ir.languageVersion).toBe('4.0.0');
   });
 });

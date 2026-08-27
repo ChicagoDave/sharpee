@@ -40,6 +40,9 @@ export class ConcealmentTestStory implements Story {
     description: 'Minimal story for testing concealment actions',
   };
 
+
+  /** The starting room, remembered for `createPlayer` (ADR-327 D10 order). */
+  private studyId?: string;
   createPlayer(world: WorldModel) {
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
@@ -48,17 +51,19 @@ export class ConcealmentTestStory implements Story {
       name: 'yourself',
       description: 'As good-looking as ever.',
     }));
+    // ADR-327 D10: setStory builds the world FIRST, so the study exists here.
+    if (this.studyId) world.moveEntity(player.id, this.studyId);
     return player;
   }
 
   initializeWorld(world: WorldModel): void {
-    const player = world.getPlayer()!;
 
     // Study — main test room with hiding spots. Carries an ADR-209 snippet in
     // BOTH description texts: the first look (first visit) renders the
     // initialDescription, the second the standard description, and the shared
     // clock counter must advance across them (AC-9).
     const study = world.createEntity('study', EntityType.ROOM);
+    this.studyId = study.id;
     study.add(new RoomTrait({
       initialDescription:
         'You step into a quiet study: heavy curtains, a large desk, a tall armoire.{snippet:clock}',
@@ -198,7 +203,6 @@ export class ConcealmentTestStory implements Story {
     world.moveEntity(maid.id, hall.id);
 
     // Place player in study
-    world.moveEntity(player.id, study.id);
   }
 
   extendParser?(parser: Parser): void {}

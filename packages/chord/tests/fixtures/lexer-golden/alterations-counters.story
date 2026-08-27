@@ -40,7 +40,9 @@ create the keeper
 
   The keeper walks the route.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
@@ -61,3 +63,7 @@ remove from action taking
 
 remove from action examining
   x the target
+
+before the game starts
+  change the player to Alex
+end before

@@ -26,7 +26,7 @@ const SOURCE =
   'define fact the killer\n  Viola, nobody\nend fact\n\n' +
   'create the Parlor\n  a room\n\n  A parlor.\n\n' +
   'create the Study\n  a room\n\n  A study.\n\n' +
-  'create the player\n  in the Parlor\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Parlor\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Viola\n  a person, proper\n  in the Study\n\n  An actress.\n\n' +
   'create Watson\n  a person, proper\n  in the Parlor\n  mood calm\n\n  A friend.\n\n' +
   'create the Maid\n' +

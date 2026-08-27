@@ -23,10 +23,16 @@ create the Vault
 
   A vault.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 ${body}`;
 
@@ -76,11 +82,18 @@ create the cloak
 ${cloakTraits}
   A cloak.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
   wears the cloak
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('reports a worn item without the wearable trait', () => {
@@ -152,10 +165,17 @@ create the Bar
 
   A bar.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Bar
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     expect(errorCodes(src)).toEqual([]);
   });

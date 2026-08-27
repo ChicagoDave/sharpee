@@ -21,7 +21,7 @@ import type { Span } from './span.js';
  * `story language 3` (ADR-327, 2026-08-26): `IROnClause.actor` is a new
  * required field and the owner-is-object binding is spelled `object`.
  */
-export const IR_FORMAT = 'story language 3';
+export const IR_FORMAT = 'story language 4';
 
 /** Root of a compiled story. */
 export interface StoryIR {
@@ -78,6 +78,15 @@ export interface StoryIR {
    */
   announceModes: Record<string, string>;
   entities: IREntity[];
+  /**
+   * `before the game starts … end before` (ADR-327 D10) — the story's one
+   * pre-play block. The loader runs its body at the end of `initializeWorld`,
+   * against a fully built world; the role assignment it performs is what
+   * `createPlayer` then returns. Null only for a story the analyzer already
+   * rejected (`analysis.start-block-missing`), so the loader may treat a null
+   * here as a load error rather than a default.
+   */
+  startBlock: { body: IRStatement[]; span: Span } | null;
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   /**
@@ -243,8 +252,15 @@ export interface IREntity {
    * by-number fallback.
    */
   pronouns?: string;
-  /** True for the story's player entity (`create the player`). */
-  isPlayer: boolean;
+  /**
+   * `playable` (ADR-327 D10) — this character may hold the player role.
+   * Replaces the retired `isPlayer`, which named the block (`create the
+   * player`) rather than the character. Who actually *holds* the role is a
+   * runtime fact the start block decides, never an IR field: the loader
+   * gates `change the player to` on this flag, and gives a `playable`
+   * character the carrying capacity the role needs.
+   */
+  isPlayable: boolean;
   /** Kind-noun compositions (`a room`), in declaration order. */
   kinds: IRComposition[];
   /** Trait-adjective compositions (`scenery`, `dark while …`). */
@@ -1409,6 +1425,14 @@ export type IRStatement =
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `change the player to <entity>` (ADR-327 D9/D10). Read two ways by the
+   * loader, discriminated on `world.getPlayer()`: undefined (inside the
+   * start block, before the engine has set a player) assigns the role
+   * directly; defined (any turn after load) emits a switch request for the
+   * engine to drain at turn end.
+   */
+  | { kind: 'change-player'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /** `change mood to <word>` (ADR-310 D3) — the clause's `it` takes the mood. */
   | { kind: 'change-mood'; mood: string; stmtWhen?: IRCondition | null; span: Span }
   /** `change feeling toward <entity> to <disposition>` (ADR-310 D3) — `it` feels differently about the target. */

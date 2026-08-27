@@ -73,7 +73,7 @@ describe('the published vocabulary surface (D11)', () => {
 
   it('leaves the player out, the way the index does', () => {
     const [, fernhill] = stories[0];
-    const player = fernhill.entities.find((entity) => entity.isPlayer);
+    const player = fernhill.entities.find((entity) => entity.isPlayable);
     const surface = publishVocabulary(buildVocabularyIndex(fernhill));
     expect(surface.wordsOf[player!.id]).toBeUndefined();
   });

@@ -57,9 +57,13 @@ const PINNED = {
   //  ship publicly as ONE major over Chord 1.x.)
   // (3.4.0 — ADR-326, 2026-08-25: `a random adjacent room`, additive minor.)
   // (4.0.0 — ADR-327, 2026-08-26: actor-explicit heads, `it`/`its` removed
-  //  outside `define trait`; `on <gerund> it` stops parsing — a MAJOR.)
+  //  outside `define trait`; `on <gerund> it` stops parsing — a MAJOR.
+  //  Re-recorded the same day for D9/D10 — `playable`, `before the game
+  //  starts`, `change the player to`, and the removal of `create the
+  //  player` — which ride the SAME major: one MAJOR for the whole ADR-327
+  //  cutover, per D6.)
   languageVersion: '4.0.0',
-  ebnfSha256: '92a873241bb83cbba4de68b08735e0becd407e1c6bf9591106e01fe13c5187e2',
+  ebnfSha256: '525b5c8eeb45fc40d2cf8125817f9a6c769b59a0b2d38d1bd9cdd122d29a88ea',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

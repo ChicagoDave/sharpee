@@ -206,10 +206,16 @@ create the box
     end select
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Room
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrases en-US
   box-opened:
@@ -328,10 +334,16 @@ create the Hall
     end select
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrases en-US
   step-one:
@@ -381,10 +393,16 @@ create the Room
     refuse nope
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Room
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrases en-US
   nope:

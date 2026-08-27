@@ -1465,6 +1465,17 @@ export declare class GameEngine {
      * Story code must position the new PC (via world.moveEntity) BEFORE
      * calling switchPlayer, since parser context uses the entity's current location.
      */
+    /**
+     * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
+     *
+     * @param turn the turn just executed
+     * @returns nothing; on a request the role moves and `game.pc_switched` is
+     *   emitted. Two requests in one turn are a story bug, not a sequence: the
+     *   first wins and the rest are reported as `runtime.double-player-switch`,
+     *   because "who is the player at the end of this turn" has one answer and
+     *   silently taking the last one hides the contradiction.
+     */
+    private drainPlayerSwitch;
     switchPlayer(entityId: string): void;
     /**
      * Get world model

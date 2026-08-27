@@ -29,10 +29,17 @@ create the Cave
 
   A cave.
 
-${mid}create the player
+${mid}create Alex
+  a person
+  playable
   starts in the Cave
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** A book whose key is referenced nowhere — pure declaration tests. */

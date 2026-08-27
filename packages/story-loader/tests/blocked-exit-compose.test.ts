@@ -66,10 +66,16 @@ create the gong
     change the story to chase
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Junction
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase north-deflected
   Your stomach turns you back south.

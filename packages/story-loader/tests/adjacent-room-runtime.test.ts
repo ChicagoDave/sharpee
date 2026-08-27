@@ -130,10 +130,16 @@ create the monkey
 
   A monkey.
 ${extra}
-create the player
+create Alex
+  a person
+  playable
   starts in the Hub
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase south-shut
   The south way is shut.
@@ -284,10 +290,16 @@ create the Yard
 
   The yard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Cell
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase cell-shut
   The cell is shut.
@@ -345,10 +357,16 @@ create the Far Room
 
   Far.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hub
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase keeper-yells
   The keeper yells and you dart away.
@@ -411,10 +429,17 @@ create the Pong
     move the player to a random adjacent room
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Ping
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('re-entrant arrivals are bounded (ADR-327 D5)', () => {

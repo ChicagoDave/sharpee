@@ -18,7 +18,9 @@ create the rusty winch
 
   A rusty winch wound with chain.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
 
   You.
@@ -49,3 +51,7 @@ end phrase
 define phrase bridge-thuds
   The bridge thuds home.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

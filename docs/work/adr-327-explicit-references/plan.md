@@ -70,7 +70,7 @@ ADR-328 D3 was amended 2026-08-26: perception **tags** actor-sourced narration (
 - **Entry state**: Phase 1 shipped (IR carries the actor field). Present the firing-filter design to David before editing `story-loader` — reuse of D5's pattern, and how a compiled-but-unreachable non-player head is handled today (parses, never fires, per D7's known gap — not an error).
 - **Deliverable**: Player-headed clauses (`on the player taking`, `after the player entering`) fire when and only when the player is the acting entity; own-block bare heads keep firing exactly as before (unchanged — they're owner-scoped, not actor-matched). REAL-PATH loader test (rule 13a): a fixture story with a player-headed clause and a differently-named-actor-headed clause on the same gerund, asserting only the player one fires on a player action.
 - **Exit state**: `pnpm --filter '@sharpee/story-loader' run test:ci` green with new actor-match coverage. Acceptance item 2's player-path half ("the player's action fires `on the player <gerund>` and not `on the mercenaries <gerund>`") is green; the non-player half stays explicitly open, tracked in Phase 6.
-- **Status**: CURRENT (since 2026-08-26) — landed 2026-08-26 (session e822b1): Q1 (a) actor consultation in `lifecycle-engine.ts` (opt-in key `actor:<id>`), Q2 story-loader fixtures migrated (31 files); `actorMatches` on interceptor/event/dispatch paths; bare heads on the owner under the actor key; `tests/adr-327-actor-match.test.ts` (13 REAL-PATH tests). Exit: story-loader 86/87 files — `zoo-pure-ir` reads the corpus, red until Phase 4. See `phase-2-loader-shape.md` Landing notes.
+- **Status**: DONE (2026-08-26) — landed 2026-08-26 (session e822b1): Q1 (a) actor consultation in `lifecycle-engine.ts` (opt-in key `actor:<id>`), Q2 story-loader fixtures migrated (31 files); `actorMatches` on interceptor/event/dispatch paths; bare heads on the owner under the actor key; `tests/adr-327-actor-match.test.ts` (13 REAL-PATH tests). Exit: story-loader 86/87 files — `zoo-pure-ir` reads the corpus, red until Phase 4. See `phase-2-loader-shape.md` Landing notes.
 
 ### Phase 3: D9 + D10 — the player role: assignment, reassignment, and the start block
 - **Tier**: Large
@@ -80,7 +80,28 @@ ADR-328 D3 was amended 2026-08-26: perception **tags** actor-sourced narration (
 - **Deliverable**: `playable`, `before the game starts … end before`, `change the player to <entity>`, and the `create-the-player` removal diagnostic all parse and analyze per D9/D10. A missing role assignment or a second start block is a named compile error. Through a real engine (rule 13a): the switch takes effect at the fired turn's end, the next turn's `after the player entering` fires for the new PC and not the old one, the old PC's own-block clause still fires when the old PC acts, two switches in one turn raise the named diagnostic, and `world.getPlayer()` is the assigned character at turn one.
 - **Role gate on autonomous behaviour (D9 note, 2026-08-26)**: every entity-owned `on every turn` daemon (`runtime.ts:3254-3277`) checks at fire time that its owner is not `world.getPlayer()`; the NPC tick skips the role-holder; the loader's `!irEntity.isPlayer` guard on `NpcTrait` (`loader.ts:871`) goes with `create the player`. Real-path tests for both D9 scenarios: (A) switching to an NPC with every-turn clauses silences them from the next turn and wakes the old PC's; (B) clauses authored on the starting PC stay silent until it stops being the PC, then fire. The NPC-tick skip touches `packages/stdlib` (`npc-service`) — discuss before editing. Tests here keep the current PC in the room, so they pass under the existing presence gate and again after it is retired.
 - **Exit state**: Acceptance items 5 and 6 fully green, real-path, through a real engine. `pnpm --filter '@sharpee/chord' run test:ci`, `pnpm --filter '@sharpee/story-loader' run test:ci`, `pnpm --filter '@sharpee/engine' test` all green.
-- **Status**: PENDING
+- **Ruling that reshaped this phase (2026-08-26)**: David ruled the D10 runtime
+  design **(C) — flip the engine's order**, so `setStory` builds the world
+  before it claims the player. The shape doc had called C "not viable"; that was
+  a mis-measurement (seven TS files place the player in `initializeWorld`, not
+  "every TS story"). C dissolves the static role read, `ir.initialPlayer`, and
+  the pass-1 skip: `createPlayer` becomes a lookup of the character the start
+  block named. Q1 (unconditional role assignment) was **withdrawn** with it —
+  the block executes, so a conditional opening PC is legal and the unfilled case
+  is a load-time `LoadError`. Q2–Q5 all ruled YES.
+- **Status**: DONE (2026-08-26/27, session 56856a). Landed: chord grammar +
+  gates + `story language 4` (1064 green); story-loader role lookup, start-block
+  execution, two-moment `change-player`, D9 daemon role gates (635 green, 2 red
+  are `zoo-pure-ir`, the corpus reader Phase 4 owns); stdlib `canNpcAct(npc,
+  world)` (1637 green); engine order flip, concealment registration kept ahead
+  of the build, `switchPlayer`'s first caller via a turn-boundary drain,
+  `runtime.double-player-switch`, and the Q2 role-vocabulary move (637 green);
+  world-model `playerRole.ts` (1492 green); seven TS stories plus the engine and
+  bootstrap test stories re-ordered (bootstrap 50 green). New tests: 22
+  compile-side (`chord/tests/adr-327-phase3.test.ts`) and 8 REAL-PATH through a
+  real engine (`bootstrap/src/adr-327-phase3-role.test.ts`). ~90 chord and ~55
+  story-loader/world-index fixture files migrated. Five implementation findings
+  are in the shape doc's Landing notes, owed to ADR-327 at Phase 5.
 
 ### Phase 4: Corpus migration sweep — stories, fixtures, and the D8 trait specimen (D6, mechanical)
 - **Tier**: Large
@@ -88,8 +109,42 @@ ADR-328 D3 was amended 2026-08-26: perception **tags** actor-sourced narration (
 - **Domain focus**: Every in-repo story and fixture migrates in this landing change per D6 — no deprecation window. Production stories: `branch-stories/{fernhill,ides-of-march,secret-letter}`, `stories/{friendly-zoo,cloak}` (Dungeo is TypeScript, untouched). Package test fixtures: `packages/world-index/tests` (inline story strings and `.story` fixtures — chord's and story-loader's own fixtures migrated in Phases 1–2), devkit's `story language 2` pins (`packages/devkit/src/**/*.test.ts`), and `story-loader/tests/zoo-pure-ir.test.ts`, which reads `stories/friendly-zoo/zoo.story` and goes green with the corpus. The D8 specimen: `mercenaries.chord`'s `kick-escape` trait rewritten to carrier-relative `it`/`its` (the corpus's own worked example in the ADR). `create the player` in all 61 matching files migrates to D10's shape (name the character, mark `playable`, assign the role in a `before the game starts` block); `starts in` stays on the character.
 - **Entry state**: Phases 1–3 shipped (grammar and runtime are final — migrating against a moving grammar target is wasted work). Present the sweep's mechanism to David before mass-editing story content files: each `it`/`its` resolves statically to its enclosing block's owner (mechanical per the ADR's own corpus-scale note), each bare head is checked individually (own-block survives, else migrates), each `create the player` becomes a start-block assignment — confirm before editing rather than scripting silently over authored story prose.
 - **Deliverable**: All 45 files / 172 `it`-head occurrences and 218 syntactic `it`/`its` occurrences (minus the D8 survivors) migrated; all 18 bare heads checked and resolved (own-block kept, else migrated); all 61 `create the player` occurrences (17 stories/fixtures counted by the ADR, the rest package test fixtures) migrated to D10's shape; IDE test references (`tools/ide/web/testing-surface/tests/{tree-session-real-path,ac-signoff-cli}.test.ts`, `tools/ide/SharpeeIDETests/{TestingSurfaceRealPathTests,TestToolchain,TestRunnerTests}.swift`) updated to the new spelling.
+- **Measured scope (2026-08-27, session 56856a — supersedes the pre-Phase-1 estimates above)**:
+  22 authored corpus sources (`.story` + `.chord`, excluding `dist/`). **16** carry
+  `create the player`: three authored works (fernhill, ides-of-march, secret-letter)
+  and thirteen demo/test stories. **82** `on/after <gerund> it` heads across 14 files;
+  **9** bare heads across 2 files; **113** syntactic `it`/`its` sites (statement
+  subjects, `while it is` conditions, `its <field>` possessives). D8 carrier scopes
+  that KEEP `it`: 13 `define trait` blocks across 5 files, plus `define condition`
+  bodies. Outside the corpus: ~13 devkit test files + 3 fixtures + 1 template, one
+  fixture each in character / platform-browser / world-index, and 54 files under
+  `tools/ide`. **Not migrated**: `docs/work` (109 files), `docs/context` (2) and
+  `docs/architecture` (7) are historical records of what was decided at the time —
+  only Phase 5's two named ADR flips are edited; `docs/unofficial` is out of bounds.
 - **Exit state**: `pnpm --filter '@sharpee/chord' run test:ci`, `pnpm --filter '@sharpee/story-loader' run test:ci`, `pnpm --filter '@sharpee/world-index' run test:ci`, `pnpm --filter '@sharpee/engine' test` all green. `./sharpee test branch-stories/secret-letter` (160 cards / 209 assertions, zero behavioral diffs attributable to the reform), plus fernhill/ides-of-march/friendly-zoo/cloak suites, all green. `./repokit build dungeo` then the Dungeo walkthrough chain (952 passing, 17 transcripts) unchanged — a single run is sufficient at the pinned seed. IDE TS tests (`testing-surface`) run via existing test command; `SharpeeIDETests` (Swift/XCTest) spot-checked via `xcodebuild test` if David wants that gate in this phase rather than deferred. Acceptance items 1 and 3 fully satisfied.
-- **Status**: PENDING
+- **Protagonist names (David, 2026-08-27)**: fernhill and ides-of-march are **test
+  stories** — content is adjustable for tests, so their PCs are named here (**Wren**,
+  **Nick Bray**). Secret Letter's PC needed no invention at all: the name is the game's
+  own title and sits in the player block's existing description — **Jack** (Jacqueline
+  Toresal, "everyone outside of the Maiden House knows you as Jack", per the 2009 detail
+  design at `docs/references/textfyre/secretletter/design/`). The thirteen demo/test
+  stories use `Alex`.
+- **Status**: DONE (2026-08-27, session 56856a). Corpus: 16 player blocks migrated, 82
+  `it`-heads, 113 `it`/`its` sites resolved to the owner the COMPILER names (driven off
+  `analysis.it-removed`'s own fix-it and span, so `define trait` / `define condition`
+  carrier scopes were never touched). Every corpus source compiles clean; Secret Letter
+  is gate-clean through the real import resolver. Package fixtures: devkit (incl. the
+  `story language 2`→`4` pins and the story template), character, platform-browser,
+  world-index. IDE: the five test fixtures plus the frozen fernhill; the 47 generated
+  docs-tab HTML pages are reference surface and belong to Phase 5.
+  **Gates, all green**: chord 1064, story-loader **637** (`zoo-pure-ir` went green with
+  the corpus, closing Phase 2's accepted red), stdlib 1637, engine 637, world-model 1492,
+  bootstrap 52, devkit 172, world-index 169, character 567, platform-browser 138; repo
+  `tsc --noEmit` clean; IDE testing-surface 91. Story trees: secret-letter **160 cards /
+  209 assertions**, fernhill 36/40, ides-of-march 39/48, thealderman 4/9. Dungeo
+  rebuilt and its walkthrough chain **952 passing across 17 transcripts** — the baseline,
+  unmoved by the engine order flip. `SharpeeIDETests` (Swift/XCTest) deferred per the
+  phase's own note.
 
 ### Phase 5: Paper trail — ADR supersession flips, docs, and the final regression gate (D6, Acceptance item 4)
 - **Tier**: Medium

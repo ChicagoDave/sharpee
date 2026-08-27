@@ -26,7 +26,9 @@ create the logbook
     phrase log-entry
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lighthouse
 
   You. Keeper, for now.
@@ -36,3 +38,7 @@ define phrases en-US
     Day 40: {weather-note} The oil is low; the nights aren't.
 
 define text weather-note from "./weather.ts"
+
+before the game starts
+  change the player to Alex
+end before

@@ -50,10 +50,16 @@ create the Vault
 
   A vault.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the iron ring
   in the Vault
@@ -153,10 +159,16 @@ create the Yard
 
   A yard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the statue
   in the Yard

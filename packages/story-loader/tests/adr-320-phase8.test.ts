@@ -53,7 +53,7 @@ const SOURCE =
   'create the Hall\n  a room\n  east to the Yard\n\n  A hall.\n\n' +
   'create the Yard\n  a room\n  west to the Hall\n\n  A yard.\n\n' +
   'create the Cell\n  a room\n\n  A cell.\n\n' +
-  'create the player\n  in the Hall\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Aemilia\n' +
   '  a person, proper\n' +
   '  in the Hall\n' +

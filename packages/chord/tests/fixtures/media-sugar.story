@@ -18,7 +18,9 @@ create the Hall
 
   A marble concert hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
@@ -27,3 +29,7 @@ define sound chime from "audio/chime.ogg"
 define sound rain from "audio/rain.ogg"
 define music overture from "audio/overture.ogg"
 define image map from "img/map.png"
+
+before the game starts
+  change the player to Alex
+end before

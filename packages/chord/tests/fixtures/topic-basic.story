@@ -58,7 +58,13 @@ define topics for the porter
     change the porter to nervous
 end topics
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lodge
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

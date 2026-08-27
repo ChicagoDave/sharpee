@@ -12,7 +12,9 @@ create the Aviary
 
   Bright cages and brighter noise.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Aviary
 
   You.
@@ -113,3 +115,7 @@ create the parrot
 define phrases en-US
   keeper-wave:
     She gives you a little wave on the way out.
+
+before the game starts
+  change the player to Alex
+end before

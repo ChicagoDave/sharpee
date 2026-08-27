@@ -227,7 +227,13 @@
  *   - `analysis.going-self-owner` / `analysis.going-player-it` /
  *     `parse.on-target` retire into the gates above; the AST/IR binding
  *     `'it'` is spelled `'object'`; `IR_FORMAT` → `story language 3`.
- * D9/D10 (`playable`, `before the game starts`, `change the player to`) land
- * in a later phase of the same major.
+ * D9/D10 landed 2026-08-26 in the same major (Phase 3):
+ *   - `playable` marks a character eligible for the player role; the role is
+ *     assigned in a `before the game starts … end before` block via
+ *     `change the player to <character>`, which also moves it mid-play.
+ *   - `create the player` is REMOVED (parse.removed-create-player) — the
+ *     player is a role a named character holds, not a block.
+ *   - `IREntity.isPlayer` is replaced by `isPlayable`; `IR_FORMAT` →
+ *     `story language 4`. One MAJOR for the whole cutover, per D6.
  */
 export const CHORD_LANGUAGE_VERSION = '4.0.0';

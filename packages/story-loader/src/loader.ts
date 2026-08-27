@@ -122,6 +122,7 @@ import {
 } from '@sharpee/stdlib';
 import {
   ActorTrait,
+  addPlayerRoleVocabulary,
   ClimbableTrait,
   CombatantTrait,
   ConcealmentTrait,
@@ -484,9 +485,11 @@ export class ChordStory implements Story {
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
-    // Pass 1 — create every remaining non-player entity.
+    // Pass 1 — create every remaining entity. ADR-327 D10: the role-holder is
+    // one of these. There is no player block to skip any more — who holds the
+    // role is decided by the start block, after the world exists.
     for (const irEntity of this.ir.entities) {
-      if (irEntity.isPlayer || this.worldIds.has(irEntity.id)) continue;
+      if (this.worldIds.has(irEntity.id)) continue;
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
@@ -700,104 +703,95 @@ export class ChordStory implements Story {
 
     this.worldBuilt = true;
 
-    // Engine order (GameEngine.setStory): createPlayer ran before world
-    // content existed — the player can be placed and equipped only now.
-    if (this.playerId) this.finalizePlayer(world);
+    // ADR-327 D10 (design C, ruled 2026-08-26): the engine now builds the
+    // world FIRST, so the start block runs here — against a world where every
+    // character already exists — and its `change the player to` assignment is
+    // what `createPlayer` then returns. Nothing is read statically: the
+    // assignment may carry a `when` tail and pick a different opening PC.
+    this.runtime.runStartBlock(world);
+    this.finalizeRoleHolder(world);
   }
 
+  /**
+   * Return the entity the start block gave the player role to (ADR-327 D10).
+   *
+   * No longer a build: under design C the engine runs `initializeWorld` first,
+   * so the role-holder is an ordinary world entity by the time this is called.
+   * What it still does is stamp the ROLE onto that character — the actor flag
+   * and the role's own vocabulary — which is the part that moves when the role
+   * moves (`GameEngine.switchPlayer`, Q2).
+   *
+   * @param world the world `initializeWorld` has already built
+   * @returns the role-holder
+   * @throws LoadError when the start block never assigned the role — the story
+   *   compiled (the assignment may be conditional), but the path taken left the
+   *   role empty, and there is no defaulting to fall back on
+   */
   createPlayer(world: WorldModel): IFEntity {
-    const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
-    const description = irPlayer?.descriptionKey ? this.phraseText(irPlayer.descriptionKey) : 'An adventurer.';
-
-    const player = world.createEntity('yourself', 'actor');
-    player.add(
-      new IdentityTrait({
-        name: 'yourself',
-        description,
-        aliases: ['self', 'me', 'myself', ...(irPlayer?.aka ?? [])],
-        properName: true,
-        article: '',
-      }),
-    );
-    player.add(new ActorTrait({ isPlayer: true }));
-    player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
-    // ADR-327 D1: the player's own clauses (bare heads, or heads on the
-    // player as target) resolve through this marker; `bind` cannot add it
-    // when the player is created after the world (direct/test order).
-    if (irPlayer && this.runtime.playerCarriesClauses() && !player.has(ChordBehaviorTrait.type)) {
-      player.add(new ChordBehaviorTrait());
+    if (!this.worldBuilt) {
+      throw new LoadError(
+        'The world must be built before the player role is claimed — call `initializeWorld` first (ADR-327 D10).',
+      );
     }
-    this.playerId = player.id;
-    if (irPlayer) {
-      this.worldIds.set(irPlayer.id, player.id);
-      this.irIds.set(player.id, irPlayer.id);
+    if (!this.playerId) {
+      throw new LoadError(
+        'No character holds the player role: the `before the game starts` block ran without assigning it. Add an unconditional `change the player to <character>`, or make sure one of its conditional arms always fires.',
+        this.ir.startBlock?.span,
+      );
     }
-
-    // Direct/test order: the world is already built, finalize immediately.
-    // Engine order (setStory calls createPlayer FIRST, then initializeWorld
-    // — "player must exist first"): initializeWorld finalizes instead.
-    if (this.worldBuilt) this.finalizePlayer(world);
-
+    const player = world.getEntity(this.playerId)!;
+    const actor = player.get(TraitType.ACTOR) as ActorTrait | undefined;
+    if (actor) actor.isPlayer = true;
+    addPlayerRoleVocabulary(player);
     return player;
   }
 
   /**
-   * Place and equip the player, then run the initial derived-property
-   * evaluation. Runs exactly once, from whichever lifecycle hook fires
-   * second — both the engine order (createPlayer → initializeWorld) and
-   * the direct order (initializeWorld → createPlayer) are supported.
+   * Settle the player role once the world is built and the start block has run
+   * (ADR-327 D10).
+   *
+   * Placement, state seeding, trait composition and character blocks are no
+   * longer this method's business — the role-holder is an ordinary entity, so
+   * passes 0-2 already did all of that. What remains is what only the ROLE
+   * needs: the `player` sentinel every load-time reference resolves through,
+   * and the equipment the role's own `carries`/`wears` lines declare.
+   *
+   * Runs exactly once. A story whose start block assigned nothing leaves
+   * `playerId` unset and is reported by `createPlayer`, not here — the world
+   * is still perfectly well-formed; it just has no protagonist.
    */
-  private finalizePlayer(world: WorldModel): void {
+  private finalizeRoleHolder(world: WorldModel): void {
     if (this.playerFinalized) return;
     this.playerFinalized = true;
-    const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
-    const player = world.getEntity(this.playerId!)!;
+    const assigned = this.runtime.assignedPlayerId;
+    if (!assigned) return;
+    this.playerId = assigned;
 
-    // Starting location: whatever placement line the player carries — `in`,
-    // `on`, or `starts in` alike (ADR-289 D4) — else the first declared
-    // room. The fallback survives only for a player with NO placement line;
-    // consulting the relation sent a player declared `in the Kitchen` to the
-    // first room instead, ignoring what the author wrote.
-    const startIr =
-      irPlayer?.placement?.place ?? this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'))?.id;
-    if (startIr) {
-      world.moveEntity(player.id, this.requireWorldId(startIr, irPlayer ?? undefined));
-    }
+    // The `player` sentinel the compiler emits for `the player` in load-time
+    // positions (`feels wary of the player`, `define timer … for the player`)
+    // resolves to whoever opens the story in the role.
+    this.worldIds.set('player', assigned);
+    const irId = this.irIds.get(assigned);
+    const irPlayer = irId ? (this.ir.entities.find((e) => e.id === irId) ?? null) : null;
 
-    // ADR-289 D4: the player seeds like any other entity. Pass 2 never
-    // reaches it — `built` excludes the player by construction — so the two
-    // seedings that pass runs (`states[0]`, per-entity counter `starts`)
-    // happen here. The divergence was an omission, not a design.
-    if (irPlayer) {
-      if (irPlayer.states.length > 0) {
-        world.setStateValue(CHORD_STATE_PREFIX + irPlayer.id, irPlayer.states[0]);
-      }
-      for (const counter of irPlayer.counters) {
-        world.setStateValue(counterKey(counter.name, irPlayer.id), counter.starts);
-      }
-    }
-
-    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
-    // player composes trait adjectives + `starts` states through the SAME
-    // loader path as any entity (`a person` is analyzer-gated to a no-op;
-    // NPC behaviors are refused at compile). Runs here — the second
-    // lifecycle hook — so entity-valued configs resolve against the
-    // fully-built world regardless of createPlayer/initializeWorld order.
-    if (irPlayer) {
-      this.applyTraitAdjectives(player, irPlayer, null);
-      this.applyStartsStates(player, irPlayer);
-      this.resolvePendingEntityRefs();
+    // Starting location fallback (ADR-289 D4): a protagonist with no placement
+    // line starts in the first declared room. Pass 2 places what the author
+    // wrote; only the unwritten case is left, and only for the role — an
+    // unplaced NPC is offstage on purpose, an unplaced PC is nowhere to play.
+    if (world.getLocation(assigned) === undefined) {
+      const firstRoom = this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'));
+      if (firstRoom) world.moveEntity(assigned, this.requireWorldId(firstRoom.id, firstRoom));
     }
 
     // Carried items: into inventory (ADR-230 Phase 6 — `carries the X`).
     for (const carriedIrId of irPlayer?.carries ?? []) {
-      world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), player.id);
+      world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), assigned);
     }
 
     // Worn items: into inventory, marked worn.
     for (const wornIrId of irPlayer?.wears ?? []) {
       const wornId = this.requireWorldId(wornIrId, irPlayer ?? undefined);
-      world.moveEntity(wornId, player.id);
+      world.moveEntity(wornId, assigned);
       const worn = world.getEntity(wornId);
       const wearable = worn?.get(TraitType.WEARABLE) as WearableTrait | undefined;
       if (!wearable) {
@@ -807,14 +801,12 @@ export class ChordStory implements Story {
         throw new LoadError(`\`${wornIrId}\` is worn by the player but is not wearable.`, irPlayer?.span);
       }
       wearable.worn = true;
-      wearable.wornBy = player.id;
+      wearable.wornBy = assigned;
     }
 
-    // ADR-310/318 Phase 5: apply compiled character blocks. Runs here —
-    // the second lifecycle hook — because a block's refs (`feels …
-    // toward the player`) need the FULLY built world in either
-    // createPlayer/initializeWorld order, the same reason Gap-2
-    // composition lives here.
+    // ADR-310/318 Phase 5: apply compiled character blocks. Runs here, after
+    // the role is settled, because a block's refs (`feels … toward the
+    // player`) resolve through the `player` sentinel mapped just above.
     this.applyCharacterBlocks(world);
 
     // ADR-240: no initial derived-property evaluation — derived state is
@@ -874,7 +866,11 @@ export class ChordStory implements Story {
       if (!entity) {
         throw new LoadError(`\`${irEntity.name}\`: the entity carrying a character block was never built.`, irEntity.span);
       }
-      if (!irEntity.isPlayer && !entity.has(TraitType.NPC)) {
+      // ADR-327 D9: every character with a character block carries the trait.
+      // The PC used to be kept out of the NPC service by construction; the
+      // service now skips whoever holds the role at fire time, which is what
+      // lets a former PC's clauses wake when the role moves off them.
+      if (!entity.has(TraitType.NPC)) {
         entity.add(new NpcTrait({ behaviorId: 'passive', canMove: false }));
       }
       const applied = applyCompiledCharacter(entity, irEntity.character, {
@@ -1680,7 +1676,7 @@ export class ChordStory implements Story {
    */
   private regionsInParentFirstOrder(): IREntity[] {
     const regions = this.ir.entities.filter(
-      (e) => !e.isPlayer && e.kinds.some((k) => k.name === 'region'),
+      (e) => e.kinds.some((k) => k.name === 'region'),
     );
     const byId = new Map(regions.map((r) => [r.id, r]));
     this.regionParents.clear();
@@ -1757,6 +1753,13 @@ export class ChordStory implements Story {
       case 'person': {
         entity = world.createEntity(irEntity.name, 'actor');
         entity.add(new ActorTrait());
+        // ADR-327 D10 (Q4, ruled 2026-08-26): a character who can hold the
+        // player role needs somewhere to carry things — the capacity the
+        // synthetic `yourself` actor used to be born with. Non-playable
+        // persons are unchanged.
+        if (irEntity.isPlayable) {
+          entity.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+        }
         // ADR-242 D2/D3: `proper` → the player's own proper-name shape
         // (properName + empty article); otherwise the plain IdentityTrait
         // defaults stand ('a', contextual articles). The old helpers-era

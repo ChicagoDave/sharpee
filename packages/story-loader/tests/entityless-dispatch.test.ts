@@ -19,7 +19,7 @@ import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
-const WORLD = `create the Cockpit\n  a room\n\n  A cockpit.\n\ncreate the tiller\n  scenery\n  in the Cockpit\n\n  A tiller.\n\ncreate the player\n  starts in the Cockpit\n\n  You.\n`;
+const WORLD = `create the Cockpit\n  a room\n\n  A cockpit.\n\ncreate the tiller\n  scenery\n  in the Cockpit\n\n  A tiller.\n\ncreate Alex\n  a person\n  playable\n  starts in the Cockpit\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`;
 
 const SAILING = `${HEADER}define action sailing
   grammar

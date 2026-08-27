@@ -501,11 +501,13 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
     lines.push('');
   }
 
-  lines.push('create the player');
+  lines.push('create Alex', '  a person', '  playable');
   lines.push(`  starts in ${roomName(0)}`);
   lines.push('');
   lines.push(prose(rooms, words));
   lines.push('');
+  // ADR-327 D10: a story says who the player is.
+  lines.push('before the game starts', '  change the player to Alex', 'end before', '');
 
   return lines.join('\n');
 }

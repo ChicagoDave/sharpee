@@ -310,7 +310,23 @@ export type Declaration =
   | ImportDecl
   // ADR-270 author alteration model (David 2026-07-26):
   | ExtendAction
-  | RemoveFromAction;
+  | RemoveFromAction
+  // ADR-327 D10 the start block (David 2026-08-26):
+  | StartBlockDecl;
+
+/**
+ * `before the game starts … end before` (ADR-327 D10) — the one place a
+ * story assigns the player role before play begins. Effect statements only:
+ * `phrase`/`emit` are an analyzer gate, because the block runs before any
+ * turn exists to carry prose (the story header's `prologue:` is that seam).
+ * Exactly one per story; the analyzer also requires that one to assign the
+ * role on some path.
+ */
+export interface StartBlockDecl {
+  kind: 'start-block';
+  body: Statement[];
+  span: Span;
+}
 
 /**
  * `define phrasebook <name> [while <condition>] … end phrasebook`
@@ -1825,6 +1841,7 @@ export type Statement =
   | MediaStmt
   | SetStmt
   | ChangeStmt
+  | ChangePlayerStmt
   | ChangeMoodStmt
   | ChangeFeelingStmt
   | MoveStmt
@@ -2008,6 +2025,22 @@ export interface ChangeStmt {
   kind: 'change';
   entity: NameRef;
   state: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `change the player to <entity> [when <cond>]` (ADR-327 D9/D10) — moves the
+ * player role to a named character. Distinguished from `ChangeStmt` in the
+ * parser by the target reading exactly `the player`, which lets the tail
+ * parse as a multi-word name ref rather than the single state word
+ * `ChangeStmt` takes. The analyzer requires the target to be a `playable`
+ * person; the loader reads it two ways — assignment inside the start block,
+ * a runtime switch request on any turn after that.
+ */
+export interface ChangePlayerStmt {
+  kind: 'change-player';
+  target: NameRef;
   stmtWhen: ConditionNode | null;
   span: Span;
 }

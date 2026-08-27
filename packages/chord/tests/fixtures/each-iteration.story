@@ -10,7 +10,7 @@ story
 define condition stray-crate: it is a container and it is not in the store room
 define condition penned-crate: it is a container and it is in the pen
 define condition dusty-thing: it is a supporter and it is in the pen
-define condition keeper-present: it is a person
+define condition keeper-present: it is a person and it is in the store room
 
 define action tidying
   grammar
@@ -105,7 +105,9 @@ create the store room
     end each
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the pen
 
 create the red crate
@@ -156,3 +158,7 @@ define phrases en-US
     Noted in the ledger.
   ledger-note:
     The ledger is up to date.
+
+before the game starts
+  change the player to Alex
+end before

@@ -1317,6 +1317,23 @@ import type { ActionInterceptor } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
+ * Slot id of the implicit actor consultation (ADR-327 D1): every wired
+ * action consults the acting entity last. Not a descriptor slot —
+ * descriptors never declare it.
+ */
+export declare const ACTOR_SLOT_ID = "actor";
+/**
+ * The registration key an interceptor uses to be consulted AS THE ACTOR
+ * (ADR-327 D1): `actor:<actionId>`. A separate key, not the action's own id,
+ * so a binding keyed on a trait the actor happens to carry (ACTOR on a
+ * give/show recipient, CONTAINER on the player) is never consulted twice —
+ * once as a target, once as the actor. Opting in is registering under this
+ * key: `world.registerActionInterceptor(trait, actorConsultationId(id), …)`.
+ * @param actionId the action's primary id (`if.action.taking`)
+ * @returns the actor-consultation registration key
+ */
+export declare function actorConsultationId(actionId: string): string;
+/**
  * One resolved (entity, actionId) interceptor consultation.
  *
  * A slot that consults two action ids (D6 both-ids) yields up to two
@@ -3366,7 +3383,8 @@ export declare class NpcService implements INpcService {
      */
     onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /**
-     * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+     * Whether an NPC can take a turn: it is an NPC, it is not the character
+     * currently being played (ADR-327 D9), and — if it carries life-state —
      * is alive and conscious. An NPC with no `HealthTrait` is active by default
      * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
      * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility

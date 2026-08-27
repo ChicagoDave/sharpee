@@ -75,7 +75,7 @@ export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
   const byWord = new Map<string, Set<string>>();
 
   for (const entity of ir.entities) {
-    if (entity.isPlayer) continue;
+    if (entity.isPlayable) continue;
 
     const words = entityVocabulary(entity);
     wordsOf.set(entity.id, words);

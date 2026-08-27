@@ -135,22 +135,10 @@ export class CloakOfDarknessStory implements Story {
     // Create the message
     this.messageEntity = this.createMessage(bar);
     
-    // Set initial player location to foyer
-    const player = world.getPlayer();
-    if (player) {
-      console.log(`Moving player ${player.id} to foyer ${foyer.id}`);
-      world.moveEntity(player.id, foyer.id);
-      // Give player the cloak initially
-      console.log(`Moving cloak ${cloak.id} to player ${player.id}`);
-      world.moveEntity(cloak.id, player.id);
-      // Verify cloak location
-      const cloakLoc = world.getLocation(cloak.id);
-      console.log(`Cloak location after move: ${cloakLoc}`);
-      const playerContents = world.getContents(player.id);
-      console.log(`Player contents: ${playerContents.map((e: any) => e.name).join(', ')}`);
-    } else {
-      console.log('WARNING: No player found in world!');
-    }
+    // ADR-327 D10: the player is created AFTER the world, so placement and
+    // the starting cloak move to `createPlayer`. Only the ids are recorded here.
+    this.foyerId = foyer.id;
+    this.cloakId = cloak.id;
   }
   
   /**
@@ -238,6 +226,24 @@ export class CloakOfDarknessStory implements Story {
   /**
    * Create the player entity
    */
+  /** The starting room and the cloak, recorded by `initializeWorld`. */
+  private foyerId?: string;
+  private cloakId?: string;
+
+  /**
+   * Put the player in the foyer wearing the cloak (ADR-327 D10).
+   *
+   * Runs from `createPlayer`, which the engine now calls after
+   * `initializeWorld` — so the foyer and the cloak already exist.
+   *
+   * @param world the built world
+   * @param player the player entity
+   */
+  private placePlayer(world: WorldModel, player: IFEntity): void {
+    if (this.foyerId) world.moveEntity(player.id, this.foyerId);
+    if (this.cloakId) world.moveEntity(this.cloakId, player.id);
+  }
+
   createPlayer(world: WorldModel): IFEntity {
     // Check if a player already exists
     const existingPlayer = world.getPlayer();
@@ -266,6 +272,7 @@ export class CloakOfDarknessStory implements Story {
         }));
       }
       
+      this.placePlayer(world, existingPlayer);
       return existingPlayer;
     }
     
@@ -290,6 +297,7 @@ export class CloakOfDarknessStory implements Story {
       }
     }));
     
+    this.placePlayer(world, player);
     return player;
   }
   

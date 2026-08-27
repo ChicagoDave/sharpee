@@ -55,7 +55,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(47);
+    expect(errors[0].span.line).toBe(49);
     expect(errors[0].message).toContain('velvet cloak');
     expect(errors[0].message).toContain('opera cloak');
   });
@@ -76,7 +76,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
     expect(errors[0].message).toContain('select');
-    expect(errors[0].span.line).toBe(79);
+    expect(errors[0].span.line).toBe(81);
   });
 
   it('unbound marker in a phrase', () => {
@@ -87,6 +87,6 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors[0].code).toBe('analysis.unbound-marker');
     // 94: the define-verb → extend-action migration (ADR-270 D7) added two
     // lines above this site in the cloak-shaped source.
-    expect(errors[0].span.line).toBe(97);
+    expect(errors[0].span.line).toBe(99);
   });
 });

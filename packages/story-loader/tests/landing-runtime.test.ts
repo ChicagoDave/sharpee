@@ -93,10 +93,17 @@ create the monkey
 
   A monkey.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Alley
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const roomOf = (b: Booted, irId: string) => b.story.entityId(irId)!;

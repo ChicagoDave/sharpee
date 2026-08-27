@@ -128,20 +128,20 @@ create the wandering mercenaries
   serious-looking swords on their hips.
 
   when the player's waiting expires
-    move it here
-    change it to oblivious
+    move the wandering mercenaries here
+    change the wandering mercenaries to oblivious
     restart search
     phrase merc-arrival
   end when
 
   when search expires
-    change it to approaching
+    change the wandering mercenaries to approaching
     start lunge
     phrase merc-spotted
   end when
 
   when lunge expires
-    change it to aggressive
+    change the wandering mercenaries to aggressive
     start capture
     phrase merc-grab
   end when
@@ -171,25 +171,25 @@ create the wandering mercenaries
   end when
 
   when the player moves
-    phrase merc-dash-away when it is approaching
-    move it offstage
-    change it to oblivious
+    phrase merc-dash-away when the wandering mercenaries is approaching
+    move the wandering mercenaries offstage
+    change the wandering mercenaries to oblivious
     reset search
     reset lunge
     reset recovery
   end when
 
-  on attacking it
-    refuse when it is oblivious: merc-dont-provoke
-    phrase merc-break-free when it is aggressive
-    phrase merc-shove-off when it is approaching
-    change it to approaching
+  on the player attacking
+    refuse when the wandering mercenaries is oblivious: merc-dont-provoke
+    phrase merc-break-free when the wandering mercenaries is aggressive
+    phrase merc-shove-off when the wandering mercenaries is approaching
+    change the wandering mercenaries to approaching
     reset lunge
     reset capture
     start recovery
   end on
 
-  on talking it while it is not oblivious
+  on the player talking while the wandering mercenaries is not oblivious
     refuse merc-ignore-pleas
   end on
 
@@ -200,7 +200,7 @@ create the sword
   honed to a wicked edge. Nothing less than three-foot-long, practical tools
   for stabbing people dead.
 
-  on taking it
+  on the player taking
     refuse sword-not-for-you
   end on
 
@@ -216,7 +216,7 @@ create the sword
 ## ---------------------------------------------------------------------------
 
 define trait wary
-  on talking it while the wandering mercenaries is here
+  on the player talking while the wandering mercenaries is here
     refuse when the wandering mercenaries is oblivious: merc-hush
     refuse merc-run
   end on
@@ -248,7 +248,7 @@ define action kicking
 ## the mercenaries.
 
 define trait kick-escape
-  on kicking it
+  on the player kicking
     refuse when it is oblivious: merc-dont-provoke
     phrase merc-break-free-kick when it is aggressive
     phrase merc-shove-off-kick when it is approaching
@@ -263,7 +263,7 @@ end trait
 ## player in `secret-letter.story`.
 
 define trait kick-yourself
-  on kicking it
+  on the player kicking
     refuse kick-self
   end on
 end trait

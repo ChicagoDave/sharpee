@@ -24,10 +24,17 @@ create the Den
 
   A small square den.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Den
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** The document a Testing tab session would have written. Seed pinned (D5). */

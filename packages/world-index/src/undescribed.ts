@@ -44,7 +44,7 @@ export function deriveUndescribed(ir: StoryIR): string[] {
     .filter((entity) => {
       if (entity.descriptionKey !== null && entity.descriptionKey !== undefined) return false;
       if (entity.initialDescriptionKey !== null && entity.initialDescriptionKey !== undefined) return false;
-      if (entity.isPlayer) return false;
+      if (entity.isPlayable) return false;
       return !isRegion(entity);
     })
     .map((entity) => entity.id);

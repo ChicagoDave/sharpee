@@ -89,10 +89,17 @@ create the plum
   ripenable
   in the Orchard
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D4 forward-march at runtime (non-reversible sets)', () => {
@@ -144,10 +151,17 @@ create the tide
   in the Shore
   states, reversible: low, high
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shore
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D4 reversible sets', () => {
@@ -183,10 +197,17 @@ define sequence ripening
     change the plum to ripe
 end sequence
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('named-entity `change` from sequence-step scope (CP6)', () => {
@@ -271,10 +292,17 @@ create the owl
     phrase hoot
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Meadow
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('decision-10 presence gate (performances need an audience)', () => {
@@ -387,10 +415,17 @@ create the lantern
     phrase glow when the lantern is bright
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 interface DispatchAction {
@@ -503,10 +538,17 @@ create the iron gate
   openable
   in the Yard
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('state adjectives read live from world trait state (D1)', () => {

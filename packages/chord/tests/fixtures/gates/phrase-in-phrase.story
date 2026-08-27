@@ -20,7 +20,13 @@ create the Field
 
   A field. {again}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Field
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

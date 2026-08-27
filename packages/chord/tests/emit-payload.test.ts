@@ -68,6 +68,14 @@ describe('payloaded emit (ADR-216)', () => {
     emit petted
   end on
 
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
+
 create the Hall
   a room
 

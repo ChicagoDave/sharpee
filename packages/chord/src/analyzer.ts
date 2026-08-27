@@ -22,6 +22,7 @@ import {
   CompositionItem,
   ConditionNode,
   CreateDecl,
+  StartBlockDecl,
   CounterDecl,
   DefineCounter,
   DefineAction,
@@ -398,12 +399,13 @@ function scopeHasIt(scope: Scope): boolean {
 }
 
 /**
- * Can this entity act (ADR-327 D1)? The player, or a `a person` block —
- * the two block kinds whose owner is a clause head's subject.
+ * Can this entity act (ADR-327 D1)? A `a person` block — the block kind whose
+ * owner can be a clause head's subject.
  */
 function isActorSymbol(sym: EntitySymbol): boolean {
-  if (sym.id === 'player') return true;
-  return sym.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+  // ADR-327 D10 removed the player block, so `a person` is the whole rule —
+  // the role-holder is one of these characters, chosen at run time.
+  return isPersonDecl(sym.decl);
 }
 
 /** The entity's name as the author wrote it (`the Grocery Stall`), for fix-its. */
@@ -524,6 +526,25 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
  */
 export function analyze(ast: StoryFile, diagnostics: DiagnosticBag): StoryIR {
   return new Analyzer(ast, diagnostics).run();
+}
+
+/**
+ * `a person` composed on a create block — the ADR-327 D10 eligibility floor
+ * for holding the player role.
+ */
+function isPersonDecl(decl: CreateDecl): boolean {
+  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+}
+
+/**
+ * `playable` composed on a create block (ADR-327 D10) — a bare, single-word
+ * composition matched ahead of profile/personality/trait routing, so the word
+ * never reaches parser vocabulary or the unknown-trait census gate.
+ */
+function isPlayableDecl(decl: CreateDecl): boolean {
+  return decl.compositions.some(
+    (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
+  );
 }
 
 interface EntitySymbol {
@@ -843,6 +864,9 @@ class Analyzer {
           : {}),
       },
       entities: [],
+      // ADR-327 D10: resolved after the declaration loop, so its statements
+      // see every entity the story declares.
+      startBlock: null,
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
@@ -1014,6 +1038,10 @@ class Analyzer {
           break; // applied onto owners after all entities are built (applyConversations)
       }
     }
+
+    // ADR-327 D10: the start block resolves after every entity is built —
+    // `change the player to <name>` refers to characters declared anywhere.
+    ir.startBlock = this.buildStartBlock();
 
     // ADR-250 D3: books in arbitration order; predicates resolve here in
     // pass 2 (an entity declared after the book may appear in its `while`).
@@ -1266,9 +1294,10 @@ class Analyzer {
         }
       }
 
-      // Census 12: items the player wears must be wearable. Only the player's
-      // `wears` list is applied at load — mirror that scope exactly.
-      if (entity.isPlayer) {
+      // Census 12: items a role-eligible character wears must be wearable.
+      // Under ADR-327 D10 there is no compile-time player, so the scope is
+      // every `playable` character — the set that can actually hold the role.
+      if (entity.isPlayable) {
         for (const wornId of entity.wears) {
           const worn = ir.entities.find((e) => e.id === wornId);
           if (worn && !worn.traits.some((t) => t.name === 'wearable')) {
@@ -3998,7 +4027,6 @@ class Analyzer {
   private routeCharacterComposition(
     comp: CompositionItem,
     isPerson: boolean,
-    isPlayer: boolean,
     entityName: string,
     out: IRPersonalityEntry[],
   ): boolean {
@@ -4029,16 +4057,6 @@ class Analyzer {
       this.diagnostics.error(
         'analysis.personality-person-only',
         `\`${name}\` is a personality adjective — it composes only on a person (\`a person, ${name}\`); \`${entityName}\` is not a person.`,
-        comp.span,
-      );
-      return true;
-    }
-    // The player carries no character model — the model drives NPC turns
-    // (ADR-310; the direct parallel of the player-behavior gate below).
-    if (isPlayer) {
-      this.diagnostics.error(
-        'analysis.personality-player',
-        `The player carries no character model — personality adjectives shape how an NPC behaves, and the player's behavior is the player's.`,
         comp.span,
       );
       return true;
@@ -4545,16 +4563,13 @@ class Analyzer {
   private routeProfileComposition(
     comp: CompositionItem,
     isPerson: boolean,
-    isPlayer: boolean,
     entityName: string,
     isDuplicate: boolean,
   ): Record<string, string> | null {
-    if (!isPerson || isPlayer) {
+    if (!isPerson) {
       this.diagnostics.error(
-        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
-        isPlayer
-          ? `The player carries no character model — \`cognitive-profile\` shapes how an NPC perceives and believes.`
-          : `\`cognitive-profile\` composes only on a person — \`${entityName}\` is not a person.`,
+        'analysis.character-line-person-only',
+        `\`cognitive-profile\` composes only on a person — \`${entityName}\` is not a person.`,
         comp.span,
       );
       return null;
@@ -4704,8 +4719,19 @@ class Analyzer {
   private buildEntity(decl: CreateDecl): IREntity {
     const sym = this.byId.get(decl.name.words.join('-').toLowerCase());
     const id = sym?.id ?? decl.name.words.join('-').toLowerCase();
-    const isPlayer = decl.name.words.length === 1 && decl.name.words[0].toLowerCase() === 'player';
-    const isPerson = decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+    const isPerson = isPersonDecl(decl);
+    // ADR-327 D10: `playable` marks a character eligible for the player role.
+    const isPlayable = isPlayableDecl(decl);
+    if (isPlayable && !isPerson) {
+      const comp = decl.compositions.find(
+        (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
+      )!;
+      this.diagnostics.error(
+        'analysis.playable-non-person',
+        `\`playable\` marks a character who can hold the player role — \`${decl.name.words.join(' ')}\` is not \`a person\`.`,
+        comp.span,
+      );
+    }
 
     const kinds = [];
     const traits = [];
@@ -4713,10 +4739,16 @@ class Analyzer {
     let profile: Record<string, string> | undefined;
     let sawProfileLine = false;
     for (const comp of decl.compositions) {
+      // ADR-327 D10: `playable` is a reserved bare composition. Consumed here,
+      // ahead of profile/personality/trait routing, so the word never enters
+      // parser vocabulary and never reaches the unknown-trait census gate.
+      if (!comp.article && comp.words.length === 1 && comp.words[0].toLowerCase() === 'playable') {
+        continue;
+      }
       // ADR-310 D4: `cognitive-profile <name> [with …]` rides the
       // composition grammar and compiles into character data.
       if (!comp.article && comp.words[0]?.toLowerCase() === 'cognitive-profile') {
-        const built = this.routeProfileComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), sawProfileLine);
+        const built = this.routeProfileComposition(comp, isPerson, decl.name.words.join(' '), sawProfileLine);
         sawProfileLine = true;
         if (built) profile = built;
         continue;
@@ -4726,7 +4758,7 @@ class Analyzer {
       // Consumed words never reach trait composition, so they never enter
       // parser vocabulary (the D2 no-parser-vocabulary rule) and never hit
       // the census-15 unknown-trait gate.
-      if (!comp.article && this.routeCharacterComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), personality)) {
+      if (!comp.article && this.routeCharacterComposition(comp, isPerson, decl.name.words.join(' '), personality)) {
         continue;
       }
       const built = {
@@ -4900,12 +4932,10 @@ class Analyzer {
       decl.codes[0] ??
       decl.honors[0] ??
       decl.burdens[0];
-    if (firstCharacterLine && (!isPerson || isPlayer)) {
+    if (firstCharacterLine && !isPerson) {
       this.diagnostics.error(
-        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
-        isPlayer
-          ? `The player carries no character model — character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) shape how an NPC behaves.`
-          : `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
+        'analysis.character-line-person-only',
+        `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
         firstCharacterLine.span,
       );
     } else if (firstCharacterLine) {
@@ -5389,31 +5419,11 @@ class Analyzer {
       }
     }
 
-    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
-    // player composes like any entity — but only `a person` is a legal
-    // kind (a no-op; the player is already an actor), and NPC behavior
-    // adjectives would hand the player to the NPC service. Both gate.
-    if (isPlayer) {
-      for (const kind of kinds) {
-        if (kind.name !== 'person') {
-          this.diagnostics.error(
-            'analysis.player-kind',
-            `The player cannot be \`a ${kind.name}\` — only \`a person\` composes on the player block (as a no-op).`,
-            kind.span,
-          );
-        }
-      }
-      for (const trait of traits) {
-        const contributed = manifestForAdjective(trait.name);
-        if (contributed?.manifest.name === 'npc') {
-          this.diagnostics.error(
-            'analysis.player-behavior',
-            `\`${trait.name}\` is an NPC behavior — the player is not driven by the NPC service.`,
-            trait.span,
-          );
-        }
-      }
-    }
+    // ADR-327 D10: the player-block composition gates (`analysis.player-kind`,
+    // `analysis.player-behavior`) are gone with the player block itself. A
+    // `playable` character composes like any other person, and an NPC behavior
+    // adjective on one is legitimate — it drives them for as long as they are
+    // NOT the role-holder, which is exactly what D9's role gate makes possible.
 
     // ADR-234 D3: a door's location IS its room pair — the loader places
     // it in room1 per the platform convention; a placement line is a load
@@ -5492,7 +5502,7 @@ class Analyzer {
       // Present only when declared and resolved (ruled Q-2: absent means
       // the platform's by-number fallback — and zero golden churn).
       ...(pronouns !== undefined ? { pronouns } : {}),
-      isPlayer,
+      isPlayable,
       kinds,
       traits,
       // ADR-310 D7: present exactly when the block declared at least one
@@ -5782,6 +5792,7 @@ class Analyzer {
       switch (stmt.kind) {
         case 'set':
         case 'change':
+        case 'change-player':
         case 'change-mood':
         case 'change-feeling':
         case 'move':
@@ -5872,6 +5883,71 @@ class Analyzer {
   }
 
   // ----------------------------------------------------------- statements
+
+  /**
+   * Resolve the story's `before the game starts` block (ADR-327 D10).
+   *
+   * Runs after every entity is built, so the role assignment can name a
+   * character declared anywhere in the story. Three gates live here:
+   * exactly one block per story, effect statements only, and a role
+   * assignment on some path. The last is a compile-time *reachability*
+   * check, not a guarantee — the assignment may carry a `when` tail, so the
+   * loader keeps a matching runtime backstop for the path that skips it.
+   *
+   * @returns the lowered block, or null when the story declares none (which
+   *   is itself reported, except in a grammar file, which carries no story)
+   */
+  private buildStartBlock(): { body: IRStatement[]; span: Span } | null {
+    const blocks = this.ast.declarations.filter((d): d is StartBlockDecl => d.kind === 'start-block');
+    if (blocks.length === 0) {
+      // Only a story is missing a start block. A grammar file carries no story
+      // content, and a headerless fragment is not a story either — both are
+      // compiled all over the test suites and neither has a role to fill.
+      if (!this.ast.grammarHeader && this.ast.header) {
+        this.diagnostics.error(
+          'analysis.start-block-missing',
+          'This story never says who the player is. Add a `before the game starts` block assigning the role: `change the player to <character>`.',
+          this.ast.header?.span ?? this.ast.span,
+        );
+      }
+      return null;
+    }
+    for (const extra of blocks.slice(1)) {
+      this.diagnostics.error(
+        'analysis.duplicate-start-block',
+        'A story has one `before the game starts` block — merge these two.',
+        extra.span,
+      );
+    }
+
+    const decl = blocks[0];
+    const body: IRStatement[] = [];
+    let assignsRole = false;
+    decl.body.forEach((stmt, index) => {
+      // Q3 (ruled 2026-08-26): the block runs before any turn exists to carry
+      // prose, so narration here has no sink. The story header's `prologue:`
+      // is the seam that does.
+      if (stmt.kind === 'phrase' || stmt.kind === 'emit') {
+        this.diagnostics.error(
+          'analysis.start-block-narration',
+          `\`${stmt.kind}\` has no sink before the game starts — opening text belongs in the story header's \`prologue:\` field.`,
+          stmt.span,
+        );
+        return;
+      }
+      if (stmt.kind === 'change-player') assignsRole = true;
+      body.push(this.resolveStatement(stmt, STORY_SCOPE, `start-block.${index}`));
+    });
+
+    if (!assignsRole) {
+      this.diagnostics.error(
+        'analysis.start-block-no-role',
+        'This `before the game starts` block never assigns the player role — add `change the player to <character>`.',
+        decl.span,
+      );
+    }
+    return { body, span: decl.span };
+  }
 
   private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
     switch (stmt.kind) {
@@ -6000,6 +6076,36 @@ class Analyzer {
           this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
+      case 'change-player': {
+        // ADR-327 D9/D10: the role moves to a named character. Eligibility is
+        // compile-time so the engine's `switchPlayer` isPlayable throw can
+        // never reach a player. An unresolved name is left to the standard
+        // unknown-entity gate `resolveEntityValue` already fires — a second
+        // diagnostic for one miss reads as two problems.
+        const entity = this.resolveEntityValue(stmt.target, scope);
+        if (entity.kind === 'entity') {
+          const sym = this.byId.get(entity.id);
+          if (sym && !isPersonDecl(sym.decl)) {
+            this.diagnostics.error(
+              'analysis.player-target-not-person',
+              `\`${sym.nameLower}\` cannot hold the player role — only \`a person\` can.`,
+              stmt.span,
+            );
+          } else if (sym && !isPlayableDecl(sym.decl)) {
+            this.diagnostics.error(
+              'analysis.player-target-not-playable',
+              `\`${sym.nameLower}\` is not \`playable\` — add \`playable\` to its create block to let the player role move to it.`,
+              stmt.span,
+            );
+          }
+        }
+        return {
+          kind: 'change-player',
+          entity,
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
       }
       case 'change-mood': {
         // ADR-310 D3: the mood word resolves against the character
@@ -6985,10 +7091,11 @@ class Analyzer {
    */
   private resolveEntityId(ref: NameRef): string | null {
     const lower = ref.words.join(' ').toLowerCase();
-    if (PLAYER_WORDS.has(lower)) {
-      const player = this.entities.find((e) => e.id === 'player');
-      if (player) return player.id;
-    }
+    // ADR-327 D10: `the player` names the ROLE, not an entity — there is no
+    // player block any more. `player` is the sentinel id the loader resolves
+    // against `world.getPlayer()` at run time, exactly as `define timer … for
+    // the player` already did.
+    if (PLAYER_WORDS.has(lower)) return 'player';
 
     const exact = this.entities.filter((e) => e.nameLower === lower);
     if (exact.length === 1) return exact[0].id;

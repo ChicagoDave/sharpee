@@ -21,7 +21,9 @@ create the well
 
   A stone well.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Courtyard
 
   You.
@@ -37,3 +39,7 @@ define sound roar from "audio/roar.ogg"
 define phrase roar-text
   A deafening roar shakes the room.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

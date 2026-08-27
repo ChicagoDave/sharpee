@@ -24,7 +24,13 @@ create the elvish sword
 
   A sharp elvish blade.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Arena
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

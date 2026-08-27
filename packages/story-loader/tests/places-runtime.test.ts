@@ -92,10 +92,17 @@ create the monkey
   phrase disappeared:
     The monkey is gone.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Stall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe("move … to <owner>'s location (D1)", () => {

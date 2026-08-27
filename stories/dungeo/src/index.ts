@@ -628,11 +628,8 @@ export class DungeoStory implements Story {
       ],
     );
 
-    // Set initial player location to West of House
-    const player = world.getPlayer();
-    if (player) {
-      world.moveEntity(player.id, this.whiteHouseIds.westOfHouse);
-    }
+    // ADR-327 D10: the player is created after the world, so placement moved
+    // into `createPlayer` — West of House already exists by the time it runs.
   }
 
   /**
@@ -726,6 +723,7 @@ export class DungeoStory implements Story {
         existingPlayer.add(new HealthTrait({ health: 100, maxHealth: 100 }));
       }
 
+      world.moveEntity(existingPlayer.id, this.whiteHouseIds.westOfHouse);
       return existingPlayer;
     }
 
@@ -760,6 +758,9 @@ export class DungeoStory implements Story {
     }));
     // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
     player.add(new HealthTrait({ health: 100, maxHealth: 100 }));
+
+    // ADR-327 D10: setStory builds the world FIRST, so West of House exists.
+    world.moveEntity(player.id, this.whiteHouseIds.westOfHouse);
 
     return player;
   }

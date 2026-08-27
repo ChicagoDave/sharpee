@@ -221,6 +221,14 @@ create the Crypt
 define phrases en-US
   crypt-curse:
     The amulet flares, and the crypt claims you.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 `);
     const story = createStory(ir, { seed: 42 });
     const world = new WorldModel();

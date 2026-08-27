@@ -23,10 +23,17 @@ const ROOMS = `create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function compileClean(source: string): StoryIR {
@@ -98,10 +105,17 @@ create the brass lamp
 
   A brass lamp.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     const l = load(source);
     const entries: Array<{ owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }> = [];
@@ -140,10 +154,17 @@ create the box
 
   A box.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('rogue containment resolves instead of looping forever', { timeout: 5000 }, () => {

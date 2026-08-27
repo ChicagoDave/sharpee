@@ -10,7 +10,9 @@ define condition sweep-time: the player is in the Barn
 create the Barn
   a room
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Barn
 
 create the goat
@@ -29,3 +31,7 @@ create the goat
 define phrases en-US
   nope:
     Nope.
+
+before the game starts
+  change the player to Alex
+end before

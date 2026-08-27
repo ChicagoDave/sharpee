@@ -29,10 +29,16 @@ create the Hall
 
   Second paragraph of the hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   Fine.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the plaque
   in the Hall

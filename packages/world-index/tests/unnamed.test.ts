@@ -49,8 +49,15 @@ create the Study
 
   A study.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D13 — a thing the mechanics need that nothing announces', () => {

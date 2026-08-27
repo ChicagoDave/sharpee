@@ -99,10 +99,18 @@ create the sword
 ${sword}
   A sword.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
+
 ${player}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** Drive one consultation through the four hooks the way the lifecycle engine does. */

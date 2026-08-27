@@ -168,16 +168,39 @@ export function roomsOf(ir: StoryIR): IREntity[] {
  */
 export function thingsOf(ir: StoryIR): IREntity[] {
   return ir.entities.filter(
-    (entity) => !isRoom(entity) && !isRegion(entity) && !isDoor(entity) && !entity.isPlayer,
+    (entity) => !isRoom(entity) && !isRegion(entity) && !isDoor(entity) && !entity.isPlayable,
   );
+}
+
+/**
+ * The character the story's `before the game starts` block gives the player
+ * role to (ADR-327 D10).
+ *
+ * Reads the block's first unconditional `change the player to` — the opening
+ * protagonist. A conditional assignment is deliberately not followed: which arm
+ * fires is a run-time fact, and this index describes the story as written.
+ *
+ * @param ir the story IR
+ * @returns the opening PC's entity id, or `undefined` when the story assigns
+ *   the role only conditionally (or not at all)
+ */
+export function initialPlayerIdOf(ir: StoryIR): string | undefined {
+  for (const stmt of ir.startBlock?.body ?? []) {
+    if (stmt.kind !== 'change-player' || stmt.stmtWhen) continue;
+    if (stmt.entity.kind === 'entity') return stmt.entity.id;
+  }
+  return undefined;
 }
 
 /**
  * The room the player begins in.
  *
  * @param ir the story IR
- * @returns the start room's id, or `undefined` when the story places no player
+ * @returns the start room's id, or `undefined` when the story names no opening
+ *   protagonist, or that character carries no placement line
  */
 export function startRoomOf(ir: StoryIR): string | undefined {
-  return ir.entities.find((entity) => entity.isPlayer)?.placement?.place;
+  const playerId = initialPlayerIdOf(ir);
+  if (playerId === undefined) return undefined;
+  return ir.entities.find((entity) => entity.id === playerId)?.placement?.place;
 }

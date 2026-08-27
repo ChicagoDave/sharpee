@@ -30,11 +30,16 @@ const mainWith = (importLine: string) =>
     '', //                   6
     importLine, //          7
     '', //                   8
-    'create the player', //  9
-    '  a room', //          10
-    '', //                  11
-    '  You.', //            12
-    '', //                  13
+    'create Alex', //        9
+    '  a person', //        10
+    '  playable', //        11
+    '', //                  12
+    '  You.', //            13
+    '', //                  14
+    'before the game starts', // 15
+    '  change the player to Alex', // 16
+    'end before', //        17
+    '', //                  18
   ].join('\n');
 
 describe('ADR-251 Acceptance — worked example', () => {
@@ -53,10 +58,16 @@ describe('ADR-251 Acceptance — worked example', () => {
       '',
       'import "regions/harbor"',
       '',
-      'create the player',
+      'create Alex',
+      '  a person',
+      '  playable',
       '  starts in the Lighthouse',
       '',
       '  You.',
+      '',
+      'before the game starts',
+      '  change the player to Alex',
+      'end before',
       '',
     ].join('\n');
     // Two creates + a cross-file reference: the gull is placed in the
@@ -162,14 +173,19 @@ describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment f
       '', //                      6
       'import "regions/market"', // 7
       '', //                      8
-      'create the player', //     9
+      'create Alex', //           9
       '  a person', //           10
-      '', //                     11
-      '  You.', //               12
-      '', //                     13
-      '  after the player entering', //  14
-      '    phrase main-missing', // 15
-      '  end after', //          16
+      '  playable', //           11
+      '', //                     12
+      '  You.', //               13
+      '', //                     14
+      '  after the player entering', // 15
+      '    phrase main-missing', //     16
+      '  end after', //          17
+      '', //                     18
+      'before the game starts', // 19
+      '  change the player to Alex', // 20
+      'end before', //           21
       '',
     ].join('\n');
     const missing = errorsOf(main, resolver).filter((d) => d.code === 'analysis.missing-phrase');
@@ -178,7 +194,7 @@ describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment f
     const inMain = missing.find((d) => d.message.includes('main-missing'));
     expect(inFragment?.span).toMatchObject({ file: 'regions/market.chord', line: 7 });
     expect(inMain?.span.file).toBeUndefined();
-    expect(inMain?.span.line).toBe(15);
+    expect(inMain?.span.line).toBe(16);
   });
 
   it('a fragment PARSE diagnostic also carries the fragment file', () => {
@@ -233,7 +249,7 @@ describe('ADR-251 D5 (amended 2026-08-22) — imports nest (GH #302)', () => {
       }),
     });
     const order = r.ir.entities.map((e) => e.id).filter((id) => id !== 'player');
-    expect(order).toEqual(['first', 'second', 'third']);
+    expect(order).toEqual(['first', 'second', 'third', 'alex']);
   });
 
   it('a span two levels down names ITS file, not the fragment that imported it', () => {

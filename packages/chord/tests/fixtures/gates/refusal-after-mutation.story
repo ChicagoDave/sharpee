@@ -16,3 +16,11 @@ create the box
 define phrases en-US
   cant-read:
     No.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

@@ -164,10 +164,17 @@ create the shelf
     end each
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function load() {

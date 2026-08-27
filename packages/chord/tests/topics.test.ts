@@ -20,9 +20,15 @@ const story = (body: string) => `story
   id: topics
   story-version: 0.0.1
 
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the Lodge
   a room

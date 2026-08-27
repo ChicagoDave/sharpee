@@ -101,10 +101,17 @@ create the ghost
   phrase present while after-hours:
     A translucent shape drifts by.
 
-create the player
+create Alex
+  a person
+  playable
   in the Zoo
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   function bootWithEngine() {
@@ -205,10 +212,17 @@ create the cat
   phrase entered:
     The cat wanders in.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('exited fires when the player shares the source room, with counters keyed (owner, exited)', () => {
@@ -275,10 +289,17 @@ create the cat
   phrase disappeared:
     The cat is simply gone.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('the remove statement removes the entity and narrates the witnessed disappearance (AC-6)', () => {
@@ -381,10 +402,17 @@ create the cat
 
   A cat.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('`while it is on` / `while it is lit` bind the shipped trait fields', () => {

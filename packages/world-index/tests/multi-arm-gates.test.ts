@@ -55,14 +55,20 @@ create the bell
 
   A bell.
 
-  on pushing it
+  on the player pushing
     change the gate warden to bored
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Junction
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase north-deflected
   Turned back.
@@ -95,10 +101,16 @@ create the Yard
 
   The yard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Junction
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase yard-roped
   Roped off.

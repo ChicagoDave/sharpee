@@ -63,10 +63,16 @@ create the Roadside
 
   A road. In no region at all.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lawn
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase clock-tick
   Somewhere, a clock ticks.

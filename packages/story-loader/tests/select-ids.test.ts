@@ -72,10 +72,17 @@ create the gong
 
   A brass gong.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function compiled(): StoryIR {
@@ -124,9 +131,9 @@ function selectIds(ir: StoryIR): string[] {
 }
 
 describe('ADR-289 D2 — compiler-assigned select ids', () => {
-  it('IR_FORMAT is `story language 3`', () => {
-    expect(IR_FORMAT).toBe('story language 3');
-    expect(compiled().format).toBe('story language 3');
+  it('IR_FORMAT is `story language 4`', () => {
+    expect(IR_FORMAT).toBe('story language 4');
+    expect(compiled().format).toBe('story language 4');
   });
 
   it('names owner, clause and statement path', () => {

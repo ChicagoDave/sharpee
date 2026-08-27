@@ -51,10 +51,17 @@ end phrase
 
 ${body}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shed
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D5 gerund fail-fast (ADR-228)', () => {

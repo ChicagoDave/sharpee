@@ -18,7 +18,13 @@ create the Chapel
   A cold stone chapel. The dark presses in from every corner, and the single
   candle does nothing against it.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Chapel
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

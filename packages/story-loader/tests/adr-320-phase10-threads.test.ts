@@ -58,7 +58,7 @@ function storySource(thread: string, extra = ''): string {
   return (
     'story\n  title: T\n  authors:\n    N\n  id: phase104\n  story-version: 0.0.1\n\n' +
     'create the Hall\n  a room\n\n  A hall.\n\n' +
-    'create the player\n  in the Hall\n\n  Me.\n\n' +
+    'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
     'create Kemp\n  a person, proper\n  in the Hall\n  mood cheerful\n  spreads nothing\n\n  The clown.\n\n' +
     'define topics for Kemp\n' +
     '  about "the weather":\n' +

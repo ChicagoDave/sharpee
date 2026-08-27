@@ -222,7 +222,7 @@ describe('traits-basic IR (§2.2/§3.2 + ownership package)', () => {
 describe('ownership-package additions — inline sources', () => {
   it('compiles define-action must lines with infinitive normalization (D6)', () => {
     const result = compile(
-      `${HEADER}define action bowing\n  grammar\n    bow the noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat\n  in the Hall\n\n  A hat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define action bowing\n  grammar\n    bow the noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat\n  in the Hall\n\n  A hat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const bowing = result.ir.actions.find((a) => a.name === 'bowing')!;
@@ -241,7 +241,7 @@ describe('ownership-package additions — inline sources', () => {
 
   it('merges trait-declared states into composer entities for state checks (D8)', () => {
     const errors = errorsOf(
-      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    change the cat to awake\n  end after\n\ncreate the cat\n  sleepy\n  in the Hall\n\n  A cat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    change the cat to awake\n  end after\n\ncreate the cat\n  sleepy\n  in the Hall\n\n  A cat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -269,7 +269,7 @@ describe('Phase B gate classes', () => {
 
   it('unknown score in award, with suggestion', () => {
     const errors = errorsOf(
-      `${HEADER}create the Vault\n  a room\n  score gold worth 5\n\n  Shiny.\n\n  after the player entering\n    award golds\n  end after\n\ncreate the player\n  starts in the Vault\n\n  You.\n`,
+      `${HEADER}create the Vault\n  a room\n  score gold worth 5\n\n  Shiny.\n\n  after the player entering\n    award golds\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Vault\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(
       errors.some(
@@ -290,7 +290,7 @@ describe('Phase B gate classes', () => {
 
   it('open condition accepted as a truth test where `it` is in scope', () => {
     const result = compile(
-      `${HEADER}define condition roomish: it is a room\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering while roomish\n    win\n  end after\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define condition roomish: it is a room\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering while roomish\n    win\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.conditions).toMatchObject([{ name: 'roomish', open: true }]);

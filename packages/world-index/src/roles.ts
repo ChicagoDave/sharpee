@@ -153,7 +153,7 @@ function affordanceTraits(ir: StoryIR): ReadonlySet<string> {
  * @returns true when no affordance can make this a tool
  */
 function isNeverATool(entity: IREntity): boolean {
-  return isRoom(entity) || isRegion(entity) || entity.isPlayer;
+  return isRoom(entity) || isRegion(entity) || entity.isPlayable;
 }
 
 /**

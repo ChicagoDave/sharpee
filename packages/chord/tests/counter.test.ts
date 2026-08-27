@@ -20,10 +20,17 @@ create the Camp
 
   A cold camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const compileStory = (body: string) => {
@@ -79,10 +86,17 @@ create the Camp
 
   A camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('raise / lower mutation (ADR-264 D2)', () => {
@@ -201,7 +215,9 @@ create the innkeeper
 
   Inn.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   after going
@@ -209,10 +225,15 @@ create the player
   end after
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     const ir = lowered(src);
     expect(ir.entities.find((e) => e.id === 'innkeeper')!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 2 });
-    expect(ir.entities.find((e) => e.isPlayer)!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 5 });
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 5 });
   });
 
   it('takes a number, not an expression', () => {

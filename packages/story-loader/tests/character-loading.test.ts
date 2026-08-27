@@ -23,7 +23,7 @@ const SOURCE =
   'define fact the killer\n  the Duke, nobody\nend fact\n\n' +
   'create the Parlor\n  a room\n\n  A parlor.\n\n' +
   'create the Cellar\n  a room\n\n  A cellar.\n\n' +
-  'create the player\n  in the Parlor\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Parlor\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create the Duke\n  a person\n  in the Parlor\n\n  Him.\n\n' +
   'create the Maid\n' +
   '  a person\n' +

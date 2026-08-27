@@ -41,12 +41,20 @@ function storySource(extraLines: string[] = []): string {
     '',
     '  A bare room.',
     '',
-    'create the player',
+    'create Alex',
+    '  a person',
+    '  playable',
     '  starts in the Lab',
     '',
     '  You.',
     '',
     ...extraLines,
+    // ADR-327 D10: a story says who the player is. Last, so appended
+    // declarations still land at top level.
+    'before the game starts',
+    '  change the player to Alex',
+    'end before',
+    '',
   ].join('\n');
 }
 
@@ -57,7 +65,7 @@ const HATCH_STORY_TAIL = [
   '',
   '  A note.',
   '',
-  '  on reading it',
+  '  on the player reading',
   '    phrase note-text',
   '  end on',
   '',
@@ -224,7 +232,7 @@ describe('compose --json — piped stdout integrity (the real IDE transport)', (
           `  The ${a} ${b} stretches on, panelled and echoing, its far corners lost in shadow.`, '');
       }
     }
-    lines.push('create the player', `  starts in the ${first[0]} ${second[0]}`, '', '  You.', '');
+    lines.push('create Alex', '  a person', '  playable', `  starts in the ${first[0]} ${second[0]}`, '', '  You.', '', 'before the game starts', '  change the player to Alex', 'end before', '');
 
     const sub = mkdtempSync(join(DIR, 'bigpipe-'));
     const file = join(sub, 'big.story');

@@ -54,7 +54,7 @@ define phrase merc-held
   The guards hold you fast.
 end phrase
 
-define timer waiting for the player
+define timer waiting for Alex
   pausing
 end timer
 
@@ -75,10 +75,18 @@ create the guards
 ${guards}
   Guards.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
+
 ${player}
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** Drive the going action's source-room slot through the registered interceptor. */
@@ -132,15 +140,15 @@ describe("the player's own going (D3h)", () => {
     expect(goFrom(b, 'yard').veto).toMatchObject({ valid: false, error: 'merc-held' });
     expect(goFrom(b, 'gate').veto).toMatchObject({ valid: false, error: 'merc-held' });
     // The timer was not touched — a refused go runs no `after going`.
-    expect(b.world.getStateValue(timerKey('player.waiting'))).toBeUndefined();
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toBeUndefined();
   });
 
   it('`after going` runs its mutations once the move completes', () => {
     const b = boot(SOURCE('', PLAYER));
-    expect(b.world.getStateValue(timerKey('player.waiting'))).toBeUndefined();
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toBeUndefined();
     const { veto } = goFrom(b, 'yard');
     expect(veto).toBeNull();
-    expect(b.world.getStateValue(timerKey('player.waiting'))).toMatchObject({ phase: 'running', index: 0, startedTurn: 3 });
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toMatchObject({ phase: 'running', index: 0, startedTurn: 3 });
   });
 
   it("`it` inside the clause is the player, not the room", () => {
@@ -174,10 +182,17 @@ create the Gate
 
   A gate.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     const b = boot(src);
     expect(goFrom(b, 'yard').veto).toMatchObject({ error: 'merc-held' });
@@ -225,9 +240,9 @@ describe('when <entity> moves (D3h)', () => {
   it('an entity mover matches that entity, read off the event envelope', () => {
     const b = boot(SOURCE('', '  when the guards moves\n    restart waiting\n  end when\n'));
     moved(b, b.playerId);
-    expect(b.world.getStateValue(timerKey('player.waiting'))).toBeUndefined();
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toBeUndefined();
     moved(b, b.story.entityId('guards')!);
-    expect(b.world.getStateValue(timerKey('player.waiting'))).toMatchObject({ phase: 'running' });
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toMatchObject({ phase: 'running' });
   });
 
   it('ignores other event types', () => {

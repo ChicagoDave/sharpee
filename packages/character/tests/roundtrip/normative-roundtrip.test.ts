@@ -22,6 +22,8 @@ const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 
 
 const SOURCE =
   HEADER +
+  // ADR-327 D10: a story says who the player is.
+  'create Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'define temperament steadfast\n' +
   '  duty over fear\n' +
   '  duty over desire\n' +

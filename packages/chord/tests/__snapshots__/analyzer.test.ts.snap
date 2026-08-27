@@ -87,7 +87,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       ],
       "id": "foyer-of-the-opera-house",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [
         {
           "condition": null,
@@ -132,7 +132,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "exits": [],
       "id": "cloakroom",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [
         {
           "condition": null,
@@ -177,7 +177,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "exits": [],
       "id": "foyer-bar",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [
         {
           "condition": null,
@@ -324,20 +324,32 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
     {
       "aka": [],
-      "article": "the",
+      "article": null,
       "blockedExits": [],
       "carries": [],
       "containing": [],
       "counters": [],
       "deadly": null,
       "deadlyExits": [],
-      "descriptionKey": "player.description",
+      "descriptionKey": "alex.description",
       "exits": [],
-      "id": "player",
+      "id": "alex",
       "initialDescriptionKey": null,
-      "isPlayer": true,
-      "kinds": [],
-      "name": "player",
+      "isPlayable": true,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "person",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 46,
+            "line": 46,
+          },
+        },
+      ],
+      "name": "Alex",
       "onClauses": [],
       "placement": {
         "place": "foyer-of-the-opera-house",
@@ -345,14 +357,14 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 46,
-          "line": 46,
+          "endLine": 48,
+          "line": 48,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 27,
-        "endLine": 49,
+        "endLine": 51,
         "line": 45,
       },
       "startsStates": [],
@@ -379,7 +391,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "exits": [],
       "id": "velvet-cloak",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [],
       "name": "velvet cloak",
       "onClauses": [],
@@ -387,8 +399,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 63,
-        "endLine": 55,
-        "line": 51,
+        "endLine": 57,
+        "line": 53,
       },
       "startsStates": [],
       "states": [],
@@ -402,8 +414,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 53,
-            "line": 53,
+            "endLine": 55,
+            "line": 55,
           },
         },
       ],
@@ -425,7 +437,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "exits": [],
       "id": "brass-hook",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [
         {
           "condition": null,
@@ -440,8 +452,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 12,
             "endColumn": 39,
-            "endLine": 61,
-            "line": 61,
+            "endLine": 63,
+            "line": 63,
           },
         },
       ],
@@ -453,15 +465,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 62,
-          "line": 62,
+          "endLine": 64,
+          "line": 64,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 53,
-        "endLine": 64,
-        "line": 59,
+        "endLine": 66,
+        "line": 61,
       },
       "startsStates": [],
       "states": [],
@@ -475,8 +487,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 61,
-            "line": 61,
+            "endLine": 63,
+            "line": 63,
           },
         },
       ],
@@ -500,7 +512,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "exits": [],
       "id": "message-in-the-sawdust",
       "initialDescriptionKey": null,
-      "isPlayer": false,
+      "isPlayable": false,
       "kinds": [],
       "name": "message in the sawdust",
       "onClauses": [
@@ -522,8 +534,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 30,
-                        "endLine": 75,
-                        "line": 75,
+                        "endLine": 77,
+                        "line": 77,
                       },
                       "stmtWhen": null,
                     },
@@ -533,8 +545,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 12,
-                        "endLine": 76,
-                        "line": 76,
+                        "endLine": 78,
+                        "line": 78,
                       },
                       "stmtWhen": null,
                     },
@@ -542,8 +554,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 18,
-                    "endLine": 74,
-                    "line": 74,
+                    "endLine": 76,
+                    "line": 76,
                   },
                   "value": "intact",
                 },
@@ -556,8 +568,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 32,
-                        "endLine": 78,
-                        "line": 78,
+                        "endLine": 80,
+                        "line": 80,
                       },
                       "stmtWhen": null,
                     },
@@ -565,8 +577,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 20,
-                    "endLine": 77,
-                    "line": 77,
+                    "endLine": 79,
+                    "line": 79,
                   },
                   "value": "trampled",
                 },
@@ -579,8 +591,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 35,
-                        "endLine": 80,
-                        "line": 80,
+                        "endLine": 82,
+                        "line": 82,
                       },
                       "stmtWhen": null,
                     },
@@ -590,8 +602,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 13,
-                        "endLine": 81,
-                        "line": 81,
+                        "endLine": 83,
+                        "line": 83,
                       },
                       "stmtWhen": null,
                     },
@@ -599,8 +611,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 23,
-                    "endLine": 79,
-                    "line": 79,
+                    "endLine": 81,
+                    "line": 81,
                   },
                   "value": "obliterated",
                 },
@@ -609,8 +621,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 82,
-                "line": 73,
+                "endLine": 84,
+                "line": 75,
               },
               "subject": {
                 "base": {
@@ -632,8 +644,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 83,
-            "line": 72,
+            "endLine": 85,
+            "line": 74,
           },
         },
       ],
@@ -643,15 +655,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 69,
-          "line": 69,
+          "endLine": 71,
+          "line": 71,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 24,
-        "endLine": 72,
-        "line": 66,
+        "endLine": 74,
+        "line": 68,
       },
       "startsStates": [],
       "states": [
@@ -669,15 +681,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 68,
-            "line": 68,
+            "endLine": 70,
+            "line": 70,
           },
         },
       ],
       "wears": [],
     },
   ],
-  "format": "story language 3",
+  "format": "story language 4",
   "grammarExtensions": [
     {
       "action": "putting",
@@ -708,8 +720,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 86,
-        "line": 85,
+        "endLine": 88,
+        "line": 87,
       },
     },
   ],
@@ -722,8 +734,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 102,
-        "line": 102,
+        "endLine": 104,
+        "line": 104,
       },
     },
   ],
@@ -754,12 +766,27 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     "defaultLocale": "en-US",
     "locales": {
       "en-US": {
+        "alex.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 51,
+            "line": 51,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "As good-looking as ever.",
+            },
+          ],
+        },
         "brass-hook.description": {
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 64,
-            "line": 64,
+            "endLine": 66,
+            "line": 66,
           },
           "strategy": null,
           "variants": [
@@ -773,8 +800,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 92,
-            "line": 90,
+            "endLine": 94,
+            "line": 92,
           },
           "strategy": null,
           "variants": [
@@ -833,8 +860,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 70,
-            "endLine": 96,
-            "line": 95,
+            "endLine": 98,
+            "line": 97,
           },
           "strategy": null,
           "variants": [
@@ -848,8 +875,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 69,
-            "endLine": 100,
-            "line": 99,
+            "endLine": 102,
+            "line": 101,
           },
           "strategy": null,
           "variants": [
@@ -863,8 +890,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 98,
-            "line": 97,
+            "endLine": 100,
+            "line": 99,
           },
           "strategy": null,
           "variants": [
@@ -876,27 +903,12 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
             },
           ],
         },
-        "player.description": {
-          "span": {
-            "column": 3,
-            "endColumn": 27,
-            "endLine": 49,
-            "line": 49,
-          },
-          "strategy": null,
-          "variants": [
-            {
-              "markers": [],
-              "text": "As good-looking as ever.",
-            },
-          ],
-        },
         "stumble": {
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 94,
-            "line": 93,
+            "endLine": 96,
+            "line": 95,
           },
           "strategy": null,
           "variants": [
@@ -910,8 +922,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 57,
-            "line": 55,
+            "endLine": 59,
+            "line": 57,
           },
           "strategy": null,
           "variants": [
@@ -928,6 +940,30 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
   "ranks": [],
   "scores": [],
   "sequences": [],
+  "startBlock": {
+    "body": [
+      {
+        "entity": {
+          "id": "alex",
+          "kind": "entity",
+        },
+        "kind": "change-player",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 107,
+          "line": 107,
+        },
+        "stmtWhen": null,
+      },
+    ],
+    "span": {
+      "column": 1,
+      "endColumn": 11,
+      "endLine": 108,
+      "line": 106,
+    },
+  },
   "story": {
     "onClauses": [],
     "reversible": false,

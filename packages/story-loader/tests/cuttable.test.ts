@@ -50,10 +50,16 @@ create the Bin
 
 ${body}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shed
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the knife
   in the Shed
@@ -137,11 +143,17 @@ create the Beach
 
   A beach.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Beach
   carries the shovel
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the shovel
 

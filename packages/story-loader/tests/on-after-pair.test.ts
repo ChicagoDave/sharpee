@@ -50,10 +50,16 @@ create the bell
 
   A bronze bell.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shrine
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define trait chimed
   on the player pushing

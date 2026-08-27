@@ -29,10 +29,16 @@ create the Road
 
   The road.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Junction
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase turned-back
   Turned back.

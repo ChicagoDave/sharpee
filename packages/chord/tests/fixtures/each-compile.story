@@ -51,7 +51,9 @@ create the Trophy Barn
 
   A barn with a ledger and strong opinions.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Trophy Barn
 
 create the no smoking sign
@@ -89,3 +91,7 @@ define phrases en-US
     Still peckish.
   sweep-note:
     The keeper sweeps the yard.
+
+before the game starts
+  change the player to Alex
+end before

@@ -27,10 +27,17 @@ const WORLD = `create the Bar
 
   A bar.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Bar
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const PHRASES = `define phrases en-US

@@ -65,43 +65,43 @@ create the monkey
   found entertaining. It grips the necklace protectively, tight against its
   tiny chest. The monkey is standing on the southeast cable.
 
-  on every turn while it is here and the player has the banana and one chance in 5
+  on every turn while the monkey is here and the player has the banana and one chance in 5
     phrase monkey-idle-banana
   end on
 
-  on every turn while it is here and one chance in 5
+  on every turn while the monkey is here and one chance in 5
     phrase monkey-idle
   end on
 
-  on listening it
+  on the player listening
     refuse monkey-chatter
   end on
 
-  on smelling it
+  on the player smelling
     refuse monkey-no-smell
   end on
 
-  on taking it
+  on the player taking
     refuse monkey-jumps-away
   end on
 
-  on attacking it
+  on the player attacking
     refuse monkey-jumps-away
   end on
 
-  on pushing it
+  on the player pushing
     refuse monkey-jumps-away
   end on
 
-  on pulling it
+  on the player pulling
     refuse monkey-jumps-away
   end on
 
-  on giving it
-    phrase monkey-trade when it has the banana
-    move the necklace to the player when it has the banana
-    move the banana offstage when it has the banana
-    move it offstage when the player has the necklace
+  on the player giving
+    phrase monkey-trade when the monkey has the banana
+    move the necklace to the player when the monkey has the banana
+    move the banana offstage when the monkey has the banana
+    move the monkey offstage when the player has the necklace
   end on
 
 create the necklace
@@ -111,11 +111,11 @@ create the necklace
   set in a silver-wrought starburst on a silver chain. It's easily worth the
   price of any piece of merchandise in the market.
 
-  on taking it while the monkey has the necklace
+  on the player taking while the monkey has the necklace
     refuse monkey-guards-necklace
   end on
 
-  on wearing it
+  on the player wearing
     refuse necklace-not-worn
   end on
 

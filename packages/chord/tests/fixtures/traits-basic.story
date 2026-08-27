@@ -82,3 +82,11 @@ create the flimsy basket
 define phrases en-US
   closed-up:
     The north door is bolted after hours.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

@@ -25,10 +25,17 @@ create the Camp
 
   A cold camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 ${phrases}`;
 
 function load(text: string) {

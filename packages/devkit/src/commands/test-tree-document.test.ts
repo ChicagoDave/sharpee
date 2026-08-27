@@ -37,10 +37,17 @@ create the brass lamp
 
   It gleams dully.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Den
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /**

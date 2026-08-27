@@ -100,7 +100,9 @@ import "grubbers-market"
 ## can end where the source's narration ended.
 ## ---------------------------------------------------------------------------
 
-create the player
+create Jack
+  a person
+  playable
   starts in the Northwest Junction
   kick-yourself
   wears the old gray cloak
@@ -116,7 +118,7 @@ create the player
   end on
 
   after going while hunted
-    restart waiting
+    restart the player's waiting
   end after
 
 create the old gray cloak
@@ -127,11 +129,11 @@ create the old gray cloak
   wear it in the masculine style, fastened on the side and thrown back over your
   right shoulder.
 
-  on taking_off it
+  on the player taking_off
     refuse clothing-stays
   end on
 
-  on taking it while the player wears the old gray cloak
+  on the player taking while the player wears the old gray cloak
     refuse clothing-stays
   end on
 
@@ -153,11 +155,11 @@ create the woolen cap
   Your woolen cap is patchy and stained, like the rest of you. You usually
   keep your hair stuffed up under it.
 
-  on taking_off it
+  on the player taking_off
     refuse clothing-stays
   end on
 
-  on taking it
+  on the player taking
     refuse clothing-stays
   end on
 
@@ -188,11 +190,11 @@ create the boots
 
   Leather, floppy, from a pile in Maiden House.
 
-  on taking_off it
+  on the player taking_off
     refuse clothing-stays
   end on
 
-  on taking it
+  on the player taking
     refuse clothing-stays
   end on
 
@@ -210,3 +212,6 @@ create the cloth satchel
   Your trusty cloth satchel: big enough to hold the things you nick, small
   enough to not hamper your getaway.
 
+before the game starts
+  change the player to Jack
+end before

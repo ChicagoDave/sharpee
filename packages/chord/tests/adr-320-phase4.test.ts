@@ -18,10 +18,16 @@ const WORLD = `create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create Will Kemp
   a person

@@ -13,6 +13,7 @@ import { applyCompiledCharacter, type AppliedCharacter } from '../../src/index.j
 
 const SOURCE =
   'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n' +
+  'create Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
   'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
   'create the Duke\n  a person\n\n  Him.\n\n' +

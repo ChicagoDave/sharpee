@@ -7,7 +7,10 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER =
+  'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n' +
+  // ADR-327 D10: every story names its player.
+  'create Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n';
 
 function compileStory(body: string) {
   return compile(HEADER + body);
@@ -76,9 +79,12 @@ describe('D2 — diagnostics', () => {
     expect(errors.every((e) => e.code !== 'analysis.trait-not-declared')).toBe(true);
   });
 
-  it('personality on the player is analysis.personality-player', () => {
-    const errors = errorsOf('create the player\n  a person, honest\n\n  Me.\n');
-    expect(errors.filter((e) => e.code === 'analysis.personality-player')).toHaveLength(1);
+  // ADR-327 D10: the player block is gone, and with it the gate that said the
+  // player carries no character model. A `playable` character is a person like
+  // any other — the model drives them for as long as they are not the PC (D9).
+  it('personality composes on a playable character', () => {
+    const errors = errorsOf('create Robin\n  playable\n  a person, honest\n\n  Me.\n');
+    expect(errors).toEqual([]);
   });
 
   it('`with` config on a personality adjective is analysis.personality-config', () => {
@@ -99,7 +105,7 @@ describe('D2 — diagnostics', () => {
 
 describe('D3 — mood, feels, knows declarations', () => {
   const TOBIAS =
-    'create the player\n\n  Me.\n\n' +
+    'create Robin\n  a person\n  playable\n\n  Me.\n\n' +
     'create Tobias\n' +
     '  a person, very honest, cowardly\n' +
     '  mood nervous\n' +
@@ -180,24 +186,23 @@ describe('D3 — mood, feels, knows declarations', () => {
 
   it('duplicate mood line, feels target, and knows topic each error once', () => {
     const errors = errorsOf(
-      'create the player\n\n  Me.\n\ncreate Tobias\n  a person\n  mood calm\n  mood nervous\n  feels wary of the player\n  feels trusts toward the player\n  knows the murder, witnessed\n  knows the murder, told\n\n  A man.\n',
+      'create Robin\n  a person\n  playable\n\n  Me.\n\ncreate Tobias\n  a person\n  mood calm\n  mood nervous\n  feels wary of the player\n  feels trusts toward the player\n  knows the murder, witnessed\n  knows the murder, told\n\n  A man.\n',
     );
     expect(errors.filter((e) => e.code === 'analysis.mood-duplicate')).toHaveLength(1);
     expect(errors.filter((e) => e.code === 'analysis.feels-duplicate')).toHaveLength(1);
     expect(errors.filter((e) => e.code === 'analysis.knows-duplicate')).toHaveLength(1);
   });
 
-  it('character lines on a non-person and on the player each gate', () => {
+  it('character lines gate on a non-person, and compose on a playable character', () => {
     expect(
       errorsOf('create the Lantern\n  mood calm\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);
+    // ADR-327 D10: no `analysis.character-line-player` — see above.
     expect(
-      errorsOf('create the player\n  a person\n  mood calm\n\n  Me.\n').filter(
-        (e) => e.code === 'analysis.character-line-player',
-      ),
-    ).toHaveLength(1);
+      errorsOf('create Robin\n  playable\n  a person\n  mood calm\n\n  Me.\n'),
+    ).toEqual([]);
   });
 });
 
@@ -340,7 +345,7 @@ describe('D14 — define fact and thinks', () => {
 
 describe('D13 — entity-scoped predicates and D16 phrasebook specificity', () => {
   const WORLD =
-    'create the player\n\n  Me.\n\n' +
+    'create Robin\n  a person\n  playable\n\n  Me.\n\n' +
     'create the Colonel\n  a person, proper\n  mood calm\n  knows the murder, witnessed\n\n  Him.\n\n';
 
   it('mood words, feels, and knows all gate a per-line `when`', () => {
@@ -587,7 +592,7 @@ describe('D10 — spreads propagation lines', () => {
         'define phrase ginger-moves-off\n  The air clears.\nend phrase\n\n' +
         'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
         'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
-        'create the player\n\n  Me.\n\n' +
+        'create Robin\n  a person\n  playable\n\n  Me.\n\n' +
         'create Colonel Mustard\n' +
         '  a person, proper, cruel\n' +
         '  in the Kitchen\n' +
@@ -838,17 +843,14 @@ describe('ADR-318 D3/D7 — temperaments', () => {
     expect(unconditional).toHaveLength(1);
   });
 
-  it('temperament on a non-person and on the player each gate', () => {
+  it('temperament gates on a non-person, and composes on a playable character', () => {
     expect(
       errorsOf('create the Lantern\n  temperament duty over fear\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);
-    expect(
-      errorsOf('create the player\n  a person\n  temperament duty over fear\n\n  Me.\n').filter(
-        (e) => e.code === 'analysis.character-line-player',
-      ),
-    ).toHaveLength(1);
+    // ADR-327 D10: no `analysis.character-line-player` — the role is not a block.
+    expect(errorsOf('create Robin\n  playable\n  a person\n  temperament duty over fear\n\n  Me.\n')).toEqual([]);
   });
 
   it('an empty define block and a malformed pair line each error at parse', () => {

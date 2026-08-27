@@ -55,8 +55,13 @@ create the rat
 
   A watchful rat.
 
-create the player
+create Alex
+  playable
   a person, combatant with health 30 and skill 10
   starts in the Gate
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
