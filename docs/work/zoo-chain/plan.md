@@ -1,5 +1,13 @@
 # Zoo Chained Walkthrough + Enabling Platform Fixes
 
+**Plan Status**: DONE
+> Field added 2026-08-27 (session a3a4af). No status was decided here — this plan has
+> exactly two phases, F1 and F2, and its own `## Status` section below records both
+> COMPLETE (2026-07-12). Transcribed into the machine-readable field; flagged as
+> heading-only by `pre-session-audit` for five consecutive sessions.
+> **Not archived** — rule 18b would move a terminal plan to `docs/work/archive/`, but that
+> is David's call, not a side effect of adding a field.
+
 **Origin**: David, 2026-07-12 — "Chained walkthrough testing is required."
 Investigation found cloak/zoo gates were always atomic (no chained
 conversion ever landed); David scoped the work: **zoo only**, existing

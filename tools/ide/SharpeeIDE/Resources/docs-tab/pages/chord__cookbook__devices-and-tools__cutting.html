@@ -1,4 +1,4 @@
-<p>The platform gates eligibility (<code>cuttable</code>) and validates the tool (<code>with the &lt;tool entity&gt;</code>, the same contract as lockable keys); the outcome is the entity's own <code>on cutting it</code> clause, and exactly one implementation is required at load. Note there is no bare <code>cut X</code> in the core grammar: the tool is part of the phrasing.</p>
+<p>The platform gates eligibility (<code>cuttable</code>) and validates the tool (<code>with the &lt;tool entity&gt;</code>, the same contract as lockable keys); the outcome is the entity's own <code>on the player cutting</code> clause, and exactly one implementation is required at load. Note there is no bare <code>cut X</code> in the core grammar: the tool is part of the phrasing.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Bell Tower
   a room
@@ -14,8 +14,8 @@ create the bell rope
 
   A rope as thick as your wrist, humming with tension.
 
-  on cutting it
-    change it to severed
+  on the player cutting
+    change the bell rope to severed
     phrase rope-severed
   end on
 
@@ -29,14 +29,20 @@ create the butter knife
 
   A knife for butter, and butter only.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Bell Tower
   carries the butter knife
 
 define phrases en-US
   rope-severed:
     The shears bite through strand after strand until the rope parts with
-    a crack. Somewhere above, the bell swings free.</code></pre>
+    a crack. Somewhere above, the bell swings free.
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-text">&gt; cut the rope with the butter knife
 The butter knife won't cut the bell rope.

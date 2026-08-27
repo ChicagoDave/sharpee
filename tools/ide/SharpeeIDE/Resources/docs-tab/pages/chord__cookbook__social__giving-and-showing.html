@@ -1,4 +1,4 @@
-<p>Giving moves the item; showing is purely social. The recipient must be a person: hand something to the furniture and the action tells you so. The default NPC accepts anything; richer reactions are <code>on giving it</code> / <code>on showing it</code> clauses on the item or the recipient.</p>
+<p>Giving moves the item; showing is purely social. The recipient must be a person: hand something to the furniture and the action tells you so. The default NPC accepts anything; richer reactions are <code>on the player giving</code> / <code>on the player showing</code> clauses on the item or the recipient.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Gatehouse
   a room
@@ -23,9 +23,15 @@ create the silver medallion
 
   A silver medallion stamped with the garrison's crest.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
-  carries the silver medallion</code></pre>
+  carries the silver medallion
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-text">&gt; give the medallion to the brazier
 You can only give things to people.

@@ -94,6 +94,7 @@ export const NAV: NavSection[] = [
           { title: 'Doors', href: '/chord/guide/world/doors' },
           { title: 'Regions', href: '/chord/guide/world/regions' },
           { title: 'People', href: '/chord/guide/world/people' },
+          { title: 'The player role', href: '/chord/guide/world/the-player-role' },
         ],
       },
       {

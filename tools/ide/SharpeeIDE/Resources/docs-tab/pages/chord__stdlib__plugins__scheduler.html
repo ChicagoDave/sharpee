@@ -19,7 +19,9 @@ create the kettle
 
   A copper kettle, beginning to warm.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Scullery
 
 define sequence kettle coming to the boil
@@ -36,7 +38,11 @@ define sequence steam
   when the story becomes boiling
     phrase steam-note
       Steam fogs the little window over the sink.
-end sequence</code></pre>
+end sequence
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; wait
 Time passes...
@@ -101,12 +107,18 @@ create the brass clock
       The brass clock ticks once, heavily.
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Jetty
 
 define phrase tide-works
   Out past the bar, the tide keeps working at the rocks.
-end phrase</code></pre>
+end phrase
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; wait
 Time passes...

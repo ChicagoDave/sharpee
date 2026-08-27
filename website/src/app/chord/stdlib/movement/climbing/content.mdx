@@ -22,7 +22,7 @@ create the pear tree
 
   Low branches all the way up, practically a ladder.
 
-  after climbing it
+  after the player climbing
     phrase over-the-wall
       From up here you can see clear over the wall into the lane.
   end after
@@ -34,8 +34,14 @@ create the garden wall
 
   Twelve feet of smooth brick, no handholds.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard Corner
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -68,7 +74,7 @@ climb speaks success but the player never leaves the room floor
 | Success | `climbed_onto` (object) · `climbed_up` / `climbed_down` (directional) |
 | Events | `climbed`, plus `entered` (object) or `moved` (directional) |
 
-Interceptors: `after climbing it` on the target, the pear tree's
+Interceptors: `after the player climbing` on the target, the pear tree's
 comment above, and how a cliff would teleport (below). There are two
 honest footnotes. First, the action also implements directional
 climbing (`climb up` meaning "take the up exit"), but no core grammar
@@ -76,5 +82,5 @@ reaches it today: bare `up`/`down` parse as going, which is usually
 what you want, and a story adding `climb up` as grammar gets room-exit
 climbing for free. Second, the trait's `destination`/`direction` fields
 are unread by the standard action, so climbing never teleports you to a
-destination room; put an `after climbing it` clause on the cliff if you
+destination room; put an `after the player climbing` clause on the cliff if you
 want that (`blockedMessage`/`successMessage` are likewise story data).

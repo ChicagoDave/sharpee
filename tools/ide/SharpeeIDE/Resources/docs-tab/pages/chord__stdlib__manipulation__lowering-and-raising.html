@@ -23,7 +23,7 @@ define trait windlass-basket
     already-down:
       The basket is already at the bottom.
 
-  on lowering it
+  on the player lowering
     it must be raised: already-down
     change it to lowered
     phrase basket-lowered
@@ -50,8 +50,14 @@ create the windlass crank
 
   A worn oak crank, polished smooth by many hands.
 
-create the player
-  starts in the Well Head</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Well Head
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; lower the crank
 That isn't something you can lower.
@@ -66,5 +72,5 @@ The basket is already at the bottom.
 You can't raise the wicker basket.</code></pre>
 <p>Every line but the last is the story's (the action's <code>otherwise refuse</code> miss, the trait's state guard and mutation), and the last line is the platform's entire contribution to this verb family: <code>cant_raise_that</code>.</p>
 <table><thead><tr><th></th><th>lower (<code>lowering-*</code>)</th><th>raise (<code>raising-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>cant_lower_that</code> (the only standard keys)</td><td><code>no_target</code> · <code>cant_raise_that</code></td></tr><tr><td>Success</td><td>none — your dispatch action's and trait's phrases speak</td><td>none</td></tr><tr><td>Events</td><td>none standard — a registered behavior emits its own</td><td>none standard</td></tr></tbody></table>
-<p>There are three boundaries to know. The fall-through is well-defined (ADR-229): a clause gated out by <code>while</code> or a consumed <code>, once</code> simply sits out, and the command falls through to the action body, the next trait, and finally the <code>otherwise refuse</code> miss. An <code>on lowering it</code> clause directly on an <em>entity</em> is a load error with a pointed message. These verbs never consult entity-level interceptors; the trait/action pattern above is the way. And from TypeScript the equivalent is a capability behavior registered for <code>lowering</code> (the Sharpee Way, how Dungeo's basket works).</p>
-<p>TURN left this family on its own terms: <code>turn</code>/<code>rotate</code>/<code>twist X</code> still parse (just below the switching phrasal forms, so <code>turn lamp on</code> still switches) and the unhandled refusal is still <code>turning-cant-turn-that</code>, but turning now wears cutting's dual surface without the trait gate: an <code>on turning it</code> clause directly on the entity is consulted (turning is one of the 38 wired actions), or a TypeScript capability behavior for <code>turning</code> takes the whole turn; no eligibility trait, no define-action scaffolding needed. WAVE and WIND, the other classic per-entity verbs, still have no binding at all: no grammar, no action; a story wanting them defines the whole verb with <code>define action</code>, exactly as above.</p>
+<p>There are three boundaries to know. The fall-through is well-defined (ADR-229): a clause gated out by <code>while</code> or a consumed <code>, once</code> simply sits out, and the command falls through to the action body, the next trait, and finally the <code>otherwise refuse</code> miss. An <code>on the player lowering</code> clause directly on an <em>entity</em> is a load error with a pointed message. These verbs never consult entity-level interceptors; the trait/action pattern above is the way. And from TypeScript the equivalent is a capability behavior registered for <code>lowering</code> (the Sharpee Way, how Dungeo's basket works).</p>
+<p>TURN left this family on its own terms: <code>turn</code>/<code>rotate</code>/<code>twist X</code> still parse (just below the switching phrasal forms, so <code>turn lamp on</code> still switches) and the unhandled refusal is still <code>turning-cant-turn-that</code>, but turning now wears cutting's dual surface without the trait gate: an <code>on the player turning</code> clause directly on the entity is consulted (turning is one of the 38 wired actions), or a TypeScript capability behavior for <code>turning</code> takes the whole turn; no eligibility trait, no define-action scaffolding needed. WAVE and WIND, the other classic per-entity verbs, still have no binding at all: no grammar, no action; a story wanting them defines the whole verb with <code>define action</code>, exactly as above.</p>

@@ -33,7 +33,7 @@ create the brass telescope
 
   A long brass telescope aimed at the slot in the dome.
 
-  phrase detail while it is on:
+  phrase detail while the brass telescope is on:
     Its clockwork drive ticks as it tracks the sky.
 
 create the star chart
@@ -42,8 +42,14 @@ create the star chart
 
   A chart of the northern constellations.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Observatory
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -75,10 +81,10 @@ the description only while the condition holds.
 | Success | `contents_list` · `container_contents` · `surface_contents` | `examined` · `examined_self` · `examined_container` · `examined_supporter` · `examined_switchable` · `examined_readable` · `examined_wearable` · `examined_door` · `nothing_special` |
 | Events | `looked` · `room-description` · `list-contents` | `examined` |
 
-Interceptors: `on examining it` / `after examining it` on the target
+Interceptors: `on the player examining` / `after the player examining` on the target
 (the robin in chord-language.md rides this seam). Looking
 consults no interceptor clauses, since there is no entity to hang them
-on; use the room's `after entering it` or an `on every turn` daemon
+on; use the room's `after the player entering` or an `on every turn` daemon
 instead.
 
 Brief mode is not implemented: verbose is hardcoded on, so

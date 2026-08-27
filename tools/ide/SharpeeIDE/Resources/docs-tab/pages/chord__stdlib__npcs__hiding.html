@@ -21,7 +21,7 @@ create the wicker hamper
 
   A hamper big enough for a person, currently full of crockery.
 
-  on hiding it
+  on the player hiding
     refuse hamper-crockery
   end on
 
@@ -29,8 +29,14 @@ create the wicker hamper
     You lift the lid; the hamper is packed with crockery. No room for
     you.
 
-create the player
-  starts in the Curio Shop</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Curio Shop
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; hide in the hamper
 You lift the lid; the hamper is packed with crockery. No room for you.
@@ -46,7 +52,7 @@ You come out of hiding.
 
 &gt; come out
 You're not hiding.</code></pre>
-<p>Two spots, two seams: the hamper's <code>on hiding it</code> guard refuses with its own phrase, the curtain accepts exactly the position its adjective declared, and the reveal action closes the loop with its own <code>not_hidden</code> refusal when you try it standing in the open.</p>
+<p>Two spots, two seams: the hamper's <code>on the player hiding</code> guard refuses with its own phrase, the curtain accepts exactly the position its adjective declared, and the reveal action closes the loop with its own <code>not_hidden</code> refusal when you try it standing in the open.</p>
 <table><thead><tr><th></th><th>hide (<code>hiding-*</code>)</th><th>reveal (<code>revealing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>nothing_to_hide</code> · <code>cant_hide_there</code> · <code>already_hidden</code></td><td><code>not_hidden</code></td></tr><tr><td>Success</td><td><code>behind</code> / <code>under</code> / <code>on</code> / <code>inside</code></td><td><code>revealed</code></td></tr><tr><td>Events</td><td><code>player_concealed</code></td><td><code>player_revealed</code></td></tr></tbody></table>
-<p>Interceptors: the hiding spot's <code>on hiding it</code> clauses are consulted (the hamper above); revealing has no interceptor surface (flagged as a minor asymmetry).</p>
+<p>Interceptors: the hiding spot's <code>on the player hiding</code> clauses are consulted (the hamper above); revealing has no interceptor surface (flagged as a minor asymmetry).</p>
 <p>Three more honest flags remain. The design puts every action outside a quiet allowlist (look, examine, wait, listen, smell, inventory, and the metas) down as silently breaking concealment before it runs, but in the current build that break listener is never registered, so walking, taking, and talking do <em>not</em> actually reveal you; only the NPC-can't-see-you half is wired (flagged). <code>cant_hide_there</code>'s current rendering misplaces an article (&quot;You can't hide an under …&quot;; flagged). And the trait's <code>capacity</code> field is dormant.</p>

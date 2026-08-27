@@ -3,7 +3,7 @@ room does in a `.story` file happens in its `create` block: direction
 lines, doors (`north to the Potting Shed through the green door`), and
 blocked exits (chord-language.md); `dark` / `dark while <condition>`; a
 `first time` arrival description; `deadly:`; states, scores, and
-`on`/`after` clauses, including `after entering it`, the room-arrival
+`on`/`after` clauses, including `after the player entering`, the room-arrival
 reaction the Potting Shed uses.
 
 **enterable** (`enterable`, adjective). Marks a thing the player can
@@ -37,8 +37,8 @@ helpers for story use.
 
 **region** (`a region`, kind noun, since ADR-236). A named room group,
 authored region-side: `containing the Drive, the Hall` lists members
-(additive: regions nest by containing each other), `after entering it`
-/ `after leaving it` react to boundary crossings (`leaving` exists only
+(additive: regions nest by containing each other), `after the player entering`
+/ `after the player leaving` react to boundary crossings (`leaving` exists only
 here), and an `on every turn` clause on the region block is a region
 daemon, firing while the player is anywhere in a member room. The
 `region_entered`/`region_exited` events going emits are what

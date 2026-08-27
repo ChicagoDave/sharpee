@@ -48,12 +48,18 @@ create the ship's biscuit
 
   Dense enough to drive nails.
 
-  after eating it
-    remove it
+  after the player eating
+    remove the ship's biscuit
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Pantry
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -97,7 +103,7 @@ There's nothing left to drink.
 The transcript shows the cross-refusals and the implicit take. The honest
 caveat comes as a pair of a problem and its fix: **eating never removes the
 item** (the fully eaten apple stays in inventory at zero servings), and the
-biscuit's `after eating it` clause with a `remove it` body is the one-line
+biscuit's `after the player eating` clause with a `remove it` body is the one-line
 remedy.
 
 | | eat (`eating-*`) | drink (`drinking-*`) |
@@ -106,8 +112,8 @@ remedy.
 | Success | `eaten` · `eaten_some` / `eaten_all` · taste flavor (`delicious`/`tasty`/`bland`/`awful`) · `filling` / `still_hungry` · `poisonous` | `drunk` · `sipped` / `quaffed` · `from_container` / `empty_now` |
 | Events | `eaten` | `drunk` |
 
-Interceptors: `on eating it` / `after eating it` and `on drinking it` /
-`after drinking it` on the item, as above.
+Interceptors: `on the player eating` / `after the player eating` and `on the player drinking` /
+`after the player drinking` on the item, as above.
 
 An emptied `containsLiquid` vessel stays nominally drinkable and keeps
 saying `empty_now` (caveat, flagged). Neither shipped story exercises

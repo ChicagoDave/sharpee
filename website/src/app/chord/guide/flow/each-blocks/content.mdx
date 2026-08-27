@@ -10,7 +10,7 @@ define condition labeled-pot: it is a pot and it is in the potting shed
 ```
 
 ```chord
-  on planting it
+  on the player planting
     each frame-seedling
       move the match to the Nursery Bed
       phrase planted-out with plant = the match
@@ -30,7 +30,7 @@ created, and an empty match set simply runs the body zero times.
 *innermost* loop:
 
 ```chord
-  on auditing it
+  on the player auditing
     each frame-seedling
       each labeled-pot
         phrase audit-pair with pot = the match

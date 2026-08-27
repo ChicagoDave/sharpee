@@ -6,7 +6,7 @@
   in the Greenhouse
   states: seedling, flowering, fruiting</code></pre>
 <pre><code class="language-chord">define trait prunable
-  on pruning it
+  on the player pruning
     the player must hold the garden shears: need-shears
     select on its state
       when seedling
@@ -47,7 +47,7 @@ end trait</code></pre>
     cat-eats:
       The kipper vanishes with terrifying efficiency…
 
-  on feeding it
+  on the player feeding
     the actor must have its food: no-morsel
     it must be peckish: already-fed-cat
     change it to fed
@@ -66,7 +66,7 @@ end trait</code></pre>
 <pre><code class="language-chord">create the furnace poker
   in the Boiler Shed
 
-  on taking it while the boiler is running
+  on the player taking while the boiler is running
     refuse poker-hot
   end on</code></pre>
-<p><code>refuse &lt;phrase&gt;</code> stops the action and speaks; the standard TAKE resumes being ordinary the moment the condition clears. The folly door uses the same shape to stay jammed until Tobias has told you its story (<code>on opening it while tobias is not shaken → refuse folly-jammed</code>).</p>
+<p><code>refuse &lt;phrase&gt;</code> stops the action and speaks; the standard TAKE resumes being ordinary the moment the condition clears. The folly door uses the same shape to stay jammed until Tobias has told you its story (<code>on the player opening while tobias is not shaken → refuse folly-jammed</code>).</p>

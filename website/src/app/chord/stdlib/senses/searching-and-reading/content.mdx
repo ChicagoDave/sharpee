@@ -53,8 +53,14 @@ create the beam inscription
 
   Letters cut into the lowest rafter.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Attic
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -92,8 +98,8 @@ scenery inscription reads in place.
 | Success | `found_concealed` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
 | Events | `searched` | `read` |
 
-Interceptors: `on searching it` (a false bottom that only yields to a
-second, gated search is one `while` clause) and `on reading it`.
+Interceptors: `on the player searching` (a false bottom that only yields to a
+second, gated search is one `while` clause) and `on the player reading`.
 
 The readable trait's literacy fields (`requiresAbility`) are declared
 but not enforced today.

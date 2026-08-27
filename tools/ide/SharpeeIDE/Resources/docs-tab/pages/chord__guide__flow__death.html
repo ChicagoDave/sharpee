@@ -1,7 +1,7 @@
 <p>Death is not <code>lose</code>. <code>lose</code> ends the game directly; the three constructs here run the platform's death machinery instead: the death text speaks, a died event fires, and at the end of the turn the engine re-checks whether the player is actually dead. That re-check is a real window: a story policy that revives the player during the turn (a reincarnation rule, a guardian angel) vetoes the ending and play continues. With no such policy, the story ends in defeat.</p>
 <p><strong><code>kill the player [&lt;phrase-key&gt;] [when &lt;condition&gt;]</code></strong> is a statement, peer to <code>win</code> and <code>lose</code>, legal anywhere statements go: <code>on</code> and <code>after</code> clauses, <code>every turn</code> daemons, action bodies, inside <code>select</code> and <code>each</code>. The phrase key is the death text (define it like any phrase) and doubles as the recorded cause; bare <code>kill the player</code> records the cause <code>killed</code> and shows only the platform's ending text. The <code>when</code> suffix gates it like any statement:</p>
-<pre><code class="language-chord">  on crossing it
-    kill the player bridge-death when it is frayed
+<pre><code class="language-chord">  on the player crossing
+    kill the player bridge-death when the rope bridge is frayed
     phrase bridge-holds
   end on</code></pre>
 <p>While the bridge is whole, the <code>kill</code> is skipped and <code>bridge-holds</code> speaks instead, the same shape as the conditional <code>lose</code>.</p>
@@ -12,7 +12,7 @@
   south is deadly: falls-death
 
   The roar of the water is everything.</code></pre>
-<p>The conditional form <code>is deadly while &lt;condition&gt;:</code> parses but is not wired yet: a load error tells you so, and the live equivalent is an <code>on going it</code> clause carrying <code>kill the player when &lt;condition&gt;</code>.</p>
+<p>The conditional form <code>is deadly while &lt;condition&gt;:</code> parses but is not wired yet: a load error tells you so, and the live equivalent is an <code>on the player going</code> clause carrying <code>kill the player when &lt;condition&gt;</code>.</p>
 <p><strong><code>deadly: &lt;phrase-key&gt;</code></strong> marks the whole room as a no-escape position: every verb except a safe allowlist (look and examine, by default) is fatal, including objectless ones like WAIT and INVENTORY that no per-entity clause could catch. Reserve it for the genuinely inescapable spot, not as a generic hazard flag:</p>
 <pre><code class="language-chord">create Over the Falls
   a room

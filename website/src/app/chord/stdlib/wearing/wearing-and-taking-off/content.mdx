@@ -51,16 +51,22 @@ create the iron torc
 
   A ring of black iron, hinged like a shackle.
 
-  on taking_off it
+  on the player taking_off
     refuse torc-stuck
   end on
 
   phrase torc-stuck:
     The torc's hinge has seized; it will not open.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vestry
   wears the woolen tunic
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -89,8 +95,7 @@ The torc's hinge has seized; it will not open.
 
 Three seams in one scene: `wears` starts the player dressed in the tunic,
 the default layers let the vest stack straight over it and the tunic slide
-out from underneath (the layer-default quirk, live), and the torc's `on taking_off
-it` guard is a cursed garment in one clause.
+out from underneath (the layer-default quirk, live), and the torc's `on the player taking_off` guard is a cursed garment in one clause.
 
 | | wear (`wearing-*`) | take off (`taking_off-*`) |
 |---|---|---|
@@ -98,5 +103,5 @@ it` guard is a cursed garment in one clause.
 | Success | `worn` | `removed` (the item stays in inventory) |
 | Events | `worn` / `wear_blocked` | `removed` / `take_off_blocked` |
 
-Interceptors: `on wearing it` / `on taking_off it` on the garment: a cloak
+Interceptors: `on the player wearing` / `on the player taking_off` on the garment: a cloak
 that reacts to being donned is one clause on the cloak.

@@ -21,8 +21,8 @@ suspends pursuit, so a person will not walk out mid-sentence to run an
 errand.
 
 A person's own `states:` list is the ordinary [World >
-States](/chord/guide/world/states) construct, driven with `change it to
-<state>`, and is often what a goal is gated on.
+States](/chord/guide/world/states) construct, driven with `change <the person>
+to <state>`, and is often what a goal is gated on.
 
 ```chord
 create Jonas Reed
@@ -30,7 +30,7 @@ create Jonas Reed
   states: denying, confessed
 
   goal seek-the-vault, high
-    active when it is breaking
+    active when Jonas Reed is breaking
     seek Marta Kell
     move to the Vault
   end goal

@@ -2,18 +2,18 @@ Ten statements do the story's work. The pumpkin below uses most of
 them:
 
 ```chord
-  on measuring it
-    set its tally to 3
-    phrase tape-reading with girth = its tally
+  on the player measuring
+    set the pumpkin's tally to 3
+    phrase tape-reading with girth = the pumpkin's tally
     emit pumpkin-measured
   end on
 
-  on picking it
-    change it to picked
+  on the player picking
+    change the pumpkin to picked
     award picked-the-champion, once
-    move it to the Compost Corner when it is picked
+    move the pumpkin to the Compost Corner when the pumpkin is picked
     phrase picked-note
-    win harvest-glory when its tally is 3
+    win harvest-glory when the pumpkin's tally is 3
   end on
 ```
 
@@ -29,7 +29,7 @@ them:
   sentences start capitalized, so the two do not collide.)
 
   ```chord
-  after entering it
+  after the player entering
     phrase apiary-hum
       The hum reaches you before the gate has even closed.
   end after
@@ -54,7 +54,7 @@ them:
   machinery, not the same thing as `lose`.
 
 ```chord
-  on emptying it
+  on the player emptying
     remove the champion slug
     phrase trap-emptied
     lose when the champion pumpkin is picked

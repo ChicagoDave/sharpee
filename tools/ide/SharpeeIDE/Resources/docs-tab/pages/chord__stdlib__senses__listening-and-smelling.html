@@ -14,15 +14,21 @@ create the pipe organ
 
   A pipe organ that fills the far wall.
 
-  on listening it
+  on the player listening
     phrase organ-breath
   end on
 
   phrase organ-breath:
     Air sighs through the pipes, a chord not quite sounding.
 
-create the player
-  starts in the Chapel</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Chapel
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; listen
 You hear nothing out of the ordinary.
@@ -35,7 +41,7 @@ The pipe organ has no particular smell.
 
 &gt; smell
 You don't smell anything unusual.</code></pre>
-<p>The organ's <code>on listening it</code> phrase replaces the stock miss entirely; where no clause answers, the platform's own misses are honest rather than errors.</p>
+<p>The organ's <code>on the player listening</code> phrase replaces the stock miss entirely; where no clause answers, the platform's own misses are honest rather than errors.</p>
 <table><thead><tr><th></th><th>listen (<code>listening-*</code>)</th><th>smell (<code>smelling-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td>—</td><td><code>too_far</code></td></tr><tr><td>Success</td><td><code>device_running</code> · <code>device_off</code> · <code>liquid_sounds</code> · <code>container_sounds</code> · <code>no_sound</code> · <code>active_devices</code> · <code>silence</code></td><td><code>food_scent</code> · <code>drink_scent</code> · <code>burning_scent</code> · <code>container_food_scent</code> · <code>no_particular_scent</code> · <code>smoke_detected</code> · <code>food_nearby</code> · <code>no_scent</code></td></tr><tr><td>Events</td><td><code>listened</code> / <code>listen_blocked</code></td><td><code>smelled</code> / <code>smell_blocked</code></td></tr></tbody></table>
-<p>Interceptors: like touching, both are favorites for <code>on listening it</code> / <code>on smelling it</code> clauses.</p>
+<p>Interceptors: like touching, both are favorites for <code>on the player listening</code> / <code>on the player smelling</code> clauses.</p>
 <p>Separately from this action pair, the platform has a real <strong>sound propagation</strong> system (the acoustic traits): engine-level, per-turn, event-driven. Sounds travel through walls by acoustic cost and reach listener entities. The listening <em>action</em> does not read it; the two meet in story logic, not in stdlib.</p>

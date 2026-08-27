@@ -1,5 +1,11 @@
 # Session Plan: ADR-294 transcript-tester ground-up rebuild (ACs 1-9 core)
 
+**Plan Status**: ACTIVE
+> Field added 2026-08-27 (session a3a4af). No status was decided here — this transcribes
+> the plan's own `## Status` section below (Phase 1 COMPLETE, Phases 2-5 PENDING) into the
+> machine-readable field `plan-pointer-gate.sh` and the staleness sweep actually read.
+> Flagged as heading-only by `pre-session-audit` for five consecutive sessions.
+
 **Created**: 2026-08-01
 **Overall scope**: Rebuild `packages/transcript-tester` in place on the golden-transcript model (ADR-294 D1-D9, D10, D14, D15, D18): whole-session record/diff/bless replacing the nondeterminism-coping machinery (navigator retries, `WHILE`/`ENSURES`, `[OK: any]`), now that ADR-293 Phases A+B make output byte-identical at a pinned seed. Scope is bounded to Acceptance Criteria 1-9 (the core rebuild); ACs 10-14 are gated on ADR-293 Phase C (`materialize`/trace) and are an explicit follow-on arc, not part of this plan.
 **Bounded contexts touched**: N/A — infrastructure/tooling (a CLI testing tool rebuild; no `docs/ddd/notation.yaml` exists in this repo and none of this work introduces domain modeling)

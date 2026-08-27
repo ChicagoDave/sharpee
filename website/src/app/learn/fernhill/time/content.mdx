@@ -29,7 +29,7 @@ anchors on that *event* rather than a turn number:
 create the Folly
   a room
 
-  after entering it, once
+  after the player entering, once
     change the fuse to lit
     phrase fuse-catches
   end after
@@ -65,7 +65,7 @@ create the Cellar
 An entity's `on every turn` clause fires only while the player is there
 to hear it. The `, once` modifier makes a beat that never repeats; a
 `while` gate makes one that tracks live state. (The fuse hisses the same
-way: `on every turn while it is lit`.)
+way: `on every turn while the fuse is lit`.)
 
 ## The boiler: a state machine
 
@@ -115,5 +115,5 @@ causal spine of the estate: the boiler runs, the frost seal opens
 in the next chapter.
 
 Out-of-order attempts get their own voices, authored as refusals on the
-entities themselves (`on pushing it while the boiler is cold → refuse
-primer-dry`; the cold boiler answers `switch on` with a hollow CLANK).
+entities themselves (`on the player pushing while the boiler is cold →
+refuse primer-dry`; the cold boiler answers `switch on` with a hollow CLANK).

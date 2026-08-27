@@ -27,9 +27,9 @@ and `diggable`. Each takes an optional implement named directly after
 `with` (`cuttable with the rusty knife`) that the player must be
 holding; with no implement named, any attempt reaches the entity. What the cut or dig
 actually *does* is never platform policy: a cuttable entity must carry
-exactly one implementation, an `on cutting it` clause, its own or
+exactly one implementation, an `on the player cutting` clause, its own or
 from a composed trait. The story fails to load with none, or with
-two. The same rule binds `diggable` to `on digging it`.
+two. The same rule binds `diggable` to `on the player digging`.
 
 ```chord
 create the straw bale
@@ -40,8 +40,8 @@ create the straw bale
 
   A bale of straw, bound tight with orange twine.
 
-  on cutting it
-    change it to loose
+  on the player cutting
+    change the straw bale to loose
     phrase twine-cut
   end on
 ```

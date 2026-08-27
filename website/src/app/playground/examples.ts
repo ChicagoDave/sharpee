@@ -33,7 +33,8 @@ export interface PlaygroundExample {
 
 const STARTER = `story
   title: Welcome to the Playground
-  authors: You
+  authors:
+    You
   id: playground-starter
   story-version: 0.1.0
 
@@ -55,11 +56,13 @@ create the brass key
 
   A small brass key, worn bright with handling.
 
-  on taking it
+  on the player taking
     phrase pocketed
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Study
 
   You feel ready for anything.
@@ -67,11 +70,16 @@ create the player
 define phrase pocketed
   You slip the key into your pocket. It feels important.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 const TWO_ROOMS = `story
   title: Two Rooms and a Door
-  authors: You
+  authors:
+    You
   id: playground-door
   story-version: 0.1.0
 
@@ -91,15 +99,22 @@ create the oak door
 
   A heavy oak door, iron-banded.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 const LAMP_ROOM = `story
   title: The Lamp Room
-  authors: You
+  authors:
+    You
   id: playground-lamp
   story-version: 0.1.0
 
@@ -121,15 +136,22 @@ create the marble statue
 
   A blank-eyed statue, far too heavy to move.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lamp Room
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 const LOCKED_STUDY = `story
   title: The Locked Study
-  authors: You
+  authors:
+    You
   id: playground-locked-study
   story-version: 0.1.0
 
@@ -157,10 +179,16 @@ create the iron key
 
   Cold, old, and heavier than it looks.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Landing
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 /** The story the editor opens with. */

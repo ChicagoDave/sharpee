@@ -18,7 +18,7 @@ create the sandy patch
 
   A patch of sand a shade darker than the rest.
 
-  on digging it, once
+  on the player digging, once
     move the scarab to the Strand
     phrase sand-yields
   end on
@@ -38,7 +38,9 @@ create the seashell
 
   A scallop shell, pretty and useless.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Strand
   carries the seashell
 
@@ -46,6 +48,10 @@ define phrases en-US
   sand-yields:
     Two spadefuls down, the blade rings against something small and hard.
     You lift out a faience scarab.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

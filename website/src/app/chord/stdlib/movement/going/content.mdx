@@ -34,7 +34,7 @@ create the green door
 
   A green door in the north wall, painted and peeling.
 
-  on going it
+  on the player going
     refuse when the player holds the wheelbarrow: barrow-too-wide
   end on
 
@@ -46,7 +46,7 @@ create the Potting Shed
 
   Clay pots on every shelf, and the smell of compost.
 
-  after entering it, once
+  after the player entering, once
     phrase shed-memory
       You spent a whole summer in here once, pricking out seedlings.
   end after
@@ -63,12 +63,18 @@ create the wheelbarrow
 
   A wooden wheelbarrow, wider than it needs to be.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Walled Garden
 
 define phrases en-US
   wall-too-high:
     The south wall is twelve feet of smooth brick. Not without a ladder.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -110,8 +116,8 @@ You spent a whole summer in here once, pricking out seedlings.
 
 One walk covers the seams: the blocked wall speaks the story's phrase,
 the dark Grotto lets you in but shows you nothing, the closed door
-refuses, the door's own `on going it` guard vetoes the wheelbarrow, and
-the shed's `after entering it, once` greets the first arrival.
+refuses, the door's own `on the player going` guard vetoes the wheelbarrow, and
+the shed's `after the player entering, once` greets the first arrival.
 
 | | go (`going-*`) |
 |---|---|
@@ -120,9 +126,9 @@ the shed's `after entering it, once` greets the first arrival.
 | Events | `actor_exited` / `actor_moved` / `actor_entered`, plus `region_exited` / `region_entered` on region crossings: what `after going` clauses and daemons key off |
 
 Interceptors: going consults three parties in order: the room being
-left (`on going it`), the room being entered (its clauses bind as
+left (`on the player going`), the room being entered (its clauses bind as
 `entering_room` conditions; this is how a room refuses entry rather
-than refusing exit), and the door being passed through (`on going it`
+than refusing exit), and the door being passed through (`on the player going`
 on the door, as the green door shows). First refusal wins. Regions can
-react to the crossing events on their own blocks: `after entering it`
-/ `after leaving it`.
+react to the crossing events on their own blocks: `after the player entering`
+/ `after the player leaving`.

@@ -27,8 +27,14 @@ create the iron gates
 
   Twin gates of black iron, shut fast.
 
-create the player
-  starts in the Gatehouse</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Gatehouse
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; look
 Gatehouse
@@ -47,17 +53,17 @@ You can't take the zookeeper.</code></pre>
 <p>One word each way: <code>proper</code> (person-only) renders Tobias bare-named in the room listing and in refusals while the unmarked zookeeper keeps an article, and <code>plural</code> sets grammatical number so every message agrees: the gates &quot;are&quot; fixed in place where the statue &quot;is&quot;.</p>
 <p>The rest of the trait in one-liners:</p>
 <ul><li><code>pronouns he</code> (or <code>she</code>, <code>it</code>, <code>they</code>, or a <code>define pronouns</code> named set, per chord-language.md) names a person's narration pronoun set; absent means the by-number fallback (&quot;it&quot;/&quot;they&quot;). Nothing is inferred from a name.</li><li><code>concealed</code> marks a hidden item that searching reveals and announces.</li><li><code>points</code> awards score on the first take, deduped per entity. It is TypeScript-only today; Chord's <code>score … worth N</code> lines are the separate named-award system.</li><li>The create-line article is never read for identity: <code>create the zookeeper</code> and <code>create a zookeeper</code> load identically.</li></ul>
-<p><strong>region</strong> (<code>a region</code>, a kind noun since ADR-236) groups rooms into areas: a room carries a region id, regions nest by containing each other, and going emits <code>region_exited</code> / <code>region_entered</code> per crossed boundary. Everything is authored region-side: <code>containing</code> lists members (additive across lines), <code>after entering it</code> / <code>after leaving it</code> react to boundary crossings (<code>leaving</code> exists only on region blocks), and an <code>on every turn</code> clause on the region block is a region daemon, firing only while the player is in a member room (the daemon machinery is <a href="/chord/stdlib/plugins">the plugins layer's</a>).</p>
+<p><strong>region</strong> (<code>a region</code>, a kind noun since ADR-236) groups rooms into areas: a room carries a region id, regions nest by containing each other, and going emits <code>region_exited</code> / <code>region_entered</code> per crossed boundary. Everything is authored region-side: <code>containing</code> lists members (additive across lines), <code>after the player entering</code> / <code>after the player leaving</code> react to boundary crossings (<code>leaving</code> exists only on region blocks), and an <code>on every turn</code> clause on the region block is a region daemon, firing only while the player is in a member room (the daemon machinery is <a href="/chord/stdlib/plugins">the plugins layer's</a>).</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Grounds
   a region
   containing the Orchard, the Apiary
 
-  after entering it
+  after the player entering
     phrase under-the-boughs
   end after
 
-  after leaving it
+  after the player leaving
     phrase back-on-the-road
   end after
 

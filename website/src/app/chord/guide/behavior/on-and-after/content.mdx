@@ -12,12 +12,12 @@ create the hive box
 
   A white wooden hive box, lid held down by a brick.
 
-  on opening it
-    refuse when it is humming: bees-disturbed
-    change it to quiet
+  on the player opening
+    refuse when the hive box is humming: bees-disturbed
+    change the hive box to quiet
   end on
 
-  after opening it
+  after the player opening
     phrase honey-smell
   end after
 ```
@@ -26,3 +26,61 @@ The division is enforced: `refuse`, `refuse when`, and `must` are parse
 errors inside an `after` body (`parse.react-refusal`). If a reaction
 wants to stop something, it is not a reaction; move it to `on`. Every
 clause closes with an `end` line matching its opener.
+
+## The head names who acts
+
+A clause head is *actor, then verb*: `on the player opening`. The block it
+sits in is what is acted **on** — the hive box above — so the head has one
+job, naming who is doing it.
+
+```chord
+create Marguerite
+  a person
+  starts in the Counting House
+
+  The senior clerk, and she knows it.
+
+create the ledger
+  in the Counting House
+
+  A ledger, spine cracked.
+
+  on the player taking
+    refuse ledger-not-yours
+  end on
+
+  after Marguerite taking
+    phrase she-checks-the-column
+  end after
+```
+
+The two clauses sit on the same object and fire for different people. Write
+the owner's name where you would once have written `it`.
+
+## `the player` is a role, not a character
+
+`the player` means whoever is the player character when the clause fires, so
+a clause written with it follows the role if the story hands it to someone
+else. To pin behavior to one particular character instead, write that
+character's name.
+
+## A character's own block needs no name
+
+Inside a person's `create` block the subject is already settled, so the head
+drops the actor — the same way `wears the boots` needs no subject.
+
+```chord
+create Marguerite
+  a person
+  starts in the Counting House
+
+  The senior clerk, and she knows it.
+
+  on going
+    refuse she-will-not-leave-the-ledger
+  end on
+```
+
+That bare head is her own going. Outside a person's block it is an error
+(`analysis.head-bare-outside-actor`) — a hive box does not open things, so
+`on opening` there has no one to mean.

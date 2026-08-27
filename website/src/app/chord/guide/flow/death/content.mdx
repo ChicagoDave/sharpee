@@ -16,8 +16,8 @@ doubles as the recorded cause; bare `kill the player` records the cause
 gates it like any statement:
 
 ```chord
-  on crossing it
-    kill the player bridge-death when it is frayed
+  on the player crossing
+    kill the player bridge-death when the rope bridge is frayed
     phrase bridge-holds
   end on
 ```
@@ -44,7 +44,7 @@ create Aragain Falls
 
 The conditional form `is deadly while <condition>:` parses but is not
 wired yet: a load error tells you so, and the live equivalent is an
-`on going it` clause carrying `kill the player when <condition>`.
+`on the player going` clause carrying `kill the player when <condition>`.
 
 **`deadly: <phrase-key>`** marks the whole room as a no-escape position:
 every verb except a safe allowlist (look and examine, by default) is

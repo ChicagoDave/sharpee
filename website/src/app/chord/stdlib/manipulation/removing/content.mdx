@@ -41,7 +41,7 @@ create the fingerbone
 
   A saint's fingerbone, brown with age.
 
-  on taking it
+  on the player taking
     refuse bone-sacred
   end on
 
@@ -54,8 +54,14 @@ create the linen shroud
 
   A folded linen shroud.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Crypt Chapel
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -80,8 +86,7 @@ Each source kind renders its own success key, and the fingerbone's
 | Success | `removed_from` (a container) · `removed_from_surface` (a supporter) |
 | Events | `taken` (source in the payload) |
 
-Interceptors: the item slot consults `on removing it` and then `on taking
-it`, in that order; the source consults `on removing it` only, and so does
+Interceptors: the item slot consults `on the player removing` and then `on the player taking`, in that order; the source consults `on the player removing` only, and so does
 an explicitly named tool, after item and source. As with
 putting/inserting, register per entity under one gerund. Bare `remove X`
 still means undressing.

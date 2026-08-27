@@ -208,6 +208,21 @@ explicit `KNOWN_PARTIAL_PAGES` set with the reason documented — a **new page i
 default** and joins the partial set only by naming itself there. Widening the bar to the
 remaining pages is future work, not silently claimed.
 
+*Second instrument beside this one (2026-08-27, session a3a4af, ADR-327's reference migration):*
+`packages/story-loader/tests/docs-adr-327-spelling.test.ts` checks the SAME corpus for the six
+ADR-327 diagnostics and deliberately does **not** widen the test above. The reason is the
+admission bar, not preference: this test requires a fence to fully load
+(`compile` → `createStory` → `initializeWorld` → `createPlayer` → `extendParser`), so an
+unloadable fence must be excluded wholesale via `KNOWN_PARTIAL_PAGES` — a set that today
+excludes ten pages **including `define-trait` and `define-condition`**, which are exactly
+ADR-327 D8's carrier-exception pages, where `it`/`its` legally survive and a regression would
+be invisible. Every ADR-327 diagnostic fires at `compile()` alone on a bare fence with only a
+story header (verified by probe, same session — no world, player, or grammar seeding), so the
+spelling gate admits strictly MORE of the corpus than this one can: 159 pages against this
+test's vocabulary directory. Two bars, one corpus — not the drift class D5 closes, which is
+hand-transcription of derived content. "Widening the bar to the remaining pages" above stays
+open as future work for the LOAD bar specifically.
+
 ### D7 — Voice and length discipline for everything this ADR touches
 
 All three surfaces follow the docs policy ruling (2026-07-19): examples for everything, basic

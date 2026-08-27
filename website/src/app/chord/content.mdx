@@ -6,7 +6,7 @@ no project scaffold, no package manifest, and no build configuration.
 
 ## What a story looks like
 
-```
+```chord
 create the Foyer Bar
   a room, dark while the player has the velvet cloak
   aka bar
@@ -14,7 +14,7 @@ create the Foyer Bar
   The bar, much rougher than you'd have guessed after the opulence of
   the foyer to the north, is completely empty.
 
-  after entering it while in-darkness
+  after the player entering while in-darkness
     phrase stumble
     first time
       change the message to trampled
@@ -51,7 +51,7 @@ leaving the story.
 * **Prose** — descriptions are paragraphs, not string literals; blank lines are paragraph breaks
 * **Exits** — declared on the room, including blocked exits with their own refusal message
 * **Named conditions** — give a world state a name once, then read it as English wherever it is tested
-* **Event clauses** — `after entering it while in-darkness`, with ordinal forms like `first time` and `third time`
+* **Event clauses** — `after the player entering while in-darkness`, with ordinal forms like `first time` and `third time`
 * **People and conversation** — topics, patrols, and scheduled behavior
 * **Opt-in systems** — a `use` line enables scoring with its rank ladder, hunger, and other subsystems, and only then does their vocabulary exist
 

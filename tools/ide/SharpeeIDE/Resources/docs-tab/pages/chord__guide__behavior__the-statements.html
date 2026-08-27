@@ -1,22 +1,22 @@
 <p>Ten statements do the story's work. The pumpkin below uses most of them:</p>
-<pre><code class="language-chord">  on measuring it
-    set its tally to 3
-    phrase tape-reading with girth = its tally
+<pre><code class="language-chord">  on the player measuring
+    set the pumpkin's tally to 3
+    phrase tape-reading with girth = the pumpkin's tally
     emit pumpkin-measured
   end on
 
-  on picking it
-    change it to picked
+  on the player picking
+    change the pumpkin to picked
     award picked-the-champion, once
-    move it to the Compost Corner when it is picked
+    move the pumpkin to the Compost Corner when the pumpkin is picked
     phrase picked-note
-    win harvest-glory when its tally is 3
+    win harvest-glory when the pumpkin's tally is 3
   end on</code></pre>
 <ul><li><strong><code>phrase &lt;key&gt;</code></strong> speaks the named text. Dotted keys (<code>zoo.pa.closing-3</code>) are legal. <code>with &lt;name&gt; = &lt;value&gt;</code> passes a value the phrase can format.</li></ul>
 <p>A phrase used in only one place does not need a separate definition: indent prose directly under the <code>phrase</code> line and the text is declared and spoken in one gesture. (A deeper line is read as a statement, not prose, only when it opens with a lowercase statement keyword; prose sentences start capitalized, so the two do not collide.)</p>
-<p>``<code>chord after entering it phrase apiary-hum The hum reaches you before the gate has even closed. end after </code>``</p>
+<p>``<code>chord after the player entering phrase apiary-hum The hum reaches you before the gate has even closed. end after </code>``</p>
 <ul><li><strong><code>emit &lt;word&gt;</code></strong> raises a story event other clauses and the platform can observe.</li><li><strong><code>set &lt;thing&gt; to &lt;value&gt;</code></strong> writes a trait data field, like the pumpkin's <code>tally</code>.</li><li><strong><code>change &lt;name&gt; to &lt;state&gt;</code></strong> moves an owner along its declared states; <code>change the story to &lt;state&gt;</code> moves the story.</li><li><strong><code>move &lt;name&gt; to &lt;name&gt;</code></strong> relocates an entity.</li><li><strong><code>remove &lt;name&gt;</code></strong> takes an entity out of play, permanently: there is no <code>to</code>, nothing to get back, and removing the player is a load error (<code>analysis.remove-player</code>).</li><li><strong><code>award &lt;name&gt;</code></strong> grants an owner-scoped score; the explicit <code>, once</code> is available but dedupe already makes awards idempotent.</li><li><strong><code>win [&lt;phrase&gt;]</code></strong> and <strong><code>lose [&lt;phrase&gt;]</code></strong> end the story, optionally speaking a named phrase on the way out.</li><li><strong><code>kill the player [&lt;phrase-key&gt;]</code></strong> runs the platform's death machinery, not the same thing as <code>lose</code>.</li></ul>
-<pre><code class="language-chord">  on emptying it
+<pre><code class="language-chord">  on the player emptying
     remove the champion slug
     phrase trap-emptied
     lose when the champion pumpkin is picked

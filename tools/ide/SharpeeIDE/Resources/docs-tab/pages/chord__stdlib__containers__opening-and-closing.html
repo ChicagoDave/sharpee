@@ -19,7 +19,7 @@ create the biscuit tin
 
   A dented tin with a warped lid.
 
-  on closing it
+  on the player closing
     refuse tin-warped
   end on
 
@@ -39,12 +39,18 @@ create the tin whistle
 
   A tin whistle on a loop of cord.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Galley
 
 override message closing-closed
   You swing it shut.
-end override</code></pre>
+end override
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; open the anvil
 The anvil can't be opened.
@@ -62,7 +68,7 @@ Inside the sea chest you see tin whistle.
 
 &gt; close the sea chest
 You swing it shut.</code></pre>
-<p>Three seams and the chain in one scene: the anvil refuses with the platform's <code>not_openable</code>, the tin's <code>on closing it</code> guard speaks its own refusal, and the story-wide <code>override message</code> rewrites every plain close. The sea chest's contents line is the <code>opened-revealed</code> chain at work.</p>
+<p>Three seams and the chain in one scene: the anvil refuses with the platform's <code>not_openable</code>, the tin's <code>on the player closing</code> guard speaks its own refusal, and the story-wide <code>override message</code> rewrites every plain close. The sea chest's contents line is the <code>opened-revealed</code> chain at work.</p>
 <table><thead><tr><th></th><th>open (<code>opening-*</code>)</th><th>close (<code>closing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_openable</code> · <code>already_open</code> · <code>locked</code> · <code>no_tool</code> · <code>tool_not_held</code> · <code>wrong_tool</code></td><td><code>not_closable</code> · <code>already_closed</code> · <code>prevents_closing</code></td></tr><tr><td>Success</td><td><code>opened</code> · <code>its_empty</code> (a container opens onto nothing)</td><td><code>closed</code></td></tr><tr><td>Events</td><td><code>opened</code>, then <code>revealed</code> via the chain</td><td><code>closed</code> (rich payload: door/container flags, contents count)</td></tr></tbody></table>
-<p>The interceptor seams are <code>on opening it</code> and <code>on closing it</code> on the target (the humming hive box in chord-language.md is exactly this seam), and opening consults an explicitly named tool after the target (target, then tool, the same ordering discipline as lock-and-key).</p>
+<p>The interceptor seams are <code>on the player opening</code> and <code>on the player closing</code> on the target (the humming hive box in chord-language.md is exactly this seam), and opening consults an explicitly named tool after the target (target, then tool, the same ordering discipline as lock-and-key).</p>
 <p>Two gaps remain: the several-tools list <code>toolIds</code> is TypeScript today, and the trait's <code>autoLock</code> field exists but is inert (closing never locks).</p>

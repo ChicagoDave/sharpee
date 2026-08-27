@@ -6,14 +6,14 @@
   in the Entrance Hall
   states: guarded, softened
 
-  on giving it
-    change it to softened when it has the sherry bottle
-    award softened, once when it is softened
-    phrase kettle-softened when it is softened
+  on the player giving
+    change Mrs Kettle to softened when Mrs Kettle has the sherry bottle
+    award softened, once when Mrs Kettle is softened
+    phrase kettle-softened when Mrs Kettle is softened
   end on</code></pre>
 <pre><code class="language-chord">create the Entrance Hall
   west is blocked while Mrs Kettle is guarded: kettle-blocks</code></pre>
-<p>The <code>on giving it</code> clause is the <strong>give-gate</strong>: hand her the right bottle and she softens. Because the block is a live condition, the study door opens the same instant, with no extra wiring. The <code>when</code> tails on each statement keep wrong gifts from softening anyone.</p>
+<p>The <code>on the player giving</code> clause is the <strong>give-gate</strong>: hand her the right bottle and she softens. Because the block is a live condition, the study door opens the same instant, with no extra wiring. The <code>when</code> tails on each statement keep wrong gifts from softening anyone.</p>
 <h2 id="a-patrol">A patrol</h2>
 <pre><code class="language-chord">create Tobias
   aka groundskeeper
@@ -29,13 +29,13 @@
   about the silver locket:
     phrase tobias-locket-reply
   about &quot;the folly&quot;, &quot;the fire&quot;:
-    change it to shaken
+    change tobias to shaken
     award truth, once
     phrase tobias-folly-reply
   about &quot;the bank&quot;: phrase tobias-bank-reply
 end topics</code></pre>
-<p>A row's body is ordinary statements: the folly row <em>changes Tobias's state</em> (which is what unsticks the folly door two chapters from now) and scores the discovery. A miss falls to the owner's <code>on asking it</code> catch-all if it has one:</p>
-<pre><code class="language-chord">  on asking it
+<p>A row's body is ordinary statements: the folly row <em>changes Tobias's state</em> (which is what unsticks the folly door two chapters from now) and scores the discovery. A miss falls to the owner's <code>on the player asking</code> catch-all if it has one:</p>
+<pre><code class="language-chord">  on the player asking
     phrase tobias-shrug
   end on</code></pre>
 <p>Mrs Kettle's table has no catch-all, so her misses get the platform's polite default. Both shapes are legitimate; pick per character.</p>

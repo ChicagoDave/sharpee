@@ -27,12 +27,18 @@ create the ship's biscuit
 
   Dense enough to drive nails.
 
-  after eating it
-    remove it
+  after the player eating
+    remove the ship's biscuit
   end after
 
-create the player
-  starts in the Pantry</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Pantry
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; eat the cordial
 You should drink the elderflower cordial, not eat it.
@@ -67,7 +73,7 @@ You drink the elderflower cordial.
 
 &gt; sip the cordial
 There's nothing left to drink.</code></pre>
-<p>The transcript shows the cross-refusals and the implicit take. The honest caveat comes as a pair of a problem and its fix: <strong>eating never removes the item</strong> (the fully eaten apple stays in inventory at zero servings), and the biscuit's <code>after eating it</code> clause with a <code>remove it</code> body is the one-line remedy.</p>
+<p>The transcript shows the cross-refusals and the implicit take. The honest caveat comes as a pair of a problem and its fix: <strong>eating never removes the item</strong> (the fully eaten apple stays in inventory at zero servings), and the biscuit's <code>after the player eating</code> clause with a <code>remove it</code> body is the one-line remedy.</p>
 <table><thead><tr><th></th><th>eat (<code>eating-*</code>)</th><th>drink (<code>drinking-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_item</code> · <code>not_edible</code> · <code>is_drink</code> · <code>already_consumed</code></td><td><code>no_item</code> · <code>not_drinkable</code> · <code>already_consumed</code> · <code>container_closed</code></td></tr><tr><td>Success</td><td><code>eaten</code> · <code>eaten_some</code> / <code>eaten_all</code> · taste flavor (<code>delicious</code>/<code>tasty</code>/<code>bland</code>/<code>awful</code>) · <code>filling</code> / <code>still_hungry</code> · <code>poisonous</code></td><td><code>drunk</code> · <code>sipped</code> / <code>quaffed</code> · <code>from_container</code> / <code>empty_now</code></td></tr><tr><td>Events</td><td><code>eaten</code></td><td><code>drunk</code></td></tr></tbody></table>
-<p>Interceptors: <code>on eating it</code> / <code>after eating it</code> and <code>on drinking it</code> / <code>after drinking it</code> on the item, as above.</p>
+<p>Interceptors: <code>on the player eating</code> / <code>after the player eating</code> and <code>on the player drinking</code> / <code>after the player drinking</code> on the item, as above.</p>
 <p>An emptied <code>containsLiquid</code> vessel stays nominally drinkable and keeps saying <code>empty_now</code> (caveat, flagged). Neither shipped story exercises eat/drink; the zoo's feeding is its own <code>feedable</code> trait.</p>

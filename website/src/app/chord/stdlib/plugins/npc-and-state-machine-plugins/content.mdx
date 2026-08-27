@@ -36,8 +36,14 @@ create Mairead
 
   The orchard warden, mid-round.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -100,7 +106,7 @@ create the capstan
 
   A tarred capstan wound with ferry rope.
 
-  on turning it
+  on the player turning
     phrase capstan-turns
       You lean into the capstan and it comes round, pawls clacking.
   end on
@@ -112,13 +118,15 @@ create the signal cord
 
   A cord for ringing the bell on the far bank.
 
-  on pulling it
+  on the player pulling
     change the story to signaled
     phrase cord-rings
       Far across the water, a bell answers the cord.
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Slipway
 
 define machine ferry
@@ -147,6 +155,10 @@ end phrase
 define phrase ferry-underway
   The ferry is underway, beating slowly toward you.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -164,7 +176,7 @@ The ferry is underway, beating slowly toward you.
 ```
 
 Two trigger kinds in two turns: the action trigger fires the turn the
-capstan turns (the `on turning it` clause makes the turn succeed
+capstan turns (the `on the player turning` clause makes the turn succeed
 and the transition's `on enter` speaks in the same turn's output),
 and the condition trigger fires the turn the cord's clause moves the
 story to `signaled`.

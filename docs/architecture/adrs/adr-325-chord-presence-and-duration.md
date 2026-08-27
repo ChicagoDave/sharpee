@@ -276,11 +276,22 @@ replacement for the latter: every named turn is reachable, and the chance is on 
 The sweep's remaining `on going it … while …` clauses were about Jack and the mercenaries,
 hung on rooms only because `going`'s `it` is the source room. They get homes:
 
-- **The player's own going.** Inside the player's block, `on going` / `after going` with
-  no `it` is the player's own movement — intercept and reaction respectively:
+- **The player's own going.** Inside the PC's own block, `on going` / `after going` with
+  no actor named is that character's own movement — intercept and reaction respectively.
+  (Amended 2026-08-27 for ADR-327 D10: there is no `create the player`; the character is
+  created by name, marked `playable`, and given the role in the start block. The bare
+  heads stand — ADR-327 D1's own-block exception.)
 
   ```
-  create the player
+  before the game starts
+    change the player to Jack
+  end before
+
+  create Jack
+    a person
+    playable
+    starts in the Northwest Junction
+
     on going while the wandering mercenaries is aggressive
       refuse merc-held
     end on
@@ -294,16 +305,19 @@ hung on rooms only because `going`'s `it` is the source room. They get homes:
   `when <timer> expires`, riding the actor-moved event `going` already emits:
 
   ```
-  when the player moves, while it is approaching
+  when the player moves, while the wandering mercenaries is approaching
     phrase merc-dash-away
-    move it offstage
-    change it to oblivious
+    move the wandering mercenaries offstage
+    change the wandering mercenaries to oblivious
     reset search
     reset lunge
   end when
   ```
 
-  `it` is the clause's owner. The event is the *completed* move (the `after` phase); a
+  The clause sits in the mercenaries' block and names them outright. (Amended 2026-08-27
+  for ADR-327 D2: syntactic `it`/`its` left the language, so the owner is spelled, not
+  pronominalized. The bare timer names `search` and `lunge` are ADR-325 D3c's owner-first
+  form and are untouched.) The event is the *completed* move (the `after` phase); a
   refusal belongs on the mover's own `on going`.
 
 ### D3i. `kill the player` takes an inline body

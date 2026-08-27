@@ -3,7 +3,7 @@
 define condition ripe-tomato: it is a tomato and it is not in the trug</code></pre>
 <p>The distinction that matters is <em>open</em> versus <em>closed</em>, and it is decided entirely by whether the body mentions <code>it</code>:</p>
 <ul><li>A <strong>closed</strong> condition never mentions <code>it</code>. It is a plain truth test about the world: <code>trug-in-hand</code> asks whether the player holds the trug, yes or no. Closed conditions go in truth positions: <code>while</code>, <code>when</code>, <code>refuse when</code>, <code>must be</code> comparisons.</li><li>An <strong>open</strong> condition mentions <code>it</code>, leaving the subject free. It describes a <em>set</em>: <code>ripe-tomato</code> is the criterion &quot;any tomato not yet in the trug.&quot; Open conditions go where a set is expected: <code>any</code>/<code>no</code>/<code>each</code> and <code>must be any</code>.</li></ul>
-<pre><code class="language-chord">  on examining it
+<pre><code class="language-chord">  on the player examining
     phrase go-ahead when trug-in-hand
     phrase still-out when any ripe-tomato
   end on</code></pre>

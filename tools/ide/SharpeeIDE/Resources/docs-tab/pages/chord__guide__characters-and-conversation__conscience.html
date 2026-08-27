@@ -1,5 +1,5 @@
 <p><strong>Conscience</strong> is what happens when a person holds something that costs them to hold. <code>burdened by &lt;topic&gt;</code> says a known topic weighs on them, and the topic must actually be held: without a matching <code>knows &lt;topic&gt;, &lt;source&gt;</code> line in the same block the compiler rejects it with <code>analysis.burdened-unheld</code>, since being burdened by something you do not know is an authoring slip rather than a subtlety.</p>
-<p>Pressure accumulates into three bands — <code>clear</code>, <code>burdened</code>, <code>breaking</code>. Bands are read like any other state: rows can condition on <code>when it is breaking</code>, a <a href="/chord/guide/characters-and-conversation/goals">goal</a> can go <code>active when it is breaking</code>, and a <a href="/chord/guide/characters-and-conversation/manner">manner</a> can shift the delivery once someone is carrying too much. The band is not a countdown the author has to drive by hand; it is derived from what the person is holding and what has been asked of them.</p>
+<p>Pressure accumulates into three bands — <code>clear</code>, <code>burdened</code>, <code>breaking</code>. Bands are read like any other state: rows can condition on <code>when &lt;the person&gt; is breaking</code>, a <a href="/chord/guide/characters-and-conversation/goals">goal</a> can go <code>active when &lt;the person&gt; is breaking</code>, and a <a href="/chord/guide/characters-and-conversation/manner">manner</a> can shift the delivery once someone is carrying too much. The band is not a countdown the author has to drive by hand; it is derived from what the person is holding and what has been asked of them.</p>
 <p>This is where the rest of the model pays off. A principle (<code>never betrays a confidence</code>) refuses to bend, a temperament decides which way an unrelated conflict falls, and the cost of keeping both shows up here — as a band that eventually makes a <code>breaking</code> row reachable. If you want a character who cracks, do not write the crack as a script; give them something to carry and a row that only fires once they are carrying too much.</p>
 <pre><code class="language-chord">create Viola Wainright
   a person, proper, remorseful
@@ -10,6 +10,6 @@
 
 define topics for Viola Wainright
   about &quot;the family&quot;:
-    change it to confessed when it is breaking
+    change Viola Wainright to confessed when Viola Wainright is breaking
     phrase viola-deflects
 end topics</code></pre>

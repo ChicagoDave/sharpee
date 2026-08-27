@@ -33,7 +33,7 @@ create the wicker hamper
 
   A hamper big enough for a person, currently full of crockery.
 
-  on hiding it
+  on the player hiding
     refuse hamper-crockery
   end on
 
@@ -41,8 +41,14 @@ create the wicker hamper
     You lift the lid; the hamper is packed with crockery. No room for
     you.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Curio Shop
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -64,7 +70,7 @@ You come out of hiding.
 You're not hiding.
 ```
 
-Two spots, two seams: the hamper's `on hiding it` guard refuses with its
+Two spots, two seams: the hamper's `on the player hiding` guard refuses with its
 own phrase, the curtain accepts exactly the position its adjective
 declared, and the reveal action closes the loop with its own
 `not_hidden` refusal when you try it standing in the open.
@@ -75,7 +81,7 @@ declared, and the reveal action closes the loop with its own
 | Success | `behind` / `under` / `on` / `inside` | `revealed` |
 | Events | `player_concealed` | `player_revealed` |
 
-Interceptors: the hiding spot's `on hiding it` clauses are consulted
+Interceptors: the hiding spot's `on the player hiding` clauses are consulted
 (the hamper above); revealing has no interceptor surface (flagged as a
 minor asymmetry).
 

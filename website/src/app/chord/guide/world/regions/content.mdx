@@ -1,7 +1,7 @@
 A region groups rooms and owns behavior for all of them: `containing`
 lists members (additive across lines; regions nest), an `on every turn`
 clause is a region daemon firing only while the player is in a member
-room, and `after entering it` / `after leaving it` bind to boundary
+room, and `after the player entering` / `after the player leaving` bind to boundary
 crossings in either direction. `leaving` exists only on region blocks.
 
 ```chord
@@ -13,11 +13,11 @@ create the Grounds
     phrase night-wind
   end on
 
-  after entering it
+  after the player entering
     phrase cold-returns
   end after
 
-  after leaving it
+  after the player leaving
     phrase out-of-the-wind
   end after
 ```

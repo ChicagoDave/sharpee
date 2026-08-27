@@ -1,4 +1,4 @@
-<p><code>turn</code>/<code>rotate</code>/<code>twist X</code> parse out of the box, but the platform refuses to invent what turning <em>means</em> (<code>cant_turn_that</code>, ADR-090). An entity claims the verb through the dispatch-action pattern (a <code>define action</code> owns the verb, a trait's <code>on turning it</code> clause carries the behavior), and everything else falls through to the action's own refusals, which render from plain short keys on this path.</p>
+<p><code>turn</code>/<code>rotate</code>/<code>twist X</code> parse out of the box, but the platform refuses to invent what turning <em>means</em> (<code>cant_turn_that</code>, ADR-090). An entity claims the verb through the dispatch-action pattern (a <code>define action</code> owns the verb, a trait's <code>on the player turning</code> clause carries the behavior), and everything else falls through to the action's own refusals, which render from plain short keys on this path.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">define action turning
   grammar
@@ -25,7 +25,7 @@ define trait stiff-valve
     valve-already-open:
       It's already open as far as it goes.
 
-  on turning it
+  on the player turning
     it must be shut: valve-already-open
     change it to wide-open
     phrase valve-opened
@@ -52,8 +52,14 @@ create the workbench
 
   A workbench bolted to the floor.
 
-create the player
-  starts in the Pump Room</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Pump Room
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-text">&gt; turn the workbench
 That isn't something you can turn.

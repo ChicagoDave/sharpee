@@ -26,19 +26,25 @@ create the iron ring
 
   A ring set into the floor slab.
 
-  on taking it
+  on the player taking
     refuse ring-fused
   end on
 
   phrase ring-fused:
     The ring is fused to the slab; your fingers just slip off it.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lamp Room
 
 override message dropping-dropped
   You set it down with care.
-end override</code></pre>
+end override
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; take the statue
 The marble statue is fixed in place.
@@ -51,6 +57,6 @@ Taken.
 
 &gt; drop the lantern
 You set it down with care.</code></pre>
-<p>Three seams in one scene: <code>scenery</code> refuses with the platform's <code>fixed_in_place</code>, the ring's <code>on taking it</code> guard refuses with its own phrase, and the story-wide <code>override message</code> rewrites every plain drop.</p>
+<p>Three seams in one scene: <code>scenery</code> refuses with the platform's <code>fixed_in_place</code>, the ring's <code>on the player taking</code> guard refuses with its own phrase, and the story-wide <code>override message</code> rewrites every plain drop.</p>
 <table><thead><tr><th></th><th>take (<code>taking-*</code>)</th><th>drop (<code>dropping-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>cant_take_self</code> · <code>already_have</code> · <code>cant_take_room</code> · <code>fixed_in_place</code> · <code>container_full</code> · <code>too_heavy</code> · <code>cannot_take</code> · <code>nothing_to_take</code></td><td><code>not_held</code> · <code>still_worn</code> (take it off first) · <code>container_full</code> · <code>cant_drop_here</code> · <code>nothing_to_drop</code></td></tr><tr><td>Success</td><td><code>taken</code> · <code>taken_from</code> (out of or off something) · <code>taken_multi</code> (<code>take all</code>)</td><td><code>dropped</code> · <code>dropped_in</code> · <code>dropped_on</code> · <code>dropped_quietly</code> (glass, room drop) · <code>dropped_carelessly</code> (<code>discard</code>) · <code>dropped_multi</code></td></tr><tr><td>Events</td><td><code>taken</code> / <code>take_blocked</code></td><td><code>dropped</code> / <code>drop_blocked</code></td></tr></tbody></table>
-<p>Interceptors: <code>on taking it</code> / <code>after taking it</code> on the item, and REMOVE-FROM phrasing cannot dodge a taking guard.</p>
+<p>Interceptors: <code>on the player taking</code> / <code>after the player taking</code> on the item, and REMOVE-FROM phrasing cannot dodge a taking guard.</p>

@@ -15,7 +15,7 @@ no tool named yields `no_tool`; a named tool not in hand yields
 The stdlib action then performs **no mutation of its own**. What a cut or
 dig does (bramble into a gap, earth yielding a tin) is the entity's
 registered implementation, and it is *required*: exactly one per entity,
-either an `on cutting it` / `on digging it` clause (the entity's own or a
+either an `on the player cutting` / `on the player digging` clause (the entity's own or a
 composed trait's) or a capability behavior for the action id (TypeScript,
 ADR-090). Zero or two is a load error, never a silent runtime no-op
 ("… is cuttable but registers no cutting implementation").
@@ -37,8 +37,8 @@ create the bramble
 
   A wall of thorns swallowing the back fence.
 
-  on cutting it
-    change it to cleared
+  on the player cutting
+    change the bramble to cleared
     phrase bramble-cleared
   end on
 
@@ -58,7 +58,7 @@ create the seedbed
 
   A patch of dark earth, recently disturbed.
 
-  on digging it, once
+  on the player digging, once
     move the seed tin to the Kitchen Garden
     phrase tin-unearthed
   end on
@@ -68,7 +68,9 @@ create the seed tin
 
   A rusted biscuit tin, rattling faintly.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen Garden
   carries the trowel
   carries the billhook
@@ -78,6 +80,10 @@ define phrases en-US
     The billhook hacks a gap through the thorns; the back fence shows through.
   tin-unearthed:
     A few trowelfuls down you strike metal, and lever out a rusted seed tin.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -113,7 +119,7 @@ spent, falls through to the generic `dug` stub.
 | Success | `cut` (the generic stub — the entity's own text renders over it) | `dug` (same) |
 | Events | `cut` / `cut_blocked` | `dug` / `dug_blocked` |
 
-Interceptors: `on cutting it` / `on digging it` *are* the implementation
+Interceptors: `on the player cutting` / `on the player digging` *are* the implementation
 here; the target's interceptor is consulted first, then an explicitly
 named tool's, and a cursed knife can veto the cut. Composing `cuttable`/`diggable` obliges the
 entity to register exactly one implementation.

@@ -16,6 +16,9 @@ harness, which asserts the exact code still fires.
 | `if` / `else` / `end if` | `parse.removed-if` | `must`, the `when` suffix, or `select` |
 | top-level `define score … worth N` | `parse.removed-score` | an owner-attached `score` line |
 | `ordered` / `once` phrase strategy | `parse.phrase-strategy-retired` | `stopping` / `first-time` |
+| `on <verb> it` / `after <verb> it` clause head | `parse.removed-head-it` | `on <actor> <verb>` — the head names who acts |
+| `it` / `its` in a statement, condition, or possessive | `analysis.it-removed` | the owner's name; still the carrier inside `define trait` |
+| `create the player` | `parse.removed-create-player` | a named character, `playable`, and a `before the game starts` block |
 
 The through-line is *stickiness* (design.md, given 9): every one of these
 removals took a floating, top-level behavior and re-homed it on the thing
@@ -24,12 +27,20 @@ clause lives on the room it reacts in. A global `flag` floated in no
 one's namespace; a `states:` line lives on its owner. The migration is
 almost always "find the thing this was really about, and move it there."
 
+The three newest rows sharpen the same idea one turn further. A clause used to
+say what it acted *on* and leave who acted implicit; now the head names the
+actor and the block it sits in supplies the object. `it` was a pronoun with no
+antecedent on the line, so a clause could not be read alone; now the owner is
+written, except inside a `define trait`, where the carrier has no name to
+write. And the player stopped being a block to become a role a named character
+holds — see [The player role](/chord/guide/world/the-player-role).
+
 The richest case is `if`, because a single removed construct fans out to
 three replacements. This no longer parses:
 
 ```chord
-  on opening it
-    if it is locked-fast
+  on the player opening
+    if the door is locked-fast
       phrase clunk
     end if
   end on
@@ -39,7 +50,7 @@ It reports `parse.removed-if`, and which replacement you want depends on
 what the `if` was doing. If it was *guarding* the whole action (this may
 not proceed unless a condition holds), it becomes a `must` requirement. If it was making *one statement*
 conditional, it becomes that
-statement plus a `when` suffix (`phrase clunk when it is locked-fast`).
+statement plus a `when` suffix (`phrase clunk when the door is locked-fast`).
 If it was choosing between *several
 bodies* by a value, it becomes
 a `select`. The removed `if` had all three

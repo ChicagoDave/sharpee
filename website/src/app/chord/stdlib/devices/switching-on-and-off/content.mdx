@@ -31,7 +31,7 @@ create the safelight
 
   A red-globed safelight with a spring clamp.
 
-  phrase detail while it is lit:
+  phrase detail while the safelight is lit:
     Its red glow pools over the developing trays.
 
 create the enlarger
@@ -41,7 +41,7 @@ create the enlarger
 
   A photographic enlarger on a steel column.
 
-  on switching_on it
+  on the player switching_on
     refuse enlarger-unplugged
   end on
 
@@ -56,9 +56,15 @@ create the ventilation fan
 
   A boxy ventilation fan set into the wall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Darkroom
   carries the safelight
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -88,8 +94,8 @@ You switch off the safelight, plunging the area into darkness.
 
 Four seams in one scene: illumination triggers the automatic LOOK (room
 text first, then `illuminates_darkness`), the lit safelight's examine
-picks up its `detail while it is lit` sentence, the enlarger's `on
-switching_on it` guard refuses with its own phrase, and the `starts on`
+picks up its `detail while the safelight is lit` sentence, the enlarger's `on
+the player switching_on` guard refuses with its own phrase, and the `starts on`
 fan goes down to the bare `stop` synonym.
 
 | | switch on (`switching_on-*`) | switch off (`switching_off-*`) |
@@ -100,8 +106,8 @@ fan goes down to the bare `stop` synonym.
 
 The success key is chosen by what the device is (light, sound, flavor,
 or plain), and event payloads carry light, sound, power, and timer facts
-for story reactions. The interceptors are `on switching_on it` / `on
-switching_off it` on the device, as with the enlarger above.
+for story reactions. The interceptors are `on the player switching_on` / `on
+the player switching_off` on the device, as with the enlarger above.
 
 In Chord, `on`/`off` and `lit` work as state predicates (`while the
 flashlight is on`, `while the lantern is lit`), and declaring your own

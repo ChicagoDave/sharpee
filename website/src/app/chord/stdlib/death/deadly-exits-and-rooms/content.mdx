@@ -31,7 +31,9 @@ create the Steam Vault
 
   Scalding fog, wall to wall. There is no air to spare in here.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Basalt Ledge
 
 define phrases en-US
@@ -40,6 +42,10 @@ define phrases en-US
     the question of footing irrelevant.
   steam-death:
     The steam finds your lungs.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player who walks north sees no movement prose and no refusal, only
@@ -77,7 +83,7 @@ is not wired yet. This compiles clean:
 create the Dam Top
   a room
   states: holding, burst
-  east is deadly while it is burst: flood-death
+  east is deadly while the Dam Top is burst: flood-death
 
   The dam hums underfoot.
 ```

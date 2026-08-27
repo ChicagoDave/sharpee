@@ -411,8 +411,21 @@ create Jack
 - Dense blocks repeat names where they said `it` — the `aka` alias system is what keeps
   that bearable, and the plural-`is` spelling (`the mercenaries is aggressive`) becomes
   ubiquitous rather than occasional.
-- The book, sharpee.net's Chord reference, and `docs/reference` carry a breaking-spelling
-  update; the tree-document corpus re-pins nothing (spelling changes don't move seeds).
+- sharpee.net's Chord reference (`website/src/app/chord/**` and `website/src/app/learn/**`)
+  and the IDE Documentation-tab bundle built from it (`tools/ide/web/docs-tab/build.mjs`)
+  carry a breaking-spelling update; the tree-document corpus re-pins nothing (spelling
+  changes don't move seeds).
+  *(Amended 2026-08-27, session a3a4af.* This bullet originally named "the book,
+  sharpee.net's Chord reference, and `docs/reference`". Measured at migration time: **the
+  book is a no-op** — `docs/book/` is the TypeScript authoring book and carries zero
+  `chord` fences — and **`docs/reference` does not exist**. The one real surface is the
+  in-repo website tree, which is also what the IDE ships, so the docs-tab bundle is named
+  here rather than left implicit. The surface is larger than the paper trail assumed:
+  ~185 removed-spelling sites across ~82 files, and the reference documented **none** of
+  D1/D9/D10's constructs — no `playable`, `before the game starts`, `change the player
+  to`, or actor-explicit head anywhere on it. That made it documentation authoring rather
+  than a spelling sweep, and it was split into its own plan,
+  `docs/work/chord-reference-adr-327/plan.md`.)*
 
 ## Acceptance
 
@@ -432,7 +445,12 @@ create Jack
    attributable to the reform (fernhill, friendly-zoo, cloak, ides, secret-letter,
    fixtures; Dungeo is TS and untouched).
 4. Paper trail: EBNF rows, `chord-grammar-changes.md`, ADR-257 MAJOR bump; the reference
-   and book updates are tracked (ADR-272's surfaces).
+   updates are tracked (ADR-272's surfaces).
+   *(Amended 2026-08-27, session a3a4af: "and book" struck — `docs/book/` carries no Chord
+   content, so there is nothing there to track. The paper-trail half of this item is
+   SATISFIED — ADR-325 D3h and ADR-264 D2/D3 flipped, `chord-grammar-changes.md`
+   finalized, `version.ts` 4.0.0 and its EBNF pin verified. The reference half is owed by
+   `docs/work/chord-reference-adr-327/plan.md`; see the amended Consequences bullet.)*
 5. D9, compile and REAL-PATH: `change the player to <entity>` parses and `playable` gates
    it (a non-`playable` target is the named analyzer error); through a real engine, the
    clause's turn ends with `game.pc_switched`, the next turn's `after the player

@@ -1,4 +1,4 @@
-<p>A region groups rooms and owns behavior for all of them: <code>containing</code> lists members (additive across lines; regions nest), an <code>on every turn</code> clause is a region daemon firing only while the player is in a member room, and <code>after entering it</code> / <code>after leaving it</code> bind to boundary crossings in either direction. <code>leaving</code> exists only on region blocks.</p>
+<p>A region groups rooms and owns behavior for all of them: <code>containing</code> lists members (additive across lines; regions nest), an <code>on every turn</code> clause is a region daemon firing only while the player is in a member room, and <code>after the player entering</code> / <code>after the player leaving</code> bind to boundary crossings in either direction. <code>leaving</code> exists only on region blocks.</p>
 <pre><code class="language-chord">create the Grounds
   a region
   containing the Drive, the Hall
@@ -7,10 +7,10 @@
     phrase night-wind
   end on
 
-  after entering it
+  after the player entering
     phrase cold-returns
   end after
 
-  after leaving it
+  after the player leaving
     phrase out-of-the-wind
   end after</code></pre>

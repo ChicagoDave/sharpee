@@ -21,16 +21,22 @@ create the bone key
 
   A key carved from a bird's hollow bone.
 
-  on locking it
+  on the player locking
     refuse key-never-seals
   end on
 
   phrase key-never-seals:
     The bone key turns only one way; it opens, it never seals.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vestry
-  carries the bone key</code></pre>
+  carries the bone key
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; open the reliquary
 The reliquary is locked.
@@ -51,7 +57,7 @@ You close the reliquary.
 
 &gt; lock the reliquary with the bone key
 The bone key turns only one way; it opens, it never seals.</code></pre>
-<p>The keyless UNLOCK asks rather than fails, lock state gates opening until the key turns, and the last command is ADR-229's ordering made visible: each action consults the <strong>target first, then the key</strong>: the reliquary has nothing to say, so the bone key's own <code>on locking it</code> clause vetoes its use (and note the key contract resolved even though the bone key is declared <em>after</em> the reliquary; forward references are legal).</p>
+<p>The keyless UNLOCK asks rather than fails, lock state gates opening until the key turns, and the last command is ADR-229's ordering made visible: each action consults the <strong>target first, then the key</strong>: the reliquary has nothing to say, so the bone key's own <code>on the player locking</code> clause vetoes its use (and note the key contract resolved even though the bone key is declared <em>after</em> the reliquary; forward references are legal).</p>
 <table><thead><tr><th></th><th>lock (<code>locking-*</code>)</th><th>unlock (<code>unlocking-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>not_lockable</code> · <code>no_key</code> · <code>key_not_held</code> · <code>wrong_key</code> · <code>not_closed</code> · <code>already_locked</code></td><td><code>not_lockable</code> · <code>no_key</code> · <code>key_not_held</code> · <code>wrong_key</code> · <code>already_unlocked</code></td></tr><tr><td>Success</td><td><code>locked</code> · <code>locked_with</code></td><td><code>unlocked</code> · <code>unlocked_with</code></td></tr><tr><td>Events</td><td><code>locked</code> / <code>lock_blocked</code></td><td><code>unlocked</code> / <code>unlock_blocked</code> (key, sound, and container/door flags in the payload)</td></tr></tbody></table>
 <p>Interceptors (ADR-229) consult the target first, then the key, and each side's clause sees the other's identity in its context. Only an <em>explicitly named</em> key is consulted, because a key the platform infers is not a command entity.</p>
 <p>Gaps: the several-keys list <code>keyIds</code> is TypeScript today.</p>

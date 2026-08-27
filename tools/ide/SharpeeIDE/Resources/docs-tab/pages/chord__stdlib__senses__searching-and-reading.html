@@ -29,8 +29,14 @@ create the beam inscription
 
   Letters cut into the lowest rafter.
 
-create the player
-  starts in the Attic</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Attic
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; take the letter
 You can't see any such thing.
@@ -54,5 +60,5 @@ The beam inscription reads:
 T.W. + E.W. 1893</code></pre>
 <p>Until the search, the concealed letter is invisible even to the parser; once revealed, reading takes the portable letter first, while the scenery inscription reads in place.</p>
 <table><thead><tr><th></th><th>search (<code>searching-*</code>)</th><th>read (<code>reading-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>container_closed</code></td><td><code>not_readable</code> · <code>cannot_read_now</code></td></tr><tr><td>Success</td><td><code>found_concealed</code> · <code>container_contents</code> · <code>supporter_contents</code> · <code>empty_container</code> · <code>searched_location</code> · <code>searched_object</code> · <code>nothing_special</code></td><td><code>read_text</code> · <code>read_book</code> · <code>read_book_page</code> · <code>read_sign</code> · <code>read_inscription</code></td></tr><tr><td>Events</td><td><code>searched</code></td><td><code>read</code></td></tr></tbody></table>
-<p>Interceptors: <code>on searching it</code> (a false bottom that only yields to a second, gated search is one <code>while</code> clause) and <code>on reading it</code>.</p>
+<p>Interceptors: <code>on the player searching</code> (a false bottom that only yields to a second, gated search is one <code>while</code> clause) and <code>on the player reading</code>.</p>
 <p>The readable trait's literacy fields (<code>requiresAbility</code>) are declared but not enforced today.</p>

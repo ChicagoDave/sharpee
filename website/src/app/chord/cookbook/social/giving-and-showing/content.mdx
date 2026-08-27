@@ -1,7 +1,7 @@
 Giving moves the item; showing is purely social. The recipient must be a
 person: hand something to the furniture and the action tells you so.
-The default NPC accepts anything; richer reactions are `on giving it` /
-`on showing it` clauses on the item or the recipient.
+The default NPC accepts anything; richer reactions are `on the player giving` /
+`on the player showing` clauses on the item or the recipient.
 
 The author writes:
 
@@ -29,9 +29,15 @@ create the silver medallion
 
   A silver medallion stamped with the garrison's crest.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
   carries the silver medallion
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

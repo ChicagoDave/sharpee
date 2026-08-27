@@ -31,15 +31,21 @@ create the pipe organ
 
   A pipe organ that fills the far wall.
 
-  on listening it
+  on the player listening
     phrase organ-breath
   end on
 
   phrase organ-breath:
     Air sighs through the pipes, a chord not quite sounding.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Chapel
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -58,7 +64,7 @@ The pipe organ has no particular smell.
 You don't smell anything unusual.
 ```
 
-The organ's `on listening it` phrase replaces the stock miss entirely;
+The organ's `on the player listening` phrase replaces the stock miss entirely;
 where no clause answers, the platform's own misses are honest rather
 than errors.
 
@@ -69,7 +75,7 @@ than errors.
 | Events | `listened` / `listen_blocked` | `smelled` / `smell_blocked` |
 
 Interceptors: like touching, both are favorites for `on
-listening it` / `on smelling it` clauses.
+the player listening` / `on the player smelling` clauses.
 
 Separately from this action pair, the platform has a real **sound
 propagation** system (the acoustic traits): engine-level,

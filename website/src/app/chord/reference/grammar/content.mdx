@@ -52,7 +52,7 @@ is declarations: `create` blocks and `define` forms.
 | Blocked exits (rooms) | `west is blocked while the boiler is off: frost-sealed` |
 | Region membership (regions) | `containing the Drive, the Hall` |
 | First-visit prose (rooms) | `first time` + indented paragraph |
-| Behavior clauses | `on giving it … end on` · `after entering it … end after` |
+| Behavior clauses | `on the player giving … end on` · `after the player entering … end after` |
 | Description | any bare paragraph after a blank line |
 
 Composition reads naturally: an article starts a kind noun (`a room`),
@@ -63,16 +63,19 @@ Yard] and wait-turns 5`).
 ## Behavior clauses
 
 ```chord
-on giving it while it is guarded, once
+on the player giving while the strongbox is guarded, once
   …statements…
 end on
 ```
 
-`on <verb> it` intercepts an action and may refuse it; `after <verb>
-it` reacts once the action has happened (no refusals inside). `on every
-turn` is the owner's daemon, firing only in the owner's presence. Every
-clause takes an optional `while <condition>` gate and modifiers such as
-`, once` (fire a single time, ever).
+`on <actor> <verb>` intercepts an action and may refuse it; `after
+<actor> <verb>` reacts once the action has happened (no refusals
+inside). The head names who acts; the block it sits in is what is acted
+on. Inside a character's own block the actor is dropped — `on going` is
+that character's own going. `on every turn` is the owner's daemon,
+firing only in the owner's presence. Every clause takes an optional
+`while <condition>` gate and modifiers such as `, once` (fire a single
+time, ever).
 
 ## Statements
 

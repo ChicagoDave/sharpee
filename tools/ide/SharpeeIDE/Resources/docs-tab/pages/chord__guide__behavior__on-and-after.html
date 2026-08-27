@@ -7,12 +7,47 @@
 
   A white wooden hive box, lid held down by a brick.
 
-  on opening it
-    refuse when it is humming: bees-disturbed
-    change it to quiet
+  on the player opening
+    refuse when the hive box is humming: bees-disturbed
+    change the hive box to quiet
   end on
 
-  after opening it
+  after the player opening
     phrase honey-smell
   end after</code></pre>
 <p>The division is enforced: <code>refuse</code>, <code>refuse when</code>, and <code>must</code> are parse errors inside an <code>after</code> body (<code>parse.react-refusal</code>). If a reaction wants to stop something, it is not a reaction; move it to <code>on</code>. Every clause closes with an <code>end</code> line matching its opener.</p>
+<h2 id="the-head-names-who-acts">The head names who acts</h2>
+<p>A clause head is <em>actor, then verb</em>: <code>on the player opening</code>. The block it sits in is what is acted <strong>on</strong> — the hive box above — so the head has one job, naming who is doing it.</p>
+<pre><code class="language-chord">create Marguerite
+  a person
+  starts in the Counting House
+
+  The senior clerk, and she knows it.
+
+create the ledger
+  in the Counting House
+
+  A ledger, spine cracked.
+
+  on the player taking
+    refuse ledger-not-yours
+  end on
+
+  after Marguerite taking
+    phrase she-checks-the-column
+  end after</code></pre>
+<p>The two clauses sit on the same object and fire for different people. Write the owner's name where you would once have written <code>it</code>.</p>
+<h2 id="the-player-is-a-role-not-a-character"><code>the player</code> is a role, not a character</h2>
+<p><code>the player</code> means whoever is the player character when the clause fires, so a clause written with it follows the role if the story hands it to someone else. To pin behavior to one particular character instead, write that character's name.</p>
+<h2 id="a-character-s-own-block-needs-no-name">A character's own block needs no name</h2>
+<p>Inside a person's <code>create</code> block the subject is already settled, so the head drops the actor — the same way <code>wears the boots</code> needs no subject.</p>
+<pre><code class="language-chord">create Marguerite
+  a person
+  starts in the Counting House
+
+  The senior clerk, and she knows it.
+
+  on going
+    refuse she-will-not-leave-the-ledger
+  end on</code></pre>
+<p>That bare head is her own going. Outside a person's block it is an error (<code>analysis.head-bare-outside-actor</code>) — a hive box does not open things, so <code>on opening</code> there has no one to mean.</p>
