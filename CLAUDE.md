@@ -125,49 +125,14 @@ If all four are "no," then discuss a platform change. Usually the architecture a
 
 Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm build`.
 
-**Cold start (fresh clone only)** — two bootstrap steps before `./repokit` exists:
-
-```bash
-pnpm install
-npx tsf build                            # platform packages; emits the .d.ts repokit's tsc needs
-pnpm --filter @sharpee/repokit build     # tsf does NOT build repokit (not in ts-forge.config.json)
-./repokit build dungeo
-```
-
-Once `./repokit` is built these steps are never needed again — `./repokit clean
-&& ./repokit build dungeo` rebuilds the whole tree unaided (verified
-2026-07-28). `clean` preserves repokit's own `dist/`, and repokit loads
-`@sharpee/devkit` only for `--browser`/`--playground`.
-
 `pnpm build` (turbo) is NOT a substitute for `tsf build`: it misses ~12 packages
 including `engine` and `devkit`, and dies on `platform-browser` with a TS2307
 for `@sharpee/engine`.
 
-```bash
-# Show help
-./repokit
+Always use `dist/cli/sharpee.js` for testing — much faster than loading individual packages.
 
-# Common platform workflows (in-repo)
-./repokit build dungeo               # Build platform + story, then bundle
-./repokit build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
-./repokit build dungeo --skip stdlib # Resume the platform build from stdlib
-./repokit clean                      # Remove dist/, dist-esm/, tsbuildinfo
-./repokit verify                     # tsf build --npm + publish dry-run
-```
-
-**Multi-user (zifmia) — RETIRED 2026-08-13.** The name was misused and the tool was never in active development; `repokit`'s `--zifmia` flag and its `zifmia` command are removed, and the source is archived at `tools/_archive/zifmia`, outside the pnpm workspace. Its two real-path test suites were pinned to the `.sharpee` bundle format, which is itself deprecated. `tools/shite` — the same server under a second name, which is the misuse being retired — is archived alongside it at `tools/_archive/shite`. The legacy Tauri `--runner` was dropped earlier (ADR-180).
-
-**Outputs**:
-- `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
-- `dist/web/{story}/` — Self-contained single-player browser client (`--browser`)
-
-**Version System**:
-- Versions use plain `X.Y.Z` — no `-beta` suffix, no timestamp (the npm `beta` DIST-TAG is separate from the version string)
-- Version stamping runs FIRST, before any compilation
-
-**IMPORTANT**:
-- Use `--skip <pkg>` to resume a platform build and avoid slow full rebuilds.
-- Always use `dist/cli/sharpee.js` for testing — much faster than loading individual packages.
+> Cold-start bootstrap, the full command and flag reference, outputs, and version stamping:
+> the `repokit-build` skill (`.claude/skills/repokit-build/`).
 
 ### Transcript Testing — ALWAYS USE THE BUNDLE
 
@@ -263,24 +228,12 @@ When context usage reaches ~15% remaining:
 
 ### Async Communication (when user is away)
 
-If stuck or have questions during autonomous work:
-
-1. Create GitHub issue with question: `gh issue create --title "Claude Question: [topic]" --body "[details]"`.
-2. Send ntfy notification with issue link:
-   ```bash
-   curl -d "Question: [brief desc] - reply on GitHub: [issue-url]" ntfy.sh/sharpee-chicagodave
-   ```
-3. Poll for response: `gh api repos/ChicagoDave/sharpee/issues/[N]/comments --jq '.[].body'`.
-4. Continue work based on response.
+If stuck during autonomous work, ask via GitHub issue + ntfy rather than blocking:
+the `async-question` skill (`.claude/skills/async-question/`) has the exact commands.
 
 ## Key Locations
 
 - **API Reference**: `packages/sharpee/docs/genai-api/` — auto-generated from `.d.ts` files, repo-only (not published to npm; the IDE ships this reference for authors). Read these first instead of exploring packages. See `packages/sharpee/docs/genai-api/index.md` for navigation.
-- Traits: `packages/world-model/src/traits/`
-- Behaviors: `packages/world-model/src/behaviors/`
-- Actions: `packages/stdlib/src/actions/standard/` (each action `<name>/` has `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, `<name>-types.ts`)
-- ADRs: `docs/architecture/adrs/`
-- Work tracking: `docs/work/`
 
 <!-- devarch:start -->
 @~/.devarch/DEVARCH.md

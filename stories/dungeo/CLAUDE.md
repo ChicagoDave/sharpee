@@ -61,22 +61,11 @@ The single `CAROUSEL-FLIP!-FLAG` drives the two rooms **oppositely** (verified i
 
 ## Project Structure
 
-```
-src/
-├── regions/           # Rooms organized by geographic area
-│   └── {region}/
-│       ├── index.ts   # Room creation, connections, exports
-│       ├── rooms/     # One .ts file per room
-│       └── objects/   # Objects placed in this region
-├── npcs/              # NPCs with behavior systems
-│   └── {npc}/
-│       ├── {npc}-entity.ts    # Entity creation
-│       ├── {npc}-behavior.ts  # NpcBehavior implementation
-│       └── {npc}-messages.ts  # Message IDs
-├── actions/           # Story-specific actions (say, ring, etc.)
-├── handlers/          # Daemons and event handlers
-└── scheduler/         # Timed events (lantern, candles, dam)
-```
+`src/` is organized by **geography, not by kind**: rooms and the objects placed in
+them live together under `regions/{region}/`, so a room and its objects are edited
+side by side. NPCs get a directory each under `npcs/{npc}/` splitting entity,
+behavior, and messages. `actions/`, `handlers/`, and `scheduler/` hold the
+story-specific action implementations, daemons/event handlers, and timed events.
 
 ## Key References
 
