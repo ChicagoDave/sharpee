@@ -9,8 +9,10 @@
  * @see ADR-069 Perception-Based Event Filtering
  */
 
-import type { ISemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent, Presence } from '@sharpee/core';
 import type { IFEntity, IWorldModel } from '@sharpee/world-model';
+
+export type { Presence } from '@sharpee/core';
 
 /**
  * Sense types for perception checks
@@ -109,4 +111,19 @@ export interface IPerceptionService {
     world: IWorldModel,
     sense: Sense
   ): boolean;
+
+  /**
+   * The observer's presence relative to a place where an event happened
+   * (ADR-328 D3). Co-location and concealment only — sight is a separate
+   * question (`canPerceive`), and darkness stays a transform (ADR-069).
+   *
+   * @param observer - The perceiving actor (usually the player)
+   * @param locationId - Where the event happened: a room, a region, or any
+   *   entity (resolved to its containing room)
+   * @param world - The world model
+   * @returns `present` when co-located and visible, `concealed` when
+   *   co-located and hidden, `absent` otherwise — including when the
+   *   location cannot be resolved
+   */
+  presenceOf(observer: IFEntity, locationId: string, world: IWorldModel): Presence;
 }

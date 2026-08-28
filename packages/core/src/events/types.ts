@@ -3,6 +3,15 @@
 import { EntityId } from '../types/entity.js';
 
 /**
+ * The player's presence relative to where an event happened (ADR-328 D3,
+ * ADR-144's vocabulary): `present` — co-located and visible; `absent` —
+ * elsewhere; `concealed` — co-located but hidden. Stamped by the engine's
+ * enrichment funnel on actor-sourced events that carry a producer-set
+ * `entities.location`; the client decides what to show.
+ */
+export type Presence = 'present' | 'absent' | 'concealed';
+
+/**
  * Represents a semantic event in the system
  */
 export interface ISemanticEvent {
@@ -71,6 +80,14 @@ export interface ISemanticEvent {
    * Whether this event should be narrated
    */
   narrate?: boolean;
+
+  /**
+   * Whether the player witnessed this event (ADR-328 D3). Present only on
+   * actor-sourced events whose producer stamped `entities.location`; the
+   * enrichment funnel computes it against the player at emit time. Absent
+   * means "not tagged" — shown by default — not "absent from the room".
+   */
+  presence?: Presence;
 
   /**
    * Additional metadata for event processing

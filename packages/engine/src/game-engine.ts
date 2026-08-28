@@ -45,7 +45,7 @@ import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilit
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
@@ -1122,7 +1122,8 @@ export class GameEngine {
         // ADR-296 D1: the player action is one transaction; every event in
         // this batch is stamped with the same id (when not already carrying
         // one inherited via executeChains — the funnel stamp is idempotent).
-        transactionId: `txn:${turn}:action`
+        transactionId: `txn:${turn}:action`,
+        presenceOf: this.presenceResolver()
       };
 
       // Store events for this turn (process through enrichment pipeline)
@@ -2226,6 +2227,18 @@ export class GameEngine {
   }
 
   /**
+   * The ADR-328 D3 presence resolver both enrichment funnels hand to
+   * `processEvent`: the current player's presence at a producer-stamped
+   * location, via the perception service. Undefined when no perception
+   * service is configured — events then stay untagged.
+   */
+  private presenceResolver(): ((locationId: string) => Presence) | undefined {
+    const service = this.perceptionService;
+    if (!service) return undefined;
+    return (locationId) => service.presenceOf(this.context.player, locationId, this.world);
+  }
+
+  /**
    * Process events from a plugin through the shared pipeline (ADR-120)
    * Enriches, filters, stores, and emits events.
    *
@@ -2246,7 +2259,8 @@ export class GameEngine {
       playerId: this.context.player.id,
       locationId: playerLocation ?? undefined,
       // ADR-296 D1: each plugin batch is its own transaction.
-      transactionId: `txn:${turn}:plugin:${pluginId}`
+      transactionId: `txn:${turn}:plugin:${pluginId}`,
+      presenceOf: this.presenceResolver()
     };
 
     let processed = events.map(e => processEvent(e, enrichmentContext));

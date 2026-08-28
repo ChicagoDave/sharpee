@@ -2,7 +2,7 @@
 
 **Created**: 2026-08-25
 **Plan Status**: ACTIVE
-**Superseded by**: docs/work/chord-reference-adr-327/plan.md
+**Superseded by**: docs/work/archive/chord-reference-adr-327/plan.md
 > Rule 18b disposition, **still live** (David, 2026-08-27, session a3a4af). Phase 5's reference-surface
 > half was split into the plan named above and `.current-plan` repoints there; **every phase here is
 > left untouched and this plan stays resumable**. Phase 6 (D7 — non-player actors fire their own heads)

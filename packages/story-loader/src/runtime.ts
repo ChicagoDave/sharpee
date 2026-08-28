@@ -3331,7 +3331,7 @@ export class ChordRuntime {
             if (clause.once && fired > 1) return []; // `, once` (D5)
             ctx.world.setStateValue(key, fired);
             evalCtx.occurrence = fired;
-            return this.narrated(this.execStatements(clause.body, evalCtx));
+            return this.narrated(this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world));
           },
         });
       });
@@ -3392,7 +3392,7 @@ export class ChordRuntime {
               if (clause.once && fired > 1) continue; // `, once` (D5)
               ctx.world.setStateValue(key, fired);
               evalCtx.occurrence = fired;
-              out.push(...this.execStatements(clause.body, evalCtx));
+              out.push(...this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world));
             }
             return this.narrated(out);
           },
@@ -3421,6 +3421,33 @@ export class ChordRuntime {
   /** Scheduler-returned events must narrate to reach the transcript. */
   private narrated(events: ISemanticEvent[]): ISemanticEvent[] {
     return events.map((e) => ({ ...e, narrate: true } as ISemanticEvent));
+  }
+
+  /**
+   * ADR-328 D3, producer half: an owner's autonomous narration carries the
+   * owner as `entities.actor` and the place it happened as
+   * `entities.location` — a room owner is the room, a region owner the
+   * region, anything else its containing room. The engine's enrichment
+   * funnel reads the location to tag `presence`; without it the funnel
+   * would default both to the player. A value the statement already set
+   * wins.
+   */
+  private sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel): ISemanticEvent[] {
+    const ownerId = this.host.entityId(ownerIrId);
+    if (!ownerId) return events;
+    const owner = world.getEntity(ownerId);
+    const location =
+      owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)
+        ? ownerId
+        : (world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId));
+    return events.map((e) => ({
+      ...e,
+      entities: {
+        ...e.entities,
+        actor: e.entities?.actor ?? ownerId,
+        ...(location !== undefined && e.entities?.location === undefined ? { location } : {}),
+      },
+    }));
   }
 
   /**

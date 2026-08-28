@@ -8,8 +8,8 @@
  * @see ADR-069 Perception-Based Event Filtering
  */
 
-import { type ISemanticEvent } from '@sharpee/core';
-import { IFEntity, type IWorldModel, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
+import { type ISemanticEvent, type Presence } from '@sharpee/core';
+import { IFEntity, type IWorldModel, TraitType, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
 import { SENSE_PRECEDENCE } from '@sharpee/if-services';
 
 // Re-export interface types from if-services for convenience
@@ -20,6 +20,7 @@ export type {
   PerceptionBlockReason,
   PerceptionBlockedData,
   IPerceptionService,
+  Presence,
 } from '@sharpee/if-services';
 
 import type {
@@ -111,6 +112,34 @@ export class PerceptionService implements IPerceptionService {
       default:
         return true;
     }
+  }
+
+  /**
+   * The observer's presence relative to where an event happened (ADR-328 D3).
+   *
+   * Co-location rules (the loader's former `playerPresentAt`): a room means
+   * the observer is in that room; a region means the observer is in one of
+   * its member rooms (transitive through nesting, ADR-236 D4); anything else
+   * means the two share a containing room. Presence, not sight — the snake
+   * speaks in darkness. A co-located observer carrying a concealed state is
+   * `concealed` (ADR-144's eavesdropping case).
+   */
+  presenceOf(observer: IFEntity, locationId: string, world: IWorldModel): Presence {
+    if (!this.isCoLocated(observer, locationId, world)) {
+      return 'absent';
+    }
+    return observer.has(TraitType.CONCEALED_STATE) ? 'concealed' : 'present';
+  }
+
+  private isCoLocated(observer: IFEntity, locationId: string, world: IWorldModel): boolean {
+    if (observer.id === locationId) return true;
+    const place = world.getEntity(locationId);
+    if (!place) return false;
+    if (place.has(TraitType.REGION)) return world.isInRegion(observer.id, locationId);
+    const observerRoom = world.getContainingRoom(observer.id)?.id ?? world.getLocation(observer.id);
+    if (place.has(TraitType.ROOM)) return observerRoom === locationId;
+    const placeRoom = world.getContainingRoom(locationId)?.id ?? world.getLocation(locationId);
+    return placeRoom !== undefined && placeRoom === observerRoom;
   }
 
   /**

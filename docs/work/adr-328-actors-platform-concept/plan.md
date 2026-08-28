@@ -230,29 +230,79 @@ ADR's own text implies).
 - **Child artifact**: this plan. The tag's vocabulary (`PlayerPresence`) and the computation
   source (`PerceptionService.canPerceive`) both already exist — this phase wires them together
   at the emit boundary rather than inventing new concepts.
+- **Design as approved (David, "Go", 2026-08-28 00:42 CDT)** — corrects four details above,
+  each verified against source before the edit:
+  1. **The chokepoint is the engine's enrichment funnel**, `enrichEvent` in
+     `packages/engine/src/turn-event-processor.ts:63`, reached by both funnels
+     (`game-engine.ts:1129` action, `:2252` plugin) and by Phase 3's execution entry. The funnel
+     is blind today: the loader mints every `chord.phrase` with `entities: {}`
+     (`runtime.ts:4549`), and enrichment then defaults `entities.actor` to the **player** and
+     `entities.location` to the **player's room** (`turn-event-processor.ts:88-93`). So the
+     contract is two-sided: **producers** (loader entity-turn `:3336` / trait-turn `:3396`
+     daemons; character propagation `tick-phases.ts:674`) stamp `entities.actor` = owner and
+     `entities.location` = the room it happened in (room owner → the room, region owner → the
+     region, else the containing room — the owner-side half of `playerPresentAt`, `:3563`);
+     the **funnel** stamps `presence` only on events that arrived with a producer-stamped
+     `entities.location`, checked before the player-location default is applied. Story-owned
+     daemons (`:3352`) stay untagged — not actor-sourced, and untagged means "show".
+     **Corrected at implementation (2026-08-28):** player action events are NOT unlocated —
+     the action context stamps `entities.location` at context creation
+     (`action-context-factory.ts:87-99`), so they reach the funnel producer-located and tag
+     `present`. Because the location is captured *before* execute, a `going` event sits at the
+     origin room after the move and would have tagged `absent`; the funnel therefore treats an
+     event whose `entities.actor` is the player as `present` by identity, before consulting
+     `presenceOf`. Rendering reads none of this, so goldens stay byte-identical (verified:
+     walkthrough chain below).
+  2. **`location` reuses `entities.location`** (`core/src/events/types.ts:45`, "A location
+     where the event occurred") — a top-level sibling would duplicate it. Only `presence` is new.
+  3. **Presence is co-location + concealment, not `canPerceive`.** `canPerceive` is a sense
+     check (darkness/blindness); D3 keeps darkness a transform. New
+     `IPerceptionService.presenceOf(observer, locationId, world)` in `if-services`, implemented
+     on stdlib's `PerceptionService`, folds the loader's room/region/containing-room rule with
+     character's `resolvePlayerPresence` (`visibility.ts:137` — exported, **zero callers**;
+     `tick-phases.ts:650,674` hardcode `'present'`) for the `concealed` case
+     (`TraitType.CONCEALED_STATE`). Bootstrap always wires a `PerceptionService`
+     (`bootstrap/src/index.ts:273`).
+  4. **The type lives in `core`.** `ISemanticEvent` cannot import from `character`
+     (dependency runs the other way); `Presence` is declared beside `ISemanticEvent` and
+     `character` re-exports it as `PlayerPresence` — the union is verbatim.
+  Also recorded: `narrate` is written in eight places and read by nothing downstream (grep over
+  all `packages/*/src`; `runtime.ts:3422`'s "must narrate to reach the transcript" is stale) —
+  the tag is not modelled on it. And a **fourth drop site**: `tick-phases.ts:674`'s
+  `roomId === playerLocation` gate on the propagation `witnessed` event, reaching the engine via
+  the character phase registration (ADR-310 D15) → `NpcPlugin` → `processPluginEvents`; its
+  control flow retires in 2b with the other three, and ADR-328 D3 is amended to say four.
 - **Entry state**: none — independent of D1/D2/D5/D6. Present the emit-boundary design to
   David first: which single chokepoint stamps `location`+`presence` on every actor-sourced
   narration event (the entity-daemon path in `story-loader`, and, once Phase 3/4 land, the
   execution-entry path too — this phase's mechanism must not be actor-source-specific).
+  **Done — see "Design as approved" above.**
 - **Deliverable**: every actor-sourced narration event carries `location` (the room it
   happened in) and `presence` (computed via `PerceptionService.canPerceive` against the current
   player) alongside the existing `narrate` hint. **No dropping** — this phase does not touch
   the story-loader presence gate's control flow yet (Phase 2b does); it only adds the tag. The
   engine's `filterEvents` call in `processPluginEvents` likewise keeps dropping until 2b, but
-  the events it passes are already tagged here.
+  the events it passes are already tagged here. *(Corrected 2026-08-28: `entities.location`
+  and `presence` via `presenceOf`, per the approved design.)*
 - **REAL-PATH test (rule 13a)**: this phase is the emit-time half of one landing unit with
   2b, and 2b's real-path test (an entity daemon firing off-stage through a real Chord story
   and the real transcript-tester) is the unit's acceptance. Its own check, real path: the
   tagged events are asserted on the real engine's emitted event payloads — `location` and
   `presence` present and correct — for an on-stage and an off-stage daemon firing, no
-  emitter double.
+  emitter double. *(Corrected 2026-08-28: 2a leaves the Chord gate closed, so an off-stage
+  Chord clause emits nothing; the 2a real-path check is a TS test story registering a daemon on
+  the real scheduler plugin for an NPC in another room, through the real engine and the real
+  `PerceptionService`, asserting `presence: 'absent'` and the NPC's room on the emitted payload,
+  with the on-stage case asserting `'present'`. The Chord off-stage case stays 2b's.)*
 - **Exit state**: `pnpm --filter '@sharpee/core' run test:ci`, `pnpm --filter '@sharpee/character' run test:ci`,
-  `pnpm --filter '@sharpee/stdlib' run test:ci` green with new tag-stamping coverage. **Not
+  `pnpm --filter '@sharpee/stdlib' run test:ci`, **`pnpm --filter '@sharpee/engine' run test:ci`,
+  `pnpm --filter '@sharpee/story-loader' run test:ci`** (added 2026-08-28 — the funnel and the
+  producer stamp live there) green with new tag-stamping coverage. **Not
   independently shippable** — the tag exists on the event but nothing downstream reads it yet,
   and the daemon presence gate at `runtime.ts:3322` still silently drops off-stage firings
   exactly as before. This is intentional mid-landing state, the same shape as ADR-327 Phase 1's
   "corpus not expected to parse yet" — Phase 2b closes the loop in the same landing.
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session 13615f). Evidence: core 176, stdlib 1647 (27 pre-existing skips), character 568, engine 656 (7 pre-existing skips), story-loader 963 — all passing after the last edit; `./repokit build dungeo` + walkthrough chain 952 passing, goldens byte-identical; `mutation-verification` clean. Uncommitted at time of writing.
 
 ### Phase 2b: D3 — Perception tagging, client-facing half + daemon-gate retirement
 - **Tier**: Large
@@ -298,7 +348,7 @@ ADR's own text implies).
   observers' semantics"), **ADR-069**'s `filterEvents` contract, and **ADR-070** §Visibility and Perception ("Player
   elsewhere → Nothing reported") — already stamped by Phase 0 (2026-08-27), nothing further owed — Dungeo is untouched at this point (its daemons
   don't yet drive NPC actions; Phase 6b is where its chain actually moves).
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 3: D1/D2a — The programmatic execution entry
 - **Tier**: Medium

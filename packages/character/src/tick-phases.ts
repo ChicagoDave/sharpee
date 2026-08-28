@@ -229,12 +229,16 @@ function createEvent(
   type: string,
   data: Record<string, unknown>,
   npcId?: string,
+  locationId?: string,
 ): ISemanticEvent {
   return {
     id: `${type}_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
     type,
     timestamp: Date.now(),
-    entities: npcId ? { actor: npcId } : {},
+    entities: {
+      ...(npcId ? { actor: npcId } : {}),
+      ...(locationId ? { location: locationId } : {}),
+    },
     data,
   };
 }
@@ -673,6 +677,8 @@ function recordTransfer(
   if (roomId === playerLocation && !result.alreadyKnew && !authorNarratesArrival) {
     const visibility = getVisibilityResult(transfer, 'present');
     if (visibility.messageId) {
+      // ADR-328 D3 producer half: the room it happened in rides on the
+      // event so the engine funnel can tag presence.
       events.push(createEvent('character.propagation.witnessed', {
         speakerId: speaker.id,
         listenerId: transfer.listenerId,
@@ -680,7 +686,7 @@ function recordTransfer(
         messageId: visibility.messageId,
         speakerName: speaker.name,
         listenerName: listenerEntity.name,
-      }, speaker.id));
+      }, speaker.id, roomId));
     }
   }
 }

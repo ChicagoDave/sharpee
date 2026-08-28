@@ -1690,6 +1690,13 @@ export declare class GameEngine {
      */
     getUndoLevels(): number;
     /**
+     * The ADR-328 D3 presence resolver both enrichment funnels hand to
+     * `processEvent`: the current player's presence at a producer-stamped
+     * location, via the perception service. Undefined when no perception
+     * service is configured — events then stay untagged.
+     */
+    private presenceResolver;
+    /**
      * Process events from a plugin through the shared pipeline (ADR-120)
      * Enriches, filters, stores, and emits events.
      *
@@ -2263,7 +2270,7 @@ export declare class EngineRandomService implements RandomService {
  * Extracted from GameEngine as part of Phase 4 remediation.
  * Handles event enrichment, perception filtering, and event emission.
  */
-import { type ISemanticEvent, type ISemanticEventSource, type IPlatformEvent } from '@sharpee/core';
+import { type ISemanticEvent, type ISemanticEventSource, type IPlatformEvent, type Presence } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { type IPerceptionService } from '@sharpee/stdlib';
 import { EngineConfig } from './types.js';
@@ -2284,6 +2291,15 @@ export interface EventProcessingContext {
      * platform-op completions) — safe under the sort's never-group rule.
      */
     transactionId?: string;
+    /**
+     * Presence resolver for the ADR-328 D3 tag. When set, enrichment stamps
+     * `presence` on every event that ARRIVES with a producer-set
+     * `entities.location` — the room the event happened in — evaluated
+     * before the player-location default below is applied, so a defaulted
+     * location never masquerades as a witnessed one. Events without a
+     * producer location (player actions today) are left untagged.
+     */
+    presenceOf?: (locationId: string) => Presence;
 }
 /**
  * Process an event through normalization and enrichment

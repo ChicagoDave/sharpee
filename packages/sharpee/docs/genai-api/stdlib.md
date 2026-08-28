@@ -2930,9 +2930,9 @@ export declare class StandardWitnessSystem implements WitnessSystem {
  *
  * @see ADR-069 Perception-Based Event Filtering
  */
-import { type ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent, type Presence } from '@sharpee/core';
 import { IFEntity, type IWorldModel } from '@sharpee/world-model';
-export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, } from '@sharpee/if-services';
+export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, Presence, } from '@sharpee/if-services';
 import type { Sense, IPerceptionService } from '@sharpee/if-services';
 /**
  * Default implementation of IPerceptionService
@@ -2954,6 +2954,18 @@ export declare class PerceptionService implements IPerceptionService {
      * Check if an actor can perceive using a specific sense.
      */
     canPerceive(actor: IFEntity, location: IFEntity, world: IWorldModel, sense: Sense): boolean;
+    /**
+     * The observer's presence relative to where an event happened (ADR-328 D3).
+     *
+     * Co-location rules (the loader's former `playerPresentAt`): a room means
+     * the observer is in that room; a region means the observer is in one of
+     * its member rooms (transitive through nesting, ADR-236 D4); anything else
+     * means the two share a containing room. Presence, not sight — the snake
+     * speaks in darkness. A co-located observer carrying a concealed state is
+     * `concealed` (ADR-144's eavesdropping case).
+     */
+    presenceOf(observer: IFEntity, locationId: string, world: IWorldModel): Presence;
+    private isCoLocated;
     /**
      * Check if actor can see in the given location.
      *
