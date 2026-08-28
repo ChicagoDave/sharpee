@@ -846,3 +846,11 @@ When testing pronoun implementation:
 - Pronoun Island: https://pronoun.is/ (test your pronouns)
 - Wikipedia: Singular They: https://en.wikipedia.org/wiki/Singular_they
 - Swedish "hen": https://en.wikipedia.org/wiki/Hen_(pronoun)
+
+## Amendment — Per-actor voice on the phrase path (ADR-328 D4, 2026-08-28)
+
+**Context.** Phase D's `resolvePerspectivePlaceholders` is a string pre-pass over the provider-wide `NarrativeContext`: every `{You}` and bare `{verb}` resolves to the *player's* person before the phrase parser sees the template. [ADR-328](adr-328-actors-are-a-platform-concept.md) D4 makes grammatical person a per-actor rendering property — a witnessed NPC's action renders in the third person from the same template.
+
+**Change.** Part 3 stands: `NarrativeSettings` remains the story-level narrative person (and pronouns) *of the player*, immutable after game start. What changes is which resolver runs for a given message. The engine binds the acting entity's `NounPhrase` under the reserved `ACTOR_PARAM_KEY` (`if-domain`); when that actor is not the player, `renderTemplate` rewrites the `{You}` family and bare verbs into phrase-algebra forms anchored on the actor (`expandActorPlaceholders`, `perspective/placeholder-resolver.ts`) and the Assembler agrees them (ADR-199 §4 B) — "The thief takes the lamp." When the actor is the player, or no actor is bound, the Phase D pre-pass runs unchanged, so player-voice output and 3rd-person narration's pronouns are byte-identical to before. The Phase D pre-pass is therefore the player-voice resolver, not the resolver of record for every actor.
+
+**Session.** 2026-08-28, session d6dc2b — Phase 1 of `docs/work/adr-328-actors-platform-concept/plan.md`; `lang-en-us/tests/actor-voice.test.ts`, `engine/tests/prose-pipeline/actor-voice.test.ts` (real path).

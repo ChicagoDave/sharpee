@@ -21,7 +21,7 @@ export const goingLanguage = {
     'no_exit_that_way': "{You} {can't} go that way.",
     'door_closed': "{capitalize the door} {verb:is door} closed.",
     'door_locked': "{capitalize the door} {verb:is door} locked.",
-    'too_dark': "It is pitch dark. You are likely to be eaten by a grue.",
+    'too_dark': "It is pitch dark. {You} {be} likely to be eaten by a grue.",
     'moved': "{You} {go} {verbatim:direction}.",
     'cant_go_through': "{You} {can't} go through {obstacle}.",
     'already_there': "{You're} already there.",

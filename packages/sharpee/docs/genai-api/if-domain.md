@@ -3314,6 +3314,15 @@ export interface RenderPosition {
     pendingTerminal?: '.' | '?' | '!';
 }
 /**
+ * The reserved param key under which the engine binds the acting entity's
+ * `NounPhrase` for a rendered message (ADR-328 D4). Reserved like `__slots__`:
+ * never an author-facing placeholder name. The locale provider reads it to
+ * render the `{You}` placeholder family in the actor's own person — the player
+ * in the narrative person, anyone else in the third — and the Assembler agrees
+ * verbs against it through the ordinary `Verb` subject path (ADR-199 §4 B).
+ */
+export declare const ACTOR_PARAM_KEY = "__actor__";
+/**
  * The context a producer realizes against: a read-only world, the bound params,
  * locale settings, and the three declared seams. The seam METHODS are part of
  * the contract now; their behavior is filled in by ADR-195–197.

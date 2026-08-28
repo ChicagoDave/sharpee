@@ -21,7 +21,9 @@ import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
+  expandActorPlaceholders,
 } from './perspective/index.js';
+import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -299,11 +301,16 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * @returns The realized text blocks
    */
   renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[] {
-    // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
-    // that runs BEFORE parsing. Passing params lets the resolver leave bound
-    // params for the phrase parser and conjugate every other bare {word} as a
-    // perspective verb (no central verb allowlist needed).
-    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext, params);
+    // Step 1: the perspective pre-pass, in the ACTOR's person (ADR-328 D4).
+    // When the engine bound a non-player actor under the reserved key, the
+    // `{You}` family and bare verbs become phrase forms anchored on that actor
+    // ("The thief takes …"); the Assembler agrees them (ADR-199). Otherwise —
+    // the player acting, or no actor bound — the ADR-089 string pre-pass runs
+    // against the story's narrative context exactly as before, so player-voice
+    // output (and 3rd-person narration's pronouns) is byte-identical.
+    const resolved = this.hasNonPlayerActor(params, ctx)
+      ? expandActorPlaceholders(template, params, ACTOR_PARAM_KEY)
+      : resolvePerspectivePlaceholders(template, this.narrativeContext, params);
 
     // Step 2: Parse to a phrase tree (binds params; throws PhraseParseError at
     // parse time on legacy ':' chains, unknown kinds, or unbound params).
@@ -312,6 +319,18 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // Step 3: Realize with the Assembler — the sole authority for article,
     // agreement, punctuation, whitespace, reference, and case.
     return this.assembler.realize(tree, ctx);
+  }
+
+  /**
+   * Whether the message's bound actor is an entity other than the player
+   * (ADR-328 D4): a `NounPhrase` under the reserved actor key whose
+   * `referableId` is set and differs from the narrative's player id.
+   */
+  private hasNonPlayerActor(params: Record<string, unknown>, ctx: RenderContext): boolean {
+    const actor = params[ACTOR_PARAM_KEY];
+    if (typeof actor !== 'object' || actor === null) return false;
+    const np = actor as { kind?: unknown; referableId?: unknown };
+    return np.kind === 'noun' && np.referableId !== undefined && np.referableId !== ctx.narrative.playerId;
   }
 
   /**

@@ -3380,6 +3380,7 @@ export interface GenericEventData extends ChainableEventData {
  *
  * @see ADR-192 §6
  */
+import type { EntityId } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { HandlerContext } from './handlers/types.js';
 /**
@@ -3431,10 +3432,14 @@ export interface PhrasebookResolution {
  *   fill a `{slot:key}` in its own template without holding a render context at
  *   report time (ADR-195 S2). Plain phrase data — save/replay-safe.
  * @param blockKey the channel key to stamp on the realized blocks
+ * @param actorId the acting entity of the event being rendered (ADR-328 D4).
+ *   When given, its `NounPhrase` is bound under the reserved `ACTOR_PARAM_KEY`
+ *   — unless the emitter bound one already — so the provider renders the
+ *   `{You}` family in the actor's own person. Absent for actorless events.
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
-export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string): ITextBlock[] | null;
+export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId): ITextBlock[] | null;
 /**
  * Flatten realized blocks to a single plain string (newlines between blocks).
  * Used when a rendered message must be embedded into another message as a

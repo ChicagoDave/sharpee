@@ -146,6 +146,12 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Whether the message's bound actor is an entity other than the player
+     * (ADR-328 D4): a `NounPhrase` under the reserved actor key whose
+     * `referableId` is set and differs from the narrative's player id.
+     */
+    private hasNonPlayerActor;
+    /**
      * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
      * @param on true → "a, b, and c"; false → "a, b and c"
      */
@@ -2125,6 +2131,12 @@ export interface NarrativeContext {
  */
 export declare const DEFAULT_NARRATIVE_CONTEXT: NarrativeContext;
 /**
+ * The context whose conjugation is the 3rd-person-singular surface — the form
+ * the phrase algebra's `Verb` atom takes as its lemma (ADR-199 §1). Used to
+ * rewrite a bare perspective verb into a subject-agreeing `{verb:…}` atom.
+ */
+export declare const THIRD_SINGULAR_CONTEXT: NarrativeContext;
+/**
  * Conjugate a verb based on perspective
  *
  * @param verb Base form of verb (e.g., "take", "open")
@@ -2148,6 +2160,29 @@ export declare function conjugateVerb(verb: string, context: NarrativeContext): 
  * @returns Message with resolved placeholders
  */
 export declare function resolvePerspectivePlaceholders(message: string, context?: NarrativeContext, params?: Record<string, unknown>): string;
+/**
+ * Rewrite the `{You}` placeholder family and every bare perspective verb into
+ * phrase-algebra forms anchored on the acting entity (ADR-328 D4), for a
+ * message whose actor is NOT the player. The caller decides that (it knows the
+ * narrative's player id); this function only rewrites. The rewritten template
+ * renders through the Assembler, which agrees each verb with the actor's
+ * number and person (ADR-199 §4 B) and applies the definite article — so
+ * `{You} {take} {the item}.` becomes "The thief takes the lamp." for a unique
+ * NPC, "Jack takes the lamp." for a proper-named one, and "The mercenaries take
+ * the lamp." for a plural one.
+ *
+ * Forms: `{You}`/`{you}` → the actor as subject/object; `{Your}`/`{your}` (and
+ * `{Yours}`/`{yours}`) → the actor's possessive (`'s`); `{You're}`/`{you're}` →
+ * the actor + an agreeing "is"; `{Yourself}`/`{yourself}` → a reflexive pronoun
+ * of the last-mentioned referent (ADR-197 — the actor, once named); a bare
+ * `{verb}` → `{verb:<3rd-singular lemma> <actor>}`.
+ *
+ * @param message the template text
+ * @param params the bound params (bare words that are params are left alone)
+ * @param actorKey the param key the actor's NounPhrase is bound under
+ * @returns the rewritten template, ready for `parsePhraseTemplate`
+ */
+export declare function expandActorPlaceholders(message: string, params: Record<string, unknown>, actorKey: string): string;
 ```
 
 ### assembler/english-assembler

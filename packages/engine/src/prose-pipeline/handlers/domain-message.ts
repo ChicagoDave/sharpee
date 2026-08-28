@@ -101,7 +101,7 @@ export function tryProcessDomainEventMessage(
 
   // Phrase path (ADR-192): render the template to a phrase tree and realize it.
   if (phraseAvailable(context)) {
-    const blocks = renderViaPhrase(context, data.messageId, params, blockKey);
+    const blocks = renderViaPhrase(context, data.messageId, params, blockKey, event.entities?.actor);
     return blocks ?? inlineFallback();
   }
 

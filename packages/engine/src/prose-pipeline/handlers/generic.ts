@@ -39,7 +39,7 @@ export function handleGameMessage(
     // handleGenericEvent accepts). Fall back to `data` so those bind.
     const params = (data.params ?? data) as Record<string, unknown>;
     if (phraseAvailable(context)) {
-      const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.GAME_MESSAGE);
+      const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.GAME_MESSAGE, event.entities?.actor);
       if (blocks) return blocks;
     } else {
       const message = context.languageProvider.getMessage(data.messageId, params);
@@ -86,10 +86,10 @@ export function handleGenericEvent(
 
     // Phrase path: try the event type as a template key, then the messageId.
     if (phraseAvailable(context)) {
-      const byType = renderViaPhrase(context, event.type, params, BLOCK_KEYS.ACTION_RESULT);
+      const byType = renderViaPhrase(context, event.type, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor);
       if (byType) return byType;
       if (data.messageId) {
-        const byId = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT);
+        const byId = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor);
         if (byId) return byId;
       }
       return [];

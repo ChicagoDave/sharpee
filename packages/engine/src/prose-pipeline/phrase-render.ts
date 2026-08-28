@@ -15,6 +15,8 @@
  * @see ADR-192 §6
  */
 
+import type { EntityId } from '@sharpee/core';
+import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
 import type { HandlerContext } from './handlers/types.js';
 
@@ -79,6 +81,10 @@ export interface PhrasebookResolution {
  *   fill a `{slot:key}` in its own template without holding a render context at
  *   report time (ADR-195 S2). Plain phrase data — save/replay-safe.
  * @param blockKey the channel key to stamp on the realized blocks
+ * @param actorId the acting entity of the event being rendered (ADR-328 D4).
+ *   When given, its `NounPhrase` is bound under the reserved `ACTOR_PARAM_KEY`
+ *   — unless the emitter bound one already — so the provider renders the
+ *   `{You}` family in the actor's own person. Absent for actorless events.
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
@@ -87,6 +93,7 @@ export function renderViaPhrase(
   messageId: string,
   params: Record<string, unknown>,
   blockKey: string,
+  actorId?: EntityId,
 ): ITextBlock[] | null {
   const lp = context.languageProvider!;
   // ADR-250 D4: the phrasebook read point. Ask the world for a book-resolved
@@ -105,6 +112,13 @@ export function renderViaPhrase(
   // no template exists; let the caller fall back to inline data.message/text.
   if (!bookHit && lp.getTemplate!(messageId) === undefined) {
     return null;
+  }
+  // ADR-328 D4: bind the acting entity under the reserved actor key. The
+  // entity→phrase bridge is the render world's (ADR-194 seam); a world-less
+  // context has no bridge and the message renders in the player's voice.
+  if (actorId !== undefined && params[ACTOR_PARAM_KEY] === undefined) {
+    const actor = context.makeRenderContext!({}).world.nounPhraseFor?.(actorId);
+    if (actor) params = { ...params, [ACTOR_PARAM_KEY]: actor };
   }
   const ctx = context.makeRenderContext!(params);
 

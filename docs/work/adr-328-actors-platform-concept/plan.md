@@ -70,6 +70,10 @@ performing a story-authored action).
   engine's — the tick-home ruling), `docs/core-concepts/README.md:48` (says the opposite;
   corrected in Phase 5), `docs/book/v2.0.0/code-snippets/CATALOG.md` (snippet extraction and
   the by-hand assembly method).
+- *(Added 2026-08-28, Phase 1 landing.)* `docs/architecture/adrs/adr-089-pronoun-identity-system.md`
+  amended in place: Part 3 confirmed to stand (`NarrativeSettings` remains the story-level
+  narrative person of the player, unchanged); Phase D's string pre-pass is now scoped as the
+  player-voice resolver only, not the resolver of record for every actor.
 
 No unplanned ACCEPTED proposal items apply — `docs/proposals/*.md` was scanned; every item in
 every templated file is already PLANNED, DONE, or (one case, `docs-consolidation.md` P-9)
@@ -179,11 +183,34 @@ ADR's own text implies).
   *actor-voice* literal second-person sites under `packages/lang-en-us/src/actions/` — quoted
   speech and meta messages exempt by name (the Deliverable's triage list); a "0 literal `You`"
   metric would force rewriting NPC dialogue and is not the criterion.
-  ADR-089's Part 3 amended in place: its own words call `NarrativeSettings` "immutable after
-  game start," a decision this phase directly supersedes with per-actor render-time
-  resolution — the amend-after-code pattern this plan uses elsewhere (ADR-070/120 in Phase 0),
-  not a re-interview, since ADR-089 stays ACCEPTED throughout.
-- **Status**: CURRENT (since 2026-08-27)
+  ADR-089 amended in place (amend-after-code, not a re-interview). **Corrected at landing:**
+  Part 3 is *not* superseded — `NarrativeSettings` remains the story-level narrative person of
+  the player, immutable after game start, exactly as written. What this phase supersedes is
+  Phase D's string pre-pass as the resolver of record for every actor: it stays as the
+  player-voice resolver; non-player actors go through the phrase algebra.
+- **Status**: DONE (2026-08-28, session d6dc2b) — landed as designed, with one simplification:
+  no Assembler player-pronoun rule was needed. `renderTemplate` branches on whether the bound
+  actor is the player (`referableId` vs `ctx.narrative.playerId`): the player takes the unchanged
+  ADR-089 pre-pass (byte-identical output, 3rd-person pronouns preserved); anyone else takes
+  `expandActorPlaceholders`, which rewrites the `{You}` family and bare verbs into
+  `{capitalize the __actor__}` / `{verb:<3sg> __actor__}` forms the Assembler agrees (ADR-199).
+  Possessive lands as `{the __actor__}'s`; reflexive as `{pronoun:reflexive}` (last-mentioned) —
+  the "unshipped" pieces from the design needed no new phrase kinds. The engine binds the
+  actor at one chokepoint (`renderViaPhrase`, `ACTOR_PARAM_KEY` from if-domain) from
+  `event.entities.actor`, passed by the `domain-message` and `generic` handlers; an emitter's own
+  binding wins. Templates untouched except the four actor-voice literals (`going.ts:24`,
+  `taking.ts:24,:28`, `asking.ts:32`); the 420 `{You}` sites are sugar and did not change.
+  **Evidence (2026-08-28):** `pnpm --filter '@sharpee/lang-en-us' run test:ci` — 26 files, 444
+  passing (14 new in `tests/actor-voice.test.ts`, incl. rendered assertions for the four
+  rewritten templates, player byte-identical + third person); `pnpm --filter '@sharpee/engine' run test:ci`
+  — 64 files, 646 passing, 7 skipped (pre-existing; 3 new mock-level in `phrase-render.test.ts`,
+  6 new REAL-PATH in `tests/prose-pipeline/actor-voice.test.ts` — domain-message and generic handlers both: real `WorldModel`, real
+  `EnglishLanguageProvider` with the shipped `if.action.closing.closed` template, real
+  `ProsePipeline` — "The thief closes the brass lamp." and "You close the brass lamp." in one
+  turn); engine `tsc --noEmit` clean; `./repokit build dungeo` then
+  `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` —
+  **952 passing across 17 transcripts, every golden matched** (byte-identical, as required
+  before any non-player actor runs). ADR-089 carries the dated amendment.
 
 ### Phase 2a: D3 — Perception tagging, emit-time half (core → character → story-loader)
 - **Tier**: Medium
@@ -225,7 +252,7 @@ ADR's own text implies).
   and the daemon presence gate at `runtime.ts:3322` still silently drops off-stage firings
   exactly as before. This is intentional mid-landing state, the same shape as ADR-327 Phase 1's
   "corpus not expected to parse yet" — Phase 2b closes the loop in the same landing.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 2b: D3 — Perception tagging, client-facing half + daemon-gate retirement
 - **Tier**: Large

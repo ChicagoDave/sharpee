@@ -29,7 +29,7 @@ export const askingLanguage = {
     'confused': "{capitalize the target} looks confused.",
 
     // Success messages - known topic
-    'responds': "{capitalize the target} {verb:tells target} you about {verbatim:topic}.",
+    'responds': "{capitalize the target} {verb:tells target} {you} about {verbatim:topic}.",
     'explains': "{capitalize the target} {verb:explains target} about {verbatim:topic}.",
     'already_told': "{capitalize the target} {verb:says target}, \"I already told you about that.\"",
     'remembers': "{capitalize the target} {verb:says target}, \"Ah yes, about {verbatim:topic}...\"",
