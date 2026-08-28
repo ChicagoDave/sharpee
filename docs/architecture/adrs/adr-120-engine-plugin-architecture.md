@@ -320,3 +320,11 @@ Add hooks only when a concrete use case requires them. Start minimal.
 - `docs/work/platform/state-machine.md` — detailed assessment and migration plan
 - `packages/engine/src/game-engine.ts` — current hardcoded subsystem calls (lines 637-757)
 - `packages/engine/src/scheduler/` — scheduler implementation to be extracted
+
+## Amendment — Superseded in part by ADR-328 (2026-08-27)
+
+**Context.** [ADR-328](adr-328-actors-are-a-platform-concept.md) (ACCEPTED 2026-08-25; D5 amended 2026-08-27) rules that the engine owns the per-turn actor tick, per the Logic Location table (`CLAUDE.md`: "NPC turn phase" is an engine responsibility).
+
+**Change.** Of the three extractions in §Subsystem Extraction, `@sharpee/plugin-npc` dissolves: what its `onAfterAction` drove (`npcService.tick`, `onPlayerEnters`/`onPlayerLeaves`, the ADR-310 `actionEvents` and ADR-320 `emitSound` feeds, behavior-state save/restore) becomes an engine-owned actor turn phase. The NPC row of §Plugin Priority Order (100) is therefore no longer a plugin priority — the actor phase runs first as engine sequencing, and State Machine (75) / Scheduler (50) keep their relative order behind it. The `TurnPlugin` interface, `PluginRegistry`, `TurnPluginContext`, and the scheduler and state-machine plugins are unchanged.
+
+**Session.** 2026-08-27, session d6dc2b — Phase 0 of `docs/work/adr-328-actors-platform-concept/plan.md`.

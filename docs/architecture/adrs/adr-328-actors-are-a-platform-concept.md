@@ -234,7 +234,9 @@ path, so ADR-327's non-player acceptance items close when D2's execution entry l
    program's D2 execution entry — a non-player actor fires `on <actor> <gerund>` and not
    the player's head. (Reworded 2026-08-25, session 8ae644: ADR-327 D7 removed the
    analyzer restriction this item originally named.)
-4. ADR-070/120 carry their amendment stamps.
+4. ADR-070/120 carry their amendment stamps. *(Satisfied 2026-08-27, session d6dc2b —
+   Phase 0 of the program plan; both stamps cover the execution half and, for ADR-070, the
+   perception half D3 retires.)*
 
 ## Session
 

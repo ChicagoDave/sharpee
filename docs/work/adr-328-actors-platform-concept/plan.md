@@ -126,8 +126,11 @@ ADR's own text implies).
   Stale Status line, not an open decision: stamp it like any other accepted ADR. The Status
   line itself is left alone — flipping ADR statuses is not this plan's call.
 - **Exit state**: Acceptance item 4 satisfied.
-- **Status**: PENDING (runs first; no code dependency and nothing to rule on. Phase 1 remains
-  CURRENT — this phase is docs-only and the two do not contend.)
+- **Status**: DONE (2026-08-27, session d6dc2b) — both stamps appended as dated "Superseded in
+  part by ADR-328" amendment sections. ADR-070's stamp covers both halves (the execution table
+  and §Visibility and Perception), so Phase 2b's ADR-070 stamp item is already satisfied.
+  ADR-120's stamp retires the `plugin-npc` extraction and the NPC priority row; its Status
+  line left as-is. ADR-328 Acceptance item 4 marked satisfied in place.
 
 ### Phase 1: D4 — Actor voice as a per-actor rendering property (leads, David's ruling)
 - **Tier**: Medium
@@ -266,8 +269,7 @@ ADR's own text implies).
   strategy variants on witness rows), **ADR-325** D2 ("fires… when the player shares the
   room") and its Non-goals bullet at `:556` ("no change to the `disappeared`/`entered`
   observers' semantics"), **ADR-069**'s `filterEvents` contract, and **ADR-070** §Visibility and Perception ("Player
-  elsewhere → Nothing reported") — the perception half Phase 0's execution-system stamp does
-  not cover — Dungeo is untouched at this point (its daemons
+  elsewhere → Nothing reported") — already stamped by Phase 0 (2026-08-27), nothing further owed — Dungeo is untouched at this point (its daemons
   don't yet drive NPC actions; Phase 6b is where its chain actually moves).
 - **Status**: PENDING
 
