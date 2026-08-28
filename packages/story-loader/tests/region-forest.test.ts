@@ -61,7 +61,7 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
     return messageIdsOf(reported.flatMap((e) => story.runtime.fireEventClauses(world, e))) as string[];
   };
 
-  const tick = (): string[] => {
+  const tickEvents = (): ISemanticEvent[] => {
     turn += 1;
     const events: ISemanticEvent[] = [];
     for (const daemon of daemons) {
@@ -69,8 +69,9 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
       if (daemon.condition && !daemon.condition(ctx)) continue;
       events.push(...daemon.run(ctx));
     }
-    return messageIdsOf(events) as string[];
+    return events;
   };
+  const tick = (): string[] => messageIdsOf(tickEvents()) as string[];
 
   beforeEach(() => {
     story = createStory(compileSource(FIXTURE), { seed: 7 });
@@ -92,8 +93,16 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
     expect(forestSongs).toContain('forest-birdsong');
 
     expect(go(Direction.EAST)).toEqual(['open-sky']); // back out: crossing out
-    const fieldSongs: string[] = [];
-    for (let i = 0; i < 24; i++) fieldSongs.push(...tick());
-    expect(fieldSongs).toEqual([]); // no hardcoded room set, no name heuristic — just membership
+    // ADR-328 D3 (2026-08-28): the region's daemon keeps firing with the
+    // player outside — located at the Forest, for the engine to tag absent
+    // and the client to hide. Membership decides what is SHOWN, never what
+    // fires; no hardcoded room set, no name heuristic, on either side.
+    const forest = story.entityId('forest')!;
+    const fieldEvents: ISemanticEvent[] = [];
+    for (let i = 0; i < 24; i++) fieldEvents.push(...tickEvents());
+    const fieldSongs = fieldEvents.filter((e) => (e.data as { messageId?: string }).messageId === 'forest-birdsong');
+    expect(fieldSongs.length).toBeGreaterThan(0);
+    expect(fieldSongs.every((e) => e.entities.location === forest)).toBe(true);
+    expect(world.isInRegion(world.getPlayer()!.id, forest)).toBe(false);
   });
 });

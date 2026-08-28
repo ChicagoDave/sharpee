@@ -30,6 +30,8 @@ interface Booted {
   turn: number;
   /** Run the daemon roster for the next turn; returns message ids narrated. */
   tick(): string[];
+  /** As `tick`, returning the raw events (for tag assertions, ADR-328 D3). */
+  tickEvents(): ISemanticEvent[];
   /** Fire the Yard's `after the player entering` clause (the verbs live there). */
   enterYard(): string[];
   record(): { phase: string; index: number } | undefined;
@@ -55,10 +57,13 @@ function boot(source: string, seed = 5): Booted {
     playerId: player.id,
     turn: 1,
     tick() {
+      return messageIdsOf(this.tickEvents());
+    },
+    tickEvents() {
       const ctx = { world, turn: this.turn };
       const events = daemons.flatMap((d) => (d.condition && !d.condition(ctx) ? [] : d.run(ctx)));
       this.turn++;
-      return messageIdsOf(events);
+      return events;
     },
     enterYard() {
       const roomId = story.entityId('yard')!;
@@ -164,13 +169,18 @@ describe('stepping (D3f)', () => {
     expect(b.tick()).toEqual(['guards.expired-line']);
   });
 
-  it("a turn's prose is not spoken when the owner is off-stage", () => {
+  it("a turn's prose is spoken with the owner off-stage — tagged absent, never dropped (ADR-328 D3)", () => {
     const b = boot(SOURCE('start the guards\' search'));
     b.enterYard();
     b.tick();
     b.tick();
     b.world.moveEntity(b.story.entityId('guards')!, null);
-    expect(b.tick()).toEqual([]); // lingering reached, nobody to hear it
+    // Lingering reached: the line fires. Its owner has no place at all, so
+    // the loader tags it `absent` itself (the funnel would find no location).
+    const events = b.tickEvents();
+    expect(messageIdsOf(events)).toEqual(['guards.search.lingering']);
+    expect(events[0].presence).toBe('absent');
+    expect(events[0].entities.actor).toBe(b.story.entityId('guards'));
     expect(b.record()).toMatchObject({ index: 2 });
   });
 

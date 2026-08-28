@@ -143,6 +143,9 @@ if (require.main === module) {
       // the transcript argument is the command driver.
       search: null,
       searchBudget: null,
+      // ADR-328 D3: show every actor emission, labelled by location, for
+      // --play/--exec (and --test, overriding the transcript's header).
+      omniscient: false,
       help: false
     };
 
@@ -201,6 +204,8 @@ if (require.main === module) {
         options.watch = true;
       } else if (arg === '--coverage') {
         options.coverage = true;
+      } else if (arg === '--omniscient') {
+        options.omniscient = true;
       } else if (arg === '--search') {
         i++;
         if (i < args.length) {
@@ -266,6 +271,10 @@ Options:
                        point-seed: header line to paste on success
   --search-budget <N>  Override the search try budget (default: 10 x the
                        point's declared class count)
+  --omniscient         Show every actor emission, on-stage or off, labelled
+                       by location (ADR-328 D3). The default hides what the
+                       player was absent from. For --test it overrides the
+                       transcript's presence: header
   --help, -h           Show this help message
 
 Examples:
@@ -382,13 +391,18 @@ Examples:
     }
   }
 
-  function loadStoryAndCreateGame(storyPath, entry, seed, channels) {
+  function loadStoryAndCreateGame(storyPath, entry, seed, channels, presence) {
     // ADR-293: forward the resolved master seed to EngineConfig.seed; a
     // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
     const seedOption = seed !== undefined ? { seed } : {};
     // ADR-294 D15: declared capture channels flow to assembly — the
     // capability profile and per-command channel capture are fixed there.
-    const channelsOption = channels !== undefined ? { channels } : {};
+    // ADR-328 D3: so does the presence presentation — `lastOutput` is
+    // composed once, at the packet, under one mode for the session.
+    const channelsOption = {
+      ...(channels !== undefined ? { channels } : {}),
+      ...(presence !== undefined ? { presence } : {}),
+    };
     if (storyPath.endsWith('.story')) {
       // ADR-293 D1: one master seed governs the engine AND the chord
       // evaluator. When none was injected, read the clock once HERE so both
@@ -674,7 +688,8 @@ Examples:
         options.storyPath,
         undefined,
         resolveSeed(undefined).seed,
-        OPENING_CHANNELS
+        OPENING_CHANNELS,
+        options.omniscient ? 'omniscient' : undefined
       );
       console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
@@ -855,7 +870,8 @@ Examples:
         options.storyPath,
         undefined,
         resolveSeed(undefined).seed,
-        OPENING_CHANNELS
+        OPENING_CHANNELS,
+        options.omniscient ? 'omniscient' : undefined
       );
       // ADR-293 D14: author surfaces show the seed automatically — one
       // number plus a command list reproduces the session.
@@ -1058,7 +1074,11 @@ Examples:
             : resolveSeed(transcript.seed);
           // ADR-294 D15: assemble with the transcript's declared channels.
           const declaredChannels = (transcript.config && transcript.config.channels) || [];
-          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels);
+          // ADR-328 D3: the header's presence: mode, unless --omniscient overrides.
+          const declaredPresence = options.omniscient
+            ? 'omniscient'
+            : (transcript.config && transcript.config.presence) || undefined;
+          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels, declaredPresence);
           // ADR-293 D14: every run reports the seed it used, clock-derived included.
           console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 
@@ -1095,7 +1115,12 @@ Examples:
         const chainChannels =
           (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
             parsedTranscripts[0].transcript.config.channels) || [];
-        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels);
+        // ADR-328 D3: likewise the first member's presence: mode.
+        const chainPresence = options.omniscient
+          ? 'omniscient'
+          : (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
+              parsedTranscripts[0].transcript.config.presence) || undefined;
+        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels, chainPresence);
         // ADR-293 D14: every run reports the seed it used, clock-derived included.
         console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 

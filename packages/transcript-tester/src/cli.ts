@@ -369,15 +369,17 @@ async function main(): Promise<void> {
     // capability profile and capture set.
     // A parse error is swallowed here: the main loop reports it properly.
     let chainSeed: number | undefined;
+    let chainPresence: 'default' | 'omniscient' | undefined;
     try {
       const firstConfig = parseTranscriptFile(options.transcriptPaths[0]).config;
       chainSeed = firstConfig?.seeds?.[0];
       assembledChannels = firstConfig?.channels ?? [];
+      chainPresence = firstConfig?.presence;
     } catch {
       chainSeed = undefined;
     }
     try {
-      game = await loadStory(options.storyPath, undefined, chainSeed, assembledChannels);
+      game = await loadStory(options.storyPath, undefined, chainSeed, assembledChannels, chainPresence);
     } catch (error) {
       console.error(`Error loading story: ${error}`);
       process.exit(3);
@@ -427,7 +429,7 @@ async function main(): Promise<void> {
       try {
         assembledChannels = transcript.config?.channels ?? [];
         game = await loadStory(options.storyPath, transcript.header.entry,
-          transcript.config?.seeds?.[0], assembledChannels);
+          transcript.config?.seeds?.[0], assembledChannels, transcript.config?.presence);
       } catch (error) {
         console.error(`Error loading story: ${error}`);
         process.exit(3);

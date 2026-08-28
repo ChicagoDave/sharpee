@@ -30,7 +30,7 @@ const MAX_SEED = Number.MAX_SAFE_INTEGER;
  * recognized case-insensitively. Everything else in the header stays a raw
  * string in `transcript.header`.
  */
-const CONFIG_KEYS = ['seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'];
+const CONFIG_KEYS = ['seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed', 'presence'];
 
 /**
  * One `forces:` entry: `point[#occurrence]=CLASS` (ADR-293 D8/D9 via the
@@ -680,6 +680,19 @@ function parseConfigField(
       config.forces = canonical;
       config.forceSpecs = specs;
       config.forcesLineNumber = lineNumber;
+      return;
+    }
+
+    case 'presence': {
+      // ADR-328 D3: how presence-tagged prose is presented in this run.
+      if (value !== 'default' && value !== 'omniscient') {
+        parseErrors.push({
+          lineNumber,
+          message: `Invalid presence: "${value}" — expected default or omniscient (ADR-328 D3)`
+        });
+        return;
+      }
+      config.presence = value;
       return;
     }
 

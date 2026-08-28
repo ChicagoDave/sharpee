@@ -39,9 +39,6 @@ export interface GoalStepContext {
   /** The room connection graph. */
   roomGraph: RoomGraph;
 
-  /** Whether the player is in the same room as the NPC. */
-  playerPresent: boolean;
-
   /**
    * Function to check if an entity is in the same room as the NPC.
    * Used for acquire/give/drop steps.
@@ -125,7 +122,7 @@ function evaluateStep(step: GoalStep, ctx: GoalStepContext): StepResult {
     case 'say':
       return {
         status: 'completed',
-        witnessed: ctx.playerPresent ? step.witnessed ?? step.messageId : undefined,
+        witnessed: step.witnessed ?? step.messageId,
       };
 
     case 'give':
@@ -168,7 +165,7 @@ function evaluateSeek(
 
   return {
     status: 'in-progress',
-    witnessed: ctx.playerPresent ? witnessed : undefined,
+    witnessed,
     mutation: { kind: 'move', toRoom: nextRoom },
   };
 }
@@ -198,7 +195,7 @@ function evaluateTargetInRoom(
   if (ctx.isInRoom(target, ctx.currentRoom)) {
     return {
       status: 'completed',
-      witnessed: ctx.playerPresent ? witnessed : undefined,
+      witnessed,
     };
   }
 
@@ -263,7 +260,7 @@ function evaluateDrop(
   }
   return {
     status: 'completed',
-    witnessed: ctx.playerPresent ? witnessed : undefined,
+    witnessed,
     mutation: { kind: 'drop', itemId: item },
   };
 }
@@ -285,9 +282,7 @@ function evaluateOpportunistic(
   if (allMet) {
     return {
       status: 'completed',
-      witnessed: ctx.playerPresent
-        ? goal.def.actMessageId
-        : undefined,
+      witnessed: goal.def.actMessageId,
     };
   }
 

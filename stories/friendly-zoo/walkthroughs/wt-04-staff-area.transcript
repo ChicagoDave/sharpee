@@ -1,17 +1,19 @@
 title: Zoo Walkthrough 4 — Keeper's Farewell and the Staff Area
 story: friendly-zoo
-description: Chained full-playthrough, chapter 4 of 5. The witnessed-only
-  keeper departure, the staff-gate Optional clause (absorbs the old wt-04
-  optional proof, ADR-196 C1), and the supply room. Continues from wt-03.
+description: Chained full-playthrough, chapter 4 of 5. The keeper's departure
+  (already happened off-stage — re-pinned 2026-08-28 under ADR-328 D3), the
+  staff-gate Optional clause (absorbs the old wt-04 optional proof, ADR-196
+  C1), and the supply room. Continues from wt-03.
 
 ---
 
-# The keeper waited, unwitnessed, past closing — his once-only farewell
-# fires the moment we arrive (D11: `, once` cannot burn off-stage).
+# The keeper's once-only farewell fired on the first after-hours turn while
+# we were in the Petting Zoo (ADR-328 D3: `, once` consumes off-stage; the
+# line was tagged absent and hidden). He has already left for the parking lot.
 > west
 [OK: contains "Main Path"]
-[OK: contains "Zoo's all yours"]
-[OK: contains "engine start and fade into the distance"]
+[OK: not contains "Zoo's all yours"]
+[OK: not contains "Sam the zookeeper is here"]
 
 # Gate CLOSED: the Optional clause is absent, the sentence ends cleanly.
 > examine staff gate

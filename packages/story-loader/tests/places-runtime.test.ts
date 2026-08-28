@@ -3,8 +3,9 @@
  * real WorldModel and the real runtime's clause path: `move … to <owner>'s
  * location` / `… here` / `… offstage`, `location` as the containing room,
  * `is in <owner>'s location` on an offstage owner, the witnessed
- * `disappeared` row on going offstage, and the named diagnostic when the
- * owner is offstage.
+ * `disappeared` row on going offstage (located at the source room per
+ * ADR-328 D3, never dropped), and the named diagnostic when the owner is
+ * offstage.
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
@@ -132,16 +133,23 @@ describe("move … to <owner>'s location (D1)", () => {
 });
 
 describe('move … offstage (D2)', () => {
-  it('detaches the entity, keeps it in the world, and narrates the witnessed disappearance', () => {
+  it('detaches the entity, keeps it in the world, and narrates the disappearance located at the room it left (ADR-328 D3)', () => {
     const b = boot(SOURCE('move the monkey offstage'));
     const monkey = b.story.entityId('monkey')!;
+    const stall = b.story.entityId('stall')!;
     const events = enterStall(b);
     expect(b.world.hasEntity(monkey)).toBe(true);
     expect(b.world.getLocation(monkey)).toBeUndefined();
-    expect(messageIdsOf(events)).toContain('monkey.disappeared');
+    const row = events.find((e) => (e.data as { messageId?: string }).messageId === 'monkey.disappeared');
+    expect(row).toBeDefined();
+    // The row is located where it happened and names the mover; the engine
+    // tags presence from that room and the client decides — nothing is
+    // dropped here for being unwitnessed.
+    expect(row!.entities.location).toBe(stall);
+    expect(row!.entities.actor).toBe(monkey);
   });
 
-  it('an unwitnessed offstage move narrates nothing', () => {
+  it('an entity with no `disappeared` block has no row to narrate, wherever it goes offstage from', () => {
     const b = boot(SOURCE('move Teisha offstage'));
     const teisha = b.story.entityId('teisha')!;
     const events = enterStall(b);

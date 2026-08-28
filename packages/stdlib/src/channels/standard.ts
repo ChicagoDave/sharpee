@@ -131,11 +131,17 @@ function toProseEntry(block: {
   content: ReadonlyArray<TextContent>;
   tight?: boolean;
   className?: string;
+  presence?: ProseEntry['presence'];
+  location?: string;
 }): ProseEntry {
   return {
     content: [...block.content],
     ...(block.tight ? { tight: true } : {}),
     ...(block.className ? { className: block.className } : {}),
+    // ADR-328 D3: the presence tag rides the wire with the entry — the
+    // client decides what to show, so the channel never drops on it.
+    ...(block.presence ? { presence: block.presence } : {}),
+    ...(block.location ? { location: block.location } : {}),
   };
 }
 

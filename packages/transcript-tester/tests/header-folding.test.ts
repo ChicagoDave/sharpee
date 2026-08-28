@@ -154,7 +154,8 @@ describe.skipIf(!hasCorpus)('header grammar across a configured corpus', () => {
   // for `stories/` and passing silently when it finds nothing.
   const LEGAL = new Set([
     'title', 'story', 'entry', 'author', 'description',
-    'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'
+    'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed',
+    'presence'
   ]);
 
   it('produces no header key outside the grammar', () => {

@@ -1,8 +1,10 @@
 /**
  * ownership-runtime.test.ts — Phase C P4: the ownership semantics wired to
  * world state. D4 forward-march at runtime (the analyzer catches only the
- * static change-to-initial case), the decision-10 presence gate with its
- * RNG-not-consumed-off-stage guarantee, the dedicated body-level `must` and
+ * static change-to-initial case), owner-sourced narration under ADR-328 D3
+ * (every clause fires wherever the player is, located at its owner's place
+ * for the engine's presence tag — the decision-10 firing gate is retired),
+ * the dedicated body-level `must` and
  * statement-`when`-suffix tests (Finding 8 — fixture coverage is
  * incidental), state adjectives read live (D1), and the AC-6 transplant
  * for trait-declared state.
@@ -316,31 +318,36 @@ describe('decision-10 presence gate (performances need an audience)', () => {
     return events;
   };
 
-  it('off-stage clauses do not fire, do not draw the RNG, and do not consume `, once`', () => {
+  it('off-stage clauses fire, located at their owner, drawing the RNG and consuming `, once` (ADR-328 D3)', () => {
     const { story, world, playerId } = load(PRESENCE_STORY);
     const daemons = story.runtime.buildSchedulerDaemons();
+    const barn = story.entityId('barn')!;
+    const locationOf = (events: ISemanticEvent[], messageId: string) =>
+      events.find((e) => (e.data as { messageId?: string }).messageId === messageId)?.entities?.location;
 
     // Player is in the Meadow; the bull, owl, and the Barn's own clause are
-    // all off-stage.
-    for (let turn = 1; turn <= 6; turn++) {
-      expect(messageIdsOf(tick(daemons, world, turn))).toEqual([]);
-    }
-    // The bull's `one chance in 2` never drew: the RNG cursor is untouched
-    // (AC-5 — on-stage streams stay deterministic regardless of absence).
-    expect(world.getStateValue(CHORD_RNG_KEY)).toBeUndefined();
+    // all off-stage — and all fire, every event placed in the Barn (a room
+    // owner IS its place; the animals' place is their containing room).
+    const first = tick(daemons, world, 1);
+    expect(messageIdsOf(first)).toEqual(expect.arrayContaining(['creak', 'fidget', 'hoot']));
+    expect(locationOf(first, 'creak')).toBe(barn);
+    expect(locationOf(first, 'fidget')).toBe(barn);
+    expect(locationOf(first, 'hoot')).toBe(barn);
+    expect(world.getLocation(playerId)).not.toBe(barn);
 
-    // Walk into the Barn: room clause, trait clause, and entity clauses all
-    // find their audience.
-    world.moveEntity(playerId, story.entityId('barn')!);
-    const heard = new Set<string>();
-    for (let turn = 7; turn <= 12; turn++) {
+    // The bull's `one chance in 2` draws off-stage: the RNG cursor moves.
+    const heard = new Set<string>(messageIdsOf(first).map(String));
+    for (let turn = 2; turn <= 6; turn++) {
       for (const id of messageIdsOf(tick(daemons, world, turn))) heard.add(String(id));
     }
-    expect(heard).toContain('creak'); // room-owned clause: player IN the room
-    expect(heard).toContain('fidget'); // trait every-turn clause
-    expect(heard).toContain('snort'); // chance clause draws only on-stage
-    expect(heard).toContain('hoot'); // `, once` survived the off-stage turns
+    expect(heard).toContain('snort');
     expect(world.getStateValue(CHORD_RNG_KEY)).toBeTypeOf('number');
+
+    // `, once` was consumed off-stage: walking into the Barn never hears it.
+    world.moveEntity(playerId, barn);
+    for (let turn = 7; turn <= 12; turn++) {
+      expect(messageIdsOf(tick(daemons, world, turn))).not.toContain('hoot');
+    }
   });
 
   it('`, once` fires exactly once on-stage', () => {

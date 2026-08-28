@@ -2925,8 +2925,6 @@ export interface PropagationContext {
     speaker: RoomOccupant;
     /** All other NPCs in the same room. */
     listeners: RoomOccupant[];
-    /** Whether the player is present in the room. */
-    playerPresent: boolean;
     /** Current turn number. */
     turn: number;
     /** Number of turns the speaker has been in this room with listeners. */
@@ -3494,8 +3492,6 @@ export interface GoalStepContext {
     movement: MovementProfile;
     /** The room connection graph. */
     roomGraph: RoomGraph;
-    /** Whether the player is in the same room as the NPC. */
-    playerPresent: boolean;
     /**
      * Function to check if an entity is in the same room as the NPC.
      * Used for acquire/give/drop steps.

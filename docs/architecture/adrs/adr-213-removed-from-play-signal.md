@@ -37,6 +37,11 @@
 - **Witnessed** — the player's containing room equals the entity's last
   containing room at the moment of the transition (the D11 posture:
   unwitnessed transitions narrate nothing and consume nothing).
+  *Superseded in part by ADR-328 D3 (stamped 2026-08-28, Phase 2b): the row
+  now fires on every transition, located at the room it happened in; the
+  engine tags `presence` and the client hides what the player was absent
+  from. Consequently the `(owner, channel)` Choice counters advance
+  off-stage — a determinism re-pin for strategy variants on witness rows.*
 
 ## Context
 

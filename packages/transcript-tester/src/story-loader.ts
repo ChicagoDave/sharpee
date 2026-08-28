@@ -27,14 +27,18 @@ export type TestableGame = LoadedGame;
  * @param seed      optional master seed from the transcript `seed:` header
  *   (ADR-293 D1) — the runner verifies the session seed against the pin, it
  *   never sets it, so the host must seed the engine at assembly
+ * @param channels  optional declared capture channels (ADR-294 D15)
+ * @param presence  optional presence presentation from the transcript
+ *   `presence:` header (ADR-328 D3); absent → the platform default
  */
 export async function loadStory(
   storyPath: string,
   entry?: string,
   seed?: number,
-  channels?: string[]
+  channels?: string[],
+  presence?: 'default' | 'omniscient'
 ): Promise<TestableGame> {
-  return bootstrapLoadStory(storyPath, { entry, seed, channels });
+  return bootstrapLoadStory(storyPath, { entry, seed, channels, presence });
 }
 
 /**

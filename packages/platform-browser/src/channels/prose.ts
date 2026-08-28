@@ -25,7 +25,14 @@
  * Public interface: {@link createProseChannelRenderers}.
  */
 
-import { composeProse, joinProseEntries, type ChannelRenderer } from '@sharpee/channel-service';
+import {
+  composeProse,
+  joinProseEntries,
+  showsEntry,
+  presenceLabel,
+  type ChannelRenderer,
+  type ProsePresentationOptions,
+} from '@sharpee/channel-service';
 import { PREFERRED_LAYOUT_CHANNEL } from '@sharpee/if-domain';
 import type { ChannelDefinition, ProseEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
@@ -50,6 +57,16 @@ export interface ProseChannelRendererOptions {
    * amendment). Not fired when the turn flattens to nothing.
    */
   onEntriesText?(text: string): void;
+
+  /**
+   * How presence-tagged entries are presented (ADR-328 D3). Absent = the
+   * platform default: `absent` entries are hidden, `present`/`concealed`
+   * show. The IDE's Play panel passes `{ presence: 'omniscient' }` to
+   * watch actors off-stage — every entry shows, labelled by location and
+   * classed `main-entry--<presence>`. `onEntriesText` applies the same
+   * mode, so what the recording bridge captures is what was shown.
+   */
+  presentation?: ProsePresentationOptions;
 }
 
 /**
@@ -131,8 +148,9 @@ export function createProseChannelRenderers(
 
       // Report the engine's own text BEFORE rendering, so the recording
       // bridge never depends on what the DOM ends up looking like.
+      const presentation = opts.presentation ?? {};
       if (opts.onEntriesText) {
-        const text = joinProseEntries(composed);
+        const text = joinProseEntries(composed, presentation);
         if (text) opts.onEntriesText(text);
       }
 
@@ -140,12 +158,18 @@ export function createProseChannelRenderers(
       for (let i = 0; i < composed.length; i += 1) {
         const entry = normalizeEntry(composed[i]);
         if (!entry) continue;
+        // ADR-328 D3: presentation is the client's — the default hides
+        // what the player was absent from; omniscient shows and labels it.
+        if (!showsEntry(entry.presence, presentation)) continue;
         const p = doc.createElement('p');
         p.classList.add('main-entry');
         const source = layoutChannelAt(value, i);
         if (source) p.classList.add(`prose-${source}`);
         if (entry.tight) p.classList.add('main-entry--tight');
         if (entry.className) p.classList.add(entry.className);
+        if (entry.presence) p.classList.add(`main-entry--${entry.presence}`);
+        const label = presenceLabel(entry.presence, entry.location, presentation);
+        if (label) p.appendChild(doc.createTextNode(`${label} `));
         // No `white-space: pre-line`. Engine handlers split `\n` into
         // block boundaries via `createBlocks`; entries marked `tight`
         // get the `main-entry--tight` class so the inter-paragraph
@@ -214,14 +238,26 @@ function normalizeEntry(raw: unknown): ProseEntry | null {
     return { content: raw as ReadonlyArray<TextContent> };
   }
   if (raw && typeof raw === 'object' && 'content' in raw) {
-    const obj = raw as { content: unknown; tight?: unknown; className?: unknown };
+    const obj = raw as {
+      content: unknown;
+      tight?: unknown;
+      className?: unknown;
+      presence?: unknown;
+      location?: unknown;
+    };
     if (!Array.isArray(obj.content)) return null;
+    const presence =
+      obj.presence === 'present' || obj.presence === 'absent' || obj.presence === 'concealed'
+        ? obj.presence
+        : undefined;
     return {
       content: obj.content as ReadonlyArray<TextContent>,
       ...(obj.tight ? { tight: true } : {}),
       ...(typeof obj.className === 'string' && obj.className
         ? { className: obj.className }
         : {}),
+      ...(presence ? { presence } : {}),
+      ...(typeof obj.location === 'string' && obj.location ? { location: obj.location } : {}),
     };
   }
   return null;

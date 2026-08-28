@@ -502,6 +502,13 @@ export interface TranscriptRunConfig {
     }>;
     /** Line the `point-seed:` header field appeared on, for error reporting. */
     pointSeedsLineNumber?: number;
+    /**
+     * Presence presentation (ADR-328 D3), from the `presence:` header field.
+     * Absent = the platform default (an `absent` entry is hidden, so goldens
+     * mean what a player sees). `omniscient` shows every actor emission
+     * labelled by location — for testing NPC behaviour off-stage.
+     */
+    presence?: 'default' | 'omniscient';
 }
 /**
  * Provenance header of a `.golden` recording (ADR-294 D3/D7).
@@ -1797,8 +1804,11 @@ export type TestableGame = LoadedGame;
  * @param seed      optional master seed from the transcript `seed:` header
  *   (ADR-293 D1) — the runner verifies the session seed against the pin, it
  *   never sets it, so the host must seed the engine at assembly
+ * @param channels  optional declared capture channels (ADR-294 D15)
+ * @param presence  optional presence presentation from the transcript
+ *   `presence:` header (ADR-328 D3); absent → the platform default
  */
-export declare function loadStory(storyPath: string, entry?: string, seed?: number, channels?: string[]): Promise<TestableGame>;
+export declare function loadStory(storyPath: string, entry?: string, seed?: number, channels?: string[], presence?: 'default' | 'omniscient'): Promise<TestableGame>;
 /**
  * Assemble a testable game from an already-loaded story instance.
  */

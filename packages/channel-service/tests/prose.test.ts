@@ -106,6 +106,60 @@ describe('joinProseEntries', () => {
   });
 });
 
+describe('presence presentation (ADR-328 D3)', () => {
+  const entries = [
+    { content: ['You wait.'] },
+    { content: ['The owl hoots.'], presence: 'absent', location: 'r_barn' },
+    { content: ['Sam waves.'], presence: 'present', location: 'r_hall' },
+    { content: ['A whisper.'], presence: 'concealed', location: 'r_hall' },
+  ];
+
+  it('hides absent entries by default and shows present and concealed, unlabelled', () => {
+    expect(joinProseEntries(entries)).toBe('You wait.\n\nSam waves.\n\nA whisper.');
+  });
+
+  it('omniscient shows every entry, tagged ones labelled by location', () => {
+    expect(joinProseEntries(entries, { presence: 'omniscient' })).toBe(
+      'You wait.\n\n[r_barn] The owl hoots.\n\n[r_hall] Sam waves.\n\n[r_hall] A whisper.',
+    );
+  });
+
+  it('omniscient resolves the label through locationLabel when given', () => {
+    const text = joinProseEntries(entries, {
+      presence: 'omniscient',
+      locationLabel: (id) => ({ r_barn: 'Barn', r_hall: 'Hall' })[id] ?? id,
+    });
+    expect(text).toBe('You wait.\n\n[Barn] The owl hoots.\n\n[Hall] Sam waves.\n\n[Hall] A whisper.');
+  });
+
+  it('omniscient labels a tagged entry with no location by its presence', () => {
+    expect(joinProseEntries([{ content: ['Gone.'], presence: 'absent' }], { presence: 'omniscient' })).toBe(
+      '[absent] Gone.',
+    );
+  });
+
+  it('a hidden entry leaves no stray separator, and its tight successor joins the survivor', () => {
+    const text = joinProseEntries([
+      { content: ['First.'] },
+      { content: ['Hidden.'], presence: 'absent', location: 'r_barn' },
+      { content: ['Second.'], tight: true },
+    ]);
+    expect(text).toBe('First.\nSecond.');
+  });
+
+  it('packetProseText forwards the presentation', () => {
+    const payload = {
+      'preferred-layout': ['game-message', 'game-message'],
+      'game-message': [
+        { content: ['You wait.'] },
+        { content: ['The owl hoots.'], presence: 'absent', location: 'r_barn' },
+      ],
+    };
+    expect(packetProseText(payload)).toBe('You wait.');
+    expect(packetProseText(payload, { presence: 'omniscient' })).toBe('You wait.\n\n[r_barn] The owl hoots.');
+  });
+});
+
 describe('composeProse', () => {
   const entry = (text: string) => ({ content: [text] });
 

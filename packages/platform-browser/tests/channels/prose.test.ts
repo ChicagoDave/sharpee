@@ -124,6 +124,50 @@ describe('createProseChannelRenderers', () => {
     expect(slot.querySelector('strong')).toBeNull();
   });
 
+  it('hides an absent entry by default and shows present/concealed ones (ADR-328 D3)', () => {
+    const prose = build();
+    turn(
+      prose,
+      {
+        'game-message': [
+          { content: ['You wait.'] },
+          { content: ['The owl hoots.'], presence: 'absent', location: 'r_barn' },
+          { content: ['Sam waves.'], presence: 'present', location: 'r_hall' },
+        ],
+      },
+      ['game-message', 'game-message', 'game-message'],
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(2);
+    expect(ps[0].textContent).toBe('You wait.');
+    expect(ps[1].textContent).toBe('Sam waves.');
+    expect(ps[1].classList.contains('main-entry--present')).toBe(true);
+  });
+
+  it('omniscient shows every entry, labelled by location and classed by presence', () => {
+    const texts: string[] = [];
+    const prose = build({
+      presentation: { presence: 'omniscient', locationLabel: (id: string) => (id === 'r_barn' ? 'Barn' : id) },
+      onEntriesText: (text: string) => texts.push(text),
+    });
+    turn(
+      prose,
+      {
+        'game-message': [
+          { content: ['You wait.'] },
+          { content: ['The owl hoots.'], presence: 'absent', location: 'r_barn' },
+        ],
+      },
+      ['game-message', 'game-message'],
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(2);
+    expect(ps[1].textContent).toBe('[Barn] The owl hoots.');
+    expect(ps[1].classList.contains('main-entry--absent')).toBe(true);
+    // The recording bridge sees the same presentation the DOM shows.
+    expect(texts).toEqual(['You wait.\n\n[Barn] The owl hoots.']);
+  });
+
   it('renders nothing for a turn that produced no prose', () => {
     const prose = build();
     turn(prose, {}, []);

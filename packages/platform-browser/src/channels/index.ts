@@ -17,7 +17,7 @@
  * @see ADR-165 — Renderer Architecture — §7, §8
  */
 
-import type { IRenderer } from '@sharpee/channel-service';
+import type { IRenderer, ProsePresentationOptions } from '@sharpee/channel-service';
 import { PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
 import { createProseChannelRenderers } from './prose.js';
 import { createPromptChannelRenderer } from './prompt.js';
@@ -116,6 +116,12 @@ export interface RegisterDefaultBrowserRenderersOptions {
    */
   onProseEntriesText?(text: string): void;
   /**
+   * How presence-tagged prose is presented (ADR-328 D3). Absent = the
+   * platform default (hide `absent`). The IDE's Play panel opts into
+   * `{ presence: 'omniscient' }` to watch actors off-stage.
+   */
+  prosePresentation?: ProsePresentationOptions;
+  /**
    * Optional hotspot-click handler for image channels. When a
    * hotspot is clicked the renderer calls this with the hotspot's
    * `command` field — the browser client routes it through
@@ -171,6 +177,7 @@ export function registerDefaultBrowserRenderers(
   const prose = createProseChannelRenderers(layout.main, PROSE_CHANNEL_IDS, {
     onAfterAppend: opts.onProseAfterAppend,
     onEntriesText: opts.onProseEntriesText,
+    presentation: opts.prosePresentation,
   });
   for (const [channelId, channelRenderer] of prose.byChannelId) {
     renderer.registerRenderer(channelId, channelRenderer);

@@ -528,7 +528,7 @@ function runPropagationSubStep(
   surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const { world, turn, playerLocation } = ctx;
+  const { world, turn } = ctx;
 
   // Group NPCs by room
   const roomNpcs = new Map<string, IFEntity[]>();
@@ -545,7 +545,7 @@ function runPropagationSubStep(
 
   for (const [roomId, roomNpcList] of roomNpcs) {
     if (roomNpcList.length < 2) continue;
-    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events, surface);
+    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, events, surface);
   }
 
   return events;
@@ -559,8 +559,7 @@ function runPropagationSubStep(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function handleRoomPropagation(
   roomId: string,
@@ -568,7 +567,6 @@ function handleRoomPropagation(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -588,14 +586,13 @@ function handleRoomPropagation(
     const propContext: PropagationContext = {
       speaker: { id: speaker.id, trait, profile: config.propagationProfile },
       listeners,
-      playerPresent: roomId === playerLocation,
       turn,
     };
 
     const transfers = evaluatePropagation(propContext);
 
     for (const transfer of transfers) {
-      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, playerLocation, events, surface);
+      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, events, surface);
     }
   }
 }
@@ -610,8 +607,7 @@ function handleRoomPropagation(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function recordTransfer(
   transfer: ReturnType<typeof evaluatePropagation>[number],
@@ -621,7 +617,6 @@ function recordTransfer(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -674,11 +669,12 @@ function recordTransfer(
     return;
   }
 
-  if (roomId === playerLocation && !result.alreadyKnew && !authorNarratesArrival) {
+  // ADR-328 D3: no room gate — the event fires wherever the player is,
+  // carrying the room it happened in so the engine funnel tags presence
+  // and the client decides what to show.
+  if (!result.alreadyKnew && !authorNarratesArrival) {
     const visibility = getVisibilityResult(transfer, 'present');
     if (visibility.messageId) {
-      // ADR-328 D3 producer half: the room it happened in rides on the
-      // event so the engine funnel can tag presence.
       events.push(createEvent('character.propagation.witnessed', {
         speakerId: speaker.id,
         listenerId: transfer.listenerId,
@@ -702,10 +698,10 @@ function runGoalSubStep(
   surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const { world, playerLocation } = ctx;
+  const { world } = ctx;
 
   for (const npc of npcs) {
-    executeNpcGoals(npc, registry, world, playerLocation, ctx.turn, events, surface);
+    executeNpcGoals(npc, registry, world, ctx.turn, events, surface);
   }
 
   return events;
@@ -733,15 +729,13 @@ function boundCompiledEval(
  * @param npc - The NPC entity to evaluate
  * @param registry - Character phase registry for configs and goal managers
  * @param world - World model for location lookups and room graph
- * @param playerLocation - Player's current room ID
  * @param currentTurn - The turn being evaluated (D16 suppression window)
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function executeNpcGoals(
   npc: IFEntity,
   registry: CharacterPhaseRegistry,
   world: WorldModel,
-  playerLocation: EntityId,
   currentTurn: number,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
@@ -772,7 +766,6 @@ function executeNpcGoals(
     trait,
     movement,
     roomGraph: buildRoomGraph(world),
-    playerPresent: npcLocation === playerLocation,
     isInRoom: (entityId, roomId) => world.getLocation(entityId) === roomId,
     getEntityRoom: (entityId) => world.getLocation(entityId) || undefined,
     ...(evalCompiled ? { evalCompiled } : {}),
@@ -823,16 +816,17 @@ function executeNpcGoals(
     !sceneWrappedSay &&
     applied &&
     (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
-    stepResult.witnessed &&
-    npcLocation === playerLocation
+    stepResult.witnessed
   ) {
+    // ADR-328 D3: no room gate — the step narrates wherever the player is,
+    // carrying the NPC's room so the engine tags presence.
     events.push(createEvent('character.goal.step', {
       npcId: npc.id,
       goalId: activeGoal.def.id,
       step: activeGoal.state.currentStep,
       messageId: stepResult.witnessed,
       speaker: nounPhraseFor(npc),
-    }, npc.id));
+    }, npc.id, npcLocation));
   }
 
   if (stepResult.status === 'completed' && applied) {
@@ -914,7 +908,9 @@ function runInfluenceSubStep(
       const targetId = effect.target ?? npc.id;
       const target = world.getEntity(targetId);
       const targetLoc = target ? world.getLocation(target.id) : undefined;
-      if (targetLoc === playerLocation) {
+      // ADR-328 D3: no room gate — the release line fires wherever the
+      // player is, carrying the target's room so the engine tags presence.
+      {
         // Opt-in release line (David's ruling 2026-08-16): the authored
         // `expired` phrase key rides as messageId; absent = silent, and
         // the payload stays byte-identical to the pre-ruling shape.
@@ -933,7 +929,7 @@ function runInfluenceSubStep(
                 influencerName: influencer?.name ?? effect.influencerId,
               }
             : {}),
-        }));
+        }, effect.influencerId, targetLoc));
       }
     }
   }
@@ -971,7 +967,7 @@ function runInfluenceSubStep(
   // Evaluate passive influences per room
   for (const [roomId, entities] of roomEntities) {
     const results = evaluatePassiveInfluences(entities);
-    handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
+    handleInfluenceResults(results, roomId, registry, world, turn, events);
   }
 
   return events;
@@ -990,8 +986,7 @@ function runInfluenceSubStep(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function handleInfluenceResults(
   exertions: PassiveInfluenceExertion[],
@@ -999,7 +994,6 @@ function handleInfluenceResults(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
 ): void {
   for (const exertion of exertions) {
@@ -1034,17 +1028,19 @@ function handleInfluenceResults(
 
       if (outcome.status === 'applied') {
         newlyApplied.push(outcome.targetId);
-      } else if (exertion.resisted && roomId === playerLocation) {
+      } else if (exertion.resisted) {
+        // ADR-328 D3: no room gate — tagged by the room, not dropped.
         events.push(createEvent('character.influence.resisted', {
           influencerId: exertion.influencerId, targetId: outcome.targetId,
           influenceName: exertion.influenceName, messageId: exertion.resisted,
           influencerName: influencerEntity?.name ?? exertion.influencerId,
           targetName: targetEntity?.name ?? outcome.targetId,
-        }, exertion.influencerId));
+        }, exertion.influencerId, roomId));
       }
     }
 
-    if (newlyApplied.length > 0 && exertion.witnessed && roomId === playerLocation) {
+    if (newlyApplied.length > 0 && exertion.witnessed) {
+      // ADR-328 D3: no room gate — tagged by the room, not dropped.
       const firstTarget = world.getEntity(newlyApplied[0]);
       events.push(createEvent('character.influence.applied', {
         influencerId: exertion.influencerId,
@@ -1053,7 +1049,7 @@ function handleInfluenceResults(
         influenceName: exertion.influenceName, messageId: exertion.witnessed,
         influencerName: influencerEntity?.name ?? exertion.influencerId,
         targetName: firstTarget?.name ?? newlyApplied[0],
-      }, exertion.influencerId));
+      }, exertion.influencerId, roomId));
     }
   }
 }

@@ -1,0 +1,26 @@
+title: Presence — the default rendering hides what the player was absent from
+story: presence-test
+description: The owl's every-turn clauses fire while the player is in the Hall
+  (the `, once` clause is consumed off-stage), but the default rendering shows
+  none of it. Walking into the Barn shows the hoot; the settling line was spent
+  before anyone arrived.
+seed: 7
+
+---
+
+> wait
+[OK: not contains "hoots"]
+[OK: not contains "settles"]
+
+> wait
+[OK: not contains "hoots"]
+[OK: not contains "settles"]
+
+> east
+[OK: contains "Barn"]
+[OK: contains "The owl hoots."]
+[OK: not contains "settles"]
+
+> wait
+[OK: contains "The owl hoots."]
+[OK: not contains "settles"]

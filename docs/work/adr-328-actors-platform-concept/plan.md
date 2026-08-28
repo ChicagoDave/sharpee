@@ -313,9 +313,13 @@ ADR's own text implies).
   (the packet carries the tag per ADR-163's "channels carry every story→UI signal"), the
   default client renderer (hides `absent`, shows `present`/`concealed`), transcript-tester
   (renders through the default so existing goldens keep their meaning; an omniscient test mode
-  shows all actor emissions labelled by location), the engine's `processPluginEvents` gate (`game-engine.ts:2238` — `filterEvents` stops
-  dropping — it tags `presence` and keeps ADR-069's per-sense selection, since darkness
-  stays a transform under D3; ADR-069's `filterEvents` contract is amended accordingly), and
+  shows all actor emissions labelled by location), the engine's `processPluginEvents` gate (`game-engine.ts:2238` — **corrected 2026-08-28:
+  `filterEvents` never dropped; it transforms (darkness → `perception.blocked`, per-sense
+  renderings selection) and returns one event per input. The plugin-side drops are
+  `NpcService`'s decision logic (`stdlib/src/npc/behaviors.ts:114`, `npc-service.ts:500`),
+  retired in Phase 5. The 2b engine-side change is ADR-069's amendment: an `absent`-tagged
+  event passes through `filterEvents` untouched, so darkness in the player's room never
+  rewrites an off-stage line**), and
   finally two hand-rolled mechanisms the ADR's own D3 text names for retirement onto this path: `story-loader/src/runtime.ts`'s
   entity/story/trait every-turn daemon presence gate (`:3322` and its story-owned/trait-owned
   siblings — **removed**), and `witnessMove` (`runtime.ts:~4095-4110`, called from
@@ -348,7 +352,30 @@ ADR's own text implies).
   observers' semantics"), **ADR-069**'s `filterEvents` contract, and **ADR-070** §Visibility and Perception ("Player
   elsewhere → Nothing reported") — already stamped by Phase 0 (2026-08-27), nothing further owed — Dungeo is untouched at this point (its daemons
   don't yet drive NPC actions; Phase 6b is where its chain actually moves).
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session 5c0980). Scope as landed, beyond the text above: the
+  goal-step gate (`tick-phases.ts:827`, `step-evaluator.ts` ×5, `propagation-evaluator.ts:46`
+  — folded on David's "go", stated as an assumption) and the influence
+  `expired`/`resisted`/`applied` room gates (`tick-phases.ts:917/1037/1047`, same pattern) also
+  retire onto the tag; the loader's timer named-turn prose gate (`timerOwnerPresent`) retires
+  with `playerPresentAt`; a placeless owner is tagged `absent` by `sourced()` directly.
+  Evidence (all 2026-08-28 03:03–03:10 CDT, after the last source edit): stdlib 1651 passing
+  (27 pre-existing skips), engine 659 (7 pre-existing skips), channel-service 119,
+  platform-browser 145, transcript-tester 282, story-loader 963, character 570 (incl. the new `off-stage-narration.test.ts` written for the mutation-verification gap); root `tsc`
+  clean; `./repokit build dungeo` green; REAL-PATH `stories/presence-test` default 4 passing /
+  omniscient 3 passing through `dist/cli/sharpee.js`; Dungeo chain 952 passing (unchanged);
+  friendly-zoo chain 56 passing across wt-01..07 with `timeline.transcript`, `wt-04`, `wt-05`
+  re-pinned (explained in each header) — wt-01's `examine yourself` is a pre-existing
+  ADR-327 `yourself` failure (GH #319, noted there), exercised with a diagnostic substitute.
+  Re-pinned unit fixtures: story-loader `region-daemon`, `region-forest`, `ownership-runtime`,
+  `zoo-surfaces-phase3`, `places-runtime`, `timers-runtime`; character `goals`, `propagation`.
+  Pre-existing, unrelated: `scripts/__tests__/cli-chord-seed.test.ts` uses the removed
+  `create the player` grammar (GH #320). ADR-328 D3 amended (2026-08-28); ADR-213 §Witnessed,
+  ADR-325 D2 + Non-goals, ADR-069 (new amendment), ADR-070 `:538` (correction) stamped.
+  **Story consequence to flag**: friendly-zoo's four `on every turn while after-hours, once`
+  confessions are now spent on the first after-hours turn wherever the player is, so in
+  normal play they are heard only if the player is standing there at closing — the
+  ADR-predicted outcome, but the zoo may want `after the player entering while after-hours,
+  once` instead (David's call, not made here).
 
 ### Phase 3: D1/D2a — The programmatic execution entry
 - **Tier**: Medium
@@ -378,7 +405,7 @@ ADR's own text implies).
   actor's id when it can.
 - **Exit state**: `pnpm --filter '@sharpee/engine' run test:ci` green with new entry coverage. The
   entry exists and is exercised by one pilot action; the remaining 53 files are Phase 4.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 4: D2b — Actor threading across the standard-action library (mechanical sweep)
 - **Tier**: Large

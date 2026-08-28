@@ -2,9 +2,11 @@
  * zoo-surfaces-phase3.test.ts — Z3/Z3b/Z6 loader half (chord-zoo-surfaces
  * Phase 3, 2026-07-14): `present` blocks → ADR-212 slot entries (order,
  * counter keys, predicate gate ANDed with presence), `entered`/`exited`
- * witnessed-only narration on the `move` statement, `disappeared` riding
- * the ADR-213 observer (statement AND TS-initiated removals; unwitnessed
- * silent; orphaning never fires), and `detail` compiling to the shipped
+ * narration on the `move` statement (ADR-328 D3, 2026-08-28: both rows fire
+ * on every transition, each located at its room for the engine's presence
+ * tag — no longer witnessed-only), `disappeared` riding the ADR-213
+ * observer (statement AND TS-initiated removals; orphaning never fires),
+ * and `detail` compiling to the shipped
  * trait fields or the loader-owned state-clause provider.
  */
 import { describe, expect, it, vi } from 'vitest';
@@ -167,7 +169,7 @@ end before
   });
 });
 
-describe('Z3 entered/exited: witnessed-only on the move statement', () => {
+describe('Z3 entered/exited on the move statement — located, not gated (ADR-328 D3)', () => {
   const SOURCE = `story
   title: P3
   authors:
@@ -225,11 +227,16 @@ end before
 
 `;
 
-  it('exited fires when the player shares the source room, with counters keyed (owner, exited)', () => {
+  const eventFor = (events: ISemanticEvent[], messageId: string) =>
+    events.find((e) => (e.data as { messageId?: string }).messageId === messageId)!;
+
+  it('exited is located at the source room, with counters keyed (owner, exited)', () => {
     const booted = boot(SOURCE);
     const events = enterRoom(booted, 'lab'); // cat Lab → Annex, player in Lab
     expect(messageIdsOf(events)).toContain('cat.exited');
-    const exited = events.find((e) => (e.data as { messageId?: string }).messageId === 'cat.exited')!;
+    const exited = eventFor(events, 'cat.exited');
+    expect(exited.entities.location).toBe(booted.story.entityId('lab'));
+    expect(exited.entities.actor).toBe(booted.story.entityId('cat'));
     const variants = (exited.data as { params: { variants: Choice } }).params.variants;
     expect(variants).toMatchObject({
       kind: 'choice',
@@ -239,22 +246,25 @@ end before
     });
   });
 
-  it('entered fires when the player shares the destination room', () => {
+  it('entered is located at the destination room — and the source row fires too, located at the source', () => {
     const booted = boot(SOURCE);
     enterRoom(booted, 'lab'); // cat → Annex
     const events = enterRoom(booted, 'hall'); // cat Annex → Hall = player's room
     expect(messageIdsOf(events)).toContain('cat.entered');
-    expect(messageIdsOf(events)).not.toContain('cat.exited'); // source unwitnessed
+    expect(eventFor(events, 'cat.entered').entities.location).toBe(booted.story.entityId('hall'));
+    // The source row is no longer dropped for being unwitnessed: it rides,
+    // located at the Annex, for the engine to tag absent and the client to hide.
+    expect(messageIdsOf(events)).toContain('cat.exited');
+    expect(eventFor(events, 'cat.exited').entities.location).toBe(booted.story.entityId('annex'));
   });
 
-  it('a transition between two rooms the player is in neither of narrates nothing', () => {
+  it('a transition between two rooms the player is in neither of still narrates both rows, located', () => {
     const booted = boot(SOURCE);
     enterRoom(booted, 'lab'); // cat → Annex
     enterRoom(booted, 'hall'); // cat → Hall
     const events = enterRoom(booted, 'lab'); // cat Hall → Annex; player in Lab
-    expect(messageIdsOf(events)).not.toContain('cat.exited');
-    expect(messageIdsOf(events)).not.toContain('cat.entered');
-    // The move itself still happened — only the narration was unwitnessed.
+    expect(eventFor(events, 'cat.exited').entities.location).toBe(booted.story.entityId('hall'));
+    expect(eventFor(events, 'cat.entered').entities.location).toBe(booted.story.entityId('annex'));
     expect(booted.world.getLocation(booted.story.entityId('cat')!)).toBe(booted.story.entityId('annex'));
   });
 });

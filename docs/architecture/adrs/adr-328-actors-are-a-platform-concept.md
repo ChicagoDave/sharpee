@@ -136,6 +136,42 @@ engine's `processPluginEvents` (`game-engine.ts:2238`), whose `filterEvents` cal
 dropping and keeps ADR-069's per-sense selection. ADR-213 §Witnessed, ADR-325 D2, ADR-069
 and ADR-070 §Visibility are stamped at the landing.
 
+**Amended 2026-08-28 (session 5c0980 — Phase 2b landing).** Two corrections and the
+as-built shape.
+
+- **`filterEvents` never dropped.** The 2026-08-27 sentence above is wrong on that point:
+  `PerceptionService.filterEvents` (`stdlib/src/services/PerceptionService.ts`) transforms
+  visual events into `perception.blocked` and selects per-sense renderings; it returns one
+  event per input. The plugin-side drops live in `NpcService`'s decision logic
+  (`stdlib/src/npc/behaviors.ts`, `npc-service.ts`) and retire with it in Phase 5. The one
+  engine-side change this phase makes is the ADR-069 amendment: an event tagged `absent`
+  passes through `filterEvents` untouched, so darkness in the player's room never rewrites
+  an off-stage line into "you can't see".
+- **The drop sites retired onto the tag are more than three.** As landed: the loader's
+  entity-, trait-, and region-owned every-turn daemon gate (`playerPresentAt` deleted), the
+  loader's timer named-turn prose gate (`timerOwnerPresent` deleted), `witnessMove` (both
+  rows always fire, `exited`/`disappeared` located at the source room, `entered` at the
+  destination); and in the character layer the propagation `witnessed` room gate, the
+  goal-step gate (`playerPresent` removed from `PropagationContext` and `GoalStepContext`;
+  a step's `witnessed` is always its message), and the influence `expired`/`resisted`/
+  `applied` room gates — every one now emits with the room it happened in as
+  `entities.location`. An owner with no place at all (offstage) is tagged `absent` by the
+  loader itself, since the funnel has no location to resolve.
+- **The wire and the surfaces.** `ITextBlock` and `ProseEntry` carry `presence` and
+  `location` (additive; no protocol bump). `joinProseEntries`/`packetProseText` take a
+  `ProsePresentationOptions` — default hides `absent`; `omniscient` shows every entry with a
+  `[<location name>]` prefix (`[<presence>]` when the entry has no location). The browser
+  renderer takes the same option (`presentation`), classing entries
+  `main-entry--<presence>`. transcript-tester gains a `presence: default | omniscient`
+  header field; the CLI bundle gains `--omniscient` for `--play`/`--exec`/`--test`.
+- **Real path.** `stories/presence-test` — an owl whose every-turn clauses fire while the
+  player is in the next room; `default-rendering.transcript` sees nothing until it walks in
+  and never sees the `, once` line (spent off-stage); `omniscient-rendering.transcript` sees
+  both, labelled `[Barn]`. Re-pinned as the amendment predicted: friendly-zoo's
+  `timeline.transcript`, `wt-04`, `wt-05` (the keeper's farewell and the snake's and
+  parrot's confessions are spent on the first after-hours turn, unseen from the Petting
+  Zoo); Dungeo's chain unchanged at 952.
+
 ### D4. Voice is a rendering property — any actor, any person
 
 Grammatical person is resolved per actor at render time, never authored into template

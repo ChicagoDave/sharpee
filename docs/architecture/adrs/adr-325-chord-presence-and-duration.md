@@ -143,6 +143,10 @@ Witness narration: a `disappeared` row (ADR-213) fires for `move … offstage` e
 for `remove` when the player shares the room — the observer is about what the player saw,
 not about the entity's fate.
 
+*Superseded in part by ADR-328 D3 (stamped 2026-08-28, Phase 2b): the row fires whether or
+not the player shares the room, located at the room the entity left; presence is tagged
+by the engine and the client decides what to show. The mutation semantics above stand.*
+
 ### D3. Timers — named turns, no numbers
 
 **Two kinds of counter, told apart by their verbs.** ADR-264's counters are **tallies**:
@@ -554,7 +558,8 @@ shows the merged shape. Tree-pinned: the attack card asserts the stdlib line is 
   already means offstage).
 - No `holder` possessive (the immediate container).
 - No change to `remove`, to the `disappeared`/`entered` observers' semantics, or to
-  `define sequence`.
+  `define sequence`. *(The observers' "witnessed-only" firing was later changed by ADR-328
+  D3 — stamped 2026-08-28; see D2.)*
 - No `when <entity> moves` refusal form (refusals belong on the mover's `on going`); no
   `when <non-player entity> goes` sugar beyond `moves`.
 - No tally arithmetic, money, or prices (the math-and-money subsystem).

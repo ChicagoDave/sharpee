@@ -59,6 +59,15 @@ export class PerceptionService implements IPerceptionService {
     const canSee = this.canPerceive(actor, location, world, 'sight');
 
     return events.map((event) => {
+      // ADR-328 D3: an event the player was absent from is already tagged
+      // for the client to hide. Darkness (ADR-069) is a fact about the room
+      // the player IS in; transforming an off-stage event into "you can't
+      // see" would narrate the wrong place — so absent events pass through
+      // untouched, tag intact.
+      if (event.presence === 'absent') {
+        return event;
+      }
+
       // Witnessable facts carry a per-sense renderings map. Select the rendering
       // for the perceiver's highest-precedence available sense. This is generic —
       // it keys off the presence of `renderings`, not off NPC/movement specifics —

@@ -1,0 +1,22 @@
+title: Presence — the omniscient rendering shows every actor emission, labelled by location
+story: presence-test
+description: The same commands as default-rendering, rendered omnisciently.
+  Off-stage lines appear labelled with the room they happened in; the `, once`
+  clause is seen firing on the first turn and never again.
+seed: 7
+presence: omniscient
+
+---
+
+> wait
+[OK: contains "[Barn] The owl hoots."]
+[OK: contains "[Barn] The owl settles onto its perch for the night."]
+
+> wait
+[OK: contains "[Barn] The owl hoots."]
+[OK: not contains "settles"]
+
+> east
+[OK: contains "Barn"]
+[OK: contains "[Barn] The owl hoots."]
+[OK: not contains "settles"]

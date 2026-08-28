@@ -220,11 +220,6 @@ export interface SchedulerDaemon {
 /** ADR-327 D5: the most nested move-arrivals one turn may fire before the runtime refuses. */
 const MOVE_ARRIVAL_DEPTH_CAP = 8;
 
-/** The containing room of an entity, or its raw location when it has none. */
-function roomOfIn(world: WorldModel, id: string): string | undefined {
-  return world.getContainingRoom(id)?.id ?? world.getLocation(id);
-}
-
 export class ChordRuntime {
   private eventSeq = 0;
   /** Declared score identities (Phase B): name → worth. */
@@ -3315,16 +3310,14 @@ export class ChordRuntime {
           run: (ctx) => {
             // Role gate (ADR-327 D9): a character's autonomous clauses drive
             // them only while they are NOT the one being played. Checked
-            // before the presence gate so the RNG stream and `, once` are
+            // before the condition so the RNG stream and `, once` are
             // untouched for as long as the owner holds the role — the clause
             // wakes, unconsumed, the turn the role moves off them.
             if (this.holdsPlayerRole(ctx.world, irEntity.id)) return [];
-            // Presence gate (decision 10): performances need an audience —
-            // the clause does not FIRE off-stage. Checked before the
-            // condition so an off-stage `one chance in N` never draws the
-            // RNG (AC-5 determinism for on-stage firings) and `, once` is
-            // never consumed unwitnessed. Presence, not sight.
-            if (!this.playerPresentAt(ctx.world, irEntity.id)) return [];
+            // No presence gate (ADR-328 D3): the clause fires wherever the
+            // player is — `, once` and RNG conditions consume off-stage, and
+            // `sourced` below stamps the owner's place so the engine tags
+            // `presence` and the client decides what to show.
             const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
             if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
             const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -3379,11 +3372,11 @@ export class ChordRuntime {
               const worldId = this.host.entityId(irEntity.id);
               const entity = worldId ? ctx.world.getEntity(worldId) : undefined;
               if (!entity?.has(traitType)) continue;
-              // Role gate (ADR-327 D9), then the presence gate (decision 10)
-              // — both before any condition so the RNG stream and `, once`
-              // are untouched off-stage and while the owner is the PC.
+              // Role gate (ADR-327 D9) before any condition, so the RNG
+              // stream and `, once` are untouched while the owner is the PC.
+              // No presence gate (ADR-328 D3): off-stage firings are tagged,
+              // not dropped.
               if (this.holdsPlayerRole(ctx.world, irEntity.id)) continue;
-              if (!this.playerPresentAt(ctx.world, irEntity.id)) continue;
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
@@ -3430,7 +3423,9 @@ export class ChordRuntime {
    * region, anything else its containing room. The engine's enrichment
    * funnel reads the location to tag `presence`; without it the funnel
    * would default both to the player. A value the statement already set
-   * wins.
+   * wins. An owner with no place at all (offstage) has nowhere the player
+   * could be present, so its narration is tagged `absent` here — the
+   * funnel never overwrites a producer-set presence.
    */
   private sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel): ISemanticEvent[] {
     const ownerId = this.host.entityId(ownerIrId);
@@ -3447,6 +3442,9 @@ export class ChordRuntime {
         actor: e.entities?.actor ?? ownerId,
         ...(location !== undefined && e.entities?.location === undefined ? { location } : {}),
       },
+      ...(location === undefined && e.entities?.location === undefined && e.presence === undefined
+        ? { presence: 'absent' as const }
+        : {}),
     }));
   }
 
@@ -3461,14 +3459,6 @@ export class ChordRuntime {
     return this.narrated(this.execStatements(statements, { world }));
   }
 
-  /**
-   * Decision 10 presence semantics: the player shares the owner's location.
-   * A room owner means the player is IN that room; a region owner "is" at
-   * every member room — presence is `isInRegion(player, region)`, transitive
-   * through nesting (ADR-236 D4); for anything else the two share a
-   * containing room (same co-location rule as can-see/can-reach — presence,
-   * not sight, so the snake speaks in darkness).
-   */
   // ---------------------------------------------------------------- timers
 
   /** Wire the engine's turn counter (loader-only; ADR-325 D3f). */
@@ -3556,20 +3546,17 @@ export class ChordRuntime {
       this.writeTimer(def.qualified, world, { ...record, index });
       const state = def.states[index - 1];
       const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-      if (table[`${def.qualified}.${state}`] && this.timerOwnerPresent(def, world)) {
-        out.push(this.phraseEvent(`${def.qualified}.${state}`, { world }));
+      if (table[`${def.qualified}.${state}`]) {
+        // ADR-328 D3: a named turn's prose fires wherever the player is;
+        // an entity owner's place rides the event so it is tagged, not dropped.
+        const spoken = this.phraseEvent(`${def.qualified}.${state}`, { world });
+        out.push(...(def.owner && def.owner !== 'player' ? this.sourced([spoken], def.owner, world) : [spoken]));
       }
       if (def.meanwhile && (def.meanwhile.chance === null || this.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
         out.push(...this.execStatements(def.meanwhile.body, ownerCtx));
       }
     }
     return this.narrated(out);
-  }
-
-  /** A state's prose needs its audience: the owner's room (story/player: always). */
-  private timerOwnerPresent(def: IRTimerDef, world: WorldModel): boolean {
-    if (def.owner === null || def.owner === 'player') return true;
-    return this.playerPresentAt(world, def.owner);
   }
 
   /**
@@ -3585,19 +3572,6 @@ export class ChordRuntime {
   private holdsPlayerRole(world: WorldModel, irEntityId: string): boolean {
     const worldId = this.host.entityId(irEntityId);
     return worldId !== undefined && worldId === world.getPlayer()?.id;
-  }
-
-  private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
-    const ownerId = this.host.entityId(irEntityId);
-    const playerId = world.getPlayer()?.id;
-    if (!ownerId || !playerId) return false;
-    if (ownerId === playerId) return true;
-    const owner = world.getEntity(ownerId);
-    if (owner?.has(TraitType.REGION)) return world.isInRegion(playerId, ownerId);
-    const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
-    if (owner?.has(TraitType.ROOM)) return playerRoom === ownerId;
-    const ownerRoom = world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId);
-    return ownerRoom !== undefined && ownerRoom === playerRoom;
   }
 
   /**
@@ -4044,12 +4018,13 @@ export class ChordRuntime {
   }
 
   /**
-   * Z3: `move` with witnessed-only lifecycle narration (D11). `exited`
-   * fires when the player shares the mover's SOURCE room at the transition
-   * (and the move really changes rooms); `entered` when the player shares
-   * the DESTINATION room after arrival. Unwitnessed transitions narrate
-   * nothing and consume nothing; narration is enqueued, never emitted
-   * inline from the mutation pass. Moving the player itself never narrates.
+   * Z3: `move` with lifecycle narration (D11, as amended by ADR-328 D3).
+   * `exited` fires for the mover's SOURCE room at the transition (when the
+   * move really changes rooms); `entered` for the DESTINATION room after
+   * arrival. Both rows fire wherever the player is, each stamped with its
+   * room; the engine tags `presence` and the client hides what the player
+   * was absent from. Narration is enqueued, never emitted inline from the
+   * mutation pass. Moving the player itself never narrates.
    *
    * @param thingWorldId the moved entity's world id
    * @param placeWorldId the destination's world id
@@ -4090,10 +4065,11 @@ export class ChordRuntime {
   }
 
   /**
-   * Move an entity and enqueue what the player witnessed: `exited` when it
-   * leaves the player's room, `entered` when it arrives, and `disappeared`
-   * (ADR-325 D2, the same row `remove` uses) when it goes offstage from the
-   * player's room. `placeWorldId` null detaches the entity (offstage).
+   * Move an entity and enqueue its lifecycle narration: `exited` for the
+   * room it leaves, `entered` for the room it arrives in, and `disappeared`
+   * (ADR-325 D2, the same row `remove` uses) when it goes offstage — each
+   * tagged by room (ADR-328 D3), none dropped. `placeWorldId` null detaches
+   * the entity (offstage).
    */
   private moveWithLifecycle(thingWorldId: string, placeWorldId: string | null, ctx: ExecContext): void {
     const world = ctx.world;
@@ -4113,7 +4089,15 @@ export class ChordRuntime {
     }
   }
 
-  /** The witnessed `exited`/`entered`/`disappeared` rows for a move (ADR-325 D2, Z3). */
+  /**
+   * The `exited`/`entered`/`disappeared` rows for a move (ADR-325 D2, Z3),
+   * as amended by ADR-328 D3: both rows fire on every room transition,
+   * each stamped with the room it happened in (`exited`/`disappeared` the
+   * source, `entered` the destination) and the mover as actor. The engine
+   * tags `presence` from that room and the client hides what the player
+   * was absent from — the rows are no longer dropped here, so the
+   * `(owner, channel)` Choice counters advance off-stage.
+   */
   private witnessMove(
     thingWorldId: string,
     placeWorldId: string | null,
@@ -4121,20 +4105,22 @@ export class ChordRuntime {
     toRoom: string | undefined,
     world: WorldModel,
   ): void {
-    const playerId = world.getPlayer()?.id;
-    if (!playerId || thingWorldId === playerId) return;
+    if (thingWorldId === world.getPlayer()?.id) return; // the player's own move narrates as travel
     const irId = this.host.irIdOf(thingWorldId);
     if (!irId) return;
     if (fromRoom === toRoom) return; // not a room transition — nothing to witness
-    const playerRoom = roomOfIn(world, playerId);
-    if (playerRoom === undefined) return;
-    if (playerRoom === fromRoom) {
-      const event = this.channelEvent(irId, placeWorldId === null ? 'disappeared' : 'exited', world);
-      if (event) this.enqueueChannelEvent(event);
+    const placed = (event: ISemanticEvent | null, room: string): void => {
+      if (!event) return;
+      this.enqueueChannelEvent({
+        ...event,
+        entities: { ...event.entities, actor: event.entities?.actor ?? thingWorldId, location: room },
+      });
+    };
+    if (fromRoom !== undefined) {
+      placed(this.channelEvent(irId, placeWorldId === null ? 'disappeared' : 'exited', world), fromRoom);
     }
-    if (playerRoom === toRoom) {
-      const event = this.channelEvent(irId, 'entered', world);
-      if (event) this.enqueueChannelEvent(event);
+    if (toRoom !== undefined) {
+      placed(this.channelEvent(irId, 'entered', world), toRoom);
     }
   }
 

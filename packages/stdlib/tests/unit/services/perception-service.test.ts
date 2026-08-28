@@ -42,6 +42,38 @@ describe('PerceptionService', () => {
     world.moveEntity(player.id, litRoom.id);
   });
 
+  describe('filterEvents — absent events pass through (ADR-328 D3)', () => {
+    test('a visual event the player was absent from keeps its tag and is not transformed by darkness', () => {
+      world.moveEntity(player.id, darkRoom.id);
+      const event: ISemanticEvent = {
+        id: 'e1',
+        type: 'if.event.room.description',
+        timestamp: 0,
+        entities: { actor: 'npc', location: litRoom.id },
+        data: { messageId: 'npc.line' },
+        presence: 'absent',
+      };
+      const [out] = service.filterEvents([event], player, world);
+      expect(out).toBe(event);
+      expect(out.presence).toBe('absent');
+      expect(out.type).toBe('if.event.room.description');
+    });
+
+    test('a present visual event in darkness is still transformed (ADR-069 darkness stays a transform)', () => {
+      world.moveEntity(player.id, darkRoom.id);
+      const event: ISemanticEvent = {
+        id: 'e2',
+        type: 'if.event.room.description',
+        timestamp: 0,
+        entities: { actor: 'npc', location: darkRoom.id },
+        data: { messageId: 'npc.line' },
+        presence: 'present',
+      };
+      const [out] = service.filterEvents([event], player, world);
+      expect(out.type).toBe('if.event.perception.blocked');
+    });
+  });
+
   describe('canPerceive', () => {
     test('should return true for sight in a lit room', () => {
       const canSee = service.canPerceive(player, litRoom, world, 'sight');

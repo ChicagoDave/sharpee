@@ -150,6 +150,25 @@ export interface ITextBlock {
      * stories can define their own.
      */
     readonly className?: string;
+    /**
+     * The player's presence relative to where the narrated event happened
+     * (ADR-328 D3). Copied by the prose pipeline from the source event's
+     * `presence` tag; absent on blocks whose event carried no tag (the
+     * player's own actions, system messages). The union mirrors
+     * `@sharpee/core`'s `Presence` verbatim — this package has no
+     * dependencies, so it cannot import it.
+     *
+     * Presentation is the client's: the default renderers hide `absent`
+     * and show `present`/`concealed`; an omniscient client shows all.
+     */
+    readonly presence?: 'present' | 'absent' | 'concealed';
+    /**
+     * The id of the place the narrated event happened in (ADR-328 D3) —
+     * a room or region entity id, from the source event's
+     * `entities.location`. Set only alongside `presence`. A client that
+     * shows off-stage narration labels it by this location.
+     */
+    readonly location?: string;
 }
 /**
  * Core block keys defined by the platform.
