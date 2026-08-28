@@ -129,6 +129,13 @@ client displaying all actor emissions."*)
 The loader's hand-rolled witness channels and legality pre-checks retire onto this path
 as before.
 
+**Amended 2026-08-27 (David, session d6dc2b — plan review).** Three drop sites retire onto
+the tag, not one: the loader's every-turn daemon presence gate (`runtime.ts:3318-3438`),
+`witnessMove` (`runtime.ts:4090`, the `exited`/`entered`/`disappeared` rows), and the
+engine's `processPluginEvents` (`game-engine.ts:2238`), whose `filterEvents` call stops
+dropping and keeps ADR-069's per-sense selection. ADR-213 §Witnessed, ADR-325 D2, ADR-069
+and ADR-070 §Visibility are stamped at the landing.
+
 ### D4. Voice is a rendering property — any actor, any person
 
 Grammatical person is resolved per actor at render time, never authored into template
@@ -143,6 +150,13 @@ agreeing forms before NPC action ships, so one prose model exists from day one a
 interim witness-message dialect is built to be thrown away. The sweep is the program's
 long pole by choice: it leads.
 
+**Amended 2026-08-27 (David, session d6dc2b — plan review).** ADR-089 already built the
+placeholder and conjugation mechanism (49 of 51 action files use it); the residual work is
+per-actor resolution at render time and name substitution for non-player third person, not
+a template sweep. The interim NPC dialect this decision says must not be built already
+exists — `lang-en-us/src/npc/`, 39 `npc.*` messages — and retires with its producers in
+the NpcService dissolution.
+
 ### D5. The character layer's output is the pipeline
 
 The arbiter's chosen act (ADR-310/318) becomes an `(action, actorId)` invocation —
@@ -152,6 +166,13 @@ the decision layer; its execution half is **deleted, not adapted** (Q-1 resolved
 2026-08-25, David: "dissolve — we don't keep compatibility layers"). No `NpcAction`
 shim survives; behaviors emit `(action, actorId)` invocations directly. One execution
 path with no named exceptions.
+
+**Amended 2026-08-27 (David, session d6dc2b — plan review).** The engine owns the per-turn
+actor tick (`CLAUDE.md:77`). `plugin-npc` dissolves outright; what `NpcPlugin.onAfterAction`
+drove — `npcService.tick`, `onPlayerEnters`/`onPlayerLeaves`, the ADR-310 `actionEvents`
+and ADR-320 `emitSound` feeds, behavior-state save/restore — becomes an engine-owned actor
+turn phase calling the surviving decision surface, and ADR-120's plugin priority ordering
+becomes engine sequencing.
 
 ### D6. Dungeo rewrites its five NPCs, and the chain re-pins by design
 
