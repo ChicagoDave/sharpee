@@ -245,6 +245,7 @@ end phrase`));
     const context: any = {
       world,
       player,
+      actor: player,
       action: turningAction,
       command: {
         directObject: { entity: crank }
@@ -280,6 +281,7 @@ end phrase`));
     const context: any = {
       world,
       player,
+      actor: player,
       action: turningAction,
       command: { directObject: { entity: statue } },
       sharedData: {},

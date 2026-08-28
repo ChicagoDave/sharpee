@@ -52,6 +52,7 @@ function attack(world: WorldModel, player: IFEntity, target: IFEntity): ISemanti
   const context: any = {
     world,
     player,
+    actor: player,
     random: new EngineRandomService(7),
     action: attackingAction,
     currentLocation: world.getContainingRoom(player.id),

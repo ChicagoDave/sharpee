@@ -96,6 +96,7 @@ describe('entity-scoped refusal key resolution (ADR-231 D1)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: takingAction,
       command: {
         directObject: { entity: ring },
@@ -190,6 +191,7 @@ function takeContextFor(world: WorldModel, player: IFEntity, target: IFEntity): 
   return {
     world,
     player,
+    actor: player,
     action: takingAction,
     command: {
       directObject: { entity: target },

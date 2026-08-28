@@ -171,6 +171,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,
@@ -342,6 +343,7 @@ describe('AC12 — mid-scene save/restore through the real SaveRestoreService', 
         ({
           currentTurn: 6,
           player: l.player,
+          actor: l.player,
           history: [],
           metadata: { started: new Date() },
         }) as unknown as GameContext,

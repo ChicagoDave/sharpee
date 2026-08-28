@@ -84,6 +84,26 @@ actor and nothing else changes shape. `CommandExecutor`'s dormant `actorId` beco
 live; the 126 `context.player` reads across 49 standard-action files become reads of the
 command's actor.
 
+> **Amendment (2026-08-28, session f6b1e5 — Phase 3 shipped).** Two corrections and the
+> shape as built. (1) There was no dormant executor `actorId` option: the field the
+> 2026-08-25 citation pointed at is `BeforeActionHookData.actorId`, the pre-action hook's
+> payload, filled from the player. The actor had to be introduced, and the seam is
+> `ActionContext`, not the executor — both context factories baked the player into
+> `currentLocation`, every scope helper, `event()`'s `entities.actor`, and `emitSound`.
+> (2) The reads do not *become* actor reads by rename: `ActionContext` now carries both
+> `actor` (who is acting; every actor-relative helper derives from it) and `player` (the
+> player, read only when the logic is genuinely about the player — scoring, second-person
+> phrasing). Phase 4's sweep decides per read which of the 126 is which. As built:
+> `CommandExecutor.executeAsActor({ actionId, actorId, directObject?, indirectObject?,
+> instrument? })` skips parse/transformers/CommandValidator and runs the same private
+> `runPhases` as `execute()`, so the pre-action hook, capability dispatch, the four phases,
+> and entity-handler reactions are one path; `TurnResult.actorId` names who acted; the
+> parser's world-context set stays player-bound because parsing is player-only by
+> construction. Pilot action: `taking`, including the ADR-228 lifecycle engine it consults —
+> the actor-consultation slot (ADR-327 D1) and every interceptor hook's `actorId` are the
+> command's actor, so an interceptor keyed on an NPC fires for that NPC and is told so.
+> Real path: `packages/engine/tests/execute-as-actor.test.ts`.
+
 ### D3. Perception tags what the player witnesses — the client decides what to show
 
 **Amended 2026-08-26 (David, session 1f4b9f).** As accepted, this decision read "an

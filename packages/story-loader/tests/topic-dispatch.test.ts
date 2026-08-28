@@ -66,6 +66,7 @@ function makeContext(l: Loaded, action: { id: string }, command: Record<string, 
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,

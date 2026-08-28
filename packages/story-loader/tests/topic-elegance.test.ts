@@ -40,6 +40,7 @@ describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
       const context: any = {
         world,
         player,
+        actor: player,
         action: askingAction,
         currentLocation: world.getContainingRoom(player.id)!,
         command: { directObject: { entity: keeper }, topic },

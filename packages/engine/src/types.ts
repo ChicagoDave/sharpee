@@ -113,6 +113,13 @@ export interface TurnResult {
    * The action ID that was executed (if any)
    */
   actionId?: string;
+
+  /**
+   * The entity that performed the action (ADR-328 D1) — the player for a
+   * parser-driven turn, the named actor for `CommandExecutor.executeAsActor`.
+   * Absent only when the command failed before an actor was resolved.
+   */
+  actorId?: string;
   
   /**
    * The parsed command (if successfully parsed)

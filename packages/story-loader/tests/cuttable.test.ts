@@ -239,6 +239,7 @@ end phrase`);
     const context: any = {
       world,
       player,
+      actor: player,
       action: cuttingAction,
       command: {
         directObject: { entity: rope },

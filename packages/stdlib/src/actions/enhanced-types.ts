@@ -108,14 +108,28 @@ export interface ActionContext {
    * Read-only access to the world model
    */
   readonly world: WorldModel;
-  
+
   /**
-   * The player entity
+   * The entity performing this action (ADR-328 D1).
+   *
+   * Every actor-relative helper on this context — `currentLocation`, the
+   * scope checks, `event()`'s `entities.actor`, `emitSound`'s source — is
+   * computed from this entity. For parser-driven commands it is the player;
+   * for the programmatic entry (`CommandExecutor.executeAsActor`, ADR-328
+   * D2) it is whichever actor the caller named.
+   */
+  readonly actor: IFEntity;
+
+  /**
+   * The player entity. Equal to `actor` for parser-driven commands; distinct
+   * when a non-player actor is acting. Read this only when the logic is
+   * genuinely about the player (scoring, second-person phrasing), never as a
+   * stand-in for "who is acting" — that is `actor`.
    */
   readonly player: IFEntity;
-  
+
   /**
-   * The player's current location
+   * The actor's current location
    */
   readonly currentLocation: IFEntity;
   

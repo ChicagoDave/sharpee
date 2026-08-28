@@ -47,6 +47,7 @@ describe('locked-door-and-key vignette (ADR-234 elegance parity)', () => {
       const context: any = {
         world,
         player,
+        actor: player,
         action,
         currentLocation: world.getContainingRoom(player.id)!,
         command,

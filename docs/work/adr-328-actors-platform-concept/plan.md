@@ -405,7 +405,34 @@ ADR's own text implies).
   actor's id when it can.
 - **Exit state**: `pnpm --filter '@sharpee/engine' run test:ci` green with new entry coverage. The
   entry exists and is exercised by one pilot action; the remaining 53 files are Phase 4.
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session f6b1e5). Evidence: `ActionContext.actor` added
+  (stdlib `enhanced-types.ts`; `player` stays the player); both context factories
+  (`stdlib/src/actions/enhanced-context.ts`, `engine/src/action-context-factory.ts`) take an
+  `actor` defaulting to the player and derive `currentLocation`, every scope helper, `event()`'s
+  `entities.actor/location`, `emitSound`'s source, and the implicit-take sub-context from it.
+  `CommandExecutor.executeAsActor(ActorCommand)` (`command-executor.ts`) and `execute()` share one
+  private `runPhases(command, actor, …)`; `TurnResult.actorId` added; hook `actorId` and the
+  ADR-104 inference scope read the actor. Correction to the domain-focus line above: `:50` was
+  `BeforeActionHookData.actorId`, not an executor option — there was nothing dormant to make
+  live; and the parser world-context read (`:188`) stays player-bound because it is on the parse
+  half, which is player-only by construction. Pilot: `taking.ts` reads `context.actor` (4 sites),
+  and the lifecycle engine it consults (`stdlib/src/actions/lifecycle/lifecycle-engine.ts`, 6
+  sites — the actor-consultation slot and every interceptor hook's `actorId`) flipped to
+  `context.actor` after mutation-verification showed an NPC's take would still consult and
+  inform interceptors as the player.
+  REAL-PATH: `packages/engine/tests/execute-as-actor.test.ts` (11 tests) through the real
+  `CommandExecutor`/`StandardActionRegistry`/`EventProcessor`/`EngineRandomService` — NPC take
+  moves the lamp into the NPC (`world.getLocation`), `entities.actor` and `data.actorId` are the
+  NPC, real scope rejection when the NPC is in another room, real `SceneryTrait` rejection, hook
+  `actorId`, an item interceptor vetoing by `actorId` and told the NPC (then the player), the
+  ADR-327 D1 actor-consultation slot consulting the acting NPC and not the player, unknown
+  actor/action → `command.failed` with no mutation, parser baseline unchanged.
+  Runs 2026-08-28 04:04–04:07 CDT after the last source edit (the lifecycle flip):
+  `./repokit build dungeo` green; root `npx tsc --noEmit` clean; engine 670 passing (7
+  pre-existing skips); stdlib 1651 passing (27 pre-existing skips); story-loader 963 passing
+  (thirteen hand-rolled `context: any` fixtures gained `actor: player`); character 570 passing;
+  Dungeo chain 952 passing; presence-test transcripts passing. Not done here by design: a `GameEngine` wrapper (Phase 5's NpcService
+  design decides how an NPC action folds into the turn).
 
 ### Phase 4: D2b — Actor threading across the standard-action library (mechanical sweep)
 - **Tier**: Large
@@ -417,6 +444,14 @@ ADR's own text implies).
 - **Child artifact**: this plan.
 - **Entry state**: Phase 3 shipped (the entry exists and threads an actor end-to-end for at
   least one action — this phase repeats that pattern 53 more times).
+  Carried from Phase 3's mutation-verification (2026-08-28): two shared reads the pilot did not
+  reach and this sweep must — `stdlib/src/helpers/multi-object-handler.ts` (`expandMultiObject`/
+  `expandAll`/`expandList` build the candidate set from `context.player`'s scope, so an NPC's
+  "take all" filters the wrong room) and a test gap for the engine factory's `emitSound` source
+  and implicit-take sub-context under a non-player actor (both thread `actor`; no test drives
+  them with one). Also: thirteen story-loader test fixtures hand-roll `context: any` and now
+  carry `actor: player` — a sweep that reaches an action they drive needs nothing more, but any
+  new hand-rolled fixture must include `actor`.
 - **Deliverable**: every `context.player`/`getPlayer()` read in `packages/stdlib/src/actions`
   becomes a read of the command's actor. Mechanical per action, but every touched file is
   regression-gated by the Dungeo walkthrough chain, which is still player-only at this point
@@ -430,7 +465,7 @@ ADR's own text implies).
   (after `./repokit build dungeo`) unchanged at 952/17 — any diff here is a defect, not a
   re-pin, since nothing about NPC execution has landed yet. **ADR-327's AC-2 and AC-5 go
   green** through this phase (its Phase 6 unblocks); **ADR-328 Acceptance item 3 is satisfied**.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 5: D5 — NpcService's decision/execution split; `plugin-npc` dissolves
 - **Tier**: Large

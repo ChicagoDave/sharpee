@@ -104,11 +104,24 @@ export interface ActionContext {
      */
     readonly world: WorldModel;
     /**
-     * The player entity
+     * The entity performing this action (ADR-328 D1).
+     *
+     * Every actor-relative helper on this context — `currentLocation`, the
+     * scope checks, `event()`'s `entities.actor`, `emitSound`'s source — is
+     * computed from this entity. For parser-driven commands it is the player;
+     * for the programmatic entry (`CommandExecutor.executeAsActor`, ADR-328
+     * D2) it is whichever actor the caller named.
+     */
+    readonly actor: IFEntity;
+    /**
+     * The player entity. Equal to `actor` for parser-driven commands; distinct
+     * when a non-player actor is acting. Read this only when the logic is
+     * genuinely about the player (scoring, second-person phrasing), never as a
+     * stand-in for "who is acting" — that is `actor`.
      */
     readonly player: IFEntity;
     /**
-     * The player's current location
+     * The actor's current location
      */
     readonly currentLocation: IFEntity;
     /**
@@ -767,9 +780,13 @@ import { ValidatedCommand } from '../validation/types.js';
 /**
  * Factory function to create unified action context
  *
- * Phase 2: Factory pattern implementation
+ * @param actor The entity performing the action (ADR-328 D1). Defaults to
+ *              `player`, so parser-driven and test contexts are unchanged;
+ *              pass a non-player actor to run the action as that entity.
+ *              `currentLocation` is the actor's immediate location.
+ * @throws when the actor has no location in the world
  */
-export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, random: RandomService, scopeResolver?: ScopeResolver): ActionContext;
+export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, random: RandomService, scopeResolver?: ScopeResolver, actor?: IFEntity): ActionContext;
 /**
  * Helper to create a mock action context for testing
  */
@@ -1717,7 +1734,7 @@ export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
 ```
 
 ### actions/author/trace

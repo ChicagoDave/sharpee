@@ -103,6 +103,12 @@ export interface TurnResult {
      */
     actionId?: string;
     /**
+     * The entity that performed the action (ADR-328 D1) — the player for a
+     * parser-driven turn, the named actor for `CommandExecutor.executeAsActor`.
+     * Absent only when the command failed before an actor was resolved.
+     */
+    actorId?: string;
+    /**
      * The parsed command (if successfully parsed)
      */
     parsedCommand?: IParsedCommand;
@@ -714,10 +720,17 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  * - Pass results between phases
  * - Return the final TurnResult
  *
+ * Two entries, one path (ADR-328 D1/D2): `execute(input, …)` parses and
+ * validates typed input as the player; `executeAsActor(request, …)` takes an
+ * already-resolved command and a named actor. Both hand a `ValidatedCommand`
+ * and an actor to the same private `runPhases`, so capability dispatch, the
+ * pre-action hook, the four phases, and entity-handler reactions are
+ * identical whoever acts.
+ *
  * All event creation is owned by the action components themselves.
  */
 import { type ISystemEvent, type IGenericEventSource, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError } from '@sharpee/world-model';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -754,6 +767,25 @@ export type BeforeActionHookListener = (data: BeforeActionHookData, world: World
  * @returns The (potentially modified) parsed command
  */
 export type ParsedCommandTransformer = (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
+/**
+ * A resolved command for the programmatic entry (ADR-328 D2): the action to
+ * run, who runs it, and the entities already chosen for each slot. There is
+ * no parser step, so there is nothing to disambiguate — the caller has
+ * decided. Scope and every other actor-relative check still run in the
+ * action's own `validate()`.
+ */
+export interface ActorCommand {
+    /** The action id to run, e.g. `if.action.taking` */
+    actionId: string;
+    /** The entity performing the action */
+    actorId: string;
+    /** Direct object, if the action takes one */
+    directObject?: IFEntity;
+    /** Indirect object, if the action takes one */
+    indirectObject?: IFEntity;
+    /** Instrument (ADR-080), if the action takes one */
+    instrument?: IFEntity;
+}
 export declare class CommandExecutor {
     private parser;
     private validator;
@@ -804,7 +836,50 @@ export declare class CommandExecutor {
      * Emit the pre-action hook to all registered listeners.
      */
     private emitBeforeAction;
+    /**
+     * Execute typed input as the player: parse → transform → validate → the
+     * shared four-phase path (`runPhases`).
+     *
+     * @param input - The raw command text
+     * @param world - The world model
+     * @param context - Turn context (current turn, player, config)
+     * @param config - Engine config (timing collection)
+     * @param soundBuffer - The per-turn sound buffer (ADR-172)
+     * @returns The turn result; never throws — failures come back as a
+     *          `command.failed` event with `success: false`
+     */
     execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): Promise<TurnResult>;
+    /**
+     * Execute an already-resolved command as the named actor (ADR-328 D2).
+     *
+     * Skips parse, the parsed-command transformers, and the CommandValidator —
+     * the caller has chosen the entities — and runs everything after: the
+     * pre-action hook, capability dispatch, validate → execute → report |
+     * blocked, and entity-handler reactions. The action's own `validate()`
+     * still performs every actor-relative check (scope, capacity, traits,
+     * interceptors) against the named actor. Synchronous: nothing inside the
+     * four phases awaits.
+     *
+     * @param request - Action id, actor id, and resolved slot entities
+     * @param world - The world model
+     * @param context - Turn context (current turn, player, config)
+     * @param config - Engine config (timing collection)
+     * @param soundBuffer - The per-turn sound buffer (ADR-172)
+     * @returns The turn result with `actorId` set to the request's actor;
+     *          never throws — an unknown actor or action comes back as a
+     *          `command.failed` event with `success: false`
+     */
+    executeAsActor(request: ActorCommand, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): TurnResult;
+    /**
+     * The one four-phase path (ADR-328 D1). Both entries land here with a
+     * validated command and the entity acting; nothing below reads the
+     * player except through `actor`.
+     */
+    private runPhases;
+    /**
+     * Build the failure result both entries return instead of throwing.
+     */
+    private failedResult;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;
 ```

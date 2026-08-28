@@ -83,6 +83,7 @@ describe('use combat through the real loader (ADR-215 AC-1/AC-3)', () => {
       const context: any = {
         world,
         player,
+        actor: player,
         random,
         action: attackingAction,
         currentLocation: world.getContainingRoom(player.id),

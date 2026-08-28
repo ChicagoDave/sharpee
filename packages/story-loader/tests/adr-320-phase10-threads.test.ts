@@ -182,6 +182,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,
@@ -681,6 +682,7 @@ describe('AC14 (persistence leg, Phase 10.6) — the real SaveRestoreService rou
         ({
           currentTurn: 6,
           player: l.player,
+          actor: l.player,
           history: [],
           metadata: { started: new Date() },
         }) as unknown as GameContext,

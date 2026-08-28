@@ -166,9 +166,10 @@ export function resolveLifecycle(
   // consulted last under the actor-consultation key — a clause "when this
   // character does X, to anything" has no target entity to hang on, so the
   // actor itself carries the interceptor, registered for that purpose.
-  // Today the actor is the player; ADR-328 D2 makes this the command's
-  // actor (the one line that flips).
-  const actor = context.player;
+  // ADR-328 D2 (flipped 2026-08-28): the command's actor, not the player —
+  // a non-player actor running through `executeAsActor` carries its own
+  // interceptor here, and every hook below is told the same actor.
+  const actor = context.actor;
   if (actor) {
     const actorActionId = actorConsultationId(descriptor.actionId);
     const lookup = context.world.getInterceptorForAction(actor, actorActionId);
@@ -253,7 +254,7 @@ export function runPreValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.preValidate) continue;
     const veto = vetoOf(
-      c.interceptor.preValidate(c.entity, context.world, context.player.id, c.data, context.random)
+      c.interceptor.preValidate(c.entity, context.world, context.actor.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -276,7 +277,7 @@ export function runPostValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.postValidate) continue;
     const veto = vetoOf(
-      c.interceptor.postValidate(c.entity, context.world, context.player.id, c.data, context.random)
+      c.interceptor.postValidate(c.entity, context.world, context.actor.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -296,7 +297,7 @@ export function runPostValidate(
  */
 export function runPostExecute(context: ActionContext, state: LifecycleState): void {
   for (const c of state.consultations) {
-    c.interceptor.postExecute?.(c.entity, context.world, context.player.id, c.data, context.random);
+    c.interceptor.postExecute?.(c.entity, context.world, context.actor.id, c.data, context.random);
   }
 }
 
@@ -326,7 +327,7 @@ export function runPostReport(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.postReport) continue;
-    const result = c.interceptor.postReport(c.entity, context.world, context.player.id, c.data, context.random);
+    const result = c.interceptor.postReport(c.entity, context.world, context.actor.id, c.data, context.random);
     if (!result) continue;
     if (result.override) {
       if (overrideSeen) {
@@ -372,7 +373,7 @@ export function runOnBlocked(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.onBlocked) continue;
-    const result = c.interceptor.onBlocked(c.entity, context.world, context.player.id, error, c.data, context.random);
+    const result = c.interceptor.onBlocked(c.entity, context.world, context.actor.id, error, c.data, context.random);
     if (!result) continue;
     if (result.override) {
       if (overrideSeen) {
