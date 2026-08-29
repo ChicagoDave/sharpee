@@ -21,7 +21,9 @@
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import {
+  ActStmt,
   ActionPattern,
   ActionRefusal,
   AwardStmt,
@@ -170,6 +172,42 @@ import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+
+/**
+ * The inflections a written verb may stand for (ADR-329 D1/Q-1: the author
+ * writes whichever form reads right; matching is on the lemma). `takes` →
+ * `take`, `goes` → `go`, `carries` → `carry`; the word itself always counts.
+ */
+function verbLemmas(word: string): Set<string> {
+  const w = word.toLowerCase();
+  const out = new Set([w]);
+  if (w.endsWith('ies') && w.length > 4) out.add(`${w.slice(0, -3)}y`);
+  if (w.endsWith('es') && w.length > 3) out.add(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 2) out.add(w.slice(0, -1));
+  return out;
+}
+
+/**
+ * The verbs that open a standard grammar shape (`take :item`, `give :item to
+ * :recipient`, `go north`) — the parser's admission test for a name-led acting
+ * statement. Built once from the manifest; bare-direction shapes (`north`) and
+ * every other one-word shape are excluded, because `the guards north` is not a
+ * sentence. Story-defined verbs join per file (see `storyVerbLexicon`).
+ */
+let actVerbLexicon: Set<string> | null = null;
+function stdlibActVerbs(): Set<string> {
+  if (actVerbLexicon) return actVerbLexicon;
+  const out = new Set<string>();
+  for (const shapes of Object.values(STDLIB_MANIFEST.locales['en-US'].grammarShapes)) {
+    for (const shape of shapes) {
+      const parts = shape.split(' ');
+      if (parts.length < 2 || parts[0].startsWith(':')) continue;
+      out.add(parts[0]);
+    }
+  }
+  actVerbLexicon = out;
+  return out;
+}
 /** The landing-list strategy words (ADR-325 D5) — rejected after `a random adjacent room` (ADR-326 D1). */
 const STRATEGY_WORDS = new Set(['randomly', 'cycling', 'stopping']);
 // ADR-298 D4: the structural test for a header prose value being a phrase
@@ -5504,7 +5542,12 @@ class Parser {
       }
     }
 
-    const body = this.parseStatements(headLine.indent, clauseKind);
+    // ADR-329 D3: an every-turn body is a turn-phase site where a character
+    // may act; an intercept body is not. The statement parser sees the
+    // difference through the body kind it is handed.
+    const body = binding === 'every-turn'
+      ? this.parseStatements(headLine.indent, 'every-turn', 'on every turn')
+      : this.parseStatements(headLine.indent, clauseKind);
     const endSpan = this.consumeEnd(clauseKind, headLine);
 
     return {
@@ -7127,7 +7170,12 @@ class Parser {
         return this.parseSelect(line, blockKeyword);
       case 'each':
         return this.parseEachBlock(line, blockKeyword);
-      default:
+      default: {
+        // ADR-329 D1: a name-led line whose later words include an action
+        // verb is an acting statement candidate — `the guards take the
+        // sword`. Anything else stays the unknown statement it always was.
+        const act = this.tryParseActStatement(line, blockKeyword);
+        if (act) return act;
         this.diagnostics.error(
           'parse.unknown-statement',
           `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockName}\` block.${this.misparseHint(line)}`,
@@ -7135,7 +7183,82 @@ class Parser {
         );
         this.pos++;
         return null;
+      }
     }
+  }
+
+  /**
+   * ADR-329 D1: admit `<actor> <verb> …` as an acting statement when the line
+   * is all words (a `when` suffix aside) and some word after the first lemma-
+   * matches a verb that opens a standard shape or one of this file's own
+   * `define action`/`extend action` grammar lines. The words are carried raw:
+   * only the analyzer knows the story's entities, so only it can split the
+   * actor from the verb. Returns null — and consumes nothing — when the line
+   * is not a candidate.
+   */
+  private tryParseActStatement(line: Line, blockKeyword: string): ActStmt | null {
+    const tokens = line.tokens;
+    if (tokens.length < 2 || tokens[0].kind !== 'word') return null;
+    let whenIndex = tokens.length;
+    for (let i = 2; i < tokens.length; i++) {
+      if (tokens[i].kind === 'word' && tokens[i].text === 'when') { whenIndex = i; break; }
+    }
+    const words = tokens.slice(0, whenIndex);
+    if (words.length < 2) return null;
+    if (!words.every((t) => t.kind === 'word' || t.kind === 'number')) return null;
+    const lexicon = stdlibActVerbs();
+    const story = this.storyVerbLexicon();
+    const hasVerb = words.slice(1).some((t) => {
+      for (const lemma of verbLemmas(t.text)) if (lexicon.has(lemma) || story.has(lemma)) return true;
+      return false;
+    });
+    if (!hasVerb) return null;
+    this.pos++;
+    const c = new Cursor(tokens, line);
+    c.i = whenIndex;
+    const stmtWhen = this.parseStatementWhen(c, line);
+    return {
+      kind: 'act',
+      words: words.map((t) => ({ text: t.text, span: t.span })),
+      bodyKind: blockKeyword,
+      stmtWhen,
+      span: lineSpan(line),
+    };
+  }
+
+  private storyVerbs: Set<string> | null = null;
+
+  /**
+   * The verbs this file's own `define action` / `extend action` grammar lines
+   * open with — scanned once, structurally: an indent-0 `define action` or
+   * `extend action` line, then the first word of every line deeper than its
+   * `grammar` line until the block ends. A heuristic for admission only; the
+   * analyzer matches the real shapes.
+   */
+  private storyVerbLexicon(): Set<string> {
+    if (this.storyVerbs) return this.storyVerbs;
+    const out = new Set<string>();
+    let inAction = false;
+    let grammarIndent: number | null = null;
+    for (const line of this.lines) {
+      const first = line.tokens[0];
+      if (line.indent === 0) {
+        inAction = first?.kind === 'word' && (first.text === 'define' || first.text === 'extend')
+          && line.tokens[1]?.kind === 'word' && line.tokens[1].text === 'action';
+        grammarIndent = null;
+        continue;
+      }
+      if (!inAction || !first) continue;
+      if (first.kind === 'word' && first.text === 'grammar' && line.tokens.length === 1) {
+        grammarIndent = line.indent;
+        continue;
+      }
+      if (grammarIndent === null) continue;
+      if (line.indent <= grammarIndent) { grammarIndent = null; continue; }
+      if (first.kind === 'word') out.add(first.text.toLowerCase());
+    }
+    this.storyVerbs = out;
+    return out;
   }
 
   /** The statement `when <condition>` suffix (ratchet D7); null when absent. */

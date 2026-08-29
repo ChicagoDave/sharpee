@@ -27,6 +27,9 @@ function generateEventId(): string {
   return `evt_${Date.now()}_${(++eventCounter).toString(36)}`;
 }
 
+/** A story handler that threw while reacting to an applied event (`ProcessedEvents.failed` entry). */
+type HandlerFailure = { event: ISemanticEvent; reason: string };
+
 export class EventProcessor {
   private world: WorldModel;
   private options: Required<ProcessorOptions>;
@@ -95,6 +98,7 @@ export class EventProcessor {
     // Process each event
     for (const event of events) {
       const processed = this.processSingleEvent(event);
+      if (processed.failures) results.failed.push(...processed.failures);
       
       if (processed.success) {
         results.applied.push(event);
@@ -130,6 +134,8 @@ export class EventProcessor {
     reason?: string;
     changes: WorldChange[];
     reactions?: ISemanticEvent[];
+    /** Story handlers that threw while reacting to this (applied) event. */
+    failures?: HandlerFailure[];
   } {
     // Validate if required
     if (this.options.validate) {
@@ -153,12 +159,13 @@ export class EventProcessor {
       this.world.applyEvent(event);
 
       // Invoke entity handlers (ADR-052)
-      const reactions = this.invokeEntityHandlers(event);
+      const { reactions, failures } = this.invokeEntityHandlers(event);
 
       return {
         success: true,
         changes,
-        reactions
+        reactions,
+        failures
       };
     } catch (error) {
       return {
@@ -192,6 +199,7 @@ export class EventProcessor {
     // Process each reaction
     for (const reaction of reactions) {
       const processed = this.processSingleEvent(reaction);
+      if (processed.failures) results.failed.push(...processed.failures);
       
       if (processed.success) {
         results.applied.push(reaction);
@@ -226,9 +234,10 @@ export class EventProcessor {
    * Collects effects from all story-level handlers and processes them
    * through EffectProcessor. Entity `on` handlers were removed in ISSUE-068.
    */
-  private invokeEntityHandlers(event: ISemanticEvent): ISemanticEvent[] {
+  private invokeEntityHandlers(event: ISemanticEvent): { reactions: ISemanticEvent[]; failures: HandlerFailure[] } {
     const allEffects: Effect[] = [];
     const legacyReactions: ISemanticEvent[] = [];
+    const failures: HandlerFailure[] = [];
 
     // Convert to IGameEvent for handlers
     const gameEvent: IGameEvent = {
@@ -246,10 +255,17 @@ export class EventProcessor {
             allEffects.push(...effects);
           }
         } catch (error) {
-          console.error(
-            `Story handler error for ${event.type}:`,
-            error instanceof Error ? error.message : error
-          );
+          // A handler that threw is a failed reaction to a fact the world has
+          // already applied. It joins `ProcessedEvents.failed` — the contract
+          // field for exactly this — so the caller can surface it (the
+          // executor reports it as `command.failed`); a log line reached no
+          // author and no player. Found 2026-08-29 (ADR-329 Phase 9b): the
+          // loader's `runtime.*` diagnostics raised from a chain-fired clause
+          // vanished here.
+          failures.push({
+            event,
+            reason: error instanceof Error ? error.message : String(error),
+          });
         }
       }
     }
@@ -343,7 +359,10 @@ export class EventProcessor {
     }
 
     // Return reactions (overrides consumed; phrase emissions kept as events)
-    return filteredReactions;
+    // and the handlers that threw — carried as data, never instance state,
+    // because effect emission re-enters `processEvents` (the constructor's
+    // emit callback) and a shared buffer would be drained by the inner call.
+    return { reactions: filteredReactions, failures };
   }
 
   /**

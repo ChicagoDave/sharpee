@@ -41,6 +41,8 @@ import {
   PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
   type INpcService,
+  type ActSlots,
+  type ActResult,
 } from '@sharpee/stdlib';
 import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
@@ -369,16 +371,7 @@ export class GameEngine {
     // ADR-328 D5: the engine owns the actor turn phase. Its execution entry
     // is this executor, curried over the live world and turn context, so a
     // behavior's chosen act runs the same four phases a typed command does.
-    this.actorTurnPlugin = new ActorTurnPlugin((actorId, actionId, slots) => {
-      const result = this.commandExecutor.executeAsActor(
-        { actionId, actorId, ...slots },
-        this.world,
-        this.context,
-        this.config,
-        this.soundBuffer,
-      );
-      return { success: result.success && !result.refused && !wasRefused(result.events), events: result.events };
-    });
+    this.actorTurnPlugin = new ActorTurnPlugin((actorId, actionId, slots) => this.executeAsActor(actorId, actionId, slots));
     this.pluginRegistry.register(this.actorTurnPlugin);
 
     // ADR-224: auto-register the deadly-room death transformer so every story
@@ -1918,6 +1911,31 @@ export class GameEngine {
    */
   getNpcService(): INpcService {
     return this.actorTurnPlugin.getNpcService();
+  }
+
+  /**
+   * The execution entry (ADR-328 D2; ADR-329 D4): perform one standard or
+   * story action NOW as `actorId`, through the same four phases a typed
+   * command runs — validate, interceptors, capability dispatch, report —
+   * over the live world and turn context. The engine's own actor turn phase
+   * and a Chord acting statement both come through here; there is no other
+   * door. Runs synchronously; the world has changed (or the action was
+   * refused) by the time it returns.
+   *
+   * @param actorId - The entity performing the action
+   * @param actionId - A standard (`if.action.taking`) or story action id
+   * @param slots - The entities and direction the action operates on
+   * @returns Whether the action ran (false when refused) and every event it emitted
+   */
+  executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult {
+    const result = this.commandExecutor.executeAsActor(
+      { actionId, actorId, ...slots },
+      this.world,
+      this.context,
+      this.config,
+      this.soundBuffer,
+    );
+    return { success: result.success && !result.refused && !wasRefused(result.events), events: result.events };
   }
 
   /**

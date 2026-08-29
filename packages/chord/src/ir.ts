@@ -1438,6 +1438,15 @@ export type IRStatement =
   /** `change feeling toward <entity> to <disposition>` (ADR-310 D3) — `it` feels differently about the target. */
   | { kind: 'change-feeling'; target: IRValue; disposition: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `<actor> <verb> …` (ADR-329 D1): one standard or story action performed
+   * NOW as `actor` through the engine's execution entry. `action` is the bare
+   * name as clause heads carry it (`taking` — story-first at load, else
+   * `if.action.<name>`); `shape` is the matched grammar shape (`give :item to
+   * :recipient`); `slots` binds each shape slot in order. A `going` shape's
+   * literal direction arrives as a `direction` slot with a literal value.
+   */
+  | { kind: 'act'; actor: IRValue; action: string; shape: string; slots: Array<{ slot: string; value: IRValue }>; stmtWhen?: IRCondition | null; span: Span }
   /** `remove <entity>` (Z6, ADR-213 Q3) — out of play via `world.removeEntity`; observers fire. */
   | { kind: 'remove'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }

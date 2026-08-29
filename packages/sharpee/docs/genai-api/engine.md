@@ -1268,7 +1268,7 @@ export interface EngineSharedData {
  */
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { type Parser, type IPerceptionService, type INpcService } from '@sharpee/stdlib';
+import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock } from '@sharpee/text-blocks';
@@ -1603,6 +1603,21 @@ export declare class GameEngine {
      * behaviors and tick phases the engine's actor turn phase drives.
      */
     getNpcService(): INpcService;
+    /**
+     * The execution entry (ADR-328 D2; ADR-329 D4): perform one standard or
+     * story action NOW as `actorId`, through the same four phases a typed
+     * command runs — validate, interceptors, capability dispatch, report —
+     * over the live world and turn context. The engine's own actor turn phase
+     * and a Chord acting statement both come through here; there is no other
+     * door. Runs synchronously; the world has changed (or the action was
+     * refused) by the time it returns.
+     *
+     * @param actorId - The entity performing the action
+     * @param actionId - A standard (`if.action.taking`) or story action id
+     * @param slots - The entities and direction the action operates on
+     * @returns Whether the action ran (false when refused) and every event it emitted
+     */
+    executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult;
     /**
      * The negotiated client capabilities for this session (ADR-216): the
      * `client has <capability>` predicate reads these live, and channel

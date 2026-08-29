@@ -19,6 +19,8 @@
  * - Diagnostics gate the load (atomic): callers must check hasErrors().
  */
 import {
+  ActStmt,
+  ActionPattern,
   CompositionItem,
   ConditionNode,
   CreateDecl,
@@ -144,7 +146,7 @@ import {
   IRStoryFields,
   StoryIR,
 } from './ir.js';
-import { Span, spanOf } from './span.js';
+import { mergeSpans, Span, spanOf } from './span.js';
 
 /**
  * The `story` block's opening keyword. Its length is how far a header-level
@@ -610,6 +612,81 @@ interface PhaseOrderState {
 }
 
 /** The source keyword a statement was written with, for phase-order messages. */
+/** Leading articles an acting statement's names may carry (ADR-329 D1). */
+const ACT_ARTICLES = new Set(['the', 'a', 'an']);
+
+/**
+ * The manifest's going shapes spell directions both long and short (`go
+ * north`, `go n`, `go inside`); the IR carries the canonical word the loader's
+ * direction lookup expects (`north`, `in`).
+ */
+const ACT_DIRECTION_CANONICAL: Record<string, string> = {
+  n: 'north', s: 'south', e: 'east', w: 'west',
+  ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest',
+  u: 'up', d: 'down', inside: 'in', outside: 'out',
+};
+
+/** The inflections a written verb may stand for (ADR-329 D1/Q-1) — mirrors the parser's admission test. */
+function verbLemmas(word: string): Set<string> {
+  const w = word.toLowerCase();
+  const out = new Set([w]);
+  if (w.endsWith('ies') && w.length > 4) out.add(`${w.slice(0, -3)}y`);
+  if (w.endsWith('es') && w.length > 3) out.add(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 2) out.add(w.slice(0, -1));
+  return out;
+}
+
+/**
+ * Render a story action pattern as manifest-style shapes (`kick :target`),
+ * expanding optional parts to both readings and `a|b` alternatives to each.
+ */
+function expandPatternShapes(pattern: ActionPattern): string[] {
+  let shapes: string[][] = [[]];
+  for (const part of pattern.parts) {
+    const options: string[][] = part.kind === 'alt' ? part.words.map((w) => [w]) : part.kind === 'slot' ? [[`:${part.word}`]] : [[part.word]];
+    if (part.optional) options.push([]);
+    const next: string[][] = [];
+    for (const prefix of shapes) for (const opt of options) next.push([...prefix, ...opt]);
+    shapes = next;
+  }
+  return shapes.filter((sh) => sh.length > 0).map((sh) => sh.join(' '));
+}
+
+/**
+ * Match lowercased words against a shape's parts. The first literal matches
+ * by lemma, later literals exactly; a slot consumes at least one word, up to
+ * the next literal (or the end). Returns the slot bindings as word ranges, or
+ * null when the words do not fit the shape.
+ */
+function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string; from: number; to: number }> | null {
+  const slots: Array<{ slot: string; from: number; to: number }> = [];
+  let i = 0;
+  for (let j = 0; j < parts.length; j++) {
+    const part = parts[j];
+    if (part.startsWith(':')) {
+      const next = parts[j + 1];
+      let end: number;
+      if (next === undefined) {
+        end = words.length;
+      } else if (next.startsWith(':')) {
+        return null; // two adjacent slots cannot be split without a parser — no standard shape has them
+      } else {
+        end = words.indexOf(next, i + 1);
+        if (end === -1) return null;
+      }
+      if (end <= i) return null;
+      slots.push({ slot: part.slice(1), from: i, to: end });
+      i = end;
+    } else {
+      if (i >= words.length) return null;
+      const ok = j === 0 ? verbLemmas(words[i]).has(part) : words[i] === part;
+      if (!ok) return null;
+      i++;
+    }
+  }
+  return i === words.length ? slots : null;
+}
+
 function statementWord(stmt: Statement): string {
   return stmt.kind === 'media' ? stmt.form : stmt.kind === 'timer-verb' ? stmt.verb : stmt.kind;
 }
@@ -627,6 +704,13 @@ class Analyzer {
   private traitNames = new Set<string>();
   /** action name → declared grammar-slot names. */
   private actionSlots = new Map<string, Set<string>>();
+  /**
+   * ADR-329 D2: the story's own grammar shapes by action name — every
+   * `define action` pattern and every `extend action` addition, rendered
+   * like the manifest's (`kick :target`). Built on first use from the AST,
+   * so a clause body that precedes its action's declaration still matches.
+   */
+  private actShapes: Map<string, string[]> | null = null;
   /**
    * emit event id (dotless) → the top-level payload field names it carries
    * (ADR-253 D1). Collected across every `emit` during resolution so
@@ -5796,6 +5880,7 @@ class Analyzer {
         case 'change-mood':
         case 'change-feeling':
         case 'move':
+        case 'act':
         case 'remove':
         case 'award':
         case 'raise':
@@ -6170,6 +6255,8 @@ class Analyzer {
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      case 'act':
+        return this.resolveActStatement(stmt, scope);
       case 'award': {
         // ADR-261 D4: `award` is gated with `score` and `ranks`.
         if (!this.usedExtensions.has('scoring')) {
@@ -6373,6 +6460,212 @@ class Analyzer {
   }
 
   /** Resolve a statement `when` suffix (ratchet D7), or null. */
+  // ------------------------------------------------- acting statements (ADR-329)
+
+  /** Bodies where a character may act (ADR-329 D3): reactions and the turn's own clock. */
+  private static readonly ACT_BODIES = new Set(['after', 'when', 'every-turn', 'timer', 'topics', 'exchange', 'initiative', 'conversation']);
+
+  /**
+   * `<actor> <verb> …` (ADR-329 D1–D3). Split the actor from the verb by the
+   * longest name prefix that names an entity, match the rest against the
+   * story's and the manifest's grammar shapes on the verb's lemma, resolve
+   * each slot as a name, and gate the body. Every failure is a named
+   * diagnostic; nothing is guessed.
+   */
+  private resolveActStatement(stmt: ActStmt, scope: Scope): IRStatement {
+    const line = stmt.words.map((w) => w.text).join(' ');
+    const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
+    const dead: IRStatement = { kind: 'phrase', phraseKey: '', params: [], stmtWhen, span: stmt.span };
+
+    if (!Analyzer.ACT_BODIES.has(stmt.bodyKind)) {
+      const where = stmt.bodyKind === 'on'
+        ? 'an `on` clause is deciding whether the triggering action happens, and cannot perform another'
+        : stmt.bodyKind === 'before'
+          ? 'nothing acts before the game starts'
+          : `a \`${stmt.bodyKind}\` body is not a place where a character acts`;
+      this.diagnostics.error(
+        'analysis.act-in-intercept',
+        `\`${line}\` — ${where}. A character acts in a reaction: move this line to an \`after\` clause, a \`when\` clause, \`on every turn\`, or a conversation row.`,
+        stmt.span,
+      );
+      return dead;
+    }
+
+    const words = stmt.words;
+    const lowerOf = (w: { text: string }) => w.text.toLowerCase();
+    const spanOfRange = (from: number, to: number): Span => {
+      let sp = words[from].span;
+      for (let i = from + 1; i < to; i++) sp = mergeSpans(sp, words[i].span);
+      return sp;
+    };
+    const nameRefOf = (from: number, to: number): NameRef => {
+      const hasArticle = to - from > 1 && ACT_ARTICLES.has(lowerOf(words[from]));
+      return {
+        kind: 'name',
+        article: hasArticle ? lowerOf(words[from]) : null,
+        words: words.slice(hasArticle ? from + 1 : from, to).map((w) => w.text),
+        span: spanOfRange(from, to),
+      };
+    };
+
+    // The actor: the longest prefix naming an entity wins; `the player` is
+    // remembered so the refusal can name the rule it hit.
+    let actor: EntitySymbol | null = null;
+    let actorEnd = 0;
+    let playerPrefix = false;
+    for (let k = words.length - 1; k >= 1; k--) {
+      const ref = nameRefOf(0, k);
+      const joined = ref.words.join(' ').toLowerCase();
+      if (ref.words.length === 1 && PLAYER_WORDS.has(joined)) { playerPrefix = true; continue; }
+      const sym = this.findEntitySilent(ref);
+      if (sym) { actor = sym; actorEnd = k; break; }
+    }
+    if (!actor) {
+      if (playerPrefix) {
+        // ADR-329 D1 (Q-3): the player is never made to act — a forced player
+        // action would be a second spelling for the `move` eject scene and
+        // breaks one-command-one-action.
+        this.diagnostics.error(
+          'analysis.act-player-actor',
+          `\`${line}\` — the player cannot be made to act; an acting statement names a character. Write the character's own name, or use \`move\` for an authorial change.`,
+          stmt.span,
+        );
+        return dead;
+      }
+      const people = this.entities.filter((e) => isActorSymbol(e)).map((e) => e.nameLower);
+      this.diagnostics.error(
+        'analysis.act-actor',
+        `\`${line}\` — no character named here acts; an acting statement begins with a character's name (\`a person\`)${this.suggestText(lowerOf(words[0]) === 'the' && words.length > 1 ? lowerOf(words[1]) : lowerOf(words[0]), people)}.`,
+        stmt.span,
+      );
+      return dead;
+    }
+    if (!isActorSymbol(actor)) {
+      this.diagnostics.error(
+        'analysis.act-actor',
+        `\`${line}\` — \`${entityDisplayName(actor)}\` cannot act; an acting statement names a character (\`a person\`).`,
+        spanOfRange(0, actorEnd),
+      );
+      return dead;
+    }
+
+    // The verb and its slots, against every shape the story and the manifest know.
+    const rest = words.slice(actorEnd);
+    const match = this.matchActShape(rest.map((w) => w.text));
+    if (!match) {
+      const verb = lowerOf(rest[0]);
+      const shapesOfVerb = this.shapesOpenedBy(verb);
+      if (shapesOfVerb.length === 0) {
+        const verbs = [...new Set([...this.allActShapes().values()].flat().map((sh) => sh.split(' ')[0]).filter((v) => !v.startsWith(':')))];
+        this.diagnostics.error(
+          'analysis.act-unknown-verb',
+          `\`${line}\` — \`${rest[0].text}\` is not an action's word; an acting statement uses an action's own grammar (\`take the sword\`, \`give the necklace to the player\`)${this.suggestText(verb, verbs)}.`,
+          spanOfRange(actorEnd, words.length),
+        );
+      } else {
+        this.diagnostics.error(
+          'analysis.act-slot-shape',
+          `\`${line}\` — \`${rest.map((w) => w.text).join(' ')}\` matches none of the shapes \`${rest[0].text}\` opens: ${shapesOfVerb.map((sh) => `\`${sh}\``).join(', ')}.`,
+          spanOfRange(actorEnd, words.length),
+        );
+      }
+      return dead;
+    }
+
+    const slots: Array<{ slot: string; value: IRValue }> = [];
+    for (const bound of match.slots) {
+      const ref = nameRefOf(actorEnd + bound.from, actorEnd + bound.to);
+      slots.push({ slot: bound.slot, value: this.resolveEntityValue(ref, scope) });
+    }
+    if (match.direction) {
+      slots.push({ slot: 'direction', value: { kind: 'literal', value: match.direction, valueType: 'string' } });
+    }
+    return {
+      kind: 'act',
+      actor: { kind: 'entity', id: actor.id },
+      action: match.action,
+      shape: match.shape,
+      slots,
+      stmtWhen,
+      span: stmt.span,
+    };
+  }
+
+  /**
+   * The story's own shapes (`define action` patterns, `extend action`
+   * additions) by action name, rendered like the manifest's. Optional parts
+   * expand to both readings; `a|b` alternatives to each.
+   */
+  private storyActShapes(): Map<string, string[]> {
+    if (this.actShapes) return this.actShapes;
+    const out = new Map<string, string[]>();
+    const add = (name: string, patterns: ActionPattern[]) => {
+      const list = out.get(name) ?? [];
+      for (const pattern of patterns) list.push(...expandPatternShapes(pattern));
+      out.set(name, list);
+    };
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-action') add(decl.name, decl.patterns);
+      else if (decl.kind === 'extend-action') add(decl.name, decl.patterns);
+    }
+    this.actShapes = out;
+    return out;
+  }
+
+  /** Story shapes first (a story action of a standard name shadows it), then the manifest's. */
+  private allActShapes(): Map<string, string[]> {
+    const out = new Map<string, string[]>(this.storyActShapes());
+    const manifest = STDLIB_MANIFEST.locales['en-US'].grammarShapes;
+    for (const [id, shapes] of Object.entries(manifest)) {
+      const name = id.slice('if.action.'.length);
+      out.set(name, [...(out.get(name) ?? []), ...shapes]);
+    }
+    return out;
+  }
+
+  private shapesOpenedBy(verb: string): string[] {
+    const lemmas = verbLemmas(verb);
+    const out: string[] = [];
+    for (const shapes of this.allActShapes().values()) {
+      for (const sh of shapes) {
+        const first = sh.split(' ')[0];
+        if (!first.startsWith(':') && lemmas.has(first)) out.push(sh);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Match the words after the actor against every known shape: the first
+   * literal by lemma, later literals exactly, each slot consuming at least one
+   * word up to the next literal. Story actions win over standard ones; among
+   * the rest the shape with the most literal words wins (`take the cap off`
+   * is `taking_off`, not `taking`). A `going` shape with no slot yields its
+   * direction word.
+   */
+  private matchActShape(rest: string[]): { action: string; shape: string; slots: Array<{ slot: string; from: number; to: number }>; direction: string | null } | null {
+    if (rest.length === 0) return null;
+    const lower = rest.map((w) => w.toLowerCase());
+    const story = this.storyActShapes();
+    let best: { action: string; shape: string; slots: Array<{ slot: string; from: number; to: number }>; literals: number; isStory: boolean } | null = null;
+    for (const [action, shapes] of this.allActShapes()) {
+      const isStory = story.has(action);
+      for (const shape of shapes) {
+        const slots = matchShapeWords(lower, shape.split(' '));
+        if (!slots) continue;
+        const literals = shape.split(' ').filter((pt) => !pt.startsWith(':')).length;
+        if (!best || (isStory && !best.isStory) || (isStory === best.isStory && literals > best.literals)) {
+          best = { action, shape, slots, literals, isStory };
+        }
+      }
+    }
+    if (!best) return null;
+    const parts = best.shape.split(' ');
+    const written = best.action === 'going' && best.slots.length === 0 && parts.length >= 1 ? parts[parts.length - 1] : null;
+    const direction = written === null ? null : (ACT_DIRECTION_CANONICAL[written] ?? written);
+    return { action: best.action, shape: best.shape, slots: best.slots, direction };
+  }
+
   private resolveStmtWhen(cond: ConditionNode | null, scope: Scope): IRCondition | null {
     return cond ? this.resolveCondition(cond, scope) : null;
   }

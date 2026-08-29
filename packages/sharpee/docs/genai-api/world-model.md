@@ -2160,6 +2160,8 @@ export declare const TraitType: {
     readonly WEARABLE: "wearable";
     readonly EDIBLE: "edible";
     readonly SCENERY: "scenery";
+    /** Sees in the dark (ADR-328 D5) — presence is the fact */
+    readonly NIGHT_VISION: "if.trait.night_vision";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
@@ -3473,6 +3475,29 @@ export declare class SceneryTrait implements ITrait {
      */
     visible: boolean;
     constructor(data?: Partial<SceneryTrait>);
+}
+```
+
+### traits/night-vision/nightVisionTrait
+
+```typescript
+import { ITrait } from '../trait.js';
+/**
+ * Night vision marks an observer that sees in the dark (ADR-328 D5).
+ *
+ * Darkness is a rule about the observer, not the room: a room with no
+ * light hides its contents from anyone who needs light to see. An entity
+ * carrying this trait does not — the underground thief who robs by feel,
+ * a cat, a creature of the deep. Its presence is the fact; there is no data.
+ *
+ * Checked by `VisibilityBehavior` at the two darkness gates (`canSee`,
+ * `getVisible`). It says nothing about light itself: a room stays dark for
+ * everyone else, and the observer's own arrival description still reads as
+ * a dark room's.
+ */
+export declare class NightVisionTrait implements ITrait {
+    static readonly type: "if.trait.night_vision";
+    readonly type: "if.trait.night_vision";
 }
 ```
 
@@ -8476,6 +8501,8 @@ export declare class VisibilityBehavior extends Behavior {
      * @param world - The world model
      * @returns true if the room is dark and has no accessible light sources
      */
+    /** Whether the observer sees without light — carries `NightVisionTrait`. */
+    private static seesInDark;
     static isDark(room: IFEntity, world: WorldModel): boolean;
     /**
      * Determines if a light source entity is currently providing light.

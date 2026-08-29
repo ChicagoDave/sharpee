@@ -96,6 +96,39 @@ describe('CommandExecutor.executeAsActor (ADR-328 D2)', () => {
     };
   });
 
+  describe('a reaction that throws surfaces on the turn (ADR-329 Phase 9b)', () => {
+    it('the take still happens; the failed handler is reported as `command.failed` with its reason', () => {
+      const eventProcessor = new EventProcessor(world);
+      eventProcessor.registerHandler('if.event.taken', () => {
+        throw new Error('runtime.example: the story refused the reaction');
+      });
+      const language = new EnglishLanguageProvider();
+      const throwingExecutor = new CommandExecutor(
+        world,
+        registry,
+        eventProcessor,
+        new EnglishParser(language, { world }),
+        undefined,
+        new EngineRandomService(12345)
+      );
+
+      const result = throwingExecutor.executeAsActor(
+        { actionId: IFActions.TAKING, actorId: npc.id, directObject: lamp },
+        world,
+        gameContext
+      );
+
+      // The fact stands — the world applied the take before the handler ran.
+      expect(world.getLocation(lamp.id)).toBe(npc.id);
+      expect(result.success).toBe(true);
+      // The failure reaches the turn, beside the take, with the handler's reason.
+      const failed = result.events.filter(e => e.type === 'command.failed');
+      expect(failed).toHaveLength(1);
+      expect(failed[0].data).toMatchObject({ reason: 'runtime.example: the story refused the reaction', eventType: 'if.event.taken' });
+      expect(result.events.indexOf(failed[0])).toBeGreaterThan(result.events.findIndex(e => e.type === 'if.event.taken'));
+    });
+  });
+
   describe('a non-player actor takes', () => {
     it('moves the item into the actor and stamps the actor on the taken event', () => {
       expect(world.getLocation(lamp.id)).toBe(hall.id);

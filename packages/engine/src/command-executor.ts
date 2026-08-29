@@ -593,6 +593,21 @@ export class CommandExecutor {
       if (processed.reactions && processed.reactions.length > 0) {
         allEvents = [...events, ...processed.reactions];
       }
+      // An event whose application threw — a chain handler raising a runtime
+      // diagnostic (the loader's `runtime.*` LoadErrors) — surfaces on the
+      // same `command.failed` event this executor's own catch produces. The
+      // processor records the failure; nothing read it, so a diagnostic
+      // raised from a chain-fired clause vanished (found 2026-08-29, ADR-329
+      // Phase 9b). The command itself stands: the action ran; a reaction did not.
+      for (const failure of processed.failed) {
+        allEvents = [...allEvents, {
+          id: `cmd_failed_${turn}_${Date.now()}_${allEvents.length}`,
+          type: 'command.failed',
+          timestamp: Date.now(),
+          entities: {},
+          data: { reason: failure.reason, input, eventType: failure.event.type }
+        }];
+      }
     }
 
     const result: TurnResult = {

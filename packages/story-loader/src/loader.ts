@@ -86,6 +86,8 @@ import {
   createImageChannel,
   killPlayer,
   type INpcService,
+  type ActSlots,
+  type ActResult,
 } from '@sharpee/stdlib';
 import {
   createHungerCrossingWatcher,
@@ -510,6 +512,27 @@ export class ChordStory implements Story {
       if (irEntity.placement) {
         author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
       }
+      // `carries the X` / `wears the X` are facts about the holder, whoever it
+      // is — a character's inventory is world construction exactly as its
+      // room is (ADR-230 Phase 6 wrote them for the player; the role-holder
+      // is one character among the `a person` entities, ADR-327 D10). Found
+      // 2026-08-29 under ADR-329: an NPC's `carries` compiled and was never
+      // placed — the monkey's necklace, the mercenaries' sword, Teisha's cord.
+      for (const carriedIrId of irEntity.carries ?? []) {
+        author.moveEntity(this.requireWorldId(carriedIrId, irEntity), entity.id);
+      }
+      for (const wornIrId of irEntity.wears ?? []) {
+        const wornId = this.requireWorldId(wornIrId, irEntity);
+        author.moveEntity(wornId, entity.id);
+        const wearable = world.getEntity(wornId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
+        if (!wearable) {
+          // ADR-276 census 12: the compiler's gate refuses this
+          // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
+          throw new LoadError(`\`${wornIrId}\` is worn by ${irEntity.name} but is not wearable.`, irEntity.span);
+        }
+        wearable.worn = true;
+        wearable.wornBy = entity.id;
+      }
       // ADR-236 D2: region membership through the platform seam —
       // `assignRoom` sets RoomTrait.regionId (never touched directly here);
       // member regions were parented at creation (pass 0), so only room
@@ -783,26 +806,8 @@ export class ChordStory implements Story {
       if (firstRoom) world.moveEntity(assigned, this.requireWorldId(firstRoom.id, firstRoom));
     }
 
-    // Carried items: into inventory (ADR-230 Phase 6 — `carries the X`).
-    for (const carriedIrId of irPlayer?.carries ?? []) {
-      world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), assigned);
-    }
-
-    // Worn items: into inventory, marked worn.
-    for (const wornIrId of irPlayer?.wears ?? []) {
-      const wornId = this.requireWorldId(wornIrId, irPlayer ?? undefined);
-      world.moveEntity(wornId, assigned);
-      const worn = world.getEntity(wornId);
-      const wearable = worn?.get(TraitType.WEARABLE) as WearableTrait | undefined;
-      if (!wearable) {
-        // ADR-276 census 12: the compiler's gate refuses this
-        // (analysis.worn-not-wearable) — this is the loader's defensive
-        // backstop against rogue IR.
-        throw new LoadError(`\`${wornIrId}\` is worn by the player but is not wearable.`, irPlayer?.span);
-      }
-      wearable.worn = true;
-      wearable.wornBy = assigned;
-    }
+    // Carried and worn items were placed in pass 2 with every other
+    // entity's — the role-holder's inventory is not a role fact.
 
     // ADR-310/318 Phase 5: apply compiled character blocks. Runs here, after
     // the role is settled, because a block's refs (`feels … toward the
@@ -1051,6 +1056,7 @@ export class ChordStory implements Story {
     getClientCapabilities?(): object;
     getContext?(): { currentTurn: number };
     getRandomService?(): RandomService;
+    executeAsActor?(actorId: string, actionId: string, slots?: ActSlots): ActResult;
   }): void {
     // ADR-325 D3f: timers stamp the turn they start on from the engine's
     // live counter, so a `start` in the player's action waits one turn.
@@ -1072,6 +1078,23 @@ export class ChordStory implements Story {
     // ADR-215 Q4: NPCs are CORE — the engine owns the actor turn phase
     // (ADR-328 D5), so there is nothing to register; each factory-configured
     // behavior registers under its per-entity id on the engine's service.
+    // ADR-329 D4: an acting statement performs its action through the
+    // engine's execution entry. Its events never ride an action's or a
+    // handler's own return (they were applied inside the entry and would be
+    // applied again); they wait in the runtime's act buffer for the flush
+    // plugin below, which runs right after the player's action — before the
+    // actor phase (100) — so the act narrates immediately after the report
+    // that caused it. Acts fired inside scheduler daemons drain on the tick.
+    if (engine.executeAsActor) {
+      this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
+      if (this.runtime.hasActingStatements()) {
+        engine.getPluginRegistry().register({
+          id: 'chord.acted-events',
+          priority: 150,
+          onAfterAction: () => this.runtime.drainActEvents(),
+        } satisfies TurnPlugin);
+      }
+    }
     const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
       npcService.registerBehavior(this.buildNpcBehavior(pending) as never);

@@ -1845,6 +1845,7 @@ export type Statement =
   | ChangeMoodStmt
   | ChangeFeelingStmt
   | MoveStmt
+  | ActStmt
   | RemoveStmt
   | AwardStmt
   | CounterMutateStmt
@@ -2092,6 +2093,28 @@ export type PlaceExpr =
   | { kind: 'adjacent-room'; span: Span };
 
 /** `move <entity> to <place> | here | offstage [when <cond>]` (ADR-325 D1–D2) */
+/**
+ * A name-led acting statement — `<actor> <verb> [<object>] [<preposition>
+ * <object>] [when <condition>]` (ADR-329 D1). The parser admits the line when
+ * some word after the first lemma-matches a known action verb and carries the
+ * words raw; the analyzer — the layer that knows the story's entities and its
+ * own `define action` shapes — splits actor from verb, matches the grammar
+ * shape (D2), resolves the slots, and gates the body (D3).
+ */
+export interface ActStmt {
+  kind: 'act';
+  /** Every word/number token before the `when` suffix, in source order. */
+  words: Array<{ text: string; span: Span }>;
+  /**
+   * The enclosing body's kind as the parser classifies it: `after`, `when`,
+   * `every-turn`, `timer`, `on` (an intercept), `before` (the start block),
+   * `topics`/`exchange`/`initiative`/`conversation` (rows), `action`, …
+   */
+  bodyKind: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
 export interface MoveStmt {
   kind: 'move';
   entity: NameRef;

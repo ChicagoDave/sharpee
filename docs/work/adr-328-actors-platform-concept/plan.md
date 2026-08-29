@@ -74,6 +74,14 @@ performing a story-authored action).
   amended in place: Part 3 confirmed to stand (`NarrativeSettings` remains the story-level
   narrative person of the player, unchanged); Phase D's string pre-pass is now scoped as the
   player-voice resolver only, not the resolver of record for every actor.
+- *(Added 2026-08-29, session aeade8, Phase 9 re-plan.)* `docs/architecture/adrs/adr-329-chord-acting-statement.md`
+  — ACCEPTED; the sole authority for Phase 9's scope (D1–D9, Acceptance items 1–5). Q-4's
+  ruling (goal-step lowering lands under this ADR but is sequenced as its own phase, its own
+  real-path gate, behind the statement phase) is the reason Phase 9 splits 9a→9b→9c→9d rather
+  than 9a→9b in parallel. `docs/architecture/chord-grammar-changes.md` and
+  `packages/chord/src/version.ts` — the paper-trail conventions Phase 9d's Acceptance-item-5
+  closure follows (grammar-changes entries and the language version bump are logged once a
+  feature ships, not per sub-phase, per every existing 2026-08 entry).
 
 No unplanned ACCEPTED proposal items apply — `docs/proposals/*.md` was scanned; every item in
 every templated file is already PLANNED, DONE, or (one case, `docs-consolidation.md` P-9)
@@ -811,27 +819,262 @@ ADR's own text implies).
   actor-explicit heads (which actor fires when the syntax's action itself completes).
 - **Exit state**: the child ADR is ACCEPTED. Its own phases (Phase 9 below) inherit whatever
   scope/tier it specifies — this plan cannot size Phase 9 yet.
-- **Status**: PENDING (blocked on David's availability to run the ADR interview — not
-  sequenced behind Phases 5-7, only behind Phases 3-4)
+- **Status**: DONE (2026-08-29, session aeade8) — ADR-329 ACCEPTED by David after the
+  rule-11a interview (Q-1 a: both inflections; Q-2 a: refusals narrate as the pipeline does,
+  "likely to evolve"; Q-3 b: `the player` excluded — the forced-going eject would be a second,
+  worse spelling of ADR-326's `move` scene; Q-4 a: goal-step lowering lands here) and
+  `adr-review` 19/19. Review corrections folded: the engine entry is private to its actor
+  phase (`game-engine.ts:372-380`), so one public engine method is a named surface; ADR-328
+  Acceptance item 2 stamped; ADR-328 D7 stamped with the child. Phase 9 re-plans from ADR-329.
+  Drafting record — **ADR-329 drafted**:
+  `docs/architecture/adrs/adr-329-chord-acting-statement.md`, DRAFT with four Open Questions
+  (verb spelling; what a refused act says; `the player` as actor; whether the goal-step
+  lowering in `packages/character` lands here or as a sibling). Written by the plan's own
+  method: the block first, on the `adr-327-ac2` fixture (two `## NEW` lines are the only
+  unshipped syntax), then the five-item needs list (four exist; the nested-act event splice
+  is the one new mechanism). The rule-11a interview with David is the remaining step; the
+  phase's exit state (ACCEPTED) is not reached until it runs.
 
 ### Phase 9: D7b — Implement the Chord acting surface
-- **Tier**: unknown — re-plan once Phase 8's ADR is ACCEPTED
-- **Budget**: unknown
-- **Domain focus**: `packages/chord` (grammar), `packages/story-loader` (runtime), scope
-  otherwise set entirely by Phase 8's ADR.
-- **Entry state**: **External dependency, not just sequential** — Phase 8's ADR must be
-  ACCEPTED before this phase's scope is even knowable, exactly like ADR-327 Phase 6 before this
-  plan existed. Run `session-planner` again for this phase specifically once Phase 8 lands.
-- **Deliverable**: TBD by Phase 8's ADR.
-- **Exit state**: TBD. The impact analysis marks this surface "elective until a story wants
-  it" (§ Sizing and shape) — Acceptance item 2's demo scene does not require it (Phase 6b
-  already satisfies that item using existing Dungeo NPCs), so this phase is the program's
-  natural tail, not a blocker for calling the umbrella complete otherwise.
-- **Status**: PENDING (blocked on Phase 8)
+
+**Re-planned 2026-08-29 (session aeade8), from ADR-329 (ACCEPTED 2026-08-29) — Phase 8's
+child ADR.** ADR-329 sizes this phase itself (D1–D9, Acceptance items 1–5); it is split into
+four session-sized sub-phases below rather than left as one phase, per the ADR's own five-item
+needs list (three surfaces exist, one is a single method exposing what exists, one is a genuinely
+new splice) and Q-4's ruling that the goal-step lowering (D6) is sequenced as its own phase,
+behind the statement phase, with its own real-path gate. Each sub-phase names its own child
+artifact — the platform-change discussion-first pass (CLAUDE.md) — because ADR-329's acceptance
+authorizes design, not implementation by itself (ADR-329, opening line).
+
+#### Phase 9a: D1–D3, D8 (partial) — the acting statement compiles
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `packages/chord/chord.ebnf` (new `statement` alternative beside `move`,
+  ~lines 902–966 — verified this session: the `move`/`change`/`award`/etc. rows are all
+  keyword-led; the acting statement is **not** — its first word is a name, like no existing
+  statement row); `packages/chord/src/parser.ts` (`parseStatement`, `:6679-6714` — dispatches
+  on `firstWord(line)` through a `switch` of fixed keywords with `default:` raising
+  `parse.unknown-statement`, `:7128`; verified this session there is no precedent for a
+  name-led statement in this switch — **this is the one open parser-design question for the
+  child artifact below**, not a detail to improvise mid-implementation); `packages/chord/src/ir.ts`
+  (one new `IRStatement` variant beside `{ kind: 'move'; ... }`, `:1440`); `packages/chord/src/analyzer.ts`
+  (D2's verb match against `STDLIB_MANIFEST.locales['en-US'].grammarShapes` — the exact pattern
+  already used for removal-action shape lookups at `:1403`, `shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[...]`
+  — plus story-registered shapes per ADR-270/215; D3's body-legality gate, mirroring the
+  existing "`refuse` not in `after` bodies" gate the EBNF already documents; the actor-resolution
+  check reusing the name-to-entity + `a person` kind check the `analysis.head-actor*` family
+  already performs at `:5643-5694`). New analyzer errors (D1/D2/D3, named in ADR-329's header):
+  `analysis.act-unknown-verb`, `analysis.act-slot-shape`, `analysis.act-in-intercept`,
+  `analysis.act-player-actor`.
+- **Child artifact**: present to David before the first edit — (1) how `parseStatement`
+  distinguishes a name-led acting statement from every other name-led line in a body (a
+  `default:` case that attempts the actor-statement parse before falling through to
+  `parse.unknown-statement`, or a lookahead on the second word being a known-lemma verb); (2)
+  the exact `IRStatement` shape (actor `IRValue` + resolved action id + slot `IRValue[]`,
+  mirroring `move`'s `entity`/`place` pair). This is a `packages/chord` platform change
+  (CLAUDE.md discussion-first), and Phase 3/5's own child-artifact convention applies unchanged.
+- **Entry state**: Phase 8 DONE (ADR-329 ACCEPTED). Independent of Phases 3–7's runtime work —
+  this phase only makes the statement parse, analyze, and lower to IR; nothing executes yet.
+- **Deliverable**: the statement `<actor> <verb> [<object>] [<preposition> <object>] [when
+  <condition>]` (D1) parses in every legal body and is rejected by name in every illegal one
+  (D3); the verb is matched by lemma against the manifest's and story's grammar shapes (D2);
+  `the player` as actor is `analysis.act-player-actor` (D1); one new IR statement kind exists,
+  unexecuted. EBNF row written (D8, partial — the `chord-grammar-changes.md` entry and
+  `CHORD_LANGUAGE_VERSION` bump land in 9d with the rest of the paper trail, matching this
+  plan's own convention of logging the grammar-changes entry once a feature ships, not per
+  sub-phase — see the 2026-08-25/26 entries in `docs/architecture/chord-grammar-changes.md`).
+- **REAL-PATH test (rule 13a)**: N/A for this sub-phase's own gate — Acceptance item 1 is a
+  compile-tests item (parse/analyze, no runtime), so the bar is direct: the statement parses in
+  `after`, `when` (timer expiry, `becomes`, `the player moves`), `on every turn`, and
+  conversation-row bodies, with one-, two-, and direction-slot shapes; each of the seven listed
+  analyzer errors fires by name with a fix-it (intercept body, `before the game starts` body,
+  unknown verb, wrong slot shape, non-person actor, `the player` as actor, unknown name in a
+  slot) — real `parser.ts`/`analyzer.ts`, not a hand-built AST.
+- **Exit state**: `pnpm --filter '@sharpee/chord' test` green with the new compile-test suite;
+  the AC-2 fixture's two `## NEW` lines (ADR-329 "The block first") parse and produce IR.
+  Nothing executes — the statement is inert until 9b.
+- **Status**: DONE (2026-08-29, session aeade8) — landed as designed at the checkpoint, with
+  three refinements the code forced, each recorded in ADR-329's landing note: (1) the
+  actor/verb split and the shape match live in the **analyzer**, not the parser — only the
+  analyzer knows the story's entities and its own `define action`/`extend action` shapes; the
+  parser admits a name-led line as an `act` candidate when some later word lemma-matches a
+  verb opening a standard shape (or one of the file's own grammar lines, scanned structurally)
+  and carries the words raw with the body kind, so `frobnicate the message` stays
+  `parse.unknown-statement` exactly as before (`parser.ts` `tryParseActStatement`); (2) one more
+  error id than the ADR named — `analysis.act-actor` (no character named / cannot act) beside
+  `act-unknown-verb`, `act-slot-shape`, `act-in-intercept`, `act-player-actor`; (3) the
+  every-turn body is handed to the statement parser as body kind `every-turn` so D3 can tell
+  it from an intercept. **Deviation from this phase's own text**: the EBNF row is deferred to
+  9d with the 4.1.0 bump — `language-version.test.ts` pins `chord.ebnf`'s SHA-256 to
+  `CHORD_LANGUAGE_VERSION`, so the row cannot land without the bump, and the bump waits until
+  the statement executes (9b). The compile-time `the player` gate covers the spelled role only;
+  the runtime half of D1 (an actor who currently *holds* the role) is 9b's, at the loader.
+  Evidence (2026-08-29 00:47 CDT): `packages/chord/tests/act-statement.test.ts` — 18 tests
+  (IR lowering for one-slot, two-slot, direction, story-verb, most-specific-shape, both
+  inflections, `when` suffix; every legal body incl. a `define topics` row; the five named
+  errors plus `analysis.unknown-entity` for a slot and `parse.unknown-statement` preserved);
+  `pnpm --filter '@sharpee/chord' test` 1082 passing across 71 files; `tsc --noEmit` clean for
+  `packages/chord` and, after `pnpm --filter '@sharpee/chord' build`, for `packages/story-loader`
+  (the IR consumer; its `execStatements` has no `default:`, so an `act` is skipped — inert).
+
+#### Phase 9b: D4, D5 (execution entry) — the statement runs, splices, and caps
+- **Tier**: Large
+- **Budget**: 350
+- **Domain focus**: `packages/engine/src/game-engine.ts` (the ONE public method exposing the
+  execution entry the engine already builds at `:372-380` for `ActorTurnPlugin` — verified this
+  session: `this.actorTurnPlugin = new ActorTurnPlugin((actorId, actionId, slots) => {
+  this.commandExecutor.executeAsActor(...) })`, a closure handed only to that plugin today; the
+  new method exposes the same `(actorId, actionId, slots) → ActResult` shape stdlib's
+  `ExecutionEntry` type already declares (`packages/stdlib/src/npc/types.ts`), the loader
+  receiving it at `onEngineReady` the same way it receives `getNpcService()`/`getRandomService()`);
+  `packages/story-loader/src/runtime.ts` (the new statement executor calling that method; the
+  nested-act event splice at `fireAfterClauses`, `:3583-3600` — verified this session, the
+  existing method that fires a target's `after <verb> it` clauses in the triggering action's
+  report phase is the exact site the nested act's events splice into, immediately after; the
+  re-entry cap mirrors `MOVE_ARRIVAL_DEPTH_CAP` (`:4139-4145`, `runtime.move-arrival-reentry`,
+  cap 8) at a new constant and `runtime.act-reentry`, ADR-327 D5's same number and posture).
+- **Child artifact**: present to David before the first edit — the one new engine method's
+  exact name and signature (it is the single platform-package surface this sub-phase adds,
+  per ADR-329's own framing: "one public engine method is the whole platform cost"), and the
+  splice-vs-direct dispatch rule (turn-phase sites run the act directly per D4; `after`
+  bodies/conversation rows splice into the still-open report phase). `packages/engine` is a
+  platform change (CLAUDE.md discussion-first).
+- **Entry state**: 9a DONE (the statement parses to IR). Independent of 9c (D6's goal-step
+  lowering is sequenced behind this phase per ADR-329 Q-4, not ahead of it).
+- **Deliverable**: the loader performs the act through the engine's new public method at the
+  moment the statement runs (D4); turn-phase sites (timers, `on every turn`, `becomes`) emit the
+  act's events as the turn's own events; `after`-body and conversation-row sites splice the
+  nested act's events into the outer turn's stream immediately after the triggering action's
+  own report; heads fire for the acting actor (ADR-327 D7, already landed — this sub-phase wires
+  the statement to it, adds nothing new there); re-entry deeper than 8 raises `runtime.act-reentry`
+  naming the chain and performs no further act (D4); a refused act narrates exactly as any
+  witnessed refusal would, via the existing ADR-328 D3/D4 machinery, and mutates nothing (D5).
+- **REAL-PATH test (rule 13a)**: through a real engine, the `adr-327-ac2-execution-entry.test.ts`
+  harness shape (`packages/story-loader/tests/helpers/boot-engine.ts`) — Acceptance item 2 in
+  full: `after the player entering` → `the guards take the sword` moves the sword into the
+  guards (asserted on `world.getLocation`), fires `after the guards taking` and not the player's
+  head; the `on the guards taking` refusal leaves the sword where it was and fires no `after`;
+  the player in the room receives the act's third-person narration in the turn's output *after*
+  the entering report, and from another room receives nothing while the sword still moved; a
+  timer-fired act in the turn phase; a conversation-row act; the re-entry cap raises
+  `runtime.act-reentry` at depth 8 and performs no ninth act; a save taken mid-sequence restores
+  and continues.
+- **Exit state**: `pnpm --filter '@sharpee/story-loader' test` and
+  `pnpm --filter '@sharpee/engine' test` green with the new suite; the AC-2 fixture's block
+  (ADR-329 "The block first") runs end to end exactly as its prose describes. Corpus not run
+  here — no story adopts the statement yet (9d's job); the fixture is the only proof, per the
+  "content is David's" constraint.
+- **Status**: DONE (2026-08-29, session aeade8) — landed with one design refinement and two
+  platform fixes the real-path suite forced, all recorded in ADR-329's landing note.
+  **Refinement (D4)**: a nested act's events never ride an action's or a handler's own
+  return — `CommandExecutor.runPhases` applies its events through `EventProcessor.processEvents`
+  (`command-executor.ts:591`) and a chain-fired clause's return is `processReactions`'d, so
+  splicing them there would apply an already-applied act twice (entity and story handlers
+  firing again). They wait in the runtime's `pendingActEvents` and are delivered on the
+  engine's plugin path (`processPluginEvents`: enrich, tag presence, append — never re-apply):
+  a loader-registered `chord.acted-events` TurnPlugin at priority **150** (the registry runs
+  descending, so it precedes the actor phase at 100 — the act narrates right after the report
+  that caused it) and a `chord.act-drain` scheduler daemon for acts fired inside daemon bodies;
+  both registered only when the story carries an acting statement, so every other story keeps
+  its exact plugin and daemon roster. **Platform fix 1** (`packages/story-loader/loader.ts`
+  pass 2): every entity's `carries`/`wears` are placed at load — previously the role-holder's
+  only (`loader.ts:789`), so the monkey's necklace, the mercenaries' sword, Teisha's cord and
+  fernhill's letter compiled to `carries` and were never placed (probed: `sword location:
+  undefined`); the player-only block is gone. **Platform fix 2** (`packages/event-processor`
+  `processor.ts` + `packages/engine/command-executor.ts`): a story handler that throws now
+  joins `ProcessedEvents.failed` (the contract field for it) instead of `console.error`, and the
+  executor surfaces every failed application as `command.failed` beside its own catch — the
+  loader's `runtime.*` diagnostics raised from a chain-fired clause (`after the player
+  entering` is a `world.chainEvent` story handler) had been vanishing, `runtime.move-arrival-reentry`
+  included. **Evidence** (2026-08-29 01:03–01:55 CDT): `packages/story-loader/tests/adr-329-act-statement.test.ts`
+  9 passing on a real `GameEngine.executeTurn` (sword moves; `after the guards taking` fires
+  and the player's head does not; the take narrates after the entering report tagged
+  `present`; the refusal keeps the sword and narrates `take_blocked`; an every-turn act with
+  the player elsewhere is tagged `absent`; a timer-fired act; a `define topics` row act —
+  Teisha gives the sword; the cap raises `runtime.act-reentry` with ≤ 8 acts; Alex-as-role
+  raises `runtime.act-player-actor` and the sword stays; save/restore via the real
+  `SaveRestoreService`; `executeAsActor` called directly); mutation-verification (rule 15)
+  graded both suites GREEN and named two coverage gaps, closed the same session:
+  `event-processor/tests/unit/handler-failure.test.ts` (3 — one of which caught a real defect:
+  an instance-level failure buffer was drained by the effect processor's re-entrant
+  `processEvents`, so failures are now threaded as return data, no instance state),
+  a failed-reaction case in `engine/tests/execute-as-actor.test.ts`, and an NPC
+  `carries`/`wears` placement case in `story-loader/tests/loader.test.ts`. Final counts
+  (02:20 CDT): story-loader 981 passing (92 files); engine 680 passing; event-processor
+  27 passing; chord 1082 passing; Dungeo chain 952 passing / 17 transcripts; fernhill 36 cards, ides 39 cards passing; cloak (2),
+  friendly-zoo (1) and secret-letter (131 passing / 29 failing) are **identical to a baseline
+  worktree at `c31ab561`** — pre-existing, the `yourself` cases being GH #319 (commented).
+  Not done here: the EBNF row and 4.1.0 bump (9d); the plan's "corpus not run here" was
+  overtaken — it was run, because two platform packages beyond the ADR's surfaces changed.
+
+#### Phase 9c: D6 — goal steps lower onto the entry; `applyStepMutation` retires
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `packages/character/src/tick-phases.ts` (`applyStepMutation`, `:860-875` —
+  verified this session, the current bare `switch` over `move`/`take`/`give`/`drop` calling
+  `world.moveEntity` directly with no validate, no interceptor, no witnessing) and its caller
+  (the tick that evaluates a `StepResult` and invokes it); `packages/engine`'s new execution
+  entry (9b's deliverable) as the only door goal steps use afterward; ADR-310 D8 (amendment
+  stamp — owner is this phase's implementer, trigger is this phase's real-path test going
+  green, per ADR-329 D6's own instruction).
+- **Child artifact**: present to David before the first edit — the mapping from each step kind
+  to its action (`acquire`→`taking` once in reach, `give`→`giving`, `drop`→`dropping`, `move
+  to`→one `going` per turn along the path — D6's own wording) and what happens to a step whose
+  action is refused (D6: "a trait refusal can block a goal step for the first time" — does the
+  plan runner retry next tick, abandon the step, or something else; ADR-329 doesn't rule this,
+  D6 only says refusal becomes *possible*, not what the planner does with it). `packages/character`
+  is a platform change (CLAUDE.md discussion-first); this is also the ADR-310 D8 amendment site.
+- **Entry state**: 9b DONE (the execution entry is exposed and exercised end to end). Sequenced
+  behind the statement phase per ADR-329 Q-4 — this is not a parallel option.
+- **Deliverable**: `acquire`/`give`/`drop`/`move to` goal steps execute through 9b's entry as
+  the acting NPC, not `world.moveEntity`; `applyStepMutation`'s bare mutation calls retire
+  outright (no compatibility shim — the same "dissolve, not adapt" posture Phase 5 used for
+  `NpcAction`); ADR-310 D8 gets its amendment stamp naming this landing.
+- **REAL-PATH test (rule 13a)**: through the real character-model tick
+  (`packages/character/tests/tick-phases/character-model-phase.test.ts` harness shape) —
+  Acceptance item 3: an NPC's `give` step runs through the entry and a trait refusal on the
+  recipient blocks it, item unmoved; a witnessed `drop` step narrates in the NPC's voice
+  (ADR-328 D4); an `acquire` step performs `taking` once in reach and is refused like any other
+  take when scope says no.
+- **Exit state**: `pnpm --filter '@sharpee/character' test` green; `applyStepMutation` deleted
+  or reduced to nothing but the door-call; no caller still reaches `world.moveEntity` directly
+  for a goal step.
+- **Status**: CURRENT (since 2026-08-29; 9b DONE)
+
+#### Phase 9d: Acceptance items 4–5 — corpus green, paper trail closes
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: no corpus story adopts the statement (content is David's — a fixture or
+  test-source-only proof per the constraint on this plan); `docs/architecture/chord-grammar-changes.md`
+  (new entry, dated, matching the existing row shape — form/rationale/example/decision);
+  `packages/chord/src/version.ts` (`CHORD_LANGUAGE_VERSION` `'4.0.0'` → `'4.1.0'`, minor per
+  ADR-257 D2 — additive, every story valid at 4.0.0 stays valid); the reference surfaces
+  ADR-272 names (documents the statement and D7's `move`-vs-acting sentence); ADR-329 §Acceptance
+  item 5 and ADR-328 §Acceptance (stamp both satisfied).
+- **Child artifact**: none — no new platform surface, documentation and regression only.
+- **Entry state**: 9c DONE (D6 landed; ADR-310 D8 stamped).
+- **Deliverable**: every story suite passes with zero diffs — fernhill, friendly-zoo, cloak,
+  ides, secret-letter (`branch-stories/secret-letter/secret-letter.tests.json` tree), and the
+  9a/9b/9c fixture suites; Dungeo's chain byte-identical (it is TypeScript and untouched by this
+  phase); the paper trail lands (EBNF row already in 9a; the `chord-grammar-changes.md` entry
+  and version bump land here, at feature-ship time, matching this file's own convention).
+- **REAL-PATH test (rule 13a)**: `node dist/cli/sharpee.js --test --chain
+  stories/dungeo/walkthroughs/wt-*.transcript` byte-identical at 952 passing across 17
+  transcripts, the pinned-seed baseline this plan has re-verified at every landing (Phase 5,
+  6b); each story suite's own test command (`pnpm --filter` per package, or that story's own
+  transcript/tree runner) green with no new failures against its own pre-9-phase baseline.
+- **Exit state**: ADR-329 Acceptance items 1–5 all satisfied; ADR-328 D7 stamp (already applied
+  at Phase 8) is now backed by a landed implementation, not just an accepted child ADR; this
+  plan's Phase 9 — and with it the whole ADR-328 program — is DONE.
+- **Status**: PENDING (blocked on 9c)
 
 ## Note on session-state tracking
 
-No `docs/context/.session-state-{id}.json` exists for this session (checked
-`docs/context/.active-session` — absent — and a direct file check for the session id given in
-this task's framing). Per the session-planner's own instructions, the phase-tracking merge step
-is skipped rather than creating a new, unnamespaced state file.
+No `docs/context/.session-state-{id}.json` existed at this plan's original writing (checked
+`docs/context/.active-session` — absent then — and a direct file check for the session id given
+in that task's framing). Per the session-planner's own instructions, the phase-tracking merge
+step was skipped rather than creating a new, unnamespaced state file.
+
+**Update, 2026-08-29 (session aeade8, Phase 9 re-plan)**: `docs/context/.session-state-aeade8.json`
+now exists (created by that session's start hook) and has been merged with `phase: 9,
+phaseName: "9a: D1-D3, D8 (partial) - the acting statement compiles", tier: "Medium", budget: 250`.

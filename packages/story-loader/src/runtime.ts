@@ -59,7 +59,7 @@ import {
   type InitiativeSeizure,
   sceneWith,
 } from '@sharpee/world-model';
-import { actorConsultationId, exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
+import { actorConsultationId, exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer, type ActResult, type ActSlots } from '@sharpee/stdlib';
 import {
   absenceWordFor,
   activeThreadFor,
@@ -219,6 +219,8 @@ export interface SchedulerDaemon {
 
 /** ADR-327 D5: the most nested move-arrivals one turn may fire before the runtime refuses. */
 const MOVE_ARRIVAL_DEPTH_CAP = 8;
+/** ADR-329 D4: how deep an act whose reactions act again may nest — ADR-327 D5's cap, same number. */
+const ACT_DEPTH_CAP = 8;
 
 export class ChordRuntime {
   private eventSeq = 0;
@@ -230,6 +232,13 @@ export class ChordRuntime {
   private readonly timerClauses = new Map<string, { clause: IRTimerClause; it: string | null }[]>();
   /** The engine's live turn counter (wired at engine-ready); null headless. */
   private turnProvider: (() => number) | null = null;
+  /** ADR-329 D4: the engine's execution entry, wired at engine-ready; null headless. */
+  private executionEntry: ((actorId: string, actionId: string, slots?: ActSlots) => ActResult) | null = null;
+  /** Events an acting statement produced inside an action or handler, awaiting the flush plugin / drain daemon. */
+  private readonly pendingActEvents: ISemanticEvent[] = [];
+  private actDepth = 0;
+  /** The acts in flight, for the re-entry diagnostic (`the guards taking → …`). */
+  private readonly actChain: string[] = [];
   /** The last scheduler tick's turn — the headless fallback for `turnNow`. */
   private lastTickTurn = 0;
 
@@ -3407,6 +3416,19 @@ export class ChordRuntime {
         run: () => this.drainChannelEvents(),
       });
     }
+    // ADR-329 D4: an act fired inside a daemon body (every-turn, a timer's
+    // expiry) has no player action for the flush plugin to follow; this
+    // daemon delivers its events on the same tick. Registered only when the
+    // story carries an acting statement, so every other story keeps its
+    // exact daemon roster.
+    if (this.hasActingStatements()) {
+      daemons.push({
+        id: 'chord.act-drain',
+        name: 'Acting-statement narration drain',
+        condition: () => this.pendingActEvents.length > 0,
+        run: () => this.drainActEvents(),
+      });
+    }
 
     return daemons;
   }
@@ -3464,6 +3486,97 @@ export class ChordRuntime {
   /** Wire the engine's turn counter (loader-only; ADR-325 D3f). */
   setTurnProvider(provider: () => number): void {
     this.turnProvider = provider;
+  }
+
+  /** ADR-329 D4: the engine's execution entry (`GameEngine.executeAsActor`), set at engine-ready. */
+  setExecutionEntry(entry: (actorId: string, actionId: string, slots?: ActSlots) => ActResult): void {
+    this.executionEntry = entry;
+  }
+
+  /** True when any clause body in the story carries an acting statement (ADR-329). */
+  hasActingStatements(): boolean {
+    const visit = (node: unknown): boolean => {
+      if (Array.isArray(node)) return node.some(visit);
+      if (node && typeof node === 'object') {
+        const rec = node as Record<string, unknown>;
+        if (rec.kind === 'act' && typeof rec.action === 'string' && Array.isArray(rec.slots)) return true;
+        return Object.values(rec).some(visit);
+      }
+      return false;
+    };
+    return visit(this.ir);
+  }
+
+  /**
+   * Drain the events acting statements produced inside actions and handlers
+   * (ADR-329 D4). Consumed by the loader's `chord.acted-events` turn plugin
+   * — right after the player's action, before the actor phase — and by the
+   * act drain daemon for acts fired inside scheduler daemons. Never rendered
+   * through an action's own return: the entry already applied them.
+   */
+  drainActEvents(): ISemanticEvent[] {
+    return this.pendingActEvents.splice(0, this.pendingActEvents.length);
+  }
+
+  /**
+   * Perform an acting statement (ADR-329 D1/D4/D5): resolve the actor and
+   * the action id (story-first, as clause heads resolve), bind the shape's
+   * slots to roles, and run the action NOW as that actor through the
+   * engine's execution entry. Returns every event the action emitted —
+   * a refusal's included (D5: the pipeline's own answer).
+   *
+   * @throws LoadError `runtime.act-no-entry` headless; `runtime.act-player-actor`
+   *   when the actor currently holds the player role; `runtime.act-reentry`
+   *   past 8 nested acts.
+   */
+  private performAct(stmt: Extract<IRStatement, { kind: 'act' }>, ctx: ExecContext): ISemanticEvent[] {
+    if (!this.executionEntry) {
+      throw new LoadError(`runtime.act-no-entry: \`${stmt.action}\` needs the engine's execution entry — the story is running without an engine.`, stmt.span);
+    }
+    const world = ctx.world;
+    const actorId = this.evaluator.entityValue(stmt.actor, ctx);
+    const actorName = world.getEntity(actorId)?.name ?? actorId;
+    // The runtime half of D1's exclusion: the compiler refuses the spelled
+    // role; a named character who currently holds it is refused here.
+    if (world.getPlayer()?.id === actorId) {
+      throw new LoadError(`runtime.act-player-actor: ${actorName} holds the player role this turn and cannot be made to act.`, stmt.span);
+    }
+    const storyDef = this.ir.actions.find((a) => a.name === stmt.action);
+    const actionId = storyDef ? `chord.action.${stmt.action}` : `if.action.${stmt.action}`;
+    const instrumentSlots = new Set((storyDef?.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
+
+    const slots: ActSlots = {};
+    let entitySlots = 0;
+    for (const bound of stmt.slots) {
+      if (bound.slot === 'direction') {
+        const word = bound.value.kind === 'literal' ? bound.value.value : this.evaluator.entityValue(bound.value, ctx);
+        const direction = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+        if (!direction) throw new LoadError(`Unknown direction \`${word}\`.`, stmt.span);
+        slots.direction = direction;
+        continue;
+      }
+      const entity = world.getEntity(this.evaluator.entityValue(bound.value, ctx));
+      if (!entity) throw new LoadError(`\`${bound.slot}\` names nothing in the world.`, stmt.span);
+      if (instrumentSlots.has(bound.slot)) slots.instrument = entity;
+      else if (entitySlots++ === 0) slots.directObject = entity;
+      else slots.indirectObject = entity;
+    }
+
+    const link = `${actorName} ${stmt.action}`;
+    if (this.actDepth >= ACT_DEPTH_CAP) {
+      throw new LoadError(
+        `runtime.act-reentry: an acting statement re-entered ${ACT_DEPTH_CAP} times (${[...this.actChain, link].join(' → ')}) — a reaction keeps making a character act in a way whose reactions make one act again.`,
+        stmt.span,
+      );
+    }
+    this.actDepth++;
+    this.actChain.push(link);
+    try {
+      return this.executionEntry(actorId, actionId, slots).events;
+    } finally {
+      this.actDepth--;
+      this.actChain.pop();
+    }
   }
 
   /** The current turn: the engine's when wired, else the last tick's. */
@@ -3835,6 +3948,19 @@ export class ChordRuntime {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx, thing), ctx);
+          }
+          break;
+        }
+        case 'act': {
+          // ADR-329 D4: one action, now, as the named character, through the
+          // engine's execution entry. Runs ONCE — in a single pass, or the
+          // mutations pass of a two-pass body. Its events were applied inside
+          // the entry, so they never join this body's return (an action's or
+          // a handler's return is re-applied); they wait in the act buffer
+          // for the flush plugin, which lands them right after the report
+          // that caused them — or for the drain daemon, on the tick.
+          if (phase !== 'reports' && holds) {
+            for (const e of this.performAct(stmt, ctx)) this.pendingActEvents.push(e);
           }
           break;
         }

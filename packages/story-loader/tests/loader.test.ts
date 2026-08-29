@@ -267,6 +267,60 @@ end before
     expect(signs.has(TraitType.SCENERY)).toBe(true);
   });
 
+  it("places a character's `carries` and `wears` at load — every entity's, not only the role-holder's (found 2026-08-29, ADR-329 Phase 9b)", () => {
+    const ir = compileSource(`story
+  title: Coverage
+  authors:
+    Nobody
+  id: coverage-3
+  story-version: 0.0.1
+
+create the Pantry
+  a room
+
+  A pantry.
+
+create the sword
+
+  A sword.
+
+create the hat
+  wearable
+
+  A hat.
+
+create Teisha
+  a person
+  in the Pantry
+  carries the sword
+  wears the hat
+
+  Teisha.
+
+create Alex
+  a person
+  playable
+  starts in the Pantry
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+
+`);
+    const story = createStory(ir);
+    const world = new WorldModel();
+    story.initializeWorld(world);
+    const teisha = story.entityId('teisha')!;
+    expect(world.getLocation(story.entityId('sword')!)).toBe(teisha);
+    const hatId = story.entityId('hat')!;
+    expect(world.getLocation(hatId)).toBe(teisha);
+    const wearable = world.getEntity(hatId)!.get(TraitType.WEARABLE) as WearableTrait;
+    expect(wearable.worn).toBe(true);
+    expect(wearable.wornBy).toBe(teisha);
+  });
+
   it('backstop: rejects rogue IR wearing a non-wearable (ADR-276 census 12 — the compiler gates this as analysis.worn-not-wearable)', () => {
     // Gate-clean source (the anvil IS wearable), then strip the trait from
     // the IR directly — the loader's defensive backstop must still throw.

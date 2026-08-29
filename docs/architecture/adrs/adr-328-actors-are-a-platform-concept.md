@@ -286,6 +286,11 @@ its Q-1 resolved to full implementation (its D7): named actors fire on this ADR'
 path, so ADR-327's non-player acceptance items close when D2's execution entry lands.
 (Amended 2026-08-25, session 8ae644, per ADR-327's Supersedes section.)
 
+*(Child written and ACCEPTED 2026-08-29, session aeade8:
+[ADR-329](adr-329-chord-acting-statement.md) — the acting statement `<actor> <verb>
+<object>`, one action now as that character through the execution entry; goal steps lower
+onto the same entry; `move` unchanged — "move puts; acting does". Stamped per ADR-329 D9.)*
+
 ## Non-goals
 
 - No change to `move`/Chord effect semantics (ADR-325/326 stand as written).
@@ -319,6 +324,15 @@ path, so ADR-327's non-player acceptance items close when D2's execution entry l
    action through the pipeline; a trait refusal blocks it; the player witnesses it in
    third person from the same room and sees nothing from another room; Dungeo's chain is
    green at re-pinned seeds.
+   *(Satisfied 2026-08-28, session 1d6ae5 — Phases 6a/6b of the program plan, stamped
+   2026-08-29 by session aeade8 from the plan's recorded evidence. The scene is Dungeo's:
+   the thief takes through the real `taking` and `stealing` actions, the troll recovers his
+   axe through `taking` with the white-hot refusal exempting the guardian and blocking
+   everyone else, `going` narrates a witnessed mover through `actor_exited`/`actor_entered`
+   with no arrival perception for a non-protagonist, and the 952-test/17-transcript chain
+   ran byte-identical at its pinned seeds with no re-pin — "green at re-pinned seeds"
+   was satisfied without a re-pin being needed. Evidence: plan.md Phase 6a/6b status
+   lines, 2026-08-28 23:55 CDT.)*
 3. ADR-327's non-player acceptance items (its AC-2 and AC-5) are green through this
    program's D2 execution entry — a non-player actor fires `on <actor> <gerund>` and not
    the player's head. (Reworded 2026-08-25, session 8ae644: ADR-327 D7 removed the
