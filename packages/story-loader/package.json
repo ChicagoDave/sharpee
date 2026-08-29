@@ -29,7 +29,6 @@
     "@sharpee/ext-hunger": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/plugins": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",

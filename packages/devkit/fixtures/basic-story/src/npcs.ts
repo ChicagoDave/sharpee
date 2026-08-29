@@ -5,7 +5,7 @@
  * Owner: npm regression test suite
  */
 
-import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext } from '@sharpee/stdlib';
 import { definePoint } from '@sharpee/core';
 
 // Declared choice points (ADR-293): every draw names a point the author can
@@ -22,35 +22,18 @@ const BOT_PHRASES = [
 
 /**
  * Patrol Bot — an NPC that randomly speaks when the player is visible.
- * Used to test NpcPlugin + NpcBehavior.
+ * Used to test the engine's actor turn phase + NpcBehavior.
  */
 export const patrolBotBehavior: NpcBehavior = {
   id: 'regression-patrol-bot',
   name: 'Patrol Bot',
-  onTurn(context: NpcContext): NpcAction[] {
-    if (!context.playerVisible) return [];
+  onTurn(context: NpcContext): void {
+    if (!context.playerVisible) return;
     if (context.random.chance(BOT_SPEAKS_POINT, 0.6)) {
-      return [
-        {
-          type: 'speak',
-          messageId: 'npc.speech',
-          data: {
-            text: context.random.pick(BOT_PHRASE_POINT, BOT_PHRASES),
-          },
-        },
-      ];
+      context.narrate({ text: context.random.pick(BOT_PHRASE_POINT, BOT_PHRASES) });
     }
-    return [];
   },
-  onPlayerEnters(): NpcAction[] {
-    return [
-      {
-        type: 'emote',
-        messageId: 'npc.emote',
-        data: {
-          text: 'The maintenance bot swivels its optical sensor toward you.',
-        },
-      },
-    ];
+  onPlayerEnters(context: NpcContext): void {
+    context.narrate({ text: 'The maintenance bot swivels its optical sensor toward you.' });
   },
 };

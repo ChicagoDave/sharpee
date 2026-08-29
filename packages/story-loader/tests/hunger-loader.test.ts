@@ -5,6 +5,7 @@
  * `use hunger, announce <mode>`.
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
@@ -46,7 +47,7 @@ function load(text: string) {
   story.initializeWorld(world);
   world.setPlayer(story.createPlayer(world).id);
   const plugins: TurnPlugin[] = [];
-  story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p as TurnPlugin) }) });
+  story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p as TurnPlugin) }) });
   return { world, plugins };
 }
 

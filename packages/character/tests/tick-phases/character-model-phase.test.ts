@@ -111,6 +111,7 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
     });
   }
 
@@ -223,6 +224,7 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
       const tick = (turn: number) => handler([maid, cook, ginger, colonel], {
         world, turn, random: {} as unknown as RandomService,
         playerLocation: room.id, playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
       });
 
       const first = tick(1);
@@ -261,6 +263,7 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
       const tick = (turn: number) => handler([maid, cook, ginger, duchess], {
         world, turn, random: {} as unknown as RandomService,
         playerLocation: room.id, playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
       });
 
       tick(1);
@@ -302,6 +305,7 @@ describe('createCharacterModelPhase — assembled phase over a real world', () =
       const tick = (turn: number) => handler([maid, cook, ginger, john], {
         world, turn, random: {} as unknown as RandomService,
         playerLocation: room.id, playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
       });
 
       tick(1);
@@ -351,6 +355,7 @@ describe('decay sub-step (ADR-310 D6 — runtime-owned curves)', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
     });
   }
 
@@ -451,6 +456,7 @@ describe('decay sub-step (ADR-310 D6 — runtime-owned curves)', () => {
     const events = handler([npc, influencer], {
       world, turn: 1, random: {} as unknown as RandomService,
       playerLocation: room.id, playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
     });
 
     const firstDecay = events.findIndex(e => e.type === CharacterMessages.MOOD_CHANGED);
@@ -489,6 +495,7 @@ describe('registerCharacterModelPhase — real NpcService socket (ADR-310 D15)',
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
     });
 
     // The phase actually ran inside the service's turn: the decay sub-step
@@ -522,6 +529,7 @@ describe('registerCharacterModelPhase — real NpcService socket (ADR-310 D15)',
     service.tick({
       world, turn: 1, random: {} as unknown as RandomService,
       playerLocation: room.id, playerId: player.id,
+      act: () => { throw new Error('no act expected in this test'); },
     });
 
     // A double decay (old inline call + phase sub-step) would leave 1

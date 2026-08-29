@@ -172,9 +172,6 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../parser-en-us
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
@@ -783,31 +780,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
-  packages/plugin-npc:
-    dependencies:
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/plugins':
-        specifier: workspace:*
-        version: link:../plugins
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../world-model
-    devDependencies:
-      '@types/node':
-        specifier: ^20.11.19
-        version: 20.19.27
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
   packages/plugin-scheduler:
     dependencies:
       '@sharpee/core':
@@ -925,9 +897,6 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../parser-en-us
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
@@ -995,9 +964,6 @@ importers:
       '@sharpee/platform-browser':
         specifier: workspace:*
         version: link:../platform-browser
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
@@ -1096,9 +1062,6 @@ importers:
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
@@ -1169,9 +1132,6 @@ importers:
       '@sharpee/platform-browser':
         specifier: workspace:*
         version: link:../platform-browser
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
@@ -1454,9 +1414,6 @@ importers:
       '@sharpee/platform-browser':
         specifier: workspace:*
         version: link:../../packages/platform-browser
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../../packages/plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../../packages/plugin-scheduler
@@ -1512,9 +1469,6 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../../packages/parser-en-us
-      '@sharpee/plugin-npc':
-        specifier: workspace:*
-        version: link:../../packages/plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../../packages/plugin-scheduler

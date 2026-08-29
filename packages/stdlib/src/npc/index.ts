@@ -1,7 +1,8 @@
 /**
  * NPC Module Exports (ADR-070)
  *
- * Provides NPC behavior system for autonomous characters.
+ * Provides the NPC decision layer for autonomous characters (ADR-328 D5):
+ * behaviors decide, the engine's actor phase executes through the pipeline.
  */
 
 // Types
@@ -15,10 +16,7 @@ export * from './character-messages.js';
 export {
   NpcService,
   createNpcService,
-  registerNpcCombatResolver,
-  clearNpcCombatResolver,
   type INpcService,
-  type NpcCombatResolver,
   type NpcTickContext,
   type NpcTickPhase,
 } from './npc-service.js';

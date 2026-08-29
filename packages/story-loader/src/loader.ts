@@ -85,6 +85,7 @@ import {
   createAmbientChannel,
   createImageChannel,
   killPlayer,
+  type INpcService,
 } from '@sharpee/stdlib';
 import {
   createHungerCrossingWatcher,
@@ -96,7 +97,6 @@ import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
 import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import {
   applyCompiledCharacter,
   createTraitMemoryAccess,
@@ -1045,6 +1045,7 @@ export class ChordStory implements Story {
    */
   onEngineReady(engine: {
     getPluginRegistry(): { register(plugin: unknown): void };
+    getNpcService(): INpcService;
     registerSlotEntry?(entry: ChordSlotEntry): void;
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
     getClientCapabilities?(): object;
@@ -1068,12 +1069,10 @@ export class ChordStory implements Story {
     if (engine.getRandomService) {
       this.evaluator.setRandomService(engine.getRandomService());
     }
-    // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
-    // (unlike the scheduler's daemon-gated registration below), and each
-    // factory-configured behavior registers under its per-entity id.
-    const npcPlugin = new NpcPlugin();
-    engine.getPluginRegistry().register(npcPlugin);
-    const npcService = npcPlugin.getNpcService();
+    // ADR-215 Q4: NPCs are CORE — the engine owns the actor turn phase
+    // (ADR-328 D5), so there is nothing to register; each factory-configured
+    // behavior registers under its per-entity id on the engine's service.
+    const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
       npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
     }

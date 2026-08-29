@@ -99,11 +99,12 @@ export function createActionContext(
   const sharedData: EngineSharedData = {};
 
   // Create the event method
-  const event = (type: string, data: Record<string, any>): ISemanticEvent => {
-    // Add standard entities
+  const event = (type: string, data: Record<string, any>, at?: { location: string }): ISemanticEvent => {
+    // Add standard entities. `at` places a fact somewhere other than where
+    // the actor began the action (ADR-328 D3) — an arrival at its destination.
     const entities: Record<string, string> = {
       actor: actor.id,
-      location: currentLocation?.id || actor.id
+      location: at?.location ?? (currentLocation?.id || actor.id)
     };
 
     // Add entities from command

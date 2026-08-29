@@ -10,15 +10,14 @@ npm install @sharpee/ext-basic-combat
 
 ## Overview
 
-This extension provides opt-in combat resolution for both attack directions:
+This extension provides opt-in combat resolution for both attack directions through one interceptor:
 
-- **PC→NPC** - `BasicCombatInterceptor`, registered on `CombatantTrait` + `if.action.attacking`
-- **NPC→PC** - `basicNpcResolver`, registered as the NPC combat resolver
+- **`BasicCombatInterceptor`** - registered on `CombatantTrait` + `if.action.attacking`; resolves the player's blows at an NPC and an NPC's blows at the player. An NPC attacks by running the real attacking action through the engine's execution entry (ADR-328 D5), so the same interceptor, the same rules, and the same messages apply whoever swings. A lethal blow on the player routes through `killPlayer`, the canonical death sink (ADR-227).
 - **CombatService** - skill-based hit/damage resolution with validation
 - **Combat messages** - message IDs and health-status helpers for reporting
-- **One-call setup** - `registerBasicCombat()` wires both directions at once
+- **One-call setup** - `registerBasicCombat()` registers the interceptor
 
-Stories with custom combat register their own interceptor and resolver instead of calling `registerBasicCombat()`.
+Stories with custom combat register their own interceptor instead of calling `registerBasicCombat()`.
 
 ## Usage
 
@@ -29,25 +28,30 @@ import { registerBasicCombat } from '@sharpee/ext-basic-combat';
 registerBasicCombat(world);
 ```
 
-To wire only one direction, register the individual components yourself:
+To register the interceptor on your own terms:
 
 ```typescript
 import { TraitType } from '@sharpee/world-model';
-import { registerNpcCombatResolver } from '@sharpee/stdlib';
-import {
-  BasicCombatInterceptor,
-  basicNpcResolver,
-} from '@sharpee/ext-basic-combat';
+import { BasicCombatInterceptor } from '@sharpee/ext-basic-combat';
 
-// PC→NPC only — the binding is per-world and idempotent (ADR-208)
+// The binding is per-world and idempotent (ADR-208)
 world.registerActionInterceptor(
   TraitType.COMBATANT,
   'if.action.attacking',
   BasicCombatInterceptor
 );
+```
 
-// NPC→PC only
-registerNpcCombatResolver(basicNpcResolver);
+An NPC that should fight back is a behavior that acts:
+
+```typescript
+engine.getNpcService().registerBehavior({
+  id: 'brawler',
+  onTurn(context) {
+    const player = context.world.getPlayer();
+    if (player && context.playerVisible) context.act('if.action.attacking', { directObject: player });
+  },
+});
 ```
 
 The `CombatService` can be used directly for custom resolution:

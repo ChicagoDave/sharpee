@@ -309,9 +309,11 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   // if.action.going
   'going-already-there': 'if.action.going.already_there',
   'going-arrived': 'if.action.going.arrived',
+  'going-arrives': 'if.action.going.arrives',
   'going-cant-go': 'if.action.going.cant_go',
   'going-cant-go-through': 'if.action.going.cant_go_through',
   'going-contents-list': 'if.action.going.contents_list',
+  'going-departs': 'if.action.going.departs',
   'going-destination-not-found': 'if.action.going.destination_not_found',
   'going-door-closed': 'if.action.going.door_closed',
   'going-door-locked': 'if.action.going.door_locked',

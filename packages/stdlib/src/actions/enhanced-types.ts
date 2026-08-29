@@ -372,8 +372,12 @@ export interface ActionContext {
    * return [
    *   context.event('if.event.taken', eventData)
    * ]
+   *
+   * @param at - Where the fact happened, when that is not where the actor
+   *   stood as the action began (ADR-328 D3): an arrival is located at the
+   *   destination. Presence is tagged from this location.
    */
-  event(type: string, data: any): ISemanticEvent;
+  event(type: string, data: any, at?: { location: string }): ISemanticEvent;
 
   /**
    * Emit a sound from the actor's current location for this turn (ADR-172

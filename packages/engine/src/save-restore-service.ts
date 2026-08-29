@@ -40,6 +40,7 @@
  *     see the same data reorganized.
  */
 
+import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './actor-turn-plugin.js';
 import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
 
 import { WorldModel } from '@sharpee/world-model';
@@ -327,9 +328,15 @@ export class SaveRestoreService {
     const world = provider.getWorld();
     world.loadJSON(decompressWorldSnapshot(saveData.engineState.worldSnapshot));
 
-    // Restore plugin states if present (ADR-120).
+    // Restore plugin states if present (ADR-120). A save written before the
+    // actor phase moved into the engine (ADR-328 D5) holds NPC behavior state
+    // under `plugin-npc`'s id; it restores into the engine's phase unchanged.
     if (saveData.engineState.pluginStates) {
-      provider.getPluginRegistry().setStates(saveData.engineState.pluginStates);
+      const { [LEGACY_NPC_PLUGIN_ID]: legacyNpcState, ...pluginStates } = saveData.engineState.pluginStates;
+      if (legacyNpcState !== undefined && pluginStates[ACTOR_TURN_PLUGIN_ID] === undefined) {
+        pluginStates[ACTOR_TURN_PLUGIN_ID] = legacyNpcState;
+      }
+      provider.getPluginRegistry().setStates(pluginStates);
     }
 
     // Restore the dedicated action RNG stream (ADR-231 D6). Saves that

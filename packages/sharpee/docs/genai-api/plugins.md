@@ -273,63 +273,7 @@ export interface BandNarratorConfig extends BandCrossingConfig {
 export declare function createBandNarrator(config: BandNarratorConfig): TurnPlugin;
 ```
 
-## @sharpee/plugin-npc
-
-### npc-plugin
-
-```typescript
-/**
- * NpcPlugin - Wraps NPC service as a TurnPlugin (ADR-070, ADR-120)
- *
- * Priority 100: Runs before scheduler (50) and state machines (75).
- * NPCs act immediately after the player's action.
- */
-import { type ISemanticEvent } from '@sharpee/core';
-import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
-import { type INpcService } from '@sharpee/stdlib';
-/**
- * The {@link TurnPlugin} that lets NPCs act each turn (ADR-070, ADR-120).
- *
- * Runs at priority 100 — before state machines (75) and the scheduler (50), so
- * NPCs react immediately after the player's action. It wraps the NPC service
- * from `@sharpee/stdlib`, pre-registering the standard `guard` and `passive`
- * behaviours. Register the plugin with the engine, then add story-specific
- * behaviours through {@link getNpcService}.
- */
-export declare class NpcPlugin implements TurnPlugin {
-    /** Stable plugin id. */
-    id: string;
-    /** Run order within a turn (NPCs act first). */
-    priority: number;
-    private service;
-    constructor();
-    /**
-     * Tick the NPC service for this turn and return the events NPCs produced.
-     *
-     * After the per-turn tick (which drives each NPC's `onTurn`), this also fires
-     * the room-entry/exit hooks when the player's action moved them this turn:
-     * an `if.event.actor_moved` in `ctx.actionEvents` is always the player's move
-     * (NPC movement is produced here, not in the player's action events), so the
-     * NPCs in the room left react via `onPlayerLeaves` and those in the room
-     * entered react via `onPlayerEnters` (e.g. a greeting emote). Without this the
-     * service's `onPlayerEnters`/`onPlayerLeaves` hooks have no runtime caller.
-     */
-    onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
-    /**
-     * Returns an empty object: NPC state lives in world-model entity traits, so it
-     * is saved with the world and the plugin holds nothing of its own.
-     */
-    getState(): unknown;
-    /** No-op: NPC state is restored with the world model, not by this plugin. */
-    setState(state: unknown): void;
-    /**
-     * The underlying NPC service — the author hook for registering custom NPC
-     * behaviours. The service type (`INpcService`) and behaviour helpers live in
-     * `@sharpee/stdlib`.
-     */
-    getNpcService(): INpcService;
-}
-```
+> **plugin-npc**: dist/index.d.ts not found — build first.
 
 ## @sharpee/plugin-scheduler
 

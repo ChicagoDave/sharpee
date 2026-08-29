@@ -572,7 +572,56 @@ ADR's own text implies).
   own-block clause still fires when the old PC acts" half now has its dependency
   (`executeAsActor`); write it where the PC switch lands. NPC-visited semantics and NPC death
   are open by design (see the Phase 4 survivor comments); D7's child ADR gives them words.
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session 1d6ae5) — landed as presented (twelve calls, all accepted:
+  "keep going"). The seam is `NpcContext.act(actionId, slots) → ActResult` (the engine's
+  `executeAsActor`, curried per NPC) plus `narrate(message | {text}, params)` → one `game.message`
+  sourced by the NPC at its current room; hooks return `void`. `NpcAction`, the seven executors,
+  `announceMovement`/`npc.moved.witnessed`, the combat-resolver registry, and the runtime-dead
+  `onSpokenTo`/`onAttacked`/`onObserve` + `onPlayerSpeaks`/`onNpcAttacked` are deleted. The engine
+  registers `ActorTurnPlugin` (`packages/engine/src/actor-turn-plugin.ts`, id `sharpee.engine.actors`,
+  priority 100) in its constructor and exposes `getNpcService()`; `plugin-npc` is deleted from the
+  workspace, the umbrella, the ADR-178 baseline (stamped), repokit, and seven package configs.
+  `ActorCommand.direction` → `parsed.extras.direction`; `TurnResult.refused` (set on the blocked
+  branch) is what `ActResult.success` reads — `success` alone reports a `blocked()` refusal as
+  success (`take_blocked` carries no `blocked: true`). `going` narrates a witnessed mover through
+  its own `actor_exited` (`if.action.going.departs`, at the origin) and `actor_entered`
+  (`if.action.going.arrives`, at the destination — `context.event(type, data, { location })` is
+  the new override, both context implementations) and emits no arrival perception for a
+  non-protagonist; `lang-en-us/src/npc/npc.ts` keeps three behavior lines (D4 amended).
+  `canActorLeave` runs `going.validate()` per direction for the scene leaver
+  (`dialogue-selector.ts`); `hasTraversableExit` stays for `runtime.ts`'s two Phase 9 sites.
+  basic-combat: `basicNpcResolver` deleted; `BasicCombatInterceptor` draws the villain point for
+  a non-player attacker; `applyCombatResult` leaves the player's lethal flag to `killPlayer`, whose
+  guard now keys on the `dead` flag rather than `isAlive` (health ≤ 0 silenced
+  `if.event.player.died` on every combat-death path — the ordering trap the resolver had worked
+  around by hand). Save state: `pluginStates['sharpee.engine.actors']`; a `sharpee.plugin.npc`
+  entry restores through a read-side alias in `save-restore-service.ts`. act-detection reads
+  `if.event.taken`/`if.event.attacked` only.
+  **Evidence (2026-08-28, 21:35–21:55 CDT, after the last source edit):** stdlib 1660 passing
+  (27 pre-existing skips; new `going-witnessed.test.ts` 3, `exit-legality` +4 `canActorLeave`,
+  `npc-service.test.ts` rewritten 25, ADR-203 AC-1/2/4 rewritten onto the real going action);
+  engine 679 passing (7 skips; new `actor-turn-plugin.test.ts` 7 REAL-PATH: real `GameEngine`,
+  real `PerceptionService`, real player turn — take moves the lamp and is tagged present, a
+  scenery take comes back `success: false` with nothing moved, an NPC entering the player's room
+  is `absent` at exit and `present` at entry with no room description, `narrate` renders,
+  onPlayerLeaves/Enters fire only for the player's own move, the legacy save id restores);
+  lang-en-us 447 passing (+3 template tests); character 570 passing; basic-combat 32 passing
+  (new `npc-attack-through-attacking.test.ts` 3 REAL-PATH: the real attacking action as the
+  ogre through the real interceptor — `if.event.player.died` via `killPlayer`, `if.event.death`
+  for an NPC victim, `violence_not_the_answer` with no interceptor); story-loader 971 passing
+  (the six suites drive the engine's own phase through `tests/helpers/boot-engine.ts` — a real
+  `GameEngine`, `setStory`, `getById('sharpee.engine.actors')`; `npc-behaviors` adds a full real
+  turn; 12 other suites' engine stubs gained `getNpcService: () => createNpcService()`); chord
+  1064 passing (two alias-catalog entries); baseline 8 passing; plugins 13 passing. Type checks
+  per package clean (note: root `npx tsc --noEmit` is vacuous — `tsconfig.json` has `files: []`
+  and only references, so it checks nothing; prior sessions' "root tsc clean" lines were empty
+  evidence). `./repokit build --no-genai` green (platform + 4.1 MB bundle; genai-api regenerated
+  by hand). Bundle smoke, all through `dist/cli/sharpee.js`: presence-test 7 passing;
+  character-acceptance (Chord, real character phase through the engine's actor phase) b1 15,
+  p10 21, b3 62 passing + 1 failing (`b3-seek-out-recycle` second confession); cloak-of-darkness
+  80 passing + 2 failing (bar-darkness golden banner divergence, `examine yourself`). **All three
+  failures reproduce byte-for-byte on a HEAD (`593945a8`) worktree build — pre-existing, not this
+  phase's.** Dungeo does not compile, as this phase's exit state says.
 
 ### Phase 6a: D6 — Dungeo's four lighter NPCs rewrite onto the pipeline
 - **Tier**: Large
@@ -584,6 +633,19 @@ ADR's own text implies).
 - **Child artifact**: this plan.
 - **Entry state**: Phase 5 shipped (the decision/execution split exists; these four NPCs'
   `NpcBehavior`s are what's currently broken by it).
+- **Entry state (added 2026-08-28, session 1d6ae5)**: the shape is `onTurn(context): void`
+  with `context.act(IFActions.X, { directObject | direction })` and `context.narrate(...)`;
+  `onSpokenTo`/`onAttacked` no longer exist (they were never called — cyclops/robot/dungeon-master's
+  `onSpokenTo` and thief/troll/cyclops's `onAttacked` are dead code to drop, not port). Dungeo's
+  `meleeNpcResolver` (`dungeo/src/index.ts:578`, `combat/melee-npc-attack.ts`) has no registry to
+  register into: NPC blows are `attacking` through the target's `CombatantTrait` interceptor —
+  fold it into Dungeo's interceptor the way basic-combat did (villain-vs-hero point on the
+  attacker; the player's lethal flag belongs to `killPlayer` in attacking's report, never to the
+  interceptor). Story handlers on `if.event.taken` (treasure scoring) now see the thief's takes —
+  check the actor. The thief's `custom` lair-deposit is direct mutation inside `onTurn` (still
+  allowed) or `dropping` per item. Dungeo's `say-action`/`bat-handler`/`exorcism-handler` emit
+  their own `npc.emoted`; `npc.no_response` and the `npc.attacks…` family are Dungeo's own
+  `addMessage` overrides and keep working. `moveTo` had no live user.
 - **Deliverable**: all four NPCs' behaviors emit `(action, actorId)` invocations directly
   instead of `NpcAction` values; each take/drop/attack/move now runs the real standard action
   and honors its interceptors for the first time — a documented behavior change wherever the
@@ -594,7 +656,7 @@ ADR's own text implies).
   on the old system here.
 - **Exit state**: these four NPCs' walkthrough coverage passes; the thief (Phase 6b) is the
   only piece still on the old system, so the full chain is not yet expected green.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 6b: D6 — The thief rewrites; the 952-test walkthrough chain re-pins
 - **Tier**: Large
@@ -653,6 +715,12 @@ ADR's own text implies).
 - **Exit state**: zero references to `NpcAction`/`NpcPlugin`/`createNpcService` under
   `docs/book/v2.0.0/parts` and `code-snippets` (48 today across the tree, the `testing/` logs
   excluded — they are historical records); the zoo tutorial and devkit fixture green.
+- **Entry state (added 2026-08-28, session 1d6ae5)**: `stories/family-zoo-tutorial` and
+  `packages/devkit/fixtures/basic-story` already rewrote in Phase 5 (`narrate({ text })` replaces
+  the `speak`/`emote` + `npc.speech`/`npc.emote` pair; `engine.getNpcService()` replaces the
+  plugin). Still owed here: `docs/book/v2.0.0/parts/part-6/20-non-player-characters.md` and its
+  `code-snippets/ch20-*` (and the v1.5.0 copies), plus `tutorials/familyzoo/v1.5.0` and `v2.0.0`
+  whose `package.json`s still depend on `@sharpee/plugin-npc`.
 - **Status**: PENDING
 
 ### Phase 8: D7a — Write the Chord acting-surface child ADR

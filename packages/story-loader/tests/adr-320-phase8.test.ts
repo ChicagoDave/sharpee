@@ -28,7 +28,8 @@ import {
   readSceneStore,
   sceneWith,
 } from '@sharpee/world-model';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import type { ActorTurnPlugin } from '@sharpee/engine';
+import { bootEngine } from './helpers/boot-engine';
 import {
   SaveRestoreService,
   PluginRegistry,
@@ -121,39 +122,25 @@ interface Loaded {
   story: ChordStory;
   world: WorldModel;
   player: IFEntity;
-  npcPlugin: NpcPlugin;
+  phase: ActorTurnPlugin;
   sounds: ISound[];
 }
 
 function load(source: string = SOURCE): Loaded {
-  const story = createStory(compileSource(source), { seed: 7 });
-  const world = new WorldModel();
-  story.initializeWorld(world);
-  const player = story.createPlayer(world);
-  world.setPlayer(player.id);
-
-  // The story's own engine-ready hook registers the REAL NpcPlugin and
-  // the character-model tick phase on its service — no stub of owned
-  // machinery; the test drives the plugin exactly as the engine would.
-  const registered: unknown[] = [];
-  story.onEngineReady({
-    getPluginRegistry: () => ({ register: (p: unknown) => registered.push(p) }),
-  });
-  const npcPlugin = registered.find(
-    (p) => (p as { id?: string }).id === 'sharpee.plugin.npc',
-  ) as NpcPlugin;
-  expect(npcPlugin).toBeDefined();
-
-  return { story, world, player, npcPlugin, sounds: [] };
+  // A REAL engine: setStory runs the story's own engine-ready hook, which
+  // registers the character-model tick phase on the engine's NPC service.
+  // The test drives the engine's actor phase exactly as the engine does.
+  const { story, world, player, phase } = bootEngine(source, 7);
+  return { story, world, player, phase, sounds: [] };
 }
 
 const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
 const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
   entity(l, irId).get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 
-/** One NPC turn through the real plugin (the engine's own call shape). */
+/** One NPC turn through the engine's actor phase (the engine's own call shape). */
 function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISemanticEvent[] {
-  return l.npcPlugin.onAfterAction({
+  return l.phase.onAfterAction({
     world: l.world,
     turn,
     playerId: l.player.id,

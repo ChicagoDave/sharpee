@@ -591,6 +591,38 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        room_description: string;
+        contents_list: string;
+        no_exit: string;
+        no_exit_that_way: string;
+        door_closed: string;
+        door_locked: string;
+        too_dark: string;
+        moved: string;
+        cant_go_through: string;
+        already_there: string;
+        nowhere_to_go: string;
+        no_direction: string;
+        not_in_room: string;
+        no_exits: string;
+        movement_blocked: string;
+        destination_not_found: string;
+        need_light: string;
+        went: string;
+        arrived: string;
+        departs: string;
+        arrives: string;
+        cant_go: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -701,36 +733,6 @@ export declare const standardActionLanguage: ({
         surface_contents: string;
         worn_by_you: string;
         worn_by_other: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        room_description: string;
-        contents_list: string;
-        no_exit: string;
-        no_exit_that_way: string;
-        door_closed: string;
-        door_locked: string;
-        too_dark: string;
-        moved: string;
-        cant_go_through: string;
-        already_there: string;
-        nowhere_to_go: string;
-        no_direction: string;
-        not_in_room: string;
-        no_exits: string;
-        movement_blocked: string;
-        destination_not_found: string;
-        need_light: string;
-        went: string;
-        arrived: string;
-        cant_go: string;
     };
     help: {
         description: string;
@@ -901,6 +903,40 @@ export declare const standardActionLanguage: ({
         cant_reach: string;
         key_not_held: string;
         still_locked: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;
@@ -1578,38 +1614,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        revealed: string;
-        not_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1872,13 +1876,16 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
     };
     help: {
         description: string;
@@ -1889,13 +1896,8 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
+        revealed: string;
+        not_hidden: string;
     };
     help: {
         description: string;
@@ -1909,7 +1911,12 @@ export declare const standardActionLanguage: ({
 
 ```typescript
 /**
- * Language content for NPC system (ADR-070)
+ * Language content for the standard NPC behaviors (ADR-070; ADR-328 D5)
+ *
+ * Only what a behavior NARRATES lives here — a guard's blocking line, a
+ * wanderer noticing the player, a follower following. What an NPC DOES
+ * (take, go, attack) renders through the action's own messages in the
+ * actor's voice (ADR-328 D4); no third-person "npc.takes" dialect exists.
  *
  * Attribution lines name the acting NPC via a `speaker` NounPhrase param (ADR-203)
  * and agree their verb with it via the ADR-199 Verb atom (`{verb:LEMMA speaker}`).
@@ -1919,45 +1926,9 @@ export declare const standardActionLanguage: ({
  */
 export declare const npcLanguage: {
     messages: {
-        'npc.enters': string;
-        'npc.leaves': string;
-        'npc.arrives': string;
-        'npc.departs': string;
-        'npc.heard_arrives': string;
-        'npc.heard_departs': string;
         'npc.notices_player': string;
-        'npc.ignores_player': string;
-        'npc.takes': string;
-        'npc.drops': string;
         'npc.follows': string;
         'npc.guard.blocks': string;
-        'npc.guard.attacks': string;
-        'npc.guard.defeated': string;
-        'npc.attacks': string;
-        'npc.misses': string;
-        'npc.hits': string;
-        'npc.killed': string;
-        'npc.unconscious': string;
-        'npc.combat.attack.missed': string;
-        'npc.combat.attack.hit': string;
-        'npc.combat.attack.hit_light': string;
-        'npc.combat.attack.hit_heavy': string;
-        'npc.combat.attack.knocked_out': string;
-        'npc.combat.attack.killed': string;
-        'npc.speech': string;
-        'npc.speaks': string;
-        'npc.shouts': string;
-        'npc.whispers': string;
-        'npc.mutters': string;
-        'npc.emote': string;
-        'npc.laughs': string;
-        'npc.growls': string;
-        'npc.cries': string;
-        'npc.sighs': string;
-        'npc.greets': string;
-        'npc.farewell': string;
-        'npc.no_response': string;
-        'npc.confused': string;
     };
 };
 ```

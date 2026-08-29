@@ -213,6 +213,11 @@ a template sweep. The interim NPC dialect this decision says must not be built a
 exists — `lang-en-us/src/npc/`, 39 `npc.*` messages — and retires with its producers in
 the NpcService dissolution.
 
+*(Landed 2026-08-28, session 1d6ae5 — Phase 5. `lang-en-us/src/npc/npc.ts` keeps three
+messages, the ones the standard behaviors NARRATE rather than act — `npc.guard.blocks`,
+`npc.notices_player`, `npc.follows` — and loses the 36 that narrated actions. An NPC's move
+now renders through `going`'s own `departs`/`arrives` templates in the actor's voice.)*
+
 ### D5. The character layer's output is the pipeline
 
 The arbiter's chosen act (ADR-310/318) becomes an `(action, actorId)` invocation —
@@ -229,6 +234,14 @@ drove — `npcService.tick`, `onPlayerEnters`/`onPlayerLeaves`, the ADR-310 `act
 and ADR-320 `emitSound` feeds, behavior-state save/restore — becomes an engine-owned actor
 turn phase calling the surviving decision surface, and ADR-120's plugin priority ordering
 becomes engine sequencing.
+
+*(Landed 2026-08-28, session 1d6ae5 — Phase 5 of the program plan. The seam is
+`NpcContext.act(actionId, slots)` → the engine's execution entry, plus `narrate` for a
+line that is not an action; hooks return nothing. `ActorTurnPlugin` (`packages/engine/src/actor-turn-plugin.ts`)
+is registered by the engine's constructor at priority 100 and reached through
+`GameEngine.getNpcService()`; `plugin-npc` is deleted. Also retired as runtime-dead:
+`onSpokenTo`/`onAttacked`/`onObserve` and the service's `onPlayerSpeaks`/`onNpcAttacked`,
+which nothing called. Dungeo's five behaviors do not compile until Phase 6, as planned.)*
 
 ### D6. Dungeo rewrites its five NPCs, and the chain re-pins by design
 

@@ -1,12 +1,13 @@
 /**
  * @file npc-attribution-realpath.test.ts
  * @description ADR-203 — REAL-PATH integration for NPC attribution speaker
- *   agreement across the stdlib→lang seam. AC-1 drives the actual `NpcService`
- *   movement emitter (which calls `nounPhraseFor(npc)` at emit time) against a
- *   *plural* NPC and renders the emitted `npc.leaves` event through a real
- *   `EnglishLanguageProvider` — proving the verb agrees ("leave", not "leaves").
+ *   agreement across the stdlib→lang seam. AC-1 drives the real `going` action
+ *   as a *plural* NPC (ADR-328 D5: an NPC's move IS the going action) and
+ *   renders the witnessed `if.action.going.departs` message it emits through a
+ *   real `EnglishLanguageProvider` with the actor bound as the engine binds it
+ *   (ADR-328 D4) — proving the verb agrees ("leave", not "leaves").
  *   AC-2/3/4/6 exercise the same real seam (entity → `nounPhraseFor` → catalog
- *   `{verb:… speaker}` → agreement) with no stubs on either side.
+ *   `{verb:… speaker}` / actor-voice → agreement) with no stubs on either side.
  *
  * AC map (ADR-203): AC-1 plural agreement, AC-2 proper-name unchanged,
  * AC-3 article orthogonal to agreement, AC-4 verbatim payload byte-identical,
@@ -24,10 +25,14 @@ import {
   Direction,
   IFEntity,
 } from '@sharpee/world-model';
-import { createSeededRandom } from '@sharpee/core';
 import type { NarrativeAgreement, RenderContext } from '@sharpee/if-domain';
+import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { NpcService } from '../../src/npc/npc-service';
+import { goingAction } from '../../src/actions/standard/going';
+import { IFActions } from '../../src/actions/constants';
+import { createActionContext } from '../../src/actions/enhanced-context';
+import { createCommand } from '../test-utils';
+import { createFixtureRandomService } from '../test-utils/fixture-random-service';
 import { nounPhraseFor } from '../../src/utils';
 
 /** A render context mirroring the engine's `makeRenderContext(params)`. */
@@ -60,7 +65,20 @@ function npcEntity(name: string, identity: Record<string, unknown> = {}): IFEnti
 }
 
 describe('ADR-203 NPC attribution — real path', () => {
-  test('AC-1: a plural NPC leaving renders a plural verb end-to-end (real NpcService emitter)', () => {
+  /** Run the real going action as `mover` and return the witnessed departure's message + params. */
+  function departureOf(world: WorldModel, player: IFEntity, mover: IFEntity): { messageId: string; params: Record<string, unknown> } {
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.EAST };
+    const context = createActionContext(world, player, goingAction, command, createFixtureRandomService(1), undefined, mover);
+    expect(goingAction.validate(context).valid).toBe(true);
+    goingAction.execute(context);
+    const exited = goingAction.report(context).find((e) => e.type === 'if.event.actor_exited')!;
+    const { messageId, params } = exited.data as { messageId: string; params: Record<string, unknown> };
+    // The engine binds the acting entity under ACTOR_PARAM_KEY at render (ADR-328 D4).
+    return { messageId, params: { ...params, [ACTOR_PARAM_KEY]: nounPhraseFor(mover) } };
+  }
+
+  function twoRooms(): { world: WorldModel; player: IFEntity; roomA: IFEntity } {
     const world = new WorldModel();
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true } as never);
@@ -70,40 +88,37 @@ describe('ADR-203 NPC attribution — real path', () => {
     const roomB = world.createEntity('Room B', EntityType.ROOM);
     roomA.add(new RoomTrait({ exits: { [Direction.EAST]: { destination: roomB.id } } }));
     roomB.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: roomA.id } } }));
+    world.moveEntity(player.id, roomA.id);
+    return { world, player, roomA };
+  }
 
+  test('AC-1: a plural NPC leaving renders a plural verb end-to-end (real going action as the NPC)', () => {
+    const { world, player, roomA } = twoRooms();
     const twins = world.createEntity('twins', EntityType.ACTOR);
     twins.add(new IdentityTrait({ name: 'twins', nounType: 'plural' }));
-    twins.add(new NpcTrait({ behaviorId: 'mover', canMove: true, announcesMovement: true }));
+    twins.add(new NpcTrait({ behaviorId: 'mover', canMove: true }));
     world.moveEntity(twins.id, roomA.id);
 
-    const service = new NpcService();
-    service.registerBehavior({ id: 'mover', onTurn: () => [{ type: 'move', direction: Direction.EAST } as never] });
-    const events = service.tick({
-      world,
-      turn: 1,
-      random: createSeededRandom(1),
-      playerLocation: roomA.id,
-      playerId: player.id,
-    });
+    const { messageId, params } = departureOf(world, player, twins);
+    expect(messageId).toBe('if.action.going.departs');
+    // The real emitter resolved the mover to a plural NounPhrase.
+    expect((params[ACTOR_PARAM_KEY] as { number: string }).number).toBe('plural');
 
-    const witnessed = events.find((e) => e.type === 'npc.moved.witnessed');
-    expect(witnessed).toBeDefined();
-    const sight = (witnessed!.data as { renderings: { sight: { messageId: string; params: Record<string, any> } } })
-      .renderings.sight;
-    expect(sight.messageId).toBe('npc.leaves');
-    // The real emitter resolved the speaker to a plural NounPhrase at emit time.
-    expect(sight.params.speaker.number).toBe('plural');
-
-    const rendered = render(sight.messageId, sight.params);
-    expect(rendered).toContain('The twins leave to the'); // plural verb agrees
+    const rendered = render(messageId, params);
+    expect(rendered).toBe('The twins leave to the east.'); // plural verb agrees
     expect(rendered).not.toContain('leaves');
   });
 
   test('AC-2: a proper-named NPC renders name-only + singular verb (unchanged from pre-migration)', () => {
-    const sam = npcEntity('Sam', { nounType: 'proper' });
+    const { world, player, roomA } = twoRooms();
+    const sam = world.createEntity('Sam', EntityType.ACTOR);
+    sam.add(new IdentityTrait({ name: 'Sam', nounType: 'proper' }));
+    sam.add(new NpcTrait({ behaviorId: 'mover', canMove: true }));
+    world.moveEntity(sam.id, roomA.id);
+
+    const { messageId, params } = departureOf(world, player, sam);
     // Old output was "Sam leaves to the east." — must be byte-identical.
-    expect(render('npc.leaves', { speaker: nounPhraseFor(sam), direction: 'east' }))
-      .toBe('Sam leaves to the east.');
+    expect(render(messageId, params)).toBe('Sam leaves to the east.');
   });
 
   test('AC-3: article follows the template hint; agreement is orthogonal', () => {
@@ -122,7 +137,10 @@ describe('ADR-203 NPC attribution — real path', () => {
   test('AC-4: the {verbatim:text} utterance payload is byte-identical', () => {
     const sam = npcEntity('Sam', { nounType: 'proper' });
     const utter = 'Well... "trouble", eh?';
-    const rendered = render('npc.speaks', { speaker: nounPhraseFor(sam), text: utter });
+    // A story's own attributed-speech template over the same seam (the
+    // platform's NPC speech dialect is gone — ADR-328 D4/D5).
+    provider.addMessage('test.adr203.says', '{capitalize the speaker} {verb:says speaker}, "{verbatim:text}"');
+    const rendered = render('test.adr203.says', { speaker: nounPhraseFor(sam), text: utter });
     expect(rendered).toBe(`Sam says, "${utter}"`);
     expect(rendered).toContain(utter); // exact — no escaping, no modification
   });

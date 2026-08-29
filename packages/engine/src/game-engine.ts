@@ -40,6 +40,7 @@ import {
   channelRegistry,
   PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
+  type INpcService,
 } from '@sharpee/stdlib';
 import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
@@ -50,6 +51,7 @@ import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
+import { ActorTurnPlugin } from './actor-turn-plugin.js';
 
 
 import {
@@ -144,6 +146,20 @@ export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
 /**
  * Main game engine
  */
+/**
+ * Whether an action that produced these events was refused: modern
+ * `blocked()` paths reuse the primary event type with `blocked: true` /
+ * `failed: true` instead of emitting `action.error`, so `TurnResult.success`
+ * alone would report a refused action as a success (platform-issue-sweep
+ * Phase 7).
+ */
+function wasRefused(events: ISemanticEvent[]): boolean {
+  return events.some(e => {
+    const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
+    return data?.blocked === true || data?.failed === true;
+  });
+}
+
 export class GameEngine {
   private world: WorldModel;
   private sessionStartTime?: number;
@@ -169,6 +185,7 @@ export class GameEngine {
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
+  private actorTurnPlugin!: ActorTurnPlugin;
 
   /**
    * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
@@ -348,6 +365,21 @@ export class GameEngine {
       this.systemEventSource,
       this.randomService
     );
+
+    // ADR-328 D5: the engine owns the actor turn phase. Its execution entry
+    // is this executor, curried over the live world and turn context, so a
+    // behavior's chosen act runs the same four phases a typed command does.
+    this.actorTurnPlugin = new ActorTurnPlugin((actorId, actionId, slots) => {
+      const result = this.commandExecutor.executeAsActor(
+        { actionId, actorId, ...slots },
+        this.world,
+        this.context,
+        this.config,
+        this.soundBuffer,
+      );
+      return { success: result.success && !result.refused && !wasRefused(result.events), events: result.events };
+    });
+    this.pluginRegistry.register(this.actorTurnPlugin);
 
     // ADR-224: auto-register the deadly-room death transformer so every story
     // (TS or Chord) gets the deadly-room verb-allowlist / probabilistic hazard for
@@ -1207,10 +1239,7 @@ export class GameEngine {
         // blocked() paths reuse the primary event type with blocked:true /
         // failed:true — a refused action would otherwise report success and
         // (e.g.) advance state-machine transitions it never earned.
-        const actionRefused = semanticEvents.some(e => {
-          const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
-          return data?.blocked === true || data?.failed === true;
-        });
+        const actionRefused = wasRefused(semanticEvents);
         const pluginContext: TurnPluginContext = {
           world: this.world,
           turn,
@@ -1881,6 +1910,14 @@ export class GameEngine {
    */
   getPluginRegistry(): PluginRegistry {
     return this.pluginRegistry;
+  }
+
+  /**
+   * The NPC decision layer (ADR-328 D5): where a story registers the
+   * behaviors and tick phases the engine's actor turn phase drives.
+   */
+  getNpcService(): INpcService {
+    return this.actorTurnPlugin.getNpcService();
   }
 
   /**

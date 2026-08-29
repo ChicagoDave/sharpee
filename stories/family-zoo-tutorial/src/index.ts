@@ -67,10 +67,9 @@ import {
 } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
-  type NpcBehavior, type NpcContext, type NpcAction, createPatrolBehavior,
+  type NpcBehavior, type NpcContext, createPatrolBehavior,
   type Action, type ActionContext, type ValidationResult,
 } from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
@@ -349,10 +348,8 @@ export class FriendlyZooStory implements Story {
       });
     }
 
-    // --- NPC Plugin ---
-    const npcPlugin = new NpcPlugin();
-    engine.getPluginRegistry().register(npcPlugin);
-    const npcService = npcPlugin.getNpcService();
+    // --- NPC behaviors (the engine owns the actor turn phase, ADR-328 D5) ---
+    const npcService = engine.getNpcService();
 
     const keeperPatrol = createPatrolBehavior({
       route: [this.roomIds.mainPath, this.roomIds.pettingZoo, this.roomIds.aviary],

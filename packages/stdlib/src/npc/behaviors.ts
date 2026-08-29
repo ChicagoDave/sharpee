@@ -1,13 +1,22 @@
 /**
- * Standard NPC Behaviors (ADR-070)
+ * Standard NPC Behaviors (ADR-070; ADR-328 D5)
  *
  * Reusable behavior patterns for common NPC archetypes.
  * These are generic behaviors that can be used in any IF game.
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
+ *
+ * Every act here is a real standard action run as the NPC through
+ * `context.act` — a guard's attack is `if.action.attacking`, a wanderer's
+ * step is `if.action.going` — so the world's rules apply to it exactly as
+ * they apply to the player.
+ *
+ * Public interface: guardBehavior, passiveBehavior, createWandererBehavior,
+ * createFollowerBehavior, createPatrolBehavior.
+ * Owner context: stdlib / npc
  */
 
 import { definePoint } from '@sharpee/core';
-import { NpcBehavior, NpcContext, NpcAction } from './types.js';
+import { type NpcBehavior, type NpcContext } from './types.js';
 import { NpcMessages } from './npc-messages.js';
 
 // ADR-293 D2: the wanderer's two draws. Moving is a forceable yes/no choice
@@ -16,6 +25,7 @@ import { NpcMessages } from './npc-messages.js';
 const NPC_MOVE_POINT = definePoint('stdlib.npc.move', { classes: ['yes', 'no'] });
 const NPC_EXIT_POINT = definePoint('stdlib.npc.exit');
 import { TraitType, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
+import { IFActions } from '../actions/constants.js';
 import { nounPhraseFor } from '../utils/index.js';
 
 /**
@@ -23,59 +33,39 @@ import { nounPhraseFor } from '../utils/index.js';
  *
  * Guards:
  * - Don't move on their own
- * - Emit a blocking message when player enters
- * - Attack player each turn if hostile and engaged
- * - Counterattack when attacked
+ * - Narrate a blocking line when the player enters
+ * - Attack the player each turn while hostile and engaged
  */
 export const guardBehavior: NpcBehavior = {
   id: 'guard',
   name: 'Guard Behavior',
 
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
     const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
     const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
     if (health && !HealthBehavior.canAct(health)) {
-      return [];
+      return;
     }
 
     // If hostile and player is visible, attack!
     if (combatant?.hostile && context.playerVisible) {
       const player = context.world.getPlayer();
       if (player) {
-        return [{ type: 'attack', target: player.id }];
+        context.act(IFActions.ATTACKING, { directObject: player });
       }
     }
-
-    return [];
   },
 
-  onPlayerEnters(context: NpcContext): NpcAction[] {
+  onPlayerEnters(context: NpcContext): void {
     // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
     const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
     if (health && !HealthBehavior.canAct(health)) {
-      return [];
+      return;
     }
 
     // Growl or block when player enters
-    return [
-      {
-        type: 'emote',
-        messageId: NpcMessages.GUARD_BLOCKS,
-        data: { speaker: nounPhraseFor(context.npc) },
-      },
-    ];
-  },
-
-  onAttacked(context: NpcContext, attacker): NpcAction[] {
-    // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
-    const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
-    if (health && !HealthBehavior.canAct(health)) {
-      return [];
-    }
-
-    // Counterattack
-    return [{ type: 'attack', target: attacker.id }];
+    context.narrate(NpcMessages.GUARD_BLOCKS, { speaker: nounPhraseFor(context.npc) });
   },
 };
 
@@ -85,54 +75,35 @@ export const guardBehavior: NpcBehavior = {
  * Wanderers:
  * - Move randomly with configurable probability
  * - Respect room restrictions
- * - Announce presence when entering player's room
+ * - Acknowledge the player's arrival
+ *
+ * Arrival in the player's room is narrated by the going action itself
+ * (the player witnesses the NPC enter), not by the behavior.
  */
 export function createWandererBehavior(options: {
   /** Probability of moving each turn (0-1) */
   moveChance?: number;
-  /** Whether to announce when entering player's room */
-  announceEntry?: boolean;
 } = {}): NpcBehavior {
   const moveChance = options.moveChance ?? 0.3;
-  const announceEntry = options.announceEntry ?? true;
 
   return {
     id: 'wanderer',
     name: 'Wanderer Behavior',
 
-    onTurn(context: NpcContext): NpcAction[] {
-      const actions: NpcAction[] = [];
-
+    onTurn(context: NpcContext): void {
       // Chance to move
       if (context.random.chance(NPC_MOVE_POINT, moveChance)) {
         const exits = context.getAvailableExits();
         if (exits.length > 0) {
           const exit = context.random.pick(NPC_EXIT_POINT, exits);
-          actions.push({ type: 'move', direction: exit.direction });
-
-          // If we're about to enter player's room, announce
-          if (announceEntry && exit.destination === context.playerLocation) {
-            actions.push({
-              type: 'emote',
-              messageId: NpcMessages.NPC_ENTERS,
-              data: { speaker: nounPhraseFor(context.npc) },
-            });
-          }
+          context.act(IFActions.GOING, { direction: exit.direction });
         }
       }
-
-      return actions;
     },
 
-    onPlayerEnters(context: NpcContext): NpcAction[] {
+    onPlayerEnters(context: NpcContext): void {
       // Acknowledge player's arrival
-      return [
-        {
-          type: 'emote',
-          messageId: NpcMessages.NPC_NOTICES_PLAYER,
-          data: { speaker: nounPhraseFor(context.npc) },
-        },
-      ];
+      context.narrate(NpcMessages.NPC_NOTICES_PLAYER, { speaker: nounPhraseFor(context.npc) });
     },
   };
 }
@@ -157,60 +128,41 @@ export function createFollowerBehavior(options: {
   // Track the last room we saw the player in
   let lastPlayerLocation: string | undefined;
 
+  /** Step toward the player if an exit leads straight to them; narrate only if the step happened. */
+  const follow = (context: NpcContext): void => {
+    const exits = context.getAvailableExits();
+    const exitToPlayer = exits.find(
+      (e) => e.destination === context.playerLocation
+    );
+    if (!exitToPlayer) return;
+
+    const went = context.act(IFActions.GOING, { direction: exitToPlayer.direction });
+    if (went.success) {
+      context.narrate(followMessageId, { speaker: nounPhraseFor(context.npc) });
+    }
+  };
+
   return {
     id: 'follower',
     name: 'Follower Behavior',
 
-    onTurn(context: NpcContext): NpcAction[] {
-      const actions: NpcAction[] = [];
-
+    onTurn(context: NpcContext): void {
       // If player is not visible and we're not in the same room, try to follow
       if (!context.playerVisible && lastPlayerLocation) {
-        // Find a path to the player (simplified: just try to move toward them)
-        const exits = context.getAvailableExits();
-        const exitToPlayer = exits.find(
-          (e) => e.destination === context.playerLocation
-        );
-
-        if (exitToPlayer) {
-          actions.push({ type: 'move', direction: exitToPlayer.direction });
-          actions.push({
-            type: 'emote',
-            messageId: followMessageId,
-            data: { speaker: nounPhraseFor(context.npc) },
-          });
-        }
+        follow(context);
       }
 
       // Update last known player location
       lastPlayerLocation = context.playerLocation;
-
-      return actions;
     },
 
-    onPlayerLeaves(context: NpcContext): NpcAction[] {
+    onPlayerLeaves(context: NpcContext): void {
       if (!immediate) {
-        return [];
+        return;
       }
 
       // Immediately follow (find which exit player took)
-      const exits = context.getAvailableExits();
-      const exitToPlayer = exits.find(
-        (e) => e.destination === context.playerLocation
-      );
-
-      if (exitToPlayer) {
-        return [
-          { type: 'move', direction: exitToPlayer.direction },
-          {
-            type: 'emote',
-            messageId: followMessageId,
-            data: { speaker: nounPhraseFor(context.npc) },
-          },
-        ];
-      }
-
-      return [];
+      follow(context);
     },
 
     getState() {
@@ -232,8 +184,8 @@ export const passiveBehavior: NpcBehavior = {
   id: 'passive',
   name: 'Passive Behavior',
 
-  onTurn(): NpcAction[] {
-    return [];
+  onTurn(): void {
+    // Nothing to do.
   },
 };
 
@@ -260,13 +212,13 @@ export function createPatrolBehavior(options: {
     id: 'patrol',
     name: 'Patrol Behavior',
 
-    onTurn(context: NpcContext): NpcAction[] {
-      if (route.length === 0) return [];
+    onTurn(context: NpcContext): void {
+      if (route.length === 0) return;
 
       // Wait at waypoint
       if (waitCounter > 0) {
         waitCounter--;
-        return [];
+        return;
       }
 
       // Check if we're at the current waypoint
@@ -277,7 +229,8 @@ export function createPatrolBehavior(options: {
         const exitToTarget = exits.find((e) => e.destination === targetRoom);
 
         if (exitToTarget) {
-          return [{ type: 'move', direction: exitToTarget.direction }];
+          context.act(IFActions.GOING, { direction: exitToTarget.direction });
+          return;
         }
       }
 
@@ -293,8 +246,6 @@ export function createPatrolBehavior(options: {
           direction *= -1;
         }
       }
-
-      return [];
     },
 
     getState() {

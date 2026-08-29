@@ -312,9 +312,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.going
   'going-already-there',
   'going-arrived',
+  'going-arrives',
   'going-cant-go',
   'going-cant-go-through',
   'going-contents-list',
+  'going-departs',
   'going-destination-not-found',
   'going-door-closed',
   'going-door-locked',

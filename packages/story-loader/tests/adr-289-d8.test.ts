@@ -11,6 +11,7 @@
  *   isWithin — a visited-set guard so rogue containment cycles terminate.
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { AuthorModel, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
 import type { ReadableTrait } from '@sharpee/world-model';
@@ -119,7 +120,7 @@ end before
 `;
     const l = load(source);
     const entries: Array<{ owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }> = [];
-    l.story.onEngineReady({
+    l.story.onEngineReady({ getNpcService: () => createNpcService(),
       getPluginRegistry: () => ({ register: () => {} }),
       registerSlotEntry: (entry: { owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }) =>
         entries.push(entry),

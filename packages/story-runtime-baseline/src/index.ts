@@ -26,7 +26,6 @@ export const STORY_RUNTIME_BASELINE: ReadonlyArray<string> = Object.freeze([
   '@sharpee/media',
   '@sharpee/parser-en-us',
   '@sharpee/platform-browser',
-  '@sharpee/plugin-npc',
   '@sharpee/plugin-scheduler',
   '@sharpee/plugin-state-machine',
   '@sharpee/queries',

@@ -33,7 +33,8 @@ import {
   readSceneStore,
   sceneWith,
 } from '@sharpee/world-model';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import type { ActorTurnPlugin } from '@sharpee/engine';
+import { bootEngine } from './helpers/boot-engine';
 import {
   createSeededRandom,
   deriveStreamSeed,
@@ -133,27 +134,14 @@ interface Loaded {
   story: ChordStory;
   world: WorldModel;
   player: IFEntity;
-  npcPlugin: NpcPlugin;
+  phase: ActorTurnPlugin;
   sounds: ISound[];
 }
 
 function load(source: string): Loaded {
-  const story = createStory(compileSource(source), { seed: 7 });
-  const world = new WorldModel();
-  story.initializeWorld(world);
-  const player = story.createPlayer(world);
-  world.setPlayer(player.id);
-
-  const registered: unknown[] = [];
-  story.onEngineReady({
-    getPluginRegistry: () => ({ register: (p: unknown) => registered.push(p) }),
-  } as never);
-  const npcPlugin = registered.find(
-    (p) => (p as { id?: string }).id === 'sharpee.plugin.npc',
-  ) as NpcPlugin;
-  expect(npcPlugin).toBeDefined();
-
-  return { story, world, player, npcPlugin, sounds: [] };
+  // A REAL engine; its actor phase is what the test ticks (ADR-328 D5).
+  const { story, world, player, phase } = bootEngine(source, 7);
+  return { story, world, player, phase, sounds: [] };
 }
 
 const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
@@ -162,9 +150,9 @@ const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
 const threadState = (l: Loaded) =>
   traitOf(l, 'kemp').conversationThreads?.[l.player.id]?.['the-defection'];
 
-/** One NPC turn through the real plugin (the engine's own call shape). */
+/** One NPC turn through the engine's actor phase (the engine's own call shape). */
 function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISemanticEvent[] {
-  return l.npcPlugin.onAfterAction({
+  return l.phase.onAfterAction({
     world: l.world,
     turn,
     playerId: l.player.id,

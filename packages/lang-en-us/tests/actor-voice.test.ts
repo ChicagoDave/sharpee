@@ -169,3 +169,25 @@ describe('the four shipped templates rewritten from literal second person (Phase
     expect(text(p.renderMessage(ids.nothingToTake, params, makeCtx(params)))).toBe('The thief takes in everything the thief sees and enjoys the moment.');
   });
 });
+
+describe('the witnessed-mover templates (ADR-328 D5) — emitted only for a non-player actor', () => {
+  const ids = { departs: 'if.action.going.departs', arrives: 'if.action.going.arrives' };
+
+  it('are registered under the going action id', () => {
+    const p = new EnglishLanguageProvider();
+    for (const id of Object.values(ids)) expect(p.getTemplate?.(id), id).toBeDefined();
+  });
+
+  it('render a non-player mover by name, in the third person, with the surface direction', () => {
+    const p = new EnglishLanguageProvider();
+    const params = { [ACTOR_PARAM_KEY]: thief, direction: 'north' };
+    expect(text(p.renderMessage(ids.departs, params, makeCtx(params)))).toBe('The thief leaves to the north.');
+    expect(text(p.renderMessage(ids.arrives, { ...params, direction: 'south' }, makeCtx({ ...params, direction: 'south' })))).toBe('The thief enters from the south.');
+  });
+
+  it('agree a plural mover', () => {
+    const p = new EnglishLanguageProvider();
+    const params = { [ACTOR_PARAM_KEY]: mercenaries, direction: 'east' };
+    expect(text(p.renderMessage(ids.departs, params, makeCtx(params)))).toBe('The mercenaries leave to the east.');
+  });
+});

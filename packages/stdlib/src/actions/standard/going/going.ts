@@ -26,6 +26,7 @@ import {
   type DirectionType,
   canActorWalkInVehicle,
   type RegionCrossings,
+  getOppositeDirection,
 } from '@sharpee/world-model';
 import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -514,11 +515,26 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
-    // Return movement events first (no messageId - these are for event sourcing/handlers)
+    // The protagonist's own move is narrated by what they see on arrival
+    // (below). Anyone else's move is narrated by what the PLAYER sees of it:
+    // the departure, located at the origin, and the arrival, located at the
+    // destination — presence tagging (ADR-328 D3) renders whichever room the
+    // player is in, and actor voice (D4) names the mover. `context.player`
+    // survives here on purpose: this asks who holds the role this turn.
+    const isProtagonist = context.actor.id === context.player.id;
+    const direction = sharedData.direction as DirectionType | undefined;
+    const witnessed = (messageId: string, dir: DirectionType | undefined) => isProtagonist
+      ? {}
+      : { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } };
+
+    // Return movement events first. actor_moved carries no messageId — it is
+    // for event sourcing/handlers; exited/entered narrate a witnessed mover.
     const events: ISemanticEvent[] = [
-      context.event('if.event.actor_exited', exitedData),
+      context.event('if.event.actor_exited', { ...exitedData, ...witnessed('if.action.going.departs', direction) }),
       context.event('if.event.actor_moved', movedData),
-      context.event('if.event.actor_entered', enteredData)
+      context.event('if.event.actor_entered',
+        { ...enteredData, ...witnessed('if.action.going.arrives', direction ? getOppositeDirection(direction) : undefined) },
+        { location: destinationRoom.id })
     ];
 
     // Emit region boundary crossing events (ADR-149)
@@ -540,6 +556,15 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           fromRegionId: crossings.exited[0],
         }));
       }
+    }
+
+    // What follows is the mover's own arrival perception — resolver prose,
+    // the darkness line, the room description. Only the protagonist reads
+    // it; a witnessed NPC's arrival was narrated above.
+    if (!isProtagonist) {
+      const state = getLifecycleState(context);
+      if (state) runPostReport(context, state, events, 'if.event.went');
+      return events;
     }
 
     // Resolver narration (ADR-295 D4/D5): forwarded verbatim, ahead of the

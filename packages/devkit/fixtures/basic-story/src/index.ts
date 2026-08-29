@@ -40,7 +40,6 @@ import { WorldModel, IFEntity, EntityType, type IWorldModel } from '@sharpee/wor
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
 import { registerScoring } from '@sharpee/ext-scoring';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { type Action } from '@sharpee/stdlib';
@@ -300,11 +299,8 @@ class RegressionStory implements Story {
   onEngineReady(engine: GameEngine): void {
     const world = engine.getWorld();
 
-    // --- NPC Plugin ---
-    const npcPlugin = new NpcPlugin();
-    engine.getPluginRegistry().register(npcPlugin);
-    const npcService = npcPlugin.getNpcService();
-    npcService.registerBehavior(patrolBotBehavior);
+    // --- NPC behaviors (the engine owns the actor turn phase, ADR-328 D5) ---
+    engine.getNpcService().registerBehavior(patrolBotBehavior);
 
     // --- Scheduler Plugin ---
     const schedulerPlugin = new SchedulerPlugin();

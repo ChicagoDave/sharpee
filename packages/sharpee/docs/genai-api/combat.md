@@ -196,15 +196,19 @@ export declare function getHealthStatusMessageId(status: HealthStatus): CombatMe
 /**
  * Basic Combat Interceptor
  *
- * Wraps CombatService as an ActionInterceptor for PC→NPC attacks.
- * Registered on CombatantTrait for if.action.attacking.
+ * Wraps CombatService as an ActionInterceptor for attacks in both
+ * directions. Registered on CombatantTrait for if.action.attacking, it
+ * resolves whoever swings — the player at an NPC, or an NPC acting through
+ * the execution entry at the player (ADR-328 D5) — with one rule set.
  */
 import { type ActionInterceptor } from '@sharpee/world-model';
 import { CombatResult } from './combat-service.js';
 /** Outcome class of a CombatService result (shared with the villain point). */
 export declare function combatResultClass(result: CombatResult): 'missed' | 'hit' | 'knocked_out' | 'killed';
 /**
- * ActionInterceptor that uses CombatService for PC→NPC combat resolution.
+ * ActionInterceptor that uses CombatService for combat resolution in either
+ * direction. The blow draws on the hero point when the player swings and
+ * on the villain point otherwise, so the two streams stay independent.
  *
  * postExecute populates sharedData with:
  *   - attackResult: AttackResult-shaped object
@@ -212,25 +216,6 @@ export declare function combatResultClass(result: CombatResult): 'missed' | 'hit
  *   - usedCombatService: true
  */
 export declare const BasicCombatInterceptor: ActionInterceptor;
-```
-
-### basic-npc-resolver
-
-```typescript
-/**
- * Basic NPC Combat Resolver
- *
- * Wraps CombatService as an NpcCombatResolver for NPC→PC (and NPC→NPC) attacks.
- * Used by npc-service.ts executeAttack() when registered.
- */
-import type { NpcCombatResolver } from '@sharpee/stdlib';
-/**
- * Basic NPC combat resolver using CombatService.
- *
- * Resolves NPC attacks using the skill-based probability system.
- * Returns semantic events for the attack result and optional death.
- */
-export declare const basicNpcResolver: NpcCombatResolver;
 ```
 
 ### index
@@ -241,12 +226,14 @@ export declare const basicNpcResolver: NpcCombatResolver;
  *
  * Generic skill-based combat extension for Sharpee IF engine.
  *
- * Provides opt-in combat resolution for both attack directions:
- * - PC→NPC: BasicCombatInterceptor (registered on CombatantTrait + if.action.attacking)
- * - NPC→PC: basicNpcResolver (registered as NpcCombatResolver)
+ * Provides opt-in combat resolution for both attack directions through one
+ * interceptor: BasicCombatInterceptor, registered on CombatantTrait for
+ * if.action.attacking, resolves the player's blows at an NPC and an NPC's
+ * blows at the player — an NPC attacks by running the real attacking action
+ * through the engine's execution entry (ADR-328 D5).
  *
  * Stories with custom combat (e.g., Dungeo's melee system) register their
- * own interceptor and resolver instead of calling registerBasicCombat().
+ * own interceptor instead of calling registerBasicCombat().
  *
  * @example
  * ```typescript
@@ -258,15 +245,14 @@ export declare const basicNpcResolver: NpcCombatResolver;
  */
 import { type IWorldModel } from '@sharpee/world-model';
 /**
- * Register the basic combat system for both attack directions.
+ * Register the basic combat system.
  *
  * Call this in your story's initializeWorld() to enable generic
  * skill-based combat. Do NOT call this if your story registers
- * its own combat interceptor/resolver.
+ * its own combat interceptor.
  *
- * Registers:
- * 1. BasicCombatInterceptor on CombatantTrait + if.action.attacking (PC→NPC)
- * 2. basicNpcResolver as the NPC combat resolver (NPC→PC)
+ * Registers BasicCombatInterceptor on CombatantTrait + if.action.attacking;
+ * whoever attacks a combatant — player or NPC — resolves through it.
  *
  * The interceptor binding is registered on the given world (ADR-208):
  * per-world, idempotent (last-wins), so calling this on every story load
@@ -278,5 +264,4 @@ export declare function registerBasicCombat(world: IWorldModel): void;
 export { CombatService, createCombatService, applyCombatResult, type ICombatService, type CombatContext, type CombatResult, type CombatValidation, type ApplyCombatResultInfo, } from './combat-service.js';
 export { CombatMessages, getHealthStatusMessageId, type CombatMessageId, type HealthStatus, } from './combat-messages.js';
 export { BasicCombatInterceptor } from './basic-combat-interceptor.js';
-export { basicNpcResolver } from './basic-npc-resolver.js';
 ```

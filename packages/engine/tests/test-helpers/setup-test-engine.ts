@@ -4,7 +4,7 @@
 
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
-import { registerStandardCapabilities } from '@sharpee/stdlib';
+import { registerStandardCapabilities, PerceptionService } from '@sharpee/stdlib';
 import { Story } from '../../src/story';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
@@ -14,6 +14,8 @@ export interface TestEngineOptions {
   includeObjects?: boolean;
   /** Optional EngineConfig forwarded to the GameEngine constructor (e.g. `seed`). */
   config?: import('../../src/types').EngineConfig;
+  /** Wire the real stdlib PerceptionService (presence tagging, ADR-328 D3). */
+  withPerception?: boolean;
 }
 
 /**
@@ -27,7 +29,7 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
   languageProvider: EnglishLanguageProvider;
   parser: EnglishParser;
 } {
-  const { includeCapabilities = true, includeObjects = false, config } = options;
+  const { includeCapabilities = true, includeObjects = false, config, withPerception = false } = options;
 
   // Create world model
   const world = new WorldModel();
@@ -64,6 +66,7 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
     parser,
     language: languageProvider,
     ...(config ? { config } : {}),
+    ...(withPerception ? { perceptionService: new PerceptionService() } : {}),
   });
 
   return { engine, world, player, languageProvider, parser };

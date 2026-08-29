@@ -7,6 +7,7 @@
  * "no loader-side special-casing of the `scoring` name".
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
@@ -55,7 +56,7 @@ function load(text: string) {
   world.setPlayer(story.createPlayer(world).id);
 
   const plugins: TurnPlugin[] = [];
-  story.onEngineReady({
+  story.onEngineReady({ getNpcService: () => createNpcService(),
     getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p as TurnPlugin) }),
   });
   return { story, world, plugins };

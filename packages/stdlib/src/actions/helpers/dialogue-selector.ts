@@ -49,7 +49,7 @@ import {
   type SceneWireEvent,
 } from '@sharpee/world-model';
 import { ActionContext } from '../enhanced-types.js';
-import { hasTraversableExit } from './exit-legality.js';
+import { canActorLeave } from './exit-legality.js';
 
 /** The sharedData slots marking a firing as gripped (D16/D14). */
 interface GripSharedData {
@@ -301,12 +301,13 @@ export function runConversationScene(
     const kept: SceneDirective[] = [];
     for (const directive of directives) {
       if (directive.kind === 'close-scene' && directive.boundary === 'exit' && directive.leaverId) {
-        const room = context.world.getContainingRoom(directive.leaverId)?.id
-          ?? context.world.getLocation(directive.leaverId);
-        if (!room || !hasTraversableExit(context.world, room)) {
-          // D8: the world refuses the exit — the scene stays live; the
-          // selection's rendered response (typically a rendered silence)
-          // stands. Author-channel visibility only.
+        const leaver = context.world.getEntity(directive.leaverId);
+        if (!leaver || !canActorLeave(context.world, leaver, context.player, context.random)) {
+          // D8: the world refuses the exit — going's own validate, run for
+          // the leaver, found no direction it would accept (ADR-328 D5).
+          // The scene stays live; the selection's rendered response
+          // (typically a rendered silence) stands. Author-channel
+          // visibility only.
           events.push(context.event('character.scene.exit_refused', {
             sceneId: scene.id,
             leaverId: directive.leaverId,

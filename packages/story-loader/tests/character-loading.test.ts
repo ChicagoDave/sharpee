@@ -13,7 +13,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import { EngineRandomService, SaveRestoreService, type GameContext } from '@sharpee/engine';
 import { createSemanticEventSource, type ISemanticEvent } from '@sharpee/core';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import type { ActorTurnPlugin } from '@sharpee/engine';
+import { bootEngine } from './helpers/boot-engine';
 import { PluginRegistry } from '@sharpee/plugins';
 import { CharacterModelTrait, IFEntity, NpcTrait, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
@@ -54,7 +55,7 @@ describe('Phase 5 — character blocks through the real loader', () => {
   let story: ChordStory;
   let world: WorldModel;
   let player: IFEntity;
-  let npcPlugin: NpcPlugin;
+  let phase: ActorTurnPlugin;
   let turn: number;
   const random = new EngineRandomService(7);
 
@@ -64,7 +65,7 @@ describe('Phase 5 — character blocks through the real loader', () => {
 
   const tick = (actionEvents: ISemanticEvent[] = []) => {
     turn += 1;
-    return npcPlugin.onAfterAction({
+    return phase.onAfterAction({
       world,
       turn,
       random,
@@ -75,14 +76,8 @@ describe('Phase 5 — character blocks through the real loader', () => {
   };
 
   beforeEach(() => {
-    story = createStory(compileSource(SOURCE), { seed: 11 });
-    world = new WorldModel();
-    story.initializeWorld(world);
-    player = story.createPlayer(world);
-    world.setPlayer(player.id);
-    const plugins: unknown[] = [];
-    story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
-    npcPlugin = plugins.find((p): p is NpcPlugin => p instanceof NpcPlugin)!;
+    // A real engine; its actor phase is what `tick` drives (ADR-328 D5).
+    ({ story, world, player, phase } = bootEngine(SOURCE, 11));
     turn = 0;
   });
 
@@ -110,7 +105,7 @@ describe('Phase 5 — character blocks through the real loader', () => {
     expect(duke().has(TraitType.NPC)).toBe(false);
   });
 
-  it('the tick phase runs through the real NpcPlugin: observation mutates the trait', () => {
+  it('the tick phase runs through the engine\'s real actor phase: observation mutates the trait', () => {
     const threatBefore = maidTrait().threatValue;
     tick([{ id: 'e1', type: 'if.event.attacked', timestamp: 0, entities: { actor: player.id }, data: {} }]);
     expect(maidTrait().threatValue).toBeGreaterThan(threatBefore);

@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
@@ -40,7 +41,7 @@ const load = (capabilities?: Record<string, unknown>) => {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.onEngineReady({
+  story.onEngineReady({ getNpcService: () => createNpcService(),
     getPluginRegistry: () => ({ register: () => {} }),
     ...(capabilities ? { getClientCapabilities: () => capabilities } : {}),
   });

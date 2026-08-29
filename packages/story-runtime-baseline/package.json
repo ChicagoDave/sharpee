@@ -29,7 +29,6 @@
     "@sharpee/media": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/platform-browser": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/queries": "workspace:*",

@@ -10,6 +10,7 @@
  * (loader.test.ts, cuttable.test.ts).
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
@@ -117,7 +118,7 @@ create the keeper
     story.initializeWorld(world);
     story.createPlayer(world);
     expect(() =>
-      story.onEngineReady({ getPluginRegistry: () => ({ register: () => undefined }) } as never),
+      story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => undefined }) } as never),
     ).toThrowError(/needs `with route/);
   });
 

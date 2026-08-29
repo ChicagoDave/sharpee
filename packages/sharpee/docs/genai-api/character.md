@@ -4500,9 +4500,9 @@ export interface CompiledStoryOracle {
  * knowledge so reputation travels by propagation (D7).
  *
  * Sites (ADR-318 Implementation; statement site per ADR-320 D11):
- * - taking → steal-candidate: `if.event.taken` / `npc.took` where the item
+ * - taking → steal-candidate: `if.event.taken` where the item
  *   came out of another actor's possession
- * - combat → harm: `if.event.attacked` / `npc.attacked`
+ * - combat → harm: `if.event.attacked`
  * - reveal → topic delivery: `revealConfidedTopic` — called from the
  *   dialogue path, where delivery is knowable (prose is opaque; events are
  *   not tagged with what a line asserts)

@@ -671,7 +671,10 @@ describe('goingAction (Golden Pattern)', () => {
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
-          expect(event.entities.location).toBe(room1.id);
+          // An arrival is located where it happened — the destination
+          // (ADR-328 D3); everything else sits at the origin.
+          const expectedLocation = event.type === 'if.event.actor_entered' ? room2.id : room1.id;
+          expect(event.entities.location, event.type).toBe(expectedLocation);
         }
       });
     });

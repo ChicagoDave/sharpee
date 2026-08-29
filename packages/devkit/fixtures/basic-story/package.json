@@ -11,7 +11,6 @@
     "@sharpee/ext-scoring": "latest",
     "@sharpee/lang-en-us": "latest",
     "@sharpee/parser-en-us": "latest",
-    "@sharpee/plugin-npc": "latest",
     "@sharpee/plugin-scheduler": "latest",
     "@sharpee/plugin-state-machine": "latest",
     "@sharpee/stdlib": "latest",

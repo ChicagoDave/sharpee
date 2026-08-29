@@ -10,6 +10,7 @@
  * trait fields or the loader-owned state-clause provider.
  */
 import { describe, expect, it, vi } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
@@ -119,7 +120,7 @@ end before
   function bootWithEngine() {
     const booted = boot(SOURCE);
     const registered: Array<Record<string, unknown>> = [];
-    booted.story.onEngineReady({
+    booted.story.onEngineReady({ getNpcService: () => createNpcService(),
       getPluginRegistry: () => ({ register: () => {} }),
       registerSlotEntry: (entry: Record<string, unknown>) => void registered.push(entry),
     } as never);

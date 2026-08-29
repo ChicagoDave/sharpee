@@ -9,6 +9,7 @@
  * loader → real StateMachinePlugin evaluate.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
@@ -83,7 +84,7 @@ describe('ADR-256 machine `when event` seam translates the Chord event id (REAL-
     player = story.createPlayer(world);
     world.setPlayer(player.id);
     const plugins: unknown[] = [];
-    story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
+    story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
     smPlugin = plugins.find((p): p is StateMachinePlugin => p instanceof StateMachinePlugin)!;
     expect(smPlugin, 'StateMachinePlugin registered').toBeDefined();
     turn = 0;

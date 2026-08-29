@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import {
@@ -77,7 +78,7 @@ type Transformer = (parsed: IParsedCommand, world: WorldModel) => IParsedCommand
 /** Capture the transformer onEngineReady registers via a structural engine stub. */
 function captureTransformer(story: ChordStory): Transformer {
   const captured: Transformer[] = [];
-  story.onEngineReady({
+  story.onEngineReady({ getNpcService: () => createNpcService(),
     getPluginRegistry: () => ({ register: () => {} }),
     registerParsedCommandTransformer: (t: Transformer) => captured.push(t),
   });
@@ -168,7 +169,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
     world.setPlayer(player.id);
 
     const captured: Transformer[] = [];
-    story.onEngineReady({
+    story.onEngineReady({ getNpcService: () => createNpcService(),
       getPluginRegistry: () => ({ register: () => {} }),
       registerParsedCommandTransformer: (t: Transformer) => captured.push(t),
     });

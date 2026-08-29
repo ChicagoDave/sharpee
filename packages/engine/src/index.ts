@@ -40,6 +40,7 @@ export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins'
 
 // Scene evaluation (ADR-149)
 export { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
+export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './actor-turn-plugin.js';
 
 // Extracted services
 export * from './vocabulary-manager.js';

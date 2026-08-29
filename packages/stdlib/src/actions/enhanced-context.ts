@@ -325,8 +325,8 @@ class InternalActionContext implements ActionContext {
    * 
    * This is the single unified method for creating events (ADR-041)
    */
-  event(type: string, data: any): ISemanticEvent {
-    return this.createEventInternal(type, data);
+  event(type: string, data: any, at?: { location: string }): ISemanticEvent {
+    return this.createEventInternal(type, data, at);
   }
 
   /**
@@ -374,9 +374,11 @@ class InternalActionContext implements ActionContext {
    */
   private createEventInternal(
     type: string,
-    eventData: any
+    eventData: any,
+    at?: { location: string }
   ): ISemanticEvent {
     const entities = this.getEventEntities();
+    if (at) entities.location = at.location;
 
     // Action status events keep their timestamp default (never double-wrapped)
     if (type === 'action.error' || type === 'action.success' || type === 'action.blocked') {

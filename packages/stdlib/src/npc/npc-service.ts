@@ -1,20 +1,28 @@
 /**
- * NPC Service (ADR-070)
+ * NPC Service (ADR-070; ADR-328 D5) — the decision layer.
  *
- * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
+ * Holds the registered behaviors and tick phases, decides which NPCs may
+ * act this turn, and gives each behavior a context to act through. It
+ * executes nothing itself: every act a behavior chooses runs through the
+ * execution entry the engine supplies on the tick context (`act`), which
+ * is the same four-phase path the player's commands take. The engine owns
+ * the per-turn tick (`CLAUDE.md` Logic Location: the NPC turn phase is the
+ * engine's); this service is what that phase calls.
+ *
+ * Public interface: NpcService / createNpcService, INpcService,
+ * NpcTickContext, NpcTickPhase.
+ * Owner context: stdlib / npc.
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import type { ISound } from '@sharpee/if-domain';
-import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType, getOppositeDirection } from '@sharpee/world-model';
-import type { PerSenseRenderings } from '@sharpee/if-services';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType } from '@sharpee/world-model';
 import {
-  NpcBehavior,
-  NpcContext,
-  NpcAction,
+  type NpcBehavior,
+  type NpcContext,
+  type ExecutionEntry,
 } from './types.js';
-import { NpcMessages } from './npc-messages.js';
-import { nounPhraseFor } from '../utils/index.js';
+
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
@@ -25,50 +33,7 @@ export type NpcTickPhase = (
 ) => ISemanticEvent[];
 
 /**
- * NPC Combat Resolver function type.
- *
- * Stories register a resolver to handle NPC→target combat resolution.
- * Without a resolver, NPC attack actions emit a bare `npc.attacked` event
- * with no combat resolution (no damage, no death).
- */
-export type NpcCombatResolver = (
-  npc: IFEntity,
-  target: IFEntity,
-  world: WorldModel,
-  random: RandomService
-) => ISemanticEvent[];
-
-/**
- * Module-level NPC combat resolver. Set via registerNpcCombatResolver().
- * Uses globalThis to share across module boundaries (same pattern as interceptor registry).
- */
-const NPC_COMBAT_RESOLVER_KEY = '__sharpee_npc_combat_resolver__';
-
-function getNpcCombatResolver(): NpcCombatResolver | undefined {
-  return (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY] as NpcCombatResolver | undefined;
-}
-
-/**
- * Register an NPC combat resolver.
- *
- * Call this in your story's initializeWorld() to provide combat resolution
- * for NPC attack actions. Without a resolver, NPC attacks produce bare events.
- *
- * @param resolver - Function that resolves NPC→target combat and returns events
- */
-export function registerNpcCombatResolver(resolver: NpcCombatResolver): void {
-  (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY] = resolver;
-}
-
-/**
- * Clear the NPC combat resolver. Used for testing cleanup.
- */
-export function clearNpcCombatResolver(): void {
-  delete (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY];
-}
-
-/**
- * Context for NPC tick (simplified version of SchedulerContext)
+ * Context for one NPC tick — what the engine hands the service each turn.
  */
 export interface NpcTickContext {
   world: WorldModel;
@@ -76,6 +41,12 @@ export interface NpcTickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The execution entry (ADR-328 D2/D5): how a behavior's chosen act, and
+   * a tick phase's, becomes a real `(action, actorId)` invocation. The
+   * engine supplies it; the service curries it per NPC as `NpcContext.act`.
+   */
+  act: ExecutionEntry;
   /**
    * The player action's events this turn (ADR-310 Phase 5) — input for
    * observation-driven tick phases (the character model's observe
@@ -113,7 +84,7 @@ export interface INpcService {
   /** Register a tick phase handler (ADR-142/144/145/146) */
   registerTickPhase(name: string, handler: NpcTickPhase): void;
 
-  /** Execute the NPC turn phase */
+  /** Run the NPC turn: every eligible NPC's `onTurn`, then the tick phases */
   tick(context: NpcTickContext): ISemanticEvent[];
 
   /** Notify NPCs that player entered a room */
@@ -121,7 +92,8 @@ export interface INpcService {
     world: WorldModel,
     roomId: EntityId,
     random: RandomService,
-    turn: number
+    turn: number,
+    act: ExecutionEntry
   ): ISemanticEvent[];
 
   /** Notify NPCs that player left a room */
@@ -129,25 +101,8 @@ export interface INpcService {
     world: WorldModel,
     roomId: EntityId,
     random: RandomService,
-    turn: number
-  ): ISemanticEvent[];
-
-  /** Handle player speaking to an NPC */
-  onPlayerSpeaks(
-    world: WorldModel,
-    npcId: EntityId,
-    words: string,
-    random: RandomService,
-    turn: number
-  ): ISemanticEvent[];
-
-  /** Handle player attacking an NPC */
-  onNpcAttacked(
-    world: WorldModel,
-    npcId: EntityId,
-    attackerId: EntityId,
-    random: RandomService,
-    turn: number
+    turn: number,
+    act: ExecutionEntry
   ): ISemanticEvent[];
 }
 
@@ -159,18 +114,19 @@ function createEventId(prefix: string): string {
 }
 
 /**
- * Create a semantic event
+ * Create a semantic event sourced by an NPC at a location.
  */
 function createEvent(
   type: string,
   data: Record<string, unknown>,
-  npcId?: EntityId
+  npcId: EntityId,
+  locationId?: EntityId
 ): ISemanticEvent {
   return {
     id: createEventId('npc'),
     type,
     timestamp: Date.now(),
-    entities: npcId ? { actor: npcId } : {},
+    entities: { actor: npcId, ...(locationId ? { location: locationId } : {}) },
     data,
   };
 }
@@ -208,11 +164,17 @@ export class NpcService implements INpcService {
   }
 
   /**
-   * Execute the NPC turn phase
+   * Run the NPC turn. Each eligible NPC's behavior decides through its
+   * context; the acts it chooses have already run, and their events sit
+   * in the returned stream in the order they were acted, followed by the
+   * registered tick phases' events.
+   *
+   * @param context - The engine's tick context for this turn
+   * @returns The turn's NPC-sourced events, in order
    */
   tick(context: NpcTickContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    const { world, turn, random, playerLocation, playerId } = context;
+    const { world, turn, random, playerLocation, act } = context;
     this.lastWorld = world;
 
     // Find all NPCs that can act
@@ -232,13 +194,12 @@ export class NpcService implements INpcService {
         random,
         turn,
         playerLocation,
-        npcLocation
+        npcLocation,
+        act,
+        events
       );
 
-      // Call onTurn hook
-      const actions = behavior.onTurn(npcContext);
-      const actionEvents = this.executeActions(npc, actions, world, random, playerLocation);
-      events.push(...actionEvents);
+      behavior.onTurn(npcContext);
     }
     // Lucidity decay is no longer inlined here: it is the decay sub-step of
     // the registered 'character-model' tick phase (contracts.md §2, ADR-310 D15).
@@ -259,10 +220,10 @@ export class NpcService implements INpcService {
     world: WorldModel,
     roomId: EntityId,
     random: RandomService,
-    turn: number
+    turn: number,
+    act: ExecutionEntry
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    const playerId = world.getPlayer()?.id || '';
 
     // Get NPCs in the room
     const entities = world.getContents(roomId);
@@ -274,19 +235,19 @@ export class NpcService implements INpcService {
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerEnters) continue;
 
+      // The player just entered roomId, so it is the player's current location.
       const npcContext = this.createNpcContext(
         npc,
         world,
         random,
         turn,
         roomId,
-        roomId
+        roomId,
+        act,
+        events
       );
 
-      const actions = behavior.onPlayerEnters(npcContext);
-      // The player just entered roomId, so it is the player's current location.
-      const actionEvents = this.executeActions(npc, actions, world, random, roomId);
-      events.push(...actionEvents);
+      behavior.onPlayerEnters(npcContext);
     }
 
     return events;
@@ -299,7 +260,8 @@ export class NpcService implements INpcService {
     world: WorldModel,
     roomId: EntityId,
     random: RandomService,
-    turn: number
+    turn: number,
+    act: ExecutionEntry
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const playerId = world.getPlayer()?.id || '';
@@ -321,100 +283,15 @@ export class NpcService implements INpcService {
         random,
         turn,
         playerLocation,
-        roomId
+        roomId,
+        act,
+        events
       );
 
-      const actions = behavior.onPlayerLeaves(npcContext);
-      const actionEvents = this.executeActions(npc, actions, world, random, playerLocation);
-      events.push(...actionEvents);
+      behavior.onPlayerLeaves(npcContext);
     }
 
     return events;
-  }
-
-  /**
-   * Handle player speaking to an NPC
-   */
-  onPlayerSpeaks(
-    world: WorldModel,
-    npcId: EntityId,
-    words: string,
-    random: RandomService,
-    turn: number
-  ): ISemanticEvent[] {
-    const npc = world.getEntity(npcId);
-    if (!npc) return [];
-
-    if (!this.canNpcAct(npc, world)) return [];
-
-    const behavior = this.getBehaviorForNpc(npc);
-    if (!behavior?.onSpokenTo) {
-      // Default response if no handler
-      return [
-        createEvent(
-          'npc.spoke',
-          {
-            npc: npcId,
-            messageId: NpcMessages.NPC_NO_RESPONSE,
-            data: { speaker: nounPhraseFor(npc) },
-          },
-          npcId
-        ),
-      ];
-    }
-
-    const playerId = world.getPlayer()?.id || '';
-    const playerLocation = world.getLocation(playerId) || '';
-    const npcLocation = world.getLocation(npcId) || '';
-
-    const npcContext = this.createNpcContext(
-      npc,
-      world,
-      random,
-      turn,
-      playerLocation,
-      npcLocation
-    );
-
-    const actions = behavior.onSpokenTo(npcContext, words);
-    return this.executeActions(npc, actions, world, random, playerLocation);
-  }
-
-  /**
-   * Handle player attacking an NPC
-   */
-  onNpcAttacked(
-    world: WorldModel,
-    npcId: EntityId,
-    attackerId: EntityId,
-    random: RandomService,
-    turn: number
-  ): ISemanticEvent[] {
-    const npc = world.getEntity(npcId);
-    if (!npc) return [];
-
-    if (!this.canNpcAct(npc, world)) return [];
-
-    const behavior = this.getBehaviorForNpc(npc);
-    if (!behavior?.onAttacked) return [];
-
-    const attacker = world.getEntity(attackerId);
-    if (!attacker) return [];
-
-    const playerLocation = world.getLocation(attackerId) || '';
-    const npcLocation = world.getLocation(npcId) || '';
-
-    const npcContext = this.createNpcContext(
-      npc,
-      world,
-      random,
-      turn,
-      playerLocation,
-      npcLocation
-    );
-
-    const actions = behavior.onAttacked(npcContext, attacker);
-    return this.executeActions(npc, actions, world, random, playerLocation);
   }
 
   // ==================== Private Helpers ====================
@@ -479,13 +356,22 @@ export class NpcService implements INpcService {
     return this.behaviors.get(npcTrait.behaviorId);
   }
 
+  /**
+   * Build one NPC's context. `act` curries the execution entry to this
+   * NPC and appends the act's events to `sink`; `narrate` appends one
+   * `game.message` sourced by the NPC at wherever it stands when it
+   * speaks — after a move, that is the new room. Both write to the same
+   * sink so the turn's stream keeps the order the behavior acted in.
+   */
   private createNpcContext(
     npc: IFEntity,
     world: WorldModel,
     random: RandomService,
     turn: number,
     playerLocation: EntityId,
-    npcLocation: EntityId
+    npcLocation: EntityId,
+    entry: ExecutionEntry,
+    sink: ISemanticEvent[]
   ): NpcContext {
     const npcInventory = world.getContents(npc.id);
 
@@ -500,6 +386,17 @@ export class NpcService implements INpcService {
       playerVisible: npcLocation === playerLocation,
       getEntitiesInRoom: () => world.getContents(npcLocation),
       getAvailableExits: () => this.getExitsFromRoom(world, npcLocation, npc),
+      act: (actionId, slots) => {
+        const result = entry(npc.id, actionId, slots);
+        sink.push(...result.events);
+        return result;
+      },
+      narrate: (message, params) => {
+        const data = typeof message === 'string'
+          ? { messageId: message, params: params ?? {} }
+          : { text: message.text };
+        sink.push(createEvent('game.message', data, npc.id, world.getLocation(npc.id) || undefined));
+      },
     };
   }
 
@@ -534,299 +431,6 @@ export class NpcService implements INpcService {
     }
 
     return exits;
-  }
-
-  private executeActions(
-    npc: IFEntity,
-    actions: NpcAction[],
-    world: WorldModel,
-    random: RandomService,
-    playerLocation: EntityId
-  ): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-
-    for (const action of actions) {
-      const actionEvents = this.executeAction(npc, action, world, random, playerLocation);
-      events.push(...actionEvents);
-    }
-
-    return events;
-  }
-
-  private executeAction(
-    npc: IFEntity,
-    action: NpcAction,
-    world: WorldModel,
-    random: RandomService,
-    playerLocation: EntityId
-  ): ISemanticEvent[] {
-    switch (action.type) {
-      case 'move':
-        return this.executeMove(npc, action.direction, world, playerLocation);
-
-      case 'moveTo':
-        return this.executeMoveTo(npc, action.roomId, world, playerLocation);
-
-      case 'take':
-        return this.executeTake(npc, action.target, world);
-
-      case 'drop':
-        return this.executeDrop(npc, action.target, world);
-
-      case 'attack':
-        return this.executeAttack(npc, action.target, world, random);
-
-      case 'speak':
-        return [
-          createEvent(
-            'npc.spoke',
-            {
-              npc: npc.id,
-              messageId: action.messageId,
-              data: action.data,
-              params: action.data,
-            },
-            npc.id
-          ),
-        ];
-
-      case 'emote':
-        return [
-          createEvent(
-            'npc.emoted',
-            {
-              npc: npc.id,
-              messageId: action.messageId,
-              data: action.data,
-              params: action.data,
-            },
-            npc.id
-          ),
-        ];
-
-      case 'wait':
-        return []; // No events for waiting
-
-      case 'custom':
-        return action.handler();
-
-      default:
-        return [];
-    }
-  }
-
-  private executeMove(
-    npc: IFEntity,
-    direction: DirectionType,
-    world: WorldModel,
-    playerLocation: EntityId
-  ): ISemanticEvent[] {
-    const currentLocation = world.getLocation(npc.id);
-    if (!currentLocation) return [];
-
-    const currentRoom = world.getEntity(currentLocation);
-    if (!currentRoom) return [];
-
-    const roomTrait = currentRoom.get(RoomTrait);
-    if (!roomTrait?.exits?.[direction]) return [];
-
-    const destination = roomTrait.exits[direction].destination;
-    if (!destination) return [];
-
-    // Move the NPC
-    world.moveEntity(npc.id, destination);
-
-    return [
-      createEvent(
-        'npc.moved',
-        {
-          npc: npc.id,
-          from: currentLocation,
-          to: destination,
-          direction,
-        },
-        npc.id
-      ),
-      // Player-witnessable announcement (opt-in; layered on top of npc.moved).
-      ...this.announceMovement(npc, world, playerLocation, currentLocation, destination, direction),
-    ];
-  }
-
-  private executeMoveTo(
-    npc: IFEntity,
-    roomId: EntityId,
-    world: WorldModel,
-    playerLocation: EntityId
-  ): ISemanticEvent[] {
-    const currentLocation = world.getLocation(npc.id);
-    if (!currentLocation) return [];
-
-    // Move the NPC
-    world.moveEntity(npc.id, roomId);
-
-    return [
-      createEvent(
-        'npc.moved',
-        {
-          npc: npc.id,
-          from: currentLocation,
-          to: roomId,
-        },
-        npc.id
-      ),
-      // Directionless announcement (npc.arrives / npc.departs).
-      ...this.announceMovement(npc, world, playerLocation, currentLocation, roomId),
-    ];
-  }
-
-  /**
-   * Build the player-witnessable movement announcement for a crossing.
-   *
-   * Returns a single sense-neutral `npc.moved.witnessed` fact carrying a per-sense
-   * `renderings` map (sight + hearing). PerceptionService selects the rendering for
-   * the player's available sense; neither is derived from the other.
-   *
-   * @returns one `npc.moved.witnessed` event, or `[]` when the NPC does not announce
-   *   movement or the move touches neither the player's room.
-   */
-  private announceMovement(
-    npc: IFEntity,
-    world: WorldModel,
-    playerLocation: EntityId,
-    from: EntityId,
-    to: EntityId,
-    direction?: DirectionType
-  ): ISemanticEvent[] {
-    const trait = npc.get(TraitType.NPC) as NpcTrait | undefined;
-    if (!trait?.announcesMovement) return [];
-    const overrides = trait.movementMessages ?? {};
-
-    let sightId: string;
-    let hearingId: string;
-    let params: Record<string, unknown>;
-
-    // Direction constants are language-neutral UPPERCASE tokens ('EAST'); the
-    // npc.leaves/npc.enters templates render the param through
-    // {verbatim:direction}, so bind the lowercase surface form the player
-    // should read ("leaves to the east", not "to the EAST").
-    if (from === playerLocation) {            // departure
-      sightId = direction
-        ? (overrides.leaves ?? NpcMessages.NPC_LEAVES)
-        : (overrides.departs ?? NpcMessages.NPC_DEPARTS);
-      hearingId = NpcMessages.NPC_HEARD_DEPARTS;
-      params = {
-        speaker: nounPhraseFor(npc),
-        ...(direction ? { direction: direction.toLowerCase() } : {}),
-      };
-    } else if (to === playerLocation) {       // arrival
-      sightId = direction
-        ? (overrides.enters ?? NpcMessages.NPC_ENTERS)
-        : (overrides.arrives ?? NpcMessages.NPC_ARRIVES);
-      hearingId = NpcMessages.NPC_HEARD_ARRIVES;
-      // The player sees the NPC arrive *from* the direction it came.
-      const dir = direction ? getOppositeDirection(direction) : undefined;
-      params = {
-        speaker: nounPhraseFor(npc),
-        ...(dir ? { direction: dir.toLowerCase() } : {}),
-      };
-    } else {
-      return [];                              // a move the player can't witness
-    }
-
-    const renderings: PerSenseRenderings = {
-      sight: { messageId: sightId, params },
-      hearing: { messageId: hearingId, params: {} },
-    };
-
-    return [
-      createEvent(
-        'npc.moved.witnessed',
-        { npc: npc.id, renderings },
-        npc.id
-      ),
-    ];
-  }
-
-  private executeTake(
-    npc: IFEntity,
-    targetId: EntityId,
-    world: WorldModel
-  ): ISemanticEvent[] {
-    const target = world.getEntity(targetId);
-    if (!target) return [];
-
-    // Captured before the move: act detection (ADR-318 D4) classifies a
-    // take out of another actor's possession as a steal-candidate.
-    const from = world.getLocation(targetId);
-
-    // Move item to NPC's inventory
-    world.moveEntity(targetId, npc.id);
-
-    return [
-      createEvent(
-        'npc.took',
-        {
-          npc: npc.id,
-          target: targetId,
-          from,
-        },
-        npc.id
-      ),
-    ];
-  }
-
-  private executeDrop(
-    npc: IFEntity,
-    targetId: EntityId,
-    world: WorldModel
-  ): ISemanticEvent[] {
-    const target = world.getEntity(targetId);
-    if (!target) return [];
-
-    const npcLocation = world.getLocation(npc.id);
-    if (!npcLocation) return [];
-
-    // Move item to NPC's location
-    world.moveEntity(targetId, npcLocation);
-
-    return [
-      createEvent(
-        'npc.dropped',
-        {
-          npc: npc.id,
-          target: targetId,
-        },
-        npc.id
-      ),
-    ];
-  }
-
-  private executeAttack(
-    npc: IFEntity,
-    targetId: EntityId,
-    world: WorldModel,
-    random: RandomService
-  ): ISemanticEvent[] {
-    const target = world.getEntity(targetId);
-    if (!target) return [];
-
-    // Delegate to registered combat resolver if available
-    const resolver = getNpcCombatResolver();
-    if (resolver) {
-      return resolver(npc, target, world, random);
-    }
-
-    // No resolver registered — emit bare attack event (no combat resolution)
-    return [
-      createEvent(
-        'npc.attacked',
-        {
-          npc: npc.id,
-          target: targetId,
-        },
-        npc.id
-      ),
-    ];
   }
 }
 

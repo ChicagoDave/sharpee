@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import { bootEngine } from './helpers/boot-engine';
 import { askingAction } from '@sharpee/stdlib';
 import { CharacterModelTrait, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
@@ -161,14 +161,12 @@ describe('the mint rule and the pin (ADR-318 D9) through the real ask path', () 
   });
 
   it('after real NPC ticks, a mint stamps the mirrored turn + 1 (not the unset-mirror fallback)', () => {
-    const l = load();
-    // The real tick path writes the CHARACTER_TURN_KEY mirror.
-    const plugins: unknown[] = [];
-    l.story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
-    const npcPlugin = plugins.find((p): p is NpcPlugin => p instanceof NpcPlugin)!;
+    // A real engine: its actor phase's tick path writes the
+    // CHARACTER_TURN_KEY mirror (ADR-328 D5).
+    const l = bootEngine(SOURCE, 7);
     const random = new EngineRandomService(7);
     for (const turn of [1, 2]) {
-      npcPlugin.onAfterAction({
+      l.phase.onAfterAction({
         world: l.world,
         turn,
         random,

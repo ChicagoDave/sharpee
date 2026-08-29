@@ -18,7 +18,7 @@
  */
 
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity } from '@sharpee/world-model';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
 import { hasWorldContext } from './parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
@@ -100,6 +100,8 @@ export interface ActorCommand {
   indirectObject?: IFEntity;
   /** Instrument (ADR-080), if the action takes one */
   instrument?: IFEntity;
+  /** Direction of travel, for `if.action.going` (read from `parsed.extras.direction`) */
+  direction?: DirectionType;
 }
 
 /** Timing bookkeeping shared by both entries. */
@@ -118,13 +120,15 @@ function syntheticParsed(request: ActorCommand): IParsedCommand {
   const words = [request.actionId];
   if (request.directObject) words.push(request.directObject.name);
   if (request.indirectObject) words.push(request.indirectObject.name);
+  if (request.direction) words.push(request.direction.toLowerCase());
   return {
     rawInput: words.join(' '),
     action: request.actionId,
     tokens: [],
     structure: { verb: { tokens: [0], text: request.actionId, head: request.actionId } },
     pattern: 'PROGRAMMATIC',
-    confidence: 1.0
+    confidence: 1.0,
+    ...(request.direction ? { extras: { direction: request.direction } } : {})
   };
 }
 
@@ -399,6 +403,7 @@ export class CommandExecutor {
     const turn = context.currentTurn;
     const executionStart = config?.collectTiming ? Date.now() : 0;
     let executionTime = 0;
+    let refused = false;
 
     const action = this.actionRegistry.get(command.actionId);
     if (!action) {
@@ -554,6 +559,7 @@ export class CommandExecutor {
       }
     } else {
       // Validation failed - use blocked() for error events
+      refused = true;
       if (useCapabilityDispatch) {
         // Capability dispatch: use behavior's blocked phase
         events = executeCapabilityBlocked(currentContext, actionValidation, command.actionId);
@@ -593,6 +599,7 @@ export class CommandExecutor {
       turn,
       input,
       success: !events.some(e => e.type === 'action.error'),
+      ...(refused ? { refused: true as const } : {}),
       events: allEvents,
       actionId: command.actionId,
       actorId: actor.id,

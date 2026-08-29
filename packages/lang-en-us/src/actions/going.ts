@@ -34,6 +34,10 @@ export const goingLanguage = {
     'need_light': "It's too dark to go that way safely.",
     'went': "{You} {go} {verbatim:direction}.",
     'arrived': "{You} {arrive}.",
+    // A witnessed mover (ADR-328 D3/D4): emitted only for a non-player
+    // actor, so `{You}` always renders as the mover's name.
+    'departs': "{You} {leave} to the {verbatim:direction}.",
+    'arrives': "{You} {enter} from the {verbatim:direction}.",
     'cant_go': "{You} {can't} go that way."
   },
   

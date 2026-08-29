@@ -109,6 +109,14 @@ export interface TurnResult {
      */
     actorId?: string;
     /**
+     * True when the action's own `validate()` refused it and the `blocked`
+     * phase ran instead of execute/report. `success` stays as it was (no
+     * `action.error`), since a refusal is still a completed turn for the
+     * turn cycle; this is the fact a caller that acted on purpose — the
+     * actor turn phase (ADR-328 D5) — reads to learn the act did not happen.
+     */
+    refused?: true;
+    /**
      * The parsed command (if successfully parsed)
      */
     parsedCommand?: IParsedCommand;
@@ -730,7 +738,7 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  * All event creation is owned by the action components themselves.
  */
 import { type ISystemEvent, type IGenericEventSource, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity } from '@sharpee/world-model';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -785,6 +793,8 @@ export interface ActorCommand {
     indirectObject?: IFEntity;
     /** Instrument (ADR-080), if the action takes one */
     instrument?: IFEntity;
+    /** Direction of travel, for `if.action.going` (read from `parsed.extras.direction`) */
+    direction?: DirectionType;
 }
 export declare class CommandExecutor {
     private parser;
@@ -1258,7 +1268,7 @@ export interface EngineSharedData {
  */
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { type Parser, type IPerceptionService } from '@sharpee/stdlib';
+import { type Parser, type IPerceptionService, type INpcService } from '@sharpee/stdlib';
 import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock } from '@sharpee/text-blocks';
@@ -1307,9 +1317,6 @@ type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K
  * capabilities through.
  */
 export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
-/**
- * Main game engine
- */
 export declare class GameEngine {
     private world;
     private sessionStartTime?;
@@ -1335,6 +1342,7 @@ export declare class GameEngine {
     private pendingPlatformOps;
     private perceptionService?;
     private pluginRegistry;
+    private actorTurnPlugin;
     /**
      * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
      * `executeTurn()`; populated as actions call `context.emitSound`;
@@ -1590,6 +1598,11 @@ export declare class GameEngine {
      * Get plugin registry for registering turn-cycle plugins (ADR-120)
      */
     getPluginRegistry(): PluginRegistry;
+    /**
+     * The NPC decision layer (ADR-328 D5): where a story registers the
+     * behaviors and tick phases the engine's actor turn phase drives.
+     */
+    getNpcService(): INpcService;
     /**
      * The negotiated client capabilities for this session (ADR-216): the
      * `client has <capability>` predicate reads these live, and channel
@@ -1906,6 +1919,81 @@ export declare class SceneEvaluationPlugin implements TurnPlugin {
      * Evaluates all registered scene conditions after a successful action.
      */
     onAfterAction(context: TurnPluginContext): ISemanticEvent[];
+}
+```
+
+### actor-turn-plugin
+
+```typescript
+/**
+ * Actor turn phase (ADR-070, ADR-120; ADR-328 D5).
+ *
+ * The engine-owned phase in which non-player actors act. It runs first
+ * after the player's action (priority 100 — before state machines at 75
+ * and the scheduler at 50), drives the NPC decision layer's tick, and
+ * fires the room-entry/exit hooks when the player's action moved them.
+ * Every act a behavior chooses runs through the engine's execution entry
+ * — the same four phases the player's commands take — so this phase
+ * executes nothing of its own; it sequences.
+ *
+ * Registered by `GameEngine` itself in its constructor (like the scene
+ * evaluation plugin); stories reach the decision layer through
+ * `GameEngine.getNpcService()`.
+ *
+ * Public interface: ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID,
+ * LEGACY_NPC_PLUGIN_ID.
+ * Owner context: @sharpee/engine — turn cycle
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { type ExecutionEntry, type INpcService } from '@sharpee/stdlib';
+/** The plugin id this phase saves behavior state under. */
+export declare const ACTOR_TURN_PLUGIN_ID = "sharpee.engine.actors";
+/**
+ * The id `@sharpee/plugin-npc` saved behavior state under before the actor
+ * phase moved into the engine (ADR-328 D5). Read-side alias only: a save
+ * carrying it restores into this phase; nothing writes it.
+ */
+export declare const LEGACY_NPC_PLUGIN_ID = "sharpee.plugin.npc";
+export declare class ActorTurnPlugin implements TurnPlugin {
+    private readonly act;
+    /** Stable plugin id. */
+    id: string;
+    /** Run order within a turn (actors act first). */
+    priority: number;
+    private readonly service;
+    /**
+     * @param act - The engine's execution entry, curried over its world and
+     *   turn context: how a behavior's chosen act becomes a real
+     *   `(action, actorId)` invocation.
+     */
+    constructor(act: ExecutionEntry);
+    /**
+     * Tick the decision layer for this turn and return the events actors
+     * produced.
+     *
+     * After the per-turn tick (which drives each NPC's `onTurn`), this also
+     * fires the room-entry/exit hooks when the player's own action moved them
+     * this turn: an `if.event.actor_moved` in `ctx.actionEvents` whose actor
+     * is the player (any other actor's move is an NPC acting through the
+     * entry, and is not the player arriving anywhere) makes the NPCs in the
+     * room left react via `onPlayerLeaves` and those in the room entered via
+     * `onPlayerEnters`.
+     */
+    onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
+    /**
+     * Per-NPC behavior state (#226) for the save. NPC world state itself
+     * rides the world snapshot; this is only what behaviors hold privately.
+     */
+    getState(): unknown;
+    /** Restore per-NPC behavior state from a save. */
+    setState(state: unknown): void;
+    /**
+     * The NPC decision layer — the author hook for registering behaviors
+     * and tick phases. The service type (`INpcService`) and behavior helpers
+     * live in `@sharpee/stdlib`.
+     */
+    getNpcService(): INpcService;
 }
 ```
 
