@@ -125,6 +125,7 @@ import {
   DefineProfile,
   FeelsDecl,
   GoalDecl,
+  GoalStepDecl,
   InfluenceDecl,
   KnowsDecl,
   ResistsDecl,
@@ -2240,9 +2241,50 @@ class Parser {
       decl.steps.push({ kind: 'drop', item, in: inRef, span: lineSpan(line) });
       return;
     }
+    const perform = this.tryParsePerformStep(line);
+    if (perform === 'errored') return;
+    if (perform) {
+      decl.steps.push(perform);
+      return;
+    }
     stepError(
-      `Unrecognized goal line: \`${line.raw.trim()}\` — expected \`active when\`, seek, acquire, wait for, move to, act, say, give, or drop.`,
+      `Unrecognized goal line: \`${line.raw.trim()}\` — expected \`active when\`, seek, acquire, wait for, move to, act, say, give, drop, or an action's own words (\`open the door\`, \`go east\`).`,
     );
+  }
+
+  /**
+   * ADR-329 D10: a goal line that is none of the step verbs is a `perform`
+   * step when its first word lemma-matches a verb that opens a standard shape
+   * or one of this file's own action grammar lines — the acting statement's
+   * admission (`tryParseActStatement`), with the actor implied. The words are
+   * carried raw for the analyzer to match. A `when` suffix is refused by name:
+   * a step that should not run yet waits (`wait for`).
+   *
+   * @returns the step; `'errored'` when the line was admitted but refused
+   *   (diagnostic already reported); null when the line is not a candidate
+   */
+  private tryParsePerformStep(line: Line): GoalStepDecl | 'errored' | null {
+    const tokens = line.tokens;
+    const first = tokens[0];
+    if (!first || first.kind !== 'word') return null;
+    if (!tokens.every((t) => t.kind === 'word' || t.kind === 'number')) return null;
+    const lexicon = stdlibActVerbs();
+    const story = this.storyVerbLexicon();
+    let opens = false;
+    for (const lemma of verbLemmas(first.text)) {
+      if (lexicon.has(lemma) || story.has(lemma)) { opens = true; break; }
+    }
+    if (!opens) return null;
+    const whenAt = tokens.findIndex((t, i) => i > 0 && t.kind === 'word' && t.text === 'when');
+    if (whenAt !== -1) {
+      this.diagnostics.error(
+        'parse.goal-step',
+        'A goal step carries no `when` — a step that should not run yet waits: put `wait for <condition>` on the line before it.',
+        tokens[whenAt].span,
+      );
+      return 'errored';
+    }
+    return { kind: 'perform', words: tokens.map((t) => ({ text: t.text, span: t.span })), span: lineSpan(line) };
   }
 
   /**

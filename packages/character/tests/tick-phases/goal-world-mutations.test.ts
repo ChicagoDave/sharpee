@@ -15,6 +15,7 @@ import {
   ContainerTrait,
   ActorTrait,
   TraitType,
+  Direction,
 } from '@sharpee/world-model';
 import type { RandomService } from '@sharpee/core';
 import { CharacterPhaseRegistry, createCharacterModelPhase } from '../../src/tick-phases';
@@ -247,5 +248,73 @@ describe('D6 — goal steps mutate the world', () => {
 
     expect(entry.calls).toEqual([]);
     expect(world.getLocation(npc.id)).toBe(study.id);
+  });
+
+  // ADR-329 D10 — the `perform` step. SCAFFOLDING (rule 13a): the entry
+  // records the call and performs nothing; the real path is
+  // packages/story-loader/tests/adr-329-d10-perform-step.test.ts.
+  it('a perform step runs its action as the NPC with the roles it carries, and advances', () => {
+    const key = world.createEntity('key', 'object');
+    key.add(new IdentityTrait({ name: 'key' }));
+    const wand = world.createEntity('wand', 'object');
+    wand.add(new IdentityTrait({ name: 'wand' }));
+    registerGoal([
+      { type: 'perform', actionId: 'chord.action.conjuring', slots: { directObject: key.id, indirectObject: study.id, instrument: wand.id } },
+      { type: 'act', messageId: 'butler-gloats' },
+    ]);
+
+    tick(1);
+
+    expect(entry.calls).toEqual([
+      { actorId: npc.id, actionId: 'chord.action.conjuring', directObject: key.id, indirectObject: study.id, instrument: wand.id },
+    ]);
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+    expect(trait.goalState['errand']).toMatchObject({ currentStep: 1 });
+  });
+
+  it('a perform of `going` carries its canonical direction and moves the NPC through the exit', () => {
+    // The step carries the compiler's direction word; the phase resolves it to
+    // the platform's DirectionType (`NORTH`), which is what a loader-built
+    // room keys its exits by. This harness keys them lowercase, so give the
+    // Parlor a platform-keyed exit for the scaffolding entry to find.
+    (parlor.get(TraitType.ROOM) as RoomTrait).exits[Direction.NORTH] = { destination: hall.id };
+    registerGoal([{ type: 'perform', actionId: IFActions.GOING, slots: { direction: 'north' } }]);
+
+    tick(1);
+
+    expect(entry.calls).toEqual([{ actorId: npc.id, actionId: IFActions.GOING, direction: Direction.NORTH }]);
+    expect(world.getLocation(npc.id)).toBe(hall.id);
+  });
+
+  it('a refused perform neither advances nor stops trying: the same call every tick until it succeeds', () => {
+    registerGoal([
+      { type: 'perform', actionId: 'chord.action.conjuring', slots: {} },
+      { type: 'act', messageId: 'butler-gloats' },
+    ]);
+    refused.add('chord.action.conjuring');
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+
+    tick(1);
+    tick(2);
+    expect(entry.calls.filter((c) => c.actionId === 'chord.action.conjuring')).toHaveLength(2);
+    expect(trait.goalState['errand']).toMatchObject({ currentStep: 0 });
+
+    refused.delete('chord.action.conjuring');
+    tick(3);
+    expect(trait.goalState['errand']).toMatchObject({ currentStep: 1 });
+  });
+
+  // Scaffold-only by design: on the real path this branch is unreachable —
+  // the compiler refuses an unknown name and the loader's `requireWorldId`
+  // throws on an unresolvable id — so it is a defensive guard, not part of
+  // Acceptance item 7, and no real-path case backs it.
+  it('a perform whose slot names nothing in the world performs nothing and does not advance', () => {
+    registerGoal([{ type: 'perform', actionId: 'chord.action.conjuring', slots: { directObject: 'no-such-entity' } }]);
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+
+    tick(1);
+
+    expect(entry.calls).toEqual([]);
+    expect(trait.goalState['errand']).toMatchObject({ currentStep: 0 });
   });
 });

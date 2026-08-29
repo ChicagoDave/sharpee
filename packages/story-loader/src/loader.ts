@@ -882,6 +882,10 @@ export class ChordStory implements Story {
         ...(this.ir.customMoods?.length ? { customMoods: this.ir.customMoods } : {}),
         ...(this.ir.customPersonalities?.length ? { customPersonalities: this.ir.customPersonalities } : {}),
         resolveEntityId: (irId) => this.requireWorldId(irId, irEntity),
+        // ADR-329 D10: the one rule `performAct` (runtime.ts) applies to the
+        // acting statement — a story action is `chord.action.<name>`, a
+        // standard one `if.action.<name>` — stated here for the goal step.
+        resolveActionId: (name) => (this.ir.actions.some((a) => a.name === name) ? `chord.action.${name}` : `if.action.${name}`),
       });
       this.appliedCharacters.push({
         worldId,

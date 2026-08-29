@@ -3026,6 +3026,8 @@ export class ChordRuntime {
 
     interface DispatchContext {
       world: WorldModel;
+      /** Whoever is acting (ADR-328 D2) — the player, or a character performing the action. */
+      actor?: IFEntity;
       player: IFEntity;
       // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
       // defaultSemantics (merged parser-side, ADR-148) — the access seam
@@ -3037,7 +3039,9 @@ export class ChordRuntime {
 
     /** Entity bindings + declared semantic WORDS (ADR-275 D2), one map. */
     const bindings = (entity: IFEntity | undefined, context: DispatchContext): Record<string, string> => {
-      const slots: Record<string, string> = { actor: context.player.id };
+      // `the actor` is whoever performs the action — a character acting
+      // through the execution entry (ADR-329 D1/D10) as much as the player.
+      const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
       if (entity && primarySlot) slots[primarySlot] = entity.id;
       const extras = context.command.parsed?.extras ?? {};
       for (const key of semanticKeys) {
@@ -3115,7 +3119,7 @@ export class ChordRuntime {
             const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
             if (!candidate) continue;
             const candidateShared: CapabilitySharedData = { chordSlots: slots };
-            const result = candidate.validate(entity, context.world, context.player.id, candidateShared);
+            const result = candidate.validate(entity, context.world, (context.actor ?? context.player).id, candidateShared);
             if (!result.valid) return { valid: false, error: result.error };
             if (candidateShared.chordSkip === true) continue; // gated out — not claiming
             behavior = candidate;
@@ -3147,7 +3151,7 @@ export class ChordRuntime {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
         if (entity && behavior) {
-          behavior.execute(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
+          behavior.execute(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
         }
         if (def.body.length) {
           runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
@@ -3158,7 +3162,7 @@ export class ChordRuntime {
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
         const events: ISemanticEvent[] = [];
         if (entity && behavior) {
-          const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
+          const effects = behavior.report(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
           // The same D9 attribution override as the engine's
           // effectsToEvents: context.event stamps the acting player,
           // which is wrong for NPC-originated effects.
@@ -3172,7 +3176,7 @@ export class ChordRuntime {
         }
         // After-clauses bind to the target entity — an entity-less command
         // has no owner to react (ADR-275 D1).
-        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world, context.player.id));
+        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world, (context.actor ?? context.player).id));
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
@@ -3210,6 +3214,8 @@ export class ChordRuntime {
   private actionBodyCtxFromSlots(
     context: {
       world: WorldModel;
+      /** Whoever is acting (ADR-328 D2); the player when absent. */
+      actor?: IFEntity;
       player: IFEntity;
       sharedData: Record<string, unknown>;
     },
@@ -3217,7 +3223,7 @@ export class ChordRuntime {
   ): ExecContext {
     return {
       world: context.world,
-      slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: context.player.id },
+      slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: (context.actor ?? context.player).id },
       ledger: this.ledgerFor(context.sharedData, 'chordBodyDecisions', phase),
     };
   }

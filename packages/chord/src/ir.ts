@@ -641,7 +641,13 @@ export interface IRGoalDef {
   span: Span;
 }
 
-/** One goal step (ADR-310 D8) — verbs per ADR-145's step types; entity refs resolved. */
+/**
+ * One goal step (ADR-310 D8) — verbs per ADR-145's step types; entity refs
+ * resolved. A `perform` step (ADR-329 D10) is one action the owner performs
+ * now, through the execution entry: the action's bare name (the loader
+ * qualifies it — a story action or a standard one), the shape that matched,
+ * and its slots already sorted into the entry's roles.
+ */
 export type IRGoalStep =
   | { kind: 'seek'; target: string; in?: string; span: Span }
   | { kind: 'acquire'; target: string; span: Span }
@@ -650,7 +656,20 @@ export type IRGoalStep =
   | { kind: 'act'; phraseKey: string; span: Span }
   | { kind: 'say'; phraseKey: string; target?: string; span: Span }
   | { kind: 'give'; item: string; target: string; span: Span }
-  | { kind: 'drop'; item: string; in?: string; span: Span };
+  | { kind: 'drop'; item: string; in?: string; span: Span }
+  | { kind: 'perform'; action: string; shape: string; slots: IRPerformSlots; span: Span };
+
+/**
+ * The roles of a `perform` step's slots (ADR-329 D10), as the execution entry
+ * takes them: entity ids (or the `player` sentinel) for the objects, the
+ * canonical direction word for a `going` shape.
+ */
+export interface IRPerformSlots {
+  directObject?: string;
+  indirectObject?: string;
+  instrument?: string;
+  direction?: string;
+}
 
 /**
  * An `influence` block (ADR-310 D9), defined on the exerter. Effect axes

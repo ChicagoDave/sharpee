@@ -930,7 +930,14 @@ export interface GoalDecl {
   span: Span;
 }
 
-/** One goal step line (ADR-310 D8) — verbs per ADR-145's step types. */
+/**
+ * One goal step line (ADR-310 D8) — verbs per ADR-145's step types — or, when
+ * the line is none of them, a `perform` step (ADR-329 D10): an action's own
+ * words with the block's owner implied as the actor. The parser admits a
+ * `perform` line when its first word lemma-matches a known action verb and
+ * carries the words raw; the analyzer matches the shape and resolves the slots
+ * exactly as it does for an acting statement.
+ */
 export type GoalStepDecl =
   | { kind: 'seek'; target: NameRef; in: NameRef | null; span: Span }
   | { kind: 'acquire'; target: NameRef; span: Span }
@@ -939,7 +946,8 @@ export type GoalStepDecl =
   | { kind: 'act'; phraseKey: string; span: Span }
   | { kind: 'say'; phraseKey: string; target: NameRef | null; span: Span }
   | { kind: 'give'; item: NameRef; target: NameRef; span: Span }
-  | { kind: 'drop'; item: NameRef; in: NameRef | null; span: Span };
+  | { kind: 'drop'; item: NameRef; in: NameRef | null; span: Span }
+  | { kind: 'perform'; words: Array<{ text: string; span: Span }>; span: Span };
 
 /**
  * An `influence` block (ADR-310 D9): author-invented name, mode and range

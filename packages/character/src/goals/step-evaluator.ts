@@ -130,6 +130,16 @@ function evaluateStep(step: GoalStep, ctx: GoalStepContext): StepResult {
 
     case 'drop':
       return evaluateDrop(step.item, step.witnessed, ctx);
+
+    case 'perform':
+      // ADR-329 D10: no planning half — the action's own validate is the
+      // only gate, so the intent is simply the action, and the phase's
+      // refusal path (no advance, retry next tick) does the rest.
+      return {
+        status: 'completed',
+        witnessed: step.witnessed,
+        mutation: { kind: 'perform', actionId: step.actionId, slots: step.slots },
+      };
   }
 }
 

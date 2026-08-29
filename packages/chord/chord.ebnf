@@ -409,9 +409,54 @@ create-line  = "aka" alias { "," alias } NL
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
                                                               rooms only *)
              | on-clause
+             | goal-block                                  (* ADR-310 D8; person blocks
+                                                              with a character model *)
              | prose-paragraph ;                           (* post-blank: description;
                                                               consecutive bare paragraphs
                                                               append *)
+
+(* A goal (ADR-310 D8): a named, prioritized plan a character pursues on its
+   own turns, one step per turn. The other ADR-310 character-block lines
+   (mood, personality, knows/thinks, influence, resists, spreads) are not yet
+   in this file — a paper-trail gap recorded 2026-08-29, not a language fact. *)
+goal-block   = "goal" WORD "," WORD NL                     (* name, priority: critical |
+                                                              high | medium | low
+                                                              (analysis.unknown-priority) *)
+               >>> { goal-line }
+               "end" "goal" NL ;
+goal-line    = "active" "when" condition NL                (* at most one; absent =
+                                                              always active *)
+             | "seek" name [ "in" name ] NL                (* walk toward an entity or
+                                                              room, one room per turn *)
+             | "acquire" name NL                           (* wait until in the room,
+                                                              then `taking` *)
+             | "wait" "for" condition NL
+             | "move" "to" name NL                         (* walk to a room *)
+             | "act" phrase-key NL
+             | "say" phrase-key [ "to" name ] NL
+             | "give" name "to" name NL                    (* blocked unless held; waits
+                                                              for the recipient *)
+             | "drop" name [ "in" name ] NL
+             | verb-words NL ;                             (* ADR-329 D10: an action's own
+                                                              words, the block's owner
+                                                              implied as the actor —
+                                                              `open the door`, `go east`,
+                                                              `conjure the key into the
+                                                              Vault`. Matched against the
+                                                              story's and the standard
+                                                              grammar shapes exactly as
+                                                              the acting statement is;
+                                                              a `taking` / `giving` /
+                                                              `dropping` shape folds onto
+                                                              acquire / give / drop
+                                                              (their planning half kept);
+                                                              anything else performs
+                                                              NOW, the action's validate
+                                                              the only gate, a refusal
+                                                              retried next turn. No
+                                                              `when` suffix on a step —
+                                                              `wait for` is the guard
+                                                              (parse.goal-step) *)
 
 phrase-override = "phrase" phrase-key
                   [ "," STRATEGY ] [ "while" condition ] ":" NL

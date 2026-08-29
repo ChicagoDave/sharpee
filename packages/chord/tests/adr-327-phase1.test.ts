@@ -357,11 +357,13 @@ describe('placement vs head — split by block structure, not by the article', (
 });
 
 describe('the wire stamps move with the major', () => {
-  it('IR format is `story language 4` and the IR carries the current language version (4.x)', () => {
+  it('IR format is `story language 4` and the IR carries the current language version', () => {
     const ir = ok({});
     expect(IR_FORMAT).toBe('story language 4');
     expect(ir.format).toBe('story language 4');
-    expect(CHORD_LANGUAGE_VERSION).toMatch(/^4\./);
+    // The 4.x major this phase landed was folded into public 3.5.0 by the
+    // owner's consolidation ruling (2026-08-29, version.ts) — the IR carries
+    // whatever the public number is; the major itself is no longer asserted.
     expect(ir.languageVersion).toBe(CHORD_LANGUAGE_VERSION);
   });
 });

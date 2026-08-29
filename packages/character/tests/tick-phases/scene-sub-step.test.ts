@@ -16,8 +16,10 @@ import {
   ContainerTrait,
   ActorTrait,
   TraitType,
+  Direction,
   type SceneOccasion,
 } from '@sharpee/world-model';
+import { IFActions } from '@sharpee/stdlib';
 import type { RandomService, ISemanticEvent } from '@sharpee/core';
 import type { ISound } from '@sharpee/if-domain';
 import { CharacterPhaseRegistry, createCharacterModelPhase } from '../../src/tick-phases';
@@ -277,6 +279,34 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       expect((closed!.data as { boundary?: string }).boundary).toBe('exit');
       expect(traitOf(alice).conversationMemory?.[bert.id]?.visits).toBe(1);
       expect(traitOf(bert).conversationMemory?.[alice.id]?.visits).toBe(1);
+    });
+
+    it('a seated participant whose `perform` step is a `going` closes the scene on exit too (ADR-329 D10)', () => {
+      // The perform step carries the compiler's direction word; the phase
+      // resolves it to the platform's `NORTH`, so give the Parlor a
+      // platform-keyed exit for the scaffolding entry to walk.
+      (parlor.get(TraitType.ROOM) as RoomTrait).exits[Direction.NORTH] = { destination: hall.id };
+      openScene(world, {
+        participantIds: [alice.id, bert.id],
+        openedBy: { kind: 'initiative', openerId: alice.id },
+      });
+      registry.register(alice.id, {
+        goalDefs: [{
+          id: 'errand',
+          activatesWhen: [],
+          priority: 'high',
+          mode: 'sequential',
+          steps: [{ type: 'perform', actionId: IFActions.GOING, slots: { direction: 'north' } }],
+        }],
+      });
+
+      const events = tick(1);
+
+      expect(world.getLocation(alice.id)).toBe(hall.id);
+      expect(Object.values(readSceneStore(world).scenes)).toHaveLength(0);
+      const closed = events.find((e) => e.type === 'character.scene.scene-closed');
+      expect(closed).toBeDefined();
+      expect((closed!.data as { boundary?: string }).boundary).toBe('exit');
     });
 
     it('D16 holds a seated NPC in place until the conversation decays, then pursuit resumes', () => {

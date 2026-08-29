@@ -29,6 +29,7 @@ import {
   TraitType,
   CharacterModelTrait,
   RoomTrait,
+  Direction,
   type IExitInfo,
   type DirectionType,
   type TemperamentDef,
@@ -811,10 +812,10 @@ function executeNpcGoals(
   // completed `say` at a co-located wrappable partner becomes a scene
   // opening move — its observable surface is the sound path, so the
   // legacy witnessed mint below is suppressed for exactly that firing.
+  const mutation = stepResult.status === 'completed' || stepResult.status === 'in-progress' ? stepResult.mutation : undefined;
   if (
     applied &&
-    (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
-    stepResult.mutation?.kind === 'move'
+    (mutation?.kind === 'move' || (mutation?.kind === 'perform' && mutation.actionId === IFActions.GOING))
   ) {
     surface.movedNpcIds.add(npc.id);
   }
@@ -933,6 +934,24 @@ function stepAction(
     case 'drop': {
       const item = entity(m.itemId);
       return item ? { actionId: IFActions.DROPPING, slots: { directObject: item } } : undefined;
+    }
+    case 'perform': {
+      // ADR-329 D10: the roles were sorted at compile time; only the lookups
+      // are left. A slot naming nothing in the world is nothing to perform.
+      const slots: ActSlots = {};
+      for (const role of ['directObject', 'indirectObject', 'instrument'] as const) {
+        const id = m.slots[role];
+        if (id === undefined) continue;
+        const found = entity(id);
+        if (!found) return undefined;
+        slots[role] = found;
+      }
+      if (m.slots.direction !== undefined) {
+        const direction = (Direction as Record<string, DirectionType>)[m.slots.direction.toUpperCase()];
+        if (!direction) return undefined;
+        slots.direction = direction;
+      }
+      return { actionId: m.actionId, slots };
     }
   }
 }

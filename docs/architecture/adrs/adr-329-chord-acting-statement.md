@@ -343,11 +343,157 @@ in the execution phase. The EBNF row lands with the 4.1.0 bump (D8), because
 EBNF row beside `move` in the statement production; `chord-grammar-changes.md` entry;
 ADR-257 **minor** bump (additive — every story valid at 4.0.0 is valid after).
 
+*(The 4.1.0 this landed as was folded, with 3.4.0 and the 4.0.0 major, into public **3.5.0**
+by the owner's consolidation ruling of 2026-08-29 — nothing past Chord 3.3.0 / Sharpee 5.1.1
+had been published. ADR-257 D2, sixth recorded exception.)*
+
 ### D9. What this ADR's acceptance flips
 
 The DRAFT → ACCEPTED flip (owner: the rule-11a interview) stamps ADR-328 D7 with this ADR's
 number — its child exists — and nothing else. ADR-325/326 are untouched (D7 here);
 ADR-310 D8's stamp waits for D6's landing, above.
+
+### D10. A goal step is an acting statement with the actor implied (GH #321)
+
+*(Amendment, 2026-08-29, session 9de27b — DRAFT until David accepts it. Raised during Phase
+9c: the goal block's step vocabulary is closed — seek, acquire, wait for, move to, act, say,
+give, drop — so a story verb a character can perform from a reaction (D1/D2, in a `when` or
+`after` body) cannot be a step of its plan.)*
+
+The block first (lesson 10). A wizard whose plan is to put the key where it belongs — the
+prompt is David's (GH #321): *an actor with a magical ability to place an item in a known
+location*. **The two lines marked `## NEW` are the only syntax that does not compile today**;
+the rest is ADR-310 D8's block as it ships.
+
+```chord
+define action conjuring
+  grammar
+    conjure the item into the place
+  the item must be reachable
+  otherwise refuse conjure-what
+
+define trait conjurable
+  on the wizard conjuring
+    move it to the Vault               ## the spell's effect — the trait's clause claims
+  end on                               ## the dispatch, as thealderman's `accusing` does
+end trait
+
+create the key
+  conjurable
+
+  A key.
+
+create the wizard
+  a person
+  in the Tower
+
+  goal secure-the-key, high
+    active when the player has the key
+    seek the player
+    take the key                       ## NEW — the same step `acquire the key` is
+    conjure the key into the Vault     ## NEW — a story verb, performed as the wizard
+    say wizard-gloats
+  end goal
+```
+
+**A goal body line that is none of the eight step verbs (and not `active when`) is tried as
+an acting statement whose actor is the block's owner.** Its first word's lemma opens a shape
+(the story's own `define action`/`extend action` grammar first, the manifest's second — D2's
+matching, unchanged); its slots are names, resolved as every other step ref is (`the player`
+is admissible in a slot, as `give … to the player` already is; the owner never appears — the
+block names the actor). The line lowers to one **`perform` step** carrying the action, the
+shape, and the slots already sorted into the roles the execution entry takes — direct object,
+indirect object, instrument (a story action's `is an instrument` slot), direction (a `going`
+shape's literal) — and the tick performs it exactly as D6 performs `give`: one action, run
+through `NpcTickContext.act` as the NPC, validated, interceptable, witnessed. **It acts now**:
+a `perform` step seeks nothing and waits for nothing — the action's own validate is the only
+gate, so a `take the key` written where the key is out of reach is refused, and 9c's refusal
+ruling applies unchanged (no advance, no announcement, retried next tick, each witnessed
+refusal narrating). Guarding a step is what `wait for` is for; a step carries no `when`
+suffix (the statement's suffix skips a line; a step that should not run yet waits, and a
+step that should not run at all is not written).
+
+**The standard verbs keep their planning half as spellings.** Three of the shapes an acting
+statement can take are already steps with a plan attached, and the plan is the point of
+writing them in a goal: the analyzer folds them onto the existing step kinds, so the tick's
+behaviour is exactly what it was —
+
+| The line matches | Lowers to | Which means |
+| --- | --- | --- |
+| any `taking` shape with one item (`take the key`, `pick up the key`) | `acquire` | waits, silently, until the item is in the room; then takes it |
+| any `giving` shape with an item and a recipient | `give` | blocked (loud) unless held; waits until the recipient is in the room; then gives |
+| any `dropping` shape with one item | `drop` | blocked (loud) unless held; drops |
+| everything else — `go east`, `open the door`, `conjure the key into the Vault` | `perform` | acts now; refusal retries next tick |
+
+`move to <place>` stays the planner's spelling (a path, one `going` per turn); `go east` is a
+`perform` of one `going`. Nothing new is decided about how a character acts — D6's one truth
+holds for both forms, and the four rows above are the same words meaning the same thing in
+a reaction body and in a plan.
+
+**Errors are D2's, by name.** A first word that opens no shape stays `parse.goal-step`
+(the parser admits the line only when its first lemma is an action verb the file or the
+manifest knows, the same admission `tryParseActStatement` makes); a verb whose shapes the
+words do not fit is `analysis.act-slot-shape`, listing them; an unknown name in a slot is
+the existing unknown-entity error; a `when` suffix on a step is `parse.goal-step` naming
+`wait for`.
+
+**Surfaces.** `packages/chord/src/parser.ts` (a default case in `parseGoalBodyLine` before
+the step error), `analyzer.ts` (`perform` lowering beside the goal-step switch, sharing `matchActShape` and
+the name-splitting helpers with the statement; the roles are sorted here, at compile time,
+from the AST's own `slotTypes` — the statement's roles stay the loader's, `performAct`, so
+one rule is stated at two sites rather than shared across the package boundary), `ast.ts`/`ir.ts` (one step
+kind), `packages/character/src/goals/goal-types.ts` (`PerformStep`, one `StepMutation`
+kind), `step-evaluator.ts` (completes with the mutation), `apply-compiled.ts` (`mapGoalStep`,
+with the loader supplying the qualified action id the way it already supplies entity ids),
+`tick-phases.ts` (`stepAction`'s one new case). **No engine, stdlib, or world-model change.**
+Paper trail: EBNF (the goal-step production gains the row), `chord-grammar-changes.md`,
+the reference's goal page. No separate ADR-257 bump: D10 rides the **3.5.0** consolidation
+(owner ruling 2026-08-29 — 3.4.0, 4.0.0, 4.1.0, and D10 are one public minor alongside
+Sharpee 5.2.0; ADR-257 D2's sixth recorded exception), so only the EBNF hash re-pins.
+
+**Acceptance** (numbered on from item 5): **6.** compile tests — each row of the table
+lowers as stated; a story verb lowers to `perform` with its roles; `go east` carries the
+direction; the errors fire by name. **7.** REAL-PATH (rule 13a), on `GameEngine.executeTurn`
+through the character tick: the wizard's `conjure the key into the Vault` moves the key
+(asserted on `world.getLocation`) and advances the step; `take the key` waits until the
+key is in the room and then takes it (the `acquire` fold, on the real path); a refused
+`perform` leaves the world unchanged, does not advance, and narrates its refusal to a
+present player each retried turn. **8.** corpus identical to baseline (thealderman,
+b3-conscience, and ides carry goal blocks; none uses the form).
+
+*(6 — satisfied 2026-08-29, session 9de27b: `packages/chord/tests/adr-329-d10-perform-step.test.ts`,
+18 — every row of the fold table, the wizard's story verb with its roles, the instrument slot,
+`go east`'s direction, lemma matching, `the player` in a slot, and each error by name; chord
+1100 passing / 72 files. **7** — satisfied the same session: `packages/story-loader/tests/adr-329-d10-perform-step.test.ts`,
+6, on `GameEngine.executeTurn` — the conjure moves the key and advances; `take the key` waits
+until the key is dropped in the room, then takes it; a refused `open the chest` narrates
+`open_blocked` `present` on each retried turn and never advances; plus the actor-binding
+correction's own case. **8** — satisfied the same session, all through the rebuilt
+`dist/cli/sharpee.js` and `./sharpee test --tree`: fernhill 36 cards, ides 39, secret-letter
+131 passing / 29 failing (GH #319, pre-existing), thealderman 4; cloak-of-darkness 80 passing /
+2 failing and friendly-zoo 75 / 1 (the 9b baseline's pre-existing three); character-acceptance
+b1 15, b3 62 / 1 (`b3-seek-out-recycle`, pre-existing), p10 21, p8+p9 19; Dungeo chain 952
+passing / 17 transcripts, unmoved. Paper trail: `chord.ebnf` `goal-block` production (new —
+the goal block had never been in the file), `chord-grammar-changes.md` row, the reference's
+create-block table and the goals guide; EBNF hash re-pinned under 3.5.0.)*
+
+*(Landed — compile half 2026-08-29, session 9de27b, plan Phase 1:
+`packages/chord/tests/adr-329-d10-perform-step.test.ts`, 18 (Acceptance 6). Runtime half the
+same session, Phase 2: `PerformStep` → `StepMutation.perform` → `stepAction`'s one new case,
+`mapGoalStep` qualifying the action name through a loader-supplied `resolveActionId`. Real
+path `packages/story-loader/tests/adr-329-d10-perform-step.test.ts`, 6, on
+`GameEngine.executeTurn` (Acceptance 7): the wizard's conjure moves the key and advances;
+`take the key` waits, silently, until the key is dropped in the room, then takes it; a
+refused `open the chest` narrates `if.event.open_blocked` `present` on each retried turn and
+never advances; unrefused it opens; `go east` is one `going`. **One platform correction the
+real path forced**: the story dispatch action bound `the actor` — and the actorId handed to
+capability validate/execute/report and to `fireAfterClauses` — to `context.player`, so a
+story action performed by a character (statement or step) tested the player's whereabouts
+and matched the player's heads; it now binds whoever acts (`runtime.ts`, `buildDispatchAction`),
+with a real-path case that fails without it. One fixture finding, reflected in the block
+above: a story action's effect is a trait clause (`define trait … on the wizard conjuring …
+end trait`) the entity composes — entity `on` clauses never fire on the dispatch path, the
+loader's own rule. Version: rides 3.5.0, per the consolidation ruling.)*
 
 ## Non-goals
 

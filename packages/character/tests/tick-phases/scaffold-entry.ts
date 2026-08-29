@@ -21,6 +21,7 @@ export interface ScaffoldCall {
   direction?: string;
   directObject?: string;
   indirectObject?: string;
+  instrument?: string;
 }
 
 /** An entry for harnesses whose NPCs never act — any call is a test failure. */
@@ -48,6 +49,7 @@ export function scaffoldEntry(
       ...(slots?.direction ? { direction: slots.direction } : {}),
       ...(slots?.directObject ? { directObject: slots.directObject.id } : {}),
       ...(slots?.indirectObject ? { indirectObject: slots.indirectObject.id } : {}),
+      ...(slots?.instrument ? { instrument: slots.instrument.id } : {}),
     });
     if (refuse?.(actorId, actionId)) return { success: false, events: [] };
     switch (actionId) {
@@ -67,7 +69,10 @@ export function scaffoldEntry(
         return { success: !!room && world.moveEntity(slots!.directObject!.id, room), events: [] };
       }
       default:
-        return { success: false, events: [] };
+        // Any other action — a `perform` step's story verb, say — is
+        // recorded and counts as performed; it has no world effect here.
+        // The real path (adr-329-d10-perform-step.test.ts) runs the action.
+        return { success: true, events: [] };
     }
   };
   return { act, calls };

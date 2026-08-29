@@ -55,6 +55,7 @@ import {
   EmitField,
   EmitValue,
   ExtendAction,
+  GoalStepDecl,
   RemoveFromAction,
   MachineTransition,
   MediaStmt,
@@ -119,6 +120,7 @@ import {
   IRFeelsEntry,
   IRGoalDef,
   IRGoalStep,
+  IRPerformSlots,
   IRInfluenceDef,
   IRKnowsEntry,
   IRPersonalityEntry,
@@ -625,6 +627,27 @@ const ACT_DIRECTION_CANONICAL: Record<string, string> = {
   ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest',
   u: 'up', d: 'down', inside: 'in', outside: 'out',
 };
+
+/** The words of an acting statement or a `perform` step, as the parser carried them. */
+type ActWords = ReadonlyArray<{ text: string; span: Span }>;
+
+/** The span covering `words[from..to)`. */
+function actWordsSpan(words: ActWords, from: number, to: number): Span {
+  let sp = words[from].span;
+  for (let i = from + 1; i < to; i++) sp = mergeSpans(sp, words[i].span);
+  return sp;
+}
+
+/** `words[from..to)` as a name reference, a leading article split off (ADR-329 D1). */
+function actWordsNameRef(words: ActWords, from: number, to: number): NameRef {
+  const hasArticle = to - from > 1 && ACT_ARTICLES.has(words[from].text.toLowerCase());
+  return {
+    kind: 'name',
+    article: hasArticle ? words[from].text.toLowerCase() : null,
+    words: words.slice(hasArticle ? from + 1 : from, to).map((w) => w.text),
+    span: actWordsSpan(words, from, to),
+  };
+}
 
 /** The inflections a written verb may stand for (ADR-329 D1/Q-1) — mirrors the parser's admission test. */
 function verbLemmas(word: string): Set<string> {
@@ -5216,6 +5239,11 @@ class Analyzer {
               steps.push({ kind: 'drop', item, ...(inId !== null ? { in: inId } : {}), span: step.span });
               break;
             }
+            case 'perform': {
+              const lowered = this.lowerPerformStep(step);
+              if (lowered !== null) steps.push(lowered);
+              break;
+            }
           }
         }
         goals.push({
@@ -6493,20 +6521,8 @@ class Analyzer {
 
     const words = stmt.words;
     const lowerOf = (w: { text: string }) => w.text.toLowerCase();
-    const spanOfRange = (from: number, to: number): Span => {
-      let sp = words[from].span;
-      for (let i = from + 1; i < to; i++) sp = mergeSpans(sp, words[i].span);
-      return sp;
-    };
-    const nameRefOf = (from: number, to: number): NameRef => {
-      const hasArticle = to - from > 1 && ACT_ARTICLES.has(lowerOf(words[from]));
-      return {
-        kind: 'name',
-        article: hasArticle ? lowerOf(words[from]) : null,
-        words: words.slice(hasArticle ? from + 1 : from, to).map((w) => w.text),
-        span: spanOfRange(from, to),
-      };
-    };
+    const spanOfRange = (from: number, to: number): Span => actWordsSpan(words, from, to);
+    const nameRefOf = (from: number, to: number): NameRef => actWordsNameRef(words, from, to);
 
     // The actor: the longest prefix naming an entity wins; `the player` is
     // remembered so the refusal can name the rule it hit.
@@ -6589,6 +6605,87 @@ class Analyzer {
       stmtWhen,
       span: stmt.span,
     };
+  }
+
+  /**
+   * ADR-329 D10: a goal line in an action's own words, the block's owner
+   * implied as the actor. The words match the story's and the manifest's
+   * shapes exactly as an acting statement's do (D2); each slot resolves as a
+   * step ref (`the player` is the sentinel id, as `give … to the player`
+   * already resolves it). A manifest `taking`, `giving`, or `dropping` match
+   * folds onto the step kind that already carries its planning half —
+   * `acquire`, `give`, `drop` — so the tick behaves exactly as it did for
+   * those words; anything else is a `perform` step, its slots sorted into the
+   * execution entry's roles: a story action's `is an instrument` slot is the
+   * instrument, the rest fill direct then indirect object in shape order, and
+   * a `going` shape's literal is the direction.
+   *
+   * @returns the lowered step, or null after a reported diagnostic
+   */
+  private lowerPerformStep(step: Extract<GoalStepDecl, { kind: 'perform' }>): IRGoalStep | null {
+    const words = step.words;
+    const line = words.map((w) => w.text).join(' ');
+    const match = this.matchActShape(words.map((w) => w.text));
+    if (!match) {
+      const verb = words[0].text.toLowerCase();
+      const shapesOfVerb = this.shapesOpenedBy(verb);
+      if (shapesOfVerb.length === 0) {
+        // The parser admitted the first word by lemma against the same
+        // lexicon, so this branch is unreachable in practice; the named
+        // error stays so a drift between the two tests is loud, not silent.
+        this.diagnostics.error(
+          'analysis.act-unknown-verb',
+          `\`${line}\` — \`${words[0].text}\` is not an action's word; a goal step in an action's own words uses its grammar (\`open the door\`, \`go east\`).`,
+          step.span,
+        );
+      } else {
+        this.diagnostics.error(
+          'analysis.act-slot-shape',
+          `\`${line}\` matches none of the shapes \`${words[0].text}\` opens: ${shapesOfVerb.map((sh) => `\`${sh}\``).join(', ')}.`,
+          step.span,
+        );
+      }
+      return null;
+    }
+
+    const bound: Array<{ slot: string; id: string }> = [];
+    for (const b of match.slots) {
+      const id = this.resolveEntityId(actWordsNameRef(words, b.from, b.to));
+      if (id === null) return null;
+      bound.push({ slot: b.slot, id });
+    }
+
+    // The fold: the standard verbs keep their planning half. A story action
+    // of the same name shadows the standard one (matchActShape) and is
+    // performed as itself.
+    if (!this.storyActShapes().has(match.action)) {
+      if (match.action === 'taking' && bound.length === 1) {
+        return { kind: 'acquire', target: bound[0].id, span: step.span };
+      }
+      if (match.action === 'giving' && bound.length === 2) {
+        const item = bound.find((b) => b.slot === 'item');
+        const recipient = bound.find((b) => b.slot === 'recipient');
+        if (item && recipient) return { kind: 'give', item: item.id, target: recipient.id, span: step.span };
+      }
+      if (match.action === 'dropping' && bound.length === 1) {
+        return { kind: 'drop', item: bound[0].id, span: step.span };
+      }
+    }
+
+    const instrumentSlots = new Set<string>();
+    for (const decl of this.ast.declarations) {
+      if ((decl.kind === 'define-action' || decl.kind === 'extend-action') && decl.name === match.action) {
+        for (const st of decl.slotTypes) if (st.type === 'instrument') instrumentSlots.add(st.slot);
+      }
+    }
+    const slots: IRPerformSlots = {};
+    for (const b of bound) {
+      if (instrumentSlots.has(b.slot)) slots.instrument = b.id;
+      else if (slots.directObject === undefined) slots.directObject = b.id;
+      else slots.indirectObject = b.id;
+    }
+    if (match.direction !== null) slots.direction = match.direction;
+    return { kind: 'perform', action: match.action, shape: match.shape, slots, span: step.span };
   }
 
   /**

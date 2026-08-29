@@ -66,8 +66,16 @@ const PINNED = {
   //  `<character> <verb> …` beside `move` in the statement production, with
   //  the `verb-words` production — additive minor; every 4.0.0 story is
   //  valid. Landed 9a–9c; pinned at 9d with the paper trail.)
-  languageVersion: '4.1.0',
-  ebnfSha256: 'cb7e5eecfacbfe9a6ac2a32b5a350f92982cb6172436f23195b06c8791f32a5b',
+  // 3.5.0 — owner consolidation ruling, 2026-08-29 (session 9de27b): nothing
+  // since 3.3.0 / Sharpee 5.1.1 is published, so 3.4.0, 4.0.0, 4.1.0, and
+  // ADR-329 D10's `perform` goal step are ONE public minor, shipping with
+  // Sharpee 5.2.0. Bumps slow down: the number moves with a publish, not a
+  // landing. The EBNF hash was unchanged by the ruling itself; ADR-329
+  // D10 (GH #321, same session) then added the `goal-block` production —
+  // the goal block had never been in the grammar file — with its
+  // `verb-words` step row, and re-pinned the hash under this same version.
+  languageVersion: '3.5.0',
+  ebnfSha256: 'f8d5cbaf3ec16261bfe6f55ceac3a293e8334abb731517a07dc3f9f30212b148',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

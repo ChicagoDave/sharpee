@@ -4260,7 +4260,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
-  "languageVersion": "4.1.0",
+  "languageVersion": "3.5.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

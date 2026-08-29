@@ -654,6 +654,14 @@ export interface CompiledCharacterContext {
      * ref here is rogue IR, not a story state.
      */
     resolveEntityId?: (irId: string) => string;
+    /**
+     * Qualifies a `perform` step's bare action name (ADR-329 D10) to the id
+     * the execution entry runs — `chord.action.<name>` for the story's own
+     * actions, `if.action.<name>` for the standard ones. The LOADER owns the
+     * story's action list, so it supplies the rule; absent, every name is
+     * taken as standard.
+     */
+    resolveActionId?: (name: string) => string;
 }
 /**
  * Map compiled `define temperament` defs (plus the compiler's synthesized
@@ -3254,8 +3262,30 @@ export interface DropStep extends StepBase {
     item: string;
     location?: string;
 }
+/**
+ * The slots of a `perform` step, as the execution entry's roles: world
+ * entity ids for the objects, the direction word for a `going` action.
+ */
+export interface PerformSlots {
+    directObject?: string;
+    indirectObject?: string;
+    instrument?: string;
+    direction?: string;
+}
+/**
+ * Perform one action now, as the NPC (ADR-329 D10): a Chord goal line in
+ * an action's own words — `conjure the key into the Vault`, `go east`,
+ * `open the door`. No planning half: the action's own validate is the only
+ * gate, and a refusal retries next tick (D6's ruling).
+ */
+export interface PerformStep extends StepBase {
+    type: 'perform';
+    /** The qualified action id (`if.action.<name>` or `chord.action.<name>`). */
+    actionId: string;
+    slots: PerformSlots;
+}
 /** Union of all goal step types. */
-export type GoalStep = SeekStep | AcquireStep | WaitForStep | MoveToStep | ActStep | SayStep | GiveStep | DropStep;
+export type GoalStep = SeekStep | AcquireStep | WaitForStep | MoveToStep | ActStep | SayStep | GiveStep | DropStep | PerformStep;
 /** Author-defined goal with activation conditions and behavior sequence. */
 export interface GoalDef {
     /** Unique goal identifier. */
@@ -3337,6 +3367,10 @@ export type StepMutation = {
 } | {
     kind: 'drop';
     itemId: string;
+} | {
+    kind: 'perform';
+    actionId: string;
+    slots: PerformSlots;
 };
 /** Result of evaluating a single goal step. */
 export type StepResult = {

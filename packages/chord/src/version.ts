@@ -245,5 +245,16 @@
  * `the player` is never the actor (D1). `move` is unchanged: move puts,
  * acting does (D7). Additive — every 4.0.0 story is valid — so a minor by
  * D2's ordinary rule.
+ *
+ * **3.5.0 (owner consolidation ruling, 2026-08-29, session 9de27b)** — ships
+ * alongside Sharpee 5.2.0. Nothing since Chord 3.3.0 / Sharpee 5.1.1 has been
+ * published, so the landings above it — 3.4.0 (ADR-326), 4.0.0 (ADR-327),
+ * 4.1.0 (ADR-329), and ADR-329 D10's `perform` goal step — are ONE public
+ * revision, **3.5.0**: the consolidation species of the 2.0.0 and 3.0.0
+ * rulings, and the majors-as-minors kind too (ADR-327's major folds in).
+ * The entries above stay as the true landing history; their numbers were
+ * internal. Owner's direction with the ruling: **the version bumps slow
+ * down** — the public number moves with a publish, not with every landing.
+ * Cross-noted at ADR-257 D2.
  */
-export const CHORD_LANGUAGE_VERSION = '4.1.0';
+export const CHORD_LANGUAGE_VERSION = '3.5.0';

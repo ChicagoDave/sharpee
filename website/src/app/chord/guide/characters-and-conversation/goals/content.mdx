@@ -12,13 +12,64 @@ compound joined with `and`. It does not read a fact's value: writing
 because `the ledger` resolves as an entity there. Gate on state, and let
 a `thinks` line carry what the person believes.
 
-The body is a short list of steps: `seek <person>` to go find someone,
-`move to <room>` to go somewhere, and `say <phrase> to <target>` to
-deliver an authored line on arrival. Steps are authored behavior, not a
-planner — nothing is searched or invented, and a goal that cannot make
-its next step simply does not act this turn. A conversation in progress
-suspends pursuit, so a person will not walk out mid-sentence to run an
-errand.
+The body is a short list of steps, one per turn. Four of them carry a
+plan: `seek <person or room>` walks toward something one room at a time,
+`move to <room>` walks to a place, `acquire <thing>` waits until the thing
+is in the room and then takes it, and `give <thing> to <person>` waits
+until the recipient is in the room and then hands it over (the person
+must already hold it). The rest act on the spot: `drop <thing>`, `say
+<phrase> to <target>` delivers an authored line, `act <phrase>` narrates
+one, and `wait for <condition>` holds the goal until something is true.
+Steps are authored behavior, not a planner — nothing is searched or
+invented, and a goal that cannot make its next step simply does not act
+this turn. A conversation in progress suspends pursuit, so a person will
+not walk out mid-sentence to run an errand.
+
+A step can also be **an action's own words**, with the goal's owner as
+the one acting: `open the door`, `go east`, `conjure the key into the
+Vault`. The line is matched against the standard grammar and the story's
+own `define action` grammar exactly as an
+[acting statement](/chord/guide/behavior/the-statements) is, and it runs
+the real action through the same pipeline as a typed command — it can be
+refused by an `on` clause, witnessed by whoever is present, and reacted
+to with `after`. Such a step acts *now*: nothing waits for it, and a
+refusal is retried next turn, narrating each time the player is there to
+see it. The standard verbs keep their plan: `take the key`, `pick up the
+key`, or `get the key` are the same step as `acquire the key`, `hand the
+key to the player` is `give`, and `discard the key` is `drop`. There is
+no `when` on a step — a step that should not run yet waits, with `wait
+for`.
+
+```chord
+define action conjuring
+  grammar
+    conjure the item into the place
+  the item must be reachable
+  otherwise refuse conjure-what
+
+define trait conjurable
+  on the wizard conjuring
+    move it to the Vault
+  end on
+end trait
+
+create the key
+  conjurable
+
+  A key.
+
+create the wizard
+  a person
+  in the Tower
+
+  goal secure-the-key, high
+    active when the player has the key
+    seek the player
+    take the key
+    conjure the key into the Vault
+    say wizard-gloats
+  end goal
+```
 
 A person's own `states:` list is the ordinary [World >
 States](/chord/guide/world/states) construct, driven with `change <the person>
