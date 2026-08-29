@@ -21,7 +21,7 @@ import {
   HealthTrait,
   ContainerTrait,
   WeaponTrait,
-  EntityType,
+  EntityType, NightVisionTrait
 } from '@sharpee/world-model';
 
 /**
@@ -93,6 +93,7 @@ export function createThief(
   }));
 
   // NPC behavior - uses custom 'thief' behavior
+  thief.add(new NightVisionTrait()); // the underground is dark; its residents see (ADR-328 D5)
   thief.add(new NpcTrait({
     behaviorId: 'thief',
     isHostile: false,  // Becomes hostile when attacked or in late-game

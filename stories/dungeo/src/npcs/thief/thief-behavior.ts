@@ -1,41 +1,44 @@
 /**
- * Thief NPC Behavior (ADR-070)
+ * Thief NPC Behavior (ADR-070; ADR-328 D5)
  *
  * Complex behavior implementing Mainframe Zork's Thief:
  * - Wandering: Random movement through underground
  * - Stalking: Following player when they have valuables
  * - Stealing: Taking items from player and rooms
  * - Returning: Bringing loot back to lair
- * - Fighting: Combat when attacked or late-game
+ * - Fighting: Combat when late-game
  * - Fleeing: Escaping when wounded
  *
  * Special mechanics:
  * - Opens jeweled egg when depositing treasures at lair (canonical MDL act1.254:1078-1099)
  * - Combat difficulty scales with player score
+ *
+ * Every act is a real action run as the thief through the engine's
+ * execution entry: a step is `going`, a take from the room is `taking`, a
+ * theft from the player is Dungeo's `stealing`, a blow is `attacking`
+ * through the melee interceptor. The world's rules apply — a take an
+ * interceptor refuses does not happen, and the thief knows it. The lair
+ * deposit is authorial mutation (concealed drops), kept direct.
  */
 
-import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
-import { IFEntity, NpcTrait, CombatantTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
-import { type ISemanticEvent } from '@sharpee/core';
+import { type NpcBehavior, type NpcContext, IFActions } from '@sharpee/stdlib';
+import { IFEntity, NpcTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
 
 import { ThiefMessages } from './thief-messages';
-import { TreasureTrait, EggTrait } from '../../traits';
-import { ThiefCustomProperties, ThiefState } from './thief-entity';
+import { STEAL_ACTION_ID } from '../../actions/stealing';
+import { EggTrait } from '../../traits';
+import { ThiefCustomProperties } from './thief-entity';
 import {
   getThiefProps,
-  setThiefState,
   findPlayerTreasures,
   findRoomTreasures,
   isCarryingEgg,
-  getEggFromInventory,
   isAtLair,
   depositTreasures,
   isThiefDisabled,
   decrementCooldowns,
   shouldEscalateToCombat,
   getThiefCombatDecision,
-  isStilettoItem,
-  getTreasureValue
 } from './thief-helpers';
 
 import { definePoint } from '@sharpee/core';
@@ -56,12 +59,6 @@ const STEAL_COOLDOWN = 5;           // Turns between steals
 const MAX_CARRY_BEFORE_RETURN = 3;  // Items before heading home
 // FLEE_HEALTH_THRESHOLD removed — flee decision now uses canonical WINNING? (melee.137:287-293)
 
-// Event ID counter
-let eventCounter = 0;
-function generateEventId(): string {
-  return `thief-bhv-${Date.now()}-${++eventCounter}`;
-}
-
 /**
  * The Thief's NPC behavior implementation
  */
@@ -72,18 +69,18 @@ export const thiefBehavior: NpcBehavior = {
   /**
    * Main turn logic - state machine dispatcher
    */
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     const props = getThiefProps(context.npc);
-    if (!props) return [];
+    if (!props) return;
 
     // Check global disabled flag (GDT NR command)
     if (isThiefDisabled(context.world)) {
-      return [];
+      return;
     }
 
     // Check state-level disabled
     if (props.state === 'DISABLED') {
-      return [];
+      return;
     }
 
     // Decrement cooldowns
@@ -93,14 +90,14 @@ export const thiefBehavior: NpcBehavior = {
     // When at lair and player absent, deposit treasures and open egg.
     // This fires regardless of state — even in FIGHTING, the thief deposits
     // when the player is gone (canonical behavior).
-    const depositActions = handleLairDeposit(context, props);
-    if (depositActions.length > 0) {
-      return depositActions;
+    if (handleLairDeposit(context)) {
+      return;
     }
 
     // Priority 2: Handle fighting state (includes WINNING? flee decision)
     if (props.state === 'FIGHTING') {
-      return handleFightingState(context, props);
+      handleFightingState(context, props);
+      return;
     }
 
     // Track engrossed flag: thief is engrossed while carrying the egg
@@ -113,33 +110,39 @@ export const thiefBehavior: NpcBehavior = {
     // Priority 3: Late-game combat escalation (canonical WINNING?)
     if (shouldEscalateToCombat(context) && !props.hasBeenAttacked) {
       props.state = 'FIGHTING';
-      return handleFightingState(context, props);
+      handleFightingState(context, props);
+      return;
     }
 
     // State machine dispatch
     switch (props.state) {
       case 'WANDERING':
-        return handleWanderingState(context, props);
+        handleWanderingState(context, props);
+        return;
       case 'STALKING':
-        return handleStalkingState(context, props);
+        handleStalkingState(context, props);
+        return;
       case 'STEALING':
-        return handleStealingState(context, props);
+        handleStealingState(context, props);
+        return;
       case 'RETURNING':
-        return handleReturningState(context, props);
+        handleReturningState(context, props);
+        return;
       case 'FLEEING':
-        return handleFleeingState(context, props);
+        handleFleeingState(context, props);
+        return;
       default:
-        return [];
+        return;
     }
   },
 
   /**
    * When player enters thief's room
    */
-  onPlayerEnters(context: NpcContext): NpcAction[] {
+  onPlayerEnters(context: NpcContext): void {
     const props = getThiefProps(context.npc);
-    if (!props || props.state === 'DISABLED') return [];
-    if (isThiefDisabled(context.world)) return [];
+    if (!props || props.state === 'DISABLED') return;
+    if (isThiefDisabled(context.world)) return;
 
     // Update tracking
     props.lastKnownPlayerRoom = context.playerLocation;
@@ -147,60 +150,23 @@ export const thiefBehavior: NpcBehavior = {
     // Check if player has valuables - thief notices
     const playerTreasures = findPlayerTreasures(context);
     if (playerTreasures.length > 0 && context.random.chance(THIEF_NOTICE_POINT, 0.5)) {
-      return [{
-        type: 'emote',
-        messageId: ThiefMessages.NOTICES_VALUABLES,
-        data: { npcName: context.npc.name }
-      }];
+      context.narrate(ThiefMessages.NOTICES_VALUABLES, { npcName: context.npc.name });
+      return;
     }
 
     // Otherwise just appear
-    return [{
-      type: 'emote',
-      messageId: ThiefMessages.APPEARS,
-      data: { npcName: context.npc.name }
-    }];
+    context.narrate(ThiefMessages.APPEARS, { npcName: context.npc.name });
   },
 
   /**
    * When player leaves thief's room
    */
-  onPlayerLeaves(context: NpcContext): NpcAction[] {
+  onPlayerLeaves(context: NpcContext): void {
     const props = getThiefProps(context.npc);
-    if (!props || props.state === 'DISABLED') return [];
+    if (!props || props.state === 'DISABLED') return;
 
     // Update last known location for stalking
     props.lastKnownPlayerRoom = context.playerLocation;
-
-    return [];
-  },
-
-  /**
-   * When thief is attacked
-   */
-  onAttacked(context: NpcContext, attacker: IFEntity): NpcAction[] {
-    const props = getThiefProps(context.npc);
-    if (!props) return [];
-
-    // Mark as attacked (permanent hostility)
-    props.hasBeenAttacked = true;
-    props.state = 'FIGHTING';
-
-    // Make combatant hostile
-    const combatant = context.npc.get(CombatantTrait);
-    if (combatant) {
-      combatant.hostile = true;
-    }
-
-    // Counter-attack
-    return [
-      {
-        type: 'emote',
-        messageId: ThiefMessages.COUNTERATTACKS,
-        data: { npcName: context.npc.name }
-      },
-      { type: 'attack', target: attacker.id }
-    ];
   },
 
   /**
@@ -222,21 +188,37 @@ export const thiefBehavior: NpcBehavior = {
   }
 };
 
+// ============= Acts =============
+
+/** Step through an exit — the real going action as the thief. */
+function go(context: NpcContext, direction: string): boolean {
+  return context.act(IFActions.GOING, { direction: direction as never }).success;
+}
+
+/** Take an item from the room — the real taking action as the thief; false when the world refused. */
+function take(context: NpcContext, item: IFEntity): boolean {
+  return context.act(IFActions.TAKING, { directObject: item }).success;
+}
+
+/** Steal an item out of the player's possession — Dungeo's stealing action as the thief. */
+function steal(context: NpcContext, item: IFEntity): boolean {
+  return context.act(STEAL_ACTION_ID, { directObject: item }).success;
+}
+
 // ============= State Handlers =============
 
 /**
  * WANDERING: Random movement, looking for opportunities
  */
-function handleWanderingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  const actions: NpcAction[] = [];
-
+function handleWanderingState(context: NpcContext, props: ThiefCustomProperties): void {
   // Check if player is visible with valuables -> STALKING
   if (context.playerVisible) {
     const playerTreasures = findPlayerTreasures(context);
     if (playerTreasures.length > 0) {
       props.state = 'STALKING';
       props.lastKnownPlayerRoom = context.playerLocation;
-      return handleStalkingState(context, props);
+      handleStalkingState(context, props);
+      return;
     }
   }
 
@@ -244,7 +226,8 @@ function handleWanderingState(context: NpcContext, props: ThiefCustomProperties)
   const roomTreasures = findRoomTreasures(context);
   if (roomTreasures.length > 0 && !context.playerVisible) {
     props.state = 'STEALING';
-    return handleStealingState(context, props);
+    handleStealingState(context, props);
+    return;
   }
 
   // Random movement
@@ -252,20 +235,18 @@ function handleWanderingState(context: NpcContext, props: ThiefCustomProperties)
     const exits = context.getAvailableExits();
     if (exits.length > 0) {
       const exit = context.random.pick(THIEF_EXIT_POINT, exits);
-      actions.push({ type: 'move', direction: exit.direction });
+      go(context, exit.direction);
       props.turnsInRoom = 0;
     }
   } else {
     props.turnsInRoom++;
   }
-
-  return actions;
 }
 
 /**
  * STALKING: Following player, waiting for steal opportunity
  */
-function handleStalkingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
+function handleStalkingState(context: NpcContext, props: ThiefCustomProperties): void {
   if (context.playerVisible) {
     // Update tracking
     props.lastKnownPlayerRoom = context.playerLocation;
@@ -274,19 +255,15 @@ function handleStalkingState(context: NpcContext, props: ThiefCustomProperties):
     const playerTreasures = findPlayerTreasures(context);
     if (playerTreasures.length > 0 && props.stealCooldown <= 0 && context.random.chance(THIEF_STEAL_POINT, STEAL_CHANCE)) {
       props.state = 'STEALING';
-      return handleStealingState(context, props);
+      handleStealingState(context, props);
+      return;
     }
 
     // Otherwise just lurk and maybe gloat
     if (context.random.chance(THIEF_GLOAT_POINT, 0.2)) {
-      return [{
-        type: 'emote',
-        messageId: ThiefMessages.GLOATS,
-        data: { npcName: context.npc.name }
-      }];
+      context.narrate(ThiefMessages.GLOATS, { npcName: context.npc.name });
     }
-
-    return [];
+    return;
   }
 
   // Player not visible - try to follow
@@ -294,22 +271,20 @@ function handleStalkingState(context: NpcContext, props: ThiefCustomProperties):
     const exits = context.getAvailableExits();
     const exitToPlayer = exits.find(e => e.destination === props.lastKnownPlayerRoom);
     if (exitToPlayer) {
-      return [{ type: 'move', direction: exitToPlayer.direction }];
+      go(context, exitToPlayer.direction);
+      return;
     }
   }
 
   // Lost the player - go back to wandering
   props.state = 'WANDERING';
   props.lastKnownPlayerRoom = null;
-  return [];
 }
 
 /**
  * STEALING: Taking items from player or room
  */
-function handleStealingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  const actions: NpcAction[] = [];
-
+function handleStealingState(context: NpcContext, props: ThiefCustomProperties): void {
   // Priority: steal from player if visible
   if (context.playerVisible) {
     const playerTreasures = findPlayerTreasures(context);
@@ -319,12 +294,9 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
       const identity = target.get(IdentityTrait);
       const itemName = identity?.name ?? 'item';
 
-      actions.push({ type: 'take', target: target.id });
-      actions.push({
-        type: 'speak',
-        messageId: ThiefMessages.STEALS_FROM_PLAYER,
-        data: { itemName }
-      });
+      if (steal(context, target)) {
+        context.narrate(ThiefMessages.STEALS_FROM_PLAYER, { itemName });
+      }
 
       props.stealCooldown = STEAL_COOLDOWN;
 
@@ -335,8 +307,7 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
       } else {
         props.state = 'WANDERING';
       }
-
-      return actions;
+      return;
     }
   }
 
@@ -345,18 +316,12 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
   if (roomTreasures.length > 0) {
     const target = roomTreasures[0];
 
-    actions.push({ type: 'take', target: target.id });
+    const taken = take(context, target);
 
     // Silent steal from room (player might not be watching)
-    if (!context.playerVisible) {
-      // No message - stealth
-    } else {
+    if (taken && context.playerVisible) {
       const identity = target.get(IdentityTrait);
-      actions.push({
-        type: 'emote',
-        messageId: ThiefMessages.STEALS_FROM_ROOM,
-        data: { itemName: identity?.name ?? 'something' }
-      });
+      context.narrate(ThiefMessages.STEALS_FROM_ROOM, { itemName: identity?.name ?? 'something' });
     }
 
     props.stealCooldown = STEAL_COOLDOWN;
@@ -368,27 +333,25 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
     } else {
       props.state = 'WANDERING';
     }
-
-    return actions;
+    return;
   }
 
   // Nothing to steal, go back to wandering
   props.state = 'WANDERING';
-  return [];
 }
 
 /**
  * RETURNING: Heading back to lair with loot
  *
- * Deposit is handled by Priority 2 (handleLairDeposit) when the player
+ * Deposit is handled by Priority 1 (handleLairDeposit) when the player
  * is absent. Here we just transition to WANDERING once at lair, or
  * move toward it if not there yet.
  */
-function handleReturningState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  // At lair — Priority 2 handles deposit when player is absent
+function handleReturningState(context: NpcContext, props: ThiefCustomProperties): void {
+  // At lair — Priority 1 handles deposit when player is absent
   if (isAtLair(context)) {
     props.state = 'WANDERING';
-    return [];
+    return;
   }
 
   // Not at lair - move toward it
@@ -396,13 +359,12 @@ function handleReturningState(context: NpcContext, props: ThiefCustomProperties)
   if (exits.length > 0) {
     const exitToLair = exits.find(e => e.destination === props.lairRoomId);
     if (exitToLair) {
-      return [{ type: 'move', direction: exitToLair.direction }];
+      go(context, exitToLair.direction);
+      return;
     }
     const exit = context.random.pick(THIEF_EXIT_POINT, exits);
-    return [{ type: 'move', direction: exit.direction }];
+    go(context, exit.direction);
   }
-
-  return [];
 }
 
 /**
@@ -414,7 +376,7 @@ function handleReturningState(context: NpcContext, props: ThiefCustomProperties)
  * - shouldAttack → attack the player
  * - !shouldAttack but shouldStay → hesitate (circle warily)
  */
-function handleFightingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
+function handleFightingState(context: NpcContext, props: ThiefCustomProperties): void {
   // If player is visible, use WINNING? to decide fight/flee
   if (context.playerVisible) {
     const { shouldAttack, shouldStay } = getThiefCombatDecision(context);
@@ -425,40 +387,31 @@ function handleFightingState(context: NpcContext, props: ThiefCustomProperties):
 
     if (!shouldStay && !inLair) {
       // Flee: emit message, leave room, go back to wandering
-      const actions: NpcAction[] = [{
-        type: 'emote',
-        messageId: ThiefMessages.FLEES,
-        data: { npcName: context.npc.name }
-      }];
+      context.narrate(ThiefMessages.FLEES, { npcName: context.npc.name });
 
       const exits = context.getAvailableExits();
       if (exits.length > 0) {
         // Try to head toward lair, otherwise pick random exit
         const exitToLair = exits.find(e => e.destination === props.lairRoomId);
         const exit = exitToLair ?? context.random.pick(THIEF_EXIT_POINT, exits);
-        actions.push({ type: 'move', direction: exit.direction });
+        go(context, exit.direction);
       }
 
       props.state = 'WANDERING';
-      return actions;
+      return;
     }
 
     if (shouldAttack) {
       const player = context.world.getPlayer();
       if (player) {
-        return [
-          {
-            type: 'emote',
-            messageId: ThiefMessages.ATTACKS,
-            data: { npcName: context.npc.name }
-          },
-          { type: 'attack', target: player.id }
-        ];
+        context.narrate(ThiefMessages.ATTACKS, { npcName: context.npc.name });
+        // The real attacking action — the melee interceptor resolves the blow
+        context.act(IFActions.ATTACKING, { directObject: player });
       }
     }
 
     // shouldStay but !shouldAttack — hesitate (no action, just stay in room)
-    return [];
+    return;
   }
 
   // Player fled - chase them
@@ -466,58 +419,34 @@ function handleFightingState(context: NpcContext, props: ThiefCustomProperties):
     const exits = context.getAvailableExits();
     const exitToPlayer = exits.find(e => e.destination === props.lastKnownPlayerRoom);
     if (exitToPlayer) {
-      return [{ type: 'move', direction: exitToPlayer.direction }];
+      go(context, exitToPlayer.direction);
+      return;
     }
   }
 
   // Lost player - back to wandering but stay hostile
   props.state = 'WANDERING';
-  return [];
 }
 
 /**
  * FLEEING: Running away when wounded
  */
-function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  const actions: NpcAction[] = [];
-
-  // Emit flee message once
-  if (props.state !== 'FLEEING') {
-    actions.push({
-      type: 'emote',
-      messageId: ThiefMessages.FLEES,
-      data: { npcName: context.npc.name }
-    });
-  }
-
+function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): void {
   // Head toward lair
   if (isAtLair(context)) {
     // At lair, stay here to recover
     props.state = 'WANDERING';
-    return actions;
+    return;
   }
 
   const exits = context.getAvailableExits();
   if (exits.length > 0) {
-    // Try to get to lair
+    // Try to get to lair; otherwise a random exit (away from the player if
+    // visible — the pick is random either way)
     const exitToLair = exits.find(e => e.destination === props.lairRoomId);
-    if (exitToLair) {
-      actions.push({ type: 'move', direction: exitToLair.direction });
-    } else {
-      // Move away from player if visible
-      if (context.playerVisible) {
-        // Pick random exit (away from player)
-        const exit = context.random.pick(THIEF_EXIT_POINT, exits);
-        actions.push({ type: 'move', direction: exit.direction });
-      } else {
-        // Random wander toward lair
-        const exit = context.random.pick(THIEF_EXIT_POINT, exits);
-        actions.push({ type: 'move', direction: exit.direction });
-      }
-    }
+    const exit = exitToLair ?? context.random.pick(THIEF_EXIT_POINT, exits);
+    go(context, exit.direction);
   }
-
-  return actions;
 }
 
 // ============= Special Mechanics =============
@@ -529,46 +458,46 @@ function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): 
  * he deposits all carried treasures in the room. If the egg is among them, he
  * opens it (sets OpenableTrait.isOpen = true), making the canary inside accessible.
  * The canary already exists inside the egg from world setup (forest.ts).
+ *
+ * This is authorial mutation, not an act: the drops are CONCEALED (MDL:
+ * OVISON bit cleared) until the thief dies, which no standard action says.
+ *
+ * @returns true when a deposit happened (the thief's turn is spent)
  */
-function handleLairDeposit(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
+function handleLairDeposit(context: NpcContext): boolean {
   // Only fire when at lair AND player is NOT in the room (MDL: <N==? .RM .WROOM>)
   if (!isAtLair(context) || context.playerVisible) {
-    return [];
+    return false;
   }
 
   const droppable = depositTreasures(context);
   if (droppable.length === 0) {
-    return [];
+    return false;
   }
 
-  return [{
-    type: 'custom',
-    handler: (): ISemanticEvent[] => {
-      for (const item of droppable) {
-        // Special egg handling (MDL act1.254:1097-1099):
-        // If item is the egg, open it so the canary inside becomes accessible
-        const eggTrait = item.get(EggTrait);
-        if (eggTrait && !eggTrait.hasBeenOpened) {
-          const openable = item.get(OpenableTrait);
-          if (openable && !openable.isOpen) {
-            openable.isOpen = true;
-          }
-          eggTrait.hasBeenOpened = true;
-        }
-
-        // Drop item in the Treasure Room, concealed (MDL: OVISON bit cleared)
-        // Items become visible when the thief dies
-        context.world.moveEntity(item.id, context.npcLocation);
-        const identity = item.get(IdentityTrait);
-        if (identity) {
-          identity.concealed = true;
-        }
+  for (const item of droppable) {
+    // Special egg handling (MDL act1.254:1097-1099):
+    // If item is the egg, open it so the canary inside becomes accessible
+    const eggTrait = item.get(EggTrait);
+    if (eggTrait && !eggTrait.hasBeenOpened) {
+      const openable = item.get(OpenableTrait);
+      if (openable && !openable.isOpen) {
+        openable.isOpen = true;
       }
-
-      // Clear engrossed flag — treasures deposited
-      context.npc.attributes.thiefEngrossed = false;
-
-      return [];
+      eggTrait.hasBeenOpened = true;
     }
-  }];
+
+    // Drop item in the Treasure Room, concealed (MDL: OVISON bit cleared)
+    // Items become visible when the thief dies
+    context.world.moveEntity(item.id, context.npcLocation);
+    const identity = item.get(IdentityTrait);
+    if (identity) {
+      identity.concealed = true;
+    }
+  }
+
+  // Clear engrossed flag — treasures deposited
+  context.npc.attributes.thiefEngrossed = false;
+
+  return true;
 }

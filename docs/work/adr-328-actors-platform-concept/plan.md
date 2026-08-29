@@ -656,6 +656,14 @@ ADR's own text implies).
   on the old system here.
 - **Exit state**: these four NPCs' walkthrough coverage passes; the thief (Phase 6b) is the
   only piece still on the old system, so the full chain is not yet expected green.
+- **Progress (2026-08-28, session 1d6ae5 — committed WIP at finalize)**: all five behaviors, the
+  melee interceptor's villain branch, the `stealing` action, the guardian exemption on the axe, and
+  `NightVisionTrait` (world-model, David's ruling: seeing in the dark is its own trait) are written;
+  Dungeo unit tests 46 passing at the pre-trait build; chain 267/268 through wt-07 at that build.
+  Two one-liners left broken at finalize: `world-model/src/traits/implementations.ts:84` needs the
+  `NIGHT_VISION` registry entry; `night-vision.test.ts` must declare darkness with
+  `requiresLight: true`. Then rebuild → chain → re-pin explained diffs. 6a and 6b are landing
+  together (the thief was rewritten in the same pass).
 - **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 6b: D6 — The thief rewrites; the 952-test walkthrough chain re-pins

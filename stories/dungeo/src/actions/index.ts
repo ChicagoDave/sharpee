@@ -45,6 +45,7 @@ export * from './incant';
 
 // Lift (Inside Mirror pole)
 export * from './lift';
+export * from './stealing';
 
 // Lower (Inside Mirror pole)
 export * from './lower';
@@ -171,6 +172,7 @@ import { burnAction } from './burn';
 import { prayAction } from './pray';
 import { incantAction } from './incant';
 import { liftAction } from './lift';
+import { stealingAction } from './stealing';
 import { lowerAction } from './lower';
 import { pushPanelAction } from './push-panel';
 import { knockAction } from './knock';
@@ -267,6 +269,7 @@ export const customActions = [
   prayAction,
   incantAction,
   liftAction,
+  stealingAction,
   lowerAction,
   pushPanelAction,
   knockAction,

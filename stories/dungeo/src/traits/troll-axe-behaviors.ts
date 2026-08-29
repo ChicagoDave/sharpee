@@ -59,6 +59,13 @@ export const TrollAxeTakingInterceptor: ActionInterceptor = {
       return null; // No trait, continue with standard logic
     }
 
+    // The guardian recovering his own axe (MDL act1.254:182-195) is a real
+    // take through this same action (ADR-328 D5) — the white-hot refusal is
+    // for everyone else.
+    if (actorId === trait.guardianId) {
+      return null;
+    }
+
     // Check if guardian (troll) is alive
     const guardian = world.getEntity(trait.guardianId);
     if (guardian) {

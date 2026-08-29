@@ -11,7 +11,7 @@ import {
   IdentityTrait,
   ActorTrait,
   NpcTrait,
-  EntityType
+  EntityType, NightVisionTrait
 } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
 import { RobotMessages } from './robot-messages';
@@ -53,6 +53,7 @@ export function createRobot(world: WorldModel, roomId: string): IFEntity {
     homeRoomId: roomId
   };
 
+  robot.add(new NightVisionTrait()); // the underground is dark; its residents see (ADR-328 D5)
   robot.add(new NpcTrait({
     behaviorId: 'robot',
     isHostile: false,

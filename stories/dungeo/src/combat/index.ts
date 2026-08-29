@@ -71,8 +71,3 @@ export {
   CURE_STATE,
   getBaseOstrength,
 } from './melee-state';
-
-export {
-  // NPC→PC melee resolver
-  meleeNpcResolver,
-} from './melee-npc-attack';

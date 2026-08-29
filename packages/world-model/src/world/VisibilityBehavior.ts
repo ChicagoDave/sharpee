@@ -59,6 +59,11 @@ export class VisibilityBehavior extends Behavior {
    * @param world - The world model
    * @returns true if the room is dark and has no accessible light sources
    */
+  /** Whether the observer sees without light — carries `NightVisionTrait`. */
+  private static seesInDark(observer: IFEntity): boolean {
+    return observer.hasTrait(TraitType.NIGHT_VISION);
+  }
+
   static isDark(room: IFEntity, world: WorldModel): boolean {
     if (!this.roomRequiresLight(room, world)) {
       return false; // Room isn't dark (live evaluator or static trait fact)
@@ -200,8 +205,9 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // Check if room is dark (live evaluator first — ADR-240)
-    if (this.roomRequiresLight(observerRoom, world)) {
+    // Check if room is dark (live evaluator first — ADR-240). An observer
+    // with night vision needs no light (ADR-328 D5).
+    if (this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer)) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
@@ -247,8 +253,9 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check if room is dark (live evaluator first — ADR-240)
-    const isDark = this.roomRequiresLight(observerRoom, world);
+    // Check if room is dark (live evaluator first — ADR-240). An observer
+    // with night vision needs no light (ADR-328 D5).
+    const isDark = this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer);
     const hasLight = this.hasLightSource(observerRoom, world);
     
     // If it's dark and no light, only see specific things
