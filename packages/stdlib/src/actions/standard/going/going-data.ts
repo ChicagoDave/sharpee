@@ -55,7 +55,7 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const actor = context.player;
+  const actor = context.actor;
   
   // Get direction from context (should already be a Direction constant)
   // Direction can come from extras or from directObject name
@@ -116,7 +116,7 @@ export const buildActorExitedData: ActionDataBuilder<Record<string, unknown>> = 
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const actor = context.player;
+  const actor = context.actor;
   
   // Get direction from context (should already be a Direction constant)
   // Direction can come from extras or from directObject name
@@ -150,7 +150,7 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const actor = context.player;
+  const actor = context.actor;
   
   // Get direction from context (should already be a Direction constant)
   // Direction can come from extras or from directObject name

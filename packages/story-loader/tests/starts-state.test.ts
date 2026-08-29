@@ -122,6 +122,7 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: unlockingAction,
       command: {
         directObject: { entity: safe },

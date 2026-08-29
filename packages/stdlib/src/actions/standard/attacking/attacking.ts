@@ -146,7 +146,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
    * Checks preconditions only - no state changes
    */
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
     // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
     const weapon = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
@@ -225,10 +225,10 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         target.has(TraitType.COMBATANT);
 
       if (shouldInferWeapon) {
-        weapon = findWieldedWeapon(context.player, context.world);
+        weapon = findWieldedWeapon(context.actor, context.world);
         if (!weapon) {
           // Fall back to AttackBehavior's inference
-          const inventory = context.world.getContents(context.player.id);
+          const inventory = context.world.getContents(context.actor.id);
           weapon = AttackBehavior.inferWeapon(inventory);
         }
         weaponInferred = !!weapon;
@@ -460,7 +460,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     if (usedCombatService && combatResult) {
       messageId = combatResult.messageId;
       params.damage = combatResult.damage;
-      params.attackerName = context.player.name;
+      params.attackerName = context.actor.name;
       params.targetName = target.name; // string for combat service compat
       params.target = nounPhraseFor(target);
 
@@ -553,7 +553,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     if (result.exitRevealed) {
       events.push(context.event('if.event.exit_revealed', {
         direction: result.exitRevealed,
-        room: context.world.getLocation(context.player.id)
+        room: context.world.getLocation(context.actor.id)
       }));
     }
 
@@ -565,6 +565,10 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // For killed targets, emit a death event.
     if (result.targetKilled) {
+      // Deliberately `player`, not `actor`: the question is whether the
+      // *victim* is the player (game-over routing), whoever struck the blow.
+      // Chord's only death statement is `kill the player`; NPC death has no
+      // word yet on either side (ADR-328 D7's child ADR).
       if (target.id === context.player.id) {
         // ADR-224: player death routes through the canonical primitive, not the
         // generic if.event.death — combat becomes one `cause` among many. (Forward-
@@ -581,7 +585,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         events.push(context.event('if.event.death', {
           target: target.id,
           targetName: target.name,
-          killedBy: context.player.id
+          killedBy: context.actor.id
         }));
       }
     }
@@ -591,7 +595,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.knocked_out', {
         target: target.id,
         targetName: target.name,
-        knockedOutBy: context.player.id
+        knockedOutBy: context.actor.id
       }));
     }
 

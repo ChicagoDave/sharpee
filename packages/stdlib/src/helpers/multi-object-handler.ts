@@ -78,7 +78,7 @@ export function expandMultiObject(
 ): MultiObjectItem[] {
   const directObject = context.command.parsed.structure.directObject;
   const world = context.world;
-  const player = context.player;
+  const actor = context.actor;
 
   // Handle "all" keyword
   if (directObject?.isAll) {
@@ -108,7 +108,7 @@ function expandAll(
   options: MultiObjectOptions
 ): MultiObjectItem[] {
   const world = context.world;
-  const player = context.player;
+  const actor = context.actor;
   const scopeResolver = new StandardScopeResolver(world);
 
   // Get entities based on scope
@@ -117,14 +117,14 @@ function expandAll(
     case 'carried':
       // ADR-247: `carried` scope (e.g. `drop all`) is held items, not worn —
       // matches the IF convention that `all` never strips worn clothing.
-      candidates = world.getCarriedAndWorn(player.id).carried;
+      candidates = world.getCarriedAndWorn(actor.id).carried;
       break;
     case 'visible':
-      candidates = scopeResolver.getVisible(player);
+      candidates = scopeResolver.getVisible(actor);
       break;
     case 'reachable':
     default:
-      candidates = scopeResolver.getReachable(player);
+      candidates = scopeResolver.getReachable(actor);
       break;
   }
 
@@ -160,7 +160,7 @@ function expandList(
   options: MultiObjectOptions
 ): MultiObjectItem[] {
   const world = context.world;
-  const player = context.player;
+  const actor = context.actor;
   const scopeResolver = new StandardScopeResolver(world);
   const results: MultiObjectItem[] = [];
 
@@ -169,14 +169,14 @@ function expandList(
   switch (options.scope) {
     case 'carried':
       // ADR-247: `carried` scope is held items, not worn (IF `all` convention).
-      scopeCandidates = world.getCarriedAndWorn(player.id).carried;
+      scopeCandidates = world.getCarriedAndWorn(actor.id).carried;
       break;
     case 'visible':
-      scopeCandidates = scopeResolver.getVisible(player);
+      scopeCandidates = scopeResolver.getVisible(actor);
       break;
     case 'reachable':
     default:
-      scopeCandidates = scopeResolver.getReachable(player);
+      scopeCandidates = scopeResolver.getReachable(actor);
       break;
   }
 

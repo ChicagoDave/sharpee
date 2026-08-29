@@ -313,7 +313,7 @@ export interface ActionContext {
      *
      * // In execute() or report() - access the data
      * const { behavior, entity } = context.validationResult!.data!;
-     * behavior.execute(entity, context.world, context.player.id);
+     * behavior.execute(entity, context.world, context.actor.id);
      */
     validationResult?: ValidationResult;
     /**
@@ -348,7 +348,7 @@ export interface ActionContext {
      *
      * Buffers an `ISound` for the per-turn sound dispatcher to propagate to
      * every `ListenerTrait` entity. The context auto-fills `sourceEntity`
-     * (from `context.player.id`) and `sourceLocation` (from
+     * (from `context.actor.id`) and `sourceLocation` (from
      * `context.currentLocation.id`) so callers only supply the semantic
      * payload: kind, volumeTier, and optional content.
      *
@@ -1734,7 +1734,7 @@ export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
+export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```
 
 ### actions/author/trace

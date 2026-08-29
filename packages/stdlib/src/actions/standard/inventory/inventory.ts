@@ -57,28 +57,28 @@ interface InventoryAnalysis {
  * Shared logic between validate and execute phases
  */
 function analyzeInventory(context: ActionContext): InventoryAnalysis {
-  const player = context.player;
+  const actor = context.actor;
   const location = context.currentLocation;
   
   // ADR-247: getCarriedAndWorn is the partition — held items and worn items
   // in one call. (Replaces the old getContents({includeWorn:true}) + a
   // hand-rolled worn/held split.)
-  const { carried: holding, worn } = context.world.getCarriedAndWorn(player.id);
+  const { carried: holding, worn } = context.world.getCarriedAndWorn(actor.id);
   const totalItems = holding.length + worn.length;
   
-  // Calculate weight if player has inventory limits
+  // Calculate weight if actor has inventory limits
   let totalWeight = 0;
   let hasWeightLimit = false;
   let weightLimit = 0;
   
-  if (player.has(TraitType.ACTOR)) {
+  if (actor.has(TraitType.ACTOR)) {
     // TODO: Add inventoryLimit to ActorTrait when weight system is implemented
     // Weight-based inventory limits are not yet supported on ActorTrait
   }
   
   // Build event data for the observable action
   const eventData: InventoryEventMap['if.action.inventory'] = {
-    actorId: player.id,
+    actorId: actor.id,
     locationId: location.id,
     totalItems: totalItems,
     heldItems: holding.length,

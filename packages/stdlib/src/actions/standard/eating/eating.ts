@@ -174,7 +174,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): void {
     const item = context.command.directObject!.entity!;
-    const actor = context.player;
+    const actor = context.actor;
 
     // Capture state before mutation for event data
     const servingsBefore = EdibleBehavior.getServings(item);

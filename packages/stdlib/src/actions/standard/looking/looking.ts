@@ -51,13 +51,17 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Only mutation: mark room as visited.
     // Capture first-visit state BEFORE marking, so report() can distinguish the
     // initial description from the standard one (mirrors going.ts:350–368).
-    const room = context.world.getContainingRoom(context.player.id);
+    const room = context.world.getContainingRoom(context.actor.id);
 
     if (room && room.hasTrait(TraitType.ROOM)) {
       const isFirstVisit = !RoomBehavior.hasBeenVisited(room);
       context.sharedData.isFirstVisit = isFirstVisit;
-      if (isFirstVisit) {
-        RoomBehavior.markVisited(room, context.player);
+      // `visited` is the reader's first look (Chord's `first time` prose
+      // lowers to RoomTrait.initialDescription), so only the player's own
+      // look marks it — an NPC looking here must not spend the player's
+      // first-visit description. NPC-visited semantics are open (ADR-328).
+      if (isFirstVisit && context.actor.id === context.player.id) {
+        RoomBehavior.markVisited(room, context.actor);
       }
     }
 
@@ -94,7 +98,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     events.push(context.event('if.event.room.description', roomDescData));
 
     // Emit illustration events for the room (ADR-124)
-    const room = context.world.getContainingRoom(context.player.id);
+    const room = context.world.getContainingRoom(context.actor.id);
     if (room) {
       events.push(...emitIllustrations(room, 'on-enter', lookedEvent.id, context));
     }
@@ -159,7 +163,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error,
       messageId: blockedMessageId(context, result),
       params: result.params,
-      actorId: context.player.id
+      actorId: context.actor.id
     })];
   },
 

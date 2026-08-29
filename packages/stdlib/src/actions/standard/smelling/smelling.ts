@@ -190,7 +190,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
   },
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
 
     const state = resolveLifecycle(context, smellingLifecycle);

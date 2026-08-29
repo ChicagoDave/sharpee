@@ -145,7 +145,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
 
       // Perform the move if there's a destination
       if (sharedData.destinationId) {
-        context.world.moveEntity(context.player.id, sharedData.destinationId);
+        context.world.moveEntity(context.actor.id, sharedData.destinationId);
       }
     } else if (target) {
       // Object climbing
@@ -163,14 +163,14 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         sharedData.destinationId = climbable.destination;
       }
 
-      const moved = context.world.moveEntity(context.player.id, moveTarget);
+      const moved = context.world.moveEntity(context.actor.id, moveTarget);
       if (!moved) {
         // Invariant (belt-and-suspenders, same pattern as the loader's door
         // guard): validate already established the target/destination can
         // receive the player — a refusal here is a platform bug and must
         // never become a silent no-op with success narration.
         throw new Error(
-          `climbing: moveEntity refused after validation passed (player ${context.player.id} -> ${moveTarget})`
+          `climbing: moveEntity refused after validation passed (player ${context.actor.id} -> ${moveTarget})`
         );
       }
     }
@@ -329,7 +329,7 @@ function validateObjectClimbing(
   }
 
   // Check if already on/in the target
-  const currentLocation = context.world.getLocation(context.player.id);
+  const currentLocation = context.world.getLocation(context.actor.id);
   if (currentLocation === target.id) {
     return { valid: false, error: 'already_there', params: { place: nounPhraseFor(target) } };
   }
@@ -345,7 +345,7 @@ function validateObjectClimbing(
     const destinationExists = climbable.destination
       ? !!context.world.getEntity(climbable.destination)
       : false;
-    if (!destinationExists && !context.world.canMoveEntity(context.player.id, target.id)) {
+    if (!destinationExists && !context.world.canMoveEntity(context.actor.id, target.id)) {
       return { valid: false, error: 'climb_nowhere', params: { object: nounPhraseFor(target) } };
     }
   }

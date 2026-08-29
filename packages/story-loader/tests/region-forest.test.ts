@@ -46,6 +46,7 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
     const context: any = {
       world,
       player,
+      actor: player,
       action: goingAction,
       currentLocation,
       command: { parsed: { extras: { direction } } },

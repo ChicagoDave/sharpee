@@ -101,10 +101,10 @@ function resolveDirection(context: ActionContext): DirectionType | undefined {
 
 /** The room movement starts from (the containing room when in a walkable vehicle). */
 function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
-  const walkCheck = canActorWalkInVehicle(context.world, context.player.id);
+  const walkCheck = canActorWalkInVehicle(context.world, context.actor.id);
   let currentRoom = context.currentLocation;
   if (walkCheck.vehicle && walkCheck.canWalk) {
-    const containingRoom = context.world.getContainingRoom(context.player.id);
+    const containingRoom = context.world.getContainingRoom(context.actor.id);
     if (containingRoom) {
       currentRoom = containingRoom;
     }
@@ -223,7 +223,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   ],
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const sharedData = getGoingSharedData(context);
 
     // Get the direction from the parsed command (should already be a Direction constant)
@@ -381,7 +381,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   
   execute(context: ActionContext): void {
     // Only perform the movement mutation
-    const actor = context.player;
+    const actor = context.actor;
     const sharedData = getGoingSharedData(context);
 
     // Get the source room - if in a vehicle, use containing room
@@ -463,8 +463,14 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       context.world.moveEntity(actor.id, destination.id);
     }
 
-    // Mark the destination room as visited
-    if (isFirstVisit) {
+    // Mark the destination room as visited. `visited` is the reader's first
+    // look (Chord's `first time` prose lowers to RoomTrait.initialDescription),
+    // so only the player's own arrival marks it — an NPC walking through must
+    // not spend the player's first-visit description. NPC-visited semantics
+    // are open (ADR-328); `after <actor> entering` binds to actor_moved, not
+    // to the first_entered event this emits, so nothing on the Chord side
+    // depends on it firing for NPCs.
+    if (isFirstVisit && actor.id === context.player.id) {
       RoomBehavior.markVisited(destination, actor);
     }
 
@@ -490,7 +496,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         context.event('if.event.went', {
           messageId: resolution.messageId,
           params: resolution.params ?? {},
-          actorId: context.player.id,
+          actorId: context.actor.id,
           direction: sharedData.direction,
           blocked: true
         })
@@ -521,7 +527,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Exit events — innermost first
       for (const regionId of crossings.exited) {
         events.push(context.event('if.event.region_exited', {
-          actorId: context.player.id,
+          actorId: context.actor.id,
           regionId,
           toRegionId: crossings.entered[0],
         }));
@@ -529,7 +535,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Entry events — outermost first
       for (const regionId of crossings.entered) {
         events.push(context.event('if.event.region_entered', {
-          actorId: context.player.id,
+          actorId: context.actor.id,
           regionId,
           fromRegionId: crossings.exited[0],
         }));
@@ -553,7 +559,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.went', {
         messageId: `${context.action.id}.too_dark`,
         params: {},
-        actorId: context.player.id,
+        actorId: context.actor.id,
         destinationId: destinationRoom.id,
         isDark: true
       }));
@@ -568,7 +574,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Get visible contents in the destination room (filter concealed items)
     const destinationContents = context.world.getContents(destinationRoom.id)
-      .filter(e => e.id !== context.player.id)
+      .filter(e => e.id !== context.actor.id)
       .filter(e => {
         const identity = e.getTrait(IdentityTrait);
         return !(identity && identity.concealed === true);
@@ -645,7 +651,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error,
       messageId: blockedMessageId(context, result),
       params: result.params || {},
-      actorId: context.player.id
+      actorId: context.actor.id
     })];
 
     // All resolved consultations (source, destination, door) are notified;

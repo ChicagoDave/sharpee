@@ -59,7 +59,7 @@ export function validateToolRequirements(
   }
 
   // Check if player has the tool
-  const actor = context.player;
+  const actor = context.actor;
   const toolLocation = context.world.getLocation(tool.id);
   if (toolLocation !== actor.id) {
     return {

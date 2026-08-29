@@ -308,7 +308,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
         targetName: sharedData.targetName,
         containerId: sharedData.targetId,
         containerName: sharedData.targetName,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         isContainer: sharedData.isContainer,
         isDoor: sharedData.isDoor,
         keyId: sharedData.keyId,

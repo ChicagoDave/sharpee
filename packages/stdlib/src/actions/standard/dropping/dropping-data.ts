@@ -22,7 +22,7 @@ export const buildDroppedData: ActionDataBuilder<Record<string, unknown>> = (
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const actor = context.player;
+  const actor = context.actor;
   const noun = context.command.directObject?.entity;
   
   if (!noun) {

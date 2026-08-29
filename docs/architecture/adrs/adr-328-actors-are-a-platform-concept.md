@@ -290,6 +290,15 @@ path, so ADR-327's non-player acceptance items close when D2's execution entry l
    program's D2 execution entry — a non-player actor fires `on <actor> <gerund>` and not
    the player's head. (Reworded 2026-08-25, session 8ae644: ADR-327 D7 removed the
    analyzer restriction this item originally named.)
+   *(Partly satisfied 2026-08-28, session a19b44 — Phase 4 of the program plan. AC-2's
+   non-player half is green: `packages/story-loader/tests/adr-327-ac2-execution-entry.test.ts`
+   drives the guards through `CommandExecutor.executeAsActor` and asserts their heads fire
+   and the player's do not, with the sweep of 133 `context.player` reads to `context.actor`
+   behind it and the Dungeo chain byte-identical. AC-5 is NOT green: no test in the
+   repository references `game.pc_switched` (grep, 2026-08-28), so `change the player to`
+   has no real-path test on either half; this phase put its dependency in place — the old
+   PC acting through the entry — and the test itself is still owed, tracked in the plan's
+   Phase 5 entry state.)*
 4. ADR-070/120 carry their amendment stamps. *(Satisfied 2026-08-27, session d6dc2b —
    Phase 0 of the program plan; both stamps cover the execution half and, for ADR-070, the
    perception half D3 retires.)*

@@ -78,7 +78,7 @@ export const droppingLifecycle: ActionLifecycleDescriptor = {
  * Get the drop location for the player
  */
 function getDropLocation(context: ActionContext): IFEntity | undefined {
-  const actor = context.player;
+  const actor = context.actor;
   const playerLocation = context.world.getLocation(actor.id);
   return playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
 }
@@ -87,7 +87,7 @@ function getDropLocation(context: ActionContext): IFEntity | undefined {
  * Validate dropping a single entity
  */
 function validateSingleEntity(context: ActionContext, noun: IFEntity): ValidationResult {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Use ActorBehavior to validate dropping
   if (!ActorBehavior.isHolding(actor, noun.id, context.world)) {
@@ -145,7 +145,7 @@ function executeSingleEntity(
   noun: IFEntity,
   scratch: DroppingItemScratch
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Store the drop location before the move (player's current location)
   const dropLocation = context.world.getLocation(actor.id);
@@ -173,7 +173,7 @@ function reportSingleSuccess(
   events: ISemanticEvent[],
   isMultiObject: boolean = false
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
   const dropLocation = scratch.dropLocation
     ? context.world.getEntity(scratch.dropLocation)
     : getDropLocation(context);
@@ -352,7 +352,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Single object execution
     const sharedData = getDroppingSharedData(context);
-    const actor = context.player;
+    const actor = context.actor;
     const noun = context.command.directObject!.entity!;
 
     // Delegate to ActorBehavior for dropping validation
@@ -392,7 +392,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Single object report - use the data builder pattern for domain data
     const droppedData = buildEventData(droppedDataConfig, context);
-    const actor = context.player;
+    const actor = context.actor;
     const noun = context.command.directObject!.entity!;
 
     // Determine success message

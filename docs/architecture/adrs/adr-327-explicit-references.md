@@ -441,6 +441,12 @@ create Jack
    non-player actor acting through ADR-328's execution entry fires its own head and not
    the player's; D5's move-arrival fires the entering clause for the moved actor, with
    the re-entrant cap's diagnostic pinned.
+   *(Satisfied 2026-08-28, session a19b44 — the non-player half landed with ADR-328
+   Phase 4: `packages/story-loader/tests/adr-327-ac2-execution-entry.test.ts` drives the
+   guards through the real `CommandExecutor.executeAsActor` against compiled Chord and
+   asserts `on the guards taking` / `after the guards taking` fire and the player's heads
+   do not, on the sword's location and the occurrence keys. The player half and D5's
+   move-arrival were already pinned in `adr-327-actor-match.test.ts`.)*
 3. The migrated corpus is green: every story's suite passes with zero behavioral diffs
    attributable to the reform (fernhill, friendly-zoo, cloak, ides, secret-letter,
    fixtures; Dungeo is TS and untouched).

@@ -115,7 +115,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   ],
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     let target = context.command.directObject?.entity;
 
     // A targetless firing is a continuation prompt (ADR-320 D14): the

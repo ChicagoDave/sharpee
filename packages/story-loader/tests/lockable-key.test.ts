@@ -92,6 +92,7 @@ describe('lockable with key on container kinds (ADR-230 Phase 9a)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: unlockingAction,
       command: {
         directObject: { entity: strongbox },

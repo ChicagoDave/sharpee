@@ -134,6 +134,7 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: goingAction,
       currentLocation,
       command: { parsed: { extras: { direction } } },

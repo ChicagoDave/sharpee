@@ -34,7 +34,7 @@ export function analyzeLockContext(
   target: IFEntity,
   key?: IFEntity
 ): LockAnalysis {
-  const actor = context.player;
+  const actor = context.actor;
   const requiresKey = LockableBehavior.requiresKey(target);
   let keyHeld = false;
   
@@ -76,7 +76,7 @@ export function validateKeyRequirements(
   }
 
   // Check if player has the key
-  const actor = context.player;
+  const actor = context.actor;
   const keyLocation = context.world.getLocation(key.id);
   if (keyLocation !== actor.id) {
     return {

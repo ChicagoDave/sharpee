@@ -232,7 +232,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       // Domain data (for event sourcing / handlers)
       targetId: noun.id,
       targetName: noun.name,
-      actorId: context.player.id
+      actorId: context.actor.id
     }));
 
     // 2. Domain event for backward compatibility (simplified)

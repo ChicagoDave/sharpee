@@ -144,7 +144,7 @@ export function createCapabilityDispatchAction(
       const sharedData: CapabilitySharedData = {};
 
       // Delegate validation to behavior
-      const behaviorResult = behavior.validate(entity, context.world, context.player.id, sharedData);
+      const behaviorResult = behavior.validate(entity, context.world, context.actor.id, sharedData);
 
       if (!behaviorResult.valid) {
         // ADR-231 D1: behavior-originated error keys are fully-qualified by
@@ -182,7 +182,7 @@ export function createCapabilityDispatchAction(
       }
 
       // Delegate execution to behavior
-      data.behavior.execute(entity, context.world, context.player.id, data.sharedData);
+      data.behavior.execute(entity, context.world, context.actor.id, data.sharedData);
     },
 
     blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -196,7 +196,7 @@ export function createCapabilityDispatchAction(
         const effects = data.behavior.blocked(
           entity,
           context.world,
-          context.player.id,
+          context.actor.id,
           result.error || config.cantDoThatError,
           data.sharedData
         );
@@ -234,7 +234,7 @@ export function createCapabilityDispatchAction(
       const effects = data.behavior.report(
         entity,
         context.world,
-        context.player.id,
+        context.actor.id,
         data.sharedData
       );
       return effectsToEvents(effects, context, config.actionId);

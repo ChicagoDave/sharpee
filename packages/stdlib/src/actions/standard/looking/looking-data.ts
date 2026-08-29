@@ -16,7 +16,7 @@ import { nounPhraseFor } from '../../../utils/index.js';
  * Delegates to VisibilityBehavior.isDark() as the single source of truth.
  */
 function checkIfDark(context: ActionContext): boolean {
-  const room = context.world.getContainingRoom(context.player.id);
+  const room = context.world.getContainingRoom(context.actor.id);
   if (!room) return false;
   return VisibilityBehavior.isDark(room, context.world);
 }
@@ -29,16 +29,16 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const player = context.player;
+  const actor = context.actor;
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    player,
+    actor,
     context.world
   );
 
-  // Get visible items (excluding the room itself and the player)
+  // Get visible items (excluding the room itself and the actor)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== player.id
+    e => e.id !== location.id && e.id !== actor.id
   );
 
   // Check if dark
@@ -52,7 +52,7 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   const identity = location.getTrait(IdentityTrait);
 
   return {
-    actorId: player.id,
+    actorId: actor.id,
     // New atomic structure
     room: roomSnapshot,
     visibleItems: visibleSnapshots,
@@ -84,13 +84,13 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
 ): Record<string, unknown> => {
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
 
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   // Create snapshots
@@ -176,13 +176,13 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
 ): Record<string, unknown> => {
   // Use visibility logic to determine what location to describe
   const { location } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
 
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   if (visible.length === 0) {
@@ -278,7 +278,7 @@ export function determineLookingMessage(
 ): { messageId: string; params: Record<string, any> } {
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
   const params: Record<string, any> = {};
@@ -338,7 +338,7 @@ export function determineLookingMessage(
 
   // Check for visible items
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   // Check command verb for variations

@@ -34,7 +34,7 @@ import {
  * Resolves undefined when the actor is directly in a room.
  */
 function resolveCurrentContainer(context: ActionContext): IFEntity | undefined {
-  const currentLocation = context.world.getLocation(context.player.id);
+  const currentLocation = context.world.getLocation(context.actor.id);
   if (!currentLocation) return undefined;
   const container = context.world.getEntity(currentLocation);
   if (!container || container.has(TraitType.ROOM)) return undefined;
@@ -92,7 +92,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   group: 'movement',
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const currentLocation = context.world.getLocation(actor.id);
 
     const state = resolveLifecycle(context, exitingLifecycle);
@@ -175,7 +175,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed
    */
   execute(context: ActionContext): void {
-    const actor = context.player;
+    const actor = context.actor;
     const currentLocation = context.world.getLocation(actor.id)!; // Safe because validate ensures it exists
     const currentContainer = context.world.getEntity(currentLocation)!; // Safe because validate ensures it exists
     const parentLocation = context.world.getLocation(currentLocation)!; // Safe because validate ensures it exists

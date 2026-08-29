@@ -465,7 +465,37 @@ ADR's own text implies).
   (after `./repokit build dungeo`) unchanged at 952/17 — any diff here is a defect, not a
   re-pin, since nothing about NPC execution has landed yet. **ADR-327's AC-2 and AC-5 go
   green** through this phase (its Phase 6 unblocks); **ADR-328 Acceptance item 3 is satisfied**.
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session a19b44). Evidence: 133 `context.player`/`getPlayer()`
+  reads flipped to `context.actor` across 50 files (49 under `stdlib/src/actions/**` plus
+  `helpers/multi-object-handler.ts`); seven reads survive under the path, each commented with
+  its reason — `attacking.ts` victim-is-player branch and `deadly-room-death.ts` (`killPlayer`
+  is the player-death primitive; Chord's only death statement is `kill the player`),
+  `concealment-break.ts` (hidden-player mechanic; Chord's `concealed` is an item marker),
+  `context-adapter.ts` (if-domain's `IActionContext` declares no `actor`), and the two
+  `markVisited` guards in `going.ts`/`looking.ts` (`visited` backs Chord's `first time` prose —
+  the reader's first look — so only the player's own arrival/look marks it; `after <actor>
+  entering` binds to `actor_moved`, not `first_entered`, so NPC heads lose nothing). Decisions
+  and the Chord-seam reading are in the "Actor Sweep Decisions" artifact
+  (https://claude.ai/code/artifact/cdfbdcd5-b9d2-43b3-b5fa-45c5bd02be27); David accepted all
+  seven recommendations.
+  Tests from the Behavior Statements: `engine/tests/execute-as-actor.test.ts` +2 (implicit take
+  inside wearing as the NPC; `emitSound` sourced from the NPC and its room),
+  `stdlib/tests/unit/helpers/multi-object-actor.test.ts` (3: NPC `take all`/`drop all` expand from
+  and land in the NPC), `stdlib/tests/unit/actions/visited-guard.test.ts` (2),
+  `story-loader/tests/adr-327-ac2-execution-entry.test.ts` (4 — ADR-327 AC-2's non-player half
+  through the real `CommandExecutor.executeAsActor`: the guards fire `on the guards taking` and
+  `after the guards taking`, never the player's heads, with the sword's location and occurrence
+  keys asserted), `story-loader/tests/adr-328-npc-dialogue-scene.test.ts` (3 — from
+  mutation-verification's one warning: an NPC addressing an NPC opens the scene seated on
+  itself, the player nowhere in it). `@sharpee/event-processor` and `@sharpee/parser-en-us`
+  added as story-loader devDependencies for those two tests. Seven more hand-rolled
+  `context: any` loader fixtures gained `actor: player` (David: "continue").
+  Runs 2026-08-28 20:00–20:35 CDT after the last source edit: root `npx tsc --noEmit` clean;
+  stdlib 1656 passing (27 pre-existing skips); engine 672 (7 skips); story-loader 970; character
+  570; `./repokit build dungeo` green; Dungeo chain 952/17 passing and **byte-identical** to the
+  pre-sweep baseline (full-output diff with `ms` timings masked: 0 lines); presence-test
+  transcripts passing. ADR-327 AC-2 satisfied (stamped); ADR-328 Acceptance item 3 stamped for
+  the AC-2 half — see the ADR for the AC-5 half.
 
 ### Phase 5: D5 — NpcService's decision/execution split; `plugin-npc` dissolves
 - **Tier**: Large
@@ -536,7 +566,13 @@ ADR's own text implies).
   mid-cutover state. This phase and Phase 6 are one landing unit for commit-cutover purposes
   even though they're separate session-sized phases for planning (the same split ADR-327's own
   plan used for its Phases 1-4).
-- **Status**: PENDING
+- **Entry state (added 2026-08-28, session a19b44)**: Phase 4 shipped; every standard action
+  reads `context.actor`. Carried, not forgotten: ADR-327 AC-5 (`change the player to`) has no
+  real-path test on either half — nothing references `game.pc_switched` — and its "old PC's
+  own-block clause still fires when the old PC acts" half now has its dependency
+  (`executeAsActor`); write it where the PC switch lands. NPC-visited semantics and NPC death
+  are open by design (see the Phase 4 survivor comments); D7's child ADR gives them words.
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 6a: D6 — Dungeo's four lighter NPCs rewrite onto the pipeline
 - **Tier**: Large

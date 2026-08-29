@@ -98,7 +98,7 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
     if (!context.canSee(target)) {
       return { valid: false, error: 'not_visible' };
     }
-    if (context.world.getLocation(target.id) !== context.world.getLocation(context.player.id)) {
+    if (context.world.getLocation(target.id) !== context.world.getLocation(context.actor.id)) {
       return { valid: false, error: 'too_far' };
     }
     if (!target.has(TraitType.ACTOR)) {

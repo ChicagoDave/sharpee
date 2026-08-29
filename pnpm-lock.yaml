@@ -1115,9 +1115,15 @@ importers:
         specifier: workspace:*
         version: link:../world-model
     devDependencies:
+      '@sharpee/event-processor':
+        specifier: workspace:*
+        version: link:../event-processor
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../parser-en-us
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27

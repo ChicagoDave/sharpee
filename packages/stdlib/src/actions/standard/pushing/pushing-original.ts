@@ -52,7 +52,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
 
@@ -247,7 +247,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
 
   execute(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
     

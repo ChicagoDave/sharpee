@@ -36,7 +36,9 @@
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "@sharpee/event-processor": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

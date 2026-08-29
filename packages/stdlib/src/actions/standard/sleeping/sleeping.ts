@@ -42,7 +42,7 @@ interface SleepAnalysis {
 }
 
 function analyzeSleepAction(context: ActionContext): SleepAnalysis {
-  const actor = context.player;
+  const actor = context.actor;
   const eventData: SleptEventData = {
     turnsPassed: 1  // Sleeping advances one turn by default
   };

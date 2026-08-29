@@ -94,10 +94,10 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const player = context.player;
+    const actor = context.actor;
 
     // Already concealed?
-    if (isConcealed(player)) {
+    if (isConcealed(actor)) {
       return { valid: false, error: 'already_hidden' };
     }
 
@@ -154,10 +154,10 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
 
   execute(context: ActionContext): void {
     const sharedData = getHidingSharedData(context);
-    const player = context.player;
+    const actor = context.actor;
 
     // Add ConcealedStateTrait — this IS the concealment state
-    player.add(new ConcealedStateTrait({
+    actor.add(new ConcealedStateTrait({
       targetId: sharedData.targetId!,
       position: sharedData.position!,
       quality: sharedData.quality!,

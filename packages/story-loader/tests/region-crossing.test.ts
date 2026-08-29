@@ -140,6 +140,7 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: goingAction,
       currentLocation,
       command: { parsed: { extras: { direction } } },

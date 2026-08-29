@@ -22,7 +22,7 @@ export function analyzeSwitchingContext(
   context: ActionContext,
   target: IFEntity
 ): SwitchingAnalysis {
-  const actor = context.player;
+  const actor = context.actor;
   
   const analysis: SwitchingAnalysis = {
     target,

@@ -18,11 +18,14 @@ import {
   ActorTrait,
   ContainerTrait,
   RoomTrait,
+  WearableTrait,
+  TraitType,
   type IFEntity,
   type ActionInterceptor
 } from '@sharpee/world-model';
+import type { ISound } from '@sharpee/if-domain';
 import { EventProcessor } from '@sharpee/event-processor';
-import { StandardActionRegistry, standardActions, IFActions, actorConsultationId } from '@sharpee/stdlib';
+import { StandardActionRegistry, standardActions, IFActions, actorConsultationId, type Action } from '@sharpee/stdlib';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 
@@ -64,6 +67,7 @@ describe('CommandExecutor.executeAsActor (ADR-328 D2)', () => {
   let lamp: IFEntity;
   let boulder: IFEntity;
   let executor: CommandExecutor;
+  let registry: StandardActionRegistry;
   let gameContext: GameContext;
 
   beforeEach(() => {
@@ -71,7 +75,7 @@ describe('CommandExecutor.executeAsActor (ADR-328 D2)', () => {
 
     const language = new EnglishLanguageProvider();
     const parser = new EnglishParser(language, { world });
-    const registry = new StandardActionRegistry();
+    registry = new StandardActionRegistry();
     for (const action of standardActions) registry.register(action);
     registry.setLanguageProvider(language);
 
@@ -302,6 +306,65 @@ describe('CommandExecutor.executeAsActor (ADR-328 D2)', () => {
 
       expect(result.events.some(e => e.type === 'if.event.taken')).toBe(false);
       expect(world.getLocation(lamp.id)).toBe(player.id);
+    });
+  });
+
+  describe('the context factory under a non-player actor (Phase 4 carried gaps)', () => {
+    it('an implicit take inside wearing runs as the NPC — the cloak ends up worn by the NPC', () => {
+      const cloak = world.createEntity('wool cloak', EntityType.OBJECT);
+      cloak.add(new WearableTrait());
+      world.moveEntity(cloak.id, hall.id);
+
+      const result = executor.executeAsActor(
+        { actionId: IFActions.WEARING, actorId: npc.id, directObject: cloak },
+        world,
+        gameContext
+      );
+
+      expect(result.success).toBe(true);
+      // The mutation: the implicit take moved the cloak into the NPC, and wearing wore it there.
+      expect(world.getLocation(cloak.id)).toBe(npc.id);
+      const wearable = cloak.get(TraitType.WEARABLE) as WearableTrait;
+      expect(wearable.isWorn).toBe(true);
+      expect(wearable.wornBy).toBe(npc.id);
+      expect(world.getContents(player.id)).toHaveLength(0);
+
+      // The sub-context the factory built for the implicit take was the NPC's, not the player's.
+      const implicit = result.events.find(e => e.type === 'if.event.implicit_take');
+      expect(implicit).toBeDefined();
+      expect(implicit!.entities.actor).toBe(npc.id);
+      const taken = result.events.find(e => e.type === 'if.event.taken');
+      expect(taken).toBeDefined();
+      expect(taken!.entities.actor).toBe(npc.id);
+      const worn = result.events.find(e => e.type === 'if.event.worn');
+      expect(worn).toBeDefined();
+      expect((worn!.data as { actorId: string }).actorId).toBe(npc.id);
+    });
+
+    it("emitSound stamps the NPC and the NPC's room as the source, not the player's", () => {
+      const shout: Action = {
+        id: 'test.action.shout',
+        validate: () => ({ valid: true }),
+        execute: () => {},
+        report: (context) => {
+          context.emitSound({ kind: 'shout', volumeTier: 'shouting' });
+          return [];
+        }
+      };
+      registry.register(shout);
+      world.moveEntity(npc.id, cellar.id);
+      const sounds: ISound[] = [];
+
+      executor.executeAsActor({ actionId: shout.id, actorId: npc.id }, world, gameContext, undefined, sounds);
+      expect(sounds).toHaveLength(1);
+      expect(sounds[0].sourceEntity).toBe(npc.id);
+      expect(sounds[0].sourceLocation).toBe(cellar.id);
+
+      // The same action as the player sources from the player and the hall.
+      executor.executeAsActor({ actionId: shout.id, actorId: player.id }, world, gameContext, undefined, sounds);
+      expect(sounds).toHaveLength(2);
+      expect(sounds[1].sourceEntity).toBe(player.id);
+      expect(sounds[1].sourceLocation).toBe(hall.id);
     });
   });
 });

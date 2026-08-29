@@ -85,10 +85,10 @@ export function markThreadGripped(context: ActionContext): void {
  */
 function selectionContext(context: ActionContext, target: IFEntity): DialogueSelectionContext {
   const scene = sceneWith(context.world, target.id);
-  const shared = scene?.participantIds.includes(context.player.id) ? scene : undefined;
+  const shared = scene?.participantIds.includes(context.actor.id) ? scene : undefined;
   return {
     world: context.world,
-    speakerId: context.player.id,
+    speakerId: context.actor.id,
     ...(shared ? { scene: shared } : {}),
   };
 }
@@ -167,10 +167,10 @@ export function threadGrips(
  * @returns The implicit partner, or `undefined` when no thread claims one
  */
 export function resolveImplicitThreadPartner(context: ActionContext): IFEntity | undefined {
-  const location = context.world.getLocation(context.player.id);
+  const location = context.world.getLocation(context.actor.id);
   if (!location) return undefined;
   for (const entity of context.world.getContents(location)) {
-    if (entity.id === context.player.id || !entity.has(TraitType.ACTOR)) continue;
+    if (entity.id === context.actor.id || !entity.has(TraitType.ACTOR)) continue;
     if (threadGrips(context, entity, { type: 'talk-to' })) return entity;
   }
   return undefined;
@@ -226,16 +226,16 @@ export function resolveSceneIntrusion(
     return { blocks: false, events: [] };
   }
   const scene = sceneWith(context.world, target.id);
-  if (!scene || scene.participantIds.includes(context.player.id)) {
+  if (!scene || scene.participantIds.includes(context.actor.id)) {
     return { blocks: false, events: [] };
   }
 
-  const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.player.id, false);
+  const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.actor.id, false);
   const events = wireEvents.map((w) => toSceneEvent(context, w));
   if (outcome === 'blocks') {
     events.push(context.event('character.scene.intrusion_blocked', {
       sceneId: scene.id,
-      interrupterId: context.player.id,
+      interrupterId: context.actor.id,
     }));
     return { blocks: true, events };
   }
@@ -274,16 +274,17 @@ export function runConversationScene(
     // side is already seated (a participant is in at most one live scene;
     // intruding on a foreign scene resolved via `resolveSceneIntrusion`
     // before this runs).
-    if (sceneWith(context.world, context.player.id)) return [];
+    if (sceneWith(context.world, context.actor.id)) return [];
     const opened = runtime.openScene(
-      [context.player.id, target.id],
-      { kind: 'address', openerId: context.player.id },
+      [context.actor.id, target.id],
+      { kind: 'address', openerId: context.actor.id },
     );
     scene = opened.scene;
     events.push(...opened.wireEvents.map((w) => toSceneEvent(context, w)));
-  } else if (scene.participantIds.includes(context.player.id)) {
-    // The move clock stamps only for the player's own scene — a foreign
-    // scene's clock is not the player's to reset (Phase 8 fix).
+  } else if (scene.participantIds.includes(context.actor.id)) {
+    // The move clock stamps only for the actor's own scene — a foreign
+    // scene's clock is not the actor's to reset (Phase 8 fix; the actor is
+    // whoever is speaking, player or NPC, per ADR-328 D2).
     runtime.recordMove(scene.id);
   } else {
     // Foreign scene still live (a `blocks` outcome upstream): no scene

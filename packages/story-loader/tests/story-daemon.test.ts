@@ -111,6 +111,7 @@ describe('story-owned every-turn daemon (ADR-236 D7, REAL-PATH)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: goingAction,
       currentLocation,
       command: { parsed: { extras: { direction } } },
