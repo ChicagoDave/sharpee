@@ -930,6 +930,25 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               exit from the mover's
                                                               room, drawn at effect
                                                               time; no strategy word *)
+             | name verb-words [ stmt-when ] NL            (* ADR-329 D1/D2: the acting
+                                                              statement — a character
+                                                              performs one action NOW
+                                                              through the execution
+                                                              entry. The first words
+                                                              name a person (never `the
+                                                              player`: analysis.act-
+                                                              player-actor); the rest
+                                                              match a standard or
+                                                              story grammar shape by
+                                                              verb lemma (analysis.act-
+                                                              unknown-verb / act-slot-
+                                                              shape). Legal in `after`,
+                                                              `when`, `on every turn`,
+                                                              and conversation rows —
+                                                              not in an `on` intercept
+                                                              (analysis.act-in-
+                                                              intercept). Move PUTS;
+                                                              acting DOES (D7) *)
              | "remove" name [ stmt-when ] NL              (* Z6: remove from play;
                                                               never the player *)
              | "award" { token } [ "," "once" ] [ stmt-when ] NL
@@ -965,8 +984,15 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | select-on | select-strategy | ordinal-block | each-block ;
 stmt-when    = "when" condition ;                          (* statement-final suffix, D7:
                                                               legal on phrase, emit, change,
-                                                              move, remove, award, win, lose —
+                                                              move, remove, award, win, lose,
+                                                              and the acting statement —
                                                               not on set or bare refuse *)
+verb-words   = WORD { WORD | name } ;                      (* ADR-329 D2: `takes the sword`,
+                                                              `gives the sword to Alex`,
+                                                              `goes east` — the verb in
+                                                              either inflection, then the
+                                                              shape's slots as names or a
+                                                              direction word *)
 phrase-key   = WORD ;                                      (* single kebab word; a "." is
                                                               parse.dotted-key (ADR-254/256) *)
 param        = "with" WORD { WORD } "=" value-expr ;

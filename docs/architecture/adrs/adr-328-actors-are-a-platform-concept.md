@@ -320,6 +320,11 @@ onto the same entry; `move` unchanged — "move puts; acting does". Stamped per 
 1. A child ADR/plan exists per phase — execution entry + actor threading; perception-
    gated witnessing; NpcService disposition + Dungeo migration; actor voice — each with
    its own real-path acceptance (rule 13a), before any phase implements.
+   *(Satisfied 2026-08-29, session d04ae1 — the program plan
+   `docs/work/adr-328-actors-platform-concept/plan.md` carried one phase per surface, each
+   with a child artifact and a rule-13a real-path gate, and the last child ADR — ADR-329,
+   the Chord acting surface D7 named — is ACCEPTED and fully landed (its Acceptance items
+   1–5 all stamped). Item 3's AC-5 half remains the one open thread, tracked there.)*
 2. The program's end state is demonstrable in one scene: an NPC performs a standard
    action through the pipeline; a trait refusal blocks it; the player witnesses it in
    third person from the same room and sees nothing from another room; Dungeo's chain is

@@ -381,6 +381,8 @@ ADR-310 D8's stamp waits for D6's landing, above.
    direction-slot shapes; the analyzer errors fire by name — an intercept body, a `before the
    game starts` body, an unknown verb, a wrong slot shape, a non-person actor, `the player`
    as the actor, an unknown name in a slot — each with its fix-it.
+   *(Satisfied 2026-08-29, session aeade8 — Phase 9a: `packages/chord/tests/act-statement.test.ts`,
+   18, real `parser.ts`/`analyzer.ts`; one more error id than named, `analysis.act-actor`.)*
 2. **REAL-PATH loader tests (rule 13a), through a real engine** (the `adr-327-ac2` harness
    shape): `after the player entering` → `the guards take the sword` moves the sword into the
    guards (asserted on `world.getLocation`), fires `after the guards taking` and not the
@@ -390,13 +392,30 @@ ADR-310 D8's stamp waits for D6's landing, above.
    the sword still moved (ADR-328 AC-2's scene, from Chord); a timer-fired act in the turn
    phase; a conversation-row act; the re-entry cap raises `runtime.act-reentry` at depth 8
    and performs no ninth act; a save taken mid-sequence restores and continues.
+   *(Satisfied 2026-08-29, session aeade8 — Phase 9b: `packages/story-loader/tests/adr-329-act-statement.test.ts`,
+   9, on `GameEngine.executeTurn`; every clause of this item is one of its cases.)*
 3. **D6, REAL-PATH**: a character-model NPC's `give` step runs
    through the entry — a trait refusal on the recipient blocks it and the item stays; a
    witnessed `drop` step narrates in the NPC's voice.
+   *(Satisfied 2026-08-29, session d04ae1 — Phase 9c: `packages/story-loader/tests/adr-329-goal-steps.test.ts`,
+   5, on `GameEngine.executeTurn` — the recipient's `on the Maid giving … refuse` keeps the
+   letter and narrates `present` on each retried turn; the `drop` narrates `present` in the
+   room and `absent` from another; plus `acquire` (taken; refused on scenery) and `move to`
+   (`going`, one hop per turn).)*
 4. **Corpus green**: every story suite passes (fernhill, friendly-zoo, cloak, ides,
    secret-letter, fixtures) with zero diffs — nothing in the corpus uses the statement yet;
    Dungeo is TypeScript and untouched, its chain byte-identical.
+   *(Satisfied 2026-08-29, session d04ae1 — after 9c's `./repokit build dungeo --skip
+   character`: ides 39 cards, fernhill 36, secret-letter 131 passing / 29 failing — all
+   identical to the `c31ab561` baseline (the secret-letter failures pre-date this ADR, GH
+   #319); Dungeo chain 952 passing across 17 transcripts, unmoved. cloak and friendly-zoo
+   were matched to baseline at 9b (2 and 1 pre-existing failing cards).)*
 5. **Paper trail** (D8) landed; the reference updated.
+   *(Satisfied 2026-08-29, session d04ae1 — Phase 9d: EBNF row beside `move` in the
+   statement production plus the `verb-words` production; `chord-grammar-changes.md` entry
+   dated 2026-08-29; `CHORD_LANGUAGE_VERSION` 4.0.0 → 4.1.0 with the surface pin
+   re-recorded; the reference grammar table and the statements guide carry the statement
+   and D7's sentence beside `move`.)*
 
 ## Session
 

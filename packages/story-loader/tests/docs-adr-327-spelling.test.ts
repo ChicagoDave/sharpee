@@ -110,6 +110,7 @@ const PARSE_BLOCKED_FENCES: ReadonlySet<string> = new Set([
   'chord/guide/behavior/the-statements/content.mdx#1',
   'chord/guide/behavior/the-statements/content.mdx#2',
   'chord/guide/behavior/the-statements/content.mdx#3',
+  'chord/guide/behavior/the-statements/content.mdx#4',
   'chord/guide/behavior/what-a-clause-can-bind/content.mdx#1',
   'chord/guide/flow/death/content.mdx#1',
   'chord/guide/flow/each-blocks/content.mdx#2',

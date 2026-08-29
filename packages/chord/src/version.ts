@@ -235,5 +235,15 @@
  *     player is a role a named character holds, not a block.
  *   - `IREntity.isPlayer` is replaced by `isPlayable`; `IR_FORMAT` →
  *     `story language 4`. One MAJOR for the whole cutover, per D6.
+ *
+ * **4.1.0 — ADR-329, 2026-08-29 (session d04ae1): the acting statement.**
+ * `<character> <verb> [<object>] [<preposition> <object>] [when <condition>]`
+ * performs one standard or story action now, as that character, through
+ * the engine's execution entry — validated, interceptable, witnessed. The
+ * verb matches a grammar shape by lemma (D2); legal in `after`, `when`,
+ * `on every turn`, and conversation rows, not in `on` intercepts (D3);
+ * `the player` is never the actor (D1). `move` is unchanged: move puts,
+ * acting does (D7). Additive — every 4.0.0 story is valid — so a minor by
+ * D2's ordinary rule.
  */
-export const CHORD_LANGUAGE_VERSION = '4.0.0';
+export const CHORD_LANGUAGE_VERSION = '4.1.0';

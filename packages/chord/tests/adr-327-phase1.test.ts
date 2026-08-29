@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 import { IR_FORMAT } from '../src/ir';
+import { CHORD_LANGUAGE_VERSION } from '../src/version';
 import type { IROnClause, StoryIR } from '../src/ir';
 
 const HEADER = `story
@@ -356,10 +357,11 @@ describe('placement vs head — split by block structure, not by the article', (
 });
 
 describe('the wire stamps move with the major', () => {
-  it('IR format is `story language 4` and the language version is 4.0.0', () => {
+  it('IR format is `story language 4` and the IR carries the current language version (4.x)', () => {
     const ir = ok({});
     expect(IR_FORMAT).toBe('story language 4');
     expect(ir.format).toBe('story language 4');
-    expect(ir.languageVersion).toBe('4.0.0');
+    expect(CHORD_LANGUAGE_VERSION).toMatch(/^4\./);
+    expect(ir.languageVersion).toBe(CHORD_LANGUAGE_VERSION);
   });
 });

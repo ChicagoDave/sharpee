@@ -1,4 +1,4 @@
-Ten statements do the story's work. The pumpkin below uses most of
+Eleven statements do the story's work. The pumpkin below uses most of
 them:
 
 ```chord
@@ -41,7 +41,42 @@ them:
 - **`change <name> to <state>`** moves an owner along its declared
   states; `change the story to <state>`
   moves the story.
-- **`move <name> to <name>`** relocates an entity.
+- **`move <name> to <name>`** relocates an entity. It *puts* — nothing
+  is seen to happen, no clause fires, nothing can refuse it. To make a
+  character *do* something, name them and the action instead.
+- **`<character> <verb> [<object>] [<preposition> <object>]`** — the
+  acting statement — has that character perform one action now, through
+  the same pipeline as a typed command: `the guards take the sword`,
+  `Teisha gives the sword to the player`, `the monkey goes east`. The
+  action can refuse (an `on the guards taking` clause, a locked door),
+  the player sees it in third person when they are in the room, and
+  `after the guards taking` fires just as it would for a typed command.
+  `move the monkey offstage` *puts* the monkey somewhere; `the monkey
+  gives the necklace to the player` *does* something. The actor is a
+  character, never `the player`, and the statement is legal in `after`
+  and `when` bodies, `on every turn`, and topic rows — not inside an
+  `on` intercept, which is where an action is being decided, not done.
+
+  ```chord
+  create the guards
+    a person, plural
+    in the Yard
+
+    Guards.
+
+  create the sword
+    in the Yard
+
+    A sword.
+
+  create the Yard
+    a room
+    after the player entering
+      the guards take the sword
+    end after
+
+    A yard.
+  ```
 - **`remove <name>`** takes an entity out of play, permanently: there
   is no `to`, nothing to get back, and removing the player is a load
   error (`analysis.remove-player`).

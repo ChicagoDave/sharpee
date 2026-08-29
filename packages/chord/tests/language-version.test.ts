@@ -62,8 +62,12 @@ const PINNED = {
   //  starts`, `change the player to`, and the removal of `create the
   //  player` — which ride the SAME major: one MAJOR for the whole ADR-327
   //  cutover, per D6.)
-  languageVersion: '4.0.0',
-  ebnfSha256: '525b5c8eeb45fc40d2cf8125817f9a6c769b59a0b2d38d1bd9cdd122d29a88ea',
+  // (4.1.0 — ADR-329, 2026-08-29 (session d04ae1): the acting statement
+  //  `<character> <verb> …` beside `move` in the statement production, with
+  //  the `verb-words` production — additive minor; every 4.0.0 story is
+  //  valid. Landed 9a–9c; pinned at 9d with the paper trail.)
+  languageVersion: '4.1.0',
+  ebnfSha256: 'cb7e5eecfacbfe9a6ac2a32b5a350f92982cb6172436f23195b06c8791f32a5b',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

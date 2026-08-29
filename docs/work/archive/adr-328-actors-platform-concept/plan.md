@@ -1,7 +1,7 @@
 # Session Plan: Implement ADR-328 — Actors are a platform concept
 
 **Created**: 2026-08-27
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-08-29, session d04ae1 — Phase 9d closed; every phase DONE. The one thread left open by the program is ADR-327 AC-5's real-path test, carried outside this plan.)
 **Overall scope**: Land ADR-328's umbrella program — one `(action, actorId)` execution path for
 anyone who acts (D1/D2), perception that tags actor-sourced narration instead of dropping it
 (D3), actor voice as a per-actor rendering property (D4, leads by David's ruling), the
@@ -1090,7 +1090,22 @@ authorizes design, not implementation by itself (ADR-329, opening line).
 - **Exit state**: ADR-329 Acceptance items 1–5 all satisfied; ADR-328 D7 stamp (already applied
   at Phase 8) is now backed by a landed implementation, not just an accepted child ADR; this
   plan's Phase 9 — and with it the whole ADR-328 program — is DONE.
-- **Status**: CURRENT (since 2026-08-29; 9c DONE)
+- **Status**: DONE (2026-08-29, session d04ae1). The corpus half was already green from 9c's
+  sweep (ides 39, fernhill 36, secret-letter 131/29 baseline-identical, Dungeo chain 952/17).
+  Paper trail as landed: `chord.ebnf` — the acting statement row beside `move` in the
+  `statement` production (`name verb-words [ stmt-when ] NL`, gates in the comment) plus a
+  `verb-words` production and `stmt-when`'s legality list; `version.ts` 4.0.0 → **4.1.0**
+  (additive minor, ADR-257 D2) with `language-version.test.ts` re-pinned to
+  `cb7e5eec…`; `docs/architecture/chord-grammar-changes.md` row dated 2026-08-29; website
+  `chord/reference/grammar` table row and `guide/behavior/the-statements` bullet with the
+  D7 sentence beside `move` (no website test suite exists); ADR-329 Acceptance items 1–5
+  stamped; ADR-328 Acceptance item 1 stamped (item 3's AC-5 half stays open). The bump's
+  fallout, fixed with David's go-ahead: `adr-327-phase1.test.ts` now pins
+  `CHORD_LANGUAGE_VERSION` (and `^4\.`) instead of the literal; four golden IR snapshots
+  regenerated — the diff is the one `languageVersion` line in each. Evidence (2026-08-29
+  03:2x CDT): chord 1082 passing across 71 files. Observed: the IDE's generated
+  `tools/ide/SharpeeIDE/Resources/docs-tab/docs-index.json` still says
+  `chordLanguageVersion 4.0.0` — the IDE build regenerates it; not this repo's commit.
 
 ## Note on session-state tracking
 
