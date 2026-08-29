@@ -96,7 +96,7 @@ describe('ADR-203 NPC attribution — real path', () => {
     const { world, player, roomA } = twoRooms();
     const twins = world.createEntity('twins', EntityType.ACTOR);
     twins.add(new IdentityTrait({ name: 'twins', nounType: 'plural' }));
-    twins.add(new NpcTrait({ behaviorId: 'mover', canMove: true }));
+    twins.add(new NpcTrait({ behaviorId: 'mover', canMove: true, announcesMovement: true }));
     world.moveEntity(twins.id, roomA.id);
 
     const { messageId, params } = departureOf(world, player, twins);
@@ -113,7 +113,7 @@ describe('ADR-203 NPC attribution — real path', () => {
     const { world, player, roomA } = twoRooms();
     const sam = world.createEntity('Sam', EntityType.ACTOR);
     sam.add(new IdentityTrait({ name: 'Sam', nounType: 'proper' }));
-    sam.add(new NpcTrait({ behaviorId: 'mover', canMove: true }));
+    sam.add(new NpcTrait({ behaviorId: 'mover', canMove: true, announcesMovement: true }));
     world.moveEntity(sam.id, roomA.id);
 
     const { messageId, params } = departureOf(world, player, sam);

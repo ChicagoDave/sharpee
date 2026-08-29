@@ -664,7 +664,41 @@ ADR's own text implies).
   `NIGHT_VISION` registry entry; `night-vision.test.ts` must declare darkness with
   `requiresLight: true`. Then rebuild → chain → re-pin explained diffs. 6a and 6b are landing
   together (the thief was rewritten in the same pass).
-- **Status**: CURRENT (since 2026-08-28)
+- **Status**: DONE (2026-08-28, session 1d6ae5) — 6a and 6b landed together. **The chain did
+  not re-pin: `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript`
+  → 952 passing across 17 transcripts, every golden matched** (23:55 CDT, after the last
+  source edit). Three findings, each answered at its own layer, are what made byte-identity
+  possible: (1) the thief's theft from the player is not a `taking` — `taking`'s scope refuses
+  an item inside another actor — so Dungeo's `stealing` action (`actions/stealing/`,
+  `DUNGEO_STEAL`; reports `if.event.taken` + `fromLocation`, silent refusal) is what he acts;
+  (2) the underground residents act in dark rooms — `NightVisionTrait` (world-model; David:
+  "wouldn't seeing in the dark be its own trait?"), honored at `VisibilityBehavior`'s two
+  darkness gates, on the thief/troll/cyclops/robot/DM; (3) the carousel is the player's puzzle
+  (MDL CAROUSEL-EXIT; ROBBER never traverses exits) — the Round Room resolver defers a non-player
+  mover to static topology so the thief no longer draws on `dungeo.round-room.exit` under the
+  player. A fourth was Phase 5's own: `going`'s witnessed-mover narration is gated on
+  `NpcTrait.announcesMovement` again (David: "we're adding non-corpus text to dungeo?") — the
+  opt-in the retired `announceMovement` honored; Chord's `announces-movement` still lowers to it.
+  Villain blows: the real `attacking` through `MeleeInterceptor`'s villain branch (resolver
+  folded in; `VILLAIN_RECOVERS`/`VILLAIN_NO_STRENGTH` refusals; hero death via `killPlayer`
+  inside the interceptor, emitted from `postReport`); `melee-villain-blow.test.ts` 4. The troll
+  takes his own axe (guardian exempt from the white-hot refusal). `onSpokenTo`/`onAttacked`
+  were never called — dropped, not ported. Evidence: Dungeo unit tests 46 passing; stdlib 1661,
+  engine 679 (+actor-turn 7), story-loader 971, world-model 1496 (+night-vision 4) passing.
+  Dungeo unit transcripts, classified against a `593945a8` worktree build (baseline 1742
+  passing, 1 failing — `info-channel-baseline`, pre-existing): first run 1733/9 surfaced one
+  real regression — `trophy-case-scoring`, because `taking` awarded ADR-129 take-points to
+  whoever took (the thief's room thefts scored for the player); fixed with a protagonist guard
+  in `taking.ts` + `taking-points-actor.test.ts` (2). Final: 1738 passing, 5 failing = the
+  pre-existing one, an unpinned-seed flake (`implicit-take-put`), and three explained
+  assertion-shape changes owed David's ruling: `troll-interactions.transcript:75,:80` assert the
+  troll's blow as a `game.message` (it is `if.event.attacked` with the same prose now);
+  `wave-rainbow.transcript:42,:76` assert no `if.event.actor_moved` on a blocked `east` and now
+  see an NPC's real step that turn. Mutation-verification's five story-side gaps closed:
+  `stealing-action.test.ts` (4), `thief-lair-deposit.test.ts` (2), `troll-axe-behaviors.test.ts`
+  (2), `carousel-exit-resolver.test.ts` (2), `melee-villain-blow.test.ts` +2 forced outcomes —
+  Dungeo vitest 58 passing (11 files); stdlib 1663; chain re-run after the guard: 952/17.
+
 
 ### Phase 6b: D6 — The thief rewrites; the 952-test walkthrough chain re-pins
 - **Tier**: Large
@@ -689,7 +723,7 @@ ADR's own text implies).
   in third person from the same room (Phase 1's voice work) and — via the default renderer
   hiding `absent` (Phase 2b) — sees nothing from another room, while the event itself still
   fired and mutated state. This is the program's one demonstrable scene.
-- **Status**: PENDING
+- **Status**: DONE (2026-08-28, session 1d6ae5) — landed with 6a; see 6a's status for the evidence (952/17 byte-identical, no re-pin).
 
 ### Phase 6c: D6 — The book's chapter 20, the zoo tutorial, and the devkit fixture rewrite onto the pipeline
 - **Tier**: Medium
@@ -729,7 +763,7 @@ ADR's own text implies).
   plugin). Still owed here: `docs/book/v2.0.0/parts/part-6/20-non-player-characters.md` and its
   `code-snippets/ch20-*` (and the v1.5.0 copies), plus `tutorials/familyzoo/v1.5.0` and `v2.0.0`
   whose `package.json`s still depend on `@sharpee/plugin-npc`.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-08-28)
 
 ### Phase 8: D7a — Write the Chord acting-surface child ADR
 - **Tier**: Medium

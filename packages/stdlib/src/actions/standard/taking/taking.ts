@@ -200,9 +200,12 @@ function executeSingleEntity(
   // Perform the actual move
   context.world.moveEntity(noun.id, actor.id);
 
-  // Score points for taking items with points value (ADR-129)
+  // Score points for taking items with points value (ADR-129). The score is
+  // the protagonist's: a non-player actor taking a pointed item (the thief
+  // robbing a room through this same action, ADR-328 D5) awards nothing.
+  // `context.player` survives here on purpose — this asks who holds the role.
   const identity = noun.getTrait(IdentityTrait);
-  if (identity?.points) {
+  if (identity?.points && actor.id === context.player.id) {
     context.world.awardScore(
       noun.id,
       identity.points,

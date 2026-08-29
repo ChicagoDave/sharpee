@@ -77,6 +77,7 @@ import { ListenerTrait } from './listener/listenerTrait.js';
 
 // System traits
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
+import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
 
 /**
  * Map of trait types to their constructors
@@ -88,6 +89,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.SUPPORTER]: SupporterTrait,
   [TraitType.ROOM]: RoomTrait,
   [TraitType.WEARABLE]: WearableTrait,
+  [TraitType.NIGHT_VISION]: NightVisionTrait,
   [TraitType.EDIBLE]: EdibleTrait,
   [TraitType.SCENERY]: SceneryTrait,
 

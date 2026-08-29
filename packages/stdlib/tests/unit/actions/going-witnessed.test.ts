@@ -4,7 +4,9 @@
  *
  * The going action emits `actor_exited` located at the origin and
  * `actor_entered` located at the destination, each carrying a witnessed
- * message for a non-player actor; the mover's own arrival perception (the
+ * message when the non-player mover announces its movement
+ * (`NpcTrait.announcesMovement`, opt-in — the thief slips by unremarked);
+ * the mover's own arrival perception (the
  * room description, the contents list, the darkness line) is the
  * protagonist's alone. Presence tagging then renders whichever room the
  * player is in.
@@ -21,6 +23,7 @@ import {
   ContainerTrait,
   RoomTrait,
   Direction,
+  NpcTrait,
 } from '@sharpee/world-model';
 import { goingAction } from '../../../src/actions/standard/going';
 import { IFActions } from '../../../src/actions/constants';
@@ -44,6 +47,9 @@ function buildWorld() {
   const npc = world.createEntity('mercenary', EntityType.ACTOR);
   npc.add(new ActorTrait());
   npc.add(new ContainerTrait());
+  // Opt-in: only a mover that announces its movement is narrated (the
+  // thief slips by unremarked).
+  npc.add(new NpcTrait({ announcesMovement: true }));
   world.moveEntity(npc.id, hall.id);
 
   return { world, hall, cellar, player, npc };
@@ -72,6 +78,21 @@ describe('a witnessed mover (ADR-328 D3/D5)', () => {
     expect(exited.data).toMatchObject({ messageId: 'if.action.going.departs', params: { direction: 'north' } });
     expect(entered.entities).toMatchObject({ actor: npc.id, location: cellar.id });
     expect(entered.data).toMatchObject({ messageId: 'if.action.going.arrives', params: { direction: 'south' } });
+  });
+
+  it('a mover that does not announce its movement moves unremarked — the events carry no messages', () => {
+    const { world, cellar, player, npc } = buildWorld();
+    (npc.get(NpcTrait) as NpcTrait).announcesMovement = false;
+
+    const events = goNorth(world, player, npc);
+
+    expect(world.getLocation(npc.id)).toBe(cellar.id);
+    const exited = events.find(e => e.type === 'if.event.actor_exited')!;
+    const entered = events.find(e => e.type === 'if.event.actor_entered')!;
+    expect((exited.data as { messageId?: string }).messageId).toBeUndefined();
+    expect((entered.data as { messageId?: string }).messageId).toBeUndefined();
+    // Still located where it happened, for handlers and presence.
+    expect(entered.entities.location).toBe(cellar.id);
   });
 
   it("an NPC's move emits no room description — the arrival perception is the protagonist's", () => {

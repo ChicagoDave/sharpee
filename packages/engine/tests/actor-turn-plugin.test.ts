@@ -39,7 +39,7 @@ function stage(behavior: NpcBehavior, npcRoom: 'here' | 'east' = 'here') {
   const npc = world.createEntity('thief', EntityType.ACTOR);
   npc.add(new ActorTrait());
   npc.add(new ContainerTrait());
-  npc.add(new NpcTrait({ behaviorId: behavior.id, canMove: true }));
+  npc.add(new NpcTrait({ behaviorId: behavior.id, canMove: true, announcesMovement: true }));
   world.moveEntity(npc.id, npcRoom === 'here' ? here.id : east.id);
 
   const lamp = world.createEntity('brass lamp', EntityType.OBJECT);

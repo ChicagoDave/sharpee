@@ -226,6 +226,7 @@ Located in `/packages/world-model/src/traits/`:
 - **Supporter** - Can have objects placed on top
 - **LightSource** - Provides illumination
 - **Scenery** - Fixed in place, can't be taken
+- **NightVision** - The observer sees in the dark (a marker; ADR-328 D5)
 - **Actor** - Represents player or NPCs
 - **Door** - Connects two rooms
 
@@ -640,7 +641,7 @@ interface PerceptionBlockedData {
 ```typescript
 // In story setup
 const bar = world.createEntity('Dark Bar', EntityType.ROOM);
-bar.add(new RoomTrait({ isDark: true }));  // Dark until lit
+bar.add(new RoomTrait({ requiresLight: true }));  // Dark until lit
 
 // When player enters while carrying cloak (absorbs light):
 // - Room description is filtered to perception.blocked
@@ -648,7 +649,7 @@ bar.add(new RoomTrait({ isDark: true }));  // Dark until lit
 // - Action failures still appear
 
 // When cloak is hung (bar becomes lit):
-roomTrait.isDark = false;
+roomTrait.requiresLight = false;
 // Now room description shows normally
 ```
 

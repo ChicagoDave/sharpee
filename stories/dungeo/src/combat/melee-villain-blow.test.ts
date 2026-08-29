@@ -32,6 +32,7 @@ import { MeleeInterceptor } from '../interceptors/melee-interceptor';
 import { MeleeMessages } from './melee-messages';
 import { MELEE_STATE } from './melee-state';
 import { setGDTFlags, getGDTFlags } from '../actions/gdt/gdt-context';
+import { EngineRandomService } from '@sharpee/engine';
 
 const SWEEPS = 150;
 
@@ -67,7 +68,7 @@ function buildArena(immortal: boolean) {
 }
 
 /** One villain blow: the real attacking action's four phases as the troll. */
-function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['player'], troll: ReturnType<typeof buildArena>['troll'], seed: number) {
+function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['player'], troll: ReturnType<typeof buildArena>['troll'], seed: number, random?: EngineRandomService) {
   const command: ValidatedCommand = {
     parsed: {
       rawInput: 'attack yourself',
@@ -80,7 +81,7 @@ function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['p
     actionId: IFActions.ATTACKING,
     directObject: { entity: player, parsed: { text: 'yourself', candidates: ['yourself'] } },
   };
-  const context = createActionContext(world, player, attackingAction, command, createFixtureRandomService(seed), undefined, troll);
+  const context = createActionContext(world, player, attackingAction, command, random ?? createFixtureRandomService(seed), undefined, troll);
   const validation = attackingAction.validate(context);
   if (!validation.valid) return { valid: false as const, events: attackingAction.blocked!(context, validation) };
   context.validationResult = validation;
@@ -140,5 +141,33 @@ describe('a villain blow through the real attacking action (ADR-328 D5)', () => 
     expect(troll.attributes[MELEE_STATE.VILLAIN_STAGGERED]).toBe(false);
     // The next swing lands.
     expect(trollSwings(world, player, troll, 4).valid).toBe(true);
+  });
+
+  it('a forced STAGGER staggers the hero (state, not narration)', () => {
+    const { world, player, troll } = buildArena(false);
+    const random = new EngineRandomService(424242);
+    random.loadForces([{ point: 'dungeo.melee.blow.villain', cls: 'STAGGER', mode: 'sticky' }]);
+
+    const { valid } = trollSwings(world, player, troll, 0, random);
+
+    expect(valid).toBe(true);
+    expect(player.attributes[MELEE_STATE.STAGGERED]).toBe(true);
+    // Forced path: zero draws on the villain point.
+    expect(random.serializeStreamStates()['dungeo.melee.blow.villain']).toBeUndefined();
+  });
+
+  it('a forced LOSE_WEAPON drops the hero’s weapon on the floor', () => {
+    const { world, player, troll } = buildArena(false);
+    const sword = world.createEntity('elvish sword', EntityType.OBJECT);
+    sword.add(new WeaponTrait({}));
+    world.moveEntity(sword.id, player.id);
+    const room = world.getLocation(player.id)!;
+    const random = new EngineRandomService(424242);
+    random.loadForces([{ point: 'dungeo.melee.blow.villain', cls: 'LOSE_WEAPON', mode: 'sticky' }]);
+
+    const { valid } = trollSwings(world, player, troll, 0, random);
+
+    expect(valid).toBe(true);
+    expect(world.getLocation(sword.id)).toBe(room);
   });
 });

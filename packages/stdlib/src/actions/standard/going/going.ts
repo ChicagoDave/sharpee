@@ -27,6 +27,7 @@ import {
   canActorWalkInVehicle,
   type RegionCrossings,
   getOppositeDirection,
+  NpcTrait,
 } from '@sharpee/world-model';
 import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -516,16 +517,20 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
     // The protagonist's own move is narrated by what they see on arrival
-    // (below). Anyone else's move is narrated by what the PLAYER sees of it:
-    // the departure, located at the origin, and the arrival, located at the
-    // destination — presence tagging (ADR-328 D3) renders whichever room the
-    // player is in, and actor voice (D4) names the mover. `context.player`
-    // survives here on purpose: this asks who holds the role this turn.
+    // (below). Anyone else's move is narrated by what the PLAYER sees of it
+    // — but only when the mover announces its movement (`NpcTrait.
+    // announcesMovement`, opt-in; Chord's `announces-movement`): the thief
+    // slips in and out unremarked. When it does, the departure is located
+    // at the origin and the arrival at the destination — presence tagging
+    // (ADR-328 D3) renders whichever room the player is in, and actor voice
+    // (D4) names the mover. `context.player` survives here on purpose: this
+    // asks who holds the role this turn.
     const isProtagonist = context.actor.id === context.player.id;
+    const announces = !isProtagonist && (context.actor.get(NpcTrait)?.announcesMovement ?? false);
     const direction = sharedData.direction as DirectionType | undefined;
-    const witnessed = (messageId: string, dir: DirectionType | undefined) => isProtagonist
-      ? {}
-      : { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } };
+    const witnessed = (messageId: string, dir: DirectionType | undefined) => announces
+      ? { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } }
+      : {};
 
     // Return movement events first. actor_moved carries no messageId — it is
     // for event sourcing/handlers; exited/entered narrate a witnessed mover.

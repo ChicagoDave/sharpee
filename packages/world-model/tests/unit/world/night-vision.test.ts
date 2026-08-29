@@ -23,7 +23,7 @@ describe('NightVisionTrait — seeing in the dark (ADR-328 D5)', () => {
   beforeEach(() => {
     world = new WorldModel();
     cave = world.createEntity('Dark Cave', 'room');
-    cave.add(new RoomTrait({ isDark: true }));
+    cave.add(new RoomTrait({ requiresLight: true }));
     cave.add(new ContainerTrait());
 
     thief = world.createEntity('thief', 'actor');

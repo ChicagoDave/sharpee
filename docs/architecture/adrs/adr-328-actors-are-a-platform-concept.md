@@ -241,7 +241,11 @@ line that is not an action; hooks return nothing. `ActorTurnPlugin` (`packages/e
 is registered by the engine's constructor at priority 100 and reached through
 `GameEngine.getNpcService()`; `plugin-npc` is deleted. Also retired as runtime-dead:
 `onSpokenTo`/`onAttacked`/`onObserve` and the service's `onPlayerSpeaks`/`onNpcAttacked`,
-which nothing called. Dungeo's five behaviors do not compile until Phase 6, as planned.)*
+which nothing called. Dungeo's five behaviors do not compile until Phase 6, as planned.
+Corrected at Phase 6 (David, 2026-08-28: "we're adding non-corpus text to dungeo?"): a
+witnessed mover's `going` narrates only when the mover opts in — `NpcTrait.announcesMovement`,
+Chord's `announces-movement` — exactly the opt-in the retired `announceMovement` honored; the
+default stays silent, so a story with no such NPC reads as it did.)*
 
 ### D6. Dungeo rewrites its five NPCs, and the chain re-pins by design
 
@@ -253,6 +257,22 @@ seeds in that phase: an explained diff is a re-pin, an unexplained diff is a def
 (the ADR-295 golden-re-record precedent). The thief — patrol, theft, combat, RNG — is
 the seed-sensitive resident; its rewrite is the phase's sizing driver. Dungeo
 constrains the migration cost, never the design.
+
+*(Landed 2026-08-28, session 1d6ae5 — Phases 6a+6b together. The chain did NOT re-pin:
+952/17 byte-identical at seed 42. Three things the shadow system had let through, each
+answered where it belonged: a theft out of the player's possession is not a `taking`
+(scope rightly refuses it) — Dungeo's own `stealing` action (`DUNGEO_STEAL`) is what the
+thief acts; the underground residents act in the dark — `NightVisionTrait` (world-model,
+David: "wouldn't seeing in the dark be its own trait?"), on the thief, troll, cyclops, robot
+and Dungeon Master; and the carousel spins for the player alone (MDL's CAROUSEL-EXIT is the
+player's exit function; ROBBER never traverses exits), so the Round Room resolver defers a
+non-player mover to static topology and draws nothing. Villain blows run the real
+`attacking` through `MeleeInterceptor`'s villain branch; the troll takes his own axe through
+the real `taking`; the never-called `onSpokenTo`/`onAttacked` hooks were dead code and are
+gone — Dungeo's say/set-dial/push-dial-button/answer actions own those mechanics. One more
+platform correction surfaced by an unpinned Dungeo transcript: ADR-129 take-points are the
+protagonist's — `taking` awards them only when the actor holds the role, so the thief robbing
+a room scores nothing for the player.)*
 
 ### D7. The Chord acting surface is designed in this program (Q resolved 2026-08-25, David: option b)
 
