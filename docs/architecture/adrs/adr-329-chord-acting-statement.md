@@ -355,7 +355,8 @@ ADR-310 D8's stamp waits for D6's landing, above.
 
 ### D10. A goal step is an acting statement with the actor implied (GH #321)
 
-*(Amendment, 2026-08-29, session 9de27b — DRAFT until David accepts it. Raised during Phase
+*(Amendment, 2026-08-29, session 9de27b — **ACCEPTED** by David the same day ("flip"), after
+it landed in full on his three phase gos. Raised during Phase
 9c: the goal block's step vocabulary is closed — seek, acquire, wait for, move to, act, say,
 give, drop — so a story verb a character can perform from a reaction (D1/D2, in a `when` or
 `after` body) cannot be a step of its plan.)*
