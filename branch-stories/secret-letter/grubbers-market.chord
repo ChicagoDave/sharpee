@@ -175,7 +175,7 @@ create the Exotic Gems Stall
   affordable to anyone in Grubber's Market. Still, they're far, far out of your
   price range. Other stalls lie to the north, northeast, east, and southeast.
 
-  on every turn while hunted and the monkey is hidden
+  on every turn while hunted and the monkey is hidden and the player is in the Exotic Gems Stall
     change the monkey to loose
     move the monkey to the Top of the Post
     phrase monkey-commotion

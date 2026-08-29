@@ -16,8 +16,11 @@
 ## the back of the stall"). So: first time Jack stands in the Exotic Gems
 ## Stall while hunted, the commotion fires and the monkey takes the post.
 ## (The arming clause lives on the Exotic Gems Stall's own create block in
-## `grubbers-market.chord` — an offstage entity's every-turn clauses never
-## run, so the stage owns the trigger.)
+## `grubbers-market.chord`. Since ADR-328 D3 an every-turn clause fires
+## wherever the player is — there is no presence gate any more — so the
+## clause says the presence itself: `and the player is in the Exotic Gems
+## Stall`. Without that it fired at the bite, off-stage, and the monkey was
+## on the post before Jack ever saw the commotion — found 2026-08-29.)
 ## BOTH readings (hunted-not-chase; location kept as staging) CONFIRMED by
 ## David, 2026-08-24 (change document, "The monkey", dated confirmation).
 ##

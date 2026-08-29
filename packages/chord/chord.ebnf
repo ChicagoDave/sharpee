@@ -2,15 +2,23 @@
    Chord Grammar — EBNF
    ==========================================================================
    Machine-oriented extraction of the Chord grammar as the parser implements
-   it (packages/chord/src/parser.ts). The annotated version — layout rules,
-   ratchet history, analyzer gates, implementation readings — lives in
-   docs/reference/chord-grammar.md; keep the two in sync (grammar changes
-   require David's approval via docs/architecture/chord-grammar-changes.md).
+   it (packages/chord/src/parser.ts). This file is the language's surface of
+   record: tests/language-version.test.ts pins its hash to
+   CHORD_LANGUAGE_VERSION (ADR-257 D5), and the website's grammar reference
+   (website/src/app/chord/reference/grammar/content.mdx) serves it for
+   download. Grammar changes require David's approval and a row in
+   docs/architecture/chord-grammar-changes.md; the analyzer gates named in
+   the comments below are the diagnostic codes in src/analyzer.ts.
 
    Coverage: Phase A subset + Phase B declarations + Phase C ownership
    package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
    CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers) +
-   ADR-261 (`use scoring` with its rank ladder), as of 2026-07-24.
+   ADR-261 (`use scoring` with its rank ladder), as of 2026-07-24; brought
+   to parity with the parser's dispatch tables on 2026-08-29 (ADR-310 the
+   character model, ADR-318 the normative layer, ADR-325 timers/places/
+   landings, ADR-227 `kill`, ADR-230 `carries`). Removed forms the parser
+   still names with a fix-it (`define verb|flag|score|behavior`, `if`) are
+   not productions here.
 
    Notation:
      UPPER      = token class          "quoted" = literal word
@@ -18,9 +26,9 @@
      x | y      = alternatives         (* … *)  = comment
      NL         = end of source line (Chord is line-oriented)
      >>>        = an indented block follows (layout; EBNF cannot express
-                  indentation — see the Layout table in chord-grammar.md)
+                  indentation — the summary below is the rule)
 
-   Layout summary (normative in chord-grammar.md):
+   Layout summary:
      - Indentation is spaces only; a tab is a lex error.
      - Blocks open with their header line and close at dedent or their
        explicit "end <kw>" terminator per the Layout table.
@@ -37,6 +45,22 @@ NUMBER  = digit { digit } { "." digit { digit } } ;        (* 1, 20, 1.0.0 *)
 STRING  = '"' any-except-'"' '"' ;                         (* no escapes *)
 MARKER  = "{" content "}" ;                                (* inside prose text only *)
 LOCALE  = WORD ;                                           (* e.g. en-US *)
+
+rest-of-line    = any-except-NL ;                          (* trimmed at both ends *)
+prose-line      = rest-of-line NL ;                        (* MARKERs extracted inline *)
+prose-paragraph = prose-line { prose-line } ;              (* an indented run of text
+                                                              lines joined by single
+                                                              spaces; stops at dedent
+                                                              or an `end` line. Where
+                                                              the host allows several
+                                                              paragraphs (phrase and
+                                                              variant bodies, kill and
+                                                              timer bodies) a blank
+                                                              line starts a new one;
+                                                              elsewhere (a create
+                                                              description) it ends
+                                                              the block *)
+inline-prose    = >>> prose-paragraph ;                    (* a body under a statement *)
 
 
 (* ---- Comments (ADR-249) ------------------------------------------------ *)
@@ -82,6 +106,9 @@ story-header = "story" NL                         (* ADR-298: positional
                                                      (parse.removed-story-header) *)
                >>> { states-line | score-line | story-on-clause | use-line
                    | use-phrasebook-line
+                   | timer-clause                     (* ADR-325 D3e: a story-owned
+                                                         timer's expiry (a `define
+                                                         timer` with no `for`) *)
                    | meta-field } ;
 meta-field   = "title" ":" rest-of-line NL        (* required (parse.story-title) *)
              | "id" ":" rest-of-line NL
@@ -198,7 +225,12 @@ declaration  = create | start-block | define-condition | define-phrase | define-
              | define-trait | define-action | define-hatch
              | define-sequence
              | define-counter                              (* ADR-264 *)
+             | define-timer                                (* ADR-325 D3a *)
              | define-machine                              (* ADR-215, use-gated *)
+             | define-fact | define-profile                (* ADR-310 D14 / D4 *)
+             | define-mood | define-personality            (* ADR-310 D5 *)
+             | define-temperament | define-code            (* ADR-318 D3 / D4 *)
+             | define-honor | define-topic                 (* ADR-318 D7 / D12a *)
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
@@ -376,6 +408,11 @@ create-line  = "aka" alias { "," alias } NL
                                                               line *)
              | placement NL
              | "wears" name NL
+             | "carries" name NL                           (* ADR-230 Phase 6: start
+                                                              inventory, the missing
+                                                              half of `wears` *)
+             | landing-line                                (* ADR-325 D5: region
+                                                              blocks only *)
              | "containing" name { [ "," ] [ "and" ] name } NL
                                                            (* region membership (ADR-236
                                                               D2, ratchet R2): region
@@ -409,16 +446,250 @@ create-line  = "aka" alias { "," alias } NL
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
                                                               rooms only *)
              | on-clause
+             | timer-clause | move-clause                  (* ADR-325 D3e / D3h: event
+                                                              clause heads on the owner *)
+             | mood-line                                   (* ADR-310 character-model
+             | feels-line                                     lines: person blocks only
+             | knows-line                                     (analysis.character-line-
+             | thinks-line                                    person-only) *)
+             | spreads-line
+             | resists-line
+             | influence-block
              | goal-block                                  (* ADR-310 D8; person blocks
                                                               with a character model *)
+             | temperament-line                            (* ADR-318 normative lines:
+             | never-line                                     the same person-only
+             | protects-line                                  gate *)
+             | "answers" "honestly" NL
+             | honor-line
+             | "burdened" "by" name NL                     (* ADR-318 D8: pre-story
+                                                              guilt; the topic must be
+                                                              held by a `knows` line
+                                                              (analysis.burdened-
+                                                              unheld); one per topic *)
+             | "code" WORD NL                              (* ADR-318 D4: a `define
+                                                              code` bundle, unioned
+                                                              with the block's own
+                                                              never/obligation lines *)
              | prose-paragraph ;                           (* post-blank: description;
                                                               consecutive bare paragraphs
                                                               append *)
 
+(* ---- the character model (ADR-310) ------------------------------------- *)
+
+(* Words the author writes, numbers the runtime owns. Every closed word list
+   cited below lives in src/character-manifest.ts; the parser collects the
+   words raw and the analyzer resolves them, so a miss is a diagnostic naming
+   the vocabulary, never a silent drop.
+
+   Two D2–D5 constructs are NOT lines of their own — they ride the composition
+   list above:
+   - personality (D2): `a person, very honest, cowardly` — an adjective from
+     the manifest or a `define personality` name, optionally preceded by an
+     intensity word (slightly | somewhat | very | extremely). Personality
+     words never enter the parser's noun vocabulary (D12).
+   - cognitive-profile (D4): `cognitive-profile <name> [with <dimension>
+     <value> and …]` — the name is a preset (clear-headed | fixated |
+     elsewhere | loosened | fogged | braced | unmoored | unquiet) or a
+     `define profile` name; each `with` pair overrides one of the five
+     dimensions (perception, belief-formation, coherence, lucidity,
+     self-model); `while` is refused (analysis.profile-conditional).
+   Decay (D6) is never declared. *)
+
+mood-line    = "mood" WORD NL ;                            (* D3: a platform mood or a
+                                                              `define mood` name;
+                                                              `change mood to <word>`
+                                                              is the transition *)
+feels-line   = "feels" disposition [ "toward" ] name NL ;  (* D3: longest-matched
+                                                              against the manifest —
+                                                              `wary of` / `devoted to`
+                                                              are two words; a bare
+                                                              proper name after the
+                                                              disposition needs
+                                                              `toward` (parse.feels-
+                                                              target). Any entity may
+                                                              stand where the player
+                                                              does (D14) *)
+disposition  = WORD [ WORD ] ;                             (* despises | hates |
+                                                              dislikes | wary of |
+                                                              neutral | likes | trusts
+                                                              | devoted to *)
+knows-line   = "knows" name { "," WORD } NL ;              (* D3: a valueless topic,
+                                                              then order-free one-word
+                                                              slots — at most one
+                                                              source (witnessed | told
+                                                              | inferred | assumed |
+                                                              hallucinated), one
+                                                              confidence (uncertain |
+                                                              suspects | believes |
+                                                              certain), and `confided`
+                                                              (ADR-318 D4). A source
+                                                              is required (analysis.
+                                                              knows-missing-source) *)
+thinks-line  = "thinks" name "is" name { "," WORD } NL ;   (* D14: a valued belief —
+                                                              the fact is a `define
+                                                              fact` name, the value one
+                                                              of its declared values;
+                                                              slots as `knows`, minus
+                                                              `confided`. One level of
+                                                              belief: no `thinks X
+                                                              thinks …` *)
+spreads-line = "spreads" "nothing" NL                      (* D10: `mute` said in
+                                                              English — `mute` itself
+                                                              is parse.spreads-
+                                                              tendency *)
+             | "spreads" [ topic-list ] [ "chatty" ] "to" WORD
+               [ "," "except" name-ref-list ] NL ;         (* audience: trusted |
+                                                              anyone | allied. No topic
+                                                              list = no topic filter
+                                                              on the character's
+                                                              chatty profile;
+                                                              `chatty` is optional
+                                                              flavor (the form implies
+                                                              it — `selective` is not
+                                                              a word) *)
+topic-list   = name { ( "," | "and" ) name } ;
+name-ref-list = name { "," [ "and" ] name | "and" name } ; (* Oxford `and` welcome *)
+resists-line = "resists" WORD [ "," "except" "from" name ] NL ;
+                                                           (* D9: the influence name an
+                                                              exerter invented; one
+                                                              line, binary — the
+                                                              target resists or does
+                                                              not. `except from` takes
+                                                              a name or a kind
+                                                              (`a woman`) *)
+influence-block = "influence" WORD { "," WORD } NL         (* D9: author-invented name,
+                                                              then mode (passive |
+                                                              active) and range
+                                                              (proximity | targeted |
+                                                              room), order-free *)
+               >>> { influence-line }
+               "end" "influence" NL ;
+influence-line = "clouds" "focus" NL
+             | "makes" WORD WORD NL                        (* <axis> <word>: axis is
+                                                              mood or threat, the word
+                                                              from that axis's
+                                                              vocabulary (analysis.
+                                                              unknown-influence-axis /
+                                                              -effect-word) *)
+             | "phrase" phrase-key "on"
+               ( "witnessed" | "resisted" | "expired" ) NL ;
+                                                           (* message hooks reuse
+                                                              `phrase`; one per
+                                                              outcome *)
+
+(* The character model's top-level definitions (ADR-310 D4/D5/D14). *)
+define-fact  = "define" "fact" name NL                     (* D14: the closed value set
+                                                              a `thinks` line draws
+                                                              from; at least one value
+                                                              (analysis.fact-empty), no
+                                                              repeats *)
+               >>> { name-ref-list NL }
+               "end" "fact" NL ;
+define-profile = "define" "profile" WORD NL                (* D4: a named cognitive
+                                                              profile — one row per
+                                                              dimension, each at most
+                                                              once (analysis.profile-
+                                                              row-duplicate); unstated
+                                                              dimensions inherit from
+                                                              `clear-headed` *)
+               >>> { WORD WORD NL }                        (* <dimension> <value> *)
+               "end" "profile" NL ;
+define-mood  = "define" "mood" WORD "like" WORD
+               [ "," "but" WORD ] NL ;                     (* D5: a custom mood anchored
+                                                              at a platform mood, nudged
+                                                              by restless | stiller |
+                                                              darker | brighter *)
+define-personality = "define" "personality" WORD NL ;      (* D5: a new adjective; a
+                                                              platform word, an
+                                                              intensity, or a trait
+                                                              name is analysis.
+                                                              personality-shadows-* *)
+
+(* ---- the normative layer (ADR-318) ------------------------------------- *)
+
+(* Forces, act categories, obligation words, and face-acts are closed
+   vocabularies in src/character-manifest.ts; each line's words are collected
+   raw and resolved by the analyzer (analysis.unknown-force / -act-category /
+   -face-act). Person blocks only. *)
+
+temperament-line = "temperament" WORD [ "with" force-pair { "and" force-pair } ]
+                   [ "while" WORD ] NL                     (* D3: a `define
+                                                              temperament` name with
+                                                              optional overrides *)
+             | "temperament" force-pair { "and" force-pair }
+               [ "while" WORD ] NL ;                       (* D7: an inline anonymous
+                                                              ordering. One-token
+                                                              lookahead on `over`
+                                                              tells the forms apart.
+                                                              `while <state>` binds
+                                                              the ordering to one of
+                                                              the block's `states:`
+                                                              (analysis.temperament-
+                                                              unknown-state); two
+                                                              bound to the same state
+                                                              is analysis.temperament-
+                                                              tie. Never mutated —
+                                                              the state ratchet is the
+                                                              only lever *)
+force-pair   = WORD "over" WORD ;                          (* fear | desire | duty |
+                                                              honor | love; a force
+                                                              over itself is analysis.
+                                                              temperament-self-pair *)
+never-line   = "never" WORD { WORD }
+               [ "," "except" [ "to" "protect" ] scope-ref ] NL ;
+                                                           (* D4: the words before the
+                                                              comma longest-match an
+                                                              act category (betray a
+                                                              confidence | lie | harm
+                                                              | steal | break a promise
+                                                              | abandon | trespass),
+                                                              with a trailing scope for
+                                                              harm/abandon *)
+protects-line = "protects" scope-ref NL ;                  (* D4/D5: an obligation —
+                                                              compiles to a standing
+                                                              goal *)
+honor-line   = "honor" [ WORD ] "before" scope-ref
+               [ "," "except" name-ref-list ] NL ;         (* D7: bare = the full
+                                                              face-act bundle; a WORD
+                                                              names a `define honor`
+                                                              selection. Scope is the
+                                                              audience whose presence
+                                                              engages it *)
+scope-ref    = "anyone" | name ;                           (* D4/D9-D10 grammar: anyone,
+                                                              a kind (`a servant`), or
+                                                              an entity (`the
+                                                              children`) *)
+define-temperament = "define" "temperament" WORD NL        (* D3: at least one pair
+                                                              (parse.temperament-
+                                                              empty); no repeats *)
+               >>> { force-pair NL }
+               "end" "temperament" NL ;
+define-code  = "define" "code" WORD NL                     (* D4: a named principle
+                                                              bundle; at least one
+                                                              line (parse.code-empty) *)
+               >>> { never-line | protects-line | "answers" "honestly" NL }
+               "end" "code" NL ;
+define-honor = "define" "honor" WORD NL                    (* D7: a selective face-act
+                                                              bundle — one face-act per
+                                                              line (backs down | shows
+                                                              fear | admits fault |
+                                                              pleads | accepts insult |
+                                                              caught lying); at least
+                                                              one (parse.honor-empty) *)
+               >>> { WORD { WORD } NL }
+               "end" "honor" NL ;
+define-topic = "define" "topic" WORD WORD { WORD } "as" WORD NL ;
+                                                           (* D12a: alias a witnessed-
+                                                              act topic — `<actor>
+                                                              <act> as <alias>`, at
+                                                              least two words before
+                                                              `as`; one alias per act
+                                                              (analysis.witnessed-
+                                                              duplicate) *)
+
 (* A goal (ADR-310 D8): a named, prioritized plan a character pursues on its
-   own turns, one step per turn. The other ADR-310 character-block lines
-   (mood, personality, knows/thinks, influence, resists, spreads) are not yet
-   in this file — a paper-trail gap recorded 2026-08-29, not a language fact. *)
+   own turns, one step per turn. *)
 goal-block   = "goal" WORD "," WORD NL                     (* name, priority: critical |
                                                               high | medium | low
                                                               (analysis.unknown-priority) *)
@@ -457,6 +728,64 @@ goal-line    = "active" "when" condition NL                (* at most one; absen
                                                               `when` suffix on a step —
                                                               `wait for` is the guard
                                                               (parse.goal-step) *)
+
+(* ---- timers, places, landings (ADR-325) -------------------------------- *)
+
+(* A timer counts turns by name and never sees a number (D3): the author
+   names the turns, the timer steps through them once started, and ends in
+   the one state every timer shares, `expired` — never written (parse.timer-
+   expired). ADR-264's counters are TALLIES and take raise/lower/set; a
+   timer takes only the timer verbs (analysis.timer-verb-on-tally). *)
+
+define-timer = "define" "timer" WORD [ "for" name ] NL     (* D3a: owned by an entity
+                                                              or the player (`for`),
+                                                              else by the story *)
+               >>> { timer-line }
+               "end" "timer" NL ;
+timer-line   = WORD NL [ >>> prose-paragraph ]             (* one named turn; the body
+                                                              is spoken the turn it is
+                                                              reached, as a `phrase`
+                                                              body is *)
+             | "meanwhile" [ "," "one" "chance" "in" NUMBER ] NL
+               >>> { statement }                           (* every running turn,
+                                                              occasionally with the
+                                                              chance; at most one *)
+             | "interrupted" "one" "chance" "in" NUMBER NL ;
+                                                           (* per running turn, the
+                                                              chance it expires now
+                                                              instead of stepping; at
+                                                              most one *)
+timer-clause = "when" value-expr "expires"
+               [ [ "," ] "while" condition ] NL            (* D3e: expiry is an event.
+                                                              Bare name inside the
+                                                              owner's block, possessive
+                                                              from outside (`the
+                                                              player's waiting`) *)
+               >>> { statement } "end" "when" NL ;
+move-clause  = "when" value-expr "moves"
+               [ [ "," ] "while" condition ] NL            (* D3h: the completed move
+                                                              of the named entity —
+                                                              a reaction, never a
+                                                              refusal (that is the
+                                                              mover's own `on going`);
+                                                              create blocks only *)
+               >>> { statement } "end" "when" NL ;
+landing-line = "landing" name NL                           (* D5: where a thing put in
+                                                              the region lands; the
+                                                              region becomes a place *)
+             | "landing" "," LANDING-STRATEGY ":" name-ref-list NL ;
+                                                           (* a list must say how to
+                                                              choose, a single room
+                                                              takes no strategy
+                                                              (parse.landing-strategy);
+                                                              one line per region;
+                                                              every room contained
+                                                              (analysis.landing-not-
+                                                              contained); mutable with
+                                                              `set <region>'s landing
+                                                              to <room>` *)
+LANDING-STRATEGY = "randomly" | "cycling" | "stopping" ;   (* drawn on a per-region
+                                                              seeded stream *)
 
 phrase-override = "phrase" phrase-key
                   [ "," STRATEGY ] [ "while" condition ] ":" NL
@@ -956,7 +1285,18 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               keys pass verbatim into
                                                               event.data *)
              | media-statement                             (* ADR-216 sugar, below *)
-             | "set" value-expr "to" value-expr NL
+             | "set" value-expr "to" value-expr [ stmt-when ] NL
+                                                           (* a trait field, a region's
+                                                              landing (ADR-325 D5), or
+                                                              a tally's absolute value
+                                                              (ADR-325 D4, clamped) *)
+             | "change" "mood" "to" WORD [ stmt-when ] NL  (* ADR-310 D3: the clause
+                                                              owner's mood; the word
+                                                              is analyzer-resolved *)
+             | "change" "feeling" "toward" name "to" disposition
+               [ stmt-when ] NL                            (* ADR-310 D3: the owner's
+                                                              disposition toward one
+                                                              entity *)
              | "change" "the" "player" "to" name [ stmt-when ] NL
                                                            (* ADR-327 D9/D10: the role moves
                                                               to a named `playable` person
@@ -968,13 +1308,28 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               turn after that *)
              | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
                                                               or any entity *)
-             | "move" name "to" name [ stmt-when ] NL
-             | "move" name "to" "a" "random" "adjacent" "room"
-               [ stmt-when ] NL                            (* ADR-326 D1: the computed
-                                                              place — one traversable
-                                                              exit from the mover's
-                                                              room, drawn at effect
-                                                              time; no strategy word *)
+             | "move" name ( "to" place | "here" | "offstage" )
+               [ stmt-when ] NL                            (* ADR-325 D1/D2: `here` is
+                                                              the player's location;
+                                                              `offstage` is no location
+                                                              — the entity keeps its
+                                                              states and timers and is
+                                                              reattached by a later
+                                                              `move` (`remove` stays
+                                                              terminal). A trailing
+                                                              here/offstage ends the
+                                                              name; elsewhere it is
+                                                              part of it *)
+             | timer-verb value-expr [ stmt-when ] NL      (* ADR-325 D3c: bare name in
+                                                              the owner's block,
+                                                              possessive elsewhere;
+                                                              `stop music|ambient` is
+                                                              the media statement *)
+             | "kill" "the" "player" [ phrase-key ] [ stmt-when ] NL
+               [ >>> prose-paragraph ]                     (* ADR-227; ADR-325 D3i: an
+                                                              indented body in place of
+                                                              the key, never both
+                                                              (parse.kill-body) *)
              | name verb-words [ stmt-when ] NL            (* ADR-329 D1/D2: the acting
                                                               statement — a character
                                                               performs one action NOW
@@ -1030,8 +1385,30 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
 stmt-when    = "when" condition ;                          (* statement-final suffix, D7:
                                                               legal on phrase, emit, change,
                                                               move, remove, award, win, lose,
+                                                              set, kill, the timer verbs,
                                                               and the acting statement —
-                                                              not on set or bare refuse *)
+                                                              not on bare refuse *)
+timer-verb   = "start" | "stop" | "restart" | "reset" | "interrupt" ;
+                                                           (* ADR-325 D3c: start is a
+                                                              no-op when running; stop
+                                                              holds; restart = first
+                                                              state and running; reset
+                                                              = not started; interrupt
+                                                              expires now and fires the
+                                                              `when … expires` clause *)
+place        = name                                        (* a room, an enterable, a
+                                                              region with a landing *)
+             | name "'s" "location" | "its" "location"    (* ADR-325 D1: the containing
+                                                              room, always; a room's is
+                                                              itself, a region's is its
+                                                              landing; an offstage
+                                                              owner refuses at run time *)
+             | "a" "random" "adjacent" "room" ;            (* ADR-326 D1: one traversable
+                                                              exit from the mover's
+                                                              room, drawn at effect
+                                                              time; a `move` destination
+                                                              only (parse.adjacent-room-
+                                                              placement) *)
 verb-words   = WORD { WORD | name } ;                      (* ADR-329 D2: `takes the sword`,
                                                               `gives the sword to Alex`,
                                                               `goes east` — the verb in
@@ -1137,7 +1514,21 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   recency words *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
+             | "has" [ "not" ] ( "started" | "expired" )      (* ADR-325 D3d: a TIMER's
+                                                                  lifecycle, only when the
+                                                                  word stands alone; `is`
+                                                                  reads its named turn;
+                                                                  `is expired` is analysis.
+                                                                  timer-is-expired *)
              | ( "has" | "holds" | "wears" ) name
+             | "feels" disposition [ "toward" ] name           (* ADR-310 D13: the subject's
+                                                                  disposition toward an
+                                                                  entity *)
+             | "knows" name                                   (* ADR-310 D13: the subject
+                                                                  holds the topic — a
+                                                                  `knows` line, propagation,
+                                                                  or a witnessed act
+                                                                  (ADR-318 D12a) *)
              | "was" "discussed"                              (* ADR-320 D9: the subject
                                                                   is a TOPIC; per-pair
                                                                   discussed-ness *)

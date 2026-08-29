@@ -74,8 +74,15 @@ const PINNED = {
   // D10 (GH #321, same session) then added the `goal-block` production —
   // the goal block had never been in the grammar file — with its
   // `verb-words` step row, and re-pinned the hash under this same version.
+  // Re-pinned again 2026-08-29 (session eec23b): the grammar file brought to
+  // parity with the parser's dispatch tables — ADR-310 (the character model
+  // lines and its define forms), ADR-318 (the normative layer), ADR-325
+  // (timers, places, landings, the two `when` clauses), ADR-227 `kill`,
+  // ADR-230 `carries`, the D13 feels/knows predicates, `set … when`, and
+  // the prose productions the file had always referenced without defining.
+  // Paper trail for grammar shipped since 3.x, no language change.
   languageVersion: '3.5.0',
-  ebnfSha256: 'f8d5cbaf3ec16261bfe6f55ceac3a293e8334abb731517a07dc3f9f30212b148',
+  ebnfSha256: '60f9abd70b17db967d6a1e1659307cef3817eb20533a628a414186648c3ef8a4',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

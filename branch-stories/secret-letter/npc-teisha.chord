@@ -41,7 +41,7 @@ create Teisha
   flap), which is a little bit scary and a little bit of a relief — it's nice to
   be able to let your guard down and talk to someone outside Maiden House.
 
-  on every turn while one chance in 5
+  on every turn while Teisha is here and one chance in 5
     phrase teisha-atmosphere
   end on
 
