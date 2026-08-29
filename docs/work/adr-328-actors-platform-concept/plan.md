@@ -1039,7 +1039,31 @@ authorizes design, not implementation by itself (ADR-329, opening line).
 - **Exit state**: `pnpm --filter '@sharpee/character' test` green; `applyStepMutation` deleted
   or reduced to nothing but the door-call; no caller still reaches `world.moveEntity` directly
   for a goal step.
-- **Status**: CURRENT (since 2026-08-29; 9b DONE)
+- **Status**: DONE (2026-08-29, session d04ae1) — landed as the child artifact described, with
+  David's two rulings: **refusal** = a failed mutation's existing posture (no advance, no
+  announcement, retry next tick; each witnessed attempt narrates its refusal — loud every turn
+  by design); **the generalized goal step** (any acting-statement shape as a step, so a story
+  verb such as a magical `conjure the key into the Vault` can be a step — David's prompt) is a
+  follow-on under ADR-329, GH #321, not folded in. As built: the character phase's
+  `TickContext` gains the required `act: ExecutionEntry` stdlib's `NpcTickContext` already
+  carried and the engine already supplied; `performStep`/`stepAction`/`exitDirectionTo`
+  replace `applyStepMutation` (deleted — `grep moveEntity tick-phases.ts` is empty);
+  `move` → `going` by the current room's exit whose destination is the next room (a one-way
+  passage walked backwards resolves to no exit and the NPC does not act), `take` → `taking`,
+  `give` → `giving`, `drop` → `dropping`; the act's events join the tick's stream. Evidence
+  (2026-08-29 02:59–03:04 CDT): REAL PATH `packages/story-loader/tests/adr-329-goal-steps.test.ts`
+  5 passing on `GameEngine.executeTurn` (recipient-intercept refusal keeps the letter and
+  narrates `present` on each retried turn; drop `present`/`absent`; acquire takes a coin and
+  is refused on scenery with the goal stuck; move to performs `going` one hop per turn);
+  scaffolding `packages/character/tests/tick-phases/goal-world-mutations.test.ts` 11 (new
+  `scaffold-entry.ts`, declared scaffolding, backed by the real path); character 574 passing
+  (49 files); story-loader 986 passing (93 files); root `tsc` clean; `./repokit build dungeo
+  --skip character` rebuilt dist-esm + bundle; corpus identical to baseline — ides 39 cards
+  (carries `move to the Stage`), fernhill 36, secret-letter 131 passing / 29 failing
+  (pre-existing), Dungeo chain 952 passing / 17 transcripts. mutation-verification: clean.
+  ADR-310 D8 stamped; ADR-329 D6 landing note written. Observed, unchanged: a `refuse
+  <phrase>` fixture phrase renders blank in both the 9b and 9c suites (stderr only);
+  `drop <item> in <place>` compiles to `DropStep.location`, which the evaluator ignores.
 
 #### Phase 9d: Acceptance items 4–5 — corpus green, paper trail closes
 - **Tier**: Small
@@ -1066,7 +1090,7 @@ authorizes design, not implementation by itself (ADR-329, opening line).
 - **Exit state**: ADR-329 Acceptance items 1–5 all satisfied; ADR-328 D7 stamp (already applied
   at Phase 8) is now backed by a landed implementation, not just an accepted child ADR; this
   plan's Phase 9 — and with it the whole ADR-328 program — is DONE.
-- **Status**: PENDING (blocked on 9c)
+- **Status**: CURRENT (since 2026-08-29; 9c DONE)
 
 ## Note on session-state tracking
 

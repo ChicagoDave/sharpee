@@ -7,6 +7,7 @@
  * observe nothing.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -77,6 +78,7 @@ describe('Phase 5 — observe sub-step over ctx.actionEvents', () => {
       random: {} as unknown as RandomService,
       playerLocation: kitchen.id,
       playerId: player.id,
+      act: unexpectedAct,
       ...(actionEvents ? { actionEvents } : {}),
     });
   }

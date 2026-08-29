@@ -7,6 +7,7 @@
  * the counterpart of the story-loader's off-stage daemon tests.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -67,6 +68,7 @@ describe('character narration fires off-stage, located (ADR-328 D3)', () => {
       random: {} as unknown as RandomService,
       playerLocation: garden.id,
       playerId: player.id,
+      act: unexpectedAct,
     });
 
   const only = (events: ISemanticEvent[], type: string): ISemanticEvent[] => events.filter((e) => e.type === type);

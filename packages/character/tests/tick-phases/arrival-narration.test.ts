@@ -20,6 +20,7 @@
  * during the single blow-up scene.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IdentityTrait,
@@ -80,6 +81,7 @@ describe('propagation — the platform does not narrate an arrival the story nar
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: unexpectedAct,
     });
   }
 

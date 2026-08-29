@@ -18,6 +18,8 @@ import {
 } from '@sharpee/world-model';
 import type { RandomService } from '@sharpee/core';
 import { CharacterPhaseRegistry, createCharacterModelPhase } from '../../src/tick-phases';
+import { IFActions } from '@sharpee/stdlib';
+import { scaffoldEntry } from './scaffold-entry';
 import type { GoalStep } from '../../src/goals';
 
 function room(world: WorldModel, name: string): IFEntity {
@@ -52,6 +54,7 @@ describe('D6 — goal steps mutate the world', () => {
   let player: IFEntity;
   let npc: IFEntity;
   let registry: CharacterPhaseRegistry;
+  let entry: ReturnType<typeof scaffoldEntry>;
 
   beforeEach(() => {
     world = new WorldModel();
@@ -64,7 +67,12 @@ describe('D6 — goal steps mutate the world', () => {
     world.setPlayer(player.id);
     npc = actorIn(world, 'Butler', parlor, { model: true });
     registry = new CharacterPhaseRegistry();
+    entry = scaffoldEntry(world, (actorId, actionId) => refused.has(actionId));
+    refused.clear();
   });
+
+  // Action ids the scaffolding entry refuses this test (a trait refusal stand-in).
+  const refused = new Set<string>();
 
   function registerGoal(steps: GoalStep[]): void {
     registry.register(npc.id, {
@@ -85,6 +93,7 @@ describe('D6 — goal steps mutate the world', () => {
       random: {} as unknown as RandomService,
       playerLocation: world.getLocation(player.id)!,
       playerId: player.id,
+      act: entry.act,
     });
   }
 
@@ -173,5 +182,70 @@ describe('D6 — goal steps mutate the world', () => {
     tick(2);
 
     expect(world.getLocation(npc.id)).toBe(parlor.id);
+  });
+  it('moveTo performs `going` as the NPC with the exit direction toward the next room', () => {
+    registerGoal([{ type: 'moveTo', target: study.id }]);
+
+    tick(1);
+
+    expect(entry.calls).toEqual([{ actorId: npc.id, actionId: IFActions.GOING, direction: 'north' }]);
+    expect(world.getLocation(npc.id)).toBe(hall.id);
+  });
+
+  it('acquire performs `taking`, give performs `giving`, drop performs `dropping` — each as the NPC', () => {
+    const knife = world.createEntity('knife', 'object');
+    knife.add(new IdentityTrait({ name: 'knife' }));
+    world.moveEntity(knife.id, parlor.id);
+    registerGoal([
+      { type: 'acquire', target: knife.id },
+      { type: 'give', item: knife.id, target: player.id },
+    ]);
+    tick(1);
+    tick(2);
+    expect(entry.calls).toEqual([
+      { actorId: npc.id, actionId: IFActions.TAKING, directObject: knife.id },
+      { actorId: npc.id, actionId: IFActions.GIVING, directObject: knife.id, indirectObject: player.id },
+    ]);
+    expect(world.getLocation(knife.id)).toBe(player.id);
+
+    const tray = world.createEntity('tray', 'object');
+    tray.add(new IdentityTrait({ name: 'tray' }));
+    world.moveEntity(tray.id, npc.id);
+    registry.register(npc.id, { goalDefs: [{ id: 'tidy', activatesWhen: [], priority: 'high', mode: 'sequential', steps: [{ type: 'drop', item: tray.id }] }] });
+    tick(3);
+    expect(entry.calls.at(-1)).toEqual({ actorId: npc.id, actionId: IFActions.DROPPING, directObject: tray.id });
+    expect(world.getLocation(tray.id)).toBe(parlor.id);
+  });
+
+  it('a refused act neither moves the item nor advances the step, and is retried next tick', () => {
+    const letter = world.createEntity('letter', 'object');
+    letter.add(new IdentityTrait({ name: 'letter' }));
+    world.moveEntity(letter.id, npc.id);
+    registerGoal([{ type: 'give', item: letter.id, target: player.id }]);
+    refused.add(IFActions.GIVING);
+
+    tick(1);
+    expect(world.getLocation(letter.id)).toBe(npc.id);
+    const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+    expect(trait.goalState['errand']).toMatchObject({ currentStep: 0 });
+
+    tick(2);
+    expect(entry.calls.filter(c => c.actionId === IFActions.GIVING)).toHaveLength(2);
+
+    refused.delete(IFActions.GIVING);
+    tick(3);
+    expect(world.getLocation(letter.id)).toBe(player.id);
+  });
+
+  it('a one-way passage walked backwards is no exit: the NPC does not act and stays put', () => {
+    // Hall -> Study only; the planner's graph is bidirectional, the room is not.
+    delete (study.get(TraitType.ROOM) as RoomTrait).exits['west'];
+    world.moveEntity(npc.id, study.id);
+    registerGoal([{ type: 'moveTo', target: parlor.id }]);
+
+    tick(1);
+
+    expect(entry.calls).toEqual([]);
+    expect(world.getLocation(npc.id)).toBe(study.id);
   });
 });

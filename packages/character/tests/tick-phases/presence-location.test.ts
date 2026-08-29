@@ -7,6 +7,7 @@
  * unchanged here (Phase 2b retires it).
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IdentityTrait,
@@ -69,6 +70,7 @@ describe('propagation witnessed event is located (ADR-328 D3)', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: unexpectedAct,
     });
     const witnessed = events.filter((e) => e.type === 'character.propagation.witnessed');
     expect(witnessed.length).toBeGreaterThan(0);

@@ -292,6 +292,26 @@ acts, statement-form and plan-form alike, so there is never a second truth. The
 plan may sequence it as its own phase with its own real-path gate (Acceptance item 3), but
 this ADR is not complete until it lands.
 
+*(Landed — 2026-08-29, session d04ae1, Phase 9c. `applyStepMutation` is gone;
+`performStep` resolves the evaluator's intent to one action and its slots — `move` →
+`going` by the direction of the current room's exit whose destination is the next room
+(the planner's graph is bidirectional, the room is not: a one-way passage walked backwards
+resolves to no exit and the NPC does not act); `take` → `taking`; `give` → `giving`;
+`drop` → `dropping` — and runs it through the tick's `act`, the same `ExecutionEntry` the
+engine already handed every tick phase (`NpcTickContext.act`), which the character phase's
+own context had simply not carried. The act's events join the tick's stream, already
+applied. Refusal ruling, David 2026-08-29: a refused step is exactly a failed mutation was —
+no advance, no announcement, retried next tick — and each witnessed attempt narrates its
+refusal; a step that keeps being refused is loud every turn, by design. Real path:
+`packages/story-loader/tests/adr-329-goal-steps.test.ts`, 5, on `GameEngine.executeTurn` —
+a recipient's `on the Maid giving … refuse` blocks the `give` and the letter stays, the
+refusal narrating `present` on each retried turn; a `drop` narrates `present` in the room
+and `absent` from another; `acquire` takes a coin and is refused on scenery, the goal stuck
+at that step; `move to` performs `going` through the room's real exit, one hop per turn.
+Corpus identical to baseline (ides 39 — it carries a `move to the Stage` step — fernhill 36,
+secret-letter 131/29; Dungeo chain 952). Follow-on, not folded in: a goal step as any
+acting-statement shape, so a story verb can be a step — GH #321.)*
+
 ### D7. `move` is unchanged: *move puts; acting does*
 
 ADR-325's `move` and ADR-326's adjacent-room place are authorial teleportation and stay

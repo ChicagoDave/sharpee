@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { unexpectedAct } from "../tick-phases/scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -157,6 +158,7 @@ describe('the observe sub-step statement site (if.event.told)', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: unexpectedAct,
       actionEvents: [told],
     });
 

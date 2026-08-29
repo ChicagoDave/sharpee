@@ -4299,6 +4299,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
+import { type ExecutionEntry } from '@sharpee/stdlib';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import { PropagationProfile } from './propagation/index.js';
 import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
@@ -4311,6 +4312,13 @@ interface TickContext {
     random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
+    /**
+     * The execution entry (ADR-328 D2; ADR-329 D6): how a goal step's chosen
+     * act — `taking`, `giving`, `dropping`, `going` — becomes a real action
+     * run as the NPC through the engine's four phases. The engine supplies
+     * it every tick; the goal sub-step is its only consumer here.
+     */
+    act: ExecutionEntry;
     /**
      * The player action's events this turn (ADR-310 Phase 5) — the observe
      * sub-step's input. Absent (older callers, unit harnesses) = nothing

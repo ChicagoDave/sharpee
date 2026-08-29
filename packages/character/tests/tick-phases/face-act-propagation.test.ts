@@ -11,6 +11,7 @@
  * (the received fact's source) and on the selection result.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -106,6 +107,7 @@ describe('318-AC4 — witnessed face-act reaches a third NPC via propagation', (
       random: {} as unknown as RandomService,
       playerLocation: kitchen.id,
       playerId: player.id,
+      act: unexpectedAct,
       ...(actionEvents ? { actionEvents } : {}),
     });
   }

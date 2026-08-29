@@ -30,6 +30,7 @@ import {
   CharacterModelTrait,
   RoomTrait,
   type IExitInfo,
+  type DirectionType,
   type TemperamentDef,
   type SceneWireEvent,
   type ConversationSceneState,
@@ -37,7 +38,15 @@ import {
   type InitiativeSeizure,
 } from '@sharpee/world-model';
 import type { IRCondition } from '@sharpee/chord';
-import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
+import {
+  nounPhraseFor,
+  processLucidityDecay,
+  observeEvent,
+  CharacterMessages,
+  IFActions,
+  type ActSlots,
+  type ExecutionEntry,
+} from '@sharpee/stdlib';
 import { detectActs, witnessActs, witnessStatement } from './act-detection/index.js';
 import { normalizeTopic } from '@sharpee/chord';
 import { CHARACTER_TURN_KEY, dialogueTurn } from './character-clock.js';
@@ -69,6 +78,7 @@ import {
   GoalManager,
   GoalStepContext,
   StepResult,
+  StepMutation,
   evaluateGoalStep,
   SimpleRoomGraph,
 } from './goals/index.js';
@@ -96,6 +106,13 @@ interface TickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The execution entry (ADR-328 D2; ADR-329 D6): how a goal step's chosen
+   * act — `taking`, `giving`, `dropping`, `going` — becomes a real action
+   * run as the NPC through the engine's four phases. The engine supplies
+   * it every tick; the goal sub-step is its only consumer here.
+   */
+  act: ExecutionEntry;
   /**
    * The player action's events this turn (ADR-310 Phase 5) — the observe
    * sub-step's input. Absent (older callers, unit harnesses) = nothing
@@ -701,7 +718,7 @@ function runGoalSubStep(
   const { world } = ctx;
 
   for (const npc of npcs) {
-    executeNpcGoals(npc, registry, world, ctx.turn, events, surface);
+    executeNpcGoals(npc, registry, world, ctx.turn, ctx.act, events, surface);
   }
 
   return events;
@@ -730,6 +747,7 @@ function boundCompiledEval(
  * @param registry - Character phase registry for configs and goal managers
  * @param world - World model for location lookups and room graph
  * @param currentTurn - The turn being evaluated (D16 suppression window)
+ * @param act - The execution entry the step's action runs through, as this NPC
  * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function executeNpcGoals(
@@ -737,6 +755,7 @@ function executeNpcGoals(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   currentTurn: number,
+  act: ExecutionEntry,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -782,10 +801,11 @@ function executeNpcGoals(
 
   const stepResult = evaluateGoalStep(activeGoal, stepContext);
 
-  // D6: the evaluator computes intent; the phase applies it to the world.
-  // A step whose mutation failed neither advances nor announces itself —
-  // it retries next tick.
-  const applied = applyStepMutation(stepResult, npc.id, npcLocation, world);
+  // ADR-310 D6 / ADR-329 D6: the evaluator computes intent; the phase
+  // performs it as the NPC through the execution entry. A step whose
+  // action was refused neither advances nor announces itself — it retries
+  // next tick, and each witnessed refusal narrates (ADR-329 D5).
+  const applied = performStep(stepResult, npc.id, npcLocation, world, act, events);
 
   // Phase 8 surfacing: applied moves feed exit-close detection; a
   // completed `say` at a co-located wrappable partner becomes a scene
@@ -850,29 +870,81 @@ function executeNpcGoals(
 }
 
 /**
- * Apply a goal step's world mutation (NPC movement, item transfer).
+ * Perform a goal step's act as the NPC (ADR-329 D6): the step's intent
+ * becomes one standard action — `going` one exit, `taking`, `giving`,
+ * `dropping` — run through the execution entry, so it is validated,
+ * interceptable, and witnessed exactly as a typed command would be.
+ * The action's events join the tick's stream (already applied by the
+ * executor; the plugin path only enriches and tags them).
  *
  * @param result - The step evaluation result carrying the intent
  * @param npcId - The acting NPC
- * @param npcLocation - The NPC's current room (drop destination)
- * @param world - The world to mutate
- * @returns True when there was nothing to apply or the mutation succeeded
+ * @param npcLocation - The NPC's current room (where a `move` departs from)
+ * @param world - The world, read for the exit that leads to the step's room
+ * @param act - The execution entry
+ * @param events - The tick's event accumulator the act's events join
+ * @returns True when there was nothing to perform or the action ran; false when refused
  */
-function applyStepMutation(
+function performStep(
   result: StepResult,
   npcId: EntityId,
   npcLocation: EntityId,
   world: WorldModel,
+  act: ExecutionEntry,
+  events: ISemanticEvent[],
 ): boolean {
   if (result.status !== 'completed' && result.status !== 'in-progress') return true;
   if (!result.mutation) return true;
-  const m = result.mutation;
+  const resolved = stepAction(result.mutation, npcLocation, world);
+  if (!resolved) return false;
+  const outcome = act(npcId, resolved.actionId, resolved.slots);
+  events.push(...outcome.events);
+  return outcome.success;
+}
+
+/**
+ * The action and slots one step mutation lowers onto. A `move` whose room
+ * the NPC's current room has no exit toward resolves to nothing — the
+ * planner's graph is built from exits, so this only arises for a one-way
+ * passage walked backwards, and an NPC cannot go where no exit leads.
+ */
+function stepAction(
+  m: StepMutation,
+  npcLocation: EntityId,
+  world: WorldModel,
+): { actionId: string; slots: ActSlots } | undefined {
+  const entity = (id: EntityId) => world.getEntity(id);
   switch (m.kind) {
-    case 'move': return world.moveEntity(npcId, m.toRoom);
-    case 'take': return world.moveEntity(m.itemId, npcId);
-    case 'give': return world.moveEntity(m.itemId, m.toId);
-    case 'drop': return world.moveEntity(m.itemId, npcLocation);
+    case 'move': {
+      const direction = exitDirectionTo(world, npcLocation, m.toRoom);
+      return direction ? { actionId: IFActions.GOING, slots: { direction } } : undefined;
+    }
+    case 'take': {
+      const item = entity(m.itemId);
+      return item ? { actionId: IFActions.TAKING, slots: { directObject: item } } : undefined;
+    }
+    case 'give': {
+      const item = entity(m.itemId);
+      const recipient = entity(m.toId);
+      return item && recipient
+        ? { actionId: IFActions.GIVING, slots: { directObject: item, indirectObject: recipient } }
+        : undefined;
+    }
+    case 'drop': {
+      const item = entity(m.itemId);
+      return item ? { actionId: IFActions.DROPPING, slots: { directObject: item } } : undefined;
+    }
   }
+}
+
+/** The direction of the exit from `roomId` whose destination is `toRoom`, if one exists. */
+function exitDirectionTo(world: WorldModel, roomId: EntityId, toRoom: EntityId): DirectionType | undefined {
+  const exits = world.getEntity(roomId)?.get(RoomTrait)?.exits;
+  if (!exits) return undefined;
+  for (const [direction, exit] of Object.entries(exits)) {
+    if ((exit as IExitInfo).destination === toRoom) return direction as DirectionType;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@
  * context seam — never on return values alone.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { scaffoldEntry } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -94,6 +95,7 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       random: {} as unknown as RandomService,
       playerLocation: opts?.playerAt ?? world.getLocation(player.id)!,
       playerId: player.id,
+      act: scaffoldEntry(world).act,
       actionEvents: opts?.actionEvents ?? [],
       emitSound: (s) => sounds.push(s),
     });
