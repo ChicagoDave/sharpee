@@ -15,20 +15,21 @@ inhabited.
 
 Sharpee's NPC system has three parts that work together:
 
-1. **`NpcTrait`**: the trait that marks an entity as an NPC.
+1. **`NpcTrait`**: the trait that marks an entity as an NPC and names its behavior.
 2. **`NpcBehavior`**: an object that decides what the NPC does each turn.
-3. **`NpcPlugin`**: an engine plugin that gives NPCs their own phase in the turn.
+3. **The engine's actor turn phase**: after the player's command has run, the
+   engine gives each NPC a turn of its own and carries out whatever its behavior
+   decided.
 
-These span four packages: the engine, the world-model, the NPC plugin, and the
-stdlib.
+These span three packages: the world-model, the stdlib, and the engine. There is
+no plugin to install or register; the engine owns the phase.
 
 ```typescript
 import { GameEngine } from '@sharpee/engine';
 import { definePoint } from '@sharpee/core';
 import { NpcTrait } from '@sharpee/world-model';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import {
-  NpcBehavior, NpcContext, NpcAction, createPatrolBehavior,
+  NpcBehavior, NpcContext, createPatrolBehavior,
 } from '@sharpee/stdlib';
 ```
 
@@ -66,28 +67,30 @@ zookeeper.add(new NpcTrait({
   canMove: true,                    // allowed to change rooms
   // "The zookeeper leaves to the east."
   announcesMovement: true,
-  isAlive: true,
-  isConscious: true,
 }));
 
 world.moveEntity(zookeeper.id, mainPath.id);
 ```
 
 The `behaviorId` is the crucial link: it must exactly match the `id` of a
-behavior you register later. `canMove` decides whether this NPC is allowed to walk
-between rooms. The parrot, which stays put, sets it to `false`.
+behavior you register later. `canMove` decides whether `getAvailableExits()` offers this
+NPC any way out of a room, which is how the built-in behaviors decide whether to
+walk. The parrot, which stays put, sets it to `false`.
 
 `announcesMovement` is what makes the patrol *visible*: when Sam walks out of
 (or into) the player's room, the platform prints a line like "The zookeeper
 leaves to the east." It defaults to `false`, but a silent NPC that changes rooms
 between turns is imperceptible until the player types `look`, so switch it on
 for any NPC whose comings and goings the player should notice. (Moves between
-two rooms the player isn't in stay silent either way.)
+two rooms the player isn't in stay silent either way.) The line is not special
+NPC text: it is the standard `going` action reporting a move, the same action
+that runs when the player types `east`. Sam simply performs it instead of the
+player, which is the idea this whole chapter rests on.
 
 > **The mistake everyone makes once:** a `behaviorId` that doesn't match any
 > registered behavior's `id`. The NPC exists and you can examine it, but it never
-> acts, because the NPC service can't find a behavior to run for it. Keep the two
-> strings identical.
+> acts, because the engine has no behavior to run for it. Keep the two strings
+> identical.
 
 ### The parrot becomes an NPC
 
@@ -101,8 +104,6 @@ the behavior we write below:
 parrot.add(new NpcTrait({
   behaviorId: 'zoo-parrot',   // matches parrotBehavior.id, below
   canMove: false,             // it stays on its perch
-  isAlive: true,
-  isConscious: true,
 }));
 ```
 
@@ -123,13 +124,17 @@ The stdlib ships several behaviors ready to use, so common NPCs need no custom c
 | `passiveBehavior` | Do nothing (react-only NPCs) |
 
 The zookeeper uses `createPatrolBehavior`: give it a route of room IDs and it
-walks them in order, finding the exits on its own.
+walks them in order, finding the exits on its own. Every one of these moves,
+blocks, or fights through the same two calls your own behaviors will use, so
+there is nothing a built-in can do that a custom behavior cannot.
 
 ## Writing a custom behavior
 
 When the built-ins don't fit, implement the `NpcBehavior` interface yourself. Its
 only required hook is `onTurn`, called every turn; the others fire on specific
-events. Randomness in a behavior always goes through a named choice point,
+events. A hook returns nothing. Instead, it *does* things through the context it
+is handed, and a hook that does nothing is simply a turn on which the NPC stands
+still. Randomness in a behavior always goes through a named choice point,
 declared once with `definePoint` (imported from `@sharpee/core`). The parrot
 squawks a random phrase when the player is present and greets them on arrival:
 
@@ -156,64 +161,99 @@ const parrotBehavior: NpcBehavior = {
   name: 'Parrot Behavior',
 
   // Called every turn, whether or not the player is here.
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     // no audience, stay quiet
-    if (!context.playerVisible) return [];
+    if (!context.playerVisible) return;
 
     // 50% chance to squawk
     if (context.random.chance(PARROT_SQUAWK, 0.5)) {
       const phrase = context.random.pick(PARROT_PHRASE, PARROT_PHRASES);
-      return [{
-        type: 'speak',
-        messageId: 'npc.speech',
-        data: { text: phrase },
-      }];
+      context.narrate({ text: phrase });
     }
-    return [];
   },
 
   // Called once when the player walks into the parrot's room.
-  onPlayerEnters(context: NpcContext): NpcAction[] {
-    return [{
-      type: 'emote',
-      messageId: 'npc.emote',
-      data: {
-        text:
-          'The parrot ruffles its feathers and eyes you ' +
-          'with interest.',
-      },
-    }];
+  onPlayerEnters(context: NpcContext): void {
+    context.narrate({
+      text:
+        'The parrot ruffles its feathers and eyes you ' +
+        'with interest.',
+    });
   },
 };
 ```
 
-`NpcContext` hands the behavior everything it needs: `playerVisible` (is the
-player in this room?), `random` for chance and selection, and access to the NPC
-and the world. Each hook returns an array of `NpcAction` describing what the NPC
-does this turn:
+`NpcContext` hands the behavior everything it needs to decide: `playerVisible`
+(is the player in this room?), `random` for chance and selection, `npc` and
+`world` for the NPC itself and everything around it, `npcLocation`, and
+`getAvailableExits()` for the ways out of the current room. It also hands the
+behavior the only two things a behavior can *do*:
 
-| Action | What it does |
+| Method | What it does |
 |---|---|
-| `{ type: 'move', direction: Direction.NORTH }` | Walk to a connected room |
-| `{ type: 'speak', messageId, data }` | Say something (visible text) |
-| `{ type: 'emote', messageId, data }` | Do something visible |
-| `{ type: 'wait' }` | Do nothing this turn |
-| `{ type: 'take', target }` / `{ type: 'drop', target }` | Pick up / drop an item |
+| `narrate({ text })` | Print a line about this NPC, verbatim |
+| `narrate(messageId, params)` | Print a line from a message id in your language layer |
+| `act(actionId, slots)` | Perform a standard action as this NPC |
 
-Return an empty array for a turn where the NPC does nothing.
+`narrate` is for things that are not actions: a squawk, a greeting, a growl. The
+line is attributed to the NPC at the NPC's location, so a player in another room
+never sees it. (The `playerVisible` check in `onTurn` is still worth keeping. A
+squawk nobody hears would still spend the coin flip, and every later flip in the
+session would land differently.) The `{ text }` form needs no message id, so
+there is nothing to add in `extendLanguage`. If you would rather keep the
+parrot's lines with the rest of your text, register a message id there and pass
+it as the first argument instead.
 
-The `npc.speech` and `npc.emote` message ids the behavior emits are provided by the
-platform's language layer (`@sharpee/lang-en-us`). You don't register them in
-`extendLanguage`. They render verbatim the `text` you pass in each action's `data`.
+`act` is the door into the rest of the platform. A call such as
+`context.act('if.action.taking', { directObject: cracker })` runs the standard
+`taking` action *as the parrot*: the same `validate`, `execute`, and `report`
+phases you met in Chapter 14, the same scope rules, the same trait checks. If a
+trait refuses the take (scenery, or something inside a closed container), the
+action is blocked exactly as it would be for the player, and `act` returns
+`{ success: false }` so the behavior can decide what to do instead. If it
+succeeds, the world has changed by the time `act` returns, and a player standing
+in the same room witnesses it, reported the way Sam's patrol is reported: by the
+action itself, about the actor who performed it. The `slots` are the things the action
+works on: `directObject`, `indirectObject`, `instrument`, and, for `going`, a
+`direction`. There is no parser step, because the behavior has already chosen
+them.
 
-## Registering the plugin and behaviors
+This is how the built-in patrol walks. It does not teleport Sam and print a
+line; it finds the exit that leads toward the next waypoint and performs `going`
+as him, which is why "The zookeeper leaves to the east." reads exactly like the
+player's own movement would:
 
-NPC behaviors don't fire until the `NpcPlugin` is registered with the engine.
-That happens in `onEngineReady()`, the story hook called after the engine is
-fully built, which is where any plugin needing the engine reference is set up.
-Chapter 13 already gave your story an `onEngineReady` (it holds the two chain
-handlers), so *add* the plugin code below at the top of that existing method;
-don't declare a second one.
+::: under-the-hood
+**Under the Hood: `createPatrolBehavior`** · `@sharpee/stdlib`
+
+```typescript
+// inside the patrol's onTurn, once it knows the target room
+const exits = context.getAvailableExits();
+const exitToTarget = exits.find(
+  (e) => e.destination === targetRoom,
+);
+
+if (exitToTarget) {
+  context.act(IFActions.GOING, {
+    direction: exitToTarget.direction,
+  });
+  return;
+}
+```
+:::
+
+A locked door refuses Sam the same way it would refuse the player, and the
+patrol simply tries again next turn. `canMove: false` works one step earlier:
+`getAvailableExits()` offers nothing, so a built-in mover never asks.
+
+## Registering the behaviors
+
+NPC behaviors don't fire until they are registered with the engine's NPC
+service. The engine already owns the turn phase; you never create it. What you
+register is each behavior, by id, in `onEngineReady()`, the story hook called
+after the engine is fully built. Chapter 13 already gave your story an
+`onEngineReady` (it holds the two chain handlers), so *add* the code below at the
+top of that existing method; don't declare a second one.
 
 The patrol route references `this.roomIds`, the field you started in Chapter 13.
 That field currently remembers only `giftShop` and `pettingZoo`; the route also
@@ -240,14 +280,11 @@ With the ids recorded, the registration itself looks like this:
 
 ```typescript
 onEngineReady(engine: GameEngine): void {
-  // 1. Create and register the plugin: gives NPCs a turn phase
-  const npcPlugin = new NpcPlugin();
-  engine.getPluginRegistry().register(npcPlugin);
+  // 1. The engine owns the NPC turn phase; ask it for the
+  //    service that holds the behaviors
+  const npcService = engine.getNpcService();
 
-  // 2. Get the NPC service from the plugin
-  const npcService = npcPlugin.getNpcService();
-
-  // 3. Build the zookeeper's patrol from a route of room IDs
+  // 2. Build the zookeeper's patrol from a route of room IDs
   const keeperPatrol = createPatrolBehavior({
     route: [
       this.roomIds.mainPath,
@@ -264,15 +301,15 @@ onEngineReady(engine: GameEngine): void {
   keeperPatrol.id = 'zoo-keeper-patrol';
   npcService.registerBehavior(keeperPatrol);
 
-  // 4. Register the parrot's custom behavior
+  // 3. Register the parrot's custom behavior
   // (its id already matches)
   npcService.registerBehavior(parrotBehavior);
 }
 ```
 
-Two registrations are needed and both matter: register the *plugin* (without it,
-no NPC acts at all) and register each *behavior* (without it, an NPC with that
-`behaviorId` has nothing to run).
+One registration per behavior, and each one matters: an NPC whose `behaviorId`
+names nothing that was registered has nothing to run, and stands there for the
+whole game.
 
 Note the patrol factory: it returns a behavior whose `id` defaults to `'patrol'`,
 so the zookeeper's `behaviorId: 'zoo-keeper-patrol'` wouldn't match until you
@@ -336,7 +373,8 @@ description: Sam patrols visibly; the parrot greets and squawks
 
 An NPC is an actor carrying `IdentityTrait`, `ActorTrait`, and `NpcTrait`, with a
 `behaviorId` that matches a registered behavior, whether you use a built-in such as
-`createPatrolBehavior` or write your own `NpcBehavior`, whose `onTurn` and
-`onPlayerEnters` return `NpcAction[]`. Nothing acts until `onEngineReady()` does
-*both*: registers the `NpcPlugin` with the engine and registers each behavior with
-its service.
+`createPatrolBehavior` or write your own `NpcBehavior`. A behavior's hooks return
+nothing; they act through the context, with `narrate` for a line and `act` for a
+standard action performed as the NPC, through the same four phases the player's
+own commands take. Nothing acts until `onEngineReady()` registers each behavior
+with `engine.getNpcService()`.

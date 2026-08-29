@@ -763,7 +763,28 @@ ADR's own text implies).
   plugin). Still owed here: `docs/book/v2.0.0/parts/part-6/20-non-player-characters.md` and its
   `code-snippets/ch20-*` (and the v1.5.0 copies), plus `tutorials/familyzoo/v1.5.0` and `v2.0.0`
   whose `package.json`s still depend on `@sharpee/plugin-npc`.
-- **Status**: CURRENT (since 2026-08-28)
+- **Scope ruling (2026-08-28, session aeade8)**: the `v1.5.0` edition and both
+  `tutorials/familyzoo/{v1.5.0,v2.0.0}` editions stay untouched. Each pins the *published*
+  `@sharpee/*` at its own version (`^1.5.0`, `^2.0.0` — both still on npm, both shipping
+  `plugin-npc`), and `docs/book/CLAUDE.md` requires snippets to compile against what a
+  reader installs; `tutorials/familyzoo/v2.0.0` has 163 type errors against the 5.1.1
+  workspace (`isDark`, `withPriority`, `author`, `isAlive`, `chance(0.5)`), of which ~15
+  are the NPC surface, so an NPC-only patch would leave it consistent with neither version.
+  The whole-edition re-sync is issue #224, not this phase. The `v2.0.0` book edition is the
+  one that tracks the live platform (its ch20 already carried ADR-293 `definePoint`).
+- **Status**: DONE (2026-08-28, session aeade8) — `docs/book/v2.0.0/parts/part-6/20-non-player-characters.md`
+  rewritten onto the pipeline (engine-owned actor phase; void hooks; `narrate`/`act` with
+  `ActSlots`; an Under-the-Hood box quoting the patrol's real `context.act(IFActions.GOING, …)`;
+  `engine.getNpcService()` registration; `isAlive`/`isConscious` dropped from `NpcTrait`, gone
+  since ADR-226). Evidence, all 2026-08-28 23:35–23:38 CDT: `code-snippets/` regenerated
+  (164 snippets, ch20 now 01–08 with `05-createpatrolbehavior.reference.ts`); the ch20
+  author snippets assembled into one file and `tsc --noEmit` against the workspace's
+  `@sharpee/*` — exit 0; `./scripts/build-book.sh v2.0.0 html` clean; em-dash grep on the
+  chapter empty; the chapter's Try-it sequence run through `dist/cli/sharpee.js --exec` against
+  `stories/family-zoo-tutorial` (`--seed 7`) prints "The zookeeper leaves to the east." and
+  "The parrot ruffles its feathers and eyes you with interest." verbatim, so `npcs.transcript`'s
+  assertions hold. Exit-state grep: zero `NpcAction`/`NpcPlugin`/`createNpcService` under
+  `docs/book/v2.0.0/parts` and `code-snippets` (the `testing/` logs excluded, as specified).
 
 ### Phase 8: D7a — Write the Chord acting-surface child ADR
 - **Tier**: Medium

@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **163 snippets** across 31 chapters (160 author, 3 reference).
+- **164 snippets** across 31 chapters (160 author, 4 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -272,13 +272,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-non-player-characters-actors-that-take-turns.ts` | Non-Player Characters: Actors That Take Turns | typescript | author | 25 |
-| 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 44 |
-| 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 98 |
-| 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 136 |
-| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 222 |
-| 06 | `06-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 234 |
-| 07 | `07-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 241 |
+| 01 | `01-non-player-characters-actors-that-take-turns.ts` | Non-Player Characters: Actors That Take Turns | typescript | author | 27 |
+| 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 45 |
+| 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 101 |
+| 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 141 |
+| 05 | `05-createpatrolbehavior.reference.ts` | Writing a custom behavior | typescript | reference — `createPatrolBehavior` | 229 |
+| 06 | `06-registering-the-behaviors.ts` | Registering the behaviors | typescript | author | 262 |
+| 07 | `07-registering-the-behaviors.ts` | Registering the behaviors | typescript | author | 274 |
+| 08 | `08-registering-the-behaviors.ts` | Registering the behaviors | typescript | author | 281 |
 
 ## Scenes: Named Windows of Story Time
 

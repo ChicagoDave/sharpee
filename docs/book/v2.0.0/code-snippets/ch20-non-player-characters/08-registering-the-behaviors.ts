@@ -1,12 +1,9 @@
 onEngineReady(engine: GameEngine): void {
-  // 1. Create and register the plugin: gives NPCs a turn phase
-  const npcPlugin = new NpcPlugin();
-  engine.getPluginRegistry().register(npcPlugin);
+  // 1. The engine owns the NPC turn phase; ask it for the
+  //    service that holds the behaviors
+  const npcService = engine.getNpcService();
 
-  // 2. Get the NPC service from the plugin
-  const npcService = npcPlugin.getNpcService();
-
-  // 3. Build the zookeeper's patrol from a route of room IDs
+  // 2. Build the zookeeper's patrol from a route of room IDs
   const keeperPatrol = createPatrolBehavior({
     route: [
       this.roomIds.mainPath,
@@ -23,7 +20,7 @@ onEngineReady(engine: GameEngine): void {
   keeperPatrol.id = 'zoo-keeper-patrol';
   npcService.registerBehavior(keeperPatrol);
 
-  // 4. Register the parrot's custom behavior
+  // 3. Register the parrot's custom behavior
   // (its id already matches)
   npcService.registerBehavior(parrotBehavior);
 }
