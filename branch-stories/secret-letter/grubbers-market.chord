@@ -89,8 +89,10 @@ create the Northwest Junction
   east to the Candlemaker's Stall
   southeast to the Rope Stall
   north is blocked while calm: north-deflected
+  north is blocked while the player's market-escape has started: escape-north
   north is blocked while hunted: gates-locked
   north is blocked while chase: gates-locked
+  northwest is blocked while the player's market-escape has started: escape-alley
 
   This is the northwest corner of Grubber's Market. You can skirt around the
   edge of the market to the northeast or south, or head into the thick of it to
@@ -322,10 +324,16 @@ create Outside the Silk Tent
   northwest to the Rope Stall
   southeast to the Leather Stall
   southwest to the Weaponsmith's Stall
+  north is blocked while the player's market-escape has started: escape-tent-planted
 
   Teisha has done well enough for herself that her 'stall' is actually a full-on
   tent. You can enter the tent to the north, or move on to one of the many other
   stalls to the east, west, northeast, northwest, southeast, or southwest.
+
+  after the player entering while the player's market-escape has started
+    phrase escape-tent-planted
+    move the player to a random adjacent room
+  end after
 
 create Inside the Silk Tent
   a room
@@ -358,6 +366,10 @@ create the Top of the Post
   aka top of the center post, top of the centre post, top
   down to the Base of the Center Post
   down is blocked while chase: top-no-way-down
+  northeast is blocked: slide-barehanded
+  northwest is blocked: slide-barehanded
+  southeast is blocked: slide-barehanded
+  southwest is blocked: slide-barehanded
 
   Perched atop the high central post, you can look out over the whole market
   square. To the north, Lord's Road heads out of the city towards Lord's Keep.

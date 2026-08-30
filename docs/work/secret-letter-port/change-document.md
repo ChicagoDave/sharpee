@@ -549,6 +549,20 @@ what the mercenaries now know to look for. Whether the captain's description gro
 authored when that chapter is reached. The grace window is a fixed two turns unless the `hunted`
 build finds a dwell counter does the job more cleanly.
 
+**The other three cables — RULED (David, 2026-08-30): "the other three scenarios are
+intentional — only the one wire is the escape route."** The source's four cables and
+landing table are carried (`story.ni:3728-3830`), and a landing on the southeast, southwest
+or northwest cable behaves as the source has it: Jack lands, seen, and in the chase the
+source's `Market Escape` spool runs (`story.ni:4132-4200`, six rows to capture). In the
+remake the change happens only Behind Fruit Stall and the east exit is watched while she is
+the urchin, so those three landings can only end in capture — and that is the intent: the
+northeast wire, let go of mid-slide, is the single escape. The source's own default for a
+bare `slide down cable` (southeast, `story.ni:3756-3758`) also stays: "if the default was SE
+in the original source, it stays that way." Standing rule stated the same day: **"whatever
+the original source does and if there's a gap, then I want to know"** — the port builds the
+source's behaviour where the change document is silent, and reports the gap rather than
+deciding it.
+
 ### The sweep's postures — DECIDED (David, 2026-08-23): `oblivious`, `approaching`, `aggressive`
 
 The mercenaries' third posture is renamed. The source's `grabbing` (`story.ni:2071-2182`) names

@@ -234,6 +234,10 @@ create the wandering mercenaries
   when the player's pole-destruction expires
     kill the player pole-falls
   end when
+  when the player's market-escape expires
+    phrase escape-caught
+    kill the player mercenary-brutality
+  end when
 
   when the player moves, while the wandering mercenaries is not here
     phrase merc-dash-away when the wandering mercenaries is approaching
@@ -294,6 +298,7 @@ define trait wary
     refuse when the wandering mercenaries is here and the wandering mercenaries is oblivious: merc-hush
     refuse when the wandering mercenaries is here: merc-run
     refuse when it is in the Fruit Stall and the Fruit Stall is chaotic: fruit-keeper-busy
+    refuse when the player's market-escape has started: escape-no-time
   end on
 end trait
 
@@ -400,6 +405,84 @@ define timer pole-destruction for the player
     There is a solid chock! from below as the axe bites into wood, and the
     entire post shivers.
 end timer
+
+## ---------------------------------------------------------------------------
+## MARKET ESCAPE — after a seen landing (`story.ni:4132-4200`)
+##
+## The source's scene after the slide in Final Chase: a six-row spool of
+## the mercenaries closing in, one row a turn, capture on the sixth; talking
+## and stealing refused ("There's no time for that!"); the tent barred (a
+## dash for it is turned back and she is thrown into a random adjacent
+## stall); the alley and the north gates refused with the scene's own
+## lines; a sprint line on every move; the scene ends safely at Commerce
+## Street. In the port it opens on the three seen landings in `chase`
+## (`aerial-runway.chord`, which reports the gap: with no place to change,
+## the remake's spool can only end in capture). Row one prints on the
+## landing turn itself, as the source's every-turn rule did; rows two to
+## five are the timer's named turns; the expiry is row six and the death.
+## Not carried: the stealing refusal (nothing is left to steal — the banana
+## is already in the satchel before the trade); the source's `try looking`
+## after the sprint line (the room prints itself). The tent: the source
+## excluded only the tent from the random throw; here the tent's north is
+## blocked while the spool runs, which both keeps the throw out of it
+## (ADR-326 skips blocked exits) and answers a direct `n` with the same
+## line. Every line is Gentry's.
+## ---------------------------------------------------------------------------
+
+define timer market-escape for the player
+  closer
+    The shouts are getting closer.
+  shoving
+    You hear curses and yells of pain as the mercenaries shove their way
+    through the crowds of shoppers. They're closing in!
+  spotted
+    Someone yells, 'There! I see him!'
+  footsteps
+    You hear thudding footsteps right behind you!
+end timer
+
+define phrase escape-shouting
+  You hear shouting coming from all quarters of the market. If the
+  mercenaries saw where you landed, they'll be after you in no time.
+end phrase
+
+define phrase escape-caught
+  Mercenaries burst through the crowd from three different directions. They
+  grab you and slam you to the ground, knocking the breath from your lungs.
+
+  'Gotcha, you little runt!' someone growls in your ear.
+end phrase
+
+define phrase escape-no-time
+  There's no time for that! You've got to run!
+end phrase
+
+define phrase escape-sprint, randomly
+  You sprint through the crowd.
+or
+  You dive through the crowd.
+or
+  You weave through the crowd.
+or
+  You dodge through the crowd.
+or
+  You race through the crowd.
+end phrase
+
+define phrase escape-tent-planted
+  You dash for Teisha's tent, but it's no good — the mercenaries have
+  planted themselves outside it and are scanning the crowd. You backpedal
+  quickly before they can spot you.
+end phrase
+
+define phrase escape-alley
+  Not that way — the alley is a dead end!
+end phrase
+
+define phrase escape-north
+  No good — the mercenaries have closed the north gates and aren't letting
+  anyone through. Your only chance is east, further into the city!
+end phrase
 
 define phrase tent-caught
   'Jack, what are you doing?!' Teisha cries, 'Get out of—oof!'

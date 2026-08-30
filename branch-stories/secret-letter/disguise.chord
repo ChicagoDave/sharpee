@@ -188,6 +188,10 @@ create Commerce Street
 
   (PLACEHOLDER — David's line. Commerce Street, the chapter's way out.)
 
+  after the player entering while the player's market-escape has started
+    reset the player's market-escape
+  end after
+
 ## Gentry's arrival block (`story.ni:4266`), verbatim, for David to rework:
 ##   "You made it.
 ##   You let out a long, shaky breath. You're safe now. Commerce Street is

@@ -149,8 +149,9 @@ create Jack
     refuse merc-held
   end on
 
-  after going while (hunted and Jack is not dressed) or (chase and Jack is identified)
-    restart the player's waiting
+  after going
+    restart the player's waiting when (hunted and Jack is not dressed) or (chase and Jack is identified)
+    phrase escape-sprint when the player's market-escape has started
   end after
 
 create the old gray cloak
@@ -165,9 +166,15 @@ create the old gray cloak
     refuse clothing-stays
   end on
 
-  on the player taking while the player wears the old gray cloak
+  on the player taking while the player has the old gray cloak
     refuse clothing-stays
   end on
+
+## The take-refusal is gated on `has`, not `wears`: after the slide's
+## authorial `move` puts the cloak on the ground, `the player wears the old
+## gray cloak` STILL holds — the wearable's worn flag survives the move (GH
+## #334) — while `has` reads its location. The source retrieves the cloak
+## after a landing (`story.ni:4270`), so it must be takeable there.
 
 ## The urchin's other garment (`story.ni:1393`), worn from the first turn — the
 ## change document's escape-disguise ruling brought it back: the parchment's
