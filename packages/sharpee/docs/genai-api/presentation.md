@@ -1244,14 +1244,14 @@ import type { IRenderer, ProsePresentationOptions } from '@sharpee/channel-servi
 import { createProseChannelRenderers } from './prose.js';
 import { createPromptChannelRenderer } from './prompt.js';
 import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status.js';
-import { createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer } from './info.js';
+import { createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createChapterChannelRenderer } from './info.js';
 import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify.js';
 import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image.js';
 import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio.js';
 import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation.js';
 import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle.js';
 import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
-export { createProseChannelRenderers, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
+export { createProseChannelRenderers, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createChapterChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio.js';
 export { createGenericPanelRenderer } from './panel.js';

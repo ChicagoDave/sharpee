@@ -256,5 +256,14 @@
  * internal. Owner's direction with the ruling: **the version bumps slow
  * down** — the public number moves with a publish, not with every landing.
  * Cross-noted at ADR-257 D2.
+ *
+ * Landings folded into the unpublished 3.5.0 (2026-08-30, session 262648,
+ * the GH #339-#342 set): `is in <region>` is a MEMBERSHIP test — true in
+ * member rooms, transitive through nesting, needing no `landing` line
+ * (#339; the landing gate stays for destinations); an `entering` clause on
+ * a THING rides the entering action's interceptor instead of silently
+ * binding to room arrival (#341); `proper` composes on ANY create block
+ * (#342 — `analysis.proper-person-only` retired, the unconditional gate
+ * stays). Additive all three — every valid 3.5.0 story is unchanged.
  */
 export const CHORD_LANGUAGE_VERSION = '3.5.0';

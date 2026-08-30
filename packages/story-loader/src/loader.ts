@@ -2042,12 +2042,19 @@ export class ChordStory implements Story {
         );
       }
       switch (trait.name) {
-        case 'proper':
-          // ADR-242 D1: identity configuration, consumed by the person
-          // branch's IdentityTrait construction (like the room branch's
-          // `dark`) — without this case it would fall through to the
-          // authored-trait default and mint a spurious ChordDataTrait.
+        case 'proper': {
+          // ADR-242 D1 as extended by GH #342: `proper` composes on any
+          // block. The person branch already constructs its IdentityTrait
+          // with the proper shape; every other kind gets the same shape
+          // applied here (properName + empty article — re-applying to a
+          // person writes the identical values).
+          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (identity) {
+            identity.properName = true;
+            identity.article = '';
+          }
           break;
+        }
         case 'scenery':
           if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
           break;

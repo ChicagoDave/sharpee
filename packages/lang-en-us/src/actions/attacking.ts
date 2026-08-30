@@ -47,7 +47,7 @@ export const attackingLanguage = {
     // handler / event-sourcing consumption.
     'combat.cannot_attack': "{You} {can't} attack {the target}.",
     'combat.already_dead': "{capitalize the target} {verb:is target} already dead.",
-    'combat.not_hostile': "{capitalize the target} isn't hostile.",
+    'combat.not_hostile': "{capitalize the target} {verb:isn't target} hostile.",
     'combat.no_target': "Attack what?",
     'combat.target_unconscious': "{capitalize the target} {verb:is target} already unconscious.",
     'combat.need_weapon': "{You} {need} a weapon to attack effectively.",

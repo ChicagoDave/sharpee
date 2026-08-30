@@ -75,8 +75,12 @@ export interface InterceptorReportResult {
    *    to a language template (mirrors the inline-text fallback in
    *    `event-processor.ts`'s entity-handler override path).
    *
-   *  Multiple interceptors returning `override` for the same action is a
-   *  hard error mirroring ADR-106's "multiple game.message reactions" rule. */
+   *  When multiple interceptors return `override` for one action, the
+   *  first in consultation order wins and later overrides are dropped
+   *  (GH #340) — slots consult before the actor, so a target's own clause
+   *  outranks an actor bare-head. The former hard error mirrored ADR-106's
+   *  "multiple game.message reactions" rule but punished two individually
+   *  legal declarations. */
   override?: {
     messageId: string;
     params?: Record<string, unknown>;

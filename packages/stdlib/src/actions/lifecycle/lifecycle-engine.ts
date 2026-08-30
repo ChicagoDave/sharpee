@@ -305,9 +305,14 @@ export function runPostExecute(context: ActionContext, state: LifecycleState): v
  * Run every consultation's `postReport` hook and apply the results to the
  * action's events.
  *
- * At most ONE consultation may return an `override` — a second is a hard
- * error (throws), mirroring the `InterceptorReportResult` contract's
- * ADR-106 rule. `emit` effects append in consultation order.
+ * Override arbitration (GH #340): the FIRST consultation to return an
+ * `override` wins; a later consultation's override is dropped while its
+ * other effects still apply. Slots consult before the actor, so a target's
+ * own clause outranks an actor bare-head — the same first-wins rule the
+ * story-loader's per-owner clause merge already uses. (This replaces the
+ * former hard error, which the executor surfaced as `command.failed` —
+ * "I don't understand that." — for two legal declarations.) `emit`
+ * effects append in consultation order.
  *
  * @param context - The action context.
  * @param state - The resolved lifecycle state.
@@ -329,17 +334,12 @@ export function runPostReport(
     if (!c.interceptor.postReport) continue;
     const result = c.interceptor.postReport(c.entity, context.world, context.actor.id, c.data, context.random);
     if (!result) continue;
-    if (result.override) {
-      if (overrideSeen) {
-        throw new Error(
-          `Interceptor lifecycle (${state.descriptor.actionId}): multiple consultations ` +
-          `returned a postReport override — at most one interceptor may override the ` +
-          `primary message (slot '${c.slotId}', action '${c.actionId}').`
-        );
-      }
-      overrideSeen = true;
-    }
-    applyInterceptorReportResult(events, primaryEventType, result, context, { searchFrom });
+    // First override wins (GH #340): drop a later consultation's override,
+    // keep its other effects. Consultation order puts slots before the
+    // actor, so this is target-first by construction.
+    const applied = result.override && overrideSeen ? { ...result, override: undefined } : result;
+    if (result.override) overrideSeen = true;
+    applyInterceptorReportResult(events, primaryEventType, applied, context, { searchFrom });
   }
 }
 

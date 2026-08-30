@@ -78,6 +78,15 @@ describe('Verb agreement (ADR-199)', () => {
     expect(render(verb('is', 's'), { s: list(noun('troll')) })).toBe('is');
   });
 
+  it("negative contractions agree in number (GH #343): isn't/aren't, doesn't/don't", () => {
+    expect(render(verb("isn't", 'x'), { x: noun('phone') })).toBe("isn't");
+    expect(render(verb("isn't", 'x'), { x: noun('shoppers', { number: 'plural' }) })).toBe("aren't");
+    expect(render(verb("doesn't", 'x'), { x: noun('keeper') })).toBe("doesn't");
+    expect(render(verb("doesn't", 'x'), { x: noun('keepers', { number: 'plural' }) })).toBe("don't");
+    expect(render(verb("hasn't", 'x'), { x: noun('guards', { number: 'plural' }) })).toBe("haven't");
+    expect(render(verb("wasn't", 'x'), { x: noun('guards', { number: 'plural' }) })).toBe("weren't");
+  });
+
   it('AC-5: a mass subject agrees as singular', () => {
     expect(render(verb('is', 'w'), { w: noun('water', { number: 'mass', articleType: 'some' }) })).toBe('is');
   });

@@ -29,7 +29,7 @@ export const givingLanguage = {
     // Refusal messages
     'inventory_full': "{capitalize the recipient} says, \"I can't carry any more.\"",
     'too_heavy': "{capitalize the recipient} says, \"That's too heavy for me.\"",
-    'not_interested': "{capitalize the recipient} doesn't seem interested in {the item}.",
+    'not_interested': "{capitalize the recipient} {verb:doesn't recipient} seem interested in {the item}.",
     'refuses': "{capitalize the recipient} politely declines.",
 
     // Success messages

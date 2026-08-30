@@ -108,6 +108,15 @@ describe('a region as a place (D5)', () => {
     expect(errs(story('', '', clause("move the monkey to the Stalls")))).toContain('analysis.region-not-a-place');
   });
 
+  it('a membership test needs no landing: `is in <region>` is legal on a landing-less region (GH #339)', () => {
+    expect(errs(story('', '', clause('move the monkey to the Alley when the player is in the Market')))).not.toContain('analysis.region-not-a-place');
+    expect(errs(story('', '', '  after going while the player is in the Stalls\n    move the monkey to the Alley\n  end after\n'))).not.toContain('analysis.region-not-a-place');
+  });
+
+  it("`is in <region>'s location` stays landing-gated — a region's location IS its landing (D5)", () => {
+    expect(errs(story('', '', clause("move the monkey to the Alley when the player is in the Market's location")))).toContain('analysis.region-not-a-place');
+  });
+
   it('a landing makes the region a destination', () => {
     const ir = ok(story('  landing the East Gate', '', clause('move the monkey to the Market')));
     expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0].body[0]).toMatchObject({ kind: 'move', place: { kind: 'entity', id: 'market' } });

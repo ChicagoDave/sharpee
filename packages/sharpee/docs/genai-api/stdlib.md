@@ -1475,9 +1475,14 @@ export declare function runPostExecute(context: ActionContext, state: LifecycleS
  * Run every consultation's `postReport` hook and apply the results to the
  * action's events.
  *
- * At most ONE consultation may return an `override` — a second is a hard
- * error (throws), mirroring the `InterceptorReportResult` contract's
- * ADR-106 rule. `emit` effects append in consultation order.
+ * Override arbitration (GH #340): the FIRST consultation to return an
+ * `override` wins; a later consultation's override is dropped while its
+ * other effects still apply. Slots consult before the actor, so a target's
+ * own clause outranks an actor bare-head — the same first-wins rule the
+ * story-loader's per-owner clause merge already uses. (This replaces the
+ * former hard error, which the executor surfaced as `command.failed` —
+ * "I don't understand that." — for two legal declarations.) `emit`
+ * effects append in consultation order.
  *
  * @param context - The action context.
  * @param state - The resolved lifecycle state.

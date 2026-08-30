@@ -290,9 +290,11 @@ export class ChordRuntime {
           this.bindEventClause(world, entity, clause, clauseIndex, trigger);
           return;
         }
-        if (REGION_EVENT_TRIGGERS[clause.action]) {
+        if (REGION_EVENT_TRIGGERS[clause.action] && !EVENT_TRIGGERS[clause.action]) {
           // `leaving` exists only as a region crossing reaction (D6) — on
           // any other owner it would silently never fire. Refuse at load.
+          // `entering` is exempt: on a THING it is the entering action's
+          // interceptor (GH #341), bound below like any other gerund.
           throw new LoadError(
             `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
             clause.span,
@@ -694,7 +696,13 @@ export class ChordRuntime {
   /** The clause's trigger event type by owner kind, or undefined for non-event clauses. */
   private eventTriggerFor(entity: IREntity, clause: IROnClause): string | undefined {
     const isRegionOwner = entity.kinds.some((k) => k.name === 'region');
-    return isRegionOwner ? REGION_EVENT_TRIGGERS[clause.action] : EVENT_TRIGGERS[clause.action];
+    if (isRegionOwner) return REGION_EVENT_TRIGGERS[clause.action];
+    // GH #341: the arrival event is a ROOM's story of a move. A THING's
+    // `entering` clause means "someone enters this thing" and rides the
+    // entering action's interceptor instead — bound to the arrival event it
+    // could never fire (the event's destination is a room, never the thing).
+    const isRoomOwner = entity.kinds.some((k) => k.name === 'room');
+    return isRoomOwner ? EVENT_TRIGGERS[clause.action] : undefined;
   }
 
   /** Test/debug entry: run every event clause bound to this event type. */

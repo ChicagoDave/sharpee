@@ -377,7 +377,14 @@ export class Evaluator {
         // owner has none, and `is in` nothing is false, never an error.
         const subjectId = this.entityValue(cond.subject, ctx);
         const placeId = this.evalValue(cond.object, ctx);
-        if (typeof placeId !== 'string' || !ctx.world.getEntity(placeId)) return raw(false);
+        const place = typeof placeId === 'string' ? ctx.world.getEntity(placeId) : undefined;
+        if (typeof placeId !== 'string' || !place) return raw(false);
+        // A REGION place is a MEMBERSHIP test (GH #339, ADR-236): rooms are
+        // not contained by their region — membership is RoomTrait.regionId,
+        // transitive through nesting — so the containment walk below would
+        // always answer false. `isInRegion` resolves a non-room subject
+        // through its containing room.
+        if (place.has(TraitType.REGION)) return raw(ctx.world.isInRegion(subjectId, placeId));
         return raw(this.isWithin(ctx.world, subjectId, placeId));
       }
       case 'is-here': {

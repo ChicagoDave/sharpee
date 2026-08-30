@@ -371,8 +371,10 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
    `on refusing:` in `define conversation`, `on leaving` in a scene) are
    not on-clauses and are untouched (D4). *)
 
-(* Event verbs (catalog EVENT_VERBS, gerund register): `entering` on rooms/
-   enterables binds to the movement event; on REGION blocks (ADR-236 D6)
+(* Event verbs (catalog EVENT_VERBS, gerund register): `entering` on ROOMS
+   binds to the movement event; on any other thing — scenery, enterables —
+   it is the entering ACTION's interceptor ("someone enters this thing",
+   GH #341), like any consulted gerund; on REGION blocks (ADR-236 D6)
    `after entering it` / `after leaving it` bind to the region's crossing
    events (region_entered/region_exited), fired per boundary actually
    crossed. `leaving` (ratchet R3) exists ONLY on region blocks — a load

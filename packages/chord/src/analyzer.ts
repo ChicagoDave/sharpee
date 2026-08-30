@@ -4979,19 +4979,14 @@ class Analyzer {
       startsStates.push(s.state);
     }
 
-    // ADR-242 D1: `proper` is the first kind-scoped trait adjective —
-    // person-only and unconditional (identity is not turn state). Both
-    // gates are analyzer diagnostics so the author reads the specific
+    // ADR-242 D1 as extended by GH #342 (David, 2026-08-30): `proper`
+    // composes on ANY create block — a place-as-scenery, a shop, an
+    // institution is a name as much as a person is. The person-only gate
+    // is retired; the unconditional gate stays (identity is not turn
+    // state), an analyzer diagnostic so the author reads the specific
     // reason, not the loader's generic conditional-composition error.
     for (const comp of decl.compositions) {
       if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
-      if (!isPerson) {
-        this.diagnostics.error(
-          'analysis.proper-person-only',
-          `\`proper\` composes only on a person (\`a person, proper\`) — \`${decl.name.words.join(' ')}\` is not a person.`,
-          comp.span,
-        );
-      }
       if (comp.condition) {
         this.diagnostics.error(
           'analysis.proper-conditional',
@@ -7536,6 +7531,9 @@ class Analyzer {
   /**
    * ADR-325 D5: a region is a place only once it names a landing. Fires on
    * a region used as a destination or as the owner of `'s location`.
+   * A MEMBERSHIP test (`is in <region>`, GH #339) is exempt: asking where
+   * someone is needs no put-destination, so `resolvePlace` skips this gate
+   * for the bare-name arm in membership mode.
    */
   private checkRegionPlace(value: IRValue, span: Span): void {
     if (value.kind !== 'entity') return;
@@ -7551,11 +7549,14 @@ class Analyzer {
     }
   }
 
-  private resolvePlace(place: PlaceExpr, scope: Scope): IRValue {
+  private resolvePlace(place: PlaceExpr, scope: Scope, purpose: 'destination' | 'membership' = 'destination'): IRValue {
     switch (place.kind) {
       case 'name': {
         const value = this.resolveEntityValue(place.ref, scope);
-        this.checkRegionPlace(value, place.ref.span);
+        // GH #339: a membership test may name a landing-less region — the
+        // landing gate is a destination concern (ADR-325 D5). `'s location`
+        // stays gated in both modes: a region's location IS its landing.
+        if (purpose === 'destination') this.checkRegionPlace(value, place.ref.span);
         return value;
       }
       case 'location': {
@@ -7800,7 +7801,7 @@ class Analyzer {
               pred: 'is-in',
               negated: cond.predicate.negated,
               subject,
-              object: this.resolvePlace(cond.predicate.place, scope),
+              object: this.resolvePlace(cond.predicate.place, scope, 'membership'),
             };
           case 'timer-has': {
             // ADR-325 D3d: `has started` / `has expired` read a timer's lifecycle.

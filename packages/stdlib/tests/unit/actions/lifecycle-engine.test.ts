@@ -386,7 +386,7 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
     expect((events[1].data as any).messageId).toBe('test.second_item_message');
   });
 
-  test('two consultations both returning an override is a hard error', () => {
+  test('two consultations both returning an override: the first wins, the later override is dropped, its emit still applies (GH #340)', () => {
     const { world, item, box } = setup();
     world.registerActionInterceptor(TraitType.READABLE, TEST_ACTION, {
       postReport() {
@@ -395,7 +395,10 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
     });
     world.registerActionInterceptor(TraitType.OPENABLE, TEST_ACTION, {
       postReport() {
-        return { override: { messageId: 'test.container_override' } };
+        return {
+          override: { messageId: 'test.container_override' },
+          emit: [{ type: 'if.event.container_grumbled', data: {} }]
+        };
       }
     });
 
@@ -405,8 +408,11 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
       context.event('if.event.frobbed', { messageId: 'test.standard' })
     ];
 
-    expect(() => runPostReport(context, state, events, 'if.event.frobbed'))
-      .toThrow(/multiple consultations/);
+    expect(() => runPostReport(context, state, events, 'if.event.frobbed')).not.toThrow();
+    // First in consultation order (the item slot precedes the container slot) wins.
+    expect((events[0].data as any).messageId).toBe('test.item_override');
+    // The losing consultation's other effects still apply.
+    expect(events.some((e) => e.type === 'if.event.container_grumbled')).toBe(true);
   });
 });
 

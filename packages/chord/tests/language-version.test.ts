@@ -87,7 +87,15 @@ const PINNED = {
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.
   // Re-pinned again (ADR-330 Phase 3): the `during`/`before`/`after` chapter
   // atoms and the `during` head suffix — still the unpublished 3.5.0 set.
-  ebnfSha256: 'f82fded2f68957744476af1fb2d08552c20159c8001929156c83ece6784a4f10',
+  // Re-pinned 2026-08-30 (session 262648, GH #339-#342): comment-only ebnf
+  // motion — the event-verbs note now states the #341 contract (`entering`
+  // on a THING rides the entering action's interceptor; rooms keep the
+  // movement event) — plus two changes with no ebnf text of their own:
+  // `proper` composes on ANY create block (#342; analysis.proper-person-only
+  // retired) and `is in <region>` is a membership test needing no landing
+  // (#339). All fold into the unpublished 3.5.0 set per ADR-257 D2 as
+  // amended (the number moves at publish).
+  ebnfSha256: '6109ade0700d8d5e9fe21ce59c668bfa059d627b51f487629631740d1b5252c5',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

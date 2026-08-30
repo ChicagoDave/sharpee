@@ -180,6 +180,12 @@ const IRREGULAR_VERBS: Record<string, { plural: string; firstSingular?: string }
   has: { plural: 'have' }, // have
   does: { plural: 'do' }, // do
   goes: { plural: 'go' }, // go
+  // Negative contractions (GH #343): templates that used to hard-code
+  // "isn't"/"doesn't" after a param subject never agreed in number.
+  "isn't": { plural: "aren't" }, // be (present, negated)
+  "doesn't": { plural: "don't" }, // do (present, negated)
+  "hasn't": { plural: "haven't" }, // have (present, negated)
+  "wasn't": { plural: "weren't" }, // be (past, negated)
   // `-ie` stems (ADR-204): 3sg adds only `-s`, so they surface as `-ies` and would be
   // mis-handled by the `ies`→`y` rule (which is correct for the common `-y` stems). This
   // closed set is the exception; add longer derivatives (unties, belies) on demand.
