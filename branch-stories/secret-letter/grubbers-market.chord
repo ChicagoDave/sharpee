@@ -835,6 +835,13 @@ end phrase
 
 import "wares"
 
+## The backdrops — the crowd, the wall, the stalls as a thing, the awnings,
+## the wires, the market as a noun, and the bare smell and sound of the
+## place — after the wares and before the stallkeepers, who arbitrate after
+## everything that stands in their rooms.
+
+import "backdrops"
+
 ## ---------------------------------------------------------------------------
 ## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)
 ##
