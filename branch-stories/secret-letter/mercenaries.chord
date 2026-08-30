@@ -280,10 +280,20 @@ create the sword
 ## there.
 ## ---------------------------------------------------------------------------
 
+## The third refusal is the fruit stall's, not the sweep's (`story.ni:2434`:
+## after the banana theft the keeper is too busy with his spilled fruit to
+## talk). It lives here because the platform consults ONE interceptor per
+## (entity, action) — `WorldModel.getInterceptorForAction` returns the
+## highest-priority candidate only (GH #332) — so a second trait's `on
+## talking`, or the keeper's own, never fires beside this one. The `when`
+## names the carrier's situation; only the fruit stallkeeper ever stands in
+## the Fruit Stall.
+
 define trait wary
-  on the player talking while the wandering mercenaries is here
-    refuse when the wandering mercenaries is oblivious: merc-hush
-    refuse merc-run
+  on the player talking
+    refuse when the wandering mercenaries is here and the wandering mercenaries is oblivious: merc-hush
+    refuse when the wandering mercenaries is here: merc-run
+    refuse when it is in the Fruit Stall and the Fruit Stall is chaotic: fruit-keeper-busy
   end on
 end trait
 

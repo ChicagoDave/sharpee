@@ -452,23 +452,103 @@ create the banana
 
   The banana is plump, bright yellow with just a sprinkling of brown freckles.
 
-  on the player taking while calm
-    refuse banana-blocked
+  on the player taking
+    refuse when calm: banana-blocked
+    phrase fruit-theft-chaos when (hunted or chase) and the player is in the Fruit Stall and the Fruit Stall is orderly
   end on
+
+  after the player taking while (hunted or chase) and the player is in the Fruit Stall and the Fruit Stall is orderly
+    move the banana to the cloth satchel
+    change the Fruit Stall to chaotic
+    move the player to a random adjacent room
+  end after
 
 ## The calm-walk banana is unreachable — RULED (David, 2026-08-24): the
 ## stallkeeper is blocking the banana bin during the calm walk, so there is no
 ## quiet banana lift (that placeholder is retired). The theft happens under
-## the sweep, where the source's noisy rule applies — built with the chase
-## half. The room's gated detail line carries David's "currently blocked by
-## the stallkeeper" wording while calm — it renders on examining only until
-## GH #316 (looking must consult gated detail like examining) lands; the
-## trimmed `look`-card assertion in the tree document is that fix's
-## acceptance check.
+## the sweep, where the source's rule applies unchanged (change document,
+## "Theft"). The room's gated detail line carries David's "currently blocked
+## by the stallkeeper" wording while calm (GH #316 landed: it renders on
+## `look` as well as on examining).
+##
+## THE NOISY THEFT — the source's rule for THIS stall (`story.ni:2438-2445`,
+## "Fruit Theft"), not the generic one (`story.ni:1990-1998`). Stealing fruit
+## from the orderly Fruit Stall is seen and shouted, but a passing mercenary
+## trips over the monkey into the bins, and in the chaos Jack slips away with
+## the fruit in her satchel: the stall turns `chaotic` and is left UNBLOCKED
+## — "You shouldn't have any trouble coming back here if you need to" —
+## which is what the escape's landing at this stall later depends on. The
+## eject is ADR-326's `move the player to a random adjacent room` (the
+## blocked northeast is excluded by the draw). The clause is an on+after
+## pair, the trade trait's shape: the `on` phrase replaces stdlib's "You
+## take the banana" as the action's message, the `after` does the moving
+## once the take has really happened. Two readings flagged for
+## David: (1) the change document's gloss "(seen, kept, ejected, stall
+## blocked)" describes the generic rule; the source's own rule for this
+## stall leaves it unblocked, and "unchanged" is read as the source's rule.
+## (2) The source keys the opener on a mere-urchin/successful-thief flag the
+## apple's calm lift never set (the 2009 player starts holding the apple and
+## a mere urchin), so the banana gets the first-theft opener; the on-edge
+## opener the change document quotes (`story.ni:1997`) is kept aside below.
+## Not carried: the chaotic-stall second theft ("no one notices you picking
+## up another [noun]", `story.ni:2447`) — the port has one banana and no
+## other placed fruit, so it has no consumer; and the generic blocked-stall
+## bounce (`story.ni:1825`), since no stall is ever blocked in Chapter 1.
+## Known seam (ADR-326 D5: the draw narrates nothing): the eject prints the
+## theft text and no destination description — `look` answers.
+##
+## The steal verbs (`story.ni:1954-1965`) are taking's synonyms, as the
+## source resolves them ("if the noun is on-stage: try taking").
+
+extend action taking
+  grammar
+    steal the item
+    filch the item
+    grab the item
+    loot the item
+    nick the item
+    pilfer the item
+    shoplift the item
+    snatch the item
+    swipe the item
+    thieve the item
 
 define phrase banana-blocked
   Unfortunately, the bin holding the bananas is too close to the stallkeeper
   to make a move.
+end phrase
+
+## Kept aside for David's call — the successful-thief opener (`story.ni:1997`):
+##   "With the stallkeepers all on edge about the mercenaries, it's not
+##   likely you'll be able to nick anything without someone noticing. Still,
+##   nothing ventured...
+##   *'Thief!'*"
+
+define phrase fruit-theft-chaos
+  Ah, *this* is something you know how to do, at least. You sidle up casually
+  to the stall, wait until the stallkeeper seems preoccupied, then reach out
+  and pluck the banana from the shelf.
+
+  Suddenly the stallkeeper jabs his finger at you and screams, *'Stop,
+  thief!'*
+
+  One of the mercenaries happens to be wandering by at that moment. He hears
+  the stallkeeper's shouts and comes running straight for you!
+
+  Then there is a loud screech, and something gray and hairy scampers out
+  from under the mercenary's feet. He stumbles, trips, and pitches headlong
+  into the fruit stall. Fruit scatters everywhere. The stallkeeper is wailing
+  and berating the mercenary, who is covered with juice and slimy pulp.
+
+  In the general chaos, you slip away easily, stuffing the banana into your
+  satchel. Fortunately, no one managed to get a very good look at you, and
+  the stallkeeper will be too busy cleaning up his wares to keep an eye out
+  for you. You shouldn't have any trouble coming back here if you need to.
+end phrase
+
+define phrase fruit-keeper-busy
+  The stallkeeper is far too busy trying to clean up all the spilled fruit to
+  deal with you.
 end phrase
 
 create the pear
@@ -499,10 +579,9 @@ create the cluster of brambleberries
 ## route-clause deviation, because he wrote the compass word into the sentence.
 ##
 ## Theft is situational, not universal (change document, "Theft"): quiet while
-## the market is calm, and the source's noisy rule (`story.ni:1978-1997` — the
-## player is spotted, ejected to a random adjacent room, and the stall is
-## permanently blocked) once the mercenaries are sweeping. Only the calm half is
-## built here; the noisy half belongs with the chase.
+## the market is calm — the apple's lift below — and the source's own noisy
+## rule for the fruit stall once the mercenaries are sweeping — the banana's
+## chaos beat, above with the banana.
 ##
 ## What the walk ends INTO — decided (change document, "The eavesdrop's
 ## aftermath"): the bite opens the eavesdrop (`eavesdrop.chord`) — the voices
@@ -699,6 +778,17 @@ create the fruit stallkeeper
 
   The stallkeeper looks nervous and irritable. Armed thugs stomping around the
   Grubber's Market is not good for business.
+
+  phrase detail while the Fruit Stall is chaotic:
+    The stallkeeper is frantically trying to put his wares back into some
+    semblance of order.
+
+## After the banana theft the keeper is too busy to talk (`story.ni:2434`):
+## that refusal is the third line of the shared `wary` trait
+## (`mercenaries.chord`), guarded on the carrier standing in the chaotic
+## Fruit Stall — the platform consults one interceptor per (entity, action),
+## so neither a second trait nor a clause on this block could fire beside
+## `wary` (GH #332). The phrase is `fruit-keeper-busy`, below with the theft.
 
 define greetings for the fruit stallkeeper
   first time:
