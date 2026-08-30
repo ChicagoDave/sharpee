@@ -37,6 +37,15 @@
 ##      talking/continue their conversation; outside/just outside/at the
 ##      entrance to) into four whole-sentence variants, one draw per shape,
 ##      for the same reason as 5. Every word in each variant is his.
+##   7. `jar-keeps-weed` in `wares.chord` reads "You can't put that in the
+##      jar" where the source reads "You can't put [the noun] in the jar" —
+##      a container's clause cannot name the item being inserted, so "that"
+##      is the substitution.
+##   8. `fruit-theft-again` in `grubbers-market.chord` reads "picking up
+##      another piece of fruit" where the source reads "picking up another
+##      [noun]" — a marker cannot render a bare name (`{item}` is rejected
+##      as unbound; the binder's hints are all articles), so "piece of
+##      fruit" is the substitution.
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
 ## `(PLACEHOLDER — David's line …)`.

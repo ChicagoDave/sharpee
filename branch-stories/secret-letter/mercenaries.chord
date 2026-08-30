@@ -420,9 +420,10 @@ end timer
 ## the remake's spool can only end in capture). Row one prints on the
 ## landing turn itself, as the source's every-turn rule did; rows two to
 ## five are the timer's named turns; the expiry is row six and the death.
-## Not carried: the stealing refusal (nothing is left to steal — the banana
-## is already in the satchel before the trade); the source's `try looking`
-## after the sprint line (the room prints itself). The tent: the source
+## The stealing refusal is carried since the wares increment (2026-08-30):
+## every ware's taking clause refuses with `escape-no-time` while the spool
+## runs (`wares.chord`). Not carried: the source's `try looking` after the
+## sprint line (the room prints itself). The tent: the source
 ## excluded only the tent from the random throw; here the tent's north is
 ## blocked while the spool runs, which both keeps the throw out of it
 ## (ADR-326 skips blocked exits) and answers a direct `n` with the same

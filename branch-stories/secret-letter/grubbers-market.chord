@@ -132,12 +132,26 @@ create the Grocery Stall
   southwest to the Northwest Junction
   southeast to the Fruit Stall
   south to the Candlemaker's Stall
+  states: trading, blocked
 
   This is a typical grocer's stall, with various kinds of food set out. There
   are baskets bristling with loaves of bread, yellow pyramids of cheese, and
   spiced jerky hanging in bundles overhead. You can continue along the market's
   outer ring to the southwest or southeast, or head in towards the center of the
   market to the south.
+
+  after the player entering while the Grocery Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+## `blocked` is the source's own stall state (`story.ni:1823`): a noisy theft
+## sets it and coming back bounces her (`wares.chord`, "THE THEFT RULE").
+## The source cleared every stall when Market Escape began (`story.ni:4136`);
+## here the bounce simply stands down while that spool runs — the same
+## observable behaviour, since the chapter ends at Commerce Street. Seven
+## stalls carry the state: the Fruit Stall has its own rule and is never
+## blocked, and nothing at the Hat and Gems stalls can be nicked.
 
 ## The description's final sentence is David's (2026-08-24, change document
 ## "The escape disguise" ruling): it restores the source's shadowy-recesses
@@ -217,11 +231,17 @@ create the Leather Stall
   northeast to the Hat Stall
   northwest to Outside the Silk Tent
   west to the Weaponsmith's Stall
+  states: trading, blocked
 
   This merchant mostly deals in riding equipment — reins, harnesses, stirrups,
   and the like. A full riding saddle sits on proud display near the back. There
   are a few scabbards and belts for sale, as well. More stalls lie to the west, northwest,
   and northeast.
+
+  after the player entering while the Leather Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create the Weaponsmith's Stall
   a room
@@ -229,10 +249,16 @@ create the Weaponsmith's Stall
   east to the Leather Stall
   northeast to Outside the Silk Tent
   northwest to the Exotic Gems Stall
+  states: trading, blocked
 
   The weaponsmith's wares hang along the sides of his stall, a grim picket fence
   of down-hanging blades. You can find less intimidating stalls to the east, northeast,
   and northwest.
+
+  after the player entering while the Weapons Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create the Exotic Gems Stall
   a room
@@ -261,11 +287,17 @@ create the Herb Stall
   north to the Northwest Junction
   east to the Rope Stall
   south to the Exotic Gems Stall
+  states: trading, blocked
 
   The herb stall is usually a quiet place. Customers here like to browse, poke
   their noses into the various jars, and judge the potency of a potential
   purchase at their leisure. Other stalls are to the south, and east, and the
   market opens out a little to the north.
+
+  after the player entering while the Herb Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create the Rope Stall
   a room
@@ -275,12 +307,18 @@ create the Rope Stall
   west to the Herb Stall
   southwest to the Exotic Gems Stall
   southeast to Outside the Silk Tent
+  states: trading, blocked
 
   One thing you can say about the rope stall: you'll never spend a moment
   wondering what's for sale. It's all rope, and lots of it: thick and thin,
   knotted and loose, in heaps and in coils, stacked on the ground and dangling in
   loops. More stalls are to the northeast, southeast, west, and southwest, and
   the market opens out a bit to the northwest.
+
+  after the player entering while the Rope Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create the Candlemaker's Stall
   a room
@@ -290,6 +328,7 @@ create the Candlemaker's Stall
   west to the Northwest Junction
   southeast to the Pottery Stall
   southwest to the Rope Stall
+  states: trading, blocked
 
   The heat and fumes from the candlemaker's tallow pots make this stall an
   unpleasant place to loiter. Still, people need candles, and customers seem to be
@@ -297,6 +336,11 @@ create the Candlemaker's Stall
   tallow, fast-burning and cheap, but there are also a number of premade wax
   candles in different colors. Other stalls are to the north, east, west, southeast,
   and southwest.
+
+  after the player entering while the Candle Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create the Pottery Stall
   a room
@@ -306,6 +350,7 @@ create the Pottery Stall
   east to the Eastern Junction
   southeast to the Hat Stall
   southwest to Outside the Silk Tent
+  states: trading, blocked
 
   The wares at the pottery stall are spread out on the ground, forcing browsers
   and passers-by to step carefully around them. The urns, jars, and bowls are each
@@ -313,6 +358,11 @@ create the Pottery Stall
   made of fired clay from the Westlands, decorated with colorful glazes. There are
   more stalls to the northwest, northeast, southeast, and southwest, or you can
   head out to the market's edge to the east.
+
+  after the player entering while the Pottery Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
 
 create Outside the Silk Tent
   a room
@@ -403,7 +453,7 @@ create the display of apples
 
 create the display of pears
   aka pears, pear display
-  scenery, plural
+  scenery, a supporter, plural
   in the Fruit Stall
 
   These vary in color from yellowish-green to dusky orange-brown, with thick,
@@ -411,7 +461,7 @@ create the display of pears
 
 create the display of kello fruit
   aka kello, kello fruit, kello display
-  scenery, plural
+  scenery, a supporter, plural
   in the Fruit Stall
 
   Normally you'd kill for a slice of kello, but these look a bit too green. Not
@@ -419,15 +469,29 @@ create the display of kello fruit
 
 create the display of brambleberries
   aka brambleberries, brambleberry clusters, clusters, berries
-  scenery, plural
+  scenery, a supporter, plural
   in the Fruit Stall
 
   The thumb-sized clusters are shiny and bluish-black. Your mouth waters at the
   thought of how tart they must be.
 
+create the display of oranges
+  aka oranges, orange display, pale oranges, small oranges
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  The oranges are pale and disappointingly small.
+
+create the display of limes
+  aka limes, lime display, dark green limes, green limes
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  The dark green limes look refreshing.
+
 create the display of bananas
   aka bananas, banana display, bushel
-  scenery, plural
+  scenery, a supporter, plural
   in the Fruit Stall
 
   You rarely see bananas this far north. These look just about perfect — plump,
@@ -460,20 +524,50 @@ create the apple
 create the banana
   aka kozarian banana, yellow banana
   edible
+  states: shelved, nicked
   on the display of bananas
 
   The banana is plump, bright yellow with just a sprinkling of brown freckles.
 
-  on the player taking
+  on the player taking while the banana is shelved
     refuse when calm: banana-blocked
-    phrase fruit-theft-chaos when (hunted or chase) and the player is in the Fruit Stall and the Fruit Stall is orderly
+    refuse when the player's market-escape has started: escape-no-time
+    phrase fruit-theft-chaos when the Fruit Stall is orderly and thefts is 0
+    phrase fruit-theft-chaos-thief when the Fruit Stall is orderly and thefts is at least 1
+    phrase fruit-theft-again when the Fruit Stall is chaotic
   end on
 
-  after the player taking while (hunted or chase) and the player is in the Fruit Stall and the Fruit Stall is orderly
+  after the player taking while the banana is shelved
+    change the banana to nicked
     move the banana to the cloth satchel
-    change the Fruit Stall to chaotic
+    raise thefts by 1
+    change the Fruit Stall to chaotic when the Fruit Stall is orderly
     move the player to a random adjacent room
   end after
+
+## The other fruit take the same rule through the `fruit-ware` trait below —
+## the banana keeps its own clause because its calm refusal is David's
+## ruling and a trait's clause cannot sit beside an entity's own (GH #332).
+## A fruit is `shelved` until taken and `nicked` after, so a dropped fruit
+## taken again is a plain take (the source's on-stage `try taking`).
+
+define trait fruit-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase fruit-theft-chaos when (hunted or chase) and the Fruit Stall is orderly and thefts is 0
+    phrase fruit-theft-chaos-thief when (hunted or chase) and the Fruit Stall is orderly and thefts is at least 1
+    phrase fruit-theft-again when (hunted or chase) and the Fruit Stall is chaotic
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Fruit Stall to chaotic when (hunted or chase) and the Fruit Stall is orderly
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
 
 ## The calm-walk banana is unreachable — RULED (David, 2026-08-24): the
 ## stallkeeper is blocking the banana bin during the calm walk, so there is no
@@ -502,10 +596,13 @@ create the banana
 ## apple's calm lift never set (the 2009 player starts holding the apple and
 ## a mere urchin), so the banana gets the first-theft opener; the on-edge
 ## opener the change document quotes (`story.ni:1997`) is kept aside below.
-## Not carried: the chaotic-stall second theft ("no one notices you picking
-## up another [noun]", `story.ni:2447`) — the port has one banana and no
-## other placed fruit, so it has no consumer; and the generic blocked-stall
-## bounce (`story.ni:1825`), since no stall is ever blocked in Chapter 1.
+## Since the wares increment (2026-08-30) every fruit sits on its display
+## and takes this rule, so the chaotic-stall second theft ("no one notices
+## you picking up another [noun]", `story.ni:2447`) has consumers and is
+## carried as `fruit-theft-again`; the openers split on the `thefts`
+## counter as the source's urchin/thief flag did (`wares.chord`). The
+## generic blocked-stall bounce (`story.ni:1825`) is carried on the seven
+## stalls that can be blocked.
 ## Known seam (ADR-326 D5: the draw narrates nothing): the eject prints the
 ## theft text and no destination description — `look` answers.
 ##
@@ -530,16 +627,15 @@ define phrase banana-blocked
   to make a move.
 end phrase
 
-## Kept aside for David's call — the successful-thief opener (`story.ni:1997`):
-##   "With the stallkeepers all on edge about the mercenaries, it's not
-##   likely you'll be able to nick anything without someone noticing. Still,
-##   nothing ventured...
-##   *'Thief!'*"
+## The two openers are the source's own split (`story.ni:2440`): the first
+## theft of the game gets "Ah, this is something you know how to do"; a
+## Jack who has already been shouted at gets "With the stallkeepers all on
+## edge". The fruit named is the taking action's own `{the item}` slot.
 
 define phrase fruit-theft-chaos
   Ah, *this* is something you know how to do, at least. You sidle up casually
   to the stall, wait until the stallkeeper seems preoccupied, then reach out
-  and pluck the banana from the shelf.
+  and pluck {the item} from the shelf.
 
   Suddenly the stallkeeper jabs his finger at you and screams, *'Stop,
   thief!'*
@@ -552,10 +648,42 @@ define phrase fruit-theft-chaos
   into the fruit stall. Fruit scatters everywhere. The stallkeeper is wailing
   and berating the mercenary, who is covered with juice and slimy pulp.
 
-  In the general chaos, you slip away easily, stuffing the banana into your
+  In the general chaos, you slip away easily, stuffing {the item} into your
   satchel. Fortunately, no one managed to get a very good look at you, and
   the stallkeeper will be too busy cleaning up his wares to keep an eye out
   for you. You shouldn't have any trouble coming back here if you need to.
+end phrase
+
+define phrase fruit-theft-chaos-thief
+  With the stallkeepers all on edge about the mercenaries, it's not likely
+  you'll be able to nick anything without someone noticing. Still, nothing
+  ventured...
+
+  *'Thief!'*
+
+  One of the mercenaries happens to be wandering by at that moment. He hears
+  the stallkeeper's shouts and comes running straight for you!
+
+  Then there is a loud screech, and something gray and hairy scampers out
+  from under the mercenary's feet. He stumbles, trips, and pitches headlong
+  into the fruit stall. Fruit scatters everywhere. The stallkeeper is wailing
+  and berating the mercenary, who is covered with juice and slimy pulp.
+
+  In the general chaos, you slip away easily, stuffing {the item} into your
+  satchel. Fortunately, no one managed to get a very good look at you, and
+  the stallkeeper will be too busy cleaning up his wares to keep an eye out
+  for you. You shouldn't have any trouble coming back here if you need to.
+end phrase
+
+## `story.ni:2447` — a second fruit from the chaotic stall. "another
+## [noun]" reads "another piece of fruit": a marker cannot render a bare
+## name (deviation 8 in the story header's list).
+
+define phrase fruit-theft-again
+  With the stallkeeper still sorting out his spilled fruit, and most of the
+  shoppers trying to avoid the mess, no one notices you picking up another
+  piece of fruit. You slip the fruit into your satchel and move quickly to
+  another part of the market.
 end phrase
 
 define phrase fruit-keeper-busy
@@ -564,21 +692,49 @@ define phrase fruit-keeper-busy
 end phrase
 
 create the pear
+  aka yellowish pear, twisty pear
   edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of pears
 
   The pear is yellowish green with a bit of light brown on the bottom.
 
 create the kello fruit
   aka green fruit, unripe fruit
   edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of kello fruit
 
   It's a little bit too green, but probably still tasty.
 
 create the cluster of brambleberries
-  aka brambleberry cluster, berry cluster
+  aka brambleberry cluster, berry cluster, cluster
   edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of brambleberries
 
   The thumb-sized cluster is shiny and bluish-black.
+
+create the orange
+  aka pale orange, small orange
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of oranges
+
+  The orange is pale and disappointingly small.
+
+create the lime
+  aka dark green lime, green lime
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of limes
+
+  The dark green lime looks refreshing.
 
 ## ---------------------------------------------------------------------------
 ## THE APPLE AND THE ALLEY
@@ -672,6 +828,12 @@ end phrase
 define phrase apple-first-bite
   (PLACEHOLDER — David's line. The first bite, taken in the Alley.)
 end phrase
+
+## The other eight stalls' wares and the source's generic theft rule — what
+## stands in the rooms above, imported here so the rooms are declared first
+## and the stallkeepers below arbitrate after it.
+
+import "wares"
 
 ## ---------------------------------------------------------------------------
 ## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)
