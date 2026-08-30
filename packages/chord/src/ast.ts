@@ -269,6 +269,7 @@ export type Declaration =
   | DefineHatch
   | DefineSequence
   | DefineTimer
+  | DefineChapters
   // ADR-264 story-global numeric counter:
   | DefineCounter
   // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
@@ -1743,6 +1744,37 @@ export interface MachineTransition {
  * counts turns by name: once started it steps through `states` one per
  * turn and ends in the built-in `expired`. `owner` null = the story's.
  */
+/**
+ * The moment a chapter begins (ADR-330 D2) — one of the four event
+ * spellings drawn from the vocabulary the language already has. `<entity>
+ * moves` is deliberately not one of them (the parser names it in a fix-it).
+ */
+export type ChapterTrigger =
+  | { kind: 'game-starts'; span: Span }
+  | { kind: 'first-visit'; room: NameRef; span: Span }
+  | { kind: 'timer-expires'; timer: ValueExpr; span: Span }
+  | { kind: 'becomes'; owner: NameRef; state: string; span: Span };
+
+/** One `define chapters` row (ADR-330 D1): `<name> - <title>`, an optional description, `begins when <event>`. */
+export interface ChapterRowDecl {
+  /** The identifier conditions name — one kebab word, lowercased. */
+  name: string;
+  /** The title as written after the dash — prose the client prints, never parsed. */
+  title: string;
+  /** The optional indented paragraph — joined text, or null when absent. */
+  description: string | null;
+  /** Null only when the row's `begins when` line is missing (already reported). */
+  trigger: ChapterTrigger | null;
+  span: Span;
+}
+
+/** `define chapters … end chapters` (ADR-330 D1) — admitted only under `use chapters` (analyzer gate). */
+export interface DefineChapters {
+  kind: 'define-chapters';
+  rows: ChapterRowDecl[];
+  span: Span;
+}
+
 export interface DefineTimer {
   kind: 'define-timer';
   name: string;
@@ -2262,7 +2294,22 @@ export type ConditionNode =
   | NoneOfNode
   | ClientHasNode
   | SubjectChangesNode
-  | AskedNode;
+  | AskedNode
+  | ChapterConditionNode;
+
+/**
+ * `during <chapter>` / `before <chapter>` / `after <chapter>` (ADR-330 D5) —
+ * the current chapter is / has not reached / has passed the named row.
+ * `during` also stands as a head suffix beside `while` (sugar for
+ * `while during <chapter>`). The name resolves to the row's ordinal in the
+ * analyzer.
+ */
+export interface ChapterConditionNode {
+  kind: 'chapter';
+  relation: 'during' | 'before' | 'after';
+  name: string;
+  span: Span;
+}
 
 /**
  * `the subject changes` (ADR-320 D9, frozen 2026-08-17) — true when the

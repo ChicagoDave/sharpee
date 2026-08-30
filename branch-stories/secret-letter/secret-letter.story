@@ -56,6 +56,7 @@ story
   story-version: 0.1.0
   description: Grubber's Market, a stolen apple, and a girl the whole city is about to start looking for.
   states: calm, hunted, chase
+  use chapters
 
 ## ---------------------------------------------------------------------------
 ## THE IMPORTS
@@ -74,6 +75,20 @@ story
 ## first, then the place (with its people). Reordering these lines changes
 ## behaviour.
 ## ---------------------------------------------------------------------------
+
+## THE CHAPTERS (ADR-330, David 2026-08-29: "Chapter I - Grubber's Market begins
+## when the game starts. Chapter II - Commerce Street begins when the player
+## visits Commerce Street for the first time."). Titles are his words verbatim;
+## each row may carry an indented description paragraph — a line for the
+## title card's second line — which is his to add. A chapter ends when the
+## next begins; the client is told on the `story.chapter` channel.
+
+define chapters
+  market - Chapter I - Grubber's Market
+    begins when the game starts
+  commerce - Chapter II - Commerce Street
+    begins when the player visits Commerce Street for the first time
+end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
 
@@ -100,11 +115,19 @@ import "grubbers-market"
 ## can end where the source's narration ended.
 ## ---------------------------------------------------------------------------
 
+## The look is a state (`disguise.chord`): `urchin` is the opening dress,
+## `dressed` the escape disguise, `identified` the disguise after the boots
+## give her away. Her own description follows it — the detail line is
+## David's. The sweep reads her in every state except `dressed` (change
+## document, "The recognition rule, sharpened"), so the disguise window is
+## the one time a move does not restart the arrival clock.
+
 create Jack
   a person
   playable
   starts in the Northwest Junction
   kick-yourself
+  states: urchin, dressed, identified
   wears the old gray cloak
   wears the woolen cap
   wears the boots
@@ -113,11 +136,15 @@ create Jack
   Jack Toresal, who has been a boy in this market for as long as anyone here has
   bothered to look.
 
+  phrase detail while Jack is dressed:
+    (PLACEHOLDER — David's line. Jack in the dress and the fashionable hat,
+    boots underneath.)
+
   on going while the wandering mercenaries is aggressive
     refuse merc-held
   end on
 
-  after going while hunted
+  after going while (hunted and Jack is not dressed) or (chase and Jack is identified)
     restart the player's waiting
   end after
 

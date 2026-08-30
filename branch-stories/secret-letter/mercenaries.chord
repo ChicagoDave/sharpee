@@ -66,6 +66,15 @@
 ## her, and `after going while hunted` restarts `waiting`. The apple's
 ## `on eating` starts `waiting` the moment the story turns `hunted`.
 ##
+## THE SWEEP READS HER ONLY WHERE THEY STAND (2026-08-29): `search`, `lunge`
+## and `recovery` step forward only while the pair is in Jack's room. Under
+## ADR-328 D3 an expiry clause fires wherever the player is, and an
+## AUTHORIAL move — the slide's `move the player`, the let-go drop — never
+## fires `when the player moves`, so without the guard a search begun at the
+## Top of the Post ran on to `aggressive` while she was on the wire and
+## held her behind the fruit stall with nobody there. A search she has
+## walked away from now simply lapses; the next arrival is `waiting`'s.
+##
 ## The stallkeeper talk-refusals in the mercenaries' presence
 ## (`story.ni:1875-1879`) live below as the `wary` trait, composed on the ten
 ## keepers. Not here, on purpose: the conspicuous shopper (`story.ni:3395-3420`)
@@ -134,13 +143,13 @@ create the wandering mercenaries
     phrase merc-arrival
   end when
 
-  when search expires
+  when search expires, while the wandering mercenaries is here
     change the wandering mercenaries to approaching
     start lunge
     phrase merc-spotted
   end when
 
-  when lunge expires
+  when lunge expires, while the wandering mercenaries is here
     change the wandering mercenaries to aggressive
     start capture
     phrase merc-grab
@@ -166,8 +175,56 @@ create the wandering mercenaries
       senses are yanked away. Why they wanted you, you never awake to find out.
   end when
 
-  when recovery expires
+  when recovery expires, while the wandering mercenaries is here
     start lunge
+  end when
+
+  when the player's exposure expires, while the player is in the Fruit Stall and Jack is dressed
+    change Jack to identified
+    move the wandering mercenaries here
+    change the wandering mercenaries to approaching
+    start lunge
+    phrase boots-spotted
+  end when
+
+  when the player's tent-escape expires, while the player is in Inside the Silk Tent
+    move the wandering mercenaries here
+    change the wandering mercenaries to aggressive
+    phrase tent-caught
+    kill the player mercenary-brutality
+  end when
+
+  when the player's tent-escape expires, while the player is in the Base of the Center Post
+    phrase pole-escape-begins
+    start the player's pole-escape
+  end when
+
+  when the player's tent-escape expires, while the player is in the Top of the Post
+    phrase pole-escape-begins
+    move the wandering mercenaries to the Base of the Center Post
+    phrase pole-safe
+    start the player's pole-problem
+  end when
+
+  when the player's pole-escape expires, while the player is not in the Top of the Post
+    move the wandering mercenaries here
+    change the wandering mercenaries to aggressive
+    phrase pole-caught
+    kill the player mercenary-brutality
+  end when
+
+  when the player's pole-escape expires, while the player is in the Top of the Post
+    move the wandering mercenaries to the Base of the Center Post
+    phrase pole-safe
+    start the player's pole-problem
+  end when
+
+  when the player's pole-problem expires
+    start the player's pole-destruction
+  end when
+
+  when the player's pole-destruction expires
+    kill the player pole-falls
   end when
 
   when the player moves
@@ -267,6 +324,161 @@ define trait kick-yourself
     refuse kick-self
   end on
 end trait
+
+## ---------------------------------------------------------------------------
+## THE CHASE — from TE20 to the slide (`story.ni:4003-4128`)
+##
+## The story moves `hunted` → `chase` on the TE20 trade (change document,
+## "What moves hunted → chase": TE20, as in the source; the tent and pole
+## timers are `chase` content). The sweep stops reading her the moment the
+## chase begins — its arrival clock restarts only while `hunted` — and the
+## source's rails take over, each a timer on the player:
+##
+##   * `tent-escape` — two turns to be out the back of the tent (one named
+##     turn, then expiry). Still in the tent: caught, killed. At the Base:
+##     the pole clock starts. Already at the Top: straight to the pole.
+##   * `pole-escape` — one turn to be at the Top of the Post. Not there:
+##     caught, killed. There: the pair takes the base and cannot climb.
+##   * `pole-problem` — seven turns of texture below (six named turns and
+##     the expiry), the source's `TIMER_Pole_Problem`.
+##   * `pole-destruction` — the axe: two named turns spoken as they are
+##     reached (POLE1, POLE2), then the expiry is POLE3 — the fall.
+##
+## Leaving the top by the cable resets the last two (`aerial-runway.chord`).
+## The clocks' clauses are in the pair's block above; every line below is
+## Gentry's except the three exit refusals, which the source enforced
+## silently ("stop the action") and which are David's to write.
+##
+## Not carried: the axe as an examinable thing and the "You can't do
+## anything to the mercenaries while you're way up here" refusals — an
+## NPC-carried thing is out of the player's scope (GH #313), and the pair is
+## a room below, out of scope anyway.
+## ---------------------------------------------------------------------------
+
+define timer tent-escape for the player
+  fleeing
+end timer
+
+define timer pole-escape for the player
+end timer
+
+define timer pole-problem for the player
+  muttering
+  kicking
+  shouting
+  crowding
+  debating
+  running
+  meanwhile
+    phrase pole-texture
+end timer
+
+define timer pole-destruction for the player
+  axe
+    A mercenary enters the square behind Teisha's tent, carrying an axe.
+
+    Uh-oh.
+  chopping
+    There is a solid chock! from below as the axe bites into wood, and the
+    entire post shivers.
+end timer
+
+define phrase tent-caught
+  'Jack, what are you doing?!' Teisha cries, 'Get out of—oof!'
+
+  The mercenaries charge in, knocking Teisha and racks of silk garments to
+  the floor. A rock-hard fist closes around your upper arm. 'Gotcha!' the
+  mercenary yells. The other one starts hollering for his companions as
+  they drag you out of the tent.
+end phrase
+
+define phrase mercenary-brutality
+  The captain soon arrives, followed by two more of his men. They take your
+  other arm as their leader smiles. 'Good work, dims. Got ourselves a nice
+  little commission with this one.' And before you can react, he takes a
+  sack of black cloth from his belt and jerks it down over your head.
+
+  Everything goes dark. You can't breathe. You struggle, but you can no more
+  break the iron grip on your arms than you could uproot a tree. The men
+  holding you curse. Dimly, you hear shouts from the crowd — someone
+  protesting this rough treatment of a child.
+
+  'Don't worry, m'lady,' laughs the mercenary leader. 'We'll treat the
+  little rat nice an' gentle. Like this, see?'
+
+  Something huge and heavy crashes into your head, and the rest of your
+  senses are ripped away. Why they wanted you, you never awake to find out.
+end phrase
+
+define phrase pole-escape-begins
+  You can hear Teisha yelling shrilly at the mercenaries behind you — then
+  her tirade is cut off abruptly amidst grunted curses. Someone is fumbling
+  with the back flap of the tent!
+end phrase
+
+define phrase pole-caught
+  The mercenaries burst out of the tent. With nowhere to run, you are
+  quickly overwhelmed. They drag you back out to the market (dimly you see
+  Teisha sitting amidst her scattered silks, nursing a bloody nose) and
+  hold you firmly while calling to their comrades.
+end phrase
+
+define phrase pole-safe
+  One of the mercenaries tries to climb after you, but can't get more than
+  a few feet up before sliding back. Looks like you're safe for the time
+  being — but they're already heatedly discussing how to get you down, and
+  there are only so many ways you can go from here.
+end phrase
+
+define phrase pole-texture, randomly
+  Another of the mercenaries tries his luck climbing the post, but his
+  callused fingers can't get a grip on the wood.
+or
+  One of the mercenaries kicks the post in frustration.
+or
+  The mercenaries continue to shout and point.
+or
+  More mercenaries are squeezing into the tiny square behind Teisha's tent.
+or
+  The sounds of heated debate drift up from below. You just make out the
+  word, 'fire'.
+or
+  The sounds of heated debate drift up from below. You just make out the
+  word, 'ladder'.
+or
+  The sounds of heated debate drift up from below. You just make out the
+  word, 'arrows'.
+or
+  One of the mercenaries runs back out through Teisha's tent.
+end phrase
+
+define phrase pole-falls
+  The mercenaries chop ever faster, taking turns as each one grows tired.
+  Soon the post is shaking and swaying dangerously, and it is all you can do
+  to keep your balan-
+
+  And that's when the post gives one horrendous lurch, your foot slips, and
+  you go pinwheeling off the top of the post. You just have time to notice
+  the grins on the mercenaries' faces, and the fact that none of them are
+  trying to catch you, before the ground fills your sight and everything
+  goes black.
+end phrase
+
+## The three ways back the source refused without a word during the chase
+## (`story.ni:4030`, `:4044`): the tent's south, the base's south, the top's
+## down. David's lines.
+
+define phrase tent-no-way-back
+  (PLACEHOLDER — David's line. Not back into the market — out the back way.)
+end phrase
+
+define phrase base-no-way-back
+  (PLACEHOLDER — David's line. Not back into the tent; up.)
+end phrase
+
+define phrase top-no-way-down
+  (PLACEHOLDER — David's line. The mercenaries are at the base of the post.)
+end phrase
 
 ## ---------------------------------------------------------------------------
 ## THE LINES — all Gentry's

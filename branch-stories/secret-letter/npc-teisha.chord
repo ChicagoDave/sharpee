@@ -31,8 +31,11 @@ create Teisha
   aka woman, merchant, saleswoman, seller, vendor, clothier, redhead, red curls, curls
   pronouns she
   mood calm
+  states: unaware, told
   starts in Inside the Silk Tent
   carries the measuring cord
+  carries the dress
+  carries the fashionable hat
 
   Teisha is a short, busty woman with a smile as warm as her tumbling red curls.
   She likes you, and she knows that you'd never nick from her stall, so she lets
@@ -57,21 +60,259 @@ define topics for Teisha
   about "the tent", "behind the tent", "the pole", "the post":
     phrase teisha-behind-the-tent
   about "the clothes", "the silks", "the garments", "the gowns", "her wares":
-    phrase teisha-the-clothes
+    phrase teisha-the-clothes when calm
+    phrase teisha-disguise when hunted
   about "the monkey":
     phrase teisha-the-monkey
   about "fossville", "baron fossville", "the baron":
     phrase teisha-fossville
   about "the ascension":
     phrase teisha-the-ascension
+  about "the mercenaries", "the thugs", "the soldiers", "the men with swords", "big guys with swords":
+    phrase teisha-mercenaries-calm when calm
+    phrase teisha-told-mercenaries when hunted
+    change Teisha to told when hunted
+  about "nothing", "everything's fine", "it's tricky", "the matter", "what's wrong":
+    phrase teisha-nothing-calm when calm
+    phrase teisha-just-tricky when hunted
+    change Teisha to told when hunted
+  about "hiding", "somewhere to hide", "help", "a place to hide":
+    phrase teisha-hiding-calm when calm
+    phrase teisha-hide when hunted
+  about "a disguise", "the dress", "the hat", "a cloak":
+    phrase teisha-disguise-calm when calm
+    phrase teisha-disguise when hunted
+  about "a trade", "trading", "what she would trade", "the price", "a deal":
+    phrase teisha-trade-calm when calm
+    phrase teisha-trade-for when hunted
 end topics
+
+## THE CHASE OCCASION (change document, "Teisha's conversation": TE1-TE9,
+## TE16 and TE20 stay in the chase). Chord's greeting arms take no `while`,
+## so the calm and hunted openers share an arm and split on a statement
+## `when` — the same row answers in one place, as ADR-320 requires.
+##
+## The 2009 menu replies become topics, the stallkeeper precedent: TE2 (the
+## mercenaries), TE6 ("everything's just tricky"), TE7 (hide), TE8 (a
+## disguise), TE16 (what she would trade). TE3 ("look at that cloak again")
+## and TE4 ("everything's fine") were menu-only turns with no ask behind
+## them and are not carried; TE10/TE17/TE18/TE19 are menu plumbing. The
+## source's `TE5 while TE2/TE5/TE6 unfired, else TE9` return rule is
+## Teisha's `unaware`/`told` state: telling her (TE2 or TE6) flips it.
+##
+## Calm-walk answers for the chase-only topics are David's — a player can
+## ask about hiding before anything has happened.
 
 define greetings for Teisha
   first time:
-    phrase teisha-calm-opener
+    phrase teisha-calm-opener when calm
+    phrase teisha-spooked when hunted or chase
   on return:
-    phrase teisha-calm-return
+    phrase teisha-calm-return when calm
+    phrase teisha-back-so-soon when hunted or chase and Teisha is unaware
+    phrase teisha-still-here when hunted or chase and Teisha is told
 end greetings
+
+## ---------------------------------------------------------------------------
+## TE20 — THE TRADE, and the chase's first line
+##
+## The intercept is on the necklace (`monkey.chord`): giving or showing it to
+## Teisha runs Gentry's haggle as the action's own message, then the trade
+## itself — the port's first acting statements (ADR-329): Teisha GIVES the
+## dress and the hat, refusable and witnessed through the real `giving`,
+## rather than the loader teleporting them. They ride in the satchel after
+## (change document: "stuffed in a satchel when she slides"). The necklace
+## leaves play (`story.ni:3309`). Then the source's Final Chase opener
+## (`story.ni:4009`), Gentry's, verbatim.
+## ---------------------------------------------------------------------------
+
+define trait trade-for-the-necklace
+  on the player giving while the player is in Inside the Silk Tent
+    phrase teisha-trade
+  end on
+
+  after the player giving while the player is in Inside the Silk Tent
+    Teisha gives the dress to the player
+    Teisha gives the fashionable hat to the player
+    move the dress to the cloth satchel
+    move the fashionable hat to the cloth satchel
+    remove the necklace
+    phrase teisha-hurry
+    change the story to chase
+    reset the player's waiting
+    move the wandering mercenaries offstage
+    change the wandering mercenaries to oblivious
+    reset the wandering mercenaries' search
+    reset the wandering mercenaries' lunge
+    reset the wandering mercenaries' recovery
+    start the player's tent-escape
+  end after
+
+  on the player showing while the player is in Inside the Silk Tent
+    phrase teisha-trade
+  end on
+
+  after the player showing while the player is in Inside the Silk Tent
+    Teisha gives the dress to the player
+    Teisha gives the fashionable hat to the player
+    move the dress to the cloth satchel
+    move the fashionable hat to the cloth satchel
+    remove the necklace
+    phrase teisha-hurry
+    change the story to chase
+    reset the player's waiting
+    move the wandering mercenaries offstage
+    change the wandering mercenaries to oblivious
+    reset the wandering mercenaries' search
+    reset the wandering mercenaries' lunge
+    reset the wandering mercenaries' recovery
+    start the player's tent-escape
+  end after
+end trait
+
+## The trade ends the sweep and starts the chase (change document, "What
+## moves hunted → chase"): the story ratchets to `chase`, the pair's clocks
+## go back to idle and the pair off-stage — they are "just outside" — and
+## the tent-escape clock (`mercenaries.chord`, "THE CHASE") starts.
+
+## DAVID: TE20 rewritten around a dress and hat. Gentry's haggle
+## (`story.ni:3215`) is kept aside — the change document leaves the
+## perceiver line ("It brings out your eyes. You look... almost royal") to
+## your call:
+##   "You hold out the necklace, dangling it by its chain. 'Have a look at
+##   this, Teisha,' you say. 'You think this is worth one of your cloaks?'
+##   Teisha's eyebrow shoots up, but she manages to hide her excitement with
+##   the coolness of a professional haggler. 'That's not bad,' she mutters.
+##   'Most of Hathid's wares are just pretty glass, but this...' She gives
+##   you a look. 'Now, tell me the truth, Jack, you didn't just steal this
+##   from somewhere, did you?'
+##   You shake your head proudly. It's not exactly a lie.
+##   'Well, not that it matters.' The necklace disappears into one of
+##   Teisha's pockets. 'Let's see...' she starts searching through the
+##   clothes, looking for something in your size. 'This should fit. I think
+##   it suits you, too.' She holds out a light green cloak. 'What do you
+##   think?'
+##   It takes your breath away, but you try to hide your eagerness just as
+##   Teisha hid hers. 'It's tricky,' you say, nodding casually.
+##   Teisha laughs. 'Then it's yours.'"
+
+define phrase teisha-trade
+  (PLACEHOLDER — David's line. TE20: the necklace for the dress and the
+  fashionable hat.)
+end phrase
+
+define phrase teisha-hurry
+  Suddenly you hear someone shouting just outside: 'Hey, any of you dims
+  check inside this tent yet?'
+
+  Teisha's face turns white. 'Hurry, Jack!' she hisses, 'Out the back way!'
+end phrase
+
+## DAVID: TE1 opens "Change your mind about that cloak?" — a cloak Jack never
+## discussed in the calm walk. Gentry's (`story.ni:3176`), kept aside:
+##   "'Hello, Jack,' says Teisha. 'Change your mind about that cloak?' Then
+##   she gets a look at your face and frowns. 'Something the matter, sweetie?
+##   You look spooked.'"
+
+define phrase teisha-spooked
+  (PLACEHOLDER — David's line. TE1 without the cloak: Teisha sees Jack's face
+  and knows something is wrong.)
+end phrase
+
+define phrase teisha-back-so-soon
+  'Back so soon, Jack?' Teisha asks. She eyes you closely. 'Are you sure
+  there's nothing the matter?'
+end phrase
+
+define phrase teisha-still-here
+  Teisha's face falls as you stumble back into the tent. 'You're still
+  here?' she asks. 'I'd hoped you'd gotten away by now.'
+end phrase
+
+define phrase teisha-told-mercenaries
+  'Now that you mention it, I am a bit spooked,' you say, trying to catch
+  your breath. 'There's a bunch of big guys with swords out there, chasing
+  me all over the market!'
+
+  Teisha frowns. 'Big guys with — you mean mercenaries? In Grubber's?' She
+  peeks out through the front flap. 'Brigid help us,' she mutters, glancing
+  back at you. 'Don't tell me what they're after you for — I don't want to
+  know.'
+end phrase
+
+define phrase teisha-just-tricky
+  'No, really,' you say, in a not-quite-steady voice. 'Everything's just
+  tricky.'
+
+  Teisha smirks. 'Uh-huh. You know I don't just sit by myself in this silk
+  tent all day, don't you, Jack? I do have some idea of what's going on in
+  the world outside, you know. I know there are mercenaries searching
+  Grubber's, and I'm guessing they're probably after you.' Her voice softens,
+  and she puts her hand on your shoulder. 'Don't worry, Jack. I don't need
+  to know what you did to get them after you. I won't turn you in.'
+end phrase
+
+define phrase teisha-hide
+  'I need help, Teisha,' you tell her plaintively. 'I need somewhere to
+  hide.'
+
+  Teisha sighs. Although you know she cares about you, you also know that
+  Teisha is a smart, practical woman, and first and foremost she is worried
+  about losing her customers. 'All right,' she says, 'you can stay in here
+  as long as you like, but if the mercenaries decide to search the place I
+  can't stop them. Probably your best bet is to slip out that way—' she
+  points to the narrow gap in the back wall of the tent. 'I'll pretend I
+  never saw you.'
+end phrase
+
+## DAVID: TE8 and TE16 both name cloaks. Gentry's, kept aside:
+##   TE8: "Suddenly your eyes fall on the many cloaks hanging among Teisha's
+##   silks. 'I could use one of your cloaks as a disguise,' you say. 'The
+##   mercenaries expect me to be wearing my usual ratty stuff.'
+##   Teisha sighs. 'Jack... I'm sorry. These silks are expensive, and I have
+##   to pay my suppliers and make a living for myself. If you have coin, or
+##   something worth trading, maybe I can cut you a deal. Otherwise...' she
+##   shakes her head."
+##   TE16: "'I need one of those cloaks, Teisha,' you say. 'Just tell me what
+##   you want for it, and I'll get it, somehow.'
+##   Teisha thinks for a moment. 'Most of the things you'd find in Grubber's
+##   are staple goods, not much use to me. I'd need something with resale
+##   value. Jewelry, or the like. But don't you go stealing anything, Jack,'
+##   she adds hastily. 'I don't want you getting into even more trouble than
+##   you're already in!'" / "a piece of jewelry would do nicely."
+
+define phrase teisha-disguise
+  (PLACEHOLDER — David's line. TE8 around a dress: Jack asks for a disguise;
+  Teisha needs coin or something worth trading.)
+end phrase
+
+define phrase teisha-trade-for
+  (PLACEHOLDER — David's line. TE16 around a dress: something with resale
+  value — jewelry — and don't go stealing anything.)
+end phrase
+
+## The calm-walk answers to the chase-only topics — David's.
+
+define phrase teisha-mercenaries-calm
+  (PLACEHOLDER — David's line. Teisha on the mercenaries before anything has
+  happened.)
+end phrase
+
+define phrase teisha-nothing-calm
+  (PLACEHOLDER — David's line. Nothing is the matter, in the calm walk.)
+end phrase
+
+define phrase teisha-hiding-calm
+  (PLACEHOLDER — David's line. Hide from what? — in the calm walk.)
+end phrase
+
+define phrase teisha-disguise-calm
+  (PLACEHOLDER — David's line. A disguise, asked idly in the calm walk.)
+end phrase
+
+define phrase teisha-trade-calm
+  (PLACEHOLDER — David's line. What she trades for, asked in the calm walk.)
+end phrase
 
 define phrase teisha-atmosphere, randomly
   Teisha hums quietly to herself.

@@ -230,6 +230,26 @@ ul, ol, menu {
   margin-top: 1em;
 }
 
+/* ADR-330 D4: a chapter's title card — the title bold and set off from the
+   turn's prose, the description under it; the card is a block so a page can
+   style or hide it whole (`.sharpee-chapter`). */
+.sharpee-prose-pane .sharpee-chapter {
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+
+.sharpee-prose-pane p.sharpee-chapter-title {
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 0.25em;
+}
+
+.sharpee-prose-pane p.sharpee-chapter-description {
+  font-style: italic;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* The gap `banner-spacer` used to occupy. The channel reassembly discards that
    empty piece (`stdlib/src/channels/standard.ts` — `case 'banner-spacer'`), so
    the separation before the story tail has to live here instead. Consecutive

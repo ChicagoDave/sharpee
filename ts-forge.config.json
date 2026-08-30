@@ -34,6 +34,7 @@
     "packages/extensions/basic-combat/tsconfig.json",
     "packages/extensions/scoring/tsconfig.json",
     "packages/extensions/hunger/tsconfig.json",
+    "packages/extensions/chapters/tsconfig.json",
     "stories/dungeo/tsconfig.json"
   ],
   "targets": {

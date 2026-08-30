@@ -34,7 +34,7 @@ import {
   type StoryIR,
 } from '@sharpee/chord';
 import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
-import type { IROnClause } from '@sharpee/chord';
+import type { IROnClause, IRChapterTrigger } from '@sharpee/chord';
 
 /**
  * Topics an entity's own TURN-TRIGGERED clauses are gated on knowing.
@@ -99,6 +99,7 @@ import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
 import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
+import { CHAPTER_CURRENT_KEY, CHAPTER_FIRED_PREFIX, createChaptersPlugin, type ChapterRow, type ChapterRuntimeTrigger } from '@sharpee/ext-chapters';
 import {
   applyCompiledCharacter,
   createTraitMemoryAccess,
@@ -174,7 +175,7 @@ import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordBehaviorTrait, ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -814,6 +815,18 @@ export class ChordStory implements Story {
     // player`) resolve through the `player` sentinel mapped just above.
     this.applyCharacterBlocks(world);
 
+    // ADR-330 D2: the opening chapter is current from the moment the game
+    // starts — before the first turn, so `during <opener>` holds while turn 1
+    // renders. Seeded here, not by the plugin (which runs after an action);
+    // the plugin announces it on turn 1. A restored world already carries
+    // these keys and is never re-seeded (this method runs once per boot,
+    // before any restore).
+    const opener = (this.ir.chapters ?? []).find((c) => c.trigger.kind === 'game-starts');
+    if (opener && world.getStateValue(CHAPTER_CURRENT_KEY) === undefined) {
+      world.setStateValue(CHAPTER_FIRED_PREFIX + opener.name, true);
+      world.setStateValue(CHAPTER_CURRENT_KEY, opener.ordinal);
+    }
+
     // ADR-240: no initial derived-property evaluation — derived state is
     // registered evaluators, consulted live at every read.
   }
@@ -1180,6 +1193,37 @@ export class ChordStory implements Story {
         narrationEventId: 'if.event.hunger_narrated',
         fallbackPhraseId: 'if.action.hunger.crossed',
       }));
+    }
+
+    // ADR-330: chapters. The rows lower here — the registry map cannot carry
+    // them (ADR-260 D5) — each trigger to what the plugin can read directly:
+    // a room's world id, a timer record's key, a state value's key. Rogue IR
+    // without the `use` is a LoadError, never silently dead (the machines
+    // precedent).
+    if ((this.ir.chapters ?? []).length > 0) {
+      if (!(this.ir.uses ?? []).includes('chapters')) {
+        throw new LoadError('`define chapters` needs `use chapters` in the story header.', this.ir.chapters![0].span);
+      }
+      const lower = (t: IRChapterTrigger): ChapterRuntimeTrigger => {
+        switch (t.kind) {
+          case 'game-starts':
+            return { kind: 'game-starts' };
+          case 'first-visit':
+            return { kind: 'first-visit', roomId: this.requireWorldId(t.room) };
+          case 'timer-expires':
+            return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
+          case 'becomes':
+            return { kind: 'becomes', stateKey: t.owner === 'story' ? CHORD_STORY_STATE_KEY : CHORD_STATE_PREFIX + t.owner, state: t.state };
+        }
+      };
+      const rows: ChapterRow[] = this.ir.chapters!.map((c) => ({
+        name: c.name,
+        title: c.title,
+        description: c.description,
+        ordinal: c.ordinal,
+        trigger: lower(c.trigger),
+      }));
+      engine.getPluginRegistry().register(createChaptersPlugin(rows));
     }
 
     const daemons = this.runtime.buildSchedulerDaemons();

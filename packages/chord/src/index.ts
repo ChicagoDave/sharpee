@@ -29,7 +29,7 @@ export type { StdlibManifest, StdlibLocaleFacts } from './stdlib-manifest.js';
 export { conditionRequiresSelfBreaking } from './condition-discharge.js';
 export { CHARACTER_MANIFEST } from './character-manifest.js';
 export type { CharacterManifest } from './character-manifest.js';
-export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
+export { EXTENSION_MANIFESTS, CHAPTERS_MANIFEST, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
 export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 export type { PhrasebookManifest } from './phrasebooks.js';

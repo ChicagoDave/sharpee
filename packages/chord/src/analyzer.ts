@@ -63,6 +63,8 @@ import {
   PlaceExpr,
   OnClause,
   DefineTimer,
+  DefineChapters,
+  ChapterTrigger,
   TimerClause,
   MoveClause,
   KillStmt,
@@ -108,6 +110,8 @@ import {
   IRMeterRung,
   IRCounterDef,
   IRTimerDef,
+  IRChapterDef,
+  IRChapterTrigger,
   IRTimerClause,
   IRMoveClause,
   IRLanding,
@@ -294,6 +298,8 @@ function conditionFingerprint(cond: ConditionNode): string {
       return `not(${conditionFingerprint(cond.operand)})`;
     case 'chance':
       return `chance:${cond.n}`;
+    case 'chapter':
+      return `chapter:${cond.relation}:${cond.name}`;
     case 'client-has':
       return `client-has:${cond.capability}`;
     case 'condition-ref':
@@ -472,6 +478,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
     case 'chance':
     case 'condition-ref':
     case 'client-has':
+    case 'chapter':
       return false;
     case 'any-of':
     case 'none-of':
@@ -780,6 +787,9 @@ class Analyzer {
   private pronounSetDecls = new Map<string, DefinePronouns>();
   /** `define fact` declarations in order (ADR-310 D14), and their built defs by id. */
   private factDecls: DefineFact[] = [];
+  /** `define chapters` blocks (ADR-330) — at most one; built after timers. */
+  private chapterDecls: DefineChapters[] = [];
+  private chapterDefs: IRChapterDef[] = [];
   private factDefs: IRFactDef[] = [];
   private factById = new Map<string, IRFactDef>();
   /** `define temperament` defs plus per-entity synthesized inline/override defs (ADR-318 D3), in declaration order. */
@@ -941,6 +951,8 @@ class Analyzer {
     this.buildWitnessedTopics();
     // ADR-325 D3: timers resolve their owners against the entity table.
     this.buildTimers();
+    // ADR-330: chapters resolve their triggers against entities, timers, and states.
+    this.buildChapters();
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -993,6 +1005,8 @@ class Analyzer {
       hasHatches: false,
       // Additive and optional — absent when the story declares no facts.
       ...(this.factDefs.length > 0 ? { facts: this.factDefs } : {}),
+      // ADR-330 chapters — additive and optional, present only under `use chapters`.
+      ...(this.chapterDefs.length > 0 ? { chapters: this.chapterDefs } : {}),
       // ADR-318 D12a witnessed-act aliases — additive and optional.
       ...(this.witnessedTopics.length > 0 ? { witnessedTopics: this.witnessedTopics } : {}),
       // ADR-310 D5 custom vocabulary — additive and optional.
@@ -1132,6 +1146,7 @@ class Analyzer {
         case 'define-profile':
         case 'define-mood':
         case 'define-personality':
+        case 'define-chapters':
           break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
@@ -3238,6 +3253,14 @@ class Analyzer {
           } else {
             this.customMoods.set(decl.name, decl);
           }
+        }
+      }
+      else if (decl.kind === 'define-chapters') {
+        // ADR-330 D1: one block per story; built in buildChapters after timers.
+        if (this.chapterDecls.length > 0) {
+          this.diagnostics.error('analysis.duplicate-chapters', 'This story already has a `define chapters` block — one block declares every chapter.', decl.span);
+        } else {
+          this.chapterDecls.push(decl);
         }
       }
       else if (decl.kind === 'define-personality') {
@@ -7303,6 +7326,91 @@ class Analyzer {
   }
 
   /**
+   * Build the chapter table (ADR-330 D1–D3): the `use chapters` gate, name
+   * uniqueness, the opening row (exactly one on `the game starts`, and it is
+   * the first row), and each trigger resolved — a room for a first visit, a
+   * timer's qualified key, an entity or the story with a declared state.
+   */
+  private buildChapters(): void {
+    const decl = this.chapterDecls[0];
+    if (!decl) return;
+    if (!this.usedExtensions.has('chapters')) {
+      this.diagnostics.error(
+        'analysis.chapters-needs-use',
+        'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
+        decl.span,
+      );
+      return;
+    }
+    const seen = new Set<string>();
+    const openers: number[] = [];
+    decl.rows.forEach((row, ordinal) => {
+      if (seen.has(row.name)) {
+        this.diagnostics.error('analysis.duplicate-chapter', `A chapter named \`${row.name}\` is already declared — names are what conditions say, one each.`, row.span);
+        return;
+      }
+      seen.add(row.name);
+      if (!row.trigger) return; // parse.chapter-no-trigger already reported
+      const trigger = this.resolveChapterTrigger(row.trigger);
+      if (!trigger) return;
+      if (trigger.kind === 'game-starts') openers.push(ordinal);
+      this.chapterDefs.push({ name: row.name, title: row.title, description: row.description ?? '', ordinal, trigger, span: row.span });
+    });
+    if (openers.length === 0) {
+      this.diagnostics.error(
+        'analysis.chapter-no-opening',
+        'A story with `use chapters` opens a chapter when the game starts — give the first row `begins when the game starts` (ADR-330 D2).',
+        decl.span,
+      );
+    } else if (openers.length > 1) {
+      this.diagnostics.error(
+        'analysis.chapter-two-openings',
+        'Only one chapter begins when the game starts — this is the second row on that moment.',
+        decl.rows[openers[1]].span,
+      );
+    } else if (openers[0] !== 0) {
+      this.diagnostics.error(
+        'analysis.chapter-opening-not-first',
+        'The chapter that begins when the game starts must be the first row — chapters are in declaration order, and nothing can begin before the opening (ADR-330 D1/D3).',
+        decl.rows[openers[0]].span,
+      );
+    }
+  }
+
+  /** Resolve one chapter trigger (ADR-330 D2), or null after reporting. */
+  private resolveChapterTrigger(t: ChapterTrigger): IRChapterTrigger | null {
+    switch (t.kind) {
+      case 'game-starts':
+        return { kind: 'game-starts' };
+      case 'first-visit': {
+        const id = this.resolveEntityId(t.room);
+        if (id === null) return null; // already reported
+        const sym = this.byId.get(id);
+        if (!sym || !sym.decl.compositions.some((k) => k.article !== null && k.words[0]?.toLowerCase() === 'room')) {
+          this.diagnostics.error('analysis.chapter-visit-not-room', `\`${t.room.words.join(' ')}\` is not a room — a chapter begins on the first visit to a ROOM.`, t.room.span);
+          return null;
+        }
+        return { kind: 'first-visit', room: id };
+      }
+      case 'timer-expires': {
+        const key = this.timerKeyOf(t.timer, STORY_SCOPE);
+        if (key === null) {
+          const candidates = [...this.timers.values()].map((x) => (x.owner === null ? x.name : `the ${x.owner}'s ${x.name}`));
+          const written = t.timer.kind === 'ref' ? t.timer.ref.words.join(' ') : t.timer.kind === 'bare' ? t.timer.words.join(' ') : t.timer.kind === 'possessive' ? t.timer.field.join(' ') : '<value>';
+          this.diagnostics.error('analysis.unknown-timer', `\`${written}\` is not a declared timer of the story${this.suggestText(written, candidates)} — from the chapter table, name an owner's timer by its possessive.`, t.span);
+          return null;
+        }
+        return { kind: 'timer-expires', timer: key };
+      }
+      case 'becomes': {
+        const anchor = this.resolveStepAnchor({ timing: 'becomes', owner: t.owner, state: t.state, span: t.span });
+        if (!anchor) return null;
+        return { kind: 'becomes', owner: anchor.owner, state: anchor.state };
+      }
+    }
+  }
+
+  /**
    * The timer a value names, or null: a bare name resolves owner-first
    * (the scope's owner, the player inside the player's block) then the
    * story's; a possessive names its owner outright (ADR-325 D3c).
@@ -7536,6 +7644,25 @@ class Analyzer {
         return { kind: 'not', operand: this.resolveCondition(cond.operand, scope) };
       case 'chance':
         return { kind: 'chance', n: cond.n };
+      case 'chapter': {
+        // ADR-330 D5: the row's name → its ordinal, under the `use` gate.
+        // Read off the AST, not the built tables: a `phrase detail` gate
+        // resolves in pass 1, before `use` lines and chapter rows are built.
+        const uses = (this.ast.header?.uses ?? []).some((u) => u.name === 'chapters');
+        if (!uses) {
+          this.diagnostics.error('analysis.chapters-needs-use', `\`${cond.relation} ${cond.name}\` reads a chapter — add \`use chapters\` and a \`define chapters\` block to the story.`, cond.span);
+          return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
+        }
+        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
+        const rows = block?.rows ?? [];
+        const ordinal = rows.findIndex((r) => r.name === cond.name);
+        if (ordinal < 0) {
+          const names = rows.map((r) => r.name);
+          this.diagnostics.error('analysis.unknown-chapter', `\`${cond.name}\` is not a declared chapter${this.suggestText(cond.name, names)} — the names are the \`define chapters\` rows: ${names.join(', ') || '(none)'}.`, cond.span);
+          return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
+        }
+        return { kind: 'chapter', relation: cond.relation, ordinal };
+      }
       case 'client-has': {
         // ADR-216: capability words are the closed platform flag set —
         // validated here, lowered to the camelCase platform key.

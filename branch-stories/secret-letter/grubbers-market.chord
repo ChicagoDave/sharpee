@@ -112,12 +112,19 @@ create the Fruit Stall
   phrase detail while calm:
     The bushel of bananas is currently blocked by the stallkeeper.
 
+  after the player entering while Jack is dressed
+    start the player's exposure
+  end after
+
 create the Eastern Junction
   a room
   aka eastern edge
   north to the Fruit Stall
   south to the Hat Stall
   west to the Pottery Stall
+  east to Commerce Street
+  east is blocked while calm: east-deflected
+  east is blocked while Jack is urchin: east-watched
 
   You're near the eastern edge of Grubber's Market. Commerce Street lies to the east.
   You can travel along the outer ring of stalls to the north or south, or
@@ -259,6 +266,7 @@ create Inside the Silk Tent
   a room
   aka silk tent, tent, inside the tent
   south to Outside the Silk Tent
+  south is blocked while chase: tent-no-way-back
   north to the Base of the Center Post
 
   The walls of the tent provide a bit of quiet and privacy from the crowds outside
@@ -272,6 +280,7 @@ create the Base of the Center Post
   a room
   aka center post, centre post, post, base of the post, behind the tent
   south to Inside the Silk Tent
+  south is blocked while chase: base-no-way-back
   up to the Top of the Post
 
   This is a cramped little square formed by the backs of three stalls and Teisha's
@@ -283,6 +292,7 @@ create the Top of the Post
   a room
   aka top of the center post, top of the centre post, top
   down to the Base of the Center Post
+  down is blocked while chase: top-no-way-down
 
   Perched atop the high central post, you can look out over the whole market
   square. To the north, Lord's Road heads out of the city towards Lord's Keep.
@@ -1127,3 +1137,9 @@ import "aerial-runway"
 ## ---------------------------------------------------------------------------
 
 import "monkey"
+
+## The disguise (change document, "The escape disguise"): the dress and hat,
+## the change behind the stall, the boots, and the way out — after the
+## runway and the monkey, whose landing and necklace it builds on.
+
+import "disguise"

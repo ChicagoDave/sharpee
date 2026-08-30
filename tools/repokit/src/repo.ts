@@ -45,6 +45,7 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   // before it so its tsc finds their declarations (ADR-260/263).
   ['@sharpee/ext-scoring', 'extensions/scoring'],
   ['@sharpee/ext-hunger', 'extensions/hunger'],
+  ['@sharpee/ext-chapters', 'extensions/chapters'],
   ['@sharpee/story-loader', 'story-loader'],
   ['@sharpee/bootstrap', 'bootstrap'],
   ['@sharpee/platform-browser', 'platform-browser'],
@@ -80,6 +81,7 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/ext-basic-combat', './packages/extensions/basic-combat/dist/index.js'],
   ['@sharpee/ext-scoring', './packages/extensions/scoring/dist/index.js'],
   ['@sharpee/ext-hunger', './packages/extensions/hunger/dist/index.js'],
+  ['@sharpee/ext-chapters', './packages/extensions/chapters/dist/index.js'],
   ['@sharpee/plugins', './packages/plugins/dist/index.js'],
   ['@sharpee/plugin-scheduler', './packages/plugin-scheduler/dist/index.js'],
   ['@sharpee/plugin-state-machine', './packages/plugin-state-machine/dist/index.js'],

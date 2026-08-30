@@ -13,6 +13,7 @@ import {
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
   createBannerChannelRenderer,
+  createChapterChannelRenderer,
 } from '../../src/channels/info';
 
 const replaceJson: ChannelDefinition = { id: 'x', contentType: 'json', mode: 'replace' };
@@ -178,5 +179,50 @@ describe('info / ifid renderers', () => {
     const base = readFileSync(resolve(__dirname, '../../styles/base.css'), 'utf8');
     const rule = /p\[class\*=['"]sharpee-banner-['"]\]\s*\+\s*p:not\(\[class\*=['"]sharpee-banner-['"]\]\)\s*\{[^}]*margin-top:\s*1em/;
     expect(base, 'no sibling rule gives the post-banner paragraph its gap').toMatch(rule);
+  });
+});
+
+describe('chapter renderer (ADR-330 D4)', () => {
+  let main: HTMLElement;
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    main = document.createElement('div');
+    document.body.appendChild(main);
+  });
+
+  it('renders a title card — title then description — as a block with the name and ordinal as data', () => {
+    const r = createChapterChannelRenderer(main);
+    r.onValue({ name: 'market', title: 'Chapter I: Grubber\'s Market', description: 'A stolen apple.', ordinal: 0 }, replaceJson);
+    const card = main.querySelector('.sharpee-chapter')!;
+    expect(card).toBeTruthy();
+    expect(card.getAttribute('data-chapter')).toBe('market');
+    expect(card.getAttribute('data-chapter-ordinal')).toBe('0');
+    const ps = [...card.querySelectorAll('p')].map((p) => [p.className, p.textContent]);
+    expect(ps).toEqual([
+      ['sharpee-chapter-title', 'Chapter I: Grubber\'s Market'],
+      ['sharpee-chapter-description', 'A stolen apple.'],
+    ]);
+  });
+
+  it('an empty description is not rendered; a packet with no text renders no card', () => {
+    const r = createChapterChannelRenderer(main);
+    r.onValue({ name: 'commerce', title: 'Chapter II', description: '', ordinal: 1 }, replaceJson);
+    expect(main.querySelectorAll('p').length).toBe(1);
+    expect(main.querySelector('.sharpee-chapter-description')).toBeNull();
+    r.onValue({ name: 'x', title: '', description: '', ordinal: 2 }, replaceJson);
+    expect(main.querySelectorAll('.sharpee-chapter').length).toBe(1);
+    r.onValue('not an object', replaceJson);
+    expect(main.querySelectorAll('.sharpee-chapter').length).toBe(1);
+  });
+
+  it('every chapter class it emits has a rule in base.css', () => {
+    const r = createChapterChannelRenderer(main);
+    r.onValue({ name: 'market', title: 'T', description: 'D', ordinal: 0 }, replaceJson);
+    const base = readFileSync(resolve(__dirname, '../../styles/base.css'), 'utf8');
+    expect(base).toContain('.sharpee-chapter');
+    for (const p of main.querySelectorAll('p')) {
+      expect(base, `base.css has no rule for p.${p.className}`).toContain(`p.${p.className}`);
+    }
+    expect(base).toMatch(/p\.sharpee-chapter-title\s*\{[^}]*font-weight:\s*bold/);
   });
 });

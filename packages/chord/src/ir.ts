@@ -122,6 +122,8 @@ export interface StoryIR {
   hunger?: IRHungerDef;
   /** Story-global numeric counters (ADR-264 D1). */
   counters: IRCounterDef[];
+  /** `define chapters` rows in order (ADR-330 D1), present only under `use chapters`. */
+  chapters?: IRChapterDef[];
   /** Named-turn timers (ADR-325 D3), every owner — keyed by `qualified`. */
   timers: IRTimerDef[];
   sequences: IRSequenceDef[];
@@ -1245,6 +1247,28 @@ export interface IRCounterDef {
  * bare `<name>` for the story's. A state's prose, when authored, lives in
  * the phrase table under `<qualified>.<state>`.
  */
+/** The moment a chapter begins (ADR-330 D2), resolved: ids are IR entity ids, timers their `qualified` key. */
+export type IRChapterTrigger =
+  | { kind: 'game-starts' }
+  | { kind: 'first-visit'; room: string }
+  | { kind: 'timer-expires'; timer: string }
+  | { kind: 'becomes'; owner: string; state: string };
+
+/**
+ * One chapter (ADR-330 D1/D4): `name` is what conditions say and never
+ * prints; `title` and `description` (empty string when the row has none)
+ * ride the `story.chapter` packet verbatim; `ordinal` is the row's 0-based
+ * position — the chapters' order is declaration order (D3).
+ */
+export interface IRChapterDef {
+  name: string;
+  title: string;
+  description: string;
+  ordinal: number;
+  trigger: IRChapterTrigger;
+  span: Span;
+}
+
 export interface IRTimerDef {
   name: string;
   qualified: string;
@@ -1587,6 +1611,8 @@ export type IRValue =
 
 export type IRCondition =
   | { kind: 'and'; operands: IRCondition[] }
+  /** ADR-330 D5: the current chapter is (`during`) / has not reached (`before`) / has passed (`after`) the row at `ordinal`. */
+  | { kind: 'chapter'; relation: 'during' | 'before' | 'after'; ordinal: number }
   | { kind: 'or'; operands: IRCondition[] }
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }

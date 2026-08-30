@@ -59,6 +59,9 @@ import {
   DefineMachine,
   DefineSequence,
   DefineTimer,
+  DefineChapters,
+  ChapterRowDecl,
+  ChapterTrigger,
   TimerStateDecl,
   EmitField,
   EmitValue,
@@ -672,8 +675,8 @@ class Parser {
             continue;
           }
           let bookCondition: ConditionNode | null = null;
-          if (uc.isWord('while')) {
-            uc.next();
+          if (uc.isWord('while') || uc.isWord('during')) {
+            if (uc.isWord('while')) uc.next();
             const condTokens: Token[] = [];
             while (!uc.atEnd()) condTokens.push(uc.next()!);
             bookCondition = this.parseCondition(new Cursor(condTokens, useLine), useLine);
@@ -1233,6 +1236,163 @@ class Parser {
   }
 
   /**
+   * `define chapters … end chapters` (ADR-330 D1). One row per chapter:
+   * `<name> - <title>` on the row line — the name is the first word, the
+   * title is everything after the dash, taken raw so a colon or a numeral in
+   * it means nothing — then, deeper, an optional description paragraph and
+   * the `begins when <event>` line. The `use chapters` gate, name
+   * uniqueness, and the opening-row rules are the analyzer's.
+   */
+  private parseDefineChapters(): DefineChapters | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define chapters
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.chapters-head', '`define chapters` takes nothing else on the line — the rows follow, indented.', c.restSpan());
+    }
+    const decl: DefineChapters = { kind: 'define-chapters', rows: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('chapters', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.chapters-empty', 'This `define chapters` block declares no chapters — add `<name> - <title>` rows, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const row = this.parseChapterRow(line);
+      if (row) decl.rows.push(row);
+    }
+    this.diagnostics.error('parse.chapters-end', 'Expected `end chapters` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** One chapter row and its deeper lines (ADR-330 D1). */
+  private parseChapterRow(line: Line): ChapterRowDecl | null {
+    const c = new Cursor(line.tokens, line);
+    const nameTok = c.next();
+    const dash = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !dash || dash.kind !== 'punct' || dash.text !== '-' || c.atEnd()) {
+      this.diagnostics.error(
+        'parse.chapter-row',
+        "Expected `<name> - <title>` (e.g. `market - Chapter I: Grubber's Market`).",
+        lineSpan(line),
+      );
+      this.skipDeeperLines(line.indent);
+      return null;
+    }
+    const raw = line.raw.trim();
+    const title = raw.slice(raw.indexOf(' - ') + 3).trim();
+    const row: ChapterRowDecl = { name: nameTok.text.toLowerCase(), title, description: null, trigger: null, span: lineSpan(line) };
+
+    const prose: string[] = [];
+    while (this.pos < this.lines.length) {
+      const next = this.lines[this.pos];
+      if (next.indent <= line.indent || isEndLine(next)) break;
+      if (looksLikeComment(next)) {
+        this.skipCommentInsideBlock(next);
+        continue;
+      }
+      this.pos++;
+      row.span = mergeSpans(row.span, lineSpan(next));
+      const nc = new Cursor(next.tokens, next);
+      if (firstWord(next) === 'begins' && nc.isWord('when', 1)) {
+        nc.next();
+        nc.next();
+        if (row.trigger) {
+          this.diagnostics.error('parse.chapter-trigger', 'A chapter begins once — this row already has a `begins when` line.', lineSpan(next));
+          continue;
+        }
+        row.trigger = this.parseChapterTrigger(nc, next);
+        continue;
+      }
+      prose.push(next.raw.trim());
+    }
+    if (prose.length > 0) row.description = prose.join(' ');
+    if (!row.trigger) {
+      this.diagnostics.error('parse.chapter-no-trigger', `Chapter \`${row.name}\` has no \`begins when <event>\` line — every chapter says when it begins (ADR-330 D2).`, row.span);
+    }
+    return row;
+  }
+
+  /**
+   * The four trigger spellings (ADR-330 D2): `the game starts`, `the player
+   * visits <room> for the first time`, `<timer> expires`, `<entity|the story>
+   * becomes <state>`. `<entity> moves` is named in a fix-it and refused.
+   */
+  private parseChapterTrigger(c: Cursor, line: Line): ChapterTrigger | null {
+    const span = lineSpan(line);
+    if (c.isWord('the') && c.isWord('game', 1) && c.isWord('starts', 2)) {
+      c.next();
+      c.next();
+      c.next();
+      if (!c.atEnd()) this.diagnostics.error('parse.chapter-trigger', 'Nothing follows `the game starts`.', c.restSpan());
+      return { kind: 'game-starts', span };
+    }
+    if (c.isWord('the') && c.isWord('player', 1) && c.isWord('visits', 2)) {
+      c.next();
+      c.next();
+      c.next();
+      const room = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'for');
+      const tail = c.matchWord('for') && c.matchWord('the') && c.matchWord('first') && c.matchWord('time');
+      if (room.words.length === 0 || !tail || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `the player visits <room> for the first time`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'first-visit', room, span };
+    }
+    const words = line.tokens.filter((t) => t.kind === 'word').map((t) => t.text);
+    if (words.includes('moves')) {
+      this.diagnostics.error(
+        'parse.chapter-trigger',
+        '`<entity> moves` is not a chapter trigger (ADR-330 D2) — a chapter begins when the game starts, when the player visits a room for the first time, when a timer expires, or when something becomes a state.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    if (words.includes('expires')) {
+      const timer = this.parseValueExpr(c, line, new Set(['expires']));
+      if (!c.matchWord('expires') || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `<timer> expires`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'timer-expires', timer, span };
+    }
+    if (words.includes('becomes')) {
+      const owner = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'becomes');
+      const state = c.matchWord('becomes') ? c.next() : undefined;
+      if (owner.words.length === 0 || !state || state.kind !== 'word' || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `<entity> becomes <state>` or `the story becomes <state>`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'becomes', owner, state: state.text.toLowerCase(), span };
+    }
+    this.diagnostics.error(
+      'parse.chapter-trigger',
+      'Expected a moment after `begins when` — `the game starts`, `the player visits <room> for the first time`, `<timer> expires`, or `<entity> becomes <state>`.',
+      c.restSpan(),
+    );
+    return null;
+  }
+
+  /** Error recovery inside a chapters block: skip the lines deeper than a bad row. */
+  private skipDeeperLines(indent: number): void {
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > indent && !isEndLine(this.lines[this.pos])) this.pos++;
+  }
+
+  /**
    * `define timer <name> [for <owner>] … end timer` (ADR-325 D3a). Body
    * lines: a state name (one turn, optional indented prose), `meanwhile[,
    * one chance in n]` + statements, `interrupted one chance in n`.
@@ -1363,12 +1523,14 @@ class Parser {
     let condition: ConditionNode | null = null;
     if (c.peek()?.kind === 'comma') {
       c.next();
-      if (!c.matchWord('while')) {
+      if (c.isWord('during')) {
+        condition = this.parseCondition(c, headLine);
+      } else if (!c.matchWord('while')) {
         this.diagnostics.error('parse.timer-clause', 'Expected `, while <condition>` after `expires`.', c.restSpan());
       } else {
         condition = this.parseCondition(c, headLine);
       }
-    } else if (c.matchWord('while')) {
+    } else if (c.matchWord('while') || c.isWord('during')) {
       condition = this.parseCondition(c, headLine);
     }
     if (!c.atEnd()) {
@@ -1448,12 +1610,14 @@ class Parser {
     let condition: ConditionNode | null = null;
     if (c.peek()?.kind === 'comma') {
       c.next();
-      if (!c.matchWord('while')) {
+      if (c.isWord('during')) {
+        condition = this.parseCondition(c, headLine);
+      } else if (!c.matchWord('while')) {
         this.diagnostics.error('parse.move-clause', 'Expected `, while <condition>` after `moves`.', c.restSpan());
       } else {
         condition = this.parseCondition(c, headLine);
       }
-    } else if (c.matchWord('while')) {
+    } else if (c.matchWord('while') || c.isWord('during')) {
       condition = this.parseCondition(c, headLine);
     }
     if (!c.atEnd()) {
@@ -2659,7 +2823,7 @@ class Parser {
     c.next(); // is
     c.next(); // blocked
     let condition: ConditionNode | null = null;
-    if (c.matchWord('while')) {
+    if (c.matchWord('while') || c.isWord('during')) {
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -2685,7 +2849,7 @@ class Parser {
     c.next(); // is
     c.next(); // deadly
     let condition: ConditionNode | null = null;
-    if (c.matchWord('while')) {
+    if (c.matchWord('while') || c.isWord('during')) {
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -2767,7 +2931,7 @@ class Parser {
       if (c.matchWord('with')) {
         config.push(...this.parseConfigSettings(c, line));
       }
-      if (c.matchWord('while')) {
+      if (c.matchWord('while') || c.isWord('during')) {
         condition = this.parseCondition(c, line);
       }
       const endTok = c.tokens[c.i - 1] ?? startTok;
@@ -2954,8 +3118,8 @@ class Parser {
     // Z3b: optional `while <condition>` up to the colon — `phrase detail
     // while it is on:` (`it` = the owner; the analyzer resolves).
     let condition: ConditionNode | null = null;
-    if (c.isWord('while')) {
-      c.next();
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -3252,6 +3416,9 @@ class Parser {
       case 'channel':
         // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
         return this.parseDefineChannel();
+      case 'chapters':
+        // ADR-330 D1 — the chapter table; `use chapters` is the analyzer's gate.
+        return this.parseDefineChapters();
       case 'fact':
         // ADR-310 D14 — a closed value set for valued beliefs.
         return this.parseDefineFact();
@@ -3405,6 +3572,13 @@ class Parser {
     if (c.isWord('while')) {
       c.next();
       condition = this.parseCondition(c, headLine);
+      if (c.isWord('during')) {
+        this.diagnostics.error('parse.head-while-during', 'A phrase line takes `while <condition>` or `during <chapter>`, not both — write one `while`: `while during <chapter> and …`.', c.restSpan());
+        c.next();
+        if (c.peek()?.kind === 'word') c.next();
+      }
+    } else if (c.isWord('during') && c.peek(1)?.kind === 'word') {
+      condition = this.parseCondition(c, headLine);
     }
 
     const variants: TextValue[] = [];
@@ -3484,8 +3658,8 @@ class Parser {
       name = nameTok.text;
     }
     let condition: ConditionNode | null = null;
-    if (c.isWord('while')) {
-      c.next();
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
       const condTokens: Token[] = [];
       while (!c.atEnd()) condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, headLine), headLine);
@@ -5512,7 +5686,7 @@ class Parser {
       const headWords: Token[] = [];
       while (!c.atEnd()) {
         const t = c.peek()!;
-        if (t.kind !== 'word' || t.text === 'while' || t.text === 'anything') break;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
         headWords.push(t);
         c.next();
       }
@@ -5561,8 +5735,16 @@ class Parser {
       }
     }
 
-    // `while <condition>` — legal on every binding (ownership package).
+    // `while <condition>` — legal on every binding (ownership package) — or
+    // ADR-330 D5's `during <chapter>`, sugar for `while during <chapter>`.
     if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+      if (c.isWord('during')) {
+        this.diagnostics.error('parse.head-while-during', 'A head takes `while <condition>` or `during <chapter>`, not both — write one `while`: `while during <chapter> and …`.', c.restSpan());
+        c.next();
+        if (c.peek()?.kind === 'word') c.next();
+      }
+    } else if (c.isWord('during') && c.peek(1)?.kind === 'word') {
       condition = this.parseCondition(c, headLine);
     }
 
@@ -7905,6 +8087,14 @@ class Parser {
         const w = c.next()!;
         return { kind: 'asked', word: 'many-times', span: mergeSpans(t.span, w.span) };
       }
+    }
+
+    // ADR-330 D5: `during|before|after <chapter>` — the chapter's name is one
+    // standalone word; the analyzer resolves it to the row's ordinal.
+    if (t.kind === 'word' && (t.text === 'during' || t.text === 'before' || t.text === 'after') && c.peek(1)?.kind === 'word' && this.isBareConditionRef(c, 1)) {
+      c.next();
+      const name = c.next()!;
+      return { kind: 'chapter', relation: t.text as 'during' | 'before' | 'after', name: name.text.toLowerCase(), span: mergeSpans(t.span, name.span) };
     }
 
     // Bare single word (before a connective or end of condition): a named

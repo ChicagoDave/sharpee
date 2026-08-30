@@ -11,6 +11,7 @@
  * the manifest types.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
+import { CHAPTERS_MANIFEST } from './chapters.js';
 import { COMBAT_MANIFEST } from './combat.js';
 import { HUNGER_MANIFEST } from './hunger.js';
 import { NPC_MANIFEST } from './npc.js';
@@ -19,6 +20,7 @@ import { STATE_MACHINES_MANIFEST } from './state-machines.js';
 import type { ExtensionManifest, ManifestAdjective } from './types.js';
 
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './types.js';
+export { CHAPTERS_MANIFEST } from './chapters.js';
 export { COMBAT_MANIFEST } from './combat.js';
 export { HUNGER_MANIFEST } from './hunger.js';
 export { NPC_MANIFEST } from './npc.js';
@@ -31,7 +33,7 @@ export { STATE_MACHINES_MANIFEST } from './state-machines.js';
  * admitted and refuse a `use` line.
  */
 export const EXTENSION_MANIFESTS: ReadonlyMap<string, ExtensionManifest> = new Map(
-  [COMBAT_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
+  [CHAPTERS_MANIFEST, COMBAT_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
 );
 
 /**

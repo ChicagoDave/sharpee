@@ -1,0 +1,48 @@
+{
+  "name": "@sharpee/ext-chapters",
+  "version": "5.2.0",
+  "description": "Chapters extension for the Sharpee IF engine — declared story chapters (ADR-330): the turn plugin that begins them and the story.chapter channel",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
+    "build:npm": "tsc --outDir dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/plugins": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.5"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "chapters"
+  ],
+  "license": "MIT",
+  "module": "./dist-esm/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/extensions/chapters"
+  }
+}

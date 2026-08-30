@@ -31,6 +31,7 @@ import {
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
   createBannerChannelRenderer,
+  createChapterChannelRenderer,
 } from './info.js';
 import {
   createDeathChannelRenderer,
@@ -71,6 +72,7 @@ export {
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
   createBannerChannelRenderer,
+  createChapterChannelRenderer,
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
@@ -198,6 +200,9 @@ export function registerDefaultBrowserRenderers(
   renderer.registerSlot('prologue', layout.prologue);
   renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.prologue));
   renderer.registerRenderer('banner', createBannerChannelRenderer(layout.main));
+  // ADR-330 D4: a chapter beginning is a title card in the prose log; a
+  // story without `use chapters` never emits the channel and loses nothing.
+  renderer.registerRenderer('story.chapter', createChapterChannelRenderer(layout.main));
   renderer.registerRenderer('death', createDeathChannelRenderer(layout.notify));
   renderer.registerRenderer('endgame', createEndgameChannelRenderer(layout.notify));
   renderer.registerRenderer('score_notify', createScoreNotifyChannelRenderer(layout.notify));

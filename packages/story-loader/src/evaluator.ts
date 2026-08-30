@@ -42,6 +42,7 @@ import {
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
+import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
 import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
 
@@ -185,6 +186,11 @@ export class Evaluator {
         return !this.evalCondition(cond.operand, ctx);
       case 'chance':
         return this.drawChance(cond.n, ctx.world);
+      case 'chapter': {
+        // ADR-330 D5: the current chapter's ordinal (absent = none begun yet, -1).
+        const current = (ctx.world.getStateValue(CHAPTER_CURRENT_KEY) as number | undefined) ?? -1;
+        return cond.relation === 'during' ? current === cond.ordinal : cond.relation === 'before' ? current < cond.ordinal : current > cond.ordinal;
+      }
       case 'condition': {
         const named = this.conditions.get(cond.name);
         if (!named) throw new LoadError(`Unknown condition \`${cond.name}\` at evaluation time.`);

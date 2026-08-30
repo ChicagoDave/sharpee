@@ -64,7 +64,19 @@ create the cables
     phrase slide-ride-out
     move the old gray cloak to the Fruit Stall
     move the player to the Fruit Stall
+    kill the player ride-out-caught
   end when
+
+## DAVID: the ride-out death — seen landing in front of the stall, no place
+## to change, the sweep converging (ruled 2026-08-24: "she's caught and
+## killed"). Keyed rather than inline: an inline `kill` body is named by its
+## fragment-relative line and column, and two fragments can collide (GH
+## #324).
+
+define phrase ride-out-caught
+  (PLACEHOLDER — David's line. Caught on the ride-out landing and killed — a
+  hard ending.)
+end phrase
 
 ## ---------------------------------------------------------------------------
 ## THE SLIDE — first turn
@@ -80,6 +92,10 @@ define trait slideable
   on the player sliding
     the player must have the old gray cloak: slide-barehanded
     phrase slide-first-half
+    reset the player's waiting
+    reset the player's pole-escape
+    reset the player's pole-problem
+    reset the player's pole-destruction
     move the player to On the Wire
     phrase on-the-wire-reveal
     start the cables' sliding
@@ -110,6 +126,7 @@ define action letting-go
   move the old gray cloak to Behind Fruit Stall
   move the player to Behind Fruit Stall
   reset the cables' sliding
+  start the player's lingering
 
 ## Bare `drop` is the mid-slide synonym (David, 2026-08-24) — its own action
 ## so its elsewhere-refusal can differ from LET GO's. Outside the wire it
@@ -125,18 +142,45 @@ define action releasing
   move the old gray cloak to Behind Fruit Stall
   move the player to Behind Fruit Stall
   reset the cables' sliding
+  start the player's lingering
 
 define phrase drop-what
   What do you want to drop?
 end phrase
 
+## The two windows (change document, "Both timing questions"): a second turn
+## back here expires the player's `lingering` clock, moves the pair to the
+## Fruit Stall and marks this room `watched`; stepping out then is death
+## (ruled 2026-08-24: "she's caught and killed"). The death is an `after
+## going` REACTION, not an `on going` intercept: a `kill` inside an intercept
+## does not stop the move (the room description, the dash-away line and a
+## platform warning all printed before the engine stopped — 2026-08-29), and
+## the pair's posture is left alone so Jack's own `on going … aggressive`
+## refusal cannot swallow the step. The clocks are declared in
+## `disguise.chord`.
+
 create Behind Fruit Stall
   a room
   aka behind the fruit stall
+  states: hidden, watched
   southwest to the Fruit Stall
 
   Cramped and flea-ridden with barely room to move. The market is out to the
   southwest.
+
+  when the player's lingering expires, while the player is in Behind Fruit Stall
+    move the wandering mercenaries to the Fruit Stall
+    change Behind Fruit Stall to watched
+  end when
+
+  after the player going while Behind Fruit Stall is watched
+    kill the player stepped-out-caught
+  end after
+
+define phrase stepped-out-caught
+  (PLACEHOLDER — David's line. She steps out into the mercenaries waiting at
+  the Fruit Stall: caught and killed, no free turn.)
+end phrase
 
 ## ---------------------------------------------------------------------------
 ## THE LINES — Gentry's, split across the two turns

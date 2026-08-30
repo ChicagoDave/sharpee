@@ -32,7 +32,8 @@ story
 ```
 
 The header holds `key: value` facts, story-wide `states:`, `use`
-lines admitting platform extensions (`combat`, `state-machines`), and
+lines admitting platform extensions (`combat`, `state-machines`,
+`scoring`, `hunger`, `chapters`), and
 the story-owned daemon (`on every turn … end on`). Everything after it
 is declarations: `create` blocks and `define` forms.
 
@@ -118,6 +119,12 @@ not (the fuse is lit) and the study door is open
 (`open`, `locked`, `lit`, …) resolve from trait state; declared states
 resolve by name; `any` / `no` quantify over a named open condition.
 
+Under `use chapters`, a chapter is readable: `during market` (it is the
+current chapter), `before market`, `after market`. On an `on`/`after`
+head — and anywhere else a line takes `while` — `during market` may
+stand alone as the suffix: `on the player talking during commerce` is
+`… while during commerce`.
+
 ## The define forms
 
 | Form | Declares |
@@ -131,6 +138,7 @@ resolve by name; `any` / `no` quantify over a named open condition.
 | `define action <name>` | an authored action: grammar, requirements, refusals, body |
 | `define sequence <name> … end sequence` | a timeline: `at turn N`, `N turns later`, `when <entity> becomes <state>` |
 | `define machine … end machine` | a state machine (`use state-machines`) |
+| `define chapters … end chapters` | the story's chapters (`use chapters`): one row per chapter — `<name> - <title>`, an optional description paragraph, and `begins when <event>` (`the game starts`, `the player visits <room> for the first time`, `<timer> expires`, `<entity> becomes <state>`); a chapter ends when the next begins, and the client is told on its own `story.chapter` channel |
 | `define sound/image/music <name> from "<file>"` | a media asset |
 
 ## The alteration forms

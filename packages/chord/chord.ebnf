@@ -148,7 +148,8 @@ use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
 use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per
                                                               line (combat,
-                                                              state-machines); admits
+                                                              state-machines, chapters
+                                                              — ADR-330); admits
                                                               the extension's manifest
                                                               vocabulary and triggers
                                                               its runtime registration.
@@ -226,6 +227,7 @@ declaration  = create | start-block | define-condition | define-phrase | define-
              | define-sequence
              | define-counter                              (* ADR-264 *)
              | define-timer                                (* ADR-325 D3a *)
+             | define-chapters                             (* ADR-330, `use chapters` *)
              | define-machine                              (* ADR-215, use-gated *)
              | define-fact | define-profile                (* ADR-310 D14 / D4 *)
              | define-mood | define-personality            (* ADR-310 D5 *)
@@ -313,7 +315,19 @@ counter-line = "counter" WORD [ "starts" NUMBER ]
 (* ---- on / after clauses (D3/D5; heads ADR-327 D1) ---------------------- *)
 
 on-clause    = ( "on" | "after" ) clause-form
-               [ "while" condition ]
+               [ "while" condition | "during" WORD ]     (* ADR-330 D5: `during
+                                                              <chapter>` on a head is
+                                                              sugar for `while during
+                                                              <chapter>`; both on one
+                                                              head is parse.head-while-
+                                                              during. The same sugar
+                                                              stands wherever a line
+                                                              takes `while condition`:
+                                                              blocked/deadly exits,
+                                                              phrase overrides and
+                                                              gates, phrasebooks, timer
+                                                              and move clauses, and a
+                                                              composition's `while` *)
                { "," clause-modifier } NL
                >>> { statement } "end" ( "on" | "after" ) NL ;
                                         (* terminator matches the opener *)
@@ -728,6 +742,54 @@ goal-line    = "active" "when" condition NL                (* at most one; absen
                                                               `when` suffix on a step —
                                                               `wait for` is the guard
                                                               (parse.goal-step) *)
+
+(* ---- chapters (ADR-330) — a `use chapters` extension ------------------- *)
+
+(* Chapters are declared, not scripted: one block names every chapter with
+   the moment it begins, and a chapter ends when the next begins — there is
+   no `end chapter`. Admitted only under `use chapters` (analysis.chapters-
+   needs-use). Rows are in declaration order and that order is the
+   chapters' order; the opening row — exactly one on `the game starts` —
+   must be first (analysis.chapter-no-opening / -two-openings /
+   -opening-not-first); a repeated name is analysis.duplicate-chapter; a
+   second block is analysis.duplicate-chapters. The runtime, the
+   `story.chapter` channel packet, and the `during`/`before`/`after`
+   predicates are the extension's (ADR-330 D4/D5) and land with it. *)
+
+define-chapters = "define" "chapters" NL
+                  >>> { chapter-row }
+                  "end" "chapters" NL ;
+chapter-row  = WORD "-" rest-of-line NL                    (* <name> - <title>: the
+                                                              name is one kebab word,
+                                                              what conditions say and
+                                                              never printed; the title
+                                                              is raw prose to the end
+                                                              of the line — a numeral
+                                                              or a colon in it means
+                                                              nothing to the grammar *)
+               >>> [ prose-paragraph ]                     (* the description — rides
+                                                              the packet with the title;
+                                                              empty when absent *)
+               "begins" "when" chapter-trigger NL ;        (* required; once per row
+                                                              (parse.chapter-no-trigger
+                                                              / parse.chapter-trigger) *)
+chapter-trigger = "the" "game" "starts"                    (* the ADR-327 D10 start
+                                                              moment *)
+             | "the" "player" "visits" name
+               "for" "the" "first" "time"                  (* the role-holder's first
+                                                              arrival in a ROOM
+                                                              (analysis.chapter-visit-
+                                                              not-room) — any arrival,
+                                                              an authorial move included *)
+             | value-expr "expires"                        (* an ADR-325 timer, by its
+                                                              possessive from the story
+                                                              level (analysis.unknown-
+                                                              timer) *)
+             | name "becomes" WORD ;                       (* an entity, or `the story`,
+                                                              reaching a declared state
+                                                              (analysis.undeclared-
+                                                              state). `<entity> moves`
+                                                              is refused by name *)
 
 (* ---- timers, places, landings (ADR-325) -------------------------------- *)
 
@@ -1491,6 +1553,15 @@ unary        = "not" unary
              | "asked" repetition-words                    (* ADR-320 D4: the enclosing
                                                               row's per-pair ask count
                                                               read as a word *)
+             | ( "during" | "before" | "after" ) WORD      (* ADR-330 D5: the current
+                                                              chapter is / has not
+                                                              reached / has passed the
+                                                              named `define chapters`
+                                                              row (analysis.unknown-
+                                                              chapter; needs `use
+                                                              chapters`); the name
+                                                              stands alone, before a
+                                                              connective or the end *)
              | WORD                                        (* bare => named-condition or
                                                               state ref, only when a
                                                               connective or end-of-condition

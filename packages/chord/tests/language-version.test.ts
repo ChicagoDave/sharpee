@@ -82,7 +82,12 @@ const PINNED = {
   // the prose productions the file had always referenced without defining.
   // Paper trail for grammar shipped since 3.x, no language change.
   languageVersion: '3.5.0',
-  ebnfSha256: '60f9abd70b17db967d6a1e1659307cef3817eb20533a628a414186648c3ef8a4',
+  // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
+  // chapters` — the first additive grammar of the chapters extension,
+  // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.
+  // Re-pinned again (ADR-330 Phase 3): the `during`/`before`/`after` chapter
+  // atoms and the `during` head suffix — still the unpublished 3.5.0 set.
+  ebnfSha256: 'f82fded2f68957744476af1fb2d08552c20159c8001929156c83ece6784a4f10',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at
