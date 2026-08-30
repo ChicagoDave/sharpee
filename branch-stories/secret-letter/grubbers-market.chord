@@ -429,6 +429,14 @@ create the Top of the Post
   Four anchor cables stretch away in four directions: northwest, northeast, southwest,
   and southeast.
 
+  after the player entering while chase
+    phrase pole-scamper
+  end after
+
+  after the player entering while not chase
+    phrase pole-climbed
+  end after
+
 ## ---------------------------------------------------------------------------
 ## THE FRUIT STALL
 ##
@@ -783,6 +791,35 @@ create the wooden crates
   and ship goods. There are scores more just like these to be found all over the
   market.
 
+  on the player opening
+    refuse crates-nailed-shut
+  end on
+
+  on the player searching
+    refuse crates-nailed-shut
+  end on
+
+  on the player taking
+    refuse crates-too-heavy
+  end on
+
+  on the player pushing
+    refuse crates-too-heavy
+  end on
+
+## The crates' own refusals (`story.ni:1509-1517`). `raising` and the
+## looking-under lift gag are not carried — no such clause verbs
+## (`market-scenery.chord` header).
+
+define phrase crates-nailed-shut
+  The crates are all nailed shut.
+end phrase
+
+define phrase crates-too-heavy
+  Oof! What's in these things, gold bricks? At any rate, the crates are far too
+  heavy for you to move.
+end phrase
+
 ## The north-road deflection is David's line (2026-08-24); the locked-gates
 ## refusal is Gentry's, `story.ni:2250` verbatim.
 
@@ -841,6 +878,11 @@ import "wares"
 ## everything that stands in their rooms.
 
 import "backdrops"
+
+## The standing scenery — the far posts, the two tents' walls, the climbable
+## post at the base, the alley's walls and nails, and the view from the top.
+
+import "market-scenery"
 
 ## ---------------------------------------------------------------------------
 ## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)

@@ -1,0 +1,442 @@
+## ===========================================================================
+## THE MARKET'S STANDING SCENERY — the posts seen from afar, the post you can
+## climb, the two tents' walls, the alley's walls and nails, and the view
+## from the top
+##
+## The Book 2 scenery the backdrops increment left standing: the source's two
+## wooden-post backdrops (Part 15, `story.ni:2952-2978`), the silk tent as a
+## thing (Part 16 Chapter 2, `story.ni:2999`), the bottom of the center post
+## (Part 18 Chapter 2, `story.ni:3652-3668`) with the climb-up flavor
+## (`story.ni:3670-3676`), the farmland view from the top (Part 19,
+## `story.ni:3620-3628`), and the Alley's walls and nails (`story.ni:1521,
+## 1531-1543`). The crates' own refusal lines (`story.ni:1509-1517`) ride
+## along in `grubbers-market.chord`, on the crates. Every finished line is
+## Gentry's, carried verbatim; nothing here is placeholder.
+##
+## THE TWO FAR POSTS are followers (the backdrops pattern — one entity, a
+## `when Jack moves` clause). The source splits the far view in two: a
+## "distant" post seen from the perimeter ring and the roof, and an
+## "inaccessible" post seen from the four inner stalls, which alone prints a
+## room paragraph — a random one of four sentences, saying "stall" at three
+## rooms and "tent" outside Teisha's. Chord's `phrase present` cannot vary
+## its noun by room, so the inaccessible post is TWO entities, one per
+## wording, never co-located. All three answer every handling but examining
+## with the source's one line.
+##
+## THE CLIMB. `climb post` at the base must move Jack up, as the source's
+## `Instead of climbing ... try going up` does. The post is `climbable,
+## enterable`: climbable lets the climbing action succeed, enterable makes
+## the post a legal (momentary) destination — the same mechanical-trait move
+## the market's `enterable` is (`backdrops.chord`), never player-visible —
+## and the clause's `move` rides postExecute to the Top of the Post. The
+## climb-up flavor itself hangs on the Top of the Post room's own arrival
+## clause (`grubbers-market.chord`), so the walked `u` and the climb narrate
+## alike.
+##
+## NOT CARRIED, with reasons:
+##   * The nails are their own scenery, not `part of` the crates — Chord has
+##     no part-of composition. They have no description in the source (the
+##     2009 answer was Inform's own "nothing special" default) and none here.
+##   * The bottom of the post's initial appearance ("The big support post
+##     rises up in the midst of the gloom...", `story.ni:3656`) — dead text
+##     in 2009: the post is scenery, and Inform never prints a scenery
+##     thing's initial appearance.
+##   * `descend post` / `climb down post` at the base — the parser folds
+##     descend and climb down into the one climbing action
+##     (`packages/parser-en-us/src/grammar.ts:415-418`), so they climb UP,
+##     where the source sent them down to "You can't go that way." Reported,
+##     not routed around: a story cannot see which surface verb fired.
+##   * The slide-down-the-pole flavor on going down from the Top
+##     ("You take a deep breath, lower yourself carefully...",
+##     `story.ni:3639-3641`) — an arrival clause on the Base cannot tell a
+##     descent from a walk-in from the tent; Chord has no came-from guard.
+##   * `Instead of going/facing inside` in the Center Post rooms — Chord has
+##     no in/out directions (`chord.ebnf:910`), the port's standing omission.
+##   * The crates' `Instead of raising` and the looking-under lift gag
+##     (`story.ni:1509-1513`) — no raising or looking-under clause verbs.
+##   * The facing rules Part 18/19 add (`facing up`, the per-cable "ends
+##     near" lines) — the peering spike (`peering.chord`) settled that
+##     surface; its Base-of-post `wayUp` answer stands.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## WHERE THE FAR POSTS SHOW — the distant post's ten rooms are the perimeter
+## ring plus the roof; the inaccessible post's four are the inner stalls
+## around the center, split by which word the paragraph needs.
+## ---------------------------------------------------------------------------
+
+define condition post-seen-distantly: market-perimeter or the player is in the Outer Market Roof
+
+define condition post-behind-the-stalls: the player is in the Rope Stall or the player is in the Pottery Stall or the player is in the Candle Stall
+
+## ---------------------------------------------------------------------------
+## THE DISTANT POST (`story.ni:2972-2978`) — seen across the market from the
+## perimeter ring and the roof. No room paragraph in the source.
+## ---------------------------------------------------------------------------
+
+create the distant post
+  aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
+  scenery
+  in the Northwest Junction
+
+  The big central support post rises up from the middle of the market, holding
+  up the canvas awnings that shade the square.
+
+  when Jack moves, while post-seen-distantly
+    move the distant post here
+  end when
+
+  on the player taking
+    refuse find-way-behind-stalls
+  end on
+
+  on the player touching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pushing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pulling
+    refuse find-way-behind-stalls
+  end on
+
+  on the player climbing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player entering
+    refuse find-way-behind-stalls
+  end on
+
+  on the player searching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player attacking
+    refuse find-way-behind-stalls
+  end on
+
+## ---------------------------------------------------------------------------
+## THE INACCESSIBLE POST (`story.ni:2952-2970`) — close enough to fill a
+## paragraph, still out of reach behind the stalls. The source composes its
+## paragraph from four frames and a per-room noun; these two entities carry
+## the same four frames, one wording each.
+## ---------------------------------------------------------------------------
+
+create the inner post
+  aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
+  scenery
+  in the Rope Stall
+
+  This is the central post that holds up the canvas awnings stretched over the
+  market square. It rises from the midst of a cluster of stalls in the middle
+  of the market, to a height of about fifty feet. Thick, taut support wires
+  stretch from the top of the post in four directions: northwest, northeast,
+  southwest, and southeast.
+
+  phrase present, randomly:
+    Rising up behind the stall is a tall wooden post.
+  or
+    You see a tall wooden post rising up behind the stall.
+  or
+    A tall wooden post is visible behind the stall.
+  or
+    Behind the stall is a tall wooden post.
+
+  when Jack moves, while post-behind-the-stalls
+    move the inner post here
+  end when
+
+  on the player taking
+    refuse find-way-behind-stalls
+  end on
+
+  on the player touching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pushing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pulling
+    refuse find-way-behind-stalls
+  end on
+
+  on the player climbing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player entering
+    refuse find-way-behind-stalls
+  end on
+
+  on the player searching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player attacking
+    refuse find-way-behind-stalls
+  end on
+
+create the near post
+  aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
+  scenery
+  starts in Outside the Silk Tent
+
+  This is the central post that holds up the canvas awnings stretched over the
+  market square. It rises from the midst of a cluster of stalls in the middle
+  of the market, to a height of about fifty feet. Thick, taut support wires
+  stretch from the top of the post in four directions: northwest, northeast,
+  southwest, and southeast.
+
+  phrase present, randomly:
+    Rising up behind the tent is a tall wooden post.
+  or
+    You see a tall wooden post rising up behind the tent.
+  or
+    A tall wooden post is visible behind the tent.
+  or
+    Behind the tent is a tall wooden post.
+
+  on the player taking
+    refuse find-way-behind-stalls
+  end on
+
+  on the player touching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pushing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player pulling
+    refuse find-way-behind-stalls
+  end on
+
+  on the player climbing
+    refuse find-way-behind-stalls
+  end on
+
+  on the player entering
+    refuse find-way-behind-stalls
+  end on
+
+  on the player searching
+    refuse find-way-behind-stalls
+  end on
+
+  on the player attacking
+    refuse find-way-behind-stalls
+  end on
+
+define phrase find-way-behind-stalls
+  You need to find a way behind the stalls to get to the post.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SILK TENT AS A THING (`story.ni:2999-3001`) — Teisha's tent seen from
+## outside it, inside it, and from the cramped square behind it. The body
+## carries the south wording (two of its three rooms); the dispatch line
+## flips it north outside. Entering it falls to the platform's own line, as
+## the source fell to Inform's.
+## ---------------------------------------------------------------------------
+
+create the silk tent
+  aka silk, blue tent, bright blue tent, faded tent, dusty tent, teishas tent
+  scenery
+  starts in Outside the Silk Tent
+
+  Teisha's tent is bright blue, though now it's somewhat faded and covered
+  with market dust. You can enter to the south.
+
+  when Jack moves, while the player is in Outside the Silk Tent or the player is in Inside the Silk Tent or the player is in the Base of the Center Post
+    move the silk tent here
+  end when
+
+  on the player examining
+    phrase silk-tent-enter-north when the player is in Outside the Silk Tent
+  end on
+
+define phrase silk-tent-enter-north
+  Teisha's tent is bright blue, though now it's somewhat faded and covered
+  with market dust. You can enter to the north.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CANVAS TENT WALL (`story.ni:1537-1543`) — the stallkeeper's tent the
+## alley backs onto, seen again from behind Teisha's tent.
+## ---------------------------------------------------------------------------
+
+create the canvas tent
+  aka canvas, canvas wall, wall, stall, stallkeepers tent, stallkeeper tent, keepers tent, smooth canvas, stretched canvas, tough canvas, tight canvas
+  scenery
+  in the Alley
+
+  The canvas wall of the tent is tough and stretched tight.
+
+  when Jack moves, while the player is in the Alley or the player is in the Base of the Center Post
+    move the canvas tent here
+  end when
+
+  on the player climbing
+    refuse canvas-no-climb
+  end on
+
+define phrase canvas-no-climb
+  You can't climb up the smooth, tight canvas.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE STOREHOUSE WALL (`story.ni:1521-1529`) — the alley's other side. The
+## source answers `climb wall` with the description; the refusal here is the
+## same sentence.
+## ---------------------------------------------------------------------------
+
+create the storehouse wall
+  aka storehouse, warehouse, store house, high wall, smooth wall, back wall, wall
+  scenery
+  in the Alley
+
+  The wall of the storehouse is too high and too smooth to climb.
+
+  on the player climbing
+    refuse storehouse-no-climb
+  end on
+
+define phrase storehouse-no-climb
+  The wall of the storehouse is too high and too smooth to climb.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE NAILS (`story.ni:1531`) — the crates are nailed shut, and the nails
+## answer to their name. The source gives them no description and no rules.
+## ---------------------------------------------------------------------------
+
+create the nails
+  aka nail
+  scenery, plural
+  in the Alley
+
+## ---------------------------------------------------------------------------
+## THE BOTTOM OF THE CENTER POST (`story.ni:3652-3668`) — the post itself,
+## finally in reach. Climbing it is going up: `climbable, enterable` lets the
+## climb succeed (the mechanical-trait pattern the market's `enterable` set),
+## and the clause carries Jack to the Top of the Post; the Top's own arrival
+## clause speaks the source's climb flavor for walk and climb alike.
+## ---------------------------------------------------------------------------
+
+create the center post
+  aka bottom of the center post, post, support post, central post, wooden post, big post, tall post, pole
+  scenery, climbable, enterable
+  in the Base of the Center Post
+
+  It's huge, almost too big to put your arms around. Way up at the top, you
+  can see wires stretching out in each of the cardinal directions.
+
+  on the player taking
+    refuse post-does-not-budge
+  end on
+
+  on the player pushing
+    refuse post-does-not-budge
+  end on
+
+  on the player pulling
+    refuse post-does-not-budge
+  end on
+
+  on the player turning
+    refuse post-does-not-budge
+  end on
+
+  on the player attacking
+    refuse post-does-not-budge
+  end on
+
+  on the player climbing
+    move the player to the Top of the Post
+  end on
+
+define phrase post-does-not-budge
+  The enormous post does not budge.
+end phrase
+
+## The climb-up flavor (`story.ni:3670-3676`), spoken by the Top of the Post
+## room's arrival clauses in `grubbers-market.chord`: the panic line during
+## the chase, the hidden-back-here text first time, the grunting line ever
+## after.
+
+define phrase pole-climbed, first-time
+  You're totally hidden back here, so there's no one to stop you from
+  climbing. By the time you're high enough for people to see you, you're also
+  high enough that no one will notice anyway; no one ever bothers to look up
+  in Grubber's Market. After a minute or so of grunting and sweating, you
+  reach the top.
+or
+  After a minute or so of grunting and sweating, you reach the top.
+end phrase
+
+define phrase pole-scamper
+  With speed borne of panic, you scamper up the wooden post.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE VIEW FROM THE TOP (`story.ni:3620-3628`) — the farmland view, named by
+## everything the room description points at. Everything but looking gets the
+## source's too-far line.
+## ---------------------------------------------------------------------------
+
+create the farmland view
+  aka view, road, keep, city, meadows, meadow, farmlands, farmland, farms, farm, lords road, lords keep, commerce street, street, Miradan, Miradania, rolling pastures, pastures, pasture
+  scenery
+  in the Top of the Post
+
+  The view is spectacular, but you don't have time to waste gawking.
+
+  on the player taking
+    refuse view-too-far
+  end on
+
+  on the player touching
+    refuse view-too-far
+  end on
+
+  on the player pushing
+    refuse view-too-far
+  end on
+
+  on the player pulling
+    refuse view-too-far
+  end on
+
+  on the player climbing
+    refuse view-too-far
+  end on
+
+  on the player entering
+    refuse view-too-far
+  end on
+
+  on the player searching
+    refuse view-too-far
+  end on
+
+  on the player attacking
+    refuse view-too-far
+  end on
+
+  on the player smelling
+    refuse view-too-far
+  end on
+
+  on the player listening
+    refuse view-too-far
+  end on
+
+define phrase view-too-far
+  It's all too far away for you to do more than look at it.
+end phrase
