@@ -23,22 +23,32 @@
 ## ---------------------------------------------------------------------------
 ## THE MARKET
 ##
-## Seventeen rooms: the alley, fourteen market locations, and the two stages of
-## the centre post. Geometry and room text are the source's, converted from
-## `story.ni:1474, 2206-3005, 3623, 3666`. The market is a ring of stalls
-## around a hub, and almost every stall names its own exits in its description,
-## so the exit lists below are checkable against the prose beside them.
+## Seventeen rooms here: the alley, fourteen market locations, and the two
+## stages of the centre post; the eighteenth, the storehouse roof above the
+## alley, is Book 1's own and lives with its scene in `eavesdrop.chord`.
+## Geometry and room text are the source's, converted from `story.ni:1474,
+## 2206-3005, 3623, 3666`. The market is a ring of stalls around a hub, and
+## almost every stall names its own exits in its description, so the exit
+## lists below are checkable against the prose beside them.
 ##
-## The P-8 spike (per-room "seen from elsewhere" text — the source's `distant
-## description` / `dead-end description`, `Adjacent Rooms`) is NOT wired here
-## yet. It runs as its own increment against these rooms; see the plan's
-## Phase 6 deliverable.
+## The P-8 "seen from elsewhere" layer (the source's `distant description`,
+## `Adjacent Rooms`) lives in `peering.chord`, which records the spike's
+## answer — one phrase per target room, one dispatch line per (room,
+## direction) pair.
 ## ---------------------------------------------------------------------------
+
+## The Alley carries Book 1's scene (`eavesdrop.chord`): the voices at its
+## mouth after the bite, the crates up to the roof, and the sweep's opening
+## on the first climb back down once the story is `hunted`. Southeast is
+## refused while the voices are there; up is refused while the pair is.
 
 create the Alley
   a room
   aka narrow alley
   southeast to the Northwest Junction
+  up to the Outer Market Roof
+  southeast is blocked while the voices is here: alley-stay-hidden
+  up is blocked while the wandering mercenaries is here: alley-ankle-grab
 
   This narrow alley is tucked away between a storehouse on one side and the
   canvas wall of a stallkeeper's tent on the other. It serves primarily as
@@ -46,14 +56,29 @@ create the Alley
   exactly the most pleasant-smelling place in all of Miradania, but at least no
   one is likely to bother you here. You can leave to the southeast.
 
+  phrase detail while the voices is here:
+    A group of people have gathered just outside the alley. You can't quite
+    hear what they're saying from here, but there is a grim, ugly tone to them
+    that speaks of dangerous doings.
+
+  after the player entering while hunted, once
+    phrase roof-tumble
+    move the wandering mercenaries here
+    change the wandering mercenaries to approaching
+    start the wandering mercenaries' lunge
+    reset the player's waiting
+  end after
+
 ## THE NORTH ROAD (change document, "The market gates", ruled 2026-08-24): the
 ## gates stand open through the calm walk and Jack is deflected, not blocked —
 ## the deflection line is David's (2026-08-24). Once the sweep starts the gates
 ## are closed and locked as in the source (`story.ni:1749`), and the refusal is
-## Gentry's (`story.ni:2250`). The gates as an examinable (ceremonial doors,
-## "Until now." conditional tail) are a later increment. All three arms are
-## wired: blocked lines on one direction compose in declaration order, first
-## condition that holds wins (GH #315, fixed 2026-08-24).
+## Gentry's (`story.ni:2250`). All three arms are wired: blocked lines on one
+## direction compose in declaration order, first condition that holds wins
+## (GH #315, fixed 2026-08-24). The gates themselves (`story.ni:2236`) stand
+## below as scenery: their "certainly never closed" description grows its
+## "Until now." tail once the sweep has begun, the junction reports them
+## closed, and opening, entering, or pushing them then gets the locked line.
 
 create the Northwest Junction
   a room
@@ -71,6 +96,33 @@ create the Northwest Junction
   edge of the market to the northeast or south, or head into the thick of it to
   the east or southeast. A wide, paved road leads north. You can also duck back
   into the alley to the northwest.
+
+  phrase detail while hunted or chase:
+    The north gates leading to Lord's Road are closed.
+
+create the market gates
+  aka north gates, north gate, gates, gate, ceremonial gates, wooden doors, doors
+  scenery, plural
+  in the Northwest Junction
+
+  The north gates are huge wooden doors, nearly ten feet wide each, that date
+  all the way back to when Toresal was a fortified town. They're kept around
+  for ceremony, mostly; they're certainly never closed.
+
+  phrase detail while hunted or chase:
+    Until now.
+
+  on the player opening while hunted or chase
+    refuse gates-locked
+  end on
+
+  on the player entering while hunted or chase
+    refuse gates-locked
+  end on
+
+  on the player pushing while hunted or chase
+    refuse gates-locked
+  end on
 
 create the Grocery Stall
   a room
@@ -372,9 +424,13 @@ create the display of bananas
 create the apple
   aka round, firm, green apple
   edible
+  states: whole, bitten
   on the display of apples
 
   The apple is round, firm, green at the bottom shading up to red near the stem.
+
+  phrase detail while the apple is bitten:
+    There is a big bite taken out of one side.
 
   after the player taking while calm, once
     phrase apple-lifted-quietly
@@ -383,8 +439,10 @@ create the apple
   on the player eating
     refuse when the player is not in the Alley: apple-not-here
     phrase apple-first-bite
-    change the story to hunted
-    start the player's waiting
+    change the apple to bitten
+    move the voices to the Alley
+    move the group of mercenaries to the Outer Market Roof
+    move the mercenary captain to the Outer Market Roof
   end on
 
 create the banana
@@ -447,13 +505,13 @@ create the cluster of brambleberries
 ## built here; the noisy half belongs with the chase.
 ##
 ## What the walk ends INTO — decided (change document, "The eavesdrop's
-## aftermath"): the first bite moves the story from `calm` to `hunted`, the
-## third state between the walk and the chase. Jack has heard the voices and
-## knows she is wanted; nobody has seen her yet. The chase itself begins later,
-## on Teisha's TE20 cloak trade, not here. The source also locks the market
-## gates at this moment (`story.ni:1749`); the port has no gates to lock yet —
-## Chapter 1 has no exit out of the market — so that waits for the rooms that
-## carry them.
+## aftermath"): the bite opens the eavesdrop (`eavesdrop.chord`) — the voices
+## at the alley mouth, the briefing overheard from the roof — and the
+## briefing's end moves the story from `calm` to `hunted`, the third state
+## between the walk and the chase. Jack has heard the voices and knows she is
+## wanted; nobody has seen her yet. The chase itself begins later, on
+## Teisha's TE20 trade, not here. The gates lock at the same moment
+## (`story.ni:1749`): `north is blocked while hunted` on the junction.
 ##
 ## MECHANISM DEVIATION from the source, recorded here rather than in the story
 ## header's list, which covers prose. The source keeps each fruit off-stage and
@@ -1124,10 +1182,20 @@ end phrase
 import "npc-teisha"
 
 ## ---------------------------------------------------------------------------
+## THE EAVESDROP
+##
+## Book 1's scene: the voices at the alley mouth, the group on the roof, the
+## five overheard lines, and the moment the story turns `hunted`. Pasted
+## after Teisha and before the mercenaries it hands over to.
+## ---------------------------------------------------------------------------
+
+import "eavesdrop"
+
+## ---------------------------------------------------------------------------
 ## THE MERCENARIES
 ##
 ## The `hunted` state's pressure model — the pair that sweeps the market once
-## Jack has overheard them. Pasted after Teisha as a reading order: the
+## Jack has overheard them. Pasted after the eavesdrop as a reading order: the
 ## mercenaries' clocks are their own and the player's, and the rooms carry
 ## nothing for them.
 ## ---------------------------------------------------------------------------

@@ -48,7 +48,11 @@
 ##     offstage`). Any move she makes while they are not holding her sends
 ##     them offstage and puts every clock back, so a search never finishes in
 ##     a room she has already left. The dash-away line is only for the move
-##     that shakes off an approach.
+##     that shakes off an approach. The clause is guarded `while the
+##     wandering mercenaries is not here`: it runs AFTER a room's own
+##     `after the player entering` on the same move, so a move that ends
+##     with the pair already in her new room is an arrival beat (the tumble
+##     from the roof, `eavesdrop.chord`) and must not be undone.
 ##   * The source suppresses the warning and the spotting when "the
 ##     mercenaries will not recognise us" (woolen cap off, captain not yet
 ##     wise — `story.ni:2093-2099`). That branch is DROPPED, not deferred
@@ -63,8 +67,12 @@
 ##     narrow-escape pool.
 ##
 ## On the player, in `secret-letter.story`: `on going` refuses while they hold
-## her, and `after going while hunted` restarts `waiting`. The apple's
-## `on eating` starts `waiting` the moment the story turns `hunted`.
+## her, and `after going while hunted` restarts `waiting`. The sweep opens on
+## the climb down from the roof after the briefing (`eavesdrop.chord`, the
+## Alley's `after the player entering while hunted, once`): the pair rushes
+## into the alley `approaching` with `lunge` running, and Jack's first move
+## out shakes them off and starts `waiting` — the source's own opening
+## (`story.ni:1725`).
 ##
 ## THE SWEEP READS HER ONLY WHERE THEY STAND (2026-08-29): `search`, `lunge`
 ## and `recovery` step forward only while the pair is in Jack's room. Under
@@ -227,7 +235,7 @@ create the wandering mercenaries
     kill the player pole-falls
   end when
 
-  when the player moves
+  when the player moves, while the wandering mercenaries is not here
     phrase merc-dash-away when the wandering mercenaries is approaching
     move the wandering mercenaries offstage
     change the wandering mercenaries to oblivious

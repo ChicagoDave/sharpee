@@ -32,6 +32,11 @@
 ##      one. Same three words, same odds. (Two quips are also FOLDED in that
 ##      file — `ST2`+`ST5` and `ST4`+`ST5` become one phrase each — but the
 ##      source always plays them in that order, so no word changes.)
+##   6. `alley-still-talking` in `eavesdrop.chord` expands Gentry's nested
+##      `[one of]` word alternations (men/voices; still talking/continue
+##      talking/continue their conversation; outside/just outside/at the
+##      entrance to) into four whole-sentence variants, one draw per shape,
+##      for the same reason as 5. Every word in each variant is his.
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
 ## `(PLACEHOLDER — David's line …)`.

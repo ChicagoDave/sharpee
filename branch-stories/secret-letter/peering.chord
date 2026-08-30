@@ -56,6 +56,11 @@ define action peering
   refuse without direction: peer-where
 
   phrase distant-northwest-junction when the direction is waySE and the player is in the Alley
+  phrase distant-outer-market-roof when the direction is wayUp and the player is in the Alley
+
+  phrase distant-alley-from-roof when the direction is wayDown and the player is in the Outer Market Roof
+  phrase distant-lords-road when the direction is wayN and the player is in the Outer Market Roof
+  phrase distant-northwest-junction when the direction is waySE and the player is in the Outer Market Roof
 
   phrase distant-alley when the direction is wayNW and the player is in the Northwest Junction
   phrase distant-herb-stall when the direction is wayS and the player is in the Northwest Junction
@@ -212,6 +217,23 @@ end phrase
 
 define phrase distant-alley
   The entrance to a narrow alley lies northwest.
+end phrase
+
+## The roof and what it overlooks (`story.ni:1490, 1584, 1593-1597`): the
+## alley's line up, the roof's line down, Lord's Road to the north, and the
+## junction to the southeast (the source's `overlooks`, answered with the
+## junction's own distant line).
+
+define phrase distant-outer-market-roof
+  You cannot see up to the roof from down here.
+end phrase
+
+define phrase distant-alley-from-roof
+  You can climb back down the crates to the alley below.
+end phrase
+
+define phrase distant-lords-road
+  Off to the north you can see Lord's Road leading away from the market.
 end phrase
 
 define phrase distant-silk-tent-outside

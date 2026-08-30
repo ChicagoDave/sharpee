@@ -355,6 +355,15 @@ middle state is the sweep: gates locked, pursuers on the board, Jack unseen.
 - The market gates lock at the transition (`story.ni:1749`) — the market becomes a box, which is
   what makes the sweep a threat rather than a chase the player could simply walk away from.
 
+**Where `calm` → `hunted` sits — RULED (David, 2026-08-30): at the briefing's end, not the
+bite.** The bullet above says "the bite in the Alley moves `calm` → `hunted`"; the build
+(`eavesdrop.chord`) found that sentence in tension with this section's own definition of
+`hunted` ("has heard the voices and knows she is wanted") and with the gates ruling ("at the
+eavesdrop's end — the calm → hunted transition"). David confirmed the end of the briefing: the
+bite opens the eavesdrop and the story stays `calm` through it; the story turns `hunted`, and
+the gates lock, the turn the leader barks "Okay, go!" and the men fan out. The bite sentence
+above is superseded by this note.
+
 **What moves `hunted` → `chase` — DECIDED (David, 2026-08-22): `TE20`, as in the source.** The
 chase begins the moment the necklace-for-cloak trade fires (`story.ni:4005`), with Jack inside
 Teisha's tent holding the green silk cloak; the `Tent Escape` and `Pole Escape` timers run from

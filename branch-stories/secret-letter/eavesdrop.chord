@@ -1,0 +1,324 @@
+## ===========================================================================
+## THE EAVESDROP — Book 1's scene, carried whole
+##
+## The bite in the Alley is the source's opening moment (`story.ni:1469`):
+## "Suddenly, from the alley's entrance, you hear voices." From there the
+## 2009 game boxed Jack into the Alley and the storehouse roof above it until
+## she had heard the mercenaries' whole briefing — the `Eavesdropping on
+## Soldiers` scene (`story.ni:1742-1804`): men at the alley mouth whose words
+## she cannot make out from below, the crates up to the Outer Market Roof,
+## five turns of the leader's orders overheard from there (the parchment's
+## "hat and a gray cloak" among them), and then the men fanning out into the
+## market with two of them shoving the north gates closed.
+##
+## WHAT THIS FILE FIXES about the state model, and the reading it takes.
+## Before it, the bite moved the story straight to `hunted` and started the
+## sweep's arrival clock, so Jack was hunted before she had heard why. The
+## change document ("The eavesdrop's aftermath") defines `hunted` as "Jack
+## has heard the voices and knows she is wanted", and the gates ruling puts
+## the lock "at the eavesdrop's end — the calm → hunted transition". So:
+##
+##   * the bite stays `calm` and opens the scene: the voices arrive at the
+##     alley mouth, the group and its captain appear on the roof;
+##   * the fifth overheard line ends it: the men leave, the story turns
+##     `hunted`, and the north gates (`north is blocked while hunted`) are
+##     locked;
+##   * the sweep opens as the source opens it (`story.ni:1725`): the first
+##     climb back down after the briefing is the tumble — "Check the alley!"
+##     — and the pair rushes in `approaching` with their lunge clock
+##     running. Moving out of the alley shakes them off (the dash-away line)
+##     and restarts `waiting`; the random sweep runs from there.
+##
+## RULED (David, 2026-08-30): the transition is at the briefing's end. The
+## change document's older sentence "the bite in the Alley moves calm →
+## hunted" is superseded by a dated note in its "eavesdrop's aftermath"
+## section; the bite card pins `calm`, the "Okay, go!" card pins `hunted`.
+##
+## THE FIVE LINES SPOOL ONLY FROM THE ROOF, as in the source: the every-turn
+## clause is gated on the group being here, and `first time` … `fifth time`
+## count that clause's own firings. Down in the alley the men are just
+## talking, one chance in four per turn, and southeast is refused until they
+## leave — so the roof is the only way through, which is what the source's
+## `Instead of listening` line in the alley is hinting at.
+##
+## WHAT IS NOT CARRIED, with reasons:
+##   * The ankle grab (`story.ni:1563`) carries its line as a blocked exit
+##     (`up is blocked while the wandering mercenaries is here`, on the
+##     Alley) but not its mutation — a blocked line cannot change a posture.
+##     The pair arrives `approaching` with `lunge` running, so the grab
+##     follows on the next turn anyway; one turn slower than the source.
+##   * "Carefully, you descend the stack of crates." (`story.ni:1732`) — an
+##     `entering` clause cannot tell a descent from a walk in from the
+##     junction, so later descents print the room alone.
+##   * The source's `[one of]` word alternations inside the alley's "still
+##     talking" texture (`story.ni:1772-1781`) become whole-sentence
+##     variants — deviation 6 in the story header's list.
+##   * The arms and armor as their own examinable (`story.ni:1682`) — folded
+##     into the group's description, which already names the mismatched
+##     arms. The captain IS carried, as the scenery he is on the roof.
+##   * "You can't do anything to the gates from up here" — cross-room scope
+##     is not a Chord thing; the gates are examinable at the junction only.
+##   * "No time for breakfast right now!" (`story.ni:2417`) — the engine
+##     keeps the bitten apple at zero servings and stdlib refuses a second
+##     bite in `validate` ("There's nothing left of the apple to eat"),
+##     before any story clause is consulted. Gentry's line has no way in.
+##
+## Every line below is Gentry's, carried from `story.ni:1474-1804`.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE VOICES — the men at the alley mouth, heard but not seen
+##
+## The source's `conversation` backdrop as it stands in the Alley. Off-stage
+## until the bite moves it in, and off-stage again when the briefing ends —
+## `move … offstage`, not `remove`: a removed entity cannot be named by the
+## alley's `southeast is blocked while the voices is here` (entering threw,
+## then the exit stopped parsing — GH #330), and a phrase emitted in the
+## same arm as its owner's departure never rendered (GH #329). Off-stage
+## keeps the names resolvable; the room-owned spool keeps the text.
+## ---------------------------------------------------------------------------
+
+create the voices
+  aka voice, men, group of men, group of people, people, words, talking, conversation
+  scenery, plural
+
+  You'd have to poke your head out of the alley to get a good look at the
+  men. You only know they're there because you can hear them talking.
+
+  on the player listening
+    refuse alley-strain-to-hear
+  end on
+
+  on every turn while the voices is here and one chance in 4
+    phrase alley-still-talking
+  end on
+
+define phrase alley-strain-to-hear
+  You strain to hear what the men are saying, but can't make out the words.
+  Maybe if you got some elevation, you could hear better.
+end phrase
+
+## The source draws each word of this from a `[one of]` list — men or
+## voices; still talking, continue talking, or continue their conversation;
+## outside, just outside, or at the entrance to — inside four sentence
+## shapes. Chord randomises whole arms, so each shape carries one draw.
+
+define phrase alley-still-talking, randomly
+  The men are still talking outside the alley.
+or
+  The voices just outside the alley continue their conversation.
+or
+  You can still hear the men at the entrance to the alley talking.
+or
+  You can still hear the voices talking just outside the alley.
+end phrase
+
+## What the alley's southeast says while they are there (`story.ni:1577`).
+
+define phrase alley-stay-hidden, stopping
+  Those men are still talking right outside the alley. Something — an
+  intuition? — tells you it would be a good idea to stay out of sight for
+  the moment.
+or
+  Those men are still talking right outside the alley. Better stay out of
+  sight until they leave.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE ROOF — the storehouse roof (`story.ni:1584`), reached up the crates
+##
+## Every other way off it is the source's one refusal; what can be seen from
+## it is in `peering.chord` (the junction to the southeast, Lord's Road
+## north, the alley below). The briefing spools from HERE, not from the
+## group: a phrase whose owner leaves the stage in the same arm never
+## renders, and the fifth line is the one that sends the group away. The
+## room is always present, so its text always lands.
+## ---------------------------------------------------------------------------
+
+create the Outer Market Roof
+  a room
+  aka roof, rooftop, market roof, roof top, outer market
+  down to the Alley
+  north is blocked: roof-precarious
+  northeast is blocked: roof-precarious
+  east is blocked: roof-precarious
+  southeast is blocked: roof-precarious
+  south is blocked: roof-precarious
+  southwest is blocked: roof-precarious
+  west is blocked: roof-precarious
+  northwest is blocked: roof-precarious
+  up is blocked: roof-precarious
+
+  You're perched atop the red tile roof of the storehouse. From here you have
+  a good view of the market's northwest junction and Lord's Road leading out
+  of town to the north.
+
+  after the player entering
+    phrase roof-hop-up
+  end after
+
+  on every turn while the group of mercenaries is here
+    first time
+      phrase overheard-spread-out
+    second time
+      phrase overheard-tempers
+    third time
+      phrase overheard-a-kid
+    fourth time
+      phrase overheard-parchment
+    fifth time
+      phrase overheard-go
+      move the voices offstage
+      move the mercenary captain offstage
+      move the group of mercenaries offstage
+      change the story to hunted
+  end on
+
+create the tiles
+  aka red tiles, tile, shingle, shingles, storehouse roof
+  scenery, plural
+  in the Outer Market Roof
+
+  The roof tiles are warm under the morning sun.
+
+create the view
+  aka view of town, vista, landscape, city, town, Miradania, Toresal
+  scenery
+  in the Outer Market Roof
+
+  You have a good view of the market's northwest junction and Lord's Road
+  leading out of town to the north.
+
+## ---------------------------------------------------------------------------
+## THE GROUP OF MERCENARIES — seen from the roof, gathered at the junction
+##
+## Off-stage until the bite; on the Outer Market Roof for the briefing, as
+## the source places them (`story.ni:1604`); off-stage again with the voices
+## when the fifth line has been heard. Bare `listen` never reaches an entity
+## clause (no target), so the source's roof and alley `Instead of listening`
+## lines answer `listen to the mercenaries` / `listen to the voices` only.
+## ---------------------------------------------------------------------------
+
+create the group of mercenaries
+  aka mercenaries, mercenary, men, soldiers, people, person, bravos, guards, mercs, group
+  scenery, plural
+
+  They're not Lord's Guards, that's for sure. They wear no insignia, for one
+  thing. Their arms and armor are mismatched, ugly, and scarred — not an
+  unfit description of the men themselves, either. Also, while the Guard
+  would be concerned with keeping the peace in Grubber's Market, these bravos
+  look ready to clobber anyone who gets in their way, and maybe burn down a
+  few stalls while they're at it.
+
+  after the player examining, once
+    phrase roof-mercenaries-wonder
+  end after
+
+  on the player listening
+    phrase roof-listen-carefully
+  end on
+
+create the mercenary captain
+  aka captain, leader, mercenary leader, older mercenary, grizzled mercenary
+  scenery
+
+  The leader of the mercenaries looks a bit older and a bit more grizzled
+  than the rest. He also looks smarter. You'll have a hard time fooling him,
+  if it comes to that.
+
+define phrase roof-mercenaries-wonder
+  So what are they doing here, you wonder? And come to think of it, where are
+  the Lord's Guards, anyway?
+end phrase
+
+define phrase roof-listen-carefully
+  You listen carefully to what the mercenaries are saying...
+end phrase
+
+## The briefing — the source's `Table of overheard mercenary utterances`
+## (`story.ni:1795-1804`), one row per turn on the roof.
+
+define phrase overheard-spread-out
+  '...we know he skulks Grubber's most mornings, so spread out quick, cover
+  all streets from the square,' growls one of them, evidently the group's
+  leader.
+end phrase
+
+define phrase overheard-tempers
+  The leader spits on the dusty ground. 'Keep your eyes open and don't take
+  guff. But for the love of Brigid, keep your tempers and your swords
+  sheathed unless you really need 'em. Ain't bein' paid to toss the locals.'
+end phrase
+
+define phrase overheard-a-kid
+  'And keep sharp!' the leader snaps. 'Remember this is a kid we're lookin'
+  for. Kids move fast, stay out of sight, slip through crowds easy. I find
+  out later he got away under your nose, I'll have it off!'
+
+  Suddenly, that bit of apple you swallowed a minute ago turns into a cold,
+  hard chunk in your belly.
+end phrase
+
+define phrase overheard-parchment
+  'Now, everyone memorize the description.' The leader pulls a dirty, folded
+  bit of parchment from his belt and squints at it. 'Shoulder-length brown
+  hair,' he reads, haltingly. 'Green eyes. Slight of build. Ten, maybe twelve
+  spans high.' He holds his hand out flat, at what happens to be exactly your
+  height. 'Usually wears a hat and a gray cloak.'
+
+  He refolds the parchment and jams it back into his belt. 'You dims got all
+  that?'
+
+  The others nod.
+end phrase
+
+define phrase overheard-go
+  'Okay, go!' barks the leader, and the mercenaries set out in several
+  directions, moving at a brisk walk. Two men go to the north gates and start
+  shoving them closed; the others enter the crowded market and start shoving
+  their way through the suddenly flabbergasted crowds.
+
+  Your heart sinks. This is *definitely* not good.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE WAY DOWN — the sweep's opening (`story.ni:1725`)
+##
+## Fired from the Alley's own `after the player entering while hunted, once`
+## (`grubbers-market.chord`): the first time Jack sets foot in the alley
+## after the briefing is the descent, and the tumble brings the pair in —
+## `approaching`, lunge running, and `waiting` reset, since that clock only
+## ever runs while the pair is off-stage. The pair's own `when the player
+## moves` (`mercenaries.chord`) fires after this clause on the same move and
+## is guarded for it: a move that ends with the pair already in her new room
+## is an arrival, not an escape.
+## ---------------------------------------------------------------------------
+
+define phrase roof-hop-up
+  You nimbly hop up on top of the crates; from there, it's only a short
+  scramble to the roof of the market.
+end phrase
+
+define phrase roof-tumble
+  As you climb back down the crates, one of them wobbles and your foot slips.
+  You tumble loudly to the cobblestones. 'Stupid! Clumsy!' you mutter,
+  scrambling to your feet.
+
+  From the street, you hear, 'What was that? Check the alley!'
+
+  Two mercenaries rush in and spot you immediately. They approach warily,
+  their arms spread wide.
+
+  You're in trouble now...
+end phrase
+
+define phrase alley-ankle-grab
+  You try to scramble up the crates, but one of the mercenaries grabs your
+  ankle and drags you back down!
+end phrase
+
+define phrase roof-precarious
+  The rooftop is steep and slick, and the tiles have been known to come loose
+  and fall off. It's precarious enough just staying here in one spot. If
+  you're to make your escape, you'll have to make it down on the ground.
+end phrase
