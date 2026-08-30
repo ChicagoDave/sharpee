@@ -37,6 +37,8 @@
 - Final corpus check: Dungeo chain 952/17, fernhill 36/40, ides 39/48, secret-letter 246/355 — byte-identical.
 - Plan archived to `docs/work/archive/adr-330-chapters/`; `.current-plan` returned to the port plan with a Resumed stamp. ADR-330 marked **IMPLEMENTED 2026-08-29** with two at-implementation amendments (D4: no save-format bump, opener current before turn 1; D5: `during` at every `while` site).
 
+- **Play-through after the push** (David: "Go ahead"): Chapter 1 end to end through `./sharpee play`. Finding: Behind Fruit Stall had a minted back door (`ne` from the Fruit Stall) — plain exits are bidirectional at load, `, one-way` reserved (GH #327); blocked story-side with a placeholder and pinned (247 cards / 357 assertions). `a boots (worn)` filed as GH #328. Uncommitted.
+
 ## Key Decisions
 
 ### 1. ADR-330 — Chapters in Chord

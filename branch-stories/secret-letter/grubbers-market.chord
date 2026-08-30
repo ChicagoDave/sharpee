@@ -99,6 +99,7 @@ create the Fruit Stall
   west to the Candlemaker's Stall
   southwest to the Pottery Stall
   south to the Eastern Junction
+  northeast is blocked: behind-stall-no-entry
   states: orderly, chaotic
 
   Bins heaped high with brightly colored fruit lend a pleasant fragrance to this end
@@ -115,6 +116,18 @@ create the Fruit Stall
   after the player entering while Jack is dressed
     start the player's exposure
   end after
+
+## Behind Fruit Stall surfaces only from the let-go drop (change document,
+## "Where she changes", amended 2026-08-23) — but every plain exit is
+## bidirectional at load (`connectRooms` stamps both directions; ADR-234
+## D4's `, one-way` is reserved and not wired, GH #327), so its `southwest
+## to the Fruit Stall` minted a northeast way in. Found in play 2026-08-29:
+## `ne` from here walked straight into the hidden spot. Blocked until the
+## language has a one-way exit; the refusal line is David's.
+
+define phrase behind-stall-no-entry
+  (PLACEHOLDER — David's line. No way in behind the stall from the front.)
+end phrase
 
 create the Eastern Junction
   a room
