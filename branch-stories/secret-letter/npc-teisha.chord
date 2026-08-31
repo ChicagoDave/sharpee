@@ -124,6 +124,11 @@ end greetings
 ## (change document: "stuffed in a satchel when she slides"). The necklace
 ## leaves play (`story.ni:3309`). Then the source's Final Chase opener
 ## (`story.ni:4009`), Gentry's, verbatim.
+##
+## GIVING (or showing) IS THE ONLY WAY IN — RULED (David, 2026-08-31):
+## the source's buy-with-necklace redirect (`story.ni:3035`) is not
+## carried; `buy silks` answers the no-money line in every state
+## (`silk-wares.chord`).
 ## ---------------------------------------------------------------------------
 
 define trait trade-for-the-necklace

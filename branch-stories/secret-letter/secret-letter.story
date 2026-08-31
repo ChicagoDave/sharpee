@@ -137,7 +137,7 @@ import "grubbers-market"
 ## the one time a move does not restart the arrival clock.
 
 create Jack
-  a person
+  a person, proper
   playable
   starts in the Northwest Junction
   kick-yourself

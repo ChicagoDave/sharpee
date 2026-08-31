@@ -884,6 +884,10 @@ import "backdrops"
 
 import "market-scenery"
 
+## Teisha's wares — the silks in the tent and the buy verb (Part 17 Ch 2).
+
+import "silk-wares"
+
 ## ---------------------------------------------------------------------------
 ## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)
 ##
