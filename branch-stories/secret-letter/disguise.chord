@@ -40,7 +40,7 @@
 ## captain text the recognition ruling supersedes, kept aside in the comment
 ## at the bottom of this file.
 ##
-## Every finished line below is Gentry's; every PLACEHOLDER is David's.
+## Every finished line below is Gentry's; every TODO is David's.
 ## ===========================================================================
 
 ## ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@
 create the dress
   aka gown, green dress, new dress
 
-  (PLACEHOLDER — David's line. The dress Teisha trades for the necklace.)
+  (TODO during play-testing — The dress Teisha trades for the necklace.)
 
   on the player wearing
     refuse change-outfit-instead
@@ -67,7 +67,7 @@ create the dress
 create the fashionable hat
   aka fashionable hat, new hat, lady's hat, bonnet
 
-  (PLACEHOLDER — David's line. The fashionable hat that comes with the dress.)
+  (TODO during play-testing — The fashionable hat that comes with the dress.)
 
   on the player wearing
     refuse change-outfit-instead
@@ -77,7 +77,7 @@ create the fashionable hat
 ## clothing-is-the-look ruling). Line is David's.
 
 define phrase change-outfit-instead
-  (PLACEHOLDER — David's line. Not piece by piece — CHANGE OUTFIT.)
+  (TODO during play-testing — Not piece by piece — CHANGE OUTFIT.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -116,20 +116,20 @@ define action changing-outfit
 ## to run!" — kept aside; the dress and hat need their own.
 
 define phrase change-outfit
-  (PLACEHOLDER — David's line. Jack changes into the dress and the fashionable
+  (TODO during play-testing — Jack changes into the dress and the fashionable
   hat behind the stall; the cap goes into the satchel.)
 end phrase
 
 define phrase change-no-dress
-  (PLACEHOLDER — David's line. Nothing to change into yet.)
+  (TODO during play-testing — Nothing to change into yet.)
 end phrase
 
 define phrase change-not-here
-  (PLACEHOLDER — David's line. Not out here, in the open.)
+  (TODO during play-testing — Not out here, in the open.)
 end phrase
 
 define phrase change-already
-  (PLACEHOLDER — David's line. Already changed.)
+  (TODO during play-testing — Already changed.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -165,7 +165,7 @@ end timer
 ## wearing. No source text (the 2009 game has no footwear).
 
 define phrase boots-spotted
-  (PLACEHOLDER — David's line. A mercenary notices the boots under the dress.)
+  (TODO during play-testing — A mercenary notices the boots under the dress.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -183,10 +183,10 @@ create Commerce Street
   aka commerce, the street
   west to the Eastern Junction
   first time
-    (PLACEHOLDER — David's line. "You made it." — Gentry's arrival block is
+    (TODO during play-testing — "You made it." — Gentry's arrival block is
     kept aside in this file's comments; it ends by removing the cloak.)
 
-  (PLACEHOLDER — David's line. Commerce Street, the chapter's way out.)
+  (TODO during play-testing — Commerce Street, the chapter's way out.)
 
   after the player entering while the player's market-escape has started
     reset the player's market-escape
@@ -220,10 +220,10 @@ create Commerce Street
 ##   to have any chance of sneaking past him."
 
 define phrase east-deflected
-  (PLACEHOLDER — David's line. The calm walk does not leave the market east.)
+  (TODO during play-testing — The calm walk does not leave the market east.)
 end phrase
 
 define phrase east-watched
-  (PLACEHOLDER — David's line. The captain watches the Commerce Street
+  (TODO during play-testing — The captain watches the Commerce Street
   entrance; not as Jack looks now.)
 end phrase

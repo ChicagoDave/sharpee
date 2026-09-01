@@ -571,15 +571,15 @@ end phrase
 ## down. David's lines.
 
 define phrase tent-no-way-back
-  (PLACEHOLDER — David's line. Not back into the market — out the back way.)
+  (TODO during play-testing — Not back into the market — out the back way.)
 end phrase
 
 define phrase base-no-way-back
-  (PLACEHOLDER — David's line. Not back into the tent; up.)
+  (TODO during play-testing — Not back into the tent; up.)
 end phrase
 
 define phrase top-no-way-down
-  (PLACEHOLDER — David's line. The mercenaries are at the base of the post.)
+  (TODO during play-testing — The mercenaries are at the base of the post.)
 end phrase
 
 ## ---------------------------------------------------------------------------

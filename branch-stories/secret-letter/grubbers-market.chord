@@ -194,7 +194,7 @@ create the Fruit Stall
 ## language has a one-way exit; the refusal line is David's.
 
 define phrase behind-stall-no-entry
-  (PLACEHOLDER — David's line. No way in behind the stall from the front.)
+  (TODO during play-testing — No way in behind the stall from the front.)
 end phrase
 
 create the Eastern Junction
@@ -852,7 +852,7 @@ end phrase
 ## your apple in peace" (`story.ni:1469`).
 
 define phrase apple-not-here
-  (PLACEHOLDER — David's line. Refused in the open; points northwest without
+  (TODO during play-testing — Refused in the open; points northwest without
   naming it.)
 end phrase
 
@@ -863,7 +863,7 @@ end phrase
 ## voices." (`story.ni:1469`) — which is also where the eavesdrop begins.
 
 define phrase apple-first-bite
-  (PLACEHOLDER — David's line. The first bite, taken in the Alley.)
+  (TODO during play-testing — The first bite, taken in the Alley.)
 end phrase
 
 ## The other eight stalls' wares and the source's generic theft rule — what

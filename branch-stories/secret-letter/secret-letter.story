@@ -48,7 +48,7 @@
 ##      fruit" is the substitution.
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
-## `(PLACEHOLDER — David's line …)`.
+## `(TODO during play-testing — …)`.
 ##
 ## What the port is checked against:
 ##   docs/references/textfyre/secretletter/           the 2009 I7 source and design archive
@@ -151,7 +151,7 @@ create Jack
   bothered to look.
 
   phrase detail while Jack is dressed:
-    (PLACEHOLDER — David's line. Jack in the dress and the fashionable hat,
+    (TODO during play-testing — Jack in the dress and the fashionable hat,
     boots underneath.)
 
   on going while the wandering mercenaries is aggressive

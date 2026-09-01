@@ -85,7 +85,7 @@
 ##
 ## Structural choices for David to rename or redirect at will: the mid-slide
 ## room's name ("On the Wire") and Behind Fruit Stall's return exit direction
-## (southwest). Every finished line is Gentry's; the marked PLACEHOLDER texts
+## (southwest). Every finished line is Gentry's; the marked TODO texts
 ## are David's to write.
 ##
 ## Known seam: `move the player to <room>` narrates nothing, so a landing
@@ -287,7 +287,7 @@ end trait
 ## #324).
 
 define phrase ride-out-caught
-  (PLACEHOLDER — David's line. Caught on the ride-out landing and killed — a
+  (TODO during play-testing — Caught on the ride-out landing and killed — a
   hard ending.)
 end phrase
 
@@ -400,7 +400,7 @@ create Behind Fruit Stall
   end after
 
 define phrase stepped-out-caught
-  (PLACEHOLDER — David's line. She steps out into the mercenaries waiting at
+  (TODO during play-testing — She steps out into the mercenaries waiting at
   the Fruit Stall: caught and killed, no free turn.)
 end phrase
 

@@ -47,7 +47,7 @@
 ## READINGS FLAGGED FOR DAVID — the change document's theft rule was written
 ## about the fruit; this file applies it to every stall as its wording says:
 ##   1. A calm lift of ANY ware is quiet — a knife from the weaponsmith, a
-##      belt, a candle — with one PLACEHOLDER line for all of them
+##      belt, a candle — with one TODO line for all of them
 ##      (`stall-lift-quietly`), since the source has no calm theft text at
 ##      all. The apple keeps David's own line.
 ##   2. A quiet calm lift does NOT make Jack a "successful thief" for the
@@ -97,7 +97,7 @@
 ## the bonnets carry no singular `bonnet` alias — that word is the
 ## fashionable hat's (`disguise.chord`), and the tree's pins on the trade
 ## name the hat by it (a `states:` pin takes one word).
-## Every finished line is Gentry's; the marked PLACEHOLDER texts are David's.
+## Every finished line is Gentry's; the marked TODO texts are David's.
 ## ===========================================================================
 
 define counter thefts starts 0
@@ -119,7 +119,7 @@ end phrase
 ## which keeps your own.
 
 define phrase stall-lift-quietly
-  (PLACEHOLDER — David's line. A quiet lift of {the item} from its display
+  (TODO during play-testing — A quiet lift of {the item} from its display
   while the market is calm; the stallkeeper never looks up.)
 end phrase
 
