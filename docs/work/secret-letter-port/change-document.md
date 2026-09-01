@@ -27,6 +27,24 @@ one chapter per pass, not authored ahead of the build.
 
 ---
 
+## Standing rulings (port-wide)
+
+### Conversation is open dialogue, never topic tables — DECIDED (David, 2026-08-31)
+
+David: *"every topic-based interaction with an NPC needs to be remapped to open dialogue"* —
+scope confirmed in the same conversation: **"every NPC."** One of the core reasons for porting
+this game is to enable the more complex capabilities of the new conversation system (ADR-320);
+`define topics` is therefore not an NPC surface anywhere in this story. Every NPC conversation
+is scene-shaped: greetings open it, `define conversation` threads and `define exchange` blocks
+carry the content, manner colors delivery, and the conversation system's own memory
+(`was discussed`, recency/absence words) replaces hand-plumbed state.
+
+**Reach**: all 23 source trees, the ten generic stallkeepers included; and Chapter 1's built
+conversation surfaces (Teisha's `define topics` block, the shared `ST` stallkeeper tree) are
+rebuild scope under this ruling. Talk-*refusals* (the `wary`/busy lines) are not conversations
+and stand as built. The mapping that implements this ruling is
+`docs/work/secret-letter-port/rewrite-pattern.md` (plan Phase 7).
+
 ## Chapter 1 — Prologue and Grubber's Market
 
 **Status**: IN CONVERSATION (opened 2026-08-22, session 50a5a8).
