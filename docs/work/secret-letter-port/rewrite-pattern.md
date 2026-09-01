@@ -11,7 +11,12 @@ document's standing rulings: **every NPC's conversation is open dialogue;
 to open dialogue" — "every NPC").
 **Status**: RULED (2026-09-01) — all five open questions in §7 carry
 David's rulings; the demonstration conversion (Sandler + Bobby, §7 OQ-1)
-is unblocked.
+is unblocked — and **deferred** (2026-09-01, session c2a3b7, David: "I'm not
+ready to write dialogue at this point — keep this until we're done with the
+port"). Until Phases 10 and 11 are built, every conversation is a *stub*:
+its triggers and world side effects live, its text a TODO — see plan.md's
+standing "Conversation stubs" rule. The demonstration runs on those stubs
+afterward; nothing here changes.
 
 This is the written half of Phase 7's deliverable: a general mapping from
 Textfyre's menu-driven quip tree (the `Quips` extension) to Chord's
