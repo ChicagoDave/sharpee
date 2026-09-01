@@ -9,8 +9,9 @@ document's standing rulings: **every NPC's conversation is open dialogue;
 `define topics` is not an NPC surface anywhere in this story** (David,
 2026-08-31: "every topic-based interaction with an NPC needs to be remapped
 to open dialogue" — "every NPC").
-**Status**: DRAFT — awaiting David's rulings on the open questions at the
-bottom; the demonstration conversion runs after those.
+**Status**: RULED (2026-09-01) — all five open questions in §7 carry
+David's rulings; the demonstration conversion (Sandler + Bobby, §7 OQ-1)
+is unblocked.
 
 This is the written half of Phase 7's deliverable: a general mapping from
 Textfyre's menu-driven quip tree (the `Quips` extension) to Chord's
@@ -175,6 +176,9 @@ mutations per M7.
 
 ## 4. Per-NPC perception (vision.md §3d) — the mechanism
 
+**Status: STANDING (David, 2026-09-01, OQ-3).** Phase 8 applies this
+mechanism across all trees.
+
 The standing rule: some characters see Jacqueline regardless of presentation
 (the gender sight — starting set: Teisha, Dame Sandler, Bobby, Widow
 Shannon); everyone else sees what is presented — Jack's existing
@@ -200,6 +204,42 @@ fixed per NPC; presentation varies at runtime. Two layers, only one runtime:
 
 The demonstration conversion must exercise both live layers: one perceiver
 whose address P1 carries, one presentation-split row P2 carries.
+
+---
+
+## 4a. The unit of work is the NPC's set (David, 2026-09-01)
+
+David's framing, recorded verbatim in substance: **for each NPC we decide
+a set of conversations.** In one-on-one conversations Jack and the NPC
+float within the set; in some cases the set carries information Jack
+needs. One or more PC+NPC conversations with several participants (the
+ballroom, certainly) are coming and will be their own challenge.
+
+How the set maps onto the shipped machinery (verified 2026-09-01):
+
+- **The set** is the NPC's greetings, threads, and exchanges together —
+  the disposition table of §5 is the set's ledger. It is decided per NPC
+  before that NPC's conversion runs, which is also where the NPC's
+  perception (§4) and Vedd register are fixed.
+- **Floating within the set** is ADR-320 D14's transition rule: per pair,
+  at most one ACTIVE thread, the rest PARKED with cursors held or
+  CONCLUDED; a `passive` or `assertive` thread lets Jack move off it and
+  resume later (`on parting` / `on resuming`), a `blocking` one pins the
+  set to that thread until it concludes. So "float" is authored per
+  thread by strength, and the default posture of a set is passive.
+  Dispatch precedence in `dialogue-selector.ts`: open exchange > active
+  thread > parked-thread resume.
+- **Information in the set** is a thread whose conclusion is state —
+  `when <key> is concluded` becomes true for other rows, greetings, and
+  gates across trees (M5's cross-tree `was discussed` and M7's
+  conclusion mutations). The set's useful content is therefore
+  enumerable: it is the concluding threads.
+- **Several participants** — see §6, third seam, and GH #347. ADR-320
+  D10 designs the floor (one speaker by disposition, non-speakers react
+  through manner, interruption by strength) but the shipped runtime opens
+  scenes only as pairs and holds threads per pair; the ballroom is
+  platform work, not a story workaround. Sets for the ballgoers are
+  decided against that surface when Phase 8 reaches the ball.
 
 ---
 
@@ -229,43 +269,77 @@ refusal/silence rows, the hub re-prompt loop.
   Open dialogue as the port-wide surface makes this the first thing every
   player touches; GH #317 (bare-verb scoping/fall-through) is the adjacent
   known seam. **To discuss with David before filing.**
+  *Re-verified 2026-09-01* against the bundle (`dist/cli/sharpee.js
+  --exec "yes/no/say yes/answer yes/say hello to kemp"` on
+  `ides-of-march.story`): all five return "I don't understand that."
+  ADR-320's Implementation note that "ASK/TELL/SAY/YES/NO … already
+  exist" in `parser-en-us` is stale — `grammar.ts` defines ask/tell/
+  question/inquire only. `lang-en-us/src/actions/answering.ts` carries
+  patterns for bare `yes`/`no`/`answer [response]` and
+  `constants.ts:87` names `if.action.answering`, but no stdlib action
+  directory and no grammar line back them: an orphaned surface, not a
+  working one. GH #318 (clarification follow-up: the next input answers
+  a held question) is the same shape one layer down.
 - **Unclaimed conversational input inside a scene.** With no topic table,
   input no exchange or thread claims falls through to the asking/telling
   action's default path. Whether that default renders an authorable per-NPC
   fallback (the source's equivalent: "There is no reply.") or a stdlib
   line needs one probe during the demonstration — if it is not authorable,
   that is a second seam to raise.
+- **Multi-participant scenes (the ballroom).** ADR-320 D10 decides the
+  floor model for several participants, and the scene state carries a
+  `participantIds: string[]` (`conversation-scene.ts:98`), but every
+  opening path builds a pair — `openScene([actor, target], …)` in
+  `dialogue-selector.ts:278` and `runtime.ts:1894` — a participant sits
+  in at most one live scene (`conversation-scene-store.ts:15`), thread
+  status is per pair (D14), and the selector's own comment says a
+  multi-party scene with two active player-pair threads is produced by
+  no current path (`dialogue-selector.ts:160-164`). D14 also lists
+  NPC↔NPC threads as deliberately not in v1. Not needed for the
+  demonstration (Sandler and Bobby are one-on-one); **needed before
+  Phase 8 reaches the ballroom**. **REQUIRED (David, 2026-09-01: "we
+  will need multi-NPC conversations") — filed as GH #347** with the
+  ball's six co-located ballgoer trees and the "every ballgoer spoken
+  to" gate (`story.ni:11155`) as the concrete need; platform work for
+  its own session, with an ADR-320 amendment or companion ADR for the
+  Chord surface and the join rules.
 
 ---
 
 ## 7. Open questions for David (block the demonstration, not the pattern)
 
-- **OQ-1 — The demonstration conversation.** Recommendation: **Dame
-  Sandler's first occasion AND Bobby's alley conversation together** — a
-  scene apart in the same chapter, and between them they exercise every
-  mapping rule: Sandler brings the four-occasion greetings with absence
+- **OQ-1 — The demonstration conversation.** **RULED (David, 2026-09-01):
+  both together** — Dame Sandler's first occasion AND Bobby's alley
+  conversation. A scene apart in the same chapter, and between them they
+  exercise every mapping rule: Sandler brings the four-occasion greetings with absence
   words (M1), the hub-exchange shape (M10 — `DS2` is the source's own hub),
   the leave-triggered exchange and stance forks (M3), the `HO1` cross-tree
   gate (M5), the ejection close (M7/M11), and P1 (a perceiver whose "Squire
   Jack" address is a remake ruling to capture); Bobby brings the thread
   with `opens when`, blocking refusal, and a concluding world change (M2,
-  M7). Sandler alone is the smaller alternative if the proof should stay
-  single-tree.
-- **OQ-2 — The chapter gate.** Both candidates are Chapter 2 content and
-  the change document has no Chapter 2 section yet. Either the Chapter 2
-  change-document pass (the Phase 4 guided conversation) runs first — its
-  normal course — or David rules the demonstration builds to the 2009
-  source's defaults with gaps reported (the standing 2026-08-30 ruling),
-  re-checked when the Chapter 2 pass arrives.
-- **OQ-3 — Perception mechanism.** Confirm §4's two-layer reading (authored
-  perception, conditioned presentation, marker deferred) as the standing
-  mechanism Phase 8 applies across all trees.
-- **OQ-4 — The Chapter 1 rebuild's timing.** The standing ruling makes
-  Teisha's `define topics` block and the shared `ST` stallkeeper tree
-  rebuild scope. Rebuild them as part of the demonstration (proving the
-  pattern on already-tested content), or in Phase 8's pass (where the Vedd
-  register reaches Teisha anyway)?
-- **OQ-5 — The answer input surface** (§6). How should a player answer an
-  open exchange at the parser — bare `yes`/`no`/subject words while an
-  exchange is open, a SAY/ANSWER verb, or the ask/tell surface as-is until
-  the platform discussion lands?
+  M7). (Sandler alone was the smaller alternative; not taken.)
+- **OQ-2 — The chapter gate.** **RULED (David, 2026-09-01): build to the
+  2009 source's defaults now.** Both candidates are Chapter 2 content and
+  the change document has no Chapter 2 section yet; the demonstration
+  builds under the standing 2026-08-30 ruling (mechanics default to the
+  source, gaps reported not decided) and is re-checked when the Chapter 2
+  change-document pass (the Phase 4 guided conversation) arrives. That
+  pass changes prose and rulings, not the pattern the demonstration proves.
+- **OQ-3 — Perception mechanism.** **RULED (David, 2026-09-01): confirmed
+  as standing.** §4's two-layer reading (P1 authored perception, P2
+  conditioned presentation, P3 marker deferred until a shared construct
+  needs it) is the mechanism Phase 8 applies across all trees.
+- **OQ-4 — The Chapter 1 rebuild's timing.** **RULED (David, 2026-09-01):
+  Phase 8, first up.** Teisha's `define topics` block and the shared `ST`
+  stallkeeper tree stay as built through the demonstration (David is
+  play-testing them in Phase 6's tail); Phase 8 opens with deciding
+  Teisha's set (§4a) and rebuilding both, where the Vedd register reaches
+  her anyway.
+- **OQ-5 — The answer input surface** (§6). **RULED (David, 2026-09-01):
+  bare answers while an exchange is open, with `say X` / `answer X` as
+  the explicit synonyms.** Bare input routes to the open exchange's
+  answer rows; with no exchange open the same input falls through to the
+  normal parse. Filed as GH #346 (platform work, its own session). Until
+  it lands the demonstration answers exchanges as `ask X about <answer>`,
+  the ides-of-march tests' interim, and its tree lines are updated when
+  the surface arrives.
