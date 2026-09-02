@@ -327,6 +327,16 @@ random people** — it is not a bloodline.
 parentage, legitimacy, the Ascension itself. A talent distributed at random is the structural
 opposite of a bloodline, sitting inside a story about nothing but bloodlines.
 
+**The talent is common in children and often dissipates in puberty — David, 2026-09-01.**
+Raised by the Chapter 2 change-document conversation, from the source's City Park line (the
+Maiden House orphans "know that you're really a girl", `story.ni:4917`): *"I think we decide the
+'talent' is common in children, but it often dissipates in puberty."* So the random weave above
+is what is *left* in adults — those in whom it did not fade (Teisha, Dame Sandler, Olgan Minor,
+Widow Shannon) — and children see her as a matter of course. Axiomatic, per the standing rule
+(§2): the story shows it and never explains it. Consequences recorded in the change document's
+Chapter 2 section; the one it hands forward is Chapter 4's — the Maiden House orphans are a
+houseful of perceivers under the two widows who do not see.
+
 ### 3d. People with the talent see Jack as Jacq
 
 Those who have it perceive her true self, unprompted and without being told.

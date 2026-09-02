@@ -625,3 +625,206 @@ rolled 1–3 timeout becomes a per-turn `one chance in 2` roll once Jack has wai
 has no "random number between" assignment, the expected pacing is the same, and the roll runs on
 the seeded stream so tree-document lines stay deterministic. The captain's arrival two turns into
 `aggressive` stays a death, as the source has it (`story.ni:2126`).
+
+## Chapter 2 — Commerce Street and Lord's Market
+
+**Status**: COMPLETE for Phase 10 (opened and closed 2026-09-01, session b24d9a) — six rulings, one carry-list; lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01)
+
+**Chapter 2 is Commerce Street and Lord's Market, and it ends at the Back Alley** — the source's
+Book 3 and Book 4 in file order, ending where Book 6 opens: Jack walks into the alley south of
+Lord's Market and Bobby is there. David: *"Chapter 2 ends at the Back Alley, Bobby comes before
+Maiden House."* That is the source's own boundary (its Commerce Street hint scene runs from the
+market's end until `Meeting Bobby` begins, `story.ni:1067`) and the source's own order (Bobby
+sends Jack to Maiden House, not the other way round).
+
+**What this settles about the pacing spine.** `vision.md` §5's push/pull/quiet table reads
+mercenaries → shops → mercenaries → Maiden House → mercenaries → Bobby, which would put Bobby
+after Maiden House. The order is ruled here: **Bobby comes before Maiden House**, as in the
+source. The table's *kinds* (shops are the quiet beat, Bobby is the first pull) stand; its
+sequence is superseded on this one point, and the change document is the authority
+(vision.md §8 — the vision is a capture, never the citation). Whether a mercenary push sits
+between the shops and Bobby is not decided here; it is a question for this chapter's
+pressure section below.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 9 — Commerce Street, the Bakery, the Butcher's Shop, the Armory, East Commerce Street (Book 3, `story.ni:4197-4950`); Lord's Market, Royal Tunic, Sandler & Sons, Chorus Brothers (Book 4, `story.ni:4951-5602`) |
+| The exit | The Back Alley (`story.ni:5607`) — entering it for the first time is the chapter's end and Chapter 3's opening beat (the coin trick, `BO1`) |
+| Conversations | 6 trees, 113 quips — `GE` Germaise 19, `HO` Holstenoffer 24, `OM` Olgan Minor 8, `CL` the clothier 6, `DS` Dame Sandler 48, `CB` the Chorus Brothers 8. Pieter is present as a talk-refusal only (`story.ni:5222`) |
+| Scripted events | One — `EVENT_Fossville` on first entry to Lord's Market (`story.ni:5010-5030`): the Baron storms out of the moneylender's, collides with Jack, the hooded woman calms him |
+| Puzzles | None — the designers' walkthrough (`test meeting`, `story.ni:12419`) goes east, east, south, straight to Bobby |
+| Pressure | None in the source — west to the market refused by day ("lay low for a while", `story.ni:4280`), the shops shuttered at night |
+
+**Only the first-visit layer is this chapter's.** Each shop carries a later-visit layer keyed on
+the sewer escape (`the player has been in the sewer`) or on Pieter's bodyguard scene: `GE16-19`,
+`HO18-24` (the back door to the rooftops), `OM9`, `DS24-30` (Sandler locks Jack out), and the
+whole clean-Jack layer — the ball gown, `CB` and the loan, `DS31+`, `CB7`'s "Fossville was here
+yesterday". Those belong to the chapters that reach them (Phases 8 and 10 cite this document per
+chapter, so they are recorded here as *not Chapter 2*, not as cut). Chapter 2 builds the
+first-visit trees: `GE1-15`, `HO1-17`, `OM1-8`, `CL1-5` as the dirty-Jack refusal, `DS1-23`,
+`CB1`'s dirty-Jack refusal, and the Fossville event — as stubs, per the standing conversation
+rule.
+
+### The clothes — DECIDED (David, 2026-09-01): Jack changes back into the urchin
+
+**Jack walks Commerce Street and Lord's Market as the boy the street knows.** David: *"we need
+Jack to change back or do it automatically."* The dress and the fashionable hat bought the head
+start out of the market; on this street they come off. So the six first-visit trees stand as the
+source wrote them — Germaise's "grateful for your disguise", Holstenoffer's "skinny boy like
+yerself", Sandler's "Squire Jack", the clothier's "merely a boy", the Chorus Brothers' "penniless
+ragamuffin" — spoken to Jack the boy, and the perception question for these characters is the
+standing per-NPC one (`vision.md` §3d/§3g), not a costume problem.
+
+**The mechanism defaults to the source's: automatic, on arrival at Commerce Street.** David left
+the two open ("change back *or* do it automatically"); the standing rule (2026-08-30, "whatever
+the original source does and if there's a gap, then I want to know") picks between them. The
+source's arrival block is itself an automatic change of clothes — *"Gratefully, you remove the
+cloak"* — and it moves the escape garment into the satchel and puts the gray cloak back on if
+Jack carries it (`story.ni:4266-4276`). The remake does the same on the same turn with the
+remake's garments: **the dress and hat go into the satchel, the woolen cap goes back on**, and
+the gray cloak goes back on only if she retrieved it from the landing (it stays where it fell
+otherwise, as ruled under the escape disguise). The dress and hat then ride in the satchel
+through the middle game exactly as the source's green silk cloak did. The arrival text that
+narrates this is David's line (the built room already carries a TODO for it, keyed to Gentry's
+block, `disguise.chord`). The player-performed alternative — `CHANGE OUTFIT` at the street, the
+action Chapter 1 already built — is not carried unless David rules for it; recorded here as the
+gap the default resolved.
+
+**Consequences.**
+- The source's exit rule — *"You'd better put your hat on — most of the merchants on this street
+  know you as Jack"* (`story.ni:4284-4289`) — carries: leaving Commerce Street bare-headed is
+  refused while the merchants know her, and the Bobby variant of that line belongs to Chapter 3.
+- Bobby meets Jack the boy at the alley, as the source needs (*"He doesn't even know that you're
+  really a girl"*, `story.ni:5630`). No Chapter 3 rework follows from the disguise.
+- The clothier's later "Getting changed" scene (`story.ni:5178`, the ball gown with Pieter) is
+  untouched and not this chapter's; the remake's Chapter 1 change is a *third* outfit change in
+  the game, not a replacement for that one.
+- Chapter 1's "identified" sweep recognition — the mercenaries match the gray cloak and cap — is
+  now the look Jack wears again on Commerce Street. Whether that matters here is the pressure
+  question below.
+
+### Pressure — DECIDED (David, 2026-09-01): paranoia, but no chase yet
+
+**Chapter 2 has no pressure with teeth.** David: *"I would add some paranoia, but otherwise
+there's no chase yet."* Nothing in these nine rooms takes Jack: no sweep, no captain, no clock,
+no capture. The source's shape carries — west to the market refused by day (*"It would be a good
+idea to lay low for a while"*, `story.ni:4280`), the shops shuttered at night — and the spine's
+**second mercenary push moves out of this chapter**; where it lands (Chapter 3, or later) is that
+chapter's question, not decided here.
+
+**What is added is paranoia** — Jack's own, as texture. Under the vision's own rule
+(`vision.md` §5, "Pressure has teeth") this is atmosphere, not pressure, and that is the point:
+it does not pretend to be a threat, it is a hunted kid catching her breath on a street she has
+been told is safe. **The lines are David's, during play-testing**, and their form is his too.
+What the port builds is the slot: a texture channel on the chapter's street rooms in the source's
+own idiom — the `1 in 5` every-turn idle rolls Germaise, Holstenoffer and Olgan already run
+(`story.ni:4374`, `4552`, `4746`) — carrying TODO lines until David writes them. Recorded as the
+structural reading, not the content; if the paranoia is meant to live elsewhere (in a
+conversation opener, in Jack's examine-self, in the arrival block itself) that is settled when
+the lines are.
+
+**Consequence for the chapter's shape.** With no pressure and no puzzle, Chapter 2 is the
+source's exposition chapter as written: nine rooms, six optional conversations, one scripted
+collision, and a walk to the alley. The change document authorizes it as that. The `vision.md`
+§5 open question ("what supplies pressure outside a chase?") is **not answered here** — this
+chapter is ruled to be the quiet beat that needs none.
+
+### Who sees her — DECIDED (David, 2026-09-01): Olgan Minor has the talent; the other four do not
+
+David: *"Olgan has the talent, the other four don't."* The chapter's six speakers on the
+`vision.md` §3f matrix:
+
+| | Perceives Jack (§3d) | Does not |
+| --- | --- | --- |
+| **Knows everything** | Dame Sandler (already placed) | — |
+| **Public tier** | **Olgan Minor** | Germaise, Old Man Holstenoffer, the clothier, the Chorus Brothers |
+
+**Olgan's line is the talent, not sharp eyes.** *"You are suddenly certain that he knows you're
+not really a boy — that he knew it the instant you walked into his shop"* (`story.ni:4736`) is
+now evidence of §3d in the source's own words, the third such after Teisha's *"guessed it the
+very first time"* and Sandler's *"did you really think I hadn't guessed?"* — and *"Run along,
+girl, before you cut yourself"* (`story.ni:4749`) is a perceiver outside the arrangement using a
+true word, exactly as §3g's first row has it. He is the first perceiver in the game who is
+hostile: Teisha and Sandler like her; Olgan sees her and sneers. That is the port's first
+demonstration that the talent implies nothing about kindness, which §3c's "weaves through random
+people" already promised.
+
+**What each flag fixes now**, with dialogue deferred (standing conversation-stub rule):
+- Each of the five stubs carries its perception flag in its TODO note, so the Phase 8 rewrite
+  reads it from the stub rather than re-asking.
+- Olgan's description carries the source's talent sentence verbatim — it is description, not
+  dialogue, so it is built in this chapter, not deferred. His `OM8` ejection ("little boy… soft,
+  pink hide") is a perceiver *choosing* the public word in front of the player, which §3g's
+  "position picks the word" allows; whether that line changes is his rewrite's question.
+- The four non-perceivers' first-visit trees stand as public-tier text: their "boy"/"lad"
+  tokens are assigned by position and need no reassignment. Holstenoffer's *"the Queen's little
+  brat"* (`HO7`) is the standing §3g **[watch]** on "brat" and stays flagged, not resolved here.
+- Under §3g everyone here except Sandler never speaks of lineage. Germaise's and Holstenoffer's
+  old-Duke lines (`GE12`, `HO9`, `HO5`) are about the Duke, not about Jack, and are untouched by
+  the §3e lineage-language rewrite — the thirty lines that rewrite measured are Sandler's and
+  later chapters'.
+
+### What carries as the source has it — RECORDED (2026-09-01, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 2
+surfaces carry unchanged and were not put to David as questions:
+
+- **The Fossville collision** (`EVENT_Fossville`, `story.ni:5010-5030`) — fires once on first
+  entry to Lord's Market, Gentry's text verbatim: the Baron out of the moneylender's, the fall,
+  the hooded woman's *"Calm yourself, Fossville… It's only a foolish street boy"*, his *"Off
+  with you then, urchin"*, her *"The Queen can not appear to play favorites"* as they go. The
+  `follow` refusal ("You've already lost him in the crowd") carries. This is the player's first
+  sight of the antagonist and the remake's §3e motive is structural, but nothing in the scene's
+  text names lineage, so it is untouched by the lineage rewrite.
+- **East Commerce Street** (`story.ni:4822-4950`) — the three estates as locked fronts (Black
+  Gate refused by the servants; Red Gate locked, its brass key a later chapter's; the Jacobs
+  mansion refused), the iron fence, the park gate, `knock`. The Red Gate `unlock` machinery is
+  built when its chapter is.
+- **The street and the square** — Commerce Street's day description, sidewalks, cobbles, mud,
+  the three storefronts with facing-direction shortcuts; Lord's Market's day description,
+  storefronts, servants ("no one affords you so much as a second glance"), the unlit lanterns.
+  The night variants exist in the source for later chapters and are not this chapter's.
+- **The shops' scenery and refusals** — the bread and flour and oven, the trays and hooks and
+  chopping block, the dagger display (Olgan's "have your finger off" threat), the clothier's
+  curtains/carpet/dummies/mirror and the lovely clothes with their dirty-Jack tail, the display
+  case and its jewelry, the armchairs and teller's window. Buying with no purse: Olgan's *"Run
+  along, girl"*, the clothier's price that leaves her "queasy" — the source's own text stands.
+- **Idle texture** — Germaise's dough, Holstenoffer's cleaver (the source's one `dramatic
+  event` here, `ATMOS_Holstenoffer`, carries as plain every-turn texture per P-9: the port ships
+  without deferred narration), Olgan's staring, the clothier's fussing.
+- **The chapter's end** — entering the Back Alley for the first time. The `define chapters`
+  block gains Chapter 3's row on that trigger; the coin-trick text and `BO1` are Chapter 3's.
+- **The Vedd idiom register** (Phase 5, seeded as diction) reaches these five new trees when
+  their dialogue is written in Phase 8, not now — the stubs carry no register.
+
+**One gap found, not decided** — see the next section.
+
+### The talent in children — DECIDED (David, 2026-09-01): common in children, often gone by puberty
+
+The City Park gap (`story.ni:4917` — the Maiden House orphans *"know that you're really a
+girl"*) is resolved by a world rule, not a line. David: *"I think we decide the 'talent' is
+common in children, but it often dissipates in puberty."* Recorded as a premise in `vision.md`
+§3c (dated 2026-09-01), since it governs the whole remake; what it settles here:
+
+- **The orphans see her.** The City Park refusal stands as the source has it: the kids know, and
+  calling her out in front of Bobby is exactly the danger the line names. Bobby is "a few years
+  older" (`story.ni:5630`) — past the age where it fades — and does not see, as the source needs.
+- **The adult perceivers are the ones it stayed with.** §3f's random weave in adults is the
+  residue of a childhood sight; Teisha, Sandler, Olgan and Shannon are not a different kind of
+  person, just ones it did not leave. Nothing about kindness or knowledge follows from it (Olgan).
+- **Axiomatic.** Under the standing rule (vision.md §2) no one explains why it fades and no
+  system models it; it is shown in who sees.
+- **Handed forward, not decided here**: whether Jack herself has it (she is a child on the
+  boundary — the question is the vision's, when it matters); and Chapter 4's shape — Maiden House
+  is a house of children who see under two widows who don't, which is the Fiona knot (§4) seen
+  from the other side.
+
+**Chapter 2's questions are answered.** Extent, clothes, pressure, perception, the source
+carry-list, and this gap. The section is complete for Phase 10's purposes: every room, tree
+(as a stub), event, and refusal in Books 3 and 4's first-visit layer is authorized, the
+later-visit layers are recorded as belonging to later chapters, and the lines are David's
+during play-testing.
