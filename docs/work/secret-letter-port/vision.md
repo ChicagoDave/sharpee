@@ -391,6 +391,12 @@ been waiting for the Duke's daughter to finally make herself known"*), so her re
 two languages would meet in one scene. Recorded as a reading of the two rules together, not as a
 ruling — David has not been asked whether perceivers use the true lineage language.
 
+**Dame Sandler's reveal — RESOLVED (David, 2026-09-02, change document Chapter 9): perceivers
+use the true lineage language, and the reveal is not where the public *son* is spoken.** Sandler's
+`DS31-49` carry in the true words — *daughter*, *Lady Jacqueline* — and her law lines convert to
+the succession claim above in David's words; she says nothing of the public name. The wrong-name
+pain arrives from the record and the room (the ball, Chapter 11's question), not from her.
+
 **The letter — RESOLVED (David, 2026-09-01, change document Chapter 6): it names her rightly.**
 The Duke's letter carries as written — *Jacqueline Toresal*, and "her" (`story.ni:9481`). The
 derived reading above is half right: the *law* and the public claim say son; the Duke's own
@@ -457,7 +463,7 @@ are not the same rule and do not correlate:
 
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
-| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona (David, 2026-09-02, change document Chapter 7 — has known the name *Jacqueline* from the Duke for fourteen years, never from her eyes); Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes) |
+| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona (David, 2026-09-02, change document Chapter 7 — has known the name *Jacqueline* from the Duke for fourteen years, never from her eyes); Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes); Pieter (David, 2026-09-02, change document Chapter 9 — knows from Sandler's reveal, *"I was in the dark, all right"*; his *"Jack"* slips are habit, not a tell) |
 | **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5); Fossville's butler (David, 2026-09-01, change document Chapter 6) | the market, the stallkeepers, Bobby, Jacobs |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you

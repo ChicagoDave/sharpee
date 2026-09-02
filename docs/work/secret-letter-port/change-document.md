@@ -2028,3 +2028,207 @@ it — recorded in vision.md §3e as a premise), the walk out (past the men, in 
 section is complete for Phase 10's purposes: every live room, the scene, every scripted event and
 refusal in Book 11 and the estate front's unlock are authorized, `SH13-16` is authorized as a stub,
 the two street beats are authorized as placeholders, and the lines are David's during play-testing.
+
+---
+
+## Chapter 9 — Dame Sandler and the Preparations
+
+**Status**: COMPLETE for Phase 10 (2026-09-02, session ade32b) — four rulings, one carry-list, four gaps; produced against Book 12 Parts 1-3 (`story.ni:10588-10975`) and the clean-Jack layers of Books 3 and 4 (`story.ni:5065-5230, 5440-5602, 4736-4820`); lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-02): Sandler and the shopping, ending as evening falls; the journey is its own chapter
+
+The source's *"Chapter 9 - Preparations"* runs from Sandler's door (`story.ni:5262`) through the
+shopping and the night journey to the keep, printing *"Chapter 10 - The Ball"* in the keep's foyer
+(`story.ni:11041`); its scene chain, hint chain and `test ballgoing` (`story.ni:12449`) end one
+room later, in the ballroom (`story.ni:10967, 1091`). Put to David: (A) Sandler's door to the
+keep's foyer; (B) Sandler's door to the ballroom; (C) split it — Sandler and the shopping as one
+chapter, the night journey as its own; (D) something else. David: **"C."**
+
+**Chapter 9 is Dame Sandler's reveal and the shopping with Pieter, from Sandler's door to the
+moment Journey to the Ball begins**: gown, jewel and dagger in hand, stepping onto Commerce
+Street, *"Evening is falling over the city, and the streets are clearing of people"*
+(`story.ni:10967-10975`). That text is Chapter 10's opening beat, not this chapter's exit text.
+**Chapter 10 is the night journey to Lord's Keep** (Book 12 Parts 3-4, `story.ni:10967-11046`,
+over Chapter 4's rooms), and the port's numbering runs one past the source's from here: the
+source's Chapter 10 (the ball) is the port's Chapter 11, its Chapter 11 (the Baron) the port's
+Chapter 12. The source's seams at the foyer and the ballroom are Chapter 10's to draw between.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 0 new. Sandler & Sons, the Chorus Brothers, the Royal Tunic, Lord's Market, Commerce Street, the Armory, East Commerce Street — Chapter 2's rooms in their clean-Jack, bodyguard state. The Southern Gate (`story.ni:10978`) is Chapter 10's |
+| Opens with | `DS31` on entering Sandler's clean — *"Lady Jacqueline... how nice to see you finally looking yourself, after all these years"* (`story.ni:5262-5266, 10615`) |
+| NPCs | Dame Sandler; Pieter, from guard to bodyguard (`story.ni:10758-10760`); the Chorus Brothers; the clothier; Olgan Minor |
+| Conversations | `DS31-49` and `DS49B` (20 quips, `story.ni:10615-10657`) — the reveal, the claim, the murder, the task, the jewel; `PI1-12` (12, `story.ni:10826-10848`, `PI12` for the Woods only); `CB1-8` clean (8, `story.ni:5484-5498`); `CL1-6` clean (6, `story.ni:5127-5137`); Olgan Minor's talk refused by Pieter (`story.ni:10916`) |
+| Scenes | 1 — the Bodyguard scene, from `DS49B` to the ballroom (`story.ni:10758`); plus Getting Changed inside it (`story.ni:5182-5194`) |
+| Scripted events | The case unlocked on `DS48`, the jewel worn, `DS49B` and the case locked again (`story.ni:10717-10731`); Pieter unfrozen (`story.ni:10760`) and following (`story.ni:10770-10777`); the letter shown to the Brothers turns them respectful (`story.ni:5551`); `CB6` gives the purse (`story.ni:5528`); the gown bought, Pieter waits outside, the mirror (`story.ni:5114-5121`); *"Come on, Lady Toresal"* (`story.ni:5188-5191`); the dagger under Pieter's glare, worn under the gown (`story.ni:10925-10927`) |
+| The exit | Onto Commerce Street with all three. Chapter 10's row is the evening text |
+| Puzzles | None — the designers' `test sandler`, `test moneylender`, `test clothier`, `test armory` (`story.ni:12441-12447`) are the shops in order; the source's own hints are the shopping list |
+| Pressure | None on stage. Pieter's steering refusals (`story.ni:10806-10818, 10893-10902, 8757-8767`) |
+| Deaths | 0 |
+
+### Dame Sandler's reveal — DECIDED (David, 2026-09-02): true words throughout; the public name is not hers to say
+
+Dame Sandler sees (vision.md §3d) and is inside the arrangement, so §3g gives her the true words
+in private — and the reveal is private: her shop, Pieter, the case. Her source lines are the true
+words already: *"Lady Jacqueline"* (`DS31`, `story.ni:10615`), *"the Duke's daughter"* (`DS32`,
+`story.ni:10617`), *"You are the daughter of one of the most loved and respected noblemen in
+living memory"* (`DS39`, `story.ni:10634`), *"Good luck, Lady Jacqueline"* (`story.ni:10609`).
+Two things her tree does not do: it states the source's law — *"in the absence of a named
+successor, the ruler is determined by the will of the people"* (`DS38`, `story.ni:10632`) — where
+vision.md §3e rules a claim by succession (the Duke was the King's brother); and it never says
+that the public claim names the Duke's son, which §3e rules Jack must press it in. vision.md §3e's
+derived reading left this scene as the place the two languages would meet, awaiting David. Put to
+David: (A) Sandler speaks true words throughout and says nothing of the public name; her law lines
+convert to the succession claim; (B) she names the public claim to Jack's face here; (C) something
+else. David: **"A."**
+
+**Sandler's tree carries in the true words, and the wrong name stays out of her mouth.** `DS31-49`
+carry as written for address and lineage — *daughter*, *Lady Jacqueline*, *"did you really think
+I hadn't guessed?"* (`DS32`, the talent as the source already wrote it, unexplained per §2). The
+law lines convert: `DS38`'s *will of the people* and `DS39`'s *"even as his illegitimate heir"*
+become the succession claim — the King's brother's child, the King dead without naming an heir —
+in David's words, and `DS42`'s *"people who are interested in seeing you succeed"* and `DS44`'s
+*"you must announce yourself"* carry over that. The pain of the public name arrives later, from
+the record and the room, not from the one person who has always seen her and now says so.
+
+**vision.md §3e's derived reading is resolved by this** (recorded there, 2026-09-02): perceivers
+use the true lineage language, and Sandler's reveal is not where the public *son* is spoken. Which
+scene is, if any, is Chapter 11's question (the ball), asked within this ruling.
+
+### Who sees her — DECIDED (David, 2026-09-02): Pieter does not see
+
+Pieter is the chapter's new speaking character, with her from Sandler's shop to the ballroom. In
+the source he did not know — *"Oh, I was in the dark, all right. To tell you the truth, it's a
+bit of a shock, seeing you like this... er, Jacqueline"* (`PI2`, `story.ni:10828`), *"Goddesses,
+but it's weird calling you that"* (`PI3`, `story.ni:10830`) — and his road lines slip back to
+*"Jack"* (`ATMOS_Pieter`, `story.ni:10787`; *"Don't, Jack"* at the gate, `story.ni:11017`), his
+stammer randomized between the three forms (`story.ni:5231-5232`). Under the dress premise
+(Chapter 8) everyone uses the girl words now, so his stumbling is habit, not a tell; whether he
+has the talent is still this document's to carry per §3d. Put to David: (A) Pieter does not see;
+his lines carry as written; (B) Pieter sees and always has; (C) something else. David: **"A."**
+
+**Pieter does not see, and his lines carry as written** — the shock, the stumble, the *"Jack"*
+slips, the stammer. He is the dress premise's worked example: the first character who meets the
+flipped presentation having known the other one, a decent man catching up to what he is looking
+at. His *"I suppose he could have done worse for a daughter"* (`PI6`) and *"He'll try to intimidate
+you because you're young and a girl"* (`PI10`, `story.ni:10844`) are the girl words everyone uses
+now, not sight. After `DS31-49` he knows the politics — the lineage, the claim, the ball — so his
+cell in vision.md §3f is *knows everything, does not perceive*, beside Fiona and Fossville
+(recorded there, 2026-09-02).
+
+**The rest of the chapter's cast is already ruled**:
+- **Dame Sandler sees** (§3d) and is inside the arrangement; her tree carries in the true words
+  (ruled above).
+- **The Chorus Brothers do not see** (Chapter 2). Their *"My dear"*, *"Miss"*, *"you certainly
+  look respectable"* (`CB4`, `story.ni:5490`; `story.ni:5556`) are the girl words under the dress
+  premise; `CB7`'s *"Fossville was here yesterday"* carries.
+- **The clothier does not see** (Chapter 2). *"a clean, respectable, and evidently well-to-do
+  young lady"* (`story.ni:5069`), *"Sister"*, *"honey"*, *"You'll look like a princess!"* — the
+  girl words under the dress premise. His dirty-Jack refusal is Chapter 2's; this is his clean
+  layer.
+- **Olgan Minor sees** (Chapter 2). His *"Run along, girl, before you cut yourself"*
+  (`story.ni:4766`) was a tell while she was dirty and is not one now; carries as written. Pieter
+  refuses his conversation (`story.ni:10916`), so `OM1-9` are not reached in this chapter.
+
+### Pressure — DECIDED (David, 2026-09-02): quiet, as the source has it
+
+Put to David as the source has it — nothing on stage; Pieter's steering refusals cite the ball's
+clock and Sandler's orders, not the men (*"We don't have time to go traipsing around the city"*,
+`story.ni:10902-10903`; *"That's exactly where Fossville will expect you to go"*,
+`story.ni:10806-10807`) — against fear without teeth on the streets again, or teeth. David:
+**"A."**
+
+**The shopping is the spine's quiet beat**, between Chapter 8's bath and Chapter 10's night
+journey (§5: *push / pull / quiet*). Pieter's steering is the only pressure and it is about time.
+Nothing new is built for it; the men are not on the streets this afternoon. Chapters 4 through 9
+now run fear, teeth, fear, fear, fear, quiet.
+
+### What carries as the source has it — RECORDED (2026-09-02, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 9
+surfaces carry unchanged and were not put to David as questions:
+
+- **Sandler's on entering clean** (`story.ni:5244-5267`) — `DS31` started on entry with `DS31`
+  unfired; the source's *"Chapter 9 - Preparations"* heading is the port's Chapter 9 row.
+- **Leaving Sandler's** (`story.ni:10594-10611`) — refused until `DS49` (*"what I have to tell
+  you is dreadfully important"* / *"There are a few things yet you should know"*); refused until
+  a jewel is worn (*"aren't you forgetting something?"*); *"Good luck, Lady Jacqueline"* on the
+  way out; talking again after `DS49` refused (*"There's no time, child"*); the letter shown
+  (*"proof of your heritage, Jacqueline... Guard it well"*).
+- **`DS31-49`, `DS49B`** — as a stub per the standing conversation rule, with the law lines
+  converted per the ruling above: `DS31` on entry; `DS32`/`DS34` exclusive; `DS36` and `DS40`
+  both into `DS41`; the `DS45-48` cluster, with `DS49` fired automatically once the cluster is
+  exhausted (the designers' note on why, `story.ni:10715`, carries as a build note); `DS48`
+  unlocks the case and lays out the four pieces (`story.ni:10717-10721`); taking one wears it and
+  fires `DS49B`, which locks the case again (`story.ni:10723-10731`).
+- **The jewelry** (`story.ni:10735-10752`) — ring, pendant, bracelet, brooch, one chosen; the
+  brooch *"in the shape of a cup, symbol of the Goddess Magdalena"*; the case's *"Pieter has his
+  eyes on you constantly"* refusal (`story.ni:5206`).
+- **The Bodyguard scene** (`story.ni:10758-10802`) — from `DS49B` to the ballroom; Pieter
+  unfrozen and following (*"looking around warily / his hand on his sword hilt / doggedly keeping
+  you in sight"*); his ten road mutters as a dramatic event, capped (`story.ni:10783-10796` —
+  they fire during Journey to the Ball, so they are Chapter 10's to hear, authorized here as
+  his); the letter shown to him (*"Don't lose that"*, `story.ni:10801-10802`).
+- **Pieter's steering** (`story.ni:10804-10819, 10891-10903, 8757-8767`) — no Maiden House; no
+  leaving Lord's Market without a gown; no going back to Sandler's; no Brothers once the purse is
+  had; no clothier once the gown is had; no bakery or butcher; no armory once the dagger is had;
+  no east from Commerce Street; no west to Grubber's without the dagger.
+- **`PI1-12`** — as a stub per the standing conversation rule, the `PI1` stammer included;
+  `PI8-10` fall away as each errand is done; `PI12` is the Woods' and Chapter 10's.
+- **The Chorus Brothers, clean** (`story.ni:5449-5602`) — `CB1` started on entering clean; the
+  brothers disrespectful until the letter is shown (`story.ni:5551-5558`, *"a personage of more...
+  importance than first we assumed"*), then respectful; `CB3` routed to `CB4` or `CB6` by their
+  state; `CB6` gives the purse (`story.ni:5528`); `CB8` shows the letter; the persuasion routes
+  (`story.ni:5536-5569`); *"Come back soon... Your business is... always welcome"* on leaving;
+  the purse, its drawstring, the gold coins and their refusals (`story.ni:5571-5602`). Their
+  dirty-Jack refusal is Chapter 2's.
+- **The clothier, clean** (`story.ni:5069-5194`) — the squeal on entering; his idle set
+  (`story.ni:5083`); *"Come back soon, sweetie"*; buying without the purse (*"Remember what Dame
+  Sandler said, Jacqueline"*, `story.ni:5108`); the gown bought — the fitting, *"Er, I'll wait
+  outside"*, the full-length mirror, *"you do look like a princess"* (`story.ni:5114-5121`);
+  `CL1-6` as a stub, gated as the source gates them (`CL3`/`CL4` on `DS49`, `CL6` on the purse);
+  the ball gown and its undressing refusal (`story.ni:5171-5173`); Getting Changed — Pieter off
+  stage while she changes, *"Wow... Come on, Lady Toresal"* on stepping out (`story.ni:5182-5191`).
+  The day dress is removed from play here (`story.ni:5116`).
+- **Olgan Minor, with Pieter** (`story.ni:10905-10958`) — the proprietor finding something else
+  to look at; conversation refused by Pieter (*"Don't waste your breath making conversation,
+  Jacqueline"*, and the hint of history between the two men); the big weapons refused; the
+  dagger bought under Pieter's glare, *"small enough to hide under your, er..."*, Minor biting the
+  coin, the knife under the gown; the plain dagger as a worn weapon, its draw refused until the
+  ball (`story.ni:10931-10958`); *"You leave the weapons shop with a sense of relief"*.
+- **The chapter's end** — with gown, jewel and dagger, stepping onto Commerce Street. The `define
+  chapters` block gains Chapter 10's row on Journey to the Ball's beginning; the evening text, the
+  world set to night and the purse removed (`story.ni:10967-10974`) are Chapter 10's opening.
+- **The Vedd idiom register** reaches `DS31-49`, `PI1-12`, `CB`, `CL` when Phase 8 writes them,
+  not now. Pieter's *"Goddesses"* and the brooch's Magdalena are source texture and stay.
+
+### Gaps found, not decided
+
+1. **The law lines** — `DS38` and `DS39` convert from the source's popular-acclaim law to §3e's
+   succession claim (ruled above). The words are David's; Phase 10 builds the stubs with the
+   source text marked for conversion, and reports.
+2. **The dagger's hiding place** — the source writes it *"under your gown"* and *"under your ball
+   gown"*, and the buying order is the player's: she may buy the dagger before the gown, in the
+   day dress. Carries as the source has it; reported.
+3. **`CB7`'s "yesterday"** — *"I saw Baron Fossville leaving here yesterday"* assumes Chapter 2's
+   collision was the day before. Under the port's chapter clock (the market, the night, the jail,
+   the morning, the hanging, this afternoon) it is; carries. Reported so Phase 10 checks the
+   count.
+4. **Pieter's ten road mutters** fire only during Journey to the Ball, so they are heard in
+   Chapter 10 though authorized here as Pieter's lines. Reported so neither chapter drops them.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); where the public *son* is spoken, if anywhere (Chapter 11's, the ball); Chapter 10's
+opening — evening on Commerce Street, the world to night, Chapter 4's route walked again with
+Pieter, the Southern Gate, the keep's foyer and the ballroom (`story.ni:10967-11060`, with the
+Pieter-keyed rules in Book 5B).
+
+**Chapter 9's questions are answered.** Extent (Sandler's door to evening on Commerce Street; the
+journey split off as Chapter 10, the port's numbering one past the source's from here), Sandler's
+reveal (true words, the public name unsaid — vision.md §3e's derived reading resolved), Pieter
+(does not see; his lines carry), pressure (quiet), the source carry-list, and four gaps. The
+section is complete for Phase 10's purposes: every scene, scripted event and refusal in Book 12
+Parts 1-2 and the clean-Jack layers of Books 3 and 4 is authorized, the four trees are authorized
+as stubs with `DS38-39` marked for conversion, and the lines are David's during play-testing.
