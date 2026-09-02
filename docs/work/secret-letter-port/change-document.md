@@ -1779,3 +1779,252 @@ four gaps. The section is complete for Phase 10's purposes: every room, scene, e
 in Books 9 and 10 is authorized, the two Fiona layers and the closet table are authorized as stubs
 with their conversions named, the raid's clock and its death carry with teeth, the square's
 mercenaries are authorized as placeholder beats, and the lines are David's during play-testing.
+
+---
+
+## Chapter 8 — Red Gate Estate
+
+**Status**: COMPLETE for Phase 10 (2026-09-02, session ade32b) — four rulings, one carry-list, four gaps; produced against Book 11 (Red Gate Estate, `story.ni:10008-10587`), with the Book 3 estate front (`story.ni:4858-4901`) and Book 4's Chapter 9 trigger (`story.ni:5262`); lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-02): from the privy window to Sandler's door
+
+The source draws two seams and they disagree. Its theme change (`select theme
+"PreparingForBall"` on returning to East Commerce Street clean, `story.ni:10064`) and the
+designers' own `test redgate` (`story.ni:12439`, ending *"n / n / d / d / s / s / s"* out of the
+house) put a boundary at the front gates, dressed. Its printed heading, its scene chain and its
+hint chain all draw it later: Shannon's Company ends *"when the location is Lords Market and the
+player is clean"* (`story.ni:10014`), her goodbye fires and the game pushes Jack east into
+Sandler & Sons (`story.ni:10067-10071`), `Red Gate Hints` runs until `DS31` fires
+(`story.ni:1089`), and *"Chapter 9 - Preparations"* prints when `DS31` starts (`story.ni:5262`).
+Put to David: (A) the window to the front gates, walking out clean; (B) the window to Shannon's
+goodbye in Lord's Market and the step into Sandler & Sons; (C) something else. David: **"B."**
+
+**Chapter 8 is Book 11 whole, from Shannon coming through the privy window to her hurrying
+south in Lord's Market and Jack stepping into Sandler & Sons.** Dame Sandler's second tree
+(`DS31-49`, the reveal and the brooch) is Chapter 9's, where the source prints its own heading.
+Shannon's Company is the chapter's one scene and its exact span.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 8 new — Entrance Hall (the source's Foyer), Great Hall, Cellar, Second Floor Landing, Office, Third Floor Landing, Master Bedroom, Bathroom (`story.ni:10090, 10163, 10222, 10310, 10326, 10437, 10447, 10474`). The Dining Hall and Kitchen are commented out in the source (`story.ni:10131-10157`) — see the carry-list. Plus Behind Maiden House, East Commerce Street and Lord's Market in Shannon's Company (Chapter 3's and Chapter 2's rooms) |
+| Opens with | Shannon scrabbling through the privy window after her — *"Fiona thought I should maybe come with you"* (`story.ni:10020-10025`) |
+| NPCs | Widow Shannon, following every turn (`story.ni:10029`); no one else. The house is empty |
+| Conversations | Shannon's later tree `SH13-16` (4 quips, `story.ni:6502-6508`), available only outside the house — talk inside the estate is refused (*"reluctant to break the silence"*, `story.ni:10111`). Her scripted lines inside: the portrait, the box, the faucets, the bath, the dress |
+| Scenes | 1 — Shannon's Company (`story.ni:10014`) |
+| Scripted events | Shannon moved to Behind Maiden House (`story.ni:10016`); the wall climb into East Commerce Street (`story.ni:10049-10053`); the gates unlocked with the brass key and Jack pushed through (`story.ni:4894-4898`); the threshold pause and the tension ratchet (`story.ni:10116-10119`); the furnace and the fire (`story.ni:10261-10282`); the bath, the old clothes, the day dress, `clean` (`story.ni:10543-10551`); the mirror (`story.ni:10573`); *"I suppose we should go see Mrs. Sandler now"* on East Commerce Street clean (`story.ni:4828-4837`); Shannon's goodbye and `try going east` (`story.ni:10067-10071`) |
+| The exit | Arriving in Lord's Market clean. Chapter 9's row is Sandler's door |
+| Puzzles | One chain — the water is freezing (`story.ni:10540`); break the furniture for wood, light the furnace, bathe. The wooden box on the top shelf (climb the desk) is optional |
+| Pressure | None on stage. Shannon's refusals — northeast from the alley, east and west on the street while dirty, south from the hall while dirty (`story.ni:10046, 10057, 10060, 10125`) |
+| Deaths | 0 |
+
+### The street — DECIDED (David, 2026-09-02): fear without teeth; the house stays quiet
+
+Put to David as the source has it — the mercenaries entirely off stage: a *"commotion from the
+direction of Lord's Market"* and the thought that *"they'll double back and put a watch on
+Maiden House soon enough"* (`story.ni:10023`); Shannon's refusals citing men nobody sees
+(*"The mercenaries will be watching the entrance"*, `story.ni:10046`; *"Fossville's men will
+still be looking for you"*, `story.ni:10057, 10060`); *"no one is about after the awful spectacle"*
+on the sprint across the park (`story.ni:10050`); a silent house with no clock — against fear
+without teeth on the street, or teeth somewhere in the chapter. David: **"B."**
+
+**This is new content.** Men are visible on East Commerce Street when Shannon and Jack drop
+down from the park wall, and Shannon hurries her the short way to the Red Gate front gates.
+They never take her. The house stays as the source has it: silent, dusty, empty, no clock. The
+§5 per-scene exception, ruled for this street as it was for Chapter 6's morning on the same
+street: the fear is the street's, its teeth are none. The beats and their lines are David's.
+
+**What this does for the rhythm.** Chapters 4 through 8 now run fear, teeth, fear, fear, fear —
+and this chapter's fear is confined to the doorstep. Once the gates grind shut behind her the
+chapter is the spine's pull beat as the vision has it (§5: *Townhouse / Library / Bath — pull,
+knowledge*). The jail is still the one scene outside the market that can take her.
+
+**Shannon's refusals carry underneath the new beats**, as the source's texture: the front way
+around Maiden House, east and west on the street while dirty, south from the hall while dirty.
+The men on the street are the reason those refusals were always giving.
+
+### The bath and the dress — DECIDED (David, 2026-09-02): the presentation flips, as the source has it
+
+This is the scene vision.md §2 and §4 already keep: the furnace lit, the bath (*"feeling
+everything wash clean away"*), the old clothes gone, Shannon holding out the Duchess's day dress
+(`story.ni:10543-10551`), and the mirror — *"A complete stranger looks back at you... She looks,
+you realize, quite pretty. This isn't Jack anymore. This is Jacqueline"* (`story.ni:10574`). From
+that turn the player is `clean` for the rest of the game (`story.ni:5061`), and the source's
+world reads her as a young lady from here on: *"you are Jacqueline Toresal, daughter of the
+Duke"* on examining herself (`story.ni:1330`), Shannon's refusal of Lord's Market lifted
+(`story.ni:10058`), the clothier, the Chorus Brothers and Dame Sandler treating her as a lady in
+Chapter 9, and the mercenaries' parchment — a hat and a gray cloak — matching nobody. vision.md
+§3e rules that the public reliably reads her as a boy while she presents as one; the bath is
+where the presentation changes, and what the dress does to the public was not yet ruled. Put to
+David: (A) as the source has it — the presentation flips with the dress; (B) the dress changes
+her clothes, not what the public sees; (C) something else. David: **"A."**
+
+**From the mirror on, the public reads her as a young lady.** The men on the street let a lady
+and a widow pass. The talent stops showing in anyone's *words* from here — everyone uses the girl
+words now, perceiver or not — so §3g's *position picks the word* has nothing left to pick between
+after this scene, and the tells that carried Chapters 1 through 7 (Teisha's *"almost royal"*,
+Olmer's *"miss"*, the butler's *"girl"*, Shannon's *"Miss Jacqueline"*) are a closed set. The
+mirror text, the faucet monologue (*"You are the Duke's daughter, a child of nobility"*,
+`story.ni:10489`) and the clean self-description carry as written; they are Jack's own
+interiority, which §1 already rules is a girl's.
+
+**What the flip means under the remake, and what it does not.** In the source the bath washes
+off a disguise and the girl underneath is what the mirror shows. Under §1 there is no disguise
+underneath; there is a girl who has been presenting as a boy for survival, and the dress is the
+first time her presentation and her self agree. The world reads the presentation, as it always
+did (§3e); what changed is which way it points. Nothing here decides what the mirror shows of
+the *body* — vision.md §2's coda is where that motif becomes literal, and this scene stays its
+figurative version. And nothing here moves anyone's perception cell: Shannon still sees, Fiona
+and Theresa still do not, and the perceivers' knowledge is unchanged — it is simply no longer
+distinguishable from anyone else's by what they call her.
+
+**Recorded in vision.md §3e as a premise** (2026-09-02): the dress is the second presentation
+and the public follows it. Chapters 9 through 11 are asked within it.
+
+### The walk out — DECIDED (David, 2026-09-02): she walks past the men in the dress
+
+The source has the street empty when she comes back out clean; Shannon's *"I suppose we should
+go see Mrs. Sandler now"* (`story.ni:4837`), an open walk east, and the goodbye in the square
+(`story.ni:10069`). Under the two rulings above the men were on the street when she went in and
+the public reads her as a lady when she comes out. Put to David: (A) the watch is still on the
+street and she walks past the men who hunt her; (B) the street has cleared, as the source has
+it; (C) something else. David: **"A."**
+
+**This is new content.** The men are still on East Commerce Street when the gates open again,
+and Jack walks past them in the Duchess's dress with Shannon at her elbow. They look at her and
+see nobody they want. Fear without teeth, a second time on the same street, and the first time
+the boy words fail to find her: the parchment says a hat and a gray cloak and a boy, and none of
+that walks past. The beat and its lines are David's. The walk east to Lord's Market, Shannon's
+goodbye (*"Take care, Jacqueline"*) and the push into Sandler & Sons carry as written after it.
+
+**What this closes.** The chapter's fear is now bracketed: the doorstep on the way in, the
+doorstep on the way out, and the house between them quiet. The second beat is the first ruling's
+proof — the dress does what it does in front of the people it was most needed against.
+
+### Who sees her — RECORDED (2026-09-02, from vision.md §4 and §3f; no new perceiver)
+
+- **Widow Shannon sees** (§4). Her *"Jacqueline"* throughout Book 11 carries — *"Wait,
+  Jacqueline"* (`story.ni:10046`), *"What a treasure, Jacqueline!"* (`story.ni:10371`), *"No, you
+  should keep those, Jacqueline"* (`story.ni:10374`), *"Take care, Jacqueline"* (`story.ni:10069`),
+  and *"Miss Jacqueline"* / *"Jacqueline"* across `SH13-16` (`story.ni:6502-6508`). **One line
+  converts**: at the portrait the source has her whisper *"Jack, dear, you have his eyes"*
+  (`story.ni:10182`) — the only *"Jack"* in Shannon's mouth in the whole source, and under §3g
+  (a perceiver outside the arrangement uses the true words freely) it is *"Jacqueline, dear"*.
+  `SH14` carries as the source's own account of the talent: *"I always thought you were special,
+  Jacqueline. But that was just my own feelings telling me things, the way they do sometimes"* —
+  no explanation, per §2's axiomatic rule.
+- **The men on the street do not see** and hunt the boy Jack (Chapter 7). Under the bath ruling
+  they read a lady on the way out.
+- **Nobody else speaks.** The house is empty; the portrait, the letters and the bed are Jack's
+  own thoughts, in her own words.
+- **After this chapter the words no longer tell** (ruled above). Chapter 9's perceivers — Dame
+  Sandler above all — are still perceivers, and §3f's matrix still holds; it is only the tell
+  that has closed.
+
+### What carries as the source has it — RECORDED (2026-09-02, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 8
+surfaces carry unchanged and were not put to David as questions:
+
+- **Shannon's company** (`story.ni:10014-10041`) — the scene from Leaving Maiden House's end to
+  Lord's Market clean; Shannon moved to the location every turn; *"Shannon follows silently /
+  close by"* while the tension is unimportant (`story.ni:10041`); the window text with her
+  scrabbling through and *"Fiona thought I should maybe come with you"* (`story.ni:10023`), which
+  is this chapter's opening and the `define chapters` row.
+- **The park wall** (`story.ni:10046-10053`) — northeast refused (*"watching the entrance"*), the
+  boost up the ten-foot wall, the sprint across the park, both moved to East Commerce Street.
+  The new street beat (ruled above) lands on arrival, on top of this.
+- **East Commerce Street in Shannon's company** — east refused while dirty, west refused
+  throughout (`story.ni:10057-10061`); the estate front as Chapter 2 built it, now with its
+  `unlock` machinery live: the brass key from the satchel, *"The lock is rusty and stiff from
+  long disuse"*, the grinding *clunk* and the push through (`story.ni:4877-4898`); the wire
+  refused (`story.ni:4900`); `knock` (*"No one answers"*); the theme change on coming out clean
+  (`story.ni:10063-10064`, the port's equivalent); *"I suppose we should go see Mrs. Sandler
+  now"* (`story.ni:4828-4837`).
+- **The estate as a region** (`story.ni:10075-10084`) — the silence backdrop and its *"holding
+  its breath, waiting"*; talk-to-Shannon refused inside (`story.ni:10111-10112`); the dust
+  backdrop (`story.ni:10205-10210`).
+- **The Entrance Hall** (`story.ni:10090-10129`) — the threshold text and the tension ratchet
+  (*"one last glance over your shoulder at the streets of Toresal"*, `story.ni:10116-10119`);
+  *"The house is eerie in its stillness"* on the first move (`story.ni:10121-10123`); south
+  refused while dirty (*"Are you sure you've found everything you were meant to find here?"*,
+  `story.ni:10125-10126`). The Bodyguard-scene refusal (`story.ni:10128-10129`) is Pieter's
+  chapter's.
+- **The Dining Hall and Kitchen** are commented out in the source (`story.ni:10131-10157`) and
+  are not built: the Great Hall is directly north of the Entrance Hall (`story.ni:10163`), as the
+  source compiles. `INVENTORY.md`'s count of 10 rooms for Book 11 includes the two dead ones;
+  Chapter 8 builds 8. Reported below.
+- **The Great Hall** (`story.ni:10163-10218`) — the description with its first-time *"The cream
+  of the city once filled this room"*; the portrait, its two-state paragraph, its description
+  (*"his lost, beleaguered, and only heir"*), the reach refusal, and Shannon's line after it
+  (converted, above); the old furniture, the dustsheets, the sit/stand/take refusals (*"There
+  will be time to clean this place later, when this craziness is over"*); `wipe` as rubbing.
+- **The Cellar and the furnace** (`story.ni:10222-10304`) — the narrow stairway; the furnace
+  cold/hot with its two descriptions; *"The grating squeaks open"* and Shannon's suggestion
+  (`story.ni:10245-10250`); `attack furniture` in the Great Hall for the pile of wood
+  (*"somehow exhilarating"*, `story.ni:10261-10269`); the wood into the furnace, Shannon's
+  match, the roaring fire and the orange light (`story.ni:10277-10304`).
+- **The landings** (`story.ni:10310-10320, 10437-10441`) — as Landings, with their distant
+  descriptions.
+- **The Office** (`story.ni:10326-10433`) — the ransacked room; the bookshelves' first paragraph
+  (*"the Duke must have loved his books"*) revealing the box; the box unreachable until she
+  stands on the desk (`story.ni:10360-10361, 10416`); the box, its crest, the velvet interior;
+  the collected documents and, beneath them, the mother's three unsigned letters (*"Your
+  mother's words, you realize"*, `story.ni:10390`); taking them refused (*"they could get
+  scattered and lost"*); Shannon's two lines on the box and her *"Your father was such a
+  compassionate man"* on the letters (`story.ni:10371-10374, 10399`); the scattered books. All
+  optional — nothing in the chain requires the Office.
+- **The Master Bedroom** (`story.ni:10447-10468`) — the bare bed, its one-time paragraph
+  (*"This, then, is where he died"*, the *"I never asked for this"* thought, `story.ni:10458`);
+  the refusals.
+- **The Bathroom** (`story.ni:10474-10586`) — the granite basin; the faucets' first-time
+  monologue (`story.ni:10488-10489`, carries under the ruling above), Shannon's *"a bath with
+  water-pipes! What a luxury"*, turning them, drinking from them; the cold bath refused
+  (*"The furnace must be off"*, `story.ni:10540-10541`); the bath itself, the old clothes left
+  on the floor and refused ever after, the day dress, `clean` (`story.ni:10543-10566`); the
+  mirror on wearing the dress (`story.ni:10573-10574`); undressing refused (*"not really the
+  proper time or place"*); *"You can't leave here naked!"* (`story.ni:10585-10586`); *"Once is
+  enough for today"*.
+- **The chapter's end** — arriving in Lord's Market clean ends Shannon's Company: the goodbye,
+  Shannon removed, `try going east` into Sandler & Sons (`story.ni:10067-10071`). The `define
+  chapters` block gains Chapter 9's row on Sandler's door, where the source prints *"Chapter 9 -
+  Preparations"* (`story.ni:5262`). The new walk-out beat (ruled above) plays before this, on
+  East Commerce Street.
+- **`SH13-16`** — as a stub per the standing conversation rule, available in Shannon's company
+  outside the house only.
+- **The Vedd idiom register** reaches `SH13-16` and Shannon's scripted lines when Phase 8 writes
+  them, not now. Her *"Goddesses"* is source texture and stays.
+- **The source's image-changing rules** for the estate and the dress (`story.ni:1287, 1298`) are
+  not carried; the port has no image channel for this story.
+
+### Gaps found, not decided
+
+1. **The street beats** — where the men stand on East Commerce Street when she drops from the
+   wall, how Shannon hurries her the few steps to the gates, and what the men do when a lady
+   and a widow come out through the same gates; David's, at play-testing. Phase 10 builds one
+   placeholder beat on arrival and one on the way out, and reports.
+2. **The two dead rooms** — the Dining Hall and Kitchen exist in the source as commented-out
+   text (`story.ni:10131-10157`) and in `INVENTORY.md`'s count, not in the compiled game.
+   Chapter 8 builds the 8 live rooms under the standing default. Whether the two come back is
+   David's; reported, not decided.
+3. **"Estelle"** — the third love letter has the mother write *"I pressed Estelle with subtle
+   questions but I am certain she knows nothing"* (`story.ni:10390`). The name appears nowhere
+   else in the source; the bedroom paragraph names *"his wife, the Duchess"* without a name
+   (`story.ni:10458`). Carries as written; whether Estelle is the Duchess is David's to say or
+   leave.
+4. **Shannon's converted line** — *"Jack, dear, you have his eyes"* is converted to
+   *"Jacqueline, dear"* under §3g (recorded above). If David wants the source's slip kept as
+   something Shannon says, that is his to rule; Phase 10 builds the conversion.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); Chapter 9's opening — Sandler's door, `DS31-49`, the brooch, and the shopping with
+Pieter (Book 12, `story.ni:10588-`), asked within the dress premise recorded here.
+
+**Chapter 8's questions are answered.** Extent (the window to Sandler's door), the street (fear
+without teeth, the house quiet), the bath and the dress (the presentation flips, as the source has
+it — recorded in vision.md §3e as a premise), the walk out (past the men, in the dress), perception
+(recorded, no new perceiver, one Shannon line converted), the source carry-list, and four gaps. The
+section is complete for Phase 10's purposes: every live room, the scene, every scripted event and
+refusal in Book 11 and the estate front's unlock are authorized, `SH13-16` is authorized as a stub,
+the two street beats are authorized as placeholders, and the lines are David's during play-testing.

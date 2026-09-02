@@ -414,6 +414,15 @@ evidence of the talent rather than of ordinary sharp eyes. It also keeps the hat
 public record says son because nobody asked, not because Jack lied to a clerk. The softer reading
 of the pain is available without spending the talent's distinctiveness to get it.
 
+**The dress — RESOLVED (David, 2026-09-02, change document Chapter 8): the presentation flips, and
+the public follows it.** The bath at Red Gate Estate (`story.ni:10543-10574`) is where Jack's
+presentation changes: from the mirror on she presents as a young lady, and the public reads
+her as one, as the source has it. The androgyny ruling above is unchanged — the world reads the
+presentation, and this is the second presentation. Consequences: the men on the street let a lady
+pass; the talent stops showing in anyone's *words* from here, because everyone uses the girl
+words now; the tells that carried Chapters 1-7 are a closed set. What the mirror shows of the body
+is not decided here — §2's coda is where the motif becomes literal.
+
 **Consequence for the coda (§2).** The Vedd's theology — peeling away the layers of life to reveal
 a thing's true nature — now has the inheritance itself as its subject, not only Jack's body. The
 claim that makes her heir is written in the wrong name; the coda is where the right one surfaces.
