@@ -1745,7 +1745,7 @@ export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
 ```
 
 ### actions/author/trace

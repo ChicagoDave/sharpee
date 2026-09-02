@@ -485,3 +485,19 @@ design questions (block spelling, transition-row words, conclusion predicate,
 blocking-refusal shape, advance paths) resolved by David the same session; design
 record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 
+
+## Amendment — D10a: the interruption rule as it will be built (2026-09-02)
+
+**Context.** The W-10 dance prototype (`branch-stories/secret-letter/prototypes/w10-dance/`, session 6a3da1) showed that an NPC's `opens when` thread never opens while the player is in another NPC's scene: `ensureScene` (`packages/character/src/tick-phases.ts`) refuses when either party is seated elsewhere, and nothing outside dialogue dispatch closes a scene. D10's interruption is designed and unbuilt for that path (GH #348). The plan is `docs/work/adr-320-d10-interruption/plan.md`; the three rulings below are David's, 2026-09-02, and Phase 1 builds against them.
+
+**D10a — three rulings.**
+
+1. **An authored `opens when` is an interjection.** When an NPC's thread is ready to open toward the co-located player and the player is in another scene, the thread challenges that scene through the existing `resolveIntrusion` call (`scene-binding.ts`), `worldAct: false`, exactly as the player-address path already does. `passive` yields, `assertive` protests then yields, `blocking` holds — no new scoring.
+2. **The grip is thread-aware.** The strength the challenge meets is the stronger of the scene's grip (`sceneGrip`: an open exchange's or the scene's authored strength) and the outgoing pair's ACTIVE thread strength — so a `blocking` thread holds, as D14's "single-topic completion" requires. Today `sceneGrip` ignores the thread; the same hole exists on the player-address path and closes with it. (Found by `plan-review`, 2026-09-02.)
+3. **`on parting` renders on every park.** Every path that parks an ACTIVE thread renders its authored `on parting` — the new interruption close, world-act intrusion, player-address intrusion, movement exit, silence decay — through one shared step on the park-on-close path; the dispatch path's inline render (`runtime.ts`, the same-pair topic switch) is refactored onto it. David: "if we need to fix on parting, then we fix it." Before this, `on parting` rendered only on the same-pair switch; every other close parked silently.
+
+**Ordering.** The thread floor turn reads the world after the story's own clocks under ADR-332 (ACCEPTED 2026-09-02): the scheduler runs before the actor phase, so a state an author changes in `when <timer> expires` is seen by the NPC's floor turn in the same turn.
+
+**Contract delta.** No new state shape, no new wire kind — `interruption` and `thread-parked` exist in `scene-wire.ts`; the delta is a delivered messageId on the park-on-close path. `docs/work/archive/adr-320-conversation/contracts.md` §1.3 is amended by one line when Phase 1 lands.
+
+**Session.** 2026-09-02, session 6a3da1 — Phase 0 of the plan above. Not implemented.

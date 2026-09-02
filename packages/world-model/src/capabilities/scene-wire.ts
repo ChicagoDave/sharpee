@@ -51,7 +51,28 @@ export type SceneWireEvent =
   // (beats already served) so tooling can show where the thread stands.
   | { kind: 'thread-opened'; sceneId: string; ownerId: EntityId; threadKey: string }
   | { kind: 'thread-beat'; sceneId: string; ownerId: EntityId; threadKey: string; beatIndex: number }
-  | { kind: 'thread-parked'; sceneId: string; ownerId: EntityId; threadKey: string; beatCursor: number }
+  | {
+      kind: 'thread-parked';
+      sceneId: string;
+      ownerId: EntityId;
+      /** The pair's other side (ADR-320 D10a, 2026-09-02): tooling and the parting render need it. */
+      partnerId: EntityId;
+      threadKey: string;
+      beatCursor: number;
+    }
+  // ADR-320 D10a (2026-09-02): the parked thread's authored `on parting`
+  // line, delivered on EVERY park-on-close path (interruption, exit,
+  // silence) — structured wire data like every scene move; the hosts emit
+  // the prose event (`character.thread.parting`) from it.
+  | {
+      kind: 'thread-parting';
+      sceneId: string;
+      ownerId: EntityId;
+      partnerId: EntityId;
+      threadKey: string;
+      messageId: string;
+      params: Record<string, unknown>;
+    }
   | { kind: 'thread-resumed'; sceneId: string; ownerId: EntityId; threadKey: string; beatCursor: number }
   | { kind: 'thread-concluded'; sceneId: string; ownerId: EntityId; threadKey: string };
 

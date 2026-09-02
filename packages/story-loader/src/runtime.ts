@@ -26,6 +26,7 @@ import { PHRASEBOOK_DATA } from './phrasebook-data.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import {
+  type SceneStrength,
   type ActionInterceptor,
   type CapabilityBehavior,
   type CapabilityEffect,
@@ -2179,7 +2180,7 @@ export class ChordRuntime {
       const memory = createTraitMemoryAccess(world);
       const events: ISemanticEvent[] = [];
       const pushWire = (wire: SceneWireEvent[]): void => {
-        for (const w of wire) events.push(this.rawEvent(`character.scene.${w.kind}`, { ...w }));
+        events.push(...this.wireToEvents(wire));
       };
 
       if (move.kind === 'advance') {
@@ -2237,6 +2238,84 @@ export class ChordRuntime {
       );
       pushWire([...lifecycleWire, ...advance.wireEvents]);
       return { ...delivery, events: [...events, ...delivery.events] };
+    };
+  }
+
+  /**
+   * Scene wire → semantic events (ADR-320 D12): every kind as
+   * `character.scene.<kind>` (structured data, never prose), plus — for a
+   * `thread-parting` (D10a, 2026-09-02) — the `character.thread.parting`
+   * event the prose pipeline renders by its messageId, the same event the
+   * dispatch path has always emitted for a same-pair park.
+   *
+   * @param wire - The wire events
+   * @returns The semantic events, in order
+   */
+  wireToEvents(wire: SceneWireEvent[]): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    for (const w of wire) {
+      events.push(this.rawEvent(`character.scene.${w.kind}`, { ...w }));
+      if (w.kind === 'thread-parting') {
+        events.push(
+          this.rawEvent('character.thread.parting', {
+            sceneId: w.sceneId,
+            ownerId: w.ownerId,
+            partnerId: w.partnerId,
+            threadKey: w.threadKey,
+            messageId: w.messageId,
+            params: w.params,
+          }),
+        );
+      }
+    }
+    return events;
+  }
+
+  /**
+   * The declared strength of one thread (ADR-320 D10a): what the binding
+   * folds into a scene's grip so an interjection meets the thread's own
+   * word — `define conversation …, blocking` holds.
+   *
+   * @returns The reader the binding calls
+   */
+  buildThreadStrength(): (ownerId: string, partnerId: string, threadKey: string) => SceneStrength | undefined {
+    return (ownerId, _partnerId, threadKey) =>
+      this.irOwnerOf(ownerId)?.conversations?.find((t) => t.name === threadKey)?.strength ?? undefined;
+  }
+
+  /**
+   * The parting-line deliverer (ADR-320 D10a): executes the parked
+   * thread's authored `on parting` body under the delivery rules
+   * (occurrence key, pin filter, first phrase spoken, surplus to the
+   * author channel) and hands back the spoken line. Consulted by every
+   * park-on-close path through the binding, and by the dispatch path's
+   * same-pair park. The body's non-phrase events ride `events`; the
+   * close paths, whose result is wire, carry the line alone.
+   *
+   * @param world - The live world
+   * @returns The deliverer the binding calls
+   */
+  buildPartingLine(
+    world: WorldModel,
+  ): (
+    ownerId: string,
+    partnerId: string,
+    threadKey: string,
+  ) => { messageId: string; params: Record<string, unknown>; events: ISemanticEvent[] } | undefined {
+    return (ownerId, partnerId, threadKey) => {
+      const owner = this.irOwnerOf(ownerId);
+      const thread = owner?.conversations?.find((t) => t.name === threadKey);
+      if (!owner || !thread?.onParting) return undefined;
+      const delivery = this.deliverSeizureBody(
+        world,
+        owner,
+        ownerId,
+        thread.onParting.filter((st) => st.kind !== 'then-open' && st.kind !== 'deflect' && st.kind !== 'leave'),
+        `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.parting`,
+        partnerId,
+      );
+      if (!delivery.spokenMessageId) return undefined;
+      return { messageId: delivery.spokenMessageId, params: delivery.spokenParams ?? {}, events: delivery.events };
     };
   }
 
@@ -2397,7 +2476,7 @@ export class ChordRuntime {
         );
       }
     }
-    events.push(...wire.map((w) => this.rawEvent(`character.scene.${w.kind}`, { ...w })));
+    events.push(...this.wireToEvents(wire));
     return events;
   }
 
@@ -2611,49 +2690,25 @@ export class ChordRuntime {
           // spoken line per firing — the delivery freeze).
           const parked = npcWorldId ? activeThreadFor(world, npcWorldId, actorId) : undefined;
           if (npcWorldId && parked) {
-            const parkEvents: ISemanticEvent[] = [];
-            const thread = (entity.conversations ?? []).find((t) => t.name === parked.threadKey);
+            // ADR-320 D10a (2026-09-02): the same-pair park renders its
+            // `on parting` through the one shared deliverer every close
+            // path uses; the body's own non-phrase events still ride.
             const scene = sceneWith(world, npcWorldId);
-            if (thread?.onParting) {
-              const partingKey = `${CHORD_OCCURRENCE_PREFIX}thread.${entity.id}.${parked.threadKey}.parting`;
-              const partingOccurrence = ((world.getStateValue(partingKey) as number | undefined) ?? 0) + 1;
-              world.setStateValue(partingKey, partingOccurrence);
-              const partingReports = runtime.execStatements(
-                thread.onParting.filter((st) => st.kind !== 'then-open' && st.kind !== 'deflect' && st.kind !== 'leave'),
-                { world, it: entity.id, occurrence: partingOccurrence, conversationPartnerId: actorId },
-                'all',
-              );
-              for (const event of partingReports) {
-                if (event.type === 'chord.phrase') {
-                  const payload = (event.data ?? {}) as Record<string, unknown>;
-                  parkEvents.push(
-                    runtime.rawEvent('character.thread.parting', {
-                      ownerId: npcWorldId,
-                      threadKey: parked.threadKey,
-                      messageId: String(payload.messageId),
-                      params: (payload.params as Record<string, unknown>) ?? {},
-                    }),
-                  );
-                  if (scene) {
-                    parkEvents.push(
-                      runtime.rawEvent('character.scene.utterance', {
-                        sceneId: scene.id,
-                        speakerId: npcWorldId,
-                        addresseeId: actorId,
-                        messageId: String(payload.messageId),
-                        beats: [],
-                      }),
-                    );
-                  }
-                } else {
-                  parkEvents.push(event);
-                }
-              }
-            }
+            const line = runtime.buildPartingLine(world)(npcWorldId, actorId, parked.threadKey);
             const parkWire = parkThread(world, scene?.id ?? '', npcWorldId, actorId, parked.threadKey);
-            parkEvents.push(...parkWire.map((w) => runtime.rawEvent(`character.scene.${w.kind}`, { ...w })));
+            const partingWire: SceneWireEvent[] = line
+              ? [{
+                  kind: 'thread-parting',
+                  sceneId: scene?.id ?? '',
+                  ownerId: npcWorldId,
+                  partnerId: actorId,
+                  threadKey: parked.threadKey,
+                  messageId: line.messageId,
+                  params: line.params,
+                }]
+              : [];
             if (scene) stampThreadContinuability(world, scene.id, undefined);
-            data.chordThreadPark = parkEvents;
+            data.chordThreadPark = [...(line?.events ?? []), ...runtime.wireToEvents([...parkWire, ...partingWire])];
           }
         }
         return null;

@@ -10659,6 +10659,23 @@ export interface SceneRuntimeBinding {
      * @returns True when a thread move is ready
      */
     threadTurnReady?(ownerId: EntityId, partnerId: EntityId): boolean;
+    /**
+     * Deliver a parked thread's authored `on parting` line (ADR-320 D10a,
+     * 2026-09-02): the registrar's row runner executes the body for its
+     * effects and hands back the spoken line, or undefined when the thread
+     * authors none. Consulted by every park-on-close path — interruption,
+     * exit, silence — so parting renders wherever the park happens. Absent
+     * when the registrar bound no runner.
+     *
+     * @param ownerId - The thread owner (world id)
+     * @param partnerId - The conversation partner (world id)
+     * @param threadKey - The `define conversation` key
+     * @returns The line to render, or undefined
+     */
+    partingLine?(ownerId: EntityId, partnerId: EntityId, threadKey: string): {
+        messageId: string;
+        params: Record<string, unknown>;
+    } | undefined;
 }
 ```
 
@@ -10737,8 +10754,18 @@ export type SceneWireEvent = {
     kind: 'thread-parked';
     sceneId: string;
     ownerId: EntityId;
+    /** The pair's other side (ADR-320 D10a, 2026-09-02): tooling and the parting render need it. */
+    partnerId: EntityId;
     threadKey: string;
     beatCursor: number;
+} | {
+    kind: 'thread-parting';
+    sceneId: string;
+    ownerId: EntityId;
+    partnerId: EntityId;
+    threadKey: string;
+    messageId: string;
+    params: Record<string, unknown>;
 } | {
     kind: 'thread-resumed';
     sceneId: string;

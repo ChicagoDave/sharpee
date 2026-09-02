@@ -1,9 +1,10 @@
 /**
  * Actor turn phase (ADR-070, ADR-120; ADR-328 D5).
  *
- * The engine-owned phase in which non-player actors act. It runs first
- * after the player's action (priority 100 — before state machines at 75
- * and the scheduler at 50), drives the NPC decision layer's tick, and
+ * The engine-owned phase in which non-player actors act. It leads the
+ * platform-phases band (ADR-332: after the scheduler's story reactions,
+ * before state machines and scene evaluation), drives the NPC decision
+ * layer's tick, and
  * fires the room-entry/exit hooks when the player's action moved them.
  * Every act a behavior chooses runs through the engine's execution entry
  * — the same four phases the player's commands take — so this phase
@@ -19,7 +20,7 @@
  */
 
 import { type ISemanticEvent, type EntityId } from '@sharpee/core';
-import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import {
   type ExecutionEntry,
   type INpcService,
@@ -41,8 +42,8 @@ export const LEGACY_NPC_PLUGIN_ID = 'sharpee.plugin.npc';
 export class ActorTurnPlugin implements TurnPlugin {
   /** Stable plugin id. */
   id = ACTOR_TURN_PLUGIN_ID;
-  /** Run order within a turn (actors act first). */
-  priority = 100;
+  /** Run order within a turn: first of the platform phases (ADR-332). */
+  priority = TURN_BANDS.platformPhases.floor + 50;
   private readonly service: INpcService;
 
   /**

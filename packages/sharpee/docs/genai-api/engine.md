@@ -1906,8 +1906,10 @@ export {};
 /**
  * Scene evaluation turn plugin (ADR-149, ADR-186).
  *
- * Evaluates scene begin/end conditions each turn. Runs after NPC turns
- * and state machines, before daemons/fuses (priority 60).
+ * Evaluates scene begin/end conditions each turn. Last of the platform
+ * phases (ADR-332): after the scheduler's story reactions, the actor phase
+ * and state machines — a scene whose condition is a timer state sees it
+ * the same turn.
  *
  * For each registered scene:
  * - If state='waiting' and begin() returns true → activate, emit scene_began,
@@ -1926,7 +1928,7 @@ export {};
  * Owner context: @sharpee/engine — turn cycle
  */
 import { type ISemanticEvent } from '@sharpee/core';
-import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 export declare class SceneEvaluationPlugin implements TurnPlugin {
     id: string;
     priority: number;
@@ -1943,9 +1945,10 @@ export declare class SceneEvaluationPlugin implements TurnPlugin {
 /**
  * Actor turn phase (ADR-070, ADR-120; ADR-328 D5).
  *
- * The engine-owned phase in which non-player actors act. It runs first
- * after the player's action (priority 100 — before state machines at 75
- * and the scheduler at 50), drives the NPC decision layer's tick, and
+ * The engine-owned phase in which non-player actors act. It leads the
+ * platform-phases band (ADR-332: after the scheduler's story reactions,
+ * before state machines and scene evaluation), drives the NPC decision
+ * layer's tick, and
  * fires the room-entry/exit hooks when the player's action moved them.
  * Every act a behavior chooses runs through the engine's execution entry
  * — the same four phases the player's commands take — so this phase
@@ -1974,7 +1977,7 @@ export declare class ActorTurnPlugin implements TurnPlugin {
     private readonly act;
     /** Stable plugin id. */
     id: string;
-    /** Run order within a turn (actors act first). */
+    /** Run order within a turn: first of the platform phases (ADR-332). */
     priority: number;
     private readonly service;
     /**

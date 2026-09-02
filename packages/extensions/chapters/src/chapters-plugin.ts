@@ -2,7 +2,7 @@
  * chapters-plugin.ts — the turn plugin that begins chapters (ADR-330 D2–D4).
  *
  * Once per turn, after the scheduler has stepped its timers and daemons (the
- * plugin's priority sits below the scheduler's 50), every chapter row that has
+ * watchers band, ADR-332), every chapter row that has
  * not yet fired is checked against world state: is the player standing in the
  * room the row waits for, has the row's timer expired, has the row's owner
  * reached the row's state, or is this the game's first turn. A row whose
@@ -24,7 +24,7 @@
  * Owner context: @sharpee/ext-chapters (trusted extension runtime).
  */
 import { createEvent, type ISemanticEvent } from '@sharpee/core';
-import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 
 /** The plugin's id — stable for save compatibility. */
 export const CHAPTERS_PLUGIN_ID = 'sharpee.ext.chapters';
@@ -105,9 +105,9 @@ export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
   const ordered = [...rows].sort((a, b) => a.ordinal - b.ordinal);
   return {
     id: CHAPTERS_PLUGIN_ID,
-    // Below the scheduler (50): a chapter observes the turn's timers and
-    // state changes after they have happened.
-    priority: 10,
+    // Watchers band (ADR-332): a chapter observes the turn's timers and
+    // state changes after they have happened, last of the watchers.
+    priority: TURN_BANDS.watchers.floor + 10,
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[] {
       const world = ctx.world;
       let current = (world.getStateValue(CHAPTER_CURRENT_KEY) as number | undefined) ?? -1;

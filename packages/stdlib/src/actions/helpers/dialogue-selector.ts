@@ -205,6 +205,32 @@ function toSceneEvent(context: ActionContext, wire: SceneWireEvent): ISemanticEv
 }
 
 /**
+ * Wire → semantic events for a batch (ADR-320 D12): every kind as data,
+ * plus the `character.thread.parting` prose event for a `thread-parting`
+ * (D10a, 2026-09-02) — the parked thread's `on parting` line renders
+ * on this path exactly as it does on the tick's and the dispatch path's.
+ */
+function toSceneEvents(context: ActionContext, wire: SceneWireEvent[]): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  for (const w of wire) {
+    events.push(toSceneEvent(context, w));
+    if (w.kind === 'thread-parting') {
+      events.push(
+        context.event('character.thread.parting', {
+          sceneId: w.sceneId,
+          ownerId: w.ownerId,
+          partnerId: w.partnerId,
+          threadKey: w.threadKey,
+          messageId: w.messageId,
+          params: w.params,
+        }),
+      );
+    }
+  }
+  return events;
+}
+
+/**
  * Resolve the PC's intrusion into a foreign scene (ADR-320 D10; Phase 8):
  * when the addressed NPC is seated in a scene the player is not part of,
  * the scene's grip answers through the registered runtime — `yields` and
@@ -231,7 +257,7 @@ export function resolveSceneIntrusion(
   }
 
   const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.actor.id, false);
-  const events = wireEvents.map((w) => toSceneEvent(context, w));
+  const events = toSceneEvents(context, wireEvents);
   if (outcome === 'blocks') {
     events.push(context.event('character.scene.intrusion_blocked', {
       sceneId: scene.id,
@@ -280,7 +306,7 @@ export function runConversationScene(
       { kind: 'address', openerId: context.actor.id },
     );
     scene = opened.scene;
-    events.push(...opened.wireEvents.map((w) => toSceneEvent(context, w)));
+    events.push(...toSceneEvents(context, opened.wireEvents));
   } else if (scene.participantIds.includes(context.actor.id)) {
     // The move clock stamps only for the actor's own scene — a foreign
     // scene's clock is not the actor's to reset (Phase 8 fix; the actor is
@@ -317,7 +343,7 @@ export function runConversationScene(
       }
       kept.push(directive);
     }
-    events.push(...runtime.applyDirectives(scene.id, kept).map((w) => toSceneEvent(context, w)));
+    events.push(...toSceneEvents(context, runtime.applyDirectives(scene.id, kept)));
   }
 
   return events;

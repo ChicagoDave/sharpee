@@ -2649,6 +2649,13 @@ source mechanism, the replacement is named.
    beat-threads with `define sequence`/`define machine` and timers carry it, or a primitive is
    missing, is Phase 10's first thing to find. A missing primitive is a platform discussion under
    CLAUDE.md, never built inside the story; recorded on the watch list as W-10.
+   **Found (2026-09-02, session 6a3da1)**: the prototype ran
+   (`branch-stories/secret-letter/prototypes/w10-dance/`). The turn budget, the rotation, each
+   partner's self-opening thread, rounds and the music's end all carry; **the hand-off does
+   not** — the story cannot pass the player's conversation to the next partner, because a
+   thread opens only when neither party is in another scene and nothing in Chord closes one.
+   ADR-320 D10's interruption is the designed answer and is unbuilt: GH #348, a platform
+   discussion. Details and the four smaller findings on the watch list under W-10.
 7. **The stub rule meets the rewrite** — this chapter's value is almost entirely dialogue, and the
    standing rule defers dialogue until the port is done. Phase 10 builds the dance's engine — the
    circle, the hand-offs, the turn budget, the six triggers, the memory, the music's end, the

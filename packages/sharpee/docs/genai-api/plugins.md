@@ -110,7 +110,9 @@ export interface TurnPluginContext {
 import { TurnPlugin } from './turn-plugin.js';
 /**
  * Holds the turn plugins for a running game and hands them to the engine in
- * priority order each turn (ADR-120). The engine owns the single registry;
+ * priority order each turn (ADR-120; the priorities are banded — ADR-332,
+ * `TURN_BANDS`: story reactions, then platform phases, then watchers). The
+ * engine owns the single registry;
  * stories add behaviour through the plugin packages (NPC, scheduler, state
  * machine) rather than implementing {@link TurnPlugin} directly.
  */
@@ -138,6 +140,60 @@ export declare class PluginRegistry {
      */
     setStates(states: Record<string, unknown>): void;
 }
+```
+
+### turn-bands
+
+```typescript
+/**
+ * Turn-phase bands (ADR-332): the after-action run order as three named
+ * bands. Priority stays the mechanism `PluginRegistry.getAll()` sorts by;
+ * the band is what a plugin's author chooses, by name — a plugin takes its
+ * priority from its band's constant, so the order across bands is the
+ * principle (what the author wrote happens first; the platform acts on the
+ * world the author left; the watchers read the finished turn) and the
+ * order within a band is local.
+ *
+ * Public interface: TURN_BANDS, TurnBandName, TurnBand, bandOf.
+ * Owner context: @sharpee/plugins — the turn-plugin registry.
+ */
+/** One band: its name, its inclusive priority range, and why it runs where it does. */
+export interface TurnBand {
+    /** The band's name — what a plugin declares. */
+    readonly name: TurnBandName;
+    /** Lowest priority inside the band (inclusive). */
+    readonly floor: number;
+    /** Highest priority inside the band (inclusive). */
+    readonly ceiling: number;
+    /** Why the band runs where it does (ADR-332 D2). */
+    readonly rationale: string;
+}
+/** The three band names, in run order. */
+export type TurnBandName = 'storyReactions' | 'platformPhases' | 'watchers';
+/**
+ * The bands, highest priority first — the run order (ADR-332 D2).
+ *
+ * - `storyReactions` (300–399): the scheduler — every Chord timer,
+ *   every-turn and sequence clause; TS daemons and fuses. What the author
+ *   wrote happens first.
+ * - `platformPhases` (200–299): the actor phase, state machines, scene
+ *   evaluation. The platform acts on the world the author left; their
+ *   relative order is ADR-120's, unchanged.
+ * - `watchers` (100–199): scoring, hunger, chapters. They read the finished
+ *   turn and announce — a rank crossed, a band entered, a chapter begun.
+ */
+export declare const TURN_BANDS: Readonly<Record<TurnBandName, TurnBand>>;
+/** The band names in run order (highest priority first). */
+export declare const TURN_BAND_ORDER: readonly TurnBandName[];
+/**
+ * The band a priority falls in, or `undefined` for an unbanded number. The
+ * registry never refuses an unbanded priority (ADR-120: "stories can adjust
+ * ordering"); this is how tooling and the placement test read one.
+ *
+ * @param priority - A turn plugin's priority
+ * @returns The band name, or undefined when the number is outside every band
+ */
+export declare function bandOf(priority: number): TurnBandName | undefined;
 ```
 
 ### band-crossing
@@ -534,8 +590,9 @@ export declare function createSchedulerService(): ISchedulerService;
 /**
  * SchedulerPlugin - Wraps SchedulerService as a TurnPlugin (ADR-120)
  *
- * Priority 50: Runs after NPCs (100) and state machines (75).
- * Daemons and fuses are background temporal events.
+ * Story-reactions band (ADR-332): runs FIRST after the player's action —
+ * every Chord timer, every-turn and sequence clause rides here, so what the
+ * author wrote happens before the platform's phases read the world.
  */
 import { type ISemanticEvent } from '@sharpee/core';
 import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
@@ -821,7 +878,9 @@ import { StateMachineRegistry } from './state-machine-runtime.js';
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
  *
- * Runs at priority 75 — after NPC behaviour (100), before the scheduler (50).
+ * Platform-phases band (ADR-332): after the scheduler's story reactions and
+ * the actor phase, before scene evaluation — a machine reacts to what the
+ * turn did.
  * Each turn it evaluates every machine in its {@link StateMachineRegistry} and
  * returns the events produced by any transitions that fired. Register the
  * plugin with the engine, then add machines via {@link getRegistry}.
@@ -829,7 +888,7 @@ import { StateMachineRegistry } from './state-machine-runtime.js';
 export declare class StateMachinePlugin implements TurnPlugin {
     /** Stable plugin id. */
     id: string;
-    /** Run order within a turn (after NPCs, before the scheduler). */
+    /** Run order within a turn: after the actor phase, before scene evaluation (ADR-332). */
     priority: number;
     private registry;
     constructor();

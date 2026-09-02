@@ -98,7 +98,7 @@ import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
-import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
+import { TURN_BANDS, createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import { CHAPTER_CURRENT_KEY, CHAPTER_FIRED_PREFIX, createChaptersPlugin, type ChapterRow, type ChapterRuntimeTrigger } from '@sharpee/ext-chapters';
 import {
   applyCompiledCharacter,
@@ -975,6 +975,10 @@ export class ChordStory implements Story {
           ? {
               threadTurn: this.runtime.buildThreadTurn(world),
               threadTurnReady: this.runtime.buildThreadTurnReady(world),
+              // ADR-320 D10a (2026-09-02): the thread-aware grip and the
+              // parting deliverer every park-on-close path consults.
+              activeThreadStrength: this.runtime.buildThreadStrength(),
+              partingLine: this.runtime.buildPartingLine(world),
             }
           : {}),
       });
@@ -1100,14 +1104,17 @@ export class ChordStory implements Story {
     // handler's own return (they were applied inside the entry and would be
     // applied again); they wait in the runtime's act buffer for the flush
     // plugin below, which runs right after the player's action — before the
-    // actor phase (100) — so the act narrates immediately after the report
+    // actor phase (ADR-332: the story-reactions band leads) — so the act narrates immediately after the report
     // that caused it. Acts fired inside scheduler daemons drain on the tick.
     if (engine.executeAsActor) {
       this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
       if (this.runtime.hasActingStatements()) {
         engine.getPluginRegistry().register({
           id: 'chord.acted-events',
-          priority: 150,
+          // First of the story reactions (ADR-332): the flush still runs
+          // right after the player's action, ahead of the scheduler and
+          // every platform phase.
+          priority: TURN_BANDS.storyReactions.floor + 90,
           onAfterAction: () => this.runtime.drainActEvents(),
         } satisfies TurnPlugin);
       }
@@ -1185,7 +1192,8 @@ export class ChordStory implements Story {
       // under `use hunger, announce <mode>` (default `all`).
       registry.register(createBandNarrator({
         id: 'chord.story.hunger-narrator',
-        priority: 20,
+        // Watchers band (ADR-332), after the crossing watcher: the sentence follows the event.
+        priority: TURN_BANDS.watchers.floor + 15,
         concept: 'hunger',
         value: (world) => getHungerSeverity(world),
         bands: () => bands,
@@ -1280,8 +1288,8 @@ export class ChordStory implements Story {
 
     return createBandNarrator({
       id: 'chord.story.promotion-narrator',
-      // Below ext-scoring's watcher (25): the sentence follows the event.
-      priority: 20,
+      // Watchers band (ADR-332), after ext-scoring's rank watcher: the sentence follows the event.
+      priority: TURN_BANDS.watchers.floor + 15,
       concept: 'rank',
       isEnabled: (world) => world.isScoringEnabled(),
       value: (world) => world.getScore(),
@@ -1310,13 +1318,15 @@ export class ChordStory implements Story {
    * The hunger decay + death daemon (ADR-263 D1). Each turn it raises the
    * severity counter by `grows` (the `on every turn` mechanic) and, once
    * severity reaches `fatal`, kills the player (`kill the player` — a raw-value
-   * trigger, not a band). Runs at a higher priority than the crossing watcher
-   * and narrator so they observe the updated severity the same turn.
+   * trigger, not a band). Story-reactions band (ADR-332): above the crossing watcher
+   * and narrator, so they observe the updated severity the same turn.
    */
   private buildHungerDaemon(grows: number, fatal: number | undefined): TurnPlugin {
     return {
       id: 'chord.story.hunger-daemon',
-      priority: 30,
+      // Story-reactions band (ADR-332): `grows N each turn` is a story clause;
+      // it runs before every platform phase and before its own watcher.
+      priority: TURN_BANDS.storyReactions.floor + 40,
       onAfterAction(ctx): ISemanticEvent[] {
         if (grows > 0) {
           setHungerSeverity(ctx.world, getHungerSeverity(ctx.world) + grows);

@@ -1,0 +1,295 @@
+{
+ "story": "w10-dance",
+ "seed": 7,
+ "version": 1,
+ "cards": [
+  {
+   "type": "opening",
+   "assertions": {}
+  },
+  {
+   "type": "boot",
+   "assertions": {
+    "contains": [
+     "first partner, beat 1."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "go on",
+   "assertions": {
+    "contains": [
+     "first partner, beat 2.",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "ask first partner about the weather",
+   "assertions": {
+    "contains": [
+     "first partner on the weather, ROUND ONE.",
+     "first partner, PARTING."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "ask second partner about the weather",
+   "assertions": {
+    "contains": [
+     "second partner on the weather.",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "ask third partner about the weather",
+   "assertions": {
+    "contains": [
+     "third partner on the weather."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "ROUND: the circle has come back to the first hand"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "first partner, RESUMING where we left off."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns",
+     "first partner, beat 3."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "first partner, CONCLUSION."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "ROUND: the circle has come back to the first hand"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "ask first partner about the weather",
+   "assertions": {
+    "contains": [
+     "A LATER ROUND: memory across rounds.",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "ROUND: the circle has come back to the first hand",
+     "third partner, beat 1."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "third partner, CONCLUSION."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "ROUND: the circle has come back to the first hand"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes..."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "second partner, beat 1."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "HAND-OFF: the circle turns",
+     "second partner, beat 2."
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "Time passes...",
+     "second partner, CONCLUSION.",
+     "MUSIC STOPS: every partner has had their say."
+    ]
+   }
+  }
+ ]
+}

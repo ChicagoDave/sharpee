@@ -18,6 +18,7 @@
  */
 
 import {
+  type SceneStrength,
   WorldModel,
   TraitType,
   CharacterModelTrait,
@@ -31,8 +32,9 @@ import {
   type InterruptionOutcome,
   type SceneWireEvent,
 } from '@sharpee/world-model';
-import { openScene, recordSceneMove, applySceneDirectives, closeScene } from './scene-runtime.js';
-import { scoreFloor, sceneGrip, resolveInterruption } from './scene-scoring.js';
+import { openScene, recordSceneMove, applySceneDirectives, closeScene, type PartingLine } from './scene-runtime.js';
+import { activeThreadFor } from './thread-runtime.js';
+import { scoreFloor, sceneGrip, resolveInterruption, strongerStrength } from './scene-scoring.js';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
 
 /**
@@ -106,6 +108,25 @@ export interface SceneBindingOptions {
    * for an `opens when` thread — must not mutate.
    */
   threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
+
+  /**
+   * The declared strength of one thread (ADR-320 D10a, 2026-09-02): the
+   * loader reads `define conversation …, <strength>` here so an intrusion
+   * meets a thread-aware grip — a `blocking` thread holds (D14). Absent
+   * or undefined = `passive`, today's reading.
+   */
+  activeThreadStrength?: (
+    ownerId: string,
+    partnerId: string,
+    threadKey: string,
+  ) => SceneStrength | undefined;
+
+  /**
+   * The parting-line deliverer (ADR-320 D10a): consulted by every
+   * park-on-close path so a parked thread's `on parting` renders wherever
+   * the park happens. Absent = parks render nothing (builder stories).
+   */
+  partingLine?: PartingLine;
 }
 
 // -- The speak-propensity curve (runtime-owned; D7) -------------------------
@@ -175,7 +196,7 @@ export function createSceneRuntimeBinding(
     recordMove: (sceneId) => recordSceneMove(world, sceneId),
 
     applyDirectives: (sceneId, directives) =>
-      applySceneDirectives(world, sceneId, directives, memory),
+      applySceneDirectives(world, sceneId, directives, memory, options.partingLine),
 
     floorWinnerFor: (sceneId, occasion): FloorDecision => {
       const scene = sceneOf(world, sceneId);
@@ -212,7 +233,22 @@ export function createSceneRuntimeBinding(
       if (!scene) return { outcome: 'yields', wireEvents: [] };
 
       // Grip: innermost authored strength wins; nothing authored derives
-      // `passive` (blocking is never derived — Phase 5's rule).
+      // `passive` (blocking is never derived — Phase 5's rule). ADR-320
+      // D10a (2026-09-02): the grip is thread-aware — every ACTIVE thread
+      // between the participants raises it to its declared strength, so
+      // a `blocking` thread holds against an interjection (D14).
+      let grip = sceneGrip(scene);
+      for (const holderId of scene.participantIds) {
+        for (const partnerId of scene.participantIds) {
+          if (holderId === partnerId) continue;
+          const active = activeThreadFor(world, holderId, partnerId);
+          if (!active) continue;
+          grip = strongerStrength(
+            grip,
+            options.activeThreadStrength?.(holderId, partnerId, active.threadKey) ?? 'passive',
+          );
+        }
+      }
       const outcome = resolveInterruption(
         {
           sceneId,
@@ -224,7 +260,7 @@ export function createSceneRuntimeBinding(
           },
           worldAct,
         },
-        sceneGrip(scene),
+        grip,
       );
 
       const wireEvents: SceneWireEvent[] = [
@@ -235,7 +271,7 @@ export function createSceneRuntimeBinding(
         // folded like any close. `protests` closes too (protest-then-yield);
         // the outcome word on the wire carries the protest for rendering
         // and authored reactions.
-        wireEvents.push(...closeScene(world, sceneId, 'exit', memory));
+        wireEvents.push(...closeScene(world, sceneId, 'exit', memory, options.partingLine));
       }
       return { outcome, wireEvents };
     },
@@ -262,6 +298,13 @@ export function createSceneRuntimeBinding(
       ? {
           threadTurnReady: (ownerId: string, partnerId: string) =>
             options.threadTurnReady!(ownerId, partnerId),
+        }
+      : {}),
+
+    ...(options.partingLine
+      ? {
+          partingLine: (ownerId: string, partnerId: string, threadKey: string) =>
+            options.partingLine!(ownerId, partnerId, threadKey),
         }
       : {}),
   };

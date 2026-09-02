@@ -91,6 +91,7 @@ export {
   type InterruptionOutcome,
   scoreFloor,
   resolveInterruption,
+  strongerStrength,
   sceneGrip,
   strengthFromIntent,
 } from './scene-scoring.js';
@@ -111,6 +112,7 @@ export {
   type OpenSceneOptions,
   openScene,
   closeScene,
+  type PartingLine,
   recordSceneMove,
   noteTopicMove,
   applySceneDirectives,

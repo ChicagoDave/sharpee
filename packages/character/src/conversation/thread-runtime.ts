@@ -259,7 +259,7 @@ export function parkThread(
   }
 
   state.status = 'parked';
-  return [{ kind: 'thread-parked', sceneId, ownerId, threadKey, beatCursor: state.beatCursor }];
+  return [{ kind: 'thread-parked', sceneId, ownerId, partnerId, threadKey, beatCursor: state.beatCursor }];
 }
 
 /**

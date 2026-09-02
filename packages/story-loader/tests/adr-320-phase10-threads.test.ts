@@ -284,6 +284,27 @@ describe('AC14 — passive park and resume through dispatch', () => {
     const parked = ask(l, 'the weather');
     expect(messageId(parked)).toBe('weather-line');
     expect(threadState(l)).toMatchObject({ status: 'parked', beatCursor: 1 });
+    // ADR-320 D10a (2026-09-02): the park renders its authored `on parting`
+    // through the one shared deliverer — the prose event with the id the
+    // pipeline renders by, and the wire's thread-parting data beside it.
+    const kempId = entity(l, 'kemp').id;
+    const playerId = l.world.getPlayer()!.id;
+    expect(parked.events.find((e) => e.type === 'character.thread.parting')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      threadKey: 'the-defection',
+      messageId: 'parting-line',
+    });
+    expect(parked.events.find((e) => e.type === 'character.scene.thread-parting')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      messageId: 'parting-line',
+    });
+    expect(parked.events.find((e) => e.type === 'character.scene.thread-parked')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      beatCursor: 1,
+    });
     // The continuability affordance disappears with the park (never stale).
     const scene = sceneWith(l.world, entity(l, 'kemp').id);
     expect(scene?.threadContinuability).toBeUndefined();

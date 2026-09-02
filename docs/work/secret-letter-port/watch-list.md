@@ -255,6 +255,44 @@ turn budget, hand-off, one cross-round memory — and run it under
 anything the language does not have. A missing primitive is a platform
 discussion under CLAUDE.md (an ADR), never a story-side workaround.
 
+**Found (2026-09-02, session 6a3da1) — a primitive is missing; everything around it carries.**
+The check ran as written: `branch-stories/secret-letter/prototypes/w10-dance/` (three
+placeholder partners, TODO beats, imported by nothing), driven through `./sharpee play`
+and pinned as `w10-dance.tests.json` under `./sharpee test branch-stories/secret-letter/prototypes/w10-dance`.
+
+- **Carries as the language is**: the turn budget (`define timer hand for the dance`, one
+  named turn, `restart hand` on expiry — two-turn hands, exact); the rotation (one
+  `when hand expires` clause, `select on the dance's state`, partners flipped
+  `waiting`/`dancing`); each partner's talk as a `define conversation … opens when
+  <partner> is dancing` thread that opens itself, with beats held on `dancing` so the
+  outgoing partner goes quiet; `go on` serving the next beat; rounds as a story counter
+  raised at the wrap, with topic rows keyed `at most 1` / `at least 2`; the music's end
+  as a counter raised in each `conclusion:` row.
+- **Missing — the hand-off itself (GH #348)**: the story cannot pass the player's
+  conversation to the next partner. A thread opens only when neither party is in
+  another scene (`packages/character/src/tick-phases.ts`, `ensureScene`), and nothing in
+  Chord closes or hands off a scene: the last partner's scene ends only by the player's
+  own address (that path works) or by about three silent turns. Under a two-turn hand
+  the next partner is reached a round late. ADR-320 D10's interruption rule — an
+  `opens when` partner taking the floor from a passive scene — is the designed answer
+  and is unbuilt (GH #347's D10 family). A platform discussion; nothing is built
+  around it in the story.
+- **Also surfaced, filed**: `is concluded` in an every-turn clause and `leave` in a
+  floor-turn beat pass the analyzer and throw at runtime (GH #349); a trait's guarded
+  `on the player asking while …` shadows the owner's topic table even when the guard
+  is false, so "not your hand" cannot be a composed refusal (GH #350); the acting
+  statement rejects `<npc> talks to <target>` against the very shape it names
+  (GH #351); the bundle's `--exec`/`--play` path has no import resolver, so the port's
+  README command fails and `make-story-artifacts.mjs` cannot regenerate the port's tree
+  (GH #352).
+- **Not a gap, learned**: several `when <timer> expires, while …` clauses on one timer
+  are read in order against post-mutation state, so a state rotation written as three
+  guarded clauses cascades through all three in one turn — `select on … state` is
+  the spelling. A partner's floor turn runs before the timer expiry in the same turn,
+  so a newly dancing partner opens one turn after the hand passes.
+
+**Status**: OPEN until GH #348 is decided. Phase 10's Chapter 11 build waits on it.
+
 ## Recording results
 
 Append findings under each entry with the date and the command or observation

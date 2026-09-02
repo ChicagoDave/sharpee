@@ -328,3 +328,11 @@ Add hooks only when a concrete use case requires them. Start minimal.
 **Change.** Of the three extractions in §Subsystem Extraction, `@sharpee/plugin-npc` dissolves: what its `onAfterAction` drove (`npcService.tick`, `onPlayerEnters`/`onPlayerLeaves`, the ADR-310 `actionEvents` and ADR-320 `emitSound` feeds, behavior-state save/restore) becomes an engine-owned actor turn phase. The NPC row of §Plugin Priority Order (100) is therefore no longer a plugin priority — the actor phase runs first as engine sequencing, and State Machine (75) / Scheduler (50) keep their relative order behind it. The `TurnPlugin` interface, `PluginRegistry`, `TurnPluginContext`, and the scheduler and state-machine plugins are unchanged.
 
 **Session.** 2026-08-27, session d6dc2b — Phase 0 of `docs/work/adr-328-actors-platform-concept/plan.md`.
+
+## Amendment — §Plugin Priority Order superseded by ADR-332 (2026-09-02)
+
+**Context.** [ADR-332](adr-332-story-reactions-before-the-actor-phase.md) (DRAFT 2026-09-02, David's direction) rules that the story's own reactions run before the platform's actor phase: under Chord every per-turn clause an author writes — `when <timer> expires`, `on every turn`, `define sequence` — rides the scheduler, so "temporal events run last — daemons/fuses are background" no longer describes what the scheduler carries.
+
+**Change.** §Plugin Priority Order becomes three named bands exported from `packages/plugins` (ADR-332 D2): story reactions (300s — the acting flush 390, the scheduler 350, the hunger daemon 340), platform phases (200s — actor phase 250, state machines 240, scene evaluation 230), watchers (100s — scoring and hunger watchers 120, their narrators 115, chapters 110). The scheduler moves ahead of the actor phase; every other relative position is preserved. Rationale for the new order: what the author wrote happens first; the platform acts on the world the author left. "Priority is a convention, not enforced" becomes "a band is a name you pick." Everything else in this ADR stands. Not yet implemented — ADR-332 §Acceptance names the gates.
+
+**Session.** 2026-09-02, session 6a3da1.

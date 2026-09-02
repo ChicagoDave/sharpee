@@ -1955,7 +1955,7 @@ export declare class CharacterModelDialogue implements DialogueExtension {
  * Every shape is platform-internal (contracts.md §7) — NOT author-facing
  * compatibility surface; revisable at refactor cost.
  *
- * Public interface: SceneOccasion, FloorBid, FloorDecision,
+ * Public interface: strongerStrength, SceneOccasion, FloorBid, FloorDecision,
  *   InterruptionChallenge, InterruptionOutcome, scoreFloor,
  *   resolveInterruption, sceneGrip, strengthFromIntent.
  * Owner context: @sharpee/character / conversation
@@ -2004,16 +2004,16 @@ export declare function scoreFloor(bids: FloorBid[]): FloorDecision;
  */
 export declare function sceneGrip(scene: ConversationSceneState, fallback?: SceneStrength): SceneStrength;
 /**
- * Resolve an interruption challenge (ADR-320 D10): a world event or act
- * breaks any grip — even `blocking` (D8's exemption); otherwise the
- * grip answers — `passive` yields, `assertive` protests then yields,
- * `blocking` blocks. The caller closes or re-floors the scene on
- * `yields`/`protests`; on `blocks` the scene holds.
+ * The stronger of two grips (ADR-320 D10a, 2026-09-02): a scene's
+ * effective grip against an intruder is the stronger of its own grip and
+ * every ACTIVE thread's declared strength between its participants, so a
+ * `blocking` thread holds as D14 requires.
  *
- * @param challenge - The challenge (interrupter, bid, world-act flag)
- * @param strength - The scene's effective grip (see `sceneGrip`)
- * @returns The outcome word
+ * @param a - One strength word
+ * @param b - The other
+ * @returns Whichever ranks higher
  */
+export declare function strongerStrength(a: SceneStrength, b: SceneStrength): SceneStrength;
 export declare function resolveInterruption(challenge: InterruptionChallenge, strength: SceneStrength): InterruptionOutcome;
 /**
  * Derive a scene's grip from its holder's continuation intent when no
@@ -2073,7 +2073,7 @@ export declare function writeSceneStore(world: WorldModel, state: SceneStoreStat
  * a `silence` close (the ADR-142 attention-decay machinery wired live).
  * All turn reads go through the character clock seam (D6).
  *
- * Public interface: OpenSceneOptions, openScene, closeScene,
+ * Public interface: OpenSceneOptions, PartingLine, openScene, closeScene,
  *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
  *   ageScenes.
  * Owner context: @sharpee/character / conversation
@@ -2114,9 +2114,20 @@ export declare function openScene(world: WorldModel, options: OpenSceneOptions):
  * @param sceneId - The scene to close
  * @param boundary - Which boundary closed it (`exit` or `silence`)
  * @param memory - The per-pair memory home
- * @returns The scene-closed wire event, or none when the id is not live
+ * @param partingLine - The parting-line deliverer (D10a); absent = parks render nothing
+ * @returns The thread-parked, thread-parting and scene-closed wire events, or none when the id is not live
  */
-export declare function closeScene(world: WorldModel, sceneId: string, boundary: SceneBoundaryKind, memory: ConversationMemoryAccess): SceneWireEvent[];
+/**
+ * The parting-line deliverer (ADR-320 D10a, 2026-09-02): the registrar's
+ * runner executes a parked thread's authored `on parting` body and hands
+ * back the spoken line, or undefined when none is authored. Bound by the
+ * loader; absent in builder-authored stories.
+ */
+export type PartingLine = (ownerId: string, partnerId: string, threadKey: string) => {
+    messageId: string;
+    params: Record<string, unknown>;
+} | undefined;
+export declare function closeScene(world: WorldModel, sceneId: string, boundary: SceneBoundaryKind, memory: ConversationMemoryAccess, partingLine?: PartingLine): SceneWireEvent[];
 /**
  * Stamp an on-floor move (utterance, act, or event — one vocabulary):
  * resets the scene's silence clock.
@@ -2162,9 +2173,10 @@ export declare function stampThreadContinuability(world: WorldModel, sceneId: st
  * @param sceneId - The scene the directives target
  * @param directives - The selection's directives, in order
  * @param memory - The per-pair memory home (for `close-scene`)
+ * @param partingLine - The parting-line deliverer for a `close-scene` (D10a)
  * @returns Wire events the directives produced
  */
-export declare function applySceneDirectives(world: WorldModel, sceneId: string, directives: SceneDirective[], memory: ConversationMemoryAccess): SceneWireEvent[];
+export declare function applySceneDirectives(world: WorldModel, sceneId: string, directives: SceneDirective[], memory: ConversationMemoryAccess, partingLine?: PartingLine): SceneWireEvent[];
 /**
  * Decay unattended scenes (ADR-142's attention decay, wired live): a
  * scene with no on-floor move for `threshold` turns closes on the
@@ -2175,9 +2187,10 @@ export declare function applySceneDirectives(world: WorldModel, sceneId: string,
  * @param world - The live world
  * @param memory - The per-pair memory home
  * @param threshold - Silent turns before a scene closes
+ * @param partingLine - The parting-line deliverer (D10a)
  * @returns The scene-closed wire events, oldest scene first
  */
-export declare function ageScenes(world: WorldModel, memory: ConversationMemoryAccess, threshold?: number): SceneWireEvent[];
+export declare function ageScenes(world: WorldModel, memory: ConversationMemoryAccess, threshold?: number, partingLine?: PartingLine): SceneWireEvent[];
 ```
 
 ### conversation/conversation-memory
@@ -2647,7 +2660,8 @@ export declare function threadContinuabilityFor(world: WorldModel, sceneId: stri
  *   createSceneRuntimeBinding, registerCharacterScenes.
  * Owner context: @sharpee/character / conversation
  */
-import { WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
+import { type SceneStrength, WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
+import { type PartingLine } from './scene-runtime.js';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
 /**
  * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
@@ -2691,6 +2705,19 @@ export interface SceneBindingOptions {
      * for an `opens when` thread — must not mutate.
      */
     threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
+    /**
+     * The declared strength of one thread (ADR-320 D10a, 2026-09-02): the
+     * loader reads `define conversation …, <strength>` here so an intrusion
+     * meets a thread-aware grip — a `blocking` thread holds (D14). Absent
+     * or undefined = `passive`, today's reading.
+     */
+    activeThreadStrength?: (ownerId: string, partnerId: string, threadKey: string) => SceneStrength | undefined;
+    /**
+     * The parting-line deliverer (ADR-320 D10a): consulted by every
+     * park-on-close path so a parked thread's `on parting` renders wherever
+     * the park happens. Absent = parks render nothing (builder stories).
+     */
+    partingLine?: PartingLine;
 }
 /**
  * Build the world's scene runtime over the Phase 5 machinery.

@@ -6,14 +6,16 @@
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
 import { EvaluationContext, StateMachineRegistryState } from './types.js';
 
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
  *
- * Runs at priority 75 — after NPC behaviour (100), before the scheduler (50).
+ * Platform-phases band (ADR-332): after the scheduler's story reactions and
+ * the actor phase, before scene evaluation — a machine reacts to what the
+ * turn did.
  * Each turn it evaluates every machine in its {@link StateMachineRegistry} and
  * returns the events produced by any transitions that fired. Register the
  * plugin with the engine, then add machines via {@link getRegistry}.
@@ -21,8 +23,8 @@ import { EvaluationContext, StateMachineRegistryState } from './types.js';
 export class StateMachinePlugin implements TurnPlugin {
   /** Stable plugin id. */
   id = 'sharpee.plugin.state-machine';
-  /** Run order within a turn (after NPCs, before the scheduler). */
-  priority = 75;
+  /** Run order within a turn: after the actor phase, before scene evaluation (ADR-332). */
+  priority = TURN_BANDS.platformPhases.floor + 40;
   private registry: StateMachineRegistry;
 
   constructor() {

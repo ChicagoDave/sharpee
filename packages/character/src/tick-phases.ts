@@ -1189,6 +1189,21 @@ function runSceneSubStep(
   const pushWire = (wire: SceneWireEvent[]): void => {
     for (const w of wire) {
       events.push(createEvent(`character.scene.${w.kind}`, { ...w }));
+      // ADR-320 D10a: a parked thread's `on parting` line is wire data
+      // like every scene move (never rendered as `character.scene.*`);
+      // the prose event is this one, the same the dispatch path emits.
+      if (w.kind === 'thread-parting') {
+        events.push(
+          createEvent('character.thread.parting', {
+            sceneId: w.sceneId,
+            ownerId: w.ownerId,
+            partnerId: w.partnerId,
+            threadKey: w.threadKey,
+            messageId: w.messageId,
+            params: w.params,
+          }),
+        );
+      }
     }
   };
 
@@ -1382,6 +1397,19 @@ function runSceneSubStep(
       .sort((a, b) => (a.id < b.id ? -1 : 1));
     for (const npc of candidates) {
       if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
+      // ADR-320 D10a (2026-09-02): an authored `opens when` is an
+      // interjection. When the player is seated in a scene this NPC is not
+      // part of, that scene's grip answers — thread-aware, so a `blocking`
+      // thread holds (D14) — through the same call the world-act and
+      // player-address paths make. `yields`/`protests` close it (its
+      // threads park and their `on parting` renders); `blocks` skips this
+      // candidate for the turn — no throw, no wedge, tried again next turn.
+      const foreign = sceneWith(world, ctx.playerId);
+      if (foreign && !foreign.participantIds.includes(npc.id)) {
+        const challenge = runtime.resolveIntrusion(foreign.id, npc.id, false);
+        pushWire(challenge.wireEvents);
+        if (challenge.outcome === 'blocks') continue;
+      }
       const scene = ensureScene(npc.id, ctx.playerId);
       if (!scene || scene.openExchange) continue;
       const turn = runtime.threadTurn(npc.id, ctx.playerId, scene.id);
@@ -1444,7 +1472,14 @@ function runSceneSubStep(
 
   // 8) Unattended scenes decay into a `silence` close (Phase 5's
   // machinery, wired to its runtime caller here).
-  pushWire(ageScenes(world, memory));
+  pushWire(
+    ageScenes(
+      world,
+      memory,
+      undefined,
+      runtime.partingLine ? (o, p, k) => runtime.partingLine!(o, p, k) : undefined,
+    ),
+  );
 
   return events;
 }

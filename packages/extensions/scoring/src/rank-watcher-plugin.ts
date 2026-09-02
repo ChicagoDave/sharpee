@@ -22,7 +22,7 @@
  */
 
 import { IFEvents } from '@sharpee/if-domain';
-import { createBandDataWatcher, type BandRung, type TurnPlugin } from '@sharpee/plugins';
+import { TURN_BANDS, createBandDataWatcher, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import type { WorldModel } from '@sharpee/world-model';
 
 /** The rank watcher's plugin id — stable across the refactor for save compat. */
@@ -35,8 +35,8 @@ export function createRankWatcher(): TurnPlugin {
   return createBandDataWatcher(
     {
       id: RANK_WATCHER_ID,
-      // Below the scheduler (50): a promotion observes a turn others produced.
-      priority: 25,
+      // Watchers band (ADR-332): a promotion observes a turn others produced.
+      priority: TURN_BANDS.watchers.floor + 20,
       concept: 'rank',
       isEnabled: (world: WorldModel) => world.isScoringEnabled(),
       value: (world: WorldModel) => world.getScore(),

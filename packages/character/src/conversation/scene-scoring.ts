@@ -14,7 +14,7 @@
  * Every shape is platform-internal (contracts.md §7) — NOT author-facing
  * compatibility surface; revisable at refactor cost.
  *
- * Public interface: SceneOccasion, FloorBid, FloorDecision,
+ * Public interface: strongerStrength, SceneOccasion, FloorBid, FloorDecision,
  *   InterruptionChallenge, InterruptionOutcome, scoreFloor,
  *   resolveInterruption, sceneGrip, strengthFromIntent.
  * Owner context: @sharpee/character / conversation
@@ -141,6 +141,23 @@ export function sceneGrip(
  * @param strength - The scene's effective grip (see `sceneGrip`)
  * @returns The outcome word
  */
+/** Grip order for the thread-aware comparison (ADR-320 D10a): blocking > assertive > passive. */
+const STRENGTH_RANK: Record<SceneStrength, number> = { passive: 0, assertive: 1, blocking: 2 };
+
+/**
+ * The stronger of two grips (ADR-320 D10a, 2026-09-02): a scene's
+ * effective grip against an intruder is the stronger of its own grip and
+ * every ACTIVE thread's declared strength between its participants, so a
+ * `blocking` thread holds as D14 requires.
+ *
+ * @param a - One strength word
+ * @param b - The other
+ * @returns Whichever ranks higher
+ */
+export function strongerStrength(a: SceneStrength, b: SceneStrength): SceneStrength {
+  return STRENGTH_RANK[b] > STRENGTH_RANK[a] ? b : a;
+}
+
 export function resolveInterruption(
   challenge: InterruptionChallenge,
   strength: SceneStrength,

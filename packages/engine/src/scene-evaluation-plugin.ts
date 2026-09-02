@@ -1,8 +1,10 @@
 /**
  * Scene evaluation turn plugin (ADR-149, ADR-186).
  *
- * Evaluates scene begin/end conditions each turn. Runs after NPC turns
- * and state machines, before daemons/fuses (priority 60).
+ * Evaluates scene begin/end conditions each turn. Last of the platform
+ * phases (ADR-332): after the scheduler's story reactions, the actor phase
+ * and state machines — a scene whose condition is a timer state sees it
+ * the same turn.
  *
  * For each registered scene:
  * - If state='waiting' and begin() returns true → activate, emit scene_began,
@@ -29,7 +31,7 @@ import {
   type SceneEventContext,
   type SceneReaction,
 } from '@sharpee/world-model';
-import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 
 let eventCounter = 0;
 
@@ -90,7 +92,7 @@ function reactionEvents(
 
 export class SceneEvaluationPlugin implements TurnPlugin {
   id = 'sharpee.scene-evaluation';
-  priority = 60;
+  priority = TURN_BANDS.platformPhases.floor + 30;
 
   /**
    * Evaluates all registered scene conditions after a successful action.
