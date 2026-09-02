@@ -1173,3 +1173,163 @@ complete for Phase 10's purposes: every room, event, refusal, and the tree (as a
 is authorized, the two new beats are authorized as triggers with placeholders, the Pieter layers
 are recorded as belonging to the chapters that reach them, and the lines are David's during
 play-testing.
+
+---
+
+## Chapter 5 — Jail and the Sewers
+
+**Status**: COMPLETE for Phase 10 (opened and closed 2026-09-01, session aebae2) — three rulings, one carry-list, four gaps; lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01): jail and sewers, ending at the ladder into Commerce Street
+
+Two seams were put to David from the source's own structure, and they disagree: (A) the drop
+into the drain, where the source prints its own next heading (`output chapter heading "Chapter 4
+- Sewer"`, `story.ni:8528`) and where its hint chain splits Escaping Jail from Escaping Sewer
+(`story.ni:1077-1079`); (B) the ladder up into Commerce Street at dawn, where the source prints
+*"Chapter 5 - Black Gate Estate"* (`story.ni:8720`) and where the designers' own walkthrough draws
+the leg — `test walk1` runs `test jail` and `test sewers` together (`story.ni:12407`). David:
+**"B."**
+
+**Chapter 5 is the source's Book 6 (Jail, `story.ni:7597-8545`) and Book 7 (The Sewers,
+`story.ni:8546-8742`) together, from the sack coming off in the cell to daylight on Commerce
+Street.** The sewer is two rooms and one puzzle with no cast of its own once Olmer leaves; it
+belongs with the escape it completes. Book 8's *A New Morning* is Chapter 6's.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 7 new — Jail-Cell (ours, south), Jailhouse, Jail-Cell-2 (Olmer and Darrens, north), Jail-Cell-3 (empty, west), Drain Room, the Sewer, the Access Tunnel; plus the way-out to the east as a distant description only (`story.ni:7633-7635`) |
+| Opens with | The waking text (`story.ni:7855`) — cold stone, footsteps, a raw laugh, the crash of a door; everything she carried gone but the baggy clothes (`story.ni:7614-7617`); a hulking shape in the corner |
+| Conversations | 3 trees — `BO` Bobby's jail quips `BO16-BO22` (7): the whisper, *"I'm in the cell next to yours"*, Fossville's estate and the rooftops, *"secrets about your father"*, *"Look for a letter—"*, the beating, *"Fossville, Jack! The rooftops! Look for the letter!"* (`story.ni:7878-7890`); `JA` Jacobs (30 declared, **23 live** — `JA9-JA15` are commented out in the source, `story.ni:7986-8000`, the dead hand-me-the-lockpick variant); `OL` Olmer (11, `story.ni:8322-8342`). Darrens has no tree — he waggles his head and smiles (`story.ni:8404`) |
+| Scenes | 7 story scenes — Escaping Jail (the whole book, ends in the sewer), Bobby's Voice, Jacobs's lockpicking attempt, Picking a Lock, Jacobs's Deception, Discussion of Drainage, Escape Through The Sewer; `story.ni:7605, 7865, 8235, 8253, 8290, 8541, 8548` |
+| Scripted events | Bobby wakes two turns after Jack (`story.ni:7614-7616`), his four beats auto-advance one per turn and he is removed after `BO22`; Jacobs starts one turn later (`JA2`); `JA7`'s attempt at the lock runs a three-turn timer to `JA8`, which throws the wire into the straw (`story.ni:8099-8103`); the pick through the window, the snap, the pick falling outside, Jacobs pushing the door open and leaving the cell the next turn (`story.ni:8276-8285`); Jacobs's Deception on both being in the jailhouse — `JA16`, `JA19` two turns on, Olmer's interjection, `JA21` two turns after that if unanswered (`story.ni:8290-8301`, `8194-8215`); Olmer's plea `OL1` one turn after `JA19`, `OL2` on returning from the drain room (`story.ni:8479-8483`); the north door and the twenty-second pick, the two drunks to the drain room, Olmer's explanation of the alcove (`story.ni:8416-8424, 8543-8545`); the grate, the drop, the prayer to Brigid (`story.ni:8489-8493, 8526-8531`); Olmer names the color and the drunks leave (`story.ni:8650`); the ladder and daylight (`story.ni:8718-8723`) |
+| The exit | *"Daylight! You've never been so glad to see it"* — early morning, an alley near Maiden House, then Commerce Street. Chapter 6's row |
+| Puzzles | The straw → the wire → unlock the cell door through the window → pick the wire up in the jailhouse → unlock the north door → lift the grate → follow Olmer's color twice. `test jail` + `test sewers` (`story.ni:12427-12429`), the sewer pinned with `xyzzy` |
+| Deaths | 2 — going with Jacobs (`JA22`, `story.ni:8017, 8229`: a dozen Lord's Guard and the man in red robes, *"This time, you do not escape"*), and a wrong turn in the sewer (`story.ni:8739`, lost in the black forever) |
+| Pressure | Jacobs only — a predator in the cell, then an offer with a death behind it; he removes himself two turns after the offer. No clock anywhere in the book |
+
+### Pressure — DECIDED (David, 2026-09-01): the guards come back
+
+Put to David as the source has it (no clock; Jacobs's offer and the sewer are the only teeth,
+and the jailhouse between them is a quiet puzzle box) against a clock with teeth, or fear without
+teeth as Chapter 4's street push. David: **"B."**
+
+**This is new content, and it has teeth.** The guards who dragged Bobby off come back for her.
+If Jack is still in the jail when they do, it is the capture ending — the same room of Lord's
+Guard and Rudup that Jacobs would have led her to (`JA22`'s room, `story.ni:8017`), reached by
+waiting instead of by trusting him. This is §5's standing rule applied, not excepted: the jail
+can take her in the source only if she chooses wrong, and now it can take her if she dawdles.
+
+**What this does for the chapter.** The source's jail is a box the player empties at leisure;
+under the ruling it is a box with a door about to open. It answers the vision's open question
+(§5, *What supplies pressure outside a chase?*) for this chapter the same way Chapter 4 did: a
+clock, and what it summons. The two ways to die in the jail now converge on one room and one
+man, which is where Chapter 4's ruling on Rudup (*he sees*, and *"little mouse"* is his word for
+her) already pointed. What "still in the jail" means at the boundary — the drain room, the drop
+itself — and how long she has are Phase 10's to measure and report. The lines are David's.
+
+### Who sees her — DECIDED (David, 2026-09-01): Olmer sees
+
+- **Bobby does not see** (vision.md §3f; recorded in Chapter 3). `BO16-22` carry as written —
+  *"Jack"* seven times, the boy's name from the non-perceiver who gave it to her.
+- **Jacobs does not see.** *"Kid"* once, *"runt"* throughout, *"a valuable runt"* at the door —
+  never a gendered word, which is §3g's neutral default from a man who does not look. He is in
+  earshot when Olmer calls her *"girl"* (`JA19`) and the source gives him no reaction; carries.
+  **What he knows** is the mercenaries' tier, not the small group's: he overheard Bobby, so he
+  has the name Fossville and the fact of the interest (*"Fossville has taken a special interest
+  in you"*), and nothing of why. He sells that fact; he does not understand it.
+- **Darrens** is mute and has no line to rule on.
+- **The Lord's Guards** are public tier. The cudgel against the bars, the beating heard through
+  the wall — no words about her at all.
+- **Hester Rudup sees** (Chapter 4's ruling). *"Little mouse... always finding some new hole to
+  crawl through"* (`JA22`) carries as written and is now the second time she hears it.
+- **Olmer — DECIDED (David, 2026-09-01): he sees.** Put to David three ways: his *"girl"*,
+  *"miss"*, and *"young lady"* carry as tells; or they become public words at play-testing; or
+  something else. David: **"A."** So every one of them carries — *"Do us a kindness, girl"*
+  (`OL1`), *"Miss?"* (`OL2`), *"wise beyond your years, miss"* (`OL3`), *"Please forgive me,
+  miss"* (`OL5`), *"We are at your service, miss"* (`OL9`), *"it does miss"* (`OL11`), *"thank
+  you, miss"* at the north door (`story.ni:8424`), *"Now then, miss"* and *"It was very kind of
+  you to set us free, young lady"* in the sewer (`story.ni:8650`), and *"Don't you listen to him,
+  girl!"* through Jacobs's own quip (`JA19`). A drunk in a cell takes one look through a viewing
+  window and never once uses the boy word: the same kind of tell as Shannon's *"Miss Jacqueline"*.
+  **He is the first perceiver who is neither ally nor enemy** — a stranger with the talent who
+  owes her nothing and pays her in the true words anyway. §3g's position: a perceiver outside the
+  arrangement, true words freely. A new name in §3f's matrix, public tier / perceives, beside
+  Teisha and Shannon.
+
+### What carries as the source has it — RECORDED (2026-09-01, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 5
+surfaces carry unchanged and were not put to David as questions:
+
+- **The waking and the confiscation** (`story.ni:7855, 7614-7617`) — everything but the baggy
+  clothes removed from play, permanently; nothing in the source comes back. The `InJail` theme.
+- **The cell** (`story.ni:7816-7851`) — the blankets and their refusals, the straw and its smell,
+  the wire concealed in it until searched, *"poke around in"* as searching, the door north and
+  only north (`story.ni:7778`).
+- **The cell doors and windows** (`story.ni:7662-7776`) — stout wood and iron bands, the viewing
+  window, looking through from either side with the occupant list, facing a wall to look through
+  its door, the *"reach"* mistakes (*"just type UNLOCK DOOR"*, `story.ni:7737-7757`).
+- **Bobby's Voice** `BO16-BO22` — as a stub per the standing conversation rule: the trigger two
+  turns after waking, the beats one per turn, Bobby off-stage after `BO22`, Jacobs's clock started
+  by it (`story.ni:7919-7922`).
+- **Jacobs** `JA1-JA8, JA16-JA31` — as a stub: `JA2` one turn after Bobby is gone (or on `talk
+  to`, `story.ni:8089-8090`); `JA6` → `JA7` → the three-turn timer → `JA8` puts the wire in the
+  straw; *"Jacobs ignores you completely"* while he strains at the lock; the idle set `JA24-31`
+  (his father, the lockpick, *"do whatever you want, runt"*) with its clustering; the wire refused
+  back (*"It's no use to me in here"*, `story.ni:8265`); *"He looks way too scary to mess with"*.
+- **Picking the lock** (`story.ni:8262-8285`) — *"unlock door"* supplying the wire, the tiptoe
+  text verbatim, the pick outside the door, Jacobs opening it and going north a turn later; the
+  cell doors refused from the jailhouse afterwards (*"You're not going back in there"*,
+  `story.ni:7797`).
+- **The jailhouse** (`story.ni:7609-7627, 7657`) — the bench refused (*"no time to rest"*), the
+  east passage refused, the distant descriptions of the way out and the alcove.
+- **Jacobs's Deception** — `JA16` on both in the jailhouse, `JA19` two turns on with Olmer's
+  interjection, `JA20` → `JA21` and Jacobs gone, `JA22` the death, `JA21` fired for him if Jack
+  starts on the north door while he is there (`story.ni:8411-8415`) or two turns pass; Jacobs
+  leaves if she goes to the drain room first (`story.ni:8537-8540`).
+- **Olmer and Darrens** `OL1-OL11` — as a stub: `OL1` a turn after `JA19`, `OL2` on coming back
+  from the drain room, `OL4`'s side effect (the unlock from inside the conversation,
+  `story.ni:8366-8369`), the naming on `OL5`, Darrens's history (`OL6`), the drain (`OL11`, only
+  once the drain room is visited), the north door text, the two to the drain room, *"follow"* them.
+- **The drain room** (`story.ni:8457-8545`) — the reek *"worse than the privy back at Maiden
+  House"*, the grate and the crumbling stonework, the hole and the running water, Olmer's account
+  of what the alcove is for, *"After you"*, the prayer to Brigid, the drop.
+- **The sewers** (`story.ni:8546-8742`) — the water, the bricks, the vents, the four glyphs and
+  their random colors and symbols (deterministic at the seed, as the market's sweep is), Olmer's
+  speech and the handshake, two moves on the color, *"Olmer said to follow the [color]"*, the death
+  text verbatim, the Access Tunnel, the ladder, daylight and Commerce Street.
+- **The wire** — *"like the ones you've sometimes seen Bobby carrying around"* (`story.ni:8254`);
+  it stays in the jailhouse when she goes down.
+- **The chapter's end** — the ladder text, then Chapter 6's row in `define chapters`.
+- **The Vedd idiom register** reaches the three trees when Phase 8 writes them, not now. Olmer's
+  *"the Goddesses see fit to bless me"* and *"Goddesses' blessings upon you"*, Jacobs's *"Goddesses
+  curse it"*, the blankets' *"Goddesses-know-what"* are source texture and stay.
+
+### Gaps found, not decided
+
+1. **The clock** — how long she has, and where it starts: at waking, at Bobby's beating, or at
+   Jacobs leaving. Phase 10 measures against the source's own timers (two turns to Bobby, three
+   to the wire, two and two in the deception) and the walkthrough's turn count, and reports.
+2. **The guards' return** — the beat itself and its text, and whether anything warns her first
+   (the source has no warning sound in the jail once Bobby's door slams). David's; Phase 10
+   builds a placeholder and reports.
+3. **The sewer without Olmer** — the port's drain is reachable with the wire alone, and the
+   source sets the color and shuffles the glyphs only if Olmer is in the drain room at the drop
+   (`story.ni:8650-8653`); without him both keep their defaults. Phase 10 reports what the source
+   actually does there — a soft lock, a guess, or an accidental win — before anything is decided.
+4. **What she loses** — the confiscation takes everything but the baggy clothes; what that is at
+   the capture depends on Chapters 1-4's builds (the satchel, Teisha's dress and hat, whatever
+   Maiden House gave her). Phase 10 reports the list. Nothing in the source returns, and nothing
+   later in the source needs anything from before the jail.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); Chapter 6's opening — daylight on Commerce Street, Book 8's *A New Morning*, and the
+rooftops Bobby named.
+
+**Chapter 5's questions are answered.** Extent, pressure (the guards' clock), perception (Olmer),
+the source carry-list, and four gaps. The section is complete for Phase 10's purposes: every
+room, event, refusal, both deaths, and the three trees (as stubs) in Books 6 and 7 are
+authorized, the one new beat is authorized as a trigger with a placeholder, and the lines are
+David's during play-testing.

@@ -436,7 +436,7 @@ are not the same rule and do not correlate:
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
 | **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona |
-| **Public tier** | Teisha, Widow Shannon | the market, the stallkeepers, Bobby |
+| **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5) | the market, the stallkeepers, Bobby, Jacobs |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
 for, I don't want to know"* (`TE2`). Fiona has the entire conspiracy and none of the sight: she
