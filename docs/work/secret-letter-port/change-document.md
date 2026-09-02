@@ -1514,3 +1514,268 @@ carry-list, and four gaps. The section is complete for Phase 10's purposes: ever
 refusal, the puzzle and the four shop layers (as stubs) in Book 8 are authorized, the two new
 beats are authorized as triggers with placeholders, the letter's text is settled, and the lines
 are David's during play-testing.
+
+---
+
+## Chapter 7 — The Gallows and the Raid on Maiden House
+
+**Status**: COMPLETE for Phase 10 (opened 2026-09-01 and closed 2026-09-02, session 86bb3d) — five rulings, one carry-list, four gaps; produced against Book 9 (Bobby's Execution, `story.ni:9581-9691`) and Book 10 (Raid on Maiden House, `story.ni:9692-10007`); lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01): the hanging and the raid together, ending at the privy window
+
+The source draws two seams here and they disagree. Its printed headings make the blackout a
+boundary — `output chapter heading "Chapter 7 - Mercenaries Again"` fires when Bobby's Hanging
+ends (`story.ni:9687`). Its hint chain, its scene chain and the designers' own walkthrough draw
+the boundary at the window instead: `Raid Hints` runs until Shannon's Company begins
+(`story.ni:1087`), `Leaving Maiden House` ends at Behind Maiden House (`story.ni:9984`), and
+`test walk2` closes with `test maidens` climbing out (`story.ni:12409, 12437`). Put to David:
+(A) the hanging alone, ending at the blackout; (B) the hanging and the raid together, ending as
+she goes through the privy window; (C) something else. David: **"B."**
+
+**Chapter 7 is the source's Book 9 and Book 10 whole, from the butler's side door to the privy
+window.** Shannon climbing out after her (`story.ni:10020-10025`, where the source prints
+*"Chapter 8 - Red Gate Estate"*) is Chapter 8's first beat.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 1 new — the Secret Closet (`story.ni:9866`), Book 10's only room. Plus East Commerce Street and Lord's Market in their hanging state (Chapter 2's rooms, as the source's `occasionally crowded place` region), and Maiden House by day — Dormitory, Hallway, Laundry, Privy, Behind Maiden House (Chapter 3's rooms) |
+| Opens with | East Commerce Street with the letter; the crowd flowing east, *"everyone is heading east, towards Lord's Market"*; west refused (`story.ni:9600`) |
+| Conversations | Fiona's two bedside layers — `FI21-25` (5: the croak, the apology, *"Bobby is dead"*, the sobs) and `FI26-31` (6: *"You're the tutor, aren't you?"*, *"Tell me about my father"*, Theresa's fate, *"What do I do now?"* which gives the key). Three scripted events `B_H1-3` (Fossville's speech, Rudup named, the sentence). The six-row `table of widows meeting mercenaries` heard from the closet (`story.ni:9968`). No new tree |
+| Scenes | 6 — Bobby's Hanging, Bedside Consolation, Raid on Maiden House, The Banging, Hidden in the Closet, Leaving Maiden House (`story.ni:9589, 9698, 9797, 9819, 9948, 9984`) |
+| Scripted events | The gallows and the crowd placed, the market's shoppers removed (`story.ni:9593-9598`); the execution one turn after she enters Lord's Market (`story.ni:9606`); `B_H1-3` as the current script; the blackout and the move to her bunk (`story.ni:9677-9690`); `FI21` on waking; the front door locked and the pounding (`story.ni:9803-9806`); Fiona follows her to the hallway and goes to the laundry (`story.ni:9808`); Shannon opens the board (`story.ni:9848-9855`); the closet spool (`story.ni:9953`); Theresa's expulsion on entering the hallway afterward (`story.ni:9998-10006`); `FI26`, and `FI30` gives the brass key (`story.ni:9778`) |
+| The exit | The privy window during Leaving Maiden House, into Behind Maiden House. Chapter 8's row |
+| Puzzles | None. `test hanging` is *"e / x structure / z / z / z"*; `test maidens` is *"3 / se / se / n / z / z / z / z / z / z / nw / 4 / sw / enter window"* (`story.ni:12435-12437`) |
+| Pressure | The crowd's rails in the square; then a real clock — The Banging ends in capture when nine minutes pass and she is not in the closet (`story.ni:9819`) |
+| Deaths | 1 — the captain's fist, *"You're beginning to damage my credibility, boy"* (`story.ni:9842`). `End the game in death` |
+
+### The square — DECIDED (David, 2026-09-01): fear without teeth
+
+Put to David as the source has it (a set piece on rails made of crowd — west refused on East
+Commerce Street, *"you probably shouldn't attract attention to yourself"*, the execution set for
+the turn after she enters Lord's Market, everything but examining the gallows refused, three
+scripted beats nothing she does can change; the mercenaries Fossville sent to *"gather your men
+at Lord's Market"* never appear) against fear without teeth, or teeth (being seen in the square
+is the capture). David: **"B."**
+
+**This is new content.** The mercenaries are visible — ringing the platform in the square, and
+Chapter 6's street mercenaries in the crowd on the way — and she keeps her head down while the
+crowd keeps her hidden. They never take her. The set piece on the platform plays untouched. The
+§5 per-scene exception, ruled for this scene as it was for Chapter 4's walk and Chapter 6's
+street and house: the fear is the square's, its teeth are none. The beats and their lines are
+David's.
+
+**What this does for the rhythm.** Chapters 4 through 7 now run fear, teeth, fear, fear. The
+jail is still the one that can take her; the hanging's weight is what is on the platform, not
+who is in the crowd.
+
+**The trigger — RECORDED (2026-09-01): Chapter 6's fourth gap closes here.** The source starts
+Bobby's Hanging *"when the player carries the secret letter"* (`story.ni:9589`), in the library.
+Under Chapter 6's extent ruling and this one, the scene starts when the butler shoves her out
+the side door (`story.ni:9561`): the gallows, the crowd and the mercenaries are in place before
+Chapter 7's first room prints, and nothing of the hanging leaks back into Black Gate Estate.
+
+### What the mercenaries know at the raid — DECIDED (David, 2026-09-01): they still hunt the boy Jack
+
+The source's captain has it both ways through the closet wall — *"Where is she?"*, *"we know
+she came here after the hanging"*, *"Where did the girl go?"* (`story.ni:9970-9978`) — and then,
+if she is caught, *"You're beginning to damage my credibility, boy"* (`story.ni:9844`). Under
+vision.md §3f the mercenaries hunt a scion from a parchment that describes a body, and Chapter 6
+added the stairwell line Fossville said to the man he was sending here: *"no greater challenge
+to your mercenaries than a fourteen-year-old girl"* (`story.ni:9569`). Put to David: (A) the
+hunt's terms changed in the stairwell and the men now hunt a girl; (B) the men still hunt the
+boy Jack; (C) the captain heard "girl" and does not believe it; (D) something else. David:
+**"B."**
+
+**The middle tier's knowledge does not move.** Fossville's *"girl"* was one line to one man who
+did not take it in, or took it as the Baron's sneer; the parchment still says a body, and the
+inference is still a boy. So in the overheard table the captain's *"she"* and *"the girl"*
+convert to *"he"* and *"the boy"* — *"Where is he?"*, *"we know he came here after the hanging"*,
+*"Where did the boy go?"* — and the capture ending's *"boy"* carries as written. Everything the
+mercenaries say about her from here to the ball is about a boy, and §3f's row for them stands:
+they know there is a scion, they assume a boy, they have never seen her.
+
+**Theresa's words follow from §4 without a new question.** She does not see; her *"There she
+is!"* (`story.ni:9844`), *"that child"*, *"the child is hiding there"*, *"one ungrateful little
+brat"* (`story.ni:9972-9976`) are the boy words and the neutral nouns — *"There he is!"*, and
+the rest as written. The betrayal is the same act in either set of words: she gives up the
+closet.
+
+### Shannon's ruse — DECIDED (David, 2026-09-01): she screams "Jacqueline" anyway
+
+Shannon is the one widow who sees her (vision.md §4), and the source's tell is that she alone
+says *"Miss Jacqueline"* as a matter of course. In the raid she screams *"Jacqueline!
+Jacqueline, wait!"* down the hall with the mercenaries in the house, then lies to Fiona for
+the captain's benefit — *"she slipped past me and wriggled out the privy window"*
+(`story.ni:9976`). With the men hunting a boy, put to David: (A) Shannon plays the ruse in the
+boy words, *"Jack! Jack, wait!"*, *"he slipped past me"*; (B) she screams "Jacqueline" anyway;
+(C) something else. David: **"B."**
+
+**The ruse carries as written, and a true name is said aloud in front of the middle tier.**
+Shannon's instinct under pressure is the name she actually uses, not the one the men are
+listening for. The captain hears a girl's name shouted and a girl described going out a window,
+and does not connect either to the boy on his parchment; he curses and sends his men into the
+city, as the source has it (`story.ni:9978`). So the ruse holds — the men are hunting Jack,
+and a Jacqueline who went out a window is somebody else's problem.
+
+**What it leaves.** A loose thread, David's to pull or not: the captain has now heard the name
+*Jacqueline* in the house where the boy Jack lives. Nothing in the source picks it up, and
+nothing here decides that it should. §3g's *position picks the word* is not overruled by this —
+Shannon is not choosing a public word, she is failing to, which is the ruling's point.
+
+**Jack's grin in the dark carries** (*"you'll have to revise your opinion"*, `story.ni:9976`).
+Under this ruling it is the source's meaning: Shannon lied fast and the men believed her.
+
+### Fiona and the name — DECIDED (David, 2026-09-02): knowledge from the Duke
+
+Two rulings pull against each other in Fiona's last scene. vision.md §4 (2026-08-21): Fiona does
+not see, and her *"Jacqueline"* becomes *"Jack"*, the *"like a daughter"* line included — the knot
+§4 names. Chapter 6 (2026-09-01): the letter carries as written, the Duke's hand names
+Jacqueline, and Fossville's *"girl"* was ruled knowledge from the letter, not sight. Fiona is
+the person the Duke hired; shown the letter at the bedside she says *"I know, child, I know all
+about it"* (`story.ni:9710`), and after the raid she says the name three times — *"I'm sorry I
+could not tell you sooner, Jacqueline"*, *"Please, Jacqueline"* (`FI28`, `story.ni:9733`), *"It's
+time you learned something of your past, Jacqueline"* (`FI30`, `story.ni:9737`). Put to David:
+(A) knowledge from the Duke — her *"Jacqueline"* here carries as knowledge, as Fossville's
+*"girl"* did; (B) the conversion stands and the name is news to her too; (C) something else.
+David: **"A."**
+
+**Fiona has known the name Jacqueline for fourteen years, because the Duke told her, and has
+called the child Jack every day of them, because that is the arrangement she was paid to keep
+and the child she sees.** Here, with the arrangement over — Theresa expelled, the Baron's men
+coming back, the key in Jack's hand — she says the name from the letter to Jack's face for the
+first time. `FI28` and `FI30` carry as written, *"like a daughter"* included. *"I know all about
+it"* means exactly that: the lineage, the letter, and the name in it.
+
+**§4's cell for her does not move.** Knows everything, does not perceive — and now "everything"
+includes the name. Chapter 3's conversions stand: in the kitchen the arrangement is still in
+force, and Fiona's *"you've been like a daughter to me"* / *"I love you, too, Jacqueline"*
+(`story.ni:6134`) convert as §4 rules. This scene is the turn, not a reversal. The parallel with
+Fossville is exact and worth keeping in view: two people who have never seen her, both using her
+right name, one from a stolen letter and one from a dead man's trust.
+
+### Who sees her — RECORDED (2026-09-02, from the rulings above and vision.md §3f; no new perceiver)
+
+- **Baron Fossville does not see** (Chapter 6). On the platform he never looks at her; his
+  speech is public and names nobody but Bobby. His hanging-state description (*"This is a
+  performance to him"*, `story.ni:9653`) and the kissing refusal (*"the man who murdered your
+  father"*, `story.ni:9660`) carry.
+- **Hester Rudup sees** (Chapter 4). On the platform he has no line to her; *"the man who
+  captured you last night at the fountain"* (`B_H2`) carries. His chain of office over the red
+  robes carries.
+- **Bobby did not see** (§3f, Chapter 3). `FI25`'s *"I never told him my name!... you never told
+  him your real name... and he never really knew you at all"* then *"what if he did know you?
+  What if he knew you even better than you knew yourself?"* (`story.ni:9727`) carries as
+  written — it is about the letter and the jail, the knowledge axis — and is flagged below as a
+  line whose weight the rewrite changes.
+- **The mercenary captain does not see** and hunts the boy Jack (ruled above). He hears
+  *"Jacqueline"* shouted and does not connect it (ruled above).
+- **Widow Theresa does not see** (§4). Her raid words are the boy words (ruled above).
+- **Widow Fiona does not see, and knows the name** (ruled above).
+- **Widow Shannon sees** (§4). *"Jacqueline!"* in the raid, *"Miss Fiona"* in the ruse, and
+  *"Wait, Jacqueline"* as Chapter 8 opens (`story.ni:10046`) all carry.
+- **The crowd** has no line about her.
+
+### What carries as the source has it — RECORDED (2026-09-02, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 7
+surfaces carry unchanged and were not put to David as questions:
+
+- **East Commerce Street in the hanging** (`story.ni:9585-9645`) — the `occasionally crowded
+  place` region; the crowd backdrop and its description; west refused; the one-in-four *"More
+  people wander past"* texture (`story.ni:9603`); the talk refusals (*"No one pays any attention
+  to you"*); the *"you probably shouldn't attract attention to yourself"* refusal for everything
+  else. The mercenaries in the crowd (ruled above) sit on top of this, not in place of it.
+- **Lord's Market in the hanging** — the market's shoppers removed and returned
+  (`story.ni:9595, 9683`); the gallows as a supporter whose printed name is *"sort of wooden
+  structure"* until first examined (`story.ni:9616`: *"Suddenly your mouth goes dry. It's a
+  gallows."*); *"There is some sort of wooden structure / A gallows has been erected in the center
+  of the square"* (`story.ni:9631`); every other verb on it refused (*"too many people in your
+  way"*), and on Bobby (*"You can't reach him"*); the after-scene refusal *"You can't bring
+  yourself to touch it"* for any later visit.
+- **The execution** — one turn after she enters the square (`story.ni:9606`; the designers'
+  comment on why carries as a build note); Bobby, Fossville and Rudup moved to the gallows;
+  `B_H1-3` verbatim (`story.ni:9662-9669`), one per turn, as the current script; Rudup arrives
+  after `B_H2`; *"Everything goes black."*
+- **The blackout** (`story.ni:9677-9690`) — the platform cleared, the shoppers back, Theresa
+  removed until the raid, Fiona to the Dormitory, the pause, and Jack moved to her bunk without a
+  room description. The source's *"Chapter 7 - Mercenaries Again"* heading is not printed; the
+  port's chapter rows are Chapter 6's and Chapter 8's.
+- **Bedside Consolation** (`story.ni:9698-9716`) — the waking text verbatim (*"And then it
+  comes back to you. It's Bobby. Bobby is dead."*); leaving the Dormitory refused (*"You're still
+  in shock"*); the letter shown (*"I know, child... I know all about it"*, under the ruling
+  above); giving the letter routed to showing it (`story.ni:9713`).
+- **`FI21-25`** — as a stub per the standing conversation rule: `FI21` on waking, `FI22`/`FI23`
+  exclusive of each other, `FI24` transitional into `FI25`, and `FI25` ends the scene into the
+  raid. *"Shannon found you, after the crowd dispersed"* (`FI22`) is flagged below.
+- **The raid begins** (`story.ni:9797-9816`) — the front door closed and locked; the pounding
+  and *"Open in the name of Baron Fossville!"*; Fiona's *"Go to the laundry room!"*; Fiona
+  follows her to the Hallway and goes southeast ahead of her (`story.ni:9808`); opening or
+  unlocking the front door refused (*"Are you insane? Fossville's men are right outside!"*).
+- **The Banging** (`story.ni:9819-9844`) — starts one turn into the raid; the every-turn
+  pounding lines (`story.ni:9821`); leaving the Hallway anywhere but the Laundry refused
+  (*"Get into the laundry room, quickly!"*); Fiona and Shannon refuse conversation (*"just go!"*,
+  *"Get inside!"*); leaving the Laundry with the closet open refused; **nine turns not in the
+  closet is the capture** — the door crashes in, Theresa points (*"There he is!"* under the
+  ruling above), the captain's *"boy"*, the fist, `End the game in death`. Carries with its
+  teeth under §5's standing consequence.
+- **The closet** (`story.ni:9848-9946`) — Shannon pushes the board aside on entering the
+  Laundry; `hide` enters it; the Secret Closet pitch black, *"The walls press close"*, *"like a
+  coffin"* (`story.ni:9929`), listening (*"your own harsh breathing"*, `story.ni:9917`), singing
+  refused; the board replaced behind her; opening it while the raid is on refused (*"The Baron's
+  men would catch you the instant you left"*); the door invisible before it has ever been opened
+  (`story.ni:9932-9944`).
+- **Hidden in the Closet** (`story.ni:9948-9982`) — the six-row table spooled one row a turn
+  while she is in the closet, with the captain's and Theresa's words converted per the rulings
+  above and Shannon's as written; leaving early ends the scene early; at the end the board opens,
+  the front door is open, and she is moved to the Laundry if still inside. *"That was too
+  close."*
+- **Leaving Maiden House** (`story.ni:9984-10006`) — the front door refused (*"They'll be
+  watching the front door for sure"*); Shannon's *"go talk to Widow Fiona"*; the closet refused
+  (*"almost as bad as the jail cell"*); the expulsion on entering the Hallway, verbatim — the
+  stare-down, *"Get out and never set foot in this orphanage again"*, Theresa's *"bitter,
+  helpless glare"*, the slam (`story.ni:9998-10006`); leaving the Hallway refused until `FI30`
+  (*"There are things you need to know before you leave"*, `story.ni:9790`); after `FI30`,
+  talking to Fiona again is *"There is no time"*.
+- **`FI26-31`** — as a stub: `FI26` on entering the Hallway after the expulsion, `FI30` gives the
+  brass key (`story.ni:9778`), `FI31` as the re-entry gambit during Leaving Maiden House.
+- **The brass key** (`story.ni:9793`) — Chapter 8's object, given here.
+- **The chapter's end** — going through the privy window during Leaving Maiden House. The
+  `define chapters` block gains Chapter 8's row on that trigger. The source's window text with
+  Shannon climbing out after her, Shannon moved to Behind Maiden House, and the *"Chapter 8 -
+  Red Gate Estate"* heading (`story.ni:10010-10025`) are Chapter 8's opening, not this chapter's
+  exit text.
+- **The Vedd idiom register** reaches `FI21-31` and the closet table when Phase 8 writes them,
+  not now. Shannon's *"oh, Goddesses"* and Fiona's *"Goddesses"* are source texture and stay.
+
+### Gaps found, not decided
+
+1. **The square's beats** — where the mercenaries are seen on East Commerce Street and around
+   the platform, and what keeps her hidden; David's, at play-testing. Phase 10 builds one
+   placeholder beat on East Commerce Street and one in the square's crowd texture before the
+   execution fires, and reports.
+2. **How she leaves the square** — the source has her scream, claw at the crowd, fall, and black
+   out, and `FI22` has Shannon find her *"after the crowd dispersed"* — with no mercenaries in
+   the square that is plausible. Under the ruling above the square is full of men hunting her
+   when she collapses. Whether the crowd covers that too, or Shannon's finding her needs a beat,
+   is David's. Reported, not decided; Phase 10 builds the source's blackout and `FI22` as written.
+3. **`FI25`'s weight** — *"he never really knew you at all"* / *"what if he did know you?"* is
+   written for a Bobby who did not know Jack was a girl in disguise; under the rewrite Bobby did
+   not see her and the letter is what he knew. The line carries as written; whether it says what
+   David wants it to now is David's. Reported, not decided.
+4. **The loose thread** — the captain has heard *"Jacqueline"* in the house where the boy Jack
+   lives (ruled above). Nothing in the source picks it up. Handed forward as David's to pull or
+   not; Phase 10 builds nothing for it.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); Chapter 8's opening — Shannon through the window after her, the park wall, East
+Commerce Street with a widow at her elbow, and Red Gate Manor.
+
+**Chapter 7's questions are answered.** Extent, the square (fear without teeth), what the
+mercenaries know (the boy Jack), Shannon's ruse (the true name, said aloud), Fiona and the name
+(knowledge from the Duke), perception (recorded, no new perceiver), the source carry-list, and
+four gaps. The section is complete for Phase 10's purposes: every room, scene, event and refusal
+in Books 9 and 10 is authorized, the two Fiona layers and the closet table are authorized as stubs
+with their conversions named, the raid's clock and its death carry with teeth, the square's
+mercenaries are authorized as placeholder beats, and the lines are David's during play-testing.

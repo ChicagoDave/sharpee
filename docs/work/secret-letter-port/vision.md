@@ -448,7 +448,7 @@ are not the same rule and do not correlate:
 
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
-| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona; Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes) |
+| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona (David, 2026-09-02, change document Chapter 7 — has known the name *Jacqueline* from the Duke for fourteen years, never from her eyes); Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes) |
 | **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5); Fossville's butler (David, 2026-09-01, change document Chapter 6) | the market, the stallkeepers, Bobby, Jacobs |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
@@ -685,6 +685,14 @@ kitchen.
 to hold it beyond habit. It also means her later turn — sending Jack to Dame Sandler (`DS34`, *"I
 was only to step in as a last resort"*) — is her breaking an arrangement she has kept for money and
 for love at the same time.
+
+**Chapter 7's turn — David, 2026-09-02 (change document Chapter 7).** Fiona has known the name
+*Jacqueline* from the Duke for fourteen years and has called the child Jack every day of them,
+because that is the arrangement she was paid to keep and the child she sees. After the raid, with
+the arrangement over, she says the name to Jack's face for the first time (`FI28`, `FI30`,
+`story.ni:9733-9737`) — knowledge, as Fossville's *"girl"* is knowledge (§3f), not sight. The
+kitchen lines above still convert: in Chapter 3 the arrangement is in force. Her cell in §3f does
+not move; "everything" now includes the name.
 
 ### The Shannon dress scene — no longer a collision
 
