@@ -828,3 +828,171 @@ carry-list, and this gap. The section is complete for Phase 10's purposes: every
 (as a stub), event, and refusal in Books 3 and 4's first-visit layer is authorized, the
 later-visit layers are recorded as belonging to later chapters, and the lines are David's
 during play-testing.
+
+---
+
+## Chapter 3 — Bobby and Maiden House
+
+**Status**: COMPLETE for Phase 10 (opened and closed 2026-09-01, session 7bb78d) — four rulings, one carry-list, two gaps; lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01): Bobby, then the night at Maiden House, ending at the privy window
+
+Three seams were put to David from the source's own structure: (A) after Bobby alone, (B) after
+the night at Maiden House, (C) after the night journey to Lord's Keep. David: **"B."**
+
+**Chapter 3 is the source's Book 6 (Meeting Bobby) and Book 5 (Maiden House), in file order,
+and it ends when Jack climbs out through the privy window.** That is the seam the designers'
+own walkthrough draws — `test meeting` (`story.ni:12408`) runs from the Back Alley through
+Bobby, the door, the curfew, sleep, and the window — and it is where the source's
+`Maiden House Hints` stage ends (`story.ni:1071`, "when the location is not in Maiden House").
+The night journey (Book 5B) is Chapter 4's.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 8 — Back Alley, Entrance to Maiden House (Book 6, `story.ni:5603-5803`); Hallway, Dormitory, Kitchen, Privy, Laundry, Behind Maiden House (Book 5, `story.ni:5804-6549`) |
+| Opens with | The coin trick on first entry to the Back Alley (`story.ni:5621-5629`), then Bobby's conversation from `BO1` |
+| Conversations | 4 trees — `BO` Bobby, the 14 alley quips `BO1-BO15` (his other 16 are the night journey's); `TH` Widow Theresa 11; `FI` Widow Fiona 31; `SH` Widow Shannon 16 |
+| Scripted events | Bobby leaves after `BO10` ("I'm in"); the curfew on first entry to the Hallway (`story.ni:5922-5934`) — night falls, Theresa locks the front door with the key round her neck; sleep in the dormitory |
+| The exit | The privy window, stuck halfway open (`story.ni:6311-6351`), into the alley behind the house |
+| Puzzles | None — the walkthrough is conversation, `sleep`, and `climb through window` |
+| Pressure | None in the source — the mercenaries appear only in what people say (`BO3`, `BO12`, `TH4`, `FI3`) |
+
+**Also in this region but not this chapter's**: the Secret Closet and the Raid (Book 10), Shannon's
+later conversation and the stick-and-soap scene (`story.ni:6497-6520`), and every later return to the
+house. They are recorded as belonging to the chapters that reach them.
+
+### Pressure — DECIDED (David, 2026-09-01): a mercenary at the door, and Theresa turns him away
+
+Put to David as the source has it (no push: the mercenaries appear only in what people say,
+and the curfew is the only thing that moves Jack) against a push on the street or a push at
+the house. David chose the house, and named the scene:
+
+> *"This would be a good place to add a closed door confrontation between Theresa and a
+> mercenary, but the mercenary leaves, by saying, 'I'll be back!'"*
+
+**This is new content — the spine's second mercenary push lands in Maiden House.** The scene
+is not in the source. What it fixes: a mercenary comes to the Maiden House door during the night;
+Theresa holds the door closed against him; he leaves, and his parting word is that he will be
+back. Nothing else about it is decided here — the lines are David's, written during
+play-testing (vision.md §6), and the stubbed scene carries the trigger and the exit only.
+
+**What it does for the chapter.** The curfew keeps Jack in; the visit is the reason the house is
+no longer safe to stay in. It gives the window a second meaning — not just keeping a promise to
+Bobby, but getting out before he comes back — and it seeds the Raid (Book 10), which is the
+mercenary keeping his word.
+
+**Why Theresa, under the rewrite.** vision.md §4: Theresa does not see Jack, dislikes her, and
+calls her a liar about the morning's chase (`TH4`). The person who holds the door is the one
+who least believes the danger is real. Nothing about her motive is decided here.
+
+**When it happens — DECIDED (David, 2026-09-01): it is what wakes her.** Put to David against
+the source's night (curfew → roaming the house → bunk → dozing → "You snap awake, heart
+pounding" → the widows gone, the children asleep → the privy): before sleep, as the waking,
+or after waking on the way to the privy. David: **"B."** The knock and Theresa's voice at the
+door replace the source's unexplained waking (`story.ni:5985`); Jack hears the confrontation
+from her bunk, with the children asleep around her, and the mercenary's *"I'll be back!"* is
+the last thing she hears before she slips out of bed. The source's own logic then carries:
+the widows are off-stage, the house is dark, and the privy window is the way out.
+
+**Theresa afterwards — DECIDED (David, 2026-09-01): Jack waits her out.** The source lets Jack
+reach the privy only because Theresa "is nowhere in sight" when she tiptoes into the hallway
+(`TRIG_TIPTOE`, `story.ni:5826`); while Theresa is in the hallway the privy is blocked
+(`story.ni:6263`). With the knock as the waking, Theresa has just been at the front door in
+that hallway. David: *"Jack quietly waits for Theresa to return to her room."* So the beat is:
+the knock, the confrontation heard from the bunk, *"I'll be back!"*, Theresa's footsteps back
+to her room, and only then Jack out of bed. The hallway is clear as the source has it; the
+privy block stands as written for any earlier attempt. **Gap, not decided**: whether the wait
+is narrated inside the waking passage (as the source narrates dozing off and snapping awake) or
+is a beat the player spends — Phase 10's build resolves it and reports.
+
+### Who sees her — RECORDED (2026-09-01, from vision.md §4 and §3f; no new question)
+
+Already ruled for the whole remake, and cited here so the build has one place to look:
+
+- **Shannon sees. Theresa and Fiona do not** (vision.md §4, RESOLVED 2026-08-21). Shannon's
+  "Miss Jacqueline" (`SH1`, `SH5-7`, `SH13`) is the tell and stays; Theresa's and Fiona's
+  "Jacqueline" become the boy words under §3g. Fiona holds the political secret without the
+  sight (§3f's table: knows everything, does not perceive) — her kitchen lines `FI3-7`
+  (*"Goddesses... so close... could have been... all because of..."*) are that knot showing.
+- **Bobby does not see** (§3f's table: public tier, does not perceive). The source already
+  says so in his description — *"He doesn't even know that you're really a girl"*
+  (`story.ni:5643`) — and Commerce Street's hat rule after meeting him (*"Bobby thinks you're
+  one of the boys"*, `story.ni:4288`) carries as written.
+- **The dormitory children see** (§3c, the talent-in-children rule, 2026-09-01). The source
+  gives them no line about it (`story.ni:6008-6023`: whispering, pebbles, string, "not in the
+  mood for a chat"), so nothing in this chapter's text outs her; the rule governs what Phase 8
+  may write for them, not what Phase 10 builds.
+- **The mercenary at the door** is §3f's middle tier: hunting a scion, assuming a boy, reading
+  from a parchment that describes a body. What he asks Theresa for, and what she answers, are
+  lines — David's, during play-testing.
+
+### What carries as the source has it — RECORDED (2026-09-01, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 3
+surfaces carry unchanged and were not put to David as questions:
+
+- **The Back Alley** (`story.ni:5607-5629`) — the shortcut description, north to the market
+  and southwest to Maiden House; the coin trick on first entry, Gentry's text verbatim; Bobby's
+  idle texture (`ATMOS_Bobby`, the source's `dramatic event` here, carries as plain every-turn
+  texture per P-9). Leaving before `BO8` pulls Jack back into the conversation (`BO7`); leaving
+  after it and before `BO10` is refused (*"are you in or out?"*); after `BO10` Bobby is gone.
+  The kiss and attack refusals carry.
+- **Bobby's alley tree** `BO1-BO15` (14 quips; `BO13` does not exist in the source) — as a stub
+  per the standing conversation rule: the trigger on entry, the exit after `BO10`, nothing else.
+- **Entrance to Maiden House** (`story.ni:5754-5803`) — the courtyard, the run-down buildings,
+  the wooden door as the recognized front of "home", the spur southwest to Behind Maiden House
+  (`story.ni:6521-6549`, the ten-foot stone wall shared with East Commerce Street).
+- **The curfew** (`story.ni:5922-5934`) — first entry to the Hallway turns the world to night
+  (the source remaps the market's exits and moves Bobby to the night market; the port's night
+  state does the equivalent), the door closes and locks, Theresa starts `TH1`. The key on the
+  ribbon, unreachable (*"in fourteen years you've never managed to steal it"*); the door refusals
+  while Theresa is in the hallway; the privy block while she is there.
+- **The house** — Hallway, Dormitory (bunks, the awake children, the asleep children and the
+  "don't wake them" refusal), Kitchen (basin, dishes, the `wash` action and Fiona's *"Thank you,
+  dear"* for drying, the concerned-for-our-safety hold on the kitchen door until `FI7`, the
+  goodnight on leaving), Privy (hole, bench, window stuck halfway), Laundry (washtub, the dirty
+  laundry and its refusals, clothesline, the *"someone would end up naked"* refusal, Shannon's
+  idle texture, the goodbye on leaving). One conversation with Theresa per day.
+- **The widows' trees** `TH1-11`, `FI1-20`, `SH1-12` — as stubs: entry triggers (`TH1` at the
+  curfew, `FI1` and `SH1` on first entry to their rooms), the side effects that matter to the
+  build (Fiona's hold released at `FI7`; the dishes cleaned by `FI13`), nothing else. `SH13-16`
+  is Shannon's Company, a later chapter's.
+- **Sleep** (`story.ni:5985-5995`) — refused until Bobby's invitation is accepted; the bunk
+  passage as written up to the point where the new scene takes over; the widows and the
+  dishes and the laundry off-stage afterwards; the children asleep.
+- **The window** (`story.ni:6311-6351`) — stuck halfway, the bench to reach it, the escape text
+  verbatim (*"You're free!... At worst, you'll pull extra laundry duty"*), Behind Maiden House on
+  the far side, the *"no need to sneak into Maiden House"* refusal from outside.
+- **The chapter's end** — going through the privy window from inside. The `define chapters`
+  block gains Chapter 4's row on that trigger; the night market and Bobby's second tree are
+  Chapter 4's.
+- **The Vedd idiom register** reaches the four trees when Phase 8 writes them, not now.
+
+**Two rewrite consequences in build text, flagged for Phase 10 (not gaps — the rule is
+already ruled):** the widows' words for Jack appear outside the conversation trees, in text
+Phase 10 builds rather than stubs — the curfew passage (*"The evening churchbells are ringing,
+Jacqueline... any respectable young lady"*, `story.ni:5934`), Theresa's door sneer
+(`story.ni:5861`), Fiona's *"young lady"* hold (`story.ni:6118`) and goodnight (`story.ni:6121`),
+Shannon's goodbye (`story.ni:6372`). Under §4 and §3g Theresa's and Fiona's convert to the boy
+words and Shannon's stays. Phase 10 builds them as the source has them with a play-testing TODO
+on each, as Chapter 1 did (cd748b8a); the lines are David's.
+
+### Gaps found, not decided
+
+1. **The wait** — narrated or spent (above).
+2. **The new scene's own text** — the knock, what the mercenary says, what Theresa says, and
+   *"I'll be back!"* are all David's lines; Phase 10 builds the scene as a trigger at the
+   source's waking point with a placeholder, and reports.
+
+**Handed forward, not decided here**: whether Jack herself has the talent — Theresa's *"fourteen
+years"* (`story.ni:5866`) puts her on §3c's boundary; and Chapter 4's opening pressure — Jack is
+now out at night with a mercenary who has promised to come back.
+
+**Chapter 3's questions are answered.** Extent, pressure (the scene, its timing, and Theresa
+afterwards), perception (recorded from the premises), the source carry-list, and two gaps. The
+section is complete for Phase 10's purposes: every room, tree (as a stub), event, and refusal in
+Books 6 and 5 is authorized, the new scene is authorized as a trigger and an exit, the later
+returns to the house are recorded as belonging to the chapters that reach them, and the lines
+are David's during play-testing.
