@@ -2232,3 +2232,438 @@ reveal (true words, the public name unsaid — vision.md §3e's derived reading 
 section is complete for Phase 10's purposes: every scene, scripted event and refusal in Book 12
 Parts 1-2 and the clean-Jack layers of Books 3 and 4 is authorized, the four trees are authorized
 as stubs with `DS38-39` marked for conversion, and the lines are David's during play-testing.
+
+---
+
+## Chapter 10 — The Night Journey to the Ball
+
+**Status**: COMPLETE for Phase 10 (2026-09-02, session 19f840) — three rulings, one carry-list, four gaps; produced against Book 12 Parts 3-4 (`story.ni:10960-11046`) and the Pieter-keyed layers of Book 5B (`story.ni:6578, 6820-6822, 6880-6958, 6978-6979, 7032-7035, 7216-7217, 7244-7307, 7372, 7424-7428`); lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-02): from evening on Commerce Street to the Foyer
+
+Chapter 9's extent ruling split the source's *"Chapter 9 - Preparations"* and made the night
+journey the port's Chapter 10, leaving its end to draw between the two seams the source offers:
+the Foyer, where the source prints *"Chapter 10 - The Ball"* on first entry (`story.ni:11040-11041`),
+and the Ballroom, where Journey to the Ball ends (`story.ni:10967`), the hint stage Preparing Hints
+ends (`story.ni:1091`), and `test ballgoing` ends (`story.ni:12449`). Put to David: (A) the Foyer;
+(B) the Ballroom; (C) something else. David: **"A."**
+
+**Chapter 10 is the night journey, from Journey to the Ball beginning on Commerce Street to the
+first step into the Entrance Hall** — the servant in livery, the cloaks taken, Pieter's *"Well, we
+made it"* (`story.ni:11040-11043`). The step north into the ballroom — the Arrival theme, Pieter
+turned to scenery, *"You step into a world of light..."* (`story.ni:11052-11056`) — is Chapter 11's
+opening beat, with the ballroom's first description (`story.ni:11058`) and High Society four minutes
+after (`story.ni:11153`). The `define chapters` block gains Chapter 11's row on that step, where the
+source's own heading is.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 2 new — the Southern Gate (`story.ni:10978`) and the Entrance Hall, printed *Foyer* (`story.ni:11021`) — plus ten of Chapter 4's rooms in their ball-night state: Market Square, Lord's Road, the Pasture, the Crossing, the Woods, the Clearing, Underneath the Fountain, Tunnel End, the Chapel, the Lower Bailey. The Upper Bailey and Guardhouse are refused this night (`story.ni:7424-7425`) |
+| Opens with | Journey to the Ball beginning — gown, jewel and dagger in hand on Commerce Street — *"Evening is falling over the city..."*, the world set to night, the purse and Bobby removed (`story.ni:10967-10974`) |
+| NPCs | Pieter, following (`story.ni:10770-10779`); the Lord's Guards checking invites, scenery (`story.ni:11012`); the servant in livery, a line not a character (`story.ni:11041`) |
+| Conversations | None new. Pieter's `PI` tree continues from Chapter 9 (`PI12` is the Woods' quip); his ten road mutters fire here (`story.ni:10783-10794`) |
+| Scenes | Journey to the Ball (`story.ni:10967`); the Bodyguard scene continues through this chapter and ends in the ballroom (`story.ni:10758`), which is Chapter 11's turn |
+| Scripted events | The stream crossed in a dress, Pieter soaked (`story.ni:6820-6822`); the sapling gone on arrival in the Woods and found again by searching (`story.ni:6880-6929`); the bolt pressed, *"I never knew about that"* (`story.ni:7032-7035`); the wall touched, the hole found, the brick out, the lever, the wall open, *"You're full of secrets and surprises"* (`story.ni:7247-7250, 7280-7282, 7304-7307`); the Lower Bailey cleaned and lit for the ball (`story.ni:7372`); the Foyer entry (`story.ni:11040-11043`) |
+| The exit | The Foyer entry text. Chapter 11's row fires when she goes north |
+| Puzzles | One — the way into the keep, alone this time: find the sapling, press the bolt, find the brick, pull the lever (`test ballgoing`, `story.ni:12449`) |
+| Pressure | Fear without teeth (ruled below). The source has none on the road |
+| Deaths | 0 |
+
+### Pressure — DECIDED (David, 2026-09-02): fear without teeth
+
+Put to David as the source has it — nobody on the road, the night market and Lord's Road and the
+pasture and the woods empty; Pieter the only clock, muttering about the ball starting and Dame
+Sandler and the dagger with nothing happening if she dawdles; the fountain unwatched though Rudup
+and the mercenaries took her and Bobby there the night before; the gate guards the only hazard and
+unreachable, Pieter holding her back before she can make a scene (`story.ni:11016-11017`); the
+Lower Bailey full of arriving guests who do not look twice at a young lady and her guard — against
+fear without teeth, or teeth. David: **"B."**
+
+**This is new content.** Something of the men or the watch is on the night journey — on the road,
+in the woods, or at the fountain where they took her — seen or nearly met, with no fail state. It
+is the §5 per-scene exception again, ruled by David as in Chapters 4, 6, 7 and 8. Where it lands
+and what it is are David's at play-testing; Phase 10 builds one placeholder beat at one point on
+the route and reports. Chapters 4 through 10 now run fear, teeth, fear, fear, fear, quiet, fear;
+the ball is Chapter 11's beat to place.
+
+### The rails — DECIDED (David, 2026-09-02): as the source has them
+
+Put to David against Chapter 4's shape (open outside the keep, railed inside it): the source's
+ball-night rail — east from the night market back to Commerce Street still open; once north onto
+Lord's Road no going back (*"We can't go back now"*, `story.ni:10962-10963`); the Woods' wrong
+trails looping with Pieter grumbling, no lost ending (`story.ni:6947-6958`); the Clearing's *"You
+can't turn back now"* (`story.ni:6978-6979`); up and south from the Lower Bailey refused
+(`story.ni:7424-7428`); south from the Foyer refused, *"Don't lose your nerve now"*
+(`story.ni:11045-11046`) — whole, or opened to Chapter 4's shape. David: **"A."**
+
+**The rail carries as written and closes behind her at Lord's Road.** The same rooms play open on
+Bobby's night and railed on ball night; that contrast is the ruling's consequence, not a gap. The
+Southern Gate is the rail's one spur: reachable from Lord's Road, the Pasture and the Crossing
+(`story.ni:10978, 6723`), the portcullis raised and the guards checking invitations, north refused
+(`story.ni:10995-10996`), the gatehouse and the guards untouchable (`story.ni:10992-10993,
+11016-11017`), every other direction a facing (`story.ni:10998-11008`). Nothing new is built for
+navigation.
+
+### Who sees her — RECORDED (2026-09-02, from Chapter 9 and vision.md §3e; no new perceiver)
+
+- **Pieter does not see** (Chapter 9). His *"Don't, Jack"* at the gate (`story.ni:11017`) and the
+  mutters' *"okay, Jack?"* (`story.ni:10787`) are his slips, habit not sight; carry as written.
+- **The Lord's Guards checking invites** are public tier under the dress premise: a young lady and
+  her guard arriving for the ball. No guard speaks to her. *"They might well be looking out for
+  you specifically"* (`story.ni:10995-10996`) is Jack's own narration, not a guard's line; carries
+  as written.
+- **The servant in livery** bows and takes the cloaks (`story.ni:11041`); a line, not a speaker.
+- **Nobody else speaks.** This is the port's longest stretch with one voice in it — Pieter's — and
+  it is the second chapter under the dress premise in which the talent cannot show in anyone's
+  words.
+
+### What carries as the source has it — RECORDED (2026-09-02, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 10
+surfaces carry unchanged and were not put to David as questions:
+
+- **Journey to the Ball's start** (`story.ni:10967-10974`) — triggered by gown, jewelry and dagger
+  together on Commerce Street; the evening text and Pieter's *"We'd better hurry!"*; the world set
+  to night (Grubber's Market becomes Market Square, as Chapter 4's night state does); the purse
+  removed (`story.ni:10973`); Bobby removed. Chapter 9's exit row and this chapter's opening.
+- **Pieter following** (`story.ni:10770-10779`) — moved to her location after every move, the
+  *"follows / hurries after you / sticks close to you"* line when tension is low; **his ten road
+  mutters** (`story.ni:10783-10794`) — one in three turns anywhere but Commerce Street, in random
+  order, capped at ten, authorized in Chapter 9 as his and heard here; the letter shown to him
+  (`story.ni:10801-10802`).
+- **The night market** (`story.ni:6556-6570`) — exits north, east and up; the pole refused with
+  Pieter's variant, *"Now is not the time for climbing around!"* (`story.ni:6578`); the Bobby's
+  Adventure refusal of east (`story.ni:6580`) does not run tonight.
+- **Lord's Road** (`story.ni:6675`) — south refused during the Bodyguard scene
+  (`story.ni:10962-10963`).
+- **The Southern Gate** (`story.ni:10978-11017`) — the room, its distant description
+  (`story.ni:10980`), north added to its exits (`story.ni:10985-10986`), the gatehouse and
+  portcullis (`story.ni:10990-10993`), the guards and their tabards (`story.ni:11012-11014`), the
+  refusals and facings listed above. Its Bobby's-Adventure refusal (`story.ni:10982-10983`) is
+  Chapter 4's.
+- **The Pasture and the Crossing** (`story.ni:6723, 6775`) — as written; the stream crossed
+  *"carefully lifting your skirts"*, Pieter in the water to the knee (`story.ni:6820-6822`).
+- **The Woods with Pieter** (`story.ni:6880-6958`) — the sapling removed on arrival, *"Where was
+  it?"* (`story.ni:6880-6885`); examining or searching the trees or the trails routes to the
+  underbrush (`story.ni:6902, 6909`); searching the underbrush puts the sapling back, *"you find
+  it!"* (`story.ni:6925-6929`); without it the wrong trails loop, Pieter's seven grumbles at one in
+  two (`story.ni:6947-6958`); with it the right way moves them both to the Clearing
+  (`story.ni:6950-6951`). The sapling's way is the one set on Bobby's night (`story.ni:6872`).
+- **The Clearing and the fountain** — planar directions refused (`story.ni:6978-6979`); the bolt
+  pressed with Pieter opens the entrance, *"I never knew about that"* (`story.ni:7032-7035`).
+- **The tunnels with Pieter** — Underneath the Fountain and Tunnel End as written; the wall
+  examined routes to touching it during the Bodyguard scene (`story.ni:7216-7217`); touching it
+  finds the hole (`story.ni:7247-7250`); opening it pulls the lever or hints at the brick
+  (`story.ni:7252-7256`); the hole, the brick and its refusals (`story.ni:7262-7295`); taking the
+  brick reveals the lever (`story.ni:7280-7282`); the lever opens the wall, Pieter impressed
+  (`story.ni:7304-7307`); closing the wall refused during Journey to the Ball
+  (`story.ni:7244-7245`).
+- **The Chapel** (`story.ni:7323`) — as written. **The Lower Bailey** on ball night
+  (`story.ni:7372`) — gravel over the puddles, guests trickling in from the south, the inner keep's
+  doors open north; up and south refused (`story.ni:7424-7428`).
+- **The Foyer** (`story.ni:11021-11046`) — the tapestries and garlands; the distant description
+  from the bailey (`story.ni:11023-11024`); listening (`story.ni:11029-11030`); the tapestries'
+  battles with Fossville's arms not among them (`story.ni:11034`); the garlands (`story.ni:11036`);
+  the entry event (`story.ni:11040-11043`); south refused (`story.ni:11045-11046`).
+- **Red Gate Estate's Foyer** refused during the Bodyguard scene (`story.ni:10128-10129`) and
+  east from Commerce Street refused (`story.ni:10902-10903`) — Chapter 9's steering, still standing
+  on the one turn she is on Commerce Street.
+- **The chapter's end** — the Foyer entry text; the `define chapters` block gains Chapter 11's row
+  on going north from the Foyer.
+- **The Vedd idiom register** reaches Pieter's mutters and `PI12` when Phase 8 writes his lines,
+  not now.
+
+### Gaps found, not decided
+
+1. **The pressure beat** — where on the journey it lands (road, woods, fountain) and what it is;
+   David's, at play-testing. Phase 10 builds one placeholder beat and reports.
+2. **The tunnel's light** — on Bobby's night his torch lit the tunnel and left with him
+   (`story.ni:7137-7140`); on ball night the source's tunnel rooms are not dark and nobody carries
+   a light. Carries as the source has it (lit, unremarked); reported.
+3. **Chapter 4's dawdle clock** was ruled for Bobby's night and was not asked for ball night. Under
+   this chapter's ruling Pieter's hurry has no consequence, as in the source. Reported so Phase 10
+   does not carry the clock over by analogy.
+4. **The sapling's way** — set once on Bobby's night (`story.ni:6872`) and reused when Pieter's
+   search restores it (`story.ni:6926`). Phase 10 keeps one value across the two nights under the
+   seeded stream; reported so the two chapters do not roll it twice.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); where the public *son* is spoken, if anywhere (Chapter 11's, the ball); Chapter 11's
+opening — the world of light, Pieter to scenery, High Society four minutes on, the eight ballgoers
+in order (`test socializing`, `story.ni:12451`), and the question of where the ball sits on the
+spine.
+
+**Chapter 10's questions are answered.** Extent (evening on Commerce Street to the Foyer, where
+the source prints its own heading), pressure (fear without teeth, placement David's), the rails
+(as the source has them, closed at Lord's Road), perception recorded with no new perceiver, the
+source carry-list, and four gaps. The section is complete for Phase 10's purposes: every room,
+scripted event, refusal and facing in Book 12 Parts 3-4 and the Pieter layers of Book 5B is
+authorized, one new beat is authorized as a trigger with a placeholder, and the lines are David's
+during play-testing.
+
+---
+
+## Chapter 11 — The Ball
+
+**Status**: COMPLETE for Phase 10 (2026-09-02, session 19f840) — one governing ruling and seven under it, one carry-list, seven gaps; produced against Book 12 Parts 5-7 (`story.ni:11048-11893`) and the seam into Book 13 (`story.ni:11895-11902`); lines are David's during play-testing. **This is the port's biggest rewrite** — David's words open the section.
+
+### The shape of the chapter — DECIDED (David, 2026-09-02): a real ballroom, a dance, capture
+
+Put to David as the source has it — one room, one modal conversation at a time, the nobles worked
+in any order, the capture when the last is done — with the extent question first. David answered
+the shape instead:
+
+> *"This is the biggest rewrite... and the core opportunity with Chord. A real ballroom with
+> multiple active conversations, leading to capture."*
+
+and, asked what the ballroom is spatially:
+
+> *"Yeah I want to alter the whole thing... there's a dance where everyone moves in concentric
+> circles and Jacqueline is passed from guest to guest and has one or two turns to converse."*
+
+**Chapter 11 is a dance.** The ball's guests move in concentric circles; Jacqueline is passed from
+hand to hand; with each partner she has one or two turns to converse before the circle moves her
+on. The source's *"you've never danced before and you're far too self-conscious to start now"*
+(`story.ni:11189-11190`) is the one line this chapter turns inside out. Everything below is ruled
+inside this shape. It is also the first chapter whose design rests on ADR-320's beat-thread runtime
+carrying several live conversations at once — see gap 6.
+
+### The chapter's extent — DECIDED (David, 2026-09-02): from the world of light to the hand on her shoulder
+
+Put to David: (A) end at the hand on her shoulder, where the source prints *"Chapter 11 - Baron
+Fossville"* (`story.ni:11901`); (B) end at the War Room door clicking shut, the march inside this
+chapter; (C) something else. David answered with the shape above, *"leading to capture"*; the
+reading that the chapter ends at the capture and the march is Chapter 12's opening was stated
+back to him and not corrected (gap 1).
+
+**Chapter 11 runs from the step into the ballroom** — the Arrival theme, Pieter turned to scenery
+and lost, *"You step into a world of light..."* (`story.ni:11052-11056`) — **to the mercenary's
+hand on her shoulder**: *"Come with us, girl... The Baron asked us not to drag you out kicking and
+screaming"* (`story.ni:11843`), the pause and the move to the War Room (`story.ni:11871-11873`).
+The march through the keep and the door clicking shut (`story.ni:11902`) open the port's Chapter
+12, where the source's heading is.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 1 — the Ballroom (`story.ni:11058`), the last of the source's 84 before the War Room. Under the ruling it is a dance floor, not a sub-map |
+| Opens with | The world of light; the ballroom's first description, *"every fantasy of beauty and riches that you ever dreamed of"* (`story.ni:11058`); Pieter gone (`story.ni:11123-11126`) |
+| NPCs | Jacobs the Elder (`story.ni:11247-11251`); the Queen (`story.ni:11371-11376`); the Princess (`story.ni:11382-11386`); the Duke and Duchess of Inhyron (`story.ni:11442-11453`); the Baron of Amhyron (`story.ni:11607-11609`); the Earl of Bresa (`story.ni:11725-11727`); the Prince of Gravesal (`story.ni:11819-11827`); the several mercenaries (`story.ni:11877-11887`); the guests, the string quartet, the servants and their platters (`story.ni:11100-11149`) |
+| Conversations | 6 trees, 88 quips — `JE1-20` (19, `story.ni:11266-11311`); `PR1-16` (16, `story.ni:11393-11423`); `IN1-16` (16, `story.ni:11487-11523`); `AM1-18` (18, `story.ni:11611-11652`); `BR1-12` (12, `story.ni:11737-11766`); `GR1-7` (7, `story.ni:11831-11843`). The Queen has no tree (`story.ni:11375-11376`) |
+| Scenes | High Society, four minutes after the journey ends (`story.ni:11153`); Brief Respite inside it, until every ballgoer is spoken to (`story.ni:11155-11176`); Brief Encounter, the Prince (`story.ni:11805-11815`); the seam — Brief Encounter ends in the War Room, High Society with it, Confronting the Baron begins (`story.ni:11891-11897`) |
+| Scripted events | Jacobs arrives and opens `JE1` unasked (`story.ni:11259-11261`); every ballgoer placed after `JE1`, the Prince held back (`story.ni:11354-11357`); the Princess leaves after `PR15`/`PR16` (`story.ni:11436-11438`); the Duke's back turned after `IN14` (`story.ni:11471-11475`); the Prince and the mercenaries enter together (`story.ni:11810-11815`); `GR7`'s capture line, the pause, the War Room (`story.ni:11843, 11871-11873`) |
+| The exit | The hand on her shoulder. Chapter 12's row fires on the march |
+| Puzzles | The source's is the room itself — reach each noble's closing quip (`story.ni:11157-11176`); the designers' `test socializing` is the required order (`story.ni:12451`). Under the ruling the dance replaces the order |
+| Pressure | The dance (ruled below). The source has none until the capture |
+| Deaths | 0. The capture is plot, not a losing ending — it cannot be avoided (`GR6`, *"They will catch you"*, `story.ni:11841`) |
+
+### Rounds — DECIDED (David, 2026-09-02): the circles come back round
+
+Put to David: one pass (each guest met once, one or two turns, what is unsaid stays unsaid) or
+rounds (the circles bring her back to the same hands, a conversation accruing across passes, the
+way the source's return greetings already work — `JE12` *"Back for more, hmm?"*, `IN15` *"Yes,
+girl? What is it now?"*, `AM17` *"Hello again, milady"*, `BR11` *"Hello again!"*,
+`story.ni:11288, 11521, 11650, 11764`). David: **"B."**
+
+**Each guest is met more than once, and what she says with one carries to the next.** The source's
+cross-gating survives as the dance's memory: Jacobs' tour before anyone's name means anything
+(`JE7`, `story.ni:11280`); the Duke's son before the marriage fork (`IN12` before `IN13`/`IN14`,
+`story.ni:11515-11519, 11551`); Jacobs' gossip before *"let Amhyron sneeze without your say-so"*
+(`IN10`, `story.ni:11510, 11585-11590`); `IN8` or `JE17` before `IN12` (`story.ni:11592-11597`).
+How many hands a round has and how many turns a hand gives — David's *"one or two"* — is Phase
+10's to measure against the trees' depth and report (gap 2).
+
+### What ends the dance — DECIDED (David, 2026-09-02): as the source has it, on the dance
+
+Put to David: (A) the music plays until she has had her say with everyone, then stops, then the
+Prince, then the mercenaries; (B) a clock — a set number of rounds, the music stops when it stops;
+(C) the sweep — the mercenaries work the circles inward during the dance. David: **"A."**
+
+**The source's condition carries onto the dance.** Brief Respite's definition of *spoken to*
+(`story.ni:11157-11176`) — `JE20` fired; `PR15` or `PR16`; `IN13`, `IN14` or `IN16`; `AM18`;
+`BR12`; the Queen counted always — is what ends the music. Then Brief Encounter as written: the
+Prince at her elbow, the mercenaries at the entrance, the exits blocked (`story.ni:11810-11815,
+11831, 11841`), his seven quips, and the hand. No clock, no sweep; the capture is the chapter's
+teeth (§5) and cannot be dodged, as the source has it.
+
+### Who is in the circle — DECIDED (David, 2026-09-02): the talkers dance; the Queen watches; the Prince arrives with the music's end
+
+Put to David: (A) the talkers dance — Jacobs the first hand, the four nobles round after him; the
+Queen outside the circle at her end, as the source has it; the Prince when the music stops; (B)
+everyone dances — the Queen a hand she cannot speak to, the Prince the last hand. David: **"A."**
+
+**Jacobs is the first hand**, and his opening is still his — *"You must be the girl my son helped
+out of prison recently"* (`JE1`, `story.ni:11266`), unasked, the tour of the players
+(`JE7`, `story.ni:11280`), *"Good luck, my girl"* (`JE11`, `story.ni:11286`). **The Princess, the
+Duke with the Duchess at his side, Amhyron and Bresa** are the circle's other hands. **The Queen
+stays outside it**, seen and not reached (`story.ni:11373-11376`): *"I'm watching you... Do not
+cross me."* **The Prince is not in the room until the music stops** (`story.ni:11810-11815`).
+Pieter is lost on entry (`story.ni:11123-11126`) and found trussed in Chapter 12.
+
+### The public name — DECIDED (David, 2026-09-02): not here
+
+Chapters 6 and 9 handed this chapter the question of where, if anywhere, the public claim's *son*
+is spoken. Measured: the source's ball uses the girl words from every mouth — Jacobs' *"the girl
+my son helped out of prison"* and *"my dear girl"* (`story.ni:11266, 11284`), the Duke's *"What
+would you ask of me, girl?"* and *"his illegitimate heir"* (`story.ni:11487-11489`), Amhyron's
+*"milady"*, *"a child hidden away"*, *"the heir of Duke Toresal"* (`story.ni:11611-11621`),
+Bresa's *"Young lady"* and *"my girl"* (`story.ni:11739, 11746`), the Princess's *"ambitious
+little street urchin"* (`story.ni:11393`), the mercenary's *"Come with us, girl"*
+(`story.ni:11843`) — and Jacqueline presses the claim in her own true words: *"I am the daughter
+of a Duke"* (`PR2`, `story.ni:11395`), *"Lady Jacqueline, of, er... of Toresal"* (`AM1`,
+`story.ni:11611`), *"I'd still be the Queen"* (`IN13`, `story.ni:11517`). Nobody says *son*. Put
+to David: (A) not here — the girl words carry, the wrong name stays in the documents, and if it is
+spoken aloud that is Chapter 12's; (B) here — someone in the circle presses the gap between the
+record and who is dancing with them; (C) something else. David: **"A."**
+
+**The ball's words carry as written.** The nobles see a young lady and take her for the hidden
+child; the record's *son* is not spoken in this room. vision.md §3e's open thread narrows to
+Chapter 12 (Fossville, who holds the letter and knows) or to nowhere; the coda's premise — the
+claim written in the wrong name everywhere but the Duke's hand — is untouched.
+
+### Who sees her — DECIDED (David, 2026-09-02): the Prince of Gravesal has the talent
+
+The Prince's lines are the source's own statement of a sight: *"There's something... special
+about you. I could see it from the moment I laid eyes on you"* (`GR3`, `story.ni:11835`);
+*"People in my family have always been able to see these things. It's like an aura... You have...
+a highly visible fate"* (`GR4`, `story.ni:11837`); *"I see a long journey ahead of you. And many
+trials... And I see death"* (`GR7`, `story.ni:11843`). He knows who she is and why she is here
+and says the Ascension is nothing to him (`GR5`, `story.ni:11839`). Put to David: (A) he has the
+talent — his family's sight is the talent named in the source's own words, a perceiver who knows
+the politics and wants nothing from them; (B) his sight is a fate-reading, its own thing, never
+explained; (C) something else. David: **"A."**
+
+**The Prince sees.** His lines carry as written and are the talent's, unexplained per §2; he is a
+new cell in vision.md §3f — knows the politics, perceives, wants no part of it — beside Sandler
+and Rudup in the row and beside Teisha in temperament (recorded there, 2026-09-02). Under the
+dress premise his words are the girl words everyone uses, so the tell is not in his address but
+in what he says he sees: the first perceiver since the mirror whose sight shows in the text at
+all.
+
+**The rest of the circle is not ruled, and nothing turns on it.** Jacobs, the Princess, the Duke,
+the Duchess, Amhyron, Bresa and the Queen all use the girl words under the dress premise, and none
+speaks of what they see; whether any has the talent leaves no mark on their lines. Two source
+facts recorded for David, not decided: the Duchess *"never speaks"* and *"stare[s] at you with
+wide eyes and quivering nostrils"* (`story.ni:11449`); the Queen's one look (`story.ni:11373`).
+**The mercenaries' *"girl"*** (`story.ni:11843`) is the public reading of the presentation, as
+Chapter 8 ruled — the men who hunted the boy Jack at the raid (Chapter 7) are sent for a young
+lady tonight, because the whole ball is talking about her (`AM4`, `story.ni:11617`) and Fossville
+has the letter (Chapter 6). Carries as written.
+
+**By the ball, §3f's "small group" is the whole circle.** Jacobs — *"I have informants
+everywhere"* (`JE5`, `story.ni:11276`); the Duke — *"I am aware of who you are"* (`IN1`); the
+Queen — *"She knows who you are, too"* (`JE7`); Amhyron — *"rumors that the old Duke Toresal had a
+child hidden away"* (`AM2`, `story.ni:11613`). A source fact, recorded so §3f's tiers are read as
+of Chapter 1, not as of the ball.
+
+### Fear during the dance — DECIDED (David, 2026-09-02): the dance is the pressure
+
+Put to David as the source has it — no mercenary in the ballroom until the music stops, the
+Queen's one look the only eye on her, Pieter gone and the room unleaveable but nothing pressing —
+against fear without teeth (the men seen at the doors or along the edge while the music keeps her
+moving) or something else. David: **"A."**
+
+**Nothing of the men is on stage until the music stops.** The one-or-two-turn hand is the
+chapter's pressure and the capture is its teeth. Chapters 4 through 11 now run fear, teeth, fear,
+fear, fear, quiet, fear, then the dance — a fourth kind on vision.md §5's spine, neither push nor
+pull nor quiet but a rhythm, recorded there (2026-09-02).
+
+### What carries as the source has it — RECORDED (2026-09-02, under the standing default, inside the dance)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 11
+surfaces carry unchanged and were not put to David as questions. Where the dance replaces a
+source mechanism, the replacement is named.
+
+- **The arrival** (`story.ni:11052-11056`) — the Arrival theme, Pieter to scenery, the world of
+  light; the ballroom's description and its first-time coda (`story.ni:11058`).
+- **The closed room** — exiting and every direction refused, *"you can't leave without Pieter.
+  Where did he get off to...?"* (`story.ni:11060-11064`); facings (`story.ni:11066`); the distant
+  description from the Foyer (`story.ni:11068-11069`); listening (`story.ni:11073`).
+- **Pieter in absentia** (`story.ni:11123-11126`) — any reference to him removes him from play,
+  *"you're on your own."*
+- **The scenery** — candles, chandeliers, candelabras and their opulence refusals
+  (`story.ni:11079-11096`); the guests as a backdrop across the Ballroom, the Foyer and the Lower
+  Bailey, their small talk, Jacobs' list once `JE1` has fired, *"far too absorbed in the party"*
+  (`story.ni:11100-11108`); the string quartet (`story.ni:11112-11119`); the servants who ignore
+  her, the platters, the food she never gets, *"you need to keep your wits about you"*
+  (`story.ni:11130-11149`); the kissing, attacking and throwing refusals (`story.ni:11135-11136,
+  11178`).
+- **The dance** — the source's `dance` action and its refusal (`story.ni:11180-11190`) are
+  replaced by the ruling above; the verb is the chapter's engine now.
+- **High Society** (`story.ni:11153`) — four minutes after Journey to the Ball ends, Jacobs at
+  her elbow and `JE1` started unasked (`story.ni:11259-11261`); every ballgoer placed, the Prince
+  held back (`story.ni:11354-11357`). Under the dance, this is the music starting and Jacobs the
+  first hand.
+- **The ballgoer kind** — the distant descriptions when not in conversation
+  (`story.ni:11203-11206`); the *"elsewhere in the crowd"* roster line (`story.ni:11210-11214`);
+  the *making excuses* rules that close one conversation to open another
+  (`story.ni:11227-11233`, and per noble `story.ni:11313-11314, 11425-11426, 11561-11565,
+  11654-11655, 11768-11769`). Under the dance the hand-off does this work; each noble's goodbye
+  quip (`JE20`, `PR16`, `IN16`, `AM18`, `BR12`) is the material for the pass-on.
+- **The six trees** — as stubs per the standing conversation rule, each hand's trigger live and
+  its beats TODO: `JE1-20` with the `JE9`/`JE10` cluster closing into `JE11` and `JE12`'s return
+  menu (`story.ni:11350-11364`); `PR1-16`, three ways in and every way out through `PR15` or
+  `PR16`, the Princess gone after (`story.ni:11428-11438`); `IN1-16` with `IN15`'s return, the
+  Duchess deflected to the Duke (`story.ni:11477-11485`), the `IN12` → `IN13`/`IN14` fork and the
+  Duke's back turned after `IN14` (`story.ni:11471-11475, 11551`), the populating rules
+  (`story.ni:11567-11597`); `AM1-18` with `AM17`'s return and the `AM7-9` vassalage loop
+  (`story.ni:11657-11721`); `BR1-12` with `BR11`'s return (`story.ni:11771-11799`); `GR1-7`
+  after the music stops, `GR4` gated on `GR3`, `GR7` the capture (`story.ni:11845-11873`).
+- **The Queen** (`story.ni:11371-11376`) — her distant description with its one look, and *"you
+  can't even get near her"*.
+- **Brief Encounter** (`story.ni:11805-11815`) — the Prince and the several mercenaries placed
+  together; talking to anyone else refused, *"Please stay"* (`story.ni:11821-11823`); the
+  mercenaries' description and refusals (`story.ni:11877-11887`); `GR7`, the pause, the War Room
+  without a description (`story.ni:11871-11873`).
+- **The chapter's end** — the hand on her shoulder. Chapter 12's row in `define chapters` fires on
+  the march (`story.ni:11897-11902`).
+- **The Vedd idiom register** reaches all six trees when Phase 8 writes them, not now. The
+  Princess's *"Oh, Goddesses"* (`PR9`), Jacobs' *"outside whim of the Goddesses"* (`JE9`), Bresa's
+  *"Goddess-forsaken party"* (`BR2`) are source texture and stay.
+
+### Gaps found, not decided
+
+1. **The march** — the reading that Chapter 11 ends at the hand on her shoulder and Chapter 12
+   opens with the march was stated to David and not corrected. Recorded as the extent; David may
+   move the seam to the War Room door when Chapter 12 is opened.
+2. **The dance's measure** — how many hands a round has, how many turns each hand gives (David:
+   *"one or two"*), and how a round is ordered. Phase 10 measures against the six trees' depth and
+   the cross-gating above and reports; the numbers are David's.
+3. **"Had her say"** — the source's closing quips are how a noble counts as spoken to
+   (`story.ni:11157-11176`), and a player who never reaches one never ends the room; the source
+   has the same property. Under rounds the dance loops until each is reached. Reported so Phase 10
+   decides nothing about it by accident.
+4. **Dead hands** — the Princess leaves the room after `PR15`/`PR16` (`story.ni:11436-11438`) and
+   the Duke turns his back after `IN14` (`story.ni:11471-11475`). Under rounds a hand can go dead
+   mid-dance; what the circle does with a dead hand is David's. Phase 10 carries the source's
+   removal and reports.
+5. **The Duke's fork** — `IN13` (the marriage promise) and `IN14` (*"keep him away from me"*) are
+   the ball's one consequential choice, and in the source neither changes anything afterward: the
+   only later mention of Inhyron is Fossville's taunt to Bobby (`story.ni:12041`). Both count as
+   spoken to. Reported so the fork's weight is David's to give or leave.
+6. **The dance as a Chord construct** — several live conversations, a rotation that hands the
+   player from one to the next on a turn budget, and memory across rounds. Whether ADR-320's
+   beat-threads with `define sequence`/`define machine` and timers carry it, or a primitive is
+   missing, is Phase 10's first thing to find. A missing primitive is a platform discussion under
+   CLAUDE.md, never built inside the story; recorded on the watch list as W-10.
+7. **The stub rule meets the rewrite** — this chapter's value is almost entirely dialogue, and the
+   standing rule defers dialogue until the port is done. Phase 10 builds the dance's engine — the
+   circle, the hand-offs, the turn budget, the six triggers, the memory, the music's end, the
+   Prince, the capture — with TODO beats; the conversations are Phase 8's. Reported so the split
+   is deliberate.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); whether the public *son* is ever spoken — Chapter 12's, with Fossville, or nowhere;
+Chapter 12's opening — the march, the War Room, Pieter trussed, Fossville, the `FOSS` script and
+the skirmish (`story.ni:11895-12225`), which is Phase 9's mess and needs its design before that
+chapter is asked.
+
+**Chapter 11's questions are answered.** The shape (a dance in concentric circles, one or two
+turns a hand, leading to capture — the port's biggest rewrite), extent, rounds, what ends the
+dance, who is in the circle, the public name (not here), perception (the Prince sees), fear (the
+dance is the pressure), the source carry-list inside the dance, and seven gaps. The section is
+complete for Phase 10's purposes: the ballroom, its scenery, the six trees as stubs, the scenes
+and the capture are authorized inside the dance, and the lines are David's during play-testing.

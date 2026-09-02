@@ -397,6 +397,11 @@ use the true lineage language, and the reveal is not where the public *son* is s
 the succession claim above in David's words; she says nothing of the public name. The wrong-name
 pain arrives from the record and the room (the ball, Chapter 11's question), not from her.
 
+**The ball — RESOLVED (David, 2026-09-02, change document Chapter 11): the public *son* is not spoken
+there either.** The ball's nobles use the girl words as the source wrote them and take her for the
+hidden child; Jacqueline presses the claim in her own true words. Where the wrong name is spoken
+aloud, if anywhere, is now Chapter 12's question (Fossville, who holds the letter) or no scene's.
+
 **The letter — RESOLVED (David, 2026-09-01, change document Chapter 6): it names her rightly.**
 The Duke's letter carries as written — *Jacqueline Toresal*, and "her" (`story.ni:9481`). The
 derived reading above is half right: the *law* and the public claim say son; the Duke's own
@@ -463,7 +468,7 @@ are not the same rule and do not correlate:
 
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
-| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona (David, 2026-09-02, change document Chapter 7 — has known the name *Jacqueline* from the Duke for fourteen years, never from her eyes); Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes); Pieter (David, 2026-09-02, change document Chapter 9 — knows from Sandler's reveal, *"I was in the dark, all right"*; his *"Jack"* slips are habit, not a tell) |
+| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4); the Prince of Gravesal (David, 2026-09-02, change document Chapter 11 — knows who she is and why she is here, wants nothing from it; his *"people in my family have always been able to see these things... like an aura"* is the source's own naming of the talent) | Widow Fiona (David, 2026-09-02, change document Chapter 7 — has known the name *Jacqueline* from the Duke for fourteen years, never from her eyes); Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes); Pieter (David, 2026-09-02, change document Chapter 9 — knows from Sandler's reveal, *"I was in the dark, all right"*; his *"Jack"* slips are habit, not a tell) |
 | **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5); Fossville's butler (David, 2026-09-01, change document Chapter 6) | the market, the stallkeepers, Bobby, Jacobs |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
@@ -774,6 +779,18 @@ part that is easy to copy and dropping the part that made it work.
 **Standing consequence**: no phase of this port may quietly soften a fail state into a warning, a
 retry, or a scripted rescue on the grounds of modern player tolerance. Where a scene can kill or
 capture Jack in the source, it can in the remake unless David rules otherwise for that scene.
+
+### The ball — DECIDED (David, 2026-09-02, change document Chapter 11): a dance
+
+David: *"This is the biggest rewrite... and the core opportunity with Chord. A real ballroom with
+multiple active conversations, leading to capture."* The source's ball is one room and one modal
+conversation at a time. The remake's is **a dance**: the guests move in concentric circles,
+Jacqueline is passed from hand to hand, and she has one or two turns with each before the circle
+moves her on; the circles come back round, so a conversation accrues across passes; the music
+plays until she has had her say with everyone, and then the Prince and the mercenaries come as the
+source has them. It is a fourth kind of beat on the spine above — neither push, pull nor quiet but
+a **rhythm** — and the first structure in the port that depends on several conversations being live
+at once. The rulings and their measurements are the change document's (Chapter 11).
 
 ### [open] What supplies pressure outside a chase?
 

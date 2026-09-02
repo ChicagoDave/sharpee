@@ -232,6 +232,29 @@ tree lands.
 blocked on #301 — fragment spans must name their file before nesting is
 debuggable. Platform change; do not build it as part of the port.
 
+## W-10: Several conversations live at once — the ball as a dance
+
+**Watch**: whether ADR-320's beat-thread runtime, with `define sequence` /
+`define machine` and timers, can carry Chapter 11's ruled shape (change
+document, 2026-09-02): a rotation that hands the player from one live
+conversation to the next on a one-or-two-turn budget, several threads open at
+once, and memory across rounds so a conversation accrues over repeated passes.
+
+**Why it bites at scale**: every conversation the port has built so far is
+modal — one partner, one thread, the room waits. The dance is the first
+structure that needs concurrency and a hand-off the player does not choose,
+and it is the chapter David names as the core Chord opportunity. If the
+primitive is missing, the chapter stalls at Phase 10's first step; if it is
+awkward, the awkwardness lands in the port's most dialogue-dense room (six
+trees, 88 quips).
+
+**How to check**: before building the ballroom, write the dance's engine as a
+minimal `.chord` with three placeholder partners and TODO beats — rotation,
+turn budget, hand-off, one cross-round memory — and run it under
+`./sharpee test branch-stories/secret-letter`. Record whether it needed
+anything the language does not have. A missing primitive is a platform
+discussion under CLAUDE.md (an ADR), never a story-side workaround.
+
 ## Recording results
 
 Append findings under each entry with the date and the command or observation
