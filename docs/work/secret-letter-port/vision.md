@@ -341,6 +341,12 @@ houseful of perceivers under the two widows who do not see.
 
 Those who have it perceive her true self, unprompted and without being told.
 
+**David, 2026-09-01 (Chapter 6 change-document conversation)**: *"this is one of the things that
+will fundamentally improve the story. A transgender protagonist that is seen by many people as
+she is. A young woman."* The perceivers are not a device for one reveal; they are the point. By
+Chapter 6 the change document has ruled a drunk in a cell (Olmer) and a hostile house's butler
+as seeing her — strangers who owe her nothing and see her anyway.
+
 **[source]** Two characters are already written as inexplicably perceiving something in Jack:
 
 - **Teisha** — `story.ni:3110`: "She also knows your big secret (**guessed it the very first time she caught you loitering at the tent flap**), which is a little bit scary and a little bit of a relief." And in the silk cloak scene: "'I was right,' she says. 'It brings out your eyes. You look... almost *royal*.'" She perceived Jack correctly on sight, before evidence, and what she sees is both the girl and the heir. She is in Grubber's Market — the social foreshadow can begin in the opening scene.
@@ -384,6 +390,13 @@ Sandler is both a perceiver (3d) and the character who delivers the claim (`DS32
 been waiting for the Duke's daughter to finally make herself known"*), so her reveal is where the
 two languages would meet in one scene. Recorded as a reading of the two rules together, not as a
 ruling — David has not been asked whether perceivers use the true lineage language.
+
+**The letter — RESOLVED (David, 2026-09-01, change document Chapter 6): it names her rightly.**
+The Duke's letter carries as written — *Jacqueline Toresal*, and "her" (`story.ni:9481`). The
+derived reading above is half right: the *law* and the public claim say son; the Duke's own
+hand does not. Whether he saw her truly or knew is not decided and never explained (§2). The
+consequence for the coda sharpens rather than changes: the claim is written in the wrong name
+everywhere except the one document Fossville hid.
 
 **Androgyny — RESOLVED (David, 2026-08-22): androgynous only in her description.** David raised
 making Jack androgynous — *"seems like a boy, but could be a girl"* — and then scoped it: the
@@ -435,8 +448,8 @@ are not the same rule and do not correlate:
 
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
-| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona |
-| **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5) | the market, the stallkeepers, Bobby, Jacobs |
+| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona; Baron Fossville (David, 2026-09-01, change document Chapter 6 — knows from the letter, never from his eyes) |
+| **Public tier** | Teisha, Widow Shannon; Olmer (David, 2026-09-01, change document Chapter 5); Fossville's butler (David, 2026-09-01, change document Chapter 6) | the market, the stallkeepers, Bobby, Jacobs |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
 for, I don't want to know"* (`TE2`). Fiona has the entire conspiracy and none of the sight: she

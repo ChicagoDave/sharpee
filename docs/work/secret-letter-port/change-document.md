@@ -1333,3 +1333,184 @@ the source carry-list, and four gaps. The section is complete for Phase 10's pur
 room, event, refusal, both deaths, and the three trees (as stubs) in Books 6 and 7 are
 authorized, the one new beat is authorized as a trigger with a placeholder, and the lines are
 David's during play-testing.
+
+---
+
+## Chapter 6 — The Rooftops and Black Gate Estate
+
+**Status**: COMPLETE for Phase 10 (opened and closed 2026-09-01, session aebae2) — six rulings, one carry-list, four gaps; lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01): from daylight on Commerce Street to the butler's side door, letter in hand
+
+Two seams were put to David: (A) the butler's side door onto East Commerce Street, where the
+source prints its own next heading (`output chapter heading "Chapter 6 - Gallows"`,
+`story.ni:9561`) and where its hint chain ends the Search (`story.ni:1083`); (B) through Bobby's
+hanging to the blackout, where the source prints *"Chapter 7 - Mercenaries Again"*
+(`story.ni:9687`) — the source ties the two, since the gallows go up the instant she holds the
+letter (`story.ni:9589`). David: **"A."**
+
+**Chapter 6 is the source's Book 8 (Black Gate Estate, `story.ni:8743-9580`) whole, plus the
+post-sewer layer of Book 3's shops and Book 4's jeweler, from the ladder into daylight to the
+butler's *"Go now, and don't come back."*** Bobby's hanging (Book 9) is Chapter 7's opening.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 15 new — Closed Alleyway, Rooftop, Rooftop Edge, Balcony (the roof of Black Gate Estate), Patio, Rooftop Garden, Third Floor Landing, Music Room, Audience Area, Supply Closet, Second Floor Landing, Living Room, Master Bedroom, Library; the Third Floor Balcony is commented out in the source (`story.ni:9181-9192`). Plus the morning state of Commerce Street, the four shops, East Commerce Street, Lord's Market and Sandler & Sons (Chapters 2's rooms by day, after the sewer) |
+| Opens with | *"Daylight!"* — early morning, filthy, hatless; the market, Maiden House and Fossville's front gate refused (`story.ni:8757-8770`); *"You are utterly filthy"* (`story.ni:1325`) |
+| Conversations | 4 post-sewer layers, all second-visit trees on Chapter 2's cast — `GE16-19` Germaise (4: the scowl, no Bobby, no back door, *"Go away, Jack"*), `HO18-24` Holstenoffer (7: *"you look like you've had the worse of it"*, Fiona was in looking for her, the back door refused until *"It's to help Bobby"*, then the little metal door — the chapter's one way up), `OM9` Olgan (1: *"Looking for an easy way in, little thief?"*), `DS24-30` Dame Sandler (7: *"you look an absolute fright"*, *"Did Bobby give you any... instructions?"*, the back-door hint, and she locks the door behind her). Plus the butler's four refusals and two letter reactions (`story.ni:9527-9543`). No new tree |
+| Scenes | 2 — A New Morning (from the sewer's end, `story.ni:8747`), The Search (from the balcony to East Commerce Street, `story.ni:9002`) |
+| Scripted events | The sewer's after-effects (Maiden House's door unlocked, the laundry finished, the orphans gone, day set, `story.ni:8749-8755`); `HO24` moves her to the alley (`story.ni:4697-4700`); the gutter climb (`story.ni:8818`); the jump to the balcony (`story.ni:8901`); the intruder text on the stairs down (`story.ni:9065`); Fossville's voice on the second floor (`story.ni:9275`); the winch and the chandelier (`story.ni:9235-9241, 9425-9468`); the letter revealed, read, and taken (`story.ni:9471-9496`); the butler's catch on leaving the library with it (`story.ni:9506`), the stairwell eavesdrop and the side door (`story.ni:9547-9569`) |
+| The exit | Shoved out a side door onto East Commerce Street with the letter — *"Keep yourself out of the Baron's way"*. Chapter 7's row |
+| Puzzles | Holstenoffer's back door (`HO24`), the rooftop jump, **turn the winch → lower the chandelier → search it → take the letter**. `test rooftops` + `test blackgate` (`story.ni:12431-12433`) |
+| Pressure | None on the street in the source (the mercenaries *"will be searching for you everywhere"* is text; none appear); none in the house before the scripted catch — the Baron is a voice through the floor, *"I'll be leaving again within an hour"*, and never comes up |
+| Deaths | None. The butler lets her go |
+
+### The morning on Commerce Street — DECIDED (David, 2026-09-01): fear without teeth
+
+Put to David as the source has it (a quiet hub; the refusals and the shops steer her to
+Holstenoffer's back door) against a real search with teeth, or fear without teeth as Chapter 4's
+street push. David: **"C."**
+
+**This is new content.** Mercenaries are on Commerce Street that morning, seen or heard, and she
+ducks them — into a shop, a doorway, the alley — and they never take her. The §5 per-scene
+exception, ruled for this scene as it was for Chapter 4's walk: the chapter's fear is the
+street's, its teeth are none. The beats and their lines are David's.
+
+### Inside Fossville's house — DECIDED (David, 2026-09-01): fear without teeth
+
+Put to David as the source has it (no clock; the Baron's hour is atmosphere and the butler the
+only encounter) against a clock with teeth (the hour runs out and someone comes up), or fear
+without teeth. David: **"C."**
+
+**This is new content.** Servants on the stairs, doors below, near misses in the hallway — beats
+that keep her moving through the house and cannot take her. The source's scripted catch stands
+as the house's one real encounter, and it is a release, not a capture. The Baron's *"within an
+hour"* stays as a line, not a clock. The beats and their lines are David's.
+
+**What this does for the chapter.** Chapters 4, 5 and 6 now answer the vision's open question
+(§5, *What supplies pressure outside a chase?*) three different ways in three consecutive
+chapters: fear without teeth on the night walk, a clock with teeth in the jail, fear without
+teeth again on the street and in the house. The jail is the one that can take her; the two
+around it are dread. That is a rhythm, not an inconsistency — push / pull / quiet with the
+weight where the story wants it.
+
+### What the letter says — DECIDED (David, 2026-09-01): Jacqueline, as written
+
+The chapter's centerpiece, and a reading in vision.md §3e that had been waiting on David: the
+source's letter says *"this child, who bears no fault for the circumstances of her birth,"* *"upon
+her sixteenth birthday,"* and declares the heir as **Jacqueline Toresal** (`story.ni:9481`); §3e
+rules that the public language of the claim names her as the Duke's son, and carried a derived
+reading, marked awaiting confirmation, that the law and the letter would both say son. Put to
+David: as written; or the Duke's son, Jack; or something else. David: **"A."**
+
+**The letter carries as written — Jacqueline, and "her".** The one document in the world that
+names her rightly is the one Fossville hid, and it is the first time she reads her own name.
+§3e's public record still says son: the law, the claim as it must be pressed, the people who
+know. The Duke's own hand is the exception to it. Whether the Duke saw her truly or simply knew
+is not decided and, under the axiomatic-world rule (§2), never explained. The reaction text
+carries — *"just someone who happens to have the same first name as you — but in your heart you
+know it must be true"* (`story.ni:9484`) — and §3e's consequence for the coda stands with the
+subject sharpened: the claim is written in the wrong name everywhere except here.
+
+### Who sees her — DECIDED (David, 2026-09-01): the butler sees; Fossville does not
+
+- **Germaise and Holstenoffer do not see** (Chapter 2). `GE16-19` and `HO18-24` carry as
+  written — *"Yer a good lad and I like yeh"* (`HO23`), the boy word from the friend who opens
+  the door.
+- **Olgan Minor sees** (Chapter 2). `OM9`'s *"little thief"* is a neutral noun; carries.
+- **Dame Sandler sees** (vision.md §3d) and is inside the arrangement. `DS24-30` carry as
+  written — *"Squire Jack"*, *"my dear boy"* (`DS27, DS29`) are her public words in public with
+  Pieter listening, exactly as §3g has it for her.
+- **The butler — DECIDED (David, 2026-09-01): he sees.** *"Child"* and *"little thief"* while he
+  holds her; then on the doorstep, *"A bit of advice, girl"* (`story.ni:9571`). Put to David three
+  ways: a tell; the Baron's word repeated from the stairwell, carried as overheard knowledge; or a
+  word to change. David: **"A."** So *"girl"* carries as a tell — a sour old servant with the
+  talent, who lets her go because of what he sees and says so only once, at the door. Public
+  tier, perceives: beside Teisha, Shannon and Olmer in §3f's matrix.
+- **Baron Fossville — DECIDED (David, 2026-09-01): he does not see.** His one line about her here
+  is through the floor: *"no greater challenge to your mercenaries than a fourteen-year-old girl"*
+  (`story.ni:9569`). Put to David: he sees, and uses the true words as a weapon; he does not see,
+  and knows only from the letter; or defer to the chapter where he first looks at her. David:
+  **"B."** So *"girl"* from Fossville is **knowledge, not perception** — he has read the letter —
+  and when he looks at her he sees the urchin boy the parchment describes, which is part of why
+  she keeps slipping past him. Knows everything, does not perceive: beside Fiona in §3f's matrix.
+  This rules Chapter 2's collision retroactively (his *"Off with you"* was a man who did not see)
+  and governs the ball and the confrontation ahead.
+- **David's note, recorded to vision.md §3d (2026-09-01)**: *"this is one of the things that will
+  fundamentally improve the story. A transgender protagonist that is seen by many people as she
+  is. A young woman."* Olmer and the butler are that principle at work in two consecutive
+  chapters: strangers who owe her nothing and see her anyway.
+
+### What carries as the source has it — RECORDED (2026-09-01, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 6
+surfaces carry unchanged and were not put to David as questions:
+
+- **A New Morning** (`story.ni:8747-8770`) — the day state; the three refusals (the market:
+  *"they looked in Grubber's once, they'll look there again"*; Maiden House: *"they won't let you
+  out of the orphanage until you're an old crone"*; the front gate: *"Use the rooftops, Bobby
+  said"*); the sun (`story.ni:12345`); the Jacobs mansion refusal after jail (`story.ni:4912`).
+- **The shops, second visit** — as stubs per the standing conversation rule: `GE16` on entering
+  the bakery after the sewer (`story.ni:4337-4343`), `HO18` on entering the butcher's
+  (`story.ni:4556-4571`) with Holstenoffer's atmosphere line silenced after the sewer
+  (`story.ni:4548-4550`), `HO24`'s side effect (the player to the alley), `OM9` in Olgan's idle
+  set, `DS24` on entering Sandler's while dirty and `DS30` fired on leaving (`story.ni:5244-5284`).
+  The clothier's and the moneylender's dirty-Jack refusals are Chapter 2's and fire unchanged.
+- **The Closed Alleyway** (`story.ni:8776-8824`) — the walls, the metal door refused from this
+  side (*"there's not much point in going back"*), the gutter and the climb text, *"shimmy"*.
+- **The rooftops** (`story.ni:8834-8959`) — the miniature mountain range and Bobby's exclaimed
+  virtues, the chimneys and smoke, every direction but east refused (*"focus on getting to
+  Fossville's mansion"*), *"The only way down from here is a long, deadly fall"*, the distant
+  balcony, the jump text verbatim, *"jump"* as going east.
+- **The roof of Black Gate Estate** (`story.ni:8963-9068`) — the balcony (west refused: *"you
+  can't leave until you find the letter"*), the patio and its fountain, the garden and its
+  autumn roses, the steps, the intruder text on the first descent during the Search
+  (`story.ni:9065`).
+- **The third floor** (`story.ni:9074-9258`) — the landing, the music room and the coat of arms
+  (the stoat with a milkweed flower), the harp's three answers (`story.ni:9122`), the audience
+  benches, the supply closet, the winch, the crank, the rope, the hole.
+- **The second floor** (`story.ni:9264-9361`) — Fossville's voice on first arrival
+  (`story.ni:9275`), *"You can't go down to the first floor — Fossville is down there!"*, the
+  living room and its portraits (*"a certain cruel gleam"*), *"look behind"*, the sliding doors'
+  rattle, the four-poster bed searched.
+- **The library** (`story.ni:9367-9496`) — the bookshelves and the old books, the chandelier
+  raised and lowered, *"Odd — rolled up and stuffed into one of the empty candle holders"*, the
+  letter's text verbatim (per the ruling above), the reaction, *"Don't forget the letter!"*.
+- **The butler** (`story.ni:9502-9571`) — the catch on leaving the library with the letter, the
+  arm-grip refusals (*"some kind of death pinch"*), *"Hush"*, the letter shown (*"I never saw it"*),
+  the stairwell eavesdrop verbatim — Fossville's *"one half-witted street urchin locked in a
+  cage"*, *"Gather your men at Lord's Market. We'll deal with the spy first. Once that business is
+  finished, we pay a visit to the Widows"* — the two door slams, the kitchens, the side door.
+- **The chapter's end** — the side-door text, then Chapter 7's row in `define chapters`.
+- **The Vedd idiom register** reaches the four shop layers when Phase 8 writes them, not now.
+  Holstenoffer's *"Goddesses, Jack"*, the butler's *"They say no dark deed goes unpunished"* are
+  source texture and stay.
+
+### Gaps found, not decided
+
+1. **The street beats** — where on Commerce Street the mercenaries are seen or heard, and what
+   she ducks into; David's, at play-testing. Phase 10 builds the morning with a placeholder beat
+   at one point and reports.
+2. **The house beats** — servants on the stairs, the near misses; David's. Phase 10 builds one
+   placeholder on the second-floor landing (where the source already puts the Baron's voice) and
+   reports.
+3. **The post-jail self-description** — *"it looks like your disguise is shot, too. Well, it was
+   fun while it lasted"* (`story.ni:1322`) is the 2009 framing of the hat as a disguise; under
+   vision.md §1 the line is David's to keep or rewrite. Reported, not decided.
+4. **The hanging's trigger** — the source starts Bobby's Hanging *"when the player carries the
+   secret letter"* (`story.ni:9589`), while she is still in the library; under the extent ruling
+   the hanging is Chapter 7's. Phase 10 builds Chapter 6's end as the side-door move and reports
+   where Chapter 7's trigger has to sit.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); Chapter 7's opening — East Commerce Street with the letter, the crowd flowing toward
+Lord's Market, the gallows.
+
+**Chapter 6's questions are answered.** Extent, the street and the house (both fear without
+teeth), the letter's words, perception (the butler sees, Fossville does not), the source
+carry-list, and four gaps. The section is complete for Phase 10's purposes: every room, event,
+refusal, the puzzle and the four shop layers (as stubs) in Book 8 are authorized, the two new
+beats are authorized as triggers with placeholders, the letter's text is settled, and the lines
+are David's during play-testing.
