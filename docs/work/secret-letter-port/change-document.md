@@ -996,3 +996,180 @@ section is complete for Phase 10's purposes: every room, tree (as a stub), event
 Books 6 and 5 is authorized, the new scene is authorized as a trigger and an exit, the later
 returns to the house are recorded as belonging to the chapters that reach them, and the lines
 are David's during play-testing.
+
+---
+
+## Chapter 4 — The Night Journey to Lord's Keep
+
+**Status**: COMPLETE for Phase 10 (opened and closed 2026-09-01, session 7b00cd) — five rulings, one carry-list, three gaps; lines are David's during play-testing.
+
+### The chapter's extent — DECIDED (David, 2026-09-01): all of Book 5B, ending at the capture in the Clearing
+
+Three seams were put to David from the source's own structure: (A) after the second listen at
+the arrow slit, (B) at the capture in the Clearing, (C) at the hole under the fountain, where the
+source's hint stages split Nighttime from Lord's Keep (`story.ni:1075-1077`). David: **"B."**
+
+**Chapter 4 is the source's Book 5B (Journey with Bobby, `story.ni:6550-7596`) whole, from the
+alley behind Maiden House to the sack over Jack's head.** That is where the source prints its
+own next heading (`output chapter heading "Chapter 3 - Jail"`, `story.ni:7082`) and where the
+designers' `test adventure` ends (`story.ni:12425`, its last `u` is the climb into the Clearing).
+Jail (Book 6) is Chapter 5's.
+
+**What that puts in scope**, measured from the source:
+
+| | |
+| --- | --- |
+| Rooms | 12 new — Market Square (the night market, one room where the day market was seventeen, `story.ni:6556`), Lord's Road, Pasture, Stream Crossing, Woods, Clearing, Underneath the Fountain, Tunnel End (the Secret Passage), Chapel, Lower Bailey, Upper Bailey, Guardhouse — plus the night state of the walk from Behind Maiden House through the Back Alley and Commerce Street to the market (`test meeting`'s closing `ne/ne/n/w/w/w`, `story.ni:12421`) |
+| Opens with | Jack in the alley behind the house at night; Bobby waiting under the center post in the empty market (`story.ni:5666`); `BO23` on arrival |
+| Conversations | 1 tree — `BO` Bobby's night quips `BO23-BO31` (9): two answers to *"trouble getting away from the Widows?"*, then `BO26` sends him north; `BO27-31` is her hesitation at the hole, ending *"Thattaboy, Jack."* (Correction to Chapter 3's count: Bobby's remaining sixteen split 9 here and 7 in jail, `BO16-22`.) In the keep he does not speak — *"Bobby shakes his head and puts his finger to his lips"* (`story.ni:7120`) |
+| Scenes | 3 — Bobby's Adventure (the whole book), Creeping to Lord's Keep (market → Guardhouse), Returning from Lord's Keep (Guardhouse → cell); `story.ni:6635-6641, 7573-7577` |
+| Scripted events | Bobby one room ahead at every stage, moved by `After going` rules; the split sapling's random trail in the Woods (`story.ni:6872-6873`); the fountain opened by Bobby (`story.ni:7069`); the torch lit under the fountain (`story.ni:7137`); the loose brick and the wall (`story.ni:7180`); the two listens at the arrow slit (`story.ni:7544-7557`); Bobby goes up first and does not answer (`story.ni:7145`); the capture (`story.ni:7078-7084`) |
+| The exit | The capture — Bobby bound face-down, the market mercenaries, the gaunt man in red robes, the sack, *"Good night, little mouse."* The player is moved to the cell |
+| Puzzles | None — the walkthrough is `n/e/n/n/n/d/n/n/sw/u/n/listen at slit/listen to slit/s/d/ne/s/s/u`, with a debug teleport over the random sapling |
+| Pressure | None in the source before the fountain — the streets are empty, the road is empty, and the only teeth are the ending, which cannot be avoided |
+
+**Also in this region but not this chapter's**: everything Pieter does in these rooms during the
+Bodyguard scene and Journey to the Ball — the stream crossed in a dress, searching the underbrush
+for the sapling, the bolt under the urn, the brick, hole and lever (`story.ni:6819, 6925-6929,
+7031-7034, 7242-7313`), the Southern Gate on ball night (`story.ni:10978`), the Lower Bailey's
+ball-night description (`story.ni:7372`). They are recorded as belonging to the chapters that
+reach them.
+
+### Pressure on the way to Bobby — DECIDED (David, 2026-09-01): the mercenary is on the streets
+
+Put to David as the source has it (empty streets between the house and the market; Bobby is the
+whole draw) against the mercenary who left Theresa's door still being out there. David:
+**"B keeps the pressure on."**
+
+**This is new content.** Something of the mercenary from Chapter 3's door is on the streets
+between Behind Maiden House and the night market — seen, heard, or nearly met. The walk is a
+push before Bobby's pull, which is the spine's order (vision.md §5: Maiden House, mercenaries
+push, Bobby pull).
+
+**Teeth — DECIDED (David, 2026-09-01): none, on purpose.** Put to David against the vision's
+standing rule (§5, *Pressure has teeth*: pressure outside a chase must be able to take her, or it
+is atmosphere): the street push as a losing ending like the market's, or a near thing with no
+fail state before the market. David:
+
+> *"B — we just want fear. We'll provide beats for the mercenary to be distracted (cat chasing
+> a rat, etc)."*
+
+**So the street push cannot take her.** It is fear, carried by beats in which the mercenary is
+kept off her by something else — a cat chasing a rat is David's example, not the list. This is
+the per-scene exception §5's standing consequence provides for (*"unless David rules otherwise
+for that scene"*); David has ruled otherwise for this one. The chapter's teeth are the ones at
+the fountain. The beats and their lines are David's, written during play-testing.
+
+### The rails — DECIDED (David, 2026-09-01): open outside the keep, with a chase for dawdling
+
+Put to David against the source's rail — every direction but Bobby's refused with *"you'd be
+mortified if Bobby thought you'd lost your nerve"* (`story.ni:6580, 6696, 6737, 6801-6804`), the
+market's east exit and the pole included, the Southern Gate blocked, the Woods' wrong trails
+*"you'll never find your way out"* (`story.ni:6944`), and inside the keep Bobby shaking his head
+at every wrong turn: keep it whole, or drop the refusals outside the keep and keep them inside
+it, where the guards are the reason. David:
+
+> *"B but if Jack wastes too much time, mercenaries chase her, Bobby catches up and hides them
+> as the mercenaries pass, then back on rails."*
+
+**What this fixes.** Outside the keep — the night market, Lord's Road, the Pasture, the
+Crossing — the nerve refusals go. Jack can wander; Bobby waits at the next stage. The Southern
+Gate stays blocked as the source has it (*"guarded day and night"*, `story.ni:10982`). Inside
+the keep — the Chapel, the baileys, the Guardhouse — the rail stays as written, gestures and all.
+The Woods keep the split sapling: it is the chapter's one piece of navigation and is what Pieter's
+later visit depends on.
+
+**The dawdle chase — new content.** If Jack takes too long on the way out, mercenaries give
+chase; Bobby catches up with her and hides the two of them as the mercenaries pass; then the
+journey resumes on its rails. It is a scripted beat, not a fail state: David's ruling for this
+scene, under the same §5 exception as the street push. What "too much time" is — a turn count,
+and whether it is one clock over the whole walk or one per stage — is Phase 10's to measure and
+report. The lines are David's.
+
+**What this does for the chapter.** The source's Book 5B is a corridor with a friend in it.
+Under the ruling it is an open night with a friend ahead and hunters behind, which is the market's
+shape (vision.md §5: an open sub-map, a pursuer, affordances that change as it closes in) with
+the pull and the push both present. And it partly answers the vision's open question (§5,
+*What supplies pressure outside a chase?*) for this chapter: a clock, and a pursuer it summons.
+
+### Who sees her — DECIDED (David, 2026-09-01): Hester Rudup sees
+
+- **Bobby does not see** (vision.md §3f; recorded in Chapter 3). His night quips carry as
+  written — *"Thattaboy, Jack"* (`BO31`) is the boy word from a non-perceiver, as §3g has it.
+- **The Lord's Guards behind the arrow slit** are public tier. *"Yer urchin boy"* (`story.ni:7555`)
+  is the mercenaries' assumption repeated by men who never saw her; carries as written.
+- **The gaunt man in red robes — DECIDED (David, 2026-09-01): he sees.** The source names him
+  later as Magistrate Hester Rudup (`story.ni:9664-9673`, *"the man who captured you last night
+  at the fountain"*). His line at the fountain — *"Well now, young...sir? Or is it 'miss'? So much
+  confusion, all to catch one little mouse"* (`story.ni:7079`) — was put to David three ways: a
+  non-perceiver thrown by the morning's dress (carries as written), a perceiver's tell, or a line
+  to change. David: **"B."** The line becomes a tell, the same kind as Shannon's *"Miss
+  Jacqueline"* — he is looking at a body the parchment describes as a boy and seeing what she is.
+  **He is the first hostile perceiver**, and a new cell in §3f's matrix: knows the politics
+  (Fossville's magistrate) *and* sees. The line's exact words are his to keep or sharpen at
+  play-testing; the ruling is what it means. It carries forward to the jail (`JA22`, *"Little
+  mouse... always finding some new hole to crawl through"*) and the hanging (`B_H2`), which are
+  later chapters'.
+
+### What carries as the source has it — RECORDED (2026-09-01, under the standing default)
+
+Under the standing rule (2026-08-30: build what the source does, report gaps), these Chapter 4
+surfaces carry unchanged and were not put to David as questions:
+
+- **The night state** (`story.ni:5938-5943`) — Market Square mapped west of Commerce Street, the
+  center post's foot moved into it, Bobby under it. The port's night state from Chapter 3's
+  curfew does the equivalent; the walk's rooms are Chapters 2 and 3's rooms at night.
+- **Market Square** (`story.ni:6556-6567`) — the empty maze of shadows, the abandoned stalls,
+  exits north, east, up; the pole refused (*"Bobby grabs your belt"*, `story.ni:6578`).
+- **Bobby's night tree** `BO23-BO31` — as a stub per the standing conversation rule: `BO23` on
+  arrival at the market, the exit at `BO26` (Bobby north to Lord's Road), `BO27` as the opening
+  gambit in the Clearing, `BO31`'s side effect (down the hole). Going north before `BO26` fires
+  it in passing (`story.ni:6585-6588`).
+- **Lord's Road, Pasture, Crossing, Woods** (`story.ni:6673-6960`) — descriptions, backdrops
+  (broken ground, city wall, cow pies, trees), facings, Bobby's entry texts at each (*"Fresh
+  air, Jack!"*, the rock-hopping, the sapling), the stream crossing passage (`story.ni:6816`),
+  the swim and drink refusals, the distant city. The random sapling trail — deterministic at the
+  seed, as the market's sweep is.
+- **The Clearing and the fountain** (`story.ni:6962-7089`) — the ruined pavilion, the statue of
+  Brigid, the urn and its bolt (examinable now; the bolt does nothing until Pieter), the secret
+  entrance opened by Bobby's arrival text, `BO27-31`, the capture text verbatim on the way back,
+  the planar-direction refusals in the Clearing during the adventure (`story.ni:7088`).
+- **The tunnels** (`story.ni:7091-7313`) — the fungus, the steps, Bobby's torch (his, then in the
+  bracket at the Chapel), the tunnel-length passage text, the loose brick and the wall opening on
+  the way there, the wall closing on the way back (`story.ni:7198`), the door refusals while with
+  Bobby. The hole, brick and lever exist as objects but are Pieter's chapter's to play.
+- **The keep** (`story.ni:7319-7563`) — the Chapel (candles, the sacrilege and prayer refusals),
+  the Lower Bailey (the shadow wedge, the guards and their *"less painful ways of getting yourself
+  killed"*, the steps), the Upper Bailey (torches, the view of Toresal), the Guardhouse (the door
+  refused with *"Are you NUTS?"*, the arrow slit, the two rows of overheard conversation verbatim,
+  the *"Bobby motions you back"* hold until both are heard). Bobby's keep-rail carries whole.
+- **The way back** (`story.ni:7571-7595`) — Returning from Lord's Keep; the *"heard all you need
+  to hear"* refusals; Bobby following (*"quickly brings up the rear"*); the wall shut; *"'Bobby?
+  Are you up there?' There is no answer"*; the capture; the cell.
+- **The chapter's end** — the capture text, then Chapter 5's row in `define chapters`.
+- **The Vedd idiom register** reaches Bobby's night tree when Phase 8 writes it, not now. The
+  guards' *"Goddesses witness it"* (twice, `story.ni:7555-7557`) is source texture and stays.
+
+### Gaps found, not decided
+
+1. **The street push's beats** — what of the mercenary Jack sees or hears between the house and
+   the market, and what distracts him; David's, at play-testing. Phase 10 builds the walk with a
+   placeholder beat at one point on it and reports.
+2. **The dawdle clock** — the threshold, and whether it is one clock or per stage; Phase 10
+   measures against the source's stage count (four rooms outside the keep) and reports.
+3. **The hide beat's text** — the chase, Bobby catching up, the hiding as they pass; David's.
+
+**Resolved by numbering, not by a ruling**: Chapter 2 handed forward "Chapter 4's shape — Maiden
+House is a house of children who see" (`change-document.md`, Chapter 2's talent section); under
+Chapter 3's extent ruling that house is Chapter 3's, and its section carries the answer.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); Chapter 5's opening — Jack in a cell, Bobby in the next one, and a magistrate who
+sees her.
+
+**Chapter 4's questions are answered.** Extent, the street push and its teeth, the rails and
+the dawdle chase, perception (Rudup), the source carry-list, and three gaps. The section is
+complete for Phase 10's purposes: every room, event, refusal, and the tree (as a stub) in Book 5B
+is authorized, the two new beats are authorized as triggers with placeholders, the Pieter layers
+are recorded as belonging to the chapters that reach them, and the lines are David's during
+play-testing.

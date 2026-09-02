@@ -435,7 +435,7 @@ are not the same rule and do not correlate:
 
 | | Perceives Jack (3d) | Does not |
 | --- | --- | --- |
-| **Knows everything** | Dame Sandler | Widow Fiona |
+| **Knows everything** | Dame Sandler; Hester Rudup (hostile — David, 2026-09-01, change document Chapter 4) | Widow Fiona |
 | **Public tier** | Teisha, Widow Shannon | the market, the stallkeepers, Bobby |
 
 Teisha sees Jack truly and wants no part of the politics — *"Don't tell me what they're after you
