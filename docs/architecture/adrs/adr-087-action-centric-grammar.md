@@ -298,3 +298,7 @@ Additional synonyms can be added as needed.
 - Lang-en-us action defs: `packages/lang-en-us/src/actions/*.ts`
 - Sync test: `packages/parser-en-us/tests/grammar-lang-sync.test.ts`
 - Bug that prompted this: `press :target` missing from grammar (ADR-087 context)
+
+## Amendment note (2026-09-03, DRAFT by reference)
+
+ADR-267 Amendment 1 (`only while <condition>`, GH #317) adds one method to this ADR's builder surface: `.onlyWhen(fn)` on the pattern builder, setting `GrammarRule.applies?: (context: ScopeContext) => boolean` — a rule-level parse-time applicability gate, the sibling of slot `.where()`. A rule whose predicate is false is not a candidate. The construct, its semantics, and its landing are ADR-267's; this note records the surface change here so the builder API has one home. Status follows ADR-267 Amendment 1's.

@@ -508,3 +508,30 @@ record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 **Session.** 2026-09-02, session 6a3da1 — Phase 0 of the plan above; Phase 1 built the same session (character `scene-scoring.ts` `strongerStrength`, `scene-binding.ts` thread-aware grip and the step-4a challenge in `tick-phases.ts`, `scene-runtime.ts` `PartingLine` through every close path; story-loader `buildThreadStrength`/`buildPartingLine`, the inline dispatch-path park refactored onto the shared step). Phase 3 (session 69a114) put the real path under test: `packages/story-loader/tests/adr-320-d10-interruption.test.ts` drives `GameEngine.executeTurn` on a two-hand fixture with no stubs — interruption on the hand-off turn, `on parting` rendered, resume at the parked cursor. The W-10 dance prototype reaches the next partner on the hand-off turn (14 turns to the music's end, was 28). Two residuals filed for David: GH #354 (step 4a serves a seated owner's floor turn before a later candidate's challenge — entity-id order) and GH #355 (tree pins cannot read a Chord entity's state).
 
 **Addendum — step 4a in two passes (2026-09-03, session 89ce13, GH #354 ruled option A).** Step 4a now runs every ready candidate's challenge first (pass one: each ready NPC not seated with the player calls `resolveIntrusion` against the seated scene; a `blocks` outcome is remembered for the turn) and only then serves floor turns (pass two: readiness re-probed, so a partner parked in pass one reads not-ready because a parked thread re-engages only when its `opens when` holds again). Which partner speaks on a hand-off turn therefore follows the story's `opens when`, never entity-id order, and the outgoing partner's cursor does not advance on the turn he is parked. `blocking` (D14) remains the story's lever to let a seated owner finish. The W-10 prototype dropped all six `beat, when <partner> is dancing:` gates and its tree passed unchanged (15 cards / 46 assertions), then gained partner-state pins (69 assertions) under GH #355's Chord-spelled pin form. Tests: `packages/character/tests/tick-phases/thread-interruption.test.ts` (+2), `packages/story-loader/tests/adr-320-d10-interruption.test.ts` (+3, ungated fixture on the real engine path).
+
+## Amendment — D2a: entity topics are unscoped (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (no open questions). Gates `docs/proposals/publish-readiness-defects.md` P-29 (GH #242). Lands in D2's topic-table section; ADR-239 (the shipped topic-table interface) is amended by reference.
+
+### Context
+
+- The parser resolves an ask's topic quietly against VISIBLE scope (`packages/stdlib/src/validation/command-validator.ts:903-930`, `resolveTopic` — ADR-231 D4) and sets `topicEntityId` only on a unique in-scope match. The loader's topic arm matches entity rows by that id and text rows by normalized spelling (`packages/story-loader/src/runtime.ts:1207-1222`, and `buildTopicArm`'s `rowIndexFor`); a typed topic never reaches an entity row through the text tier.
+- So `about the boiler:` serves only where the boiler is visible; anywhere else the owner's catch-all or the action's default speaks, in character, and nothing marks the difference (GH #242: Tobias on the Gravel Drive vs. the Boiler Shed; the silver locket, with no initial location, is unreachable until carried). A transcript written naively passes against the wrong text.
+- ADR-239 D1/AC-1 defined the entity tier ("quiet `topicEntityId` resolution") without saying where it fires. `about the boiler` and `about "the boiler"` read as spelling variants and behave completely differently.
+
+### Decision
+
+- **D2a-1 — A topic is a subject, not an object.** An entity topic row matches wherever the NPC is; the referenced entity's location, visibility, and on-stage existence are irrelevant to whether the row serves. `about the boiler:` and `about "the boiler":` differ only in what they key on — a world entity's whole naming surface (name, aliases, adjectives, ADR-231 D3) versus the quoted spellings — never in where they fire.
+- **D2a-2 — Mechanism: the quiet resolution widens to the world.** `resolveTopic` resolves the typed topic first against VISIBLE scope (an in-scope match wins over an off-stage namesake), then against every entity in the world; a unique match at either tier sets `topicEntityId`. Two off-stage namesakes and nothing visible is ambiguity: the text tier only, as today. The loader's matcher is unchanged (entity tier by id, then text tier), so the topic arm, exchange answer rows (`matchTopicFilters`), and conversation memory (`when <topic> was discussed`, keyed by entity id) all inherit the rule. The analyzer adds no diagnostic: there is no scoped form left to flag.
+- **D2a-3 — Rejected.** (a) Flagging the scoped form in the analyzer — leaves the trap in the language and makes the author spell it. (b) A loader-side name fallback for entity rows — a second naming resolver beside the validator's, which ADR-231 D3 made the one.
+
+### Consequences
+
+- `topicEntityId` may now name an entity the player cannot see. Interceptors and rows keyed on it (`asking.ts`, `telling`, the topic arm) must not assume scope; none does today.
+- Composes with P-8's *gone* semantics (ADR-325 Z6 amendment, plan Phase 4): a gone entity is still a subject of talk.
+- Fernhill: the boiler and locket topics serve on Tobias's rounds without carrying anything to him; the friction-log F12 case closes.
+- A story that *wants* a topic to depend on presence writes it as a row condition (`when the boiler is here`), which is the language's existing tool for that.
+
+### Session
+
+effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`).

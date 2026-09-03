@@ -338,3 +338,7 @@ Session 1befbd (2026-07-17, chord-foundations). Gap list produced by
 the phrasebook verification pass (session 907f28); grounded by four
 parallel code investigations this session before drafting.
 
+
+## Amendment 2 (2026-09-03, DRAFT by reference) — D2a gains a sibling gate
+
+ADR-267 Amendment 1 (`only while <condition>`, GH #317) adds a second parse-time gate beside D2a's slot `.where()`: rule applicability, `.onlyWhen(fn)` / `GrammarRule.applies`. After it lands, D2a reads: two parse-time gates — slot scope and rule applicability — both world-evaluated, neither producing a diagnostic; every other gate stays in `validate()`. Status follows ADR-267 Amendment 1's.
