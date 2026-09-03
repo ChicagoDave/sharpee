@@ -25,7 +25,7 @@ skipped-transcript semantics.
 
 ### P-3: Web-client Reset menu item
 - **Done when**: the published client's menu offers Reset; confirming it deletes every storage key under the story's storage prefix (saves, autosave, theme preference) and restarts the story; a real-path test verifies the keys are gone. (Issue 248. Open UX points: which menu, confirmation shape, restart-after-wipe.)
-- **Status**: PLANNED
+- **Status**: PLANNED — **superseded by `docs/proposals/publish-readiness-defects.md` P-34** (2026-09-03, session b6d0a8): no plan file exists for this item; the publish-readiness plan owns the work.
 
 ### P-4: ThemeManager renders its own theme menu
 - **Done when**: the build-time `#theme-menu` regex rewrite in `injectThemes` is gone (link injection stays); the menu renders at runtime from the wired theme list; existing switching/persistence behavior stays green; ADR-253 custom pages that keep `#theme-menu` get it populated the same way. (Issue 251 — do alongside P-3, same code.)

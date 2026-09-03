@@ -2407,6 +2407,10 @@ during play-testing.
 
 ## Chapter 11 — The Ball
 
+**SUPERSEDED 2026-09-03 (session b6d0a8)** — David: *"the entire ending (ballroom, war room, Vedd ceremony) has to be redesigned."* The dance is gone. The ruling section is
+*Chapter 11 — The Ball (the redesigned ending)* below; this section stays as the record of
+the rulings it superseded and of the measurements Phase 10 still uses.
+
 **Status**: COMPLETE for Phase 10 (2026-09-02, session 19f840) — one governing ruling and seven under it, one carry-list, seven gaps; produced against Book 12 Parts 5-7 (`story.ni:11048-11893`) and the seam into Book 13 (`story.ni:11895-11902`); lines are David's during play-testing. **This is the port's biggest rewrite** — David's words open the section.
 
 ### The shape of the chapter — DECIDED (David, 2026-09-02): a real ballroom, a dance, capture
@@ -2674,3 +2678,317 @@ dance, who is in the circle, the public name (not here), perception (the Prince 
 dance is the pressure), the source carry-list inside the dance, and seven gaps. The section is
 complete for Phase 10's purposes: the ballroom, its scenery, the six trees as stubs, the scenes
 and the capture are authorized inside the dance, and the lines are David's during play-testing.
+
+## Chapter 11 — The Ball (the redesigned ending)
+
+**Status**: COMPLETE for Phase 10 (2026-09-03, session b6d0a8) — one governing ruling and nine
+under it, one carry-list, gaps; **supersedes the Chapter 11 section of 2026-09-02 above** (the
+dance) and the Chapter 12 the plan expected (the Baron in the War Room, Book 13,
+`story.ni:11895-12225`). Produced against Book 12 Parts 5-7 (`story.ni:11048-11893`), Book 13,
+the endgame's archive history (below), and David's statement of the new ending; lines are
+David's during play-testing.
+
+### Why the ending was redesigned — David, 2026-09-03
+
+Phase 9 waited on Michael Gentry's endgame notes. David's OneDrive archive
+(`~/OneDriveArchive/Documents`, searched 2026-09-03) holds no note from Gentry and no email
+trail (0 hits for *War Room*, *Fossville*, *Pieter* in a 443 MB mailbox), but it holds the
+War Room's whole design history, which the corpus already carried in part:
+
+1. **The shipped June 2009 shape** (`MGFiles/Projects/.../story.ni`, 2009-09-12; both
+   playtests' endings match it): `FOSS3`/`FOSS4` are the letter demand — *"The letter,
+   please"*, *"Please let's not draw this out, Jack"*, *"hold her, please"* — with `give letter
+   to baron` answered *"Bitterly, you hand over the Duke's letter"*; Jack free in the chair;
+   freeing Pieter the one action; `attack baron` met with Bobby's *"No, Jack! Leave him to
+   me!"*.
+2. **Design Document 2.0 §4 "The Map Room"** (corpus `design/Design Document 2.0.doc.txt:150-268`,
+   dated 2009-10-06; implemented 22 and 29 October 2009 per the source change log,
+   `story-sh-1.2.ni:7-8`): the mercenaries leave, Jack is tied to the chair, the letter demand
+   is cut into `FOSS2`'s search, and from Bobby's entrance she has exactly five turns — three
+   tries at the dagger (dropped, the chair tips, Pieter kicks it to her hand), cut her own ropes,
+   then stab the Baron or free Pieter. Live in the corpus `story-sh-1.2.ni` (`11882-12207`); the
+   archive's newest copy (2015-01-07) is this version, unchanged.
+3. **Trunk, 2010-03 to 2012-04** = the corpus `story.ni`: the tied-up sequence commented out,
+   `FOSS10-12` filler added, the stab-Fossville win kept — vision.md §7's mess.
+4. **David's own rework note, 2010-08-15** (`Inform0912/Projects/Secret Letter War
+   Room-DavePro.inform/Source/story.ni`, four identical copies): a standalone prototype whose
+   header is a design note — Jack in the chair, not tied; drawing the dagger before Bobby comes
+   gets it taken, one warning, then Bobby dies and she is kidnapped; going for the Baron or a
+   mercenary throws her back in the chair; going to Pieter is allowed, a couple of turns of talk,
+   freeing him a sub-scene; during the fight she can ask Bobby about the hanging, dying, spying,
+   the maidens, her father, her mother (*"Mike will write prose for these"*); ten to twenty
+   escalating hints; three ending triggers. The prototype stops after the monologue table; the
+   skein is `l`, eleven `z`, `x knife`, `get knife`, `take off dagger`. DD2.0's overview had
+   promised *"Dialogue is added to explain Bobby's role"* and its §4 does not deliver it.
+
+David: *"that's as good as it gets"* — 2010 ended the work. Then, having read it:
+
+> *"I think the entire ending (ballroom, war room, Vedd ceremony) has to be redesigned (which I
+> know kills a lot the last couple of days work)."*
+
+What the redesign keeps of the last two days: the platform work (ADR-320 D10's interruption,
+the two-pass hand-off, the Chord-spelled state pins, ADR-332's bands) — built for several live
+conversations, which the new ballroom still has; the W-10 prototype as the proof. What it
+revises: the dance section above, vision.md §2's *capture was a rescue* premise and §5's ball
+entry, and Phase 9, which closes here on David's own design (its deliverable 2).
+
+### The shape of the ending — DECIDED (David, 2026-09-03)
+
+David's words, in play order:
+
+> *"we keep the ballroom entrance. There is a confrontation with the Baron, but he's dismissed
+> by the Queen, tries to bring his mercenaries in, but they are barred by the Queen's Guard.
+> The Queen watches as you mingle with the powerful and wealthy, judging you. Eventually The
+> Vedd Priestess appears, talks to the Queen, and takes you to Vella and the ceremony that
+> transforms you."*
+
+and, on the rooms and the dance:
+
+> *"Ballroom only, no war room; the dance goes (it's just too much) and we allow Jacq to
+> mingle converse with all the major players (so the multiple threaded conversations are still
+> important)."*
+
+**There is no War Room and no dance.** The ending is the Ballroom, then Vella. Jacqueline
+mingles and converses freely with every major player while the Queen watches; the Priestess
+takes her to the prayer circle. The reading that the Baron's confrontation comes first — she
+enters, he confronts her early, the Queen dismisses him, his men are barred, and only then does
+the room open to her — was stated to David and not corrected (gap 1). ADR-320's several live
+conversations remain the chapter's engine; the hand-off primitive and the rotation are no longer
+needed for it.
+
+### The chapter's extent — DECIDED (David, 2026-09-03): the world of light to the Priestess; Vella is Chapter 12
+
+David: *"ballroom is 11, Vella is 12."* **Chapter 11 runs from the step into the ballroom**
+(`story.ni:11052-11058`) **to the Priestess leading Jacqueline out**, her spirit drawn to
+follow. **Chapter 12 is Vella.** The source's Book 13 heading, the march, the War Room, the
+skirmish and the kidnap (`story.ni:11895-12225`) are cut; what of them survives is named below.
+
+**What that puts in scope**, measured from the source and from the rulings:
+
+| | |
+| --- | --- |
+| Rooms | 1 — the Ballroom (`story.ni:11058`). The War Room (`story.ni:11914`) is not built |
+| Opens with | The Arrival theme, Pieter turned to scenery, *"You step into a world of light..."* (`story.ni:11052-11056`); the ballroom's first description (`story.ni:11058`) |
+| NPCs | Baron Fossville (`story.ni:9653`, his ball-night description); the Queen (`story.ni:11371-11376`), **now with a throne, Bobby and Pieter beside it**; Bobby (`story.ni:5647`, his Skirmish description carries the *"none the worse for wear after his hanging"*); Pieter; the Queen's Guard (**new**); Jacobs the Elder, the Princess, the Duke and Duchess of Inhyron, Amhyron, Bresa, the Prince of Gravesal (`story.ni:11247-11827`); the Vedd Priestess (**new**); the several mercenaries, barred (`story.ni:11877-11887`); the guests, the quartet, the servants (`story.ni:11100-11149`) |
+| Conversations | The six source trees, 88 quips (`JE`, `PR`, `IN`, `AM`, `BR`, `GR`, `story.ni:11266-11843`); **Bobby's, new**, carrying the War Room's reveals; **the Queen's, new, a greeting only**; the Baron's confrontation, new |
+| Scenes | High Society (`story.ni:11153`) carries as the room opening; Brief Respite's *spoken to* condition (`story.ni:11157-11176`) no longer ends anything; Brief Encounter (`story.ni:11805-11815`), Confronting the Baron and the Skirmish (`story.ni:11897, 12076`) are cut |
+| Scripted events | The Baron's confrontation and dismissal; the mercenaries barred; the Queen's rising and nod; the Priestess's arrival and asking — all new. Jacobs opening `JE1` unasked (`story.ni:11259-11261`) carries |
+| The exit | The Priestess leads her out. Chapter 12's row fires on the leaving |
+| Puzzles | None in the source's sense. The chapter is the Queen's judgment, won through the conversations |
+| Pressure | The Queen's judgment, with teeth (below). Nothing after the nod |
+| Deaths | 1 losing ending, **new** — the Queen leaves; the source's capture (`story.ni:12214`) is gone |
+
+### The Baron before the court — DECIDED (David, 2026-09-03): the letter produced; the Queen threatens him quietly and lets him go
+
+Put to David: what of the War Room's four things — the poisoning confession (`FOSS1`,
+`story.ni:12031`), the letter taken (`FOSS2`, `12033`), the letter burned (`FOSS5`, `12035`),
+Bobby through the door (`FOSS6`, `12037`) — survive a public confrontation. David:
+
+> *"The letter is produced, the Queen already knows of The Baron's guilt and quietly threatens
+> him, but allows him to leave instead."*
+
+**The letter is shown before the court. Nothing is burned and nothing is confessed aloud.** The
+Queen knows what Fossville did — the poisoning is hers to know, not his to boast — and her threat
+is quiet. He leaves on her sufferance; he *"tries to bring his mercenaries in, but they are
+barred by the Queen's Guard"*, and that is the last of him. Fossville does not come back before
+the Priestess (asked, not contradicted). The source's *"Ten of my men heard you confess"*
+(`FOSS7`, `story.ni:12039`) has no confession to point at and is cut.
+
+### Bobby beside the throne — DECIDED (David, 2026-09-03): the Queen's man, and the War Room's reveals move to him
+
+The losing ending (below) put Bobby in the room, alive, and leaving with the Queen — the first
+time since the noose (Chapter 7). Put to David where he is, when she learns he lives, and whose
+man he is. David:
+
+> *"Oh Bobby is revealed standing next to the Queen's throne. Her man, but his interpretation
+> of loyalty is layered based on the needs of the moment. Jack can talk to him in the ballroom
+> and the reveals from the old War Room scene can be moved there."*
+
+**Bobby is revealed standing beside the Queen's throne.** Jacqueline learns he lives by seeing
+him there. **He is the Queen's man**, with a loyalty that bends to the moment's need — David's
+words, recorded as the character's premise, not explained in the text. **She can talk to him in
+the ballroom**, and his conversation carries what the War Room used to reveal: that he is a spy
+(`FOSS7`, `story.ni:12039`), how he escaped the noose (*"That's my own secret for now"*, `FOSS7`),
+whom he answers to (*"I don't answer to any royalty, Baron. I answer to the people of
+Miradania"*, `FOSS8`, `story.ni:12041`) — the last now in tension with *her man*, which is the
+layering David named and Phase 8's to write. David's 2010 note had wanted the same conversation
+(*hanging/dying/death, spying, maidens, her father, her mother*); it is authorized here as a
+stub under the standing rule.
+
+### The Queen's judgment — DECIDED (David, 2026-09-03): the claim, with teeth; the verdict is silent
+
+Put to David what she judges — (A) whether Jacqueline is her brother's child and worth the claim,
+the conversations the evidence; (B) whether she can hold a court — and whether the judgment can
+fail. David: **"A"**, and:
+
+> *"The Queen leaves and you are left abandoned, no one will speak to you, and Bobby leaves
+> with the Queen (game ends)."*
+
+The reading that the *A* answered both — the claim, and teeth — was stated and not corrected.
+
+**The Queen is weighing the claim, and the conversations are her evidence.** Fail it and the game
+ends: **the Queen rises and leaves, Bobby goes with her, and the room turns its back** — no one
+will speak to Jacqueline. A losing ending under vision.md §5, the chapter's teeth; the source's
+capture, which could not be avoided, is replaced by a judgment that can be lost.
+
+Put to David whether the decision is spoken. David:
+
+> *"Silent, the Queen rises and leaves, but nods for the Priestess to approach Jack."*
+
+**The verdict is never spoken.** Either way the Queen rises and leaves. Against, that is the
+ending. For, she nods the Priestess toward Jacqueline on her way out. What the judgment
+measures — which conversations, how many, what counts as won — is Phase 10's to find against the
+trees and report (gap 2).
+
+Put to David whether the Queen herself can be spoken to. David: *"yes, a greeting only."* **The
+Queen has a greeting and nothing more**; the source's *"you can't even get near her"*
+(`story.ni:11376`) yields to one exchange.
+
+### The Priestess — DECIDED (David, 2026-09-03): on her own time, blocked on the Queen; asked, and drawn
+
+Put to David what brings her — the *spoken to* condition, the Queen's summons, or her own time.
+David: **"C, but is blocked on the Queen's decision."** And on what passes:
+
+> *"The Priestess asks Jacq to come with her and Jacq's spirit is drawn uncontrollably to
+> follow."*
+
+**The Vedd Priestess arrives on her own time**, not on a condition Jacqueline meets, **and may
+not take her until the Queen has decided.** The Queen's nod is the whole of what passes between
+them that the room sees. The Priestess asks; Jacqueline's spirit is drawn to follow — not a
+choice, the first thing in the story that moves her without her consent and is good. Per
+vision.md §2 no one explains the Vedd: the nod is the entire account of what the court knows.
+
+### The crescendo — RECORDED (2026-09-03, David's intent; the §5 exception stated and not corrected)
+
+David: *"I'm actually struggling with how we'd add a fail-mode here. I kind of want a
+crescendo of goodness at this point."* The answer given and not corrected: none is needed. The
+chapter's teeth are the Queen's judgment; once she nods the chapter is won. **From the nod to the
+end of the transformation there is no fail state** — a per-scene exception under vision.md §5's
+*unless David rules otherwise for that scene*, the same standing the fear-without-teeth chapters
+have. Recorded as David's intent, to be confirmed or struck when he reads it.
+
+### Who is in the room — DECIDED (David, 2026-09-03)
+
+- **Pieter stands beside the Queen** — *"he also stands next to the Queen"*. He is lost on
+  entry as the source has it (`story.ni:11123-11126`) and found there, not trussed on a floor.
+  How he came to the throne is not ruled (gap 3).
+- **The Prince of Gravesal stays** — *"stays"*. Yesterday's ruling holds: he has the talent;
+  his *aura* lines (`GR3-4`, `story.ni:11835-11837`) carry. He is a major player in the room
+  from the start, not held back for the music's end (`story.ni:11354-11357` no longer applies).
+- **The Queen**: a greeting only, as above.
+- **The Baron**: early, then gone.
+- **Bobby**: beside the throne, conversable.
+- **The Princess** stays as a ballgoer (`PR1-16`). Her *"That's her! Get her!"*
+  (`story.ni:12214`) and the hooded men are gone with the capture.
+
+### Who sees her — RECORDED (2026-09-03; no new ruling)
+
+Yesterday's perception rulings stand: the Prince sees; the rest of the circle is unruled and
+nothing turns on it. Bobby does not see (Chapter 3); Fossville does not see (Chapter 6); Pieter
+does not see (Chapter 9). **The Priestess is the Vedd** — that she sees is the premise of §2,
+not a new cell in §3f. The Queen is not ruled; her judgment is of the claim, and nothing in
+David's words has her words turn on sight.
+
+### What carries as the source has it — RECORDED (2026-09-03, under the standing default)
+
+- **The arrival** (`story.ni:11052-11058`), the closed room and its refusals
+  (`story.ni:11060-11073`), Pieter lost on entry (`story.ni:11123-11126`), the scenery, the
+  guests as backdrop, the quartet, the servants and the platters (`story.ni:11079-11149`), the
+  kissing and throwing refusals — all as the 2026-09-02 section listed them, minus the dance.
+- **The source's `dance` refusal** (`story.ni:11180-11190`) carries again as written — *"far
+  too self-conscious to start now"* is true once more.
+- **High Society** (`story.ni:11153`) as the room opening, Jacobs at her elbow with `JE1`
+  (`story.ni:11259-11261`); the ballgoer kind, the distant descriptions, the *elsewhere in the
+  crowd* roster, the *making excuses* rules (`story.ni:11203-11233`) — under ADR-320 the source's
+  one-at-a-time modal conversations become several live threads, which is what *mingle converse
+  with all the major players* asks for.
+- **The six trees** as stubs, each trigger live and its beats TODO, with their cross-gating
+  (`JE7` before names mean anything; `IN12` before the fork; `IN8`/`JE17` before `IN12`;
+  `story.ni:11280, 11515-11519, 11551, 11592-11597`) as the conversations' memory. `GR1-7`
+  loses `GR7`'s capture line (`story.ni:11843`).
+- **The Queen's distant description** and her one look (`story.ni:11373`).
+- **Bobby's Skirmish description** (`story.ni:5647`) as his ballroom description; *"Bobby is a
+  little busy right now!"* (`story.ni:5653`) does not carry.
+- **The Baron's ball-night description** (`story.ni:9653`, the *otherwise* branch: the cracks in
+  the façade, the make-up, *"running the Baron ragged"*).
+- **Cut**: everything in Book 13 (`story.ni:11895-12225`) except what Bobby's conversation
+  carries — the march, the War Room and its scenery, the monologue `FOSS0-12`, the search, the
+  burning, the skirmish, the dagger business, the knotted ropes, the map wall, the kidnap, *"To
+  be continued"* and the sequel line (`story.ni:12220-12224`). The plain dagger she bought in
+  Chapter 9 now has no scene to be drawn in (gap 4).
+
+### Gaps found, not decided
+
+1. **The order of the opening** — the reading that the Baron confronts her before the mingling
+   (enter, confrontation, dismissal, the men barred, then the room) was stated and not
+   corrected. Recorded as the shape; David may move the confrontation.
+2. **The judgment's measure** — which conversations count, how many, what a winning showing is,
+   and when the Queen has *seen enough*. Phase 10 measures against the seven trees and reports;
+   the threshold is David's.
+3. **Pieter at the throne** — how the man who drove her to the ball and was lost in the press
+   comes to stand beside the Queen, and whether he speaks. Not ruled.
+4. **The dagger** — bought in Chapter 9 (`test armory`), strapped under the dress in Chapter 10,
+   and now drawn nowhere. Whether it stays in the shopping or goes is David's.
+5. **The letter's holder** — produced before the court; whether Jacqueline keeps it, the Queen
+   takes it, or the Baron drops it is not ruled. Chapter 6's ruling that the Duke's hand says
+   *Jacqueline* now has a public reading: the court sees the name.
+6. **The mercenaries barred** — an offstage event the room hears, unless David wants it seen.
+7. **The Queen's Guard** — new NPCs with no source; whether they are scenery or a presence
+   at the doors throughout.
+8. **The Priestess's arrival** — on her own time means a clock or a random turn; the number is
+   Phase 10's to set and report, and the case where she arrives before the Queen has decided
+   (she waits) is the ruling's own consequence.
+9. **The losing ending's text** and the Priestess's asking are David's lines; the Queen's
+   greeting likewise.
+
+**Handed forward, not decided here**: whether Jack herself has the talent (still the vision's
+question); the public *son* — Chapter 11's *not here* narrowed it to Chapter 12 or nowhere, and
+with no War Room and the Duke's own hand shown to the court, **it is nowhere** unless David puts
+it in someone's mouth at the ball (gap for Phase 8).
+
+**Chapter 11's questions are answered.** The shape (ballroom only, no dance, free conversation
+with every major player), extent, the Baron before the court, Bobby beside the throne, the
+Queen's judgment with its silent verdict and its losing ending, the Priestess and the crescendo,
+who is in the room, perception, the carry-list and the cuts, and nine gaps. The section is
+complete for Phase 10's purposes: the ballroom and its conversations as stubs, the confrontation,
+the judgment, the Queen's leaving both ways, and the Priestess's taking are authorized, and the
+lines are David's during play-testing.
+
+## Chapter 12 — Vella
+
+**Status**: COMPLETE for Phase 11's purposes (2026-09-03, session b6d0a8) — two rulings, no
+source to carry. This is vision.md §2's coda, now placed and named; the plan's Phase 11 cites
+this section.
+
+### Vella is the prayer circle — DECIDED (David, 2026-09-03)
+
+Put to David whether Vella is where §2's prayer circle happens and whether the ceremony is that
+circle. David: **"Yes, Vella is the prayer circle."** **Chapter 12 is the Vedd prayer circle at
+Vella, and the ceremony transforms Jacqueline into her real body** — §2 as written, a literal
+in-world change. The Priestess brings her there from the ballroom; the chapter opens on the
+leaving and ends on the transformation. What Vella is as a place — a room, a grove, a distance
+from the keep — is David's to say when he writes it (gap 1).
+
+### She goes alone — DECIDED (David, 2026-09-03)
+
+Put to David whether anyone she knows witnesses the ceremony. David: **"she goes alone."** No
+Bobby (gone with the Queen), no Pieter, no one from the story. The circle is the Vedd's.
+
+### What carries — RECORDED
+
+Nothing from the source: the Vedd are a name in the sequel title and nothing more
+(`story.ni:12224`). The idiom register (§2) is what has prepared this; vision.md §2's *ending is
+a rescue, not a capture* premise is superseded — there is no capture to reinterpret — and is
+amended there.
+
+### Gaps found, not decided
+
+1. **Vella as a place** and the journey to it — whether the leaving is narrated or played.
+2. **The ceremony's shape** — §2 gives the circle and the transformation; the turns between,
+   if any, are David's.
+3. **No fail state** — recorded under Chapter 11's crescendo, to be confirmed.
+4. **The ending's close** — what replaces *"To be continued"*; the sequel is not this port's.
+
+**Chapter 12's questions are answered** for Phase 11's purposes: Vella, the circle, alone, the
+transformation. The content is David's outright — the one part of the remake authored rather
+than translated.

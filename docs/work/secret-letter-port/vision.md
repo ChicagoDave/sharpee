@@ -48,7 +48,16 @@ she has envisioned in her own mind, not an interior or perceptual one.
 
 **The prayer circle is the Vedd.**
 
-### The ending is a rescue, not a capture
+### The ending is a rescue, not a capture — SUPERSEDED (David, 2026-09-03)
+
+**There is no capture to reinterpret.** The redesigned ending (change document, *Chapter 11 —
+The Ball (the redesigned ending)* and *Chapter 12 — Vella*) has no War Room, no hooded men
+and no Princess's order: the Queen judges Jacqueline through the ball's conversations, rises
+and leaves, and nods the Vedd Priestess toward her; the Priestess asks her to come, and her
+spirit is drawn to follow. The coda below is unchanged in substance — the prayer circle, the
+transformation — and now has a name, **Vella**, and a chapter, 12. The paragraphs that follow
+are kept as the record of the premise the coda was first attached to.
+
 
 The 2009 game ends with hooded men seizing Jack at the Princess's order and going to black on
 `*** To be continued ***`. Per the sequel David and Michael Gentry laid out, **that capture
@@ -780,7 +789,20 @@ part that is easy to copy and dropping the part that made it work.
 retry, or a scripted rescue on the grounds of modern player tolerance. Where a scene can kill or
 capture Jack in the source, it can in the remake unless David rules otherwise for that scene.
 
-### The ball — DECIDED (David, 2026-09-02, change document Chapter 11): a dance
+### The ball — SUPERSEDED (David, 2026-09-03): no dance; the Queen's judgment
+
+David, 2026-09-03: *"the dance goes (it's just too much) and we allow Jacq to mingle converse
+with all the major players (so the multiple threaded conversations are still important)."*
+The ball is now the ending's whole court half: the Baron confronted before the court and
+dismissed, his mercenaries barred by the Queen's Guard, Jacqueline conversing freely with
+every major player while the Queen judges the claim — with teeth: fail, and the Queen leaves
+with Bobby and the room turns its back — and the Vedd Priestess taking her to Vella on the
+Queen's silent nod. On the spine it is the port's one **judgment** beat, and the last with
+teeth; from the nod to the transformation there is none, by David's intent (a *crescendo of
+goodness*). The rulings are the change document's. The entry below is kept as the record of
+the dance ruling it replaces.
+
+### The ball — DECIDED (David, 2026-09-02, change document Chapter 11): a dance — SUPERSEDED
 
 David: *"This is the biggest rewrite... and the core opportunity with Chord. A real ballroom with
 multiple active conversations, leading to capture."* The source's ball is one room and one modal
@@ -855,7 +877,17 @@ David Cornelson, based on the game by Michael Gentry.
 
 ## 7. Open TODOs
 
-### The endgame fight scene is a mess
+### The endgame fight scene is a mess — RESOLVED (David, 2026-09-03): redesigned away
+
+**The War Room is not built.** Phase 9 closed on David's own design (its deliverable 2): the
+ending is the Ballroom, then Vella. The archive search that preceded the ruling found no
+note from Gentry, but it found the scene's whole design history — the shipped 2009 letter
+demand, Design Document 2.0 §4's tied-to-the-chair rework (October 2009), the trunk's
+half-reverted mess, and David's own 2010 prototype note — all recorded in the change document
+under *Why the ending was redesigned*. What of the War Room survives: the Baron produces the
+letter before the court; Bobby's reveals (spy, the noose, whom he answers to) move into his
+ballroom conversation. The diagnosis below is kept as the record of why.
+
 
 David: "the fight scene at the end is A MESS... our list of TODOs has to include cleaning it
 up and no, I don't know how to do that... I may have some notes from Mike somewhere... I'll
@@ -881,7 +913,10 @@ the prayer circle.
 Two things this plan cannot produce:
 
 1. **David's change document** (P-4, Phase 4's gate) — still outstanding.
-2. **Michael Gentry's notes on the endgame**, if they exist. David will dig.
+2. **Michael Gentry's notes on the endgame**, if they exist. David will dig. — **Closed
+   2026-09-03**: David's full OneDrive archive (`~/OneDriveArchive/Documents`) holds no such
+   note and no email trail; *"that's as good as it gets."* What it holds is recorded in the
+   change document's redesigned Chapter 11 section.
 
 ### [open] Do the sequel notes exist in readable form?
 

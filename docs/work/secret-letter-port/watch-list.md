@@ -329,6 +329,8 @@ is read by that partner's floor turn in the same turn.
 
 **Status**: CLOSED 2026-09-03 — GH #348 closed with this evidence; GH #354/#355 closed the same day. Phase 10's Chapter 11 build can proceed with no hold gates and with partner-state pins.
 
+**Postscript 2026-09-03 (session b6d0a8)**: later the same day David redesigned the whole ending and **the dance is gone** (change document, *Chapter 11 — The Ball (the redesigned ending)*). The ballroom still runs several live conversations at once — that is what this entry measured, and its findings and the platform work stand. The rotation and the hand-off on a turn budget are no longer what Chapter 11 builds; the prototype stays as the proof.
+
 ## Recording results
 
 Append findings under each entry with the date and the command or observation
