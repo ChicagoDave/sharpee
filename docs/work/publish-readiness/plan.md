@@ -1,0 +1,260 @@
+# Session Plan: Publish-readiness defects — Sharpee 5.2.0 + Chord Writer
+
+**Created**: 2026-09-03
+**Plan Status**: ACTIVE
+**Supersedes (rule 18b, "still live")**: `docs/work/secret-letter-port/plan.md` — that plan is stamped with a `Superseded by` line pointing here (2026-09-03, session 639650), per David's standing ruling on port-plan interruptions. Its Phases 4 and 6 stay CURRENT, untouched, resumable exactly where they are; `.current-plan` returns there when this plan is DONE or archived.
+**Overall scope**: Close the 44-item punch list in `docs/proposals/publish-readiness-defects.md` (40 ACCEPTED, 1 DONE, 3 PROPOSED pending this plan's Phase 1) that gates a formal `@sharpee/*@5.2.0` + Chord Writer publish: Chord-language and loader defects a first author hits, parser/stdlib defects the player sees, the web client's publish surface, and the release gate itself (test-green, docs, the outside-repo proof, the publish). Absorbs the archived `docs/work/backlog-tier1-2-platform/plan.md` Phases 4–8 verbatim in substance (its design conversation and Phases 5–8 for #313/#312/#314/#317/#318/#318/#320-adjacent items) — that plan is DONE, its remaining phases fold in here as Phases 5, 7, 8, 9.
+**Bounded contexts touched**: N/A — plain technical framing. This is defect remediation across `packages/` (chord, story-loader, world-model, stdlib, parser-en-us, lang-en-us, engine, platform-browser, devkit), branch/in-repo story content, and docs/release engineering — not new domain modeling. Chord's own domain concepts (topic tables, capability dispatch, scope predicates) are the subject matter of individual fixes but this plan does not introduce new ones.
+**Key domain language**: composed-clause consultation order (ADR-118), *gone* semantics (a removed entity remains in memory, terminal actions become false-reads not throws), scope predicate (touchable/reachable/visible, ADR-273), story-tier grammar and refusal fall-through (ADR-268 D2, ADR-270), topic-table entity-topic scoping (ADR-320), the language freeze (Chord story-language grammar/IR, distinct from parser-en-us's English grammar-manifest patterns), held command / clarification follow-up (ADR-225).
+
+## References consulted
+- `docs/proposals/publish-readiness-defects.md` — the source: 40 ACCEPTED items, 1 DONE (P-34), 3 PROPOSED (P-11, P-21, P-29) each naming the ADR amendment its acceptance waits on; the standing per-fix test-first rule; the P-44 language-freeze Done-when.
+- `docs/work/archive/backlog-tier1-2-platform/plan.md` — DONE, folded into this plan by David's ruling 2026-09-03; its Phases 4 (design seam), 5 (#312+#313), 6 (#314), 7 (#317), 8 (#318) are carried into this plan's Phase 1 (design) and Phases 5, 7, 8, 9 (implementation) with their entry/exit states, budgets, and `branch-stories/secret-letter/secret-letter.tests.json` real-path pins preserved in substance.
+- `docs/context/session-20260903-1000-feat-adr-321-world-index.md` (newest) — the second `proposal-review` pass and its resolution: fold the tier plan, close GH #248, fix the proposal per the review; nothing else open from this pass.
+- `docs/context/session-20260903-0700-feat-adr-321-world-index.md` — GH #354/#355 rulings and builds; **GH #355's Chord-spelled `[STATE:]` pin form is already ruled and built** (ADR-307 D2 addendum, `evaluateChordStateClaim` in `packages/branch-tester/src/runner.ts`, session 89ce13) — this satisfies P-39's stated gate before this plan even starts.
+- `docs/context/session-20260903-0145-feat-adr-321-world-index.md` — the proposal's own authorship session: the ending redesign (unrelated to this plan's scope) and the `proposal-review` first pass that produced the original 40/4 split this plan's Phase 1 gates close out.
+- `docs/context/project-profile.md` — stack/conventions this plan must not violate: `./repokit build` for the platform bundle, `pnpm exec turbo run test:ci` for platform unit suites, `./sharpee test branch-stories/secret-letter` (tree-document harness, not `--chain`) for Secret Letter real-path checks, TypeScript strict mode, `lang-en-us` owns all user-facing text, mutation-signature bar (post-call `WorldModel` state inspection, not "didn't throw").
+- `docs/work/secret-letter-port/plan.md` (header) — the outgoing ACTIVE plan this one supersedes under rule 18b; its Phases 4 and 6 are the reason "still live" (not "done but unmarked") is the correct disposition — they are genuinely mid-flight (chase increment, ending build) and untouched by this plan's scope.
+- `CLAUDE.md` — platform changes (anything under `packages/`) require discussion with David before implementation; never auto-retry a failed build or test — report and wait; the bundle (`dist/cli/sharpee.js`) is required for Dungeo transcript testing, never the package-loaded path; chain runs are deterministic at the pinned seed — one run is sufficient.
+- `docs/architecture/adrs/adr-118-stdlib-action-interceptors.md` — one interceptor per action per entity today (`getInterceptorForAction` picks by priority); P-11's gate — the amendment must define a consultation order across composed traits' clauses, including guard-false fall-through into the owner's own arm (topic table included).
+- `docs/architecture/adrs/adr-087-action-centric-grammar.md` — the `.forAction()`/`.define()` action-centric grammar API story grammar and any P-21 fall-through/scoping mechanism must extend consistently with, not fork.
+- `docs/architecture/adrs/adr-267-chord-grammar-pattern-constructs.md` — Chord's pattern-construct surface (slots, alternation); P-21's amendment, if it needs new grammar syntax for scoping, lands here or in ADR-087, not as an ad hoc mechanism.
+- `docs/architecture/adrs/adr-268-chord-grammar-rule-ordering.md` — Consequences: "definition order becomes semantic" and (per the proposal's own citation) a D2 "absolute and unconditional" story-over-standard tier rule; P-21's amendment must reconcile falling through to stdlib without reintroducing priority or making tier resolution conditional.
+- `docs/architecture/adrs/adr-270-author-alteration-model.md` — Consequences: `removeRules`/`extend action` is the one sanctioned mechanism for a story narrowing standard grammar; P-21's amendment must be checked against this existing mechanism before any new one is invented.
+- `docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md` — D2: the topic-table interface (`define topics for …`) survives as the floor's default when no exchange is open; P-29's gate — the amendment must rule whether an entity topic's referenced-entity scope is checked at all, and where that rule lives in this ADR's topic-table section.
+- `docs/architecture/adrs/adr-325-chord-presence-and-duration.md` — Z6 (per the proposal's citation): "`remove` is unchanged and stays terminal." P-8's *gone* semantics amendment supersedes this line; the amendment lands with P-8's own phase (Phase 4), not Phase 1.
+- `docs/architecture/adrs/adr-273-grammar-scope-resolver-world-api.md` — D4 (per the proposal's citation): another actor's inventory is blocked from reachability unless `OpenInventoryTrait` opts in; P-18 (#313) keeps this rule and needs only the Chord spelling of the opt-in chosen (Phase 1), not a rule change.
+- `docs/architecture/adrs/adr-225-parser-meta-verb-layer.md` — Consequences: the held-command engine mechanism is already placed ("a new query source that stores a partial command and completes it from the answer") and the exact v1/v2 cut, including one-input expiry, is explicitly "an implementation-plan decision, not ADR-level" — P-20's expiry amendment is a same-ADR addendum landing with its own fix (Phase 9), not a new ADR and not Phase 1.
+- `docs/architecture/adrs/adr-234-chord-door-loading.md` — D4/D5b: doors and plain exits default bidirectional/closed; P-1 (#327) is the `, one-way` reservation this ADR left open, exercised for the first time.
+- `docs/architecture/adrs/adr-251-chord-generalized-import.md` — `Span.file` landed under this ADR's D6 amendment (2026-08-22); P-13 (#324)'s fix uses it — the issue text calling spans file-less is stale, already corrected in the proposal.
+- `docs/architecture/adrs/adr-328-actors-are-a-platform-concept.md` — Consequences: "GH #313's NPC-inventory ruling gains its proper context" once actors are a platform concept; P-18's fix in this plan is the ADR-273-scoped predecessor step this ADR's own consequence anticipates, not a conflict with it.
+- `docs/architecture/adrs/adr-331-chord-rotation.md` (DRAFT) — Open Question 2 defers core-vs-extension until Chapter 11; a core rotation is a MINOR grammar change. P-44's freeze must not let this land inside the freeze window — it lands before Phase 9 declares the freeze, or after P-44's publish.
+- `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md` — the walkthrough chain is a byte-stable regression baseline; "run it twice" is retired — every phase's Dungeo-chain gate in this plan is a single run.
+- `docs/architecture/adrs/adr-180-build-test-devkit.md` and `docs/architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md` — Phase U2 names the globally-installed author flow (`npm i -g @sharpee/devkit`) that P-43's outside-repo proof exercises for the first time; `./sharpee` (workspace) vs. the globally-installed `sharpee` are deliberately separate builds this plan must not conflate.
+
+## Standing rules (apply to every phase)
+
+**Per-fix test-first (proposal header, DEVARCH rules 12–13a)**: every fixed defect ships with a test that pinned the defect first — a Chord fixture story under `packages/<pkg>/tests/fixtures/` run through `./sharpee test`, or a transcript for stdlib/parser items — failing without the change, passing with it.
+
+**Platform-change discipline (CLAUDE.md, carried from the tier plan)**: every phase touching `packages/` opens by presenting the proposed mechanism to David for discussion before any implementation — written into each phase's entry state below, not assumed.
+
+**Real-path verification (carried from the tier plan)**: `./sharpee test branch-stories/secret-letter` (tree-document harness — never `--chain`, never `.transcript`) is the live acceptance instrument for any fix touching a mechanism Secret Letter exercises. Package unit tests via `pnpm --filter '@sharpee/<pkg>' test` (no `2>&1`). Platform builds via `./repokit build` before any test pass. Phases touching `stdlib`/`parser-en-us`/`story-loader`/`world-model`/`chord` additionally gate on the Dungeo walkthrough chain — `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` after a fresh `./repokit build dungeo` — a single run, deterministic at the pinned seed (ADR-293 Phase D / ADR-294). Never auto-retry a failed build or test — report and wait.
+
+**The language freeze (P-44 (1), as reworded 2026-09-03 after `plan-review`)**: from P-1's first fix onward, no grammar or IR change *outside this proposal's own items* lands until the publish — ADR-331's rotation, if it goes core, lands before Phase 2 starts or after Phase 18. The proposal's own language-touching items run in Phases 2–8 (Phase 7's stdlib-manifest shape lives in `packages/chord`; Phase 8 may add Chord syntax if Phase 1's ADR chooses scoped grammar lines). **Phase 9 declares the full freeze** — a dated line under P-44 recording that Chord grammar and IR are frozen from that date to the publish — because it is the first phase after the last one that can touch them; Phases 10–18 touch none. (The earlier package-based reading, which froze `packages/chord` at Phase 6 and then had Phase 7 edit it, was a `plan-review` CONTRADICTION and is withdrawn.)
+
+## Phases
+
+### Phase 1: Decisions — the three gating ADR amendments and three design rulings
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: No code. Three ADR amendments (rule 11/11a: draft, interview if open questions remain, `adr-review`, David accepts before the gated item can be considered for a future acceptance flip) plus three design rulings carried from the tier plan's Phase 4 design conversation.
+  1. **ADR-118 amendment** (gates P-11, #332, and #350) — the composed-clause consultation order: every composed trait's clause for an action is consulted in a documented order; a false guard falls through to the next clause and then to the owner's own arm, topic table included.
+  2. **ADR-087/267 amendment** (gates P-21, #317) — refusal fall-through to stdlib vs. scoped grammar lines, reconciled against ADR-268 D2's "absolute and unconditional" story-over-standard tier rule and ADR-270's existing `removeRules`/`extend action` alteration model; check the existing mechanism before inventing a new one.
+  3. **ADR-320 amendment** (gates P-29, #242) — entity-topic scoping in the topic-table section: does an entity topic fire regardless of the referenced entity's scope, or does the analyzer flag which forms are scoped.
+  4. **Design ruling, #312 (P-16)** — whether `touchable` includes the actor themself (parity with stdlib's `attack me`) or the divergence is documented instead.
+  5. **Design ruling, #313 (P-18)** — the Chord spelling of the `OpenInventoryTrait` opt-in (the `carries` line implying it, or an explicit line); ADR-273 D4 itself is unchanged.
+  6. **Design ruling, #314 (P-19)** — the grammar-manifest addition shape for a tool-less `take :item from :container`, and whether the removing-action re-wear bug is fixed as an independent capability-dispatch leak.
+- **Entry state**: None — first phase. Present all six items to David as one design conversation (per the tier plan's own Phase 4 shape).
+- **Deliverable**: ADR-118, ADR-087/267 (or whichever of the two files the amendment naturally lands in — decide during drafting), and ADR-320 amendments, each drafted, interviewed if open questions remain, run through `adr-review`, and ACCEPTED by David. Design rulings for #312/#313/#314 recorded in this plan (updating Phases 5 and 7's entry states in place). **This phase does not flip P-11, P-21, or P-29 to ACCEPTED in the proposal** — that is a separate acceptance step (e.g. `/devarch:proposal` or a hand-edit) subsequent phases check for before implementing those items' slices.
+- **Exit state**: Three ADR amendments ACCEPTED (or the phase reports which are still DRAFT with open questions, and later phases' P-11/P-21/P-29 slices stay blocked accordingly). Three design rulings recorded.
+- **Status**: CURRENT (since 2026-09-03)
+
+### Phase 2: Load-time and rendering fixes (#327, #326, #331, #329, #334, #325)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Six independent Chord loader/render-point defects — one-way exits, first-time paragraphs on arrival, authorial-move destination description, phrase-emission-before-offstage-move ordering, worn-item authorial move, and the player's own `phrase detail while` lines on `x me`. No shared mechanism; grouped by "Chord language and loader" section and by being ungated (no Phase 1 dependency).
+- **Entry state**: Present each of the six fixes' mechanism to David before editing `packages/chord`, `packages/story-loader`, `packages/engine`, or `packages/world-model`. No dependency on Phase 1.
+- **Deliverable**: P-1 (#327) — `<direction> to <room>, one-way` compiles, reverse direction absent at load. P-2 (#326) — `first time` paragraph renders on arrival by `go`, standard description follows, never repeats. P-3 (#331) — authorial `move the player to …` (including `to a random adjacent room`) always prints the destination's description in the same turn. P-9 (#329) — a phrase emitted in the same clause arm that moves its owner offstage still renders that turn. P-10 (#334) — an authorial `move` of a worn item clears the worn flag. P-12 (#325) — `x me` renders the player's own `phrase detail while` lines. Each ships with a fixture story or fixture test pinning the defect first (standing rule).
+- **Exit state**: All six issues closed on GitHub. New/updated real-path pins in `branch-stories/secret-letter/secret-letter.tests.json` where the mechanism touches Secret Letter content. Relevant package unit suites green. Dungeo walkthrough chain green (going/arrival/inventory are shared core actions).
+- **Status**: PENDING
+
+### Phase 3: Parser/analyzer text-matching fixes (#336, #335, #337, #324, #286, #285)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Six Chord analyzer/binder defects around name resolution and text: possessive-named entities, `phrase … with … when …` ordering, bare-name interpolation markers, inline-body key collisions across imports, phrase-body interpolation, and compass-canonical direction matching. Grouped by "Chord language" section; ungated.
+- **Entry state**: Present each fix's mechanism to David before editing `packages/chord` (lexer/parser/analyzer/binder). No dependency on Phase 1 or Phase 2.
+- **Deliverable**: P-4 (#336) — possessive `create` names resolve as names in conditions/statements, with the parser preferring the declared entity and a clearer diagnostic on genuine ambiguity. P-5 (#335) — `phrase <key> with <param> = <value> when <condition>` parses both orderings, `when` is a value stop. P-6 (#337) — a bare-name marker (`{item}` or a documented hint) names a bound entity with no article. P-13 (#324) — inline `kill` body keys carry `Span.file` so cross-import collisions are impossible. P-14 (#286) — `{phrase-key}` interpolates inside `define phrase` bodies or is rejected with a diagnostic, never silently literal. P-15 (#285) — compass canonicals match in both `refuse when` and `phrase … when` conditions. Each ships with a fixture pinning the defect first.
+- **Exit state**: All six issues closed. `pnpm --filter '@sharpee/chord' test` green with new coverage. Real-path pins added where Secret Letter content exercises the fixed forms. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 4: *Gone* semantics for removed entities (#330 absorbed by #345)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `remove` currently destroys an entity outright, so any later condition naming it throws "Expected an entity, got o0g" instead of reading false, and that internal error surfaces to the player as "I don't understand that." David's ruling (2026-08-31): `remove` marks an entity *gone* rather than destroying it. **This phase lands the ADR-325 Z6 amendment with the fix**, not in Phase 1 — the amendment supersedes Z6's "`remove` is unchanged and stays terminal" line.
+- **Entry state**: Present the *gone*-marking mechanism (where the flag lives, how `is-here`/`has`/state-read conditions evaluate it, how a story condition error is prevented from surfacing as the parser's generic refusal) to David before editing `packages/world-model`/`packages/chord`/`packages/story-loader`. Draft the ADR-325 amendment alongside the design discussion (rule 11/11a: interview if open questions, `adr-review`, David accepts). No dependency on Phases 1–3.
+- **Deliverable**: `remove` marks gone instead of destroying. Every condition naming a gone entity evaluates (is-here false, has false, states as last set) instead of throwing. A story condition error never surfaces as "I don't understand that." ADR-325 amended and ACCEPTED. P-7's own fixture (`remove the voices`, entering the room, taking the exit) is the first pinned test case, per the proposal's own review note that P-8 subsumes it.
+- **Exit state**: #330 and #345 both closed. ADR-325 amendment ACCEPTED. `pnpm --filter '@sharpee/world-model' test`, `pnpm --filter '@sharpee/chord' test`, `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes with the gone-entity fixtures. Dungeo walkthrough chain green (removal is shared core mechanics).
+- **Status**: PENDING
+
+### Phase 5: Scope predicate fixes — NPC-carried item visibility and reachable-includes-player (#312, #313)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: Carried verbatim in substance from `docs/work/archive/backlog-tier1-2-platform/plan.md` Phase 5. Both are "the scope predicate is narrower than it should be" bugs against the same ADR-273 reachability/visibility computation (`ReachabilityBehavior`, `WorldModel` methods, `parser-en-us`'s scope resolver, `packages/chord/src/catalog.ts`'s `SCOPE_REQUIREMENT_PREDICATES`), fixed together so the two predicates stay consistent. Both touch Chord/scope-predicate grammar surface, so they sit inside Phases 2–8, ahead of Phase 9's freeze declaration.
+- **Entry state**: Phase 1's design rulings for #312 and #313 (including the chosen Chord spelling of the `OpenInventoryTrait` opt-in) are recorded. Present the concrete implementation plan to David before editing `world-model`/`parser-en-us`/`stdlib`/`chord` code.
+- **Deliverable**: An on-stage NPC's carried items are in the player's visible/examinable scope; `take` reaches validate so authored refusal arms fire, gated by the chosen opt-in spelling per ADR-273 D4 (reachability rule unchanged). `kick myself`/`kick me`/`kick self` resolve through a `must be reachable` slot the way stdlib's `attack me` already does; the `mercenaries.chord` kick-action workaround is reverted to use the constraint. New tests in `world-model`/`stdlib`/`parser-en-us` asserting scope inclusion via post-call state inspection. Real-path pins in `branch-stories/secret-letter/secret-letter.tests.json` for the necklace-guard refusal, the sword refusal, and `kick myself`.
+- **Exit state**: #312 and #313 closed. `./sharpee test branch-stories/secret-letter` passes with new scope-dependent branches. Unit suites green across `world-model`, `stdlib`, `parser-en-us`. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 6: Composed-clause dispatch, dialogue-form admission, and the tick-order audit (#332, #350, #349, #351)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Two related-but-distinct fixes plus a carried standing audit, grouped because P-11 and P-17 are the last two items in the proposal's Chord-language section. P-11 (#332, #350) needs every composed trait's action clause consulted in order with guard-false fall-through, including a trait's guarded `asking` clause not shadowing the owner's topic table. P-17 (#349, #351) needs the dialogue analyzer to reject dialogue-only forms outside dialogue dispatch at compile time (or give them a story-level meaning) and the acting statement to accept `<npc> talks to <player-name>`/`talks to the player`. The **tick-order audit** (carried 4+ sessions, flagged by `pre-session-audit` repeatedly) — a one-time systemic pass over every-turn `while <npc> knows <topic>` clauses across the Chord corpus for tick-order sensitivity — runs here per the task's own placement.
+- **Entry state**: **P-11's slice is gated**: verify Phase 1's ADR-118 amendment is ACCEPTED and P-11 has been flipped ACCEPTED in `docs/proposals/publish-readiness-defects.md` (a separate acceptance step, not automatic from Phase 1). If still PROPOSED, implement only P-17 and the tick-order audit in this phase and defer P-11 to a follow-on phase once accepted. P-17 and the audit have no such gate. Present the P-11 consultation-order implementation and the P-17 compile-time-rejection mechanism to David before editing `packages/character`, `packages/chord`, or `packages/story-loader`.
+- **Deliverable**: P-11 — every composed trait's `on <action>` clause is consulted per the ADR-118 amendment's order; #350's guarded `asking` shadow is fixed as the same mechanism. P-17 — dialogue-only forms (`is concluded` in an every-turn clause, `leave` in a floor-turn beat) are rejected at compile time with a diagnostic naming the outside-dialogue spelling, or given a story-level meaning; `<npc> talks to <player-name>` and `talks to the player` compile and address the player. Tick-order audit — every every-turn `while <npc> knows <topic>` clause in the Chord corpus (`branch-stories/`, `stories/`) reviewed for tick-order sensitivity; findings fixed or filed as their own issues, never left silently re-flagged.
+- **Exit state**: #332, #350, #349, #351 closed. Tick-order audit complete, its finding recorded (fixed or filed). `pnpm --filter '@sharpee/character' test`, `pnpm --filter '@sharpee/chord' test`, `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 7: Grammar coverage — bare take-from-container shape, and the removing-action re-wear bug (#314)
+- **Tier**: Medium
+- **Budget**: 150
+- **Domain focus**: Carried verbatim in substance from the archived tier plan's Phase 6. Two related findings in one issue: the grammar-manifest gap (`packages/chord/src/stdlib-manifest.ts` only has the tool-bearing `take :item from :container with|using :tool` shape) and a `stdlib` removing-action bug (removing a wearable from a container leaves it worn instead of carried).
+- **Entry state**: Phase 1's design ruling for #314 (grammar-manifest addition shape; whether the re-wear bug is fixed independently) is recorded. Present the grammar-manifest addition and the removing-action fix to David before editing `parser-en-us`/`packages/chord`/`stdlib` — `./repokit grammar` + `--check` for any standard-grammar `.story`-file change (ADR-269). The manifest is `packages/chord/src/stdlib-manifest.ts`, so this is a Chord-side grammar change and sits inside Phases 2–8, ahead of Phase 9's freeze declaration.
+- **Deliverable**: `take :item from :container` (no tool) parses and behaves as `remove :item from :container`. Removing an unworn wearable from a container leaves it carried, not worn. Real-path pins in `branch-stories/secret-letter/secret-letter.tests.json`'s satchel branch cover both.
+- **Exit state**: #314 closed. `./sharpee test branch-stories/secret-letter` passes with updated satchel-branch pins. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/stdlib' test` green. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 8: Story-action bare-verb grammar scoping / stdlib fall-through (#317)
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: Carried verbatim in substance from the archived tier plan's Phase 7. A story-tier `define action` grammar claim (e.g. `drop` as On-the-Wire's `let go` synonym) currently shadows stdlib's parse of that verb everywhere, never reaching stdlib's own MISSING_OBJECT prompt elsewhere. PROPOSED — gated by Phase 1's ADR-087/267 amendment.
+- **Entry state**: Verify Phase 1's ADR-087/267 amendment is ACCEPTED and P-21 has been flipped ACCEPTED in `docs/proposals/publish-readiness-defects.md`. If still PROPOSED, this phase does not start. Present the chosen mechanism (fall-through vs. scoped grammar, per Phase 1's ruling) to David before editing `story-loader`/`packages/chord`/`parser-en-us`.
+- **Deliverable**: `aerial-runway.chord`'s interim `releasing` action (the static elsewhere-refusal printing "What do you want to drop?" with no follow-up) is removed; bare `drop` reaches stdlib's MISSING_OBJECT prompt everywhere except On the Wire, where it still means `let go` — the issue's own named acceptance check.
+- **Exit state**: #317 closed. `./sharpee test branch-stories/secret-letter` passes with the interim phrase removed. Relevant package unit suites (`story-loader`, `parser-en-us`, or `chord`, per the chosen mechanism) green. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 9: Clarification follow-up — a bare noun after a missing-object prompt completes the command (#318)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Carried verbatim in substance from the archived tier plan's Phase 8. A genuinely new, stateful, parser-wide engine capability — the parser already asks the right MISSING_OBJECT/MISSING_INDIRECT question; nothing holds it open across a turn boundary. The held command's engine placement is already ADR-225's decision (a new query source storing a partial command, completed from the answer); **this phase lands the ADR-225 one-input-expiry amendment with the fix**, not in Phase 1.
+- **Entry state**: Phase 8 (#317) landed first, so bare-verb story claims don't block this flow from being reachable where it's needed. Present the held-command mechanism and the one-input expiry rule to David before editing `packages/engine`/`packages/parser-en-us`. Draft the ADR-225 expiry amendment alongside the design discussion.
+- **Deliverable**: After a MISSING_OBJECT/MISSING_INDIRECT refusal, the engine holds the incomplete command for exactly one turn; if the next input parses as a noun phrase resolving in scope it splices into the held command and executes; otherwise the held command is dropped and the next input parses normally. Story-agnostic fixture coverage in addition to the Secret Letter real-path pin (the two-input `drop` / `satchel` sequence). ADR-225 amended with the one-input-expiry rule and ACCEPTED. **The language freeze is declared here** (standing rules above): a dated line is added under P-44 in `docs/proposals/publish-readiness-defects.md` recording that Chord grammar and IR are frozen from this date until the P-44 publish — this is the first phase after the last one (Phase 8) that can touch them; ADR-331's rotation may not land core inside the window.
+- **Exit state**: #318 closed. ADR-225 amendment ACCEPTED. Freeze line recorded in the proposal, dated. `./sharpee test branch-stories/secret-letter` passes with the two-input drop sequence pinned. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/engine' test` green with new pending-clarification coverage. Dungeo walkthrough chain green — this changes core parse/turn flow, the highest-risk regression surface in this plan; verify carefully before declaring done.
+- **Status**: PENDING
+
+### Phase 10: Text/parser polish (#333, #328, #323, #206, #108, #97)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Six independent stdlib/lang-en-us text and binding defects: instrument-first pattern binding, plural-worn-item article, proper-named-person article in third-person narration, melee no-effect target naming, orphan message ids, and pronoun capture from entity-naming error messages.
+- **Entry state**: Present each fix's mechanism to David before editing `stdlib`/`lang-en-us`/`parser-en-us`. No dependency on Phases 5–9.
+- **Deliverable**: P-22 (#333) — `hang the item on the target` with `the item is an instrument` binds the target as direct object. P-24 (#328) — the inventory's worn group honours the first item's plurality. P-25 (#323) — a proper-named person is never prefixed with an article in third-person narration (ADR-328 D4). P-30 (#206) — the melee no-effect outcome names the target, pinned by the Dungeo wt-13 sequence at seed 42. P-31 (#108) — a test enumerates every action's required messages against `lang-en-us` and fails on any orphan; the count is zero. P-32 (#97) — after "The window is closed.", `open it` resolves to the window.
+- **Exit state**: All six issues closed. `pnpm --filter '@sharpee/stdlib' test` and `pnpm --filter '@sharpee/lang-en-us' test` green. Dungeo walkthrough chain green (wt-13 pin is the named acceptance check for P-30).
+- **Status**: PENDING
+
+### Phase 11: Room description and dialogue mechanics (#338, #346, #300, #241, #242)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Room-contents rendering plus four dialogue-adjacent stdlib/parser gaps: scenery-supporter contents on entry, answering an open exchange with a bare word, ending a conversation with goodbye, implicit-instrument tool gates, and entity-topic scope fall-through. P-29 (#242) is PROPOSED, gated by Phase 1's ADR-320 amendment.
+- **Entry state**: For P-29's slice, verify Phase 1's ADR-320 amendment is ACCEPTED and P-29 has been flipped ACCEPTED in the proposal; if still PROPOSED, this phase implements #338/#346/#300/#241 and defers #242. Present each mechanism to David before editing `stdlib`/`world-model`/`parser-en-us`/`packages/character`.
+- **Deliverable**: P-23 (#338) — arriving by going, by authorial move, and an explicit `look` produce the same supporter-contents listing. P-26 (#346) — while an exchange is open, a bare answer word, `say <word>`, and `answer <word>` all reach it; outside one, a sensible refusal. P-27 (#300) — `goodbye`/`bye` end the current conversation with the NPC's parting line if authored. P-28 (#241) — `cut the fuse` succeeds by implicit instrument when the tool is held; without it, the refusal names what's needed. P-29 (#242) — an entity topic fires wherever the NPC is, referenced-entity scope irrelevant, or the analyzer says which form is scoped, per Phase 1's ADR-320 ruling.
+- **Exit state**: #338, #346, #300, #241 closed; #242 closed if Phase 1's gate cleared. `./sharpee test branch-stories/secret-letter` passes with updated dialogue/room pins. Relevant unit suites green. Dungeo walkthrough chain green.
+- **Status**: PENDING
+
+### Phase 12: The seven Fernhill defects (#245)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Seven defects in Fernhill, filed as #245 when the story's tests were `.transcript` files with each defect asserted-as-it-behaves under a comment. **Those files are gone**: `branch-stories/fernhill/tests/` was retired in the ADR-307 tree migration (commit c0fc900e) and the suite is now `fernhill.tests.json`, which carries no #245 marker (`plan-review` TENSION, 2026-09-03). This phase re-derives the seven from #245's text (copied into P-33) and pins each in the tree document; P-33's "marked transcript assertion is corrected" is read as "the tree-document assertion pins the intended behaviour". Per the task's own sorting instruction: this phase sorts each of the seven into a platform fix or a Fernhill-source fix, rather than assuming either.
+- **Entry state**: For each of the seven, reproduce it against the current build (`./sharpee play` on `branch-stories/fernhill/fernhill.story`), record the reproducing command sequence, and determine platform vs. story fix before editing. Present platform-side mechanisms to David before editing `packages/`; story-side fixes proceed under the existing story-content-can-proceed-autonomously carve-out (CLAUDE.md).
+- **Deliverable**: (1) the winning paragraph double-print (`fernhill-saved` emitted twice) fixed. (2) the fuse's per-turn phrase firing after the blast that killed the player fixed. (3) the vine's seedling self-description while `flowering` fixed. (4) `take the deed` on the closed box silently taking the box fixed. (5) the folly door's custom refusal bypassed by the natural command fixed. (6) `hiding-spot` changing nothing observable fixed. (7) smoke following before being fed (the tool-chain buying one sentence) fixed. Each of the seven pinned in `fernhill.tests.json` asserting the intended behaviour; none remains unpinned or asserted-as-broken.
+- **Exit state**: #245 closed. `./sharpee test branch-stories/fernhill` passes with the seven new pins. Any platform-side fixes carry their own unit test coverage and Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 13: Publish and web client — menu-less Play pane, Chord Writer Restart (#196, #195)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: Two `platform-browser`/devkit web-client fixes. P-34 (#248, Reset menu item) is already DONE (go-live Phase 6a, verified 2026-09-03) — no phase needed for it.
+- **Entry state**: Present the template/menu-flag mechanism and the Restart-storage-clear mechanism to David before editing `platform-browser`/`devkit`. No dependency on Phases 2–12.
+- **Deliverable**: P-35 (#196) — one template with a menu flag; the Play pane serves without in-page chrome; `sharpee publish` and the Chord Writer Publish tab offer the menu on or off. P-36 (#195) — Chord Writer's Restart clears the Play pane's storage before reload, so the world starts fresh and recording state matches the screen.
+- **Exit state**: #196 and #195 closed. `pnpm --filter '@sharpee/platform-browser' test` green; devkit browser-build test asserts both menu states build correctly.
+- **Status**: PENDING
+
+### Phase 14: Release gate — test-green (#224, #320, #319)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Two release-blocking test failures: the family-zoo tutorial no longer type-checks, and ADR-327's fallout left `test:ci` red.
+- **Entry state**: Present the tutorial migration approach (migrate v1.5.0 or retire it with a note) to David before editing `tutorials/familyzoo/`. No platform-change discussion needed for `test:ci` fallout fixes unless they touch `packages/`.
+- **Deliverable**: P-37 (#224) — `./repokit test:npm tutorials/familyzoo/v2.0.0` type-checks and its transcripts pass against 5.2.0; v1.5.0 migrated or retired with a note. P-38 (#320, #319) — `scripts/__tests__/cli-chord-seed.test.ts` and friendly-zoo's `state-assertions.transcript` pass; `pnpm exec turbo run test:ci` and `pnpm test:scripts` both green on the release commit.
+- **Exit state**: #224, #320, #319 closed. `pnpm exec turbo run test:ci` and `pnpm test:scripts` green.
+- **Status**: PENDING
+
+### Phase 15: Release gate — CLI testing tooling (#231, #239, #240)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: cloak-of-darkness's divergent implementations, and two `sharpee test`/`sharpee play` CLI gaps.
+- **Entry state**: Present the cloak-of-darkness unification approach and the `--bless`/`--watch`/piped-input mechanisms to David before editing `stories/cloak-of-darkness`, `devkit`, or `branch-tester`. No dependency on Phases 2–14.
+- **Deliverable**: P-40 (#231) — one cloak-of-darkness implementation remains, both harnesses run the same source, the transcript suite passes. P-41 (#239, #240) — `sharpee test --bless` records goldens, `--watch` re-runs on change; `printf 'north\nnorth\n' | sharpee play` runs both commands; no error message names a flag the author does not have.
+- **Exit state**: #231, #239, #240 closed. Relevant devkit/branch-tester unit suites green; cloak-of-darkness transcript suite passes on the unified source.
+- **Status**: PENDING
+
+### Phase 16: Release gate — docs (#94, #246)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: The author-facing guide set on sharpee.net, and the testing docs page. P-39's gate (where GH #355's Chord-spelled `[STATE:]` pin form is recorded) is met by default, not by ruling: the form is built and #355 closed (session 89ce13, 2026-09-03), and its record is the ADR-307 addendum written the same day — the session's Open Items still carry "ADR-307 addendum vs own ADR — David's call, defaulting to the addendum" (`plan-review` TENSION, 2026-09-03).
+- **Entry state**: No platform-change discussion needed (this is `website/` content, not `packages/`). Before P-39's slice, confirm with David that the ADR-307 addendum is where the pin form stays; if he wants its own ADR, write it first so the site documents the form the ADR names.
+- **Deliverable**: P-42 (#94) — sharpee.net carries an author-facing guide for each subject #94 listed (traits, capability dispatch, the NPC system, and the existing seven guides' subjects where the site lacks one), each verified against 5.2.0; sidebar resolves every link; `docs/unofficial/` untouched. P-39 (#246) — the site documents `continues:`/`--tree`, `seed:`, goldens, `[STATE:]`/`[EVENT:]`/`[CHANNEL:]` (including the new Chord-spelled state-pin form), and no page recommends `--chain` to authors.
+- **Exit state**: #94 and #246 closed. Every guide link resolves; a spot-check against 5.2.0 behavior for each guide passes.
+- **Status**: PENDING
+
+### Phase 17: Release gate — the outside-repo proof (P-43)
+- **Tier**: Medium
+- **Budget**: 150
+- **Domain focus**: ADR-180 Phase U2 names the globally-installed author flow; nobody has run it outside this repository. New item, no GitHub issue.
+- **Entry state**: All prior phases DONE or their gated items resolved (this proof exercises the cumulative fixed state). No platform-change discussion needed — this is a proof run, not a code change, unless it surfaces a defect, in which case that defect is filed and fixed under the standing discipline before the proof is re-run.
+- **Deliverable**: On a machine or directory with no clone of this repo: `npm i -g @sharpee/devkit@5.2.0`, `sharpee init`, a small story written from the sharpee.net getting-started page alone, `sharpee test`, `sharpee build`, `sharpee publish`, and the zip's `index.html` played in a browser through to an ending — recorded as a dated transcript of the commands and their output in `docs/work/publish-readiness/`.
+- **Exit state**: The dated transcript exists and shows every command succeeding through to a played ending.
+- **Status**: PENDING
+
+### Phase 18: Release gate — the publish (P-44)
+- **Tier**: Medium
+- **Budget**: 150
+- **Domain focus**: The publish itself — `@sharpee/*@5.2.0` to npm, Chord Writer's next version signed/notarized, sharpee.net's install page updated, P-43's proof re-run against the published artifacts.
+- **Entry state**: All prior phases DONE (or their gated PROPOSED items explicitly deferred with David's sign-off). Verify the language freeze declared in Phase 9 has held — `git log` shows no `packages/chord` grammar/IR change since the freeze date, and none outside this proposal's items since Phase 2 began. Present the publish sequence to David before running it.
+- **Deliverable**: `@sharpee/*@5.2.0` on npm via the `Publish to npm` workflow, `git diff --exit-code` clean after stamping. Chord Writer's next version ships as signed, notarized DMGs for both architectures, status bar naming Sharpee 5.2.0 and the Chord version. sharpee.net's install page names the published versions. P-43's proof re-run against the published artifacts (not the repo), recorded.
+- **Exit state**: P-44 closed. All 44 proposal items DONE except any explicitly deferred with David's sign-off (recorded here if so).
+- **Status**: PENDING
+
+## Item-to-phase trace
+- Phase 1 (decisions only): gates P-11, P-21, P-29 acceptance; rules P-16, P-18, P-19 design
+- P-1 (#327) -> Phase 2
+- P-2 (#326) -> Phase 2
+- P-3 (#331) -> Phase 2
+- P-4 (#336) -> Phase 3
+- P-5 (#335) -> Phase 3
+- P-6 (#337) -> Phase 3
+- P-7 (#330) -> Phase 4 (absorbed by P-8)
+- P-8 (#345) -> Phase 4
+- P-9 (#329) -> Phase 2
+- P-10 (#334) -> Phase 2
+- P-11 (#332, #350) -> Phase 6 (ADR-118 gate: Phase 1)
+- P-12 (#325) -> Phase 2
+- P-13 (#324) -> Phase 3
+- P-14 (#286) -> Phase 3
+- P-15 (#285) -> Phase 3
+- P-16 (#312) -> Phase 5 (design ruling: Phase 1)
+- P-17 (#349, #351) -> Phase 6
+- P-18 (#313) -> Phase 5 (design ruling: Phase 1)
+- P-19 (#314) -> Phase 7 (design ruling: Phase 1)
+- P-20 (#318) -> Phase 9
+- P-21 (#317) -> Phase 8 (ADR-087/267 gate: Phase 1)
+- P-22 (#333) -> Phase 10
+- P-23 (#338) -> Phase 11
+- P-24 (#328) -> Phase 10
+- P-25 (#323) -> Phase 10
+- P-26 (#346) -> Phase 11
+- P-27 (#300) -> Phase 11
+- P-28 (#241) -> Phase 11
+- P-29 (#242) -> Phase 11 (ADR-320 gate: Phase 1)
+- P-30 (#206) -> Phase 10
+- P-31 (#108) -> Phase 10
+- P-32 (#97) -> Phase 10
+- P-33 (#245) -> Phase 12
+- P-34 (#248) -> DONE, no phase (go-live Phase 6a, 2026-08-08)
+- P-35 (#196) -> Phase 13
+- P-36 (#195) -> Phase 13
+- P-37 (#224) -> Phase 14
+- P-38 (#320, #319) -> Phase 14
+- P-39 (#246) -> Phase 16 (gate already satisfied, session 89ce13)
+- P-40 (#231) -> Phase 15
+- P-41 (#239, #240) -> Phase 15
+- P-42 (#94) -> Phase 16
+- P-43 -> Phase 17
+- P-44 -> Phase 18

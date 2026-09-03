@@ -1,7 +1,7 @@
 # Session Plan: Tier 1 + Tier 2 platform backlog from the Secret Letter port (#311–#318)
 
 **Created**: 2026-08-24
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-09-03, session 639650 — David: "fold the tier plan into publish-readiness". Phases 1–3 delivered; Phases 4–8 never started here and are carried verbatim into `docs/work/publish-readiness/plan.md`, which owns #313, #314, #317, #318, #312 from now on. Surfaced by the second `proposal-review` of `docs/proposals/publish-readiness-defects.md`, whose P-16/P-18/P-19/P-20/P-21 duplicated these phases.)
 **Superseded by**: `docs/work/adr-327-explicit-references/plan.md` (rule 18b "still live" disposition, David 2026-08-25 — Phases 4–8 untouched and resumable at Phase 4; `.current-plan` returns here when the ADR-327 plan is done)
 **Supersedes**: `docs/work/secret-letter-port/plan.md` (rule 18b "still live" disposition, David's "pause the port" — that plan stays exactly where it is, Phases 4 and 6 untouched; `.current-plan` returns there when this plan is done)
 **Overall scope**: Eight platform issues filed by the Secret Letter port's Phase 6 rounds, worked in two tiers. Tier 1 (#316, #315, #311) are the port's own three named blockers — each has a live story increment standing on it for real-path verification. Tier 2 (#313, #314, #317, #318, #312) is one seam — how parser scope and story grammar resolve entities — five filings from the same rounds, worked from one design conversation rather than five independent fixes.
@@ -74,7 +74,7 @@
   4. **#317** (story-action bare-verb shadows stdlib elsewhere) — room/condition-scoped grammar lines vs. refusal fall-through to stdlib's MISSING_OBJECT flow (the issue's own preferred shape); check against ADR-270's existing `removeRules`/`extend action` mechanism before inventing a new one, **and against ADR-268 D2** (per plan-review 2026-08-24): story-over-standard tier resolution is deliberately "absolute and unconditional," and both fix shapes introduce a conditional dimension into it — a parse-time `.where()`-style gate (the sanctioned surface for authored grammar, ADR-231 D2a via ADR-270 D2) may be the reconciling spelling; decide whether this needs its own ADR or fits inside ADR-269/270's existing model.
   5. **#318** (clarification follow-up: pending command held across a turn) — a genuinely new, stateful, parser-wide engine mechanism (explicitly not a secret-letter special, per the issue). Flag as **ADR-worthy** for David's confirmation — precedent in ADR-017 (disambiguation) and ADR-018 (conversational state management) for how Sharpee has modeled cross-turn parser state before.
 - **Exit state**: Every issue in the seam has a recorded design decision (and, where flagged, an ADR confirmation from David) that Phases 5–8 build against without re-litigating. `plan.md` updated with the decisions before any of Phases 5–8 starts implementation.
-- **Status**: PENDING
+- **Status**: ABANDONED here — folded into `docs/work/publish-readiness/plan.md` (2026-09-03, session 639650, David's ruling); the phase text above is carried over verbatim and is worked there, not here.
 
 ### Phase 5: Scope predicate fixes — NPC-carried item visibility and reachable-includes-player (#313, #312)
 - **Tier**: Medium
@@ -83,7 +83,7 @@
 - **Entry state**: Phase 4's design decisions for #313 and #312 are recorded. Present the concrete implementation plan to David before editing `world-model`/`parser-en-us`/`stdlib`/`chord` code.
 - **Deliverable**: An on-stage NPC's carried items are in the player's visible/examinable/takeable-attempt scope (`x necklace`, `take necklace` reach validate; the monkey's four refusal arms and the mercenaries' `sword-not-for-you` refusal become reachable). `kick myself`/`kick me`/`kick self` resolve through a `must be reachable` slot the same way stdlib's `attack me` does — the `mercenaries.chord` kick action's constraint workaround (shipped without `must be reachable`) is reverted to use the constraint once fixed. New tests in `world-model`/`stdlib`/`parser-en-us` asserting scope inclusion (post-call state inspection per the project profile's mutation-signature bar), plus real-path pins in `branch-stories/secret-letter/secret-letter.tests.json` for the necklace-guard refusal, the sword refusal, and `kick myself`.
 - **Exit state**: `#313` and `#312` closed. `./sharpee test branch-stories/secret-letter` passes with new scope-dependent branches. Unit suites green across `world-model`, `stdlib`, `parser-en-us`. Dungeo walkthrough chain green.
-- **Status**: PENDING
+- **Status**: ABANDONED here — folded into `docs/work/publish-readiness/plan.md` (2026-09-03, session 639650, David's ruling); the phase text above is carried over verbatim and is worked there, not here.
 
 ### Phase 6: Grammar coverage — bare take-from-container shape, and the removing-action re-wear bug (#314)
 - **Tier**: Medium
@@ -92,7 +92,7 @@
 - **Entry state**: Phase 4's design decision for #314 is recorded. Present the grammar-manifest addition and the removing-action fix to David before editing `parser-en-us`/`packages/chord`/`stdlib` code — remember `./repokit grammar` + `--check` for any standard-grammar `.story`-file change per ADR-269.
 - **Deliverable**: `take :item from :container` (no tool) parses and behaves as `remove :item from :container`. Removing an unworn wearable from a container leaves it carried, not worn. Held-back `stdlib` "You stuff [the noun] into your satchel." insert-line note from the Phase 6 progress log is out of scope here unless David wants it folded in during the design discussion. Real-path pins in `branch-stories/secret-letter/secret-letter.tests.json`'s satchel branch cover both the new grammar shape and the fixed removing behavior (cap taken from satchel bare, ends up carried not worn).
 - **Exit state**: `#314` closed. `./sharpee test branch-stories/secret-letter` passes with updated satchel-branch pins. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/stdlib' test` green. Dungeo walkthrough chain green.
-- **Status**: PENDING
+- **Status**: ABANDONED here — folded into `docs/work/publish-readiness/plan.md` (2026-09-03, session 639650, David's ruling); the phase text above is carried over verbatim and is worked there, not here.
 
 ### Phase 7: Story-action bare-verb grammar scoping / stdlib fall-through (#317)
 - **Tier**: Small
@@ -101,7 +101,7 @@
 - **Entry state**: Phase 4's design decision for #317 is recorded (including whether it needs its own ADR or extends ADR-269/270's existing author-alteration model). Present the concrete mechanism to David before editing `story-loader`/`packages/chord`/`parser-en-us` code.
 - **Deliverable**: `aerial-runway.chord`'s interim `releasing` action (the static elsewhere-refusal that prints "What do you want to drop?" without follow-up) is removed; bare `drop` reaches stdlib's own MISSING_OBJECT prompt everywhere except On the Wire, where it still means `let go`. This is the issue's own named acceptance check.
 - **Exit state**: `#317` closed. `./sharpee test branch-stories/secret-letter` passes with the interim phrase removed and the scoped/fall-through behavior pinned. Relevant package unit suites (`story-loader`, `parser-en-us`, or `chord` depending on Phase 4's chosen mechanism) green. Dungeo walkthrough chain green.
-- **Status**: PENDING
+- **Status**: ABANDONED here — folded into `docs/work/publish-readiness/plan.md` (2026-09-03, session 639650, David's ruling); the phase text above is carried over verbatim and is worked there, not here.
 
 ### Phase 8: Clarification follow-up — a bare noun after a missing-object prompt completes the command (#318)
 - **Tier**: Large
@@ -110,7 +110,7 @@
 - **Entry state**: Phase 4's design decision for #318 is recorded, including whether David confirmed it ADR-worthy. If confirmed, the ADR is drafted and discussed before implementation starts — this phase's own entry gate, in addition to the standing platform-change discussion. #317 landed first (Phase 7) so bare-verb story claims don't block this flow from being reachable in the rooms that need it (the two issues are explicitly related per the issue text).
 - **Deliverable**: After a MISSING_OBJECT/MISSING_INDIRECT refusal, the engine holds the incomplete command for exactly one turn; if the next input parses as a noun phrase resolving in scope, it splices into the held command and executes (the inventory-aware "You're not carrying anything." vs. "What do you want to drop?" variant, and the two-input `drop` / `satchel` sequence David specified); otherwise the held command is dropped and the next input parses normally. This is explicitly a platform-wide feature, not a secret-letter special — test coverage must include a story-agnostic fixture in addition to the secret-letter real-path pin.
 - **Exit state**: `#318` closed. ADR landed and ACCEPTED if confirmed ADR-worthy. `./sharpee test branch-stories/secret-letter` passes with the two-input drop sequence pinned. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/engine' test` green with new pending-clarification coverage. Dungeo walkthrough chain green (this changes core parse/turn flow — the highest-risk regression surface in this plan, verify carefully before declaring done).
-- **Status**: PENDING
+- **Status**: ABANDONED here — folded into `docs/work/publish-readiness/plan.md` (2026-09-03, session 639650, David's ruling); the phase text above is carried over verbatim and is worked there, not here.
 
 ## Item-to-phase trace
 - #316 -> Phase 1
