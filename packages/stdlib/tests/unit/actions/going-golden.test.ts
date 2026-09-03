@@ -78,8 +78,6 @@ describe('goingAction (Golden Pattern)', () => {
       expect(goingAction.requiredMessages).toContain('door_locked');
       expect(goingAction.requiredMessages).toContain('destination_not_found');
       expect(goingAction.requiredMessages).toContain('moved');
-      expect(goingAction.requiredMessages).toContain('moved_to');
-      expect(goingAction.requiredMessages).toContain('first_visit');
       expect(goingAction.requiredMessages).toContain('too_dark');
       expect(goingAction.requiredMessages).toContain('need_light');
     });

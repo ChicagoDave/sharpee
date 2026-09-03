@@ -378,8 +378,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     'removed_from',
     'removed_from_surface',
     'cant_reach',
-    'already_have',
-    'nothing_to_remove'
+    'already_have'
   ],
   group: 'object_manipulation',
 

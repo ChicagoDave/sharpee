@@ -37,8 +37,6 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     'nothing_special',
     'in_container',
     'on_supporter',
-    'cant_see_in_dark',
-    'look_around',
     'examine_surroundings'
   ],
   

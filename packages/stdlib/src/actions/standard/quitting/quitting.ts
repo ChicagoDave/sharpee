@@ -79,8 +79,6 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     'quit_save_query',
     'quit_unsaved_query',
     // Status messages
-    'quit_requested',
-    'game_ending'
   ],
   
   validate(context: ActionContext): ValidationResult {

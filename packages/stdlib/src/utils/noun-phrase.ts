@@ -104,6 +104,11 @@ export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: Nou
     number,
     articleType,
     referableId: entity.id,
+    // GH #323: the flag the Assembler reads to suppress an article a
+    // template hint would otherwise force ("to {the recipient}" must render
+    // "to Jack", never "to the Jack"). `articleType: 'none'` alone is
+    // overridden by the hint downstream.
+    ...(properName ? { properName: true } : {}),
   };
 
   const staticAdjectives = identity.adjectives ?? [];

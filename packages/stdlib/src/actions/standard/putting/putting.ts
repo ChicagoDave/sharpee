@@ -355,8 +355,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     'cant_put_in_itself',
     'cant_put_on_itself',
     'no_room',
-    'no_space',
-    'nothing_to_put'
+    'no_space'
   ],
   group: 'object_manipulation',
 

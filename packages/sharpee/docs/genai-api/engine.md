@@ -1502,6 +1502,18 @@ export declare class GameEngine {
      * Execute a turn
      */
     /**
+     * Register the first entity a failed turn's events name as the pronoun
+     * referent (GH #97). Refusal events carry their named entities as
+     * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
+     * door a `go west` stopped at, or the window a `look` mentioned, becomes
+     * what `it` means next. The first such phrase wins; a turn naming nothing
+     * leaves the context alone.
+     *
+     * @param events - The failed turn's events
+     * @param turn - The current turn number
+     */
+    private registerBlockedReferent;
+    /**
      * Spend the held command (GH #318): when a clarification question is open
      * and this input does not parse as a command of its own, splice it onto
      * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the

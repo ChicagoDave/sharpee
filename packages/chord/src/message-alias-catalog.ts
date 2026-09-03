@@ -16,7 +16,7 @@
  * `alias = kebab(action) + "-" + kebab(message-key)` (ADR-255 D2). Hand-curation
  * of a cryptic alias is allowed (the D5 test pins ids, not spellings); regenerate
  * the baseline by re-applying the rule to the current `lang-en-us` messages.
- * 748 aliases across 56 actions, 0 collisions.
+ * 752 aliases across 56 actions, 0 collisions (four looking keys added 2026-09-03, GH #108).
  */
 
 export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
@@ -413,6 +413,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'looking-nothing-special',
   'looking-room-dark',
   'looking-room-description',
+  'looking-room-description-brief',
+  'looking-in-container',
+  'looking-on-supporter',
+  'looking-examine-surroundings',
   'looking-surface-contents',
   'looking-you-see',
   // if.action.lowering

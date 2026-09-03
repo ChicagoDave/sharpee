@@ -37,8 +37,6 @@ describe('lookingAction (Golden Pattern)', () => {
       expect(lookingAction.requiredMessages).toContain('nothing_special');
       expect(lookingAction.requiredMessages).toContain('in_container');
       expect(lookingAction.requiredMessages).toContain('on_supporter');
-      expect(lookingAction.requiredMessages).toContain('cant_see_in_dark');
-      expect(lookingAction.requiredMessages).toContain('look_around');
       expect(lookingAction.requiredMessages).toContain('examine_surroundings');
     });
 

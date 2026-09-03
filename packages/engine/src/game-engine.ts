@@ -1001,6 +1001,33 @@ export class GameEngine {
    * Execute a turn
    */
   /**
+   * Register the first entity a failed turn's events name as the pronoun
+   * referent (GH #97). Refusal events carry their named entities as
+   * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
+   * door a `go west` stopped at, or the window a `look` mentioned, becomes
+   * what `it` means next. The first such phrase wins; a turn naming nothing
+   * leaves the context alone.
+   *
+   * @param events - The failed turn's events
+   * @param turn - The current turn number
+   */
+  private registerBlockedReferent(events: ISemanticEvent[], turn: number): void {
+    const parser = this.parser as unknown as { registerPronounEntity?: (id: string, text: string, turn: number) => void } | undefined;
+    if (!parser || typeof parser.registerPronounEntity !== 'function') return;
+    for (const event of events) {
+      const params = (event.data as { params?: Record<string, unknown> } | undefined)?.params;
+      if (!params) continue;
+      for (const value of Object.values(params)) {
+        const np = value as { kind?: unknown; referableId?: unknown; name?: unknown } | null;
+        if (np && typeof np === 'object' && np.kind === 'noun' && typeof np.referableId === 'string') {
+          parser.registerPronounEntity(np.referableId, typeof np.name === 'string' ? np.name : np.referableId, turn);
+          return;
+        }
+      }
+    }
+  }
+
+  /**
    * Spend the held command (GH #318): when a clarification question is open
    * and this input does not parse as a command of its own, splice it onto
    * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
@@ -1228,6 +1255,16 @@ export class GameEngine {
           this.parser.updatePronounContext(result.validatedCommand, turn);
         }
       }
+      // GH #97: a refusal that names an entity ("The oak door is closed.")
+      // makes it the pronoun referent — the player expects to act on
+      // whatever was just mentioned. A blocked action counts as a successful
+      // turn (its `blocked()` events are ordinary events), so this reads the
+      // events, not `result.success`: only `blocked: true` events and the
+      // events of a failed turn are scanned.
+      this.registerBlockedReferent(
+        result.success ? result.events.filter((e) => (e.data as { blocked?: unknown } | undefined)?.blocked === true) : result.events,
+        turn,
+      );
 
       // Emit events if configured
       if (this.config.onEvent) {

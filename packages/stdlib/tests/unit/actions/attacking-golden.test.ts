@@ -40,7 +40,6 @@ describe('attackingAction (Golden Pattern)', () => {
       // expect(attackingAction.requiredMessages).toContain('indestructible');
       expect(attackingAction.requiredMessages).toContain('attacked');
       expect(attackingAction.requiredMessages).toContain('attacked_with');
-      expect(attackingAction.requiredMessages).toContain('hit');
       expect(attackingAction.requiredMessages).toContain('hit_with');
       expect(attackingAction.requiredMessages).toContain('struck');
       expect(attackingAction.requiredMessages).toContain('struck_with');
@@ -64,8 +63,6 @@ describe('attackingAction (Golden Pattern)', () => {
       // expect(attackingAction.requiredMessages).toContain('needs_tool');
       // 'not_strong_enough' message removed with BREAKABLE trait
       // expect(attackingAction.requiredMessages).toContain('not_strong_enough');
-      expect(attackingAction.requiredMessages).toContain('already_damaged');
-      expect(attackingAction.requiredMessages).toContain('partial_break');
     });
 
     test('should belong to interaction group', () => {

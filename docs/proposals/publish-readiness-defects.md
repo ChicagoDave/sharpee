@@ -10,6 +10,7 @@
 **Phase 6 landed (2026-09-03, session effb6f)** — P-17 DONE (#349, #351 closed); the tick-order audit found one corpus clause, already covered by ADR-332 D4a; P-11's slice deferred to plan Phase 6a pending ADR-118 A1. **Now 23 PLANNED, 18 DONE, 3 PROPOSED.**
 **Phase 7 landed (2026-09-03, session effb6f)** — P-19 DONE (#314 closed). Phase 8 (P-21) is blocked on ADR-267 A1; Phase 9 proceeds. **Now 22 PLANNED, 19 DONE, 3 PROPOSED.**
 **Phase 9 landed (2026-09-03, session effb6f)** — P-20 DONE (#318 closed); the language freeze is declared under P-44 with the `only while` carve-out. **Now 21 PLANNED, 20 DONE, 3 PROPOSED.**
+**Phase 10 landed (2026-09-03, session effb6f)** — P-22, P-24, P-25, P-30, P-31, P-32 DONE (#333, #328, #323, #206, #108, #97 closed). **Now 15 PLANNED, 26 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -126,7 +127,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-22: An instrument-first pattern leaves the direct object empty (#333)
 - **Done when**: `hang the item on the target` with `the item is an instrument` binds the target as the direct object; the trait clause fires.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #333 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-23: Room description on entering omits scenery supporters' contents (#338)
 - **Done when**: arriving by going, by authorial move, and an explicit `look` produce the same contents listing, supporters included.
@@ -134,11 +135,11 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-24: "a boots (worn)" — an article on a plural worn item (#328)
 - **Done when**: the inventory's worn group honours the first item's plurality (no article or `some`).
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #328 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-25: "the Jack" in third-person act narration (#323)
 - **Done when**: a proper-named person is never prefixed with an article in the platform's third-person voice (ADR-328 D4).
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #323 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-26: A player cannot answer an open exchange (#346)
 - **Issue text**: `define exchange` rows are bare answer words (`yes`, `aye`, `sworn`) and none parse; the only path is `ask kemp about yes`.
@@ -159,16 +160,16 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-30: Melee no-effect message binds the weapon as the target (#206)
 - **Done when**: the no-effect outcome names the target, pinned by the Dungeo wt-13 sequence at seed 42.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #206 closed — the sixth blow now refuses by scope naming the thief, wt-13 re-blessed on that line); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-31: Thirty-plus orphan message ids with no English template (#108)
 - **Issue text**: 11 of 43 standard actions declare `requiredMessages` keys with no lang-en-us template; `restarting` has no lang file; each is a silent turn.
 - **Done when**: a test enumerates every action's required messages against lang-en-us and fails on any orphan; the count is zero.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #108 closed; the sync test holds the count at zero); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-32: Pronoun capture from error messages that name entities (#97)
 - **Done when**: after "The window is closed.", `open it` resolves to the window.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 10; #97 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-33: The nine Fernhill defects (#245)
 - **Issue text**: nine found; #241, #242 and #243 were spun out (P-28, P-29 and the testing set), leaving these seven, each asserted-as-it-behaves in a committed Fernhill transcript marked with a comment:

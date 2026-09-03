@@ -592,27 +592,17 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         room_description: string;
+        room_description_brief: string;
+        in_container: string;
+        on_supporter: string;
+        examine_surroundings: string;
+        room_dark: string;
+        exits: string;
+        you_see: string;
         contents_list: string;
-        no_exit: string;
-        no_exit_that_way: string;
-        door_closed: string;
-        door_locked: string;
-        too_dark: string;
-        moved: string;
-        cant_go_through: string;
-        already_there: string;
-        nowhere_to_go: string;
-        no_direction: string;
-        not_in_room: string;
-        no_exits: string;
-        movement_blocked: string;
-        destination_not_found: string;
-        need_light: string;
-        went: string;
-        arrived: string;
-        departs: string;
-        arrives: string;
-        cant_go: string;
+        nothing_special: string;
+        container_contents: string;
+        surface_contents: string;
     };
     help: {
         description: string;
@@ -653,24 +643,6 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        room_description: string;
-        room_dark: string;
-        exits: string;
-        you_see: string;
-        contents_list: string;
-        nothing_special: string;
-        container_contents: string;
-        surface_contents: string;
     };
     help: {
         description: string;
@@ -733,6 +705,38 @@ export declare const standardActionLanguage: ({
         surface_contents: string;
         worn_by_you: string;
         worn_by_other: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        contents_list: string;
+        no_exit: string;
+        no_exit_that_way: string;
+        door_closed: string;
+        door_locked: string;
+        too_dark: string;
+        moved: string;
+        cant_go_through: string;
+        already_there: string;
+        nowhere_to_go: string;
+        no_direction: string;
+        not_in_room: string;
+        no_exits: string;
+        movement_blocked: string;
+        destination_not_found: string;
+        need_light: string;
+        went: string;
+        arrived: string;
+        departs: string;
+        arrives: string;
+        cant_go: string;
     };
     help: {
         description: string;

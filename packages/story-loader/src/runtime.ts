@@ -3136,7 +3136,12 @@ export class ChordRuntime {
     // the primary (entity) slot skips it, and entity-less patterns are the
     // ones carrying no entity slot at all.
     const hasDirections = (def.directions ?? []).length > 0;
-    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction');
+    // GH #333: an instrument-typed slot is parsed into the command's
+    // instrument seat, so it is never the primary (direct-object) slot —
+    // `hang the item on the target` with `the item is an instrument` has
+    // `target` as its primary slot wherever the instrument sits.
+    const instrumentSlotNames = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
+    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction') && !instrumentSlotNames.has(word);
     const primarySlot = def.patterns
       .flatMap((p) => p.parts)
       .filter((part): part is { kind: 'slot'; word: string } => part.kind === 'slot')
@@ -3159,7 +3164,7 @@ export class ChordRuntime {
       // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
       // defaultSemantics (merged parser-side, ADR-148) — the access seam
       // for semantic word bindings.
-      command: { directObject?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
+      command: { directObject?: { entity?: IFEntity }; instrument?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
       sharedData: Record<string, unknown>;
       event(type: string, data: Record<string, unknown>): ISemanticEvent;
     }
@@ -3170,6 +3175,16 @@ export class ChordRuntime {
       // through the execution entry (ADR-329 D1/D10) as much as the player.
       const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
       if (entity && primarySlot) slots[primarySlot] = entity.id;
+      // GH #333: an instrument-typed slot (`the item is an instrument`) is
+      // parsed into the command's instrument seat, never the direct object —
+      // bind it under its own slot name so `{the item}` in a clause body
+      // renders whatever the pattern's position was.
+      const instrumentEntity = context.command.instrument?.entity;
+      if (instrumentEntity) {
+        for (const typed of def.slotTypes ?? []) {
+          if (typed.type === 'instrument' && slots[typed.slot] === undefined) slots[typed.slot] = instrumentEntity.id;
+        }
+      }
       const extras = context.command.parsed?.extras ?? {};
       for (const key of semanticKeys) {
         const v = extras[key];

@@ -276,14 +276,9 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     'no_target',
     'not_held',
     'still_worn',
-    'container_not_open',
-    'container_full',
     'dropped',
     'dropped_in',
     'dropped_on',
-    'cant_drop_here',
-    'dropped_quietly',
-    'dropped_carelessly',
     'nothing_to_drop'
   ],
 

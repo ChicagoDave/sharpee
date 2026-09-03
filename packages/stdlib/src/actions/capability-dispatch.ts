@@ -101,8 +101,7 @@ export function createCapabilityDispatchAction(
     },
 
     requiredMessages: [
-      'no_target',
-      'cant_do_that'
+      'no_target'
     ],
 
     validate(context: ActionContext): ValidationResult {

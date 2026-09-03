@@ -410,6 +410,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'looking-nothing-special': 'if.action.looking.nothing_special',
   'looking-room-dark': 'if.action.looking.room_dark',
   'looking-room-description': 'if.action.looking.room_description',
+  'looking-room-description-brief': 'if.action.looking.room_description_brief',
+  'looking-in-container': 'if.action.looking.in_container',
+  'looking-on-supporter': 'if.action.looking.on_supporter',
+  'looking-examine-surroundings': 'if.action.looking.examine_surroundings',
   'looking-surface-contents': 'if.action.looking.surface_contents',
   'looking-you-see': 'if.action.looking.you_see',
   // if.action.lowering

@@ -218,8 +218,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     'door_locked',
     'destination_not_found',
     'moved',
-    'moved_to',
-    'first_visit',
     'too_dark',
     'need_light'
   ],

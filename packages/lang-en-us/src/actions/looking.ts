@@ -17,6 +17,14 @@ export const lookingLanguage = {
   messages: {
     // Room description - rendered via action.success (if.event.room.description is suppressed)
     'room_description': "{name}\n{verbatim:description}",
+    // GH #108: keys the action emits that had no English. Brief mode shows
+    // the name alone (VERBOSE/BRIEF, ADR-225); the container/supporter forms
+    // are the look from inside or atop something that hides the room; an
+    // objectless `examine` reads as a look.
+    'room_description_brief': "{name}",
+    'in_container': "{You} {be} in {the container}.",
+    'on_supporter': "{You} {be} on {the supporter}.",
+    'examine_surroundings': "{name}\n{verbatim:description}",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
     'you_see': "{You} can {see} {items} here.",
