@@ -5,6 +5,7 @@
 **Planned (2026-09-03, session 639650)** — `session-planner` wrote `docs/work/publish-readiness/plan.md` (18 phases) from this proposal; all 40 ACCEPTED items flipped PLANNED (ADR-0008 status-flip ownership), cited by phase in the plan's item-to-phase trace. P-11, P-21, and P-29 stay PROPOSED — the plan's Phase 1 is their gate (the ADR-118, ADR-087/267, and ADR-320 amendments respectively); they are not planned for implementation until each is separately flipped ACCEPTED. Document **Status** stays REVIEWED, not PLANNED, while any item remains PROPOSED.
 **Phase 2 landed (2026-09-03, session effb6f)** — P-1, P-2, P-3, P-9, P-10, P-12 DONE (#327, #326, #331, #329, #334, #325 closed with evidence); Phase 1's three ADR amendments are DRAFT awaiting David, so P-11/P-21/P-29 stay PROPOSED. **Now 34 PLANNED, 7 DONE, 3 PROPOSED.**
 **Phase 3 landed (2026-09-03, session effb6f)** — P-4, P-5, P-6, P-13, P-14 (as built), P-15 DONE (#336, #335, #337, #324, #286, #285 closed). **Now 28 PLANNED, 13 DONE, 3 PROPOSED.**
+**Phase 4 landed (2026-09-03, session effb6f)** — P-7, P-8 DONE (#330, #345 closed; ADR-325 Z6 amendment DRAFT). **Now 26 PLANNED, 15 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -50,12 +51,12 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 - **Review note (2026-09-03)**: P-8's *gone* semantics subsume this; the fixture here is P-8's first test case and the two are planned together.
 - **Issue text**: after `remove the voices`, entering the room throws `Expected an entity, got o0g` and the direction stops parsing.
 - **Done when**: a `blocked while <entity> is here` condition reads false after the entity is removed; entering the room and taking the exit both work.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 4 with P-8; #330 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-8: A removed entity in a refuse-when condition throws as "I don't understand that." (#345)
 - **Issue text**: David's direction (2026-08-31) — removed items remain in memory as *gone*: `remove` marks rather than destroys.
 - **Done when**: `remove` marks the entity gone; every condition naming a gone entity evaluates (is-here false, has false, states as last set) instead of throwing; a story condition error never surfaces as the parser's "I don't understand that."; **and ADR-325 Z6 ("`remove` is unchanged and stays terminal") is amended with the *gone* semantics in the same landing** (review 2026-09-03, STALE ADR).
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 4; #345 closed; ADR-325 Z6 amendment DRAFT awaiting David); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-9: A phrase emitted in the same clause arm that moves its owner off-stage never renders (#329)
 - **Done when**: a phrase emitted before its owner is moved offstage or removed in the same arm renders in that turn's output.

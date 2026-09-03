@@ -313,12 +313,16 @@ end before
 
 `;
 
-  it('the remove statement removes the entity and narrates the witnessed disappearance (AC-6)', () => {
+  it('the remove statement marks the entity gone and narrates the witnessed disappearance (AC-6; ADR-325 Z6 as amended)', () => {
     const booted = boot(REMOVE_SOURCE);
     const catId = booted.story.entityId('cat')!;
     const events = enterRoom(booted, 'lab');
     expect(messageIdsOf(events)).toContain('cat.disappeared');
-    expect(booted.world.hasEntity(catId)).toBe(false);
+    // GH #345: `remove` no longer destroys — the cat stays in the world,
+    // nowhere, flagged gone, so conditions naming it still evaluate.
+    expect(booted.world.hasEntity(catId)).toBe(true);
+    expect(booted.world.getLocation(catId)).toBeUndefined();
+    expect(booted.story.runtime.isGone(catId, booted.world)).toBe(true);
   });
 
   it('an unwitnessed removal removes silently — nothing narrated, nothing consumed', () => {

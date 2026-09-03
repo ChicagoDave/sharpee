@@ -12,6 +12,14 @@ import type { Span } from '@sharpee/chord';
 
 /** A story failed to load. Carries the `.story` span when one is known. */
 export class LoadError extends Error {
+  /**
+   * The engine's duck-typed marker (GH #345): a failure carrying
+   * `storyRule: true` is a story rule's diagnostic, not a parse failure,
+   * and renders as such — never as the parser's own "I don't understand
+   * that." Read by the command executor when it builds `command.failed`.
+   */
+  readonly storyRule = true as const;
+
   constructor(
     message: string,
     /** Source span in the `.story` file, when attributable. */

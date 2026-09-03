@@ -71,11 +71,12 @@
 ##
 ## The source's `conversation` backdrop as it stands in the Alley. Off-stage
 ## until the bite moves it in, and off-stage again when the briefing ends —
-## `move … offstage`, not `remove`: a removed entity cannot be named by the
-## alley's `southeast is blocked while the voices is here` (entering threw,
-## then the exit stopped parsing — GH #330), and a phrase emitted in the
-## same arm as its owner's departure never rendered (GH #329). Off-stage
-## keeps the names resolvable; the room-owned spool keeps the text.
+## `move … offstage`, not `remove`, because the voices come BACK: a `remove`
+## now marks an entity gone rather than destroying it (GH #330 and GH #345
+## fixed 2026-09-03 — a gone entity still evaluates in the alley's `southeast
+## is blocked while the voices is here`), but offstage is the word for an
+## entity that is waiting. The room-owned spool keeps the text (GH #329,
+## fixed the same day, no longer forces it — left as written).
 ## ---------------------------------------------------------------------------
 
 create the voices

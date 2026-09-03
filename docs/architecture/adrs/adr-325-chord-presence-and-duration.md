@@ -649,3 +649,30 @@ Authorized 2026-08-23. The issues are filed; this is the landing order:
   (possessive location → all entities → landings → timers vs tallies → named-turn timers
   → `has expired` → presence separated from timers → `when … expires` → the interrupt →
   `meanwhile` → the movement clauses), and this ADR.
+
+## Amendment — Z6: `remove` marks an entity *gone* (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (no open questions; the direction is his, 2026-08-31). Lands with publish-readiness plan Phase 4 (P-8, GH #345; P-7, GH #330 absorbed). Supersedes the line "`remove` is unchanged and stays terminal (Z6)" above.
+
+### Context
+
+- Chord's `remove` called `WorldModel.removeEntity`, which destroys the entity. Any condition still naming it then threw at evaluation (`evaluator.ts` `entityValue`: "Expected an entity, got `o0g`"): a `<direction> is blocked while the voices is here` made entering the room throw and the direction stop parsing (GH #330); a `refuse when the necklace is not in the player …` after `remove the necklace` killed every later `buy` as the parser's "I don't understand that." (GH #345). The story's workarounds were `move … offstage` and ordering refusal ladders around removals.
+- David's direction (2026-08-31): *removed items remain in memory, but as 'gone'* — out of play (never in scope, never listed, never a parse target), while conditions, pins, and clauses that name it still evaluate; location predicates read false/nowhere instead of throwing.
+
+### Decision
+
+- **Z6a — Chord's `remove` marks gone; the platform primitive stays terminal.** `remove <entity>` moves the entity offstage through the ordinary move lifecycle (so the `disappeared` row fires for whoever witnessed it, exactly as `move … offstage`) and stamps `chord.gone.<ir-id> = true` in world state. `WorldModel.removeEntity` is untouched — a TypeScript story that destroys an entity still destroys it. Gone is a language-level fact about a story entity, carried where its states are.
+- **Z6b — A gone entity evaluates.** It is offstage, so `is here`, `is in <place>`, `has`/`holds`/`wears` read false, `location` reads nowhere, and its states, counters, and timers read as last set. Nothing throws. Scope, listing, and the parser's vocabulary already exclude a no-location entity, so it is never a target.
+- **Z6c — Gone is offstage plus the story's "over".** The flag is what distinguishes the two: a `remove`d entity is one the story has finished with; an `offstage` one is waiting to come back. `remove` on an entity already gone does nothing (no second `disappeared`). A later `move` of a gone entity back into the world clears the flag — the story unsays it by placing it. `ChordRuntime.isGone(worldId, world)` reads the flag; no Chord predicate is added (`is not here` covers every use found).
+- **Z6d — A story rule's failure is never the parser's refusal.** Independently of gone: a `LoadError` thrown from a condition or clause at run time now carries `storyRule: true`; the engine's `command.failed` event carries it through, and the prose pipeline renders `core.story_rule_failed` ("One of the story's rules failed here:") followed by the diagnostic — never "I don't understand that." The same rendering applies to chain-fired clause failures the event processor records.
+- **Z6e — Saves round-trip the flag** as ordinary world state; the entity itself is serialized like any offstage entity. A tree-document pin `<entity>.location = nowhere` resolves against a gone entity (it exists by name), where before it reported "Entity not found".
+
+### Consequences
+
+- GH #330's `move … offstage` workaround becomes optional; Secret Letter keeps the voices offstage (it wants them back), and the necklace's `remove` now leaves the buy clauses' refusal ladders evaluable.
+- ADR-213's pre-removal observer still fires only inside `removeEntity` — TypeScript removals; Chord removals narrate through the move lifecycle's `disappeared` row instead. Both reach the same channel.
+- `getAllEntities`/`findByTrait` still enumerate a gone entity, as they do an offstage one; every consumer that matters (scope, vocabulary, the NPC phase's location gates) already reads location, not membership.
+
+### Session
+
+effb6f, 2026-09-03 — publish-readiness plan Phase 4.

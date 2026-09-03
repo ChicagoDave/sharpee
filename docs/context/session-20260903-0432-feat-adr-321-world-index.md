@@ -25,13 +25,16 @@
 
 - **Phase 3 DONE (commit `10eae625` closed Phase 2)** — six analyzer/parser/binding fixes: P-4 `resolvePossessiveAsName` (#336); P-5 `when` as a `with` value stop + trailing `with` after the statement `when` (#335); P-6 the `bare` binder hint (#337); P-13 `Span.file` in inline kill keys (#324); P-14 closed as built (`analysis.phrase-in-phrase`, #286; resolving is GH #303 item 2); P-15 `canonicalDirectionWord` maps the parser's Direction constant back to the declared canonical (#285). Pins: chord `publish-readiness-phase3.test.ts` (7), lang-en-us `bare-hint.test.ts` (2), story-loader `publish-readiness-phase3.test.ts` (2, real path). Suites: chord 1132, story-loader 1042, lang-en-us 452; `./repokit build dungeo` clean; Dungeo chain 952; Secret Letter 563 cards (peering.chord back on compass canonicals; #336/#335 notes refreshed); Fernhill 36; Ides 39. Grammar-changes row. No side-effect functions touched (rule 15 does not fire).
 
+- **Phase 4 DONE (commit `a67e4e83` closed Phase 3)** — *gone* semantics: Chord's `remove` now marks gone (offstage through the move lifecycle + `chord.gone.<ir-id>`), the world-model primitive stays terminal for TypeScript; `LoadError.storyRule` + `command.failed` `storyRule: true` render `core.story_rule_failed` ("One of the story's rules failed here:") instead of the parser's refusal; ADR-325 Z6 amendment drafted (DRAFT). Pins: `story-loader/tests/gone-semantics.test.ts` (5, real path incl. #330's exit and #345's refusal ladder, states as last set, round trip, revive-by-move, the story-rule message), `engine/tests/unit/command-failed-story-rule.test.ts` (2); `zoo-surfaces-phase3` AC-6 and `offstage-phrase-renders` updated to the amended semantics. Suites: story-loader 1047, engine 682, lang-en-us 452; tsc clean; `./repokit build dungeo` clean; Dungeo chain 952; Secret Letter 563; Fernhill 36; Ides 39. #330/#345 closed; P-7/P-8 DONE.
+
 ## Key Decisions
 - Refusal fall-through rejected for P-21: every `refuse when` is an authored refusal, so fall-through needs a "does not apply" marker, and a marker evaluated before the parse chooses the action is a scoped grammar line.
 - Entity topics are subjects, not objects: scope is irrelevant to whether a topic row serves.
 - Worn is an invariant of location: an item is worn only while directly in its wearer; enforced at `WorldModel.moveEntity`.
+- Gone lives at the Chord level: `remove` = offstage + `chord.gone.<ir-id>`; `WorldModel.removeEntity` stays terminal for TypeScript stories (Dungeo untouched); a later `move` revives.
 
 ## Open Items
-- David: accept or amend the three DRAFT amendments (ADR-118 A1, ADR-267 A1, ADR-320 D2a); two carry one open question each — rule 11a asks whether to start the interview.
+- David: accept or amend the four DRAFT amendments (ADR-118 A1, ADR-267 A1, ADR-320 D2a, ADR-325 Z6); ADR-118 and ADR-267 carry one open question each — rule 11a asks whether to start the interview.
 - Carried: the every-turn `while <npc> knows <topic>` tick-order audit (Phase 6).
 
 ## Files Modified
@@ -41,6 +44,7 @@
 - Phase 3 platform: `packages/chord/src/{analyzer,parser}.ts`, `packages/lang-en-us/src/parser/parse-phrase-template.ts`, `packages/story-loader/src/runtime.ts`
 - Phase 3 tests: `packages/chord/tests/publish-readiness-phase3.test.ts`, `packages/lang-en-us/tests/bare-hint.test.ts`, `packages/story-loader/tests/publish-readiness-phase3.test.ts`
 - Phase 3 docs/content: `docs/architecture/chord-grammar-changes.md` (row), `branch-stories/secret-letter/{peering,backdrops,wares,market-scenery}.chord`, `docs/proposals/publish-readiness-defects.md` (six items DONE)
+- Phase 4: `packages/story-loader/src/{runtime,state-keys,errors}.ts`, `packages/engine/src/command-executor.ts`, `packages/engine/src/prose-pipeline/handlers/command-failed.ts`, `packages/lang-en-us/src/language-provider.ts`, `docs/architecture/adrs/adr-325-chord-presence-and-duration.md` (Z6 amendment, DRAFT), tests `story-loader/tests/gone-semantics.test.ts`, `engine/tests/unit/command-failed-story-rule.test.ts`, `branch-stories/secret-letter/eavesdrop.chord` (note)
 - `docs/architecture/adrs/adr-118-stdlib-action-interceptors.md` — Amendment 1 (DRAFT)
 - `docs/architecture/adrs/adr-267-chord-grammar-pattern-constructs.md` — Amendment 1 (DRAFT)
 - `docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md` — Amendment D2a (DRAFT)

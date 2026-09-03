@@ -74,6 +74,10 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // GH #345: a story rule's own diagnostic (the loader's LoadError from a
+      // condition or clause) — the reason follows this lead. The command
+      // parsed; a rule failed. Never the parser's refusal.
+      'core.story_rule_failed': "One of the story's rules failed here:",
       // Shared scope-refusal messages (ADR-231 D1): produced by stdlib's
       // requireScope/requireSlotScope as fully-qualified ids — every action
       // shares these; an action wanting different wording returns its own

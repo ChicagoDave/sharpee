@@ -3922,6 +3922,10 @@ export declare function handleImplicitTake(event: ISemanticEvent, _context: Hand
  *
  * Maps parser / entity-resolution failure reasons to user-facing
  * error prose. Recognized reason fragments:
+ *   - `storyRule: true` (a story rule's own diagnostic — the loader's
+ *     LoadError thrown from a condition or clause, GH #345) →
+ *     `core.story_rule_failed` followed by the reason, never the parser's
+ *     refusal: the command parsed; a rule blew up.
  *   - `ENTITY_NOT_FOUND` / `modifiers_not_matched` →
  *     `core.entity_not_found` (default: "I don't see that here.")
  *   - `NO_MATCH` / `parse` →

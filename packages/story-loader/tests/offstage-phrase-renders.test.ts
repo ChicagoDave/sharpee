@@ -74,7 +74,10 @@ describe('GH #329: a phrase in the arm that sends its owner away still renders',
     await b.turnText('wait');
     const second = await b.turnText('wait');
 
-    expect(b.world.getEntity(b.id('group-of-mercenaries'))).toBeUndefined();
+    // ADR-325 Z6 as amended (GH #345): `remove` marks the owner gone — still
+    // in the world, nowhere, flagged — rather than destroying it.
+    expect(b.world.getLocation(b.id('group-of-mercenaries'))).toBeUndefined();
+    expect(b.story.runtime.isGone(b.id('group-of-mercenaries'), b.world)).toBe(true);
     expect(second.text).toContain('"Go," the captain says, and they go.');
   });
 });

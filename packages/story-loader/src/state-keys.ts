@@ -34,6 +34,16 @@ export const CHORD_TRAIT_PREFIX = 'chord.trait.';
 export const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
 /**
+ * `chord.gone.<ir-id>` → `true` while a Chord `remove` has taken the entity
+ * out of play (GH #345, ADR-325 Z6 as amended 2026-09-03). A gone entity
+ * stays in the world offstage — conditions naming it evaluate, its states
+ * read as last set, saves round-trip it — and the flag is what tells it
+ * apart from an entity merely moved offstage. A later `move` back into the
+ * world clears it.
+ */
+export const CHORD_GONE_PREFIX = 'chord.gone.';
+
+/**
  * Numeric counters (ADR-264): story-global as `chord.counter.<name>`, per-entity
  * as `chord.counter.<ir-entity-id>.<name>`. Ordinary world state, so save/restore
  * covers each independently.

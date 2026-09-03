@@ -605,7 +605,9 @@ export class CommandExecutor {
           type: 'command.failed',
           timestamp: Date.now(),
           entities: {},
-          data: { reason: failure.reason, input, eventType: failure.event.type }
+          // A chain-fired clause's failure is a story rule's diagnostic by
+          // construction (GH #345): rendered as such, never as a parse failure.
+          data: { reason: failure.reason, input, eventType: failure.event.type, storyRule: true }
         }];
       }
     }
@@ -644,7 +646,12 @@ export class CommandExecutor {
     config: EngineConfig | undefined,
     timing: PhaseTiming
   ): TurnResult {
-    // Minimal error handling - just return failure
+    // Minimal error handling - just return failure. A thrown error carrying
+    // `storyRule: true` (the story loader's LoadError — a condition or clause
+    // that failed at run time, GH #345) is a story rule's diagnostic: the
+    // command parsed, a rule blew up. The flag rides the event so the prose
+    // pipeline renders it as such, never as the parser's own refusal.
+    const storyRule = (error as { storyRule?: unknown }).storyRule === true;
     const result: TurnResult = {
       turn,
       input,
@@ -654,7 +661,7 @@ export class CommandExecutor {
         type: 'command.failed',
         timestamp: Date.now(),
         entities: {},
-        data: { reason: error.message, input }
+        data: { reason: error.message, input, ...(storyRule ? { storyRule: true } : {}) }
       }],
       error: error.message
     };

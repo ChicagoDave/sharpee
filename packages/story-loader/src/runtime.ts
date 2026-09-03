@@ -101,6 +101,7 @@ import {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
+  CHORD_GONE_PREFIX,
   CHORD_TRAIT_PREFIX,
   counterKey,
   selectOccurrenceKey,
@@ -4180,11 +4181,12 @@ export class ChordRuntime {
         case 'remove': {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
-            // Z6 (ADR-213): the loader's pre-removal observer fires inside
-            // removeEntity and enqueues any witnessed `disappeared`
-            // narration; the report-collecting pass drains it. Never
-            // rendered inline from the mutation pass.
-            ctx.world.removeEntity(thing);
+            // ADR-325 Z6 as amended (GH #345, #330): `remove` marks the
+            // entity GONE rather than destroying it — offstage through the
+            // move lifecycle (which narrates `disappeared` exactly as
+            // `move … offstage` does), plus the gone flag. Conditions that
+            // still name it evaluate; nothing throws.
+            this.markGone(thing, ctx);
           }
           break;
         }
@@ -4410,6 +4412,31 @@ export class ChordRuntime {
    * tagged by room (ADR-328 D3), none dropped. `placeWorldId` null detaches
    * the entity (offstage).
    */
+  /**
+   * Take an entity out of play (ADR-325 Z6 as amended, GH #345): move it
+   * offstage through the ordinary move lifecycle — the `disappeared` row
+   * fires for whoever witnessed it — and stamp the gone flag under its IR
+   * id. The entity stays in the world: conditions naming it evaluate
+   * (`is here` false, `has` false, location nowhere), its states read as
+   * last set, and a save carries the flag. Already gone → nothing happens.
+   * A non-story entity (no IR id) is only moved offstage.
+   *
+   * @param worldId the entity to remove
+   * @param ctx the executing clause's context
+   */
+  private markGone(worldId: string, ctx: ExecContext): void {
+    const irId = this.host.irIdOf(worldId);
+    if (irId !== undefined && ctx.world.getStateValue(CHORD_GONE_PREFIX + irId) === true) return;
+    this.moveWithLifecycle(worldId, null, ctx);
+    if (irId !== undefined) ctx.world.setStateValue(CHORD_GONE_PREFIX + irId, true);
+  }
+
+  /** True while a Chord `remove` has taken the entity out of play. */
+  isGone(worldId: string, world: WorldModel): boolean {
+    const irId = this.host.irIdOf(worldId);
+    return irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true;
+  }
+
   private moveWithLifecycle(thingWorldId: string, placeWorldId: string | null, ctx: ExecContext): void {
     const world = ctx.world;
     const roomOf = (id: string): string | undefined =>
@@ -4417,6 +4444,14 @@ export class ChordRuntime {
     const fromRoom = roomOf(thingWorldId);
     world.moveEntity(thingWorldId, placeWorldId);
     const toRoom = roomOf(thingWorldId);
+    // A move back into the world revives a gone entity (ADR-325 Z6 as
+    // amended): the flag is the story's "over", and a later `move` unsays it.
+    if (placeWorldId !== null) {
+      const irId = this.host.irIdOf(thingWorldId);
+      if (irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true) {
+        world.setStateValue(CHORD_GONE_PREFIX + irId, false);
+      }
+    }
 
     this.witnessMove(thingWorldId, placeWorldId, fromRoom, toRoom, world);
 
