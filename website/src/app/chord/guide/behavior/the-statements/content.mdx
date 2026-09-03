@@ -41,9 +41,23 @@ them:
 - **`change <name> to <state>`** moves an owner along its declared
   states; `change the story to <state>`
   moves the story.
-- **`move <name> to <name>`** relocates an entity. It *puts* — nothing
-  is seen to happen, no clause fires, nothing can refuse it. To make a
-  character *do* something, name them and the action instead.
+- **`move <name> to <place>`** relocates an entity. It *puts* — nothing
+  is seen to happen, nothing can refuse it, though the destination's
+  `entering` clauses and the mover's `when … moves` clauses do react to
+  the arrival. To make a character *do* something, name them and the
+  action instead. A place is a room, an enterable, or a
+  [region with a landing](/chord/guide/world/regions); it can also be
+  another entity's room — `move the guards to Jack's location`,
+  `move the hat to its location` — since a possessive `location` always
+  means the containing room. Two more destinations stand alone:
+  `move the guards here` (the player's location) and
+  `move the monkey offstage` (no location at all — the monkey keeps its
+  states and timers and comes back with a later `move`). And
+  `move the player to a random adjacent room` draws one room a
+  traversable exit away from the mover, at the moment it runs, on the
+  mover's own seeded stream: blocked exits and locked doors do not count,
+  and with no candidate nothing moves. The spelling is exact — no
+  `randomly`, and only as a `move` destination.
 - **`<character> <verb> [<object>] [<preposition> <object>]`** — the
   acting statement — has that character perform one action now, through
   the same pipeline as a typed command: `the guards take the sword`,

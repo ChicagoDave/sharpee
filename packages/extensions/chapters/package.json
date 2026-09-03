@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ext-chapters",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "description": "Chapters extension for the Sharpee IF engine — declared story chapters (ADR-330): the turn plugin that begins them and the story.chapter channel",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

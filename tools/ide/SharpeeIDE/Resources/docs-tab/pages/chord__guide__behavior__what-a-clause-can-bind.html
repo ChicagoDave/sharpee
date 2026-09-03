@@ -13,4 +13,4 @@
   on every turn while dusk, once
     phrase scarecrow-shadow
   end on</code></pre>
-<p>An entity-owned <code>every turn</code> clause fires only while the player is present with its owner; the scarecrow performs to an audience or not at all. Note <code>while dusk</code>: a story-level state is referenced as a bare word in conditions.</p>
+<p>An entity-owned <code>every turn</code> clause fires wherever its owner is, whether or not the player is there: the scarecrow performs either way, and what it says is tagged with the owner's location and the player's presence so the client decides what to show — by default it hides narration tagged absent. A <code>, once</code> or a dice roll is consumed off-stage all the same. Note <code>while dusk</code>: a story-level state is referenced as a bare word in conditions.</p>

@@ -146,6 +146,8 @@ export const NAV: NavSection[] = [
           { title: 'Endings', href: '/chord/guide/flow/endings' },
           { title: 'Death', href: '/chord/guide/flow/death' },
           { title: 'Sequences', href: '/chord/guide/flow/sequences' },
+          { title: 'Timers', href: '/chord/guide/flow/timers' },
+          { title: 'Chapters', href: '/chord/guide/flow/chapters' },
         ],
       },
       {

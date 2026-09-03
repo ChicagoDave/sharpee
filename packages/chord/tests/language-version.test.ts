@@ -81,7 +81,11 @@ const PINNED = {
   // ADR-230 `carries`, the D13 feels/knows predicates, `set … when`, and
   // the prose productions the file had always referenced without defining.
   // Paper trail for grammar shipped since 3.x, no language change.
-  languageVersion: '3.5.0',
+  // 3.6.0 — 2026-09-03 (session 0135ed): minor bump alongside Sharpee 5.3.0
+  // at the owner's request; 3.5.0 / 5.2.0 were never published. The EBNF
+  // hash is unchanged by the bump — the surface pinned under 3.5.0 since
+  // 2026-08-29 (the re-pins below) is the 3.6.0 surface.
+  languageVersion: '3.6.0',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.

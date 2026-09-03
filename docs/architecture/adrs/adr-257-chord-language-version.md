@@ -119,6 +119,14 @@ author-visible, and not a version the owner tracks (David, 2026-08-29).
 > paragraph above asked about — and D2 is amended to say it (the **Amendment** paragraph at the
 > head of this section, same day, on the owner's "yes - make the edit").
 
+> **Recorded bump (2026-09-03, session 0135ed — 3.6.0 alongside Sharpee 5.3.0).** 3.5.0 / 5.2.0
+> were never published (npm carries 5.1.1 / Chord 3.3.0), so this is the ordinary bump-at-the-cut
+> D2 as amended describes, not a seventh departure: the owner asked for the next minor, and the
+> number carries the 3.5.0 set plus the landings folded into it since — ADR-330 chapters,
+> `, one-way` exits (GH #327), `proper` on any create block (GH #342), the publish-readiness fixes
+> (session effb6f) — all additive over 3.5.0. The EBNF pin hash is unchanged by the bump. The
+> public delta at publish is Chord 3.3.0 → 3.6.0.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and

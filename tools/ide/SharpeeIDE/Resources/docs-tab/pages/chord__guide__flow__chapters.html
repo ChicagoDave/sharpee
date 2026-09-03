@@ -1,0 +1,39 @@
+<p><code>use chapters</code> admits one <code>define chapters</code> block: a row per chapter, each with a name for code, a title for the reader, an optional description, and the moment it begins. Chapters are declared, not scripted — a chapter ends when the next begins, and there is no <code>end chapter</code>.</p>
+<pre><code class="language-chord">story
+  title: The Secret Letter
+  authors:
+    You
+  id: secret-letter
+  use chapters
+
+define chapters
+  market - Chapter I - Grubber's Market
+    begins when the game starts
+  commerce - Chapter II - Commerce Street
+    A wider street, and the mercenaries know your face now.
+    begins when the player visits Commerce Street for the first time
+end chapters</code></pre>
+<p>The <strong>name</strong> is one kebab word — what conditions say, never printed. The <strong>title</strong> is raw prose to the end of the line: a numeral or a colon in it means nothing to the grammar, so number your chapters however you like, or not at all. The optional <strong>description</strong> is an indented paragraph in the shape every other block's prose takes. <strong><code>begins when</code></strong> is required and comes last in the row. Rows are in reading order and that order is the chapters' order; a repeated name, a second block, or the block without <code>use chapters</code> is a compile error.</p>
+<h2 id="when-a-chapter-begins">When a chapter begins</h2>
+<p><code>begins when</code> names a <em>moment</em>, never a standing condition, and the moments are ones the language already has:</p>
+<ul><li><strong><code>the game starts</code></strong> — the first turn is about to begin. A story that says <code>use chapters</code> must open exactly one chapter here, and it must be the first row; an un-chaptered opening is spelled as a chapter (a prologue is just a row).</li><li><strong><code>the player visits &lt;room&gt; for the first time</code></strong> — the role-holder's first arrival in that room, whoever holds the role, by walking or by an authorial <code>move</code>.</li><li><strong><code>&lt;timer&gt; expires</code></strong> — a <a href="/chord/guide/flow/timers">timer</a>, named by its possessive from the story level (<code>the bell expires</code>, <code>the player's waiting expires</code>).</li><li><strong><code>&lt;entity&gt; becomes &lt;state&gt;</code></strong> or <strong><code>the story becomes &lt;state&gt;</code></strong> — a declared state being reached, as a <code>define sequence</code> step anchors.</li></ul>
+<p>A trigger firing while that chapter or a later one is already running changes nothing: the runtime raises <code>runtime.chapter-stale</code> naming the row, a diagnostic rather than a crash.</p>
+<h2 id="what-the-reader-sees">What the reader sees</h2>
+<p>A chapter beginning is a packet on the <code>story.chapter</code> channel — name, title, description, ordinal — emitted on the turn the trigger fires, after that turn's prose, so an arrival's own text reads as the last words of the chapter it closes. The browser client renders a title card; how it looks is the client's. The current chapter is ordinary world state, so save, restore, and undo carry it with no special handling.</p>
+<h2 id="reading-the-chapter">Reading the chapter</h2>
+<p>A chapter scopes nothing and gates nothing by itself, but it is readable. <code>during &lt;name&gt;</code> is true while that chapter is current, and it stands on a head directly, beside <code>while</code>, wherever a line takes <code>while &lt;condition&gt;</code>:</p>
+<pre><code class="language-chord">create the grocer
+  a person
+  in the Grocery Stall
+
+  on the player talking during commerce
+    refuse no-time-to-chat
+  end on
+
+  phrase detail during market:
+    The stallkeeper looks nervous and irritable.
+
+  on every turn while hunted and during market
+    phrase footsteps-behind
+  end on</code></pre>
+<p>A head takes one of <code>while &lt;condition&gt;</code> or <code>during &lt;name&gt;</code>; both on one head is a parse error. <code>before &lt;name&gt;</code> and <code>after &lt;name&gt;</code> — the chapter has not begun, or is over — are condition atoms only (<code>while before commerce</code>), since <code>after</code> is already a clause head. The opening chapter is current before the first turn, so <code>during &lt;opener&gt;</code> holds while turn one renders.</p>

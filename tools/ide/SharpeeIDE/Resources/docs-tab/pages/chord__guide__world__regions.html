@@ -2,6 +2,7 @@
 <pre><code class="language-chord">create the Grounds
   a region
   containing the Drive, the Hall
+  landing the Drive
 
   on every turn while one chance in 6
     phrase night-wind
@@ -14,3 +15,4 @@
   after the player leaving
     phrase out-of-the-wind
   end after</code></pre>
+<p>A region becomes a <em>place</em> once it says where things land. <code>landing the Drive</code> names the room that <code>move … to the Grounds</code> puts an entity in, and it is what <code>the Grounds's location</code> means. A list must say how to choose — <code>landing, randomly: the Drive, the Hall</code> — with <code>cycling</code> and <code>stopping</code> as the other two strategy words, drawn on the region's own seeded stream. One <code>landing</code> line per region, every room in it contained by the region (directly or through a nested one), and <code>set the Grounds's landing to the Hall</code> replaces the whole list with that one room. A region with no landing cannot be moved to, but <code>is in the Grounds</code> is a membership test either way: true in any member room, through nested regions, with no <code>landing</code> line needed.</p>

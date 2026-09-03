@@ -1,0 +1,72 @@
+<p><code>sharpee test</code> replays your story's <strong>tree document</strong> — the one file that holds every test you have recorded — fresh from boot, at the story's pinned seed, and reports a verdict for every card and every claim.</p>
+<pre><code class="language-text">sharpee test [name|dir|file.story] [--stop-on-failure|-s] [--verbose|-v] [--json] [--capture-output] [--capture-world]</code></pre>
+<p>Run it from the project directory (or name a registered story, a directory, or the <code>.story</code> file). It exits <code>0</code> when every line passed, <code>1</code> on any failure, <code>2</code> for a usage error or a document it cannot read, and <code>3</code> when the story itself fails to load — so it drops straight into CI.</p>
+<h2 id="the-tree-document">The tree document</h2>
+<p>Tests live beside your story as <strong><code>&lt;story-id&gt;.tests.json</code></strong>. Chord Writer's Testing tab writes it as you play; you can also read and edit it by hand, because the JSON is the single source of truth — a run evaluates exactly what the document says and assumes nothing.</p>
+<pre><code class="language-json">{
+  &quot;version&quot;: 1,
+  &quot;story&quot;: &quot;orchard&quot;,
+  &quot;seed&quot;: 42,
+  &quot;cards&quot;: [
+    { &quot;type&quot;: &quot;opening&quot;, &quot;assertions&quot;: { &quot;channels&quot;: [{ &quot;id&quot;: &quot;info.title&quot;, &quot;is&quot;: &quot;Orchard&quot; }] } },
+    { &quot;type&quot;: &quot;boot&quot;, &quot;assertions&quot;: { &quot;contains&quot;: [&quot;Landing&quot;, &quot;A quiet place to begin.&quot;] } },
+    {
+      &quot;type&quot;: &quot;turn&quot;,
+      &quot;command&quot;: &quot;inventory&quot;,
+      &quot;assertions&quot;: {
+        &quot;contains&quot;: [&quot;brass lantern&quot;],
+        &quot;states&quot;: [&quot;player.inventory contains lantern&quot;, &quot;the brass lantern is dull&quot;, &quot;story.state = dawn&quot;]
+      },
+      &quot;branches&quot;: [
+        {
+          &quot;branch&quot;: 1,
+          &quot;cards&quot;: [
+            {
+              &quot;type&quot;: &quot;turn&quot;,
+              &quot;command&quot;: &quot;rub lantern&quot;,
+              &quot;assertions&quot;: {
+                &quot;contains&quot;: [&quot;The lantern glows.&quot;],
+                &quot;states&quot;: [&quot;the brass lantern is glowing&quot;, &quot;the story is day&quot;]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      &quot;type&quot;: &quot;turn&quot;,
+      &quot;command&quot;: &quot;north&quot;,
+      &quot;assertions&quot;: {
+        &quot;exact&quot;: [&quot;Orchard&quot;, &quot;Rows of apple trees.&quot;],
+        &quot;states&quot;: [&quot;player.location = Orchard&quot;],
+        &quot;notContains&quot;: [&quot;Landing&quot;]
+      }
+    },
+    { &quot;type&quot;: &quot;turn&quot;, &quot;command&quot;: &quot;look&quot;, &quot;skip&quot;: true },
+    {
+      &quot;type&quot;: &quot;turn&quot;,
+      &quot;command&quot;: &quot;drop lantern&quot;,
+      &quot;assertions&quot;: {
+        &quot;contains&quot;: [&quot;Dropped.&quot;],
+        &quot;events&quot;: [&quot;if.event.dropped&quot;],
+        &quot;states&quot;: [&quot;lantern.location = Orchard&quot;, &quot;player.inventory not-contains lantern&quot;]
+      }
+    }
+  ]
+}</code></pre>
+<ul><li><strong><code>seed</code></strong> pins the story's random choices, so a run is deterministic and an exact claim is a claim rather than a coin flip. Chord Writer picks it when the document is created; keep it.</li><li><strong>Cards</strong> are the turns. The <code>opening</code> card has no command (it carries the title banner); the <code>boot</code> card is the first look; every <code>turn</code> card has its typed <code>command</code>.</li><li><strong>Branches</strong> live <em>on the card they fork from</em>. Each branch replays the story to that card and then runs its own cards, so the main line's later cards never see the branch's changes. <code>branch</code> is a stable id, not a position.</li><li><strong><code>skip: true</code></strong> runs the turn and asserts nothing — the way to move the story along without recording a claim.</li></ul>
+<h2 id="the-assertion-families">The assertion families</h2>
+<p>Each family is optional; a card may carry several. Every entry is one claim with its own verdict.</p>
+<table><thead><tr><th>Family</th><th>Claim</th><th>Example</th></tr></thead><tbody><tr><td><code>contains</code></td><td>the turn's prose contains this text</td><td><code>&quot;The lantern glows.&quot;</code></td></tr><tr><td><code>notContains</code></td><td>the prose does <strong>not</strong> contain it</td><td><code>&quot;Landing&quot;</code></td></tr><tr><td><code>exact</code></td><td>the turn's whole output, line by line (supersedes <code>contains</code>)</td><td><code>[&quot;Orchard&quot;, &quot;Rows of apple trees.&quot;]</code></td></tr><tr><td><code>states</code></td><td>a world fact holds after the turn</td><td><code>&quot;the brass lantern is glowing&quot;</code></td></tr><tr><td><code>events</code></td><td>the turn emitted this event type</td><td><code>&quot;if.event.dropped&quot;</code></td></tr><tr><td><code>channels</code></td><td>a channel's value (<code>is</code>) or fragments of it (<code>contains</code>)</td><td><code>{ &quot;id&quot;: &quot;info.title&quot;, &quot;is&quot;: &quot;Orchard&quot; }</code></td></tr></tbody></table>
+<p><strong><code>exact</code></strong> is the golden tier: it catches the article, plural and interpolation slips a <code>contains</code> claim sails past. Record it from a real run rather than typing it.</p>
+<p><strong><code>states</code></strong> is the claim that survives prose edits. Its string forms, tried in order:</p>
+<ul><li><code>story.state = &lt;state&gt;</code> / <code>story.state != &lt;state&gt;</code> — the story's own phase (<code>states:</code> in the story header).</li><li><code>&lt;entity&gt;.&lt;property&gt; = &lt;value&gt;</code> / <code>!=</code> — a single-word entity head (a name or alias) and a property: <code>location</code>, or a plain trait property.</li><li><code>&lt;entity&gt;.inventory contains &lt;item&gt;</code> / <code>not-contains</code> (also <code>contents</code>) — what an entity holds; <code>player</code> always names whoever holds the player role.</li><li><code>[the] &lt;name&gt; is &lt;state&gt;</code> / <code>is not &lt;state&gt;</code> — the Chord-spelled form: a thing's own <code>states:</code> value in the story's spelling, spaces and aliases included (<code>the brass lantern is glowing</code>); <code>the story is &lt;state&gt;</code> reads the phase the same way.</li></ul>
+<p><strong><code>events</code></strong> names an event type the turn must have emitted — the standard actions' <code>if.event.*</code> types (<code>if.event.taken</code>, <code>if.event.dropped</code>, <code>if.event.went</code>, …). A Chord dispatch action's turn carries <code>chord.phrase</code> events, so pin its outcome with <code>states</code> and <code>contains</code> instead.</p>
+<p><strong><code>channels</code></strong> reads a channel by id. A dotted id is a path into a structured channel: <code>info.title</code> is the banner's title, <code>info.description</code> its description; your own <code>define channel</code> names read the same way.</p>
+<h2 id="recording-claims-automatically">Recording claims automatically</h2>
+<p>Playing in Chord Writer's Testing tab records what the story actually said as each turn's claims. Which claims it writes is the story header's <strong><code>auto-assertion:</code></strong> policy: <code>room-name-and-description</code> (the default), <code>room-description</code>, or <code>all-emitted-text</code>. Omit the field to decide claim by claim. A card with no claims and no <code>skip</code> is a failure at run time — the document never fills a gap silently.</p>
+<h2 id="flags">Flags</h2>
+<ul><li><strong><code>--stop-on-failure</code></strong> (<code>-s</code>) halts at the first failing card.</li><li><strong><code>--verbose</code></strong> (<code>-v</code>) prints every command's output under its verdict.</li><li><strong><code>--json</code></strong> streams one NDJSON record per event on stdout (<code>run-start</code>, <code>transcript-start</code>, <code>command-result</code>, …) for tooling; <strong><code>--capture-output</code></strong> puts each command's exact output on its record, and <strong><code>--capture-world</code></strong> adds a world snapshot.</li></ul>
+<blockquote><p><strong>One suite, one file</strong></p>
+<p>There are no transcript files to name, chain, or order. A shared prefix runs once; every fork is a branch on the card it forks from. <code>--chain</code> and <code>.transcript</code> arguments are refused by name so an old habit fails loudly rather than running the wrong thing.</p></blockquote>
+<p>To try a sequence of commands without recording anything, pipe them into <a href="/chord/getting-started/compose-and-run#play-in-the-terminal"><code>sharpee play</code></a>: <code>printf 'north\nlook\n' | sharpee play</code> runs both and prints what the story said.</p>

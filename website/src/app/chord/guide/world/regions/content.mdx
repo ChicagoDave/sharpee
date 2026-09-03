@@ -8,6 +8,7 @@ crossings in either direction. `leaving` exists only on region blocks.
 create the Grounds
   a region
   containing the Drive, the Hall
+  landing the Drive
 
   on every turn while one chance in 6
     phrase night-wind
@@ -21,3 +22,15 @@ create the Grounds
     phrase out-of-the-wind
   end after
 ```
+
+A region becomes a *place* once it says where things land. `landing the
+Drive` names the room that `move … to the Grounds` puts an entity in,
+and it is what `the Grounds's location` means. A list must say how to
+choose — `landing, randomly: the Drive, the Hall` — with `cycling` and
+`stopping` as the other two strategy words, drawn on the region's own
+seeded stream. One `landing` line per region, every room in it contained
+by the region (directly or through a nested one), and
+`set the Grounds's landing to the Hall` replaces the whole list with
+that one room. A region with no landing cannot be moved to, but
+`is in the Grounds` is a membership test either way: true in any member
+room, through nested regions, with no `landing` line needed.

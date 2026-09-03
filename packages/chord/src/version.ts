@@ -265,5 +265,14 @@
  * binding to room arrival (#341); `proper` composes on ANY create block
  * (#342 — `analysis.proper-person-only` retired, the unconditional gate
  * stays). Additive all three — every valid 3.5.0 story is unchanged.
+ *
+ * **3.6.0 (owner request, 2026-09-03, session 0135ed)** — ships alongside
+ * Sharpee 5.3.0. Chord 3.5.0 / Sharpee 5.2.0 were never published (npm still
+ * carries 5.1.1 / Chord 3.3.0), so the public delta since 3.3.0 is the 3.5.0
+ * set above plus everything folded into it since: the chapters extension
+ * (ADR-330 — `use chapters`, `define chapters`, `during`/`before`/`after`),
+ * `, one-way` exits (ADR-234 D4, GH #327), `proper` on any create block
+ * (GH #342), and the publish-readiness fixes (session effb6f). All additive
+ * over 3.5.0 — a minor by D2's ordinary rule, cut at the owner's request.
  */
-export const CHORD_LANGUAGE_VERSION = '3.5.0';
+export const CHORD_LANGUAGE_VERSION = '3.6.0';
