@@ -26,24 +26,23 @@ You start in the foyer of an opera house wearing a velvet cloak. Your goal is to
 
 ## Implementation Details
 
-This Sharpee implementation demonstrates:
-- **Story Configuration**: Uses the `Story` interface with language set to "en-us"
-- **World Building**: Creates rooms, objects, and relationships
-- **Custom Behaviors**: Tracks sawdust disturbance when entering the bar in darkness
-- **Dynamic Descriptions**: Message readability changes based on game state
-- **Event Handling**: Responds to player movement and actions
+The story is `cloak.story`, written in Chord, with one TypeScript hatch
+module (`src/extras.ts`) that the story binds for the garbled-message text.
+It demonstrates:
+- **World Building**: rooms, objects, and relationships in Chord
+- **Custom Behaviors**: tracking sawdust disturbance when entering the bar in darkness
+- **Dynamic Descriptions**: message readability changing with game state
+- **Hatches**: a `define text … from "./extras.ts"` binding into TypeScript
 
 ## Building and Running
 
 ```bash
-# Install dependencies
-npm install
+# Build the hatch module (dist/extras.js)
+pnpm --filter @sharpee/story-cloak-of-darkness build
 
-# Build the TypeScript
-npm run build
-
-# Run the test runner
-npm start
+# Play or test through the platform bundle
+node dist/cli/sharpee.js --play --story stories/cloak-of-darkness
+node dist/cli/sharpee.js --test stories/cloak-of-darkness/tests/transcripts/*.transcript
 ```
 
 ## Key Features Demonstrated

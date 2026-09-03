@@ -53,7 +53,7 @@
 - David: accept or amend the five DRAFT amendments (ADR-118 A1, ADR-267 A1, ADR-320 D2a, ADR-325 Z6, ADR-225 one-input expiry); ADR-118 and ADR-267 carry one open question each — rule 11a asks whether to start the interview.
 - The tick-order audit is CLOSED (Phase 6): one corpus clause, covered by ADR-332 D4a. Do not re-carry it.
 - P-11 (#332/#350) waits in plan Phase 6a on ADR-118 A1 acceptance; P-21 (#317, Phase 8) waits on ADR-267 A1.
-- #231 cloak-of-darkness: the legacy TypeScript side is a delete list (plan Phase 15 outcome) — post it, wait; #239: close as superseded by ADR-307 or design a tree-level bless.
+- #239: close as superseded by ADR-307 or design a tree-level bless. (#231 done after David's "go": legacy side deleted, self words follow the player role, cloak suite 90 passing.)
 - P-37 (#224) — David's edition decision (see plan Phase 14 outcome); the scratch type-check recipe: a tsconfig extending the tutorial's with `paths: { "@sharpee/*": ["packages/*/src/index.ts"] }`, `moduleResolution: Bundler`, no `tsf build --npm`.
 - IDE tests for Phase 13 (`PublishTabTests`, `BuildRunnerTests`) compiled but did not run (runner hung before connecting — screen shielded); run the pinned `xcodebuild test` invocation at the keyboard.
 - Secret Letter port gap (Phase 11): the stallkeepers' patience counter is the greetings' ask count (`asked again`/`asked many times`); Gentry's source counts approaches. With bare answers no longer counting as asks, the third-approach yell needs one more ask — David's call on the mechanic (GH issue filed).

@@ -17,6 +17,7 @@
 **Phase 14 landed (2026-09-03, session effb6f)** — P-38 DONE (#320, #319 closed); P-37 (#224) deferred to David with the sizing (163 + 187 type errors across every chapter checkpoint — an edition decision, see the plan). **Now 7 PLANNED, 34 DONE, 3 PROPOSED.**
 **Phase 15 (2026-09-03, session effb6f)** — #240 DONE within P-41; #239 superseded by ADR-307 (David's ruling); P-40 (#231) is a deletion awaiting David's confirmation, list in the plan. **Still 7 PLANNED, 34 DONE, 3 PROPOSED.**
 **Phase 16 landed (2026-09-03, session effb6f)** — P-39, P-42 DONE (#246 closed; #94 closed as superseded by the site). **Now 5 PLANNED, 36 DONE, 3 PROPOSED.**
+**Phase 15 closed out (2026-09-03, session effb6f, after David's confirmation)** — P-40 DONE (#231 closed). **Now 4 PLANNED, 37 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -221,7 +222,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-40: cloak-of-darkness ships two divergent implementations (#231)
 - **Done when**: one implementation remains, both harnesses run the same source, and the transcript suite passes on it.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 15; #231 closed: `cloak.story` is the one implementation, the bundle its one harness; suite 90 passing); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-41: `sharpee test` lacks `--bless`/`--watch`; `sharpee play` drops piped commands (#239, #240)
 - **Done when**: `sharpee test --bless` records goldens and `--watch` re-runs on change; `printf 'north\nnorth\n' | sharpee play` runs both commands; no error message names a flag the author does not have.

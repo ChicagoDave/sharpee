@@ -56,6 +56,9 @@ export interface ActionMetadata {
  * query content word matches the entity's vocabulary).
  */
 const MATCH_TIER_EXACT = 3;
+
+/** The words that name the current player, whatever the player entity is called (ADR-327). */
+const SELF_WORDS = new Set(['me', 'myself', 'self', 'yourself']);
 const MATCH_TIER_WORDS = 2;
 
 /** Leading articles stripped from query text before matching (D3 defect fix). */
@@ -1030,6 +1033,14 @@ export class CommandValidator implements CommandValidator {
     const aliases = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
     const wordsMatchedFor = (q: string) =>
       Math.max(1, deriveNameVocabulary(q).length);
+
+    // The self words name whoever holds the player role (ADR-327): "me",
+    // "myself", "yourself" resolve to the current player whatever that
+    // entity is called, so a story whose player is Alex still answers
+    // `examine yourself` (GH #231's cloak suite; ISSUE #154's intent).
+    if (SELF_WORDS.has(stripped) && entity.id === this.world.getPlayer()?.id) {
+      return { tier: MATCH_TIER_EXACT, wordsMatched: 1, reasons: ['self_word'] };
+    }
 
     // Tier EXACT — full text equals name, alias, or type
     for (const query of queries) {

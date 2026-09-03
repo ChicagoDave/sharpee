@@ -240,6 +240,18 @@ export declare function escapeHtml(s: string): string;
  */
 export declare function injectThemes(html: string, themes: WiredTheme[]): string;
 /**
+ * Strip the client's in-page menu bar from a page (ADR-290 D6, GH #196): the
+ * `<menu … id="menu-bar">…</menu>` block, on the default template or an
+ * author's custom page alike. The client tolerates its absence (`menuBar` is
+ * nullable; MenuManager wires every item with optional chaining), the dialogs
+ * stay (inert without the menu), and a page with no such block is returned
+ * unchanged. One mechanism, two consumers — never an IDE-special page.
+ *
+ * @param html the page after token/theme substitution
+ * @returns the page without its menu bar
+ */
+export declare function stripClientMenu(html: string): string;
+/**
  * Resolution-mode injection (ADR-252 D5). The two callers differ ONLY in where
  * platform-browser's styles, the templates, and the esbuild alias resolve from,
  * and where the output tree lands. Everything else is core logic.
@@ -265,6 +277,13 @@ export interface BrowserBuildOpts {
     minify?: boolean;
     sourcemap?: boolean;
     quiet?: boolean;
+    /**
+     * Keep the client's in-page menu bar (File / Settings / Help) — default
+     * true. `false` strips it (ADR-290 D6, GH #196): the IDE's Play pane always
+     * builds menu-less (its header owns those controls); a publishing author
+     * chooses, knowing Save/Restore/Restart/Quit are reachable only from it.
+     */
+    menu?: boolean;
     /** Fixed build stamp (BUILD_DATE); defaults to now. Injected by the AC test so
      *  the two callers' output is byte-identical, not merely identical-modulo-stamp. */
     buildDate?: string;
