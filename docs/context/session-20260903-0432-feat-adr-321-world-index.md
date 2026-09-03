@@ -1,6 +1,6 @@
 # Session Summary: 2026-09-03 - feat/adr-321-world-index
 
-## Status: In Progress
+## Status: Complete — Phases 1–16 landed (17 local commits through `de5d4507`); the remaining plan items are David's (see Open Items)
 
 ## Goals
 - Work through `docs/work/publish-readiness/plan.md` phase by phase, committing between phases (David, 2026-09-03 04:30 CDT: "you can work through phases and commit in between - I'm going to bed").
