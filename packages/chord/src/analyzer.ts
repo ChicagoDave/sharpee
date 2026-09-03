@@ -202,7 +202,12 @@ const OPPOSITE_DIRECTION: Record<string, string> = {
  * lowering passes.
  */
 function inlineKillKey(stmt: KillStmt): string {
-  return `death-at-${stmt.span.line}-${stmt.span.column}`;
+  // GH #324: spans are fragment-relative after import splicing, so two
+  // imported files can kill at the same line:col — `Span.file` (ADR-251 D6)
+  // keeps the keys apart. The main file carries no file tag, so a story
+  // without imports keeps its old keys byte for byte.
+  const fileTag = stmt.span.file ? `${stmt.span.file.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-` : '';
+  return `death-at-${fileTag}${stmt.span.line}-${stmt.span.column}`;
 }
 
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
@@ -6817,6 +6822,12 @@ class Analyzer {
       case 'literal':
         return { kind: 'literal', value: expr.value, valueType: expr.literalKind };
       case 'possessive': {
+        // GH #336: a declared name may itself carry a possessive (`the
+        // Weaponsmith's Stall`, `Teisha's Tent`). The parser split it at the
+        // `'s`; when the whole phrase names an entity, that entity wins over
+        // a field read — resolved quietly, by exact name or alias only.
+        const whole = this.resolvePossessiveAsName(expr);
+        if (whole !== null) return { kind: 'entity', id: whole };
         // ADR-264 D3: `<owner>'s <counter>` / `its <counter>` reads a per-entity
         // counter when the field names one; otherwise it is a trait field.
         // ADR-325 D3d: `<owner>'s <timer>` reads the timer's state word.
@@ -7238,6 +7249,30 @@ class Analyzer {
    * the base to the carrier without re-reporting the bare `it` beneath it.
    * Every site that reads a possessive's owner goes through here.
    */
+  /**
+   * The entity a possessive expression names AS A WHOLE, when one does (GH
+   * #336): the parser stripped the `'s` (or a plural `'`) from the base's
+   * last word, so both spellings are re-joined with the field and matched
+   * exactly against declared names and aliases. No subset guessing — a miss
+   * returns null and the ordinary field read stands.
+   */
+  private resolvePossessiveAsName(expr: Extract<ValueExpr, { kind: 'possessive' }>): string | null {
+    if (expr.base.kind !== 'ref' || expr.base.ref.kind !== 'name' || nameIsIt(expr.base.ref)) return null;
+    const baseWords = expr.base.ref.words.map((w) => w.toLowerCase());
+    if (baseWords.length === 0 || expr.field.length === 0) return null;
+    const field = expr.field.map((w) => w.toLowerCase()).join(' ');
+    const head = baseWords.slice(0, -1).join(' ');
+    const last = baseWords[baseWords.length - 1];
+    for (const spelling of [`${last}'s`, `${last}'`]) {
+      const lower = `${head ? `${head} ` : ''}${spelling} ${field}`;
+      const exact = this.entities.filter((e) => e.nameLower === lower);
+      if (exact.length === 1) return exact[0].id;
+      const byAlias = this.entities.filter((e) => e.aka.includes(lower));
+      if (byAlias.length === 1) return byAlias[0].id;
+    }
+    return null;
+  }
+
   private possessiveBase(expr: Extract<ValueExpr, { kind: 'possessive' }>, scope: Scope): IRValue {
     if (expr.base.kind === 'ref' && nameIsIt(expr.base.ref)) {
       if (scope.storyOwned) this.reportStoryClauseIt(expr.base.ref.span);

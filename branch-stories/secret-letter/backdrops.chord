@@ -91,7 +91,8 @@
 ## WHERE THINGS ARE — the source's two regions and its per-backdrop lists,
 ## as named conditions (`story.ni:3326-3330, 3455-3459` and the backdrop
 ## declarations). `the Weapons Stall` and `the Candle Stall` are the rooms'
-## own akas: a possessive name cannot stand in a condition (GH #336).
+## own akas — written when a possessive name could not stand in a condition
+## (GH #336, fixed 2026-09-03: `the Candlemaker's Stall` now resolves there too).
 ## ---------------------------------------------------------------------------
 
 create the Open-Air Market

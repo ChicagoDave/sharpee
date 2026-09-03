@@ -4,6 +4,7 @@
 **Second review (2026-09-03, session 639650)** — `proposal-review` re-ran on the folded document: 3 blocking, 1 prior finding withdrawn, 3 advisory. David: *"fold the tier plan into publish-readiness, close #248, and fix the proposal."* Applied: P-16/P-18/P-19/P-20/P-21 were the live `docs/work/backlog-tier1-2-platform/plan.md` Phases 4–8 (DUPLICATE) — that plan is dispositioned and its five phases move into the publish-readiness plan; P-18 reworded to honour ADR-273 D4's `OpenInventoryTrait` opt-in (DECISION-IN-DISGUISE); P-20 ACCEPTED — the held command's home is ADR-225's engine decision, not a new ADR (prior DECISION-IN-DISGUISE withdrawn); P-34 was built 2026-08-08 under go-live Phase 6a (DUPLICATE) — DONE as built, #248 closed; P-13's issue text corrected (`Span.file` exists); P-39 sequenced after the #355 pin-form ruling; P-44's freeze sharpened against ADR-331. **Now 40 ACCEPTED (count corrected from the original "41" 2026-09-03, session 639650 — P-34 DONE + P-11/P-21/P-29 PROPOSED = 4 of 44, not counted among the ACCEPTED), 1 DONE, 3 PROPOSED (P-11, P-21, P-29).**
 **Planned (2026-09-03, session 639650)** — `session-planner` wrote `docs/work/publish-readiness/plan.md` (18 phases) from this proposal; all 40 ACCEPTED items flipped PLANNED (ADR-0008 status-flip ownership), cited by phase in the plan's item-to-phase trace. P-11, P-21, and P-29 stay PROPOSED — the plan's Phase 1 is their gate (the ADR-118, ADR-087/267, and ADR-320 amendments respectively); they are not planned for implementation until each is separately flipped ACCEPTED. Document **Status** stays REVIEWED, not PLANNED, while any item remains PROPOSED.
 **Phase 2 landed (2026-09-03, session effb6f)** — P-1, P-2, P-3, P-9, P-10, P-12 DONE (#327, #326, #331, #329, #334, #325 closed with evidence); Phase 1's three ADR amendments are DRAFT awaiting David, so P-11/P-21/P-29 stay PROPOSED. **Now 34 PLANNED, 7 DONE, 3 PROPOSED.**
+**Phase 3 landed (2026-09-03, session effb6f)** — P-4, P-5, P-6, P-13, P-14 (as built), P-15 DONE (#336, #335, #337, #324, #286, #285 closed). **Now 28 PLANNED, 13 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -35,15 +36,15 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-4: A possessive-named entity cannot be used in a condition or a `change` (#336)
 - **Issue text**: `the Weaponsmith's Stall is blocked` splits at the `'s` into an entity and a possessive field; the diagnostic points at the wrong word.
 - **Done when**: a possessive `create` name resolves as a name in conditions and statements; when a genuine possessive field is meant the parser prefers the declared entity name and the diagnostic names the ambiguity.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 3; #336 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-5: `phrase <key> with <param> = <value> when <condition>` cannot parse (#335)
 - **Done when**: both orderings (`with … when …` and `when … with …`) parse and evaluate; `when` is a value stop.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 3; #335 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-6: No bare-name marker — `{item}` is rejected and "another [noun]" cannot be rendered (#337)
 - **Done when**: a phrase body can name a bound entity with no article (`{item}` or a documented no-article hint) and the binder renders the bare name.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 3; #337 closed, the `bare` hint); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-7: A removed entity in a `blocked while` condition breaks the exit (#330) — absorbed by P-8
 - **Review note (2026-09-03)**: P-8's *gone* semantics subsume this; the fixture here is P-8's first test case and the two are planned together.
@@ -76,15 +77,15 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-13: Inline `kill the player` bodies collide across imported files (#324)
 - **Issue text**: keys are minted from fragment-relative line:col; two imports at the same position produce `duplicate-phrase`. The issue's "spans carry no file identity" is stale: `Span.file` landed 2026-08-22 (ADR-251 D6 amendment, GH #301 closed; `packages/chord/src/span.ts`), and the key minting does not use it (review 2026-09-03, session 639650).
 - **Done when**: the inline kill key carries `Span.file`, so keys are unique across imports, and a fixture with two imports killing at the same line:col compiles.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 3; #324 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-14: `{phrase-key}` prints literally inside a `define phrase` body (#286)
 - **Done when**: interpolation works in phrase bodies as it does in description bodies, or the analyzer rejects it with a diagnostic; silent literal output never happens.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE as built (2026-09-03, session effb6f — plan Phase 3; #286 closed: the analyzer rejects phrase-in-phrase with `analysis.phrase-in-phrase`; resolving is GH #303 item 2); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-15: `the direction is <word>` never matches with compass canonicals (#285)
 - **Done when**: a `refuse when the direction is east` and a `phrase … when the direction is northeast` both fire under a compass `directions` block; the analyzer's accepted spelling is the runtime's matched spelling.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 3; #285 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-16: A `must be reachable` action slot cannot resolve the player (#312)
 - **Done when**: `kick me` / `kick myself` resolve under a reachable constraint the way stdlib's `attack me` already does.

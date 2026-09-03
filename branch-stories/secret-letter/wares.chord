@@ -33,9 +33,9 @@
 ## `on the player taking` carries the openers and the `after` does the
 ## moving. The theft text names the item through `{the item}` — the taking
 ## action's own grammar slot, which the runtime binds into any `on the
-## player taking` body (`runtime.ts:3044`); no `with` binding is needed, and
-## none could be written: a `with … = it` value swallows a following `when`
-## (GH #335). The reins are plural, so they carry their own pair of openers
+## player taking` body (`runtime.ts:3044`); no `with` binding is needed
+## (one could be written now — GH #335's `with … when` order parses since
+## 2026-09-03). The reins are plural, so they carry their own pair of openers
 ## ("from their shelf") on a second leather trait.
 ##
 ## The displays are scenery supporters the item SITS on (the shape the

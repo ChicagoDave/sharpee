@@ -3098,6 +3098,25 @@ export class ChordRuntime {
     return this.ir.actions.map((def) => this.buildDispatchAction(def));
   }
 
+  /**
+   * The canonical word a `directions` block declares for `word` (GH #285):
+   * matched case-insensitively against each entry's canonical and aliases,
+   * so the parser's `NORTHEAST` binds as the author's `northeast`. A word
+   * no entry declares is returned unchanged.
+   *
+   * @param def the dispatch action whose `directions` block applies
+   * @param word the value the parser bound for the `direction` slot
+   */
+  private canonicalDirectionWord(def: IRActionDef, word: string): string {
+    const lower = word.toLowerCase();
+    for (const entry of def.directions ?? []) {
+      if (entry.canonical.toLowerCase() === lower || entry.aliases.some((a) => a.toLowerCase() === lower)) {
+        return entry.canonical;
+      }
+    }
+    return word;
+  }
+
   private buildDispatchAction(def: IRActionDef) {
     const runtime = this;
     const actionId = `chord.action.${def.name}`;
@@ -3142,7 +3161,14 @@ export class ChordRuntime {
       const extras = context.command.parsed?.extras ?? {};
       for (const key of semanticKeys) {
         const v = extras[key];
-        if (typeof v === 'string' && slots[key] === undefined) slots[key] = v;
+        if (typeof v !== 'string' || slots[key] !== undefined) continue;
+        // GH #285: the parser converts a compass word in `extras.direction`
+        // to the platform's Direction constant (`NORTHEAST`) — right for
+        // stdlib going, wrong for a `directions` block whose canonicals the
+        // analyzer validated as lowercase words. Bind the DECLARED canonical:
+        // the entry whose canonical or alias spells the value, whatever case
+        // the parser handed back. An undeclared word binds as it came.
+        slots[key] = key === 'direction' && hasDirections ? runtime.canonicalDirectionWord(def, v) : v;
       }
       return slots;
     };

@@ -7008,6 +7008,10 @@ class Parser {
           return { kind: 'refuse', phraseKey: key, params, span: lineSpan(line) } as RefuseStmt;
         }
         const stmtWhen = this.parseStatementWhen(c, line);
+        // GH #335: the other order — `phrase <key> when <cond> with <p> = <v>`.
+        // The condition stops at `with` (a PHRASE_STOP), so any bindings that
+        // follow it are read now rather than left unconsumed.
+        if (c.isWord('with')) params.push(...this.parseParams(c, line));
         // Declare-and-emit sugar (§2.6/§3.3): a deeper-indented bare prose
         // block after `phrase <key>` registers the text under the key.
         let inlineText: TextValue | null = null;
@@ -7588,7 +7592,9 @@ class Parser {
         this.diagnostics.error('parse.param-eq', 'Expected `= <value>` in the `with` binding.', c.restSpan());
         break;
       }
-      const value = this.parseValueExpr(c, line, new Set(['with']));
+      // GH #335: `when` stops the value too, so `with item = it when calm`
+      // reads as a binding followed by the statement's condition.
+      const value = this.parseValueExpr(c, line, new Set(['with', 'when']));
       params.push({ param, value, span: start ? mergeSpans(start.span, value.span) : value.span });
     }
     return params;
