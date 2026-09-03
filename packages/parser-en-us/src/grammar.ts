@@ -186,6 +186,8 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("toss :item to :recipient").mapsTo("if.action.throwing").build();
   grammar.define("hurl :item at :target").mapsTo("if.action.throwing").build();
   grammar.define("hurl :item to :recipient").mapsTo("if.action.throwing").build();
+  grammar.define("take :item from :container").mapsTo("if.action.removing").build();
+  grammar.define("get :item from :container").mapsTo("if.action.removing").build();
   grammar.define("take :item from :container with|using :tool").mapsTo("if.action.removing").instrument("tool").build();
   grammar.define("remove :item from :container").mapsTo("if.action.removing").build();
   grammar.define("extract :item from :container").mapsTo("if.action.removing").build();

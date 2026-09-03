@@ -161,7 +161,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
         "if.action.quitting": ["quit", "q", "exit game"],
         "if.action.raising": ["raise :target", "lift :target"],
         "if.action.reading": ["read :target", "peruse :target", "study :target"],
-        "if.action.removing": ["take :item from :container with|using :tool", "remove :item from :container", "extract :item from :container"],
+        "if.action.removing": ["take :item from :container", "get :item from :container", "take :item from :container with|using :tool", "remove :item from :container", "extract :item from :container"],
         "if.action.restarting": ["restart"],
         "if.action.restoring": ["restore", "load", "load game", "restore game"],
         "if.action.revealing": ["stand up", "come out", "reveal myself", "unhide", "stop hiding"],

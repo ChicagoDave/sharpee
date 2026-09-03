@@ -288,6 +288,8 @@ define action throwing
 
 define action removing
   grammar
+    take the item from the container
+    get the item from the container
     take the item from the container with or using the tool
     remove the item from the container
     extract the item from the container

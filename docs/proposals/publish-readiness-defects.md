@@ -8,6 +8,7 @@
 **Phase 4 landed (2026-09-03, session effb6f)** — P-7, P-8 DONE (#330, #345 closed; ADR-325 Z6 amendment DRAFT). **Now 26 PLANNED, 15 DONE, 3 PROPOSED.**
 **Phase 5 landed (2026-09-03, session effb6f)** — P-16, P-18 DONE (#312, #313 closed). **Now 24 PLANNED, 17 DONE, 3 PROPOSED.**
 **Phase 6 landed (2026-09-03, session effb6f)** — P-17 DONE (#349, #351 closed); the tick-order audit found one corpus clause, already covered by ADR-332 D4a; P-11's slice deferred to plan Phase 6a pending ADR-118 A1. **Now 23 PLANNED, 18 DONE, 3 PROPOSED.**
+**Phase 7 landed (2026-09-03, session effb6f)** — P-19 DONE (#314 closed). Phase 8 (P-21) is blocked on ADR-267 A1; Phase 9 proceeds. **Now 22 PLANNED, 19 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -110,7 +111,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-19: No bare `take X from Y` shape; `remove … from` re-wears a wearable (#314)
 - **Done when**: `take cap from satchel` works without a tool; `remove cap from satchel` leaves the cap carried, not worn.
 - **Review note (2026-09-03, session 639650)**: was `backlog-tier1-2-platform` Phase 6; folded into the publish-readiness plan on David's ruling.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 7; #314 closed; the re-wear half closed with #334 in Phase 2); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-20: A bare noun after a missing-object prompt should complete the command (#318)
 - **Done when**: after "What do you want to drop?" the next input, if it resolves as a noun phrase in scope, completes the held command; otherwise it parses fresh. The held command lives in the engine as ADR-225 decided ("a new query source that stores a partial command and completes it from the answer"); the one-input expiry is recorded as an ADR-225 amendment line in the same landing.

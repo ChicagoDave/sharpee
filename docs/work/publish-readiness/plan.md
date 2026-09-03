@@ -132,7 +132,8 @@
 - **Entry state**: Phase 1's design ruling for #314 is recorded (Phase 1 outcome, ruling 6): the two tool-less shapes join removing in `grammar.ts` and the manifest regenerates; the re-wear is the worn invariant Phase 2 lands under P-10, so this phase only pins the satchel branch against it. Present the grammar-manifest addition and the removing-action fix to David before editing `parser-en-us`/`packages/chord`/`stdlib` — `./repokit grammar` + `--check` for any standard-grammar `.story`-file change (ADR-269). The manifest is `packages/chord/src/stdlib-manifest.ts`, so this is a Chord-side grammar change and sits inside Phases 2–8, ahead of Phase 9's freeze declaration.
 - **Deliverable**: `take :item from :container` (no tool) parses and behaves as `remove :item from :container`. Removing an unworn wearable from a container leaves it carried, not worn. Real-path pins in `branch-stories/secret-letter/secret-letter.tests.json`'s satchel branch cover both.
 - **Exit state**: #314 closed. `./sharpee test branch-stories/secret-letter` passes with updated satchel-branch pins. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/stdlib' test` green. Dungeo walkthrough chain green.
-- **Status**: CURRENT (since 2026-09-03, session effb6f)
+- **Outcome (2026-09-03, session effb6f)**: #314 closed. `take the item from the container` and `get the item from the container` added to `removing` in the grammar SOURCE `packages/parser-en-us/grammar/standard-en-us.story`; `./repokit grammar` and `./repokit manifest` regenerated `grammar.ts`, the site's grammar blocks, and `stdlib-manifest.ts`. The re-wear half was Phase 2's worn invariant. Pins: story-loader `take-from-container.test.ts` (2, real path); Secret Letter change-outfit branch 2: `take cap from satchel` now reaches the story's own clothing refusal ("outfit changes are rare") where the phrasing did not parse before. Suites: parser-en-us 326, chord 1136; Dungeo chain 952; Secret Letter 566; Fernhill 36; Ides 39. Grammar-changes row.
+- **Status**: DONE (2026-09-03, session effb6f)
 
 ### Phase 8: Story-action bare-verb grammar scoping / stdlib fall-through (#317)
 - **Tier**: Small
@@ -141,7 +142,7 @@
 - **Entry state**: Verify Phase 1's ADR-087/267 amendment is ACCEPTED and P-21 has been flipped ACCEPTED in `docs/proposals/publish-readiness-defects.md`. If still PROPOSED, this phase does not start. Present the chosen mechanism (fall-through vs. scoped grammar, per Phase 1's ruling) to David before editing `story-loader`/`packages/chord`/`parser-en-us`.
 - **Deliverable**: `aerial-runway.chord`'s interim `releasing` action (the static elsewhere-refusal printing "What do you want to drop?" with no follow-up) is removed; bare `drop` reaches stdlib's MISSING_OBJECT prompt everywhere except On the Wire, where it still means `let go` — the issue's own named acceptance check.
 - **Exit state**: #317 closed. `./sharpee test branch-stories/secret-letter` passes with the interim phrase removed. Relevant package unit suites (`story-loader`, `parser-en-us`, or `chord`, per the chosen mechanism) green. Dungeo walkthrough chain green.
-- **Status**: PENDING
+- **Status**: PENDING (blocked on ADR-267 Amendment 1 acceptance — `only while <condition>`; skipped 2026-09-03, session effb6f, per the entry state)
 
 ### Phase 9: Clarification follow-up — a bare noun after a missing-object prompt completes the command (#318)
 - **Tier**: Large
@@ -150,7 +151,7 @@
 - **Entry state**: Phase 8 (#317) landed first, so bare-verb story claims don't block this flow from being reachable where it's needed. Present the held-command mechanism and the one-input expiry rule to David before editing `packages/engine`/`packages/parser-en-us`. Draft the ADR-225 expiry amendment alongside the design discussion.
 - **Deliverable**: After a MISSING_OBJECT/MISSING_INDIRECT refusal, the engine holds the incomplete command for exactly one turn; if the next input parses as a noun phrase resolving in scope it splices into the held command and executes; otherwise the held command is dropped and the next input parses normally. Story-agnostic fixture coverage in addition to the Secret Letter real-path pin (the two-input `drop` / `satchel` sequence). ADR-225 amended with the one-input-expiry rule and ACCEPTED. **The language freeze is declared here** (standing rules above): a dated line is added under P-44 in `docs/proposals/publish-readiness-defects.md` recording that Chord grammar and IR are frozen from this date until the P-44 publish — this is the first phase after the last one (Phase 8) that can touch them; ADR-331's rotation may not land core inside the window.
 - **Exit state**: #318 closed. ADR-225 amendment ACCEPTED. Freeze line recorded in the proposal, dated. `./sharpee test branch-stories/secret-letter` passes with the two-input drop sequence pinned. `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/engine' test` green with new pending-clarification coverage. Dungeo walkthrough chain green — this changes core parse/turn flow, the highest-risk regression surface in this plan; verify carefully before declaring done.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-09-03, session effb6f — Phase 8 blocked, so the Secret Letter two-input `drop`/`satchel` pin waits on it; the story-agnostic fixture is this phase's acceptance)
 
 ### Phase 10: Text/parser polish (#333, #328, #323, #206, #108, #97)
 - **Tier**: Large
