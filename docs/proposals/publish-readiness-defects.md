@@ -18,6 +18,7 @@
 **Phase 15 (2026-09-03, session effb6f)** — #240 DONE within P-41; #239 superseded by ADR-307 (David's ruling); P-40 (#231) is a deletion awaiting David's confirmation, list in the plan. **Still 7 PLANNED, 34 DONE, 3 PROPOSED.**
 **Phase 16 landed (2026-09-03, session effb6f)** — P-39, P-42 DONE (#246 closed; #94 closed as superseded by the site). **Now 5 PLANNED, 36 DONE, 3 PROPOSED.**
 **Phase 15 closed out (2026-09-03, session effb6f, after David's confirmation)** — P-40 DONE (#231 closed). **Now 4 PLANNED, 37 DONE, 3 PROPOSED.**
+**Phase 15 complete (2026-09-03, session effb6f, David's ruling)** — P-41 DONE (#239 closed as superseded by ADR-307). **Now 3 PLANNED, 38 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -226,7 +227,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-41: `sharpee test` lacks `--bless`/`--watch`; `sharpee play` drops piped commands (#239, #240)
 - **Done when**: `sharpee test --bless` records goldens and `--watch` re-runs on change; `printf 'north\nnorth\n' | sharpee play` runs both commands; no error message names a flag the author does not have.
-- **Status**: PLANNED — #240 DONE (2026-09-03, session effb6f, plan Phase 15); #239's `--bless`/`--watch` superseded by ADR-307's tree document, David's ruling pending (see the plan); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 15; #240 closed; #239 closed as superseded by ADR-307, David's ruling); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-42: The author-facing guide set on sharpee.net covers what #94 asked of docs/guides
 - **Issue text**: #94 asked for `docs/guides/` to be reviewed for accuracy, stripped of stale content, extended with traits / capability dispatch / NPC guides, and made author-facing. `docs/guides/` was quarantined to `docs/unofficial/` on 2026-08-14 (docs-consolidation P-2, David's acceptance) and sharpee.net is the author canon, so the work moves to the site and #94 closes as superseded by it (review 2026-09-03, CONTRADICTION resolved by rewording).
