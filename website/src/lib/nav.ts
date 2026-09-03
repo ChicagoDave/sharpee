@@ -93,6 +93,7 @@ export const NAV: NavSection[] = [
           { title: 'Starting state', href: '/chord/guide/world/starting-state' },
           { title: 'Doors', href: '/chord/guide/world/doors' },
           { title: 'Regions', href: '/chord/guide/world/regions' },
+          { title: 'Sound, music, and images', href: '/chord/guide/world/sound-music-and-images' },
           { title: 'People', href: '/chord/guide/world/people' },
           { title: 'The player role', href: '/chord/guide/world/the-player-role' },
         ],
@@ -176,6 +177,7 @@ export const NAV: NavSection[] = [
             href: '/chord/guide/tooling',
             children: [
               { title: 'sharpee compose', href: '/chord/guide/tooling/sharpee-compose' },
+              { title: 'sharpee test', href: '/chord/guide/tooling/sharpee-test' },
               { title: 'Reading diagnostics', href: '/chord/guide/tooling/reading-diagnostics' },
               { title: 'Migrating from removed constructs', href: '/chord/guide/tooling/migrating-from-removed-constructs' },
             ],

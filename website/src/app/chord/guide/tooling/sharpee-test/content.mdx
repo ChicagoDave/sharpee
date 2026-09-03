@@ -1,0 +1,158 @@
+`sharpee test` replays your story's **tree document** — the one file that
+holds every test you have recorded — fresh from boot, at the story's
+pinned seed, and reports a verdict for every card and every claim.
+
+```text
+sharpee test [name|dir|file.story] [--stop-on-failure|-s] [--verbose|-v] [--json] [--capture-output] [--capture-world]
+```
+
+Run it from the project directory (or name a registered story, a
+directory, or the `.story` file). It exits `0` when every line passed,
+`1` on any failure, `2` for a usage error or a document it cannot read,
+and `3` when the story itself fails to load — so it drops straight into
+CI.
+
+## The tree document
+
+Tests live beside your story as **`<story-id>.tests.json`**. Chord Writer's
+Testing tab writes it as you play; you can also read and edit it by hand,
+because the JSON is the single source of truth — a run evaluates exactly
+what the document says and assumes nothing.
+
+```json
+{
+  "version": 1,
+  "story": "orchard",
+  "seed": 42,
+  "cards": [
+    { "type": "opening", "assertions": { "channels": [{ "id": "info.title", "is": "Orchard" }] } },
+    { "type": "boot", "assertions": { "contains": ["Landing", "A quiet place to begin."] } },
+    {
+      "type": "turn",
+      "command": "inventory",
+      "assertions": {
+        "contains": ["brass lantern"],
+        "states": ["player.inventory contains lantern", "the brass lantern is dull", "story.state = dawn"]
+      },
+      "branches": [
+        {
+          "branch": 1,
+          "cards": [
+            {
+              "type": "turn",
+              "command": "rub lantern",
+              "assertions": {
+                "contains": ["The lantern glows."],
+                "states": ["the brass lantern is glowing", "the story is day"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "turn",
+      "command": "north",
+      "assertions": {
+        "exact": ["Orchard", "Rows of apple trees."],
+        "states": ["player.location = Orchard"],
+        "notContains": ["Landing"]
+      }
+    },
+    { "type": "turn", "command": "look", "skip": true },
+    {
+      "type": "turn",
+      "command": "drop lantern",
+      "assertions": {
+        "contains": ["Dropped."],
+        "events": ["if.event.dropped"],
+        "states": ["lantern.location = Orchard", "player.inventory not-contains lantern"]
+      }
+    }
+  ]
+}
+```
+
+- **`seed`** pins the story's random choices, so a run is deterministic and
+  an exact claim is a claim rather than a coin flip. Chord Writer picks it
+  when the document is created; keep it.
+- **Cards** are the turns. The `opening` card has no command (it carries the
+  title banner); the `boot` card is the first look; every `turn` card has
+  its typed `command`.
+- **Branches** live *on the card they fork from*. Each branch replays the
+  story to that card and then runs its own cards, so the main line's later
+  cards never see the branch's changes. `branch` is a stable id, not a
+  position.
+- **`skip: true`** runs the turn and asserts nothing — the way to move the
+  story along without recording a claim.
+
+## The assertion families
+
+Each family is optional; a card may carry several. Every entry is one
+claim with its own verdict.
+
+| Family | Claim | Example |
+| --- | --- | --- |
+| `contains` | the turn's prose contains this text | `"The lantern glows."` |
+| `notContains` | the prose does **not** contain it | `"Landing"` |
+| `exact` | the turn's whole output, line by line (supersedes `contains`) | `["Orchard", "Rows of apple trees."]` |
+| `states` | a world fact holds after the turn | `"the brass lantern is glowing"` |
+| `events` | the turn emitted this event type | `"if.event.dropped"` |
+| `channels` | a channel's value (`is`) or fragments of it (`contains`) | `{ "id": "info.title", "is": "Orchard" }` |
+
+**`exact`** is the golden tier: it catches the article, plural and
+interpolation slips a `contains` claim sails past. Record it from a real
+run rather than typing it.
+
+**`states`** is the claim that survives prose edits. Its string forms, tried
+in order:
+
+- `story.state = <state>` / `story.state != <state>` — the story's own phase
+  (`states:` in the story header).
+- `<entity>.<property> = <value>` / `!=` — a single-word entity head
+  (a name or alias) and a property: `location`, or a plain trait property.
+- `<entity>.inventory contains <item>` / `not-contains` (also `contents`) —
+  what an entity holds; `player` always names whoever holds the player role.
+- `[the] <name> is <state>` / `is not <state>` — the Chord-spelled form: a
+  thing's own `states:` value in the story's spelling, spaces and aliases
+  included (`the brass lantern is glowing`); `the story is <state>` reads
+  the phase the same way.
+
+**`events`** names an event type the turn must have emitted — the standard
+actions' `if.event.*` types (`if.event.taken`, `if.event.dropped`,
+`if.event.went`, …). A Chord dispatch action's turn carries `chord.phrase`
+events, so pin its outcome with `states` and `contains` instead.
+
+**`channels`** reads a channel by id. A dotted id is a path into a
+structured channel: `info.title` is the banner's title, `info.description`
+its description; your own `define channel` names read the same way.
+
+## Recording claims automatically
+
+Playing in Chord Writer's Testing tab records what the story actually said
+as each turn's claims. Which claims it writes is the story header's
+**`auto-assertion:`** policy: `room-name-and-description` (the default),
+`room-description`, or `all-emitted-text`. Omit the field to decide claim
+by claim. A card with no claims and no `skip` is a failure at run time —
+the document never fills a gap silently.
+
+## Flags
+
+- **`--stop-on-failure`** (`-s`) halts at the first failing card.
+- **`--verbose`** (`-v`) prints every command's output under its verdict.
+- **`--json`** streams one NDJSON record per event on stdout
+  (`run-start`, `transcript-start`, `command-result`, …) for tooling;
+  **`--capture-output`** puts each command's exact output on its record, and
+  **`--capture-world`** adds a world snapshot.
+
+<Callout title="One suite, one file">
+  There are no transcript files to name, chain, or order. A shared prefix
+  runs once; every fork is a branch on the card it forks from. `--chain`
+  and `.transcript` arguments are refused by name so an old habit fails
+  loudly rather than running the wrong thing.
+</Callout>
+
+To try a sequence of commands without recording anything, pipe them into
+[`sharpee play`](/chord/getting-started/compose-and-run#play-in-the-terminal):
+`printf 'north\nlook\n' | sharpee play` runs both and prints what the
+story said.

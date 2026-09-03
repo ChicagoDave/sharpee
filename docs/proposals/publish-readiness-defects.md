@@ -16,6 +16,7 @@
 **Phase 13 landed (2026-09-03, session effb6f)** — P-35, P-36 DONE (#196 closed; #195 closed as built). **Now 8 PLANNED, 33 DONE, 3 PROPOSED.**
 **Phase 14 landed (2026-09-03, session effb6f)** — P-38 DONE (#320, #319 closed); P-37 (#224) deferred to David with the sizing (163 + 187 type errors across every chapter checkpoint — an edition decision, see the plan). **Now 7 PLANNED, 34 DONE, 3 PROPOSED.**
 **Phase 15 (2026-09-03, session effb6f)** — #240 DONE within P-41; #239 superseded by ADR-307 (David's ruling); P-40 (#231) is a deletion awaiting David's confirmation, list in the plan. **Still 7 PLANNED, 34 DONE, 3 PROPOSED.**
+**Phase 16 landed (2026-09-03, session effb6f)** — P-39, P-42 DONE (#246 closed; #94 closed as superseded by the site). **Now 5 PLANNED, 36 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -216,7 +217,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-39: sharpee.net testing docs stop at hello-world and recommend `--chain` (#246)
 - **Done when**: the site documents `continues:`/`--tree`, `seed:`, goldens, `[STATE:]`/`[EVENT:]`/`[CHANNEL:]`, and no page recommends `--chain` to authors.
 - **Review note (2026-09-03, session 639650)**: sequenced after David's ruling on where the Chord-spelled `[STATE:]` pin form (GH #355, 2026-09-03) is recorded — ADR-307 addendum or its own ADR — so the site documents the form that ships.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 16; #246 closed; the site documents the ADR-307 tree document the author tool runs, pin form recorded in the ADR-307 addendum); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-40: cloak-of-darkness ships two divergent implementations (#231)
 - **Done when**: one implementation remains, both harnesses run the same source, and the transcript suite passes on it.
@@ -229,7 +230,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-42: The author-facing guide set on sharpee.net covers what #94 asked of docs/guides
 - **Issue text**: #94 asked for `docs/guides/` to be reviewed for accuracy, stripped of stale content, extended with traits / capability dispatch / NPC guides, and made author-facing. `docs/guides/` was quarantined to `docs/unofficial/` on 2026-08-14 (docs-consolidation P-2, David's acceptance) and sharpee.net is the author canon, so the work moves to the site and #94 closes as superseded by it (review 2026-09-03, CONTRADICTION resolved by rewording).
 - **Done when**: sharpee.net carries an author-facing guide for each subject #94 listed (traits, capability dispatch, the NPC system, and the existing seven's subjects where the site lacks one), each verified against 5.2.0; the site's sidebar resolves every link; nothing under `docs/unofficial/` is touched.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 16; #94 closed as superseded by the site; subject map in the plan; one new guide, sound/music/images); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-43: The outside-repo proof — install devkit from npm and ship a story from a clean directory
 - **Issue text**: new. ADR-180 Phase U2 names the globally-installed author flow; nobody has run it outside this repository.

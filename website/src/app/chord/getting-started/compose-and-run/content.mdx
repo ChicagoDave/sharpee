@@ -10,7 +10,7 @@ sharpee build
 ```text
 🔨 Building browser bundle
 
-  ✓ Validated orchard.story (gate-clean) and shipped it as story.story
+  ✓ Validated orchard.story (gate-clean) — source not shipped (`publish-source:` absent)
   ✓ Story IR → dist/orchard.ir.json
   Bundling game.js...
   ✓ Built game.js
@@ -27,7 +27,8 @@ Output: dist/web/<id>/
 engine, and a browser client in one folder. Serve it locally with
 `npx serve dist/web/<id>`, or host it anywhere static files go. For a
 `.story`, the browser client is the default — `sharpee build` needs no
-flag.
+flag. Your source stays out of the bundle unless the story header says
+`publish-source: yes`.
 
 ## Play in the terminal
 
@@ -56,44 +57,34 @@ a brass lantern
 
 Type commands at the prompt exactly as a player would; `/quit` exits.
 
-## Test with transcripts
+## Test with the tree document
 
-Transcripts are your story's test suite: player commands paired with
-assertions about the response. They live in the project's `tests/`
-directory as `.transcript` files:
-
-```text
-title: The lantern is in hand at the start
-story: orchard
-description: The player starts in the Landing carrying the brass lantern.
----
-
-> look
-[OK: contains "Landing"]
-
-> inventory
-[OK: contains "brass lantern"]
-```
+Your tests are one file beside the story, **`<story-id>.tests.json`**: the
+turns you played in Chord Writer's Testing tab, each with the claims it
+recorded about what the story said. `sharpee test` replays that document
+fresh from boot at the story's pinned seed:
 
 ```shell
 sharpee test
 ```
 
 ```text
-Found 1 transcript(s) to run
+Tree document: orchard.tests.json (seed 42, 2 line(s))
 
-Running: tests/lantern.transcript
-  "The lantern is in hand at the start"
-
-  > look                                             PASS
-  > inventory                                        PASS
-
-  2 passed (7ms)
+✓ opening-landing
+✓ landing · rub lantern
+6 cards passing, 16 assertions passing
+8 commands (6 authored + 2 replayed)
 ```
 
-`sharpee test` exits non-zero on failure, so it drops straight into CI.
-`--chain` runs several transcripts against one continuing game state,
-and `--stop-on-failure` halts at the first miss.
+Every card and every claim gets a verdict, and `sharpee test` exits
+non-zero on any failure, so it drops straight into CI. `--stop-on-failure`
+halts at the first miss; `--json` streams the results for tooling. The
+document's shape — cards, branches, and the six claim families, including
+state claims spelled the way the story spells them — is on the
+[`sharpee test`](/chord/guide/tooling/sharpee-test) page. To try commands
+without recording anything, pipe them into `sharpee play`:
+`printf 'north\nlook\n' | sharpee play`.
 
 ## Compose: the compiler on its own
 
