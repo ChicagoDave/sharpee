@@ -14,6 +14,15 @@
   - ADR-320 Amendment D2a — entity topics unscoped; validator's quiet resolution widens to the world. No open questions.
   - Rulings for #312 (actor in parse-time bases, grammar-scope-resolver), #313 (`open-inventory` trait adjective), #314 (two tool-less shapes; re-wear is the worn invariant in `moveEntity`, landed under P-10) recorded in the plan's Phase 1 outcome and folded into Phases 2, 5, 7 entry states.
 
+- **Phase 2 DONE (commit `0e5697f4` closed Phase 1)** — all six fixes landed with tests; package suites green (world-model 1504, stdlib 1666, lang-en-us 450, chord 1125 after the EBNF re-pin and the optional-`oneWay` AST, story-loader 1039 after the daemon-roster expectation gained `chord.act-drain`); `./repokit build dungeo` clean; Dungeo chain 952 passing (17 transcripts); Secret Letter 563 cards / 957 assertions with three new pins; Fernhill 36 cards; Ides of March 39 cards; #327, #326, #331, #329, #334, #325 closed; proposal P-1/P-2/P-3/P-9/P-10/P-12 DONE; mutation-verification found nothing notable (all GREEN).
+  - P-10 (#334): `WorldModel.moveEntity` clears worn/wornBy when a worn item leaves its location (the ruling-6 invariant).
+  - P-12 (#325): `examined_self` gains `{slot:detail}`.
+  - P-2 (#326): going's arrival report applies the initial description on the first visit (replace semantics, as the site documents — the proposal's "the standard description follows it" is not the documented behaviour; flagged for David).
+  - P-1 (#327): `, one-way` wired end to end (`ExitDecl.oneWay?` → `IRExit.oneWay?` → `connectRooms(..., { oneWay })`); EBNF production + re-pin under 3.5.0; grammar-changes row; sharpee.net exits page corrected (it claimed exits were one-way as written); Secret Letter's `northeast is blocked` workaround retired and the landing's exit written `, one-way`; the `ne` pin now expects "You can't go that way."
+  - P-3 (#331): `describeArrival` runs looking as the player after an outermost authorial move; act flush/drain registered for any story with a `move`; ADR-326 D5 addendum.
+  - P-9 (#329): does not reproduce at HEAD — fixed incidentally 2026-09-02 by commit 07e1949d's pre-move sourcing (`const at = this.placeOf(...)` captured before the arm runs); pinned by `offstage-phrase-renders.test.ts` (offstage and remove variants).
+  - Harness: `tests/helpers/boot-turns.ts` (real engine, per-turn events + `text:output` text; extends parser and language before `setStory`, bootstrap's order).
+
 ## Key Decisions
 - Refusal fall-through rejected for P-21: every `refuse when` is an authored refusal, so fall-through needs a "does not apply" marker, and a marker evaluated before the parse chooses the action is a scoped grammar line.
 - Entity topics are subjects, not objects: scope is irrelevant to whether a topic row serves.
@@ -24,6 +33,9 @@
 - Carried: the every-turn `while <npc> knows <topic>` tick-order audit (Phase 6).
 
 ## Files Modified
+- Phase 2 platform: `packages/world-model/src/world/{WorldModel,AuthorModel}.ts`, `packages/world-model/src/world/index.ts`, `packages/stdlib/src/actions/standard/going/going.ts`, `packages/story-loader/src/{runtime,loader}.ts`, `packages/chord/src/{parser,ast,ir,analyzer}.ts`, `packages/chord/chord.ebnf`, `packages/lang-en-us/src/actions/examining.ts`
+- Phase 2 tests: `packages/world-model/tests/unit/world/{move-entity-worn,connect-rooms-one-way}.test.ts`, `packages/stdlib/tests/unit/actions/going-first-visit-description.test.ts`, `packages/lang-en-us/tests/examined-self-detail.test.ts`, `packages/chord/tests/{doors,language-version}.test.ts`, `packages/story-loader/tests/{one-way-exit,authorial-move-describes,first-time-on-arrival,examine-self-detail,offstage-phrase-renders,scheduler}.test.ts`, `packages/story-loader/tests/helpers/boot-turns.ts`
+- Phase 2 docs/content: `docs/architecture/chord-grammar-changes.md` (row), `docs/architecture/adrs/adr-326-adjacent-room-place-expression.md` (D5 addendum), `website/src/app/chord/guide/world/exits-and-blocked-exits/content.mdx`, `branch-stories/secret-letter/{aerial-runway,grubbers-market}.chord`, `branch-stories/secret-letter/secret-letter.tests.json`, `docs/proposals/publish-readiness-defects.md` (six items DONE)
 - `docs/architecture/adrs/adr-118-stdlib-action-interceptors.md` — Amendment 1 (DRAFT)
 - `docs/architecture/adrs/adr-267-chord-grammar-pattern-constructs.md` — Amendment 1 (DRAFT)
 - `docs/architecture/adrs/adr-320-conversation-and-complex-dialogue.md` — Amendment D2a (DRAFT)

@@ -5693,6 +5693,7 @@ class Analyzer {
         // reference — an unknown name is the standard unresolved-entity
         // error; '' marks it so checkDoors skips what is already reported.
         via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
+        ...(e.oneWay ? { oneWay: true as const } : {}),
         span: e.span,
       })),
       blockedExits: decl.blockedExits.map((b, i) => {

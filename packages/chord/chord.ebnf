@@ -438,7 +438,8 @@ create-line  = "aka" alias { "," alias } NL
                                                               regions. Placement lines on
                                                               a region block are a load
                                                               error *)
-             | DIRECTION "to" name [ "through" name ] NL   (* exit; `through the <door>`
+             | DIRECTION "to" name [ "through" name ] [ "," "one-way" ] NL
+                                                           (* exit; `through the <door>`
                                                               tail (ADR-234 D1, ratchet
                                                               R2) is the ONE door
                                                               relationship form — the
@@ -447,9 +448,12 @@ create-line  = "aka" alias { "," alias } NL
                                                               (opposite direction), a
                                                               mirrored far-room line is
                                                               legal only as the exact
-                                                              mirror. `, one-way` is
-                                                              reserved, not wired (parse
-                                                              error names it). Placement
+                                                              mirror. `, one-way` (ADR-234
+                                                              D4, wired 2026-09-03, GH
+                                                              #327): the written
+                                                              direction only — no reverse
+                                                              exit, a door on the line is
+                                                              one-way. Placement
                                                               lines on a door block are
                                                               a load error — a door's
                                                               location IS its room pair

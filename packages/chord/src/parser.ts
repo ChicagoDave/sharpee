@@ -2011,17 +2011,24 @@ class Parser {
             via = doorRef;
           }
         }
-        // ADR-234 D4: `, one-way` is reserved (traversable in the written
-        // direction only) but NOT wired — a legible reservation error, not
-        // a generic parse failure, until its own ratchet entry lands.
+        // `, one-way` (ADR-234 D4's reservation, wired 2026-09-03 for GH
+        // #327): the exit is traversable in the written direction only —
+        // the loader infers no reverse exit, and a door on the line is
+        // one-way too. The comma-modifier slot is the `, once` pattern.
+        let oneWay = false;
         if (cur.peek()?.kind === 'comma' && cur.isWord('one-way', 1)) {
-          this.diagnostics.error(
-            'parse.exit-one-way-reserved',
-            '`, one-way` is reserved but not yet wired — exits and doors are bidirectional for now.',
-            lineSpan(line),
-          );
+          cur.next();
+          cur.next();
+          oneWay = true;
         }
-        decl.exits.push({ kind: 'exit', direction: word, to, via, span: lineSpan(line) } as ExitDecl);
+        decl.exits.push({
+          kind: 'exit',
+          direction: word,
+          to,
+          via,
+          ...(oneWay ? { oneWay: true as const } : {}),
+          span: lineSpan(line),
+        } as ExitDecl);
       } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('blocked', 2)) {
         this.pos++;
         const blocked = this.parseBlockedExit(word, line);

@@ -218,3 +218,5 @@ Two consequences, accepted:
 2026-08-24, session 915e68 (`docs/context/session-20260824-1035-feat-adr-321-world-index.md`)
 — Phase 3 of `docs/work/backlog-tier1-2-platform/plan.md`, following the plan-review
 correction that redirected the mechanism from ADR-295's resolver to ADR-325's place family.
+
+**D5 addendum (2026-09-03, GH #331, publish-readiness plan Phase 2).** "A moved player sees the arrival exactly as `move the player to <room>` shows it today" — today that showed nothing: the player landed unnamed until they typed `look`. An authorial move of the player now describes the destination by default, as a walked arrival does: the runtime runs the real looking action as the player through the engine's execution entry (`describeArrival`), its events riding the acting-statement flush ahead of the scheduler, so the description precedes the arrival clauses' narration. Only the outermost move of a re-entry chain describes (the blocked-stall bounce shows the room the player ends in). The draw itself still narrates nothing; the sentence above stands, with "today" now meaning this.

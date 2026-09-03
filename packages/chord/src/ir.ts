@@ -852,6 +852,13 @@ export interface IRExit {
    * both directions and places the door in the declaring room.
    */
   via: string | null;
+  /**
+   * `, one-way` (ADR-234 D4, GH #327): the loader stamps the written
+   * direction only — no reverse exit, and a door on the line has
+   * `bidirectional = false`. Present only when declared (absent keeps IR
+   * byte-identical).
+   */
+  oneWay?: true;
   span: Span;
 }
 

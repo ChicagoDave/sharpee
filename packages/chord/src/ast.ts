@@ -1189,6 +1189,13 @@ export interface ExitDecl {
    * never creates one.
    */
   via: NameRef | null;
+  /**
+   * `, one-way` (ADR-234 D4, wired for GH #327): traversable in the written
+   * direction only — the loader infers no reverse exit, and a door on the
+   * line is one-way too. Present only when declared (the golden ASTs of
+   * stories without it stay byte-identical).
+   */
+  oneWay?: true;
   span: Span;
 }
 

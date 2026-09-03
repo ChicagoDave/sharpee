@@ -3503,9 +3503,10 @@ export class ChordRuntime {
     // ADR-329 D4: an act fired inside a daemon body (every-turn, a timer's
     // expiry) has no player action for the flush plugin to follow; this
     // daemon delivers its events on the same tick. Registered only when the
-    // story carries an acting statement, so every other story keeps its
-    // exact daemon roster.
-    if (this.hasActingStatements()) {
+    // story carries an acting statement or a `move` (GH #331: a moved
+    // player's arrival description rides the same queue), so every other
+    // story keeps its exact daemon roster.
+    if (this.hasDeferredNarration()) {
       daemons.push({
         id: 'chord.act-drain',
         name: 'Acting-statement narration drain',
@@ -3665,11 +3666,27 @@ export class ChordRuntime {
 
   /** True when any clause body in the story carries an acting statement (ADR-329). */
   hasActingStatements(): boolean {
+    return this.irCarries((rec) => rec.kind === 'act' && typeof rec.action === 'string' && Array.isArray(rec.slots));
+  }
+
+  /**
+   * True when the story can queue narration for the act flush: an acting
+   * statement (ADR-329 D4) or a `move` statement — an authorial move of the
+   * player describes the destination through the same queue (GH #331).
+   * Which entity a `move` moves is a runtime fact, so any `move` counts.
+   */
+  hasDeferredNarration(): boolean {
+    return this.hasActingStatements()
+      || this.irCarries((rec) => rec.kind === 'move' && 'entity' in rec && 'place' in rec);
+  }
+
+  /** Walk the IR for any object node the predicate accepts. */
+  private irCarries(predicate: (rec: Record<string, unknown>) => boolean): boolean {
     const visit = (node: unknown): boolean => {
       if (Array.isArray(node)) return node.some(visit);
       if (node && typeof node === 'object') {
         const rec = node as Record<string, unknown>;
-        if (rec.kind === 'act' && typeof rec.action === 'string' && Array.isArray(rec.slots)) return true;
+        if (predicate(rec)) return true;
         return Object.values(rec).some(visit);
       }
       return false;
@@ -4381,8 +4398,34 @@ export class ChordRuntime {
     // transition fires the destination's entering clauses and every
     // `when <entity> moves` clause for the mover, whoever the mover is.
     if (placeWorldId !== null && toRoom !== undefined && fromRoom !== toRoom) {
+      const outermost = this.moveArrivalDepth === 0;
       this.fireMoveArrival(thingWorldId, fromRoom, toRoom, world);
+      // GH #331: an authorial move of the PLAYER describes the destination,
+      // as a walked arrival does — the real looking action, run as the
+      // player through the engine's execution entry, its events riding the
+      // acting-statement flush (right after the action, ahead of the
+      // scheduler, so the description precedes the arrival clauses'
+      // narration exactly as it does for `going`). Only the outermost move
+      // of a re-entry chain describes, so a blocked-stall bounce shows the
+      // room the player ends in, not every room passed through.
+      if (outermost && thingWorldId === world.getPlayer()?.id) {
+        this.describeArrival(thingWorldId);
+      }
     }
+  }
+
+  /**
+   * Describe the player's surroundings after an authorial move (GH #331):
+   * runs `if.action.looking` as the player through the engine's execution
+   * entry and queues its events for the act flush. A no-op before the
+   * engine is ready (a `before the game starts` move — the boot look
+   * describes the start room anyway).
+   *
+   * @param playerId the player's world id, the mover
+   */
+  private describeArrival(playerId: string): void {
+    if (!this.executionEntry) return;
+    for (const e of this.executionEntry(playerId, 'if.action.looking').events) this.pendingActEvents.push(e);
   }
 
   /**

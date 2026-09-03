@@ -27,7 +27,9 @@ export const examiningLanguage = {
     // description is a complete sentence; clause mode is for author-terminated
     // templates). Empty by default — only objects whose traits contribute get detail.
     'examined': "{verbatim:description}{slot:detail}",
-    'examined_self': "{verbatim:description}",
+    // GH #325: the player's own `phrase detail while …` lines ride the same
+    // detail slot as any other person's — examining yourself is examining.
+    'examined_self': "{verbatim:description}{slot:detail}",
     'examined_container': "{verbatim:description}{slot:detail}",
     'examined_supporter': "{verbatim:description}{slot:detail}",
     'examined_readable': "{verbatim:description}{slot:detail}",

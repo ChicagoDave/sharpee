@@ -7737,6 +7737,17 @@ export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
  * @param lastRoomId - Its containing room id at removal time, or `null`.
  */
 export type EntityRemovalObserver = (entity: IFEntity, lastRoomId: string | null) => void;
+/**
+ * Options for `connectRooms` (ADR-234 D4 `, one-way`, GH #327).
+ */
+export interface ConnectRoomsOptions {
+    /**
+     * Stamp the written direction only: no reverse exit on room2, and a door
+     * on the connection gets `bidirectional = false`. Default: both
+     * directions, the platform's standing behaviour.
+     */
+    oneWay?: boolean;
+}
 export interface IWorldModel {
     getDataStore(): IDataStore;
     /**
@@ -7957,7 +7968,7 @@ export interface IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -8292,7 +8303,7 @@ export declare class WorldModel implements IWorldModel {
      * trait's room pair disagrees with the rooms passed — the primitive owns
      * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -8707,7 +8718,7 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
+import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions, ConnectRoomsOptions } from './WorldModel.js';
 import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
@@ -8810,7 +8821,7 @@ export declare class AuthorModel implements IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;

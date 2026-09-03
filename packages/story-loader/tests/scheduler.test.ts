@@ -62,8 +62,11 @@ describe('zoo-timeline scheduler constructs', () => {
 
   it('builds one daemon per construct', () => {
     // 3 sequences + 1 entity every-turn clause (Sam) + 2 trait every-turn
-    // clauses (chatty/candid) = 6 daemons.
+    // clauses (chatty/candid) = 6 daemons, plus the acting-statement drain
+    // the story earns by carrying a `move` (GH #331: a moved player's
+    // arrival description rides that queue).
     expect(daemons.map((d) => d.id).sort()).toEqual([
+      'chord.act-drain',
       'chord.entity-turn.sam-the-zookeeper.0',
       'chord.sequence.closing-time',
       'chord.sequence.goat-bleats',

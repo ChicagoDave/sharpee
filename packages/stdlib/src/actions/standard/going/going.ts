@@ -602,6 +602,24 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Room has light - build and emit room description
     const roomSnapshot = captureRoomSnapshot(destinationRoom, context.world, false);
 
+    // First arrival by going shows the room's `first time` prose in place of
+    // the standing description (GH #326), exactly as looking-data does for a
+    // first `look`: the initial description is mirrored onto the snapshot
+    // (the room handler reads `room.description` first) and the top-level
+    // field. execute() staged `isFirstVisit` before marking the visit, so
+    // this is the one render that sees it (ADR-107 dual-mode: the message id
+    // takes precedence over the literal).
+    const destinationTrait = destinationRoom.getTrait(RoomTrait);
+    const useInitial = sharedData.isFirstVisit === true && destinationTrait !== undefined
+      && (destinationTrait.initialDescriptionId !== undefined || destinationTrait.initialDescription !== undefined);
+    const arrivalDescription = useInitial
+      ? (destinationTrait.initialDescription ?? destinationRoom.description)
+      : destinationRoom.description;
+    if (useInitial) {
+      roomSnapshot.description = arrivalDescription;
+      roomSnapshot.descriptionId = destinationTrait.initialDescriptionId ?? roomSnapshot.descriptionId;
+    }
+
     // Get visible contents in the destination room (filter concealed items)
     const destinationContents = context.world.getContents(destinationRoom.id)
       .filter(e => e.id !== context.actor.id)
@@ -617,7 +635,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       visibleItems: visibleSnapshots,
       roomId: destinationRoom.id,
       roomName: destinationRoom.name,
-      roomDescription: destinationRoom.description,
+      roomDescription: arrivalDescription,
       // ADR-209: presence of the snippet map triggers the engine handler's
       // splice pass over the description text.
       ...(destinationSnippets ? { roomSnippets: destinationSnippets } : {}),

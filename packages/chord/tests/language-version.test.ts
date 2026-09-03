@@ -95,7 +95,11 @@ const PINNED = {
   // retired) and `is in <region>` is a membership test needing no landing
   // (#339). All fold into the unpublished 3.5.0 set per ADR-257 D2 as
   // amended (the number moves at publish).
-  ebnfSha256: '6109ade0700d8d5e9fe21ce59c668bfa059d627b51f487629631740d1b5252c5',
+  // Re-pinned 2026-09-03 (session effb6f, GH #327, publish-readiness Phase
+  // 2): `, one-way` on exit lines — ADR-234 D4's reservation wired, the
+  // `[ "," "one-way" ]` tail added to the exit production. Additive; folds
+  // into the unpublished 3.5.0 set under the same ruling.
+  ebnfSha256: '37a95d1b4ea4501a1a34904451eb6f0b94dfe957ca06f2399e912e80c1a69599',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

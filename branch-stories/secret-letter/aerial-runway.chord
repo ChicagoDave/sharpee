@@ -385,7 +385,7 @@ create Behind Fruit Stall
   a room
   aka behind the fruit stall
   states: hidden, watched
-  southwest to the Fruit Stall
+  southwest to the Fruit Stall, one-way
 
   Cramped and flea-ridden with barely room to move. The market is out to the
   southwest.

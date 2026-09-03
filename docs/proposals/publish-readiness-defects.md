@@ -3,6 +3,7 @@
 **Status**: REVIEWED — `proposal-review` ran 2026-09-03 (8 blocking findings, 5 advisory). David: *"accept the 36 and take your recommendations on the eight"* — 40 items ACCEPTED (P-8 with its ADR-325 amendment; P-7 absorbed by P-8; P-33 enumerated; P-34 owning the Reset item; P-42 reworded to the site), 4 items (P-11, P-20, P-21, P-29) PROPOSED pending the ADRs the plan's first phase writes. Advisory tensions carried into the plan: ADR-326 D5's sentence (P-3), ADR-290's status (P-35), the pinned tutorial edition (P-37), the language freeze against the live port (P-44), the tick-order audit inside P-11/P-17.
 **Second review (2026-09-03, session 639650)** — `proposal-review` re-ran on the folded document: 3 blocking, 1 prior finding withdrawn, 3 advisory. David: *"fold the tier plan into publish-readiness, close #248, and fix the proposal."* Applied: P-16/P-18/P-19/P-20/P-21 were the live `docs/work/backlog-tier1-2-platform/plan.md` Phases 4–8 (DUPLICATE) — that plan is dispositioned and its five phases move into the publish-readiness plan; P-18 reworded to honour ADR-273 D4's `OpenInventoryTrait` opt-in (DECISION-IN-DISGUISE); P-20 ACCEPTED — the held command's home is ADR-225's engine decision, not a new ADR (prior DECISION-IN-DISGUISE withdrawn); P-34 was built 2026-08-08 under go-live Phase 6a (DUPLICATE) — DONE as built, #248 closed; P-13's issue text corrected (`Span.file` exists); P-39 sequenced after the #355 pin-form ruling; P-44's freeze sharpened against ADR-331. **Now 40 ACCEPTED (count corrected from the original "41" 2026-09-03, session 639650 — P-34 DONE + P-11/P-21/P-29 PROPOSED = 4 of 44, not counted among the ACCEPTED), 1 DONE, 3 PROPOSED (P-11, P-21, P-29).**
 **Planned (2026-09-03, session 639650)** — `session-planner` wrote `docs/work/publish-readiness/plan.md` (18 phases) from this proposal; all 40 ACCEPTED items flipped PLANNED (ADR-0008 status-flip ownership), cited by phase in the plan's item-to-phase trace. P-11, P-21, and P-29 stay PROPOSED — the plan's Phase 1 is their gate (the ADR-118, ADR-087/267, and ADR-320 amendments respectively); they are not planned for implementation until each is separately flipped ACCEPTED. Document **Status** stays REVIEWED, not PLANNED, while any item remains PROPOSED.
+**Phase 2 landed (2026-09-03, session effb6f)** — P-1, P-2, P-3, P-9, P-10, P-12 DONE (#327, #326, #331, #329, #334, #325 closed with evidence); Phase 1's three ADR amendments are DRAFT awaiting David, so P-11/P-21/P-29 stay PROPOSED. **Now 34 PLANNED, 7 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -20,16 +21,16 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-1: One-way exits (#327) — a plain exit is bidirectional at load, so a room reachable only by an authorial move leaks a back door
 - **Issue text**: the loader lowers a plain exit through `world.connectRooms`, which stamps both directions; Behind Fruit Stall's single `southwest to the Fruit Stall` minted a `northeast` exit in. `, one-way` has been reserved since ADR-234 D4.
 - **Done when**: `<direction> to <room>, one-way` compiles and the reverse direction does not exist at load (a fixture asserts the reverse command is refused as unknown); the plain form's behaviour is documented on sharpee.net either way.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #327 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-2: A room's `first time` paragraph never renders on entering by going (#326)
 - **Issue text**: `compose` emits the initial-description key and the loader sets it on the room trait, but arrival by `go` prints only the standard description, and so does the first explicit `look`.
 - **Done when**: a fixture room with `first time` renders the paragraph on first arrival by going and never again; the standard description follows it.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #326 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-3: An authorial `move the player to …` never describes the destination (#331)
 - **Done when**: after any authorial move of the player the destination's room description prints in the same turn, including `move the player to a random adjacent room`.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #331 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-4: A possessive-named entity cannot be used in a condition or a `change` (#336)
 - **Issue text**: `the Weaponsmith's Stall is blocked` splits at the `'s` into an entity and a possessive field; the diagnostic points at the wrong word.
@@ -57,11 +58,11 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-9: A phrase emitted in the same clause arm that moves its owner off-stage never renders (#329)
 - **Done when**: a phrase emitted before its owner is moved offstage or removed in the same arm renders in that turn's output.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #329 closed, fixed incidentally by 07e1949d and pinned); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-10: An authorial `move` of a worn item leaves it worn (#334)
 - **Done when**: moving a worn item off its wearer clears the worn flag; `the player wears X` reads false; taking it back leaves it carried, not worn.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #334 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-11: Only one trait's `on <action>` clause per entity is consulted (#332)
 - **Issue text**: `getInterceptorForAction` picks one interceptor by priority (ADR-118); a second composed trait's clause for the same action never fires. #350 (a trait's guarded `asking` clause shadows the owner's topic table even when the guard is false) has the same cause.
@@ -70,7 +71,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-12: `x me` ignores the player's `phrase detail while …` line (#325)
 - **Done when**: examining the player renders its `phrase detail while` lines exactly as examining any other person does.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 2; #325 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-13: Inline `kill the player` bodies collide across imported files (#324)
 - **Issue text**: keys are minted from fragment-relative line:col; two imports at the same position produce `duplicate-phrase`. The issue's "spans carry no file identity" is stale: `Span.file` landed 2026-08-22 (ADR-251 D6 amendment, GH #301 closed; `packages/chord/src/span.ts`), and the key minting does not use it (review 2026-09-03, session 639650).

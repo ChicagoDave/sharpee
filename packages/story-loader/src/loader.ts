@@ -544,21 +544,26 @@ export class ChordStory implements Story {
       for (const exit of irEntity.exits) {
         const toId = this.requireWorldId(exit.to, irEntity);
         const direction = toDirection(exit.direction, irEntity);
+        // `, one-way` (ADR-234 D4, GH #327): the written direction only —
+        // no reverse exit is inferred, so a room reached by an authorial
+        // move and left by walking has no back door.
+        const oneWay = exit.oneWay === true;
         if (exit.via === null) {
           // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
           // door-plain-mirror gate): connectRooms stamps BOTH directions, so
           // a plain exit whose reverse side is already door-wired would
           // silently unwire that door. The compiler refuses this; reaching
-          // here means rogue IR.
+          // here means rogue IR. A one-way exit stamps nothing on the far
+          // room, so it cannot unwire anything.
           const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
           const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
-          if (reverseExit?.via && reverseExit.destination === entity.id) {
+          if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
             throw new LoadError(
               `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
               exit.span,
             );
           }
-          world.connectRooms(entity.id, toId, direction);
+          world.connectRooms(entity.id, toId, direction, undefined, { oneWay });
           continue;
         }
         // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
@@ -582,7 +587,7 @@ export class ChordStory implements Story {
           continue;
         }
         door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
-        world.connectRooms(entity.id, toId, direction, doorId);
+        world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
       }
       // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
       // unconditional alike, are registered as live evaluators by the
@@ -1097,7 +1102,7 @@ export class ChordStory implements Story {
     // that caused it. Acts fired inside scheduler daemons drain on the tick.
     if (engine.executeAsActor) {
       this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
-      if (this.runtime.hasActingStatements()) {
+      if (this.runtime.hasDeferredNarration()) {
         engine.getPluginRegistry().register({
           id: 'chord.acted-events',
           // First of the story reactions (ADR-332): the flush still runs
