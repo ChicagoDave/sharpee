@@ -291,7 +291,39 @@ and pinned as `w10-dance.tests.json` under `./sharpee test branch-stories/secret
   the spelling. A partner's floor turn runs before the timer expiry in the same turn,
   so a newly dancing partner opens one turn after the hand passes.
 
-**Status**: OPEN until GH #348 is decided. Phase 10's Chapter 11 build waits on it.
+**Resolved (2026-09-02, sessions 6a3da1 and 69a114; recorded 2026-09-03, session ef1966) — the primitive is built, as designed, in `packages/character`.**
+`docs/work/archive/adr-320-d10-interruption/plan.md` was the platform discussion; David ruled the
+three design questions the same morning and they stand as ADR-320's D10a amendment:
+an authored `opens when` is an interjection that challenges the player's live scene through
+the same `resolveIntrusion` call world acts and the player's own address already make
+(`passive` yields, `assertive` protests then yields, `blocking` holds); the grip the challenge
+meets is the stronger of the scene's grip and the outgoing pair's ACTIVE thread strength; and
+`on parting` renders on every park, not only the same-pair topic switch. ADR-332 put the
+story's clocks ahead of the actor phase, so a partner made `dancing` by `when hand expires`
+is read by that partner's floor turn in the same turn.
+
+- **What the prototype does now** (`w10-dance.tests.json`, re-transcribed from a real
+  `./sharpee play` run): the hand passes on the hand-off turn — the outgoing partner's
+  thread parks at its cursor with its `on parting` line, the incoming partner's first beat
+  lands the same turn, and the circle's return resumes the parked thread through
+  `on resuming`. 14 turns to the music's end where the lagged engine needed 28;
+  `./sharpee test branch-stories/secret-letter/prototypes/w10-dance` 15 cards / 46
+  assertions passing (2026-09-02 22:51 CDT).
+- **Real-path tests**: `packages/story-loader/tests/adr-320-d10-interruption.test.ts`
+  (3, `GameEngine.executeTurn` on a two-hand fixture, no stubs — interruption on the
+  hand-off turn, `on parting` rendered, resume at the parked cursor);
+  `packages/character/tests/conversation/interruption-d10a.test.ts` (10) and
+  `tests/tick-phases/thread-interruption.test.ts` (4). Suites at commit 07e1949d:
+  character 597, story-loader 1022, engine 680, stdlib 1663. Dungeo chain 952
+  byte-identical; fernhill 36/40, secret-letter 562/953, thealderman 4/9.
+- **Two residuals, filed, not blocking Chapter 11**: the prototype's `beat, when <partner>
+  is dancing:` hold gates STAY — without them the partner losing the hand serves one more
+  beat on the hand-off turn before the challenge parks him, because step 4a walks candidates
+  in entity-id order (GH #354, a platform ordering question for David); a partner's
+  `waiting`/`dancing` state cannot be pinned by the tree grammar's `entity.property` head
+  (GH #355) — the cards pin `story.state` instead.
+
+**Status**: CLOSED 2026-09-03 — GH #348 closed with this evidence. Phase 10's Chapter 11 build can proceed; carry the hold gates and GH #354/#355 into it.
 
 ## Recording results
 

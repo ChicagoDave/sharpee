@@ -3,6 +3,9 @@
 **Status**: ACCEPTED (2026-08-16 — ten open questions resolved by interview, review
 findings addressed, flipped with David's approval, session 02073f). No implementation
 authorized by acceptance; the implementation plan is a separate step.
+**D10a IMPLEMENTED** (2026-09-02, commits 30ff3673 and 07e1949d — the interruption facet
+of D10, `docs/work/archive/adr-320-d10-interruption/plan.md`, all phases DONE; GH #348 closed
+2026-09-03 with the evidence inline).
 **Date**: 2026-08-16 (session 02073f)
 **Related**: ADR-310/318 (the character interior this layer sits on — shipped, acceptance
 discharged 2026-08-16), ADR-239 (topic tables — the shipped conversation interface),
@@ -488,7 +491,7 @@ record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 
 ## Amendment — D10a: the interruption rule as it will be built (2026-09-02)
 
-**Context.** The W-10 dance prototype (`branch-stories/secret-letter/prototypes/w10-dance/`, session 6a3da1) showed that an NPC's `opens when` thread never opens while the player is in another NPC's scene: `ensureScene` (`packages/character/src/tick-phases.ts`) refuses when either party is seated elsewhere, and nothing outside dialogue dispatch closes a scene. D10's interruption is designed and unbuilt for that path (GH #348). The plan is `docs/work/adr-320-d10-interruption/plan.md`; the three rulings below are David's, 2026-09-02, and Phase 1 builds against them.
+**Context.** The W-10 dance prototype (`branch-stories/secret-letter/prototypes/w10-dance/`, session 6a3da1) showed that an NPC's `opens when` thread never opens while the player is in another NPC's scene: `ensureScene` (`packages/character/src/tick-phases.ts`) refuses when either party is seated elsewhere, and nothing outside dialogue dispatch closes a scene. D10's interruption is designed and unbuilt for that path (GH #348). The plan is `docs/work/archive/adr-320-d10-interruption/plan.md`; the three rulings below are David's, 2026-09-02, and Phase 1 builds against them.
 
 **D10a — three rulings.**
 
@@ -498,6 +501,6 @@ record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 
 **Ordering.** The thread floor turn reads the world after the story's own clocks under ADR-332 (ACCEPTED 2026-09-02): the scheduler runs before the actor phase, so a state an author changes in `when <timer> expires` is seen by the NPC's floor turn in the same turn.
 
-**Contract delta.** No new state shape, no new wire kind — `interruption` and `thread-parked` exist in `scene-wire.ts`; the delta is a delivered messageId on the park-on-close path. `docs/work/archive/adr-320-conversation/contracts.md` §1.3 is amended by one line when Phase 1 lands.
+**Contract delta (as built).** No new state shape. The plan expected no new wire kind, but the parting line is a structured scene move like every other, so Phase 1 added one: `thread-parting` (`packages/world-model/src/capabilities/scene-wire.ts`, carrying `sceneId`, `ownerId`, `partnerId`, `threadKey`, `messageId`, `params`), and `thread-parked` now carries `partnerId`. The hosts emit the prose event `character.thread.parting` from it. `docs/work/archive/adr-320-conversation/contracts.md` §1.3 carries the one-line note.
 
-**Session.** 2026-09-02, session 6a3da1 — Phase 0 of the plan above. Not implemented.
+**Session.** 2026-09-02, session 6a3da1 — Phase 0 of the plan above; Phase 1 built the same session (character `scene-scoring.ts` `strongerStrength`, `scene-binding.ts` thread-aware grip and the step-4a challenge in `tick-phases.ts`, `scene-runtime.ts` `PartingLine` through every close path; story-loader `buildThreadStrength`/`buildPartingLine`, the inline dispatch-path park refactored onto the shared step). Phase 3 (session 69a114) put the real path under test: `packages/story-loader/tests/adr-320-d10-interruption.test.ts` drives `GameEngine.executeTurn` on a two-hand fixture with no stubs — interruption on the hand-off turn, `on parting` rendered, resume at the parked cursor. The W-10 dance prototype reaches the next partner on the hand-off turn (14 turns to the music's end, was 28). Two residuals filed for David: GH #354 (step 4a serves a seated owner's floor turn before a later candidate's challenge — entity-id order) and GH #355 (tree pins cannot read a Chord entity's state).
