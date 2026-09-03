@@ -1340,6 +1340,12 @@ export declare class GameEngine {
     private eventSource;
     private systemEventSource;
     private pendingPlatformOps;
+    /**
+     * The incomplete command a clarification question is holding open (GH
+     * #318, ADR-225 as amended): consumed by the very next input, answer or
+     * not. Never serialized — a restore starts with no question pending.
+     */
+    private heldCommand?;
     private perceptionService?;
     private pluginRegistry;
     private actorTurnPlugin;
@@ -1495,6 +1501,18 @@ export declare class GameEngine {
     /**
      * Execute a turn
      */
+    /**
+     * Spend the held command (GH #318): when a clarification question is open
+     * and this input does not parse as a command of its own, splice it onto
+     * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
+     * box`) and run the spliced form if it parses. An input that parses on
+     * its own drops the hold and runs as written. The hold is cleared here
+     * whatever happens — exactly one input.
+     *
+     * @param input - The raw input for this turn
+     * @returns The input to run: spliced, or as given
+     */
+    private spliceHeldCommand;
     executeTurn(input: string): Promise<TurnResult>;
     /**
      * Execute a meta-command (VERSION, SCORE, HELP, etc.)

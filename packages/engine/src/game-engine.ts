@@ -185,6 +185,13 @@ export class GameEngine {
   private eventSource = createSemanticEventSource();
   private systemEventSource: IGenericEventSource<ISystemEvent>;
   private pendingPlatformOps: IPlatformEvent[] = [];
+
+  /**
+   * The incomplete command a clarification question is holding open (GH
+   * #318, ADR-225 as amended): consumed by the very next input, answer or
+   * not. Never serialized — a restore starts with no question pending.
+   */
+  private heldCommand?: { input: string };
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
   private actorTurnPlugin!: ActorTurnPlugin;
@@ -993,6 +1000,30 @@ export class GameEngine {
   /**
    * Execute a turn
    */
+  /**
+   * Spend the held command (GH #318): when a clarification question is open
+   * and this input does not parse as a command of its own, splice it onto
+   * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
+   * box`) and run the spliced form if it parses. An input that parses on
+   * its own drops the hold and runs as written. The hold is cleared here
+   * whatever happens — exactly one input.
+   *
+   * @param input - The raw input for this turn
+   * @returns The input to run: spliced, or as given
+   */
+  private spliceHeldCommand(input: string): string {
+    const held = this.heldCommand;
+    this.heldCommand = undefined;
+    if (!held || !this.parser) return input;
+    const player = this.world.getPlayer();
+    if (player && hasWorldContext(this.parser)) {
+      this.parser.setWorldContext(this.world, player.id, this.world.getLocation(player.id) || '');
+    }
+    if (this.parser.parse(input).success) return input;
+    const spliced = `${held.input} ${input}`;
+    return this.parser.parse(spliced).success ? spliced : input;
+  }
+
   async executeTurn(input: string): Promise<TurnResult> {
     if (!this.running) {
       throw new Error('Engine is not running');
@@ -1024,6 +1055,11 @@ export class GameEngine {
         return this.executeTurn(statements[0]);
       }
     }
+
+    // GH #318 (ADR-225 as amended): a command held after a missing-object
+    // question is completed by this input when the input is not a command
+    // of its own; either way the hold is spent here — exactly one input.
+    input = this.spliceHeldCommand(input);
 
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points
@@ -1137,6 +1173,10 @@ export class GameEngine {
         this.config,
         this.soundBuffer,
       );
+      // GH #318: remember a clarification for the next input (the hold).
+      if (result.error === 'CLARIFICATION_NEEDED') {
+        this.heldCommand = { input };
+      }
 
       // Get context for event enrichment
       const playerLocation = this.world.getLocation(this.context.player.id);

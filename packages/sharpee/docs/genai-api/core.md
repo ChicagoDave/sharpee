@@ -2165,7 +2165,13 @@ export declare enum QuerySource {
     /** Game mechanic queries (passwords, combinations) */
     GAME_MECHANIC = "mechanic",
     /** Narrative-driven queries */
-    NARRATIVE = "narrative"
+    NARRATIVE = "narrative",
+    /**
+     * Parser clarification (ADR-225, GH #318): a command missing its object or
+     * indirect object is held by the engine for one input; the query carries
+     * the parser's question ("What do you want to drop?").
+     */
+    CLARIFICATION = "clarification"
 }
 /**
  * Types of queries that can be presented
@@ -2180,7 +2186,9 @@ export declare enum QueryType {
     /** Numeric input only */
     NUMERIC = "numeric",
     /** Special type for disambiguation */
-    DISAMBIGUATION = "disambiguation"
+    DISAMBIGUATION = "disambiguation",
+    /** A held incomplete command awaiting its missing object (GH #318) */
+    CLARIFICATION = "clarification"
 }
 /**
  * A query waiting for player response

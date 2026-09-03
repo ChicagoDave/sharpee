@@ -27,6 +27,8 @@ interface ClientQueryData {
   type?: string;
   messageId?: string;
   candidates?: Array<{ id: string; name: string; description?: string }>;
+  /** A clarification query's question (GH #318): the parser's own English, e.g. "What do you want to drop?". */
+  message?: string;
 }
 
 export function handleClientQuery(
@@ -34,6 +36,12 @@ export function handleClientQuery(
   context: HandlerContext,
 ): ITextBlock[] {
   const data = event.data as ClientQueryData;
+
+  // GH #318: a held-command clarification renders the parser's question,
+  // the same block kind as a disambiguation prompt.
+  if (data?.source === 'clarification') {
+    return data.message ? createBlocks(BLOCK_KEYS.ERROR, data.message) : [];
+  }
 
   if (data?.source !== 'disambiguation') {
     return [];

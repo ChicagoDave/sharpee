@@ -277,7 +277,39 @@ export class CommandExecutor {
       }
       
       if (!parseResult.success) {
-        throw new Error(`Parse failed: ${(parseResult.error as { code?: string })?.code || 'UNKNOWN'}`);
+        const parseError = parseResult.error as { code?: string; messageId?: string; message?: string; verb?: string; slot?: string };
+        // GH #318 (ADR-225's missing-object orphaning): a command missing its
+        // object or indirect object becomes a clarification query — the
+        // parser's question reaches the player, and the engine holds the
+        // input for one more input to complete it. Every other parse
+        // failure keeps the standing path.
+        if (parseError?.code === 'MISSING_OBJECT' || parseError?.code === 'MISSING_INDIRECT') {
+          const queryEvent: ISemanticEvent = {
+            id: `query_clarify_${turn}_${Date.now()}`,
+            type: 'client.query',
+            timestamp: Date.now(),
+            entities: {},
+            data: {
+              source: QuerySource.CLARIFICATION,
+              type: QueryType.CLARIFICATION,
+              messageId: parseError.messageId,
+              message: parseError.message,
+              code: parseError.code,
+              verb: parseError.verb,
+              slot: parseError.slot,
+              originalInput: input
+            }
+          };
+          return {
+            turn,
+            input,
+            success: false,
+            needsInput: true,
+            events: [queryEvent],
+            error: 'CLARIFICATION_NEEDED'
+          };
+        }
+        throw new Error(`Parse failed: ${parseError?.code || 'UNKNOWN'}`);
       }
 
       // Phase 1.5: Apply parsed command transformers

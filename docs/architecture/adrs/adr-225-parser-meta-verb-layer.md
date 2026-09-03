@@ -104,3 +104,13 @@ Session 5c4f8a (2026-07-15). Surfaced by the Dungeo MDL capability audit
 (`docs/work/schism/sharpee-chord-capability-matrix.md` #20, PLATFORM-5). Parent:
 ADR-214 (§1a, SHARPEE-GAP class). Precedent: ADR-213. Related: ADR-087 (grammar
 patterns), ADR-223 (comma-address may re-home here — OQ-1).
+
+## Amendment — missing-object orphaning as built: the held command expires after one input (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (no open questions). Lands with publish-readiness plan Phase 9 (P-20, GH #318); the "implementation-plan decision" the Consequences deferred, recorded here so the cut is not re-litigated.
+
+- **The hold.** When a parse fails with `MISSING_OBJECT` or `MISSING_INDIRECT`, the command executor emits a `client.query` with `source: QuerySource.CLARIFICATION` carrying the parser's question (the parser's own English — "What do you want to drop?", "Put it where?") and returns `needsInput`; the engine stores the incomplete input as the held command. Nothing else in the turn runs: the hold costs no turn.
+- **The answer.** The next input first parses on its own. If it does not parse as a command (a bare noun phrase, a prepositional tail), the engine splices it onto the held input — `drop` + `pear` → `drop pear`, `put pear` + `in the box` — and, if the spliced form parses, runs that; scope and validation then belong to the completed command, so an out-of-scope answer earns the completed command's refusal. If the input parses as a command on its own (`look`, `inventory`), the held command is dropped and the input runs as written.
+- **Expiry: exactly one input.** The hold is consumed by whatever input comes next, answer or not, and never survives it — a bare noun typed after an answer is an unknown command, not a second completion. Chained statements (`drop. pear`) count as separate inputs.
+- **Where.** Engine only (`GameEngine.executeTurn` and the executor's parse step); the parser is untouched, the prose pipeline renders the query's question through the existing `client.query` handler. `QuerySource.CLARIFICATION` and `QueryType.CLARIFICATION` are added in `@sharpee/core`.
+- **Not done here.** The inventory-aware "You're not carrying anything." variant of a bare `drop` stays with the action's validate; this amendment only reaches it. Story-tier verbs that shadow a standard verb (GH #317) still take the input before this flow can — ADR-267 Amendment 1's `only while` is that fix.

@@ -96,8 +96,14 @@ export function analyzeBestFailure(
     };
   }
 
-  // Sort by progress descending - most progress = best failure info
-  const sorted = [...failures].sort((a, b) => b.progress - a.progress);
+  // A failure that recognized the verb carries the real information; among
+  // those, most progress wins. Without this, a pattern that consumed NOTHING
+  // and stopped on "leftover" tokens (progress 0.9 by construction) outranks
+  // `drop :item`'s not-enough-tokens (0.5) for a bare `drop`, and the player
+  // gets "I don't understand" instead of "What do you want to drop?" (GH #318).
+  const sorted = [...failures].sort(
+    (a, b) => (Number(Boolean(b.matchedVerb)) - Number(Boolean(a.matchedVerb))) || (b.progress - a.progress),
+  );
   const best = sorted[0];
 
   // If best failure has verb matched and slot failure, we have good info
@@ -163,6 +169,23 @@ export function analyzeBestFailure(
           }
         };
       }
+    }
+    // Ran out at a literal (a preposition) after the verb and an object —
+    // `put pear` against `put :item in :container`: the indirect object is
+    // what is missing (GH #318). The slot it introduces names the question.
+    if (best.expected && !best.expected.startsWith(':') && best.tokensConsumed >= 2) {
+      const parts = best.pattern.split(' ');
+      const at = parts.indexOf(best.expected);
+      const following = at >= 0 ? parts.slice(at + 1).find((part) => part.startsWith(':')) : undefined;
+      return {
+        code: 'MISSING_INDIRECT',
+        messageId: 'parser.error.missingIndirect',
+        context: {
+          verb: best.matchedVerb,
+          slot: following ? following.slice(1) : undefined,
+          preposition: best.expected
+        }
+      };
     }
     return {
       code: 'MISSING_OBJECT',

@@ -169,6 +169,33 @@ describe('Improved Error Messages', () => {
       expect(result.messageId).toBe('parser.error.missingIndirect');
       expect(result.context.verb).toBe('put');
     });
+
+    it('GH #318: running out at the preposition after verb and object is MISSING_INDIRECT, naming the slot it introduces', () => {
+      const failures: PartialMatchFailure[] = [{
+        pattern: 'put :item in :container',
+        action: 'if.action.putting',
+        progress: 0.5,
+        tokensConsumed: 2,
+        reason: 'NOT_ENOUGH_TOKENS',
+        matchedVerb: 'put',
+        expected: 'in'
+      }];
+
+      const result = analyzeBestFailure(failures, 'put lamp', true);
+      expect(result.code).toBe('MISSING_INDIRECT');
+      expect(result.context).toMatchObject({ verb: 'put', slot: 'container', preposition: 'in' });
+    });
+
+    it('GH #318: a verb-matched failure outranks a higher-progress failure that matched nothing', () => {
+      const failures: PartialMatchFailure[] = [
+        { pattern: '[look]', action: 'if.action.looking', progress: 0.9, tokensConsumed: 0, reason: 'LEFTOVER_TOKENS', failedAtToken: 'drop' },
+        { pattern: 'drop :item', action: 'if.action.dropping', progress: 0.5, tokensConsumed: 1, reason: 'NOT_ENOUGH_TOKENS', matchedVerb: 'drop', expected: ':item' },
+      ];
+
+      const result = analyzeBestFailure(failures, 'drop', true);
+      expect(result.code).toBe('MISSING_OBJECT');
+      expect(result.context.verb).toBe('drop');
+    });
   });
 });
 
