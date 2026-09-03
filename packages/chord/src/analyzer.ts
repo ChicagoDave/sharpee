@@ -397,6 +397,15 @@ interface Scope {
    * this set instead of the state/trait vocabulary.
    */
   semanticValues?: Map<string, string[]>;
+  /**
+   * GH #349: a dialogue-dispatch body — a row of `define topics`,
+   * `define greetings`, `define exchange`, `define initiative`, `define
+   * manner`, or `define conversation` — where the runtime frames a
+   * conversation partner. The partner-only predicates (`was discussed`,
+   * `asked`, `is concluded`, `subject changes`) hold here and nowhere else;
+   * elsewhere they are `analysis.dialogue-only`.
+   */
+  dialogue?: boolean;
 }
 
 const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
@@ -695,6 +704,9 @@ function expandPatternShapes(pattern: ActionPattern): string[] {
  */
 function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string; from: number; to: number }> | null {
   const slots: Array<{ slot: string; from: number; to: number }> = [];
+  // GH #351: a literal part may be an alternation (`to|with`) — any of its
+  // spellings matches, as the grammar engine reads it.
+  const spellingsOf = (part: string): string[] => part.split('|');
   let i = 0;
   for (let j = 0; j < parts.length; j++) {
     const part = parts[j];
@@ -706,7 +718,8 @@ function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string
       } else if (next.startsWith(':')) {
         return null; // two adjacent slots cannot be split without a parser — no standard shape has them
       } else {
-        end = words.indexOf(next, i + 1);
+        const alts = spellingsOf(next);
+        end = words.findIndex((w, k) => k > i && alts.includes(w));
         if (end === -1) return null;
       }
       if (end <= i) return null;
@@ -714,7 +727,8 @@ function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string
       i = end;
     } else {
       if (i >= words.length) return null;
-      const ok = j === 0 ? verbLemmas(words[i]).has(part) : words[i] === part;
+      const alts = spellingsOf(part);
+      const ok = j === 0 ? alts.some((a) => verbLemmas(words[i]).has(a)) : alts.includes(words[i]);
       if (!ok) return null;
       i++;
     }
@@ -1831,7 +1845,7 @@ class Analyzer {
         for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRTopicRow[] = [];
       const seenEntities = new Map<string, Span>();
       const seenTexts = new Map<string, Span>();
@@ -1950,7 +1964,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRMannerRow[] = [];
       decl.rows.forEach((row, r) => {
         const beatKeys: string[] = [];
@@ -2021,7 +2035,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRGreetingRow[] = [];
       const seenHeads = new Map<string, Span>();
       for (const row of decl.rows) {
@@ -2126,7 +2140,7 @@ class Analyzer {
         for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRExchangeRow[] = [];
       const seenEntities = new Map<string, Span>();
       const seenTexts = new Map<string, Span>();
@@ -2270,7 +2284,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRInitiativeRow[] = [];
       for (const row of decl.rows) {
         // A suppression cannot also speak: `hold their tongue` is the
@@ -2348,7 +2362,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const keyOf = (part: string): string => `conversation.${ownerId}.${decl.name}.${part}`;
       const lowerBody = (body: Statement[], part: string): IRStatement[] =>
         body.map((s, j) => this.resolveStatement(s, scope, `${keyOf(part)}.${j}`));
@@ -6787,6 +6801,22 @@ class Analyzer {
     return { action: best.action, shape: best.shape, slots: best.slots, direction };
   }
 
+  /**
+   * GH #349: the partner-only predicates hold only where the runtime frames a
+   * conversation partner — a dialogue-dispatch body. Anywhere else (an
+   * entity or trait clause, an every-turn clause, an action body, a story
+   * clause) they would throw at run time, so they are refused here, naming
+   * what does hold outside dialogue.
+   */
+  private requireDialogueScope(form: string, scope: Scope, span: Span): void {
+    if (scope.dialogue) return;
+    this.diagnostics.error(
+      'analysis.dialogue-only',
+      `\`${form}\` holds only inside dialogue — a row of \`define topics\`, \`define greetings\`, \`define exchange\`, \`define initiative\`, or \`define conversation\`, where a partner is in the frame. Outside it, record the fact where the row can see it (\`change\` a state or \`raise\` a counter in the row — a thread's \`conclusion:\` for \`is concluded\`) and test that.`,
+      span,
+    );
+  }
+
   private resolveStmtWhen(cond: ConditionNode | null, scope: Scope): IRCondition | null {
     return cond ? this.resolveCondition(cond, scope) : null;
   }
@@ -7746,10 +7776,12 @@ class Analyzer {
       case 'subject-changes':
         // ADR-320 D9: the scene's thread-abandonment notice — no operands;
         // evaluation is the scene runtime's.
+        this.requireDialogueScope('subject changes', scope, cond.span);
         return { kind: 'subject-changes' };
       case 'asked':
         // ADR-320 D4: repetition word over the enclosing row's topic —
         // words are the parser's closed set; the runtime owns the counting.
+        this.requireDialogueScope(`asked ${cond.word}`, scope, cond.span);
         return { kind: 'asked', word: cond.word };
       case 'predicate': {
         // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
@@ -7773,6 +7805,7 @@ class Analyzer {
             const node: IRCondition = { kind: 'recency', topic, word: cond.predicate.word };
             return cond.predicate.negated ? { kind: 'not', operand: node } : node;
           }
+          this.requireDialogueScope('was discussed', scope, cond.predicate.span);
           return { kind: 'discussed', topic };
         }
         // ADR-320 D14: `<thread> is concluded` takes the SUBJECT as a
@@ -7780,6 +7813,7 @@ class Analyzer {
         // the key against the story's declared `define conversation`
         // blocks (a typo here would otherwise be silently false forever).
         if (cond.predicate.kind === 'concluded') {
+          this.requireDialogueScope('is concluded', scope, cond.predicate.span);
           const threadWords =
             cond.subject.kind === 'ref' ? cond.subject.ref.words
             : cond.subject.kind === 'bare' ? cond.subject.words

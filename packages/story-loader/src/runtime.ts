@@ -1762,8 +1762,18 @@ export class ChordRuntime {
     const thenOpens = body.filter(
       (s): s is Extract<IRStatement, { kind: 'then-open' }> => s.kind === 'then-open',
     );
+    // GH #349: a beat served on the speaker's own turn may carry `leave`
+    // exactly as one served in reply; here it is lifted out of the body
+    // (the walker refuses conversation statements) and reported as
+    // `leaves` for the tick caller to close the scene.
+    const leaveFrame = { world, it: owner.id, ...(audienceId !== undefined ? { conversationPartnerId: audienceId } : {}) };
+    const leaves = body.some((s) => {
+      if (s.kind !== 'leave') return false;
+      const when = (s as IRStatement & { stmtWhen?: IRCondition | null }).stmtWhen;
+      return !when || this.evaluator.evalCondition(when, leaveFrame);
+    });
     const reports = this.execStatements(
-      body.filter((s) => s.kind !== 'hold-tongue' && s.kind !== 'then-open'),
+      body.filter((s) => s.kind !== 'hold-tongue' && s.kind !== 'then-open' && s.kind !== 'leave'),
       {
         world,
         it: owner.id,
@@ -1849,6 +1859,7 @@ export class ChordRuntime {
       events,
       ...(spoken ? { spokenMessageId: spoken.messageId, spokenParams: spoken.params } : {}),
       ...(openExchange !== undefined && openWord !== undefined ? { openExchange, openWord } : {}),
+      ...(leaves ? { leaves: true } : {}),
     };
   }
 

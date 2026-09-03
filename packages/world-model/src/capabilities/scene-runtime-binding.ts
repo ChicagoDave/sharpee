@@ -113,6 +113,15 @@ export interface InitiativeSeizure {
    */
   openExchange?: ExchangeState;
 
+  /**
+   * The body carried a `leave` whose condition held (GH #349): the speaker
+   * ends the conversation on their own turn. Built by the seize runner,
+   * applied by the tick caller as a `close-scene` (`exit`) directive against
+   * the scene the seizure ran in — the floor-turn counterpart of the
+   * dispatch path's `leave`.
+   */
+  leaves?: boolean;
+
   /** The opening word (`asks`/`invites`) for the author channel, when `openExchange` is set. */
   openWord?: string;
 }

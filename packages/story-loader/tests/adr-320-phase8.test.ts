@@ -378,3 +378,36 @@ describe('AC12 — mid-scene save/restore through the real SaveRestoreService', 
     );
   });
 });
+
+describe('GH #349 — `leave` served on the speaker’s own turn (publish-readiness Phase 6)', () => {
+  const SOURCE_LEAVE = SOURCE.replace(
+    'define initiative for Bram\n  on harm:\n    phrase bram-condemns\nend initiative\n\n',
+    'define initiative for Bram\n  on harm:\n    phrase bram-condemns\n    leave\nend initiative\n\n',
+  );
+
+  it('the seizure speaks, the scene closes, nothing throws, the next turn ticks clean', () => {
+    const l = load(SOURCE_LEAVE);
+    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+
+    const attack: ISemanticEvent = {
+      id: 'evt-attack',
+      type: 'if.event.attacked',
+      timestamp: 0,
+      entities: { actor: l.player.id },
+      data: { target: entity(l, 'aemilia').id },
+    };
+    const events = tick(l, 1, [attack]);
+
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+    expect(events.some((e) => e.type === 'command.failed')).toBe(false);
+    // Bram's scene with the player opened, he spoke, and the `leave` closed it
+    // on the exit boundary — the floor-turn counterpart of the reply path.
+    const opened = events.find((e) => e.type === 'character.scene.scene-opened' && (e.data as { participantIds: string[] }).participantIds.includes(l.player.id));
+    expect(opened).toBeDefined();
+    const sceneId = (opened!.data as { sceneId: string }).sceneId;
+    expect(events.some((e) => e.type === 'character.scene.scene-closed' && (e.data as { sceneId: string; boundary: string }).sceneId === sceneId && (e.data as { boundary: string }).boundary === 'exit')).toBe(true);
+    const playerScene = Object.values(readSceneStore(l.world).scenes).find((sc) => sc.participantIds.includes(l.player.id));
+    expect(playerScene).toBeUndefined();
+    expect(() => tick(l, 2)).not.toThrow();
+  });
+});

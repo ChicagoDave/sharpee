@@ -7,6 +7,7 @@
 **Phase 3 landed (2026-09-03, session effb6f)** — P-4, P-5, P-6, P-13, P-14 (as built), P-15 DONE (#336, #335, #337, #324, #286, #285 closed). **Now 28 PLANNED, 13 DONE, 3 PROPOSED.**
 **Phase 4 landed (2026-09-03, session effb6f)** — P-7, P-8 DONE (#330, #345 closed; ADR-325 Z6 amendment DRAFT). **Now 26 PLANNED, 15 DONE, 3 PROPOSED.**
 **Phase 5 landed (2026-09-03, session effb6f)** — P-16, P-18 DONE (#312, #313 closed). **Now 24 PLANNED, 17 DONE, 3 PROPOSED.**
+**Phase 6 landed (2026-09-03, session effb6f)** — P-17 DONE (#349, #351 closed); the tick-order audit found one corpus clause, already covered by ADR-332 D4a; P-11's slice deferred to plan Phase 6a pending ADR-118 A1. **Now 23 PLANNED, 18 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -97,7 +98,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-17: The dialogue analyzer admits dialogue-only forms outside dialogue dispatch, and the acting statement rejects the shape it names (#349, #351)
 - **Issue text**: `is concluded` in an every-turn clause and `leave` in a floor-turn beat pass `compose --check` and throw at runtime; `<npc> talks to <target>` fails `act-slot-shape` against `talk to|with :target`.
 - **Done when**: the two forms are rejected at compile time with a diagnostic that names the spelling that does hold outside dialogue, or are given a story-level meaning; `<npc> talks to <player-name>` and `talks to the player` compile and address the player.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 6; #349, #351 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### B. Parser and stdlib defects the player sees
 

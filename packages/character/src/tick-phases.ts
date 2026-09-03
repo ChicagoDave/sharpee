@@ -1393,6 +1393,15 @@ function runSceneSubStep(
    * scenes, where the open is meaningful). Never a throw, never a wedge.
    */
   const applySeizedExchange = (scene: ConversationSceneState, seizure: InitiativeSeizure): void => {
+    // GH #349: a `leave` served on the speaker's own turn closes the scene
+    // — the floor-turn counterpart of the dispatch path's `leave`. The
+    // leaver is the participant who is not the player; in an NPC↔NPC
+    // scene, the first participant.
+    if (seizure.leaves) {
+      const leaverId = scene.participantIds.find((p) => p !== ctx.playerId) ?? scene.participantIds[0];
+      pushWire(applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId }], memory));
+      return;
+    }
     if (!seizure.openExchange || !scene.participantIds.includes(ctx.playerId)) return;
     pushWire(
       applySceneDirectives(
