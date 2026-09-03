@@ -93,6 +93,23 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     expect(html).not.toContain('{{STORY_ID}}');
   }, 120_000);
 
+  it('menu: false strips the in-page menu bar from the built page, custom page included (ADR-290 D6, GH #196)', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const root = mkroot('core-fernhill-menuless');
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+
+    const outDir = buildBrowser(FERNHILL, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z', menu: false });
+
+    const html = readFileSync(join(outDir, 'index.html'), 'utf-8');
+    expect(html).not.toContain('id="menu-bar"');
+    expect(html).not.toContain('id="menu-save"');
+    expect(html).toContain('id="command-input"');
+    expect(html).toContain('id="clock"'); // fernhill's own page survives minus its menu
+    // The default (menu on) still carries it.
+    const withMenu = readFileSync(join(buildBrowser(FERNHILL, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' }), 'index.html'), 'utf-8');
+    expect(withMenu).toContain('id="menu-bar"');
+  }, 120_000);
+
   it('author env and in-repo env produce byte-identical output for the same input (D5)', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const FIX = { quiet: true, buildDate: '2020-01-01T00:00:00Z' } as const;

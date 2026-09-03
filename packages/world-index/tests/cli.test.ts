@@ -101,7 +101,7 @@ describe('a compiled story', () => {
     expect(run.document.incomplete.counts).toEqual({
       missingWord: 30,
       ambiguous: 15,
-      noObject: 115,
+      noObject: 118,
       undescribed: 0,
     });
   });

@@ -5,8 +5,10 @@
  * readBrowserMeta / readClientConfig becomes an assertion.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { IRMeta, IRStoryFields } from '@sharpee/chord';
-import { injectThemes, readBrowserMeta, readClientConfig } from './browser-core.js';
+import { stripClientMenu, injectThemes, readBrowserMeta, readClientConfig } from './browser-core.js';
 
 /** Build an IRMeta with the given typed header fields (title/authors defaulted). */
 function meta(
@@ -158,5 +160,26 @@ describe('injectThemes — the wired-themes data block (P-4)', () => {
     const html = injectThemes(PAGE, []);
     expect(html).toContain('<script id="sharpee-wired-themes" type="application/json">[]</script>');
     expect(html).toContain('<!-- no built-in themes wired -->');
+  });
+});
+
+describe('stripClientMenu (ADR-290 D6, GH #196)', () => {
+  const template = readFileSync(join(__dirname, '..', '..', 'templates', 'browser', 'index.html'), 'utf-8');
+
+  it('removes the menu bar block from the default template and keeps the rest of the page', () => {
+    const html = stripClientMenu(template);
+
+    expect(template).toContain('id="menu-bar"');
+    expect(html).not.toContain('id="menu-bar"');
+    expect(html).not.toContain('id="menu-save"');
+    expect(html).not.toContain('id="theme-menu"');
+    expect(html).toContain('id="command-input"');
+    expect(html).toContain('id="main-window"');
+    expect(html).toContain('id="save-dialog"'); // the dialogs stay — inert without the menu
+  });
+
+  it('returns a page with no menu bar unchanged', () => {
+    const bare = '<!DOCTYPE html><html><body><div id="main-window"></div></body></html>';
+    expect(stripClientMenu(bare)).toBe(bare);
   });
 });

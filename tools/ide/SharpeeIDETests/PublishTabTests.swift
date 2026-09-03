@@ -55,6 +55,23 @@ final class PublishTabTests: XCTestCase {
 
     // MARK: - The view
 
+    /// ADR-290 D6 (GH #196): the menu is on by default and the choice reaches
+    /// `sharpee publish` as `--no-menu` only when the author turns it off.
+    func testTheMenuCheckboxDefaultsOnAndDrivesTheNoMenuFlag() throws {
+        let view = PublishView()
+        XCTAssertTrue(view.includeMenu, "the published page keeps its menu unless the author says otherwise")
+
+        let story = URL(fileURLWithPath: "/tmp/fernhill/fernhill.story")
+        let zip = URL(fileURLWithPath: "/tmp/out/fernhill.zip")
+        XCTAssertEqual(PublishController.arguments(storyFile: story, destination: zip, includeMenu: true),
+                       ["publish", story.path, "--out", zip.path])
+
+        view.includeMenu = false
+        XCTAssertFalse(view.includeMenu)
+        XCTAssertEqual(PublishController.arguments(storyFile: story, destination: zip, includeMenu: false),
+                       ["publish", story.path, "--out", zip.path, "--no-menu"])
+    }
+
     func testPublishIsRefusedUntilAStoryIsOpen() throws {
         let view = loadedView()
         let publish = try XCTUnwrap(button(PublishView.publishIdentifier, in: view))

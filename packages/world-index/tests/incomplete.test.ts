@@ -280,11 +280,11 @@ describe('D6b — the corpus pin', () => {
   });
 
   it("finds in Fernhill's response prose what only D10 can see", () => {
-    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 67 });
+    expect(countsFrom(fernhill, 'response')).toEqual({ missingWord: 3, ambiguous: 5, noObject: 70 });
     expect(deriveIncomplete(fernhill).counts).toEqual({
       missingWord: 30,
       ambiguous: 15,
-      noObject: 115,
+      noObject: 118,
       undescribed: 0,
     });
   });

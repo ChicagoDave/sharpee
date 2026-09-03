@@ -254,6 +254,21 @@ export function injectThemes(html: string, themes: WiredTheme[]): string {
   return html.replace(/<\/head>/, `${data}</head>`);
 }
 
+/**
+ * Strip the client's in-page menu bar from a page (ADR-290 D6, GH #196): the
+ * `<menu … id="menu-bar">…</menu>` block, on the default template or an
+ * author's custom page alike. The client tolerates its absence (`menuBar` is
+ * nullable; MenuManager wires every item with optional chaining), the dialogs
+ * stay (inert without the menu), and a page with no such block is returned
+ * unchanged. One mechanism, two consumers — never an IDE-special page.
+ *
+ * @param html the page after token/theme substitution
+ * @returns the page without its menu bar
+ */
+export function stripClientMenu(html: string): string {
+  return html.replace(/[ \t]*<menu\b[^>]*\bid="menu-bar"[^>]*>[\s\S]*?<\/menu>[ \t]*\r?\n?/, '');
+}
+
 /** Substitute the story tokens index.html carries (the override stylesheet link). */
 function processTemplate(html: string, meta: BrowserMeta): string {
   return html
@@ -331,6 +346,13 @@ export interface BrowserBuildOpts {
   minify?: boolean;
   sourcemap?: boolean;
   quiet?: boolean;
+  /**
+   * Keep the client's in-page menu bar (File / Settings / Help) — default
+   * true. `false` strips it (ADR-290 D6, GH #196): the IDE's Play pane always
+   * builds menu-less (its header owns those controls); a publishing author
+   * chooses, knowing Save/Restore/Restart/Quit are reachable only from it.
+   */
+  menu?: boolean;
   /** Fixed build stamp (BUILD_DATE); defaults to now. Injected by the AC test so
    *  the two callers' output is byte-identical, not merely identical-modulo-stamp. */
   buildDate?: string;
@@ -749,8 +771,10 @@ export function buildBrowser(
   let html = fs.readFileSync(usingCustomPage ? customPage : path.join(env.templatesDir, 'index.html'), 'utf-8');
   html = injectThemes(processTemplate(html, meta), wiredThemes);
   if (usingCustomPage) validateCustomPage(html, result.ir.channels, warn);
+  if (opts.menu === false) html = stripClientMenu(html);
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
   log(usingCustomPage ? '  ✓ Used browser/index.html (custom layout, ADR-253 D3)' : '  ✓ Copied index.html');
+  if (opts.menu === false) log('  ✓ Menu-less page: no in-page Save / Restore / Restart / Quit (ADR-290 D6)');
 
   // The TESTING page (ADR-306 Phase 2): a second rendering of the same
   // bundle for the IDE's testing play surface — no chrome, no theme links,

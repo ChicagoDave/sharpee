@@ -156,7 +156,7 @@ export function zipDirectory(dir: string): Uint8Array {
 }
 
 /**
- * `sharpee publish [<file>.story | dir] [--out <path>] [--no-minify]`.
+ * `sharpee publish [<file>.story | dir] [--out <path>] [--no-minify] [--no-menu]`.
  *
  * @returns the process exit code — 0 on success, 2 on a refusal.
  */
@@ -198,7 +198,13 @@ export async function runPublishCommand(args: string[], targetArg?: string): Pro
     outDir = buildBrowser(target.storyFile, env, {
       minify: !args.includes('--no-minify'),
       sourcemap: false, // a published artifact carries no source map
+      // ADR-290 D6 (GH #196): the author chooses; default menu-on, and the
+      // consequence of menu-off is said here, where the choice is made.
+      menu: !args.includes('--no-menu'),
     });
+    if (args.includes('--no-menu')) {
+      console.log('  ⚠ --no-menu: the page has no Save, Restore, Restart or Quit — players get none unless your page supplies them.');
+    }
   } catch (error) {
     console.error(`\npublish: build failed — ${error instanceof Error ? error.message : error}\n`);
     return 2;
@@ -275,4 +281,6 @@ sharpee publish [<file>.story | dir] [options]
 Options:
   --out <path>    Where to write the zip (default: dist/<story-id>.zip)
   --no-minify     Leave the bundle unminified
+  --no-menu       Strip the in-page menu bar. The page then has NO Save / Restore /
+                  Restart / Quit unless your own page supplies them (ADR-290 D6).
 `;

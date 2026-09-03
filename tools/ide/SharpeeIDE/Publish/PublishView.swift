@@ -10,7 +10,7 @@
 // IFID when it is created and the header is rendered from the config on every
 // save — so the CLI's refusal is a backstop for a story whose config went
 // missing, not a step an author is expected to meet.
-// Public interface: setStory(_:), onPublish, onCancel, onReveal, append(_:),
+// Public interface: setStory(_:), includeMenu, onPublish, onCancel, onReveal, append(_:),
 // finish(succeeded:zipURL:).
 // Owner context: tools/ide — Publish.
 
@@ -31,6 +31,20 @@ final class PublishView: NSView {
 
     private let storyLabel = NSTextField(labelWithString: "No story open")
     private let publishButton = NSButton(title: "Publish…", target: nil, action: nil)
+    /// ADR-290 D6 (GH #196): the author chooses whether the published page
+    /// keeps the client's in-page menu. On by default; the label beside it
+    /// carries the consequence of turning it off, at the point of choice.
+    private let menuCheckbox = NSButton(checkboxWithTitle: "Include the in-page menu (Save, Restore, Restart, Quit)",
+                                        target: nil, action: nil)
+    private let menuNote = NSTextField(wrappingLabelWithString:
+        "Off: the page has no Save, Restore, Restart or Quit unless your own page supplies them.")
+    static let menuCheckboxIdentifier = "publish.include-menu"
+
+    /// Whether the next publish keeps the in-page menu (the checkbox's state).
+    var includeMenu: Bool {
+        get { menuCheckbox.state == .on }
+        set { menuCheckbox.state = newValue ? .on : .off }
+    }
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
     private let revealButton = NSButton(title: "Reveal in Finder", target: nil, action: nil)
     private let resultLabel = NSTextField(labelWithString: "")
@@ -65,6 +79,12 @@ final class PublishView: NSView {
             + "Unzip anywhere and open index.html, or upload the zip to itch.io.")
         blurb.font = .systemFont(ofSize: 11)
         blurb.textColor = Theme.foregroundDim
+
+        menuCheckbox.state = .on
+        menuCheckbox.font = .systemFont(ofSize: 11)
+        menuCheckbox.setAccessibilityIdentifier(Self.menuCheckboxIdentifier)
+        menuNote.font = .systemFont(ofSize: 11)
+        menuNote.textColor = Theme.foregroundDim
 
         publishButton.target = self
         publishButton.action = #selector(publishClicked)
@@ -102,7 +122,7 @@ final class PublishView: NSView {
         buttons.spacing = 8
         resultLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let stack = NSStackView(views: [storyLabel, blurb, buttons, scroll])
+        let stack = NSStackView(views: [storyLabel, blurb, menuCheckbox, menuNote, buttons, scroll])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 10

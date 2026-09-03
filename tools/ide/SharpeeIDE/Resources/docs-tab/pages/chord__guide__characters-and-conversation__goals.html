@@ -1,6 +1,35 @@
 <p>A <strong>goal</strong> is a short authored plan a person pursues on their own turns, written as <code>goal &lt;name&gt;, &lt;priority&gt;</code> … <code>end goal</code>. Priorities are <code>critical</code>, <code>high</code>, <code>medium</code>, and <code>low</code>, and they only decide which goal wins when more than one is live at once.</p>
 <p><code>active when &lt;condition&gt;</code> gates the goal. The condition reads character or story state — <code>it is breaking</code> (a <a href="/chord/guide/characters-and-conversation/conscience">conscience</a> band), <code>it is not calm</code> (a mood), a story state such as <code>second-day</code>, or a compound joined with <code>and</code>. It does not read a fact's value: writing <code>active when the ledger is forged</code> fails with <code>analysis.unknown-entity</code>, because <code>the ledger</code> resolves as an entity there. Gate on state, and let a <code>thinks</code> line carry what the person believes.</p>
-<p>The body is a short list of steps: <code>seek &lt;person&gt;</code> to go find someone, <code>move to &lt;room&gt;</code> to go somewhere, and <code>say &lt;phrase&gt; to &lt;target&gt;</code> to deliver an authored line on arrival. Steps are authored behavior, not a planner — nothing is searched or invented, and a goal that cannot make its next step simply does not act this turn. A conversation in progress suspends pursuit, so a person will not walk out mid-sentence to run an errand.</p>
+<p>The body is a short list of steps, one per turn. Four of them carry a plan: <code>seek &lt;person or room&gt;</code> walks toward something one room at a time, <code>move to &lt;room&gt;</code> walks to a place, <code>acquire &lt;thing&gt;</code> waits until the thing is in the room and then takes it, and <code>give &lt;thing&gt; to &lt;person&gt;</code> waits until the recipient is in the room and then hands it over (the person must already hold it). The rest act on the spot: <code>drop &lt;thing&gt;</code>, <code>say &lt;phrase&gt; to &lt;target&gt;</code> delivers an authored line, <code>act &lt;phrase&gt;</code> narrates one, and <code>wait for &lt;condition&gt;</code> holds the goal until something is true. Steps are authored behavior, not a planner — nothing is searched or invented, and a goal that cannot make its next step simply does not act this turn. A conversation in progress suspends pursuit, so a person will not walk out mid-sentence to run an errand.</p>
+<p>A step can also be <strong>an action's own words</strong>, with the goal's owner as the one acting: <code>open the door</code>, <code>go east</code>, <code>conjure the key into the Vault</code>. The line is matched against the standard grammar and the story's own <code>define action</code> grammar exactly as an <a href="/chord/guide/behavior/the-statements">acting statement</a> is, and it runs the real action through the same pipeline as a typed command — it can be refused by an <code>on</code> clause, witnessed by whoever is present, and reacted to with <code>after</code>. Such a step acts <em>now</em>: nothing waits for it, and a refusal is retried next turn, narrating each time the player is there to see it. The standard verbs keep their plan: <code>take the key</code>, <code>pick up the key</code>, or <code>get the key</code> are the same step as <code>acquire the key</code>, <code>hand the key to the player</code> is <code>give</code>, and <code>discard the key</code> is <code>drop</code>. There is no <code>when</code> on a step — a step that should not run yet waits, with <code>wait for</code>.</p>
+<pre><code class="language-chord">define action conjuring
+  grammar
+    conjure the item into the place
+  the item must be reachable
+  otherwise refuse conjure-what
+
+define trait conjurable
+  on the wizard conjuring
+    move it to the Vault
+  end on
+end trait
+
+create the key
+  conjurable
+
+  A key.
+
+create the wizard
+  a person
+  in the Tower
+
+  goal secure-the-key, high
+    active when the player has the key
+    seek the player
+    take the key
+    conjure the key into the Vault
+    say wizard-gloats
+  end goal</code></pre>
 <p>A person's own <code>states:</code> list is the ordinary <a href="/chord/guide/world/states">World &gt; States</a> construct, driven with <code>change &lt;the person&gt; to &lt;state&gt;</code>, and is often what a goal is gated on.</p>
 <pre><code class="language-chord">create Jonas Reed
   a person, proper

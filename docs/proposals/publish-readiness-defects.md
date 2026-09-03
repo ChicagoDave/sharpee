@@ -13,6 +13,9 @@
 **Phase 10 landed (2026-09-03, session effb6f)** — P-22, P-24, P-25, P-30, P-31, P-32 DONE (#333, #328, #323, #206, #108, #97 closed). **Now 15 PLANNED, 26 DONE, 3 PROPOSED.**
 **Phase 11 landed (2026-09-03, session effb6f)** — P-23, P-26, P-27, P-28 DONE (#338, #346, #300, #241 closed); P-29's slice stays PROPOSED on ADR-320 D2a. The #338 fix lists open containers and supporters on every arrival — the Dungeo walkthrough goldens were re-blessed (14 files, 110 added "In/On … you see …" lines, nothing else). **Now 11 PLANNED, 30 DONE, 3 PROPOSED.**
 **Phase 12 landed (2026-09-03, session effb6f)** — P-33 DONE (#245 closed: four platform fixes, two story fixes, one non-reproducing; the reveal line's articles re-bless three Dungeo golden lines). **Now 10 PLANNED, 31 DONE, 3 PROPOSED.**
+**Phase 13 landed (2026-09-03, session effb6f)** — P-35, P-36 DONE (#196 closed; #195 closed as built). **Now 8 PLANNED, 33 DONE, 3 PROPOSED.**
+**Phase 14 landed (2026-09-03, session effb6f)** — P-38 DONE (#320, #319 closed); P-37 (#224) deferred to David with the sizing (163 + 187 type errors across every chapter checkpoint — an edition decision, see the plan). **Now 7 PLANNED, 34 DONE, 3 PROPOSED.**
+**Phase 15 (2026-09-03, session effb6f)** — #240 DONE within P-41; #239 superseded by ADR-307 (David's ruling); P-40 (#231) is a deletion awaiting David's confirmation, list in the plan. **Still 7 PLANNED, 34 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -194,11 +197,11 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-35: Menu-less Play pane; publish offers the in-page menu as an option (#196)
 - **Done when**: one template, a menu flag; the Play pane serves without the in-page chrome; `sharpee publish` and the Publish tab offer the menu on or off.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 13; #196 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-36: Chord Writer Restart does not clear the Play pane (#195)
 - **Done when**: Restart clears the play origin's storage before reload, so the world starts fresh and the recording state matches the screen.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 13; #195 closed — as built: the Play pane wipes the origin's storage on every boot, pinned by PlaySurfaceScriptTests); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### D. The release gate
 
@@ -208,7 +211,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-38: ADR-327 test fallout — `test:ci` must be green (#320, #319)
 - **Done when**: `scripts/__tests__/cli-chord-seed.test.ts` and friendly-zoo's `state-assertions.transcript` pass; `pnpm exec turbo run test:ci` and `pnpm test:scripts` are both green on the release commit.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 14; #320, #319 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-39: sharpee.net testing docs stop at hello-world and recommend `--chain` (#246)
 - **Done when**: the site documents `continues:`/`--tree`, `seed:`, goldens, `[STATE:]`/`[EVENT:]`/`[CHANNEL:]`, and no page recommends `--chain` to authors.
@@ -221,7 +224,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-41: `sharpee test` lacks `--bless`/`--watch`; `sharpee play` drops piped commands (#239, #240)
 - **Done when**: `sharpee test --bless` records goldens and `--watch` re-runs on change; `printf 'north\nnorth\n' | sharpee play` runs both commands; no error message names a flag the author does not have.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: PLANNED — #240 DONE (2026-09-03, session effb6f, plan Phase 15); #239's `--bless`/`--watch` superseded by ADR-307's tree document, David's ruling pending (see the plan); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-42: The author-facing guide set on sharpee.net covers what #94 asked of docs/guides
 - **Issue text**: #94 asked for `docs/guides/` to be reviewed for accuracy, stripped of stale content, extended with traits / capability dispatch / NPC guides, and made author-facing. `docs/guides/` was quarantined to `docs/unofficial/` on 2026-08-14 (docs-consolidation P-2, David's acceptance) and sharpee.net is the author canon, so the work moves to the site and #94 closes as superseded by it (review 2026-09-03, CONTRADICTION resolved by rewording).

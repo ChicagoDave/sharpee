@@ -16,4 +16,8 @@ create Alex
 before the game starts
   change the player to Alex
 end before</code></pre>
+<p>What a character <code>carries</code> is visible to the player but not reachable: you can see the thief's knife, examine it, and be refused in the story's own words when you try to take it, but you cannot simply grab it. Compose <code>open-inventory</code> on the holder when the player should be able to take from them — a friendly character holding something out, a horse with saddlebags:</p>
+<pre><code class="language-chord">create the pack horse
+  a person, open-inventory
+  carries the saddlebags</code></pre>
 <p>Note the disambiguation: <code>on</code> followed by an article is placement (<code>on the potting table</code>); <code>on</code> followed by a bare word opens a behavior clause (<code>on the player watching</code>).</p>

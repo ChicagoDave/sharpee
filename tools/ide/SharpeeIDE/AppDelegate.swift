@@ -459,7 +459,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK, let destination = panel.url else { return }
             view.begin()
-            self.publishController.publish(storyFile: storyURL, to: destination)
+            self.publishController.publish(storyFile: storyURL, to: destination, includeMenu: view.includeMenu)
         }
     }
 
