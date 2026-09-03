@@ -14,6 +14,13 @@
 /** `states:` — current state per entity: `chord.state.<ir-entity-id>`. */
 export const CHORD_STATE_PREFIX = 'chord.state.';
 
+/**
+ * The entity attribute the loader stamps with the IR entity id (GH #355):
+ * a consumer holding only the world — the tree-document runner — reads
+ * `attributes[CHORD_IR_ID_ATTRIBUTE]` to reach `chord.state.<ir-entity-id>`.
+ */
+export const CHORD_IR_ID_ATTRIBUTE = 'chordIrId';
+
 /** Rule/on-clause occurrence counters (ordinals): `chord.occurrence.<key>`. */
 export const CHORD_OCCURRENCE_PREFIX = 'chord.occurrence.';
 

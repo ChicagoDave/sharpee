@@ -1,0 +1,49 @@
+{
+ "story": "state-pins",
+ "seed": 7,
+ "version": 1,
+ "cards": [
+  {
+   "type": "opening",
+   "assertions": {}
+  },
+  {
+   "type": "boot",
+   "assertions": {
+    "states": [
+     "the brass lamp is dark",
+     "the lamp is not lit",
+     "the first partner is waiting",
+     "the story is calm",
+     "story.state = calm"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "contains": [
+     "The lamp flares."
+    ],
+    "states": [
+     "the brass lamp is lit",
+     "the brass lamp is not dark",
+     "the first partner is waiting",
+     "the story is alarmed",
+     "story.state = alarmed"
+    ]
+   }
+  },
+  {
+   "type": "turn",
+   "command": "wait",
+   "assertions": {
+    "states": [
+     "the brass lamp is lit",
+     "the story is alarmed"
+    ]
+   }
+  }
+ ]
+}

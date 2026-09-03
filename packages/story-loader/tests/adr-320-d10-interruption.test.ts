@@ -29,10 +29,14 @@ import { compileSource } from './helpers/boot-engine';
 /**
  * Two hands. The dance's `hand` timer has one named turn, so a hand lasts
  * two turns; its expiry flips which partner is `dancing`. Each partner's
- * thread opens itself while dancing, and its beats are held on dancing so a
- * partner who has lost the hand does not go on speaking.
+ * thread opens itself while dancing. With `gated`, every beat is also held
+ * on dancing — the W-10 prototype's original hold gates. Without it the
+ * beats are bare, which is what GH #354 (ruled 2026-09-03) makes correct:
+ * the platform resolves the hand-off order, not the story's gates.
  */
-const SOURCE = `story
+function source(gated: boolean): string {
+  const gate = (who: string) => (gated ? `beat, when ${who} is dancing:` : 'beat:');
+  return `story
   title: Two Hands
   authors:
     T
@@ -81,11 +85,11 @@ create Jacobs
 
 define conversation jacobs-hand for Jacobs, passive
   opens when Jacobs is dancing
-  beat, when Jacobs is dancing:
+  ${gate('Jacobs')}
     phrase jacobs-beat-one
-  beat, when Jacobs is dancing:
+  ${gate('Jacobs')}
     phrase jacobs-beat-two
-  beat, when Jacobs is dancing:
+  ${gate('Jacobs')}
     phrase jacobs-beat-three
   on parting:
     phrase jacobs-parting
@@ -105,9 +109,9 @@ create the Princess
 
 define conversation princess-hand for the Princess, passive
   opens when the Princess is dancing
-  beat, when the Princess is dancing:
+  ${gate('the Princess')}
     phrase princess-beat-one
-  beat, when the Princess is dancing:
+  ${gate('the Princess')}
     phrase princess-beat-two
   on parting:
     phrase princess-parting
@@ -166,6 +170,9 @@ define phrase princess-conclusion
   Princess, done.
 end phrase
 `;
+}
+
+const SOURCE = source(true);
 
 interface Booted {
   engine: GameEngine;
@@ -176,8 +183,8 @@ interface Booted {
   turn: (input: string) => Promise<ISemanticEvent[]>;
 }
 
-async function boot(seed = 7): Promise<Booted> {
-  const story = createStory(compileSource(SOURCE), { seed });
+async function boot(seed = 7, text: string = SOURCE): Promise<Booted> {
+  const story = createStory(compileSource(text), { seed });
   const world = new WorldModel();
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
@@ -268,5 +275,53 @@ describe('ADR-320 D10a — an opens-when partner takes the floor on the hand-off
     expect(resumed?.status).toBe('active');
     expect(resumed?.beatCursor).toBe(cursorWhenParked);
     expect(mentioning(events, 'jacobs-resuming').length).toBeGreaterThan(0);
+  });
+});
+
+describe('GH #354 — with no per-beat hold gates, the hand-off order follows `opens when`, not entity id', () => {
+  const BARE = source(false);
+
+  it('the reproduction condition holds: the seated owner\'s id sorts before the challenger\'s', async () => {
+    const b = await boot(7, BARE);
+    expect(worldId(b, 'jacobs') < worldId(b, 'princess')).toBe(true);
+  });
+
+  it('the hand-off turn: Jacobs does not speak his next beat on the way out — the Princess parks him first, then speaks', async () => {
+    const b = await boot(7, BARE);
+    await b.turn('wait');
+    const cursorBefore = thread(b, 'jacobs', 'jacobs-hand')!.beatCursor;
+    const events = await b.turn('wait');
+
+    expect(mentioning(events, 'hand-off').length).toBeGreaterThan(0);
+    // Jacobs parked at the cursor he held before the turn: no beat served while losing the hand.
+    const parked = thread(b, 'jacobs', 'jacobs-hand');
+    expect(parked?.status).toBe('parked');
+    expect(parked?.beatCursor).toBe(cursorBefore);
+    expect(mentioning(events, 'jacobs-beat-two')).toHaveLength(0);
+    expect(mentioning(events, 'jacobs-parting').length).toBeGreaterThan(0);
+    // The Princess holds the floor and her first beat landed this turn.
+    expect(seatedWith(b)).toEqual(new Set([worldId(b, 'princess'), b.player.id]));
+    expect(thread(b, 'princess', 'princess-hand')).toMatchObject({ status: 'active' });
+    expect(mentioning(events, 'princess-beat-one').length).toBeGreaterThan(0);
+    // Order on the wire: the parting precedes the new scene.
+    const types = events.map((e) => e.type);
+    expect(types.indexOf('character.thread.parting')).toBeLessThan(types.indexOf('character.scene.scene-opened'));
+  });
+
+  it('the hand comes back: the Princess parks at her own cursor and Jacobs resumes where he left off', async () => {
+    const b = await boot(7, BARE);
+    await b.turn('wait');
+    await b.turn('wait');
+    const jacobsCursor = thread(b, 'jacobs', 'jacobs-hand')!.beatCursor;
+    await b.turn('wait');
+    const princessCursor = thread(b, 'princess', 'princess-hand')!.beatCursor;
+    const events = await b.turn('wait');
+
+    expect(mentioning(events, 'hand-off').length).toBeGreaterThan(0);
+    expect(thread(b, 'princess', 'princess-hand')).toMatchObject({ status: 'parked', beatCursor: princessCursor });
+    expect(mentioning(events, 'princess-parting').length).toBeGreaterThan(0);
+    expect(thread(b, 'jacobs', 'jacobs-hand')).toMatchObject({ status: 'active', beatCursor: jacobsCursor });
+    expect(mentioning(events, 'jacobs-resuming').length).toBeGreaterThan(0);
+    expect(seatedWith(b)).toEqual(new Set([worldId(b, 'jacobs'), b.player.id]));
   });
 });

@@ -76,7 +76,11 @@ describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)
     strengths = {};
     served = [];
     registerCharacterScenes(world, createTraitMemoryAccess(world), {
-      threadTurnReady: (ownerId) => ready.has(ownerId),
+      // The loader's real probe (readyThreadMove) re-engages a parked
+      // thread only when its `opens when` holds again; here "dancing" is
+      // the `ready` set, and a partner parked this tick has lost the hand.
+      threadTurnReady: (ownerId, partnerId) =>
+        ready.has(ownerId) && threadStateFor(world, ownerId, partnerId, `${ownerId}-hand`)?.status !== 'parked',
       threadTurn: (ownerId, partnerId, sceneId) => {
         served.push(ownerId);
         const key = `${ownerId}-hand`;
@@ -191,4 +195,49 @@ describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)
     expect(sceneWith(world, princess.id)).toBeDefined();
     expect(served).toEqual([princess.id]);
   });
+
+  // GH #354 (ruled 2026-09-03): challenges resolve before any floor turn.
+  it('the seated owner is ready too and sorts first: the challenge parks him before any beat — he does not speak on the hand-off turn', () => {
+    // The reproduction condition: the seated owner's id sorts before the challenger's.
+    expect(jacobs.id < princess.id).toBe(true);
+    const jacobsScene = seatedWithJacobs('passive');
+    ready.add(jacobs.id);
+    ready.add(princess.id);
+
+    const events = tick(3);
+
+    // Persisted state: Jacobs parked at the cursor he held BEFORE the tick — no beat served on the way out.
+    expect(readSceneStore(world).scenes[jacobsScene.id]).toBeUndefined();
+    const parked = threadStateFor(world, jacobs.id, player.id, `${jacobs.id}-hand`)!;
+    expect(parked.status).toBe('parked');
+    expect(parked.beatCursor).toBe(1);
+    // Only the Princess took a floor turn; the player is seated with her.
+    expect(served).toEqual([princess.id]);
+    expect(seatedIds()).toEqual(new Set([princess.id, player.id]));
+    expect(sounds.map((s) => (s.content as { messageId: string }).messageId)).not.toContain(`beat.${jacobs.id}-hand`);
+    // The wire: the park and its parting precede the new scene and the Princess's beat.
+    const kinds = events.filter((e) => e.type.startsWith('character.scene.')).map((e) => e.type);
+    expect(kinds.indexOf('character.scene.thread-parting')).toBeLessThan(kinds.indexOf('character.scene.scene-opened'));
+  });
+
+  it('the seated owner holds a blocking thread and is ready too: he serves, the challenger is skipped (pass two honours pass one)', () => {
+    seatedWithJacobs('blocking');
+    ready.add(jacobs.id);
+    ready.add(princess.id);
+
+    const events = tick(3);
+
+    expect(threadStateFor(world, jacobs.id, player.id, `${jacobs.id}-hand`)?.status).toBe('active');
+    expect(served).toEqual([jacobs.id]);
+    expect(sceneWith(world, princess.id)).toBeUndefined();
+    expect(events.find((e) => e.type === 'character.scene.interruption')?.data).toMatchObject({
+      interrupterId: princess.id,
+      outcome: 'blocks',
+    });
+  });
+
+  function seatedIds(): Set<string> | undefined {
+    const scene = sceneWith(world, player.id);
+    return scene ? new Set(scene.participantIds) : undefined;
+  }
 });

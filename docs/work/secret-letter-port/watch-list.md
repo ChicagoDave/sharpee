@@ -316,14 +316,18 @@ is read by that partner's floor turn in the same turn.
   `tests/tick-phases/thread-interruption.test.ts` (4). Suites at commit 07e1949d:
   character 597, story-loader 1022, engine 680, stdlib 1663. Dungeo chain 952
   byte-identical; fernhill 36/40, secret-letter 562/953, thealderman 4/9.
-- **Two residuals, filed, not blocking Chapter 11**: the prototype's `beat, when <partner>
-  is dancing:` hold gates STAY — without them the partner losing the hand serves one more
-  beat on the hand-off turn before the challenge parks him, because step 4a walks candidates
-  in entity-id order (GH #354, a platform ordering question for David); a partner's
-  `waiting`/`dancing` state cannot be pinned by the tree grammar's `entity.property` head
-  (GH #355) — the cards pin `story.state` instead.
+- **Two residuals, filed and RESOLVED 2026-09-03** (David ruled option A on both, built in
+  `docs/work/archive/hand-off-order-and-state-pins/plan.md`, session 89ce13): step 4a now
+  resolves every challenge before serving any floor turn (GH #354), so the prototype's six
+  `beat, when <partner> is dancing:` hold gates are gone — bare `beat:` rows, and the committed
+  tree passed unchanged (15 cards / 46 assertions); tree cards can pin a Chord entity's own
+  state spelled the way Chord spells it (GH #355) — `the first partner is waiting`, `the dance
+  is second`, `the story is ended` — so the hand-off cards now pin the partners' `waiting`/
+  `dancing` directly (15 cards / 69 assertions). Baselines after both: Dungeo chain 952 passed,
+  fernhill 36/40, secret-letter 562/953, thealderman 4/9; character 599, story-loader 1029,
+  engine 680, stdlib 1663, branch-tester 104.
 
-**Status**: CLOSED 2026-09-03 — GH #348 closed with this evidence. Phase 10's Chapter 11 build can proceed; carry the hold gates and GH #354/#355 into it.
+**Status**: CLOSED 2026-09-03 — GH #348 closed with this evidence; GH #354/#355 closed the same day. Phase 10's Chapter 11 build can proceed with no hold gates and with partner-state pins.
 
 ## Recording results
 

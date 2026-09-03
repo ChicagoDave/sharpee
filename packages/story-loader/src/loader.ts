@@ -158,7 +158,7 @@ import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -1904,6 +1904,9 @@ export class ChordStory implements Story {
     this.applyStartsStates(entity, irEntity);
     this.worldIds.set(irEntity.id, entity.id);
     this.irIds.set(entity.id, irEntity.id);
+    // GH #355: the same mapping, readable from the world alone — the
+    // tree-document runner resolves `chord.state.<ir-id>` through it.
+    entity.attributes[CHORD_IR_ID_ATTRIBUTE] = irEntity.id;
     return entity;
   }
 

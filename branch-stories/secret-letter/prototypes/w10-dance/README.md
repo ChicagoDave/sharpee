@@ -16,7 +16,7 @@ bracketed marker. The port imports nothing from this directory.
 | --- | --- | --- |
 | The turn budget | `define timer hand for the dance` with one named turn, `restart hand` on expiry | two-turn hands, exact |
 | The rotation | one `when hand expires` clause, `select on the dance's state`, partners flip `waiting`/`dancing` | works |
-| Each partner's talk | `define conversation … opens when <partner> is dancing`, beats held on `dancing` | opens itself, goes quiet when the hand passes |
+| Each partner's talk | `define conversation … opens when <partner> is dancing`, bare `beat:` rows | opens itself; the platform parks it when the hand passes (no per-beat gate since GH #354, 2026-09-03) |
 | Continuation | `go on` mid-thread | serves the next beat |
 | Rounds | story counter `rounds`, raised at the wrap; topic rows keyed `at most 1` / `at least 2` | memory across rounds works |
 | The music's end | conclusion rows `raise spoken by 1`; `on every turn while spoken is 3, once` | works |
@@ -35,17 +35,22 @@ player's own address make; a `passive` scene yields, its thread parks at its
 cursor and its `on parting` renders, and the new hand speaks — all on the
 hand-off turn. The tree below was re-transcribed against that engine.
 
-**The hold gates stay.** `beat, when <partner> is dancing:` looked redundant
-once the interruption existed, but without them the partner losing the hand
-still serves one more beat on the hand-off turn before the challenge parks
-him — step 4a walks candidates in entity-id order and serves a seated owner's
-floor turn before a later candidate's challenge (GH #354). The gates are what
-say "only the current hand speaks"; that is story logic and it stays.
+**The hold gates are gone (2026-09-03).** As first re-transcribed, every
+beat carried `when <partner> is dancing:` because without it the partner
+losing the hand still served one more beat on the hand-off turn before the
+challenge parked him — step 4a walked candidates in entity-id order and
+served a seated owner's floor turn before a later candidate's challenge
+(GH #354). David ruled that the platform resolves the order: step 4a now runs
+every challenge before any floor turn, so the beats are bare `beat:` rows and
+the same tree passes unchanged (15 cards, 46 assertions before the pins
+below were added). A story that wants a seated partner to finish first still
+has `define conversation …, blocking`.
 
-**State pins.** Only `story.state` can be pinned on a card; a partner's own
-`waiting`/`dancing` is a `chord.state.*` value the tree grammar cannot read
-(GH #355), so the hand-off cards pin the story's phase and prove the hand
-passed through the parting and first-beat lines instead.
+**State pins.** The hand-off cards pin each partner's own `waiting`/`dancing`
+and the dance's hand, spelled the way Chord spells the condition — `the
+first partner is waiting`, `the dance is second`, `the story is ended`
+(GH #355, 2026-09-03). `story.state = dancing` stays beside them on the
+cards that had it.
 
 ## Running it
 
@@ -58,5 +63,7 @@ passed through the parting and first-beat lines instead.
 story draws no randomness), not recorded in the IDE — fed one command per
 ~350 ms through a driver script, since piping stdin all at once drops
 commands. Re-transcribed 2026-09-02 against the interruption: fourteen turns
-to the music's end, where the lagged engine needed twenty-eight. The bundle's
+to the music's end, where the lagged engine needed twenty-eight. Re-run
+2026-09-03 with the gates dropped and the state pins added: 15 cards, 69
+assertions. The bundle's
 `dist/cli/sharpee.js --exec` cannot run this story: it has no import resolver.

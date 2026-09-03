@@ -85,11 +85,11 @@ create the first partner
 
 define conversation first-hand for the first partner, passive
   opens when the first partner is dancing
-  beat, when the first partner is dancing:
+  beat:
     phrase first-beat-one
-  beat, when the first partner is dancing:
+  beat:
     phrase first-beat-two
-  beat, when the first partner is dancing:
+  beat:
     phrase first-beat-three
   on parting:
     phrase first-parting
@@ -119,9 +119,9 @@ create the second partner
 
 define conversation second-hand for the second partner, passive
   opens when the second partner is dancing
-  beat, when the second partner is dancing:
+  beat:
     phrase second-beat-one
-  beat, when the second partner is dancing:
+  beat:
     phrase second-beat-two
   on parting:
     phrase second-parting
@@ -150,7 +150,7 @@ create the third partner
 
 define conversation third-hand for the third partner, passive
   opens when the third partner is dancing
-  beat, when the third partner is dancing:
+  beat:
     phrase third-beat-one
   on parting:
     phrase third-parting

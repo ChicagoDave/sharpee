@@ -1498,21 +1498,35 @@ function runSceneSubStep(
           world.getLocation(n.id) === world.getLocation(ctx.playerId),
       )
       .sort((a, b) => (a.id < b.id ? -1 : 1));
+    // Two passes (GH #354, ruled 2026-09-03): every challenge resolves
+    // before any floor turn is served, so which partner speaks on a
+    // hand-off turn follows the story's `opens when`, never entity-id
+    // order. A seated owner whose beat is ready is not served first and
+    // then parked by a later-sorted candidate's challenge.
+    //
+    // Pass one — ADR-320 D10a (2026-09-02): an authored `opens when` is an
+    // interjection. When the player is seated in a scene this NPC is not
+    // part of, that scene's grip answers — thread-aware, so a `blocking`
+    // thread holds (D14) — through the same call the world-act and
+    // player-address paths make. `yields`/`protests` close it (its
+    // threads park and their `on parting` renders); `blocks` skips this
+    // candidate for the turn — no throw, no wedge, tried again next turn.
+    const blockedThisTurn = new Set<string>();
     for (const npc of candidates) {
       if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
-      // ADR-320 D10a (2026-09-02): an authored `opens when` is an
-      // interjection. When the player is seated in a scene this NPC is not
-      // part of, that scene's grip answers — thread-aware, so a `blocking`
-      // thread holds (D14) — through the same call the world-act and
-      // player-address paths make. `yields`/`protests` close it (its
-      // threads park and their `on parting` renders); `blocks` skips this
-      // candidate for the turn — no throw, no wedge, tried again next turn.
       const foreign = sceneWith(world, ctx.playerId);
-      if (foreign && !foreign.participantIds.includes(npc.id)) {
-        const challenge = runtime.resolveIntrusion(foreign.id, npc.id, false);
-        pushWire(challenge.wireEvents);
-        if (challenge.outcome === 'blocks') continue;
-      }
+      if (!foreign || foreign.participantIds.includes(npc.id)) continue;
+      const challenge = runtime.resolveIntrusion(foreign.id, npc.id, false);
+      pushWire(challenge.wireEvents);
+      if (challenge.outcome === 'blocks') blockedThisTurn.add(npc.id);
+    }
+    // Pass two — floor turns for whoever still holds the floor. Readiness
+    // is re-probed: a partner parked in pass one reads not-ready here
+    // because a parked thread re-engages only when its `opens when` holds
+    // again (readyThreadMove), and the hand has already passed.
+    for (const npc of candidates) {
+      if (blockedThisTurn.has(npc.id)) continue;
+      if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
       const scene = ensureScene(npc.id, ctx.playerId);
       if (!scene || scene.openExchange) continue;
       const turn = runtime.threadTurn(npc.id, ctx.playerId, scene.id);
