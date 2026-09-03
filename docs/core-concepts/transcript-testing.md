@@ -500,7 +500,7 @@ Location: `walkthroughs/wt-NN-description.transcript`
 
 - Test full game progression from start to finish
 - State persists between files via `$save` / `$restore`
-- Must be run with `--chain` flag (or via `npx sharpee build --test` which chains automatically)
+- Must be run with the bundle's `--chain` flag (`node dist/cli/sharpee.js --test --chain …`); the author tool has no chain — the tree document is the suite there
 - Number them sequentially: `wt-01`, `wt-02`, etc.
 - Each walkthrough saves at the end so the next one can continue
 
