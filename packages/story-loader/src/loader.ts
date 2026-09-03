@@ -52,26 +52,9 @@ import type { IROnClause, IRChapterTrigger } from '@sharpee/chord';
  */
 function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<string> {
   const topics = new Set<string>();
-  const walk = (condition: IRCondition | null): void => {
-    if (!condition) return;
-    switch (condition.kind) {
-      case 'knows-topic':
-        topics.add(condition.topic);
-        return;
-      case 'and':
-      case 'or':
-        for (const operand of condition.operands) walk(operand);
-        return;
-      case 'not':
-        walk(condition.operand);
-        return;
-      default:
-        return;
-    }
-  };
   for (const clause of onClauses) {
     if (clause.binding !== 'every-turn') continue;
-    walk(clause.condition);
+    for (const topic of knownTopicsIn(clause.condition)) topics.add(topic);
   }
   return topics;
 }
@@ -174,7 +157,7 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
-import { ChordBehaviorTrait, ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
+import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
@@ -936,6 +919,12 @@ export class ChordStory implements Story {
         })));
       }
       registry.setOracle(this.storyOracle());
+      // GH #353: the same-tick half of `arrivalNarratedTopics` — the tick
+      // hands a newly landed fact back, and the owner's gated every-turn
+      // clause runs on that tick rather than on the scheduler's next pass.
+      registry.setArrivalReaction((arrival, world) =>
+        this.runtime.fireArrivalReaction(arrival.listenerId, arrival.topic, world),
+      );
       this.characterRegistry = registry;
     }
 

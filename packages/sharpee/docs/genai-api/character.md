@@ -4339,7 +4339,8 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * sub-steps: decay → observe → influence → propagation → goals → scenes →
+ * arrival reactions (GH #353)
  * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
  * arbiter.) Ordering between sub-steps is a contract, which is why this
  * is one registration rather than three (docs/work/archive/adr-310/
@@ -4427,6 +4428,31 @@ export interface CharacterPhaseConfig {
      */
     arrivalNarratedTopics?: ReadonlySet<string>;
 }
+/** A fact that just landed on a listener by propagation (GH #353). */
+export interface ArrivedFact {
+    /** The NPC who now knows the topic, as a world id. */
+    listenerId: string;
+    /** The NPC who passed it, as a world id. */
+    speakerId: string;
+    /** The topic that arrived. */
+    topic: string;
+    /** The room the transfer happened in. */
+    roomId: string;
+    /** The turn it landed on. */
+    turn: number;
+}
+/**
+ * The story's reaction to an arrival-narrated fact landing (GH #353) — the
+ * other half of `arrivalNarratedTopics`. The loader binds it at load, like
+ * the oracle: authored wiring, no runtime state. `recordTransfer` queues
+ * each newly landed arrival-narrated fact and the tick calls the reaction
+ * for each after its own sub-steps (last, after scenes), appending the
+ * events it returns — so the owner's `on every turn … while it knows
+ * <topic>` clause narrates the arrival on that tick, as the contract
+ * promises, whichever band the scheduler runs in (ADR-332), and the tick's
+ * goals and scenes saw the world as it stood when the fact arrived.
+ */
+export type ArrivalReaction = (arrival: ArrivedFact, world: WorldModel) => ISemanticEvent[];
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
  * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
@@ -4442,6 +4468,8 @@ export declare class CharacterPhaseRegistry {
     private temperamentDefs?;
     /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
     private witnessedAliases?;
+    /** The story's arrival reaction (GH #353) — bound at load, like the oracle. */
+    private arrivalReaction?;
     /**
      * Register character configuration for an NPC.
      *
@@ -4459,6 +4487,15 @@ export declare class CharacterPhaseRegistry {
     setOracle(oracle: CompiledStoryOracle): void;
     /** The bound story oracle, if any. */
     getOracle(): CompiledStoryOracle | undefined;
+    /**
+     * Bind the story's arrival reaction (loader, at load — last-wins, like the
+     * oracle). Called by `recordTransfer` for every arrival-narrated fact that
+     * newly lands.
+     * @param reaction the story's reaction
+     */
+    setArrivalReaction(reaction: ArrivalReaction): void;
+    /** The bound arrival reaction, if any. */
+    getArrivalReaction(): ArrivalReaction | undefined;
     /** Set the story's authored temperament definitions (loader, at load). */
     setTemperamentDefs(defs: Readonly<Record<string, TemperamentDef>>): void;
     /** Authored temperament definitions by name (ArbiterContext.temperamentDefs source). */

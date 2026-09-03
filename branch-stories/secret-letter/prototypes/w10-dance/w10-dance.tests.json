@@ -21,7 +21,12 @@
    "assertions": {
     "contains": [
      "first partner, beat 2.",
-     "HAND-OFF: the circle turns"
+     "HAND-OFF: the circle turns",
+     "first partner, PARTING.",
+     "second partner, beat 1."
+    ],
+    "states": [
+     "story.state = dancing"
     ]
    }
   },
@@ -31,7 +36,7 @@
    "assertions": {
     "contains": [
      "first partner on the weather, ROUND ONE.",
-     "first partner, PARTING."
+     "second partner, beat 2."
     ]
    }
   },
@@ -41,7 +46,9 @@
    "assertions": {
     "contains": [
      "second partner on the weather.",
-     "HAND-OFF: the circle turns"
+     "second partner, PARTING.",
+     "HAND-OFF: the circle turns",
+     "third partner, beat 1."
     ]
    }
   },
@@ -50,7 +57,9 @@
    "command": "ask third partner about the weather",
    "assertions": {
     "contains": [
-     "third partner on the weather."
+     "third partner on the weather.",
+     "third partner, PARTING.",
+     "third partner, RESUMING."
     ]
    }
   },
@@ -60,16 +69,22 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "ROUND: the circle has come back to the first hand"
+     "ROUND: the circle has come back to the first hand",
+     "third partner, PARTING.",
+     "first partner, RESUMING where we left off."
+    ],
+    "states": [
+     "story.state = dancing"
     ]
    }
   },
   {
    "type": "turn",
-   "command": "wait",
+   "command": "ask first partner about the weather",
    "assertions": {
     "contains": [
-     "Time passes...",
+     "A LATER ROUND: memory across rounds.",
+     "first partner, PARTING.",
      "first partner, RESUMING where we left off."
     ]
    }
@@ -81,7 +96,8 @@
     "contains": [
      "Time passes...",
      "HAND-OFF: the circle turns",
-     "first partner, beat 3."
+     "first partner, PARTING.",
+     "second partner, RESUMING."
     ]
    }
   },
@@ -91,7 +107,7 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "first partner, CONCLUSION."
+     "second partner, CONCLUSION."
     ]
    }
   },
@@ -101,84 +117,8 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "ROUND: the circle has come back to the first hand"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "ask first partner about the weather",
-   "assertions": {
-    "contains": [
-     "A LATER ROUND: memory across rounds.",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "ROUND: the circle has come back to the first hand",
-     "third partner, beat 1."
+     "HAND-OFF: the circle turns",
+     "third partner, RESUMING."
     ]
    }
   },
@@ -198,35 +138,8 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
+     "ROUND: the circle has come back to the first hand",
+     "first partner, RESUMING where we left off."
     ]
    }
   },
@@ -236,36 +149,7 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "ROUND: the circle has come back to the first hand"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes..."
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "HAND-OFF: the circle turns"
-    ]
-   }
-  },
-  {
-   "type": "turn",
-   "command": "wait",
-   "assertions": {
-    "contains": [
-     "Time passes...",
-     "second partner, beat 1."
+     "first partner, beat 3."
     ]
    }
   },
@@ -276,7 +160,10 @@
     "contains": [
      "Time passes...",
      "HAND-OFF: the circle turns",
-     "second partner, beat 2."
+     "first partner, CONCLUSION."
+    ],
+    "states": [
+     "story.state = dancing"
     ]
    }
   },
@@ -286,8 +173,10 @@
    "assertions": {
     "contains": [
      "Time passes...",
-     "second partner, CONCLUSION.",
      "MUSIC STOPS: every partner has had their say."
+    ],
+    "states": [
+     "story.state = ended"
     ]
    }
   }

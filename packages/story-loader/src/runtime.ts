@@ -153,6 +153,39 @@ const toEffect = (e: ISemanticEvent): CapabilityEffect => ({
   ...(e.entities?.actor !== undefined ? { actor: e.entities.actor } : {}),
 });
 
+/**
+ * The topics a condition gates on knowing — every `knows-topic` node under
+ * it, through `and`/`or`/`not`. One walk for both halves of the arrival
+ * contract: the loader derives `arrivalNarratedTopics` from it (which
+ * topics the platform stays silent for) and the arrival reaction consults
+ * it (which clauses fire on the tick a topic lands) — GH #353.
+ *
+ * @param condition the clause condition, or null for an unconditional clause
+ * @returns the topics named; empty for null or for a condition naming none
+ */
+export function knownTopicsIn(condition: IRCondition | null): Set<string> {
+  const topics = new Set<string>();
+  const walk = (node: IRCondition | null): void => {
+    if (!node) return;
+    switch (node.kind) {
+      case 'knows-topic':
+        topics.add(node.topic);
+        return;
+      case 'and':
+      case 'or':
+        for (const operand of node.operands) walk(operand);
+        return;
+      case 'not':
+        walk(node.operand);
+        return;
+      default:
+        return;
+    }
+  };
+  walk(condition);
+  return topics;
+}
+
 /** Hooks the runtime needs from the story (implemented by ChordStory). */
 export interface RuntimeHost {
   entityId(irId: string): string | undefined;
@@ -3381,29 +3414,10 @@ export class ChordRuntime {
     this.ir.entities.forEach((irEntity) => {
       irEntity.onClauses.forEach((clause, clauseIndex) => {
         if (clause.binding !== 'every-turn') return;
-        const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
         daemons.push({
           id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
           name: `on every turn (${irEntity.id})`,
-          run: (ctx) => {
-            // Role gate (ADR-327 D9): a character's autonomous clauses drive
-            // them only while they are NOT the one being played. Checked
-            // before the condition so the RNG stream and `, once` are
-            // untouched for as long as the owner holds the role — the clause
-            // wakes, unconsumed, the turn the role moves off them.
-            if (this.holdsPlayerRole(ctx.world, irEntity.id)) return [];
-            // No presence gate (ADR-328 D3): the clause fires wherever the
-            // player is — `, once` and RNG conditions consume off-stage, and
-            // `sourced` below stamps the owner's place so the engine tags
-            // `presence` and the client decides what to show.
-            const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
-            if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
-            const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
-            if (clause.once && fired > 1) return []; // `, once` (D5)
-            ctx.world.setStateValue(key, fired);
-            evalCtx.occurrence = fired;
-            return this.narrated(this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world));
-          },
+          run: (ctx) => this.runEntityTurnClause(irEntity, clause, clauseIndex, ctx.world),
         });
       });
     });
@@ -3463,7 +3477,8 @@ export class ChordRuntime {
               if (clause.once && fired > 1) continue; // `, once` (D5)
               ctx.world.setStateValue(key, fired);
               evalCtx.occurrence = fired;
-              out.push(...this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world));
+              const at = this.placeOf(irEntity.id, ctx.world);
+              out.push(...this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world, at));
             }
             return this.narrated(out);
           },
@@ -3508,6 +3523,84 @@ export class ChordRuntime {
   }
 
   /**
+   * Run one entity every-turn clause (`on every turn while …[, once]` in a
+   * create block) now, `it` = the owner — the one body its scheduler daemon
+   * and the arrival reaction (GH #353) share, so a clause fired by either is
+   * spent for both.
+   *
+   * Role gate first (ADR-327 D9): a character's autonomous clauses drive them
+   * only while they are NOT the one being played, checked before the
+   * condition so the RNG stream and `, once` are untouched for as long as the
+   * owner holds the role — the clause wakes, unconsumed, the turn the role
+   * moves off them. No presence gate (ADR-328 D3): the clause fires wherever
+   * the player is — `, once` and RNG conditions consume off-stage, and
+   * `sourced` stamps the owner's place so the engine tags `presence` and the
+   * client decides what to show.
+   *
+   * @param irEntity the owning entity
+   * @param clause the every-turn clause
+   * @param clauseIndex its index among the owner's clauses (the occurrence key)
+   * @param world the live world
+   * @returns the clause's events, or none when a gate holds it
+   */
+  private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, clauseIndex: number, world: WorldModel): ISemanticEvent[] {
+    const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
+    if (this.holdsPlayerRole(world, irEntity.id)) return [];
+    const evalCtx: ExecContext = { world, it: irEntity.id };
+    if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
+    const fired = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+    if (clause.once && fired > 1) return []; // `, once` (D5)
+    world.setStateValue(key, fired);
+    evalCtx.occurrence = fired;
+    const at = this.placeOf(irEntity.id, world);
+    return this.narrated(this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, world, at));
+  }
+
+  /**
+   * The owner's place for ADR-328 D3 sourcing: a room owner is the room, a
+   * region owner the region, anything else its containing room (or bare
+   * location). `null` when the owner has no place (offstage); `undefined`
+   * when it has no world entity at all.
+   *
+   * @param ownerIrId the owner, as an IR id
+   * @param world the live world
+   */
+  private placeOf(ownerIrId: string, world: WorldModel): string | null | undefined {
+    const ownerId = this.host.entityId(ownerIrId);
+    if (!ownerId) return undefined;
+    const owner = world.getEntity(ownerId);
+    if (owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)) return ownerId;
+    return world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId) ?? null;
+  }
+
+  /**
+   * The arrival reaction the loader binds on the character registry (GH
+   * #353): a fact just landed on `listenerWorldId` by propagation, so each of
+   * that owner's every-turn clauses gated on knowing `topic` runs NOW, on the
+   * arrival tick, in the author's words — the contract `arrivalNarratedTopics`
+   * names (the platform's generic "mentions something" line already stands
+   * down for these). Occurrence bookkeeping is the daemon's own, so a `, once`
+   * clause fired here is spent when the scheduler next looks.
+   *
+   * @param listenerWorldId the listener, as a world id
+   * @param topic the topic that arrived
+   * @param world the live world
+   * @returns the clauses' events, in clause order; none for an unmodeled listener
+   */
+  fireArrivalReaction(listenerWorldId: string, topic: string, world: WorldModel): ISemanticEvent[] {
+    const irId = this.host.irIdOf(listenerWorldId);
+    const irEntity = irId ? this.ir.entities.find((e) => e.id === irId) : undefined;
+    if (!irEntity) return [];
+    const out: ISemanticEvent[] = [];
+    irEntity.onClauses.forEach((clause, clauseIndex) => {
+      if (clause.binding !== 'every-turn') return;
+      if (!knownTopicsIn(clause.condition).has(topic)) return;
+      out.push(...this.runEntityTurnClause(irEntity, clause, clauseIndex, world));
+    });
+    return out;
+  }
+
+  /**
    * ADR-328 D3, producer half: an owner's autonomous narration carries the
    * owner as `entities.actor` and the place it happened as
    * `entities.location` — a room owner is the room, a region owner the
@@ -3517,15 +3610,23 @@ export class ChordRuntime {
    * wins. An owner with no place at all (offstage) has nowhere the player
    * could be present, so its narration is tagged `absent` here — the
    * funnel never overwrites a producer-set presence.
+   *
+   * "The place it happened" is where the owner stood when the clause FIRED:
+   * a body that moves its owner (`move Kemp to the Tavern` after the storm-off
+   * line) narrates the leaving, not the arriving, so a caller that runs a body
+   * snapshots the place with `placeOf` first and passes it as `at` (GH #353).
+   * Omitted, the place is read now.
+   *
+   * @param events the events to stamp
+   * @param ownerIrId the owner, as an IR id
+   * @param world the live world
+   * @param at the owner's place when the events happened (`null` = no place);
+   *   omitted → the owner's place now
    */
-  private sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel): ISemanticEvent[] {
+  private sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel, at?: string | null): ISemanticEvent[] {
     const ownerId = this.host.entityId(ownerIrId);
     if (!ownerId) return events;
-    const owner = world.getEntity(ownerId);
-    const location =
-      owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)
-        ? ownerId
-        : (world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId));
+    const location = (at === undefined ? this.placeOf(ownerIrId, world) : at) ?? undefined;
     return events.map((e) => ({
       ...e,
       entities: {

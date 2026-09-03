@@ -2,7 +2,8 @@
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * sub-steps: decay → observe → influence → propagation → goals → scenes →
+ * arrival reactions (GH #353)
  * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
  * arbiter.) Ordering between sub-steps is a contract, which is why this
  * is one registration rather than three (docs/work/archive/adr-310/
@@ -161,6 +162,33 @@ export interface CharacterPhaseConfig {
   arrivalNarratedTopics?: ReadonlySet<string>;
 }
 
+/** A fact that just landed on a listener by propagation (GH #353). */
+export interface ArrivedFact {
+  /** The NPC who now knows the topic, as a world id. */
+  listenerId: string;
+  /** The NPC who passed it, as a world id. */
+  speakerId: string;
+  /** The topic that arrived. */
+  topic: string;
+  /** The room the transfer happened in. */
+  roomId: string;
+  /** The turn it landed on. */
+  turn: number;
+}
+
+/**
+ * The story's reaction to an arrival-narrated fact landing (GH #353) — the
+ * other half of `arrivalNarratedTopics`. The loader binds it at load, like
+ * the oracle: authored wiring, no runtime state. `recordTransfer` queues
+ * each newly landed arrival-narrated fact and the tick calls the reaction
+ * for each after its own sub-steps (last, after scenes), appending the
+ * events it returns — so the owner's `on every turn … while it knows
+ * <topic>` clause narrates the arrival on that tick, as the contract
+ * promises, whichever band the scheduler runs in (ADR-332), and the tick's
+ * goals and scenes saw the world as it stood when the fact arrived.
+ */
+export type ArrivalReaction = (arrival: ArrivedFact, world: WorldModel) => ISemanticEvent[];
+
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
  * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
@@ -176,6 +204,8 @@ export class CharacterPhaseRegistry {
   private temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
   /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
   private witnessedAliases?: ReadonlyArray<{ actor: string; act: string; alias: string }>;
+  /** The story's arrival reaction (GH #353) — bound at load, like the oracle. */
+  private arrivalReaction?: ArrivalReaction;
 
   /**
    * Register character configuration for an NPC.
@@ -215,6 +245,21 @@ export class CharacterPhaseRegistry {
   /** The bound story oracle, if any. */
   getOracle(): CompiledStoryOracle | undefined {
     return this.oracle;
+  }
+
+  /**
+   * Bind the story's arrival reaction (loader, at load — last-wins, like the
+   * oracle). Called by `recordTransfer` for every arrival-narrated fact that
+   * newly lands.
+   * @param reaction the story's reaction
+   */
+  setArrivalReaction(reaction: ArrivalReaction): void {
+    this.arrivalReaction = reaction;
+  }
+
+  /** The bound arrival reaction, if any. */
+  getArrivalReaction(): ArrivalReaction | undefined {
+    return this.arrivalReaction;
   }
 
   /** Set the story's authored temperament definitions (loader, at load). */
@@ -285,6 +330,15 @@ interface SceneTickSurface {
     soundParams?: Record<string, unknown>;
   }>;
 
+  /**
+   * Arrival-narrated facts that newly landed this tick (propagation) — the
+   * story's reactions to them run LAST, after scenes (GH #353), so the
+   * goals and scenes sub-steps see the world as it was when the fact
+   * arrived, exactly as they did when the scheduler ran those clauses
+   * after the actor phase.
+   */
+  arrivals: ArrivedFact[];
+
   /** Completed goal `say` steps addressed to a co-located wrappable partner. */
   says: Array<{ npcId: string; targetId: string; messageId: string; roomId: string }>;
 
@@ -294,7 +348,7 @@ interface SceneTickSurface {
 
 /** A fresh, empty surface for one phase invocation. */
 function emptySceneTickSurface(): SceneTickSurface {
-  return { acts: [], transfers: [], says: [], movedNpcIds: new Set() };
+  return { acts: [], transfers: [], arrivals: [], says: [], movedNpcIds: new Set() };
 }
 
 /**
@@ -369,8 +423,40 @@ export function createCharacterModelPhase(
       ...runPropagationSubStep(npcs, ctx, registry, surface),
       ...runGoalSubStep(npcs, ctx, registry, surface),
       ...runSceneSubStep(npcs, ctx, registry, surface),
+      ...runArrivalReactions(ctx, registry, surface),
     ];
   };
+}
+
+// ---------------------------------------------------------------------------
+// Arrival reactions (GH #353) — last, after scenes
+// ---------------------------------------------------------------------------
+
+/**
+ * Run the story's reaction to every arrival-narrated fact that landed this
+ * tick, in arrival order. Last on purpose: the clauses these reactions run
+ * may move or re-mood their owner, and the goals and scenes sub-steps must
+ * see the world as it stood when the fact arrived — the order the scheduler
+ * gave those clauses before ADR-332 moved it ahead of the actor phase.
+ * Nothing bound, or nothing arrived: no events.
+ *
+ * @param ctx - The tick context
+ * @param registry - Character phase registry (carries the bound reaction)
+ * @param surface - This tick's surface, with the queued arrivals
+ * @returns The reactions' events, in arrival order
+ */
+function runArrivalReactions(
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
+): ISemanticEvent[] {
+  const react = registry.getArrivalReaction();
+  if (!react || surface.arrivals.length === 0) return [];
+  const events: ISemanticEvent[] = [];
+  for (const arrival of surface.arrivals) {
+    events.push(...react(arrival, ctx.world));
+  }
+  return events;
 }
 
 /**
@@ -657,6 +743,23 @@ function recordTransfer(
   // narration of it stands down.
   const authorNarratesArrival =
     listenerConfig?.arrivalNarratedTopics?.has(transfer.topic) ?? false;
+
+  // GH #353: the story reacts to that arrival on THIS tick — the contract
+  // `arrivalNarratedTopics` names — but after the tick's own sub-steps, so
+  // the reaction is queued on the surface and run last (see
+  // runArrivalReactions). The scheduler's own pass of the clause (whatever
+  // band it runs in, ADR-332) then finds a `, once` clause already spent.
+  // Both paths below queue it: the reaction is about the fact landing, not
+  // about how the line travels.
+  if (!result.alreadyKnew && authorNarratesArrival) {
+    surface.arrivals.push({
+      listenerId: transfer.listenerId,
+      speakerId: speaker.id,
+      topic: transfer.topic,
+      roomId,
+      turn,
+    });
+  }
 
   // ADR-320 Phase 8 (D10 — "propagation made visible"): a wrappable
   // pair's transfer becomes a scene move; its observable surface is the

@@ -165,6 +165,8 @@ The stage of the new Globe, raw oak still pale from the saw. Two pillars painted
 
 You can see a property sword, a first hired man, Richard Burbage, William Shakespeare, and Will Kemp here.
 
+You hear: "Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. "Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.""
+
 > west
 
 Tiring-House
@@ -183,7 +185,7 @@ The stage of the new Globe, raw oak still pale from the saw. Two pillars painted
 
 You can see a property sword, a first hired man, Richard Burbage, William Shakespeare, and Will Kemp here.
 
-You hear: "Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. "Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.""
+You hear: ""Your cue is 'Peace, ho! Caesar speaks.'" He gives the line its full weight, and the boards give it back. "Not before, on pain of my attention. Not after, on pain of the same. The house opens TODAY, and today every man in it is exactly where the play says he is.""
 
 > south
 
