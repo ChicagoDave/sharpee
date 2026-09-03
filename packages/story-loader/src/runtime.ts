@@ -25,6 +25,7 @@ import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engin
 import { PHRASEBOOK_DATA } from './phrasebook-data.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
+import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import {
   type SceneStrength,
   type ActionInterceptor,
@@ -59,6 +60,7 @@ import {
   type SceneWireEvent,
   type InitiativeSeizure,
   sceneWith,
+  HealthTrait,
 } from '@sharpee/world-model';
 import { actorConsultationId, exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer, type ActResult, type ActSlots } from '@sharpee/stdlib';
 import {
@@ -3451,6 +3453,7 @@ export class ChordRuntime {
           return next < sequence.steps.length && stepReady(sequence.steps[next], ctx.world, ctx.turn);
         },
         run: (ctx) => {
+          if (this.storyOver(ctx.world)) return [];
           const next = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
           ctx.world.setStateValue(key, next + 1);
           ctx.world.setStateValue(firedKey, ctx.turn);
@@ -3487,6 +3490,7 @@ export class ChordRuntime {
         id: `chord.story-turn.${clauseIndex}`,
         name: 'on every turn (story)',
         run: (ctx) => {
+          if (this.storyOver(ctx.world)) return [];
           const evalCtx: ExecContext = { world: ctx.world };
           if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
           const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -3511,6 +3515,7 @@ export class ChordRuntime {
           name: `on every turn (${trait.name})`,
           run: (ctx) => {
             const out: ISemanticEvent[] = [];
+            if (this.storyOver(ctx.world)) return out;
             for (const irEntity of this.ir.entities) {
               const comp = irEntity.traits.find((t) => t.name === trait.name);
               if (!comp) continue;
@@ -3577,6 +3582,20 @@ export class ChordRuntime {
   }
 
   /**
+   * Whether the story is over (GH #245 defect 2): an ending was triggered
+   * (`win`/`lose`) or the player is dead (`kill the player`). Every daemon
+   * body — entity, story and trait every-turn clauses, sequence steps —
+   * checks this before running, so nothing narrates after the turn that
+   * ended the game ("Sparks walk the waxed cord" after the blast).
+   */
+  private storyOver(world: WorldModel): boolean {
+    if (world.getStateValue(STORY_ENDING_FLAG) !== undefined) return true;
+    const player = world.getPlayer();
+    const health = player?.get(HealthTrait) as { dead?: boolean } | undefined;
+    return health?.dead === true;
+  }
+
+  /**
    * Run one entity every-turn clause (`on every turn while …[, once]` in a
    * create block) now, `it` = the owner — the one body its scheduler daemon
    * and the arrival reaction (GH #353) share, so a clause fired by either is
@@ -3599,6 +3618,7 @@ export class ChordRuntime {
    */
   private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, clauseIndex: number, world: WorldModel): ISemanticEvent[] {
     const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
+    if (this.storyOver(world)) return [];
     if (this.holdsPlayerRole(world, irEntity.id)) return [];
     const evalCtx: ExecContext = { world, it: irEntity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];

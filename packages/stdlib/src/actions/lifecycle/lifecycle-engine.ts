@@ -210,7 +210,7 @@ export function getLifecycleState(context: ActionContext): LifecycleState | unde
  * story-registered keys resolve as the author wrote them — and
  * `blockedMessageId` must never prefix it with the action id.
  */
-function vetoOf(result: { valid: boolean; error?: string; params?: Record<string, unknown> } | null): ValidationResult | null {
+export function vetoOf(result: { valid: boolean; error?: string; params?: Record<string, unknown> } | null): ValidationResult | null {
   if (result !== null && result.valid === false) {
     return { valid: false, error: result.error, errorQualified: true, params: result.params };
   }

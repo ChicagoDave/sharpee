@@ -409,6 +409,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'looking-in-container',
   'looking-on-supporter',
   'looking-examine-surroundings',
+  'looking-hidden-at',
   'looking-surface-contents',
   'looking-you-see',
   // if.action.lowering

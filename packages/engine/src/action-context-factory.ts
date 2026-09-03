@@ -2,7 +2,7 @@
  * Action Context Factory - Creates ActionContext for action execution
  */
 
-import { type ActionContext, type Action, type ScopeResolver, type ValidatedCommand, ScopeLevel, type ScopeCheckResult, ScopeErrors, type ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
+import { type ActionContext, type Action, type ScopeResolver, type ValidatedCommand, ScopeLevel, type ScopeCheckResult, ScopeErrors, type ImplicitTakeResult, takingAction, nounPhraseFor } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { type ISemanticEvent, createEvent as coreCreateEvent, type RandomService } from '@sharpee/core';
 import { type ISound } from '@sharpee/if-domain';
@@ -35,22 +35,27 @@ function getScopeError(
   required: ScopeLevel,
   actual: ScopeLevel,
   entity: IFEntity
-): { valid: false; error: string; params?: Record<string, any> } {
-  const params = { item: entity.name };
+): { valid: false; error: string; errorQualified: true; params?: Record<string, any> } {
+  // The `scope.*` keys are the shared namespace lang-en-us registers once
+  // (ADR-231 D1): fully-qualified, so `errorQualified` keeps blocked() from
+  // prefixing them into the action's namespace (GH #245: the closed-box
+  // deed rendered blank as `if.action.taking.scope.not_known`). The item
+  // rides as a noun phrase (ADR-158), exactly as stdlib's own copy sends it.
+  const params = { item: nounPhraseFor(entity) };
 
   if (actual === ScopeLevel.UNAWARE) {
-    return { valid: false, error: ScopeErrors.NOT_KNOWN, params };
+    return { valid: false, error: ScopeErrors.NOT_KNOWN, errorQualified: true, params };
   }
   if (required >= ScopeLevel.VISIBLE && actual < ScopeLevel.VISIBLE) {
-    return { valid: false, error: ScopeErrors.NOT_VISIBLE, params };
+    return { valid: false, error: ScopeErrors.NOT_VISIBLE, errorQualified: true, params };
   }
   if (required >= ScopeLevel.REACHABLE && actual < ScopeLevel.REACHABLE) {
-    return { valid: false, error: ScopeErrors.NOT_REACHABLE, params };
+    return { valid: false, error: ScopeErrors.NOT_REACHABLE, errorQualified: true, params };
   }
   if (required >= ScopeLevel.CARRIED && actual < ScopeLevel.CARRIED) {
-    return { valid: false, error: ScopeErrors.NOT_CARRIED, params };
+    return { valid: false, error: ScopeErrors.NOT_CARRIED, errorQualified: true, params };
   }
-  return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, params };
+  return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, errorQualified: true, params };
 }
 
 /**

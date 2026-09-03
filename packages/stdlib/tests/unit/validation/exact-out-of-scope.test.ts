@@ -111,6 +111,23 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
     expect(!result.success && result.error.code).toBe('ENTITY_NOT_FOUND');
   });
 
+  test('GH #245 (4): `x deed` with the deed shut in a box resolves the deed, not the in-scope "deed box"', () => {
+    const box = author.createEntity('deed box', EntityType.OBJECT);
+    box.add({ type: TraitType.IDENTITY, name: 'deed box', aliases: ['box'] });
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: false });
+    author.moveEntity(box.id, room.id);
+    const deed = author.createEntity('deed', EntityType.OBJECT);
+    deed.add({ type: TraitType.IDENTITY, name: 'deed' });
+    author.moveEntity(deed.id, box.id);
+
+    const result = validator.validate(commandFor('deed'));
+
+    expect(result.success).toBe(true);
+    expect(result.success && result.value.directObject?.entity.id).toBe(deed.id);
+    expect(result.success && (result.value.directObject as { exactOutOfScope?: boolean }).exactOutOfScope).toBe(true);
+  });
+
   test('with no thief anywhere, `x thief` still resolves the knife by its word', () => {
     const result = validator.validate(commandFor('thief'));
 

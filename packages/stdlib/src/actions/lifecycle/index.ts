@@ -28,7 +28,8 @@ export {
   runPostExecute,
   runPostReport,
   runOnBlocked,
-  blockedMessageId
+  blockedMessageId,
+  vetoOf
 } from './lifecycle-engine.js';
 
 export {

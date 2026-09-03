@@ -1424,6 +1424,20 @@ export declare function resolveLifecycle(context: ActionContext, descriptor: Act
  */
 export declare function getLifecycleState(context: ActionContext): LifecycleState | undefined;
 /**
+ * D1 veto test: a hook result acts iff it is non-null AND `valid === false`.
+ * Everything else — null, `{valid: true}`, any truthy shape — falls through.
+ *
+ * Every veto is marked `errorQualified: true` (ADR-231 D1): an
+ * interceptor-originated error key is a fully-qualified message id —
+ * story-registered keys resolve as the author wrote them — and
+ * `blockedMessageId` must never prefix it with the action id.
+ */
+export declare function vetoOf(result: {
+    valid: boolean;
+    error?: string;
+    params?: Record<string, unknown>;
+} | null): ValidationResult | null;
+/**
  * Resolve the message id for a blocked action (ADR-231 D1) — the ONE
  * place the qualification convention lives.
  *

@@ -25,6 +25,7 @@ export const lookingLanguage = {
     'in_container': "{You} {be} in {the container}.",
     'on_supporter': "{You} {be} on {the supporter}.",
     'examine_surroundings': "{name}\n{verbatim:description}",
+    'hidden_at': "({You're} hiding {verbatim:position} {the spot}.)",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
     'you_see': "{You} can {see} {items} here.",

@@ -406,6 +406,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'looking-in-container': 'if.action.looking.in_container',
   'looking-on-supporter': 'if.action.looking.on_supporter',
   'looking-examine-surroundings': 'if.action.looking.examine_surroundings',
+  'looking-hidden-at': 'if.action.looking.hidden_at',
   'looking-surface-contents': 'if.action.looking.surface_contents',
   'looking-you-see': 'if.action.looking.you_see',
   // if.action.lowering

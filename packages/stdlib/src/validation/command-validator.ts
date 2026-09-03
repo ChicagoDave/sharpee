@@ -779,9 +779,13 @@ export class CommandValidator implements CommandValidator {
     const exactOutOfScope = candidates.find(
       e => !inScopeIds.has(e.id) && this.matchEntityName(e, ref)?.tier === MATCH_TIER_EXACT
     );
+    // GH #245 (4): the in-scope competitor keeps the word only when the
+    // query's head is ITS head noun (the last word of its name or of an
+    // alias) — "stamp" for "rare stamp", never "deed" for "deed box".
     const head = (ref.head ?? '').toLowerCase();
+    const lastWord = (name: string): string => name.toLowerCase().trim().split(/\s+/).pop() ?? '';
     const headInAnInScopeName = entitiesInScope.some(e =>
-      this.getEntityName(e).toLowerCase().split(/\s+/).includes(head)
+      lastWord(this.getEntityName(e)) === head || this.getEntitySynonyms(e).some(a => lastWord(a) === head)
     );
     const bestInScopeTier = scoredMatches[0]?.tier ?? 0;
     if (exactOutOfScope && scoredMatches.length > 0 && bestInScopeTier < MATCH_TIER_EXACT && !headInAnInScopeName) {

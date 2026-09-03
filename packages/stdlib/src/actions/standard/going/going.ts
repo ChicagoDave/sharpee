@@ -48,7 +48,8 @@ import {
   runPostExecute,
   runPostReport,
   runOnBlocked,
-  blockedMessageId
+  blockedMessageId,
+  vetoOf
 } from '../../lifecycle/index.js';
 
 // Import our data builders
@@ -128,6 +129,26 @@ export function exitBlockedKey(roomId: string, direction: string): string {
 /** Key for the blocked exit's refusal message, resolved AT REFUSAL TIME. */
 export function exitMessageKey(roomId: string, direction: string): string {
   return `exit.message.${roomId}.${direction}`;
+}
+
+/**
+ * The door's authored opening refusal, if any (GH #245 defect 5): runs the
+ * door's `if.action.opening` interceptor's preValidate/postValidate hooks
+ * with the seed opening's lifecycle gives them and returns the first veto
+ * — so `north` at a jammed door reads the story's hint, not "is closed".
+ * No hook, no veto → null (the stock refusal stands). Nothing is opened.
+ */
+function doorOpeningVeto(context: ActionContext, door: IFEntity): ValidationResult | null {
+  const interceptor = context.world.getInterceptorForAction(door, IFActions.OPENING)?.interceptor;
+  if (!interceptor) return null;
+  const data: Record<string, unknown> = { targetId: door.id, targetName: door.name };
+  const pre = interceptor.preValidate
+    ? vetoOf(interceptor.preValidate(door, context.world, context.actor.id, data, context.random))
+    : null;
+  if (pre) return pre;
+  return interceptor.postValidate
+    ? vetoOf(interceptor.postValidate(door, context.world, context.actor.id, data, context.random))
+    : null;
 }
 
 /**
@@ -342,6 +363,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         }
 
         if (isClosed) {
+          // GH #245 (5): the natural command surfaces the door's authored
+          // opening refusal — the story's `on the player opening … refuse`
+          // hint — instead of the stock line, by consulting the door's
+          // opening interceptor's validation vetoes (no implicit opening).
+          const doorVeto = doorOpeningVeto(context, door);
+          if (doorVeto) return doorVeto;
           return {
             valid: false,
             error: GoingMessages.DOOR_CLOSED,

@@ -19,6 +19,11 @@ story
     phrase distant-bell
   end on
 
+  on every turn while Smoke is fed and Smoke is not here
+    move Smoke here
+    phrase smoke-follows
+  end on
+
 ## The estate exterior — the night begins here.
 
 create the Grounds
@@ -455,6 +460,7 @@ create the kipper
 
 create the garden shears
   aka shears
+  plural
   in the Kitchen
 
   Long-bladed garden shears, oiled and sharp — Tobias's pride, judging
@@ -478,13 +484,21 @@ create the vine
   pipes: barely more than a seedling now, twenty years after the
   frost that should have killed it.
 
+  phrase detail while the vine is flowering:
+    Since the pipes warmed it has thrown a spray of hurried white
+    flowers along every cane.
+
+  phrase detail while the vine is fruiting:
+    Its one heavy fruit has come and gone; the pruned canes lie
+    quiet against the glass.
+
   after the player pruning while the vine is fruiting, once
     award fruited
   end after
 
 create Smoke
   aka cat, grey cat
-  a person, follower
+  a person, proper
   feedable with food the kipper
   in the Pantry
 
@@ -1055,6 +1069,10 @@ end phrase
 define phrase poker-hot
   The poker has been drinking the furnace's heat — it would take the
   skin off your palm.
+end phrase
+
+define phrase smoke-follows
+  Smoke pads after you, unhurried, as if it were her own idea.
 end phrase
 
 define phrase smoke-nose

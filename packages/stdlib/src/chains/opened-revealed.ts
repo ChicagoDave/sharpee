@@ -15,6 +15,7 @@
 import { type ISemanticEvent } from '@sharpee/core';
 import { type IWorldModel, TraitType } from '@sharpee/world-model';
 import { RevealedEventData } from '../actions/standard/opening/opening-events.js';
+import { nounPhraseFor } from '../utils/index.js';
 
 /**
  * Key for this chain - allows stories to replace the stdlib behavior
@@ -57,7 +58,15 @@ export function createOpenedRevealedChain() {
     }
 
     // Build the revealed event data
-    const revealedData: RevealedEventData = {
+    const revealedData: RevealedEventData & { messageId: string; params: Record<string, unknown> } = {
+      // GH #245 (text): the reveal renders through looking's container line
+      // with noun phrases (ADR-158/192), so items carry their articles —
+      // "In the deed box you see a deed.", never "you see deed".
+      messageId: 'if.action.looking.container_contents',
+      params: {
+        container: nounPhraseFor(target),
+        items: { kind: 'list' as const, conj: 'and' as const, items: contents.map(item => nounPhraseFor(item)) }
+      },
       containerId: targetId,
       containerName: targetName || target.name || 'container',
       items: contents.map(item => ({

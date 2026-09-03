@@ -11,7 +11,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, RoomBehavior } from '@sharpee/world-model';
+import { TraitType, RoomBehavior, ConcealedStateTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { captureRoomSnapshot } from '../../base/snapshot-utils.js';
@@ -90,7 +90,8 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     'nothing_special',
     'in_container',
     'on_supporter',
-    'examine_surroundings'
+    'examine_surroundings',
+    'hidden_at'
   ],
   
   validate(context: ActionContext): ValidationResult {
@@ -169,6 +170,20 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Emit messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
     events.push(...containedListingEvents(context, openContainerContents ?? [], context.action.id));
+
+    // GH #245 (6): a hidden player sees their own concealment — the one
+    // observable a hiding spot has when nothing is there to be hidden from.
+    const concealed = context.actor.get(ConcealedStateTrait.type) as ConcealedStateTrait | undefined;
+    if (concealed) {
+      const spot = context.world.getEntity(concealed.targetId);
+      events.push(context.event('if.event.hiding_noted', {
+        messageId: `${context.action.id}.${LookingMessages.HIDDEN_AT}`,
+        params: { position: concealed.position, spot: spot ? nounPhraseFor(spot) : { name: 'cover' } },
+        spotId: concealed.targetId,
+        position: concealed.position,
+        actorId: context.actor.id
+      }));
+    }
 
     return events;
   },
