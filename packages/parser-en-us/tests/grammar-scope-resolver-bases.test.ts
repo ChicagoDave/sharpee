@@ -146,3 +146,36 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
     expect(GrammarScopeResolver.getEntitiesInScope(constraint('touchable'), bare as GrammarContext)).toEqual([]);
   });
 });
+
+describe('GH #312: the parse-time bases include the actor', () => {
+  let world: WorldModel;
+  let player: IFEntity;
+  let context: GrammarContext;
+
+  beforeEach(() => {
+    world = new WorldModel();
+    const room = world.createEntity('Room', 'room');
+    room.add(new RoomTrait());
+    room.add(new ContainerTrait());
+    player = world.createEntity('Player', 'actor');
+    player.add(new ActorTrait());
+    player.add(new ContainerTrait());
+    world.moveEntity(player.id, room.id);
+    world.setPlayer(player.id);
+    context = { world, actorId: player.id, currentLocation: room.id } as unknown as GrammarContext;
+  });
+
+  it('`visible` and `touchable` both contain the actor, while the world enumerations still list others only', () => {
+    const visible = GrammarScopeResolver.getEntitiesInScope(constraint('visible'), context).map((e) => e.id);
+    const touchable = GrammarScopeResolver.getEntitiesInScope(constraint('touchable'), context).map((e) => e.id);
+    expect(visible).toContain(player.id);
+    expect(touchable).toContain(player.id);
+    expect(world.getVisible(player.id).map((e) => e.id)).not.toContain(player.id);
+    expect(world.getReachable(player.id).map((e) => e.id)).not.toContain(player.id);
+  });
+
+  it('adds the actor once', () => {
+    const touchable = GrammarScopeResolver.getEntitiesInScope(constraint('touchable'), context);
+    expect(touchable.filter((e) => e.id === player.id)).toHaveLength(1);
+  });
+});

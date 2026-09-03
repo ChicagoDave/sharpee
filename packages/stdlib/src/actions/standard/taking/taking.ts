@@ -333,10 +333,17 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     'nothing_to_take'
   ],
 
+  // GH #313: the target resolves at VISIBLE so a visible-but-unreachable
+  // item (another actor's inventory without OpenInventoryTrait, a closed
+  // glass case) reaches validate — an authored refusal fires there through
+  // preValidate, and absent one, this action's own not-reachable refusal
+  // speaks (requireScope REACHABLE in validateSingleEntity). preferredScope
+  // keeps disambiguation choosing the reachable candidate.
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.REACHABLE
+    directObjectScope: ScopeLevel.VISIBLE,
+    preferredScope: ScopeLevel.REACHABLE
   },
 
   validate(context: ActionContext): ValidationResult {

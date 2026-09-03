@@ -143,28 +143,41 @@ export class GrammarScopeResolver {
   }
 
   /**
-   * Get physically visible entities (world.getVisible → VisibilityBehavior)
+   * Get physically visible entities (world.getVisible → VisibilityBehavior),
+   * plus the actor themself — you can always see yourself (GH #312: parity
+   * with the command validator, where the player is resolvable at every
+   * tier, ISSUE #154). The world's enumeration deliberately lists OTHERS
+   * (it feeds "all" expansions); the parse-time base adds the actor here.
    */
   private static getVisibleEntities(context: GrammarContext): IEntity[] {
     if (typeof context.world?.getVisible !== 'function') {
       this.warnDegraded('visible', 'world.getVisible unavailable');
       return [];
     }
-    return context.world.getVisible(context.actorId);
+    return this.withActor(context.world.getVisible(context.actorId), context);
   }
 
   /**
    * Get physically reachable entities (world.getReachable →
    * ReachabilityBehavior, ADR-273 D4: sight precondition, closed containers
    * block transparent or not, another actor's inventory needs
-   * OpenInventoryTrait)
+   * OpenInventoryTrait), plus the actor themself — you can always reach
+   * yourself (GH #312: `kick me` under `must be reachable` resolves the way
+   * stdlib's `attack me` does).
    */
   private static getTouchableEntities(context: GrammarContext): IEntity[] {
     if (typeof context.world?.getReachable !== 'function') {
       this.warnDegraded('touchable', 'world.getReachable unavailable');
       return [];
     }
-    return context.world.getReachable(context.actorId);
+    return this.withActor(context.world.getReachable(context.actorId), context);
+  }
+
+  /** The base set with the acting entity added (once), when the world knows it. */
+  private static withActor(entities: IEntity[], context: GrammarContext): IEntity[] {
+    if (entities.some((e) => e.id === context.actorId)) return entities;
+    const actor = typeof context.world?.getEntity === 'function' ? context.world.getEntity(context.actorId) : undefined;
+    return actor ? [...entities, actor] : entities;
   }
 
   /**

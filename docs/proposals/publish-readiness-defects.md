@@ -6,6 +6,7 @@
 **Phase 2 landed (2026-09-03, session effb6f)** — P-1, P-2, P-3, P-9, P-10, P-12 DONE (#327, #326, #331, #329, #334, #325 closed with evidence); Phase 1's three ADR amendments are DRAFT awaiting David, so P-11/P-21/P-29 stay PROPOSED. **Now 34 PLANNED, 7 DONE, 3 PROPOSED.**
 **Phase 3 landed (2026-09-03, session effb6f)** — P-4, P-5, P-6, P-13, P-14 (as built), P-15 DONE (#336, #335, #337, #324, #286, #285 closed). **Now 28 PLANNED, 13 DONE, 3 PROPOSED.**
 **Phase 4 landed (2026-09-03, session effb6f)** — P-7, P-8 DONE (#330, #345 closed; ADR-325 Z6 amendment DRAFT). **Now 26 PLANNED, 15 DONE, 3 PROPOSED.**
+**Phase 5 landed (2026-09-03, session effb6f)** — P-16, P-18 DONE (#312, #313 closed). **Now 24 PLANNED, 17 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -91,7 +92,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-16: A `must be reachable` action slot cannot resolve the player (#312)
 - **Done when**: `kick me` / `kick myself` resolve under a reachable constraint the way stdlib's `attack me` already does.
 - **Review note (2026-09-03, session 639650)**: was `docs/work/backlog-tier1-2-platform/plan.md` Phase 5 (with P-18); folded into the publish-readiness plan on David's ruling.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 5; #312 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-17: The dialogue analyzer admits dialogue-only forms outside dialogue dispatch, and the acting statement rejects the shape it names (#349, #351)
 - **Issue text**: `is concluded` in an every-turn clause and `leave` in a floor-turn beat pass `compose --check` and throw at runtime; `<npc> talks to <target>` fails `act-slot-shape` against `talk to|with :target`.
@@ -103,7 +104,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-18: NPC-carried items are invisible to the player (#313)
 - **Done when**: an item an on-stage NPC carries is visible — in scope for `examine`, and for `take` far enough to reach the action's validate so the author's refusal arms fire (concealed items excepted); reachability stays ADR-273 D4's rule — another actor's inventory is blocked unless `OpenInventoryTrait` — and the story opts in with a Chord spelling the plan names (the `carries` line implying it, or an explicit line), so `take` succeeds only where the author allowed it.
 - **Review note (2026-09-03, session 639650)**: the first wording put NPC-carried items in `take` scope outright, reversing ADR-273 D4 (ruled 2026-07-25, built in `ReachabilityBehavior.ts`) without saying so; reworded to the opt-in path per the review's recommendation — the ADR is unchanged. Was `backlog-tier1-2-platform` Phases 4–5; folded into the publish-readiness plan on David's ruling.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8; reworded 2026-09-03, session 639650))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 5; #313 closed; `open-inventory` is the opt-in spelling); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8; reworded 2026-09-03, session 639650))
 
 ### P-19: No bare `take X from Y` shape; `remove … from` re-wears a wearable (#314)
 - **Done when**: `take cap from satchel` works without a tool; `remove cap from satchel` leaves the cap carried, not worn.

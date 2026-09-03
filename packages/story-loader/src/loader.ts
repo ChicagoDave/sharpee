@@ -113,6 +113,7 @@ import {
   CombatantTrait,
   ConcealmentTrait,
   ContainerTrait,
+  OpenInventoryTrait,
   HealthTrait,
   AuthorModel,
   CuttableTrait,
@@ -2163,6 +2164,14 @@ export class ChordStory implements Story {
         case 'pullable':
           if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
           break;
+        case 'open-inventory': {
+          // GH #313 (2026-09-03): the ADR-273 D4 opt-in — what this holder
+          // carries is reachable by others, not merely visible. `carries`
+          // alone stays placement (the IF convention: you can see the
+          // thief's knife, not grab it).
+          entity.add(new OpenInventoryTrait());
+          break;
+        }
         case 'concealed': {
           // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
           // view until searching reveals it (IdentityTrait.concealed).

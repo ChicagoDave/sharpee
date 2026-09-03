@@ -188,3 +188,5 @@ verifying stdlib's `ScopeResolver.canReach` already holds the platform's one rea
 implementation and spotting the sibling-op asymmetry (its `canSee` delegates to world-model; its
 `canReach` never graduated). **Q-2: the `define action` page via ADR-272** — folded as D5; ADR-272
 inherits the one-line semantics obligation.
+
+**D2 addendum (2026-09-03, GH #312, publish-readiness plan Phase 5).** The parse-time `visible` and `touchable` bases include the acting entity — you can always see and reach yourself — added by the grammar scope resolver (`withActor`), not by `world.getVisible`/`getReachable`, which enumerate *others* and feed "all" expansions. This is parity with the command validator, where the player is resolvable at every tier (ISSUE #154), so a `must be reachable` slot binds `me`/`myself`/`self` exactly as stdlib's `attack me` does. D4's reachability rules are untouched; GH #313 opted a holder's inventory in through the Chord `open-inventory` trait adjective (`OpenInventoryTrait`), with `taking` resolving at VISIBLE so its validate — and an author's refusal — is reached.

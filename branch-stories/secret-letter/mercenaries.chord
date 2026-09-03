@@ -312,14 +312,16 @@ end trait
 ## anything else falls to the platform's own can't-do-that line rather than
 ## the source's attack response — the one divergence, noted here.
 ##
-## No `must be reachable` line, deliberately: that constraint's scope drops
-## the player, and `kick me` (`story.ni:559`) has to parse. Kicking something
-## out of reach falls to the same can't-do-that line.
+## `the target must be reachable` is back (GH #312, fixed 2026-09-03): the
+## reachable scope now includes the player, so `kick me` (`story.ni:559`)
+## parses under the constraint, and kicking something out of reach gets the
+## platform's reach refusal.
 ## ---------------------------------------------------------------------------
 
 define action kicking
   grammar
     kick the target
+  the target must be reachable
 
 ## The kick-specific break-free (`story.ni:2184-2185`): the source forces the
 ## shin line when the verb is kick, where a plain attack rolls the
