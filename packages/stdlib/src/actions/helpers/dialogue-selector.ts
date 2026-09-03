@@ -31,9 +31,10 @@
  *   no-target path standing.
  *
  * Public interface: consultDialogueSelector, exchangeGrips, threadGrips,
- *   resolveImplicitThreadPartner, runConversationScene,
- *   resolveSceneIntrusion, isExchangeGripped, markExchangeGripped,
- *   isThreadGripped, markThreadGripped.
+ *   resolveImplicitThreadPartner, resolveOpenExchangeSpeaker,
+ *   runConversationScene, closeConversationScene, resolveSceneIntrusion,
+ *   isExchangeGripped, markExchangeGripped, isThreadGripped,
+ *   markThreadGripped.
  * Owner context: stdlib / actions / helpers
  */
 
@@ -174,6 +175,44 @@ export function resolveImplicitThreadPartner(context: ActionContext): IFEntity |
     if (threadGrips(context, entity, { type: 'talk-to' })) return entity;
   }
   return undefined;
+}
+
+/**
+ * The questioner of the open exchange in the actor's live scene (GH #346):
+ * an exchange targets the player, so the player holds at most one, and an
+ * `answer`/`say` with no addressee goes to its speaker.
+ *
+ * @param context - The action context (provides world and actor)
+ * @returns The exchange's speaker, or `undefined` when no exchange is open
+ */
+export function resolveOpenExchangeSpeaker(context: ActionContext): IFEntity | undefined {
+  const scene = sceneWith(context.world, context.actor.id);
+  const speakerId = scene?.openExchange?.speakerId;
+  return speakerId ? context.world.getEntity(speakerId) : undefined;
+}
+
+/**
+ * Close the actor's live scene on the actor's own initiative (GH #300):
+ * the `exit` boundary with the actor as leaver, through the registered
+ * runtime — parked threads render their `on parting` line exactly as on
+ * every other close path (ADR-320 D10a). No runtime, no scene: nothing.
+ *
+ * @param context - The action context
+ * @param sceneId - The scene to close
+ * @param leaverId - Who is leaving it
+ * @returns Semantic events for the close, parting lines included
+ */
+export function closeConversationScene(
+  context: ActionContext,
+  sceneId: string,
+  leaverId: string,
+): ISemanticEvent[] {
+  const runtime = context.world.getSceneRuntime();
+  if (!runtime) return [];
+  return toSceneEvents(
+    context,
+    runtime.applyDirectives(sceneId, [{ kind: 'close-scene', boundary: 'exit', leaverId }]),
+  );
 }
 
 /**

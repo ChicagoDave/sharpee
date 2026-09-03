@@ -26,6 +26,16 @@ export class DiggableBehavior extends Behavior {
   }
 
   /**
+   * The declared tools that dig this entity, in declaration order —
+   * empty when it needs none. The implicit-instrument resolution (GH
+   * #241) reads this to find a held tool the player did not name.
+   */
+  static requiredTools(entity: IFEntity): EntityId[] {
+    const diggable = DiggableBehavior.require<DiggableTrait>(entity, TraitType.DIGGABLE);
+    return [...(diggable.toolId ? [diggable.toolId] : []), ...(diggable.toolIds ?? [])];
+  }
+
+  /**
    * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
    */
   static canDigWith(entity: IFEntity, toolId: EntityId): boolean {

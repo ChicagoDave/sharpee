@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
-import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait, IFEntity } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 
@@ -210,43 +210,7 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
   );
 
   // Build container/supporter contents info for separate rendering
-  const openContainerContents: ContainerContentsInfo[] = [];
-
-  // Check each container for visible contents
-  for (const container of containers) {
-    // Skip if container is closed
-    if (container.hasTrait(TraitType.OPENABLE)) {
-      const { OpenableBehavior } = require('@sharpee/world-model');
-      if (!OpenableBehavior.isOpen(container)) continue;
-    }
-
-    // Shared visibility read: a still-concealed item stays out of the listing
-    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
-    if (contents.length > 0) {
-      openContainerContents.push({
-        containerId: container.id,
-        containerName: container.name,
-        preposition: 'in',
-        itemIds: contents.map(e => e.id),
-        itemNames: contents.map(e => e.name)
-      });
-    }
-  }
-
-  // Check each supporter for visible contents
-  for (const supporter of supporters) {
-    // Shared visibility read: a still-concealed item stays out of the listing
-    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
-    if (contents.length > 0) {
-      openContainerContents.push({
-        containerId: supporter.id,
-        containerName: supporter.name,
-        preposition: 'on',
-        itemIds: contents.map(e => e.id),
-        itemNames: contents.map(e => e.name)
-      });
-    }
-  }
+  const openContainerContents = collectContainedListings(context, containers, supporters);
 
   return {
     // New atomic structure (full snapshots)
@@ -268,6 +232,62 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
     timestamp: Date.now()
   };
 };
+
+/**
+ * The open containers' and supporters' visible contents, one listing per
+ * holder, for the "In the box you see …" / "On the table you see …"
+ * lines. Shared by the explicit look and the arrival description (GH
+ * #338): both paths must enumerate the same holders, scenery supporters
+ * included, so the two descriptions of a room never disagree.
+ *
+ * @param context action context (world reads)
+ * @param containers the room's direct containers (actors excluded)
+ * @param supporters the room's direct supporters (containers excluded)
+ * @returns listings for every holder with at least one visible item
+ */
+export function collectContainedListings(
+  context: ActionContext,
+  containers: IFEntity[],
+  supporters: IFEntity[]
+): ContainerContentsInfo[] {
+  const listings: ContainerContentsInfo[] = [];
+
+  for (const container of containers) {
+    // Skip if container is closed
+    if (container.hasTrait(TraitType.OPENABLE)) {
+      const { OpenableBehavior } = require('@sharpee/world-model');
+      if (!OpenableBehavior.isOpen(container)) continue;
+    }
+
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
+    if (contents.length > 0) {
+      listings.push({
+        containerId: container.id,
+        containerName: container.name,
+        preposition: 'in',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
+
+  for (const supporter of supporters) {
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
+    if (contents.length > 0) {
+      listings.push({
+        containerId: supporter.id,
+        containerName: supporter.name,
+        preposition: 'on',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
+
+  return listings;
+}
 
 /**
  * Determine the appropriate message ID and parameters for looking

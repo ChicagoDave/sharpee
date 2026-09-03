@@ -1525,6 +1525,16 @@ export declare class GameEngine {
      * @returns The input to run: spliced, or as given
      */
     private spliceHeldCommand;
+    /**
+     * GH #346: while the player's live conversation scene holds an open
+     * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
+     * to it first and runs as an answer; input the exchange does not claim
+     * runs unchanged — the innermost open question gets the first offer.
+     *
+     * @param input - The raw input for this turn
+     * @returns `answer <input>` when the open exchange claims it, else the input
+     */
+    private offerToOpenExchange;
     executeTurn(input: string): Promise<TurnResult>;
     /**
      * Execute a meta-command (VERSION, SCORE, HELP, etc.)

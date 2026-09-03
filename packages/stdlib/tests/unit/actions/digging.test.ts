@@ -1,7 +1,7 @@
 /**
- * Cutting action — ADR-230 D3c pinning tests.
+ * Digging action — tool gate (mirrors cutting, ADR-230 D3c) pinning tests.
  *
- * The action performs NO mutation of its own: the cut outcome is the
+ * The action performs NO mutation of its own: the dig outcome is the
  * entity's registered implementation on one of two surfaces (dual-surface
  * re-pin 2026-07-17) — an ADR-090 capability behavior (TS authors) or an
  * ADR-228 interceptor whose postExecute owns the mutation (Chord authors).
@@ -13,7 +13,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { cuttingAction } from '../../../src/actions/standard/cutting';
+import { diggingAction } from '../../../src/actions/standard/digging';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
 import {
@@ -24,22 +24,22 @@ import {
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
-const CUT_FLAG = 'test.rope_cut';
+const DUG_FLAG = 'test.earth_dug';
 
 /** Test-only capability trait: a real class so findTraitWithCapability
  *  can read the constructor's static capabilities (ADR-090). */
-class SeverableTrait {
-  static readonly type = 'test.trait.severable';
-  static readonly capabilities = [IFActions.CUTTING];
-  readonly type = SeverableTrait.type;
+class ExcavableTrait {
+  static readonly type = 'test.trait.excavable';
+  static readonly capabilities = [IFActions.DIGGING];
+  readonly type = ExcavableTrait.type;
 }
 
 const setup = (opts: { toolRequired?: boolean } = {}) => {
   const { world, player, room } = setupBasicWorld();
-  const knife = world.createEntity('sharp knife', 'object');
-  const rope = world.createEntity('thick rope', 'object');
+  const knife = world.createEntity('iron spade', 'object');
+  const rope = world.createEntity('loose earth', 'object');
   rope.add({
-    type: TraitType.CUTTABLE,
+    type: TraitType.DIGGABLE,
     ...(opts.toolRequired ? { toolId: knife.id } : {})
   } as any);
   // Inert marker trait — the target-side registration key.
@@ -49,40 +49,40 @@ const setup = (opts: { toolRequired?: boolean } = {}) => {
   return { world, player, room, rope, knife };
 };
 
-/** Registers an interceptor-surface implementation: postExecute owns the cut. */
+/** Registers an interceptor-surface implementation: postExecute owns the dig. */
 const implementViaInterceptor = (world: WorldModel) => {
-  world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.CUTTING, {
+  world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DIGGING, {
     postExecute(_entity: any, w: any) {
-      w.setStateValue(CUT_FLAG, true);
+      w.setStateValue(DUG_FLAG, true);
     },
     postReport() {
-      return { override: { messageId: 'test.rope.severed' } };
+      return { override: { messageId: 'test.earth.dug' } };
     },
   });
 };
 
 const drive = (world: WorldModel, rope: any, tool?: any) => {
   const context = createRealTestContext(
-    cuttingAction,
+    diggingAction,
     world,
-    createCommand(IFActions.CUTTING, {
+    createCommand(IFActions.DIGGING, {
       entity: rope,
       ...(tool ? { secondEntity: tool, preposition: 'with' } : {})
     })
   );
-  const validation = cuttingAction.validate(context);
+  const validation = diggingAction.validate(context);
   // Mirror the engine contract: validationResult is attached to the
   // context before execute/report (enhanced-types.ts).
   (context as any).validationResult = validation;
   if (!validation.valid) {
-    return { context, validation, events: cuttingAction.blocked(context, validation) };
+    return { context, validation, events: diggingAction.blocked(context, validation) };
   }
-  cuttingAction.execute(context);
-  return { context, validation, events: cuttingAction.report(context) };
+  diggingAction.execute(context);
+  return { context, validation, events: diggingAction.report(context) };
 };
 
-describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
-  test('non-cuttable target refuses with not_cuttable — no state change', () => {
+describe('Digging eligibility and tool requirement (tool gate (mirrors cutting, ADR-230 D3c))', () => {
+  test('non-diggable target refuses with not_diggable — no state change', () => {
     const { world, player } = setup();
     const stone = world.createEntity('grey stone', 'object');
     world.moveEntity(stone.id, player.id);
@@ -91,8 +91,8 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
     const { validation } = drive(world, stone);
 
     expect(validation.valid).toBe(false);
-    expect(validation.error).toBe('not_cuttable');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect(validation.error).toBe('not_diggable');
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 
   test('GH #241: requirement + no tool named, the declared tool in hand — cuts by implicit instrument', () => {
@@ -103,7 +103,7 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
 
     expect(validation.valid).toBe(true);
     expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(knife.id);
-    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBe(true);
   });
 
   test('GH #241: requirement + no tool named, the declared tool not held — refuses with needs_tool naming it, no state change', () => {
@@ -115,8 +115,8 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('needs_tool');
-    expect((validation.params?.tool as { name?: string })?.name).toBe('sharp knife');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect((validation.params?.tool as { name?: string })?.name).toBe('iron spade');
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 
   test('wrong tool refuses with wrong_tool — no state change', () => {
@@ -129,7 +129,7 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('wrong_tool');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 
   test('tool not held refuses with tool_not_held — no state change', () => {
@@ -141,23 +141,23 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('tool_not_held');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 
-  test('cuttable with NO implementation refuses with cant_cut (runtime safety net)', () => {
+  test('diggable with NO implementation refuses with cant_dig (runtime safety net)', () => {
     const { world, rope, knife } = setup({ toolRequired: true });
     // no interceptor, no capability behavior
 
     const { validation, events } = drive(world, rope, knife);
 
     expect(validation.valid).toBe(false);
-    expect(validation.error).toBe('cant_cut');
-    expect(events.some((e) => e.type === 'if.event.cut_blocked')).toBe(true);
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect(validation.error).toBe('cant_dig');
+    expect(events.some((e) => e.type === 'if.event.dug_blocked')).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 });
 
-describe('Cutting implementation surfaces (dual-surface re-pin)', () => {
+describe('Digging implementation surfaces (dual-surface re-pin)', () => {
   test('interceptor surface: postExecute owns the mutation, postReport overrides the message', () => {
     const { world, rope, knife } = setup({ toolRequired: true });
     implementViaInterceptor(world);
@@ -166,26 +166,26 @@ describe('Cutting implementation surfaces (dual-surface re-pin)', () => {
 
     expect(validation.valid).toBe(true);
     // THE state assertion: the implementation's mutation actually landed.
-    expect(world.getStateValue(CUT_FLAG)).toBe(true);
-    const cut = events.find((e) => e.type === 'if.event.cut')!;
-    expect((cut.data as any).messageId).toBe('test.rope.severed');
+    expect(world.getStateValue(DUG_FLAG)).toBe(true);
+    const dug = events.find((e) => e.type === 'if.event.dug')!;
+    expect((dug.data as any).messageId).toBe('test.earth.dug');
   });
 
-  test('capability surface: behavior validate/execute/report drive the cut', () => {
+  test('capability surface: behavior validate/execute/report drive the dig', () => {
     const { world, rope, knife } = setup({ toolRequired: true });
     // A trait CLASS claiming the capability (findTraitWithCapability reads
     // the constructor's static capabilities) + a registered behavior (ADR-090).
-    rope.add(new SeverableTrait() as any);
-    world.registerCapabilityBehavior(SeverableTrait.type, IFActions.CUTTING, {
+    rope.add(new ExcavableTrait() as any);
+    world.registerCapabilityBehavior(ExcavableTrait.type, IFActions.DIGGING, {
       validate() {
         return { valid: true };
       },
       execute(_entity: any, w: any) {
-        w.setStateValue(CUT_FLAG, true);
+        w.setStateValue(DUG_FLAG, true);
       },
       report() {
         return [
-          { type: 'if.event.cut', payload: { messageId: 'test.rope.fully_qualified_cut' } }
+          { type: 'if.event.dug', payload: { messageId: 'test.earth.fully_qualified_dug' } }
         ];
       },
       blocked() {
@@ -197,16 +197,16 @@ describe('Cutting implementation surfaces (dual-surface re-pin)', () => {
 
     expect(validation.valid).toBe(true);
     // THE state assertion: the behavior's mutation landed.
-    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBe(true);
     // Effects pass through unchanged — fully-qualified ids required.
-    const cut = events.find((e) => e.type === 'if.event.cut')!;
-    expect((cut.data as any).messageId).toBe('test.rope.fully_qualified_cut');
+    const dug = events.find((e) => e.type === 'if.event.dug')!;
+    expect((dug.data as any).messageId).toBe('test.earth.fully_qualified_dug');
   });
 
   test('capability behavior validate failure blocks with its error — no state change', () => {
     const { world, rope, knife } = setup({ toolRequired: true });
-    rope.add(new SeverableTrait() as any);
-    world.registerCapabilityBehavior(SeverableTrait.type, IFActions.CUTTING, {
+    rope.add(new ExcavableTrait() as any);
+    world.registerCapabilityBehavior(ExcavableTrait.type, IFActions.DIGGING, {
       validate() {
         return { valid: false, error: 'test.rope.too_taut' };
       },
@@ -223,11 +223,11 @@ describe('Cutting implementation surfaces (dual-surface re-pin)', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('test.rope.too_taut');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
   });
 });
 
-describe('Tool slot (ADR-230 D3c, R2 template)', () => {
+describe('Tool slot (tool gate (mirrors cutting, ADR-230 D3c), R2 template)', () => {
   test('explicit tool is consulted after the target, with seeded context, on a real cut', () => {
     const { world, rope, knife } = setup({ toolRequired: true });
     implementViaInterceptor(world);
@@ -235,7 +235,7 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
     knife.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
 
     const fired: string[] = [];
-    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.CUTTING, {
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.DIGGING, {
       postExecute(entity: any, _w: any, _a: any, data: any) {
         fired.push('tool');
         expect(entity.id).toBe(knife.id);
@@ -243,12 +243,12 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
       },
     });
     // The target-side implementation interceptor also records its firing.
-    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.CUTTING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DIGGING, {
       postExecute(entity: any, w: any, _a: any, data: any) {
         fired.push('target');
         expect(entity.id).toBe(rope.id);
         expect(data.toolId).toBe(knife.id); // symmetric seedData
-        w.setStateValue(CUT_FLAG, true);
+        w.setStateValue(DUG_FLAG, true);
       },
     });
 
@@ -256,7 +256,7 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
 
     // Published order (D3-B): target first, tool second.
     expect(fired).toEqual(['target', 'tool']);
-    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBe(true);
   });
 
   test('a tool-side preValidate veto blocks the cut — no state change', () => {
@@ -264,7 +264,7 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
     implementViaInterceptor(world);
     // Inert marker trait (second, distinct) — the tool-slot registration key.
     knife.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
-    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.CUTTING, {
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.DIGGING, {
       preValidate() {
         return { valid: false, error: 'test.knife_is_dull' };
       },
@@ -274,20 +274,20 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('test.knife_is_dull');
-    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
-    expect(events.some((e) => e.type === 'if.event.cut_blocked')).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBeUndefined();
+    expect(events.some((e) => e.type === 'if.event.dug_blocked')).toBe(true);
   });
 
   test('no tool named: the tool slot is not consulted', () => {
     const { world, player, rope } = setup(); // no requirement — CUT ROPE is valid bare
     implementViaInterceptor(world);
-    const knife = world.createEntity('sharp knife', 'object');
+    const knife = world.createEntity('iron spade', 'object');
     // Inert marker trait (second, distinct) — the tool-slot registration key.
     knife.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
     world.moveEntity(knife.id, player.id);
 
     let toolConsulted = false;
-    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.CUTTING, {
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.DIGGING, {
       preValidate() {
         toolConsulted = true;
         return null;
@@ -298,6 +298,6 @@ describe('Tool slot (ADR-230 D3c, R2 template)', () => {
 
     expect(validation.valid).toBe(true);
     expect(toolConsulted).toBe(false);
-    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+    expect(world.getStateValue(DUG_FLAG)).toBe(true);
   });
 });

@@ -291,6 +291,7 @@ export declare const IFActions: {
     readonly ASKING: "if.action.asking";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
+    readonly SAYING_GOODBYE: "if.action.saying_goodbye";
     readonly WEARING: "if.action.wearing";
     readonly TAKING_OFF: "if.action.taking_off";
     readonly EATING: "if.action.eating";
@@ -566,6 +567,7 @@ export * from './talking.js';
 export * from './asking.js';
 export * from './telling.js';
 export * from './answering.js';
+export * from './saying-goodbye.js';
 export * from './throwing.js';
 export * from './eating.js';
 export * from './drinking.js';
@@ -591,18 +593,18 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        room_description: string;
-        room_description_brief: string;
-        in_container: string;
-        on_supporter: string;
-        examine_surroundings: string;
-        room_dark: string;
-        exits: string;
-        you_see: string;
-        contents_list: string;
-        nothing_special: string;
-        container_contents: string;
-        surface_contents: string;
+        no_target: string;
+        not_openable: string;
+        already_open: string;
+        locked: string;
+        opened: string;
+        revealing: string;
+        its_empty: string;
+        cant_reach: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
     };
     help: {
         description: string;
@@ -643,6 +645,28 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        room_description_brief: string;
+        in_container: string;
+        on_supporter: string;
+        examine_surroundings: string;
+        room_dark: string;
+        exits: string;
+        you_see: string;
+        contents_list: string;
+        nothing_special: string;
+        container_contents: string;
+        surface_contents: string;
     };
     help: {
         description: string;
@@ -737,27 +761,6 @@ export declare const standardActionLanguage: ({
         departs: string;
         arrives: string;
         cant_go: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_openable: string;
-        already_open: string;
-        locked: string;
-        opened: string;
-        revealing: string;
-        its_empty: string;
-        cant_reach: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
     };
     help: {
         description: string;
@@ -921,6 +924,7 @@ export declare const standardActionLanguage: ({
         not_cuttable: string;
         cant_cut: string;
         no_tool: string;
+        needs_tool: string;
         tool_not_held: string;
         wrong_tool: string;
         cut: string;
@@ -938,6 +942,7 @@ export declare const standardActionLanguage: ({
         not_diggable: string;
         cant_dig: string;
         no_tool: string;
+        needs_tool: string;
         tool_not_held: string;
         wrong_tool: string;
         dug: string;
@@ -1412,19 +1417,22 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_question: string;
-        no_one_asked: string;
-        too_late: string;
+        no_response: string;
+        not_an_answer: string;
         answered: string;
-        answered_yes: string;
-        answered_no: string;
-        gave_answer: string;
-        accepted: string;
-        rejected: string;
-        noted: string;
-        confused_by_answer: string;
-        invalid_response: string;
-        needs_yes_or_no: string;
-        unclear_answer: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_talking: string;
+        not_talking_to: string;
+        said_goodbye: string;
     };
     help: {
         description: string;

@@ -26,6 +26,16 @@ export class CuttableBehavior extends Behavior {
   }
 
   /**
+   * The declared tools that cut this entity, in declaration order —
+   * empty when it needs none. The implicit-instrument resolution (GH
+   * #241) reads this to find a held tool the player did not name.
+   */
+  static requiredTools(entity: IFEntity): EntityId[] {
+    const cuttable = CuttableBehavior.require<CuttableTrait>(entity, TraitType.CUTTABLE);
+    return [...(cuttable.toolId ? [cuttable.toolId] : []), ...(cuttable.toolIds ?? [])];
+  }
+
+  /**
    * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
    */
   static canCutWith(entity: IFEntity, toolId: EntityId): boolean {

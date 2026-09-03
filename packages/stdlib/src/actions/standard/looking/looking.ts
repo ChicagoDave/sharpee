@@ -27,6 +27,59 @@ import {
 } from './looking-data.js';
 import { LookingMessages } from './looking-messages.js';
 
+/**
+ * The "In/On <holder> you see …" events for a room's contained listings
+ * (GH #338): one `if.event.list.contents` per open container or supporter
+ * with visible contents, under `<actionId>.container_contents` /
+ * `<actionId>.surface_contents`. Shared by the explicit look and going's
+ * arrival description so the two never disagree about a room.
+ *
+ * @param context action context (entity reads for the noun phrases)
+ * @param listings the holders and their visible contents
+ * @param actionId the message namespace (`if.action.looking`)
+ * @returns the list events, holders in listing order
+ */
+export function containedListingEvents(
+  context: ActionContext,
+  listings: ContainerContentsInfo[],
+  actionId: string
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  for (const containerInfo of listings) {
+    const contentsMessageId = containerInfo.preposition === 'in'
+      ? 'container_contents'
+      : 'surface_contents';
+    const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
+
+    // params carry phrases (ADR-192): the container NounPhrase and a
+    // PhraseList of its contents; top-level event fields stay strings for
+    // handler consumption.
+    const containerEntity = context.world.getEntity(containerInfo.containerId);
+    events.push(context.event('if.event.list.contents', {
+      messageId: `${actionId}.${contentsMessageId}`,
+      params: {
+        [containerKey]: containerEntity
+          ? nounPhraseFor(containerEntity)
+          : { name: containerInfo.containerName },
+        items: {
+          kind: 'list' as const,
+          conj: 'and' as const,
+          items: containerInfo.itemIds
+            .map(id => context.world.getEntity(id))
+            .filter((e): e is NonNullable<typeof e> => Boolean(e))
+            .map(e => nounPhraseFor(e)),
+        }
+      },
+      containerId: containerInfo.containerId,
+      containerName: containerInfo.containerName,
+      preposition: containerInfo.preposition,
+      itemIds: containerInfo.itemIds,
+      itemNames: containerInfo.itemNames
+    }));
+  }
+  return events;
+}
+
 export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
   requiredMessages: [
@@ -115,40 +168,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
-    if (openContainerContents && openContainerContents.length > 0) {
-      for (const containerInfo of openContainerContents) {
-        const contentsMessageId = containerInfo.preposition === 'in'
-          ? 'container_contents'
-          : 'surface_contents';
-        const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
-
-        // params carry phrases (ADR-192): the container NounPhrase and a
-        // PhraseList of its contents; top-level event fields stay strings for
-        // handler consumption.
-        const containerEntity = context.world.getEntity(containerInfo.containerId);
-        events.push(context.event('if.event.list.contents', {
-          messageId: `${context.action.id}.${contentsMessageId}`,
-          params: {
-            [containerKey]: containerEntity
-              ? nounPhraseFor(containerEntity)
-              : { name: containerInfo.containerName },
-            items: {
-              kind: 'list' as const,
-              conj: 'and' as const,
-              items: containerInfo.itemIds
-                .map(id => context.world.getEntity(id))
-                .filter((e): e is NonNullable<typeof e> => Boolean(e))
-                .map(e => nounPhraseFor(e)),
-            }
-          },
-          containerId: containerInfo.containerId,
-          containerName: containerInfo.containerName,
-          preposition: containerInfo.preposition,
-          itemIds: containerInfo.itemIds,
-          itemNames: containerInfo.itemNames
-        }));
-      }
-    }
+    events.push(...containedListingEvents(context, openContainerContents ?? [], context.action.id));
 
     return events;
   },

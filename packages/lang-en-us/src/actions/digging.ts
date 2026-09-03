@@ -18,6 +18,7 @@ export const diggingLanguage = {
     'not_diggable': "{capitalize the item} {verb:is item} not something {you} can dig.",
     'cant_dig': "Digging {the item} would achieve nothing here.",
     'no_tool': "{You} {need} something to dig {the item} with.",
+    'needs_tool': "{You} {need} {the tool} to dig {the item}.",
     'tool_not_held': "{You} {need} to be holding {the tool}.",
     'wrong_tool': "{capitalize the tool} won't dig {the item}.",
     'dug': "{You} {dig} {the item}."

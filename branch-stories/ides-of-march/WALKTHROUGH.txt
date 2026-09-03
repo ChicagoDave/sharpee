@@ -143,7 +143,7 @@ You hear: "Kemp turns the pot once in his hands and looks south, over the tavern
 
 "Well. You know what I am owed and you know what I am worth, which puts you ahead of this company on both counts." He sets the pot down and gives you the whole of his attention, a thing crowds pay for. "So ask it. Ask me the question Philip sent across the river in your mouth."
 
-> ask kemp about yes
+> yes
 
 "Yes, he says. Plain as a bell." Kemp leans in, and the yard drops out of his voice entirely. "You are no more a Norwich man than I am a Roman, and only Henslowe's own would carry this errand. GOOD. A lie in the offer would have insulted me; a liar bearing it means the silver is real." He puts out his hand. "Tell Philip the clown is his. Sworn."
 

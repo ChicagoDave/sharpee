@@ -292,7 +292,7 @@
                   "You hear: \"\"Then it is finished.\" He says it lightly, and the lightness is the armour. \"The Rose was asked, and the Rose was answered, and Kemp keeps his own counsel from here. We shall not speak of it again.\"\""
                 ]
               },
-              "command": "ask kemp about no",
+              "command": "no",
               "type": "turn"
             }
           ]
@@ -308,7 +308,7 @@
           "You hear: \"\"Done, then, and done plainly.\" He claps his hands once, the sound of a house letting go its breath. \"Tell Philip: the clown comes to the Rose, jigs and all, and the Globe may bury its Caesar with full honours. This talk is finished, friend — and finished WELL.\"\""
         ]
       },
-      "command": "ask kemp about yes",
+      "command": "yes",
       "type": "turn"
     },
     {

@@ -41,21 +41,11 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'about-website': 'if.action.about.website',
   // if.action.again
   'again-nothing-to-repeat': 'if.action.again.nothing_to_repeat',
-  // if.action.answering
-  'answering-accepted': 'if.action.answering.accepted',
+  // if.action.answering (GH #346: answers the open exchange)
   'answering-answered': 'if.action.answering.answered',
-  'answering-answered-no': 'if.action.answering.answered_no',
-  'answering-answered-yes': 'if.action.answering.answered_yes',
-  'answering-confused-by-answer': 'if.action.answering.confused_by_answer',
-  'answering-gave-answer': 'if.action.answering.gave_answer',
-  'answering-invalid-response': 'if.action.answering.invalid_response',
-  'answering-needs-yes-or-no': 'if.action.answering.needs_yes_or_no',
-  'answering-no-one-asked': 'if.action.answering.no_one_asked',
   'answering-no-question': 'if.action.answering.no_question',
-  'answering-noted': 'if.action.answering.noted',
-  'answering-rejected': 'if.action.answering.rejected',
-  'answering-too-late': 'if.action.answering.too_late',
-  'answering-unclear-answer': 'if.action.answering.unclear_answer',
+  'answering-no-response': 'if.action.answering.no_response',
+  'answering-not-an-answer': 'if.action.answering.not_an_answer',
   // if.action.asking
   'asking-already-told': 'if.action.asking.already_told',
   'asking-confused': 'if.action.asking.confused',
@@ -171,6 +161,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'cutting-cant-cut': 'if.action.cutting.cant_cut',
   'cutting-cut': 'if.action.cutting.cut',
   'cutting-no-target': 'if.action.cutting.no_target',
+  'cutting-needs-tool': 'if.action.cutting.needs_tool',
   'cutting-no-tool': 'if.action.cutting.no_tool',
   'cutting-not-cuttable': 'if.action.cutting.not_cuttable',
   'cutting-tool-not-held': 'if.action.cutting.tool_not_held',
@@ -179,6 +170,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'digging-cant-dig': 'if.action.digging.cant_dig',
   'digging-dug': 'if.action.digging.dug',
   'digging-no-target': 'if.action.digging.no_target',
+  'digging-needs-tool': 'if.action.digging.needs_tool',
   'digging-no-tool': 'if.action.digging.no_tool',
   'digging-not-diggable': 'if.action.digging.not_diggable',
   'digging-tool-not-held': 'if.action.digging.tool_not_held',
@@ -427,6 +419,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'opening-its-empty': 'if.action.opening.its_empty',
   'opening-locked': 'if.action.opening.locked',
   'opening-no-target': 'if.action.opening.no_target',
+  'opening-needs-tool': 'if.action.opening.needs_tool',
   'opening-no-tool': 'if.action.opening.no_tool',
   'opening-not-openable': 'if.action.opening.not_openable',
   'opening-opened': 'if.action.opening.opened',
@@ -556,6 +549,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'saving-save-successful': 'if.action.saving.save_successful',
   'saving-saved-locally': 'if.action.saving.saved_locally',
   'saving-saved-to-cloud': 'if.action.saving.saved_to_cloud',
+  // if.action.saying_goodbye (GH #300)
+  'saying-goodbye-not-talking': 'if.action.saying_goodbye.not_talking',
+  'saying-goodbye-not-talking-to': 'if.action.saying_goodbye.not_talking_to',
+  'saying-goodbye-said-goodbye': 'if.action.saying_goodbye.said_goodbye',
   // if.action.scoring — pruned in parallel with the chord catalog
   // (ADR-260 D4). Drift between the two tables is a live-alias/dead-target
   // bug, so they move together.

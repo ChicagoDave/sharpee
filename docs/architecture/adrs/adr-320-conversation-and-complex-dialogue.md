@@ -373,6 +373,16 @@ Packages that change (the ADR-310 idiom — named here, contracted at planning t
   gains the continuation-prompt forms ("tell me more" / "continue" / "go on" /
   "and?") as thread-advance input, the discussion D14 is; everything else about the
   carve-out stands, and `lang-en-us` remains untouched.
+  **Amended by GH #346 / #300 (2026-09-03, publish-readiness Phase 11)**: the
+  "SAY/YES/NO already exist" premise was stale — no `say`/`yes`/`no`/`answer`
+  grammar or stdlib action existed. `parser-en-us` now carries `answering`
+  (`answer`/`reply`/`respond`/`say` + a topic-slot response) and `saying_goodbye`
+  (`goodbye`/`bye`/`farewell`/`say goodbye [to X]`); stdlib's `answering` routes the
+  response to the open exchange as a `say` intent, the engine offers bare input the
+  exchange claims to it first, and `saying_goodbye` closes the player's scene on
+  `exit` (the thread's `on parting` renders; `on leaving` stays the NPC's departure).
+  `lang-en-us` carries only their refusals and a no-phrase fallback — the replies
+  themselves remain authored exchange rows (D12 holds).
 
 **D14 amendment scope (2026-08-17)**: `chord` (the `define conversation` block, rows,
 gates, `is concluded` predicate; version bump + pin), `world-model` (per-pair thread

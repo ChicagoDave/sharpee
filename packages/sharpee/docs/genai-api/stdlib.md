@@ -1154,6 +1154,7 @@ export declare const IFActions: {
     readonly ASKING: "if.action.asking";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
+    readonly SAYING_GOODBYE: "if.action.saying_goodbye";
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
     readonly ATTACKING: "if.action.attacking";
@@ -1736,6 +1737,8 @@ export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-
 export * from './eating/index.js';
 export * from './drinking/index.js';
 export * from './talking/index.js';
+export * from './answering/index.js';
+export * from './saying-goodbye/index.js';
 export * from './attacking/index.js';
 export * from './saving/index.js';
 export * from './restoring/index.js';

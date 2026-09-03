@@ -354,6 +354,34 @@ define action asking
     inquire of the recipient about the topic
   the topic is a topic
 
+## GH #300: the player's farewell closes the live conversation. The literal
+## `say goodbye` forms outrank answering's `say the response` by literal
+## specificity (ADR-268 D3), so `say goodbye` is never an exchange answer.
+
+define action saying_goodbye
+  grammar
+    goodbye
+    bye
+    farewell
+    say goodbye
+    say farewell
+    goodbye to the person
+    say goodbye to the person
+    say farewell to the person
+
+## GH #346: answering the open exchange of the player's live conversation.
+## The response is free text (a topic slot) offered to the exchange's
+## answer rows; stdlib's answering action resolves the questioner from the
+## scene. Bare answers (`yes`) reach it through the engine's exchange offer.
+
+define action answering
+  grammar
+    answer the response
+    reply the response
+    respond the response
+    say the response
+  the response is a topic
+
 ## The last three talking lines are the lexable continuation prompts (ADR-320
 ## D14, frozen list): targetless thread-advance input — stdlib's talking
 ## action resolves the conversation partner implicitly. The fourth frozen

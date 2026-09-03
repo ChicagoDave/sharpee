@@ -73,7 +73,7 @@
             {
               "assertions": {
                 "contains": [
-                  "You need something to open the nailed crate with."
+                  "You need the crowbar to open the nailed crate."
                 ]
               },
               "command": "open crate",

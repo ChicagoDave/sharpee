@@ -1080,6 +1080,12 @@ export declare class OpenableBehavior extends Behavior {
      */
     static requiresTool(entity: IFEntity): boolean;
     /**
+     * The declared tools that open this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
+    /**
      * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
      */
     static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
@@ -3206,6 +3212,12 @@ export declare class CuttableBehavior extends Behavior {
      */
     static requiresTool(entity: IFEntity): boolean;
     /**
+     * The declared tools that cut this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
+    /**
      * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
      */
     static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
@@ -3273,6 +3285,12 @@ export declare class DiggableBehavior extends Behavior {
      * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
      */
     static requiresTool(entity: IFEntity): boolean;
+    /**
+     * The declared tools that dig this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
     /**
      * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
      */

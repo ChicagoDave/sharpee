@@ -19,7 +19,8 @@ import {
   StoryInfoTrait,
   HealthTrait,
   HealthBehavior,
-  registerConcealedVisibilityBehavior
+  registerConcealedVisibilityBehavior,
+  sceneWith
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
 import {
@@ -1051,6 +1052,33 @@ export class GameEngine {
     return this.parser.parse(spliced).success ? spliced : input;
   }
 
+  /**
+   * GH #346: while the player's live conversation scene holds an open
+   * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
+   * to it first and runs as an answer; input the exchange does not claim
+   * runs unchanged — the innermost open question gets the first offer.
+   *
+   * @param input - The raw input for this turn
+   * @returns `answer <input>` when the open exchange claims it, else the input
+   */
+  private offerToOpenExchange(input: string): string {
+    const player = this.world.getPlayer();
+    if (!player) return input;
+    const scene = sceneWith(this.world, player.id);
+    const exchange = scene?.openExchange;
+    const registration = this.world.getDialogueSelector();
+    if (!scene || !exchange || !registration?.exchangeClaims) return input;
+    const speaker = this.world.getEntity(exchange.speakerId);
+    if (!speaker) return input;
+    const text = input.trim();
+    const claimed = registration.exchangeClaims(
+      speaker,
+      { type: 'say', text },
+      { world: this.world, speakerId: player.id, scene },
+    );
+    return claimed ? `answer ${text}` : input;
+  }
+
   async executeTurn(input: string): Promise<TurnResult> {
     if (!this.running) {
       throw new Error('Engine is not running');
@@ -1087,6 +1115,8 @@ export class GameEngine {
     // question is completed by this input when the input is not a command
     // of its own; either way the hold is spent here — exactly one input.
     input = this.spliceHeldCommand(input);
+    // GH #346: an open exchange is offered the input before the parse.
+    input = this.offerToOpenExchange(input);
 
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points

@@ -21,6 +21,7 @@
 
 import { ActionLifecycleDescriptor } from './descriptor.js';
 
+import { answeringLifecycle } from '../standard/answering/answering.js';
 import { askingLifecycle } from '../standard/asking/asking.js';
 import { attackingLifecycle } from '../standard/attacking/attacking.js';
 import { climbingLifecycle } from '../standard/climbing/climbing.js';
@@ -43,6 +44,7 @@ import { openingLifecycle } from '../standard/opening/opening.js';
 import { pullingLifecycle } from '../standard/pulling/pulling.js';
 import { pushingLifecycle } from '../standard/pushing/pushing.js';
 import { puttingLifecycle } from '../standard/putting/putting.js';
+import { sayingGoodbyeLifecycle } from '../standard/saying-goodbye/saying-goodbye.js';
 import { readingLifecycle } from '../standard/reading/reading.js';
 import { removingLifecycle } from '../standard/removing/removing.js';
 import { searchingLifecycle } from '../standard/searching/searching.js';
@@ -70,6 +72,7 @@ import { wearingLifecycle } from '../standard/wearing/wearing.js';
  * Context.
  */
 export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = Object.freeze([
+  answeringLifecycle,
   askingLifecycle,
   attackingLifecycle,
   climbingLifecycle,
@@ -94,6 +97,7 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   puttingLifecycle,
   readingLifecycle,
   removingLifecycle,
+  sayingGoodbyeLifecycle,
   searchingLifecycle,
   showingLifecycle,
   smellingLifecycle,

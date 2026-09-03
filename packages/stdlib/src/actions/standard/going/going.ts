@@ -37,6 +37,8 @@ import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } fr
 import { buildEventData } from '../../data-builder-types.js';
 import { GoingMessages } from './going-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { collectContainedListings } from '../looking/looking-data.js';
+import { containedListingEvents } from '../looking/looking.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -677,6 +679,21 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         itemNames: listableContents.map(e => e.name)
       }));
     }
+
+    // GH #338: the same "In/On <holder> you see …" lines the explicit look
+    // prints, holders grouped exactly as looking-data groups them — arriving
+    // and looking must never disagree about what is in the room.
+    const containers = destinationContents.filter(
+      e => e.hasTrait(TraitType.CONTAINER) && !e.hasTrait(TraitType.ACTOR)
+    );
+    const supporters = destinationContents.filter(
+      e => e.hasTrait(TraitType.SUPPORTER) && !e.hasTrait(TraitType.CONTAINER)
+    );
+    events.push(...containedListingEvents(
+      context,
+      collectContainedListings(context, containers, supporters),
+      'if.action.looking'
+    ));
 
     // Note: if.event.went is only emitted on dark/blocked; override is a no-op
     // on success non-dark transitions. Use emit for narration after success.

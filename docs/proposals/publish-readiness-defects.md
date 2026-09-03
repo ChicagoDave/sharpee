@@ -11,6 +11,7 @@
 **Phase 7 landed (2026-09-03, session effb6f)** — P-19 DONE (#314 closed). Phase 8 (P-21) is blocked on ADR-267 A1; Phase 9 proceeds. **Now 22 PLANNED, 19 DONE, 3 PROPOSED.**
 **Phase 9 landed (2026-09-03, session effb6f)** — P-20 DONE (#318 closed); the language freeze is declared under P-44 with the `only while` carve-out. **Now 21 PLANNED, 20 DONE, 3 PROPOSED.**
 **Phase 10 landed (2026-09-03, session effb6f)** — P-22, P-24, P-25, P-30, P-31, P-32 DONE (#333, #328, #323, #206, #108, #97 closed). **Now 15 PLANNED, 26 DONE, 3 PROPOSED.**
+**Phase 11 landed (2026-09-03, session effb6f)** — P-23, P-26, P-27, P-28 DONE (#338, #346, #300, #241 closed); P-29's slice stays PROPOSED on ADR-320 D2a. The #338 fix lists open containers and supporters on every arrival — the Dungeo walkthrough goldens were re-blessed (14 files, 110 added "In/On … you see …" lines, nothing else). **Now 11 PLANNED, 30 DONE, 3 PROPOSED.**
 **Origin**: issue set — the open GitHub issues as of 2026-09-03, filtered to what an outside author writing a modest Chord story meets in their first hours, plus the release gate itself. Each item's text is copied in from the issue; nothing links live.
 **Date**: 2026-09-03
 **Session**: b6d0a8
@@ -131,7 +132,7 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 
 ### P-23: Room description on entering omits scenery supporters' contents (#338)
 - **Done when**: arriving by going, by authorial move, and an explicit `look` produce the same contents listing, supporters included.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 11; #338 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-24: "a boots (worn)" — an article on a plural worn item (#328)
 - **Done when**: the inventory's worn group honours the first item's plurality (no article or `some`).
@@ -144,15 +145,15 @@ David asked what shape Sharpee/Chord is in for publishing outside of Secret Lett
 ### P-26: A player cannot answer an open exchange (#346)
 - **Issue text**: `define exchange` rows are bare answer words (`yes`, `aye`, `sworn`) and none parse; the only path is `ask kemp about yes`.
 - **Done when**: while an exchange is open, a bare answer word, `say <word>` and `answer <word>` all reach the exchange; outside one, `say`/`answer` get a sensible refusal.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 11; #346 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-27: A player cannot say goodbye (#300)
 - **Done when**: `goodbye`/`bye` end the current conversation with the NPC's parting line if authored; `on leaving`'s meaning is documented as the NPC's departure.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 11; #300 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-28: Tool gates require the instrument named even when held (#241)
 - **Done when**: `cut the fuse` with the shears in hand succeeds by implicit instrument; without it the refusal says what is needed.
-- **Status**: PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
+- **Status**: DONE (2026-09-03, session effb6f — plan Phase 11; #241 closed); was PLANNED (docs/work/publish-readiness/plan.md, 2026-09-03; was ACCEPTED (David, 2026-09-03, session b6d0a8))
 
 ### P-29: Entity topics fall through silently when the topic entity is out of scope (#242)
 - **Done when**: an entity topic fires wherever the NPC is, with the referenced entity's scope irrelevant, or the analyzer says which form is scoped; the generic fall-through never masks an authored reply.

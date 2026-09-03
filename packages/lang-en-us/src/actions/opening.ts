@@ -21,6 +21,7 @@ export const openingLanguage = {
     'its_empty': "{You} {open} {the container}, which is empty.",
     'cant_reach': "{You} {can't} reach {the item}.",
     'no_tool': "{You} {need} something to open {the item} with.",
+    'needs_tool': "{You} {need} {the tool} to open {the item}.",
     'tool_not_held': "{You} {need} to be holding {the tool}.",
     'wrong_tool': "{capitalize the tool} won't open {the item}."
   },
