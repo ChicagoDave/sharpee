@@ -249,7 +249,7 @@
     - [x] `SyntaxHighlighter` keyword set gains `timer`, `chapters`
     - [x] Chord Writer 1.3.1 → 1.4.0 (`project.yml`, CFBundleVersion 7); website `versions.json` re-derived; docs-tab regenerated
     - [x] `xcodebuild test` (SharpeeIDE scheme) green — 592 passing, 0 failures (08:41 CDT, after fixing the ADR-327 decoder drift and four stale test expectations found by the first run: 13 failures in 9 tests)
-    - [ ] `tools/ide/release-all.sh` — both slices built, notarized, stapled; `release/1.4.0/UPLOAD.md` written
+    - [x] `tools/ide/release-all.sh` — both slices built, notarized, stapled; `release/1.4.0/UPLOAD.md` written (16:12 CDT; every notarization upload after 15:24 went through the new `tools/ide/notary-submit.py` because notarytool crashed on upload — see the session file)
     - [ ] David uploads (scp + `deploy.sh`); install page verified live
 - **Status**: CURRENT
 
