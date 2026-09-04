@@ -10,6 +10,9 @@
 #   ./website/deploy.sh            # pull + build + restart
 #   ./website/deploy.sh --no-pull  # build current working tree + restart
 #   ./website/deploy.sh --setup    # one-time: install systemd unit + apache vhost
+#   ./website/deploy.sh --allow-stale-playground
+#                                  # deploy even if the playground build did not
+#                                  # produce the current platform version (GH #358)
 #
 set -e
 
@@ -120,7 +123,17 @@ if [ ! -w "$ANALYTICS_DIR" ]; then
   exit 1
 fi
 
-if [ "$1" != "--no-pull" ]; then
+PULL=1
+ALLOW_STALE_PLAYGROUND=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-pull) PULL=0 ;;
+    --allow-stale-playground) ALLOW_STALE_PLAYGROUND=1 ;;
+    *) err "unknown flag: $arg"; exit 1 ;;
+  esac
+done
+
+if [ "$PULL" = 1 ]; then
   log "Pulling latest from main ..."
   git pull --ff-only
 fi
@@ -186,8 +199,35 @@ fi
 if [ ! -f "$WEBSITE_DIR/public/web/fernhill/index.html" ]; then
   warn "public/web/fernhill/index.html is MISSING — /play is broken even though the build step above did not fail."
 fi
-if [ ! -d "$WEBSITE_DIR/public/playground" ]; then
-  warn "public/playground/ is MISSING — /playground is broken even though the build step above did not fail."
+
+# ── The playground must be THIS platform's version, not merely present ──
+# GH #358: for three weeks the client build died three packages in, and this
+# check passed every time, because it only asked whether public/playground/
+# existed — and it did, holding August's v5.0.0/ and v5.0.1/ with current.json
+# pinning a Chord 3.0.0 compiler. A build that produces nothing is
+# indistinguishable from one that worked unless the check reads the version
+# pin the build writes (tools/repokit/src/commands/playground.ts syncToWebsite:
+# current.json + v<version>/game.js) and compares it to the platform version.
+#
+# This one is fatal, unlike the warnings around it: a deploy that would publish
+# a stale playground under a fresh docs site is the outage, not a degraded
+# success. --allow-stale-playground is the operator's deliberate override for
+# shipping the site while the client build is known-broken.
+PLATFORM_VERSION="$(node -p "require('$REPO_ROOT/packages/sharpee/package.json').version")"
+PLAYGROUND_VERSION="$(node -p "try { require('$WEBSITE_DIR/public/playground/current.json').version } catch (e) { '' }")"
+PLAYGROUND_GAME="$WEBSITE_DIR/public/playground/v$PLATFORM_VERSION/game.js"
+if [ "$PLAYGROUND_VERSION" != "$PLATFORM_VERSION" ] || [ ! -s "$PLAYGROUND_GAME" ]; then
+  err "playground is STALE: current.json pins '${PLAYGROUND_VERSION:-nothing}', the platform is $PLATFORM_VERSION,"
+  err "and $PLAYGROUND_GAME $( [ -s "$PLAYGROUND_GAME" ] && echo exists || echo 'is missing' )."
+  err "The client build above did not produce this version — /playground would serve an old compiler."
+  if [ "$ALLOW_STALE_PLAYGROUND" = 1 ]; then
+    warn "continuing anyway (--allow-stale-playground)."
+  else
+    err "Fix the client build (see its output above) or re-run with --allow-stale-playground to deploy the site regardless."
+    exit 1
+  fi
+else
+  log "Playground pinned at $PLAYGROUND_VERSION (matches the platform)."
 fi
 
 # ── The playground's seeded examples must actually compile ──

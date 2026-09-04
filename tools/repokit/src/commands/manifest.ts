@@ -28,7 +28,20 @@
  * module; the vocabulary itself is frozen author surface (contracts.md §6),
  * so the gate catches any platform-side list change the language didn't take.
  *
- * Public interface: ManifestCommand, runManifestStep, checkManifestModule.
+ * The dist gate (GH #358): the generators `require()` built modules from
+ * world-model, character, story-loader and chord. The step runs BEFORE those
+ * packages compile in the platform build, so what it finds is whatever the
+ * previous build left — which may be missing (a cold host) or STALE (a host
+ * whose last successful build predates the exports the generator now reads).
+ * Both must fall back to the committed modules; only a dist that loads and
+ * carries every export the generators read is used. A stale dist that was
+ * merely present used to be required, blow up on `undefined.length`, and kill
+ * the build three packages in — before world-model's own compile, the one
+ * thing that would have refreshed it, ever ran. plover sat in that state from
+ * 2026-08-14 to 2026-09-04 and served a Chord 3.0.0 playground the whole time.
+ *
+ * Public interface: ManifestCommand, runManifestStep, checkManifestModule,
+ * probeDistModules, DIST_MODULES.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -275,27 +288,92 @@ export function generateCharacterManifestModule(root: string): { source: string;
 }
 
 /**
+ * Every built module the two generators `require()`, with the exports each
+ * one reads. This is the contract a dist must meet to be USABLE; a module that
+ * is present but lacks any listed export is stale and is treated exactly like
+ * a missing one. Keep in step with the `require()` calls in
+ * `generateManifestModule` and `generateCharacterManifestModule` — an export
+ * read there but absent here is the GH #358 crash waiting to recur.
+ */
+export const DIST_MODULES: ReadonlyArray<[path: string, exports: readonly string[]]> = [
+  // The grammar-shape slice compiles the standard grammar with chord itself;
+  // any prior build's compiler will do, so only loading is required.
+  ['packages/chord/dist/index.js', []],
+  ['packages/story-loader/dist/setting-schema.js', ['SETTING_SCHEMA', 'HIDING_POSITIONS']],
+  [
+    'packages/world-model/dist/traits/character-model/character-vocabulary.js',
+    [
+      'PERSONALITY_TRAITS',
+      'INTENSITY_WORDS',
+      'MOODS',
+      'MOOD_MODIFIERS',
+      'DISPOSITION_WORDS',
+      'THREAT_LEVELS',
+      'CONFIDENCE_WORDS',
+      'FACT_SOURCES',
+      'RESISTANCE_MODES',
+      'COGNITIVE_DIMENSIONS',
+      'FORCES',
+      'ACT_CATEGORIES',
+      'OBLIGATION_WORDS',
+      'FACE_ACTS',
+      'PRESSURE_BANDS',
+    ],
+  ],
+  ['packages/character/dist/cognitive-presets.js', ['COGNITIVE_PRESETS']],
+  ['packages/character/dist/propagation/propagation-types.js', ['PROPAGATION_AUDIENCES']],
+  ['packages/character/dist/goals/goal-types.js', ['GOAL_PRIORITIES']],
+  ['packages/character/dist/influence/influence-types.js', ['INFLUENCE_MODES', 'INFLUENCE_RANGES']],
+];
+
+/**
+ * Decide whether the built modules under `root` are usable by the generators.
+ *
+ * @returns `null` when every module in `DIST_MODULES` exists, loads, and
+ *   exports every name the generators read; otherwise one sentence naming
+ *   the first module that fails and why (not built / failed to load / stale
+ *   with the missing exports listed) — the text `runManifestStep` prints when
+ *   it falls back to the committed modules.
+ */
+export function probeDistModules(root: string): string | null {
+  for (const [rel, names] of DIST_MODULES) {
+    const abs = join(root, rel);
+    if (!existsSync(abs)) return `${rel} not built yet`;
+    let mod: Record<string, unknown>;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      mod = require(abs) as Record<string, unknown>;
+    } catch (error) {
+      return `${rel} failed to load: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    const missing = names.filter((n) => mod[n] === undefined);
+    if (missing.length > 0) {
+      return `${rel} is stale — missing export(s) ${missing.join(', ')} (built before the source that defines them)`;
+    }
+  }
+  return null;
+}
+
+/**
  * Generate and write both manifest modules (runs before chord compiles in
- * the platform build). The grammar-shape slice needs a chord dist (any prior
- * build's) to compile the grammar source; on a COLD build with no dist yet,
- * the committed modules stand in — the verify gate still proves freshness
- * once a dist exists.
+ * the platform build). The generators read built modules from a PRIOR build;
+ * when those are missing (cold build) or stale (a host whose last build
+ * predates what the generators now read — GH #358), the committed modules
+ * stand in and the step says why. The verify gate still proves freshness once
+ * a current dist exists.
+ *
+ * @throws when the dist is unusable AND no committed modules exist to fall
+ *   back on — the platform has to be built once before `repokit manifest`.
  */
 export function runManifestStep(root: string, quiet = false): void {
-  const needsDist = [
-    'packages/chord/dist/index.js',
-    'packages/story-loader/dist/setting-schema.js',
-    'packages/world-model/dist/traits/character-model/character-vocabulary.js',
-    'packages/character/dist/cognitive-presets.js',
-  ];
-  const missing = needsDist.find((p) => !existsSync(join(root, p)));
-  if (missing) {
+  const unusable = probeDistModules(root);
+  if (unusable) {
     if (existsSync(join(root, MODULE_PATH)) && existsSync(join(root, CHARACTER_MODULE_PATH))) {
-      if (!quiet) console.log(`manifest: cold build (${missing} not built yet) — using the committed modules`);
+      if (!quiet) console.log(`manifest: ${unusable} — using the committed modules`);
       return;
     }
     throw new Error(
-      `manifest: ${missing} not built and no committed manifest module — build the platform once, then run \`repokit manifest\``,
+      `manifest: ${unusable}, and no committed manifest module to fall back on — build the platform once, then run \`repokit manifest\``,
     );
   }
   const { source, actionIds, shapedActions } = generateManifestModule(root);
