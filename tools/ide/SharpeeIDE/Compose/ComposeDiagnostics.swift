@@ -94,12 +94,16 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         let name: String
     }
 
-    /// One authored entity: name, kind memberships, player marker, and the exact
-    /// span of its `create` block.
+    /// One authored entity: name, kind memberships, playable marker, and the
+    /// exact span of its `create` block.
     struct Entity: Codable, Equatable, Sendable {
         let id: String
         let name: String
-        let isPlayer: Bool
+        /// `playable` (ADR-327 D10, IR `story language 4`): this character may
+        /// hold the player role. Replaced the wire's `isPlayer` on 2026-08-27,
+        /// which named the retired `create the player` block; who holds the
+        /// role is decided by the start block at runtime and is not on the IR.
+        let isPlayable: Bool
         let kinds: [Kind]
         /// Region membership (`containing …`, ADR-236) — resolved member
         /// entity ids, non-empty only on region-kind entities. Decoded so

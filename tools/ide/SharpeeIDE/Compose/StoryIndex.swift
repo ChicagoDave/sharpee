@@ -68,7 +68,7 @@ enum StoryIndex {
         for entity in ir.allEntities {
             if entity.hasKind("room") { rooms += 1 }
             else if entity.hasKind("region") { regions += 1 }
-            else if entity.hasKind("person") || entity.isPlayer { people += 1 }
+            else if entity.hasKind("person") || entity.isPlayable { people += 1 }
             else { things += 1 }
         }
         return StoryStats(rooms: rooms,
@@ -150,9 +150,9 @@ enum StoryIndex {
                                       span: entity.span))
             } else if entity.hasKind("region") {
                 regions.append(IndexRow(title: entity.name, detail: nil, span: entity.span))
-            } else if entity.hasKind("person") || entity.isPlayer {
+            } else if entity.hasKind("person") || entity.isPlayable {
                 people.append(IndexRow(title: entity.name,
-                                       detail: entity.isPlayer ? "player" : nil,
+                                       detail: entity.isPlayable ? "playable" : nil,
                                        span: entity.span))
             } else {
                 things.append(IndexRow(title: entity.name,

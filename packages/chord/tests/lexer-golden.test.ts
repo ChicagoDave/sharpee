@@ -5,7 +5,11 @@
  * The corpus (`tests/fixtures/lexer-golden/*.story`) covers the shipped
  * Chord 2.0.0 surface the D7 amendment names, plus the 3.1.0–3.3.0
  * conversation surface (ADR-320: manner, greetings, exchanges, initiative,
- * conversation threads) in `conversation-surface.story`; the golden file
+ * conversation threads) in `conversation-surface.story`, plus the 3.4.0–3.6.0
+ * presence, duration, and chapters surface (ADR-325 timers, ADR-326 move
+ * destinations, regions with a landing, `proper`, `, one-way`, `{bare}`,
+ * ADR-329 D10 goal steps, the ADR-327 player role, ADR-330 chapters) in
+ * `presence-and-chapters-surface.story`; the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately
@@ -108,6 +112,33 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'conversation transition rows': /^ {2}on (parting|resuming|refusing):$/m,
       'conversation conclusion': /^ {2}conclusion:$/m,
       'is concluded predicate': /\bis concluded\b/,
+      // The 3.4.0–3.6.0 presence, duration, and chapters surface — the corpus
+      // the IDE's Chord 3.6.0 pin (ChordVersionCheck.supportedLanguageVersion)
+      // cites as its honesty condition. Same drift guard as above: without
+      // these the file could be gutted with this suite still green.
+      'use chapters': /^ {2}use chapters$/m,
+      'define chapters': /^define chapters$/m,
+      'chapter row': /^ {2}[\w-]+ - Chapter /m,
+      'chapter opens on game start': /^ {4}begins when the game starts$/m,
+      'chapter opens on first visit': /^ {4}begins when the player visits .+ for the first time$/m,
+      'chapter opens on becomes': /^ {4}begins when \S+ becomes \w+$/m,
+      'chapter reads': /\b(during|before|after) (market|commerce|alarm)\b/,
+      'define timer': /^define timer [\w-]+ for /m,
+      'timer chance row': /^ {2}(interrupted|meanwhile,) one chance in \d+$/m,
+      'when timer expires': /^ {2}when [\w-]+ expires$/m,
+      'timer verbs': /^ {4}(start|stop|restart|reset|interrupt) [\w-]+$/m,
+      'timer reads': /\b[\w-]+ (is \w+|has (started|expired))\b/,
+      'region landing': /^ {2}landing /m,
+      'set landing': /^ {4}set .+ landing to /m,
+      'proper': /^ {2}a person, proper$/m,
+      'pronouns': /^ {2}pronouns he$/m,
+      'one-way exit': /^ {2}\w+ to .+, one-way$/m,
+      'move offstage / here': /^ {4}move .+ (offstage|here)$/m,
+      'move to a random adjacent room': /^ {4}move .+ to a random adjacent room$/m,
+      'bare article hint': /\{bare \w+\}/,
+      'goal block': /^ {2}goal [\w-]+, (low|normal|high|critical)$/m,
+      'goal perform step': /^ {4}go east$/m,
+      'the player role': /^ {2}change the player to \w+$/m,
     };
     for (const [construct, pattern] of Object.entries(constructs)) {
       expect(pattern.test(all), `corpus no longer exercises: ${construct}`).toBe(true);

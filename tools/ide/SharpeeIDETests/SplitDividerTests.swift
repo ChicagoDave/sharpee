@@ -39,7 +39,7 @@ final class SplitDividerTests: XCTestCase {
     /// resistance beating the divider) before the priority fix.
     private var fatIR: ComposeStoryIR {
         func entity(_ n: Int, kinds: [String]) -> ComposeStoryIR.Entity {
-            ComposeStoryIR.Entity(id: "e\(n)", name: "Entity Number \(n)", isPlayer: false,
+            ComposeStoryIR.Entity(id: "e\(n)", name: "Entity Number \(n)", isPlayable: false,
                                   kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
                                   containing: nil,
                                   span: DiagnosticSpan(line: n, column: 1, endLine: n, endColumn: 5))
@@ -231,6 +231,14 @@ final class SplitDividerTests: XCTestCase {
     /// A dragged layout persists across relaunch — through the session entry
     /// (David 2026-08-09: pane widths are IDE state), which only writes once
     /// a project is open.
+    ///
+    /// The drag lands at 400, not 300: the right panel's tab strip gained the
+    /// World (ADR-321, 2026-08-19) and Publish (2026-09-03) tabs after this
+    /// test was written, and its fitting width — about 340 — is now the pane's
+    /// effective minimum, above the nominal `playMinWidth` of 240. A 300 drag
+    /// clamps to ~340 and the test then measures the clamp, not persistence.
+    /// The subject here is the round trip, so the width just has to be one
+    /// the layout can actually hold.
     func testUserDragPersistsAcrossRelaunchAtCurrentVersion() throws {
         try withCleanLayoutDefaults {
             let project = try makeTempProject()
@@ -239,17 +247,17 @@ final class SplitDividerTests: XCTestCase {
                 let (controller, window, split) = try launchWindow()
                 controller.loadProject(Project(rootURL: project))
                 pump()
-                split.setPosition(split.bounds.width - 300, ofDividerAt: 2)
+                split.setPosition(split.bounds.width - 400, ofDividerAt: 2)
                 pump()
-                XCTAssertEqual(split.arrangedSubviews[3].frame.width, 300, accuracy: 2)
+                XCTAssertEqual(split.arrangedSubviews[3].frame.width, 400, accuracy: 2)
                 XCTAssertEqual(try XCTUnwrap(SessionStateStore.load()?.playPaneWidth),
-                               300, accuracy: 2,
+                               400, accuracy: 2,
                                "the drag must land in the session entry")
                 window.orderOut(nil)
             }
             let (_, window, split) = try launchWindow()
             defer { window.orderOut(nil) }
-            XCTAssertEqual(split.arrangedSubviews[3].frame.width, 300, accuracy: 2,
+            XCTAssertEqual(split.arrangedSubviews[3].frame.width, 400, accuracy: 2,
                            "a user drag made at the current version must survive relaunch")
         }
     }

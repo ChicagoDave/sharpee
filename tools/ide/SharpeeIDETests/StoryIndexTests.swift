@@ -14,9 +14,9 @@ final class StoryIndexTests: XCTestCase {
         DiagnosticSpan(line: line, column: 1, endLine: line, endColumn: 10)
     }
 
-    private func entity(_ name: String, kinds: [String] = [], isPlayer: Bool = false,
+    private func entity(_ name: String, kinds: [String] = [], isPlayable: Bool = false,
                         line: Int = 1) -> ComposeStoryIR.Entity {
-        ComposeStoryIR.Entity(id: name.lowercased(), name: name, isPlayer: isPlayer,
+        ComposeStoryIR.Entity(id: name.lowercased(), name: name, isPlayable: isPlayable,
                               kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
                               containing: nil,
                               span: span(line))
@@ -44,7 +44,7 @@ final class StoryIndexTests: XCTestCase {
             entity("Grounds", kinds: ["region"], line: 15),
             entity("brass lantern", kinds: ["portable"], line: 20),
             entity("Wren", kinds: ["person"], line: 25),
-            entity("player", isPlayer: true, line: 30),
+            entity("Alex", isPlayable: true, line: 30),
         ],
         actions: [ComposeStoryIR.ActionDef(name: "polishing", span: span(40))],
         phrases: .init(defaultLocale: "en-US", locales: [
@@ -119,8 +119,8 @@ final class StoryIndexTests: XCTestCase {
         XCTAssertFalse(rooms.rows[0].isCode)
 
         let people = sections[3]
-        XCTAssertEqual(people.rows.map { $0.title }, ["player", "Wren"])
-        XCTAssertEqual(people.rows.first { $0.title == "player" }?.detail, "player")
+        XCTAssertEqual(people.rows.map { $0.title }, ["Alex", "Wren"])
+        XCTAssertEqual(people.rows.first { $0.title == "Alex" }?.detail, "playable")
 
         let phrases = sections[5]
         XCTAssertEqual(phrases.rows.map { $0.title }, ["cold-returns", "night-wind"])

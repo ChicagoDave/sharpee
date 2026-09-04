@@ -36,6 +36,14 @@ final class SyntaxHighlighter {
         // than the occasional colored prose word.
         "manner", "greetings", "exchange", "initiative", "conversation",
         "beat", "conclusion",
+        // Chord 3.6.0: the two block nouns that follow `define` — `timer`
+        // (ADR-325, `define timer … end timer`) and `chapters` (ADR-330,
+        // `define chapters … end chapters`). The timer VERBS (`start`, `stop`,
+        // `restart`, `reset`, `interrupt`) and the chapter READS (`during`,
+        // `before`, `after`) are deliberately not here: statement verbs like
+        // `move` and `change` have never been colored, and `before`/`after`
+        // are ordinary prose words far more often than chapter predicates.
+        "timer", "chapters",
     ]
 
     /// Property keys — a `name:` field rather than a structural keyword.
