@@ -1,6 +1,6 @@
 # Session Summary: 2026-09-04 - feat/adr-321-world-index
 
-## Status: In Progress — alignment DONE and green; Chord Writer 1.4.0 release build running at commit time (arm64 app notarization resubmitted 09:19 CDT)
+## Status: BLOCKED — alignment DONE, committed and pushed (d936024c); Chord Writer 1.4.0 release build stalled at the arm64 DMG notarization on a locked login keychain (09:38 CDT); needs David at the keyboard
 
 ## Goals
 - Align Chord Writer (the macOS IDE) with the published Sharpee 5.3.0 / Chord 3.6.0 and prepare its next release (David, 2026-09-04 ~08:05 CDT: "we need to align the IDE with the new Sharpee/Chord versions and prepare for a new release"). This is the Chord Writer half of `docs/work/publish-readiness/plan.md` Phase 18 (P-44); the npm half landed 2026-09-04 ~07:00 CDT in session 0135ed.
@@ -41,7 +41,19 @@
 - `tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord-writer.html` (regenerated)
 - `website/src/lib/versions.json` (derived)
 
-## Next Steps
+## Release run — what happened after the commit (09:20–09:45 CDT)
+- 09:20 arm64 app resubmission `84aea709` → **Accepted** in ~1 min; package.sh stapled the app, built and signed `release/arm64/ChordWriter-1.4.0-arm64.dmg`, submitted it (`76448ba2`, 09:23).
+- 09:28 `76448ba2` still In Progress after 6 min → stopped release-all, resubmitted the DMG (`221ac648`), repointed the ledger, resumed. 09:36 `221ac648` also still In Progress.
+- **Root cause of every orphan today is `notarytool` crashing mid-upload, not Apple's queue.** `~/Library/Logs/DiagnosticReports/notarytool-2026-09-04-{092921,093712,093802}.ips` — all `EXC_BAD_ACCESS / SIGBUS`, "Could not determine thread index for stack guard region", exit 138. A `--verbose` run shows the S3 multipart upload dying at chunk 7 of 13; the submission id is minted before the upload, so the orphan is born In Progress. The one upload that completed (`84aea709`, the app zip) printed `Successfully uploaded file`; none of the DMG attempts did. Xcode's notarytool is `1.1.1 (40)`. This refines the 2026-08-18 "orphaned upload" rule: check the submit output for `Successfully uploaded file`; without that line the id is dead on arrival — do not wait 5 minutes on it.
+- 09:38 a 6-attempt submit retry loop failed instantly with exit 69: `No Keychain password item found for profile: dc-notary`. Re-running `store-credentials dc-notary` (key `~/.appstoreconnect/private_keys/AuthKey_MASFPJ29HJ.p8`, key id MASFPJ29HJ, issuer 279c8b24-…) validates against Apple and then fails: **"An error occurred while accessing the keychain. User interaction is not allowed."** — the login keychain is locked (its file is intact, `login.keychain-db` mtime 04:00 today, unmodified by the store). Nothing I can do from a non-interactive shell.
+- `release-all.sh` (pid ~29821) is still polling the dead `221ac648` and will die at its 2-hour ceiling; the auto-mode classifier blocked my `pkill`, so it is left running.
+- Orphaned submission ids at Apple (harmless, abandoned): `dae88f06`, `76448ba2`, `221ac648`, `6185981f`, `b951ea48`.
+
+## Next Steps (David, at the keyboard)
+1. Unlock the login keychain (log in at the screen, or `security unlock-keychain ~/Library/Keychains/login.keychain-db`), then confirm `xcrun notarytool history --keychain-profile dc-notary` works.
+2. `pkill -f release-all.sh`, then submit the DMG until an attempt prints `Successfully uploaded file` — `xcrun notarytool submit tools/ide/release/arm64/ChordWriter-1.4.0-arm64.dmg --keychain-profile dc-notary` (each crash orphans an id; that's fine) — put that id on the `DMG_SUBMISSION=` line of `tools/ide/release/arm64/.notarize-state`, and re-run `./tools/ide/release-all.sh`. It staples the DMG, writes the Sparkle payload, then builds the x86_64 slice (two more submissions — same check applies), then collects `release/1.4.0/` with `UPLOAD.md`.
+3. Upload per `UPLOAD.md` (zips before appcasts), `./website/deploy.sh --no-pull`, verify the download page and both appcast URLs; tick the last two Phase 18 boxes.
+4. Then land the recurrence fix: teach `release-all.sh`/`package.sh` to treat a submit without `Successfully uploaded file` as failed and retry the upload immediately, instead of polling a dead id (recurrence detector: 5 sessions since 2026-08-10).
 - When `release-all.sh` finishes: verify both DMGs and appcasts under `tools/ide/release/1.4.0/`, read its `UPLOAD.md`, hand the upload (scp + `./website/deploy.sh --no-pull`) to David, then verify https://sharpee.net/chord-writer/download and the two appcast URLs return 200 and name 1.4.0.
 - Then tick the last two Phase 18 checklist boxes; Phase 17 (P-43) remains David's outside-repo run.
 
