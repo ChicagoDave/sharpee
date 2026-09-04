@@ -139,9 +139,10 @@ final class ComposeRunnerTests: XCTestCase {
         XCTAssertEqual(record.code, "analysis.unknown-entity")
         XCTAssertEqual(record.file, story.path, "compile site is the story file as passed")
         let span = try XCTUnwrap(record.span, "compile diagnostics carry the full span")
-        // 15, not 14: `cleanStory`'s `authors:` became the indented list form
-        // the compiler requires, which added a line above the error site.
-        XCTAssertEqual(span.line, 15)
+        // 17: `cleanStory`'s `authors:` became the indented list form the
+        // compiler requires (+1), and the ADR-327 migration gave Alex a
+        // `playable` line above `starts in` (+1) — both above the error site.
+        XCTAssertEqual(span.line, 17)
         XCTAssertGreaterThan(span.endColumn, span.column, "a real underline range, not a point")
     }
 

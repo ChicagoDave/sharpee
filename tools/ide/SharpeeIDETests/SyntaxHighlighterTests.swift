@@ -36,6 +36,12 @@ final class SyntaxHighlighterTests: XCTestCase {
         XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, "create")), Theme.tokenKeyword)
         XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, "Create")), Theme.tokenKeyword,
                        "keyword match is case-insensitive")
+        // Chord 3.6.0 block nouns (ADR-325 timers, ADR-330 chapters); the
+        // timer verbs and chapter reads stay uncolored by design.
+        XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, "timer")), Theme.tokenKeyword)
+        XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, "chapters")), Theme.tokenKeyword)
+        XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "interrupt")),
+                     "timer verbs are statement verbs, never colored")
         XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "lighthouse")),
                      "non-keyword words stay at base foreground")
         XCTAssertNil(SyntaxHighlighter.color(for: token(.punct, "—")))

@@ -98,7 +98,14 @@ final class EditorWrapWidthTests: XCTestCase {
     /// a sideways swipe slid the clip right. Correcting the frame width does
     /// not move the clip back, so the first characters of every line stay
     /// under the gutter. A slide must not stick: the clip's bounds-change
-    /// sync clamps it straight back, and a layout pass keeps it at x = 0.
+    /// sync clamps it straight back, and a layout pass keeps it at rest.
+    ///
+    /// "At rest" is NOT x = 0 (the 2026-08-23 gutter-clamp-origin fix): with
+    /// automaticallyAdjustsContentInsets AppKit reserves the ruler's gutter
+    /// through the clip view's contentInsets, so an unscrolled clip rests at
+    /// x = -clip.contentInsets.left (-46 with the gutter). Pinning it to 0 was
+    /// the margin bug itself, so this test reads the resting origin from the
+    /// clip rather than asserting a constant.
     func testASidewaysSlideCannotStickInWrapMode() throws {
         let file = tmp.appendingPathComponent("slid.chord")
         try "## a fragment\n\ncreate Teisha\n  a person, proper\n"
@@ -112,20 +119,22 @@ final class EditorWrapWidthTests: XCTestCase {
         let clip = scrollView.contentView
         let clipWidth = scrollView.contentSize.width
         let rulerWidth = try XCTUnwrap(scrollView.verticalRulerView?.ruleThickness)
-        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5, "settled editor starts at the left edge")
+        let restingX = -clip.contentInsets.left
+        XCTAssertEqual(clip.bounds.origin.x, restingX, accuracy: 0.5,
+                       "settled editor starts at the resting origin (the gutter inset, not 0)")
 
         // Stale wide frame, then the sideways slide it permits.
         textView.setFrameSize(NSSize(width: clipWidth + rulerWidth, height: textView.frame.height))
-        clip.scroll(to: NSPoint(x: rulerWidth, y: clip.bounds.origin.y))
+        clip.scroll(to: NSPoint(x: restingX + rulerWidth, y: clip.bounds.origin.y))
         scrollView.reflectScrolledClipView(clip)
-        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5,
+        XCTAssertEqual(clip.bounds.origin.x, restingX, accuracy: 0.5,
                        "wrapped text never scrolls sideways — the slide must be clamped back as it happens")
 
         editor.view.needsLayout = true
         editor.view.layoutSubtreeIfNeeded()
 
-        XCTAssertEqual(clip.bounds.origin.x, 0, accuracy: 0.5,
-                       "and a layout pass must leave the clip at x = 0")
+        XCTAssertEqual(clip.bounds.origin.x, restingX, accuracy: 0.5,
+                       "and a layout pass must leave the clip at its resting origin")
         XCTAssertEqual(textView.frame.width, clipWidth, accuracy: 0.5)
     }
 }

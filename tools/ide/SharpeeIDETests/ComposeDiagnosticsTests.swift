@@ -39,7 +39,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
          "ir":{"format":"story language 2","languageVersion":"3.0.0",
                "meta":{"title":"Probe","fields":{"id":"probe","storyVersion":"1.0.0",
                                                  "authors":["Tests"],"testers":[],"themes":[]}},
-               "entities":[{"id":"lab","name":"Lab","article":"the","isPlayer":false,
+               "entities":[{"id":"lab","name":"Lab","article":"the","isPlayable":false,
                             "kinds":[{"name":"room","config":[],"condition":null,
                                       "span":{"line":6,"column":3,"endLine":6,"endColumn":9}}],
                             "traits":[],"span":{"line":5,"column":1,"endLine":8,"endColumn":15}}],
@@ -74,7 +74,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
         let entity = try XCTUnwrap(ir.allEntities.first)
         XCTAssertEqual(entity.name, "Lab")
         XCTAssertTrue(entity.hasKind("room"))
-        XCTAssertFalse(entity.isPlayer)
+        XCTAssertFalse(entity.isPlayable)
         XCTAssertEqual(entity.span, DiagnosticSpan(line: 5, column: 1, endLine: 8, endColumn: 15))
 
         let action = try XCTUnwrap(ir.allActions.first)

@@ -47,7 +47,23 @@ enum ChordVersionCheck {
     /// entire conversation grammar, exactly as it did at 2.2.0. Only
     /// `SyntaxHighlighter`'s display-only keyword set moved, gaining the five
     /// block nouns and the two row openers.
-    static let supportedLanguageVersion = "3.3.0"
+    ///
+    /// 3.6.0 (2026-09-04): everything since the 3.3.0 publish, shipped as one
+    /// public minor (the 3.4.0 and 3.5.0 numbers were internal — ADR-257 D2 as
+    /// amended): timers and their verbs and reads (ADR-325), the adjacent-room,
+    /// `here` and `offstage` move destinations (ADR-326), regions with a
+    /// `landing`, `proper` on any create block, `, one-way` exits, the `{bare}`
+    /// article hint, a goal step in an action's own words (ADR-329 D10), the
+    /// player role (ADR-327), and the `chapters` extension with its
+    /// `during`/`before`/`after` reads (ADR-330). Same shape as 3.3.0: a NEW
+    /// corpus file, `presence-and-chapters-surface.story`, with every spelling
+    /// lifted from sharpee.net guide fences the story-loader docs test compiles,
+    /// gate-clean under `sharpee compose --check` at 3.6.0; the golden
+    /// regenerated over it with the four existing streams unchanged (the
+    /// ADR-327 corpus migration had already re-pinned them on 2026-09-01);
+    /// `ChordLexerGoldenTests` green with `ChordLexer.swift` untouched. The
+    /// highlighter's keyword set gained the two new `define` block nouns.
+    static let supportedLanguageVersion = "3.6.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

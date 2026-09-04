@@ -188,9 +188,20 @@ targets:
         # two different 1.3.0 artifacts in the world. Same reasoning npm enforces
         # by refusing to republish a version. Carries the GH #280 opening-card
         # fixes (info captured at boot, the `{}` self-heal, JSON channel labels).
+        # 1.4.0 — the release that pairs with Sharpee 5.3.0 / Chord 3.6.0 on
+        # npm (published 2026-09-04). The Chord pin moves 3.3.0 -> 3.6.0, so an
+        # author whose story uses timers, chapters, regions with a landing, or
+        # `proper` opens it without the "IDE is behind" warning; the bundled
+        # toolchain is 5.3.0; the docs tab is regenerated at 3.6.0 with the
+        # timers and chapters guide pages. Also since 1.3.1: `.chord` fragments
+        # as Story source with New Import / Extract Selection (#287, #288), the
+        # World tab (ADR-321), the menu-less Play pane and Publish menu (#195,
+        # #196), and the wrapped-editor scroll and stale-frame fixes (#290,
+        # #295). A minor, by the same rule 1.3.0 applied: a pin move and new
+        # surfaces are capability, not repair.
         # package.sh reads this line for the DMG filenames.
-        CFBundleShortVersionString: "1.3.1"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "1.4.0"
+        CFBundleVersion: "7"
         # 11.0, matching MACOSX_DEPLOYMENT_TARGET above — NOT 26.0, which this
         # key carried from the first IDE commit (2f6df711) through 1.0.0 and
         # 1.0.1. Every binary in the bundle is minos 11.0 (verified 2026-08-15

@@ -1,0 +1,51 @@
+# Session Summary: 2026-09-04 - feat/adr-321-world-index
+
+## Status: In Progress — alignment DONE and green; Chord Writer 1.4.0 release build running at commit time (arm64 app notarization resubmitted 09:19 CDT)
+
+## Goals
+- Align Chord Writer (the macOS IDE) with the published Sharpee 5.3.0 / Chord 3.6.0 and prepare its next release (David, 2026-09-04 ~08:05 CDT: "we need to align the IDE with the new Sharpee/Chord versions and prepare for a new release"). This is the Chord Writer half of `docs/work/publish-readiness/plan.md` Phase 18 (P-44); the npm half landed 2026-09-04 ~07:00 CDT in session 0135ed.
+
+## Completed
+- Phase 18 marked CURRENT with a dated progress block and an alignment checklist; Phase 16's stray duplicate `**Status**: PENDING` line removed.
+- `ChordVersionCheck.supportedLanguageVersion` 3.3.0 → 3.6.0, with the honesty condition met the way 3.3.0 met it: a new lexer-golden corpus file `packages/chord/tests/fixtures/lexer-golden/presence-and-chapters-surface.story` (timers + verbs + reads + `when … expires`; `move … offstage|here|to a random adjacent room`; region `landing` + `set … landing`; `proper`/`pronouns`; `, one-way`; `{bare}`; ADR-329 D10 goal steps incl. `go east`; ADR-327 `change the player to`; `use chapters` + `define chapters` with three trigger forms + `during`/`before`/`after` reads). Gate-clean: `./sharpee compose <file> --check` → "Chord 3.6.0 — … is gate-clean" (08:14 CDT; two drafting mistakes caught by the compiler and fixed: a timer read from another entity needs the possessive `the player's waiting`, and `in Commerce Street` without an article reads as a trait line).
+- Golden regenerated (`pnpm --filter @sharpee/chord golden:lexer`); the four existing streams verified byte-identical by a JSON compare (08:15 CDT); the new stream is 163 lines. Drift guard in `lexer-golden.test.ts` extended with 25 constructs for the new file; `pnpm --filter @sharpee/chord test:ci lexer-golden` → 2 passing (08:15 CDT).
+- `SyntaxHighlighter.keywords` gains `timer`, `chapters` (block nouns only; verbs/reads deliberately excluded, reasoned in the comment); `SyntaxHighlighterTests.testColorMapsByTokenKind` extended to pin both plus `interrupt` uncolored.
+- Chord Writer 1.3.1 → 1.4.0 in `tools/ide/project.yml` (CFBundleVersion 7) with the release rationale comment; `xcodegen generate` re-emitted `Info.plist` at 1.4.0; `website/scripts/sync-versions.mjs` re-derived `versions.json` (5.3.0 / 3.6.0 / 1.4.0); `tools/ide/build-docs-tab.sh` regenerated the docs tab (164 pages, Chord 3.6.0, `chord-writer.html` now reads "Chord Writer 1.4.0").
+
+## Key Decisions
+- Chord Writer's next version is 1.4.0, a minor: the pin move and the new surfaces are capability, the same rule 1.3.0 applied (recorded in the `project.yml` comment).
+- The corpus addition is the one `packages/` touch — a test fixture and its drift guard, mirroring the 3.3.0 precedent (`conversation-surface.story`). Flagged to David in-conversation rather than discussed first, because the IDE pin's own doc comment names it as the required path.
+
+## Open Items
+- **IDE suite RED (08:20 CDT): 592 tests, 13 failures in 9 test methods** — pinned invocation `xcodebuild test -project SharpeeIDE.xcodeproj -scheme SharpeeIDE -destination 'platform=macOS' -derivedDataPath ./DerivedData`; log at the session scratchpad `xcodebuild-test.log`. Everything this session touched passed (ChordLexerGoldenTests 6, ChordVersionCheckTests 5 incl. the real-path equality pin at 3.6.0, SyntaxHighlighterTests 11). Reported and WAITING per CLAUDE.md — no fix applied, no re-run.
+  - Root cause A (6 of the 9): the IDE's compose decoder is behind the 5.3.0 IR. `ComposeDiagnostics.swift:102` requires `Entity.isPlayer`; ADR-327 D10 (commit c4cea87e, 2026-08-27) replaced `IREntity.isPlayer` with `isPlayable` (`IR_FORMAT` → `story language 4`; confirmed 08:22 CDT by `./sharpee compose --json` on the test fixture: entity keys carry `isPlayable`, no `isPlayer`; `schemaVersion` 2 unchanged, so the Swift schema guard does not catch it). Every real-path compose decode fails `keyNotFound 'isPlayer'`: ComposeRunnerTests ×4 (`testCleanStoryYieldsEmptyDiagnosticsAndIR`, `testFernhillTreePopulatesFromSourceAlone`, `testHatchViolationArrivesAsFileLineRecordWithoutSpan`, `testUnresolvableHatchModuleStillReturnsGatesAndIR`), `IRTreeStateTests.testRetentionLoopOverRealCompose`, `StoryScaffoldTests.testRealTemplateScaffoldComposesClean`. In the app this means the IR tree / story index never populates against a 5.3.0 toolchain — release-blocking. Proposed fix: rename the decoded field to `isPlayable`; `StoryIndex.swift:71,153,155` follow (`people` count and the "player" detail become "playable").
+  - Root cause B (1): `ComposeRunnerTests.testAnalyzerErrorArrivesWithFullSpan` expects `span.line == 15`; the compiler reports 17 (confirmed with `--check`: `probe-err.story:17:13 analysis.unknown-entity`). The fixture gained `playable` and the indented `authors:` list in the ADR-327 migration; the expectation was not moved. Proposed fix: 15 → 17, comment updated.
+  - Unexplained (2): `EditorWrapWidthTests.testASidewaysSlideCannotStickInWrapMode` (clip x = -46.0, expected 0) and `SplitDividerTests.testUserDragPersistsAcrossRelaunchAtCurrentVersion` (340.5 vs 300 ±2). Layout tests, last touched 2026-08-22 / 2026-08-10, no prior failure recorded in `docs/context/`. Possibly window/screen-environment sensitivity on this run; not investigated further.
+  - Context: this is the first full IDE suite run since ADR-327 landed (session 0432's run on 2026-09-03 could not connect its test runner), and Chord Writer 1.3.1 shipped 2026-08-18, before the IR cutover — so 1.3.1 in the field with its 5.1.1 toolchain is consistent; only the repo IDE is behind.
+- **Fixes applied on David's "go" (08:35 CDT), suite re-run in progress:**
+  - Decoder: `ComposeDiagnostics.Entity.isPlayer` → `isPlayable` (doc comment cites ADR-327 D10 / story language 4); `StoryIndex` follows (people count; detail string "player" → "playable"). Test fixtures renamed: `ComposeDiagnosticsTests` (wire JSON + assertion), `SplitDividerTests`, `StoryIndexTests` (synthetic entity now "Alex", detail "playable"); `IRTreeStateTests` real-compose name pin `["Lab","player"]` → `["Alex","Lab"]` (cleanStory's playable character is Alex).
+  - `ComposeRunnerTests.testAnalyzerErrorArrivesWithFullSpan`: line 15 → 17 (indented `authors:` +1, `playable` +1).
+  - `EditorWrapWidthTests.testASidewaysSlideCannotStickInWrapMode`: was stale against the 2026-08-23 gutter-clamp-origin fix (9a37496b, which changed the resting origin from 0 to `-clip.contentInsets.left` = -46 and did not update this test). Test now reads the resting origin from the clip.
+  - `SplitDividerTests.testUserDragPersistsAcrossRelaunchAtCurrentVersion`: the right panel's tab strip now holds seven tabs (Play, Testing, Index, Diagnosis, Documentation, Publish, World — World added 2026-08-19, Publish 2026-09-03, both after the test's 2026-08-10 revision) and its fitting width (~340, matching the measured 340.5) is the pane's effective minimum, above the nominal `playMinWidth` 240. The drag moved 300 → 400; the test's subject is persistence. Observation, not changed: `MainWindow.playMinWidth = 240` is unreachable in practice.
+- IDE suite re-run 08:41 CDT: **592 passing, 0 failures** (`** TEST SUCCEEDED **`, same pinned invocation).
+- `tools/ide/release-all.sh` started 08:42 CDT (detached; log in the session scratchpad `release-all.log`). Platform build, archive, signing and seal checks all passed for arm64; the app was submitted for notarization at 08:29:20Z… (id `dae88f06-26dc-4e03-8b30-1f08c6e2b3f8`).
+- **Orphaned notarization (09:17 CDT):** that submission sat `In Progress` for 48 minutes — David's rule is resubmit past ~5 minutes (healthy uploads clear in 60–90 s; an interrupted upload still mints an id). Stopped the polling `release-all.sh`, re-zipped the staged `release/arm64/Chord Writer.app` with the same `ditto -c -k --keepParent` package.sh uses, resubmitted (`xcrun notarytool submit`, no `--wait` — it bus-errors on this machine): new id `84aea709-9e9c-4547-a3f3-14b128be55ed` at 09:19:43 CDT; replaced the `APP_SUBMISSION=` line in `release/arm64/.notarize-state`; resumed `release-all.sh` (it waits on the ledger's id, then package.sh staples, builds the DMG, notarizes the DMG, then the x86_64 slice). Outcome not yet known at commit time — see the next session note or `release/1.4.0/UPLOAD.md`.
+- Phase 17 (P-43, the outside-repo proof) stays PENDING — David's to run on a machine without this clone.
+
+## Files Modified
+- `docs/work/publish-readiness/plan.md`
+- `packages/chord/tests/fixtures/lexer-golden/presence-and-chapters-surface.story` (new), `lexer-golden.json`, `packages/chord/tests/lexer-golden.test.ts`
+- `tools/ide/SharpeeIDE/Compose/ComposeDiagnostics.swift`, `tools/ide/SharpeeIDE/Compose/StoryIndex.swift` (ADR-327 decoder alignment)
+- `tools/ide/SharpeeIDETests/{ComposeDiagnosticsTests,ComposeRunnerTests,EditorWrapWidthTests,IRTreeStateTests,SplitDividerTests,StoryIndexTests}.swift` (stale expectations)
+- `tools/ide/project.yml`, `tools/ide/SharpeeIDE/Compose/ChordVersionCheck.swift`, `tools/ide/SharpeeIDE/Editor/SyntaxHighlighter.swift`, `tools/ide/SharpeeIDETests/SyntaxHighlighterTests.swift`
+- `tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord-writer.html` (regenerated)
+- `website/src/lib/versions.json` (derived)
+
+## Next Steps
+- When `release-all.sh` finishes: verify both DMGs and appcasts under `tools/ide/release/1.4.0/`, read its `UPLOAD.md`, hand the upload (scp + `./website/deploy.sh --no-pull`) to David, then verify https://sharpee.net/chord-writer/download and the two appcast URLs return 200 and name 1.4.0.
+- Then tick the last two Phase 18 checklist boxes; Phase 17 (P-43) remains David's outside-repo run.
+
+## Notes
+- Session started: 2026-09-04 08:05 CDT (session 15cfa3)
+- Memory written: `project_ide_decoder_follows_ir_fields.md` — a chord IR field change must be mirrored in `ComposeDiagnostics.swift`; nothing guards it.
+- Committed mid-release on David's `/devarch:finalize` (09:20 CDT); `tools/ide/release/` is untracked release output, so the in-flight build leaves no working-tree noise.

@@ -112,7 +112,7 @@ final class IRTreeStateTests: XCTestCase {
         guard case .populated(let ir, false) = state.display else {
             return XCTFail("expected populated tree, got \(state.display)")
         }
-        XCTAssertEqual(ir.allEntities.map { $0.name }.sorted(), ["Lab", "player"])
+        XCTAssertEqual(ir.allEntities.map { $0.name }.sorted(), ["Alex", "Lab"])
 
         let broken = compose(TestToolchain.analyzerErrorStory)
         state.apply(broken)
