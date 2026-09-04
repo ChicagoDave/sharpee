@@ -71,6 +71,10 @@
 - `release-all.sh --arch-list x86_64`: DMG reused (ledger id set), verdict read, stapled, Gatekeeper accepted, Sparkle payload written — "x86_64 complete". Then `release-all.sh --collect-only`: `release/1.4.0/downloads/` holds both DMGs, both appcasts, both Sparkle zips (plus the delta archives and the 1.2.0–1.3.1 history the appcasts catalogue), `CHECKSUMS.txt`, `UPLOAD.md`. Both DMGs: `stapler validate` OK.
 - Not yet verified (AC3, as `package.sh` itself prints): Gatekeeper acceptance on a machine that never built the artifact.
 
+## 16:15–16:30 CDT — release notes and blog draft
+- `docs/work/publish-readiness/changes-since-5.1.1.md`: the full changes list (Chord, platform, Chord Writer, sharpee.net, stories, punch list, ADR roll, release mechanics), every item traceable to a commit, grammar-changes row, or punch-list entry — David's raw material.
+- `docs/work/blog/2026-09-04-sharpee-5-3-and-chord-writer-1-4.md`: a first-person release rundown in David's voice, ~730 words. Two rounds of his feedback folded in and saved as memory `feedback_no_inline_tags_in_prose`: no bolded paragraph lead-ins, and no syntax inside sentences — new syntax is shown only in fenced code blocks, the prose stays English. No em or en dashes, no ADR references.
+
 ## Next Steps (David, at the keyboard)
 1. Upload per `tools/ide/release/1.4.0/UPLOAD.md` — zips before appcasts — then `./website/deploy.sh --no-pull` (sudo), then `curl -I` the two appcast URLs and the arm64 DMG URL, and open https://sharpee.net/chord-writer/download (the version strings are already derived from `versions.json`, so the page reads 1.4.0 once deployed; `UPLOAD.md`'s closing hint about `nav.ts`/`download-card.tsx` is stale). Tick the last Phase 18 box.
 2. Optional but worth it: on a Mac that did not build it, open the DMG and launch (AC3).
