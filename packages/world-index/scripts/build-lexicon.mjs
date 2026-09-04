@@ -48,7 +48,8 @@ for (const row of rows) {
   if (!/^[a-z][a-z-]{2,}$/.test(lemma)) continue;
   words.push(lemma);
 }
-words.sort();
+// Code-unit order, the default sort's order, stated as a compare function.
+words.sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 
 const out = `/**
  * non-physical-nouns.generated.ts — nouns that never name a thing.

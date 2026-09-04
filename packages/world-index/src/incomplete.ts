@@ -568,6 +568,7 @@ export function publishFilters(prose: readonly ProseSite[] = []): ExtractorFilte
     abstractSuffixes: [...ABSTRACT_SUFFIXES],
     physicalExceptions: [...THINGS_ANYWAY],
     eventiveHeads: [...EVENTIVE_HEADS],
-    notThingHeads: [...notThingHeads].sort(),
+    // Code-unit order, the default sort's order, stated as a compare function.
+    notThingHeads: [...notThingHeads].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
   };
 }

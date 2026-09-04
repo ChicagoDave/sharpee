@@ -244,7 +244,8 @@ export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
 
   const connections = new Map<string, { rooms: [string, string]; via: string | null }>();
   for (const edge of edges) {
-    const pair = [edge.from, edge.to].sort() as [string, string];
+    // Code-unit order, the default sort's order, stated as a compare function.
+    const pair = [edge.from, edge.to].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)) as [string, string];
     const key = pair.join('|');
     const existing = connections.get(key);
     if (existing === undefined) connections.set(key, { rooms: pair, via: edge.via });

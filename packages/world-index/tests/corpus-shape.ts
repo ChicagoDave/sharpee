@@ -136,7 +136,7 @@ function wiring(ir: StoryIR, rooms: readonly IREntity[]): { connections: number;
   const degree = new Map<string, number>(rooms.map((room) => [room.id, 0]));
 
   for (const edge of wiredEdges(rooms, (id) => roomIds.has(id))) {
-    const pair = [edge.from, edge.to].sort().join('|');
+    const pair = [edge.from, edge.to].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)).join('|');
     if (pairs.has(pair)) continue;
     pairs.add(pair);
     degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1);
